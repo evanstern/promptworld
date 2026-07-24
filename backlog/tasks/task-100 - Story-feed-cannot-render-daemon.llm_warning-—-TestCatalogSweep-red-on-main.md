@@ -1,20 +1,22 @@
 ---
-id: TASK-96
+id: TASK-100
 title: Story feed cannot render daemon.llm_warning — TestCatalogSweep red on main
 status: To Do
 assignee: []
-created_date: '2026-07-24 19:37'
+created_date: '2026-07-24 19:51'
 labels:
   - bug
   - tui
 dependencies: []
 priority: high
-ordinal: 80000
+ordinal: 82000
 ---
 
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
+Refiled from a TASK-96 ID collision (two sessions created TASK-96 concurrently 2026-07-24; the mental-maps task keeps the ID — spec 041 references it).
+
 Found 2026-07-24 during TASK-78 baseline validation: `go test ./internal/tui -run TestCatalogSweep` FAILS on main (verified at 404a98f): 'docs/wiki/event-types.md backticks "daemon.llm_warning" but the catalog fixture doesn't cover it' (internal/tui/digest_test.go:208).
 
 Diagnosis (complete): spec 034 introduced the `daemon.llm_warning` event (provider-health preflight; spec 038 made it loud) and the wiki note docs/wiki/event-types.md:94,147,200 documents it, but internal/tui has NO digest registry entry and NO catalogFixture row for it (grep 'llm_warning' internal/tui/ → zero hits). The sweep test cross-checks wiki-backticked event types against the fixture, so it correctly flags the gap: the story feed has no renderer for daemon.llm_warning events.
