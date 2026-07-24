@@ -132,6 +132,21 @@ Recorded during US1 review; these refine the model above and are the as-built tr
   byte-agreement between snapshot-load and from-genesis replay.
 - **Death knowledge** is out of scope for the fact model (live `Dead` check retained at the
   door); flagged as possible follow-up.
+- **Correction memories ride as companion `agent.memory_added` events** (same batch as
+  `agent.map_corrected`), not a reducer-side append — the memories-accrete-via-events
+  invariant forbids arms appending `Agent.Memories` directly.
+- **Correction scope = absence, not availability lapse**: chopped trees, quarried-out rock,
+  drained piles, and removed structures correct; harvested forage, cooling dens, and
+  shorelines persist (the place still exists). A burned-out fire is *not* corrected — the
+  structure persists; lit-ness staleness rides the remembered `Detail`, refreshed on sight,
+  and the prompt renders "(likely burned out by now)".
+- **Walls and paths render grouped in the prompt** (count + nearest), not individually —
+  per-tile runs would bloat the prompt; landmark kinds (fire/shelter/oven/chest) render
+  individually with no cap, which is what SC-002 measures.
+- **US3 re-examination of the availability split (accepted)**: permanent-availability
+  ground conditions (forage/den/chest/wall) stay load-bearing forever; absence-class
+  conditions (tree/rock/pile) became redundancy-with-benefits under correction — kept as
+  shipped; relaxing them is a T035 tunable if the soak wants stronger epistemics.
 
 ## Modified behaviors (no new entities)
 

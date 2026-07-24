@@ -65,8 +65,8 @@ first-6 cap retired.
 **Independent test**: traveler vs homebody prompts diverge; 7th structure built in presence
 appears.
 
-- [ ] T017 [US2] Known-places section in `internal/mind/prompt.go` `userPrompt`: replace the `Village:` line with map-rendered section per contracts §3 — all fresh known structures individually with provenance phrasing (witnessed/told/revealed), resource kinds grouped with count + nearest, one-line unexplored orientation (dominant frontier direction), explicit empty-state line; delete the `parts[:6]` truncation
-- [ ] T018 [US2] Prompt tests in `internal/mind/prompt_test.go`: divergent maps → divergent sections; >6 known structures all render; told-provenance phrasing; empty-state line; fully-explored map omits the unknown-land line (SC-002)
+- [x] T017 [US2] Known-places section in `internal/mind/prompt.go` `userPrompt`: replace the `Village:` line with map-rendered section per contracts §3 — all fresh known structures individually with provenance phrasing (witnessed/told/revealed), resource kinds grouped with count + nearest, one-line unexplored orientation (dominant frontier direction), explicit empty-state line; delete the `parts[:6]` truncation
+- [x] T018 [US2] Prompt tests in `internal/mind/prompt_test.go`: divergent maps → divergent sections; >6 known structures all render; told-provenance phrasing; empty-state line; fully-explored map omits the unknown-land line (SC-002)
 
 **Checkpoint**: two villagers see different worlds; watchers can tell.
 
@@ -79,10 +79,10 @@ appears.
 **Independent test**: fire learned → burns out while away → agent seeks it, arrives, map
 corrects, next plan uses corrected knowledge.
 
-- [ ] T019 [US3] `agent.map_corrected` event: emitter in the T007 perception sweep (remembered fresh facts within perception radius absent from ground truth → `MapCorrectedPayload{Agent, Gone}` carrying facts *as remembered*); reducer arm removes facts + stamps situated memory ("The fire … was cold and dead when you looked.", Origin witness) in `internal/sim/state.go` / `internal/sim/memory.go`
-- [ ] T020 [P] [US3] Gates for `agent.map_corrected`: digest row + fixture (`internal/tui/digest.go`, `digest_test.go`); `docs/wiki/event-types.md` row; `chronicleNote` grammar line in `internal/mind/narrate.go`
-- [ ] T021 [US3] Absorb trigger in `internal/mind/mind.go`: `agent.map_corrected` re-arms the planner when a removed fact matches the agent's current intent target (contracts §1)
-- [ ] T022 [US3] US3 tests in `internal/sim/`: SC-005 flow (structure removed while away → arrival emits correction, fact gone, memory stamped); stale-plan-step interaction (plan step whose target was corrected away fails via existing `agent.plan_expired`, no omniscient re-resolve)
+- [x] T019 [US3] `agent.map_corrected` event: emitter in the T007 perception sweep (remembered fresh facts within perception radius absent from ground truth → `MapCorrectedPayload{Agent, Gone}` carrying facts *as remembered*); reducer arm removes facts + stamps situated memory ("The fire … was cold and dead when you looked.", Origin witness) in `internal/sim/state.go` / `internal/sim/memory.go`
+- [x] T020 [P] [US3] Gates for `agent.map_corrected`: digest row + fixture (`internal/tui/digest.go`, `digest_test.go`); `docs/wiki/event-types.md` row; `chronicleNote` grammar line in `internal/mind/narrate.go`
+- [x] T021 [US3] Absorb trigger in `internal/mind/mind.go`: `agent.map_corrected` re-arms the planner when a removed fact matches the agent's current intent target (contracts §1)
+- [x] T022 [US3] US3 tests in `internal/sim/`: SC-005 flow (structure removed while away → arrival emits correction, fact gone, memory stamped); stale-plan-step interaction (plan step whose target was corrected away fails via existing `agent.plan_expired`, no omniscient re-resolve)
 
 **Checkpoint**: believe–act–discover loop closed.
 
