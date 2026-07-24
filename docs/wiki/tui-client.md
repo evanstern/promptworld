@@ -9,7 +9,7 @@ sources:
   - internal/tui/grammar.go
   - internal/tui/digest.go
   - internal/tui/decisions.go
-verified_against: 4c3807c4d3fcca5cb82367a1ea9b8c0696fda472
+verified_against: 3b7dd17b478ab5aa64e4c99c44b77bc565d71376
 ---
 
 # TUI client
@@ -216,7 +216,13 @@ entry — builder, emphasized goal, and emphasized reason ("Ash's build_wall_sto
 failed — site no longer buildable") — reading as a failure at a glance without
 promoting to the whole-line alert tier; a cancelled build was previously
 indistinguishable from a finished one because it shared `agent.intent_done`'s
-plain "finished" line. The four
+plain "finished" line. Since spec 041, four more [[mental-maps]] event types get registry entries,
+all sharing a first-fact-plus-count shape (a full fact list would flood the
+line; the detail pane holds the payload verbatim): `agent.saw` ("Ash saw fire
+at (x,y) (+N more)"), `social.place_told` ("Ash told Birch of fire at (x,y)
+(+N more)"), `agent.map_corrected` ("Ash found fire at (x,y) gone (+N
+more)"), and `metatron.place_revealed` ("Metatron revealed fire at (x,y) to
+Ash (+N more)", Metatron as subject, the nudge convention). The four
 [[metatron-miracles]] types render in the metatron family voice, with a
 trailing emphasized `(forced)` annotation (`gratisMark`) whenever the
 payload's gratis flag waived the charge — an operator force is never
@@ -263,7 +269,9 @@ read the polled `Status.Horizon` — [[ipc-server]]'s `horizonClasses`
 composition backed by [[cognition]]'s `LiveHorizon` and
 [[llm-orchestrator]]'s `SuppressionCounts` — with no client-side
 re-derivation, the same "polled, not projected" posture as the LLM condition
-surfaces.
+surfaces. [[mental-maps]]'s four place-knowledge event types render through
+the raw digest feed with no dedicated pane of their own — the map/prompt
+side of the feature lives entirely in [[agent-mind]]/[[executor]], not here.
 
 ## Operational notes
 

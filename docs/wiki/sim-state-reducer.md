@@ -9,7 +9,7 @@ sources:
   - internal/sim/miracles.go
   - internal/sim/journal.go
   - internal/sim/terrain.go
-verified_against: 4c3807c4d3fcca5cb82367a1ea9b8c0696fda472
+verified_against: 3b7dd17b478ab5aa64e4c99c44b77bc565d71376
 ---
 
 # Sim state & reducer
@@ -33,8 +33,11 @@ Apply arms; an `omitempty` pointer on the Hail precedent, so a never-journaling
 agent stays byte-identical to a pre-019 snapshot; each `Memory` also now carries
 `omitempty` situated context `Where`/`Why`/`Conv`/`Origin` (spec 030's
 closed-vocabulary provenance class — the ONLY signal `DirectPerception`,
-`memory.go`, reads to classify direct perception), byte-stable when absent),
-structures (`fire`/`shelter`/`oven`/`chest`, fires carrying a
+`memory.go`, reads to classify direct perception), byte-stable when absent;
+plus, since spec 041, a private spatial-knowledge store, `Map *MentalMap`
+(`omitempty`, the Journal/Hail pointer precedent — a never-mapped agent, i.e.
+every pre-041 snapshot, round-trips byte-identically; [[mental-maps]] owns
+the type and its two knowledge-event Apply arms below), structures (`fire`/`shelter`/`oven`/`chest`, fires carrying a
 `FuelUntil`; chests (spec 013 US3) carrying a permanent `Owner` — the builder's
 agent index, zero-value round-tripping unambiguously since every chest has one —
 and a `Store *Inventory` capped at `chestCap` via the same derived `bulk()` used
@@ -100,7 +103,10 @@ unmarshalling into a bare `State` have none until called — so miracle reducer
 arms can consult the terrain vocabulary (`passable`/`buildSite`/`effectiveKind`)
 identically live, in the dry-run, and in replay. `world.migrated`'s wholesale
 `*s = p.State` replacement preserves the receiver's existing map across the
-swap (the unmarshalled payload state carries none of its own).
+swap (the unmarshalled payload state carries none of its own). `State.MapDims()`
+(spec 041) exposes the attached map's `(W, H)` — 0,0 when unattached — so the
+mind's prompt renderer ([[agent-mind]]) can size a mental-map bitmap read
+without the `State` ever serializing the map itself.
 
 `Apply` switches on event type: `clock.*` maintain pause/speed/degradation —
 since spec 028, `clock.speed_set` additionally clears `RequestedSpeed` (a
@@ -177,6 +183,21 @@ gone, or a wall's reserved-tile occupant outlasting the grace period); the
 reducer itself carries no build-specific logic, it only clears the intent the
 same way completion does, so no material is spent and no structure stands
 ([[executor]], [[event-types]]);
+[[mental-maps]]'s two knowledge-growth arms mutate `Agent.Map` directly:
+`agent.saw` upserts the perception sweep's fully-baked facts verbatim
+(`Map.upsertFact`), `agent.map_corrected` removes facts the sweep found gone
+(`Map.removeFact`) — both no-op on a map-less agent (a pre-041 world mid-
+migration), keeping the reducer total; `social.place_told` (the talk
+sidecar's directions exchange) and `metatron.place_revealed` (a vision's
+optional place grant) route through the existing `applySocial`/`applyMetatron`
+dispatchers below, upserting into the RECEIVER's map only where the fact is
+absent or the agent's own knowledge is staler. Beside these, several
+EXISTING arms gained silent DERIVED bookkeeping with no new event: `agent.moved`,
+`agent.woke`, and a `villager`-class `metatron.entity_moved` each call
+`markExplored`/`notePresence` — a mover's surroundings become explored
+terrain and mover-and-bystanders record each other's positions — a pure
+function of (state, event) with no chronicle noise, so a mind-map-populating
+step never needs its own event type (research D2);
 the `gru.*` family dispatches to
 `applyGru` in `gru.go` ([[gru]]);
 the `meeting.*`/`norm.*` families — plus `meeting.convention_established` and
@@ -259,6 +280,9 @@ taxonomy `applyTimeSnapped` uses (which, since spec 029, also shifts an active
 standing order's `ExpiresTick` — never its `PlacedTick` — across a time snap);
 [[metatron-orders]] covers the standing-order lifecycle, placement validation,
 and the angel-side trigger/confirm mechanics built on top of this reducer arm.
+[[mental-maps]] covers `Agent.Map`'s type, its four knowledge events'
+reducer arms, and the derived explored/sighting bookkeeping several
+movement-family arms now perform.
 
 ## Operational notes
 

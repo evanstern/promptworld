@@ -12,7 +12,7 @@ sources:
   - internal/metatron/miracle_batch.go
   - internal/sim/metatron.go
   - internal/persona/charter.go
-verified_against: 1e71b77f104dda982aa407b28ad2c994219e90d0
+verified_against: 3b7dd17b478ab5aa64e4c99c44b77bc565d71376
 ---
 
 # Metatron
@@ -122,6 +122,20 @@ with `dream` grandfathered replay-only — no live tool can produce a new one). 
 400-byte text cap is still a registry read, re-pointed at `send_vision`'s entry
 (`nudgeTextMax` in turn.go, `sim.NudgeTextMax` reducer-side, from the same tool so
 truncation and enforcer never diverge).
+
+Since spec 041 (FR-014), `send_vision` also carries an OPTIONAL place grant —
+`place_kind`/`place_x`/`place_y`, all-or-none (`toolcalls.go`'s `parseReveal`
+refuses a partial triple as a `rejected_gate` before anything lands). When
+given, `landVision` (now taking a `*placeReveal` parameter) composes one
+`metatron.place_revealed` event plus a companion `agent.memory_added`
+("The vision showed you the <kind> at (x,y).", `SalDream`,
+`Origin: sim.OriginOmen`) as `extra` events riding the SAME atomic
+`landNudgeBatch` call as the vision's own nudge memory — the grant lands with
+the vision or not at all. The kind enum is [[mental-maps]]'s closed
+place-fact vocabulary; the reducer dry-run (a living target, a REAL place —
+`groundFactPresent`) is the semantic authority, so the tool schema can only
+over- or under-offer, never land a false fact. A vision without the place
+arguments behaves exactly as before.
 
 Both landers share `landNudgeBatch` — the text cap, the ONE atomic `InjectSocial`
 batch, and the soul append, VERBATIM the pre-029 `landNudge` body (wrap, don't
@@ -240,8 +254,11 @@ status}`, FR-016 — see [[metatron-orders]]).
 
 ## Connections
 
-[[sim-loop]] whitelists `metatron.nudged`, the four `metatron.*` miracle types, and
+[[sim-loop]] whitelists `metatron.nudged`, `metatron.place_revealed` (spec 041, a
+vision's optional place grant), the four `metatron.*` miracle types, and
 the three injected order events (`order_placed`/`order_cancelled`/`order_triggered`);
+[[mental-maps]] owns the place-fact vocabulary `send_vision`'s place grant draws
+on and the reducer arm that validates and upserts it;
 [[sim-state-reducer]] holds the bank, the miracle reducer arms ([[metatron-miracles]]),
 and the standing-order arms ([[metatron-orders]]); [[executor]] regenerates the bank
 and emits `metatron.order_expired`; [[event-types]] catalogs all three families;

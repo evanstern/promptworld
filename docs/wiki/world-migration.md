@@ -1,29 +1,32 @@
 ---
 name: world-migration
-description: The snapshot-cut migration chain (spec 012 US6 v1→v2, spec 013 v2→v3) — carries a stopped world's people (and, from v2 on, its land) across a save-format break as a single world.migrated event
+description: The snapshot-cut migration chain (spec 012 US6 v1→v2, spec 013 v2→v3, spec 041 v3→v4) — carries a stopped world's people (and, from v2 on, its land, and from v3 on, a granted mental map) across a save-format break as a single world.migrated event
 kind: component
 sources:
   - internal/sim/migrate.go
   - internal/world/migrate.go
-verified_against: c8fe41323c1155e8fda1619e4e0ed70ff3f37645
+verified_against: 3b7dd17b478ab5aa64e4c99c44b77bc565d71376
 ---
 
 # World migration
 
-promptworld has broken its save format twice. Spec 012 (resources/food/crafting
+promptworld has broken its save format three times. Spec 012 (resources/food/crafting
 v2) widened `Inventory` from the legacy `{wood, food}` pair to the full v2 resource
 set and gave terrain generation rock outcrops — a v1 world's bytes simply don't mean
 the same thing under a v2 build. Spec 013 (inventory/storage v3) added a bulk cap,
 ground piles, chests, theft, and rot, which change how the reducer/executor treat
 *existing* event shapes (yield truncation, death spill, the give-guard) — a v2 log
 replayed under v3 code would diverge even though v2 and v3 land are identical.
-Either way, `internal/world.Open` refuses any manifest whose `format_version` isn't
+Spec 041 ([[mental-maps]], v4) gates target resolution on a per-agent mental map
+that a pre-041 world simply has none of — a v3 log loaded all-nil would leave
+every villager knowing nothing, mass starvation. Either way, `internal/world.Open`
+refuses any manifest whose `format_version` isn't
 the current one ([[world-save-directory]]). `promptworld migrate <world>`
 ([[cli-promptworld]]) is the one-time, offline door a stopped older world walks
-through to keep running; it admits a v1 **or** v2 source and refuses an
+through to keep running; it admits a v1, v2, **or** v3 source and refuses an
 already-current world outright ("nothing to migrate").
 
-The two steps have different design pins because their inputs differ:
+The three steps have different design pins because their inputs differ:
 
 - **v1→v2** (research R10): **"keep the people, reset the land"** — terrain
   generation itself changed (rock outcrops), so every villager and the whole
@@ -34,31 +37,40 @@ The two steps have different design pins because their inputs differ:
   terrain generation and no map inputs, so there is nothing to reset. Agents keep
   their exact coordinates (no re-placement), structures/overlays/mid-flight intents
   ride through unchanged, and the only adjustment is the new bulk-cap invariant.
+- **v3→v4** (spec 041, research D7): people and land carry verbatim, same as
+  2→3 — the one addition is KNOWLEDGE. Villagers are NATIVES, not strangers:
+  each living agent is granted explored terrain around its current position
+  (perception radius) plus witnessed place-facts for every current structure
+  and ground pile, all stamped at the migration tick — never a blank map that
+  would have to re-discover a village it already lives in.
 
-A v1 world chains both steps in one `migrate` run (1→2→3); a v2 world runs only the
-second step.
+An older world chains every step it needs in one `migrate` run (1→2→3→4 for a
+v1 source); a v2 world runs the last two steps, a v3 world only the last.
 
 ## How it works
 
 The work splits across two packages by concern:
 
 - **`internal/world/migrate.go`** is the ceremony: resolve and validate the source
-  world (`OpenForMigration`, which admits `format_version` 1 or 2), refuse unsafe
+  world (`OpenForMigration`, which admits `format_version` 1, 2, or 3), refuse unsafe
   conditions, archive the original database, write the fresh log, bump the
   manifest. It never touches sim semantics directly.
 - **`internal/sim/migrate.go`** is the pure transforms: decode a v1 state shape and
-  produce a v2 `sim.State` (`TransformV1Snapshot`/`MigrateState`), and carry a v2
-  `sim.State` into v3 (`TransformV2State`/`TransformV2Snapshot`). Neither runs on
-  the live reducer path.
+  produce a v2 `sim.State` (`TransformV1Snapshot`/`MigrateState`), carry a v2
+  `sim.State` into v3 (`TransformV2State`/`TransformV2Snapshot`), and grant a v3
+  `sim.State` its mental maps into v4 (`TransformV3State`/`TransformV3Snapshot`).
+  None runs on the live reducer path.
 
 **Client-side and offline**: `Migrate(dir)` refuses a running daemon (a pidfile
 liveness check duplicated from `internal/daemon` rather than imported, to avoid an
 import cycle) and refuses if the source-format archive already exists — `world.v1.db`
-for a v1 source, `world.v2.db` for a v2 source (`archiveDBPath`, keyed to
+for a v1 source, `world.v2.db` for a v2 source, `world.v3.db` for a v3 source
+(`archiveDBPath`, keyed to
 `Manifest.FormatVersion`; the already-migrated guard, never overwritten). Keying the
 guard to the *source* format means a v2 world produced by an earlier v1→2 migration
 — which still carries a stale `world.v1.db` from that run — remains migratable to
-v3: its own guard is `world.v2.db`, untouched until this run. `Migrate` never
+v3 (or a v3 world from an earlier run remains migratable to v4): its own guard is
+`world.v2.db`/`world.v3.db`, untouched until this run. `Migrate` never
 replays old events under new rules; it reads only the source world's **covering
 snapshot** — the clean-shutdown guarantee (`CheckContiguity` +
 `LatestValidSnapshot`). A real daemon appends a `daemon.stopped` bookkeeping event
@@ -128,9 +140,39 @@ values. The transform is a pure function of the input (it copies the `Agents` an
   Spilled food batches are stamped `SpoilAt` = migration tick + `rotWindowTicks`,
   same as any other fresh drop.
 
+**The v3→v4 transform** (`sim.TransformV3State` / `TransformV3Snapshot`, spec 041
+research D7) needs no distinct legacy decoder either — `Agent.Map` is additive and
+`omitempty`, so a v3 snapshot's JSON decodes straight into the current `sim.State`
+with every map nil. The transform (pure — the input and its slices are never
+mutated; `m` must be the regeneration of the world's own seed, since it sizes
+the explored bitmaps) then:
+
+- **Carries everything verbatim**: exactly the 2→3 carry list (positions, land,
+  overlays, mid-flight intents/plans, the whole social/governance fabric); the
+  clock continues from the carried tick with `Degraded` reset and
+  `EffectiveRate` refreshed, the same precedent as both earlier steps.
+- **Grants each LIVING agent knowledge**: explored terrain around its current
+  position at `witnessRadius` (the perception radius), witnessed place-facts
+  for every current structure (a fire's `FuelUntil` baked as `Detail`) and
+  ground pile — all stamped `Seen` at the migration tick, canonical
+  `(Kind, X, Y)` order — and (T013) a peer sighting of every OTHER living
+  villager at its current position, so `talk_to` stays viable across the
+  break. Villagers are natives of the village they already live in, not
+  strangers dropped into it.
+- **Gives a DEAD agent an empty but non-nil map**, not the zero value left
+  alone: genesis now seeds maps for every agent, and a replica/recovery
+  unmarshal MERGES a snapshot over a genesis state — a map-ABSENT dead agent
+  would silently resurrect the genesis map there, while a from-genesis replay
+  (`world.created` → `world.migrated`) produces the transform's own value; an
+  explicit empty map on every agent is what makes live-and-replay agree
+  byte-for-byte (a deviation from `tasks.md`'s "living agents" phrasing,
+  recorded for the planning tier — `data-model.md`'s "dead agents: map
+  retained" invariant already wants the field present).
+
 **Writing the result**: after the transform succeeds, `archiveDB` renames
 `world.db` (and any `-wal`/`-shm` sidecars) to the source-format archive —
-`world.v1.db` for a v1 source, `world.v2.db` for a v2 source — the point of no easy
+`world.v1.db` for a v1 source, `world.v2.db` for a v2 source, `world.v3.db`
+for a v3 source — the point of no easy
 return, so every refusal has already run. A fresh `world.db` is opened and gets
 exactly two events, both stamped at the continuation tick: `world.created` (same
 name/seed) then `world.migrated`, whose payload (`WorldMigratedPayload` —
@@ -146,22 +188,27 @@ restore is the same rename-back).
 ## Connections
 
 [[cli-promptworld]]'s `migrate` command is the only caller; [[world-save-directory]]
-defines the format-version gate this bridges and the `world.v1.db`/`world.v2.db`
-archive artifacts; [[sim-state-reducer]]'s `Apply` applies `world.migrated` as a
+defines the format-version gate this bridges and the `world.v1.db`/`world.v2.db`/
+`world.v3.db` archive artifacts; [[sim-state-reducer]]'s `Apply` applies `world.migrated` as a
 wholesale state replace (validated by matching `Seed`); [[event-types]] catalogs the
 payload; [[executor]] is what the migrated agents' inventory (and, from v3, the bulk
-cap and death-spill rule) belongs to; [[snapshots]] is the general mechanism this
+cap and death-spill rule) belongs to; [[mental-maps]] is what the v3→v4 step grants
+and owns the `MentalMap`/`PlaceFact` types the transform constructs directly;
+[[snapshots]] is the general mechanism this
 borrows (a covering snapshot plus a minimal event tail) to make the migrated log
 replay-provable with zero source-format history.
 
 ## Operational notes
 
 Migration is irreversible in practice (though recoverable mid-crash, above): the
-source-format archive (`world.v1.db` or `world.v2.db`) is kept, never
+source-format archive (`world.v1.db`, `world.v2.db`, or `world.v3.db`) is kept, never
 auto-deleted, as the human's escape hatch, but nothing in the codebase restores
 from it automatically. A world with no valid covering snapshot (never cleanly
 stopped) cannot be migrated at all — there is no path that migrates live event
 history directly. `internal/sim/migrate_test.go` and `internal/world/migrate_test.go`
-exercise both transforms and the full command against fixture v1 and v2 worlds,
-including a v1 fixture that chains 1→2→3 in one run; `internal/sim/whole_feature_test.go`
+exercise all three transforms and the full command against fixture v1, v2, and v3
+worlds, including a v1 fixture that chains 1→2→3→4 in one run
+(`TestTransformV3GrantsKnowledge`/`TestTransformV3ChainReducerReplay`,
+`TestMigrateV3HappyPath`/`TestMigrateV3ReplayDeterminism` cover the v3→v4 leg
+specifically, [[testing-strategy]]); `internal/sim/whole_feature_test.go`
 covers the storage-surface event types this migration must also carry correctly.

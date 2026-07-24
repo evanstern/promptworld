@@ -9,7 +9,7 @@ sources:
   - internal/sim/terrain.go
   - internal/sim/recipes.go
   - internal/sim/memory.go
-verified_against: 4c3807c4d3fcca5cb82367a1ea9b8c0696fda472
+verified_against: 3b7dd17b478ab5aa64e4c99c44b77bc565d71376
 ---
 
 # Executor
@@ -39,7 +39,11 @@ kills the build, only a squatter that outlasts the grace period does (below).
 ## How it works
 
 **Agents** (`agents.go`): eight named bodies (`sim.AgentNames`) with authored
-personas ([[agent-mind]]). `Needs{Health, Food, Rest, Warmth, Morale}` are integers 0..1000 —
+personas ([[agent-mind]]). Since spec 041 each agent also carries `Map
+*MentalMap` (`omitempty`, the Journal/Hail pointer precedent — a pre-041
+snapshot round-trips byte-identically) — the private spatial-knowledge store
+[[mental-maps]] owns end to end; the executor's only stake in it is emitting
+the events that grow and correct it (below). `Needs{Health, Food, Rest, Warmth, Morale}` are integers 0..1000 —
 integer math keeps decay byte-deterministic across platforms. `Inventory` (v2,
 format_version 2 — [[world-save-directory]]) carries `Wood`, `Stone`, `Water`,
 `Planks`, `RefinedStone`, `FoodRaw`, `FoodCooked`, `Meals` (all `omitempty` ints),
@@ -89,7 +93,11 @@ for every living agent within `witnessRadius`.
 **Intents**: `Intent{Goal, Target, Res, WorkStart}` executes as a state machine —
 walk (one tile per 5 ticks, staggered per agent, next hop from [[reflex-policy]]'s
 BFS), then on arrival: instant goals (`sleep`, `wander`, `goto_warmth`,
-`refuel_fire`) complete immediately; work goals re-validate the resource or station
+`refuel_fire`, and since spec 041 `search` — [[mental-maps]]'s deliberate-
+exploration goal, wander-class because the walk itself does the exploring:
+movement marks explored terrain and the perception beat witnesses what's
+there, so arrival needs no extra work) complete immediately; work goals
+re-validate the resource or station
 (someone may have taken it, or a fire may have gone cold — the contested-resource
 pattern, spec 012 FR-002/FR-014), emit `agent.work_started`, and after the goal's
 duration (`workDuration`, below) emit the completion event, which the reducer turns
@@ -335,7 +343,28 @@ standing on its intent target. `hailable` (same file) is the exemption
 predicate: dead, asleep, already-hailed, actively-hailing, meeting-pinned, or
 beyond `hailRadius` (64) targets are never paused. A plan-step `talk_to` firing
 hails exactly as a planner landing does. The ambient beat's talk founding is
-shared with the sweep via `talkEvents` (`executor.go`).
+shared with the sweep via `talkEvents` (`executor.go`). Since spec 041,
+`talkEvents` also carries a place-knowledge sidecar (US5, [[mental-maps]]):
+every founded talk, hail-founded included, exchanges up to `placeTellCap`
+fresh facts per direction the other party lacks or holds staler
+(`tellablePlaces`), landing one `social.place_told` each way plus a companion
+situated memory on both sides.
+
+**Perception** (spec 041, `perceptionEvents`): each awake living villager,
+on the same staggered per-agent cadence movement uses (a fifth of a full
+per-tick sweep, T034's hot-path relief), diffs ground truth within
+`witnessRadius` against its own `Agent.Map` and emits at most one `agent.saw`
+(new/changed structures, piles, standing trees, unharvested forage, unquarried
+rock, water shoreline, dens) and one `agent.map_corrected` (remembered fresh
+facts whose place has genuinely vanished — a chopped tree, a quarried-out
+outcrop, a drained pile, a removed structure; a merely-harvested forage spot
+or cooling den is not gone, only unavailable, so it stays). A correction's
+gone facts each ride a companion situated first-person discovery memory
+(`mapCorrectedText`, `salMapCorrected`) in the same batch — memories accrete
+only via `agent.memory_added`, never appended directly by a reducer arm. Pure
+function of (state, map, tick): `stepEvents` reads, never mutates.
+[[mental-maps]] owns the mental-map subsystem this sweep populates and
+corrects; the executor's role is only the perception beat that drives it.
 
 The executor also emits `agent.memory_added` events from the salience table in
 `memory.go` ([[agent-mind]]) alongside memorable happenings — and since spec 019
@@ -399,7 +428,10 @@ the substrate hold unchanged over the whole layer.
 ## Connections
 
 [[reflex-policy]] decides what idle agents do (including the v2 fuel/craft/eat
-ladder and, via `resolveGoal`, the spec 032 wall/axe/path goals); [[sim-loop]]
+ladder and, via `resolveGoal`, the spec 032 wall/axe/path goals, and since spec
+041 knowledge-gated resolution and the `search` frontier goal); [[mental-maps]]
+is the per-agent knowledge store the perception sweep populates and the
+talk sidecar exchanges; [[sim-loop]]
 drives the tick; [[event-types]] catalogs the event families; the [[gru]] preys
 on the bodies at night; [[tui-client]] renders bodies, needs gauges, structures
 (including wall HP dimming and path tiles), fire lit/cold state, ground piles,

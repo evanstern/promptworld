@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/loop.go
   - internal/sim/landing.go
-verified_against: 1e71b77f104dda982aa407b28ad2c994219e90d0
+verified_against: 3b7dd17b478ab5aa64e4c99c44b77bc565d71376
 ---
 
 # Sim loop
@@ -135,10 +135,14 @@ by construction.
 door ([[social-fabric]], [[nightly-consolidation]], musings per [[agent-mind]],
 narrator entries per [[chronicle]], nudges and miracles per [[metatron]] /
 [[metatron-miracles]], standing orders per [[metatron-orders]], proposal rephrasing
-per [[governance]] — `agent.thought` is
+per [[governance]], place-knowledge per [[mental-maps]] — `agent.thought` is
 whitelisted as a reducer no-op, `chronicle.entry` appends the story ring,
 `metatron.nudged` spends a charge with a validating reducer the dry-run enforces,
-the four `metatron.time_snapped`/`metatron.item_granted`/`metatron.entity_moved`/
+`metatron.place_revealed` (spec 041, FR-014) widens the boundary by one — a
+vision's optional place grant, declared in `send_vision`'s `Events` so
+`ValidateToolCoverage` pins it ⊆ this whitelist, whose dry-run enforces a
+living target and a real place before anything lands — the four
+`metatron.time_snapped`/`metatron.item_granted`/`metatron.entity_moved`/
 `metatron.entity_removed` miracle types (spec 016) are whitelisted the same way —
 their reducer arms enforce presence/destination/charge before anything lands,
 the whitelist is only the isolation boundary — `metatron.order_placed`/
@@ -197,7 +201,8 @@ the ctx whose cancellation triggers the final snapshot. The landing ladder's
 budgets and classes come from [[cognition]] (`cognition.ClassFor`), whose router
 and estimators produce the snapshot/landing metadata the ladder judges.
 [[metatron-miracles]]'s four event types ride `InjectSocial`'s whitelist, as do
-[[metatron-orders]]'s three injected order-lifecycle types.
+[[metatron-orders]]'s three injected order-lifecycle types and [[mental-maps]]'s
+`metatron.place_revealed`.
 [[tool-loop]] is the caller behind both doors' villager/metatron traffic since
 spec 017 — its handlers wrap `InjectIntent` (world verbs, `set_plan`) and
 `InjectSocial` (`muse`, and Metatron's nudges/`work_miracle`), and its buffered

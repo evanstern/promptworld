@@ -12,7 +12,7 @@ sources:
   - internal/persona/files.go
   - internal/scribe/scribe.go
   - internal/sim/memory.go
-verified_against: 8e0c7a09ce3ffaf14b2951e7f1304e23cfb552c9
+verified_against: 3b7dd17b478ab5aa64e4c99c44b77bc565d71376
 ---
 
 # Agent mind
@@ -46,7 +46,10 @@ cold fire nearby is background texture, not formative) — all, like the
 pre-existing `SalDream` (8), kept below `GenerationBumpSalience` (9,
 [[cognition]]) on purpose: memorable enough to surface in the working window,
 never so high they'd interrupt an in-flight generation the way near-death or
-exile do. Spec 032 added `salAxeBroke` (8) on the same band, the axe that spent
+exile do. Spec 041 added two more on the low end: `salMapCorrected` (5, a
+mental-map correction — [[mental-maps]]) and `salPlaceTold` (3, the talk band,
+for giving/getting directions between villagers). Spec 032 added `salAxeBroke`
+(8) on the same band, the axe that spent
 its last harvest use. Spec 013's storage economy added two more on the same band:
 `salChestBuilt` (7, village-visible, the oven precedent) and `salTaking` (7,
 a non-owner withdrawal from a chest — suffered by the owner and witnessed by
@@ -134,7 +137,12 @@ per-agent cadence (1800 ticks, staggered by index; since TASK-44 the stagger is
 phase-preserving — every re-arm steps in whole cadence multiples from the agent's
 own due via `nextPhasePreservingDue`, never from the current tick, so a shared
 stall cannot collapse agents into lockstep) plus triggers — wake, completion
-idle, nightfall, first-adjacency encounters (2-game-hour pair cooldown), and —
+idle, nightfall, first-adjacency encounters (2-game-hour pair cooldown), a
+mental-map correction that invalidates the agent's own current intent target
+(spec 041 US3: `absorb`'s `agent.map_corrected` case arms the agent only when
+one of the payload's gone facts matches the live intent's target or resolved
+coordinates — a correction elsewhere in the map stays quiet, carried into the
+next scheduled round as a memory instead; [[mental-maps]]), and —
 only while the replica is paused (spec 040, decision-6's paused authoring
 chain) — a landed Metatron nudge (`metatron.nudged`), which arms each targeted
 villager with the nudge event's seq as the causality edge; the game-time
@@ -154,7 +162,19 @@ since TASK-13, a "Village law" block (`villageLaw` in prompt.go: active norms wi
 provenance, exile judgments — second-person for the exile — and the assembly call
 while convening — since TASK-36 all rendered from the event-sourced meeting
 convention's clock, with a bare "Village law:" header when none exists;
-[[governance]]). The driver also runs conversations (see
+[[governance]]). Since spec 041, the prompt's world description is no longer
+omniscient: `userPrompt`'s old blanket "Village: <first six structures>" line
+and its bare-distance nearby-agent scan (`State.Structures`, all agents within
+10 tiles regardless of what the agent has ever seen) are retired in favor of
+`knownPlaces` (prompt.go), which renders only what the acting agent's OWN
+mental map holds — landmark structures individually with provenance flavor
+(witnessed/told/revealed), everything else place-shaped grouped by kind with
+count + nearest, and an orientation line toward the nearest unexplored land;
+the nearby-agent line itself now walks the map's peer sightings, so a peer who
+slipped away unseen still renders where last seen rather than its live
+position. Two villagers with different histories now see different worlds in
+their own prompts ([[mental-maps]] owns the map subsystem this renders from).
+The driver also runs conversations (see
 [[social-fabric]]). Villagers convened to the daily meeting are planner-suppressed
 (`sim.AtMeeting`, checked in `plan()`) until close, their pending triggers left
 armed — since musing no longer has a schedule of its own (spec 017, below), this
@@ -357,6 +377,8 @@ is still exactly what a plain-text reply needs.
 
 ## Connections
 
+[[mental-maps]] is the spec 041 per-agent knowledge subsystem the prompt's
+known-places section renders from and whose corrections re-arm the planner;
 [[executor]] emits memories and runs the intents; [[reflex-policy]] shares
 `resolveGoal` and provides the fallback; [[cognition]] owns the decision-class
 registry, the router the mind gates on, and the latency estimate behind

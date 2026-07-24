@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/social.go
   - internal/mind/convo.go
-verified_against: 2bc94f55c57880e07f0e52e5de20c9cd527ab340
+verified_against: 3b7dd17b478ab5aa64e4c99c44b77bc565d71376
 ---
 
 # Social fabric
@@ -135,6 +135,20 @@ so retry wall-time cannot smuggle a stale scene past its budget. The outcome
 prompt states that `gist`/`retold` must be double-quoted JSON strings. Replay
 is model-free.
 
+**Place-knowledge sidecar** (spec 041 US5, [[mental-maps]]): every founded
+talk, hail-founded included, ALSO exchanges up to `placeTellCap` fresh facts
+per direction the other party lacks or holds staler (`tellablePlaces`) —
+directions and mechanics live in [[executor]]'s `talkEvents`; the reducer's
+`applySocial` arm for `social.place_told{from, to, facts}` upserts into the
+RECEIVER's map only where the receiver's held fact is absent or staler
+(`Seen` compared — fresher knowledge, even the receiver's own, never loses to
+secondhand), a map-less receiver a no-op like `agent.saw`. Facts arrive fully
+baked (told provenance, the teller's `Seen`, `Source` = the immediate
+teller); companion situated memories on both sides ride the same batch as
+ordinary `agent.memory_added` events ("Told X about the fire at (x,y)." /
+"X told you of a fire at (x,y)."), at `salPlaceTold` (3, the talk band) —
+social texture, not a formative moment.
+
 **Conversation records** (TASK-22): `social.conversation` is no longer a reducer
 no-op — the payload (`participants`, `topics`, `tones`; empty participants means
 the legacy `[a, b]`) appends a `ConvoRecord` to `State.Conversations`, a bounded
@@ -151,7 +165,9 @@ priority lane keeps dialogue turns from starving behind planner traffic;
 [[agent-mind]]'s planner prompts read bonds/debts/reputation/rumors; the scribe
 renders the Bonds section into soul.md. [[governance]] (TASK-13) votes over these
 edges and writes violation consequences back into them; TASK-11's chronicle
-narrates the conversation events.
+narrates the conversation events. [[mental-maps]] is the knowledge store the
+place-telling sidecar reads from and writes into, riding the same talk beat
+as rumors and gifts.
 
 ## Operational notes
 

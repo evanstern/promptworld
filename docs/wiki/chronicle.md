@@ -6,7 +6,7 @@ sources:
   - internal/sim/chronicle.go
   - internal/mind/narrate.go
   - internal/scribe/scribe.go
-verified_against: 2bc94f55c57880e07f0e52e5de20c9cd527ab340
+verified_against: 3b7dd17b478ab5aa64e4c99c44b77bc565d71376
 ---
 
 # Chronicle
@@ -36,7 +36,12 @@ builds, [[gru]] emergence/sightings/attacks, conversations with gist+topics,
 rumors told, gifts, broken promises, chest thefts (spec 013's
 `social.chest_taken`, rendered "X took from Y's chest without asking" — the
 same narrative weight as a broken promise, a trust violation), musings, and
-(TASK-13) the whole
+(spec 041) three [[mental-maps]] beats — a discovery gone stale
+(`agent.map_corrected`, "X went looking for the <kind> at (x,y) and found it
+gone"), directions changing hands (`social.place_told`, "X told Y about the
+<kind> at (x,y)"), and a divine reveal (`metatron.place_revealed`, "A vision
+showed X the <kind> at (x,y)") — each voiced by the first fact in the event's
+canonical order even when the batch carries more than one, and (TASK-13) the whole
 [[governance]] arc: assemblies with attendance named (meeting hours rendered
 from the convention since TASK-36, including the birth of an emergent
 convention), grievances raised, proposals tabled/passed/voted down with
@@ -74,7 +79,8 @@ regenerated from recovered state at every daemon start.
 [[event-types]] catalogs `chronicle.entry`; [[sim-state-reducer]] holds the
 ring; [[sim-loop]] whitelists the injection; [[llm-orchestrator]] routes
 `KindNarrator` to the cloud tier; [[tui-client]] and the scribe render it;
-[[snapshots]] carry the ring through recovery.
+[[snapshots]] carry the ring through recovery; [[mental-maps]] emits the three
+place-knowledge events the narrator voices.
 
 ## Operational notes
 

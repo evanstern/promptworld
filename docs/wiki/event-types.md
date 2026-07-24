@@ -15,7 +15,7 @@ sources:
   - internal/sim/consolidate.go
   - internal/sim/terrain.go
   - internal/daemon/daemon.go
-verified_against: 1e71b77f104dda982aa407b28ad2c994219e90d0
+verified_against: 3b7dd17b478ab5aa64e4c99c44b77bc565d71376
 ---
 
 # Event types
@@ -103,6 +103,14 @@ orchestrator, boot computes the planner-safe posture rung and applies it
 through the loop's ordinary `set_speed` command, so it lands as an EXISTING
 `clock.speed_set` (below) with an ordinary `SpeedSetPayload{speed}` — a new
 emitter of that type, not a new type, which is why the format stays put.
+Spec 041 ([[mental-maps]] — per-agent spatial knowledge) is likewise
+format-stable: `Agent` gains `Map *MentalMap` (`omitempty`, the Journal/Hail
+pointer precedent — a pre-041 snapshot with the field absent round-trips
+byte-identically), and FOUR new whitelisted/reducer event types drive it —
+`agent.saw` (perception sweep witnesses), `agent.map_corrected` (a remembered
+place found gone), `social.place_told` (directions exchanged in talk), and
+`metatron.place_revealed` (a vision's optional place grant) — full shapes and
+reducer effects in the table below.
 
 ## How it works
 
@@ -220,7 +228,11 @@ validation, trigger-matching, and confirm/degradation mechanics; `order_placed`/
 `order_triggered`/`order_cancelled` are whitelisted in [[sim-loop]]'s
 `InjectSocial` door exactly like the miracle types, while `order_expired`
 needs no whitelist entry (executor-emitted, the `charge_regenerated`
-precedent).
+precedent). [[mental-maps]] owns the `agent.saw`/`agent.map_corrected`/
+`social.place_told`/`metatron.place_revealed` family end to end — the
+executor's perception sweep and talk sidecar emit the first three, the
+`send_vision` door the fourth, and `internal/sim/mentalmap.go` reduces all
+four.
 
 ## Operational notes
 

@@ -1,6 +1,6 @@
 ---
 name: tool-registry
-description: The single source of truth for agent capabilities (spec 014, extended specs 017/019/021/029) — every tool as name + params + gate + effect + cost in one registry; prompt vocabulary, parse validation, sim-door validation, durations, and rosters all derived; the tool-use loop's declared rosters and InputSchema derivation; the authoritative miracle cost table, RestrictEnum, and the derived Metatron tool guidance (spec 021); the spec-029 Metatron agency surface (send_vision/send_omen/monitor_and_act/cancel_order + pause/start/adjust_speed) with authored array schemas and the clock-speed ladder mirror; boot-time coverage gate
+description: The single source of truth for agent capabilities (spec 014, extended specs 017/019/021/029/041) — every tool as name + params + gate + effect + cost in one registry; prompt vocabulary, parse validation, sim-door validation, durations, and rosters all derived; the tool-use loop's declared rosters and InputSchema derivation; the authoritative miracle cost table, RestrictEnum, and the derived Metatron tool guidance (spec 021); the spec-029 Metatron agency surface (send_vision/send_omen/monitor_and_act/cancel_order + pause/start/adjust_speed) with authored array schemas and the clock-speed ladder mirror; the spec-041 search verb and send_vision's optional place grant; boot-time coverage gate
 kind: component
 sources:
   - internal/tool/tool.go
@@ -9,7 +9,7 @@ sources:
   - internal/tool/derive.go
   - internal/tool/validate.go
   - internal/sim/toolcheck.go
-verified_against: 1e71b77f104dda982aa407b28ad2c994219e90d0
+verified_against: 3b7dd17b478ab5aa64e4c99c44b77bc565d71376
 ---
 
 # Tool registry
@@ -29,11 +29,17 @@ curing that drift is the migration's sole permitted behavioral delta (FR-012).
 **The catalog** (`registry.go`): the pre-spec-017 30 entries, plus two spec-017
 additions — `set_plan` (a loop-only planning tool) and `work_miracle` (Metatron's
 fourth tool) — plus four spec-019 additions, the journal tools; plus six spec-032
-additions (US1-3: walls, an axe, paths); and spec 029 then retires the two nudges and
+additions (US1-3: walls, an axe, paths); spec 029 then retires the two nudges and
 adds seven Metatron tools (`send_vision`, `send_omen`, `monitor_and_act`,
-`cancel_order`, `pause`, `start`, `adjust_speed`) — assembled in order: `worldTools`
-(now 30 World verbs: the 24 legacy verbs in the old goal-vocabulary order, then
-`build_wall_plank`/`build_wall_stone`/`demolish`/`repair`/`craft_axe`/`build_path`,
+`cancel_order`, `pause`, `start`, `adjust_speed`); and spec 041 US4 adds one more
+World verb, `search` (`Effect: World, Gate: Resolvable, Cost.DurationTicks: 0,
+PlanStep: true, ReflexEligible: true`) — deliberate exploration, appended after
+`build_path` so the registration-order byte anchor holds; no args in v1 (a kind
+hint is a documented future extension, since selection is nearest-frontier
+regardless) — assembled in order: `worldTools`
+(now 31 World verbs: the 24 legacy verbs in the old goal-vocabulary order, then
+`build_wall_plank`/`build_wall_stone`/`demolish`/`repair`/`craft_axe`/`build_path`/
+`search`,
 appended after `withdraw` so no existing tool's registration position shifts —
 `worldToolsBase` wraps these too, so every one also gains the shared `reason`
 param), `set_plan`, `expressiveTools` (`say`/`gist`/`muse`), `metatronTools`
@@ -126,7 +132,14 @@ a charge (spec 016 FR-007/SC-005) — structural absence, not a sanitized field.
 now declares, in order, `converse`, then `send_vision` (a waking vision for ONE
 living villager at any hour — required `target` AgentName + required `text`,
 `MaxBytes`/`TextCapBytes` 400, `Gate Charge`, `Events`
-`metatron.nudged`/`agent.memory_added`), `send_omen` (required `targets` Text —
+`metatron.nudged`/`agent.memory_added` — since spec 041 FR-014 also carrying
+an OPTIONAL place-grant triple, `place_kind`/`place_x`/`place_y`, all riding
+together (the handler refuses a partial triple); `place_kind` is an `Enum`
+over `placeFactKinds` — [[mental-maps]]'s closed `PlaceFact` vocabulary,
+hand-mirrored here since `tool` must not import `sim`, so a drift here can
+only over- or under-offer the model, never land a false fact (the reducer
+dry-run is the semantic authority) — and `Events` gains
+`metatron.place_revealed` between the nudge and the memory), `send_omen` (required `targets` Text —
 comma-separated living names or `"everyone"` — + required `text`, same cap/gate/
 events; the night-only gate lives in the reducer, not the tool), then the
 `Gate: None` order and meta tools. `monitor_and_act` is the SECOND authored-
@@ -274,7 +287,9 @@ read the registry for the `send_vision` text cap, the granted acting-tool
 guidance, and `work_miracle` dispatch; [[daemon-lifecycle]]
 runs the boot gates; [[agent-journal]] is the spec-019 consumer of the four
 journal tools (`write_journal_entry`/`delete_from_journal`/`search_journal`/
-`read_journal`) declared here. The registry formalizes the doors — it does not
+`read_journal`) declared here. [[mental-maps]] is the spec-041 consumer of
+`search` and `send_vision`'s place grant, and the source of the
+`placeFactKinds` vocabulary hand-mirrored onto `place_kind`'s Enum. The registry formalizes the doors — it does not
 relax them: the landing ladder, whitelist, and charge economy are unchanged
 enforcers. Spec: `specs/014-tool-registry/` (contracts/registry-api.md,
 contracts/tool-catalog.md); the tool-use loop additions are spec 017

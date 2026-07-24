@@ -26,7 +26,7 @@ sources:
   - internal/persona/persona_test.go
   - e2e/daemon_e2e_test.go
   - e2e/determinism_e2e_test.go
-verified_against: 1e71b77f104dda982aa407b28ad2c994219e90d0
+verified_against: 3b7dd17b478ab5aa64e4c99c44b77bc565d71376
 ---
 
 # Testing strategy
@@ -45,6 +45,10 @@ the full [[executor]]: 30k–40k-tick determinism and replay harnesses, plus beh
 suites — multi-step intent chains with zero input (AC#1), needs decay + self-feeding
 and starvation death with recorded cause (AC#2), night warmth mechanics and exposure
 death (AC#3), and a two-day unattended village survival run on multiple seeds.
+`TestDeterminismSameSeedSameTimeline` additionally diffs each agent's canonical
+mental-map bytes across two same-seed runs (spec 041, T010) — the state hash
+already covers them, but a targeted per-agent diff localizes a map-determinism
+regression instead of just failing the whole-state comparison ([[mental-maps]]).
 (Terrain generation has its own determinism/AC suite in `internal/worldmap`, covered
 by [[worldmap-generation]].)
 
@@ -56,7 +60,22 @@ transforms (1→2→3) in one call; `internal/world/migrate_test.go` drives the 
 `Migrate(dir)` ceremony end-to-end against on-disk v1 and v2 fixture worlds (happy
 path, replay-from-zero-snapshots determinism, the already-migrated and
 already-current guards, uncovered/tolerated event tails, a running-daemon refusal)
-for both the v1→v2 and v2→v3 steps.
+for both the v1→v2 and v2→v3 steps. Spec 041 (T009) adds the v3→v4 leg on
+both sides, [[mental-maps]]'s knowledge-grant transform: `migrate_test.go`'s
+`TestTransformV3GrantsKnowledge` proves the pure `TransformV3State` carries
+people and land verbatim while granting each LIVING agent explored terrain
+around its position plus witnessed facts for every current structure/pile
+(natives, not strangers), leaves a DEAD agent an empty but non-nil map (so a
+genesis-seeded state and a migrated one agree on map presence), and mutates
+neither its input nor the map argument; `TestTransformV3ChainReducerReplay`
+proves the transform's output replays byte-identically through
+`world.created` → `world.migrated` from genesis. `world/migrate_test.go`'s
+`TestMigrateV3HappyPath` drives the same ceremony end-to-end against an
+on-disk v3 fixture world (manifest bump to v4, `world.v3.db` archived, the
+covering snapshot's agents each holding the grant), and
+`TestMigrateV3ReplayDeterminism` proves deleting every snapshot and
+rebuilding from genesis reproduces the post-migration snapshot byte-for-byte,
+maps included.
 
 `internal/sim/whole_feature_test.go` carries several byte-identity suites (SC-004/SC-005):
 the original spec-012 run, a single scripted-agent script chaining every
@@ -211,7 +230,9 @@ charge, gratis is logged visibly), and `TestRebaseTaxonomyComplete` — the buil
 fails if a new tick-anchored `int64` field appears anywhere in the state tree
 without a SHIFT/KEEP classification in `rebaseTicks`, so the taxonomy can never
 silently drift from the state struct (spec 030 extended this to
-`Belief.Reinforced`, the decay-curve anchor). Byte-identity replay suites
+`Belief.Reinforced`, the decay-curve anchor; spec 041 extends it again to
+`PlaceFact.Seen`/`PeerSighting.Seen` (SHIFT) and `PlaceFact.Detail` (KEEP),
+[[mental-maps]]/[[metatron-miracles]]). Byte-identity replay suites
 (`TestMiracleReplayByteIdentity`, `TestMiracleSnapReplayByteIdentity`,
 `TestMiracleGrantReplayByteIdentity`) prove each miracle type replays to the
 same state hash as live application.
@@ -261,7 +282,10 @@ proves a vanished reserved-tile site fails loudly immediately
 (`reason: "site no longer buildable"`) with a same-tick paired failure memory,
 never a bare `intent_done`. `builderFailure`, a shared log-scanning helper, is
 what the first two of these plus the site-loss test read to assert the count,
-reason, tick, and paired-memory invariants.
+reason, tick, and paired-memory invariants. Since spec 041 made `repair`/`demolish`
+knowledge-gated ([[reflex-policy]]), the fixture helper `grantStructureFacts`
+seeds an agent's map with the walls/structures its resolver test needs to
+already KNOW before the ground-truth assertions run.
 
 **IPC miracle round trips** (`internal/ipc/ipc_test.go`, spec 016): the
 operator "miracle" command exercised over the real wire on a pure-sim world
@@ -289,7 +313,15 @@ dead-target/day-deferral behavior (`TestOmenLandsOnNamedGroup`,
 including the start-with-speed set_speed-then-resume order and the
 converse-never-touches-the-clock guarantee (`TestMetaToolsLandThroughLoopControl`,
 `TestMetaToolStartSpeedFailureStopsBeforeResume`, `TestConverseTurnNeverTouchesTheClock`,
-`TestMetaToolLoopError`), the extended handler-firewall audit (`TestHandlerFirewallAudit`,
+`TestMetaToolLoopError`), spec 041's `send_vision` place grant
+(`TestVisionPlaceRevealLands`: the full triple lands one atomic
+nudge+memory+`metatron.place_revealed`+companion-memory batch and the
+target's map gains the revealed fact; `TestVisionPartialPlaceRefused`: a
+partial `place_kind`/`place_x`/`place_y` triple is refused before anything
+lands, charges untouched; `TestVisionFalsePlaceRefused`: the reducer dry-run
+rejects a reveal of a place absent from ground truth, the WHOLE batch
+including the vision itself, spending nothing — [[mental-maps]]), the
+extended handler-firewall audit (`TestHandlerFirewallAudit`,
 SC-007), the fixed `metatronInitiativeFrame` (`TestInitiativeFrameFixed`), the
 clock-speed ladder drift guard (`TestClockSpeedsMirrorLadder`), and the
 single-origin directive label — a console prompt carries exactly one
@@ -371,7 +403,10 @@ reducer arms and doors these suites exercise; [[tool-registry]]'s spec-032 world
 [[agent-mind]]/[[tool-loop]] are what the
 loop-era replay suite drives through a real `Loop` + `loopMind`; the
 provenance/belief-decay suites prove the substrate [[metatron]]'s omen/vision/miracle
-memories now stamp. Manual
+memories now stamp. [[mental-maps]]'s own dedicated suite
+(`internal/sim/mentalmap_test.go`) sits alongside the v3→v4 migration,
+rebase-taxonomy, determinism, and vision-place-reveal coverage this note
+tracks. Manual
 validation results live in `specs/001-world-daemon/quickstart-results.md`.
 
 ## Operational notes
