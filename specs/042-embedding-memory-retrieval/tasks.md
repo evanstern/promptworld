@@ -93,31 +93,31 @@ replay passes with Ollama stopped; kill-Ollama run stays loud + non-fatal.
 **Independent test**: quickstart.md US2 — shadow invariant (prompt bytes identical to
 off-mode) + divergence events per plan job + a ≥1-game-day summary.
 
-- [ ] T012 [US2] Situation-vector leg of the embedder: deterministic situation template
+- [x] T012 [US2] Situation-vector leg of the embedder: deterministic situation template
       (time phase · position + place desc · worst needs · active intent verb+reason ·
       nearby agent names) rendered from replica state at each `PlannerCadenceTicks`
       bucket edge, embedded, injected as `agent.situation_embedded` — in
       `internal/mind/embedder.go` (research D5)
-- [ ] T013 [US2] Pure three-term scorer `SelectMemoriesRelevant` (equal-weight
+- [x] T013 [US2] Pure three-term scorer `SelectMemoriesRelevant` (equal-weight
       normalized sal01 + rel01; neutral 0.5 for vectorless/cross-model; nil query →
       legacy delegation; serendipity tail byte-identical to today; ties newer-wins;
       sequential float64 cosine) in `internal/sim/memory.go`
       (contracts/relevance-scoring.md §1–2)
-- [ ] T014 [P] [US2] Scorer unit tests: fallback ladder rows, neutrality, tail
+- [x] T014 [P] [US2] Scorer unit tests: fallback ladder rows, neutrality, tail
       byte-identity vs `SelectMemories`, determinism across runs, in
       `internal/sim/memory_test.go`
-- [ ] T015 [US2] `cog.memory_divergence` payload + emitter (agent, tick, mode, both
+- [x] T015 [US2] `cog.memory_divergence` payload + emitter (agent, tick, mode, both
       windows as seqs, overlap, displacement, vectorless count, sit_tick) in
       `internal/sim/cognition.go` + `internal/mind/telemetry.go`
       (data-model.md event table)
-- [ ] T016 [US2] Mode gating at both prompt paths: read `memory_relevance`; `"shadow"` →
+- [x] T016 [US2] Mode gating at both prompt paths: read `memory_relevance`; `"shadow"` →
       compute both rankings, prompt gets legacy, emit divergence; in
       `internal/mind/prompt.go` (planner window) and `internal/mind/convo.go` (k=5
       scene snapshot)
-- [ ] T017 [US2] Shadow-invariant test: same seed, `""` vs `"shadow"` → byte-identical
+- [x] T017 [US2] Shadow-invariant test: same seed, `""` vs `"shadow"` → byte-identical
       prompts/behavior, divergence events present, replay green — in
       `internal/mind/` beside the existing mind tests
-- [ ] T018 [P] [US2] Divergence summary tooling: aggregate `cog.memory_divergence`
+- [x] T018 [P] [US2] Divergence summary tooling: aggregate `cog.memory_divergence`
       into mean overlap@K + promoted-memory share per agent/day (a small CLI or test
       helper reading the store — match the project's existing tooling pattern, e.g.
       under `cmd/` or as a `go test -run Summary` helper); document invocation in
