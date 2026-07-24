@@ -3,10 +3,12 @@ package main
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/evanstern/promptworld/internal/ipc"
 	"github.com/evanstern/promptworld/internal/llm"
 	"github.com/evanstern/promptworld/internal/metatron"
 	"github.com/evanstern/promptworld/internal/world"
@@ -347,5 +349,94 @@ func TestOrderStatusLineFields(t *testing.T) {
 	}
 	if line := orderStatusLine(fuzzy); !strings.Contains(line, "fuzzy") {
 		t.Errorf("fuzzy order line missing fuzzy marker: %q", line)
+	}
+}
+
+// --- T009/T011: promptworld status WARNING block (spec 034,
+// contracts/provider-conditions.md "Human surfaces") ---
+
+// TestRenderStatusHumanWarningBlock is the golden test for cmdStatus's
+// online human render: no LLM status and an all-healthy LLM status both
+// render byte-identical to pre-034 output (no WARNING line at all — the
+// offline-world fallback path never even reaches this function, but a
+// no-orchestrator or fully-healthy world must render exactly as before);
+// one and two affected providers each print one WARNING line, in wire
+// order, in the exact contract format.
+func TestRenderStatusHumanWarningBlock(t *testing.T) {
+	base := ipc.StatusData{
+		World:  ipc.WorldStatus{Name: "aria", Seed: 42},
+		Clock:  ipc.ClockStatus{Tick: 100, GameTime: "Day 1, 06:00", Speed: "16x", EffectiveRate: 16.0},
+		Daemon: ipc.DaemonStatus{Pid: 123, UptimeSeconds: 45, Subscribers: 1},
+		Log:    ipc.LogStatus{LastSeq: 7},
+	}
+
+	tests := []struct {
+		name      string
+		llm       *llm.Status
+		wantLines []string // exact WARNING lines expected, in order
+	}{
+		{
+			name: "no LLM status",
+			llm:  nil,
+		},
+		{
+			name: "healthy providers only",
+			llm: &llm.Status{Providers: []llm.ProviderStatus{
+				{Name: "local", Model: "cogito:3b", Up: true},
+			}},
+		},
+		{
+			name: "one affected provider",
+			llm: &llm.Status{Providers: []llm.ProviderStatus{
+				{
+					Name: "local", Model: "cogito:3b", Endpoint: "http://localhost:11434/v1", Up: false,
+					Condition:       "model-missing",
+					ConditionDetail: `model "cogito:3b" not served by http://localhost:11434/v1`,
+					ConditionRemedy: "ollama pull cogito:3b",
+				},
+			}},
+			wantLines: []string{
+				`WARNING llm provider "local": model "cogito:3b" not served by http://localhost:11434/v1 — ollama pull cogito:3b`,
+			},
+		},
+		{
+			name: "two affected providers",
+			llm: &llm.Status{Providers: []llm.ProviderStatus{
+				{
+					Name: "local", Model: "cogito:3b", Up: false,
+					Condition: "model-missing", ConditionDetail: "model missing detail", ConditionRemedy: "ollama pull cogito:3b",
+				},
+				{
+					Name: "cloud", Model: "claude-opus-4-8", Up: false,
+					Condition: "endpoint-unreachable", ConditionDetail: "endpoint unreachable detail", ConditionRemedy: "start the model server",
+				},
+			}},
+			wantLines: []string{
+				`WARNING llm provider "local": model missing detail — ollama pull cogito:3b`,
+				`WARNING llm provider "cloud": endpoint unreachable detail — start the model server`,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sd := base
+			sd.LLM = tt.llm
+			got := renderStatusHuman(&sd)
+
+			want := fmt.Sprintf("world %q (seed %d) — daemon running (pid %d, up %ds, %d subscriber(s))\n%s\n",
+				sd.World.Name, sd.World.Seed, sd.Daemon.Pid, sd.Daemon.UptimeSeconds, sd.Daemon.Subscribers, clockLine(&sd))
+			for _, l := range tt.wantLines {
+				want += l + "\n"
+			}
+			want += fmt.Sprintf("log: last seq %d\n", sd.Log.LastSeq)
+
+			if got != want {
+				t.Errorf("renderStatusHuman() =\n%q\nwant\n%q", got, want)
+			}
+			if len(tt.wantLines) == 0 && strings.Contains(got, "WARNING") {
+				t.Errorf("healthy/no-LLM world should render no WARNING line: %q", got)
+			}
+		})
 	}
 }
