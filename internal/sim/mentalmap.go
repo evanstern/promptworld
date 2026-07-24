@@ -179,6 +179,63 @@ func (s *State) markExplored(a *Agent, x, y int) {
 	a.Map.MarkExplored(s.m.W, s.m.H, x, y, witnessRadius)
 }
 
+// FrontierDirection returns the compass phrase ("north-east") for the
+// dominant direction of the NEAREST unexplored terrain from (fromX, fromY),
+// and false when the whole map is explored — the prompt's one-line
+// orientation toward the unknown (spec 041 US2, contracts §3). Nearest by
+// Manhattan distance, ties broken row-major (deterministic); a clearly
+// dominated axis component (less than half the other) is dropped so a mostly-
+// eastward frontier reads "east", not "north-east". Exported for
+// internal/mind.
+func (mm *MentalMap) FrontierDirection(w, h, fromX, fromY int) (string, bool) {
+	bits := exploredBytes(mm.Explored, w, h)
+	best, bx, by := -1, 0, 0
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			i := y*w + x
+			if bits[i/8]&(1<<(i%8)) != 0 {
+				continue
+			}
+			if d := abs(x-fromX) + abs(y-fromY); best < 0 || d < best {
+				best, bx, by = d, x, y
+			}
+		}
+	}
+	if best < 0 {
+		return "", false // fully explored
+	}
+	dx, dy := bx-fromX, by-fromY
+	if 2*abs(dx) < abs(dy) {
+		dx = 0
+	}
+	if 2*abs(dy) < abs(dx) {
+		dy = 0
+	}
+	var ns, ew string
+	switch {
+	case dy < 0:
+		ns = "north"
+	case dy > 0:
+		ns = "south"
+	}
+	switch {
+	case dx > 0:
+		ew = "east"
+	case dx < 0:
+		ew = "west"
+	}
+	switch {
+	case ns != "" && ew != "":
+		return ns + "-" + ew, true
+	case ns != "":
+		return ns, true
+	case ew != "":
+		return ew, true
+	}
+	// The standing tile itself is unexplored (a bare test map): no bearing.
+	return "all around", true
+}
+
 // factLess is the canonical (Kind, X, Y) fact order — the single comparator
 // the sorted Facts invariant, the binary-search upsert, and every emitted
 // fact batch share.

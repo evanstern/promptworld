@@ -1,8 +1,13 @@
 package mind
 
 import (
+	"fmt"
+	"sort"
 	"strings"
 	"testing"
+
+	"github.com/evanstern/promptworld/internal/sim"
+	"github.com/evanstern/promptworld/internal/worldmap"
 )
 
 // The villager system-prompt frame contract (spec 027,
@@ -160,4 +165,181 @@ func TestPromptFrameReport(t *testing.T) {
 	tokensApprox := bytes / 4
 	t.Logf("PROMPT_FRAME_REPORT sample=%q prompt_bytes=%d prompt_words=%d prompt_tokens_approx=%d",
 		sampleName, bytes, words, tokensApprox)
+}
+
+// --- spec 041 US2: the prompt renders only what the agent knows (T018) ------
+
+// knownPlacesState builds a State whose map is attached (MapDims/frontier
+// work) with all mental maps emptied — each test grants exactly the knowledge
+// it exercises.
+func knownPlacesState(t *testing.T) *sim.State {
+	t.Helper()
+	s := sim.NewState(42, worldmap.Generate(42, 64, 64))
+	for i := range s.Agents {
+		s.Agents[i].Map.Facts = nil
+		s.Agents[i].Map.Peers = nil
+	}
+	return s
+}
+
+func fact(kind string, x, y int, prov string, src int, detail int64) sim.PlaceFact {
+	return sim.PlaceFact{Kind: kind, X: x, Y: y, Seen: 1, Provenance: prov, Source: src, Detail: detail}
+}
+
+// addFact/addSighting assign through the exported fields, preserving the
+// canonical sort invariants (the reducer-side mutators are sim-internal).
+func addFact(mm *sim.MentalMap, f sim.PlaceFact) {
+	mm.Facts = append(mm.Facts, f)
+	sort.Slice(mm.Facts, func(i, j int) bool {
+		a, b := mm.Facts[i], mm.Facts[j]
+		if a.Kind != b.Kind {
+			return a.Kind < b.Kind
+		}
+		if a.X != b.X {
+			return a.X < b.X
+		}
+		return a.Y < b.Y
+	})
+}
+
+func addSighting(mm *sim.MentalMap, agent, x, y int, seen int64) {
+	mm.Peers = append(mm.Peers, sim.PeerSighting{Agent: agent, X: x, Y: y, Seen: seen})
+	sort.Slice(mm.Peers, func(i, j int) bool { return mm.Peers[i].Agent < mm.Peers[j].Agent })
+}
+
+// TestKnownPlacesDivergentMaps (SC-002): two villagers in the SAME world
+// state with different histories render different known-places sections, and
+// neither mentions a place it has not learned — the omniscient Village: line
+// is gone.
+func TestKnownPlacesDivergentMaps(t *testing.T) {
+	s := knownPlacesState(t)
+	// World truth holds a structure NEITHER villager may see in its prompt.
+	s.Structures = []sim.Structure{{Kind: "oven", X: 50, Y: 50}}
+	addFact(s.Agents[0].Map, fact("fire", 12, 34, "witnessed", 0, 900000))
+	addFact(s.Agents[1].Map, fact("shelter", 8, 20, "witnessed", 0, 0))
+
+	p0, p1 := userPrompt(s, 0, 4), userPrompt(s, 1, 4)
+	if p0 == p1 {
+		t.Fatal("divergent maps rendered identical prompts")
+	}
+	if !strings.Contains(p0, "fire at (12,34)") || strings.Contains(p0, "shelter at (8,20)") {
+		t.Errorf("agent 0 section wrong:\n%s", p0)
+	}
+	if !strings.Contains(p1, "shelter at (8,20)") || strings.Contains(p1, "fire at (12,34)") {
+		t.Errorf("agent 1 section wrong:\n%s", p1)
+	}
+	for i, p := range []string{p0, p1} {
+		if strings.Contains(p, "oven") {
+			t.Errorf("agent %d prompt leaked the unlearned oven (omniscient render):\n%s", i, p)
+		}
+	}
+}
+
+// TestKnownPlacesNoCap (SC-002): more than six known structures ALL render —
+// the first-6 truncation is retired.
+func TestKnownPlacesNoCap(t *testing.T) {
+	s := knownPlacesState(t)
+	for i := 0; i < 9; i++ {
+		addFact(s.Agents[0].Map, fact("fire", 10+i, 20, "witnessed", 0, 900000))
+	}
+	p := userPrompt(s, 0, 4)
+	for i := 0; i < 9; i++ {
+		if !strings.Contains(p, fmt.Sprintf("fire at (%d,20)", 10+i)) {
+			t.Fatalf("structure %d of 9 missing — a cap survives:\n%s", i+1, p)
+		}
+	}
+}
+
+// TestKnownPlacesProvenancePhrasing (contracts §3): told facts name the
+// teller, revealed facts name the vision, witnessed facts render plain; a
+// fire remembered as burned out says so.
+func TestKnownPlacesProvenancePhrasing(t *testing.T) {
+	s := knownPlacesState(t)
+	s.Tick = 50000
+	mm := s.Agents[0].Map
+	addFact(mm, sim.PlaceFact{Kind: "fire", X: 40, Y: 12, Seen: 49000, Provenance: "told", Source: 1, Detail: 60000})
+	addFact(mm, sim.PlaceFact{Kind: "shelter", X: 9, Y: 9, Seen: 49000, Provenance: "revealed"})
+	addFact(mm, sim.PlaceFact{Kind: "oven", X: 5, Y: 5, Seen: 49000, Provenance: "witnessed"})
+	addFact(mm, sim.PlaceFact{Kind: "fire", X: 6, Y: 6, Seen: 49000, Provenance: "witnessed", Detail: 49500}) // burned out by 50000
+
+	p := userPrompt(s, 0, 4)
+	for _, want := range []string{
+		"a fire at (40,12) — Birch told you",
+		"a shelter at (9,9), shown to you in a vision",
+		"oven at (5,5)",
+		"fire at (6,6) (likely burned out by now)",
+	} {
+		if !strings.Contains(p, want) {
+			t.Errorf("prompt missing %q:\n%s", want, p)
+		}
+	}
+}
+
+// TestKnownPlacesGroupsAndEmptyState (contracts §3): resource kinds group
+// with count + nearest; a villager with no known landmark structures gets the
+// explicit empty-state line, never silence.
+func TestKnownPlacesGroupsAndEmptyState(t *testing.T) {
+	s := knownPlacesState(t)
+	a := &s.Agents[0]
+	a.X, a.Y = 20, 20
+	addFact(a.Map, fact("forage", 22, 41, "witnessed", 0, 0))
+	addFact(a.Map, fact("forage", 21, 20, "witnessed", 0, 0))
+	addFact(a.Map, fact("forage", 30, 30, "witnessed", 0, 0))
+	addFact(a.Map, fact("tree", 18, 9, "witnessed", 0, 0))
+
+	p := userPrompt(s, 0, 4)
+	if !strings.Contains(p, "You know of no fires or shelters yet.") {
+		t.Errorf("empty landmark state must be explicit, not silent:\n%s", p)
+	}
+	if !strings.Contains(p, "3 forage spots (nearest (21,20))") {
+		t.Errorf("forage group wrong (count + nearest):\n%s", p)
+	}
+	if !strings.Contains(p, "1 stand of trees (nearest (18,9))") {
+		t.Errorf("tree group wrong:\n%s", p)
+	}
+	// A stale fact is invisible: age the forage past the durable horizon.
+	s.Tick = 1 + 5*86400
+	p = userPrompt(s, 0, 4)
+	if strings.Contains(p, "forage spot") {
+		t.Errorf("stale facts must not render:\n%s", p)
+	}
+}
+
+// TestKnownPlacesFrontierLine (SC-002): a partially-explored map renders the
+// one-line orientation toward the unknown; a fully-explored map omits it.
+func TestKnownPlacesFrontierLine(t *testing.T) {
+	s := knownPlacesState(t)
+	p := userPrompt(s, 0, 4)
+	if !strings.Contains(p, "is unknown to you.") {
+		t.Errorf("spawn-only exploration must orient toward the unknown:\n%s", p)
+	}
+	// Fully explored: mark everything.
+	w, h := s.MapDims()
+	s.Agents[0].Map.MarkExplored(w, h, w/2, h/2, w+h)
+	p = userPrompt(s, 0, 4)
+	if strings.Contains(p, "unknown to you") {
+		t.Errorf("fully-explored map must omit the unknown-land line:\n%s", p)
+	}
+}
+
+// TestNearbyFromSightings (spec 041 US2/T017): the Nearby line renders from
+// the viewer's peer sightings — a villager never seen is absent even when
+// physically close, and a remembered position wins over live coordinates.
+func TestNearbyFromSightings(t *testing.T) {
+	s := knownPlacesState(t)
+	a := &s.Agents[0]
+	// Birch stands 2 tiles away but has never been seen: absent.
+	s.Agents[1].X, s.Agents[1].Y = a.X+2, a.Y
+	p := userPrompt(s, 0, 4)
+	if strings.Contains(p, "Nearby:") {
+		t.Errorf("unsighted neighbor leaked into Nearby (omniscient render):\n%s", p)
+	}
+	// A sighting 3 tiles away renders with the REMEMBERED distance even after
+	// Birch moves far off unseen.
+	addSighting(a.Map, 1, a.X+3, a.Y, 100)
+	s.Agents[1].X, s.Agents[1].Y = a.X+30, a.Y
+	p = userPrompt(s, 0, 4)
+	if !strings.Contains(p, "Nearby: Birch (3 tiles away)") {
+		t.Errorf("sighting-sourced Nearby missing:\n%s", p)
+	}
 }

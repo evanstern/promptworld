@@ -168,6 +168,17 @@ func genesisPlacement(seed uint64, m *worldmap.Map, count int) []Point {
 	return pos
 }
 
+// MapDims exposes the attached static map's dimensions (0,0 when no map is
+// attached — bare test states). The mind's prompt renderer sizes mental-map
+// bitmap reads with it (spec 041 US2) without the State ever serializing the
+// map itself.
+func (s *State) MapDims() (int, int) {
+	if s.m == nil {
+		return 0, 0
+	}
+	return s.m.W, s.m.H
+}
+
 // SetMap attaches the static world map to a State built outside NewState —
 // the loop's dry-run probe and any replica reconstructed by unmarshalling into
 // a bare State. The map is unexported and unserialized, so a State restored

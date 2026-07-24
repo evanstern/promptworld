@@ -92,26 +92,34 @@ func userPrompt(s *sim.State, idx int, k int) string {
 	}
 	b.WriteString(".\n")
 
-	if len(s.Structures) > 0 {
-		var parts []string
-		for _, st := range s.Structures {
-			parts = append(parts, fmt.Sprintf("%s at (%d,%d)", st.Kind, st.X, st.Y))
-		}
-		if len(parts) > 6 {
-			parts = parts[:6]
-		}
-		fmt.Fprintf(&b, "Village: %s.\n", strings.Join(parts, "; "))
-	}
+	// Spec 041 (US2, contracts §3): the world the prompt describes is the
+	// agent's OWN — known places from its mental map (the omniscient Village:
+	// line and its first-6 cap are retired), neighbors from its peer
+	// sightings. Two villagers with different histories see different worlds.
+	b.WriteString(knownPlaces(s, idx))
 
 	var nearby []string
-	for j := range s.Agents {
-		o := s.Agents[j]
-		if j == idx || o.Dead {
-			continue
-		}
-		if d := absInt(o.X-a.X) + absInt(o.Y-a.Y); d <= 10 {
+	if a.Map != nil {
+		// Peer sightings, agent-index order (Peers' canonical sort). The
+		// remembered position is the agent's belief: a peer who slipped away
+		// unseen still renders where they were last seen — the resolver
+		// (talk_to) walks to exactly this spot, so prompt and action agree.
+		for _, p := range a.Map.Peers {
+			if p.Agent == idx || p.Agent < 0 || p.Agent >= len(s.Agents) {
+				continue
+			}
+			o := s.Agents[p.Agent]
+			if o.Dead {
+				continue
+			}
+			d := absInt(p.X-a.X) + absInt(p.Y-a.Y)
+			if d > 10 {
+				continue
+			}
 			state := ""
-			if o.Asleep {
+			// The asleep flavor only when the peer is verifiably where the
+			// sighting says (in view right now) — never a remote live read.
+			if o.Asleep && o.X == p.X && o.Y == p.Y {
 				state = ", asleep"
 			}
 			nearby = append(nearby, fmt.Sprintf("%s (%d tiles away%s)", o.Name, d, state))
@@ -142,6 +150,124 @@ func userPrompt(s *sim.State, idx int, k int) string {
 
 	b.WriteString("\nWhat do you do next?")
 	return b.String()
+}
+
+// knownPlaces renders the spec-041 known-places section (US2, contracts §3):
+// what the acting agent's mental map holds, fresh facts only (the same
+// read-time horizon the resolvers use), never State.Structures.
+//
+//   - Landmark structures (fire/shelter/oven/chest) individually, with
+//     provenance flavor — witnessed plain; told names the teller; revealed
+//     names the vision. No count cap. A fire the agent remembers as burned
+//     out (its remembered FuelUntil behind the clock) says so, matching the
+//     resolvers' remembered-lit reads.
+//   - Everything place-shaped (resource kinds, plus walls and paths — which
+//     come in runs and would flood an individual listing; grouping, not
+//     dropping, is the contract's own size bound) grouped per kind with
+//     count + nearest.
+//   - One orientation line toward the nearest unexplored land, omitted when
+//     the map is fully explored.
+//   - The explicit empty state ("You know of no fires or shelters yet.") when
+//     no landmark structure is known — the model must always be able to tell
+//     "I know none" from silence.
+func knownPlaces(s *sim.State, idx int) string {
+	a := s.Agents[idx]
+	var b strings.Builder
+	if a.Map == nil {
+		b.WriteString("You know of no fires or shelters yet.\n")
+		return b.String()
+	}
+	now := s.Tick
+
+	// Landmark structures, individually, in the map's canonical fact order.
+	landmark := map[string]bool{"fire": true, "shelter": true, "oven": true, "chest": true}
+	var places []string
+	for _, f := range a.Map.Facts {
+		if !landmark[f.Kind] || !f.Fresh(now) {
+			continue
+		}
+		var entry string
+		switch f.Provenance {
+		case "told":
+			teller := "someone"
+			if f.Source >= 0 && f.Source < len(s.Agents) {
+				teller = s.Agents[f.Source].Name
+			}
+			entry = fmt.Sprintf("a %s at (%d,%d) — %s told you", f.Kind, f.X, f.Y, teller)
+		case "revealed":
+			entry = fmt.Sprintf("a %s at (%d,%d), shown to you in a vision", f.Kind, f.X, f.Y)
+		default: // witnessed
+			entry = fmt.Sprintf("%s at (%d,%d)", f.Kind, f.X, f.Y)
+		}
+		if f.Kind == "fire" && f.Detail <= now {
+			entry += " (likely burned out by now)"
+		}
+		places = append(places, entry)
+	}
+	if len(places) > 0 {
+		fmt.Fprintf(&b, "Places you know: %s.\n", strings.Join(places, "; "))
+	} else {
+		b.WriteString("You know of no fires or shelters yet.\n")
+	}
+
+	// Grouped place kinds: count + nearest, fixed order.
+	groupKinds := []struct{ kind, one, many string }{
+		{"forage", "forage spot", "forage spots"},
+		{"tree", "stand of trees", "stands of trees"},
+		{"rock", "rock outcrop", "rock outcrops"},
+		{"water_edge", "watering spot", "watering spots"},
+		{"den", "animal den", "animal dens"},
+		{"pile", "pile of goods", "piles of goods"},
+		{"wall_plank", "plank wall", "plank walls"},
+		{"wall_stone", "stone wall", "stone walls"},
+		{"path", "path tile", "path tiles"},
+	}
+	var groups []string
+	for _, g := range groupKinds {
+		fresh := a.Map.KnownFresh(g.kind, now)
+		if len(fresh) == 0 {
+			continue
+		}
+		near := fresh[0]
+		for _, f := range fresh[1:] {
+			if absInt(f.X-a.X)+absInt(f.Y-a.Y) < absInt(near.X-a.X)+absInt(near.Y-a.Y) {
+				near = f
+			}
+		}
+		noun := g.many
+		if len(fresh) == 1 {
+			noun = g.one
+		}
+		groups = append(groups, fmt.Sprintf("%d %s (nearest (%d,%d))", len(fresh), noun, near.X, near.Y))
+	}
+	if len(groups) > 0 {
+		fmt.Fprintf(&b, "You know %s.\n", joinAnd(groups))
+	}
+
+	// Orientation toward the unknown; silent on a fully-explored map (or a
+	// map-less test State, whose dims are 0).
+	if w, h := s.MapDims(); w > 0 && h > 0 {
+		if dir, ok := a.Map.FrontierDirection(w, h, a.X, a.Y); ok {
+			if dir == "all around" {
+				b.WriteString("Land all around is unknown to you.\n")
+			} else {
+				fmt.Fprintf(&b, "Land to the %s is unknown to you.\n", dir)
+			}
+		}
+	}
+	return b.String()
+}
+
+// joinAnd joins items with commas and a final "and" ("a", "a and b",
+// "a, b and c").
+func joinAnd(items []string) string {
+	switch len(items) {
+	case 0:
+		return ""
+	case 1:
+		return items[0]
+	}
+	return strings.Join(items[:len(items)-1], ", ") + " and " + items[len(items)-1]
 }
 
 // socialContext renders a compact bonds/debts/reputation/rumor block.
