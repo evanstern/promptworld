@@ -131,6 +131,15 @@ type Agent struct {
 	// data-model.md §5's value type, recorded for the planning tier). Written
 	// only by the reducer.
 	Journal *Journal `json:"journal,omitempty"`
+	// Map (spec 041) is the agent's private spatial knowledge — the mental
+	// map gating target resolution and prompt rendering (mentalmap.go). A
+	// POINTER with omitempty (the Journal/Hail precedent) so a pre-041
+	// snapshot (field absent) round-trips byte-identically. Created exactly
+	// once, at genesis (NewState) or migration (TransformV3State) — never
+	// lazily by the reducer, so a map-less agent (dead at migration time)
+	// stays map-less on replay. Facts mutated only by knowledge-event reducer
+	// arms; explored bits by the derived markExplored bookkeeping (D2).
+	Map *MentalMap `json:"map,omitempty"`
 }
 
 // AgentHail is the courtesy pause a talk_to landing lays on its target: who

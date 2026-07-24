@@ -2,6 +2,7 @@ package sim
 
 import (
 	"bytes"
+	"encoding/json"
 	"testing"
 
 	"github.com/evanstern/promptworld/internal/clock"
@@ -183,5 +184,43 @@ func TestAxesOmitemptyStable(t *testing.T) {
 	}
 	if got := s.Marshal(); !bytes.Contains(got, []byte(`"axes"`)) {
 		t.Error("pile/inventory axes key missing after adding axes")
+	}
+}
+
+// TestMapOmitemptyStable (spec 041 T004, the TestAxesOmitemptyStable twin):
+// Agent.Map is a pointer with omitempty, so a pre-041 snapshot (no "map" key,
+// Map nil) round-trips BYTE-IDENTICALLY — unmarshal then re-marshal reproduces
+// the exact bytes and leaks no "map" key. A present map does serialize, with
+// its canonical field order.
+func TestMapOmitemptyStable(t *testing.T) {
+	s := NewState(42, testMap(42))
+	// Fresh v4 worlds seed a map per agent at genesis; a pre-041 snapshot has
+	// none — simulate its shape by clearing them.
+	for i := range s.Agents {
+		s.Agents[i].Map = nil
+	}
+	pre := s.Marshal()
+	if bytes.Contains(pre, []byte(`"map":`)) {
+		t.Fatalf("a map-less state leaked a map key:\n%s", pre)
+	}
+	var back State
+	if err := json.Unmarshal(pre, &back); err != nil {
+		t.Fatal(err)
+	}
+	if got := back.Marshal(); !bytes.Equal(got, pre) {
+		t.Errorf("pre-041 snapshot did not round-trip byte-identically:\npre:  %s\npost: %s", pre, got)
+	}
+	// A present map serializes: explored bitmap first, facts omitted when nil.
+	s.Agents[0].Map = newMentalMap(64, 64)
+	got := s.Marshal()
+	if !bytes.Contains(got, []byte(`"map":{"explored":`)) {
+		t.Errorf("agent map not serialized:\n%s", got)
+	}
+	if bytes.Contains(got, []byte(`"facts"`)) {
+		t.Errorf("a fact-less map leaked a facts key:\n%s", got)
+	}
+	s.Agents[0].Map.upsertFact(PlaceFact{Kind: "fire", X: 1, Y: 2, Seen: 100, Provenance: ProvenanceWitnessed, Detail: 400})
+	if got := s.Marshal(); !bytes.Contains(got, []byte(`"facts":[{"kind":"fire","x":1,"y":2,"seen":100,"prov":"witnessed","detail":400}]`)) {
+		t.Errorf("fact not serialized in canonical field order:\n%s", got)
 	}
 }

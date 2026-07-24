@@ -771,6 +771,7 @@ func TestRebaseTaxonomyComplete(t *testing.T) {
 		"MeetingState.OpenedTick":   shift,
 		"MeetingState.GatherStart":  shift,
 		"MetatronOrder.ExpiresTick": shift, // spec 029: a standing order's future expiry deadline
+		"PlaceFact.Seen":            shift, // spec 041: mental-map freshness anchor (Belief.Reinforced shape)
 		// KEEP — history / identity / counters.
 		"Agent.Generation":                 keep,
 		"Agent.LastConsolidatedNight":      keep,
@@ -797,6 +798,7 @@ func TestRebaseTaxonomyComplete(t *testing.T) {
 		"Norm.DayAmended":                  keep,
 		"NormViolation.Tick":               keep,
 		"MetatronOrder.PlacedTick":         keep, // spec 029: when the order was placed (history)
+		"PlaceFact.Detail":                 keep, // spec 041: remembered value baked at emission, never re-derived (see rebaseTicks)
 	}
 
 	found := map[string]bool{}

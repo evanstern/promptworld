@@ -176,6 +176,11 @@ func (s *State) applyTimeSnapped(e store.Event) error {
 //	MetatronOrder.ExpiresTick  standing-order expiry deadline (spec 029); shifted
 //	                      ONLY for ACTIVE orders (a consumed order's deadline is a
 //	                      spent artifact), so the remaining lifetime survives the jump
+//	PlaceFact.Seen        mental-map freshness anchor (spec 041: fresh iff
+//	                      now-Seen < horizon — the Belief.Reinforced shape); ONLY
+//	                      non-zero. Left unshifted, a snap would instantly stale
+//	                      every villager's knowledge — exactly the drift FR-009
+//	                      forbids.
 //
 // KEEP (history/identity — never rewritten): Agent.Generation,
 //
@@ -190,7 +195,12 @@ func (s *State) applyTimeSnapped(e store.Event) error {
 //	ChronicleEntry.Tick/Day/FromTick/ToTick, Meeting.LastMeetingDay,
 //	MeetingConvention.EstablishedDay, Norm.DayPassed/DayRepealed/DayAmended,
 //	NormViolation.Tick. Day-denominated governance fields re-arm naturally under
-//	the new clock.
+//	the new clock. PlaceFact.Detail (spec 041) is KEEP: a remembered value
+//	baked at emission, never re-derived — for a fire it mirrors the (shifted)
+//	FuelUntil as LAST SEEN, and rewriting what an agent remembers would rewrite
+//	its history; the perception sweep simply re-witnesses the shifted reality
+//	on the next look. Other kinds bake non-tick scalars here, so a blanket
+//	shift would corrupt them.
 //
 // PHASE-ANCHORED behavior (day/night, meeting times of day, charge-regen
 // boundaries) is a pure function of the absolute clock and stores no field here.
@@ -227,6 +237,13 @@ func rebaseTicks(s *State, delta int64) {
 			shift(&a.Plan[j].Until)
 			if a.Plan[j].When != nil {
 				shift(&a.Plan[j].When.Tick)
+			}
+		}
+		if a.Map != nil {
+			for j := range a.Map.Facts {
+				// Spec 041: the freshness anchor shifts so knowledge does not
+				// stale across the jump; Detail is remembered history (KEEP).
+				shift(&a.Map.Facts[j].Seen)
 			}
 		}
 	}
