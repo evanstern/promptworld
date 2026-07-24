@@ -553,6 +553,23 @@ func (s *State) Apply(e store.Event) error {
 		a.Intent = nil
 		a.IdleSince = e.Tick
 
+	case "agent.build_failed":
+		// Spec 038: a build cancelled by mid-work re-validation. State effect is
+		// identical to agent.intent_done — clear the intent, stamp IdleSince — so
+		// the builder re-plans exactly like a finished one (no material spend, no
+		// structure). The distinct type is what lets observers and the builder's
+		// mind tell a failed build from a completed one.
+		var p BuildFailedPayload
+		if err := json.Unmarshal(e.Payload, &p); err != nil {
+			return fmt.Errorf("apply %s: %w", e.Type, err)
+		}
+		a, err := agent(p.Agent)
+		if err != nil {
+			return err
+		}
+		a.Intent = nil
+		a.IdleSince = e.Tick
+
 	case "agent.moved":
 		var p AgentMovedPayload
 		if err := json.Unmarshal(e.Payload, &p); err != nil {

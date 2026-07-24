@@ -215,7 +215,7 @@ func (md *Mind) absorb(batch []store.Event) {
 			if json.Unmarshal(e.Payload, &p) == nil {
 				md.arm(p.Agent, e.Seq)
 			}
-		case "agent.intent_done", "agent.foraged", "agent.chopped", "agent.hunted", "agent.built":
+		case "agent.intent_done", "agent.build_failed", "agent.foraged", "agent.chopped", "agent.hunted", "agent.built":
 			var p struct {
 				Agent int `json:"agent"`
 			}

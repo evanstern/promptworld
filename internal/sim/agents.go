@@ -642,18 +642,25 @@ const (
 // legacy flat chopWood/quarryYield are deleted in T014, replaced by the
 // bare/axe yield pairs below.
 const (
-	wallPlankCost   = 2   // planks → wall_plank (build_wall_plank recipe input)
-	wallStoneCost   = 2   // refined_stone → wall_stone (build_wall_stone recipe input)
-	wallPlankHP     = 200 // plank wall max health
-	wallStoneHP     = 600 // stone wall max health — 3x plank (spec FR-003: ≥2x)
-	buildWallTicks  = 600 // per-wall build work duration
-	demolishChipHP  = 100 // HP removed per demolish work cycle (plank: 2 cycles; stone: 6)
-	demolishTicks   = 300 // per demolish chip cycle
-	repairHPPerUnit = 100 // HP restored per material unit consumed, clamped to max
-	repairTicks     = 240 // per repair work cycle
-	pathStoneCost   = 1   // raw stone per path tile (build_path recipe input)
-	buildPathTicks  = 240 // path build work duration
-	axeDurability   = 10  // harvest uses per fresh axe (chop/quarry far outpace hunting)
+	wallPlankCost  = 2   // planks → wall_plank (build_wall_plank recipe input)
+	wallStoneCost  = 2   // refined_stone → wall_stone (build_wall_stone recipe input)
+	wallPlankHP    = 200 // plank wall max health
+	wallStoneHP    = 600 // stone wall max health — 3x plank (spec FR-003: ≥2x)
+	buildWallTicks = 600 // per-wall build work duration
+	// wallOccupancyGraceTicks (spec 038): ticks past the wall's due tick
+	// (WorkStart + buildWallTicks) that completion may defer on an occupied
+	// reserved tile before failing loudly. 20% of buildWallTicks — long enough
+	// for a passerby or short chat, short enough that a blocked build resolves
+	// within a fraction of its own work duration. Derived bound, no persisted
+	// state: the fail trigger is a pure function of WorkStart (research D2).
+	wallOccupancyGraceTicks = 120
+	demolishChipHP          = 100 // HP removed per demolish work cycle (plank: 2 cycles; stone: 6)
+	demolishTicks           = 300 // per demolish chip cycle
+	repairHPPerUnit         = 100 // HP restored per material unit consumed, clamped to max
+	repairTicks             = 240 // per repair work cycle
+	pathStoneCost           = 1   // raw stone per path tile (build_path recipe input)
+	buildPathTicks          = 240 // path build work duration
+	axeDurability           = 10  // harvest uses per fresh axe (chop/quarry far outpace hunting)
 
 	// Harvest yield rebalance (spec FR-009/010): bare-handed drops from the
 	// legacy flat 2 to 1; a carried axe triples it to 3. Replaces chopWood /
@@ -662,6 +669,15 @@ const (
 	chopYieldAxe    = 3 // wood per axe-assisted chop
 	quarryYieldBare = 1 // stone per bare-handed quarry
 	quarryYieldAxe  = 3 // stone per axe-assisted quarry
+)
+
+// Stable reason vocabulary for agent.build_failed (spec 038): a small closed
+// set so tests and tooling can match on the string. buildFailSiteUnbuildable is
+// any build goal whose site re-validation fails mid-work; buildFailSiteBlocked
+// is walls only, once a reserved-tile occupant outlasts wallOccupancyGraceTicks.
+const (
+	buildFailSiteUnbuildable = "site no longer buildable"
+	buildFailSiteBlocked     = "site blocked too long"
 )
 
 // bulk is an agent's (or a chest's) carried load: one per unit of every
@@ -791,6 +807,18 @@ type (
 		Kind  string `json:"kind"`
 		X     int    `json:"x"`
 		Y     int    `json:"y"`
+	}
+	// BuildFailedPayload — agent.build_failed (spec 038): a build intent that
+	// passed landing is cancelled by the executor's mid-work re-validation. Its
+	// own type, distinct from the bare agent.intent_done a completion emits, so
+	// observers/tests/the builder's mind can tell a failed build from a finished
+	// one. Field shape mirrors IntentRejectedPayload (cognition.go) so failure
+	// consumers see a familiar {agent, goal, reason}. Reducer clears the intent
+	// exactly like intent_done; a paired situated memory rides the same tick.
+	BuildFailedPayload struct {
+		Agent  int    `json:"agent"`
+		Goal   string `json:"goal"`
+		Reason string `json:"reason"`
 	}
 	NeedsPayload struct {
 		Agent  int `json:"agent"`
