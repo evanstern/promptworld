@@ -61,6 +61,7 @@ var catalogFixture = map[string]digestFixture{
 	"agent.work_started":    {`{"agent":1,"tick":100}`, `Birch set to work`},
 	"agent.intent_done":     {`{"agent":2}`, `Cedar finished`},
 	"agent.intent_rejected": {`{"agent":3,"goal":"forage","reason":"blocked","staleness_ticks":5}`, `Rowan's forage refused: blocked (5t stale)`},
+	"agent.build_failed":    {`{"agent":3,"goal":"build_wall_stone","reason":"site blocked too long"}`, `Rowan's build_wall_stone failed — site blocked too long`},
 	"agent.moved":           {`{"agent":0,"x":1,"y":1}`, `Ash → (1,1)`},
 	"agent.foraged":         {`{"agent":0,"x":1,"y":1}`, `Ash foraged at (1,1)`},
 	"agent.chopped":         {`{"agent":0,"x":1,"y":1}`, `Ash chopped wood at (1,1)`},
