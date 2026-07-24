@@ -18,14 +18,14 @@ increment. US1 alone is the MVP (semantically indexed, replay-safe memory stream
 
 **Purpose**: config surface + wire-level plumbing both drivers and scoring depend on
 
-- [ ] T001 Add `embedding` route kind to the kinds enum and route validation (absent
+- [x] T001 Add `embedding` route kind to the kinds enum and route validation (absent
       route = subsystem OFF, boot info line, no backfill; anthropic transport routed to
       embedding = boot config error) in `internal/llm/llm.go` and
       `internal/llm/config.go` (contracts/embedding-events.md §4)
-- [ ] T002 Implement `Embed(ctx, texts []string) ([][]float32, model string, err)` on
+- [x] T002 Implement `Embed(ctx, texts []string) ([][]float32, model string, err)` on
       the openai_compat transport, POST `endpoint+"/embeddings"`, in
       `internal/llm/providers.go`; typed unsupported error on anthropic
-- [ ] T003 [P] Add `memory_relevance` three-state flag (`""`/`"shadow"`/`"on"`,
+- [x] T003 [P] Add `memory_relevance` three-state flag (`""`/`"shadow"`/`"on"`,
       omitempty, byte-identical round-trip for old worlds — Teaching precedent) in
       `internal/world/world.go` + validation test in `internal/world/world_test.go`
 
@@ -35,18 +35,18 @@ increment. US1 alone is the MVP (semantically indexed, replay-safe memory stream
 
 **Purpose**: memory identity + payload shapes every story reads/writes
 
-- [ ] T004 Add `Seq int64`, `Vec []float32`, `VecModel string` (all omitempty) to
+- [x] T004 Add `Seq int64`, `Vec []float32`, `VecModel string` (all omitempty) to
       `Memory`, and `SitVec []float32` / `SitVecModel string` / `SitVecTick int64`
       (omitempty) to `Agent`, in `internal/sim/agents.go`; assert pre-feature snapshot
       bytes unchanged in `internal/sim/state_test.go` (data-model.md invariants)
-- [ ] T005 Reducer stamps `Memory.Seq` from the emitting event's store seq on
+- [x] T005 Reducer stamps `Memory.Seq` from the emitting event's store seq on
       `agent.memory_added` apply in `internal/sim/state.go`; replay-stability test
       (same stream twice → same seqs) in `internal/sim/state_test.go`
-- [ ] T006 Define `MemoryEmbeddedPayload` and `SituationEmbeddedPayload` + reducer arms
+- [x] T006 Define `MemoryEmbeddedPayload` and `SituationEmbeddedPayload` + reducer arms
       (attach by `{agent, mem_seq}`, no-op if absent; set agent SitVec*) in
       `internal/sim/state.go` (+ payload structs beside `MemoryAddedPayload` in
       `internal/sim/agents.go`), per contracts/embedding-events.md §1
-- [ ] T007 Whitelist `agent.memory_embedded`, `agent.situation_embedded` (reducer-armed)
+- [x] T007 Whitelist `agent.memory_embedded`, `agent.situation_embedded` (reducer-armed)
       and `cog.memory_divergence` (no-op) in the `InjectSocial` whitelist in
       `internal/sim/loop.go`, with door-ordering comment (companion never precedes its
       memory)
@@ -64,19 +64,19 @@ byte-identical with the embedder absent.
 **Independent test**: quickstart.md US1 — embedded count converges to added count;
 replay passes with Ollama stopped; kill-Ollama run stays loud + non-fatal.
 
-- [ ] T008 [US1] Create the embedder driver: watch absorbed `agent.memory_added`, embed
+- [x] T008 [US1] Create the embedder driver: watch absorbed `agent.memory_added`, embed
       the exact recorded text (fixed-byte truncation cap constant), inject
       `agent.memory_embedded` via `InjectSocial`; debounced `daemon.llm_warning` on
       transport failure; never blocks absorb/plan; wired only when the `embedding`
       route exists; warm-pins the embedding model at driver start + slow re-warm
       (native `/api/embed` `keep_alive:-1`, best-effort, per contract §2) — new file
       `internal/mind/embedder.go` (contracts/embedding-events.md §2)
-- [ ] T009 [US1] Boot wiring: construct/start the embedder alongside the consolidation
+- [x] T009 [US1] Boot wiring: construct/start the embedder alongside the consolidation
       driver when llm.json has the `embedding` route, in `internal/daemon/daemon.go`
-- [ ] T010 [P] [US1] Driver unit tests: emission-ordered per-agent companions, failure
+- [x] T010 [P] [US1] Driver unit tests: emission-ordered per-agent companions, failure
       debounce, vectorless-forever on skip (no backfill), in
       `internal/mind/embedder_test.go`
-- [ ] T011 [US1] End-to-end + replay proof: run a seeded world, assert SC-002
+- [x] T011 [US1] End-to-end + replay proof: run a seeded world, assert SC-002
       (100% coverage absent outage) and SC-001 (replay byte-identical with zero embed
       calls — embedder not wired during replay), extending the existing replay harness
       test in `internal/daemon/` (or `internal/sim/replay_test.go` if that's where the
