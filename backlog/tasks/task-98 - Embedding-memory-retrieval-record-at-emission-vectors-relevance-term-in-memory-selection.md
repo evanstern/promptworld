@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-24 19:45'
-updated_date: '2026-07-24 20:31'
+updated_date: '2026-07-24 20:33'
 labels:
   - memory
   - embeddings
@@ -50,4 +50,6 @@ Spec: specs/042-embedding-memory-retrieval
 
 <!-- SECTION:NOTES:BEGIN -->
 spec-bridge sync: Setup: 0/3 · Foundational (blocking prerequisites for all stories): 0/4 · User Story 1 — vectors from birth, replay never recomputes (P1) 🎯 MVP: 0/4 · User Story 2 — shadow-mode divergence instrumentation (P2): 0/7 · User Story 3 — relevance shapes the window (P3): 0/4 · Polish & cross-cutting: 0/3
+
+Model-tier decision (constitution V): core slices delegated to spec-implementer @ Opus 4.8 — rubric: cross-package (llm/mind/sim/world/daemon), concurrency (async embedder driver vs absorb/plan goroutines), doctrine-adjacent (replay byte-identity, InjectSocial door semantics, reducer arms). Leaf tests/docs may run Sonnet. Implementation in .worktrees/task-98 (branch task-98-embedding-memory-retrieval), phased: (1) T001-T011 Setup+Foundational+US1 MVP, (2) T012-T018 US2 shadow, (3) T019-T025 US3+Polish. Fable gates between phases.
 <!-- SECTION:NOTES:END -->

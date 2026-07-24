@@ -4,7 +4,7 @@ title: 'Digest catalog drift: cog.tool_call missing — TestCatalogSweep red on 
 status: Done
 assignee: []
 created_date: '2026-07-23 03:09'
-updated_date: '2026-07-23 05:05'
+updated_date: '2026-07-24 20:35'
 labels:
   - events
   - tui
@@ -41,6 +41,8 @@ Tier: Sonnet spec-implementer — routine single-package view/rendering change p
 Implemented on branch task-62-cog-tool-call-digest (worktree .worktrees/task-62), commit 6bcda8d, PR #43 open: https://github.com/evanstern/promptworld/pull/43. Sonnet spec-implementer per Principle V rubric (routine single-package view/rendering slice). Labeled-voice digest job/ord/tool/verdict/tier + conditional reason; args+snapshot_tick elided (detail pane bounds them, world.migrated precedent). go test ./... fully green in worktree; go vet clean. AC#2 proven by TestCatalogSweep+TestDigestRoleSpans on the branch. AC#1 (green on main) pends the PR merge — merge blocked by permission classifier, awaiting user.
 
 PR #43 merged (4d9088a). TestCatalogSweep verified green on merged main. Worktree .worktrees/task-62 removed, branch deleted, root ff-pulled. Wiki re-pinned: docs/wiki/tui-client.md 9495150 → d38330a after reading the diff (registry-only addition; note claims unchanged); plan + freshness gates pass (36 notes fresh).
+
+Stale card (verified 2026-07-24 vs main 18a0376+): cog.tool_call now HAS a digest renderer (internal/tui/digest.go:1006) and a catalog fixture row (internal/tui/digest_test.go:164); TestCatalogSweep's current failure is daemon.llm_warning only, tracked as TASK-100 (which consolidated TASK-92/94). The problem this card describes was fixed in the interim. Archiving as obsolete — duplicate lineage of the CatalogSweep family, superseded by TASK-100.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
