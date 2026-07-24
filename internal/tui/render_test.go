@@ -346,6 +346,40 @@ func TestLLMProviderLinesEmpty(t *testing.T) {
 	}
 }
 
+// TestLLMProviderLinesConditionAnnotation (spec 034 T010, contracts/
+// provider-conditions.md "Human surfaces"): a provider carrying an active
+// condition gains an indented continuation line with the condition's detail
+// and remedy immediately below its row; a healthy provider carries none.
+func TestLLMProviderLinesConditionAnnotation(t *testing.T) {
+	st := &llm.Status{Providers: []llm.ProviderStatus{
+		{
+			Name: "local", Model: "cogito:3b", Endpoint: "http://localhost:11434/v1", Up: false,
+			Condition:       "model-missing",
+			ConditionDetail: `model "cogito:3b" not served by http://localhost:11434/v1`,
+			ConditionRemedy: "ollama pull cogito:3b",
+		},
+		{Name: "cloud", Model: "claude-opus-4-8", Up: true},
+	}}
+	lines := llmProviderLines(st)
+	if len(lines) != 3 {
+		t.Fatalf("got %d lines, want 3 (affected row + its continuation + healthy row): %v", len(lines), lines)
+	}
+	if !strings.Contains(lines[0], "local") {
+		t.Fatalf("lines[0] should be the local provider row: %q", lines[0])
+	}
+	for _, want := range []string{`model "cogito:3b" not served by http://localhost:11434/v1`, "ollama pull cogito:3b"} {
+		if !strings.Contains(lines[1], want) {
+			t.Errorf("condition continuation line missing %q: %q", want, lines[1])
+		}
+	}
+	if !strings.Contains(lines[2], "cloud") {
+		t.Fatalf("lines[2] should be the healthy cloud provider row: %q", lines[2])
+	}
+	if strings.Contains(lines[2], "ollama") || strings.Contains(lines[2], "not served") {
+		t.Errorf("healthy provider row should carry no condition text: %q", lines[2])
+	}
+}
+
 // TestOrderStatusLinesFields (spec 029 T023): the metatron pane's
 // standing-orders block carries id, fuzzy marker, origin, expiry day, status,
 // and condition for every order, headed by a count line.
