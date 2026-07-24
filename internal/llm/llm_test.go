@@ -303,15 +303,32 @@ func TestQueueBackpressure(t *testing.T) {
 	for i := 0; i < queueCap+1; i++ {
 		go o.Submit(context.Background(), Request{Kind: KindPlanner, Prompt: "x"})
 	}
-	// Wait until saturation is observable, then expect fast refusal.
-	deadline := time.Now().Add(2 * time.Second)
+	// Wait until saturation is observable, then expect fast refusal. The
+	// deadline is generous (10s) since the loop exits the instant saturation
+	// is reached — healthy runs pay none of that headroom. If the deadline
+	// still expires, the race was missed: fail now instead of falling
+	// through, or the overflow Submit below would enqueue for real and hang.
+	deadline := time.Now().Add(10 * time.Second)
+	saturated := false
+	var lastQueue int
 	for time.Now().Before(deadline) {
-		if provStatus(o.StatusSnapshot(), "local").Queue >= queueCap {
+		lastQueue = provStatus(o.StatusSnapshot(), "local").Queue
+		if lastQueue >= queueCap {
+			saturated = true
 			break
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
-	_, err := o.Submit(context.Background(), Request{Kind: KindPlanner, Prompt: "overflow"})
+	if !saturated {
+		t.Fatalf("saturation poll timed out: queue depth %d never reached queueCap %d", lastQueue, queueCap)
+	}
+
+	// Backstop: even if the queue check above were ever wrong again, bound
+	// the overflow Submit so a regression fails fast instead of blocking for
+	// the full test timeout.
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_, err := o.Submit(ctx, Request{Kind: KindPlanner, Prompt: "overflow"})
 	if !errors.Is(err, ErrQueueFull) {
 		t.Fatalf("want ErrQueueFull, got %v", err)
 	}
