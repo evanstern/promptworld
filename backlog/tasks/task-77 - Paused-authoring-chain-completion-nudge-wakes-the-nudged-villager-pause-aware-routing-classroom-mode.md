@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-23 17:00'
-updated_date: '2026-07-24 19:09'
+updated_date: '2026-07-24 19:49'
 labels:
   - teaching-game
   - classroom-mode
@@ -38,10 +38,10 @@ Spec: specs/040-paused-chain-completion
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A landed nudge arms the nudged villager's planner for exactly one bounded round at the frozen tick; the debounce still prevents any second round while frozen
-- [ ] #2 routeVerdict treats a paused world as zero predicted drift (allow); the verdict's recorded arithmetic names the paused state
-- [ ] #3 Frozen-tick thoughts land at zero staleness, fully recorded (cog.thought/cog.outcome); replay determinism harness green
-- [ ] #4 Unpaused behavior is byte-identical to today: no new wake stimuli or routing changes apply while running
+- [x] #1 A landed nudge arms the nudged villager's planner for exactly one bounded round at the frozen tick; the debounce still prevents any second round while frozen
+- [x] #2 routeVerdict treats a paused world as zero predicted drift (allow); the verdict's recorded arithmetic names the paused state
+- [x] #3 Frozen-tick thoughts land at zero staleness, fully recorded (cog.thought/cog.outcome); replay determinism harness green
+- [x] #4 Unpaused behavior is byte-identical to today: no new wake stimuli or routing changes apply while running
 - [x] #5 Spec Kit spec written and linked via spec-bridge before implementation (doctrine-adjacent, non-trivial)
 - [ ] #6 Spec phase: Setup
 - [ ] #7 Spec phase: User Story 1 — A nudge wakes the nudged villager while paused (Priority: P1) 🎯 MVP
@@ -66,4 +66,6 @@ Drift audit 2026-07-23: pins re-verified; one moved — metatron_chat handler (n
 2026-07-24: Spec 039 authored + linked (AC#5 satisfiable once committed); plan/research/data-model/contracts/quickstart/tasks on disk. Implementation delegated to spec-implementer @ Opus 4.8 in .worktrees/task-77.
 
 2026-07-24: renumbered spec dir 039→040 (concurrent TASK-78 session claimed 039 on main first); marker, feature.json, and spec docs updated.
+
+2026-07-24: T002-T014 implemented by spec-implementer @ Opus 4.8 (6 commits on task-77-paused-chain-completion). Gate: build/vet clean; go test ./... green except pre-existing TestCatalogSweep (fails identically on origin/main; tracked TASK-92/TASK-94). ACs 1-4 proven by TestPausedNudgeWakesTargetOnce, TestPausedOmenArmsOnlyTargets, TestRoutePaused, TestRouteVerdictPausedAllowsAtSuppressingSpeed, TestPausedThoughtPredictsFrozenLanding, TestPausedNudgeThinksAtSuppressingSpeed, TestRunningNudgeDoesNotArm, TestPausedNudgeReplayByteIdentical + untouched decision-4 doctrine tests. PR creation currently blocked by a GitHub API outage (retry loop running).
 <!-- SECTION:NOTES:END -->
