@@ -44,13 +44,13 @@ nudge's Seq; nudge again, assert no second thought.
 
 ### Tests for User Story 1 (write first, must fail)
 
-- [ ] T002 [US1] Harness test `TestPausedNudgeWakesTargetOnce` in internal/mind/telemetry_test.go (pattern: `TestPauseInFlightThoughtLandsAtFrozenTick`, 16x): pause via `h.loop.Do("pause","")`, inject the `metatron.nudged` + `agent.memory_added` batch (shape: internal/metatron/turn.go:422-427), assert exactly one planner `cog.thought`/`cog.outcome` for the target at the frozen tick with `staleness_ticks == 0` and `trigger_seq` equal to the nudge event's Seq (contracts C2/C3); then inject a second nudge in the same pause and assert the model call count for that agent does not increase (debounce bound, spec US1 scenario 2)
-- [ ] T003 [P] [US1] Harness test `TestPausedOmenArmsOnlyTargets` in internal/mind/telemetry_test.go: paused world, multi-target omen batch → each living awake target gets exactly one thought; a non-targeted villager gets none (spec US1 scenario 3)
+- [x] T002 [US1] Harness test `TestPausedNudgeWakesTargetOnce` in internal/mind/telemetry_test.go (pattern: `TestPauseInFlightThoughtLandsAtFrozenTick`, 16x): pause via `h.loop.Do("pause","")`, inject the `metatron.nudged` + `agent.memory_added` batch (shape: internal/metatron/turn.go:422-427), assert exactly one planner `cog.thought`/`cog.outcome` for the target at the frozen tick with `staleness_ticks == 0` and `trigger_seq` equal to the nudge event's Seq (contracts C2/C3); then inject a second nudge in the same pause and assert the model call count for that agent does not increase (debounce bound, spec US1 scenario 2)
+- [x] T003 [P] [US1] Harness test `TestPausedOmenArmsOnlyTargets` in internal/mind/telemetry_test.go: paused world, multi-target omen batch → each living awake target gets exactly one thought; a non-targeted villager gets none (spec US1 scenario 3)
 
 ### Implementation for User Story 1
 
-- [ ] T004 [US1] Add the paused-gated wake to `absorb()`'s arm switch in internal/mind/mind.go (after the existing cases, mind.go:212-237): `case "metatron.nudged":` unmarshal `sim.MetatronNudgedPayload`, and only when `md.replica.Paused`, `md.arm(t, e.Seq)` for each `t` in `Targets` (research.md D1; FR-001/FR-002/FR-003). No other bounding: the debounce is the bound (D4)
-- [ ] T005 [US1] Prove the doctrine tests still hold: `go test ./internal/mind/ -run 'TestPause|TestResume' -v` — `TestPauseStartsNoNewThoughts`, `TestPauseInFlightThoughtLandsAtFrozenTick`, `TestPauseConversationLandsAtFrozenTick`, `TestResumeNoBurst` all green alongside T002/T003
+- [x] T004 [US1] Add the paused-gated wake to `absorb()`'s arm switch in internal/mind/mind.go (after the existing cases, mind.go:212-237): `case "metatron.nudged":` unmarshal `sim.MetatronNudgedPayload`, and only when `md.replica.Paused`, `md.arm(t, e.Seq)` for each `t` in `Targets` (research.md D1; FR-001/FR-002/FR-003). No other bounding: the debounce is the bound (D4)
+- [x] T005 [US1] Prove the doctrine tests still hold: `go test ./internal/mind/ -run 'TestPause|TestResume' -v` — `TestPauseStartsNoNewThoughts`, `TestPauseInFlightThoughtLandsAtFrozenTick`, `TestPauseConversationLandsAtFrozenTick`, `TestResumeNoBurst` all green alongside T002/T003
 
 **Checkpoint**: paused nudge → one frozen-tick thought works end-to-end at
 non-suppressing speeds; US1 demonstrable alone.
@@ -69,16 +69,16 @@ verdict allow with "paused" arithmetic; resume → today's strings.
 
 ### Tests for User Story 2 (write first, must fail)
 
-- [ ] T006 [P] [US2] Pure table test `TestRoutePaused` in internal/cognition/route_test.go: for planner/conversation/meeting classes assert `Allow == true`, `PredictedDriftTicks == 0`, `PredictedWallMs == Points × spp × 1000`, `BudgetTicks`/`Points`/`Class` populated, and `Arithmetic` exactly matches contract C1 (`"%dpt x %.1fs/pt while paused = 0 ticks <= budget %d"`) — including that it contains the word `paused`
-- [ ] T007 [P] [US2] Mind test `TestRouteVerdictPausedAllowsAtSuppressingSpeed` in internal/mind/telemetry_test.go: replica with `Paused = true` and a set speed whose arithmetic suppresses the planner (and separately `tps <= 0`, the uncapped case — paused must win, spec US2 scenario 3): `routeVerdict("planner", …)` returns allow + C1 arithmetic; with `Paused = false` the verdict is byte-identical to `cognition.Route`'s output (FR-005)
-- [ ] T008 [P] [US2] Mind test `TestPausedThoughtPredictsFrozenLanding` in internal/mind/telemetry_test.go: on a paused replica, `newMeta` yields `predictedLandTick == snapshotTick`, and a planner job prompt built while paused carries NO `futureDated` prefix (prompt.go:63-69 no-ops at landing ≤ now); the recorded `cog.thought.predicted_land_tick` equals the snapshot tick (contract C3)
+- [x] T006 [P] [US2] Pure table test `TestRoutePaused` in internal/cognition/route_test.go: for planner/conversation/meeting classes assert `Allow == true`, `PredictedDriftTicks == 0`, `PredictedWallMs == Points × spp × 1000`, `BudgetTicks`/`Points`/`Class` populated, and `Arithmetic` exactly matches contract C1 (`"%dpt x %.1fs/pt while paused = 0 ticks <= budget %d"`) — including that it contains the word `paused`
+- [x] T007 [P] [US2] Mind test `TestRouteVerdictPausedAllowsAtSuppressingSpeed` in internal/mind/telemetry_test.go: replica with `Paused = true` and a set speed whose arithmetic suppresses the planner (and separately `tps <= 0`, the uncapped case — paused must win, spec US2 scenario 3): `routeVerdict("planner", …)` returns allow + C1 arithmetic; with `Paused = false` the verdict is byte-identical to `cognition.Route`'s output (FR-005)
+- [x] T008 [P] [US2] Mind test `TestPausedThoughtPredictsFrozenLanding` in internal/mind/telemetry_test.go: on a paused replica, `newMeta` yields `predictedLandTick == snapshotTick`, and a planner job prompt built while paused carries NO `futureDated` prefix (prompt.go:63-69 no-ops at landing ≤ now); the recorded `cog.thought.predicted_land_tick` equals the snapshot tick (contract C3)
 
 ### Implementation for User Story 2
 
-- [ ] T009 [US2] Add pure `RoutePaused(dc DecisionClass, secondsPerPoint float64) Verdict` to internal/cognition/route.go per research.md D2: Allow true, drift 0, wall-ms predicted, C1 arithmetic string; do NOT touch `Route` (SC-005)
-- [ ] T010 [US2] Consult the paused flag in `routeVerdict` (internal/mind/telemetry.go:61-71): immediately after `ClassFor`, `if md.replica.Paused { return cognition.RoutePaused(dc, md.secondsPerPoint(kind)) }` — before the `tps <= 0` branch so paused wins at uncapped (D2)
-- [ ] T011 [US2] Truthful land prediction in `newMeta` (internal/mind/telemetry.go:38-54): when `md.replica.Paused`, set `predictedLandTick = snapshotTick` instead of the tps projection (D3)
-- [ ] T012 [US2] Composition test `TestPausedNudgeThinksAtSuppressingSpeed` in internal/mind/telemetry_test.go: harness world at a planner-suppressing speed (pattern: `TestPlannerSuppressedAtHighSpeed`), pause, inject nudge batch → the thought is ATTEMPTED and LANDS at the frozen tick (US1 wake + US2 routing together — the full decision-6 chain), with zero `cog.outcome` suppressions while paused (SC-003)
+- [x] T009 [US2] Add pure `RoutePaused(dc DecisionClass, secondsPerPoint float64) Verdict` to internal/cognition/route.go per research.md D2: Allow true, drift 0, wall-ms predicted, C1 arithmetic string; do NOT touch `Route` (SC-005)
+- [x] T010 [US2] Consult the paused flag in `routeVerdict` (internal/mind/telemetry.go:61-71): immediately after `ClassFor`, `if md.replica.Paused { return cognition.RoutePaused(dc, md.secondsPerPoint(kind)) }` — before the `tps <= 0` branch so paused wins at uncapped (D2)
+- [x] T011 [US2] Truthful land prediction in `newMeta` (internal/mind/telemetry.go:38-54): when `md.replica.Paused`, set `predictedLandTick = snapshotTick` instead of the tps projection (D3)
+- [x] T012 [US2] Composition test `TestPausedNudgeThinksAtSuppressingSpeed` in internal/mind/telemetry_test.go: harness world at a planner-suppressing speed (pattern: `TestPlannerSuppressedAtHighSpeed`), pause, inject nudge batch → the thought is ATTEMPTED and LANDS at the frozen tick (US1 wake + US2 routing together — the full decision-6 chain), with zero `cog.outcome` suppressions while paused (SC-003)
 
 **Checkpoint**: the full learner loop (pause → nudge → thought under charter)
 works even on worlds paused from suppressing speeds.
@@ -95,8 +95,8 @@ arm; full existing suite green.
 
 ### Tests for User Story 3 (write first where new, must fail against a buggy ungated impl)
 
-- [ ] T013 [P] [US3] Mind test `TestRunningNudgeDoesNotArm` in internal/mind/mind_test.go: unpaused replica, feed a `metatron.nudged` event through `absorb()` for an agent inside its debounce-fresh window, assert `pending` is NOT set by the nudge (unit-level, no harness needed) — guards FR-003 directly so a future un-gating fails loudly
-- [ ] T014 [US3] Determinism + regression gate: `go build ./... && go vet ./... && go test ./...` from the worktree — entire existing suite (including internal/sim byte-identical replay tests and internal/mind/replay_test.go) green with zero test edits outside the files this feature adds to (SC-004/SC-005); if no existing replay scenario contains a paused nudge-thought session, add one following internal/sim/governor_replay_test.go's byte-identical pattern
+- [x] T013 [P] [US3] Mind test `TestRunningNudgeDoesNotArm` in internal/mind/mind_test.go: unpaused replica, feed a `metatron.nudged` event through `absorb()` for an agent inside its debounce-fresh window, assert `pending` is NOT set by the nudge (unit-level, no harness needed) — guards FR-003 directly so a future un-gating fails loudly
+- [x] T014 [US3] Determinism + regression gate: `go build ./... && go vet ./... && go test ./...` from the worktree — entire existing suite (including internal/sim byte-identical replay tests and internal/mind/replay_test.go) green with zero test edits outside the files this feature adds to (SC-004/SC-005); if no existing replay scenario contains a paused nudge-thought session, add one following internal/sim/governor_replay_test.go's byte-identical pattern
 
 **Checkpoint**: all three stories proven; unpaused world provably today's.
 
