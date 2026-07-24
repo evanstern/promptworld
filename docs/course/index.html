@@ -1,0 +1,1705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How a Villager Remembers</title>
+
+  <!-- Set the theme before first paint so dark mode never flashes white.
+       main.js owns the toggle + persistence; this only picks the initial value.
+       Copy as-is — no per-course customization needed. -->
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('course-theme');
+        document.documentElement.dataset.theme =
+          t || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      } catch (e) { document.documentElement.dataset.theme = 'light'; }
+    })();
+  </script>
+
+  <!-- Google Fonts: Bricolage Grotesque · DM Sans · JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400;1,9..40,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css">
+
+  <style>
+    :root {
+      --color-accent:       #2A7B9B;
+      --color-accent-hover: #1F6280;
+      --color-accent-light: #E4F2F7;
+      --color-accent-muted: #5A9DB8;
+    }
+  </style>
+
+  <script src="main.js" defer></script>
+</head>
+<body>
+
+  <nav class="nav" id="nav">
+    <div class="progress-bar" id="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+    <div class="nav-inner">
+      <span class="nav-title">How a Villager Remembers</span>
+      <div class="nav-dots" id="nav-dots" role="tablist">
+        <button class="nav-dot" data-target="module-1" data-tooltip="The Village That Writes Everything Down" role="tab" aria-label="Module 1: The Village That Writes Everything Down"></button>
+        <button class="nav-dot" data-target="module-2" data-tooltip="The Clockwork Heart" role="tab" aria-label="Module 2: The Clockwork Heart"></button>
+        <button class="nav-dot" data-target="module-3" data-tooltip="Giving Memories Coordinates" role="tab" aria-label="Module 3: Giving Memories Coordinates"></button>
+        <button class="nav-dot" data-target="module-4" data-tooltip="What Matters Right Now" role="tab" aria-label="Module 4: What Matters Right Now"></button>
+        <button class="nav-dot" data-target="module-5" data-tooltip="Trust, But Verify" role="tab" aria-label="Module 5: Trust, But Verify"></button>
+      </div>
+    </div>
+  </nav>
+
+  <main id="main">
+    <!-- modules/*.html content is assembled here by build.sh -->
+<section class="module" id="module-1" style="background: var(--color-bg-warm)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">01</span>
+      <h1 class="module-title">The Village That Writes Everything Down</h1>
+      <p class="module-subtitle">How a tiny AI village turns "something happened" into a fact it can remember forever.</p>
+    </header>
+
+    <div class="module-body">
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">A Village That Runs Itself</h2>
+
+        <p>Picture a lighthouse keeper's logbook. Nothing officially happened at the lighthouse unless it was written down — and every entry says exactly where, when, and why. promptworld runs on that same idea, except the lighthouse is a tiny village and the keeper never sleeps.</p>
+
+        <div class="icon-rows" style="margin: var(--space-6) 0;">
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-2)">🗺️</div>
+            <div>
+              <strong>A grid the villagers live on</strong>
+              <p>The whole world is a <span class="term" data-definition="A grid is the world divided into equal squares. Think of it like graph paper — every square (called a tile) has an exact address.">64×64 grid of tiles</span> — a small town's worth of ground.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-1)">🧍</div>
+            <div>
+              <strong>Villagers with real needs</strong>
+              <p>Each villager is a small <span class="term" data-definition="An AI agent is a program that senses what's happening around it and decides what to do next on its own, instead of following one fixed script.">AI agent</span> with hunger, warmth, and rest to manage, a body that can get hurt, and a private memory only she can see.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-4)">⏱️</div>
+            <div>
+              <strong>A clock that never stops</strong>
+              <p>promptworld is an always-on <span class="term" data-definition="A simulation daemon is a single program that keeps a whole miniature world running — moving time forward, moment by moment — for as long as the computer is on, even with nobody watching.">simulation daemon</span>: it advances one <span class="term" data-definition="A tick is one step of the game clock. In promptworld, one tick equals one game-second — the world's smallest unit of time.">tick</span> — one game‑second — at a time, forever.</p>
+            </div>
+          </div>
+        </div>
+
+        <div style="background: var(--color-surface); border-left: 3px solid var(--color-accent); border-radius: var(--radius-sm); padding: var(--space-5) var(--space-6); margin: var(--space-6) 0; box-shadow: var(--shadow-sm);">
+          <strong style="color: var(--color-accent);">The promise of this course</strong>
+          <p style="margin: var(--space-1) 0 0;">By the end, you'll know exactly how these AI villagers remember — and how to design memory into your own AI projects on purpose, instead of leaving it to chance.</p>
+        </div>
+
+        <p>Now watch one villager for thirty seconds. She's hunting. Her spear snaps on its very last use. A minute later she's telling a friend about it. That ordinary little moment is about to become a permanent, structured fact — with a number attached to how much it mattered.</p>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Anatomy of a Memory</h2>
+
+        <p>A villager's memory is never a vague impression. It's a concrete record with exact parts — the moment it's born, it already knows when, how important, what, where, and why.</p>
+
+        <div style="background: var(--color-surface); border-radius: var(--radius-md); box-shadow: var(--shadow-md); padding: var(--space-6); margin: var(--space-8) 0; font-family: var(--font-mono); font-size: var(--text-base); line-height: 1.9; text-align: center;">
+          <span style="border-bottom: 3px solid var(--color-actor-4); padding-bottom: 2px;">Day 3 07:12</span>
+          <span style="border-bottom: 3px solid var(--color-actor-1); padding-bottom: 2px;">(8★)</span>
+          <span style="border-bottom: 3px solid var(--color-actor-3); padding-bottom: 2px;">My spear broke</span>
+          <span style="border-bottom: 3px solid var(--color-actor-5); padding-bottom: 2px;">at the river (12,31)</span>
+          <span style="border-bottom: 3px solid var(--color-actor-2); padding-bottom: 2px;">— hunting for the village.</span>
+        </div>
+
+        <div class="icon-rows">
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-4)">🕐</div>
+            <div>
+              <strong>When</strong>
+              <p><code>Day 3 07:12</code> — the exact game moment it happened, one tick at a time.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-1)">⭐</div>
+            <div>
+              <strong>How important</strong>
+              <p><code>(8★)</code> — a score from 1 to 10 for how formative this moment was.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-3)">📝</div>
+            <div>
+              <strong>What happened</strong>
+              <p><code>My spear broke</code> — the plain-language fact, in her own words.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-5)">📍</div>
+            <div>
+              <strong>Where</strong>
+              <p><code>at the river (12,31)</code> — the place, with exact <span class="term" data-definition="Coordinates are a pair of numbers that pinpoint one exact spot on a grid — the same way (12, 31) can mark a spot on a map.">coordinates</span>, baked in the instant it happened.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-2)">🎯</div>
+            <div>
+              <strong>Why</strong>
+              <p><code>hunting for the village</code> — the reason she was even out there.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Not All Moments Are Equal</h2>
+
+        <p>A newsroom editor doesn't give a lost umbrella the same headline as a fire downtown — every story gets ranked by how big a deal it is. promptworld ranks memories the same way, with a plain <span class="term" data-definition="A constant is a named value that never changes once it's set. Code can say salHunt instead of a bare number 4, so nobody has to remember what 4 means.">constant</span> from 1 to 10.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code>
+<span class="code-line"><span class="code-keyword">const</span> (</span>
+<span class="code-line"><span class="code-property">salTalk</span>           <span class="code-operator">=</span> <span class="code-number">3</span></span>
+<span class="code-line"><span class="code-property">salHunt</span>           <span class="code-operator">=</span> <span class="code-number">4</span></span>
+<span class="code-line"><span class="code-property">salFire</span>           <span class="code-operator">=</span> <span class="code-number">5</span></span>
+<span class="code-line"><span class="code-property">salShelter</span>        <span class="code-operator">=</span> <span class="code-number">6</span></span>
+<span class="code-line"><span class="code-property">salStarvingForage</span> <span class="code-operator">=</span> <span class="code-number">5</span></span>
+<span class="code-line"><span class="code-property">salColdNight</span>      <span class="code-operator">=</span> <span class="code-number">5</span></span>
+<span class="code-line"><span class="code-property">salNearDeath</span>      <span class="code-operator">=</span> <span class="code-number">9</span></span>
+<span class="code-line"><span class="code-property">salWitnessDeath</span>   <span class="code-operator">=</span> <span class="code-number">10</span></span>
+<span class="code-line">)</span>
+            </code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">Start a list of named numbers — so the code can say "this kind of moment" instead of a bare digit nobody remembers the meaning of.</p>
+              <p class="tl">Having a chat: worth 3 out of 10. Routine, easily forgotten.</p>
+              <p class="tl">Going hunting: worth 4 — a little more memorable than small talk.</p>
+              <p class="tl">Building a fire: worth 5 — a small survival win.</p>
+              <p class="tl">Building shelter: worth 6 — a bigger survival win than a fire.</p>
+              <p class="tl">Foraging for food while starving: worth 5 — as memorable as building a fire.</p>
+              <p class="tl">Surviving a freezing night: worth 5 as well.</p>
+              <p class="tl">Nearly dying: worth 9 out of 10 — one of the most formative things that can happen to her.</p>
+              <p class="tl">Watching someone else die: the maximum, 10 — the single most formative memory possible.</p>
+              <p class="tl">End of the list.</p>
+            </div>
+          </div>
+        </div>
+
+        <p>Notice the pattern: routine moments score low, survival wins score in the middle, and life‑or‑death moments top the scale.</p>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Captured the Instant It Happens</h2>
+
+        <p>A Polaroid camera doesn't ask you to describe the room afterward — it captures where you were and what the light looked like the second you press the shutter. The <span class="term" data-definition="A function is a self-contained chunk of code that does one specific job and can be reused by name whenever it's needed.">function</span> that creates a memory works the same way.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code>
+<span class="code-line"><span class="code-keyword">func</span> <span class="code-function">situatedMemoryEvent</span>(tick int64, agent, salience int, where *MemoryPlace, why, origin, format string, args ...any) store.Event {</span>
+<span class="code-line"><span class="code-keyword">return</span> store.Event{</span>
+<span class="code-line">Tick: tick, Type: <span class="code-string">"agent.memory_added"</span>,</span>
+<span class="code-line">Payload: <span class="code-function">mustPayload</span>(MemoryAddedPayload{</span>
+<span class="code-line">Agent: agent, Text: <span class="code-function">situateText</span>(fmt.Sprintf(format, args...), where, why),</span>
+<span class="code-line">Salience: salience, Subject: -1, Where: where, Why: why, Origin: origin,</span>
+<span class="code-line">}),</span>
+<span class="code-line">}</span>
+<span class="code-line">}</span>
+            </code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">A recipe for making one memory. It needs: the moment, who felt it, how important it was, where, why, and how the sentence should read.</p>
+              <p class="tl">Package all of that up into one <span class="term" data-definition="An event is a single fact, permanently written to the village's official history — like one dated entry in the lighthouse logbook.">event</span> — one write to the village's official history.</p>
+              <p class="tl">Stamp it with the exact tick it happened, and label it as a brand-new memory.</p>
+              <p class="tl">Start filling in the memory's actual details.</p>
+              <p class="tl">Who it belongs to, and the memory's sentence — with the place and reason already woven in.</p>
+              <p class="tl">The importance score, the place, the reason, and whether she did it, saw it, or heard about it.</p>
+              <p class="tl">Finish packaging the memory's details.</p>
+              <p class="tl">Finish packaging the event.</p>
+              <p class="tl">Hand the finished memory off to be permanently recorded.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">Key insight</strong>
+            <p>Where and why are stamped <em>at the moment the event happens</em>, never reconstructed later. That context is cheap to grab right now and nearly impossible to get right after the fact — a pattern worth stealing for any AI project you build.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">More Than a Number</h2>
+
+        <p>Salience isn't just a rating on a shelf — it's a control signal. It decides whether a memory changes what a villager does next.</p>
+
+        <div style="display: flex; gap: var(--space-2); flex-wrap: wrap; justify-content: center; margin: var(--space-8) 0;">
+          <div style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 600; background: var(--color-surface); border: 2px solid var(--color-border); color: var(--color-text-muted);">1</div>
+          <div style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 600; background: var(--color-surface); border: 2px solid var(--color-border); color: var(--color-text-muted);">2</div>
+          <div style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 600; background: var(--color-surface); border: 2px solid var(--color-border); color: var(--color-text-muted);">3</div>
+          <div style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 700; background: var(--color-accent); border: 2px solid var(--color-accent); color: white; box-shadow: var(--shadow-md);">4</div>
+          <div style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 600; background: var(--color-surface); border: 2px solid var(--color-border); color: var(--color-text-muted);">5</div>
+          <div style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 600; background: var(--color-surface); border: 2px solid var(--color-border); color: var(--color-text-muted);">6</div>
+          <div style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 600; background: var(--color-surface); border: 2px solid var(--color-border); color: var(--color-text-muted);">7</div>
+          <div style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 600; background: var(--color-surface); border: 2px solid var(--color-border); color: var(--color-text-muted);">8</div>
+          <div style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 700; background: var(--color-accent); border: 2px solid var(--color-accent); color: white; box-shadow: var(--shadow-md);">9</div>
+          <div style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 700; background: var(--color-accent); border: 2px solid var(--color-accent); color: white; box-shadow: var(--shadow-md);">10</div>
+        </div>
+
+        <div class="icon-rows">
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-2)">🗣️</div>
+            <div>
+              <strong>4 and up: tellable gossip</strong>
+              <p>A memory about a neighbor becomes something she'll actually repeat to someone else.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-1)">🚨</div>
+            <div>
+              <strong>9 and up: interrupts her thinking</strong>
+              <p>Big enough that it cuts through whatever she was already doing or planning.</p>
+            </div>
+          </div>
+        </div>
+
+        <p>Every memory also records its <strong>origin</strong> — did she do it, see it, or just hear about it? That's how she can honestly say "I saw it myself."</p>
+
+        <div class="pattern-cards">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-1)">
+            <div class="pattern-icon" style="background: var(--color-actor-1)">✋</div>
+            <h4 class="pattern-title">Action</h4>
+            <p class="pattern-desc">She did it herself — her own spear, her own hands.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-2)">
+            <div class="pattern-icon" style="background: var(--color-actor-2)">👀</div>
+            <h4 class="pattern-title">Witness</h4>
+            <p class="pattern-desc">She saw it happen with her own eyes, firsthand.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-3)">
+            <div class="pattern-icon" style="background: var(--color-actor-3)">👂</div>
+            <h4 class="pattern-title">Report</h4>
+            <p class="pattern-desc">Someone else told her — secondhand, gossip passed along.</p>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">😇</div>
+          <div class="callout-content">
+            <strong class="callout-title">Even the divine gets ranked</strong>
+            <p>Dreams from the world's angel score an 8 — high, but not the highest. As the code's own comment puts it: "the divine reliably surfaces without outranking real trauma."</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Check Your Understanding</h2>
+
+        <div class="quiz-container" id="quiz-module1">
+          <div class="quiz-question-block"
+               data-correct="option-b"
+               data-explanation-right="Exactly — salience isn't just a rating, it's a gate. At 4 or higher, a memory about someone else becomes something she'll actually repeat as gossip."
+               data-explanation-wrong="Not quite. The words she'd use matter for how the story sounds, but whether she says anything at all comes down to that salience number crossing the gossip threshold.">
+            <h3 class="quiz-question">A villager watches a neighbor steal from a chest. Which matters more for whether she'll gossip about it: the memory's text, or its salience number?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The text — the exact words she'd use to describe it</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The salience number — high enough, and it becomes tellable gossip</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Neither — every memory gets shared with someone eventually</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="option-b"
+               data-explanation-right="Exactly — this is the situatedMemoryEvent pattern. Capture the where and why while it's happening; by the time you'd try to query it back out, those details are gone for good."
+               data-explanation-wrong="Not quite — think about what's actually hard to get right later: not speed, but accuracy. Once the moment passes, the exact context is gone forever.">
+            <h3 class="quiz-question">You're building a shopping assistant with AI memory. promptworld stamps the where/why context <em>at the moment</em> an event happens, instead of reconstructing it later. Why?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Because it's cheaper on storage space</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Because context is easy to capture in the moment, but nearly impossible to accurately rebuild afterward</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Because it makes the program run faster later on</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="option-b"
+               data-explanation-right="Exactly — situatedMemoryEvent bakes in all five pieces the instant the spear snaps: the text, a salience number, where, why, and origin (she felt it herself, so origin = action)."
+               data-explanation-wrong="Not quite — go back to the anatomy of a memory: every one of those pieces (text, stars, place, why, and how she knows) is captured the moment the event happens, not reconstructed afterward.">
+            <h3 class="quiz-question">A villager's hunting spear snaps on its last use. Trace it into a memory — which parts of the record actually get filled in?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Just a sentence describing what happened</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The sentence, a salience number, where it happened, why she was there, and how she knows (origin)</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Only the sentence and a salience number — location and reason get filled in later, when she recalls it</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module1')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module1')">Try Again</button>
+        </div>
+
+        <p style="color: var(--color-text-secondary); font-style: italic; margin-top: var(--space-10);">Next: <strong>The Clockwork Heart</strong> — why every one of these events lands in one long, unchangeable history that can replay perfectly, and why no AI is ever allowed to touch it directly.</p>
+      </section>
+
+    </div>
+  </div>
+</section>
+<section class="module" id="module-2" style="background: var(--color-bg)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">02</span>
+      <h1 class="module-title">The Clockwork Heart</h1>
+      <p class="module-subtitle">Why replay never lies</p>
+    </header>
+
+    <div class="module-body">
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Kill it. Restart it. Nothing changes.</h2>
+        <p>Picture a player piano. The paper roll has holes punched in it, and any piano that loads that roll plays back the identical performance — same notes, same timing, forever. The pianist who punched the roll doesn't need to be in the room anymore.</p>
+        <p>You can stop the promptworld
+          <span class="term" data-definition="A background program that keeps running without a visible window, quietly doing its job until told to stop.">daemon</span>
+          mid-tick, delete every scrap of its running memory, and restart it cold. The village comes back
+          <span class="term" data-definition="Every single byte matches exactly — not just close, but a perfect, bit-for-bit copy of the stored data.">byte-for-byte identical</span>, every villager in the exact spot, every memory intact.
+        </p>
+        <p><strong>How is that possible?</strong> This module is the answer — and it's the same trick behind one of the most valuable patterns you can ask an AI coding assistant to build for you.</p>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The one law</h2>
+        <p>The sim runs on a single rule: state only ever changes by applying recorded events, in order. Three mechanisms make that rule unbreakable.</p>
+
+        <div class="pattern-cards">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-4)">
+            <div class="pattern-icon" style="background: var(--color-actor-4)">📜</div>
+            <h4 class="pattern-title">The append-only ledger</h4>
+            <p class="pattern-desc">Every world is a
+              <span class="term" data-definition="A lightweight database that lives entirely in one file on disk — no separate server required.">SQLite</span>
+              file with an
+              <span class="term" data-definition="Data can only ever be added, never removed or rewritten — like ink on paper instead of pencil.">append-only</span>
+              <span class="term" data-definition="A record of everything that has happened, in the order it happened — the single source of truth for the whole system.">event log</span>. Deleting a row is impossible by design — a
+              <span class="term" data-definition="A rule the database itself enforces automatically on every write, no matter what the application code tries to do.">database trigger</span>
+              forbids it, and every
+              <span class="term" data-definition="A counter that goes up by exactly one for each event, with no skips — so it's easy to prove nothing is missing.">sequence number</span>
+              is checked for gaps.
+            </p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-accent)">
+            <div class="pattern-icon" style="background: var(--color-accent)">⚙️</div>
+            <h4 class="pattern-title">The reducer</h4>
+            <p class="pattern-desc">One function —
+              <span class="term" data-definition="A function whose only job is: take the current state plus one event, and return the new state. It's the single gatekeeper for every change.">the reducer</span> —
+              is the ONLY way state changes. The exact same function runs live and during
+              <span class="term" data-definition="Rebuilding the exact state of the world from scratch by loading the newest saved snapshot and re-applying every event after it, in order.">replay</span>: load the newest verified
+              <span class="term" data-definition="A saved copy of the entire state at one moment in time — a fast starting point so replay doesn't have to start from zero.">snapshot</span>, then re-apply.
+            </p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-3)">
+            <div class="pattern-icon" style="background: var(--color-actor-3)">🎲</div>
+            <h4 class="pattern-title">Deterministic dice</h4>
+            <p class="pattern-desc">Even randomness is
+              <span class="term" data-definition="Given the same inputs, always producing the exact same output — no surprises, no variance.">deterministic</span>: every random draw comes from the world's
+              <span class="term" data-definition="A starting number fed into a random-number generator so its 'random' output is actually reproducible every time.">seed</span>, a purpose, and the current
+              <span class="term" data-definition="One discrete step of simulated time — the sim's version of a clock tick.">tick</span>. Replay rolls the exact same dice.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">Key insight</strong>
+            <p>This is
+              <span class="term" data-definition="An architecture where state is never edited directly — only ever produced by replaying a permanent, ordered log of events. Recognized across the industry as event sourcing.">event sourcing</span> —
+              one of the most powerful patterns you can ask an AI assistant for. If your own app's data ever gets corrupted, or you've wished you could rewind and see exactly what happened, this is the pattern to name.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Two doors, and nothing else</h2>
+        <p>The AI mind — the part that decides what a villager wants — runs entirely outside this clockwork. Its output can only enter as a recorded event, and only through two guarded doors.</p>
+
+        <div style="display:flex; flex-direction:column; align-items:center; gap: var(--space-4); margin: var(--space-8) 0;">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-1); max-width: 340px; text-align: center;">
+            <div class="pattern-icon" style="background: var(--color-actor-1); margin: 0 auto;">🧠</div>
+            <h4 class="pattern-title">The Mind — outside</h4>
+            <p class="pattern-desc">The AI reasoning about villagers. It has opinions. It has no direct wires into the clockwork.</p>
+          </div>
+          <span class="flow-arrow" aria-hidden="true">↓</span>
+          <div style="display:flex; gap: var(--space-4); flex-wrap: wrap; justify-content: center;">
+            <div class="pattern-card" style="border-top: 3px solid var(--color-accent); max-width: 220px; text-align: center;">
+              <div class="pattern-icon" style="background: var(--color-accent); margin: 0 auto;">🚪</div>
+              <h4 class="pattern-title">Intent door</h4>
+              <p class="pattern-desc">What a villager decides to do next.</p>
+            </div>
+            <div class="pattern-card" style="border-top: 3px solid var(--color-actor-4); max-width: 220px; text-align: center;">
+              <div class="pattern-icon" style="background: var(--color-actor-4); margin: 0 auto;">🚪</div>
+              <h4 class="pattern-title">Social door</h4>
+              <p class="pattern-desc">A
+                <span class="term" data-definition="An explicit list of the only things allowed through — anything not on the list is automatically rejected.">whitelisted</span> set of event types. Nothing else gets in.
+              </p>
+            </div>
+          </div>
+          <span class="flow-arrow" aria-hidden="true">↓</span>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-3); max-width: 340px; text-align: center;">
+            <div class="pattern-icon" style="background: var(--color-actor-3); margin: 0 auto;">⚙️</div>
+            <h4 class="pattern-title">The Clockwork — inside</h4>
+            <p class="pattern-desc">The deterministic sim. Nothing enters except through a door.</p>
+          </div>
+        </div>
+        <p style="text-align:center; color: var(--color-text-muted); font-size: var(--text-sm);">Arrows point only inward. There is no door that lets the Clockwork reach back out to the Mind.</p>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Watch someone try to skip the doors</h2>
+        <p>The Mind, the Clockwork, and the Event Log, mid-argument. Step through it — or play it all at once.</p>
+
+        <div class="chat-window" id="chat-module2">
+          <div class="chat-messages">
+            <div class="chat-message" data-msg="0" data-sender="mind" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-1)">🧠</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-1)">Mind (AI)</span>
+                <p>The villager should go hunt — I've decided.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="1" data-sender="clockwork" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-accent)">⚙️</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-accent)">Clockwork (sim)</span>
+                <p>Write it in the log first. Nothing is real until it's an event.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="2" data-sender="log" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-4)">🗄️</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-4)">Event Log</span>
+                <p>Recorded: agent.intent_set, seq 4,102.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="3" data-sender="clockwork" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-accent)">⚙️</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-accent)">Clockwork (sim)</span>
+                <p>NOW she hunts. And in every replay, she'll hunt at exactly this tick, forever.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="4" data-sender="mind" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-1)">🧠</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-1)">Mind (AI)</span>
+                <p>What if I just tweak her hunger directly? It's faster—</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="5" data-sender="clockwork" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-accent)">⚙️</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-accent)">Clockwork (sim)</span>
+                <p>Denied. You have two doors. Use them.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="chat-typing" id="chat-typing" style="display:none">
+            <div class="chat-avatar" id="chat-module2-typing-avatar">?</div>
+            <div class="chat-typing-dots">
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+            </div>
+          </div>
+
+          <div class="chat-controls">
+            <button class="btn chat-next-btn">Next Message</button>
+            <button class="btn chat-all-btn">Play All</button>
+            <button class="btn chat-reset-btn">Replay</button>
+            <span class="chat-progress"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Even a "thought" has to mail itself in</h2>
+        <p>Spec 042 added three new entries to the social door's whitelist. Even the AI's own understanding of a memory — its
+          <span class="term" data-definition="A list of numbers that represents the 'meaning' of a piece of text, produced by an AI model — covered fully in the next module.">embedding vector</span> —
+          has to enter as a recorded
+          <span class="term" data-definition="The actual cargo an event carries — the data attached to 'what happened,' separate from the event's type label.">payload</span>, never computed live inside the Clockwork.
+        </p>
+
+        <p style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--space-2);">internal/sim/loop.go — excerpt (three of the whitelist's entries; the real map has more)</p>
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code>
+<span class="code-line"><span class="code-keyword">var</span> injectSocialWhitelist = <span class="code-keyword">map</span>[string]bool{</span>
+<span class="code-line">	<span class="code-string">"agent.memory_embedded"</span>:    <span class="code-keyword">true</span>,</span>
+<span class="code-line">	<span class="code-string">"agent.situation_embedded"</span>: <span class="code-keyword">true</span>,</span>
+<span class="code-line">	<span class="code-string">"cog.memory_divergence"</span>:    <span class="code-keyword">true</span>,</span>
+<span class="code-line">}</span>
+            </code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">Start a list of every event type the social door will let through.</p>
+              <p class="tl">Yes: a recorded memory embedding is allowed in.</p>
+              <p class="tl">Yes: a recorded situation embedding is allowed in too.</p>
+              <p class="tl">Yes: a note that the AI's memory of something has diverged from the record is allowed in.</p>
+              <p class="tl">That's the whole list. Anything not on it gets rejected automatically.</p>
+            </div>
+          </div>
+        </div>
+
+        <p>Once that event is recorded, the reducer is what actually applies it — and it does exactly what the log says, nothing more.</p>
+
+        <p style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--space-2);">internal/sim/state.go — excerpt from the reducer's switch</p>
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code>
+<span class="code-line"><span class="code-keyword">switch</span> e.Type {</span>
+<span class="code-line">	<span class="code-keyword">case</span> <span class="code-string">"agent.memory_embedded"</span>:</span>
+<span class="code-line">		<span class="code-comment">// Spec 042: attach a recorded embedding to the {agent, mem_seq} memory,</span></span>
+<span class="code-line">		<span class="code-comment">// copy-verbatim — the reducer never computes or inspects a vector</span></span>
+<span class="code-line">		<span class="code-comment">// (model-free sim doctrine, spec 030 lineage). A missing target is a</span></span>
+<span class="code-line">		<span class="code-comment">// deliberate NO-OP, never an error: the agent may have died or the</span></span>
+<span class="code-line">		<span class="code-comment">// memory consolidated away in the async gap. Newest-first scan: the</span></span>
+<span class="code-line">		<span class="code-comment">// companion trails its memory by moments, so the target is near the end.</span></span>
+<span class="code-line">		<span class="code-keyword">var</span> p MemoryEmbeddedPayload</span>
+<span class="code-line">		<span class="code-keyword">if</span> err := <span class="code-function">json.Unmarshal</span>(e.Payload, &p); err != <span class="code-keyword">nil</span> {</span>
+<span class="code-line">			<span class="code-keyword">return</span> <span class="code-function">fmt.Errorf</span>(<span class="code-string">"apply %s: %w"</span>, e.Type, err)</span>
+<span class="code-line">		}</span>
+<span class="code-line">		a, err := <span class="code-function">agent</span>(p.Agent)</span>
+<span class="code-line">		<span class="code-keyword">if</span> err != <span class="code-keyword">nil</span> {</span>
+<span class="code-line">			<span class="code-keyword">return</span> err</span>
+<span class="code-line">		}</span>
+<span class="code-line">}</span>
+            </code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">Look at what kind of event this is, and handle it based on that.</p>
+              <p class="tl">This is the case for: a recorded memory embedding — the AI's take on a memory.</p>
+              <p class="tl">A comment laying out the plan: copy the embedding onto the matching memory exactly as recorded.</p>
+              <p class="tl">The reducer never calculates or double-checks the vector itself — it just trusts the record.</p>
+              <p class="tl">That follows the project's rule: the simulation itself never runs any AI model.</p>
+              <p class="tl">If the matching memory can't be found, that's not treated as a crash — it's a deliberate
+                <span class="term" data-definition="A situation the code deliberately does nothing about, on purpose — not a bug, not an error, just 'nothing to do here.'">NO-OP</span>, expected and fine.
+              </p>
+              <p class="tl">The villager might have died, or the memory might have already faded away, in the time it took the AI to respond.</p>
+              <p class="tl">The AI's answer arrives slightly after the memory was made, so the search starts from the newest memories first.</p>
+              <p class="tl">Unpack the event's payload into a shape the code can read.</p>
+              <p class="tl">Try to read that payload as
+                <span class="term" data-definition="A common text format for structured data — readable by both humans and machines, and used constantly to send data between programs.">JSON</span>; if it's broken, stop here.
+              </p>
+              <p class="tl">Report exactly which event failed, and why.</p>
+              <p class="tl">End of that error check.</p>
+              <p class="tl">Look up the villager this embedding belongs to.</p>
+              <p class="tl">If that villager can't be found...</p>
+              <p class="tl">...stop and report the problem.</p>
+              <p class="tl">End of that check.</p>
+              <p class="tl">End of the event-type check.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Check your understanding</h2>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">🔭</div>
+          <div class="callout-content">
+            <strong class="callout-title">Where this is headed</strong>
+            <p>So if we want AI to help with memory, the AI must live outside the Clockwork and mail its work in — through a door, as a recorded event, like everything else.</p>
+          </div>
+        </div>
+
+        <div class="quiz-container" id="quiz-module2">
+          <div class="quiz-question-block"
+               data-correct="option-a"
+               data-explanation-right="Exactly. The reducer is the ONLY legal way state can change — so a replay divergence always traces back to state that changed some other way, or an input (like the real-world clock) that wasn't part of the recorded event and seed."
+               data-explanation-wrong="Not quite. Think about the one law from this module: state can only change by applying a recorded event through the reducer. If replay ever disagrees with the original run, something broke that rule — either state changed outside the reducer, or a non-recorded input snuck in.">
+            <h3 class="quiz-question">A replayed world ends up different from the original run — same event log, same seed, but villagers end up in different spots. Based on this module, where must the bug be hiding?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Somewhere, code changed state directly instead of going through the reducer — or read something outside the event log and seed, like the real-world clock.</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The AI mind reasoned differently the second time around.</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The database file was moved to a different folder before replay.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="option-a"
+               data-explanation-right="Exactly — event sourcing. Ask for an append-only log of everything that happened plus one function that rebuilds state by replaying it, and 'undo anything' falls out for free: just replay to an earlier point."
+               data-explanation-wrong="Not quite. More backups or manual edits don't give you a rewind button — they only protect a single snapshot, or invite the exact kind of unrecorded change this module warned about. What you want is the pattern where state is rebuilt by replaying a permanent log.">
+            <h3 class="quiz-question">You want your own app to have an "undo anything" feature. Based on this module, what's the pattern to ask an AI coding assistant to build?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Event sourcing — an append-only log of what happened, plus a single function that rebuilds state by replaying it.</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>A bigger database with more frequent backups.</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Let users manually edit the saved file whenever something looks wrong.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="option-a"
+               data-explanation-right="Exactly. AI models aren't guaranteed to produce bit-identical output run after run — so if replay recomputed the embedding live, two replays of the same world could disagree. Recording it means replay never depends on the model at all."
+               data-explanation-wrong="Not quite. Speed isn't the reason, and the whitelist is about event types, not data types — it already allows structured payloads, not just plain text. The real reason is about whether re-running an AI model twice is guaranteed to give the exact same numbers.">
+            <h3 class="quiz-question">Why must the AI's embedding vectors be recorded as events instead of recomputed live during replay?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Re-running the AI model during replay might not produce the exact same numbers twice — and replay has to be byte-for-byte identical no matter what.</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Because embeddings take too long to compute.</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Because the whitelist only allows text, not numbers.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module2')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module2')">Try Again</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>
+<section class="module" id="module-3" style="background: var(--color-bg-warm); --color-accent: var(--color-info); --color-accent-light: var(--color-info-light); --color-accent-muted: var(--color-info);">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">03</span>
+      <h1 class="module-title">Giving Memories Coordinates</h1>
+      <p class="module-subtitle">How the village turns raw text into numbers a computer can compare — and why those numbers get recorded once, never recomputed.</p>
+    </header>
+
+    <div class="module-body">
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">A Star Chart for Memories</h2>
+        <p>How would a computer know that "my spear broke at the river" and "I lost my axe by the water" are about the same kind of trouble? Not a single word matches between them.</p>
+        <p>promptworld solves this by giving every memory a set of sky coordinates. An <span class="term" data-definition="An embedding is a list of numbers a model generates from a piece of text so that texts with similar meaning end up with similar numbers — every idea gets its own coordinates.">embedding</span> model reads a memory's exact text and returns a <span class="term" data-definition="A vector is that list of numbers itself. Here it's 384 numbers that together pin one memory's meaning to one spot on an imaginary map.">vector</span> — 384 numbers, positioned so that similar meanings land near each other, like stars in the same constellation.</p>
+
+        <div style="position:relative;height:320px;background:var(--color-bg-code);border-radius:var(--radius-lg);box-shadow:var(--shadow-md);margin:var(--space-8) 0;overflow:hidden;">
+          <div style="position:absolute;left:6%;top:14%;background:color-mix(in srgb, var(--color-actor-2) 30%, var(--color-bg-code));border:1px solid var(--color-actor-2);color:#ECE9E4;padding:var(--space-1) var(--space-3);border-radius:var(--radius-full);font-size:var(--text-xs);white-space:nowrap;box-shadow:var(--shadow-sm);">"My spear broke at the river"</div>
+          <div style="position:absolute;left:20%;top:30%;background:color-mix(in srgb, var(--color-actor-2) 30%, var(--color-bg-code));border:1px solid var(--color-actor-2);color:#ECE9E4;padding:var(--space-1) var(--space-3);border-radius:var(--radius-full);font-size:var(--text-xs);white-space:nowrap;box-shadow:var(--shadow-sm);">"I lost my axe by the water"</div>
+          <div style="position:absolute;left:4%;top:46%;background:color-mix(in srgb, var(--color-actor-2) 30%, var(--color-bg-code));border:1px solid var(--color-actor-2);color:#ECE9E4;padding:var(--space-1) var(--space-3);border-radius:var(--radius-full);font-size:var(--text-xs);white-space:nowrap;box-shadow:var(--shadow-sm);">"The current swept away my net"</div>
+
+          <div style="position:absolute;left:64%;top:60%;background:color-mix(in srgb, var(--color-actor-4) 30%, var(--color-bg-code));border:1px solid var(--color-actor-4);color:#ECE9E4;padding:var(--space-1) var(--space-3);border-radius:var(--radius-full);font-size:var(--text-xs);white-space:nowrap;box-shadow:var(--shadow-sm);">"The harvest festival was joyous"</div>
+          <div style="position:absolute;left:78%;top:76%;background:color-mix(in srgb, var(--color-actor-4) 30%, var(--color-bg-code));border:1px solid var(--color-actor-4);color:#ECE9E4;padding:var(--space-1) var(--space-3);border-radius:var(--radius-full);font-size:var(--text-xs);white-space:nowrap;box-shadow:var(--shadow-sm);">"We danced until sunset at the festival"</div>
+
+          <div style="position:absolute;left:42%;top:8%;background:color-mix(in srgb, var(--color-actor-3) 30%, var(--color-bg-code));border:1px solid var(--color-actor-3);color:#ECE9E4;padding:var(--space-1) var(--space-3);border-radius:var(--radius-full);font-size:var(--text-xs);white-space:nowrap;box-shadow:var(--shadow-sm);">"A stranger asked about the road"</div>
+          <div style="position:absolute;left:58%;top:32%;background:color-mix(in srgb, var(--color-actor-3) 30%, var(--color-bg-code));border:1px solid var(--color-actor-3);color:#ECE9E4;padding:var(--space-1) var(--space-3);border-radius:var(--radius-full);font-size:var(--text-xs);white-space:nowrap;box-shadow:var(--shadow-sm);">"My hut leaks when it rains"</div>
+          <div style="position:absolute;left:28%;top:78%;background:color-mix(in srgb, var(--color-actor-3) 30%, var(--color-bg-code));border:1px solid var(--color-actor-3);color:#ECE9E4;padding:var(--space-1) var(--space-3);border-radius:var(--radius-full);font-size:var(--text-xs);white-space:nowrap;box-shadow:var(--shadow-sm);">"Wolves howled near the fence"</div>
+        </div>
+        <p style="text-align:center;font-size:var(--text-xs);color:var(--color-text-muted);">This is a 2D cartoon of 384 dimensions — the real map has far more axes than a page can draw.</p>
+
+        <p>Similarity stops being a guess about matching words and becomes <span class="term" data-definition="Cosine similarity is a formula that compares two vectors and returns a score for how closely they point in the same direction. The closer to 1, the more alike two memories' meanings are — it turns similar meaning into a number you can sort by.">cosine similarity</span> — a distance you can actually measure.</p>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Watch a Memory Get Its Coordinates</h2>
+        <p>The <span class="term" data-definition="The event log is the village's single permanent diary. Every notable thing that happens gets written there, in order, and is never edited afterward.">event log</span> never computes a vector itself — that would break the <span class="term" data-definition="The clockwork is this course's name for the deterministic core of the simulation — the part that must produce the exact same result every time it replays the same history.">clockwork's</span> golden rule: same history in, same result out, forever. A helper living outside it does the work and mails the answer back in.</p>
+
+        <div class="flow-animation" data-steps='[
+          {"highlight":"flow-actor-1","label":"The event log emits agent.memory_added: \"My spear broke at the river.\""},
+          {"highlight":"flow-actor-2","label":"The embedder picks it up whenever it is ready. The clock keeps ticking either way.","packet":true,"from":"actor-1","to":"actor-2"},
+          {"highlight":"flow-actor-3","label":"The embedder hands the text to all-minilm, which returns 384 numbers.","packet":true,"from":"actor-2","to":"actor-3"},
+          {"highlight":"flow-actor-4","label":"The embedder mails agent.memory_embedded through the social door.","packet":true,"from":"actor-2","to":"actor-4"},
+          {"highlight":"flow-actor-5","label":"The reducer attaches the vector to the memory. It is now permanent history.","packet":true,"from":"actor-4","to":"actor-5"}
+        ]'>
+          <div class="flow-actors">
+            <div class="flow-actor" id="flow-actor-1">
+              <div class="flow-actor-icon">📜</div>
+              <span>Event Log</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-2">
+              <div class="flow-actor-icon">🛰️</div>
+              <span>Embedder</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-3">
+              <div class="flow-actor-icon">⭐</div>
+              <span>all-minilm</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-4">
+              <div class="flow-actor-icon">🚪</div>
+              <span>Social Door</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-5">
+              <div class="flow-actor-icon">⚙️</div>
+              <span>Reducer</span>
+            </div>
+          </div>
+
+          <div class="flow-packet" id="flow-packet"></div>
+
+          <div class="flow-step-label" id="flow-label">Click "Next Step" to begin</div>
+
+          <div class="flow-controls">
+            <button class="btn flow-next-btn">Next Step</button>
+            <button class="btn flow-reset-btn">Restart</button>
+            <span class="flow-progress"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The Clock Never Waits for the Embedder</h2>
+        <p>Step 2 of that animation is one small function. When a fresh batch of events arrives, the embedder either catches it immediately or lets it go — no waiting, no blocking, ever.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code>
+<span class="code-line"><span class="code-keyword">func</span> (e *Embedder) <span class="code-function">Observe</span>(events []store.Event) {</span>
+<span class="code-line">	<span class="code-keyword">select</span> {</span>
+<span class="code-line">	<span class="code-keyword">case</span> e.events <- events:</span>
+<span class="code-line">	<span class="code-keyword">default</span>:</span>
+<span class="code-line">	}</span>
+<span class="code-line">}</span>
+            </code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">This is Observe — the mail slot the embedder listens at for freshly logged events.</p>
+              <p class="tl">Try the following, but never sit around waiting for it to succeed.</p>
+              <p class="tl">If there is room, drop the new events onto the embedder's own <span class="term" data-definition="A channel is Go's built-in pipe for passing data between two parts of a program that run at the same time — one side drops something in, the other side picks it up.">channel</span>.</p>
+              <p class="tl">If there is no room — the embedder is still busy with the last batch — do nothing and move on.</p>
+              <p class="tl">End of the try-or-drop check.</p>
+              <p class="tl">End of Observe. The clockwork never had to pause for the embedder to catch up.</p>
+            </div>
+          </div>
+        </div>
+
+        <p>Think of it as a mail slot that holds exactly one envelope. If the embedder has not picked up the last delivery, a new one just bounces off the door — nothing jams, nothing waits.</p>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The Envelope the Embedder Mails Back</h2>
+        <p>Once all-minilm returns its 384 numbers, the embedder wraps them in a <span class="term" data-definition="A struct groups several related pieces of data under one name, like an index card with labeled fields — here, one card holds four labeled slots.">struct</span> and mails it through the social door as an agent.memory_embedded event.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code>
+<span class="code-line">	<span class="code-property">MemoryEmbeddedPayload</span> <span class="code-keyword">struct</span> {</span>
+<span class="code-line">		<span class="code-property">Agent</span>   <span class="code-keyword">int</span>       `<span class="code-string">json:"agent"</span>`</span>
+<span class="code-line">		<span class="code-property">MemSeq</span>  <span class="code-keyword">int64</span>     `<span class="code-string">json:"mem_seq"</span>`</span>
+<span class="code-line">		<span class="code-property">Vec</span>     <span class="code-keyword">[]float32</span> `<span class="code-string">json:"vec"</span>`</span>
+<span class="code-line">		<span class="code-property">Model</span>   <span class="code-keyword">string</span>    `<span class="code-string">json:"model"</span>`</span>
+<span class="code-line">	}</span>
+            </code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">The shape of the envelope itself — MemoryEmbeddedPayload, written as a <span class="term" data-definition="JSON is a plain-text way of writing structured data that nearly every programming language can read. It is the format these numbers travel in when mailed between parts of the system.">JSON</span> <span class="term" data-definition="A payload is the actual cargo inside a message — the data being delivered, as opposed to the address label wrapped around it.">payload</span>.</p>
+              <p class="tl">Agent: whose memory this is, by villager ID.</p>
+              <p class="tl">MemSeq: which memory, by its position number in that villager's own log.</p>
+              <p class="tl">Vec: the actual coordinates — the 384 numbers describing what the memory means.</p>
+              <p class="tl">Model: the name of the model that produced these numbers, recorded right alongside them.</p>
+              <p class="tl">That is the whole envelope. Four labeled fields, nothing hidden.</p>
+            </div>
+          </div>
+        </div>
+
+        <p>Notice what's missing: no timestamp saying "embed this now." The <span class="term" data-definition="The reducer is the code that reads the event log in order and rebuilds the village's current state from it — the same input always produces the same output.">reducer</span> is the only thing allowed to attach this vector to a memory's permanent record, and it always does so after the memory already exists — so having no vector yet is a perfectly legal, temporary state.</p>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Three Things Worth Knowing</h2>
+
+        <div class="icon-rows">
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-4)">📢</div>
+            <div>
+              <strong>Failure is loud, never a stall</strong>
+              <p>If the embedding model or its local <span class="term" data-definition="An endpoint is the specific local address a program calls to talk to a service — like a phone extension for one particular function.">endpoint</span> goes down, memories keep happening — they just stay vectorless. The operator sees exactly one warning, never a crash or a frozen village.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-3)">🗺️</div>
+            <div>
+              <strong>Different model, different chart</strong>
+              <p>Every vector is stamped with the model that produced it. Numbers from two different models are like coordinates from two different star charts — comparing them is meaningless, so the system refuses to.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-2)">🔥</div>
+            <div>
+              <strong>Kept warm on purpose</strong>
+              <p>all-minilm is tiny (about 46 MB) and gets pinned in memory at startup, so there is no <span class="term" data-definition="A cold start is the delay a system takes to get ready the very first time it is used — like an engine that runs rough until it warms up.">cold start</span> lag. The big chat models are deliberately left unpinned.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">🔥</div>
+          <div class="callout-content">
+            <strong class="callout-title">The One Line That Keeps It Warm</strong>
+            <p>Deep in internal/llm/providers.go, this single line is the reason there is no cold-start lag:</p>
+            <pre style="font-family: var(--font-mono); font-size: var(--text-sm); background: var(--color-bg-code); color: #CDD6F4; padding: var(--space-3) var(--space-4); border-radius: var(--radius-sm); white-space: pre-wrap; word-break: break-word; overflow-x: hidden; margin: var(--space-2) 0;">body, err := json.Marshal(map[string]any{"model": o.model, "keep_alive": -1})</pre>
+            <p><span class="term" data-definition="keep_alive is a setting sent to Ollama that controls how long it keeps a model loaded in memory after use. -1 means forever, which skips the delay of reloading it from disk on the next request.">keep_alive: -1</span> tells Ollama to never unload the model from memory — the delay only ever happens once, at startup.</p>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">Why Local, Why Recorded</strong>
+            <p>A cloud embedding <span class="term" data-definition="An API is a fixed set of requests a piece of software will respond to, so other programs can ask it to do things — like the buttons on a vending machine, but for code. A cloud API runs on someone else's servers, reached over the internet.">API</span> can return slightly different numbers for the exact same text on two different calls — harmless for a search bar, poison for a system that must <span class="term" data-definition="Replay means re-running the recorded event log from the start to rebuild the exact same state it produced the first time — used to reproduce, debug, or resume a simulation precisely.">replay</span> <span class="term" data-definition="Byte-identical means two outputs match exactly, down to the last byte — not just close enough, but literally identical data.">byte-identical</span> history. promptworld runs all-minilm locally through <span class="term" data-definition="Ollama is free software that runs small AI models directly on your own computer, instead of sending your text to a company's servers over the internet.">Ollama</span> and records the vector once, so replay never recomputes it — it only rereads it.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Check Your Bearings</h2>
+
+        <div class="quiz-container" id="quiz-module3">
+          <div class="quiz-question-block"
+               data-correct="option-b"
+               data-explanation-right="Exactly — cloud embedding APIs return slightly different vectors for the same text on different calls. Anything that must replay byte-identically treats the recorded vectors as the permanent record, not something to recompute on demand."
+               data-explanation-wrong="Not quite — the problem is not the model name, it is that the SAME text can produce DIFFERENT numbers on different calls to a cloud API. Recorded vectors are the stable ground truth; re-embedding on demand can quietly drift away from them.">
+            <h3 class="quiz-question">You ask an AI assistant to add semantic search to your notes app using a cloud embeddings API, and to cache the results forever. A colleague says "just re-embed on demand instead of caching." What breaks?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Nothing — a fresh call always returns the exact same numbers as the cached ones.</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>A fresh call may return slightly different numbers than what was cached, so on-demand re-embedding can quietly drift away from the stable, recorded ground truth.</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>It is fine as long as the API's model name stays the same across calls.</span>
+              </button>
+              <button class="quiz-option" data-value="option-d" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>It only matters if you switch to a different cloud provider later.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="option-b"
+               data-explanation-right="Right — this is the designed failure mode. If all-minilm or its local endpoint is down, memories still happen and the village keeps running; they just stay vectorless until the model comes back, with exactly one warning logged."
+               data-explanation-wrong="Not quite — the clue is 'the village runs fine.' The clockwork never blocks on the embedder, so a struggling embedding model shows up as memories quietly missing their vectors, not as a broken village.">
+            <h3 class="quiz-question">Villagers' new memories suddenly have no vectors, but the village otherwise runs fine. Where do you look first?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The event log is corrupted and needs to be rebuilt.</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The embedding model or its local endpoint is down — vectorless-but-alive is the designed failure mode, with exactly one warning logged.</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The reducer must have a bug that is silently dropping memory_embedded events.</span>
+              </button>
+              <button class="quiz-option" data-value="option-d" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The village clock has stalled and needs to be restarted.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="option-a"
+               data-explanation-right="Exactly — a memory has to exist before anyone can embed it, the model has to run before there is anything to mail, and the reducer can only attach a vector that has already arrived through the social door."
+               data-explanation-wrong="Not quite — trace it again from the start: nothing can be embedded before the log records it, and the reducer cannot attach a vector that has not arrived yet.">
+            <h3 class="quiz-question">Put the coordinate-giving process in the order it actually happens.</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Event Log emits the memory → Embedder picks it up → all-minilm returns 384 numbers → Embedder mails the result through the Social Door → Reducer attaches the vector.</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Embedder picks up the memory → Event Log emits it → all-minilm returns 384 numbers → Reducer attaches the vector → Embedder mails it through the Social Door.</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Event Log emits the memory → all-minilm returns 384 numbers → Embedder picks it up → Reducer attaches the vector → Embedder mails it through the Social Door.</span>
+              </button>
+              <button class="quiz-option" data-value="option-d" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Reducer attaches the vector → Event Log emits the memory → Embedder picks it up → all-minilm returns 384 numbers → Embedder mails it through the Social Door.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module3')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module3')">Try Again</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>
+<section class="module" id="module-4" style="background: var(--color-bg); --color-accent: var(--color-info); --color-accent-light: var(--color-info-light); --color-accent-muted: var(--color-info);">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">04</span>
+      <h1 class="module-title">What Matters Right Now</h1>
+      <p class="module-subtitle">A villager can hold thousands of memories, but only ten fit in her head at once. Here's how she decides which ten.</p>
+    </header>
+
+    <div class="module-body">
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Packing the Daypack</h2>
+        <p>Imagine packing a small daypack before setting out — you can't carry the whole closet. You pack what matters most, weighted by how fresh it still feels, and matched to where you're actually headed.</p>
+        <p>A villager's memory window works the same way. Every planning moment, promptworld scores her whole memory shelf and packs only the top ten.</p>
+
+        <div class="pattern-cards">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-1)">
+            <div class="pattern-icon" style="background: var(--color-actor-1)">🎯</div>
+            <h4 class="pattern-title">Weight by Importance</h4>
+            <p class="pattern-desc">Every memory carries a <span class="term" data-definition="Salience is a number a villager assigns a memory for how big a deal it felt at the time. A near-miss with a bear scores far higher than an ordinary breakfast.">salience</span> rating — how big a deal it felt at the time.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-4)">
+            <div class="pattern-icon" style="background: var(--color-actor-4)">⏳</div>
+            <h4 class="pattern-title">Fade with Age</h4>
+            <p class="pattern-desc">That importance isn't permanent. It quietly halves every game-day that passes — a forecast going stale.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-3)">
+            <div class="pattern-icon" style="background: var(--color-actor-3)">🧭</div>
+            <h4 class="pattern-title">Match the Trip</h4>
+            <p class="pattern-desc">Does this memory sit close to a fresh snapshot of right now? Rope matters at a river crossing; sunscreen doesn't.</p>
+          </div>
+        </div>
+
+        <p>Add the first two together, throw in two wildcard memories drawn at random from the oldest half of her shelf, and that's her ten-item daypack. This "importance plus relevance" recipe is the same one behind the famous <span class="term" data-definition="Generative Agents (Stanford, 2023) is a research paper that popularized giving AI characters memories retrieved by combining recency, importance, and relevance into one score — the same idea this module's formula is built from.">Generative Agents</span> paper — the go-to reference whenever someone says an AI assistant "forgets what matters."</p>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The Daypack Ranking Board</h2>
+        <p>Here's one villager's shelf at a single moment, scored against a fresh <span class="term" data-definition="A situation vector is a snapshot of right now — night or day, place, urgent needs, current intent, and who's nearby — turned into the same kind of coordinates as a memory, so the two can be compared.">situation vector</span>: dusk, at the river ford, hungry, trying to cross safely, alone.</p>
+
+        <div style="background: var(--color-bg-code); color: #ECE9E4; padding: var(--space-3) var(--space-5); border-radius: var(--radius-md); font-size: var(--text-sm); margin-bottom: var(--space-6); box-shadow: var(--shadow-sm);">
+          🎯 Right now: dusk &middot; at the river ford &middot; hungry &middot; trying to cross safely &middot; alone
+        </div>
+
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: var(--space-4);">
+
+          <div style="background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-5); box-shadow: var(--shadow-sm); border-top: 4px solid var(--color-accent);">
+            <div style="font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.05em; color: var(--color-accent);">PACKED</div>
+            <p style="font-size: var(--text-sm); margin: var(--space-2) 0;">"A stranger warned wolves prowl this ford at night."</p>
+            <div style="display:flex; justify-content:space-between; font-size: var(--text-xs); color: var(--color-text-muted);"><span>★★★☆☆ (6/10)</span><span>today</span></div>
+            <div style="margin: var(--space-3) 0 var(--space-2);">
+              <div style="font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: 2px;">relevance to right now: 90%</div>
+              <div style="height:8px; background: var(--color-border-light); border-radius: var(--radius-full); overflow:hidden;"><div style="height:100%; width:90%; background: var(--color-accent);"></div></div>
+            </div>
+            <div style="text-align:right; font-family: var(--font-mono); font-weight:700; color: var(--color-accent);">score 1.50</div>
+          </div>
+
+          <div style="background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-5); box-shadow: var(--shadow-sm); border-top: 4px solid var(--color-accent);">
+            <div style="font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.05em; color: var(--color-accent);">PACKED</div>
+            <p style="font-size: var(--text-sm); margin: var(--space-2) 0;">"The chief praised her basket weaving in the square."</p>
+            <div style="display:flex; justify-content:space-between; font-size: var(--text-xs); color: var(--color-text-muted);"><span>★★★★★ (9/10)</span><span>today</span></div>
+            <div style="margin: var(--space-3) 0 var(--space-2);">
+              <div style="font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: 2px;">relevance to right now: 30%</div>
+              <div style="height:8px; background: var(--color-border-light); border-radius: var(--radius-full); overflow:hidden;"><div style="height:100%; width:30%; background: var(--color-accent);"></div></div>
+            </div>
+            <div style="text-align:right; font-family: var(--font-mono); font-weight:700; color: var(--color-accent);">score 1.20</div>
+          </div>
+
+          <div style="background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-5); box-shadow: var(--shadow-sm); border-top: 4px solid var(--color-accent);">
+            <div style="font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.05em; color: var(--color-accent);">PACKED</div>
+            <p style="font-size: var(--text-sm); margin: var(--space-2) 0;">"Learned where the healer keeps bandages."</p>
+            <div style="display:flex; justify-content:space-between; font-size: var(--text-xs); color: var(--color-text-muted);"><span>★★★☆☆ (5/10)</span><span>2 days ago</span></div>
+            <div style="margin: var(--space-3) 0 var(--space-2);">
+              <div style="font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: 2px;">relevance to right now: 60%</div>
+              <div style="height:8px; background: var(--color-border-light); border-radius: var(--radius-full); overflow:hidden;"><div style="height:100%; width:60%; background: var(--color-accent);"></div></div>
+            </div>
+            <div style="text-align:right; font-family: var(--font-mono); font-weight:700; color: var(--color-accent);">score 1.05</div>
+          </div>
+
+          <div style="background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-5); box-shadow: var(--shadow-sm); border-top: 4px solid var(--color-accent);">
+            <div style="font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.05em; color: var(--color-accent);">PACKED</div>
+            <p style="font-size: var(--text-sm); margin: var(--space-2) 0;">"She was robbed at this very ford, three weeks ago."</p>
+            <div style="display:flex; justify-content:space-between; font-size: var(--text-xs); color: var(--color-text-muted);"><span>★★★★☆ (was 7/10, now ≈0)</span><span>21 days ago</span></div>
+            <div style="margin: var(--space-3) 0 var(--space-2);">
+              <div style="font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: 2px;">relevance to right now: 97%</div>
+              <div style="height:8px; background: var(--color-border-light); border-radius: var(--radius-full); overflow:hidden;"><div style="height:100%; width:97%; background: var(--color-accent);"></div></div>
+            </div>
+            <div style="text-align:right; font-family: var(--font-mono); font-weight:700; color: var(--color-accent);">score 0.99</div>
+          </div>
+
+          <div style="background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-5); box-shadow: var(--shadow-sm); border-top: 4px solid var(--color-border); opacity: 0.75;">
+            <div style="font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.05em; color: var(--color-text-muted);">LEFT BEHIND</div>
+            <p style="font-size: var(--text-sm); margin: var(--space-2) 0;">"Watched a beautiful sunset over the hills."</p>
+            <div style="display:flex; justify-content:space-between; font-size: var(--text-xs); color: var(--color-text-muted);"><span>★★☆☆☆ (3/10)</span><span>5 days ago</span></div>
+            <div style="margin: var(--space-3) 0 var(--space-2);">
+              <div style="font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: 2px;">relevance to right now: 40%</div>
+              <div style="height:8px; background: var(--color-border-light); border-radius: var(--radius-full); overflow:hidden;"><div style="height:100%; width:40%; background: var(--color-text-muted);"></div></div>
+            </div>
+            <div style="text-align:right; font-family: var(--font-mono); font-weight:700; color: var(--color-text-muted);">score 0.55</div>
+          </div>
+
+          <div style="background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-5); box-shadow: var(--shadow-sm); border-top: 4px dashed var(--color-actor-4);">
+            <div style="font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.05em; color: var(--color-actor-4);">🎲 PACKED — WILDCARD</div>
+            <p style="font-size: var(--text-sm); margin: var(--space-2) 0;">"Argued with a neighbor over a fence."</p>
+            <div style="display:flex; justify-content:space-between; font-size: var(--text-xs); color: var(--color-text-muted);"><span>★★☆☆☆ (was 4/10, now ≈0)</span><span>10 months ago</span></div>
+            <div style="margin: var(--space-3) 0 var(--space-2);">
+              <div style="font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: 2px;">relevance to right now: 30%</div>
+              <div style="height:8px; background: var(--color-border-light); border-radius: var(--radius-full); overflow:hidden;"><div style="height:100%; width:30%; background: var(--color-actor-4);"></div></div>
+            </div>
+            <div style="text-align:right; font-size: var(--text-xs); color: var(--color-text-muted);">score 0.31 — didn't matter, drawn by the dice</div>
+          </div>
+
+        </div>
+
+        <p style="margin-top: var(--space-6);">That "Right now: dusk · at the ford · hungry…" banner isn't decoration — it's the exact one-line description that gets <span class="term" data-definition="Embedding a piece of text means running it through a model that converts it into a list of numbers positioned so similar meanings land near each other — the same process a memory's text goes through.">embedded</span> every planning interval, so there's always a fresh situation vector to score against.</p>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The Code Behind the Score Chips</h2>
+        <p>If nobody has a fresh situation vector yet, promptworld quietly steps aside and falls back to its older, simpler pick-by-salience-alone selection — nothing ever crashes waiting on a number that isn't there. When a situation vector IS available, here's the loop that produced every score chip on the board above.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code>
+<span class="code-line">	<span class="code-keyword">for</span> i, m := <span class="code-keyword">range</span> a.Memories {</span>
+<span class="code-line">		age := tick - m.Tick</span>
+<span class="code-line">		<span class="code-keyword">if</span> age &lt; 0 {</span>
+<span class="code-line">			age = 0</span>
+<span class="code-line">		}</span>
+<span class="code-line">		<span class="code-comment">// integer-friendly decay: halve per whole game-day of age (EXACTLY</span></span>
+<span class="code-line">		<span class="code-comment">// SelectMemories' weight), normalized by the salience ceiling.</span></span>
+<span class="code-line">		w := <span class="code-function">float64</span>(m.Salience)</span>
+<span class="code-line">		<span class="code-keyword">for</span> d := age / halfLifeTicks; d &gt; 0; d-- {</span>
+<span class="code-line">			w /= 2</span>
+<span class="code-line">		}</span>
+<span class="code-line">		all[i] = <span class="code-property">scored</span>{m: m, score: w/MaxSalience + <span class="code-function">relevance01</span>(m, query, queryModel), idx: i}</span>
+<span class="code-line">	}</span>
+            </code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">Go through every one of this villager's memories, one at a time.</p>
+              <p class="tl">Figure out how many ticks old this memory is — now minus when it happened.</p>
+              <p class="tl">Just in case the math ever goes negative...</p>
+              <p class="tl">...clamp it back to zero. A memory can't be from the future.</p>
+              <p class="tl">End of that safety check.</p>
+              <p class="tl">A note to future readers: this decay math deliberately mirrors the plain memory-picker's math exactly, one halving per full game-day of age...</p>
+              <p class="tl">...just scaled down to fit between 0 and 1, so it can be added fairly to something else.</p>
+              <p class="tl">Start with the memory's raw importance rating.</p>
+              <p class="tl">For every whole game-day that has passed since this memory happened...</p>
+              <p class="tl">...cut that importance number in half.</p>
+              <p class="tl">End of the aging loop — older memories keep shrinking, forever.</p>
+              <p class="tl">The final score for this memory: the shrunk importance (scaled to a 0–1 slice) plus how relevant it is to right now — computed by relevance01, next up.</p>
+              <p class="tl">End of the loop. Every memory now has one score, ready to be sorted.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">relevance01 — The Cosine Check</h2>
+        <p>This is the whole function that turned each card's "relevance to right now" bar into a number, using the <span class="term" data-definition="Cosine similarity is a formula that compares two lists of numbers and returns a score for how closely they point in the same direction. Closer to 1 means more alike in meaning — it turns similar meaning into a number you can sort by.">cosine similarity</span> between a memory's coordinates and the situation vector's.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code>
+<span class="code-line"><span class="code-keyword">func</span> <span class="code-function">relevance01</span>(m Memory, query []float32, queryModel string) float64 {</span>
+<span class="code-line">	<span class="code-keyword">if</span> <span class="code-function">len</span>(m.Vec) == 0 || m.VecModel != queryModel || <span class="code-function">len</span>(m.Vec) != <span class="code-function">len</span>(query) {</span>
+<span class="code-line">		<span class="code-keyword">return</span> <span class="code-number">0.5</span></span>
+<span class="code-line">	}</span>
+<span class="code-line">	<span class="code-keyword">var</span> dot, mm, qq float64</span>
+<span class="code-line">	<span class="code-keyword">for</span> i := <span class="code-keyword">range</span> query {</span>
+<span class="code-line">		mv, qv := <span class="code-function">float64</span>(m.Vec[i]), <span class="code-function">float64</span>(query[i])</span>
+<span class="code-line">		dot += mv * qv</span>
+<span class="code-line">		mm += mv * mv</span>
+<span class="code-line">		qq += qv * qv</span>
+<span class="code-line">	}</span>
+<span class="code-line">	<span class="code-keyword">if</span> mm == 0 || qq == 0 {</span>
+<span class="code-line">		<span class="code-keyword">return</span> <span class="code-number">0.5</span></span>
+<span class="code-line">	}</span>
+<span class="code-line">	<span class="code-keyword">return</span> (dot/(<span class="code-function">math.Sqrt</span>(mm)*<span class="code-function">math.Sqrt</span>(qq)) + <span class="code-number">1</span>) / <span class="code-number">2</span></span>
+<span class="code-line">}</span>
+            </code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">relevance01 takes one memory, the situation vector to compare it against, and which model made that vector — and returns a single number.</p>
+              <p class="tl">First, bail out to a neutral score if any of three things are true...</p>
+              <p class="tl">...this memory never got a vector, or a different model embedded it, or the two vectors don't even have the same number of dimensions — return dead-center 0.5.</p>
+              <p class="tl">End of that safety check — no data, no comparison, no opinion.</p>
+              <p class="tl">Set up three running totals: the dot product, and each vector's own squared length.</p>
+              <p class="tl">Walk through every one of the situation vector's numbers, position by position.</p>
+              <p class="tl">Pull out this memory's number and the situation's number at that same position.</p>
+              <p class="tl">Add their product into the dot-product total — the heart of cosine similarity.</p>
+              <p class="tl">Add the memory's own number, squared, into its running length total.</p>
+              <p class="tl">Add the situation's own number, squared, into its running length total.</p>
+              <p class="tl">End of walking through every dimension.</p>
+              <p class="tl">One more safety check: if either vector somehow has zero length...</p>
+              <p class="tl">...there's nothing to divide by, so return the same neutral 0.5.</p>
+              <p class="tl">End of that check.</p>
+              <p class="tl">The real formula: divide the dot product by the product of both lengths — plain cosine similarity, from -1 to 1 — then squeeze it into 0 to 1 so it adds cleanly to importance.</p>
+              <p class="tl">End of relevance01.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">Relevance Whispers, Trauma Shouts</strong>
+            <p>That squeeze into 0–1 caps relevance's contribution at +0.5. It can lift a modest memory past rivals up to five salience points stronger — enough to save a decayed-to-nothing memory like the river robbery — but it can never outshout a genuinely fresh, high-salience event.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Three Rules That Keep the Score Honest</h2>
+
+        <div class="icon-rows">
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-3)">🗺️</div>
+            <div>
+              <strong>Neutral means no data, not "no chance"</strong>
+              <p>A memory with no vector, or one embedded by a different model, scores exactly 0.5 — never punished, never promoted. Different embedding models make different coordinate charts; comparing across them would be meaningless, so relevance01 refuses to try.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-2)">🔒</div>
+            <div>
+              <strong>Her own shelf only</strong>
+              <p>The scorer's only input is that one villager's own memories. Two villagers who lived through the exact same events cannot influence each other's window — proven by a test that checks exactly this.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-4)">🎲</div>
+            <div>
+              <strong>Even the dice are deterministic</strong>
+              <p>The two wildcard slots use <span class="term" data-definition="Seeded random means the &quot;random&quot; pick is actually computed from a starting number, the seed. Replay the same seed and you get the exact same pick every time — never a new one.">seeded random</span> draws from the oldest half of her shelf, same as every other roll in the village. Replay the same history and the same memories get drawn as wildcards, every time.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">🔐</div>
+          <div class="callout-content">
+            <strong class="callout-title">Why Recency Counts From Creation, Never From Recall</strong>
+            <p>The famous reference design decays memories from their <em>last access</em> — recalling one keeps it fresh. promptworld deliberately rejected that: a <span class="term" data-definition="A pure function always produces the same output for the same input, and never changes anything outside itself. Reading a memory must stay pure, or replaying the same event log could disagree with the original run.">pure</span> read must never change the data it reads, or <span class="term" data-definition="Replay means re-running the recorded event log from the start to rebuild the exact same state it produced the first time — used to reproduce or debug a simulation precisely.">replay</span> stops matching the original run. Age is counted strictly from when a memory was created.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Check Your Bearings</h2>
+
+        <div class="quiz-container" id="quiz-module4">
+          <div class="quiz-question-block"
+               data-correct="option-a"
+               data-explanation-right="Exactly — relevance can add up to +0.5 to a score, enough to lift a memory whose salience has decayed almost to zero back into the packed set, just like the river-robbery card on the ranking board. The wildcard dice are a second, independent way it could resurface even without that boost."
+               data-explanation-wrong="Not quite — decayed salience alone can't save a memory, but that's not the whole score. Think back to the ranking board: one card had salience faded to almost nothing yet still got packed. What was carrying it?">
+            <h3 class="quiz-question">A villager returns to the river ford where she was robbed 20 days ago. That memory's salience has halved roughly 20 times — practically zero. Can it still make her ten-item window?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Yes — if it's highly relevant to what she's doing right now, relevance can lift it back into the top scores, and it could also get drawn as one of the two random wildcard picks.</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>No — once salience decays that close to zero, nothing in the formula can bring it back.</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Only if she deliberately tries to recall it, which resets its age back to zero.</span>
+              </button>
+              <button class="quiz-option" data-value="option-d" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>No — memories that old are automatically removed from her shelf.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="option-b"
+               data-explanation-right="Right — a chatbot that keeps surfacing whatever was said most recently is over-weighting recency (the fading-importance dial) while ignoring relevance entirely (how closely something matches the current situation). Naming both dials to an AI assistant is exactly the fix: add a relevance term scored against the current context."
+               data-explanation-wrong="Not quite — re-read the symptom: it favors whatever is newest, regardless of whether it fits the current situation. That's a recency problem paired with a missing-relevance problem, not an importance problem.">
+            <h3 class="quiz-question">Your chatbot keeps bringing up whatever the user said most recently, instead of what actually matters to the current question. Which dial from this module is over-weighted, and which is missing?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Importance is over-weighted; recency is missing.</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Recency is over-weighted; relevance is missing.</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Relevance is over-weighted; importance is missing.</span>
+              </button>
+              <button class="quiz-option" data-value="option-d" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>All the dials are already balanced — the bug must be somewhere else entirely.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="option-c"
+               data-explanation-right="Exactly — relevance01 checks whether the memory's vector model matches the situation vector's model. Swap embedding models and every memory's old vectors were charted by a different model than the fresh situation vector, so every comparison hits that mismatch and falls back to neutral 0.5. That's the designed safety behavior, not a bug."
+               data-explanation-wrong="Not quite — nothing about the vectors themselves changed, and there's no evidence of a crash or data loss. The clue is that it happened to EVERY score, right after a model swap — think about what relevance01 checks before it will even attempt a comparison.">
+            <h3 class="quiz-question">After swapping the embedding model, every relevance score in the village suddenly reads exactly 0.5. Why is this the <em>designed</em> behavior, not a bug?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The reducer must be silently dropping every memory-embedded event after the swap.</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The new model is simply worse at measuring similarity than the old one.</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Old memories were embedded by a different model than the fresh situation vector — a model mismatch relevance01 refuses to compare, so it returns neutral 0.5 for all of them.</span>
+              </button>
+              <button class="quiz-option" data-value="option-d" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>All the vectors were deleted when the model changed.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="option-d"
+               data-explanation-right="Exactly — a memory's read path has to stay pure. If recalling a memory could reset its age, replaying the same event log twice could produce two different orderings depending on which memories happened to get 'read' in between — and the whole clockwork's promise of identical replay would break."
+               data-explanation-wrong="Not quite — this isn't about storage size or which memories feel important. It's about what happens if a READ operation is allowed to change stored data — trace what that would do the next time the same history gets replayed.">
+            <h3 class="quiz-question">You're designing a similar memory system from scratch. A teammate suggests refreshing a memory's age every time it's recalled, the way the famous reference design does. Why does promptworld count age strictly from creation instead?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Because tracking last-recall time would use too much storage.</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Because recalled memories should actually be considered less important, not more.</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Because the embedding model can't process a memory twice.</span>
+              </button>
+              <button class="quiz-option" data-value="option-d" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Because a read must never mutate state — if recalling a memory changed its age, replaying the same event log could disagree with the original run.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module4')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module4')">Try Again</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>
+<section class="module" id="module-5" style="background: var(--color-bg-warm); --color-accent: var(--color-info); --color-accent-light: var(--color-info-light); --color-accent-muted: var(--color-info);">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">05</span>
+      <h1 class="module-title">Trust, But Verify</h1>
+      <p class="module-subtitle">The new memory score is built, tested, and fast — and not allowed to touch a single villager's mind until the evidence says it's ready.</p>
+    </header>
+
+    <div class="module-body">
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The Understudy Who Never Steps on Stage</h2>
+        <p>Every night, an understudy performs the entire play in the wings — full costume, full effort, every line delivered in step with the lead. The audience never sees her. The director watches both performances and compares notes, night after night.</p>
+        <p>promptworld's new <span class="term" data-definition="The three-term score is the memory-ranking formula from the previous module: importance, freshness, and how closely a memory matches the villager's 'right now', added together into one number.">three-term memory score</span> is built, tested, and fast. And it is not allowed to influence a single villager's thoughts — yet.</p>
+        <div class="callout callout-accent">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">That's Not Caution Theater</strong>
+            <p>That's the feature. The switch that controls this is a <span class="term" data-definition="A feature flag is a setting that turns a piece of code on or off without shipping new code — like a light switch a developer can flip after the app is already out in the world.">feature flag</span> living in one line of config, and flipping it is deliberately the very last step, not the first.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The Dial: Three Positions, Three Behaviors</h2>
+        <p>The flag lives in the world's <span class="term" data-definition="A config file is a plain-text file that controls a program's settings without touching its source code — like a thermostat dial instead of rewiring the furnace.">config file</span>, world.json, under one key: memory_relevance. It has exactly three legal values, and each one is a completely different level of trust.</p>
+
+        <div class="pattern-cards">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-text-muted)">
+            <div class="pattern-icon" style="background: var(--color-text-muted)">🔒</div>
+            <h4 class="pattern-title">"" — off</h4>
+            <p class="pattern-desc">Serve the old memory window. No new scoring runs at all. This is where every villager starts.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-accent)">
+            <div class="pattern-icon" style="background: var(--color-accent)">🎭</div>
+            <h4 class="pattern-title">"shadow"</h4>
+            <p class="pattern-desc">Serve the old window, exactly as before — but also quietly compute the new score, every single tick, and record where the two disagree.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-success)">
+            <div class="pattern-icon" style="background: var(--color-success)">✅</div>
+            <h4 class="pattern-title">"on"</h4>
+            <p class="pattern-desc">Serve the new score for real. And keep recording anyway — the understudy never actually stops taking notes.</p>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">🚧</div>
+          <div class="callout-content">
+            <strong class="callout-title">No Silent Typos Allowed</strong>
+            <p>Type <code class="badge-code">"shaddow"</code> into that field and promptworld refuses to start the world at all. Either the value is exactly right, or nothing runs — it can never silently fall back to "off" without anyone noticing.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">One Word Decides Everything</h2>
+        <p>That flag isn't just documentation — it's a literal string threaded down into the function that picks a villager's memory window every time she stops to think.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code>
+<span class="code-line"><span class="code-keyword">func</span> <span class="code-function">selectWindow</span>(s *sim.State, idx, k <span class="code-keyword">int</span>, tick <span class="code-keyword">int64</span>, mode <span class="code-keyword">string</span>) []sim.Memory {</span>
+<span class="code-line">	a := &amp;s.Agents[idx]</span>
+<span class="code-line">	<span class="code-keyword">if</span> mode == world.MemoryRelevanceOn {</span>
+<span class="code-line">		<span class="code-keyword">var</span> query []float32</span>
+<span class="code-line">		<span class="code-keyword">if</span> len(a.SitVec) &gt; 0 {</span>
+<span class="code-line">			query = a.SitVec</span>
+<span class="code-line">		}</span>
+<span class="code-line">		<span class="code-keyword">return</span> sim.<span class="code-function">SelectMemoriesRelevant</span>(a, s.Seed, idx, tick, k, query, a.SitVecModel)</span>
+<span class="code-line">	}</span>
+<span class="code-line">	<span class="code-keyword">return</span> sim.<span class="code-function">SelectMemories</span>(a, s.Seed, idx, tick, k)</span>
+<span class="code-line">}</span>
+            </code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">selectWindow decides which memory window one villager sees this tick, given the world, which villager, how many memories fit, the current tick, and the mode string.</p>
+              <p class="tl">Grab that villager's own record — nobody else's memories are in play.</p>
+              <p class="tl">If the mode is exactly "on" — the only value that's allowed to change what actually gets served...</p>
+              <p class="tl">...start building a query: the coordinates of "right now", empty until filled in.</p>
+              <p class="tl">If this villager already has a situation-vector snapshot on file...</p>
+              <p class="tl">...use it as the query.</p>
+              <p class="tl">End of that check — with or without a real snapshot, move on regardless.</p>
+              <p class="tl">Run the new three-term scorer with that query and return its top picks.</p>
+              <p class="tl">End of the "on" branch.</p>
+              <p class="tl">Any other mode — including "shadow" — falls straight back to the exact same call as always. Shadow mode never reaches the branch above.</p>
+              <p class="tl">End of selectWindow.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">🔬</div>
+          <div class="callout-content">
+            <strong class="callout-title">Proven, Not Promised</strong>
+            <p>A <span class="term" data-definition="A test is code written specifically to check that other code behaves correctly — it runs automatically and fails loudly the moment the behavior it checks stops being true.">test</span> deliberately builds a world where the old and new rankings provably differ, sets the mode to "shadow", then asserts every prompt sent to the villager's mind is <span class="term" data-definition="Byte-for-byte identical means two pieces of data match exactly, down to the very last character — not just close enough, but literally the same.">byte-for-byte identical</span> to mode "". Shadow mode can compute anything it wants; it is structurally forbidden from changing what a villager actually sees.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">What Gets Recorded</h2>
+        <p>So if shadow mode changes nothing a villager sees, where does all that comparing actually go? Every planning moment, in "shadow" or "on", emits one durable <code class="badge-code">cog.memory_divergence</code> event — <span class="term" data-definition="Telemetry is data a running system automatically records about its own behavior — not shown to end users, but read later by engineers or operators to see what actually happened.">telemetry</span> about the comparison, not a guess about it.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code>
+<span class="code-line"><span class="code-property">MemoryDivergencePayload</span> <span class="code-keyword">struct</span> {</span>
+<span class="code-line">	<span class="code-property">Agent</span>        <span class="code-keyword">int</span>     `<span class="code-string">json:"agent"</span>`</span>
+<span class="code-line">	<span class="code-property">Tick</span>         <span class="code-keyword">int64</span>   `<span class="code-string">json:"tick"</span>`</span>
+<span class="code-line">	<span class="code-property">Mode</span>         <span class="code-keyword">string</span>  `<span class="code-string">json:"mode"</span>`</span>
+<span class="code-line">	<span class="code-property">Legacy</span>       <span class="code-keyword">[]int64</span> `<span class="code-string">json:"legacy"</span>`</span>
+<span class="code-line">	<span class="code-property">Augmented</span>    <span class="code-keyword">[]int64</span> `<span class="code-string">json:"augmented"</span>`</span>
+<span class="code-line">	<span class="code-property">Overlap</span>      <span class="code-keyword">int</span>     `<span class="code-string">json:"overlap"</span>`</span>
+<span class="code-line">	<span class="code-property">Displacement</span> <span class="code-keyword">int</span>     `<span class="code-string">json:"displacement"</span>`</span>
+<span class="code-line">	<span class="code-property">Vectorless</span>   <span class="code-keyword">int</span>     `<span class="code-string">json:"vectorless"</span>`</span>
+<span class="code-line">	<span class="code-property">SitTick</span>      <span class="code-keyword">int64</span>   `<span class="code-string">json:"sit_tick"</span>`</span>
+<span class="code-line">}</span>
+            </code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">The shape of one disagreement record — what gets written to the event log every time both rankings are computed for a villager.</p>
+              <p class="tl">Agent: which villager this comparison is about, by ID.</p>
+              <p class="tl">Tick: the exact simulated moment this comparison happened.</p>
+              <p class="tl">Mode: what the flag was actually set to when this was recorded — "shadow" or "on".</p>
+              <p class="tl">Legacy: the top-10 memory IDs the OLD selector would have chosen.</p>
+              <p class="tl">Augmented: the top-10 memory IDs the NEW three-term scorer chose instead.</p>
+              <p class="tl">Overlap: how many IDs show up in both lists — where the two selectors actually agree.</p>
+              <p class="tl">Displacement: how far the memories they DO agree on moved rank between the old list and the new one.</p>
+              <p class="tl">Vectorless: how many candidate memories had no coordinates yet, so the new scorer couldn't judge their relevance at all.</p>
+              <p class="tl">SitTick: which situation-vector snapshot of "right now" this comparison used as its yardstick.</p>
+              <p class="tl">End of the payload. Ten numbers and two lists — durable, replayable evidence, not a printed guess.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Reading the Evidence</h2>
+        <p>An operator doesn't have to comb the event log by hand. One <span class="term" data-definition="A CLI (command-line interface) is a way of controlling a program by typing text commands instead of clicking buttons — the terminal window instead of a mouse.">CLI</span> command, <code class="badge-code">promptworld divergence &lt;world&gt;</code>, summarizes every villager's divergence into per-game-day averages.</p>
+
+        <div style="background: var(--color-bg-code); color: #CDD6F4; font-family: var(--font-mono); font-size: var(--text-sm); border-radius: var(--radius-md); box-shadow: var(--shadow-md); padding: var(--space-6); margin: var(--space-6) 0; overflow-x: auto; white-space: pre;">$ promptworld divergence riverdale
+villager   day   overlap@10   displacement   vectorless
+elowen     1     1.00         0.0            2
+elowen     2     1.00         0.0            1
+tobar      1     1.00         0.0            3
+tobar      2     1.00         0.0            0
+        </div>
+        <p style="text-align:center;font-size:var(--text-xs);color:var(--color-text-muted);">Overlap 1.00 everywhere — a young world, where every memory still fits inside the window whole. There's nothing yet for the two rankings to disagree about.</p>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">📊</div>
+          <div class="callout-content">
+            <strong class="callout-title">Real Numbers From This Feature's Own Validation Run</strong>
+            <p>At max simulation speed, embedding every memory added roughly 5–6% to <span class="term" data-definition="Wall-clock time is how long something actually takes on an ordinary clock on the wall — as opposed to how much of that time the computer spent doing useful work versus waiting.">wall-clock time</span>, against a 10% budget. A live shadow hour showed overlap sitting at exactly 1.00 — the villagers were still young, so the rankings couldn't disagree yet. Evidence takes time. That's the point.</p>
+          </div>
+        </div>
+
+        <p>The <span class="term" data-definition="A go/no-go decision is an explicit choice to proceed or not, made by weighing recorded evidence rather than a hunch — and written down somewhere permanent, so nobody has to remember or re-argue why later.">go/no-go decision</span> — with these exact numbers attached — gets recorded on the project board before anyone flips the dial to "on". And even once it's "on", the divergence keeps recording: the director never stops taking notes, even after opening night.</p>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Check Your Bearings</h2>
+
+        <div class="quiz-container" id="quiz-module5">
+          <div class="quiz-question-block"
+               data-correct="option-c"
+               data-explanation-right="Exactly. 'Deployed' by itself is a vibe. A shadow phase — running the new ranking alongside the old one, recording where they disagree, and writing that evidence down before flipping the switch — is what turns a risky change into a measured one."
+               data-explanation-wrong="Not quite. Think about what promptworld's memory_relevance flag adds between 'the code works' and 'the code is live for everyone': a phase where the new logic runs for real but influences nothing, plus a durable record of how much it would have changed things.">
+            <h3 class="quiz-question">You built a new ranking algorithm for your app's feed. Your AI assistant says "deployed!" What did it skip that promptworld wouldn't?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Nothing — if the code compiles and the tests pass, it's ready for everyone.</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>A faster server, since ranking algorithms are always slower than the old code.</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>A shadow phase that runs the new ranking alongside the old one, records how much they disagree, and turns that into a recorded go/no-go decision before the switch flips.</span>
+              </button>
+              <button class="quiz-option" data-value="option-d" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>A bigger database, since two ranking algorithms need twice the storage.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="option-b"
+               data-explanation-right="Right — nothing. Shadow mode's whole promise is that selectWindow only changes behavior when mode is exactly 'on'. In 'shadow', that crash happens off to the side while recording a divergence event; the prompt actually sent to that villager's mind is untouched, proven byte-for-byte identical by a test."
+               data-explanation-wrong="Not quite — remember what selectWindow does: it only branches to the new scorer when mode == 'on'. In shadow mode, every other path returns the exact same call as before, so a crash in the new scorer has nowhere to leak into what a villager actually sees.">
+            <h3 class="quiz-question">In shadow mode, a bug makes the new scorer crash while evaluating one villager. What do that villager (and everyone watching the village) actually experience?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>That villager freezes until the crash is fixed, since the crash blocks her thinking.</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Nothing — the legacy window still serves her prompt exactly as before; shadow mode is read-only observation, not a second decision-maker.</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Her memories get scrambled, since the crash corrupts her memory list.</span>
+              </button>
+              <button class="quiz-option" data-value="option-d" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The whole village pauses, since one crashed villager halts the shared clock.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="option-a"
+               data-explanation-right="Exactly — a memory has to be created before it can be embedded, it needs a vector before relevance can score it, and it needs a fresh situation-vector snapshot of 'right now' before the three-term score can compare against anything. Shadow mode only compares AFTER all of that has already happened."
+               data-explanation-wrong="Not quite — trace it from the very start of a memory's life: it can't have coordinates before it exists, relevance can't be scored before there are coordinates, and there's nothing to compare against until a situation-vector snapshot exists.">
+            <h3 class="quiz-question">Put the life of one memory in the order it actually happens.</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>An event happens → memory_added records salience and where/why → the embedder mails back its vector → a situation-vector snapshot of "right now" is taken → the three-term score runs and gets compared in shadow.</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The three-term score runs in shadow → an event happens → memory_added records salience → the embedder mails back its vector → a situation-vector snapshot is taken.</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>A situation-vector snapshot is taken → an event happens → memory_added records salience → the three-term score runs in shadow → the embedder mails back its vector.</span>
+              </button>
+              <button class="quiz-option" data-value="option-d" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The embedder mails back its vector → an event happens → memory_added records salience → a situation-vector snapshot is taken → the three-term score runs in shadow.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="option-b"
+               data-explanation-right="Exactly. Events land in the same permanent, replayable store as everything else in the village — so the divergence evidence can be re-derived, audited, and reasoned about later by anyone, the same way a memory or a message can. A printed log line vanishes into a terminal; a recorded event becomes part of history a go/no-go decision can point to."
+               data-explanation-wrong="Not quite — think about what a printed log line loses that an event doesn't: it isn't replayable, isn't stored alongside the rest of the village's permanent history, and can't be re-derived or audited later the way an event can.">
+            <h3 class="quiz-question">Why record the shadow-mode disagreement as an EVENT in the event log, instead of just printing it to a log file?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Events take up less disk space than printed log lines.</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Events live in the same durable, replayable store as everything else, so a go/no-go decision derives from evidence that can be audited and re-derived later — not a line that scrolled off a terminal.</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Log files are only for errors, and a divergence is not technically an error.</span>
+              </button>
+              <button class="quiz-option" data-value="option-d" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>It makes the embedder run faster, since it skips writing to disk.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module5')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module5')">Try Again</button>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">What You Can Now Say to an AI Assistant</h2>
+        <p>Zoom all the way out: an event happens, becomes a memory, gets coordinates, fills a window, runs in shadow, and — one day, once the evidence says so — goes live. Every step of that is recorded, and every step is replayable. The village never forgets, and it never lies about what it remembered.</p>
+
+        <div class="badge-list">
+          <div class="badge-item">
+            <code class="badge-code">event sourcing</code>
+            <span class="badge-desc">"Store every change as an event, and rebuild current state by replaying them" — instead of just overwriting a database row.</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">embeddings</code>
+            <span class="badge-desc">"Give this text a vector so I can compare it by meaning, not just matching words."</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">recency / importance / relevance</code>
+            <span class="badge-desc">"Rank memories with all three — not just whatever was said most recently."</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">shadow mode</code>
+            <span class="badge-desc">"Run the new logic alongside the old one and record how much they disagree, before switching over."</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">feature flag</code>
+            <span class="badge-desc">"Put this behind a flag so we can turn it on and off without a new deploy."</span>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">🎬</div>
+          <div class="callout-content">
+            <strong class="callout-title">Trust, But Verify</strong>
+            <p>You never have to YOLO a scoring change into production again. Ask for shadow mode with divergence metrics, and you'll have exactly what this village has: a recorded reason to believe the new thing is ready, before it ever touches a single mind.</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>
+  </main>
+
+</body>
+</html>

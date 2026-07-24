@@ -1,0 +1,278 @@
+<section class="module" id="module-3" style="background: var(--color-bg-warm); --color-accent: var(--color-info); --color-accent-light: var(--color-info-light); --color-accent-muted: var(--color-info);">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">03</span>
+      <h1 class="module-title">Giving Memories Coordinates</h1>
+      <p class="module-subtitle">How the village turns raw text into numbers a computer can compare — and why those numbers get recorded once, never recomputed.</p>
+    </header>
+
+    <div class="module-body">
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">A Star Chart for Memories</h2>
+        <p>How would a computer know that "my spear broke at the river" and "I lost my axe by the water" are about the same kind of trouble? Not a single word matches between them.</p>
+        <p>promptworld solves this by giving every memory a set of sky coordinates. An <span class="term" data-definition="An embedding is a list of numbers a model generates from a piece of text so that texts with similar meaning end up with similar numbers — every idea gets its own coordinates.">embedding</span> model reads a memory's exact text and returns a <span class="term" data-definition="A vector is that list of numbers itself. Here it's 384 numbers that together pin one memory's meaning to one spot on an imaginary map.">vector</span> — 384 numbers, positioned so that similar meanings land near each other, like stars in the same constellation.</p>
+
+        <div style="position:relative;height:320px;background:var(--color-bg-code);border-radius:var(--radius-lg);box-shadow:var(--shadow-md);margin:var(--space-8) 0;overflow:hidden;">
+          <div style="position:absolute;left:6%;top:14%;background:color-mix(in srgb, var(--color-actor-2) 30%, var(--color-bg-code));border:1px solid var(--color-actor-2);color:#ECE9E4;padding:var(--space-1) var(--space-3);border-radius:var(--radius-full);font-size:var(--text-xs);white-space:nowrap;box-shadow:var(--shadow-sm);">"My spear broke at the river"</div>
+          <div style="position:absolute;left:20%;top:30%;background:color-mix(in srgb, var(--color-actor-2) 30%, var(--color-bg-code));border:1px solid var(--color-actor-2);color:#ECE9E4;padding:var(--space-1) var(--space-3);border-radius:var(--radius-full);font-size:var(--text-xs);white-space:nowrap;box-shadow:var(--shadow-sm);">"I lost my axe by the water"</div>
+          <div style="position:absolute;left:4%;top:46%;background:color-mix(in srgb, var(--color-actor-2) 30%, var(--color-bg-code));border:1px solid var(--color-actor-2);color:#ECE9E4;padding:var(--space-1) var(--space-3);border-radius:var(--radius-full);font-size:var(--text-xs);white-space:nowrap;box-shadow:var(--shadow-sm);">"The current swept away my net"</div>
+
+          <div style="position:absolute;left:64%;top:60%;background:color-mix(in srgb, var(--color-actor-4) 30%, var(--color-bg-code));border:1px solid var(--color-actor-4);color:#ECE9E4;padding:var(--space-1) var(--space-3);border-radius:var(--radius-full);font-size:var(--text-xs);white-space:nowrap;box-shadow:var(--shadow-sm);">"The harvest festival was joyous"</div>
+          <div style="position:absolute;left:78%;top:76%;background:color-mix(in srgb, var(--color-actor-4) 30%, var(--color-bg-code));border:1px solid var(--color-actor-4);color:#ECE9E4;padding:var(--space-1) var(--space-3);border-radius:var(--radius-full);font-size:var(--text-xs);white-space:nowrap;box-shadow:var(--shadow-sm);">"We danced until sunset at the festival"</div>
+
+          <div style="position:absolute;left:42%;top:8%;background:color-mix(in srgb, var(--color-actor-3) 30%, var(--color-bg-code));border:1px solid var(--color-actor-3);color:#ECE9E4;padding:var(--space-1) var(--space-3);border-radius:var(--radius-full);font-size:var(--text-xs);white-space:nowrap;box-shadow:var(--shadow-sm);">"A stranger asked about the road"</div>
+          <div style="position:absolute;left:58%;top:32%;background:color-mix(in srgb, var(--color-actor-3) 30%, var(--color-bg-code));border:1px solid var(--color-actor-3);color:#ECE9E4;padding:var(--space-1) var(--space-3);border-radius:var(--radius-full);font-size:var(--text-xs);white-space:nowrap;box-shadow:var(--shadow-sm);">"My hut leaks when it rains"</div>
+          <div style="position:absolute;left:28%;top:78%;background:color-mix(in srgb, var(--color-actor-3) 30%, var(--color-bg-code));border:1px solid var(--color-actor-3);color:#ECE9E4;padding:var(--space-1) var(--space-3);border-radius:var(--radius-full);font-size:var(--text-xs);white-space:nowrap;box-shadow:var(--shadow-sm);">"Wolves howled near the fence"</div>
+        </div>
+        <p style="text-align:center;font-size:var(--text-xs);color:var(--color-text-muted);">This is a 2D cartoon of 384 dimensions — the real map has far more axes than a page can draw.</p>
+
+        <p>Similarity stops being a guess about matching words and becomes <span class="term" data-definition="Cosine similarity is a formula that compares two vectors and returns a score for how closely they point in the same direction. The closer to 1, the more alike two memories' meanings are — it turns similar meaning into a number you can sort by.">cosine similarity</span> — a distance you can actually measure.</p>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Watch a Memory Get Its Coordinates</h2>
+        <p>The <span class="term" data-definition="The event log is the village's single permanent diary. Every notable thing that happens gets written there, in order, and is never edited afterward.">event log</span> never computes a vector itself — that would break the <span class="term" data-definition="The clockwork is this course's name for the deterministic core of the simulation — the part that must produce the exact same result every time it replays the same history.">clockwork's</span> golden rule: same history in, same result out, forever. A helper living outside it does the work and mails the answer back in.</p>
+
+        <div class="flow-animation" data-steps='[
+          {"highlight":"flow-actor-1","label":"The event log emits agent.memory_added: \"My spear broke at the river.\""},
+          {"highlight":"flow-actor-2","label":"The embedder picks it up whenever it is ready. The clock keeps ticking either way.","packet":true,"from":"actor-1","to":"actor-2"},
+          {"highlight":"flow-actor-3","label":"The embedder hands the text to all-minilm, which returns 384 numbers.","packet":true,"from":"actor-2","to":"actor-3"},
+          {"highlight":"flow-actor-4","label":"The embedder mails agent.memory_embedded through the social door.","packet":true,"from":"actor-2","to":"actor-4"},
+          {"highlight":"flow-actor-5","label":"The reducer attaches the vector to the memory. It is now permanent history.","packet":true,"from":"actor-4","to":"actor-5"}
+        ]'>
+          <div class="flow-actors">
+            <div class="flow-actor" id="flow-actor-1">
+              <div class="flow-actor-icon">📜</div>
+              <span>Event Log</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-2">
+              <div class="flow-actor-icon">🛰️</div>
+              <span>Embedder</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-3">
+              <div class="flow-actor-icon">⭐</div>
+              <span>all-minilm</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-4">
+              <div class="flow-actor-icon">🚪</div>
+              <span>Social Door</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-5">
+              <div class="flow-actor-icon">⚙️</div>
+              <span>Reducer</span>
+            </div>
+          </div>
+
+          <div class="flow-packet" id="flow-packet"></div>
+
+          <div class="flow-step-label" id="flow-label">Click "Next Step" to begin</div>
+
+          <div class="flow-controls">
+            <button class="btn flow-next-btn">Next Step</button>
+            <button class="btn flow-reset-btn">Restart</button>
+            <span class="flow-progress"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The Clock Never Waits for the Embedder</h2>
+        <p>Step 2 of that animation is one small function. When a fresh batch of events arrives, the embedder either catches it immediately or lets it go — no waiting, no blocking, ever.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code>
+<span class="code-line"><span class="code-keyword">func</span> (e *Embedder) <span class="code-function">Observe</span>(events []store.Event) {</span>
+<span class="code-line">	<span class="code-keyword">select</span> {</span>
+<span class="code-line">	<span class="code-keyword">case</span> e.events <- events:</span>
+<span class="code-line">	<span class="code-keyword">default</span>:</span>
+<span class="code-line">	}</span>
+<span class="code-line">}</span>
+            </code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">This is Observe — the mail slot the embedder listens at for freshly logged events.</p>
+              <p class="tl">Try the following, but never sit around waiting for it to succeed.</p>
+              <p class="tl">If there is room, drop the new events onto the embedder's own <span class="term" data-definition="A channel is Go's built-in pipe for passing data between two parts of a program that run at the same time — one side drops something in, the other side picks it up.">channel</span>.</p>
+              <p class="tl">If there is no room — the embedder is still busy with the last batch — do nothing and move on.</p>
+              <p class="tl">End of the try-or-drop check.</p>
+              <p class="tl">End of Observe. The clockwork never had to pause for the embedder to catch up.</p>
+            </div>
+          </div>
+        </div>
+
+        <p>Think of it as a mail slot that holds exactly one envelope. If the embedder has not picked up the last delivery, a new one just bounces off the door — nothing jams, nothing waits.</p>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The Envelope the Embedder Mails Back</h2>
+        <p>Once all-minilm returns its 384 numbers, the embedder wraps them in a <span class="term" data-definition="A struct groups several related pieces of data under one name, like an index card with labeled fields — here, one card holds four labeled slots.">struct</span> and mails it through the social door as an agent.memory_embedded event.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code>
+<span class="code-line">	<span class="code-property">MemoryEmbeddedPayload</span> <span class="code-keyword">struct</span> {</span>
+<span class="code-line">		<span class="code-property">Agent</span>   <span class="code-keyword">int</span>       `<span class="code-string">json:"agent"</span>`</span>
+<span class="code-line">		<span class="code-property">MemSeq</span>  <span class="code-keyword">int64</span>     `<span class="code-string">json:"mem_seq"</span>`</span>
+<span class="code-line">		<span class="code-property">Vec</span>     <span class="code-keyword">[]float32</span> `<span class="code-string">json:"vec"</span>`</span>
+<span class="code-line">		<span class="code-property">Model</span>   <span class="code-keyword">string</span>    `<span class="code-string">json:"model"</span>`</span>
+<span class="code-line">	}</span>
+            </code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">The shape of the envelope itself — MemoryEmbeddedPayload, written as a <span class="term" data-definition="JSON is a plain-text way of writing structured data that nearly every programming language can read. It is the format these numbers travel in when mailed between parts of the system.">JSON</span> <span class="term" data-definition="A payload is the actual cargo inside a message — the data being delivered, as opposed to the address label wrapped around it.">payload</span>.</p>
+              <p class="tl">Agent: whose memory this is, by villager ID.</p>
+              <p class="tl">MemSeq: which memory, by its position number in that villager's own log.</p>
+              <p class="tl">Vec: the actual coordinates — the 384 numbers describing what the memory means.</p>
+              <p class="tl">Model: the name of the model that produced these numbers, recorded right alongside them.</p>
+              <p class="tl">That is the whole envelope. Four labeled fields, nothing hidden.</p>
+            </div>
+          </div>
+        </div>
+
+        <p>Notice what's missing: no timestamp saying "embed this now." The <span class="term" data-definition="The reducer is the code that reads the event log in order and rebuilds the village's current state from it — the same input always produces the same output.">reducer</span> is the only thing allowed to attach this vector to a memory's permanent record, and it always does so after the memory already exists — so having no vector yet is a perfectly legal, temporary state.</p>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Three Things Worth Knowing</h2>
+
+        <div class="icon-rows">
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-4)">📢</div>
+            <div>
+              <strong>Failure is loud, never a stall</strong>
+              <p>If the embedding model or its local <span class="term" data-definition="An endpoint is the specific local address a program calls to talk to a service — like a phone extension for one particular function.">endpoint</span> goes down, memories keep happening — they just stay vectorless. The operator sees exactly one warning, never a crash or a frozen village.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-3)">🗺️</div>
+            <div>
+              <strong>Different model, different chart</strong>
+              <p>Every vector is stamped with the model that produced it. Numbers from two different models are like coordinates from two different star charts — comparing them is meaningless, so the system refuses to.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-2)">🔥</div>
+            <div>
+              <strong>Kept warm on purpose</strong>
+              <p>all-minilm is tiny (about 46 MB) and gets pinned in memory at startup, so there is no <span class="term" data-definition="A cold start is the delay a system takes to get ready the very first time it is used — like an engine that runs rough until it warms up.">cold start</span> lag. The big chat models are deliberately left unpinned.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">🔥</div>
+          <div class="callout-content">
+            <strong class="callout-title">The One Line That Keeps It Warm</strong>
+            <p>Deep in internal/llm/providers.go, this single line is the reason there is no cold-start lag:</p>
+            <pre style="font-family: var(--font-mono); font-size: var(--text-sm); background: var(--color-bg-code); color: #CDD6F4; padding: var(--space-3) var(--space-4); border-radius: var(--radius-sm); white-space: pre-wrap; word-break: break-word; overflow-x: hidden; margin: var(--space-2) 0;">body, err := json.Marshal(map[string]any{"model": o.model, "keep_alive": -1})</pre>
+            <p><span class="term" data-definition="keep_alive is a setting sent to Ollama that controls how long it keeps a model loaded in memory after use. -1 means forever, which skips the delay of reloading it from disk on the next request.">keep_alive: -1</span> tells Ollama to never unload the model from memory — the delay only ever happens once, at startup.</p>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">Why Local, Why Recorded</strong>
+            <p>A cloud embedding <span class="term" data-definition="An API is a fixed set of requests a piece of software will respond to, so other programs can ask it to do things — like the buttons on a vending machine, but for code. A cloud API runs on someone else's servers, reached over the internet.">API</span> can return slightly different numbers for the exact same text on two different calls — harmless for a search bar, poison for a system that must <span class="term" data-definition="Replay means re-running the recorded event log from the start to rebuild the exact same state it produced the first time — used to reproduce, debug, or resume a simulation precisely.">replay</span> <span class="term" data-definition="Byte-identical means two outputs match exactly, down to the last byte — not just close enough, but literally identical data.">byte-identical</span> history. promptworld runs all-minilm locally through <span class="term" data-definition="Ollama is free software that runs small AI models directly on your own computer, instead of sending your text to a company's servers over the internet.">Ollama</span> and records the vector once, so replay never recomputes it — it only rereads it.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Check Your Bearings</h2>
+
+        <div class="quiz-container" id="quiz-module3">
+          <div class="quiz-question-block"
+               data-correct="option-b"
+               data-explanation-right="Exactly — cloud embedding APIs return slightly different vectors for the same text on different calls. Anything that must replay byte-identically treats the recorded vectors as the permanent record, not something to recompute on demand."
+               data-explanation-wrong="Not quite — the problem is not the model name, it is that the SAME text can produce DIFFERENT numbers on different calls to a cloud API. Recorded vectors are the stable ground truth; re-embedding on demand can quietly drift away from them.">
+            <h3 class="quiz-question">You ask an AI assistant to add semantic search to your notes app using a cloud embeddings API, and to cache the results forever. A colleague says "just re-embed on demand instead of caching." What breaks?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Nothing — a fresh call always returns the exact same numbers as the cached ones.</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>A fresh call may return slightly different numbers than what was cached, so on-demand re-embedding can quietly drift away from the stable, recorded ground truth.</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>It is fine as long as the API's model name stays the same across calls.</span>
+              </button>
+              <button class="quiz-option" data-value="option-d" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>It only matters if you switch to a different cloud provider later.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="option-b"
+               data-explanation-right="Right — this is the designed failure mode. If all-minilm or its local endpoint is down, memories still happen and the village keeps running; they just stay vectorless until the model comes back, with exactly one warning logged."
+               data-explanation-wrong="Not quite — the clue is 'the village runs fine.' The clockwork never blocks on the embedder, so a struggling embedding model shows up as memories quietly missing their vectors, not as a broken village.">
+            <h3 class="quiz-question">Villagers' new memories suddenly have no vectors, but the village otherwise runs fine. Where do you look first?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The event log is corrupted and needs to be rebuilt.</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The embedding model or its local endpoint is down — vectorless-but-alive is the designed failure mode, with exactly one warning logged.</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The reducer must have a bug that is silently dropping memory_embedded events.</span>
+              </button>
+              <button class="quiz-option" data-value="option-d" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The village clock has stalled and needs to be restarted.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="option-a"
+               data-explanation-right="Exactly — a memory has to exist before anyone can embed it, the model has to run before there is anything to mail, and the reducer can only attach a vector that has already arrived through the social door."
+               data-explanation-wrong="Not quite — trace it again from the start: nothing can be embedded before the log records it, and the reducer cannot attach a vector that has not arrived yet.">
+            <h3 class="quiz-question">Put the coordinate-giving process in the order it actually happens.</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Event Log emits the memory → Embedder picks it up → all-minilm returns 384 numbers → Embedder mails the result through the Social Door → Reducer attaches the vector.</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Embedder picks up the memory → Event Log emits it → all-minilm returns 384 numbers → Reducer attaches the vector → Embedder mails it through the Social Door.</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Event Log emits the memory → all-minilm returns 384 numbers → Embedder picks it up → Reducer attaches the vector → Embedder mails it through the Social Door.</span>
+              </button>
+              <button class="quiz-option" data-value="option-d" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Reducer attaches the vector → Event Log emits the memory → Embedder picks it up → all-minilm returns 384 numbers → Embedder mails it through the Social Door.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module3')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module3')">Try Again</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>

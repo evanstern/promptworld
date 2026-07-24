@@ -1,0 +1,329 @@
+<section class="module" id="module-1" style="background: var(--color-bg-warm)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">01</span>
+      <h1 class="module-title">The Village That Writes Everything Down</h1>
+      <p class="module-subtitle">How a tiny AI village turns "something happened" into a fact it can remember forever.</p>
+    </header>
+
+    <div class="module-body">
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">A Village That Runs Itself</h2>
+
+        <p>Picture a lighthouse keeper's logbook. Nothing officially happened at the lighthouse unless it was written down — and every entry says exactly where, when, and why. promptworld runs on that same idea, except the lighthouse is a tiny village and the keeper never sleeps.</p>
+
+        <div class="icon-rows" style="margin: var(--space-6) 0;">
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-2)">🗺️</div>
+            <div>
+              <strong>A grid the villagers live on</strong>
+              <p>The whole world is a <span class="term" data-definition="A grid is the world divided into equal squares. Think of it like graph paper — every square (called a tile) has an exact address.">64×64 grid of tiles</span> — a small town's worth of ground.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-1)">🧍</div>
+            <div>
+              <strong>Villagers with real needs</strong>
+              <p>Each villager is a small <span class="term" data-definition="An AI agent is a program that senses what's happening around it and decides what to do next on its own, instead of following one fixed script.">AI agent</span> with hunger, warmth, and rest to manage, a body that can get hurt, and a private memory only she can see.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-4)">⏱️</div>
+            <div>
+              <strong>A clock that never stops</strong>
+              <p>promptworld is an always-on <span class="term" data-definition="A simulation daemon is a single program that keeps a whole miniature world running — moving time forward, moment by moment — for as long as the computer is on, even with nobody watching.">simulation daemon</span>: it advances one <span class="term" data-definition="A tick is one step of the game clock. In promptworld, one tick equals one game-second — the world's smallest unit of time.">tick</span> — one game‑second — at a time, forever.</p>
+            </div>
+          </div>
+        </div>
+
+        <div style="background: var(--color-surface); border-left: 3px solid var(--color-accent); border-radius: var(--radius-sm); padding: var(--space-5) var(--space-6); margin: var(--space-6) 0; box-shadow: var(--shadow-sm);">
+          <strong style="color: var(--color-accent);">The promise of this course</strong>
+          <p style="margin: var(--space-1) 0 0;">By the end, you'll know exactly how these AI villagers remember — and how to design memory into your own AI projects on purpose, instead of leaving it to chance.</p>
+        </div>
+
+        <p>Now watch one villager for thirty seconds. She's hunting. Her spear snaps on its very last use. A minute later she's telling a friend about it. That ordinary little moment is about to become a permanent, structured fact — with a number attached to how much it mattered.</p>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Anatomy of a Memory</h2>
+
+        <p>A villager's memory is never a vague impression. It's a concrete record with exact parts — the moment it's born, it already knows when, how important, what, where, and why.</p>
+
+        <div style="background: var(--color-surface); border-radius: var(--radius-md); box-shadow: var(--shadow-md); padding: var(--space-6); margin: var(--space-8) 0; font-family: var(--font-mono); font-size: var(--text-base); line-height: 1.9; text-align: center;">
+          <span style="border-bottom: 3px solid var(--color-actor-4); padding-bottom: 2px;">Day 3 07:12</span>
+          <span style="border-bottom: 3px solid var(--color-actor-1); padding-bottom: 2px;">(8★)</span>
+          <span style="border-bottom: 3px solid var(--color-actor-3); padding-bottom: 2px;">My spear broke</span>
+          <span style="border-bottom: 3px solid var(--color-actor-5); padding-bottom: 2px;">at the river (12,31)</span>
+          <span style="border-bottom: 3px solid var(--color-actor-2); padding-bottom: 2px;">— hunting for the village.</span>
+        </div>
+
+        <div class="icon-rows">
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-4)">🕐</div>
+            <div>
+              <strong>When</strong>
+              <p><code>Day 3 07:12</code> — the exact game moment it happened, one tick at a time.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-1)">⭐</div>
+            <div>
+              <strong>How important</strong>
+              <p><code>(8★)</code> — a score from 1 to 10 for how formative this moment was.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-3)">📝</div>
+            <div>
+              <strong>What happened</strong>
+              <p><code>My spear broke</code> — the plain-language fact, in her own words.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-5)">📍</div>
+            <div>
+              <strong>Where</strong>
+              <p><code>at the river (12,31)</code> — the place, with exact <span class="term" data-definition="Coordinates are a pair of numbers that pinpoint one exact spot on a grid — the same way (12, 31) can mark a spot on a map.">coordinates</span>, baked in the instant it happened.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-2)">🎯</div>
+            <div>
+              <strong>Why</strong>
+              <p><code>hunting for the village</code> — the reason she was even out there.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Not All Moments Are Equal</h2>
+
+        <p>A newsroom editor doesn't give a lost umbrella the same headline as a fire downtown — every story gets ranked by how big a deal it is. promptworld ranks memories the same way, with a plain <span class="term" data-definition="A constant is a named value that never changes once it's set. Code can say salHunt instead of a bare number 4, so nobody has to remember what 4 means.">constant</span> from 1 to 10.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code>
+<span class="code-line"><span class="code-keyword">const</span> (</span>
+<span class="code-line"><span class="code-property">salTalk</span>           <span class="code-operator">=</span> <span class="code-number">3</span></span>
+<span class="code-line"><span class="code-property">salHunt</span>           <span class="code-operator">=</span> <span class="code-number">4</span></span>
+<span class="code-line"><span class="code-property">salFire</span>           <span class="code-operator">=</span> <span class="code-number">5</span></span>
+<span class="code-line"><span class="code-property">salShelter</span>        <span class="code-operator">=</span> <span class="code-number">6</span></span>
+<span class="code-line"><span class="code-property">salStarvingForage</span> <span class="code-operator">=</span> <span class="code-number">5</span></span>
+<span class="code-line"><span class="code-property">salColdNight</span>      <span class="code-operator">=</span> <span class="code-number">5</span></span>
+<span class="code-line"><span class="code-property">salNearDeath</span>      <span class="code-operator">=</span> <span class="code-number">9</span></span>
+<span class="code-line"><span class="code-property">salWitnessDeath</span>   <span class="code-operator">=</span> <span class="code-number">10</span></span>
+<span class="code-line">)</span>
+            </code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">Start a list of named numbers — so the code can say "this kind of moment" instead of a bare digit nobody remembers the meaning of.</p>
+              <p class="tl">Having a chat: worth 3 out of 10. Routine, easily forgotten.</p>
+              <p class="tl">Going hunting: worth 4 — a little more memorable than small talk.</p>
+              <p class="tl">Building a fire: worth 5 — a small survival win.</p>
+              <p class="tl">Building shelter: worth 6 — a bigger survival win than a fire.</p>
+              <p class="tl">Foraging for food while starving: worth 5 — as memorable as building a fire.</p>
+              <p class="tl">Surviving a freezing night: worth 5 as well.</p>
+              <p class="tl">Nearly dying: worth 9 out of 10 — one of the most formative things that can happen to her.</p>
+              <p class="tl">Watching someone else die: the maximum, 10 — the single most formative memory possible.</p>
+              <p class="tl">End of the list.</p>
+            </div>
+          </div>
+        </div>
+
+        <p>Notice the pattern: routine moments score low, survival wins score in the middle, and life‑or‑death moments top the scale.</p>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Captured the Instant It Happens</h2>
+
+        <p>A Polaroid camera doesn't ask you to describe the room afterward — it captures where you were and what the light looked like the second you press the shutter. The <span class="term" data-definition="A function is a self-contained chunk of code that does one specific job and can be reused by name whenever it's needed.">function</span> that creates a memory works the same way.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code>
+<span class="code-line"><span class="code-keyword">func</span> <span class="code-function">situatedMemoryEvent</span>(tick int64, agent, salience int, where *MemoryPlace, why, origin, format string, args ...any) store.Event {</span>
+<span class="code-line"><span class="code-keyword">return</span> store.Event{</span>
+<span class="code-line">Tick: tick, Type: <span class="code-string">"agent.memory_added"</span>,</span>
+<span class="code-line">Payload: <span class="code-function">mustPayload</span>(MemoryAddedPayload{</span>
+<span class="code-line">Agent: agent, Text: <span class="code-function">situateText</span>(fmt.Sprintf(format, args...), where, why),</span>
+<span class="code-line">Salience: salience, Subject: -1, Where: where, Why: why, Origin: origin,</span>
+<span class="code-line">}),</span>
+<span class="code-line">}</span>
+<span class="code-line">}</span>
+            </code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">A recipe for making one memory. It needs: the moment, who felt it, how important it was, where, why, and how the sentence should read.</p>
+              <p class="tl">Package all of that up into one <span class="term" data-definition="An event is a single fact, permanently written to the village's official history — like one dated entry in the lighthouse logbook.">event</span> — one write to the village's official history.</p>
+              <p class="tl">Stamp it with the exact tick it happened, and label it as a brand-new memory.</p>
+              <p class="tl">Start filling in the memory's actual details.</p>
+              <p class="tl">Who it belongs to, and the memory's sentence — with the place and reason already woven in.</p>
+              <p class="tl">The importance score, the place, the reason, and whether she did it, saw it, or heard about it.</p>
+              <p class="tl">Finish packaging the memory's details.</p>
+              <p class="tl">Finish packaging the event.</p>
+              <p class="tl">Hand the finished memory off to be permanently recorded.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">Key insight</strong>
+            <p>Where and why are stamped <em>at the moment the event happens</em>, never reconstructed later. That context is cheap to grab right now and nearly impossible to get right after the fact — a pattern worth stealing for any AI project you build.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">More Than a Number</h2>
+
+        <p>Salience isn't just a rating on a shelf — it's a control signal. It decides whether a memory changes what a villager does next.</p>
+
+        <div style="display: flex; gap: var(--space-2); flex-wrap: wrap; justify-content: center; margin: var(--space-8) 0;">
+          <div style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 600; background: var(--color-surface); border: 2px solid var(--color-border); color: var(--color-text-muted);">1</div>
+          <div style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 600; background: var(--color-surface); border: 2px solid var(--color-border); color: var(--color-text-muted);">2</div>
+          <div style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 600; background: var(--color-surface); border: 2px solid var(--color-border); color: var(--color-text-muted);">3</div>
+          <div style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 700; background: var(--color-accent); border: 2px solid var(--color-accent); color: white; box-shadow: var(--shadow-md);">4</div>
+          <div style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 600; background: var(--color-surface); border: 2px solid var(--color-border); color: var(--color-text-muted);">5</div>
+          <div style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 600; background: var(--color-surface); border: 2px solid var(--color-border); color: var(--color-text-muted);">6</div>
+          <div style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 600; background: var(--color-surface); border: 2px solid var(--color-border); color: var(--color-text-muted);">7</div>
+          <div style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 600; background: var(--color-surface); border: 2px solid var(--color-border); color: var(--color-text-muted);">8</div>
+          <div style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 700; background: var(--color-accent); border: 2px solid var(--color-accent); color: white; box-shadow: var(--shadow-md);">9</div>
+          <div style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 700; background: var(--color-accent); border: 2px solid var(--color-accent); color: white; box-shadow: var(--shadow-md);">10</div>
+        </div>
+
+        <div class="icon-rows">
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-2)">🗣️</div>
+            <div>
+              <strong>4 and up: tellable gossip</strong>
+              <p>A memory about a neighbor becomes something she'll actually repeat to someone else.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-1)">🚨</div>
+            <div>
+              <strong>9 and up: interrupts her thinking</strong>
+              <p>Big enough that it cuts through whatever she was already doing or planning.</p>
+            </div>
+          </div>
+        </div>
+
+        <p>Every memory also records its <strong>origin</strong> — did she do it, see it, or just hear about it? That's how she can honestly say "I saw it myself."</p>
+
+        <div class="pattern-cards">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-1)">
+            <div class="pattern-icon" style="background: var(--color-actor-1)">✋</div>
+            <h4 class="pattern-title">Action</h4>
+            <p class="pattern-desc">She did it herself — her own spear, her own hands.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-2)">
+            <div class="pattern-icon" style="background: var(--color-actor-2)">👀</div>
+            <h4 class="pattern-title">Witness</h4>
+            <p class="pattern-desc">She saw it happen with her own eyes, firsthand.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-3)">
+            <div class="pattern-icon" style="background: var(--color-actor-3)">👂</div>
+            <h4 class="pattern-title">Report</h4>
+            <p class="pattern-desc">Someone else told her — secondhand, gossip passed along.</p>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">😇</div>
+          <div class="callout-content">
+            <strong class="callout-title">Even the divine gets ranked</strong>
+            <p>Dreams from the world's angel score an 8 — high, but not the highest. As the code's own comment puts it: "the divine reliably surfaces without outranking real trauma."</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Check Your Understanding</h2>
+
+        <div class="quiz-container" id="quiz-module1">
+          <div class="quiz-question-block"
+               data-correct="option-b"
+               data-explanation-right="Exactly — salience isn't just a rating, it's a gate. At 4 or higher, a memory about someone else becomes something she'll actually repeat as gossip."
+               data-explanation-wrong="Not quite. The words she'd use matter for how the story sounds, but whether she says anything at all comes down to that salience number crossing the gossip threshold.">
+            <h3 class="quiz-question">A villager watches a neighbor steal from a chest. Which matters more for whether she'll gossip about it: the memory's text, or its salience number?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The text — the exact words she'd use to describe it</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The salience number — high enough, and it becomes tellable gossip</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Neither — every memory gets shared with someone eventually</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="option-b"
+               data-explanation-right="Exactly — this is the situatedMemoryEvent pattern. Capture the where and why while it's happening; by the time you'd try to query it back out, those details are gone for good."
+               data-explanation-wrong="Not quite — think about what's actually hard to get right later: not speed, but accuracy. Once the moment passes, the exact context is gone forever.">
+            <h3 class="quiz-question">You're building a shopping assistant with AI memory. promptworld stamps the where/why context <em>at the moment</em> an event happens, instead of reconstructing it later. Why?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Because it's cheaper on storage space</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Because context is easy to capture in the moment, but nearly impossible to accurately rebuild afterward</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Because it makes the program run faster later on</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="option-b"
+               data-explanation-right="Exactly — situatedMemoryEvent bakes in all five pieces the instant the spear snaps: the text, a salience number, where, why, and origin (she felt it herself, so origin = action)."
+               data-explanation-wrong="Not quite — go back to the anatomy of a memory: every one of those pieces (text, stars, place, why, and how she knows) is captured the moment the event happens, not reconstructed afterward.">
+            <h3 class="quiz-question">A villager's hunting spear snaps on its last use. Trace it into a memory — which parts of the record actually get filled in?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Just a sentence describing what happened</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The sentence, a salience number, where it happened, why she was there, and how she knows (origin)</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Only the sentence and a salience number — location and reason get filled in later, when she recalls it</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module1')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module1')">Try Again</button>
+        </div>
+
+        <p style="color: var(--color-text-secondary); font-style: italic; margin-top: var(--space-10);">Next: <strong>The Clockwork Heart</strong> — why every one of these events lands in one long, unchangeable history that can replay perfectly, and why no AI is ever allowed to touch it directly.</p>
+      </section>
+
+    </div>
+  </div>
+</section>
