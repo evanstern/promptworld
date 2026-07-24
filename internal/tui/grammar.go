@@ -458,7 +458,7 @@ func styleWrapLine(prefix string, summary []seg, width, maxWrap int) []styledLin
 		// it's actually longer than that (T005/T021 plain-equivalence).
 		if truncated && gi == len(groups)-1 {
 			if len(lineRunes) > width-1 {
-				lineRunes = lineRunes[:width-1:width-1]
+				lineRunes = lineRunes[: width-1 : width-1]
 				lineRoles = lineRoles[:width-1]
 			}
 			lineRunes = append(lineRunes, '…')
