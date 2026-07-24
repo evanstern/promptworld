@@ -178,6 +178,13 @@ func (md *Mind) snapshotConvo(tick int64, a, b int) convoCtx {
 			mem = append(mem, sim.FormatMemory(m))
 		}
 		cc.memories = append(cc.memories, mem)
+		// Shadow/on divergence instrumentation (spec 042 US2): the scene
+		// snapshot is the second prompt path — one recorded rank-divergence per
+		// participant at its k=5 selection. The snapshot above keeps the LEGACY
+		// window either way.
+		if md.memoryRelevance != "" {
+			md.recordDivergence(id, 5, tick)
+		}
 	}
 
 	// Relationship fodder in (TASK-22): the last conversation between the

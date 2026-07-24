@@ -291,7 +291,10 @@ func Run(dir string) error {
 		if consolTokWarn != "" {
 			fmt.Printf("daemon: %s\n", consolTokWarn)
 		}
-		md, err := mind.New(orch, loop, loop, w.Map(), w.Manifest.Seed, state.Marshal(), persona.Load(dir), loopRounds, plannerTokens, consolidationTokens)
+		// memory_relevance (spec 042): the world's selection-mode flag threads
+		// into the mind like the token budgets — "" legacy, "shadow" records
+		// divergence with prompts unchanged, "on" is the gated US3 posture.
+		md, err := mind.New(orch, loop, loop, w.Map(), w.Manifest.Seed, state.Marshal(), persona.Load(dir), loopRounds, plannerTokens, consolidationTokens, w.Manifest.MemoryRelevance)
 		if err != nil {
 			return err
 		}

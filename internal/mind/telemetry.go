@@ -262,6 +262,36 @@ func (md *Mind) emitCog(events ...store.Event) {
 	}
 }
 
+// recordDivergence computes both rankings for one memory selection over the
+// replica and emits the cog.memory_divergence record (spec 042 US2, FR-006) —
+// the recorded evidence the shadow→on gate decision reads. Absorb-goroutine
+// only (it reads the replica); the injection detaches like emitSuppressed so
+// telemetry never blocks the absorb loop. The query is the agent's recorded
+// situation vector (nil when none exists yet — the augmented ranking then
+// delegates to legacy and the record shows sit_tick 0, identical rankings by
+// definition). Vectorless counts the candidates whose relevance would be
+// neutral: no vector at all, or (once a query exists) a vector from a
+// different model (FR-009).
+func (md *Mind) recordDivergence(agent, k int, tick int64) {
+	a := &md.replica.Agents[agent]
+	var query []float32
+	if len(a.SitVec) > 0 {
+		query = a.SitVec
+	}
+	legacy := sim.SelectMemories(a, md.replica.Seed, agent, tick, k)
+	augmented := sim.SelectMemoriesRelevant(a, md.replica.Seed, agent, tick, k, query, a.SitVecModel)
+	vectorless := 0
+	for _, m := range a.Memories {
+		if len(m.Vec) == 0 || (query != nil && m.VecModel != a.SitVecModel) {
+			vectorless++
+		}
+	}
+	b, _ := json.Marshal(sim.NewMemoryDivergencePayload(
+		agent, tick, md.memoryRelevance, legacy, augmented, vectorless, a.SitVecTick))
+	e := store.Event{Type: "cog.memory_divergence", Payload: b}
+	go md.emitCog(e)
+}
+
 // RecalibrateSignal is the orchestrator's drift hook (installed by the
 // daemon): the live estimator's spike rate breached threshold and adopted the
 // window median — record it. The hook is per provider now (spec 024 T009); the

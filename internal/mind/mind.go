@@ -94,6 +94,14 @@ type Mind struct {
 	// always effective values — the packages never see a raw operator input.
 	plannerTokens       int64
 	consolidationTokens int64
+	// memoryRelevance is the world's selection-mode flag (spec 042,
+	// world.json memory_relevance, validated at world.Open): "" = legacy
+	// selection only; "shadow" = prompts still get the legacy window
+	// bit-identically while each selection's rank divergence is recorded
+	// (cog.memory_divergence); "on" additionally feeds the augmented window to
+	// prompts (US3, not consumed yet). Boot-static — threaded at New like the
+	// token budgets, never mutated after goroutines start.
+	memoryRelevance string
 
 	// Nightly consolidation (TASK-9): FIFO queue + per-agent in-flight guard.
 	consolQ        chan consolJob
@@ -126,7 +134,7 @@ type Mind struct {
 // driver BEFORE any goroutine starts (race-free), for tests that stub the model
 // through the Submitter interface rather than a real *llm.Orchestrator.
 // Production omits it — New wires runLoop from the concrete orchestrator.
-func New(orch Submitter, loop Injector, social SocialInjector, m *worldmap.Map, seed uint64, stateJSON []byte, personas [sim.AgentCount]string, loopRounds int, plannerTokens, consolidationTokens int64, runLoopOverride ...func(context.Context, toolloop.Job) (toolloop.Result, error)) (*Mind, error) {
+func New(orch Submitter, loop Injector, social SocialInjector, m *worldmap.Map, seed uint64, stateJSON []byte, personas [sim.AgentCount]string, loopRounds int, plannerTokens, consolidationTokens int64, memoryRelevance string, runLoopOverride ...func(context.Context, toolloop.Job) (toolloop.Result, error)) (*Mind, error) {
 	replica := sim.NewState(seed, m)
 	if err := json.Unmarshal(stateJSON, replica); err != nil {
 		return nil, err
@@ -152,6 +160,7 @@ func New(orch Submitter, loop Injector, social SocialInjector, m *worldmap.Map, 
 	md.loopRounds = loopRounds
 	md.plannerTokens = plannerTokens
 	md.consolidationTokens = consolidationTokens
+	md.memoryRelevance = memoryRelevance
 	// The tool-use loop needs the concrete orchestrator (toolloop.Run's
 	// contract surface). Production passes it; test seams that stub the model
 	// through the Submitter interface install their own runLoop after New.
@@ -391,6 +400,13 @@ func (md *Mind) plan() {
 		md.planInFlight[i].Store(true)
 		select {
 		case md.planQ <- job:
+			// Shadow/on divergence instrumentation (spec 042 US2, FR-006): one
+			// recorded rank-divergence per enqueued plan job. The job's prompt
+			// above was already built from the LEGACY window — in shadow mode
+			// nothing about the cognition changes, only this telemetry lands.
+			if md.memoryRelevance != "" {
+				md.recordDivergence(i, md.k, tick)
+			}
 			md.pending[i] = false
 			md.pendingSeq[i] = 0
 			md.lastPlanned[i] = tick

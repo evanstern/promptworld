@@ -161,3 +161,64 @@ type RecalibrationPayload struct {
 	PriorSPerPt    float64 `json:"prior_s_per_pt,omitempty"`
 	AdoptedSPerPt  float64 `json:"adopted_s_per_pt,omitempty"`
 }
+
+// MemoryDivergencePayload — cog.memory_divergence (spec 042 US2): one
+// selection's rank divergence between the legacy window and the
+// relevance-augmented window, recorded at plan/scene-snapshot time by the mind
+// while memory_relevance is "shadow" or "on". Reducer NO-OP telemetry
+// (recorded observability, cog.* class) — the recorded evidence the US2→US3
+// gate decision is made from (FR-006/FR-007). Both windows ride as memory
+// Seqs in window order, auditable against their agent.memory_added events.
+type MemoryDivergencePayload struct {
+	Agent        int     `json:"agent"`
+	Tick         int64   `json:"tick"`
+	Mode         string  `json:"mode"`
+	Legacy       []int64 `json:"legacy"`
+	Augmented    []int64 `json:"augmented"`
+	Overlap      int     `json:"overlap"`
+	Displacement int     `json:"displacement"`
+	Vectorless   int     `json:"vectorless"`
+	SitTick      int64   `json:"sit_tick"`
+}
+
+// NewMemoryDivergencePayload assembles the divergence record from the two
+// selected windows — the sim-side payload authority (the NewCogToolCallPayload
+// precedent), pure over recorded data so the arithmetic is unit-testable
+// beside the selector it audits. Overlap counts memories present in both
+// windows; displacement sums the absolute rank distance of each shared
+// member. Identity is the memory's stamped Seq; a pre-042 (seq-less, Seq 0)
+// memory has no durable identity and never counts as shared — its window slot
+// still rides the lists as 0, visibly pre-042. sitTick 0 means no situation
+// vector existed, so the rankings are identical by definition.
+func NewMemoryDivergencePayload(agent int, tick int64, mode string, legacy, augmented []Memory, vectorless int, sitTick int64) MemoryDivergencePayload {
+	l := make([]int64, len(legacy))
+	rank := make(map[int64]int, len(legacy))
+	for i, m := range legacy {
+		l[i] = m.Seq
+		if m.Seq != 0 {
+			rank[m.Seq] = i
+		}
+	}
+	g := make([]int64, len(augmented))
+	overlap, displacement := 0, 0
+	for i, m := range augmented {
+		g[i] = m.Seq
+		if m.Seq == 0 {
+			continue
+		}
+		if li, ok := rank[m.Seq]; ok {
+			overlap++
+			d := i - li
+			if d < 0 {
+				d = -d
+			}
+			displacement += d
+		}
+	}
+	return MemoryDivergencePayload{
+		Agent: agent, Tick: tick, Mode: mode,
+		Legacy: l, Augmented: g,
+		Overlap: overlap, Displacement: displacement,
+		Vectorless: vectorless, SitTick: sitTick,
+	}
+}

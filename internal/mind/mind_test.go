@@ -224,7 +224,7 @@ func newHarnessAt(t *testing.T, reply string, speed clock.Speed) *harness {
 	}
 	h.loop = sim.NewLoop(state, m, st, notify)
 
-	md, err := New(model, h.loop, h.loop, m, 42, state.Marshal(), [sim.AgentCount]string{}, testLoopRounds, testPlannerTokens, testConsolidationTokens, mockLoop(model))
+	md, err := New(model, h.loop, h.loop, m, 42, state.Marshal(), [sim.AgentCount]string{}, testLoopRounds, testPlannerTokens, testConsolidationTokens, "", mockLoop(model))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -509,7 +509,7 @@ func (c *capturingConsolModel) Submit(_ context.Context, req llm.Request) (llm.R
 func TestMindNewStoresBudgets(t *testing.T) {
 	h := newHarness(t, "")
 	state := sim.NewState(42, h.m)
-	md, err := New(h.model, h.loop, h.loop, h.m, 42, state.Marshal(), [sim.AgentCount]string{}, testLoopRounds, 321, 654, noopLoop)
+	md, err := New(h.model, h.loop, h.loop, h.m, 42, state.Marshal(), [sim.AgentCount]string{}, testLoopRounds, 321, 654, "", noopLoop)
 	if err != nil {
 		t.Fatal(err)
 	}
