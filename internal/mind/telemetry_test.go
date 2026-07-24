@@ -544,6 +544,69 @@ func TestPausedThoughtPredictsFrozenLanding(t *testing.T) {
 	}
 }
 
+// TestPausedNudgeThinksAtSuppressingSpeed (spec 040 US1+US2 together, the full
+// decision-6 chain; SC-003): on a world paused from a planner-suppressing speed
+// (32x), a landed nudge's thought is ATTEMPTED and LANDS at the frozen tick —
+// the wake (US1) arms it and paused routing (US2) allows what set-speed routing
+// would suppress. The nudged round is never suppressed while paused.
+func TestPausedNudgeThinksAtSuppressingSpeed(t *testing.T) {
+	h := newHarnessAt(t, `{"goal":"wander","reason":"stretching"}`, "32x")
+
+	// Warm until 32x routing is live (agent 0 suppressed at tick 300): under
+	// suppression lastPlanned is never set, so every agent keeps an open window.
+	if got := h.waitEvents(t, 40*time.Second, func(e store.Event) bool {
+		if e.Type != "cog.outcome" {
+			return false
+		}
+		var p sim.CogOutcomePayload
+		return json.Unmarshal(e.Payload, &p) == nil && p.Class == "planner" && p.Outcome == sim.OutcomeSuppressed
+	}); len(got) == 0 {
+		t.Fatal("no planner suppression at 32x — world never warmed")
+	}
+	st, err := h.loop.Do("pause", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	frozen := st.Tick
+	time.Sleep(1 * time.Second)
+
+	const target = 7
+	const nudgeSeq = int64(920000)
+	h.mind.Observe(nudgeBatchEvents(nudgeSeq, frozen, "vision", "the well ran dry", target))
+
+	thoughts := h.waitEvents(t, 20*time.Second, func(e store.Event) bool {
+		if e.Type != "cog.thought" {
+			return false
+		}
+		var p sim.CogThoughtPayload
+		return json.Unmarshal(e.Payload, &p) == nil && p.Agent == target && p.TriggerSeq == nudgeSeq
+	})
+	if len(thoughts) != 1 {
+		t.Fatalf("paused nudge at 32x produced %d thoughts, want exactly 1 (paused routing must allow what set-speed suppresses)", len(thoughts))
+	}
+	var tp sim.CogThoughtPayload
+	json.Unmarshal(thoughts[0].Payload, &tp)
+
+	outcomes := h.waitEvents(t, 20*time.Second, func(e store.Event) bool {
+		if e.Type != "cog.outcome" {
+			return false
+		}
+		var p sim.CogOutcomePayload
+		return json.Unmarshal(e.Payload, &p) == nil && p.Job == tp.Job
+	})
+	if len(outcomes) != 1 {
+		t.Fatalf("nudge job %s has %d outcomes, want exactly 1", tp.Job, len(outcomes))
+	}
+	var op sim.CogOutcomePayload
+	json.Unmarshal(outcomes[0].Payload, &op)
+	if op.Outcome == sim.OutcomeSuppressed {
+		t.Fatalf("the paused nudge round was suppressed (%q) — paused routing must allow it", op.Reason)
+	}
+	if op.LandingTick != frozen || op.StalenessTicks != 0 {
+		t.Errorf("frozen-tick landing wrong: landing=%d staleness=%d (frozen %d)", op.LandingTick, op.StalenessTicks, frozen)
+	}
+}
+
 // --- spec 037 US2 (T007): the suppressionCounting seam ---
 
 // countingOrch is a fake orchestrator implementing both Submitter and the
