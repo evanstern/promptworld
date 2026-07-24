@@ -102,7 +102,21 @@ var catalogFixture = map[string]digestFixture{
 	"agent.talked":          {`{"a":0,"b":1}`, `Ash chatted with Birch`},
 
 	// --- agent: mind & plans ---
-	"agent.memory_added":      {`{"agent":0,"text":"the fire needs tending","salience":5,"subject":1,"tone":0}`, `Ash remembers: "the fire needs tending" · about Birch`},
+	"agent.memory_added": {`{"agent":0,"text":"the fire needs tending","salience":5,"subject":1,"tone":0}`, `Ash remembers: "the fire needs tending" · about Birch`},
+	// Spec 042: embedding companions + divergence telemetry. Vectors are
+	// elided by design; the digest carries the identity/audit fields.
+	"agent.memory_embedded": {
+		`{"agent":0,"mem_seq":41,"vec":[0.1,0.2,0.3],"model":"all-minilm"}`,
+		`Ash memory seq=41 embedded dims=3 model=all-minilm`,
+	},
+	"agent.situation_embedded": {
+		`{"agent":1,"tick":1801,"text":"daytime · at (3,4) · idle","vec":[0.1,0.2],"model":"all-minilm"}`,
+		`Birch situation: "daytime · at (3,4) · idle" dims=2 model=all-minilm`,
+	},
+	"cog.memory_divergence": {
+		`{"agent":2,"tick":1801,"mode":"shadow","legacy":[5,6],"augmented":[5,9],"overlap":1,"displacement":0,"vectorless":3,"sit_tick":1800}`,
+		`agent=Cedar mode=shadow overlap=1/2 displaced=0 vectorless=3`,
+	},
 	"agent.thought":           {`{"agent":0,"text":"I should forage","source":"planner"}`, `Ash thought: "I should forage" (planner)`},
 	"agent.memory_promoted":   {`{"agent":0,"mem_tick":100,"text_hash":"abc","boost":2}`, `Ash's memory (t100) reinforced`},
 	"agent.memory_faded":      {`{"agent":0,"mem_tick":100,"text_hash":"abc"}`, `Ash forgot a memory (t100)`},
