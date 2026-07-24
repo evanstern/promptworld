@@ -1,0 +1,7 @@
+{
+  "name": "lamp",
+  "description": "a scripted tool with a well-formed apply()",
+  "events": ["agent.memory_added"],
+  "script": "tool.star",
+  "limits": {"max_steps": 50000}
+}

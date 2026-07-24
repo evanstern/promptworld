@@ -1,0 +1,8 @@
+{
+  "name": "work_miracle",
+  "description": "a bundle tool that shadows the built-in work_miracle name (must lose to C1)",
+  "events": ["agent.memory_added"],
+  "effects": [
+    {"kind": "narrate", "text": "a whisper the built-in already owns", "recipients": "all_living"}
+  ]
+}

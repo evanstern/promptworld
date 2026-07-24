@@ -17,6 +17,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/evanstern/promptworld/internal/bundle"
 	"github.com/evanstern/promptworld/internal/clock"
 	"github.com/evanstern/promptworld/internal/llm"
 	"github.com/evanstern/promptworld/internal/sim"
@@ -60,8 +61,16 @@ type Metatron struct {
 	loop     LoopControl // clock control for the meta tools (spec 029 US5)
 	worldDir string
 
+	// bundles is the boot-frozen set of world-scoped bundle tools (spec 036),
+	// set once by the daemon after New via SetBundles and read only by the turn
+	// worker (runTurn) — race-free because a turn runs only on an IPC request,
+	// long after boot. nil (the default, and every current test) means no bundle
+	// tools: the turn assembly behaves exactly as before.
+	bundles *bundle.BundleSet
+
 	replica *sim.State
 	m       *worldmap.Map
+	seed    uint64 // world seed — boot-immutable; backs the script world view's world.rand (spec 036 US3)
 
 	turnBusy atomic.Bool // one console turn at a time
 
@@ -158,6 +167,7 @@ func New(orch Submitter, social Injector, loop LoopControl, m *worldmap.Map, see
 		worldDir:        worldDir,
 		replica:         replica,
 		m:               m,
+		seed:            seed,
 		alive:           map[int]bool{},
 		digQ:            make(chan digJob, 4),
 		digCarry:        make(chan []string, 1),
@@ -206,6 +216,12 @@ func (mt *Metatron) Observe(events []store.Event) {
 }
 
 func (mt *Metatron) Close() { close(mt.done) }
+
+// SetBundles installs the boot-frozen bundle set the turn assembly merges into
+// its roster/handler surface (spec 036 T013/T014). The daemon calls it once
+// after New and before serving; only the turn worker reads it, so no lock is
+// needed. A nil set (never installed) leaves the angel's surface unchanged.
+func (mt *Metatron) SetBundles(bs *bundle.BundleSet) { mt.bundles = bs }
 
 func (mt *Metatron) metatronDir() string    { return filepath.Join(mt.worldDir, "metatron") }
 func (mt *Metatron) soulPath() string       { return filepath.Join(mt.metatronDir(), "soul.md") }

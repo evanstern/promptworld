@@ -255,6 +255,14 @@ var injectSocialWhitelist = map[string]bool{
 	"journal.entry_deleted": true,
 }
 
+// InjectableSocialEvent reports whether t is a social event type the
+// InjectSocial door accepts — a read-only view of injectSocialWhitelist
+// membership, exported so out-of-package boot validation (internal/bundle,
+// spec 036 T3) can gate bundle-declared events against the SAME whitelist the
+// door enforces. This is the single source of truth; validateCoverage
+// (toolcheck.go) reads the whitelist through it too.
+func InjectableSocialEvent(t string) bool { return injectSocialWhitelist[t] }
+
 // InjectSocial applies a batch of whitelisted social events atomically at
 // the next tick boundary (all-or-nothing): ticks are re-stamped, payloads
 // dry-run on a state copy first, then applied and recorded.

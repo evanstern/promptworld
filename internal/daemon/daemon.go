@@ -15,6 +15,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/evanstern/promptworld/internal/bundle"
 	"github.com/evanstern/promptworld/internal/clock"
 	"github.com/evanstern/promptworld/internal/cognition"
 	"github.com/evanstern/promptworld/internal/ipc"
@@ -49,6 +50,30 @@ func Run(dir string) error {
 	if err != nil {
 		return err
 	}
+
+	// Bundle tools (spec 036 T013): discover + validate the world's bundles/
+	// folder once at boot, alongside the registry validators above, and freeze it
+	// into a BundleSet the metatron turn assembly reads. Every BootReport entry —
+	// a skipped tool or a rejected bundle — is logged on the boot channel naming
+	// its file and rule (SC-005); a bad bundle never bricks boot (bundles are
+	// additive). An absent/empty bundles/ dir yields an empty set and changes
+	// nothing. Only a genuine I/O failure reading the root is fatal.
+	bundleSet, err := bundle.Discover(dir)
+	if err != nil {
+		return fmt.Errorf("bundle discovery: %w", err)
+	}
+	for _, iss := range bundleSet.BootReport() {
+		tl := ""
+		if iss.Tool != "" {
+			tl = " tool=" + iss.Tool
+		}
+		fmt.Printf("daemon: bundle=%s%s file=%s rule=%s severity=%s: %s\n",
+			iss.Bundle, tl, iss.File, iss.Rule, iss.Severity, iss.Message)
+	}
+	if n := len(bundleSet.Roster()); n > 0 {
+		fmt.Printf("daemon: bundles on (%d tool(s) from %d bundle(s))\n", n, len(bundleSet.Bundles()))
+	}
+
 	if err := acquirePidfile(w); err != nil {
 		return err
 	}
@@ -281,6 +306,7 @@ func Run(dir string) error {
 		if err != nil {
 			return err
 		}
+		mt.SetBundles(bundleSet) // spec 036 T013: hand the frozen bundle surface to the turn assembly
 		defer mt.Close()
 		consumers = append(consumers, mt.Observe)
 		srv.SetMetatron(mt)

@@ -1,0 +1,8 @@
+{
+  "name": "brokentool",
+  "description": "deliberately mismatched name to trigger a T1 boot rejection",
+  "events": ["agent.memory_added"],
+  "effects": [
+    {"kind": "narrate", "text": "this should never load", "recipients": "all_living"}
+  ]
+}

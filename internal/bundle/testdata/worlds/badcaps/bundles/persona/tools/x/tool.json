@@ -1,0 +1,8 @@
+{
+  "name": "x",
+  "description": "a valid tool in a bundle with broken permissions",
+  "events": ["agent.memory_added"],
+  "effects": [
+    {"kind": "narrate", "text": "hello", "recipients": "all_living"}
+  ]
+}

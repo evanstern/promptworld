@@ -1,0 +1,8 @@
+{
+  "name": "aura",
+  "description": "a valid sibling that must survive its bundlemate colliding with a built-in",
+  "events": ["agent.memory_added"],
+  "effects": [
+    {"kind": "narrate", "text": "a soft glow settles over the village", "recipients": "all_living"}
+  ]
+}

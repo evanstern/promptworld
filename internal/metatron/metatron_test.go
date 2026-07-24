@@ -89,6 +89,7 @@ func (l *loopControlStub) recorded() []loopCall {
 type stateInjector struct {
 	mu      sync.Mutex
 	state   *sim.State
+	m       *worldmap.Map // the map the dry-run copy needs for terrain-aware arms (entity_moved passability)
 	batches [][]store.Event
 	fail    bool
 }
@@ -99,10 +100,16 @@ func (si *stateInjector) InjectSocial(events []store.Event) error {
 	if si.fail {
 		return context.DeadlineExceeded
 	}
-	// Dry-run on a copy.
+	// Dry-run on a copy. The map is unexported/unserialized, so the JSON copy
+	// starts map-less — restore it (SetMap) so terrain-aware reducer arms (a
+	// bundle-tool or miracle move's passability check) resolve as the real door's
+	// probe copy does, instead of nil-panicking.
 	var copyState sim.State
 	b, _ := json.Marshal(si.state)
 	json.Unmarshal(b, &copyState)
+	if si.m != nil {
+		copyState.SetMap(si.m)
+	}
 	for _, e := range events {
 		if err := copyState.Apply(e); err != nil {
 			return err
@@ -124,7 +131,7 @@ func newTestAngel(t *testing.T, reply string) (*Metatron, *mockOrch, *stateInjec
 	m := worldmap.Generate(42, 64, 64)
 	state := sim.NewState(42, m)
 	orch := &mockOrch{reply: reply}
-	inj := &stateInjector{state: state}
+	inj := &stateInjector{state: state, m: m}
 	mt, err := New(orch, inj, &loopControlStub{}, m, 42, state.Marshal(), dir, testLoopRounds, testTurnTokens)
 	if err != nil {
 		t.Fatal(err)

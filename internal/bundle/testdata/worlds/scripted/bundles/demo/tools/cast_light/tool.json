@@ -1,0 +1,11 @@
+{
+  "name": "cast_light",
+  "description": "Cast a light that blooms for all to see at night but is invisible by day — a scripted omen that branches on the world clock.",
+  "params": [
+    {"name": "target", "kind": "agent_name", "required": true, "description": "the villager the light centers on"}
+  ],
+  "events": ["agent.memory_added"],
+  "charges": 0,
+  "script": "tool.star",
+  "limits": {"max_steps": 100000}
+}

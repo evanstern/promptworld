@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/evanstern/promptworld/internal/bundle"
 	"github.com/evanstern/promptworld/internal/persona"
 	"github.com/evanstern/promptworld/internal/tool"
 )
@@ -146,10 +147,29 @@ type grantSet struct {
 	kinds           map[string]bool // granted miracle kinds; meaningful only when restricted
 	kindsRestricted bool            // true ⇒ only kinds in `kinds` are offered for work_miracle
 	manifestDefault bool            // true ⇒ no capabilities.json on disk (full default grant)
+	// Bundle-tool grant (spec 036 T014). `tools` is confined to KNOWN built-in
+	// names (loadManifest drops unknowns), so it can never carry a bundle name;
+	// bundle tools are gated by the RAW request instead. toolsConstrained is true
+	// only when an explicit "tools" list is present — then a bundle tool is
+	// granted iff bundleAllowed names it. When false (no file, or the "tools" key
+	// omitted) every bundle tool is granted, mirroring the built-in default.
+	toolsConstrained bool
+	bundleAllowed    map[string]bool
 }
 
 // allows reports whether a metatron loop tool is granted this world.
 func (g grantSet) allows(name string) bool { return g.tools[name] }
+
+// allowsBundle reports whether a bundle tool is granted this world (spec 036
+// T014): the world-level capabilities.json "tools" list applies to bundle tools
+// the same way it does to built-ins — absent file or omitted key ⇒ granted, an
+// explicit list ⇒ the tool must be named.
+func (g grantSet) allowsBundle(name string) bool {
+	if !g.toolsConstrained {
+		return true
+	}
+	return g.bundleAllowed[name]
+}
 
 // allowsKind reports whether a miracle kind may land: unrestricted worlds allow
 // every kind; a restricted world allows only its declared subset.
@@ -238,7 +258,14 @@ type manifestDoc struct {
 //
 // Conversation is never gateable here — it is the final-text channel, not a
 // roster tool (FR-006); a world granting nothing still converses.
-func loadManifest(worldDir string) (grantSet, []string) {
+//
+// knownBundleTools is the boot-frozen bundle roster's tool names (spec 036 T014,
+// handoff fix T030): an explicit "tools" list naming a REAL bundle tool must not
+// render as an "unknown tool … ignored" notice — allowsBundle already grants it
+// correctly, so the notice was cosmetic noise. Variadic so every pre-036 call
+// site (and every direct-arg test) keeps compiling unchanged; the turn/status
+// call sites pass the bundle roster's names.
+func loadManifest(worldDir string, knownBundleTools ...string) (grantSet, []string) {
 	path := filepath.Join(worldDir, "capabilities.json")
 	data, err := os.ReadFile(path)
 	if os.IsNotExist(err) {
@@ -263,16 +290,33 @@ func loadManifest(worldDir string) (grantSet, []string) {
 	}
 
 	tools := make(map[string]bool)
+	var bundleAllowed map[string]bool
+	toolsConstrained := false
 	if doc.Tools == nil {
 		for _, n := range order { // omitted key ⇒ unconstrained
 			tools[n] = true
 		}
 	} else {
+		// An explicit list constrains BOTH built-ins and bundle tools. Built-in
+		// names filter through `known` (an unknown built-in name is a noticed typo);
+		// the raw list gates bundle tools (spec 036 T014), which loadManifest cannot
+		// classify at this layer (it has no bundle roster), so a bundle name is not
+		// reported as an unknown tool here — allowsBundle honors it.
+		toolsConstrained = true
+		bundleAllowed = make(map[string]bool, len(doc.Tools))
+		knownBundle := make(map[string]bool, len(knownBundleTools))
+		for _, n := range knownBundleTools {
+			knownBundle[n] = true
+		}
 		var unknown []string
 		for _, n := range doc.Tools {
-			if known[n] {
+			bundleAllowed[n] = true
+			switch {
+			case known[n]:
 				tools[n] = true
-			} else {
+			case knownBundle[n]:
+				// A real bundle tool name — allowsBundle already honors it; not a typo.
+			default:
 				unknown = append(unknown, n)
 			}
 		}
@@ -281,7 +325,7 @@ func loadManifest(worldDir string) (grantSet, []string) {
 		}
 	}
 
-	g := grantSet{tools: tools}
+	g := grantSet{tools: tools, toolsConstrained: toolsConstrained, bundleAllowed: bundleAllowed}
 	if doc.MiracleKinds != nil {
 		knownKind := make(map[string]bool)
 		for _, k := range tool.MiracleKinds() {
@@ -324,4 +368,83 @@ func grantedRoster(g grantSet) []tool.Tool {
 		out = append(out, t)
 	}
 	return out
+}
+
+// narrowGrantForBundles applies every installed bundle's optional
+// capabilities.json as an INTERSECTION over the world-level grant (spec 036
+// US4 T030, data-model.md GrantNarrowing): a persona bundle can only narrow
+// what the world already grants — never widen it. Reuses grantSet's own
+// semantics (this file, above) rather than reinventing them: the same "tools"/
+// "miracle_kinds" schema, the same omitted-key-means-unconstrained reading. A
+// bundle with no capabilities.json (Grant == nil) contributes nothing; with no
+// BundleSet at all, g is returned unchanged. Multiple narrowing bundles compose
+// by intersection, which is commutative — load order does not matter.
+func narrowGrantForBundles(g grantSet, bs *bundle.BundleSet) grantSet {
+	if bs == nil {
+		return g
+	}
+	for _, b := range bs.Bundles() {
+		if b.Grant != nil {
+			g = intersectGrant(g, b.Grant)
+		}
+	}
+	return g
+}
+
+// intersectGrant narrows g by one bundle's grant doc. An explicit "tools" list
+// keeps only names already granted AND named by gd — the SAME flat namespace
+// loadManifest's "tools" key already spans (built-in loop-tool names via
+// g.tools, bundle tool names via g.bundleAllowed), so a persona can narrow
+// either surface with one list. An explicit "miracle_kinds" list keeps only
+// kinds already granted AND named when the world was already restricted;
+// when the world was unrestricted ("all kinds"), gd's list becomes the new
+// ceiling (still never wider than the world's real vocabulary — grantedKinds/
+// RestrictEnum only ever consult tool.MiracleKinds() membership, so a garbage
+// persona-declared kind name is simply inert). Omitted keys narrow nothing.
+func intersectGrant(g grantSet, gd *bundle.GrantDoc) grantSet {
+	if gd.Tools != nil {
+		named := make(map[string]bool, len(gd.Tools))
+		for _, n := range gd.Tools {
+			named[n] = true
+		}
+		newTools := make(map[string]bool, len(g.tools))
+		for n := range g.tools {
+			if named[n] {
+				newTools[n] = true
+			}
+		}
+		newBundleAllowed := make(map[string]bool, len(named))
+		if g.toolsConstrained {
+			for n := range g.bundleAllowed {
+				if named[n] {
+					newBundleAllowed[n] = true
+				}
+			}
+		} else {
+			for n := range named {
+				newBundleAllowed[n] = true
+			}
+		}
+		g.tools, g.bundleAllowed, g.toolsConstrained = newTools, newBundleAllowed, true
+	}
+	if gd.MiracleKinds != nil {
+		named := make(map[string]bool, len(gd.MiracleKinds))
+		for _, k := range gd.MiracleKinds {
+			named[k] = true
+		}
+		newKinds := make(map[string]bool, len(named))
+		if g.kindsRestricted {
+			for k := range g.kinds {
+				if named[k] {
+					newKinds[k] = true
+				}
+			}
+		} else {
+			for k := range named {
+				newKinds[k] = true
+			}
+		}
+		g.kinds, g.kindsRestricted = newKinds, true
+	}
+	return g
 }

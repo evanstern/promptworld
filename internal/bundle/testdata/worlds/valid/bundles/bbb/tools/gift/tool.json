@@ -1,0 +1,11 @@
+{
+  "name": "gift",
+  "description": "bestow a cooked meal on a villager",
+  "params": [{"name": "target", "kind": "agent_name", "required": true}],
+  "events": ["metatron.item_granted", "agent.memory_added"],
+  "charges": 1,
+  "effects": [
+    {"kind": "grant_item", "target": "{args.target}", "item": "food_cooked", "qty": 1},
+    {"kind": "narrate", "text": "a warm meal appears in your hands", "recipients": "target"}
+  ]
+}
