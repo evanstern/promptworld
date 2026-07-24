@@ -12,6 +12,7 @@ import (
 	"github.com/evanstern/promptworld/internal/llm"
 	"github.com/evanstern/promptworld/internal/sim"
 	"github.com/evanstern/promptworld/internal/store"
+	"github.com/evanstern/promptworld/internal/worldmap"
 )
 
 // TestConvoRawTruncation (TASK-42 T004): oversized raw replies are cut on a rune
@@ -473,6 +474,73 @@ func TestPausedOmenArmsOnlyTargets(t *testing.T) {
 		return json.Unmarshal(e.Payload, &p) == nil && p.Agent == 5 && p.TriggerSeq == omenSeq
 	}); len(bystander) != 0 {
 		t.Fatalf("untargeted villager 5 was armed by the omen (%d thoughts)", len(bystander))
+	}
+}
+
+// --- spec 040 US2: paused routing tells the truth (TASK-77) ---
+
+// TestRouteVerdictPausedAllowsAtSuppressingSpeed (spec 040 US2, FR-004/FR-005):
+// a paused replica routes at zero drift (allow) with the C1 arithmetic naming
+// the paused state — even at a SET speed that suppresses while running, and at
+// uncapped max where the paused branch must precede the tps<=0 branch (scenario
+// 3). Running at the same speed is byte-identical to cognition.Route.
+func TestRouteVerdictPausedAllowsAtSuppressingSpeed(t *testing.T) {
+	state := sim.NewState(42, worldmap.Generate(42, 64, 64))
+	md := &Mind{orch: &mockModel{}, replica: state}
+	dc, _ := cognition.ClassFor("planner")
+	spp := md.secondsPerPoint(llm.KindPlanner)
+
+	// Paused from a suppressing set speed (32x: 3pt×20×32 = 1920 > 1200): paused
+	// wins — allow at zero drift, C1 arithmetic.
+	state.Paused = true
+	state.Speed = "32x"
+	if v := md.routeVerdict("planner", llm.KindPlanner); v != cognition.RoutePaused(dc, spp) {
+		t.Errorf("paused @32x verdict\n got %+v\nwant RoutePaused %+v", v, cognition.RoutePaused(dc, spp))
+	} else if !v.Allow || v.PredictedDriftTicks != 0 || !strings.Contains(v.Arithmetic, "paused") {
+		t.Errorf("paused @32x: allow=%v drift=%d arith=%q", v.Allow, v.PredictedDriftTicks, v.Arithmetic)
+	}
+
+	// Uncapped max while paused: the paused branch precedes tps<=0, so paused
+	// still wins (a frozen world does not drift, whatever the set speed).
+	state.Speed = "max"
+	if v := md.routeVerdict("planner", llm.KindPlanner); v != cognition.RoutePaused(dc, spp) {
+		t.Errorf("paused @uncapped verdict %+v, want RoutePaused (paused wins at uncapped)", v)
+	}
+
+	// Running at the same suppressing speed is byte-identical to Route (FR-005).
+	state.Paused = false
+	state.Speed = "32x"
+	if got, want := md.routeVerdict("planner", llm.KindPlanner), cognition.Route(dc, 32, spp); got != want {
+		t.Errorf("running @32x verdict\n got %+v\nwant %+v (byte-identical to Route)", got, want)
+	}
+}
+
+// TestPausedThoughtPredictsFrozenLanding (spec 040 US2, D3; contract C3): on a
+// paused replica newMeta predicts the land tick at the snapshot tick (not the
+// set-speed projection), so the FutureDated prompt prefix no-ops and the recorded
+// cog.thought agrees the thought lands at the frozen tick — prompt, gate, and
+// record never disagree.
+func TestPausedThoughtPredictsFrozenLanding(t *testing.T) {
+	state := sim.NewState(42, worldmap.Generate(42, 64, 64))
+	state.Paused = true
+	state.Speed = "32x" // a projection that would push the land tick forward while running
+	md := &Mind{orch: &mockModel{}, replica: state}
+
+	const snapshot = int64(5000)
+	meta := md.newMeta("planner", 0, snapshot, 900001, llm.KindPlanner)
+	if meta.predictedLandTick != snapshot {
+		t.Errorf("paused predicted land tick %d, want snapshot %d", meta.predictedLandTick, snapshot)
+	}
+	if !meta.class.FutureDated {
+		t.Fatal("planner must be FutureDated for this test to mean anything")
+	}
+	if pre := futureDated(snapshot, meta.predictedLandTick); pre != "" {
+		t.Errorf("paused thought carried a future-dating prefix: %q", pre)
+	}
+	var tp sim.CogThoughtPayload
+	json.Unmarshal(cogThoughtEvent(meta).Payload, &tp)
+	if tp.PredictedLandTick != snapshot {
+		t.Errorf("recorded predicted_land_tick %d, want %d (contract C3)", tp.PredictedLandTick, snapshot)
 	}
 }
 

@@ -47,7 +47,13 @@ func (md *Mind) newMeta(class string, agent int, snapshotTick, triggerSeq int64,
 		triggerSeq:      triggerSeq,
 		predictedWallMs: int64(wallSec * 1000),
 	}
-	if tps := md.replica.Speed.TicksPerSecond(); tps > 0 {
+	// Paused (spec 040 D3, FR-004): a thought taken while frozen lands at the
+	// frozen tick, so its predicted land tick IS the snapshot tick — not the
+	// set-speed projection. This keeps futureDated() a no-op (landing ≤ now) and
+	// the recorded PredictedLandTick honest, so prompt, gate, and record agree.
+	if md.replica.Paused {
+		m.predictedLandTick = snapshotTick
+	} else if tps := md.replica.Speed.TicksPerSecond(); tps > 0 {
 		m.predictedLandTick = snapshotTick + int64(wallSec*tps)
 	}
 	return m
@@ -62,6 +68,14 @@ func (md *Mind) routeVerdict(class string, kind llm.Kind) cognition.Verdict {
 	dc, ok := cognition.ClassFor(class)
 	if !ok {
 		return cognition.Verdict{Allow: true, Class: class}
+	}
+	// Paused authoring chain-completion (spec 040 FR-004, decision-6): a frozen
+	// world cannot drift, so routing tells the truth — allow at zero drift for
+	// every class, the arithmetic naming the paused state. Consulted BEFORE the
+	// tps<=0 branch so the paused rule wins even at uncapped max (US2 scenario 3).
+	// Unpaused routing is untouched below (SC-005).
+	if md.replica.Paused {
+		return cognition.RoutePaused(dc, md.secondsPerPoint(kind))
 	}
 	tps := md.replica.Speed.TicksPerSecond()
 	if tps <= 0 {
