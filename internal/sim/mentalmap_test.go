@@ -344,3 +344,56 @@ func TestPerceptionSweepWitnessesAndSettles(t *testing.T) {
 		}
 	}
 }
+
+// TestMentalMapReplayByteIdentical (spec 041 T010, SC-003; the sim-level twin
+// of internal/mind's TestJournalAndSituatedReplayByteIdentical): a live run
+// whose moved/saw sequences fill the villagers' maps replays from genesis to
+// BYTE-IDENTICAL per-agent mental maps — explored bitmap and fact list both —
+// and an identical whole-state hash. Genesis seeding is reconstructed from
+// seed (never replayed) and every fact rides a recorded event, so the log
+// alone must reproduce every map.
+func TestMentalMapReplayByteIdentical(t *testing.T) {
+	const seed, ticks = 99, 6 * 3600 // a working morning: moves, saws, builds
+	m := testMap(seed)
+	live := NewState(seed, m)
+	log := driveTicks(t, live, m, ticks, nil)
+
+	// The run must actually exercise the write paths this test certifies.
+	saws := 0
+	for _, e := range log {
+		if e.Type == "agent.saw" {
+			saws++
+		}
+	}
+	if saws == 0 {
+		t.Fatal("no agent.saw events in a working morning — the sweep never fired")
+	}
+	grew := false
+	for i := range live.Agents {
+		if len(live.Agents[i].Map.Facts) > 0 {
+			grew = true
+		}
+	}
+	if !grew {
+		t.Fatal("no villager holds any place-fact after a working morning")
+	}
+
+	replayed := NewState(seed, m)
+	for _, e := range log {
+		if err := replayed.Apply(e); err != nil {
+			t.Fatalf("replay apply %s: %v", e.Type, err)
+		}
+		replayed.Tick = e.Tick
+	}
+	driveTicks(t, replayed, m, ticks, nil) // re-live the quiet tail, as recovery does
+
+	for i := range live.Agents {
+		lm, rm := mustPayload(live.Agents[i].Map), mustPayload(replayed.Agents[i].Map)
+		if !bytes.Equal(lm, rm) {
+			t.Errorf("agent %d mental map diverged on replay:\nlive:   %s\nreplay: %s", i, lm, rm)
+		}
+	}
+	if live.Hash() != replayed.Hash() {
+		t.Fatal("whole-state hash diverged on replay")
+	}
+}

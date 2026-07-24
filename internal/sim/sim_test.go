@@ -81,6 +81,15 @@ func TestDeterminismSameSeedSameTimeline(t *testing.T) {
 	if a.Hash() != b.Hash() {
 		t.Fatalf("state hashes diverged: %s vs %s", a.Hash(), b.Hash())
 	}
+	// Spec 041 (T010): the mental maps specifically — per-agent canonical map
+	// bytes must match across same-seed runs (the state hash covers them, but
+	// a targeted diff localizes a map-determinism regression to its agent).
+	for i := range a.Agents {
+		am, bm := mustPayload(a.Agents[i].Map), mustPayload(b.Agents[i].Map)
+		if !bytes.Equal(am, bm) {
+			t.Errorf("agent %d mental map diverged across same-seed runs:\n%s\n%s", i, am, bm)
+		}
+	}
 }
 
 func TestDifferentSeedsDiverge(t *testing.T) {
