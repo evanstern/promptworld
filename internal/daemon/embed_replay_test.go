@@ -98,7 +98,10 @@ func TestEmbeddingReplayByteIdentical(t *testing.T) {
 		}
 	}
 	loop := sim.NewLoop(state, w.Map(), st, notify)
-	emb = mind.NewEmbedder(orch, loop, nil)
+	emb, err = mind.NewEmbedder(orch, loop, nil, w.Map(), w.Manifest.Seed, state.Marshal())
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer emb.Close()
 
 	ctx, cancel := context.WithCancel(context.Background())

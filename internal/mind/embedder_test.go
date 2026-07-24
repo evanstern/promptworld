@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/evanstern/promptworld/internal/sim"
 	"github.com/evanstern/promptworld/internal/store"
+	"github.com/evanstern/promptworld/internal/worldmap"
 )
 
 // stubEmbedClient is a settable-failure EmbedClient: one deterministic vector
@@ -67,6 +69,21 @@ func memAdded(seq int64, agent int, text string) store.Event {
 	return store.Event{Seq: seq, Tick: 100, Type: "agent.memory_added", Payload: b}
 }
 
+// newTestEmbedder starts a driver over a fresh genesis replica (tick 0 —
+// bucket edges fire only when a test advances the tick past a cadence
+// boundary on purpose).
+func newTestEmbedder(t *testing.T, client EmbedClient, inj SocialInjector, warn func(string)) *Embedder {
+	t.Helper()
+	m := worldmap.Generate(42, 64, 64)
+	state := sim.NewState(42, m)
+	e, err := NewEmbedder(client, inj, warn, m, 42, state.Marshal())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(e.Close)
+	return e
+}
+
 // nextCompanion reads one injected companion batch or fails the test.
 func nextCompanion(t *testing.T, ch chan []store.Event) sim.MemoryEmbeddedPayload {
 	t.Helper()
@@ -93,8 +110,7 @@ func nextCompanion(t *testing.T, ch chan []store.Event) sim.MemoryEmbeddedPayloa
 func TestEmbedderEmissionOrdered(t *testing.T) {
 	client := &stubEmbedClient{}
 	inj := &recordingInjector{ch: make(chan []store.Event, 16)}
-	e := NewEmbedder(client, inj, nil)
-	defer e.Close()
+	e := newTestEmbedder(t, client, inj, nil)
 
 	e.Observe([]store.Event{
 		memAdded(10, 0, "Foraged by the river."),
@@ -129,8 +145,7 @@ func TestEmbedderFailureDebounce(t *testing.T) {
 	client.setFail(true)
 	inj := &recordingInjector{ch: make(chan []store.Event, 16)}
 	warns := make(chan string, 16)
-	e := NewEmbedder(client, inj, func(detail string) { warns <- detail })
-	defer e.Close()
+	e := newTestEmbedder(t, client, inj, func(detail string) { warns <- detail })
 
 	e.Observe([]store.Event{
 		memAdded(10, 0, "one"),
@@ -181,8 +196,7 @@ func TestEmbedderTextTruncationCap(t *testing.T) {
 	var gotLen atomic.Int64
 	client := &lenRecordingClient{gotLen: &gotLen}
 	inj := &recordingInjector{ch: make(chan []store.Event, 4)}
-	e := NewEmbedder(client, inj, nil)
-	defer e.Close()
+	e := newTestEmbedder(t, client, inj, nil)
 
 	long := make([]byte, embedTextCapBytes+512)
 	for i := range long {
@@ -212,8 +226,7 @@ func TestEmbedderWarmPin(t *testing.T) {
 	client := &stubEmbedClient{warmErr: fmt.Errorf("404 page not found")}
 	inj := &recordingInjector{ch: make(chan []store.Event, 4)}
 	warns := make(chan string, 4)
-	e := NewEmbedder(client, inj, func(detail string) { warns <- detail })
-	defer e.Close()
+	e := newTestEmbedder(t, client, inj, func(detail string) { warns <- detail })
 
 	e.Observe([]store.Event{memAdded(10, 0, "still embeds")})
 	if p := nextCompanion(t, inj.ch); p.MemSeq != 10 {
@@ -224,5 +237,120 @@ func TestEmbedderWarmPin(t *testing.T) {
 	}
 	if len(warns) != 0 {
 		t.Errorf("a failed warm pin fired the failure-episode warning — it must stay best-effort")
+	}
+}
+
+// nextSituation reads one injected situation companion or fails the test.
+func nextSituation(t *testing.T, ch chan []store.Event) sim.SituationEmbeddedPayload {
+	t.Helper()
+	select {
+	case batch := <-ch:
+		if len(batch) != 1 || batch[0].Type != "agent.situation_embedded" {
+			t.Fatalf("unexpected injected batch: %+v", batch)
+		}
+		var p sim.SituationEmbeddedPayload
+		if err := json.Unmarshal(batch[0].Payload, &p); err != nil {
+			t.Fatal(err)
+		}
+		return p
+	case <-time.After(5 * time.Second):
+		t.Fatal("no situation companion injected within 5s")
+		return sim.SituationEmbeddedPayload{}
+	}
+}
+
+// TestEmbedderSituationCadence (spec 042 T012, research D5): when the
+// replica's tick crosses a PlannerCadenceTicks bucket edge, the driver renders
+// each live agent's deterministic situation string from replica state, embeds
+// it, and injects agent.situation_embedded — text (the audit surface), render
+// tick, vector, and model all recorded. Memories in the same batch keep their
+// place ahead of the bucket's situation renders (one FIFO worker), and the
+// same bucket never fires twice.
+func TestEmbedderSituationCadence(t *testing.T) {
+	client := &stubEmbedClient{}
+	inj := &recordingInjector{ch: make(chan []store.Event, 64)}
+	e := newTestEmbedder(t, client, inj, nil)
+
+	// Reference replica: absorb exactly what the driver observes, so the
+	// expected situation strings are the same deterministic render.
+	m := worldmap.Generate(42, 64, 64)
+	ref := sim.NewState(42, m)
+	moved, _ := json.Marshal(sim.AgentMovedPayload{Agent: 0, X: 3, Y: 4})
+	batch := []store.Event{
+		memAdded(4, 1, "Crossed the meadow."),
+		{Seq: 5, Tick: sim.PlannerCadenceTicks + 1, Type: "agent.moved", Payload: moved},
+	}
+	for _, ev := range batch {
+		ref.Apply(ev)
+		if ev.Tick > ref.Tick {
+			ref.Tick = ev.Tick
+		}
+	}
+
+	e.Observe(batch)
+
+	// The batch's memory companion lands first (FIFO), then one situation per
+	// live agent in index order.
+	if p := nextCompanion(t, inj.ch); p.Agent != 1 || p.MemSeq != 4 {
+		t.Fatalf("memory companion = %+v, want agent 1 seq 4 ahead of the bucket's situations", p)
+	}
+	for i := 0; i < sim.AgentCount; i++ {
+		p := nextSituation(t, inj.ch)
+		if p.Agent != i {
+			t.Fatalf("situation companion order: got agent %d, want %d", p.Agent, i)
+		}
+		if p.Tick != ref.Tick {
+			t.Errorf("agent %d situation tick = %d, want the render tick %d", i, p.Tick, ref.Tick)
+		}
+		if want := renderSituation(ref, i); p.Text != want {
+			t.Errorf("agent %d situation text = %q, want the deterministic render %q", i, p.Text, want)
+		}
+		if p.Model != "stub-model" || len(p.Vec) == 0 {
+			t.Errorf("agent %d situation companion missing vector/model: %+v", i, p)
+		}
+	}
+
+	// A later event INSIDE the same bucket fires nothing more.
+	inside, _ := json.Marshal(sim.AgentMovedPayload{Agent: 0, X: 4, Y: 4})
+	e.Observe([]store.Event{{Seq: 6, Tick: sim.PlannerCadenceTicks + 500, Type: "agent.moved", Payload: inside}})
+	e.Observe([]store.Event{memAdded(7, 2, "sync marker")})
+	if p := nextCompanion(t, inj.ch); p.MemSeq != 7 {
+		t.Fatalf("expected only the sync-marker companion, got %+v (same bucket must not re-fire)", p)
+	}
+	select {
+	case extra := <-inj.ch:
+		t.Fatalf("same-bucket event re-fired the situation leg: %+v", extra)
+	default:
+	}
+}
+
+// TestRenderSituationDeterministic (spec 042 T012): the template is a pure
+// render — identical state, identical bytes — and carries every D5 component:
+// time phase, position + place, the two worst needs, the active intent
+// verb + reason, and nearby names.
+func TestRenderSituationDeterministic(t *testing.T) {
+	m := worldmap.Generate(42, 64, 64)
+	s := sim.NewState(42, m)
+	a := &s.Agents[0]
+	a.X, a.Y = 3, 4
+	a.Needs.Warmth = 200
+	a.Needs.Food = 350
+	a.Intent = &sim.Intent{Goal: "forage", Reason: "the stores are low."}
+	// Put agent 1 adjacent so the nearby clause renders.
+	s.Agents[1].X, s.Agents[1].Y = 4, 4
+
+	got := renderSituation(s, 0)
+	if got != renderSituation(s, 0) {
+		t.Fatal("renderSituation is not deterministic over identical state")
+	}
+	for _, want := range []string{"(3,4)", "worst needs: warmth 20, food 35", "doing: forage — the stores are low.", s.Agents[1].Name} {
+		if !strings.Contains(got, want) {
+			t.Errorf("situation %q missing component %q", got, want)
+		}
+	}
+	// Idle agents render the idle clause, never a fabricated intent.
+	a.Intent = nil
+	if got := renderSituation(s, 0); !strings.Contains(got, "idle") {
+		t.Errorf("idle agent situation %q missing the idle clause", got)
 	}
 }

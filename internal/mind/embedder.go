@@ -3,11 +3,15 @@ package mind
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/evanstern/promptworld/internal/sim"
 	"github.com/evanstern/promptworld/internal/store"
+	"github.com/evanstern/promptworld/internal/worldmap"
 )
 
 // The async embedding driver (spec 042 US1): a peer of the consolidation
@@ -27,9 +31,13 @@ import (
 // Wired by the daemon ONLY when llm.json routes the embedding kind; an absent
 // route means a vectorless world and no driver.
 //
-// The situation-vector leg (spec 042 US2, T012) grows here later: the run
-// goroutine is the seam — it will absorb events into a replica and render the
-// deterministic situation template at each PlannerCadenceTicks bucket edge.
+// The situation-vector leg (spec 042 US2, T012): the run goroutine absorbs
+// every committed event into its own replica (the mind pattern) and, at each
+// PlannerCadenceTicks bucket edge, renders each live agent's situation string
+// from replica state — a deterministic template (renderSituation) — and
+// queues it for embedding exactly like a memory. The recorded companion
+// (agent.situation_embedded) carries the TEXT alongside the vector, the audit
+// surface divergence review reads (research D5).
 
 const (
 	// embedCallTimeout bounds one embeddings call. Local 384-dim models embed
@@ -59,12 +67,17 @@ type EmbedClient interface {
 	WarmEmbedding(ctx context.Context) error
 }
 
-// embedJob is one memory awaiting its vector: the emitting event's store seq
-// (the companion's target identity) and the exact recorded text.
+// embedJob is one text awaiting its vector. A memory job carries the emitting
+// event's store seq (the companion's target identity) and the exact recorded
+// text; a situation job (sit=true) carries the render tick and the rendered
+// situation string instead. One tagged type on one FIFO channel keeps the
+// single-flight worker's emission-order guarantee across both legs.
 type embedJob struct {
 	agent int
-	seq   int64
 	text  string
+	seq   int64 // memory leg: agent.memory_added store seq
+	sit   bool  // situation leg (T012)
+	tick  int64 // situation leg: the tick the text was rendered at
 }
 
 type Embedder struct {
@@ -73,6 +86,12 @@ type Embedder struct {
 	// warn surfaces a debounced operator warning (the daemon wires it to a log
 	// line + a durable daemon.llm_warning event, the TASK-91 loud channel).
 	warn func(detail string)
+
+	// replica mirrors committed state for the situation leg (run goroutine
+	// only, the mind's replica pattern): situation strings are a deterministic
+	// render over it at each cadence bucket edge.
+	replica    *sim.State
+	lastBucket int64
 
 	events chan []store.Event
 	jobs   chan embedJob
@@ -84,22 +103,29 @@ type Embedder struct {
 	failing bool
 }
 
-// NewEmbedder starts the driver. client is the orchestrator's embedding
+// NewEmbedder starts the driver from a state snapshot (the mind.New pattern —
+// the replica feeds the situation leg). client is the orchestrator's embedding
 // surface, social the loop's InjectSocial door, warn the debounced failure
 // channel (nil = log only).
-func NewEmbedder(client EmbedClient, social SocialInjector, warn func(detail string)) *Embedder {
+func NewEmbedder(client EmbedClient, social SocialInjector, warn func(detail string), m *worldmap.Map, seed uint64, stateJSON []byte) (*Embedder, error) {
+	replica := sim.NewState(seed, m)
+	if err := json.Unmarshal(stateJSON, replica); err != nil {
+		return nil, err
+	}
 	e := &Embedder{
-		client: client,
-		social: social,
-		warn:   warn,
-		events: make(chan []store.Event, 256),
-		jobs:   make(chan embedJob, 1024),
-		done:   make(chan struct{}),
+		client:     client,
+		social:     social,
+		warn:       warn,
+		replica:    replica,
+		lastBucket: replica.Tick / sim.PlannerCadenceTicks,
+		events:     make(chan []store.Event, 256),
+		jobs:       make(chan embedJob, 1024),
+		done:       make(chan struct{}),
 	}
 	go e.run()
 	go e.worker()
 	go e.warmLoop()
-	return e
+	return e, nil
 }
 
 // Observe is the loop-notify path: never blocks (drop on overflow — dropped
@@ -113,11 +139,12 @@ func (e *Embedder) Observe(events []store.Event) {
 
 func (e *Embedder) Close() { close(e.done) }
 
-// run drains observed batches into per-memory jobs, preserving the committed
+// run drains observed batches into embed jobs, preserving the committed
 // log's order — the jobs channel is FIFO and the worker single-flight, so
 // per-agent companions are emission-ordered by construction (contract §2).
-// The situation-vector leg (T012) will grow here: absorb into a replica,
-// render + enqueue the situation text at each cadence bucket edge.
+// It also absorbs every event into the replica and fires the situation leg
+// (T012) whenever the replica's tick crosses a PlannerCadenceTicks bucket
+// edge — one deterministic situation render per live agent per bucket.
 func (e *Embedder) run() {
 	for {
 		select {
@@ -125,6 +152,10 @@ func (e *Embedder) run() {
 			return
 		case batch := <-e.events:
 			for _, ev := range batch {
+				e.replica.Apply(ev)
+				if ev.Tick > e.replica.Tick {
+					e.replica.Tick = ev.Tick
+				}
 				if ev.Type != "agent.memory_added" {
 					continue
 				}
@@ -132,17 +163,98 @@ func (e *Embedder) run() {
 				if json.Unmarshal(ev.Payload, &p) != nil || p.Text == "" {
 					continue
 				}
-				select {
-				case e.jobs <- embedJob{agent: p.Agent, seq: ev.Seq, text: p.Text}:
-				default:
-					// Queue full: the memory stays vectorless forever (no
-					// backfill). Loud on the log, but not the warning channel —
-					// this is driver backpressure, not a transport failure.
-					log.Printf("mind: embedder queue full — memory seq %d stays vectorless", ev.Seq)
+				e.enqueue(embedJob{agent: p.Agent, seq: ev.Seq, text: p.Text})
+			}
+			// Situation leg (T012, research D5): at each cadence bucket edge,
+			// render each live agent's situation from the replica AS OF the
+			// edge and queue it behind any memories the same batch carried.
+			// Gaps are legal — a bucket with no committed events fires late or
+			// not at all, and selection falls back to the legacy ranking.
+			if bucket := e.replica.Tick / sim.PlannerCadenceTicks; bucket > e.lastBucket {
+				e.lastBucket = bucket
+				for i := range e.replica.Agents {
+					if e.replica.Agents[i].Dead {
+						continue
+					}
+					e.enqueue(embedJob{agent: i, sit: true, tick: e.replica.Tick,
+						text: renderSituation(e.replica, i)})
 				}
 			}
 		}
 	}
+}
+
+// enqueue is the non-blocking job send: a full queue drops the item — a
+// memory stays vectorless forever (no backfill), a situation render waits for
+// the next cadence bucket. Loud on the log, but not the warning channel —
+// this is driver backpressure, not a transport failure.
+func (e *Embedder) enqueue(j embedJob) {
+	select {
+	case e.jobs <- j:
+	default:
+		if j.sit {
+			log.Printf("mind: embedder queue full — situation render for agent %d dropped (next bucket retries)", j.agent)
+		} else {
+			log.Printf("mind: embedder queue full — memory seq %d stays vectorless", j.seq)
+		}
+	}
+}
+
+// renderSituation is the deterministic situation template (research D5): time
+// phase · position + place description · the two worst needs · the active
+// intent verb + reason · nearby agent names. A pure render over replica state
+// — identical state yields identical bytes, and the string rides the recorded
+// companion event as the divergence-audit surface. The composition includes
+// the active intent so "relevant to now" means "relevant to what I am doing
+// and where I am", not merely "similar to my last memory".
+func renderSituation(s *sim.State, idx int) string {
+	a := &s.Agents[idx]
+	var b strings.Builder
+	if s.Night {
+		b.WriteString("night")
+	} else {
+		b.WriteString("daytime")
+	}
+	if place := sim.PlaceAt(s, a.X, a.Y); place.Desc != "" {
+		fmt.Fprintf(&b, " · at %s (%d,%d)", place.Desc, a.X, a.Y)
+	} else {
+		fmt.Fprintf(&b, " · at (%d,%d)", a.X, a.Y)
+	}
+	// The two lowest needs, ties broken by the fixed declaration order below —
+	// rendered on the prompts' 0-100 scale.
+	needs := []struct {
+		name string
+		v    int
+	}{
+		{"health", a.Needs.Health}, {"food", a.Needs.Food}, {"rest", a.Needs.Rest},
+		{"warmth", a.Needs.Warmth}, {"morale", a.Needs.Morale},
+	}
+	sort.SliceStable(needs, func(i, j int) bool { return needs[i].v < needs[j].v })
+	fmt.Fprintf(&b, " · worst needs: %s %d, %s %d", needs[0].name, needs[0].v/10, needs[1].name, needs[1].v/10)
+	if a.Intent != nil {
+		fmt.Fprintf(&b, " · doing: %s", a.Intent.Goal)
+		if a.Intent.Reason != "" {
+			b.WriteString(" — ")
+			b.WriteString(a.Intent.Reason)
+		}
+	} else {
+		b.WriteString(" · idle")
+	}
+	var nearby []string
+	for j := range s.Agents {
+		o := &s.Agents[j]
+		if j == idx || o.Dead {
+			continue
+		}
+		// Same 10-tile Manhattan radius the planner prompt calls "nearby".
+		if d := absInt(o.X-a.X) + absInt(o.Y-a.Y); d <= 10 {
+			nearby = append(nearby, o.Name)
+		}
+	}
+	if len(nearby) > 0 {
+		fmt.Fprintf(&b, " · nearby: %s", strings.Join(nearby, ", "))
+	}
+	return b.String()
 }
 
 // worker embeds one memory at a time and injects its recorded companion.
@@ -178,17 +290,30 @@ func (e *Embedder) runJob(j embedJob) {
 		return
 	}
 	e.noteSuccess()
-	payload, err := json.Marshal(sim.MemoryEmbeddedPayload{
-		Agent: j.agent, MemSeq: j.seq, Vec: vecs[0], Model: model,
-	})
-	if err != nil {
-		log.Printf("mind: embedder payload marshal failed: %v", err)
+	typ := "agent.memory_embedded"
+	var payload []byte
+	var merr error
+	if j.sit {
+		// Situation leg (T012): the recorded companion carries the rendered
+		// TEXT alongside the vector — the divergence-audit surface.
+		typ = "agent.situation_embedded"
+		payload, merr = json.Marshal(sim.SituationEmbeddedPayload{
+			Agent: j.agent, Tick: j.tick, Text: j.text, Vec: vecs[0], Model: model,
+		})
+	} else {
+		payload, merr = json.Marshal(sim.MemoryEmbeddedPayload{
+			Agent: j.agent, MemSeq: j.seq, Vec: vecs[0], Model: model,
+		})
+	}
+	if merr != nil {
+		log.Printf("mind: embedder payload marshal failed: %v", merr)
 		return
 	}
-	if err := e.social.InjectSocial([]store.Event{{Type: "agent.memory_embedded", Payload: payload}}); err != nil {
+	if err := e.social.InjectSocial([]store.Event{{Type: typ, Payload: payload}}); err != nil {
 		// Loop stopped (shutdown window) or door refusal: the memory stays
-		// vectorless; the log line is the record.
-		log.Printf("mind: embedder companion for seq %d rejected: %v", j.seq, err)
+		// vectorless / the situation waits for the next bucket; the log line
+		// is the record.
+		log.Printf("mind: embedder %s for agent %d rejected: %v", typ, j.agent, err)
 	}
 }
 

@@ -316,7 +316,7 @@ func Run(dir string) error {
 			// durable daemon.llm_warning through the loop's operator door. The
 			// embedder debounces per failure episode, so a dead endpoint warns
 			// once, not per memory.
-			emb := mind.NewEmbedder(orch, loop, func(detail string) {
+			emb, err := mind.NewEmbedder(orch, loop, func(detail string) {
 				remedy := fmt.Sprintf("check the embedding endpoint (provider %q) and `ollama pull %s`", embName, embModel)
 				fmt.Printf("daemon: WARNING embedding provider %q: %s — %s\n", embName, detail, remedy)
 				payload, merr := json.Marshal(sim.LLMWarningPayload{
@@ -329,7 +329,10 @@ func Run(dir string) error {
 				if ierr := loop.InjectOperator([]store.Event{{Type: "daemon.llm_warning", Payload: payload}}); ierr != nil {
 					fmt.Printf("daemon: llm_warning event not recorded (%v)\n", ierr)
 				}
-			})
+			}, w.Map(), w.Manifest.Seed, state.Marshal())
+			if err != nil {
+				return err
+			}
 			defer emb.Close()
 			consumers = append(consumers, emb.Observe)
 			fmt.Printf("daemon: embedder on (%s via provider %q)\n", embModel, embName)
