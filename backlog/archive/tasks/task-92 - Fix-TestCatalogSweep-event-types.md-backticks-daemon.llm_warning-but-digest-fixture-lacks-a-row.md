@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-07-24 18:10'
+updated_date: '2026-07-24 20:20'
 labels:
   - tests
 dependencies: []
@@ -23,3 +24,9 @@ Pre-existing failure found during TASK-41 (2026-07-24), reproduced on main with 
 <!-- AC:BEGIN -->
 - [ ] #1 go test ./internal/tui/ -run TestCatalogSweep passes on main
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Duplicate of TASK-100 (same TestCatalogSweep/daemon.llm_warning defect); archived 2026-07-24 — see TASK-100 for the full diagnosis and fix.
+<!-- SECTION:NOTES:END -->

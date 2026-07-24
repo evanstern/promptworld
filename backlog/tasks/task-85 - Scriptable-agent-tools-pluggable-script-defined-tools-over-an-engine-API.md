@@ -1,10 +1,10 @@
 ---
 id: TASK-85
 title: 'Scriptable agent tools: pluggable script-defined tools over an engine API'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-24 03:02'
-updated_date: '2026-07-24 19:58'
+updated_date: '2026-07-24 20:19'
 labels:
   - idea
 dependencies: []
@@ -85,4 +85,12 @@ Phase 6 landed (00dfd35): SOUL fragments into system prompt (charter->souls->ski
 Phase 7 polish landed (ead97e7 after rebase): quickstart 6/6 validated — Scenarios 1-2 manual with captured boot logs (clean load line; T3 and B3 rejection lines naming file+rule+value), 3-6 via the automated suite (named test-to-scenario mapping in PR body). Boot-perf: 32 bundles/256 tools discover+validate in 43-58ms. docs/bundles.md authoring guide linked from README. Branch task-85-scriptable-agent-tools pushed (7 commits, rebased on main); PR creation retrying against GitHub API outage.
 
 Merged to main as 18a0376 (direct merge per user instruction, GitHub PR API outage; branch + worktree cleaned up, remote branch deleted). Full suite green on merged main except TestCatalogSweep — pre-existing, refiled as TASK-100. Spec 036 at 36/36 tasks, Done-eligible per spec-bridge. HOLDING at In Progress for the constitution-IV wiki re-pin: this change touches wiki-pinned sources (tool-registry, sim-loop, metatron-miracles, metatron, deterministic-rng, event-types, world-save-directory) and a concurrent session has in-flight edits to docs/wiki/ at root right now — wiki-update must run after their work lands, then TASK-85 -> Done + player-docs freshness check.
+
+spec-bridge sync: Setup: 3/3 · Foundational (Blocking Prerequisites): 7/7 · User Story 1 — Declarative tool bundle end-to-end (Priority: P1) 🎯 MVP: 8/8 · User Story 2 — Dogfood: built-in re-expressed as bundle (Priority: P2): 3/3 · User Story 3 — Scripted tools, sandboxed + deterministic (Priority: P3): 7/7 · User Story 4 — Persona bundles (Priority: P4): 4/4 · Polish & Cross-Cutting: 4/4 — status In Progress → Done
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+All spec tasks complete (Setup: 3/3 · Foundational (Blocking Prerequisites): 7/7 · User Story 1 — Declarative tool bundle end-to-end (Priority: P1) 🎯 MVP: 8/8 · User Story 2 — Dogfood: built-in re-expressed as bundle (Priority: P2): 3/3 · User Story 3 — Scripted tools, sandboxed + deterministic (Priority: P3): 7/7 · User Story 4 — Persona bundles (Priority: P4): 4/4 · Polish & Cross-Cutting: 4/4). Derived Done by spec-bridge sync.
+<!-- SECTION:FINAL_SUMMARY:END -->

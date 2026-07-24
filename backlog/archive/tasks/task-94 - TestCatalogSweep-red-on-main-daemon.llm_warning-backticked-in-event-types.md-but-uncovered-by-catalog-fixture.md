@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-07-24 18:27'
+updated_date: '2026-07-24 20:20'
 labels:
   - bug
 dependencies: []
@@ -24,3 +25,9 @@ Pre-existing spec-034 drift, surfaced while gating TASK-91/spec 038: docs/wiki/e
 - [ ] #1 go test ./internal/tui/ is green on main
 - [ ] #2 Chosen resolution (render/un-backtick/exempt) recorded on this task
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Duplicate of TASK-100 (same TestCatalogSweep/daemon.llm_warning defect); design consideration folded into TASK-100's notes; archived 2026-07-24.
+<!-- SECTION:NOTES:END -->

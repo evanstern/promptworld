@@ -4,6 +4,7 @@ title: Story feed cannot render daemon.llm_warning — TestCatalogSweep red on m
 status: To Do
 assignee: []
 created_date: '2026-07-24 19:51'
+updated_date: '2026-07-24 20:20'
 labels:
   - bug
   - tui
@@ -30,3 +31,9 @@ Surgical fix (trivial-exemption candidate per constitution Development Workflow)
 - [ ] #2 daemon.llm_warning events render a sensible story-feed line for both active=true (raise) and active=false (clear)
 - [ ] #3 Catalog fixture row added; no other digest behavior changes
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Dedup 2026-07-24: TASK-92 and TASK-94 were duplicate cards for this same defect (three sessions independently hit the red sweep) — both archived in favor of this card. Folded in from TASK-94: the event is an operator-facing state-no-op with no digest renderer, so a bare fixture row alone would fail the fixture→registry cross-check — the chosen resolution (this card's surgical fix: digestRegistry entry with raise/clear flavors + fixture row) should be recorded here when it lands (TASK-94 AC#2).
+<!-- SECTION:NOTES:END -->
