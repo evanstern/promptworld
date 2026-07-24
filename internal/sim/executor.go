@@ -183,6 +183,11 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 	// deterministic race with met winning ties (research D4).
 	events = append(events, hailStep(s, nextTick)...)
 
+	// Perception sweep (spec 041, T007): each awake villager diffs ground
+	// truth within the witness radius against its mental map and emits
+	// agent.saw for the new/changed facts (perceptionEvents below).
+	events = append(events, perceptionEvents(s, m, nextTick)...)
+
 	// Per-agent execution. Uses current state s (pre-tick); all effects
 	// land as events.
 	for i := range s.Agents {
@@ -317,6 +322,132 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 	}
 
 	return events
+}
+
+// perceptionEvents is the spec-041 perception sweep (T007, research D2): for
+// each awake living villager on its perception beat, diff ground truth within
+// the witness radius against the agent's mental map and emit ONE agent.saw
+// carrying the new/changed facts, fully baked (Seen = this tick, provenance
+// witnessed, Detail as perceived) and sorted (Kind, X, Y). A remembered fact
+// is skipped only when it is witnessed, detail-current, AND still fresh — so
+// re-perception refreshes a fact exactly when its read-time horizon would
+// stale it, and a told/revealed fact upgrades to witnessed on first sight.
+// Pure function of (state, map, nextTick); stepEvents doctrine: reads s,
+// never mutates it.
+//
+// The perception beat is the movement cadence — the same per-agent stagger
+// slot as stepping ((tick + i*3) % moveEveryTicks == 0) — so a walker looks
+// around exactly as often as it moves and a stationary agent notices changes
+// within the same window, at a fifth of the per-tick sweep cost.
+//
+// Gated kinds (data-model.md): every structure kind as-is (fires bake their
+// FuelUntil into Detail), ground piles ("pile"), and the resource tiles —
+// standing trees, unharvested forage, unquarried rock ("tree"/"forage"/
+// "rock", overlay-aware), water shoreline ("water_edge": a water tile with a
+// statically-passable neighbor — terrain shape, so walls never churn it),
+// and dens ("den"; a den on cooldown still exists).
+func perceptionEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
+	var events []store.Event
+	// Overlay membership sets, built once per sweep so the per-tile test is
+	// O(1) — lookups only, so map iteration order never matters.
+	cleared := make(map[Point]bool, len(s.Cleared))
+	for _, p := range s.Cleared {
+		cleared[p] = true
+	}
+	harvested := make(map[Point]bool, len(s.Harvested))
+	for _, h := range s.Harvested {
+		harvested[Point{X: h.X, Y: h.Y}] = true
+	}
+	quarried := make(map[Point]bool, len(s.Quarried))
+	for _, p := range s.Quarried {
+		quarried[p] = true
+	}
+
+	for i := range s.Agents {
+		a := &s.Agents[i]
+		if a.Dead || a.Asleep || a.Map == nil {
+			continue
+		}
+		if (nextTick+int64(i)*3)%moveEveryTicks != 0 {
+			continue // not this agent's perception beat
+		}
+		var news []PlaceFact
+		note := func(kind string, x, y int, detail int64) {
+			if rem, ok := a.Map.factAt(kind, x, y); ok &&
+				rem.Provenance == ProvenanceWitnessed && rem.Detail == detail &&
+				factFresh(rem, nextTick) {
+				return // known, current, and fresh — nothing new to record
+			}
+			news = append(news, PlaceFact{
+				Kind: kind, X: x, Y: y, Seen: nextTick,
+				Provenance: ProvenanceWitnessed, Detail: detail,
+			})
+		}
+		// Resource tiles within the Manhattan radius (row-major scan; the
+		// payload is sorted below regardless).
+		for y := a.Y - witnessRadius; y <= a.Y+witnessRadius; y++ {
+			for x := a.X - witnessRadius; x <= a.X+witnessRadius; x++ {
+				if !m.InBounds(x, y) || abs(x-a.X)+abs(y-a.Y) > witnessRadius {
+					continue
+				}
+				pt := Point{X: x, Y: y}
+				switch m.At(x, y) {
+				case worldmap.Tree:
+					if !cleared[pt] {
+						note("tree", x, y, 0)
+					}
+				case worldmap.Forage:
+					if !harvested[pt] {
+						note("forage", x, y, 0)
+					}
+				case worldmap.Rock:
+					if !quarried[pt] {
+						note("rock", x, y, 0)
+					}
+				case worldmap.Water:
+					if waterEdge(m, x, y) {
+						note("water_edge", x, y, 0)
+					}
+				}
+			}
+		}
+		for _, d := range m.Dens {
+			if abs(d.X-a.X)+abs(d.Y-a.Y) <= witnessRadius {
+				note("den", d.X, d.Y, 0)
+			}
+		}
+		for _, st := range s.Structures {
+			if abs(st.X-a.X)+abs(st.Y-a.Y) <= witnessRadius {
+				// FuelUntil is zero for every non-fire kind, so Detail stays
+				// omitted for them (data-model.md: fires bake it, piles 0).
+				note(st.Kind, st.X, st.Y, st.FuelUntil)
+			}
+		}
+		for _, p := range s.Piles {
+			if abs(p.X-a.X)+abs(p.Y-a.Y) <= witnessRadius {
+				note("pile", p.X, p.Y, 0)
+			}
+		}
+		if len(news) > 0 {
+			sortFacts(news)
+			events = append(events, store.Event{Tick: nextTick, Type: "agent.saw",
+				Payload: mustPayload(SawPayload{Agent: i, Facts: news})})
+		}
+	}
+	return events
+}
+
+// waterEdge reports whether a water tile touches statically-walkable ground —
+// the shoreline a villager can draw from (and the only water worth a
+// place-fact). Static terrain only: the shoreline is terrain shape, so
+// dynamic overlays (walls) never churn the fact set.
+func waterEdge(m *worldmap.Map, x, y int) bool {
+	for _, d := range neighborOrder {
+		if m.Passable(x+d[0], y+d[1]) {
+			return true
+		}
+	}
+	return false
 }
 
 // socialEvents runs the adjacency slot: repayment, gifts to the starving,

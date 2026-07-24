@@ -240,3 +240,107 @@ func TestMovedMarksExplored(t *testing.T) {
 		t.Fatalf("apply agent.moved with nil map: %v", err)
 	}
 }
+
+// TestPerceptionSweepWitnessesAndSettles (spec 041 T007): on an agent's
+// perception beat the sweep emits agent.saw for ground truth its map lacks —
+// resource tiles, structures, piles within the witness radius — with facts
+// fully baked (witnessed, Seen = tick, sorted (Kind,X,Y), fires carrying
+// FuelUntil as Detail). Once applied, an unchanged world emits nothing more
+// for that agent (the diff settles); a Detail change (refuel) re-emits.
+func TestPerceptionSweepWitnessesAndSettles(t *testing.T) {
+	const seed = 42
+	m := testMap(seed)
+	s := NewState(seed, m)
+	a := &s.Agents[0]
+	// Plant a lit fire and a pile beside agent 0 so structure/pile kinds are
+	// exercised alongside the terrain kinds.
+	s.Structures = append(s.Structures, Structure{Kind: "fire", X: a.X, Y: a.Y, FuelUntil: 9000})
+	s.Piles = append(s.Piles, Pile{X: a.X, Y: a.Y, Wood: 2})
+
+	beat := int64(moveEveryTicks * 8) // (tick + 0*3) % 5 == 0: agent 0's beat
+	evs := perceptionEvents(s, m, beat)
+	var mine []store.Event
+	for _, e := range evs {
+		var p SawPayload
+		if e.Type != "agent.saw" {
+			t.Fatalf("perception sweep emitted %s", e.Type)
+		}
+		if err := json.Unmarshal(e.Payload, &p); err != nil {
+			t.Fatal(err)
+		}
+		if p.Agent == 0 {
+			mine = append(mine, e)
+		}
+	}
+	if len(mine) != 1 {
+		t.Fatalf("agent 0 emitted %d agent.saw events on its beat, want 1", len(mine))
+	}
+	var p SawPayload
+	json.Unmarshal(mine[0].Payload, &p)
+	var fire, pile bool
+	for j, f := range p.Facts {
+		if f.Seen != beat || f.Provenance != ProvenanceWitnessed {
+			t.Fatalf("fact not baked at emission: %+v", f)
+		}
+		if abs(f.X-a.X)+abs(f.Y-a.Y) > witnessRadius {
+			t.Fatalf("fact beyond the witness radius: %+v", f)
+		}
+		if j > 0 && factLess(f, p.Facts[j-1]) {
+			t.Fatalf("payload facts out of canonical order at %d", j)
+		}
+		if f.Kind == "fire" && f.X == a.X && f.Y == a.Y {
+			fire = true
+			if f.Detail != 9000 {
+				t.Errorf("fire fact Detail = %d, want the perceived FuelUntil 9000", f.Detail)
+			}
+		}
+		if f.Kind == "pile" {
+			pile = true
+		}
+	}
+	if !fire || !pile {
+		t.Errorf("sweep missed planted facts: fire=%v pile=%v (%+v)", fire, pile, p.Facts)
+	}
+
+	// Apply, then re-sweep the unchanged world on the next beat: settled.
+	for _, e := range evs {
+		if err := s.Apply(e); err != nil {
+			t.Fatalf("apply: %v", err)
+		}
+	}
+	for _, e := range perceptionEvents(s, m, beat+moveEveryTicks) {
+		var q SawPayload
+		json.Unmarshal(e.Payload, &q)
+		if q.Agent == 0 {
+			t.Fatalf("settled map re-emitted agent.saw: %s", e.Payload)
+		}
+	}
+
+	// A Detail change (refuel pushed FuelUntil) is a changed fact: re-emitted.
+	s.Structures[len(s.Structures)-1].FuelUntil = 20000
+	saw := false
+	for _, e := range perceptionEvents(s, m, beat+2*moveEveryTicks) {
+		var q SawPayload
+		json.Unmarshal(e.Payload, &q)
+		if q.Agent == 0 {
+			for _, f := range q.Facts {
+				if f.Kind == "fire" && f.Detail == 20000 {
+					saw = true
+				}
+			}
+		}
+	}
+	if !saw {
+		t.Error("a changed fire Detail was not re-witnessed")
+	}
+
+	// Asleep and dead agents never perceive.
+	s.Agents[0].Asleep = true
+	for _, e := range perceptionEvents(s, m, beat+3*moveEveryTicks) {
+		var q SawPayload
+		json.Unmarshal(e.Payload, &q)
+		if q.Agent == 0 {
+			t.Fatal("a sleeping agent perceived")
+		}
+	}
+}

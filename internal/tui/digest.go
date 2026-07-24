@@ -304,6 +304,21 @@ var digestRegistry = map[string]digestFunc{
 		}
 		return join([]seg{nameOf(names, p.Agent), txt(" → "), coord(p.X, p.Y)}), true
 	},
+	// agent.saw (spec 041) summarizes the perception diff by its first
+	// (canonically-ordered) fact plus a count — a full fact list would flood
+	// the feed line; the detail pane holds the payload.
+	"agent.saw": func(e store.Event, names []string) ([]seg, bool) {
+		p, ok := decode[sim.SawPayload](e)
+		if !ok || len(p.Facts) == 0 {
+			return nil, false
+		}
+		f := p.Facts[0]
+		segs := []seg{nameOf(names, p.Agent), txt(" saw "), emph(f.Kind), txt(" at "), coord(f.X, f.Y)}
+		if more := len(p.Facts) - 1; more > 0 {
+			segs = append(segs, txt(" (+"), emphN(more), txt(" more)"))
+		}
+		return join(segs), true
+	},
 	"agent.foraged": func(e store.Event, names []string) ([]seg, bool) {
 		p, ok := decode[sim.HarvestPayload](e)
 		if !ok {

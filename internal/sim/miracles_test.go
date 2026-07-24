@@ -892,6 +892,18 @@ func TestSnapWholeDayNoDrift(t *testing.T) {
 		s.Structures = []Structure{{Kind: "fire", X: fire.X, Y: fire.Y, FuelUntil: t0 + 50}}
 		s.Harvested = []Harvest{{X: harv.X, Y: harv.Y, Regrow: t0 + 70}}
 		s.Piles = []Pile{{X: pile.X, Y: pile.Y, Food: []FoodBatch{{Kind: "food_raw", N: 2, SpoilAt: t0 + 140}}}}
+		// Spec 041: pre-settle the living agent's mental map (one applied
+		// perception sweep at t0, identical in both copies) — agent.saw bakes
+		// absolute Seen ticks, so an unsettled map would emit inside the
+		// window and the payloads would differ by exactly the offset this
+		// test normalizes away. PlaceFact.Seen is SHIFT (rebaseTicks), and
+		// the durable horizon far exceeds the window, so the settled map
+		// stays silent in both runs.
+		for _, e := range perceptionEvents(s, m, t0) {
+			if err := s.Apply(e); err != nil {
+				t.Fatalf("pre-settle sweep: %v", err)
+			}
+		}
 		return s
 	}
 

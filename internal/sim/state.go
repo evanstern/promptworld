@@ -594,6 +594,26 @@ func (s *State) Apply(e store.Event) error {
 		// function of (state, event); no event, no chronicle noise.
 		s.markExplored(a, p.X, p.Y)
 
+	case "agent.saw":
+		// Spec 041 (T007): the perception sweep's witnessed facts, fully
+		// baked at emission (Seen/Provenance/Detail absolute — no arithmetic
+		// that could drift), upserted verbatim into the agent's map. A
+		// map-less agent (dead at migration on a pre-041 world) is a no-op —
+		// the reducer stays total.
+		var p SawPayload
+		if err := json.Unmarshal(e.Payload, &p); err != nil {
+			return fmt.Errorf("apply %s: %w", e.Type, err)
+		}
+		a, err := agent(p.Agent)
+		if err != nil {
+			return err
+		}
+		if a.Map != nil {
+			for _, f := range p.Facts {
+				a.Map.upsertFact(f)
+			}
+		}
+
 	case "agent.foraged":
 		var p HarvestPayload
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
