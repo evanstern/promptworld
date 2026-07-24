@@ -200,12 +200,12 @@ type Memory struct {
 	Tick     int64        `json:"tick"`
 	Subject  int          `json:"subject"`
 	Tone     int          `json:"tone,omitempty"`
-	Where    *MemoryPlace `json:"where,omitempty"`    // location at emission (nil = none)
-	Why      string       `json:"why,omitempty"`      // driving intent reason, verbatim ("" = none)
-	Conv     int64        `json:"conv,omitempty"`     // conversation ref (founding-talk tick; 0 = none)
-	Origin   string       `json:"origin,omitempty"`   // spec 030: provenance class stamped at emission
-	Seq      int64        `json:"seq,omitempty"`      // spec 042: emitting event's store seq (0 = pre-042)
-	Vec      []float32    `json:"vec,omitempty"`      // spec 042: recorded embedding (nil = vectorless)
+	Where    *MemoryPlace `json:"where,omitempty"`     // location at emission (nil = none)
+	Why      string       `json:"why,omitempty"`       // driving intent reason, verbatim ("" = none)
+	Conv     int64        `json:"conv,omitempty"`      // conversation ref (founding-talk tick; 0 = none)
+	Origin   string       `json:"origin,omitempty"`    // spec 030: provenance class stamped at emission
+	Seq      int64        `json:"seq,omitempty"`       // spec 042: emitting event's store seq (0 = pre-042)
+	Vec      []float32    `json:"vec,omitempty"`       // spec 042: recorded embedding (nil = vectorless)
 	VecModel string       `json:"vec_model,omitempty"` // spec 042: producing model identity (FR-009)
 }
 
