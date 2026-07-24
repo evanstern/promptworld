@@ -9,7 +9,7 @@ sources:
   - internal/sim/miracles.go
   - internal/sim/journal.go
   - internal/sim/terrain.go
-verified_against: ce15d80522aae111e2c359287459b51401d18364
+verified_against: 4c3807c4d3fcca5cb82367a1ea9b8c0696fda472
 ---
 
 # Sim state & reducer
@@ -169,6 +169,14 @@ wall — the same material each was built from) and restores `HP` by
 still damaged with material in hand, otherwise clearing the intent —
 `isWall`/`wallMaxHP`/`wallAt` (`terrain.go`, a `chestAt` sibling) back every one
 of these arms, plus the movement `passable` check a standing wall now fails;
+`agent.build_failed` (spec 038, `BuildFailedPayload{agent, goal, reason}`) is a
+NEW arm with a state effect identical to `agent.intent_done` — `Intent = nil`,
+`IdleSince` stamped — the executor emits it, instead of the bare completion
+type, whenever a `build_*` goal's mid-work re-validation genuinely fails (site
+gone, or a wall's reserved-tile occupant outlasting the grace period); the
+reducer itself carries no build-specific logic, it only clears the intent the
+same way completion does, so no material is spent and no structure stands
+([[executor]], [[event-types]]);
 the `gru.*` family dispatches to
 `applyGru` in `gru.go` ([[gru]]);
 the `meeting.*`/`norm.*` families — plus `meeting.convention_established` and

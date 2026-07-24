@@ -26,7 +26,7 @@ sources:
   - internal/persona/persona_test.go
   - e2e/daemon_e2e_test.go
   - e2e/determinism_e2e_test.go
-verified_against: d23fbbfe471ec62c9b94ce79404870632a6eb60e
+verified_against: 4c3807c4d3fcca5cb82367a1ea9b8c0696fda472
 ---
 
 # Testing strategy
@@ -81,8 +81,13 @@ quickstart scenario 7) is the walls/axes/paths counterpart: one scripted session
 chains `craft_axe`, an axe-assisted chop, a `build_wall_plank`, a full
 `demolish` (chip then destroy), and a `build_path`, asserts every required event
 (`agent.crafted`, `agent.chopped`, `agent.built`, `agent.wall_chipped`,
-`agent.wall_destroyed`) actually occurred, then replays from genesis (log only) to
-a byte-identical state hash. `TestPre032SnapshotLoadsUnchanged` (spec 032 T021,
+`agent.wall_destroyed`, and — since spec 038 — `agent.build_failed`) actually
+occurred, then replays from genesis (log only) to a byte-identical state hash.
+Spec 038 extends the same session with a build that fails LOUDLY: a wall
+injected onto the just-built path tile (an unbuildable reserved site) resolves
+via `agent.build_failed` plus a paired situated failure memory rather than a
+bare `agent.intent_done`, and both new events replay byte-identically alongside
+the rest of the session. `TestPre032SnapshotLoadsUnchanged` (spec 032 T021,
 research R7) proves a pre-032-shaped snapshot (no structure `hp`, no inventory/pile
 `axes`) round-trips unmarshal→marshal byte-identically — the new fields are
 additive `omitempty`, so an old save loads unchanged with no format-version bump.
@@ -225,7 +230,21 @@ axe-assisted chop/quarry yield and durability countdown to breakage;
 `internal/sim/path_speed_test.go` covers a path tile's travel-speed doubling
 over a deterministic grass corridor. These sit alongside
 `TestReplayByteIdentityWallsAxesPaths` and `TestPre032SnapshotLoadsUnchanged`
-above as the feature's full proof.
+above as the feature's full proof. Spec 038 (loud build failure & occupancy
+tolerance, TASK-91, [[executor]]) rewrote `wall_test.go`'s occupancy coverage
+into a `driveWithOccupant` (per-tick scripted occupant placement) matrix:
+`TestWallOccupancyGuard` proves a permanent squatter defers completion then
+fails loudly (`agent.build_failed{reason: "site blocked too long"}`) exactly
+`wallOccupancyGraceTicks` past the due tick, never a wall, never a spend;
+`TestWallBuildToleratesPasserby` proves a mid-work crossing that clears before
+the due tick no longer cancels the build; `TestWallBuildDefersThenCompletes`
+proves a departure inside the grace window lets completion land on the first
+clear tick and never on an occupied one; and `TestWallBuildSiteVanishedFailsLoud`
+proves a vanished reserved-tile site fails loudly immediately
+(`reason: "site no longer buildable"`) with a same-tick paired failure memory,
+never a bare `intent_done`. `builderFailure`, a shared log-scanning helper, is
+what the first two of these plus the site-loss test read to assert the count,
+reason, tick, and paired-memory invariants.
 
 **IPC miracle round trips** (`internal/ipc/ipc_test.go`, spec 016): the
 operator "miracle" command exercised over the real wire on a pure-sim world

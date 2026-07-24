@@ -9,7 +9,7 @@ sources:
   - internal/tui/grammar.go
   - internal/tui/digest.go
   - internal/tui/decisions.go
-verified_against: d23fbbfe471ec62c9b94ce79404870632a6eb60e
+verified_against: 4c3807c4d3fcca5cb82367a1ea9b8c0696fda472
 ---
 
 # TUI client
@@ -210,7 +210,13 @@ compact `key=value` fields for the telemetry families (`cog.*`, `clock.*`,
 the narrow dock drops the tick and shortens the type to its last segment.
 Families carry color-role tints, key tokens (names, speech, amounts, causes)
 carry emphasis, and four high-salience types (`agent.died`, `gru.attacked`,
-`social.chest_taken`, `norm.violated`) render whole-line alert. The four
+`social.chest_taken`, `norm.violated`) render whole-line alert. Since spec 038,
+`agent.build_failed` ([[executor]], [[event-types]]) gets its own registry
+entry — builder, emphasized goal, and emphasized reason ("Ash's build_wall_stone
+failed — site no longer buildable") — reading as a failure at a glance without
+promoting to the whole-line alert tier; a cancelled build was previously
+indistinguishable from a finished one because it shared `agent.intent_done`'s
+plain "finished" line. The four
 [[metatron-miracles]] types render in the metatron family voice, with a
 trailing emphasized `(forced)` annotation (`gratisMark`) whenever the
 payload's gratis flag waived the charge — an operator force is never

@@ -9,7 +9,7 @@ sources:
   - internal/sim/terrain.go
   - internal/sim/recipes.go
   - internal/sim/memory.go
-verified_against: e9213e17e6e48cf30da802949d9b59e0e3d78370
+verified_against: 4c3807c4d3fcca5cb82367a1ea9b8c0696fda472
 ---
 
 # Executor
@@ -28,6 +28,13 @@ that v3 shape. Spec 032 (walls, axes, paths) layered in a fifth harvest tool
 (player-built walls, multi-cycle demolish/repair), and a walkable tile
 improvement (paths, which double movement speed) — all additive `omitempty`
 fields, so `format_version` stays 3 and no migration is needed to carry them.
+Spec 038 (loud build failure & occupancy tolerance, TASK-91) changed how a
+build goal's mid-work re-validation resolves: every `build_*` goal's
+site-vanished path now emits a distinct `agent.build_failed` instead of
+funneling through the same silent `agent.intent_done` a completion uses, and
+a wall's reserved-tile occupancy check moved from a mid-work insta-cancel to
+a bounded completion-time deferral — a passerby crossing the tile no longer
+kills the build, only a squatter that outlasts the grace period does (below).
 
 ## How it works
 
@@ -49,7 +56,10 @@ holds the walls/axes/paths tuning surface (`wallPlankHP` 200, `wallStoneHP` 600 
 at least 2x the plank wall per FR-003 — `axeDurability` 10 harvest uses,
 `chopYieldBare`/`chopYieldAxe` 1/3, `quarryYieldBare`/`quarryYieldAxe` 1/3,
 `demolishChipHP` 100 per work cycle, `repairHPPerUnit` 100 per material spent,
-`pathStoneCost` 1). The legacy flat `chopWood`/`quarryYield` (2) constants are
+`pathStoneCost` 1); spec 038 adds `wallOccupancyGraceTicks` (120) to the same
+block — ticks past a wall's due tick (`WorkStart + workDuration`) that
+completion may defer on an occupied reserved tile before failing loudly, a
+pure function of `WorkStart` so no new persisted state is needed. The legacy flat `chopWood`/`quarryYield` (2) constants are
 deleted, replaced by the bare/axe pairs. The recipe table itself lives
 in `recipes.go` (mirroring `specs/012-resources-food-crafting/contracts/recipes.md`
 and `specs/032-walls-axes-paths/contracts/recipes.md` — `recipes_test.go` asserts
@@ -83,7 +93,16 @@ BFS), then on arrival: instant goals (`sleep`, `wander`, `goto_warmth`,
 (someone may have taken it, or a fire may have gone cold — the contested-resource
 pattern, spec 012 FR-002/FR-014), emit `agent.work_started`, and after the goal's
 duration (`workDuration`, below) emit the completion event, which the reducer turns
-into inventory, overlays, structures, or needs. Movement itself gets a second,
+into inventory, overlays, structures, or needs. Since spec 038, a build goal
+(`isBuildGoal`: `build_fire`/`build_shelter`/`build_oven`/`build_chest`/
+`build_path`/`build_wall_plank`/`build_wall_stone`) whose mid-work re-validation
+finds the site gone no longer falls through to the bare `agent.intent_done` every
+other contested re-check uses — `buildFailedEvents` emits a distinct
+`agent.build_failed{agent, goal, reason: buildFailSiteUnbuildable}` paired
+same-tick with a situated first-person failure memory (`OriginAction`, shelter
+salience, `buildStructureName`/`buildFailureCause` composing "My <structure> was
+never built: <cause>."), so a cancelled build is never mistaken for a finished
+one (the phantom-wall belief loop TASK-91 fixes). Movement itself gets a second,
 conditional cadence slot (spec 032 US3): the staggered phase-0 tick always steps,
 but a phase-2 tick also steps when the agent is standing ON a path tile
 (`pathAt`) — stepping FROM a paved tile doubles effective speed along it, while
@@ -142,16 +161,25 @@ Completion behavior per goal:
   distinct memory text ("Raised the village's first oven — meals and baths, at
   last."), and nearby living agents get a witness memory, same pattern as a
   witnessed death.
-- `build_wall_plank`/`build_wall_stone` (spec 032 US1) → `agent.built{Kind:
-  "wall_plank"|"wall_stone"}` landing on the intent's `Res` tile — walls are the
-  one build family that lands ADJACENT to the builder (`Target`) rather than on
-  it, so a builder can never wall itself in (FR-007); re-validated at completion
-  that `Res` is still a build site AND holds no living agent (`agentAt`), else
-  `agent.intent_done` only. The reducer stamps the new wall's `HP` at
-  `wallMaxHP(kind)` (`wallPlankHP` 200, `wallStoneHP` 600 — derived from kind,
-  never stored separately, the fire-lit-ness doctrine) and spends the recipe's
-  planks/refined-stone. A builder memory rides at the shelter salience tier
-  ("Built a wall."); walls emit no witness memory.
+- `build_wall_plank`/`build_wall_stone` (spec 032 US1; occupancy tolerance spec
+  038 US3) → `agent.built{Kind: "wall_plank"|"wall_stone"}` landing on the
+  intent's `Res` tile — walls are the one build family that lands ADJACENT to
+  the builder (`Target`) rather than on it, so a builder can never wall itself
+  in (FR-007). Mid-work, only the site is re-validated (`buildSite(Res)`) —
+  spec 038 dropped the `!agentAt` term from the mid-work guard, so a passerby
+  crossing the reserved tile no longer cancels the build. At the completion
+  moment `agentAt(Res)` IS checked: an occupied tile DEFERS completion (no
+  event that tick, never entomb) rather than cancelling, and the deferral is
+  bounded — once `nextTick - WorkStart >= workDuration + wallOccupancyGraceTicks`
+  (120) the build fails LOUDLY via `buildFailedEvents` with `reason:
+  buildFailSiteBlocked` instead of waiting forever. A vanished site (mid-work
+  or at the due tick) fails loudly immediately with `buildFailSiteUnbuildable`
+  — site loss is never waited out. On a clean completion the reducer stamps
+  the new wall's `HP` at `wallMaxHP(kind)` (`wallPlankHP` 200, `wallStoneHP`
+  600 — derived from kind, never stored separately, the fire-lit-ness
+  doctrine) and spends the recipe's planks/refined-stone. A builder memory
+  rides at the shelter salience tier ("Built a wall."); walls emit no witness
+  memory.
 - `demolish` (spec 032 US1) → one chip per completed work cycle against the
   still-standing wall at `Res` (re-validated; a vanished wall — someone else
   finished it first — resolves via `agent.intent_done` only): `agent.wall_chipped`
@@ -285,7 +313,10 @@ structure, un-buildable-over). `wallMaxHP(kind)` derives each kind's ceiling
 (`wallPlankHP` 200, `wallStoneHP` 600) for the build stamp, the repair clamp,
 and the TUI's damage styling — never stored separately (`WallMaxHP` exports it
 for [[tui-client]]). `agentAt(s, x, y)` backs the wall-build occupancy guard
-(FR-007: a wall may never land on a tile holding a living agent). `pathAt(s, x,
+(FR-007: a wall may never land on a tile holding a living agent) — since spec
+038 checked only at the completion moment (deferring, then bounded-loud-
+failing on a lingering occupant), no longer during mid-work re-validation.
+`pathAt(s, x,
 y)` reports a `path` structure underfoot — the movement dual-phase cadence's
 per-step predicate (above); a path has no `HP` and never blocks (`isWall` is
 false for it).
@@ -398,4 +429,12 @@ determinism), `axe_test.go` (bare-vs-axe yield, ten-use breakage, bulk
 truncation, storage round-trip, replay), and `path_speed_test.go` (a paved
 corridor halves traversal ticks vs. unpaved) — plus an extended
 `whole_feature_test.go` pass exercising all three together. Spec 030's `Origin`
-stamping is exercised by `origin_test.go`.
+stamping is exercised by `origin_test.go`. Spec 038 (loud build failure &
+occupancy tolerance) rewrites `wall_test.go`'s occupancy-guard coverage into a
+defer-then-fail matrix — `TestWallOccupancyGuard` (a permanent squatter fails
+loudly at the grace bound), `TestWallBuildToleratesPasserby` (mid-work
+crossing no longer cancels), and `TestWallBuildDefersThenCompletes` (a
+mid-window departure lets completion land on the first clear tick, never
+during occupancy) — plus `TestWallBuildSiteVanishedFailsLoud` for the
+site-loss path, and an extended `whole_feature_test.go` pass proving
+`agent.build_failed` and its paired failure memory replay byte-identically.
