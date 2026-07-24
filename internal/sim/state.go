@@ -120,11 +120,20 @@ func NewState(seed uint64, m *worldmap.Map) *State {
 	}
 	pos := genesisPlacement(seed, m, agentCount)
 	for i := range s.Agents {
+		// Spec 041 (research D7): villagers begin knowing their landing area
+		// and nothing else — spawn surroundings explored at the perception
+		// radius, zero facts (cold-start worlds have no structures; the first
+		// perception sweep witnesses nearby resources as events). Genesis is
+		// reconstructed from seed, never replayed, so this is replay-safe by
+		// construction.
+		mm := newMentalMap(m.W, m.H)
+		mm.MarkExplored(m.W, m.H, pos[i].X, pos[i].Y, witnessRadius)
 		s.Agents[i] = Agent{
 			Name:  AgentNames[i],
 			X:     pos[i].X,
 			Y:     pos[i].Y,
 			Needs: Needs{Health: 1000, Food: 600, Rest: 800, Warmth: 800, Morale: 600},
+			Map:   mm,
 		}
 	}
 	return s
@@ -580,6 +589,10 @@ func (s *State) Apply(e store.Event) error {
 			return err
 		}
 		a.X, a.Y = p.X, p.Y
+		// Spec 041 (research D2): silent derived bookkeeping — a mover's
+		// surroundings become explored terrain in its mental map. Pure
+		// function of (state, event); no event, no chronicle noise.
+		s.markExplored(a, p.X, p.Y)
 
 	case "agent.foraged":
 		var p HarvestPayload

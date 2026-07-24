@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"testing"
+
+	"github.com/evanstern/promptworld/internal/store"
 )
 
 // TestExploredCodecRoundTrip (spec 041 T003): marked bits survive the
@@ -156,5 +158,85 @@ func TestFactFreshnessHorizons(t *testing.T) {
 	}
 	if got := mm.KnownFresh("oven", now); got != nil {
 		t.Errorf("KnownFresh(oven) = %+v, want none", got)
+	}
+}
+
+// TestGenesisSeedsSpawnExploration (spec 041 T006, research D7): NewState
+// gives every villager a map with its spawn surroundings explored at the
+// perception radius — and nothing else: no facts, no knowledge of far tiles.
+// Pure function of (seed, map): two genesis runs seed identical maps.
+func TestGenesisSeedsSpawnExploration(t *testing.T) {
+	const seed = 42
+	m := testMap(seed)
+	s := NewState(seed, m)
+	for i := range s.Agents {
+		a := &s.Agents[i]
+		if a.Map == nil {
+			t.Fatalf("agent %d has no genesis map", i)
+		}
+		if !a.Map.ExploredAt(m.W, m.H, a.X, a.Y) {
+			t.Errorf("agent %d does not know its own spawn tile", i)
+		}
+		// The diamond edge is in; just past it is out (clip-aware).
+		if x := a.X + witnessRadius; x < m.W && !a.Map.ExploredAt(m.W, m.H, x, a.Y) {
+			t.Errorf("agent %d spawn radius edge unexplored", i)
+		}
+		if x := a.X + witnessRadius + 1; x < m.W && a.Map.ExploredAt(m.W, m.H, x, a.Y) {
+			t.Errorf("agent %d knows terrain beyond the perception radius", i)
+		}
+		if a.Map.Facts != nil {
+			t.Errorf("agent %d granted genesis facts %+v — cold-start worlds grant none", i, a.Map.Facts)
+		}
+	}
+	// Determinism: genesis maps are a pure function of (seed, map).
+	s2 := NewState(seed, m)
+	if !bytes.Equal(s.Marshal(), s2.Marshal()) {
+		t.Error("two genesis runs of the same seed diverged")
+	}
+}
+
+// TestMovedMarksExplored (spec 041 T005, research D2): the agent.moved
+// reducer arm marks the mover's new surroundings explored — silent derived
+// bookkeeping, monotone (the old area stays known). A map-less agent (dead at
+// migration on a pre-041 world) is skipped without error.
+func TestMovedMarksExplored(t *testing.T) {
+	const seed = 42
+	m := testMap(seed)
+	s := NewState(seed, m)
+	a := &s.Agents[0]
+	oldX, oldY := a.X, a.Y
+
+	// Walk far enough that fresh terrain enters the radius.
+	nx, ny := oldX, oldY
+	for _, d := range neighborOrder {
+		if m.Passable(oldX+d[0], oldY+d[1]) {
+			nx, ny = oldX+d[0], oldY+d[1]
+			break
+		}
+	}
+	if nx == oldX && ny == oldY {
+		t.Skip("spawn tile has no passable neighbor on this seed")
+	}
+	if err := s.Apply(store.Event{Tick: 10, Type: "agent.moved",
+		Payload: mustPayload(AgentMovedPayload{Agent: 0, X: nx, Y: ny})}); err != nil {
+		t.Fatalf("apply agent.moved: %v", err)
+	}
+	if !a.Map.ExploredAt(m.W, m.H, nx, ny) {
+		t.Error("mover's new tile not explored")
+	}
+	if !a.Map.ExploredAt(m.W, m.H, oldX, oldY) {
+		t.Error("exploration must be monotone — the old area was forgotten")
+	}
+	// The new radius edge in the step direction is now known.
+	ex, ey := nx+(nx-oldX)*witnessRadius, ny+(ny-oldY)*witnessRadius
+	if ex >= 0 && ey >= 0 && ex < m.W && ey < m.H && !a.Map.ExploredAt(m.W, m.H, ex, ey) {
+		t.Errorf("radius edge (%d,%d) around the new position unexplored", ex, ey)
+	}
+
+	// Map-less agents skip the bookkeeping without error (nil-safe).
+	s.Agents[1].Map = nil
+	if err := s.Apply(store.Event{Tick: 11, Type: "agent.moved",
+		Payload: mustPayload(AgentMovedPayload{Agent: 1, X: s.Agents[1].X, Y: s.Agents[1].Y})}); err != nil {
+		t.Fatalf("apply agent.moved with nil map: %v", err)
 	}
 }

@@ -382,6 +382,9 @@ func (s *State) applyEntityMoved(e store.Event) error {
 		// other intent-clearing path.
 		a.Intent = nil
 		a.IdleSince = e.Tick
+		// Spec 041 (research D2): a teleported villager knows where it landed —
+		// the same derived explored-bit bookkeeping as a walked step.
+		s.markExplored(a, p.ToX, p.ToY)
 	case "structure":
 		i := s.structureIndexAt(p.X, p.Y)
 		if i < 0 {
