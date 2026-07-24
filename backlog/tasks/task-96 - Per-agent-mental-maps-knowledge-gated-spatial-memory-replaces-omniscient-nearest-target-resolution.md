@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-24 19:03'
-updated_date: '2026-07-24 20:45'
+updated_date: '2026-07-24 21:25'
 labels:
   - epistemics
   - spatial-memory
@@ -54,7 +54,7 @@ Spec: specs/041-agent-mental-maps
 - [ ] #7 Chosen representation has a documented 3D/layered-grid extension path in the spec
 - [x] #8 Spec phase: Setup
 - [x] #9 Spec phase: Foundational (blocking all stories)
-- [ ] #10 Spec phase: User Story 1 — Agents act only on places they know (P1) 🎯 MVP
+- [x] #10 Spec phase: User Story 1 — Agents act only on places they know (P1) 🎯 MVP
 - [ ] #11 Spec phase: User Story 2 — Prompt renders only known places (P2)
 - [ ] #12 Spec phase: User Story 3 — Stale memories corrected by reality (P3)
 - [ ] #13 Spec phase: User Story 4 — Deliberate search of the unknown (P4)
@@ -62,14 +62,12 @@ Spec: specs/041-agent-mental-maps
 - [ ] #15 Spec phase: Polish & Cross-Cutting
 <!-- AC:END -->
 
-
-
-
-
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 Research grounding is durable: vault branch research/Agent-Mental-Maps/ (56-source _grounding.md + 10 notes, branch gate green) committed as c70c53f on task-96-agent-mental-maps (worktree .worktrees/task-96), cut from origin/main dee6c01. Task activated 2026-07-24. Next step per AC #1: Spec Kit specify -> clarify, then spec-bridge:link back to this task before any implementation.
 
 Specify phase complete: specs/041-agent-mental-maps/spec.md + requirements checklist (all items pass) committed to main as 1bd5db5 and pushed. Task branch rebased onto it (research commit now 4101500); worktree feature.json points at specs/041-agent-mental-maps (f404233). Five starred defaults in spec Assumptions await /speckit-clarify (AC #2); spec-bridge:link after tasks phase (AC #1). [note recovered by the TASK-77 session: it had been appended to the contested task-96 file during the ID collision and was autostashed during the refile to TASK-100; original edit preserved in git stash]
+
+US1 complete (T011-T016, worktree f55180a): omniscient resolution replaced for 14 verbs + reflex parity; full suite green except pre-existing TASK-100 red. Accepted deviations recorded in data-model.md addenda (PeerSighting, availability split, spec-040 fixture repair 9bff237). MVP checkpoint reached.
 <!-- SECTION:NOTES:END -->

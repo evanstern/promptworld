@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-24 19:45'
-updated_date: '2026-07-24 20:33'
+updated_date: '2026-07-24 21:08'
 labels:
   - memory
   - embeddings
@@ -38,9 +38,9 @@ Spec: specs/042-embedding-memory-retrieval
 - [ ] #6 Embedding model choice is pinned and documented (local small model, e.g. 384-dim MiniLM/bge class via hugot or llama.cpp sidecar); model file/version is part of replay hygiene
 - [ ] #7 codebase-to-course run tagged on this feature before the PR ships (docs/course refreshed to teach the new memory-retrieval mechanic)
 - [ ] #8 Spec rigor: full Spec Kit (specify → clarify → plan → tasks) with spec-bridge:link BEFORE implementation; wiki re-ground + player-docs freshness after merge
-- [ ] #9 Spec phase: Setup
-- [ ] #10 Spec phase: Foundational (blocking prerequisites for all stories)
-- [ ] #11 Spec phase: User Story 1 — vectors from birth, replay never recomputes (P1) 🎯 MVP
+- [x] #9 Spec phase: Setup
+- [x] #10 Spec phase: Foundational (blocking prerequisites for all stories)
+- [x] #11 Spec phase: User Story 1 — vectors from birth, replay never recomputes (P1) 🎯 MVP
 - [ ] #12 Spec phase: User Story 2 — shadow-mode divergence instrumentation (P2)
 - [ ] #13 Spec phase: User Story 3 — relevance shapes the window (P3)
 - [ ] #14 Spec phase: Polish & cross-cutting
@@ -52,4 +52,8 @@ Spec: specs/042-embedding-memory-retrieval
 spec-bridge sync: Setup: 0/3 · Foundational (blocking prerequisites for all stories): 0/4 · User Story 1 — vectors from birth, replay never recomputes (P1) 🎯 MVP: 0/4 · User Story 2 — shadow-mode divergence instrumentation (P2): 0/7 · User Story 3 — relevance shapes the window (P3): 0/4 · Polish & cross-cutting: 0/3
 
 Model-tier decision (constitution V): core slices delegated to spec-implementer @ Opus 4.8 — rubric: cross-package (llm/mind/sim/world/daemon), concurrency (async embedder driver vs absorb/plan goroutines), doctrine-adjacent (replay byte-identity, InjectSocial door semantics, reducer arms). Leaf tests/docs may run Sonnet. Implementation in .worktrees/task-98 (branch task-98-embedding-memory-retrieval), phased: (1) T001-T011 Setup+Foundational+US1 MVP, (2) T012-T018 US2 shadow, (3) T019-T025 US3+Polish. Fable gates between phases.
+
+Ops decision (2026-07-24): embedding model kept perma-loaded on the serving host (localhost Ollama — all world endpoints are local). Mechanism: embedder driver warm-pin via native /api/embed keep_alive:-1 at start + hourly re-warm (empirically: compat traffic preserves the pin; compat-body keep_alive ignored). Scope: embed model only (~46MB); chat models keep default eviction (24GB RAM). Contract §2 + T008/T023 updated, committed to main.
+
+spec-bridge sync: Setup: 3/3 · Foundational (blocking prerequisites for all stories): 4/4 · User Story 1 — vectors from birth, replay never recomputes (P1) 🎯 MVP: 4/4 · User Story 2 — shadow-mode divergence instrumentation (P2): 0/7 · User Story 3 — relevance shapes the window (P3): 0/4 · Polish & cross-cutting: 0/3
 <!-- SECTION:NOTES:END -->
