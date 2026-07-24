@@ -534,6 +534,23 @@ func tellablePlaces(s *State, teller, listener int, tick int64) []PlaceFact {
 	return out
 }
 
+// PlaceRevealedPayload — metatron.place_revealed (spec 041 FR-014, contracts
+// §1): a divine place grant riding a send_vision batch through the
+// InjectSocial door. Facts carries the revealed places in canonical
+// (Kind, X, Y) order; the emitter (the metatron's vision lander) bakes only
+// the place identity (Kind, X, Y, Provenance revealed) — Seen and Detail are
+// stamped NORMATIVELY by the reducer arm (Seen = the landing tick, Detail =
+// ground truth at landing), the MetatronOrder.Status-ignored shape: the
+// model-side emitter cannot know the landing tick, and the arm's stamps are a
+// pure function of (state, event) so live, dry-run, and replay agree. The
+// dry-run enforces the fact names a REAL place (groundFactPresent) — the god
+// reveals what is, never what isn't. Companion Origin-omen memories ride the
+// same batch as agent.memory_added events (the map_corrected shape).
+type PlaceRevealedPayload struct {
+	Agent int         `json:"agent"`
+	Facts []PlaceFact `json:"facts"`
+}
+
 // MapCorrectedPayload — agent.map_corrected (spec 041 US3, contracts §1): the
 // perception sweep found remembered facts ABSENT from ground truth. Gone
 // carries the facts AS REMEMBERED (verbatim from the agent's map, canonical

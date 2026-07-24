@@ -215,6 +215,11 @@ var injectSocialWhitelist = map[string]bool{
 	// Metatron nudges (TASK-12): the spend + record; the dry-run enforces
 	// charges/form/target/text validity before anything lands.
 	"metatron.nudged": true,
+	// Spec 041 (FR-014) widens the boundary by one: a vision's divine place
+	// grant, riding the send_vision batch (declared in the tool's Events, so
+	// ValidateToolCoverage pins it ⊆ this whitelist). The dry-run enforces a
+	// living target and a real place before anything lands.
+	"metatron.place_revealed": true,
 	// Metatron miracles (spec 016): the four charge-priced world edits; the
 	// dry-run's reducer arms enforce presence/destination/charge before
 	// anything lands, and the whitelist is the isolation boundary.

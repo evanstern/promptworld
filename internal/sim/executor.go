@@ -505,6 +505,22 @@ func groundFactPresent(s *State, m *worldmap.Map, f PlaceFact) bool {
 	return s.structureAt(f.Kind, f.X, f.Y)
 }
 
+// groundFactDetail is the kind-specific Detail scalar as ground truth holds it
+// right now (spec 041 data-model: fires bake their FuelUntil; every other kind
+// 0) — the metatron.place_revealed arm's stamp, mirroring what the perception
+// sweep would bake had the agent seen the place itself.
+func groundFactDetail(s *State, f PlaceFact) int64 {
+	if f.Kind != "fire" {
+		return 0
+	}
+	for i := range s.Structures {
+		if st := &s.Structures[i]; st.Kind == "fire" && st.X == f.X && st.Y == f.Y {
+			return st.FuelUntil
+		}
+	}
+	return 0
+}
+
 // waterEdge reports whether a water tile touches statically-walkable ground —
 // the shoreline a villager can draw from (and the only water worth a
 // place-fact). Static terrain only: the shoreline is terrain shape, so

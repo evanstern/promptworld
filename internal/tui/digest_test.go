@@ -148,6 +148,10 @@ var catalogFixture = map[string]digestFixture{
 	"chronicle.entry":             {`{"day":3,"from_tick":100,"to_tick":200,"text":"Ash lit the first fire.","thread":"cold-start","agents":[0]}`, `day 3 · cold-start: Ash lit the first fire.`},
 	"metatron.charge_regenerated": {`{}`, `a charge regenerated`},
 	"metatron.nudged":             {`{"form":"dream","targets":[0],"text":"beware the cold"}`, `Metatron dream → Ash: "beware the cold"`},
+	"metatron.place_revealed": {
+		`{"agent":0,"facts":[{"kind":"fire","x":4,"y":5,"seen":100,"prov":"revealed","detail":9000}]}`,
+		`Metatron revealed fire at (4,5) to Ash`,
+	},
 	"metatron.order_placed": {
 		`{"id":"ord-100-1","origin":"player","condition":"the woodpile drops below 5 logs","action":"nudge someone to chop wood","event_types":["sim.forage_regrown"],"agent":-1,"placed_tick":100,"expires_tick":100000,"status":"active"}`,
 		`Metatron set a watch: "the woodpile drops below 5 logs"`,

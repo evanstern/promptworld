@@ -508,6 +508,98 @@ func TestVisionLands(t *testing.T) {
 	}
 }
 
+// TestVisionPlaceRevealLands (spec 041 FR-014, T032): a vision carrying the
+// optional place triple lands ONE atomic batch — nudge, vision memory, the
+// metatron.place_revealed grant, and its companion omen memory — and the
+// target's map gains the fact with revealed provenance.
+func TestVisionPlaceRevealLands(t *testing.T) {
+	mt, _, inj, _ := newTestAngel(t, "It is done.")
+	fern := agentIndexByName("Fern")
+	fx, fy := inj.state.Agents[fern].X, inj.state.Agents[fern].Y
+	inj.state.Structures = append(inj.state.Structures,
+		sim.Structure{Kind: "fire", X: fx, Y: fy, FuelUntil: 9000})
+	mt.runLoop = actLoop(mt, "send_vision", fmt.Sprintf(
+		`{"target": "Fern", "text": "A fire waits for you.", "place_kind": "fire", "place_x": %d, "place_y": %d}`, fx, fy))
+
+	r, err := mt.Turn(context.Background(), "show Fern the fire")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r.Nudge == nil || r.Nudge.Form != "vision" {
+		t.Fatalf("nudge: %+v", r.Nudge)
+	}
+	lb := landedBatches(inj)
+	if len(lb) != 1 {
+		t.Fatalf("world batches = %d, want 1 atomic batch", len(lb))
+	}
+	batch := lb[0]
+	wantTypes := []string{"metatron.nudged", "agent.memory_added", "metatron.place_revealed", "agent.memory_added"}
+	if len(batch) != len(wantTypes) {
+		t.Fatalf("batch shape: %v", batch)
+	}
+	for i, w := range wantTypes {
+		if batch[i].Type != w {
+			t.Fatalf("batch[%d] = %s, want %s", i, batch[i].Type, w)
+		}
+	}
+	known := inj.state.Agents[fern].Map.KnownFresh("fire", 0)
+	if len(known) != 1 || known[0].X != fx || known[0].Y != fy {
+		t.Fatalf("revealed fact missing from Fern's map: %+v", known)
+	}
+	if known[0].Provenance != sim.ProvenanceRevealed || known[0].Detail != 9000 {
+		t.Fatalf("revealed fact not stamped: %+v", known[0])
+	}
+	mem := inj.state.Agents[fern].Memories
+	if len(mem) != 2 || mem[1].Text != fmt.Sprintf("The vision showed you the fire at (%d,%d).", fx, fy) {
+		t.Fatalf("companion omen memory: %+v", mem)
+	}
+}
+
+// TestVisionPartialPlaceRefused (spec 041 FR-014): the place triple is
+// all-or-none — a vision naming place_kind without coordinates is refused
+// before anything lands, and no charge is spent.
+func TestVisionPartialPlaceRefused(t *testing.T) {
+	mt, _, inj, _ := newTestAngel(t, "I could not.")
+	mt.runLoop = actLoop(mt, "send_vision",
+		`{"target": "Fern", "text": "half a map", "place_kind": "fire"}`)
+	r, err := mt.Turn(context.Background(), "show Fern the fire")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r.Nudge != nil {
+		t.Fatalf("partial place triple landed: %+v", r.Nudge)
+	}
+	if len(landedBatches(inj)) != 0 {
+		t.Error("partial place triple injected a world batch")
+	}
+	if inj.state.MetatronCharges != sim.MetatronGenesisCharges {
+		t.Errorf("charges = %d, want the genesis %d untouched", inj.state.MetatronCharges, sim.MetatronGenesisCharges)
+	}
+}
+
+// TestVisionFalsePlaceRefused (spec 041 FR-014): the reducer dry-run is the
+// authority that the place is real — a reveal of a place absent from ground
+// truth rejects the WHOLE atomic batch (vision included), spending nothing.
+func TestVisionFalsePlaceRefused(t *testing.T) {
+	mt, _, inj, _ := newTestAngel(t, "The world refused.")
+	mt.runLoop = actLoop(mt, "send_vision",
+		`{"target": "Fern", "text": "a fire that is not", "place_kind": "fire", "place_x": 30, "place_y": 30}`)
+	r, err := mt.Turn(context.Background(), "lie to Fern")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r.Nudge != nil {
+		t.Fatalf("false reveal landed: %+v", r.Nudge)
+	}
+	if inj.state.MetatronCharges != sim.MetatronGenesisCharges {
+		t.Errorf("charges = %d, want the genesis %d untouched", inj.state.MetatronCharges, sim.MetatronGenesisCharges)
+	}
+	fern := agentIndexByName("Fern")
+	if len(inj.state.Agents[fern].Memories) != 0 {
+		t.Error("a rejected batch landed a memory")
+	}
+}
+
 // TestOmenLandsOnAllLiving (US2): every living villager witnesses; the dead
 // are excluded.
 func TestOmenLandsOnAllLiving(t *testing.T) {

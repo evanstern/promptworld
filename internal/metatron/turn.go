@@ -322,7 +322,7 @@ func (mt *Metatron) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 // grant gate are vision-specific. Returns the landed nudge, or (nil, in-fiction
 // refusal) which the handler maps to a rejected_gate the model may repair within
 // the loop's round cap.
-func (mt *Metatron) landVision(target, text string, charges int, alive map[int]bool, grant grantSet) (*Nudge, string) {
+func (mt *Metatron) landVision(target, text string, reveal *placeReveal, charges int, alive map[int]bool, grant grantSet) (*Nudge, string) {
 	if charges <= 0 {
 		return nil, "no charges are banked"
 	}
@@ -339,7 +339,42 @@ func (mt *Metatron) landVision(target, text string, charges int, alive map[int]b
 	if !alive[idx] {
 		return nil, fmt.Sprintf("%s is beyond reach now", sim.AgentNames[idx])
 	}
-	return mt.landNudgeBatch("vision", []int{idx}, text)
+	// The optional place grant (spec 041 FR-014): the vision batch gains one
+	// metatron.place_revealed plus its companion Origin-omen memory, riding
+	// the SAME atomic batch — the grant lands with the vision or not at all.
+	// Composition only, the BuildMiracleBatch contract: the sim reducer arm
+	// (dry-run enforced) is the authority that the place is real and the
+	// target alive; Seen/Detail are the arm's normative stamps, so the
+	// emitter bakes just the place identity.
+	var extra []store.Event
+	if reveal != nil {
+		extra = []store.Event{
+			{Type: "metatron.place_revealed", Payload: mustJSON(sim.PlaceRevealedPayload{
+				Agent: idx, Facts: []sim.PlaceFact{{Kind: reveal.Kind, X: reveal.X, Y: reveal.Y,
+					Provenance: sim.ProvenanceRevealed}}})},
+			{Type: "agent.memory_added", Payload: mustJSON(sim.MemoryAddedPayload{
+				Agent: idx, Text: revealMemoryText(reveal), Salience: sim.SalDream,
+				Subject: -1, Origin: sim.OriginOmen})},
+		}
+	}
+	return mt.landNudgeBatch("vision", []int{idx}, text, extra...)
+}
+
+// placeReveal is send_vision's optional divine place grant (spec 041 FR-014):
+// one real place to upsert into the target's mental map, provenance revealed.
+// Parsed from the place_kind / place_x / place_y argument triple (all or
+// none — parseReveal refuses a partial triple).
+type placeReveal struct {
+	Kind string
+	X, Y int
+}
+
+// revealMemoryText renders the place grant's fixed companion memory —
+// deterministic, written for the villager's world (the miracle
+// perception-memory shape; no player, no game, no outside voice).
+func revealMemoryText(r *placeReveal) string {
+	return fmt.Sprintf("The vision showed you the %s at (%d,%d).",
+		strings.ReplaceAll(r.Kind, "_", " "), r.X, r.Y)
 }
 
 // landOmen validates an omen and either lands it now or defers it to nightfall
@@ -464,9 +499,11 @@ func resolveOmenTargets(arg string, alive map[int]bool) ([]int, string) {
 // prefixed agent.memory_added per target at SalDream), and the soul append —
 // VERBATIM the pre-029 landNudge body (wrap, don't rewrite). form fixes the memory
 // prefix and the recorded form; the reducer dry-run is the door authority (charge
-// spend, night gate for omen, living targets). Returns the landed nudge, or (nil,
-// refusal) the handler maps to a rejected_gate.
-func (mt *Metatron) landNudgeBatch(form string, targets []int, text string) (*Nudge, string) {
+// spend, night gate for omen, living targets). extra events (spec 041: a vision's
+// place grant + companion memory) ride the same atomic batch after the nudge
+// memories. Returns the landed nudge, or (nil, refusal) the handler maps to a
+// rejected_gate.
+func (mt *Metatron) landNudgeBatch(form string, targets []int, text string, extra ...store.Event) (*Nudge, string) {
 	text = strings.TrimSpace(text)
 	if text == "" {
 		return nil, "the rendering was empty"
@@ -484,6 +521,7 @@ func (mt *Metatron) landNudgeBatch(form string, targets []int, text string) (*Nu
 		batch = append(batch, store.Event{Type: "agent.memory_added", Payload: mustJSON(sim.MemoryAddedPayload{
 			Agent: t, Text: prefix + text, Salience: sim.SalDream, Subject: -1, Origin: sim.OriginOmen})})
 	}
+	batch = append(batch, extra...)
 	if err := mt.social.InjectSocial(batch); err != nil {
 		log.Printf("metatron: nudge rejected at the door: %v", err)
 		return nil, "the world refused it (" + err.Error() + ")"

@@ -161,6 +161,15 @@ func (md *Mind) chronicleNote(e store.Event) {
 			line = fmt.Sprintf("%s told %s about the %s at (%d,%d).",
 				name(p.From), name(p.To), strings.ReplaceAll(f.Kind, "_", " "), f.X, f.Y)
 		}
+	case "metatron.place_revealed":
+		// Spec 041 (FR-014, T032): the divine reveal — voiced by the first
+		// fact (canonical order), the correction/telling grammar convention.
+		var p sim.PlaceRevealedPayload
+		if json.Unmarshal(e.Payload, &p) == nil && len(p.Facts) > 0 {
+			f := p.Facts[0]
+			line = fmt.Sprintf("A vision showed %s the %s at (%d,%d).",
+				name(p.Agent), strings.ReplaceAll(f.Kind, "_", " "), f.X, f.Y)
+		}
 	case "agent.thought":
 		var p sim.ThoughtPayload
 		if json.Unmarshal(e.Payload, &p) == nil && p.Source == "musing" {

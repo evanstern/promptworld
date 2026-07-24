@@ -98,12 +98,17 @@ func (mt *Metatron) turnHandlers(d *turnDispatch) map[string]toolloop.Handler {
 // handleVision wraps landVision (spec 029 T006). Door accept → landed (the report
 // is written onto the shared result); door/validation refusal → rejected_gate
 // carrying the human-readable reason, fed back so the model may correct a bad
-// target within the round cap.
+// target within the round cap. The optional place grant (spec 041 FR-014) is
+// parsed here — a partial place_* triple is refused before anything lands.
 func (mt *Metatron) handleVision(d *turnDispatch) toolloop.Handler {
 	return func(_ context.Context, call llm.ToolCall) toolloop.Outcome {
 		target := argString(call.Args, "target")
 		text := argString(call.Args, "text")
-		if nudge, why := mt.landVision(target, text, d.charges, d.alive, d.grant); nudge != nil {
+		reveal, why := parseReveal(call.Args)
+		if why != "" {
+			return toolloop.Outcome{Verdict: toolloop.VerdictRejectedGate, ResultForModel: refusal(why)}
+		}
+		if nudge, why := mt.landVision(target, text, reveal, d.charges, d.alive, d.grant); nudge != nil {
 			d.result.Nudge = nudge
 			return toolloop.Outcome{Verdict: toolloop.VerdictLanded, ResultForModel: "the vision reached its mark"}
 		} else {
@@ -287,6 +292,39 @@ func argString(raw json.RawMessage, key string) string {
 	var s string
 	_ = json.Unmarshal(m[key], &s)
 	return s
+}
+
+// argInt reads an integer-valued argument from a tool call's raw JSON object;
+// (0, false) when absent or the wrong shape (the argString contract) — the
+// presence bit distinguishes a genuine 0 coordinate from an omitted argument.
+func argInt(raw json.RawMessage, key string) (int, bool) {
+	m := map[string]json.RawMessage{}
+	if len(raw) > 0 {
+		_ = json.Unmarshal(raw, &m)
+	}
+	var n int
+	if len(m[key]) == 0 || json.Unmarshal(m[key], &n) != nil {
+		return 0, false
+	}
+	return n, true
+}
+
+// parseReveal reads send_vision's optional place grant triple (spec 041
+// FR-014): (nil, "") when no place_* argument is present, a refusal when the
+// triple is partial — the grant is all-or-none, so a half-named place never
+// reaches the door. Kind validity and place existence stay with the reducer
+// dry-run (the semantic authority).
+func parseReveal(raw json.RawMessage) (*placeReveal, string) {
+	kind := argString(raw, "place_kind")
+	x, okX := argInt(raw, "place_x")
+	y, okY := argInt(raw, "place_y")
+	if kind == "" && !okX && !okY {
+		return nil, ""
+	}
+	if kind == "" || !okX || !okY {
+		return nil, "a place grant needs all three of place_kind, place_x, and place_y"
+	}
+	return &placeReveal{Kind: kind, X: x, Y: y}, ""
 }
 
 // --- cog.tool_call telemetry (spec 017 FR-007, T018) ---

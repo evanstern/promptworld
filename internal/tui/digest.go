@@ -902,6 +902,22 @@ var digestRegistry = map[string]digestFunc{
 		}
 		return join([]seg{txt("Metatron "), emph(p.Form), txt(" → ")}, targets, []seg{txt(": "), speech(p.Text)}), true
 	},
+	// metatron.place_revealed (spec 041 FR-014): a vision's divine place
+	// grant — the agent.saw first-fact-plus-count shape, Metatron as subject
+	// (the nudge convention).
+	"metatron.place_revealed": func(e store.Event, names []string) ([]seg, bool) {
+		p, ok := decode[sim.PlaceRevealedPayload](e)
+		if !ok || len(p.Facts) == 0 {
+			return nil, false
+		}
+		f := p.Facts[0]
+		segs := []seg{txt("Metatron revealed "), emph(f.Kind), txt(" at "), coord(f.X, f.Y),
+			txt(" to "), nameOf(names, p.Agent)}
+		if more := len(p.Facts) - 1; more > 0 {
+			segs = append(segs, txt(" (+"), emphN(more), txt(" more)"))
+		}
+		return join(segs), true
+	},
 	// metatron.order_placed / order_triggered / order_cancelled / order_expired
 	// (spec 029, TASK-27 wiki-sweep gap): the standing-order lifecycle
 	// (internal/sim/metatron.go, [[metatron-orders]]) predates this contract

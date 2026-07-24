@@ -1472,6 +1472,7 @@ func (s *State) Apply(e store.Event) error {
 		return s.applyChronicle(e)
 
 	case "metatron.charge_regenerated", "metatron.nudged",
+		"metatron.place_revealed",
 		"metatron.order_placed", "metatron.order_triggered",
 		"metatron.order_cancelled", "metatron.order_expired":
 		return s.applyMetatron(e)

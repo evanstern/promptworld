@@ -812,3 +812,130 @@ func TestPlaceTellSecondhandKeepsOriginalSeen(t *testing.T) {
 		t.Errorf("relay must name the immediate teller: %+v", facts[0])
 	}
 }
+
+// TestPlaceRevealedArm (spec 041 FR-014, T032): the metatron.place_revealed
+// reducer arm validates rather than clamps (living target, real place) and
+// stamps Seen/Provenance/Detail normatively — Seen = the landing tick,
+// Provenance revealed, Detail = ground truth at landing (a fire's FuelUntil)
+// — regardless of what the emitter baked beyond the place identity.
+func TestPlaceRevealedArm(t *testing.T) {
+	const seed = 42
+	m := testMap(seed)
+	s := NewState(seed, m)
+	fx, fy := s.Agents[0].X, s.Agents[0].Y
+	s.Structures = append(s.Structures, Structure{Kind: "fire", X: fx, Y: fy, FuelUntil: 9000})
+
+	reveal := func(agent int, facts []PlaceFact, tick int64) error {
+		return s.Apply(store.Event{Tick: tick, Type: "metatron.place_revealed",
+			Payload: mustPayload(PlaceRevealedPayload{Agent: agent, Facts: facts})})
+	}
+
+	// A real place lands with the arm's normative stamps.
+	if err := reveal(1, []PlaceFact{{Kind: "fire", X: fx, Y: fy, Provenance: ProvenanceRevealed}}, 500); err != nil {
+		t.Fatalf("reveal: %v", err)
+	}
+	f, ok := s.Agents[1].Map.factAt("fire", fx, fy)
+	if !ok {
+		t.Fatal("revealed fact missing from the target's map")
+	}
+	if f.Seen != 500 || f.Provenance != ProvenanceRevealed || f.Detail != 9000 || f.Source != 0 {
+		t.Fatalf("revealed fact not normatively stamped: %+v", f)
+	}
+
+	// The dry-run's rejections: unknown target, dead target, empty grant, and
+	// a place that is not really there (the god reveals what is).
+	if err := reveal(99, []PlaceFact{{Kind: "fire", X: fx, Y: fy}}, 600); err == nil {
+		t.Error("out-of-range target accepted")
+	}
+	s.Agents[2].Dead = true
+	if err := reveal(2, []PlaceFact{{Kind: "fire", X: fx, Y: fy}}, 600); err == nil {
+		t.Error("dead target accepted")
+	}
+	if err := reveal(1, nil, 600); err == nil {
+		t.Error("empty fact grant accepted")
+	}
+	if err := reveal(1, []PlaceFact{{Kind: "oven", X: fx, Y: fy}}, 600); err == nil {
+		t.Error("a place absent from ground truth was revealed")
+	}
+
+	// A map-less living agent skips the upsert without error (reducer total).
+	s.Agents[3].Map = nil
+	if err := reveal(3, []PlaceFact{{Kind: "fire", X: fx, Y: fy}}, 700); err != nil {
+		t.Fatalf("map-less reveal errored: %v", err)
+	}
+}
+
+// TestPlaceRevealedThroughDoor (spec 041 FR-014, T032): the whole vision-grant
+// path through the REAL InjectSocial door — the landVision batch shape (nudge,
+// vision memory, place grant, companion omen memory) lands atomically, the
+// fact re-stamped to the loop tick; a false place rejects the WHOLE batch,
+// spending nothing.
+func TestPlaceRevealedThroughDoor(t *testing.T) {
+	h := newLadderHarness(t, func(s *State) {
+		s.Structures = append(s.Structures, Structure{Kind: "fire", X: 7, Y: 7, FuelUntil: 99999})
+	})
+
+	visionBatch := func(kind string, x, y int) []store.Event {
+		return []store.Event{
+			{Type: "metatron.nudged", Payload: mustPayload(MetatronNudgedPayload{
+				Form: "vision", Targets: []int{0}, Text: "Fire, beyond the ridge."})},
+			{Type: "agent.memory_added", Payload: mustPayload(MemoryAddedPayload{
+				Agent: 0, Text: "You saw a vision: Fire, beyond the ridge.",
+				Salience: SalDream, Subject: -1, Origin: OriginOmen})},
+			{Type: "metatron.place_revealed", Payload: mustPayload(PlaceRevealedPayload{
+				Agent: 0, Facts: []PlaceFact{{Kind: kind, X: x, Y: y, Provenance: ProvenanceRevealed}}})},
+			{Type: "agent.memory_added", Payload: mustPayload(MemoryAddedPayload{
+				Agent: 0, Text: "The vision showed you the fire at (7,7).",
+				Salience: SalDream, Subject: -1, Origin: OriginOmen})},
+		}
+	}
+
+	// A false place (no fire at (30,30)) rejects the whole batch at the door.
+	if err := h.loop.InjectSocial(visionBatch("fire", 30, 30)); err == nil {
+		t.Fatal("a false reveal passed the door")
+	}
+	stateJSON, _, err := h.loop.DoState()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var before State
+	if err := json.Unmarshal(stateJSON, &before); err != nil {
+		t.Fatal(err)
+	}
+	if before.MetatronCharges != MetatronGenesisCharges {
+		t.Fatalf("rejected batch spent a charge: %d", before.MetatronCharges)
+	}
+	if len(before.Agents[0].Memories) != 0 {
+		t.Fatal("rejected batch landed a memory")
+	}
+
+	// The real place lands atomically, Seen re-stamped to the loop tick.
+	if err := h.loop.InjectSocial(visionBatch("fire", 7, 7)); err != nil {
+		t.Fatalf("vision grant rejected: %v", err)
+	}
+	stateJSON, _, err = h.loop.DoState()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var after State
+	if err := json.Unmarshal(stateJSON, &after); err != nil {
+		t.Fatal(err)
+	}
+	f, ok := after.Agents[0].Map.factAt("fire", 7, 7)
+	if !ok {
+		t.Fatal("revealed fact missing after the door")
+	}
+	if f.Seen != after.Tick || f.Provenance != ProvenanceRevealed || f.Detail != 99999 {
+		t.Fatalf("door-landed fact not stamped at the loop tick: %+v (tick %d)", f, after.Tick)
+	}
+	if after.MetatronCharges != MetatronGenesisCharges-1 {
+		t.Errorf("charges = %d after the vision, want %d", after.MetatronCharges, MetatronGenesisCharges-1)
+	}
+	mems := after.Agents[0].Memories
+	if len(mems) != 2 || mems[1].Text != "The vision showed you the fire at (7,7)." {
+		t.Fatalf("companion omen memory missing: %+v", mems)
+	}
+	if mems[1].Origin != OriginOmen {
+		t.Errorf("companion memory Origin = %q, want %q", mems[1].Origin, OriginOmen)
+	}
+}
