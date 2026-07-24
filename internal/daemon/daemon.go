@@ -302,6 +302,40 @@ func Run(dir string) error {
 		orch.SetRecalibrateHook(md.RecalibrateSignal)
 		fmt.Printf("daemon: mind driver on (%d villagers, cadence %d game-min)\n",
 			sim.AgentCount, sim.PlannerCadenceTicks/60)
+		// Embedding driver (spec 042 US1): wired ONLY when llm.json routes the
+		// embedding kind — a peer of the consolidation driver, watching
+		// committed agent.memory_added events and injecting recorded
+		// agent.memory_embedded companions. An absent route is the subsystem's
+		// off switch: one boot INFO line, no warn-backfill (absence is the
+		// feature switch, mirroring "no llm.json → reflex-only"), and the world
+		// stays vectorless.
+		if orch.HasEmbedding() {
+			embName, embModel, _ := orch.EmbeddingProvider()
+			// Transport failures surface on the TASK-91 loud channel exactly
+			// like provider-health conditions: a daemon-log WARNING plus a
+			// durable daemon.llm_warning through the loop's operator door. The
+			// embedder debounces per failure episode, so a dead endpoint warns
+			// once, not per memory.
+			emb := mind.NewEmbedder(orch, loop, func(detail string) {
+				remedy := fmt.Sprintf("check the embedding endpoint (provider %q) and `ollama pull %s`", embName, embModel)
+				fmt.Printf("daemon: WARNING embedding provider %q: %s — %s\n", embName, detail, remedy)
+				payload, merr := json.Marshal(sim.LLMWarningPayload{
+					Provider: embName, Kind: "embedding-unavailable", Detail: detail, Remedy: remedy, Active: true,
+				})
+				if merr != nil {
+					fmt.Printf("daemon: llm_warning payload marshal failed: %v\n", merr)
+					return
+				}
+				if ierr := loop.InjectOperator([]store.Event{{Type: "daemon.llm_warning", Payload: payload}}); ierr != nil {
+					fmt.Printf("daemon: llm_warning event not recorded (%v)\n", ierr)
+				}
+			})
+			defer emb.Close()
+			consumers = append(consumers, emb.Observe)
+			fmt.Printf("daemon: embedder on (%s via provider %q)\n", embModel, embName)
+		} else {
+			fmt.Printf("daemon: embedding off (no \"embedding\" route in llm.json — memories stay vectorless)\n")
+		}
 		mt, err := metatron.New(orch, loop, loop, w.Map(), w.Manifest.Seed, state.Marshal(), dir, loopRounds, metatronTurnTokens)
 		if err != nil {
 			return err

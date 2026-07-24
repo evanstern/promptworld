@@ -111,6 +111,50 @@ func TestAnthropicEmbedUnsupported(t *testing.T) {
 	}
 }
 
+// TestOpenAICompatWarmEmbed (spec 042 T008 warm-pin): the warm call posts the
+// Ollama-NATIVE endpoint — the "/v1" suffix stripped, path "/api/embed" —
+// with {"model", "keep_alive": -1}, and a non-Ollama 404 surfaces as a plain
+// error the driver logs once and ignores.
+func TestOpenAICompatWarmEmbed(t *testing.T) {
+	var gotPath string
+	var body map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		json.NewDecoder(r.Body).Decode(&body)
+		if r.URL.Path != "/api/embed" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]any{"model": "all-minilm", "embeddings": [][]float32{}})
+	}))
+	t.Cleanup(srv.Close)
+
+	// The provider endpoint carries the OpenAI-compat /v1 base; the warm call
+	// must strip it back to the native root.
+	o := newOpenAICompat(srv.URL+"/v1", "all-minilm", "", "", "")
+	if err := o.WarmEmbed(context.Background()); err != nil {
+		t.Fatalf("WarmEmbed: %v", err)
+	}
+	if gotPath != "/api/embed" {
+		t.Errorf("warm path = %q, want /api/embed on the /v1-stripped base", gotPath)
+	}
+	if body["model"] != "all-minilm" {
+		t.Errorf("warm model = %v, want all-minilm", body["model"])
+	}
+	if ka, ok := body["keep_alive"].(float64); !ok || ka != -1 {
+		t.Errorf("warm keep_alive = %v, want -1 (perma-resident)", body["keep_alive"])
+	}
+
+	// A non-Ollama openai_compat server serves no /api/embed: a plain error,
+	// never a panic — best-effort by contract.
+	plain := httptest.NewServer(http.NotFoundHandler())
+	t.Cleanup(plain.Close)
+	if err := newOpenAICompat(plain.URL+"/v1", "m", "", "", "").WarmEmbed(context.Background()); err == nil {
+		t.Error("WarmEmbed against a 404 server must error (the driver logs once and continues)")
+	}
+}
+
 // embedRoutes is validRoutes plus the embedding route to a dedicated
 // openai_compat provider — the positive baseline for the kind's validation.
 const embedRoutes = `{"planner":["gemma"],"conversation":["gemma"],"meeting":["gemma"],` +

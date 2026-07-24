@@ -783,6 +783,23 @@ func (o *Orchestrator) Embed(ctx context.Context, texts []string) ([][]float32, 
 	return ec.Embed(ctx, texts)
 }
 
+// WarmEmbedding best-effort pins the embedding model resident (spec 042 T008
+// warm-pin) through the transport's Ollama-native /api/embed keep_alive call.
+// The embedder driver invokes it at start and on a slow re-warm interval; an
+// error (non-Ollama server, endpoint down) is the caller's to log once and
+// ignore — correctness never depends on the pin. ErrEmbeddingOff when no
+// embedding route exists.
+func (o *Orchestrator) WarmEmbedding(ctx context.Context) error {
+	if o.embedding == nil {
+		return ErrEmbeddingOff
+	}
+	w, ok := o.embedding.caller.(interface{ WarmEmbed(context.Context) error })
+	if !ok {
+		return fmt.Errorf("provider %q: %w", o.embedding.name, ErrEmbeddingUnsupported)
+	}
+	return w.WarmEmbed(ctx)
+}
+
 // RecordSuppression increments the daemon-lifetime count of router
 // suppressions for a decision class (spec 037 FR-004). Called from the mind's
 // emitSuppressed — the single suppression terminal — through the

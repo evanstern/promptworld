@@ -529,6 +529,43 @@ func (o *openaiCompat) Embed(ctx context.Context, texts []string) ([][]float32, 
 	return vecs, o.model, nil
 }
 
+// WarmEmbed pins the embedding model resident on an Ollama server (spec 042
+// T008 warm-pin): POST the Ollama-NATIVE endpoint — the provider base with the
+// OpenAI-compat "/v1" suffix stripped, path "/api/embed" — with
+// {"model", "keep_alive": -1}. Empirically verified on the target host: the
+// native pin keeps the model loaded indefinitely, and subsequent
+// /v1/embeddings traffic does NOT reset it (keep_alive inside the compat body
+// is ignored, so it is never sent there). Best-effort and Ollama-specific: a
+// non-Ollama openai_compat server 404s here, which the caller logs once and
+// ignores — correctness never depends on the pin, only cold-load latency does.
+func (o *openaiCompat) WarmEmbed(ctx context.Context) error {
+	body, err := json.Marshal(map[string]any{"model": o.model, "keep_alive": -1})
+	if err != nil {
+		return err
+	}
+	native := strings.TrimSuffix(o.endpoint, "/v1")
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost,
+		native+"/api/embed", bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+	if o.apiKey != "" {
+		httpReq.Header.Set("Authorization", "Bearer "+o.apiKey)
+	}
+	resp, err := o.client.Do(httpReq)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		snippet, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		return fmt.Errorf("warm embed HTTP %d: %s", resp.StatusCode, snippet)
+	}
+	io.Copy(io.Discard, resp.Body) // reply carries a vector we don't need
+	return nil
+}
+
 // --- Anthropic Messages API via the official SDK ---
 // The transport of any provider whose transport is "anthropic" (spec 024).
 
