@@ -219,6 +219,18 @@ type (
 	DaemonStoppedPayload struct {
 		Tick int64 `json:"tick"`
 	}
+	// LLMWarningPayload (spec 034) is the operator-facing provider-health
+	// transition: a raise/reclassify (Active true) or a clear (Active false,
+	// Remedy empty). Appended + broadcast on transitions only via the
+	// appendDaemonEvent pattern, exactly like DaemonStarted/Stopped; the reducer
+	// no-ops it (operator surface, never world state — same class as daemon.*).
+	LLMWarningPayload struct {
+		Provider string `json:"provider"`
+		Kind     string `json:"kind"`
+		Detail   string `json:"detail"`
+		Remedy   string `json:"remedy,omitempty"`
+		Active   bool   `json:"active"`
+	}
 	// WorldMigratedPayload (spec 012, US6) carries the full transformed v2 state
 	// of a migrated v1 world. Appended once to the fresh v2 log right after
 	// world.created; the reducer replaces State wholesale (after validating

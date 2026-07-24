@@ -136,6 +136,31 @@ func Run(dir string) error {
 		}
 		defer orch.Close()
 		srv.SetLLM(orch)
+		// Provider-health surface (spec 034 US1/US2): every condition transition
+		// (raise/reclassify/clear) is made loud on two operator channels — the
+		// daemon log and the durable, broadcast daemon.llm_warning event that
+		// line-mode attach streams and `status --json` audits. Transitions only,
+		// so the log stays quiet under a steady condition (the periodic re-probe,
+		// a later slice, is the repeat surface). The event carries the current
+		// tick via the loop's read-only status door — best-effort, defaulting to 0
+		// before the loop is running (no condition is raised that early). The
+		// reducer no-ops daemon.llm_warning exactly like daemon.started (operator
+		// surface, never world state), so it needs no whitelist or reducer arm.
+		orch.SetConditionHook(func(provider, kind, detail, remedy string, active bool) {
+			if active {
+				fmt.Printf("daemon: WARNING llm provider %q: %s — %s\n", provider, detail, remedy)
+			} else {
+				fmt.Printf("daemon: llm provider %q recovered (%s cleared)\n", provider, kind)
+			}
+			var tick int64
+			if s, derr := loop.Do("status", ""); derr == nil {
+				tick = s.Tick
+			}
+			if err := appendDaemonEvent(st, srv, "daemon.llm_warning",
+				sim.LLMWarningPayload{Provider: provider, Kind: kind, Detail: detail, Remedy: remedy, Active: active}, tick); err != nil {
+				fmt.Printf("daemon: llm_warning event append failed: %v\n", err)
+			}
+		})
 		// Adaptive-throttle debt sampler (spec 028 US1): a daemon-owned
 		// goroutine that reads aggregate staleness debt every GovernorCadence
 		// and exposes it for status. Built ONLY here, inside the orchestrator
