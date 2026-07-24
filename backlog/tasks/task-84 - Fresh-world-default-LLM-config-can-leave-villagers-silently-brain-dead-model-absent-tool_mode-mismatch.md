@@ -3,10 +3,10 @@ id: TASK-84
 title: >-
   Fresh-world default LLM config can leave villagers silently brain-dead (model
   absent / tool_mode mismatch)
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-23 23:17'
-updated_date: '2026-07-24 14:34'
+updated_date: '2026-07-24 15:14'
 labels:
   - onboarding
   - llm
@@ -38,7 +38,7 @@ Spec: specs/034-llm-defaults-preflight
 - [x] #5 Spec phase: User Story 1 — A dead local tier is loud, not silent (Priority: P1) 🎯 MVP
 - [x] #6 Spec phase: User Story 2 — Consistently tool-silent planner calls are loud (Priority: P2)
 - [x] #7 Spec phase: User Story 3 — Fresh-world defaults work out of the box (Priority: P2)
-- [ ] #8 Spec phase: Polish & Cross-Cutting Concerns
+- [x] #8 Spec phase: Polish & Cross-Cutting Concerns
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -59,4 +59,12 @@ spec-bridge sync: Setup: 1/1 · Foundational (Blocking Prerequisites) — tier: 
 spec-bridge sync: Setup: 1/1 · Foundational (Blocking Prerequisites) — tier: Opus 4.8 (orchestrator internals): 4/4 · User Story 1 — A dead local tier is loud, not silent (Priority: P1) 🎯 MVP: 6/6 · User Story 2 — Consistently tool-silent planner calls are loud (Priority: P2): 2/2 · User Story 3 — Fresh-world defaults work out of the box (Priority: P2): 3/3 · Polish & Cross-Cutting Concerns: 2/3
 
 PR #62 opened (task-84-llm-defaults-preflight, 14 commits): preflight probe + 60s re-probe, provider condition slot + daemon.llm_warning via new Loop.InjectOperator door (R8), tool-silence detector (threshold 8, mode-aware remedy), fresh-world default cogito:3b+json+parallel-4, status/TUI/log surfaces, docs aligned. Quickstart V0-V5 all PASS live (quickstart-results.md). AC#1 proven by V1/V2/V3 (loud in status/attach/event within 8s); AC#2 proven by V5 alignment greps + contracts/fresh-world-defaults.md. Remaining before Done: merge PR #62, then T019 post-merge re-grounding (wiki-update + player-docs).
+
+spec-bridge sync: Setup: 1/1 · Foundational (Blocking Prerequisites) — tier: Opus 4.8 (orchestrator internals): 4/4 · User Story 1 — A dead local tier is loud, not silent (Priority: P1) 🎯 MVP: 6/6 · User Story 2 — Consistently tool-silent planner calls are loud (Priority: P2): 2/2 · User Story 3 — Fresh-world defaults work out of the box (Priority: P2): 3/3 · Polish & Cross-Cutting Concerns: 3/3 — status In Progress → Done
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+All spec tasks complete (Setup: 1/1 · Foundational (Blocking Prerequisites) — tier: Opus 4.8 (orchestrator internals): 4/4 · User Story 1 — A dead local tier is loud, not silent (Priority: P1) 🎯 MVP: 6/6 · User Story 2 — Consistently tool-silent planner calls are loud (Priority: P2): 2/2 · User Story 3 — Fresh-world defaults work out of the box (Priority: P2): 3/3 · Polish & Cross-Cutting Concerns: 3/3). Derived Done by spec-bridge sync.
+<!-- SECTION:FINAL_SUMMARY:END -->
