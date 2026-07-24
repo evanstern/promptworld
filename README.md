@@ -82,9 +82,10 @@ crash recovery, the client protocol, and the model-output firewalls.
 ## Setup & configuration
 
 **Prerequisites**: Go (build with `go build ./cmd/promptworld`); for AI minds, an
-OpenAI-compatible local endpoint (Ollama at `http://localhost:11434/v1` by default,
-e.g. `gemma4:12b-mlx`); optionally `ANTHROPIC_API_KEY` in the environment for the
-cloud narrative tier. No model configured? The world still runs — reflex-only minds.
+OpenAI-compatible local endpoint (Ollama at `http://localhost:11434/v1` by default) with
+the fresh-world default model pulled: `ollama pull cogito:3b`; optionally
+`ANTHROPIC_API_KEY` in the environment for the cloud narrative tier. No model
+configured? The world still runs — reflex-only minds.
 
 **All model traffic is configured in `llm.json`** in the world's save directory
 (written by `promptworld new`, read at daemon start). Since spec 024 it is a
