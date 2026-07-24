@@ -60,6 +60,28 @@ func (e *ErrMissing) Error() string {
 	return fmt.Sprintf("world %q was last known at %s, but that directory is gone (deleted or moved) — check `promptworld ps --all`, or re-create it with `promptworld new`", e.Name, e.Path)
 }
 
+// ErrUnopenable is returned by Resolve when a candidate directory has a
+// world manifest on disk but world.Open rejected it (e.g. a format_version
+// this build doesn't support) — distinct from ErrNotFound: the manager did
+// find a world here, it just couldn't load it, so the underlying error
+// (including any migrate hint) must reach the caller verbatim rather than
+// being swallowed into a generic "no world named" (live bug: a stale binary
+// opening a migrated world reported ErrNotFound instead of the real
+// format_version mismatch). The predicate is deliberately version-agnostic
+// — manifest-exists-but-Open-failed — so it fires in both directions: an
+// old binary against a newer-format world, and vice versa.
+type ErrUnopenable struct {
+	Name string
+	Path string
+	Err  error
+}
+
+func (e *ErrUnopenable) Error() string {
+	return fmt.Sprintf("world %q at %s: %v", e.Name, e.Path, e.Err)
+}
+
+func (e *ErrUnopenable) Unwrap() error { return e.Err }
+
 // Resolve turns a bare world name into an absolute world directory,
 // worlds-home-first then registry (data-model.md "Name resolution",
 // FR-007/FR-011). Callers must route path-shaped arguments (IsPathArg)
@@ -70,31 +92,44 @@ func Resolve(name string) (string, error) {
 		return "", err
 	}
 	homeCandidate := filepath.Join(home, name)
-	homeOK := isReadableWorld(homeCandidate)
+	homeProbe := probeWorld(homeCandidate)
 
 	reg, err := LoadRegistry()
 	if err != nil {
 		return "", err
 	}
 	regPath, hasReg := reg.Worlds[name]
-	regOK := hasReg && isReadableWorld(regPath)
+	var regProbe worldProbe
+	if hasReg {
+		regProbe = probeWorld(regPath)
+	}
 
 	switch {
-	case homeOK && regOK:
+	case homeProbe.ok && regProbe.ok:
 		if samePath(homeCandidate, regPath) {
 			return homeCandidate, nil
 		}
 		return "", &ErrAmbiguous{Name: name, Paths: []string{homeCandidate, regPath}}
-	case homeOK:
+	case homeProbe.unopenable:
+		// Home-first, unconditionally: a home candidate that looks like a
+		// world but failed to open must surface that error even when a
+		// distinct, healthy registry candidate exists for the same name —
+		// silently preferring the registry candidate here would hide the
+		// exact failure the live bug needs surfaced.
+		return "", &ErrUnopenable{Name: name, Path: homeCandidate, Err: homeProbe.err}
+	case homeProbe.ok:
 		return homeCandidate, nil
-	case regOK:
+	case regProbe.ok:
 		return regPath, nil
+	case regProbe.unopenable:
+		return "", &ErrUnopenable{Name: name, Path: regPath, Err: regProbe.err}
 	}
 
-	// Neither resolved. If the registry once knew this name, say
-	// specifically that its directory vanished rather than a generic
-	// "not found" (or, worse, a raw world.Open error) — the manager did
-	// recognize the name, it just can't use it right now (D6/T014).
+	// Neither candidate opened, and neither looked like an unopenable
+	// world. If the registry once knew this name, say specifically that
+	// its directory vanished rather than a generic "not found" (or, worse,
+	// a raw world.Open error) — the manager did recognize the name, it
+	// just can't use it right now (D6/T014).
 	if hasReg {
 		if _, statErr := os.Stat(regPath); os.IsNotExist(statErr) {
 			return "", &ErrMissing{Name: name, Path: regPath}
@@ -103,9 +138,24 @@ func Resolve(name string) (string, error) {
 	return "", &ErrNotFound{Name: name, WorldsHome: home}
 }
 
-func isReadableWorld(dir string) bool {
-	_, err := world.Open(dir)
-	return err == nil
+// worldProbe classifies a candidate directory for Resolve: ok (opened
+// cleanly), unopenable (has a manifest on disk but world.Open rejected it —
+// e.g. an unsupported format_version, err holds the verbatim cause), or
+// neither (not a world directory at all — no manifest present, today's
+// ErrMissing/ErrNotFound fall-through applies unchanged).
+type worldProbe struct {
+	ok         bool
+	unopenable bool
+	err        error
+}
+
+func probeWorld(dir string) worldProbe {
+	if _, err := world.Open(dir); err == nil {
+		return worldProbe{ok: true}
+	} else if _, statErr := os.Stat(filepath.Join(dir, world.ManifestName)); statErr == nil {
+		return worldProbe{unopenable: true, err: err}
+	}
+	return worldProbe{}
 }
 
 func samePath(a, b string) bool {
