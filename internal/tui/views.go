@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/evanstern/promptworld/internal/clock"
+	"github.com/evanstern/promptworld/internal/ipc"
 	"github.com/evanstern/promptworld/internal/llm"
 	"github.com/evanstern/promptworld/internal/metatron"
 	"github.com/evanstern/promptworld/internal/sim"
@@ -124,7 +125,26 @@ func (m Model) headerView() string {
 	if name, kind, ok := firstLLMCondition(m.status.LLM); ok {
 		line += " " + styleErr.Render(fmt.Sprintf("[llm: %s %s]", name, kind))
 	}
+	// Suppression badge (spec 037 US1, FR-005): warn-styled, present iff ≥1
+	// watched class is suppressed at the current effective speed, following the
+	// [llm: …] badge pattern. Class order follows the wire (WatchedClasses).
+	if suppressed := suppressedHorizonClasses(m.status.Horizon); len(suppressed) > 0 {
+		line += " " + stylePaused.Render(fmt.Sprintf("[suppressed: %s]", strings.Join(suppressed, ", ")))
+	}
 	return styleHeader.Render(line)
+}
+
+// suppressedHorizonClasses returns the names of the horizon entries the router
+// is currently suppressing, in wire order — the header badge's contents. nil
+// (badge absent) when nothing is suppressed or the world carries no horizon.
+func suppressedHorizonClasses(h []ipc.HorizonClass) []string {
+	var out []string
+	for _, e := range h {
+		if e.Suppressed {
+			out = append(out, e.Class)
+		}
+	}
+	return out
 }
 
 // firstLLMCondition reports the first (wire-order, name-sorted) provider
@@ -1439,6 +1459,9 @@ func (m Model) metatronView() string {
 		if l.Spent >= l.Budget {
 			content += "\n" + styleErr.Render("budget exhausted — the angel's voice is stilled")
 		}
+		for _, row := range horizonLines(m.status.Horizon, string(m.status.Clock.Speed)) {
+			content += "\n" + row
+		}
 	}
 	// Sized to the same content width as the transcript above it (not the
 	// full terminal width) — this box nests inside metatronView's own
@@ -1521,6 +1544,58 @@ func llmProviderLines(l *llm.Status) []string {
 			llmProviderNameWidth, "(unattributed)", llmProviderModelWidth, "", "", "", rem)))
 	}
 	return lines
+}
+
+// horizonLines renders the metatron pane's live cognition-horizon block (spec
+// 037 US1, FR-006): one row per watched class — its plain-language standing at
+// the current effective speed ("thinking at 8x" / "suppressed at 32x") and,
+// when suppressed, the remedy. The router's own verdict arithmetic rides as a
+// dim detail (already operator-facing telemetry text elsewhere); no raw enum
+// strings reach the screen (verdictGlossary posture). nil when the world
+// carries no horizon (no-LLM worlds render nothing extra).
+func horizonLines(horizon []ipc.HorizonClass, speed string) []string {
+	if len(horizon) == 0 {
+		return nil
+	}
+	lines := make([]string, 0, len(horizon)+1)
+	lines = append(lines, styleDim.Render("🜂 cognition horizon"))
+	for _, e := range horizon {
+		lines = append(lines, "  "+horizonRow(e, speed))
+	}
+	return lines
+}
+
+// horizonRow renders one class's standing at the effective speed. A suppressed
+// class is warn-styled and carries its remedy plus the verbatim verdict
+// arithmetic (dim detail); a thinking class is a plain one-liner. The daemon-
+// lifetime "skipped N" count (spec 037 US2) is appended except when it is 0 on
+// a thinking class — a class that is neither suppressed now nor has ever been
+// suppressed carries no count clutter.
+func horizonRow(e ipc.HorizonClass, speed string) string {
+	var row string
+	if e.Suppressed {
+		row = stylePaused.Render(fmt.Sprintf("%s suppressed at %s — %s", e.Class, speed, horizonRemedy(e.Calibrated)))
+	} else {
+		row = fmt.Sprintf("%s thinking at %s", e.Class, speed)
+	}
+	if e.Suppressed || e.SuppressedCount > 0 {
+		row += styleDim.Render(fmt.Sprintf(" · skipped %d", e.SuppressedCount))
+	}
+	if e.Suppressed && e.Verdict != "" {
+		row += " " + styleDim.Render("("+e.Verdict+")")
+	}
+	return row
+}
+
+// horizonRemedy is the plain-language remedy for a suppressed class (spec 037
+// FR-007): an uncalibrated class may still benefit from calibration; a
+// calibrated one can only slow down — never told to recalibrate as if it were
+// a fix.
+func horizonRemedy(calibrated bool) string {
+	if calibrated {
+		return "slow down"
+	}
+	return "calibrate or slow down"
 }
 
 // minibufferView renders the one-line Metatron input at its three states

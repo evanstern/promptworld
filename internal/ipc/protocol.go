@@ -119,6 +119,28 @@ type StatusData struct {
 	// (FR-008). The warning never blocks the speed change; it always applied
 	// by the time this is set.
 	Warning string `json:"warning,omitempty"`
+	// Horizon is the live per-class cognition horizon (spec 037,
+	// contracts/status-horizon.md): one entry per watched class the router
+	// would evaluate at the CURRENT effective speed under live estimates.
+	// Present ONLY for a world with an orchestrator (composed in
+	// statusDataFull); a no-LLM world's reply is byte-identical to pre-037
+	// output (omitempty; the composer never runs). Never an empty slice —
+	// either absent or ≥1 entry.
+	Horizon []HorizonClass `json:"horizon,omitempty"`
+}
+
+// HorizonClass is one watched decision class's live standing on the status
+// reply (spec 037, contracts/status-horizon.md). Entries follow
+// cognition.WatchedClasses() order; a class whose kind has no admissible
+// serving provider is omitted. Clients render Verdict verbatim and must not
+// parse it. Calibrated classes are INCLUDED (contrast: the set_speed Warning,
+// which stays gated to uncalibrated providers).
+type HorizonClass struct {
+	Class           string `json:"class"`
+	Suppressed      bool   `json:"suppressed"`
+	Verdict         string `json:"verdict"`          // cognition.Verdict.Arithmetic verbatim
+	Calibrated      bool   `json:"calibrated"`       // serving provider has a calibration-profile entry
+	SuppressedCount int64  `json:"suppressed_count"` // daemon-lifetime router suppressions for this class
 }
 
 type WorldStatus struct {

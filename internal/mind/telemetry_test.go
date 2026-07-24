@@ -3,6 +3,7 @@ package mind
 import (
 	"encoding/json"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 	"unicode/utf8"
@@ -329,4 +330,57 @@ func TestResumeNoBurst(t *testing.T) {
 	if burst > int64(2*sim.AgentCount) {
 		t.Errorf("resume burst: %d calls in 2s", burst)
 	}
+}
+
+// --- spec 037 US2 (T007): the suppressionCounting seam ---
+
+// countingOrch is a fake orchestrator implementing both Submitter and the
+// optional suppressionCounting seam — the daemon orchestrator's shape for the
+// counter hook, minus everything emitSuppressed doesn't touch.
+type countingOrch struct {
+	scriptedModel
+	mu     sync.Mutex
+	counts map[string]int
+}
+
+func (o *countingOrch) RecordSuppression(class string) {
+	o.mu.Lock()
+	if o.counts == nil {
+		o.counts = map[string]int{}
+	}
+	o.counts[class]++
+	o.mu.Unlock()
+}
+
+// TestEmitSuppressedReachesSeam: every class emitSuppressed records reaches the
+// counting seam exactly once per call (watched and unwatched classes alike —
+// the seam counts all, the wire filters). social is nil so the detached event
+// emit no-ops; the count must still land (it is taken before the goroutine).
+func TestEmitSuppressedReachesSeam(t *testing.T) {
+	orch := &countingOrch{}
+	md := &Mind{orch: orch, social: nil}
+	classes := []string{"planner", "conversation", "meeting", "consolidation", "chronicle"}
+	for _, c := range classes {
+		md.emitSuppressed(c, 0, 100, cognition.Verdict{Class: c})
+	}
+	md.emitSuppressed("planner", 1, 200, cognition.Verdict{Class: "planner"}) // a second planner suppression
+	orch.mu.Lock()
+	defer orch.mu.Unlock()
+	if orch.counts["planner"] != 2 {
+		t.Errorf("planner reached the seam %d times, want 2", orch.counts["planner"])
+	}
+	for _, c := range []string{"conversation", "meeting", "consolidation", "chronicle"} {
+		if orch.counts[c] != 1 {
+			t.Errorf("%s reached the seam %d times, want 1", c, orch.counts[c])
+		}
+	}
+}
+
+// TestEmitSuppressedSeamlessOrchNoOp: an orchestrator lacking the seam (a bare
+// Submitter) is a silent no-op — emitSuppressed neither panics nor blocks, so
+// the absorb loop is never at risk when the counter is absent (e.g. test
+// fakes, or any future orchestrator without the hook).
+func TestEmitSuppressedSeamlessOrchNoOp(t *testing.T) {
+	md := &Mind{orch: &scriptedModel{}, social: nil}
+	md.emitSuppressed("planner", 0, 100, cognition.Verdict{Class: "planner"})
 }

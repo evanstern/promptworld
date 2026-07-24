@@ -1480,3 +1480,70 @@ func TestMaxTokensOmittedWhenAbsent(t *testing.T) {
 		t.Errorf("default config emitted max_tokens (should be omitempty): %s", data)
 	}
 }
+
+// --- spec 037 US2: suppression counters ---
+
+// TestRecordSuppressionIncrements: per-class bumps accumulate independently and
+// an unrecorded class reads zero.
+func TestRecordSuppressionIncrements(t *testing.T) {
+	o := &Orchestrator{}
+	o.RecordSuppression("planner")
+	o.RecordSuppression("planner")
+	o.RecordSuppression("conversation")
+
+	counts := o.SuppressionCounts()
+	if counts["planner"] != 2 {
+		t.Errorf("planner count = %d, want 2", counts["planner"])
+	}
+	if counts["conversation"] != 1 {
+		t.Errorf("conversation count = %d, want 1", counts["conversation"])
+	}
+	if _, ok := counts["meeting"]; ok {
+		t.Errorf("an unrecorded class must be absent, got %d", counts["meeting"])
+	}
+}
+
+// TestSuppressionCountsCopyIsolation: the returned map is a defensive copy —
+// mutating it never touches the live counts, and later bumps still register.
+func TestSuppressionCountsCopyIsolation(t *testing.T) {
+	o := &Orchestrator{}
+	o.RecordSuppression("planner")
+
+	snap := o.SuppressionCounts()
+	snap["planner"] = 999
+	snap["injected"] = 7
+
+	live := o.SuppressionCounts()
+	if live["planner"] != 1 {
+		t.Errorf("caller mutation leaked into live counts: planner = %d, want 1", live["planner"])
+	}
+	if _, ok := live["injected"]; ok {
+		t.Errorf("caller-injected key leaked into live counts")
+	}
+	o.RecordSuppression("planner")
+	if o.SuppressionCounts()["planner"] != 2 {
+		t.Errorf("post-snapshot bump lost: planner = %d, want 2", o.SuppressionCounts()["planner"])
+	}
+}
+
+// TestRecordSuppressionConcurrent (spec 037 SC-003, run under -race): N
+// goroutines each bump M times land exactly N*M with no lost updates or data
+// race on the shared map.
+func TestRecordSuppressionConcurrent(t *testing.T) {
+	o := &Orchestrator{}
+	const goroutines, per = 16, 500
+	var wg sync.WaitGroup
+	for i := 0; i < goroutines; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < per; j++ {
+				o.RecordSuppression("planner")
+			}
+		}()
+	}
+	wg.Wait()
+	if got := o.SuppressionCounts()["planner"]; got != goroutines*per {
+		t.Errorf("planner count = %d, want %d (no lost updates)", got, goroutines*per)
+	}
+}

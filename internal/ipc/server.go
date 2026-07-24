@@ -215,6 +215,7 @@ func (s *Server) statusDataFull(cs sim.Status) StatusData {
 	if s.llm != nil {
 		st := s.llm.StatusSnapshot()
 		sd.LLM = &st
+		sd.Horizon = s.horizonClasses(cs)
 	}
 	// Governor debt (spec 028 US1): folded exactly like the LLM snapshot — a nil
 	// governor (no-LLM world) leaves the zero values, which omitempty drops from
@@ -223,6 +224,51 @@ func (s *Server) statusDataFull(cs sim.Status) StatusData {
 		sd.Clock.GovernorDebt, sd.Clock.GovernorJobs = s.governor.GovernorStatus()
 	}
 	return sd
+}
+
+// horizonClasses composes the live per-class cognition horizon for a world
+// with an orchestrator (spec 037, contracts/status-horizon.md). It delegates
+// to cognition.LiveHorizon at the loop's EFFECTIVE speed
+// (cs.Speed.TicksPerSecond(), post-governor — FR-003) and each class's serving
+// provider live estimate, so the surface uses the router's own arithmetic and
+// can never disagree with it (FR-002). A class whose kind has no admissible
+// serving provider (EstimateForKind ok=false) is excluded. Unlike
+// uncalibratedWarning, calibrated classes are INCLUDED (research R4): the
+// Calibrated flag only drives the client's remedy phrasing, never membership.
+// Returns nil when nothing is included, so omitempty keeps the field absent —
+// never an empty slice (contract rule 1).
+func (s *Server) horizonClasses(cs sim.Status) []HorizonClass {
+	if s.llm == nil {
+		return nil
+	}
+	serving := make(map[string]string) // class -> serving provider name (for the calibrated flag)
+	standings := cognition.LiveHorizon(cs.Speed.TicksPerSecond(), func(class string) (float64, bool) {
+		name, est, ok := s.llm.EstimateForKind(llm.Kind(class))
+		if !ok {
+			return 0, false
+		}
+		serving[class] = name
+		return est, true
+	})
+	if len(standings) == 0 {
+		return nil
+	}
+	// Read the daemon-lifetime counts once per status request; a class never
+	// suppressed is absent from the map and keys to 0 (spec 037 FR-004). The
+	// map counts all classes but only the watched standings are surfaced, so
+	// unwatched-class counts (e.g. chronicle) never leak an extra entry.
+	counts := s.llm.SuppressionCounts()
+	out := make([]HorizonClass, 0, len(standings))
+	for _, st := range standings {
+		out = append(out, HorizonClass{
+			Class:           st.Class,
+			Suppressed:      st.Suppressed,
+			Verdict:         st.Verdict.Arithmetic,
+			Calibrated:      s.llm.CalibratedAt(serving[st.Class]) != "",
+			SuppressedCount: counts[st.Class],
+		})
+	}
+	return out
 }
 
 // uncalibratedWarning composes the set_speed reply's additive warning (spec

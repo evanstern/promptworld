@@ -468,6 +468,72 @@ func TestRenderStatusHumanWarningBlock(t *testing.T) {
 	}
 }
 
+// --- spec 037 US3 (T010): CLI horizon section ---
+
+// TestHorizonStatusLinesRenders: one line per watched class — the standing at
+// the current effective speed, the calibrate-vs-slow-down remedy split by the
+// calibrated flag, and the "skipped N" count. A thinking class with a zero
+// count carries no count.
+func TestHorizonStatusLinesRenders(t *testing.T) {
+	sd := &ipc.StatusData{
+		Clock: ipc.ClockStatus{Speed: "32x"},
+		Horizon: []ipc.HorizonClass{
+			{Class: "planner", Suppressed: true, Calibrated: false, SuppressedCount: 214},
+			{Class: "conversation", Suppressed: true, Calibrated: true, SuppressedCount: 3},
+			{Class: "meeting", Suppressed: false, Calibrated: true, SuppressedCount: 0},
+		},
+	}
+	lines := horizonStatusLines(sd)
+	if len(lines) != 3 {
+		t.Fatalf("got %d lines, want 3: %v", len(lines), lines)
+	}
+	if lines[0] != "horizon: planner suppressed at 32x — calibrate or slow down (skipped 214)" {
+		t.Errorf("uncalibrated suppressed line = %q", lines[0])
+	}
+	if lines[1] != "horizon: conversation suppressed at 32x — slow down (skipped 3)" {
+		t.Errorf("calibrated suppressed line = %q", lines[1])
+	}
+	if lines[2] != "horizon: meeting thinking at 32x" {
+		t.Errorf("thinking line = %q", lines[2])
+	}
+}
+
+// TestHorizonStatusLinesAbsent: a world with no horizon (no-LLM) renders no
+// horizon section — the CLI output is unchanged from pre-037 (FR-008 / US3
+// AC2).
+func TestHorizonStatusLinesAbsent(t *testing.T) {
+	if lines := horizonStatusLines(&ipc.StatusData{}); lines != nil {
+		t.Errorf("no-horizon world should render no horizon lines, got %v", lines)
+	}
+}
+
+// TestRenderStatusHumanWithHorizon: an LLM world's full render carries the
+// horizon section after the calibration rows and before the log line; a
+// no-horizon world's render contains no "horizon:" line at all.
+func TestRenderStatusHumanWithHorizon(t *testing.T) {
+	base := ipc.StatusData{
+		World:  ipc.WorldStatus{Name: "aria", Seed: 42},
+		Clock:  ipc.ClockStatus{Tick: 100, GameTime: "Day 1, 06:00", Speed: "32x", EffectiveRate: 32.0},
+		Daemon: ipc.DaemonStatus{Pid: 123, UptimeSeconds: 45, Subscribers: 1},
+		Log:    ipc.LogStatus{LastSeq: 7},
+	}
+	withHorizon := base
+	withHorizon.LLM = &llm.Status{Providers: []llm.ProviderStatus{{Name: "local", Model: "cogito:3b", Up: true}}}
+	withHorizon.Horizon = []ipc.HorizonClass{{Class: "planner", Suppressed: true, SuppressedCount: 5, Verdict: "x"}}
+	got := renderStatusHuman(&withHorizon)
+	if !strings.Contains(got, "horizon: planner suppressed at 32x — calibrate or slow down (skipped 5)") {
+		t.Errorf("render missing horizon line: %q", got)
+	}
+	// The horizon section sits before the log line.
+	if strings.Index(got, "horizon:") > strings.Index(got, "log: last seq") {
+		t.Errorf("horizon section should precede the log line: %q", got)
+	}
+
+	if got := renderStatusHuman(&base); strings.Contains(got, "horizon:") {
+		t.Errorf("no-horizon world rendered a horizon line: %q", got)
+	}
+}
+
 // --- T009/T013: calibration-UX rendering (spec 035) ---
 
 // TestSetSpeedLineWithWarning: a set_speed reply carrying a warning renders
