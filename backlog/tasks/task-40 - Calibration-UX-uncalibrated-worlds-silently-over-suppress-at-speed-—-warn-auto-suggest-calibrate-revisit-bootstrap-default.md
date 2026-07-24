@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-21 13:47'
-updated_date: '2026-07-24 13:57'
+updated_date: '2026-07-24 15:08'
 labels:
   - ux
 dependencies: []
@@ -53,4 +53,6 @@ Model-tier decision (constitution V rubric): SONNET (default tier). Justificatio
 spec-bridge sync: Setup: 1/1 · Foundational (Blocking Prerequisites): 4/4 · User Story 1 - Raising speed on an uncalibrated world warns loudly (Priority: P1) 🎯 MVP: 4/4 · User Story 2 - Boot warning states the concrete consequence (Priority: P2): 2/2 · User Story 3 - Calibration state visible in status (Priority: P3): 2/2 · User Story 4 - Calibrate discloses its sequential-measurement bias (Priority: P3): 1/1 · Polish & Cross-Cutting Concerns: 1/3
 
 PR opened: https://github.com/evanstern/promptworld/pull/61 (branch task-40-calibration-ux, rebased on 9f38b9a). Full suite green incl. e2e; quickstart-results.md recorded. Remaining after merge: T016 wiki re-pin, T017 player-docs freshness, spec-bridge sync to Done, worktree cleanup.
+
+PR #61 died to a GitHub edge case (head branch deleted+recreated while closed → permanently unmergeable); superseded by PR #63: https://github.com/evanstern/promptworld/pull/63 — same content, rebased onto post-spec-034 main with three real cross-merge conflicts resolved as unions (ProviderStatus gains both Condition* [034] and CalibratedAt [035]; calibration rows folded into renderStatusHuman after 034's WARNING block; 034's healthy-world byte-identity golden test consciously retuned to wire-surface-only per 035 SC-002). Full suite green + vet + gofmt after resolution. Mergeable: clean.
 <!-- SECTION:NOTES:END -->
