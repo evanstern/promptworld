@@ -136,15 +136,15 @@ invariants.
 
 **Independent test**: quickstart.md US3 — SC-004 scenario + SC-006 isolation + replay.
 
-- [ ] T019 [US3] `"on"` mode: prompt paths consume `SelectMemoriesRelevant` (divergence
+- [x] T019 [US3] `"on"` mode: prompt paths consume `SelectMemoriesRelevant` (divergence
       still recorded) in `internal/mind/prompt.go` + `internal/mind/convo.go`
-- [ ] T020 [P] [US3] SC-004 scenario test: old low-salience situation-matching memory
+- [x] T020 [P] [US3] SC-004 scenario test: old low-salience situation-matching memory
       enters the `on` window, provably absent from legacy window, in
       `internal/sim/memory_test.go`
-- [ ] T021 [P] [US3] SC-006 isolation test: mutate agent A's memories → agent B's
+- [x] T021 [P] [US3] SC-006 isolation test: mutate agent A's memories → agent B's
       selection byte-identical in every mode, in `internal/sim/memory_test.go`
       (FR-005)
-- [ ] T022 [US3] Replay byte-identity of an `"on"` world (selection pure over recorded
+- [x] T022 [US3] Replay byte-identity of an `"on"` world (selection pure over recorded
       vectors) added to the harness test from T011
 
 **Checkpoint**: all three stories independently proven; feature complete pending gate
@@ -154,14 +154,14 @@ decision + polish.
 
 ## Phase 6: Polish & cross-cutting
 
-- [ ] T023 [P] Operator docs: `embedding` kind + provider example + `memory_relevance`
+- [x] T023 [P] Operator docs: `embedding` kind + provider example + `memory_relevance`
       flag + shadow→on gate procedure + warm-pin/keep-alive note (perma-loaded embed
       model; chat models untouched) in `docs/llm-providers.md` and the event
       additions in `contracts/events.md` (the repo's event catalog — keep
       TestCatalogSweep green)
-- [ ] T024 Throughput check (SC-005): wall-clock per game-day, embedding on vs off,
+- [x] T024 Throughput check (SC-005): wall-clock per game-day, embedding on vs off,
       same seed — record numbers in TASK-98 notes (expect ≈0 delta; budget 10%)
-- [ ] T025 Quickstart walkthrough executed top-to-bottom against a real world; fix any
+- [x] T025 Quickstart walkthrough executed top-to-bottom against a real world; fix any
       drift in `specs/042-embedding-memory-retrieval/quickstart.md`
 
 **Post-merge (TASK-98 ACs, not code tasks)**: divergence threshold decision recorded on

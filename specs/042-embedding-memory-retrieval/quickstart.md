@@ -6,10 +6,16 @@ end-to-end. Details: [data-model.md](./data-model.md), [contracts/](./contracts/
 ## Prerequisites
 
 - Ollama running locally with the pinned embedding model:
-  `ollama pull all-minilm && curl -s localhost:11434/v1/embeddings -d '{"model":"all-minilm","input":"hello"}' | head -c 120`
+  `ollama pull all-minilm && curl -s localhost:11434/v1/embeddings -d '{"model":"all-minilm:latest","input":"hello"}' | head -c 120`
+- **Model id in llm.json must be the fully tagged `all-minilm:latest`** (as `ollama list`
+  prints it), not bare `all-minilm` — the alias embeds fine, but the provider-health
+  preflight compares ids and raises a persistent spurious `model-missing` warning that
+  embed traffic cannot clear (tracked as a future finding).
 - A test world save dir; `llm.json` with the `embedding` provider + route added
-  (see docs/llm-providers.md after implementation); `world.json` with
-  `"memory_relevance": "shadow"`.
+  (see docs/llm-providers.md); `world.json` with `"memory_relevance": "shadow"`.
+- **Speed**: run at ≤16x on an uncalibrated rig, or `promptworld calibrate` first —
+  above the suppression threshold the planner never enqueues, and divergence records
+  fire per enqueued plan job (at 32x uncalibrated you'd see zero divergence events).
 
 ## US1 — vectors at emission, replay never re-embeds
 
@@ -23,9 +29,11 @@ sqlite3 <save>/world.db "select count(*) from events where type='agent.memory_em
 **Expected**: embedded count converges to added count (SC-002); each embedded payload
 carries `vec` (384 floats) + `model`.
 
-**Replay byte-identity (SC-001)**: run the existing replay harness/test
-(`go test ./... -run Replay`) with Ollama **stopped** — replay must pass with zero
-embedding calls (stopped Ollama proves no recompute path exists).
+**Replay byte-identity (SC-001)**: `go test ./internal/daemon -run Replay -count=1` —
+the harness is httptest-stubbed and its endpoint-call meter asserts **zero embedding
+calls during replay** (`TestEmbeddingReplayByteIdentical`, `TestOnWorldReplayByteIdentical`);
+the manual equivalent on a real world is a daemon stop→restart (recovery replay) with
+no new embed traffic.
 
 **Loud failure (US1-S3)**: stop Ollama, run the world, emit memories.
 **Expected**: memories land vectorless, one debounced `daemon.llm_warning` in the feed,
@@ -41,7 +49,8 @@ sqlite3 <save>/world.db "select count(*) from events where type='cog.memory_dive
 
 **Expected**: divergence events per plan job; prompts byte-identical to off-mode
 (the shadow invariant test asserts this). After ≥1 full game day, produce the summary
-(mean overlap@K, promoted-memory share) — the recorded input to the US3 gate decision
+with **`promptworld divergence <world> [--json]`** (mean overlap@K, promoted-memory
+share, displacement, per agent/game-day) — the recorded input to the US3 gate decision
 (FR-007, SC-003).
 
 ## US3 — relevance shapes the window (after the gate decision)
