@@ -1,10 +1,10 @@
 ---
 id: TASK-41
 title: Surface the cognition horizon live in the TUI/status
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-21 13:47'
-updated_date: '2026-07-24 18:11'
+updated_date: '2026-07-24 18:38'
 labels:
   - ux
   - tui
@@ -27,7 +27,7 @@ Spec: specs/037-live-horizon-surface
 - [x] #2 Spec phase: User Story 1 — Live per-class verdict at the current speed (P1) 🎯 MVP
 - [x] #3 Spec phase: User Story 2 — Suppression counters (P2)
 - [x] #4 Spec phase: User Story 3 — Headless status parity (P3)
-- [ ] #5 Spec phase: Polish & lifecycle gates
+- [x] #5 Spec phase: Polish & lifecycle gates
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -52,4 +52,12 @@ Model tier (constitution V rubric): Opus 4.8 — cross-package slice (cognition,
 Implementation complete (Opus 4.8 spec-implementer, single run): T001-T010 done on task-41-live-horizon-surface (460b777 foundational, c56bf22 US1, 396046b US2, ccf97c4 US3, 06bcc02 polish). Gates: go build/vet/test green; -race green for the new counter paths. T011 live validation (quickstart §2-§4, scratch worlds, branch binary): §2 PASS — 32x shows 'planner/conversation suppressed at 32x — calibrate or slow down', meeting thinking, spec-035 set_speed warning agrees with the horizon; §3 PASS — planner skipped grew 0→32 while hot, counts retained (not reset) after dropping to 1x, all classes thinking again; §4 PASS — no-LLM world prints no horizon section and the status JSON carries no horizon key. Two PRE-EXISTING failures found and reproduced on base main (NOT from this work): internal/tui TestCatalogSweep (event-types.md backticks daemon.llm_warning, fixture lacks a row) and internal/llm TestPreflightBootNeverFails -race flake (compressClock cleanup races RunPreflight) — filing as separate tasks. Remaining: PR + merge, then T012 wiki re-pin + player-docs.
 
 spec-bridge sync: Foundational (blocking prerequisite): 1/1 · User Story 1 — Live per-class verdict at the current speed (P1) 🎯 MVP: 4/4 · User Story 2 — Suppression counters (P2): 4/4 · User Story 3 — Headless status parity (P3): 1/1 · Polish & lifecycle gates: 1/2
+
+spec-bridge sync: Foundational (blocking prerequisite): 1/1 · User Story 1 — Live per-class verdict at the current speed (P1) 🎯 MVP: 4/4 · User Story 2 — Suppression counters (P2): 4/4 · User Story 3 — Headless status parity (P3): 1/1 · Polish & lifecycle gates: 2/2 — status In Progress → Done
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+All spec tasks complete (Foundational (blocking prerequisite): 1/1 · User Story 1 — Live per-class verdict at the current speed (P1) 🎯 MVP: 4/4 · User Story 2 — Suppression counters (P2): 4/4 · User Story 3 — Headless status parity (P3): 1/1 · Polish & lifecycle gates: 2/2). Derived Done by spec-bridge sync.
+<!-- SECTION:FINAL_SUMMARY:END -->
