@@ -96,11 +96,11 @@ exhaustion.
 **Independent test**: mostly-unknown map + target only in unexplored land → search reaches
 unknown space, map grows, target found, then acted on.
 
-- [ ] T023 [US4] Frontier helper in `internal/sim/mentalmap.go` (+`path.go` glue): nearest tile that is explored ∧ passable ∧ adjacent-to-unexplored, via existing deterministic BFS predicate (research D4)
-- [ ] T024 [US4] `search` goal resolver + duration entry in `internal/sim/policy.go`: instant wander-class goal targeting the frontier tile; exhaustion error `"nothing left unexplored"` when no reachable frontier (contracts §4)
-- [ ] T025 [US4] `search` tool in the villager roster (`internal/tool/` roster definition, model-facing description per contracts §2); goal-door coverage: `ValidateToolCoverage` green (`internal/sim/toolcheck.go`)
-- [ ] T026 [US4] Reflex fallback in `internal/sim/policy.go`: get-food rung falls back to `search` when no food source is known and map has frontier (keeps FR-013 parity without omniscience)
-- [ ] T027 [US4] US4 tests in `internal/sim/`: frontier target properties; repeated search monotonically grows explored coverage and terminates (SC-004); fully-explored exhaustion; wander untouched (FR-010)
+- [x] T023 [US4] Frontier helper in `internal/sim/mentalmap.go` (+`path.go` glue): nearest tile that is explored ∧ passable ∧ adjacent-to-unexplored, via existing deterministic BFS predicate (research D4)
+- [x] T024 [US4] `search` goal resolver + duration entry in `internal/sim/policy.go`: instant wander-class goal targeting the frontier tile; exhaustion error `"nothing left unexplored"` when no reachable frontier (contracts §4)
+- [x] T025 [US4] `search` tool in the villager roster (`internal/tool/` roster definition, model-facing description per contracts §2); goal-door coverage: `ValidateToolCoverage` green (`internal/sim/toolcheck.go`)
+- [x] T026 [US4] Reflex fallback in `internal/sim/policy.go`: get-food rung falls back to `search` when no food source is known and map has frontier (keeps FR-013 parity without omniscience)
+- [x] T027 [US4] US4 tests in `internal/sim/`: frontier target properties; repeated search monotonically grows explored coverage and terminates (SC-004); fully-explored exhaustion; wander untouched (FR-010)
 
 **Checkpoint**: ignorance is a solvable problem in-world.
 
@@ -113,10 +113,10 @@ unknown space, map grows, target found, then acted on.
 **Independent test**: A knows fire, B doesn't → talk → B targets the fire; B's record shows
 told-by-A.
 
-- [ ] T028 [US5] Talk-transfer sidecar in `internal/sim/executor.go` `talkEvents` (beside `TellableFor`): deterministic selection of ≤2 facts per direction the other lacks-or-holds-staler (freshest, then nearest-to-listener, then coordinate order); emit `social.place_told` per direction with teller's `Seen` and `Source` (research D5)
-- [ ] T029 [US5] Reducer arm for `social.place_told` in `internal/sim/social.go` (or state.go): upsert absent-or-staler only, provenance told; situated memories both sides ("Told Birch about…"/"Birch told you of…") in `internal/sim/memory.go`
-- [ ] T030 [P] [US5] Gates for `social.place_told`: digest row + fixture; `docs/wiki/event-types.md` row; `chronicleNote` grammar in `internal/mind/narrate.md`-correct file (`internal/mind/narrate.go`)
-- [ ] T031 [US5] US5 tests in `internal/sim/`: SC-006 flow (transfer ≤2, told provenance, teller's Seen tick, staler-never-overwrites-fresher); B acts on told fact end-to-end at resolver level; secondhand-of-secondhand keeps original Seen
+- [x] T028 [US5] Talk-transfer sidecar in `internal/sim/executor.go` `talkEvents` (beside `TellableFor`): deterministic selection of ≤2 facts per direction the other lacks-or-holds-staler (freshest, then nearest-to-listener, then coordinate order); emit `social.place_told` per direction with teller's `Seen` and `Source` (research D5)
+- [x] T029 [US5] Reducer arm for `social.place_told` in `internal/sim/social.go` (or state.go): upsert absent-or-staler only, provenance told; situated memories both sides ("Told Birch about…"/"Birch told you of…") in `internal/sim/memory.go`
+- [x] T030 [P] [US5] Gates for `social.place_told`: digest row + fixture; `docs/wiki/event-types.md` row; `chronicleNote` grammar in `internal/mind/narrate.md`-correct file (`internal/mind/narrate.go`)
+- [x] T031 [US5] US5 tests in `internal/sim/`: SC-006 flow (transfer ≤2, told provenance, teller's Seen tick, staler-never-overwrites-fresher); B acts on told fact end-to-end at resolver level; secondhand-of-secondhand keeps original Seen
 
 **Checkpoint**: directions exist; scouts matter.
 
