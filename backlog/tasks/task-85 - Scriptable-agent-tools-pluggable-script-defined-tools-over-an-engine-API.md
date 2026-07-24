@@ -4,7 +4,7 @@ title: 'Scriptable agent tools: pluggable script-defined tools over an engine AP
 status: Done
 assignee: []
 created_date: '2026-07-24 03:02'
-updated_date: '2026-07-24 20:19'
+updated_date: '2026-07-24 20:44'
 labels:
   - idea
 dependencies: []
@@ -87,6 +87,8 @@ Phase 7 polish landed (ead97e7 after rebase): quickstart 6/6 validated — Scena
 Merged to main as 18a0376 (direct merge per user instruction, GitHub PR API outage; branch + worktree cleaned up, remote branch deleted). Full suite green on merged main except TestCatalogSweep — pre-existing, refiled as TASK-100. Spec 036 at 36/36 tasks, Done-eligible per spec-bridge. HOLDING at In Progress for the constitution-IV wiki re-pin: this change touches wiki-pinned sources (tool-registry, sim-loop, metatron-miracles, metatron, deterministic-rng, event-types, world-save-directory) and a concurrent session has in-flight edits to docs/wiki/ at root right now — wiki-update must run after their work lands, then TASK-85 -> Done + player-docs freshness check.
 
 spec-bridge sync: Setup: 3/3 · Foundational (Blocking Prerequisites): 7/7 · User Story 1 — Declarative tool bundle end-to-end (Priority: P1) 🎯 MVP: 8/8 · User Story 2 — Dogfood: built-in re-expressed as bundle (Priority: P2): 3/3 · User Story 3 — Scripted tools, sandboxed + deterministic (Priority: P3): 7/7 · User Story 4 — Persona bundles (Priority: P4): 4/4 · Polish & Cross-Cutting: 4/4 — status In Progress → Done
+
+Constitution-IV obligation closed (2026-07-24): wiki re-pinned against 1e71b77 — 15 notes re-verified (real prose updates: daemon-lifecycle, deterministic-rng, metatron, tool-registry, world-save-directory, sim-loop, metatron-orders, metatron-miracles, overview) plus NEW bundle-tools.md note + INDEX entry; wiki plan/freshness gates green (39 notes fresh). player-docs refreshed (5 pages, new player-facing bundles section in playing-via-metatron; check-freshness exit 0). TASK-85 Done status now fully backed by artifacts.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
