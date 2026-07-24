@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-24 19:03'
-updated_date: '2026-07-24 23:34'
+updated_date: '2026-07-24 23:57'
 labels:
   - epistemics
   - spatial-memory
@@ -45,8 +45,8 @@ Spec: specs/041-agent-mental-maps
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Spec Kit spec produced, clarified, and linked to this task via spec-bridge before any implementation (constitution rigor)
-- [ ] #2 The five open design questions from the research MOC (gating scope, spatial gossip, LLM consumption, 3D posture, decay rates) are resolved with recorded decisions in the spec
+- [x] #1 Spec Kit spec produced, clarified, and linked to this task via spec-bridge before any implementation (constitution rigor)
+- [x] #2 The five open design questions from the research MOC (gating scope, spatial gossip, LLM consumption, 3D posture, decay rates) are resolved with recorded decisions in the spec
 - [x] #3 Per-agent spatial knowledge exists with an explicit unknown state; verb target resolution consults it instead of the global world scan (no omniscient nearest for knowledge-gated goals)
 - [x] #4 Planner prompt renders only agent-known structures/places (no global structure coordinates; first-6 truncation bug retired)
 - [x] #5 Unknown space is explorable: an agent with no known target can search deliberately rather than only random-wander
@@ -59,7 +59,7 @@ Spec: specs/041-agent-mental-maps
 - [x] #12 Spec phase: User Story 3 — Stale memories corrected by reality (P3)
 - [x] #13 Spec phase: User Story 4 — Deliberate search of the unknown (P4)
 - [x] #14 Spec phase: User Story 5 — Spatial knowledge spreads through talk (P5)
-- [ ] #15 Spec phase: Polish & Cross-Cutting
+- [x] #15 Spec phase: Polish & Cross-Cutting
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -76,4 +76,6 @@ US2+US3 complete (T017-T022, worktree b446a21): known-places prompt (first-6 cap
 US4+US5 complete (T023-T031): search verb (frontier BFS, exhaustion honesty, reflex get-food fallback) + social.place_told sidecar (≤2 facts/direction, told provenance, teller Seen). Race gate re-verified by orchestrator (agent watcher died post-suite-green). Remaining: polish T032-T040.
 
 Polish complete (T032-T037, worktree 3b7dd17): metatron.place_revealed (dry-run-honest visions), dead-agent hygiene pinned (no prod change needed), full serial gates green (only baseline reds: TASK-100 catalog, TASK-93 llm race), soaks 8/8 both seeds, no constant tuning needed. Implementation ACs #3-#7 hold: knowledge-gated resolution shipped, prompt renders known-only (6-cap retired), search shipped, replay bit-identical (harnesses + e2e), 3D path documented in data-model.md. Remaining: T038 wiki re-pin, T039 player docs, T040 sync+PR.
+
+PR opened: https://github.com/evanstern/promptworld/pull/69 (branch task-96-agent-mental-maps, 21 commits: research vault + implementation T001-T037 + wiki re-pin + player docs). All 40 spec tasks complete; all 8 spec phases done; ACs 1-7 hold with evidence. Post-rebase sim suite green; task goes Done at merge.
 <!-- SECTION:NOTES:END -->
