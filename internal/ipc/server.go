@@ -253,14 +253,19 @@ func (s *Server) horizonClasses(cs sim.Status) []HorizonClass {
 	if len(standings) == 0 {
 		return nil
 	}
+	// Read the daemon-lifetime counts once per status request; a class never
+	// suppressed is absent from the map and keys to 0 (spec 037 FR-004). The
+	// map counts all classes but only the watched standings are surfaced, so
+	// unwatched-class counts (e.g. chronicle) never leak an extra entry.
+	counts := s.llm.SuppressionCounts()
 	out := make([]HorizonClass, 0, len(standings))
 	for _, st := range standings {
 		out = append(out, HorizonClass{
-			Class:      st.Class,
-			Suppressed: st.Suppressed,
-			Verdict:    st.Verdict.Arithmetic,
-			Calibrated: s.llm.CalibratedAt(serving[st.Class]) != "",
-			// SuppressedCount stays 0 until US2 wires Orchestrator.SuppressionCounts (T008).
+			Class:           st.Class,
+			Suppressed:      st.Suppressed,
+			Verdict:         st.Verdict.Arithmetic,
+			Calibrated:      s.llm.CalibratedAt(serving[st.Class]) != "",
+			SuppressedCount: counts[st.Class],
 		})
 	}
 	return out

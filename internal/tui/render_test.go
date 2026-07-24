@@ -422,6 +422,27 @@ func TestHorizonLinesEmpty(t *testing.T) {
 	}
 }
 
+// TestHorizonLinesSkippedCount (spec 037 US2 / T009): the "skipped N" count
+// rides every suppressed row, and every thinking row with a nonzero
+// accumulated count; a thinking row with a zero count carries no count clutter.
+func TestHorizonLinesSkippedCount(t *testing.T) {
+	horizon := []ipc.HorizonClass{
+		{Class: "planner", Suppressed: true, SuppressedCount: 214, Verdict: "3pt ..."},
+		{Class: "conversation", Suppressed: false, SuppressedCount: 12}, // slowed down; count retained
+		{Class: "meeting", Suppressed: false, SuppressedCount: 0},        // never suppressed
+	}
+	lines := horizonLines(horizon, "8x")
+	if !strings.Contains(lines[1], "skipped 214") {
+		t.Errorf("suppressed row missing count: %q", lines[1])
+	}
+	if !strings.Contains(lines[2], "conversation thinking at 8x") || !strings.Contains(lines[2], "skipped 12") {
+		t.Errorf("thinking row with accumulated count wrong: %q", lines[2])
+	}
+	if strings.Contains(lines[3], "skipped") {
+		t.Errorf("thinking row with zero count should omit the count: %q", lines[3])
+	}
+}
+
 // TestOrderStatusLinesFields (spec 029 T023): the metatron pane's
 // standing-orders block carries id, fuzzy marker, origin, expiry day, status,
 // and condition for every order, headed by a count line.

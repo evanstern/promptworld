@@ -75,6 +75,12 @@ func (md *Mind) routeVerdict(class string, kind llm.Kind) cognition.Verdict {
 // the absorb goroutine, so the injection detaches — telemetry must never
 // block the absorb loop.
 func (md *Mind) emitSuppressed(class string, agent int, snapshotTick int64, v cognition.Verdict) {
+	// Count the suppression (spec 037 FR-004) through the optional seam: an
+	// O(1) mutex bump on the orchestrator, so it never blocks the absorb loop.
+	// A test fake or nil orchestrator lacking the seam is a silent no-op.
+	if c, ok := md.orch.(suppressionCounting); ok {
+		c.RecordSuppression(class)
+	}
 	b, _ := json.Marshal(sim.CogOutcomePayload{
 		Job:   fmt.Sprintf("%s-%d-%d", class, agent, snapshotTick),
 		Class: class, Agent: agent,
@@ -83,6 +89,15 @@ func (md *Mind) emitSuppressed(class string, agent int, snapshotTick int64, v co
 	})
 	e := store.Event{Type: "cog.outcome", Payload: b}
 	go md.emitCog(e)
+}
+
+// suppressionCounting is the optional orchestrator surface for daemon-lifetime
+// per-class suppression counts (spec 037 FR-004), mirroring the estimating
+// seam below. emitSuppressed reports each router suppression through it; a test
+// fake or nil orchestrator lacking the seam is a silent no-op — telemetry
+// never blocks or fails the absorb loop.
+type suppressionCounting interface {
+	RecordSuppression(class string)
 }
 
 // estimating is the optional orchestrator surface for live per-provider

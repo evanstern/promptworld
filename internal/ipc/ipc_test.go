@@ -1187,3 +1187,40 @@ func TestStatusDataHorizonOmitempty(t *testing.T) {
 		t.Errorf("zero StatusData must omit \"horizon\", got %s", b)
 	}
 }
+
+// TestHorizonCarriesSuppressionCounts (spec 037 US2, contract rule 4): the
+// daemon-lifetime per-class counts fed by the orchestrator surface on each
+// entry keyed by class; a count recorded for an UNWATCHED class (chronicle)
+// never leaks an extra horizon entry.
+func TestHorizonCarriesSuppressionCounts(t *testing.T) {
+	h := newHarness(t, clock.Speed32x)
+	orch := llmForWarningTests(t, h)
+	orch.RecordSuppression("planner")
+	orch.RecordSuppression("planner")
+	orch.RecordSuppression("conversation")
+	orch.RecordSuppression("chronicle") // unwatched — must not appear on the wire
+	c := h.dial(t)
+
+	sd, err := c.Status("status", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(sd.Horizon) != len(cognition.WatchedClasses()) {
+		t.Fatalf("horizon should carry only watched classes, got %+v", sd.Horizon)
+	}
+	byClass := horizonByClass(sd.Horizon)
+	if byClass["planner"].SuppressedCount != 2 {
+		t.Errorf("planner count = %d, want 2", byClass["planner"].SuppressedCount)
+	}
+	if byClass["conversation"].SuppressedCount != 1 {
+		t.Errorf("conversation count = %d, want 1", byClass["conversation"].SuppressedCount)
+	}
+	if byClass["meeting"].SuppressedCount != 0 {
+		t.Errorf("never-suppressed meeting count = %d, want 0", byClass["meeting"].SuppressedCount)
+	}
+	for _, e := range sd.Horizon {
+		if e.Class == "chronicle" {
+			t.Errorf("unwatched class chronicle leaked into the horizon: %+v", e)
+		}
+	}
+}

@@ -477,6 +477,16 @@ type Orchestrator struct {
 	// steady condition never spams the log or the event stream.
 	condHookMu sync.Mutex
 	condition  func(provider, kind, detail, remedy string, active bool)
+
+	// suppressions is the per-decision-class count of router suppressions since
+	// daemon start (spec 037 FR-004): the mind reports each one through the
+	// suppressionCounting seam, the status composer reads a copy. Counts ALL
+	// classes reaching the mind's emitSuppressed (watched or not); the wire
+	// surfaces only the watched ones. Process-lifetime, mutex-guarded, reset
+	// only by daemon restart. The bump is O(1) so it never blocks the mind's
+	// absorb goroutine (telemetry doctrine).
+	suppMu       sync.Mutex
+	suppressions map[string]int64
 }
 
 func New(cfg Config, st MeterStore) (*Orchestrator, error) {
@@ -705,6 +715,35 @@ func (o *Orchestrator) EstimateForKind(kind Kind) (string, float64, bool) {
 	}
 	head := o.admissibleHead(rt)
 	return head.name, head.est.Estimate(), true
+}
+
+// RecordSuppression increments the daemon-lifetime count of router
+// suppressions for a decision class (spec 037 FR-004). Called from the mind's
+// emitSuppressed — the single suppression terminal — through the
+// suppressionCounting seam, so it must stay O(1): one map bump under a
+// dedicated lock, never blocking the absorb goroutine. Counts every class,
+// watched or not; the status composer keys out only the watched ones.
+func (o *Orchestrator) RecordSuppression(class string) {
+	o.suppMu.Lock()
+	if o.suppressions == nil {
+		o.suppressions = make(map[string]int64)
+	}
+	o.suppressions[class]++
+	o.suppMu.Unlock()
+}
+
+// SuppressionCounts returns a defensive copy of the per-class suppression
+// counts (spec 037 FR-004) for the status composer — the caller may range and
+// mutate freely without touching the live map. Nil-safe: an orchestrator that
+// has never recorded a suppression returns an empty map.
+func (o *Orchestrator) SuppressionCounts() map[string]int64 {
+	o.suppMu.Lock()
+	defer o.suppMu.Unlock()
+	out := make(map[string]int64, len(o.suppressions))
+	for class, n := range o.suppressions {
+		out[class] = n
+	}
+	return out
 }
 
 // feedEstimate reports one completed-cognition wall time to a provider's

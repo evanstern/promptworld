@@ -1567,13 +1567,21 @@ func horizonLines(horizon []ipc.HorizonClass, speed string) []string {
 
 // horizonRow renders one class's standing at the effective speed. A suppressed
 // class is warn-styled and carries its remedy plus the verbatim verdict
-// arithmetic (dim detail); a thinking class is a plain one-liner.
+// arithmetic (dim detail); a thinking class is a plain one-liner. The daemon-
+// lifetime "skipped N" count (spec 037 US2) is appended except when it is 0 on
+// a thinking class — a class that is neither suppressed now nor has ever been
+// suppressed carries no count clutter.
 func horizonRow(e ipc.HorizonClass, speed string) string {
-	if !e.Suppressed {
-		return fmt.Sprintf("%s thinking at %s", e.Class, speed)
+	var row string
+	if e.Suppressed {
+		row = stylePaused.Render(fmt.Sprintf("%s suppressed at %s — %s", e.Class, speed, horizonRemedy(e.Calibrated)))
+	} else {
+		row = fmt.Sprintf("%s thinking at %s", e.Class, speed)
 	}
-	row := stylePaused.Render(fmt.Sprintf("%s suppressed at %s — %s", e.Class, speed, horizonRemedy(e.Calibrated)))
-	if e.Verdict != "" {
+	if e.Suppressed || e.SuppressedCount > 0 {
+		row += styleDim.Render(fmt.Sprintf(" · skipped %d", e.SuppressedCount))
+	}
+	if e.Suppressed && e.Verdict != "" {
 		row += " " + styleDim.Render("("+e.Verdict+")")
 	}
 	return row
