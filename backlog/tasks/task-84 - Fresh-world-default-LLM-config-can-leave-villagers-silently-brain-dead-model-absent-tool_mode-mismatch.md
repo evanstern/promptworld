@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-23 23:17'
-updated_date: '2026-07-24 13:22'
+updated_date: '2026-07-24 14:29'
 labels:
   - onboarding
   - llm
@@ -33,7 +33,7 @@ Spec: specs/034-llm-defaults-preflight
 <!-- AC:BEGIN -->
 - [ ] #1 Fresh world on a machine without the default local model surfaces the dead tier loudly (status/attach/event), not silently
 - [ ] #2 Default local model + tool_mode decision made and aligned across DefaultConfig, docs/llm-providers.md, and README
-- [ ] #3 Spec phase: Setup
+- [x] #3 Spec phase: Setup
 - [ ] #4 Spec phase: Foundational (Blocking Prerequisites) — tier: Opus 4.8 (orchestrator internals)
 - [ ] #5 Spec phase: User Story 1 — A dead local tier is loud, not silent (Priority: P1) 🎯 MVP
 - [ ] #6 Spec phase: User Story 2 — Consistently tool-silent planner calls are loud (Priority: P2)
@@ -53,4 +53,6 @@ Full Spec Kit run complete (spec 034, specs/034-llm-defaults-preflight/: spec, p
 Drift audit 2026-07-23: verified intact — DefaultConfig at config.go:448, gemma4:12b-mlx with no ToolMode at :454; resolveToolMode defaults native at :310-313; docs/llm-providers.md:32 still shows gemma4; no startup preflight (reachability is lazy via llm/health.go circuit breaker).
 
 Tier decision (constitution V rubric): Phases 2-4 (condition plumbing, preflight lifecycle, worker hot-path detector — internal/llm orchestration + daemon wiring) = Opus 4.8: concurrency/scheduling logic in internal/llm explicitly named in the rubric. Phase 3 rendering slices (status/TUI) and Phase 5 (defaults + CLI output + doc reconciliation) = Sonnet: view/rendering code and doc reconciliation. Recorded 2026-07-24 at spec-link time.
+
+spec-bridge sync: Setup: 1/1 · Foundational (Blocking Prerequisites) — tier: Opus 4.8 (orchestrator internals): 0/4 · User Story 1 — A dead local tier is loud, not silent (Priority: P1) 🎯 MVP: 0/6 · User Story 2 — Consistently tool-silent planner calls are loud (Priority: P2): 0/2 · User Story 3 — Fresh-world defaults work out of the box (Priority: P2): 0/3 · Polish & Cross-Cutting Concerns: 0/3
 <!-- SECTION:NOTES:END -->
