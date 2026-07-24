@@ -415,3 +415,15 @@ type SawPayload struct {
 	Agent int         `json:"agent"`
 	Facts []PlaceFact `json:"facts"`
 }
+
+// MapCorrectedPayload — agent.map_corrected (spec 041 US3, contracts §1): the
+// perception sweep found remembered facts ABSENT from ground truth. Gone
+// carries the facts AS REMEMBERED (verbatim from the agent's map, canonical
+// order — context baked at emission for narration, never re-derived). The
+// reducer removes them and stamps a situated witness memory per fact. Absorb
+// trigger: the planner re-arms when a removed fact matches the agent's
+// current intent target (mind.go).
+type MapCorrectedPayload struct {
+	Agent int         `json:"agent"`
+	Gone  []PlaceFact `json:"gone"`
+}

@@ -319,6 +319,20 @@ var digestRegistry = map[string]digestFunc{
 		}
 		return join(segs), true
 	},
+	// agent.map_corrected (spec 041 US3): the believe-act-discover moment —
+	// same first-fact-plus-count shape as agent.saw.
+	"agent.map_corrected": func(e store.Event, names []string) ([]seg, bool) {
+		p, ok := decode[sim.MapCorrectedPayload](e)
+		if !ok || len(p.Gone) == 0 {
+			return nil, false
+		}
+		f := p.Gone[0]
+		segs := []seg{nameOf(names, p.Agent), txt(" found "), emph(f.Kind), txt(" at "), coord(f.X, f.Y), txt(" gone")}
+		if more := len(p.Gone) - 1; more > 0 {
+			segs = append(segs, txt(" (+"), emphN(more), txt(" more)"))
+		}
+		return join(segs), true
+	},
 	"agent.foraged": func(e store.Event, names []string) ([]seg, bool) {
 		p, ok := decode[sim.HarvestPayload](e)
 		if !ok {

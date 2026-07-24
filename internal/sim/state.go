@@ -622,6 +622,30 @@ func (s *State) Apply(e store.Event) error {
 			}
 		}
 
+	case "agent.map_corrected":
+		// Spec 041 (US3, T019): the perception sweep found remembered facts
+		// gone — remove them from the agent's map. The situated discovery
+		// memories ride the SAME batch as companion agent.memory_added events
+		// (emitted by the sweep, the spec-038 buildFailedEvents shape): the
+		// memories-accrete-via-events invariant (agents.go, TestMemoriesAccrete)
+		// forbids an arm appending Memories directly — a deviation from
+		// data-model.md's "reducer stamps a situated memory" phrasing,
+		// recorded for the planning tier. A map-less agent is a no-op
+		// (total, the agent.saw shape).
+		var p MapCorrectedPayload
+		if err := json.Unmarshal(e.Payload, &p); err != nil {
+			return fmt.Errorf("apply %s: %w", e.Type, err)
+		}
+		a, err := agent(p.Agent)
+		if err != nil {
+			return err
+		}
+		if a.Map != nil {
+			for _, f := range p.Gone {
+				a.Map.removeFact(f.Kind, f.X, f.Y)
+			}
+		}
+
 	case "agent.foraged":
 		var p HarvestPayload
 		if err := json.Unmarshal(e.Payload, &p); err != nil {

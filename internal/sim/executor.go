@@ -433,8 +433,76 @@ func perceptionEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 			events = append(events, store.Event{Tick: nextTick, Type: "agent.saw",
 				Payload: mustPayload(SawPayload{Agent: i, Facts: news})})
 		}
+
+		// The correction half (spec 041 US3, T019): remembered FRESH facts
+		// within the radius that are ABSENT from ground truth are perceived
+		// gone. Absence is about the PLACE, not its availability — a
+		// harvested forage spot or a cooling den still exists (only its
+		// availability lapsed, the resolvers' ground-condition class), while
+		// a chopped tree, a quarried-out outcrop, a drained pile, or a
+		// removed structure is genuinely no more (groundFactPresent). Gone
+		// facts ride verbatim (as remembered) in canonical order — Facts is
+		// already (Kind,X,Y)-sorted. Stale facts are invisible to read paths
+		// and left untouched; re-perception (agent.saw above) covers their
+		// return. Emitted after the agent's saw event, a fixed order; the two
+		// batches are disjoint by construction (a fact absent from ground
+		// truth is never in the saw diff).
+		var gone []PlaceFact
+		for _, f := range a.Map.Facts {
+			if abs(f.X-a.X)+abs(f.Y-a.Y) > witnessRadius || !factFresh(f, nextTick) {
+				continue
+			}
+			if !groundFactPresent(s, m, f) {
+				gone = append(gone, f)
+			}
+		}
+		if len(gone) > 0 {
+			events = append(events, store.Event{Tick: nextTick, Type: "agent.map_corrected",
+				Payload: mustPayload(MapCorrectedPayload{Agent: i, Gone: gone})})
+			// The situated discoveries ride the same batch as companion
+			// memory events, one per gone fact (the buildFailedEvents shape —
+			// memories accrete ONLY via agent.memory_added, TestMemoriesAccrete).
+			// Salience sits below the generation bump: re-arming on a matching
+			// intent target is the absorb trigger's job, not an interrupt.
+			for _, f := range gone {
+				events = append(events, situatedMemoryEvent(nextTick, i, salMapCorrected,
+					PlaceAt(s, a.X, a.Y), "", OriginWitness, "%s", mapCorrectedText(f)))
+			}
+		}
 	}
 	return events
+}
+
+// groundFactPresent reports whether a remembered place-fact still names a
+// real place (spec 041 US3): the correction's absence test. Kind-aware —
+// terrain spots that merely regrow/cool (forage, dens, water) are permanent
+// places and never correct; overlay-permanent removals (chopped tree,
+// quarried rock), drained piles, and removed structures are gone.
+func groundFactPresent(s *State, m *worldmap.Map, f PlaceFact) bool {
+	if !m.InBounds(f.X, f.Y) {
+		return false
+	}
+	switch f.Kind {
+	case "tree":
+		return effectiveKind(m, s, f.X, f.Y) == worldmap.Tree
+	case "rock":
+		return effectiveKind(m, s, f.X, f.Y) == worldmap.Rock
+	case "forage":
+		// Harvested spots regrow — the SPOT persists (static terrain).
+		return m.At(f.X, f.Y) == worldmap.Forage
+	case "water_edge":
+		return m.At(f.X, f.Y) == worldmap.Water && waterEdge(m, f.X, f.Y)
+	case "den":
+		for _, d := range m.Dens {
+			if d.X == f.X && d.Y == f.Y {
+				return true
+			}
+		}
+		return false
+	case "pile":
+		return s.pileAt(f.X, f.Y) != nil
+	}
+	return s.structureAt(f.Kind, f.X, f.Y)
 }
 
 // waterEdge reports whether a water tile touches statically-walkable ground —
