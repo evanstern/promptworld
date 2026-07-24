@@ -332,6 +332,150 @@ func TestResumeNoBurst(t *testing.T) {
 	}
 }
 
+// --- spec 040 US1: a nudge wakes the nudged villager while paused (TASK-77) ---
+
+// nudgeBatchEvents builds the landed-nudge batch the mind absorbs — the shape
+// internal/metatron/turn.go's landNudgeBatch commits: one metatron.nudged
+// carrying the arming Seq, then one prefixed agent.memory_added per target. Fed
+// straight to the mind's Observe path: the mind consumes an ALREADY-landed nudge
+// (the door's charge/night validation is upstream — spec 040 D1), so it arms
+// every Target regardless of the reducer's form gates.
+func nudgeBatchEvents(seq, tick int64, form, text string, targets ...int) []store.Event {
+	nb, _ := json.Marshal(sim.MetatronNudgedPayload{Form: form, Targets: targets, Text: text})
+	batch := []store.Event{{Seq: seq, Tick: tick, Type: "metatron.nudged", Payload: nb}}
+	prefix := "You saw a vision: "
+	if form == "omen" {
+		prefix = "You witnessed an omen: "
+	}
+	for i, tgt := range targets {
+		mb, _ := json.Marshal(sim.MemoryAddedPayload{
+			Agent: tgt, Text: prefix + text, Salience: sim.SalDream, Subject: -1, Origin: sim.OriginOmen})
+		batch = append(batch, store.Event{Seq: seq + int64(i) + 1, Tick: tick, Type: "agent.memory_added", Payload: mb})
+	}
+	return batch
+}
+
+// TestPausedNudgeWakesTargetOnce (spec 040 US1, FR-001/FR-002; contracts C2/C3):
+// while paused, a landed nudge arms the target for exactly one frozen-tick
+// planner round whose trigger_seq is the nudge event's Seq and whose outcome
+// lands at zero staleness; a second nudge in the same pause buys no second
+// thought — the 300-game-tick planner debounce cannot reopen while the clock is
+// frozen (the bound is by construction, not a counter).
+func TestPausedNudgeWakesTargetOnce(t *testing.T) {
+	h := newHarnessAt(t, `{"goal":"wander","reason":"stretching"}`, "16x")
+
+	// Warm past the debounce floor: agent 0 plans first at tick 300, proving the
+	// world is warm; high-index agents (nextDue ≥ 900) have never planned, so
+	// their debounce window is open at any frozen tick ≥ 300.
+	if got := h.waitEvents(t, 40*time.Second, func(e store.Event) bool {
+		return e.Type == "cog.thought"
+	}); len(got) == 0 {
+		t.Fatal("world never warmed to a first planner thought")
+	}
+	st, err := h.loop.Do("pause", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	frozen := st.Tick
+	time.Sleep(1 * time.Second) // drain any in-flight pre-pause cognition
+
+	const target = 7 // nextDue 1800: never planned by a frozen tick this small
+	const nudgeSeq = int64(900001)
+	h.mind.Observe(nudgeBatchEvents(nudgeSeq, frozen, "vision", "the river is rising", target))
+
+	thoughts := h.waitEvents(t, 20*time.Second, func(e store.Event) bool {
+		if e.Type != "cog.thought" {
+			return false
+		}
+		var p sim.CogThoughtPayload
+		return json.Unmarshal(e.Payload, &p) == nil && p.Class == "planner" &&
+			p.Agent == target && p.TriggerSeq == nudgeSeq
+	})
+	if len(thoughts) != 1 {
+		t.Fatalf("nudge produced %d planner thoughts for the target, want exactly 1", len(thoughts))
+	}
+	var tp sim.CogThoughtPayload
+	json.Unmarshal(thoughts[0].Payload, &tp)
+	if tp.SnapshotTick != frozen {
+		t.Errorf("thought snapshot tick %d != frozen %d", tp.SnapshotTick, frozen)
+	}
+
+	outcomes := h.waitEvents(t, 20*time.Second, func(e store.Event) bool {
+		if e.Type != "cog.outcome" {
+			return false
+		}
+		var p sim.CogOutcomePayload
+		return json.Unmarshal(e.Payload, &p) == nil && p.Job == tp.Job
+	})
+	if len(outcomes) != 1 {
+		t.Fatalf("nudge thought %s has %d outcomes, want exactly 1", tp.Job, len(outcomes))
+	}
+	var op sim.CogOutcomePayload
+	json.Unmarshal(outcomes[0].Payload, &op)
+	if op.LandingTick != frozen || op.StalenessTicks != 0 {
+		t.Errorf("frozen-tick landing wrong: landing=%d staleness=%d (frozen %d)", op.LandingTick, op.StalenessTicks, frozen)
+	}
+
+	// A second nudge to the same villager while still frozen arms pending again,
+	// but the debounce cannot reopen (game time is frozen), so no second thought.
+	const nudge2 = int64(900002)
+	h.mind.Observe(nudgeBatchEvents(nudge2, frozen, "vision", "and rising still", target))
+	if second := h.waitEvents(t, 3*time.Second, func(e store.Event) bool {
+		if e.Type != "cog.thought" {
+			return false
+		}
+		var p sim.CogThoughtPayload
+		return json.Unmarshal(e.Payload, &p) == nil && p.TriggerSeq == nudge2
+	}); len(second) != 0 {
+		t.Fatalf("second nudge in the same pause produced %d thoughts, want 0 (debounce bound)", len(second))
+	}
+}
+
+// TestPausedOmenArmsOnlyTargets (spec 040 US1, scenario 3): a paused multi-target
+// omen gives each living, awake target its own single frozen-tick round; a
+// villager the omen did not target is never armed.
+func TestPausedOmenArmsOnlyTargets(t *testing.T) {
+	h := newHarnessAt(t, `{"goal":"wander","reason":"stretching"}`, "16x")
+	if got := h.waitEvents(t, 40*time.Second, func(e store.Event) bool {
+		return e.Type == "cog.thought"
+	}); len(got) == 0 {
+		t.Fatal("world never warmed to a first planner thought")
+	}
+	st, err := h.loop.Do("pause", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	frozen := st.Tick
+	time.Sleep(1 * time.Second)
+
+	// Targets 6 and 7 (nextDue ≥ 1575) have never planned → open windows; 5 is
+	// the untargeted control.
+	const omenSeq = int64(910000)
+	h.mind.Observe(nudgeBatchEvents(omenSeq, frozen, "omen", "the long night comes", 6, 7))
+
+	for _, tgt := range []int{6, 7} {
+		got := h.waitEvents(t, 20*time.Second, func(e store.Event) bool {
+			if e.Type != "cog.thought" {
+				return false
+			}
+			var p sim.CogThoughtPayload
+			return json.Unmarshal(e.Payload, &p) == nil && p.Agent == tgt && p.TriggerSeq == omenSeq
+		})
+		if len(got) != 1 {
+			t.Fatalf("omen target %d got %d thoughts, want exactly 1", tgt, len(got))
+		}
+	}
+	if bystander := h.waitEvents(t, 2*time.Second, func(e store.Event) bool {
+		if e.Type != "cog.thought" {
+			return false
+		}
+		var p sim.CogThoughtPayload
+		return json.Unmarshal(e.Payload, &p) == nil && p.Agent == 5 && p.TriggerSeq == omenSeq
+	}); len(bystander) != 0 {
+		t.Fatalf("untargeted villager 5 was armed by the omen (%d thoughts)", len(bystander))
+	}
+}
+
 // --- spec 037 US2 (T007): the suppressionCounting seam ---
 
 // countingOrch is a fake orchestrator implementing both Submitter and the
