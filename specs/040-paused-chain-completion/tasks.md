@@ -21,7 +21,7 @@ the **Opus 4.8** `spec-implementer` tier (constitution V; recorded on TASK-77).
 
 ## Phase 1: Setup
 
-- [ ] T001 Create the TASK-77 worktree from fresh origin/main: `git worktree add .worktrees/task-77 -b task-77-paused-chain-completion origin/main` (root stays on main; all subsequent tasks execute inside `.worktrees/task-77/`)
+- [x] T001 Create the TASK-77 worktree from fresh origin/main: `git worktree add .worktrees/task-77 -b task-77-paused-chain-completion origin/main` (root stays on main; all subsequent tasks execute inside `.worktrees/task-77/`)
 
 ## Phase 2: Foundational
 
