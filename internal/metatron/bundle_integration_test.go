@@ -228,6 +228,71 @@ func TestBundleCastLightNightVsDay(t *testing.T) {
 	})
 }
 
+// TestBundlePersonaComposesIdentityGrantAndTools is US4 / quickstart Scenario 6
+// (T032): the gandalf persona bundle (T031 fixture) installs its SOUL fragment,
+// its capabilities.json grant narrowing, and its tools/ folder all together at
+// boot. The broken sibling tool is skipped with a T-rule BootReport entry
+// (clarification #1) while the SOUL fragment, the grant narrowing, and the
+// valid tool all stay active — a per-tool failure never rejects the persona.
+func TestBundlePersonaComposesIdentityGrantAndTools(t *testing.T) {
+	mt, orch, _, _ := newTestAngel(t, "As you wish.")
+	bs := bundleWorld(t, "persona")
+	mt.SetBundles(bs)
+
+	// The broken tool is skipped with a specific T-rule BootReport entry; the
+	// sibling valid tool, SOUL, and grant all still take effect.
+	found := false
+	for _, iss := range bs.BootReport() {
+		if iss.Tool == "broken" && iss.Rule == "T1" && iss.Severity == "error" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("expected a T1 rejection for the broken tool; report=%+v", bs.BootReport())
+	}
+
+	// Only the valid tool survives onto the roster.
+	if names := (func() []string {
+		var out []string
+		for _, tl := range bs.Roster() {
+			out = append(out, tl.Name)
+		}
+		return out
+	}()); len(names) != 1 || names[0] != "bless" {
+		t.Fatalf("roster = %v, want [bless]", names)
+	}
+
+	mt.runLoop = converseLoop(mt)
+	if _, err := mt.Turn(context.Background(), "what do you carry, old friend?"); err != nil {
+		t.Fatalf("Turn: %v", err)
+	}
+	sys := orch.requests()[0].System
+
+	// The persona's SOUL fragment reached the system prompt.
+	if !strings.Contains(sys, "Gandalf") {
+		t.Errorf("system prompt omits the persona's SOUL fragment:\n%s", sys)
+	}
+	// The valid sibling tool reaches the derived guidance.
+	if !strings.Contains(sys, "bless") {
+		t.Errorf("system prompt omits the valid persona tool bless:\n%s", sys)
+	}
+	// The rejected tool never leaks (neither its declared nor its manifest name).
+	if strings.Contains(sys, "brokentool") {
+		t.Error("system prompt leaks the rejected persona tool brokentool")
+	}
+	// The grant narrowing excludes "move" (not named by the fixture's
+	// capabilities.json) from the declared work_miracle kind enum, while the
+	// three kinds the fixture DOES name remain granted.
+	if strings.Contains(sys, `"move"`) {
+		t.Error("system prompt still offers the world-excluded miracle kind \"move\"")
+	}
+	for _, want := range []string{`"remove"`, `"give_item"`, `"time_snap"`} {
+		if !strings.Contains(sys, want) {
+			t.Errorf("system prompt missing granted miracle kind %s:\n%s", want, sys)
+		}
+	}
+}
+
 // assertOnlyBundleEvents fails if any landed event is outside cast_light's declared
 // surface (agent.memory_added) plus the loop's own cog.tool_call telemetry.
 func assertOnlyBundleEvents(t *testing.T, inj *stateInjector) {

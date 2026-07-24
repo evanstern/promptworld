@@ -142,7 +142,14 @@ func (mt *Metatron) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 	// reply, one combined line, exactly like the charter's today.
 	charter, charterNotice := loadCharter(mt.worldDir)
 	skills, skillNotices := loadSkills(mt.worldDir)
-	grant, manifestNotices := loadManifest(mt.worldDir)
+	grant, manifestNotices := loadManifest(mt.worldDir, bundleToolNames(mt.bundles)...)
+	// Persona bundles narrow the world-level grant (spec 036 US4 T030): a
+	// bundle's own capabilities.json can only exclude tools/kinds the world
+	// already grants, never add ones it excludes. Applied BEFORE grantedRoster
+	// so the narrowing reaches every gating layer alike — the declared roster
+	// (work_miracle's kind enum), the derived guidance, and (via `grant` on
+	// turnDispatch below) the door itself.
+	grant = narrowGrantForBundles(grant, mt.bundles)
 	var notices []string
 	if charterNotice != "" {
 		notices = append(notices, charterNotice)
@@ -202,6 +209,14 @@ func (mt *Metatron) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 		}
 	}
 
+	// Persona SOUL.md fragments (spec 036 US4 T029): each installed bundle's
+	// identity text, in load order, appended after the charter section of the
+	// system prompt (turnSystemPrompt below).
+	var souls []string
+	if mt.bundles != nil {
+		souls = mt.bundles.SoulFragments()
+	}
+
 	// One correlation id per turn, mirroring mind's "<class>-<agent>-<tick>"
 	// convention (telemetry.go newMeta): the console turn's class is "turn"; a
 	// triggered system turn's is "watch" (R6). Threads every cog.tool_call.
@@ -232,7 +247,7 @@ func (mt *Metatron) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 	res, err := mt.runLoop(callCtx, toolloop.Job{
 		JobID:     jobID,
 		Kind:      llm.KindMetatron,
-		System:    turnSystemPrompt(charter, skills, roster),
+		System:    turnSystemPrompt(charter, skills, roster, souls...),
 		Seed:      turnUserPrompt(tick, charges, alive, orders, moments, story, mt.soulTail(), mt.transcriptTail(), directive),
 		Roster:    roster,
 		Handlers:  handlers,
@@ -674,6 +689,26 @@ func (mt *Metatron) replicaTickSafe() int64 {
 	return mt.clockAt
 }
 
+// bundleToolNames returns the boot-frozen bundle roster's tool names (nil for
+// a nil/empty BundleSet) — the "known bundle tool" set loadManifest uses to
+// suppress a cosmetic "unknown tool … ignored" notice for a world-level
+// capabilities.json that correctly names a real bundle tool (spec 036 T030
+// handoff fix): allowsBundle already grants such a name; the notice was noise.
+func bundleToolNames(bs *bundle.BundleSet) []string {
+	if bs == nil {
+		return nil
+	}
+	roster := bs.Roster()
+	if len(roster) == 0 {
+		return nil
+	}
+	names := make([]string, len(roster))
+	for i, t := range roster {
+		names[i] = t.Name
+	}
+	return names
+}
+
 func agentIndexByName(name string) int {
 	name = strings.ToLower(strings.TrimSpace(name))
 	for i, n := range sim.AgentNames {
@@ -728,7 +763,9 @@ func hasWorkMiracle(roster []tool.Tool) bool {
 }
 
 // turnSystemPrompt composes the metatron turn's system prompt (spec 021 R3,
-// data-model.md §2): the editable charter, then each skill file under a
+// data-model.md §2): the editable charter, then (spec 036 US4 T029) each
+// installed persona bundle's SOUL.md fragment under a `--- persona ---`
+// separator in bundle load order, then each skill file under a
 // `--- skill: <name> ---` separator in composition order, then the fixed frame
 // appended LAST and unconditionally. The frame carries the two non-negotiables
 // verbatim, the tool-agnostic acting doctrine, and — for THIS world's granted
@@ -736,9 +773,16 @@ func hasWorkMiracle(roster []tool.Tool) bool {
 // which replaces the old hand-written tool list so the described surface can
 // never diverge from the declared one (FR-008) and automatically reflects the
 // granted subset (a conversation-only world names no acting tools at all).
-func turnSystemPrompt(charter string, skills []skillFile, roster []tool.Tool) string {
+//
+// souls is variadic so every pre-036 call site keeps compiling unchanged
+// (extend, don't break) — an absent argument composes byte-identically to the
+// pre-036 prompt.
+func turnSystemPrompt(charter string, skills []skillFile, roster []tool.Tool, souls ...string) string {
 	var b strings.Builder
 	b.WriteString(charter)
+	for _, s := range souls {
+		fmt.Fprintf(&b, "\n\n--- persona ---\n%s", s)
+	}
 	for _, s := range skills {
 		fmt.Fprintf(&b, "\n\n--- skill: %s ---\n%s", s.name, s.text)
 	}

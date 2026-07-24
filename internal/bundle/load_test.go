@@ -206,3 +206,43 @@ func TestAbsentBundlesDir(t *testing.T) {
 		t.Errorf("roster/report not empty: %v / %v", bs.Roster(), bs.BootReport())
 	}
 }
+
+// TestDiscoverPersona (spec 036 US4, T031 fixture): the gandalf persona bundle
+// surfaces its SOUL fragment and grant narrowing, keeps its valid tool, and
+// per-tool-skips its deliberately broken sibling (clarification #1) — SOUL and
+// grant stay intact even though one tool failed.
+func TestDiscoverPersona(t *testing.T) {
+	bs := discover(t, "persona")
+
+	if got := rosterNames(bs); !reflect.DeepEqual(got, []string{"bless"}) {
+		t.Fatalf("roster = %v, want [bless] (broken tool T1-skipped)", got)
+	}
+
+	bundles := bs.Bundles()
+	if len(bundles) != 1 || bundles[0].Name != "gandalf" {
+		t.Fatalf("bundles = %+v, want one bundle named gandalf", bundles)
+	}
+	b := bundles[0]
+	if !strings.Contains(b.Soul, "Gandalf") {
+		t.Errorf("Soul = %q, want it to contain the persona fragment", b.Soul)
+	}
+	if b.Grant == nil || !reflect.DeepEqual(b.Grant.MiracleKinds, []string{"remove", "give_item", "time_snap"}) {
+		t.Errorf("Grant = %+v, want miracle_kinds [remove give_item time_snap]", b.Grant)
+	}
+	if b.Grant.Tools != nil {
+		t.Errorf("Grant.Tools = %v, want nil (the fixture narrows kinds only)", b.Grant.Tools)
+	}
+
+	got := bs.SoulFragments()
+	if len(got) != 1 || !strings.Contains(got[0], "Gandalf") {
+		t.Errorf("SoulFragments() = %v, want one fragment naming Gandalf", got)
+	}
+
+	iss := findIssue(bs, "T1", "broken")
+	if iss == nil {
+		t.Fatalf("no T1 issue for the broken tool; report=%+v", bs.BootReport())
+	}
+	if iss.Severity != "error" || !strings.Contains(iss.Message, "brokentool") {
+		t.Errorf("issue = %+v", *iss)
+	}
+}

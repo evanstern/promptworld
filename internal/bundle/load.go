@@ -133,6 +133,20 @@ func (bs *BundleSet) Roster() []tool.Tool {
 	return out
 }
 
+// SoulFragments returns each bundle's SOUL.md content, in load order, skipping
+// bundles without one (spec 036 US4, T029). Each fragment is already B2-capped
+// (≤4000 chars) at load time; the metatron turn assembly appends these verbatim
+// after the charter section of the system prompt.
+func (bs *BundleSet) SoulFragments() []string {
+	var out []string
+	for _, b := range bs.bundles {
+		if b.Soul != "" {
+			out = append(out, b.Soul)
+		}
+	}
+	return out
+}
+
 // childDirs returns the direct child directory names of dir in ascending
 // bytewise order, skipping dotfiles and non-dir entries. A missing dir is the
 // common, unremarkable case: (nil, nil). Any other read error is returned.

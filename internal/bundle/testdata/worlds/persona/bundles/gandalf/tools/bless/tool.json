@@ -1,0 +1,12 @@
+{
+  "name": "bless",
+  "description": "Bestow a quiet blessing upon a villager",
+  "params": [
+    {"name": "target", "kind": "agent_name", "required": true, "description": "the villager to bless"}
+  ],
+  "events": ["agent.memory_added"],
+  "charges": 1,
+  "effects": [
+    {"kind": "narrate", "text": "You feel Gandalf's blessing settle over you, {args.target}.", "recipients": "target"}
+  ]
+}
