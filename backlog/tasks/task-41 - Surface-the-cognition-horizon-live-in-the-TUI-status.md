@@ -4,7 +4,7 @@ title: Surface the cognition horizon live in the TUI/status
 status: In Progress
 assignee: []
 created_date: '2026-07-21 13:47'
-updated_date: '2026-07-24 17:41'
+updated_date: '2026-07-24 18:08'
 labels:
   - ux
   - tui
@@ -48,4 +48,6 @@ TASK-66 / decision-6 (2026-07-23): horizon legibility is a PREREQUISITE for clas
 Drift audit 2026-07-23: PARTIALLY overtaken — the TUI decisions view now marks suppressed chains ('didn't think': internal/tui/decisions.go:232, :358; rendered views.go:1711), so 'suppression exists only in raw cog.outcome payloads' is no longer true. Still missing (remaining scope): the live per-class horizon verdict at current speed (header/status 'conversations suppressed at 32x') and suppression counters. Narrate gate moved to internal/mind/narrate.go:266-269 (was ~:260).
 
 Model tier (constitution V rubric): Opus 4.8 — cross-package slice (cognition, llm, mind, ipc, tui, cmd) touching internal/cognition arithmetic doctrine and an internal/mind telemetry seam on the absorb goroutine; both are explicitly senior-tier territory ('cross-package/architectural', 'internal/llm, internal/cognition, internal/mind orchestration'). Single implementer run, all 5 phases, batched commits per phase.
+
+Implementation complete (Opus 4.8 spec-implementer, single run): T001-T010 done on task-41-live-horizon-surface (460b777 foundational, c56bf22 US1, 396046b US2, ccf97c4 US3, 06bcc02 polish). Gates: go build/vet/test green; -race green for the new counter paths. T011 live validation (quickstart §2-§4, scratch worlds, branch binary): §2 PASS — 32x shows 'planner/conversation suppressed at 32x — calibrate or slow down', meeting thinking, spec-035 set_speed warning agrees with the horizon; §3 PASS — planner skipped grew 0→32 while hot, counts retained (not reset) after dropping to 1x, all classes thinking again; §4 PASS — no-LLM world prints no horizon section and the status JSON carries no horizon key. Two PRE-EXISTING failures found and reproduced on base main (NOT from this work): internal/tui TestCatalogSweep (event-types.md backticks daemon.llm_warning, fixture lacks a row) and internal/llm TestPreflightBootNeverFails -race flake (compressClock cleanup races RunPreflight) — filing as separate tasks. Remaining: PR + merge, then T012 wiki re-pin + player-docs.
 <!-- SECTION:NOTES:END -->

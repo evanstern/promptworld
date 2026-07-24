@@ -20,7 +20,7 @@ contracts/status-horizon.md, quickstart.md
 **Purpose**: the one shared arithmetic base both wire composition and every
 render surface delegate to (research R1, spec FR-002).
 
-- [ ] T001 Add `ClassStanding{Class, Suppressed, Verdict}` and
+- [x] T001 Add `ClassStanding{Class, Suppressed, Verdict}` and
       `LiveHorizon(ticksPerSecond, secPerPtFor) []ClassStanding` to
       `internal/cognition/horizon.go`; re-base `SuppressedAt` as a
       suppressed-names filter over `LiveHorizon` (one watched-class iteration
@@ -44,12 +44,12 @@ header (compact) and the metatron dock pane (detail), within one status poll.
 per-class block; 1x clears them within one poll; governed world reads the
 EFFECTIVE speed; no-LLM world byte-identical.
 
-- [ ] T002 [US1] Add `HorizonClass{Class, Suppressed, Verdict, Calibrated,
+- [x] T002 [US1] Add `HorizonClass{Class, Suppressed, Verdict, Calibrated,
       SuppressedCount}` (json per contracts/status-horizon.md) and
       `StatusData.Horizon []HorizonClass` with `json:"horizon,omitempty"` to
       `internal/ipc/protocol.go`, doc comment citing the contract's presence
       rules (LLM worlds only; never empty-slice).
-- [ ] T003 [US1] Compose the horizon in `statusDataFull`
+- [x] T003 [US1] Compose the horizon in `statusDataFull`
       (`internal/ipc/server.go`): when `s.llm != nil`, call
       `cognition.LiveHorizon(cs.Speed.TicksPerSecond(), resolver)` where the
       resolver maps class → `s.llm.EstimateForKind(llm.Kind(class))`
@@ -58,13 +58,13 @@ EFFECTIVE speed; no-LLM world byte-identical.
       Tests in `internal/ipc`: composition happy path, provider-missing
       exclusion, uncapped speed, calibrated flag, and the no-LLM
       byte-identity test (reply JSON has no `horizon` key — SC-004).
-- [ ] T004 [US1] Header badge in `headerView`
+- [x] T004 [US1] Header badge in `headerView`
       (`internal/tui/views.go`): when ≥1 `m.status.Horizon` entry is
       suppressed, append a warn-styled `[suppressed: <classes>]` badge on the
       `[llm: …]` badge pattern; absent otherwise. Tests in
       `internal/tui/views_test.go`: badge present/absent, both layouts,
       narrow fallback, class-name ordering follows wire order.
-- [ ] T005 [US1] Metatron-pane horizon block (`horizonLines` beside
+- [x] T005 [US1] Metatron-pane horizon block (`horizonLines` beside
       `llmProviderLines` in `internal/tui/views.go`): one row per entry —
       class, plain-language standing at the current speed ("thinking at 8x" /
       "suppressed at 32x"), remedy phrase from `suppressed × calibrated`
@@ -86,23 +86,23 @@ client.
 reset) at 1x, match the world's suppressed `cog.outcome` events, reset only on
 daemon restart.
 
-- [ ] T006 [P] [US2] Add mutex-guarded per-class suppression counts to
+- [x] T006 [P] [US2] Add mutex-guarded per-class suppression counts to
       `llm.Orchestrator` (`internal/llm/llm.go`): `RecordSuppression(class
       string)` (O(1) bump) and `SuppressionCounts() map[string]int64`
       (defensive copy). Tests in `internal/llm/llm_test.go`: increment,
       copy-isolation, concurrent bumps under `-race`.
-- [ ] T007 [P] [US2] Add the optional `suppressionCounting` seam in
+- [x] T007 [P] [US2] Add the optional `suppressionCounting` seam in
       `internal/mind/telemetry.go` (the `estimating` pattern) and call it
       from `emitSuppressed` before the detached event emit — a fake
       orchestrator without the seam is a silent no-op. Test with a counting
       fake: every `emitSuppressed` class reaches the seam; absorb path never
       blocks/panics with a seamless fake.
-- [ ] T008 [US2] Fold counts into the status composition
+- [x] T008 [US2] Fold counts into the status composition
       (`internal/ipc/server.go`): `SuppressionCounts()` read once per status,
       `SuppressedCount` per entry keyed by class. Extend the ipc composition
       test: entries carry counts; unknown-class counts (unwatched, e.g.
       `chronicle`) don't leak extra entries.
-- [ ] T009 [US2] Render `skipped N` on each metatron-pane horizon row
+- [x] T009 [US2] Render `skipped N` on each metatron-pane horizon row
       (`internal/tui/views.go`), omitted when the count is 0 and the class is
       thinking. Extend the pane render tests.
 
@@ -118,7 +118,7 @@ raw status JSON.
 **Independent Test**: quickstart.md §4 — LLM world shows the section; no-LLM
 world output unchanged.
 
-- [ ] T010 [US3] Render a horizon section in `renderStatusHuman`
+- [x] T010 [US3] Render a horizon section in `renderStatusHuman`
       (`cmd/promptworld/commands.go`): one line per entry — standing at
       current speed, remedy when suppressed, `skipped N` — nothing when
       `Horizon` is absent. Tests in `cmd/promptworld/commands_test.go`:
@@ -130,7 +130,7 @@ world output unchanged.
 
 ## Phase 5: Polish & lifecycle gates
 
-- [ ] T011 Full sweep: `go build ./... && go vet ./... && go test ./...`
+- [x] T011 Full sweep: `go build ./... && go vet ./... && go test ./...`
       green (includes `-race` for the new counter paths where the suite
       already runs it); execute quickstart.md scenarios §2–§4 against a live
       world and record outcomes on the board task.
