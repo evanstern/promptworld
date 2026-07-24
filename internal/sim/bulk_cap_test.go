@@ -264,7 +264,7 @@ func TestBulkGiveSkippedAtFullReceiver(t *testing.T) {
 		}
 		a, b := &s.Agents[0], &s.Agents[1]
 		a.X, a.Y = 1, 1
-		b.X, b.Y = 1, 2 // Manhattan 1: adjacent
+		b.X, b.Y = 1, 2                   // Manhattan 1: adjacent
 		a.Needs.Food = giveNeedBelow - 50 // starving receiver
 		a.Inv = recvInv
 		b.Needs.Food = 800 // the giver is fine

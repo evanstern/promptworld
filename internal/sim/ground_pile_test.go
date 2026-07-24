@@ -175,7 +175,7 @@ func TestContestedPickupSameTick(t *testing.T) {
 		s.Agents[i].Dead = true
 	}
 	a0, a1 := &s.Agents[0], &s.Agents[1]
-	a1.X, a1.Y = a0.X, a0.Y // co-located on the pile tile
+	a1.X, a1.Y = a0.X, a0.Y               // co-located on the pile tile
 	a0.Inv = Inventory{Wood: bulkCap - 3} // free 3 — the first taker is nearly full
 	a1.Inv = Inventory{}                  // free 24 — room for the remainder
 	s.Piles = []Pile{{X: a0.X, Y: a0.Y, Wood: 5}}
