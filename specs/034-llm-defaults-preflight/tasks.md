@@ -88,8 +88,8 @@ pull; docs and README tell the same story. See contracts/fresh-world-defaults.md
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T017 Run quickstart V0 (full `go test ./...`), gofmt (touched files only — pre-existing drift is TASK-83) and `go vet` on touched packages; fix fallout
-- [ ] T018 Execute quickstart V1–V5 live where the environment allows; record outcomes in specs/034-llm-defaults-preflight/quickstart-results.md
+- [x] T017 Run quickstart V0 (full `go test ./...`), gofmt (touched files only — pre-existing drift is TASK-83) and `go vet` on touched packages; fix fallout
+- [x] T018 Execute quickstart V1–V5 live where the environment allows; record outcomes in specs/034-llm-defaults-preflight/quickstart-results.md
 - [ ] T019 Post-merge re-grounding (root, after the PR lands): `/grounding-wiki:wiki-update` for notes sourcing internal/llm/*, internal/daemon/daemon.go, docs/llm-providers.md, README.md; then regenerate player docs via the player-docs skill (constitution Principle IV)
 
 ---
