@@ -1,10 +1,13 @@
 package daemon
 
 import (
+	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/evanstern/promptworld/internal/clock"
 	"github.com/evanstern/promptworld/internal/cognition"
@@ -147,6 +150,92 @@ func TestUncalibratedBootWarningContainsContractElements(t *testing.T) {
 	}
 	if !strings.Contains(got, "promptworld calibrate demo-ux") {
 		t.Errorf("missing the exact calibrate command with the real world name: %q", got)
+	}
+}
+
+// TestTeachingPostureReplayByteIdentical (spec 039 T017/R3, spec 036 replay
+// doctrine): the boot-time posture default is applied through the loop's normal
+// set_speed command door, so it lands as a recorded clock.speed_set event. The
+// world's log therefore replays to a byte-identical state — the posture speed
+// included — with no unrecorded manifest-aware divergence. Initial sim state is
+// left at clock.DefaultSpeed (untouched); only the recorded event moves it.
+func TestTeachingPostureReplayByteIdentical(t *testing.T) {
+	dir := t.TempDir() + "/w"
+	w, err := world.Create(dir, "teach", 42)
+	if err != nil {
+		t.Fatal(err)
+	}
+	st, err := store.Open(w.DBPath())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+
+	state := sim.NewState(w.Manifest.Seed, w.Map())
+	if state.Speed != clock.DefaultSpeed {
+		t.Fatalf("initial sim speed = %s, want the untouched default %s", state.Speed, clock.DefaultSpeed)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	loop := sim.NewLoop(state, w.Map(), st, nil)
+	done := make(chan error, 1)
+	go func() { done <- loop.Run(ctx) }()
+
+	// Apply the posture default exactly as daemon boot does — the normal command
+	// door — so it is recorded.
+	if _, err := loop.Do("set_speed", clock.Speed16x); err != nil {
+		t.Fatalf("posture set_speed: %v", err)
+	}
+	// Let a few ticks accrue around the recorded event.
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		if s, err := loop.Do("status", ""); err == nil && s.Tick >= 3 {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("world did not advance past tick 3")
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	cancel()
+	if err := <-done; err != nil {
+		t.Fatalf("loop.Run: %v", err)
+	}
+	live := state.Marshal()
+
+	// Exactly one recorded clock.speed_set(16x) carries the posture.
+	events, err := st.EventsSince(0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var speedSets int
+	for _, e := range events {
+		if e.Type != "clock.speed_set" {
+			continue
+		}
+		speedSets++
+		var p sim.SpeedSetPayload
+		if err := json.Unmarshal(e.Payload, &p); err != nil {
+			t.Fatal(err)
+		}
+		if p.Speed != clock.Speed16x {
+			t.Errorf("recorded speed_set = %s, want 16x", p.Speed)
+		}
+	}
+	if speedSets != 1 {
+		t.Errorf("%d clock.speed_set events, want exactly 1 (the posture default)", speedSets)
+	}
+
+	// Replay the log through the daemon's own recovery path: byte-identical state.
+	replayed, err := recoverState(w, st)
+	if err != nil {
+		t.Fatalf("recoverState: %v", err)
+	}
+	if replayed.Speed != clock.Speed16x {
+		t.Errorf("replayed speed = %s, want 16x (the posture rode the recorded event)", replayed.Speed)
+	}
+	if got := string(replayed.Marshal()); got != string(live) {
+		t.Errorf("replay diverged from the live state:\nlive:     %s\nreplayed: %s", live, got)
 	}
 }
 

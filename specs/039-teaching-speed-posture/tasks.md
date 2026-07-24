@@ -95,8 +95,8 @@ wire field.
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T016 Run quickstart.md end-to-end (all six sections) in the worktree; `go vet ./... && go test ./...` green; fix fallout
-- [ ] T017 Replay determinism check: teaching world's log replays byte-identical including the boot `clock.speed_set` event (reuse spec 036's replay harness pattern)
+- [X] T016 Run quickstart.md end-to-end (all six sections) in the worktree; `go vet ./... && go test ./...` green; fix fallout
+- [X] T017 Replay determinism check: teaching world's log replays byte-identical including the boot `clock.speed_set` event (reuse spec 036's replay harness pattern)
 - [ ] T018 Open PR from `.worktrees/task-78` (one TASK, one PR); after merge at root: `/grounding-wiki:wiki-update` re-pin (notes sourcing world.go, horizon.go, protocol.go, server.go, daemon.go, commands.go), then player-docs freshness (`node .claude/skills/player-docs/scripts/check-freshness.mjs --check`) and regenerate if stale
 
 ---
