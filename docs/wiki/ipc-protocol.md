@@ -5,7 +5,7 @@ kind: concept
 sources:
   - internal/ipc/protocol.go
   - specs/001-world-daemon/contracts/client-protocol.md
-verified_against: af13190c1771cd592ad26bcc2728f4e4377be894
+verified_against: d23fbbfe471ec62c9b94ce79404870632a6eb60e
 ---
 
 # IPC protocol
@@ -70,6 +70,20 @@ time it's set. `set_speed`'s existing refusal of uncapped `max` while an LLM is
 configured is retained unchanged (spec 028 FR-012) — the governor only ever
 moves `speed`/`effective_rate` along the capped ladder these fields describe,
 never `max`.
+
+Since spec 037 (`contracts/status-horizon.md`), `StatusData` also gains an
+additive `omitempty` `Horizon []HorizonClass` — unlike `Warning`, this rides
+`status`/`pause`/`resume`/`set_speed` alike (any world with an orchestrator,
+composed in [[ipc-server]]'s `statusDataFull`), one entry per watched class
+INCLUDED at the loop's CURRENT effective speed, never an empty slice (either
+absent for a no-LLM world or ≥1 entry). `HorizonClass{Class, Suppressed,
+Verdict, Calibrated, SuppressedCount}` carries the class name, whether it is
+suppressed right now, [[cognition]]'s `Verdict.Arithmetic` string verbatim
+(clients render it, never parse it), whether its serving provider is
+calibrated (calibrated classes ARE included here — contrast the `Warning`
+field above, which stays gated to bootstrap-seeded providers), and the
+daemon-lifetime count of router suppressions [[llm-orchestrator]] has
+recorded for that class.
 
 Line caps (TASK-19): request lines are capped at 1 MiB, reply/push lines at
 64 MiB. The daemon never emits a line over the cap — a reply that would exceed

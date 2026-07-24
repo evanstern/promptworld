@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
 <meta name="promptworld-docs:source" content="README.md@8fcc79cee5fc24f2b1e7e6fd67189cf58828bfc2">
-<meta name="promptworld-docs:source" content="docs/wiki/cli-promptworld.md@af13190c1771cd592ad26bcc2728f4e4377be894">
+<meta name="promptworld-docs:source" content="docs/wiki/cli-promptworld.md@d23fbbfe471ec62c9b94ce79404870632a6eb60e">
 <meta name="promptworld-docs:source" content="docs/wiki/daemon-lifecycle.md@af13190c1771cd592ad26bcc2728f4e4377be894">
-<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@af13190c1771cd592ad26bcc2728f4e4377be894">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@af13190c1771cd592ad26bcc2728f4e4377be894">
+<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@d23fbbfe471ec62c9b94ce79404870632a6eb60e">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@d23fbbfe471ec62c9b94ce79404870632a6eb60e">
 <title>Getting started — promptworld player docs</title>
 <style>
   :root {
@@ -143,6 +143,14 @@ naming the problem and what to do about it. It clears itself the moment the prob
 fixed, with no restart needed. <code>status</code> also lists, per configured AI
 provider, whether it's been calibrated — the date you last ran <code>calibrate</code>,
 or <code>uncalibrated (bootstrap)</code> if you haven't yet.</p>
+<p><code>status</code> also prints one <code>horizon:</code> line per kind of
+villager thinking — planning, conversations, meetings — telling you live whether
+it's currently keeping up (<code>thinking at &lt;speed&gt;</code>) or being
+suppressed to keep the world running smoothly (<code>suppressed at &lt;speed&gt;
+— calibrate or slow down</code>), with a running <code>skipped N</code> count of
+how many thoughts that class has lost since the daemon started. It's the same
+information as the one-time calibration warning above, just live and ongoing
+instead of a single boot-time notice.</p>
 
 <h2>4. Watch it live</h2>
 <p>Two ways to watch, both non-destructive — quitting either one just detaches; the
@@ -173,7 +181,11 @@ quietly dropped a notch on its own for now. The
 <a href="time-and-speed.html">time & speed page</a> explains what those numbers mean
 and why that happens. That same header also grows a red <code>[llm: ...]</code> badge
 if your AI model runs into trouble — the same condition <code>status</code> warns
-about, just visible at a glance while you're watching.</p>
+about, just visible at a glance while you're watching — and, whenever any kind of
+villager thinking is currently being suppressed for speed, a
+<code>[suppressed: ...]</code> badge naming which kinds. The full-screen client's
+Metatron pane goes further, listing each kind of thinking with its own live status
+and skipped-thought count.</p>
 
 <h2>5. When you're done for now</h2>
 <p>Quitting <code>attach</code> or <code>ui</code> only detaches your view — the daemon

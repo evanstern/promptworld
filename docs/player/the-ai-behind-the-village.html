@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/wiki/agent-mind.md@2bc94f55c57880e07f0e52e5de20c9cd527ab340">
-<meta name="promptworld-docs:source" content="docs/wiki/cognition.md@af13190c1771cd592ad26bcc2728f4e4377be894">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-orchestrator.md@af13190c1771cd592ad26bcc2728f4e4377be894">
+<meta name="promptworld-docs:source" content="docs/wiki/agent-mind.md@d23fbbfe471ec62c9b94ce79404870632a6eb60e">
+<meta name="promptworld-docs:source" content="docs/wiki/cognition.md@d23fbbfe471ec62c9b94ce79404870632a6eb60e">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-orchestrator.md@d23fbbfe471ec62c9b94ce79404870632a6eb60e">
 <meta name="promptworld-docs:source" content="docs/wiki/nightly-consolidation.md@2bc94f55c57880e07f0e52e5de20c9cd527ab340">
 <meta name="promptworld-docs:source" content="docs/wiki/social-fabric.md@2bc94f55c57880e07f0e52e5de20c9cd527ab340">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@af13190c1771cd592ad26bcc2728f4e4377be894">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@d23fbbfe471ec62c9b94ce79404870632a6eb60e">
 <title>The AI behind the village — promptworld player docs</title>
 <style>
   :root {
@@ -147,6 +147,15 @@ anyway, the game simply falls back to the simple built-in behavior for that mome
 instead. You may notice villagers acting a bit more routine-driven at the fastest
 speeds — that's this trade-off in action, not a bug; dial the speed back down and
 full AI-driven decisions resume.</p>
+<p>You don't have to just infer this is happening from the vibe of your village:
+<code>promptworld status</code>, and the full-screen client's header badge and
+Metatron pane, show it live — for each kind of thinking (planning, conversations,
+meetings), whether it's currently keeping up or being skipped at your current
+speed, plus a running <code>skipped N</code> count of how many thoughts that kind
+has lost since the daemon started. It's a plain, ongoing answer to "how much has
+going this fast actually cost me," not just a one-time warning when you first
+change speed — see the <a href="time-and-speed.html">time & speed page</a> for
+where to find it.</p>
 
 <h2>The game keeps relearning how slow its own AI actually is</h2>
 <p>Behind the "is this decision still worth waiting for" call above, the game keeps

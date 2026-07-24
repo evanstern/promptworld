@@ -134,7 +134,7 @@ world output unchanged.
       green (includes `-race` for the new counter paths where the suite
       already runs it); execute quickstart.md scenarios §2–§4 against a live
       world and record outcomes on the board task.
-- [ ] T012 Grounding freshness (constitution IV): after merge, run
+- [x] T012 Grounding freshness (constitution IV): after merge, run
       `/grounding-wiki:wiki-update` to re-pin the notes whose sources changed
       (`cognition`, `tui-client`, `ipc-protocol`, `ipc-server`,
       `llm-orchestrator`, `agent-mind`, `cli-promptworld`), then

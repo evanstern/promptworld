@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/ipc/server.go
   - internal/ipc/socket.go
-verified_against: af13190c1771cd592ad26bcc2728f4e4377be894
+verified_against: d23fbbfe471ec62c9b94ce79404870632a6eb60e
 ---
 
 # IPC server
@@ -54,6 +54,22 @@ jobs int)`, `SetGovernor`, kept narrow like `Angel` so `ipc` never imports
 `internal/daemon`); a nil governor (no-LLM world) leaves the clock section's
 governor fields at their `omitempty` zero, byte-identical to pre-028
 ([[cognition]], [[daemon-lifecycle]]).
+
+Since spec 037 (`contracts/status-horizon.md`), `statusDataFull` additionally
+sets `StatusData.Horizon` via `horizonClasses(cs)` whenever an orchestrator is
+attached — so `status`/`pause`/`resume`/`set_speed` all carry it alike, unlike
+the `set_speed`-only `Warning`. `horizonClasses` delegates to
+[[cognition]]'s `LiveHorizon` at the loop's EFFECTIVE speed
+(`cs.Speed.TicksPerSecond()`, post-governor), resolving each watched class's
+live estimate through `EstimateForKind` (a class whose kind has no admissible
+serving provider is excluded, `ok=false`), and folds in
+`s.llm.CalibratedAt(name) != ""` for the `Calibrated` flag and
+`s.llm.SuppressionCounts()` for each entry's `SuppressedCount` — a class never
+suppressed reads 0 from the map's zero value. Unlike `uncalibratedWarning`
+below, which gates OUT calibrated classes, `horizonClasses` INCLUDES them
+(research R4): calibration only changes the client's remedy phrasing, never
+membership. Returns nil (never an empty slice) when nothing is included, so
+`omitempty` keeps the field absent for a no-LLM world.
 
 `miracle` (spec 016, [[metatron-miracles]]) dispatches to `handleMiracle`, which
 needs only `srv.loop` — never `srv.llm` or `srv.metatron` — so it works on
@@ -110,7 +126,12 @@ server (with `SetLoop` breaking the mutual reference) and calls `Close` on exit;
 the angel's turn reply, [[metatron]]). `uncalibratedWarning` reads
 [[cognition]]'s `SuppressedAt` and [[llm-orchestrator]]'s `EstimateForKind`/
 `CalibratedAt`, and its result rides `StatusData.Warning` ([[ipc-protocol]]),
-rendered by [[cli-promptworld]]'s `setSpeedLine`.
+rendered by [[cli-promptworld]]'s `setSpeedLine`. `horizonClasses` reads
+[[cognition]]'s `LiveHorizon` and [[llm-orchestrator]]'s `EstimateForKind`/
+`CalibratedAt`/`SuppressionCounts`, and its result rides
+`StatusData.Horizon` ([[ipc-protocol]]), rendered by [[cli-promptworld]]'s
+`horizonStatusLines` and [[tui-client]]'s header badge + metatron-pane
+`horizonLines`.
 
 ## Operational notes
 

@@ -12,7 +12,7 @@ sources:
   - internal/persona/files.go
   - internal/scribe/scribe.go
   - internal/sim/memory.go
-verified_against: 2bc94f55c57880e07f0e52e5de20c9cd527ab340
+verified_against: d23fbbfe471ec62c9b94ce79404870632a6eb60e
 ---
 
 # Agent mind
@@ -161,7 +161,14 @@ Before enqueue, each due agent passes the cognition-horizon gate
 (`routeVerdict` in telemetry.go, backed by [[cognition]]'s deterministic
 router): a planner thought whose predicted drift exceeds its staleness budget
 at the current speed is never attempted — a `cog.outcome{suppressed}` records
-the arithmetic, and the reflex floor is the degrade action. Allowed agents are
+the arithmetic, and the reflex floor is the degrade action. Since spec 037
+(FR-004), `emitSuppressed` (telemetry.go) also reports the suppression to
+[[llm-orchestrator]]'s daemon-lifetime per-class counters through the
+optional `suppressionCounting{RecordSuppression(class)}` seam (the same
+optional-interface pattern as `estimating` below) before the detached event
+emit — an O(1) mutex bump that never blocks the absorb loop; a test fake or
+nil orchestrator lacking the seam is a silent no-op. The count feeds
+[[ipc-server]]'s status-wire horizon (`SuppressedCount` per class). Allowed agents are
 enqueued as immutable prompt snapshots to a single-flight-per-agent planner
 worker — a model call must never block the absorb loop, or the events channel
 overflows at high speed and edge triggers are dropped. Each job carries a

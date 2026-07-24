@@ -11,7 +11,7 @@ sources:
   - internal/cognition/horizon.go
   - internal/cognition/governor.go
   - internal/sim/cognition.go
-verified_against: af13190c1771cd592ad26bcc2728f4e4377be894
+verified_against: d23fbbfe471ec62c9b94ce79404870632a6eb60e
 ---
 
 # Cognition horizon
@@ -125,6 +125,22 @@ entirely (`ok=false`) when its serving provider is calibrated, so a
 calibrated class never contributes to the warning; this backs the
 `set_speed` uncalibrated-warning composition ([[ipc-server]]).
 
+Spec 037 (`contracts/status-horizon.md`) generalizes the live-estimate twin
+into a structured base: `ClassStanding{Class, Suppressed, Verdict}` and
+`LiveHorizon(ticksPerSecond, secPerPtFor) []ClassStanding` evaluate the same
+watched classes and `Route` arithmetic once, returning each INCLUDED class's
+full standing (the verdict's arithmetic string and all) in `WatchedClasses`
+order — a class whose resolver returns `ok=false` is excluded entirely (no
+entry, not merely never-suppressed), and `ticksPerSecond <= 0` (uncapped max
+speed) suppresses every included class via `Route`'s uncapped phrasing.
+`SuppressedAt` is now re-based as a suppressed-names filter over
+`LiveHorizon` — one watched-class iteration total, so every operator-facing
+horizon surface, from the plain warning to the richer per-class status, can
+never disagree with the router (spec 035 FR-006 posture, extended).
+[[ipc-server]]'s `horizonClasses` composes `LiveHorizon` at the loop's
+effective speed into the status wire's structured horizon, rendered per
+class by [[cli-promptworld]] and [[tui-client]].
+
 **Adaptive-throttle governor** (`governor.go`, spec 028, doctrine research R6):
 extends the horizon from the other side — instead of only scoping what a
 model may decide at a given speed, the world governs its own effective speed
@@ -221,7 +237,13 @@ writes the profile, delegating its own horizon printout to `HorizonSummary`.
 Since spec 035, [[daemon-lifecycle]]'s boot warning and [[ipc-server]]'s
 `set_speed` warning also read `HorizonSummary`/`SuppressedAt`, and
 [[llm-orchestrator]]'s `SeedCalibration` reads `Calibrated` to stamp each
-provider's `calibratedAt`. The daemon's governor sampler ([[daemon-lifecycle]])
+provider's `calibratedAt`. Since spec 037, [[ipc-server]]'s `horizonClasses`
+also reads `LiveHorizon` directly (not just the `SuppressedAt` filter) to
+compose the status wire's structured per-class horizon, and
+[[llm-orchestrator]]'s daemon-lifetime `SuppressionCounts` (fed by
+[[agent-mind]]'s `emitSuppressed` through the `suppressionCounting` seam)
+rides alongside each entry as its `SuppressedCount` — a fact this package
+itself never tracks. The daemon's governor sampler ([[daemon-lifecycle]])
 drives `Debt`/`Governor` from [[llm-orchestrator]]'s `PendingCognition`
 snapshot and the [[sim-loop]]'s status/`Govern` doors; the router
 ([[sim-loop]]'s landing ladder, and every `Route` call above) reads the

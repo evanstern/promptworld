@@ -26,7 +26,7 @@ sources:
   - internal/persona/persona_test.go
   - e2e/daemon_e2e_test.go
   - e2e/determinism_e2e_test.go
-verified_against: af13190c1771cd592ad26bcc2728f4e4377be894
+verified_against: d23fbbfe471ec62c9b94ce79404870632a6eb60e
 ---
 
 # Testing strategy
@@ -134,7 +134,20 @@ state, not raw arithmetic); a no-LLM world never warns at any speed; the
 pre-035 `set_speed max` refusal still precedes the warning and carries no
 `StatusData` at all; `status`/`pause`/`resume` never carry the warning even
 on an uncalibrated world sitting at a suppressing speed; and a byte-shape
-test pins that a zero `StatusData` omits `warning` entirely. Large-reply
+test pins that a zero `StatusData` omits `warning` entirely. Spec 037 (live
+horizon surface) adds its own horizon-composition coverage here: an
+uncalibrated 32x world's `status` reply carries one `Horizon` entry per
+watched class in `WatchedClasses` order, each with a non-empty verdict
+string and `Calibrated=false`, with planner/conversation suppressed and
+meeting thinking at the bootstrap seeds; a calibrated world (`SeedCalibration`)
+is still fully INCLUDED with `Calibrated=true` (contrast the `Warning` gate,
+which excludes it) and nothing suppressed at 32x on a fast rig; composing
+directly at `clock.SpeedMax` suppresses every included class with Route's
+uncapped phrasing; a no-LLM world's reply carries no `horizon` key at all
+(byte-identical to pre-037); and `RecordSuppression` calls surface as each
+entry's `SuppressedCount`, keyed correctly per class with an unwatched class
+(`chronicle`) never leaking an extra entry. A byte-shape test pins that a
+zero `StatusData` omits `horizon` entirely. Large-reply
 behavior (TASK-19) is proven against a `fakeDaemon` wire harness that speaks the
 protocol from canned replies: a >1 MiB `state` payload round-trips; a reply over
 the 64 MiB cap is substituted server-side with an actionable `reply too large`

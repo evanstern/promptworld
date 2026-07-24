@@ -9,7 +9,7 @@ sources:
   - internal/tui/grammar.go
   - internal/tui/digest.go
   - internal/tui/decisions.go
-verified_against: af13190c1771cd592ad26bcc2728f4e4377be894
+verified_against: d23fbbfe471ec62c9b94ce79404870632a6eb60e
 ---
 
 # TUI client
@@ -42,7 +42,12 @@ pre-028. Since spec 034, the header also gains a red `[llm: <provider>
 <kind>]` badge (the `[degraded]` badge's pattern) whenever any provider
 carries an active health condition — `firstLLMCondition` reports the first
 name-sorted affected provider; no condition active renders no badge
-([[llm-provider-health]]). `debtPercent` (`digest.go`) is the one shared arithmetic behind both
+([[llm-provider-health]]). Since spec 037 (US1, FR-005), the header gains a
+further warn-styled `[suppressed: class, class]` badge whenever ≥1 watched
+class in the polled `StatusData.Horizon` is currently suppressed —
+`suppressedHorizonClasses` filters the wire slice (already in
+`WatchedClasses` order) with no client-side re-derivation; a world with no
+horizon (no-LLM, or nothing suppressed) shows no badge. `debtPercent` (`digest.go`) is the one shared arithmetic behind both
 this suffix and the digest lines below: the measured debt expressed as a
 whole percent of `cognition.ShedThreshold`, rounded to the nearest percent.
 The raw chronicle feed's digest grammar gains two entries for the same
@@ -129,7 +134,18 @@ contended marker, and spend share, plus an `(unattributed)` row for pre-024
 months, followed by a `spend $X of $Y` wallet line — [[llm-orchestrator]]; a
 provider carrying an active health condition (spec 034) gains an indented
 continuation line rendering the condition's detail and remedy in the pane's
-error style, immediately below its row — [[llm-provider-health]]), and **villagers** (renamed from
+error style, immediately below its row — [[llm-provider-health]]; beside the
+provider table, since spec 037 (US1, FR-006) the pane also gains a
+`horizonLines` block, one dim "🜂 cognition horizon" header plus a
+`horizonRow` per watched class from the polled horizon — a thinking class
+renders a plain "<class> thinking at <speed>"; a suppressed class is
+warn-styled with its remedy ("suppressed at <speed> — calibrate or slow
+down" for an uncalibrated class, "… — slow down" for a calibrated one,
+`horizonRemedy`) and carries the router's own verdict arithmetic verbatim as
+a dim trailing detail — no raw enum ever reaches the screen. A trailing dim
+"· skipped N" (the class's `SuppressedCount`) appears on every suppressed row
+and on a thinking row only once it has ever been suppressed (N > 0), so a
+never-suppressed class shows no count clutter), and **villagers** (renamed from
 "souls", spec 015/TASK-56 — now a two-view inspector rather than a flat
 roster). The villagers **roster** shows per agent: a selection cursor,
 status, current goal, needs gauges, a leading `bulk n/24` derived-load
@@ -235,7 +251,13 @@ block and transcript lines project [[metatron-orders]]' `Status.Orders`/
 `TurnResult` fields verbatim, with no client-side re-derivation. The header's
 `[llm: …]` badge and the metatron pane's per-provider condition line read
 [[llm-provider-health]]'s `ProviderStatus.Condition`/`ConditionDetail`/
-`ConditionRemedy` fields off the same polled `Status.LLM`.
+`ConditionRemedy` fields off the same polled `Status.LLM`. The header's
+`[suppressed: …]` badge and the metatron pane's `horizonLines` block both
+read the polled `Status.Horizon` — [[ipc-server]]'s `horizonClasses`
+composition backed by [[cognition]]'s `LiveHorizon` and
+[[llm-orchestrator]]'s `SuppressionCounts` — with no client-side
+re-derivation, the same "polled, not projected" posture as the LLM condition
+surfaces.
 
 ## Operational notes
 

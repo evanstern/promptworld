@@ -10,7 +10,7 @@ sources:
   - internal/llm/providers.go
   - internal/llm/lease.go
   - internal/llm/pending.go
-verified_against: af13190c1771cd592ad26bcc2728f4e4377be894
+verified_against: d23fbbfe471ec62c9b94ce79404870632a6eb60e
 ---
 
 # LLM orchestrator
@@ -205,6 +205,17 @@ is one truth shared by providers on that endpoint) and surfaces per provider in
 status. Undeclared capacity = zero lease syscalls, exactly pre-024 behavior; a
 missing home dir disables leases with a warning (warn-not-error).
 
+**Suppression counters** (`llm.go`, spec 037 FR-004): `RecordSuppression(class)`
+bumps a `suppMu`-guarded `map[string]int64` — one O(1) increment per router
+suppression, so it never blocks the mind's absorb goroutine calling it.
+`SuppressionCounts()` returns a defensive copy for the status composer to
+range/mutate freely. Counters are daemon-lifetime (reset only by restart) and
+count EVERY class the mind reports, watched or not; [[ipc-server]]'s
+`horizonClasses` reads them back but keys out only the watched ones onto the
+wire. [[agent-mind]]'s `emitSuppressed` is the sole caller, reporting through
+the optional `suppressionCounting` seam (mirroring `estimating` below) rather
+than a hard dependency, so a test fake or nil orchestrator is a silent no-op.
+
 **Pending-thought registry** (`pending.go`, spec 028 US1): a mutex-guarded
 `pendingRegistry` inventories every accepted-but-unfinished job — the adaptive
 throttle governor's debt signal. `Submit` `add`s an entry (keyed by a
@@ -293,7 +304,12 @@ machinery (condition slot beside `tierHealth`, the worker's success path,
 Since spec 035, [[ipc-server]]'s `set_speed` warning reads `EstimateForKind`
 and `CalibratedAt` together (gating on bootstrap-seeded providers only), and
 [[cognition]]'s `Calibrated` is what `SeedCalibration` reads to set
-`calibratedAt` in the first place.
+`calibratedAt` in the first place. Since spec 037, [[agent-mind]]'s
+`emitSuppressed` feeds `RecordSuppression` through the optional
+`suppressionCounting` seam, and [[ipc-server]]'s `horizonClasses` reads
+`SuppressionCounts` alongside `EstimateForKind`/`CalibratedAt` to compose the
+status wire's per-class horizon ([[cognition]]'s `LiveHorizon` supplies the
+verdicts).
 
 ## Operational notes
 

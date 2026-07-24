@@ -6,7 +6,7 @@
 <meta name="promptworld-docs:generated-by" content="player-docs">
 <meta name="promptworld-docs:source" content="docs/wiki/game-clock.md@6eb8b60ceb65d760408051eadf50a789603efa18">
 <meta name="promptworld-docs:source" content="docs/wiki/sim-loop.md@ce15d80522aae111e2c359287459b51401d18364">
-<meta name="promptworld-docs:source" content="docs/wiki/cli-promptworld.md@af13190c1771cd592ad26bcc2728f4e4377be894">
+<meta name="promptworld-docs:source" content="docs/wiki/cli-promptworld.md@d23fbbfe471ec62c9b94ce79404870632a6eb60e">
 <title>Time and speed — promptworld player docs</title>
 <style>
   :root {
@@ -106,6 +106,15 @@ change itself still happens either way — nothing is blocked, this is just a he
 that your setup hasn't actually been measured yet, so the world is guessing
 conservatively. A calibrated world, or a speed change that doesn't pause anything,
 never shows this warning.</p>
+<p>That warning is only the one-time heads-up, though. Once you're actually running
+at a speed that's suppressing some thinking, <code>promptworld status</code> and
+the full-screen client (its header badge and its Metatron pane) keep it visible
+live, kind by kind — planning, conversations, meetings — telling you which ones are
+currently being skipped and which are keeping up, plus a running count of how many
+thoughts each kind has lost to speed since the daemon started. Drop back to a speed
+within your calibrated (or guessed) limits and the affected kinds go back to
+"thinking"; the skipped count itself only resets when the daemon restarts, so it's a
+running tally of what that session's speed has actually cost you, not a snapshot.</p>
 
 <h2>Pause and resume are player verbs</h2>
 <p>Pausing is something you do on purpose — it's different from just detaching your

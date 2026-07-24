@@ -8,7 +8,7 @@ sources:
   - cmd/promptworld/calibrate.go
   - cmd/promptworld/ps.go
   - cmd/promptworld/miracle.go
-verified_against: af13190c1771cd592ad26bcc2728f4e4377be894
+verified_against: d23fbbfe471ec62c9b94ce79404870632a6eb60e
 ---
 
 # promptworld CLI
@@ -85,7 +85,13 @@ ambiguous or unknown names exit 1). `worldArg`/`parseWorldFlags` wrap the older
   the wire's `calibrated_at` is empty), so a provider's calibration state is
   visible for the whole life of the daemon, not just a boot line that
   scrolled away. A world with no LLM status or every provider healthy and
-  calibrated renders byte-identical to pre-034 output plus these rows.
+  calibrated renders byte-identical to pre-034 output plus these rows. Since
+  spec 037 (US3, FR-008), `renderStatusHuman` also appends `horizonStatusLines`
+  — one `horizon: <class> suppressed at <speed> — calibrate or slow down
+  (skipped N)` / `horizon: <class> thinking at <speed>` line per watched
+  class in the wire's `Horizon`, mirroring the TUI's calibrate-vs-slow-down
+  remedy split (`horizonRemedy`); absent entirely when `Horizon` is absent
+  (a no-LLM world's output is unchanged).
   Offline: last-known state reconstructed read-only from the store (latest
   snapshot + `LastEventTick`), clearly labeled "daemon not running".
 - `pause` / `resume` / `speed <v>` — one-shot time controls printing the resulting
@@ -194,6 +200,9 @@ pull-command hint read [[llm-provider-health]] and [[llm-orchestrator]];
 `status`'s calibration rows and `calibrate`'s horizon summary both read
 [[cognition]]'s `Calibrated`/`HorizonSummary`; `speed`'s appended WARNING line
 reads the [[ipc-server]]-composed `StatusData.Warning` ([[ipc-protocol]]).
+`status`'s `horizonStatusLines` reads the same [[ipc-server]]-composed
+`StatusData.Horizon`, the wire shape [[tui-client]]'s header badge and
+metatron-pane block also render.
 
 ## Operational notes
 
