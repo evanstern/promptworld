@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-24 19:45'
-updated_date: '2026-07-24 19:49'
+updated_date: '2026-07-24 20:31'
 labels:
   - memory
   - embeddings
@@ -38,4 +38,16 @@ Spec: specs/042-embedding-memory-retrieval
 - [ ] #6 Embedding model choice is pinned and documented (local small model, e.g. 384-dim MiniLM/bge class via hugot or llama.cpp sidecar); model file/version is part of replay hygiene
 - [ ] #7 codebase-to-course run tagged on this feature before the PR ships (docs/course refreshed to teach the new memory-retrieval mechanic)
 - [ ] #8 Spec rigor: full Spec Kit (specify → clarify → plan → tasks) with spec-bridge:link BEFORE implementation; wiki re-ground + player-docs freshness after merge
+- [ ] #9 Spec phase: Setup
+- [ ] #10 Spec phase: Foundational (blocking prerequisites for all stories)
+- [ ] #11 Spec phase: User Story 1 — vectors from birth, replay never recomputes (P1) 🎯 MVP
+- [ ] #12 Spec phase: User Story 2 — shadow-mode divergence instrumentation (P2)
+- [ ] #13 Spec phase: User Story 3 — relevance shapes the window (P3)
+- [ ] #14 Spec phase: Polish & cross-cutting
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+spec-bridge sync: Setup: 0/3 · Foundational (blocking prerequisites for all stories): 0/4 · User Story 1 — vectors from birth, replay never recomputes (P1) 🎯 MVP: 0/4 · User Story 2 — shadow-mode divergence instrumentation (P2): 0/7 · User Story 3 — relevance shapes the window (P3): 0/4 · Polish & cross-cutting: 0/3
+<!-- SECTION:NOTES:END -->
