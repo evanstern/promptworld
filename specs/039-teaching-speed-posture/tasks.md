@@ -38,9 +38,9 @@ wire field.
 
 ### Implementation for User Story 1
 
-- [ ] T005 [US1] Daemon boot posture default in internal/daemon/daemon.go: for `w.Manifest.Teaching` worlds with an orchestrator, after calibration seeding compute rung via `cognition.MaxSafeSpeed("planner", est)` from `orch.EstimateForKind(llm.Kind("planner"))` (rung 0 ⇒ clamp to lowest capped rung), issue the loop's normal `set_speed` command so it lands as a recorded `clock.speed_set` event; print the posture line per contracts/posture.md §2 (calibrated flavor: rung + s/pt + CalibratedAt). Pure-sim teaching worlds: no-op
-- [ ] T006 [US1] `--teaching` flag on `promptworld new` in cmd/promptworld/commands.go threading to `world.Create` (extend Create's signature or set-after-create via `world.SetTeaching`) so the manifest carries the marker from birth
-- [ ] T007 [US1] Tests: boot-default table test (teaching+calibrated ⇒ posture speed event + stdout line; teaching+no-LLM ⇒ no-op; non-teaching ⇒ byte-identical boot output) in internal/daemon/daemon_test.go; `new --teaching` manifest assertion in cmd/promptworld tests beside existing cmdNew coverage
+- [X] T005 [US1] Daemon boot posture default in internal/daemon/daemon.go: for `w.Manifest.Teaching` worlds with an orchestrator, after calibration seeding compute rung via `cognition.MaxSafeSpeed("planner", est)` from `orch.EstimateForKind(llm.Kind("planner"))` (rung 0 ⇒ clamp to lowest capped rung), issue the loop's normal `set_speed` command so it lands as a recorded `clock.speed_set` event; print the posture line per contracts/posture.md §2 (calibrated flavor: rung + s/pt + CalibratedAt). Pure-sim teaching worlds: no-op
+- [X] T006 [US1] `--teaching` flag on `promptworld new` in cmd/promptworld/commands.go threading to `world.Create` (extend Create's signature or set-after-create via `world.SetTeaching`) so the manifest carries the marker from birth
+- [X] T007 [US1] Tests: boot-default table test (teaching+calibrated ⇒ posture speed event + stdout line; teaching+no-LLM ⇒ no-op; non-teaching ⇒ byte-identical boot output) in internal/daemon/daemon_test.go; `new --teaching` manifest assertion in cmd/promptworld tests beside existing cmdNew coverage
 
 **Checkpoint**: US1 fully functional — MVP
 

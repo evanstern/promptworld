@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/evanstern/promptworld/internal/clock"
+	"github.com/evanstern/promptworld/internal/cognition"
 	"github.com/evanstern/promptworld/internal/sim"
 	"github.com/evanstern/promptworld/internal/store"
 	"github.com/evanstern/promptworld/internal/world"
@@ -145,5 +147,55 @@ func TestUncalibratedBootWarningContainsContractElements(t *testing.T) {
 	}
 	if !strings.Contains(got, "promptworld calibrate demo-ux") {
 		t.Errorf("missing the exact calibrate command with the real world name: %q", got)
+	}
+}
+
+// TestTeachingPostureBootLineCalibrated (spec 039 US1, contracts/posture.md §2):
+// a measured planner estimate renders the plain "defaulting speed to Nx" line
+// with the calibration timestamp and no provisional/calibrate prompt.
+func TestTeachingPostureBootLineCalibrated(t *testing.T) {
+	got := teachingPostureBootLine("teach", clock.Speed16x, 17.0, "2026-07-24T12:00:00Z")
+	for _, want := range []string{"teaching posture", "defaulting speed to 16x", "planner-safe at 17.0s/pt", "calibrated 2026-07-24T12:00:00Z"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("calibrated boot line missing %q: %q", want, got)
+		}
+	}
+	if strings.Contains(got, "provisional") || strings.Contains(got, "promptworld calibrate") {
+		t.Errorf("calibrated boot line must not prompt calibrate: %q", got)
+	}
+}
+
+// TestTeachingPostureBootLineProvisional (spec 039 US3, contracts/posture.md §2):
+// a bootstrap-seeded planner (empty calibratedAt) marks the rung provisional and
+// appends the explicit `promptworld calibrate <world>` prompt.
+func TestTeachingPostureBootLineProvisional(t *testing.T) {
+	got := teachingPostureBootLine("teach", clock.Speed16x, 20.0, "")
+	for _, want := range []string{"defaulting speed to 16x", "provisional", "planner-safe at 20.0s/pt bootstrap estimate", "run `promptworld calibrate teach`"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("provisional boot line missing %q: %q", want, got)
+		}
+	}
+}
+
+// TestTeachingPostureSpeedDerivation (spec 039 US1/SC-005): the boot default is
+// clock.SpeedForRate(cognition.MaxSafeSpeed("planner", est)) — the exact
+// derivation daemon boot applies. A slower profile yields a lower rung; a
+// pathological one clamps to the 1x floor; the number follows the profile with
+// no stored value.
+func TestTeachingPostureSpeedDerivation(t *testing.T) {
+	cases := []struct {
+		est  float64
+		want clock.Speed
+	}{
+		{5.0, clock.Speed32x},
+		{17.0, clock.Speed16x},
+		{20.0, clock.Speed16x},
+		{1000.0, clock.Speed1x}, // even 1x suppresses ⇒ clamp to floor
+	}
+	for _, c := range cases {
+		got := clock.SpeedForRate(cognition.MaxSafeSpeed("planner", c.est))
+		if got != c.want {
+			t.Errorf("posture speed at %.1fs/pt = %s, want %s", c.est, got, c.want)
+		}
 	}
 }

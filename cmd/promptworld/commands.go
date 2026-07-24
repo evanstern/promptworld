@@ -102,6 +102,7 @@ func cmdNew(args []string) error {
 	name := fs.String("name", "", "path-form only: world name (default: directory basename)")
 	at := fs.String("at", "", "name-form only: create at this exact path instead of the default worlds home")
 	seed := fs.Uint64("seed", 0, "world seed (default: random)")
+	teaching := fs.Bool("teaching", false, "mark this a teaching world (spec 039): the daemon defaults its speed to the highest planner-safe rung")
 	arg, err := parseDirFlags(fs, args)
 	if err != nil {
 		return err
@@ -152,6 +153,15 @@ func cmdNew(args []string) error {
 	w, err := world.Create(dir, worldName, *seed)
 	if err != nil {
 		return err
+	}
+	// Teaching marker from birth (spec 039 US1): stamp the manifest so the
+	// daemon reads the posture at its first boot. Set-after-create keeps
+	// world.Create's signature untouched for its other callers.
+	if *teaching {
+		if err := world.SetTeaching(dir, true); err != nil {
+			return err
+		}
+		w.Manifest.Teaching = true
 	}
 	st, err := store.Open(w.DBPath())
 	if err != nil {

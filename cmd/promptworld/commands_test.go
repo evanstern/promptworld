@@ -45,6 +45,37 @@ func TestCmdNewNameFormCreatesUnderWorldsHome(t *testing.T) {
 	}
 }
 
+// TestCmdNewTeachingMarksManifest (spec 039 US1/T006): `new --teaching` stamps
+// the teaching marker from birth; without the flag the marker is absent.
+func TestCmdNewTeachingMarksManifest(t *testing.T) {
+	isolatedHome(t)
+	if err := cmdNew([]string{"class", "--seed", "1", "--teaching"}); err != nil {
+		t.Fatal(err)
+	}
+	home, err := worlds.WorldsHome()
+	if err != nil {
+		t.Fatal(err)
+	}
+	w, err := world.Open(filepath.Join(home, "class"))
+	if err != nil {
+		t.Fatalf("Open teaching world: %v", err)
+	}
+	if !w.Manifest.Teaching {
+		t.Errorf("--teaching did not set the manifest marker")
+	}
+
+	if err := cmdNew([]string{"plain", "--seed", "1"}); err != nil {
+		t.Fatal(err)
+	}
+	w, err = world.Open(filepath.Join(home, "plain"))
+	if err != nil {
+		t.Fatalf("Open plain world: %v", err)
+	}
+	if w.Manifest.Teaching {
+		t.Errorf("world created without --teaching should not be a teaching world")
+	}
+}
+
 // TestCmdNewPrintsLocalModelPullGuidance (spec 034 US3/T015): `promptworld new`
 // prints a closing line naming the fresh-world default's local model and a
 // copy-pasteable `ollama pull` command, derived from llm.DefaultConfig() so it
