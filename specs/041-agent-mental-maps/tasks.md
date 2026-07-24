@@ -46,12 +46,12 @@ reflex parity.
 fails "unknown to you"; after witnessing the fire, same verb resolves to it; known-far
 beats unknown-near.
 
-- [ ] T011 [US1] Map-aware matching helpers in `internal/sim/path.go`: `nearestKnown(s, m, agentIdx, fromX, fromY, kind, now)` wrapping `nearest`/`nearestAdjacentTo` with fresh-fact predicates (deterministic BFS order preserved; terrain passability untouched — research D3)
-- [ ] T012 [US1] Gate `goalResolvers` in `internal/sim/policy.go`: forage/chop/quarry/collect_water/hunt(den)/refuel_fire/cook/goto_warmth/bathe/pick_up/deposit/withdraw/demolish/repair resolve via `nearestKnown`; build-site resolvers stay terrain-based (building needs no prior knowledge of the empty spot); resolver errors use knowledge phrasing `"you know of no <kind>"` distinct from `"no <kind> reachable"` (contracts §4, FR-004)
-- [ ] T013 [US1] Gate `talk_to`/`seek` resolver in `internal/sim/policy.go`: target position from acting agent's map (last-known fact or currently-perceived), not live coordinates; existing `GuardTargetPresent` landing guard covers misses
-- [ ] T014 [US1] Reflex parity in `internal/sim/policy.go` `decideIntent`: every rung's target lookup goes through the same map predicates (research D3; clarify Q2 — no omniscient fallback)
-- [ ] T015 [US1] US1 tests in `internal/sim/policy_test.go` (or sibling): unknown-target rejection wording; known-far-beats-unknown-near (spec US1 scenario 3); witness-then-resolve flow; reflex rung parity (agent with empty map does not resolve to unseen food source); `ValidateToolCoverage` still green
-- [ ] T016 [US1] Rejection-string plumbing check in `internal/mind/handlers.go`: gated-verb rejection reaches the model verbatim via `VerdictRejectedGate` and lands in the next prompt cycle (extend existing handler test)
+- [x] T011 [US1] Map-aware matching helpers in `internal/sim/path.go`: `nearestKnown(s, m, agentIdx, fromX, fromY, kind, now)` wrapping `nearest`/`nearestAdjacentTo` with fresh-fact predicates (deterministic BFS order preserved; terrain passability untouched — research D3)
+- [x] T012 [US1] Gate `goalResolvers` in `internal/sim/policy.go`: forage/chop/quarry/collect_water/hunt(den)/refuel_fire/cook/goto_warmth/bathe/pick_up/deposit/withdraw/demolish/repair resolve via `nearestKnown`; build-site resolvers stay terrain-based (building needs no prior knowledge of the empty spot); resolver errors use knowledge phrasing `"you know of no <kind>"` distinct from `"no <kind> reachable"` (contracts §4, FR-004)
+- [x] T013 [US1] Gate `talk_to`/`seek` resolver in `internal/sim/policy.go`: target position from acting agent's map (last-known fact or currently-perceived), not live coordinates; existing `GuardTargetPresent` landing guard covers misses
+- [x] T014 [US1] Reflex parity in `internal/sim/policy.go` `decideIntent`: every rung's target lookup goes through the same map predicates (research D3; clarify Q2 — no omniscient fallback)
+- [x] T015 [US1] US1 tests in `internal/sim/policy_test.go` (or sibling): unknown-target rejection wording; known-far-beats-unknown-near (spec US1 scenario 3); witness-then-resolve flow; reflex rung parity (agent with empty map does not resolve to unseen food source); `ValidateToolCoverage` still green
+- [x] T016 [US1] Rejection-string plumbing check in `internal/mind/handlers.go`: gated-verb rejection reaches the model verbatim via `VerdictRejectedGate` and lands in the next prompt cycle (extend existing handler test)
 
 **Checkpoint**: MVP — the omniscient resolver is gone for gated verbs; epistemics are honest.
 

@@ -107,6 +107,32 @@ type PlaceRevealedPayload struct {
 Reducer: upsert; situated memory Origin omen. Chronicle grammar + digest row. Must be added
 to `injectSocialWhitelist` (rides the Metatron mind path).
 
+## Implementation addenda (accepted deviations, 2026-07-24)
+
+Recorded during US1 review; these refine the model above and are the as-built truth.
+
+- **PeerSighting** (new sub-entity): agent positions are NOT place-facts. `MentalMap.Peers
+  []PeerSighting{Agent, X, Y, Seen}` (sorted by agent index, `peers,omitempty`), maintained
+  *derivationally* (D2's silent class) from movement/wake reducer arms — mover and awake
+  living bystanders within perception radius record each other. Rationale: (Kind,X,Y)-keyed
+  facts for constantly-moving agents would leave trails demanding saw/corrected event churn
+  per move — the log-flood D2 rejected. `talk_to`/`seek` resolve to the last sighting.
+- **Availability vs existence split**: *existence* of a place is belief-gated (the map);
+  *availability at a known place* (harvest/cleared/quarried overlays, pile presence, den
+  readiness, wall damage, chest contents) stays a ground condition in the resolver's `also`
+  closure. Belief-pure availability livelocked the reflex (a just-harvested tile's fact
+  persists until US3 correction → village re-targets the nearest depleted spot forever;
+  soak 0/8 survivors). Structures remain belief-pure; arrival re-validation is the
+  correction moment (US3). Fire lit-ness is predicted from the remembered `Detail`
+  (FuelUntil as last seen), never read live.
+- **`PlaceFact.Source`**: 0-omitted, meaningful only under `Provenance=="told"` (a -1
+  sentinel cannot ride `omitempty`).
+- **Migration grants all agents (incl. dead) non-nil maps**: snapshot-over-genesis merge
+  semantics would otherwise resurrect genesis maps for map-absent dead agents, breaking
+  byte-agreement between snapshot-load and from-genesis replay.
+- **Death knowledge** is out of scope for the fact model (live `Dead` check retained at the
+  door); flagged as possible follow-up.
+
 ## Modified behaviors (no new entities)
 
 | Seam | Change |
