@@ -235,7 +235,16 @@ func TestChronicleLandsThroughTheDoor(t *testing.T) {
 	h.model.narrReply = `{"entries":[{"text":"The village wandered and mused while the light lasted.","thread":"first-days","agents":["Ash"]}]}`
 	h.model.mu.Unlock()
 
-	entries := h.waitEvents(t, 30*time.Second, func(e store.Event) bool {
+	// 240s: the max-speed loop must simulate to the narration window in wall
+	// time. The budget was 30s pre-041; per-agent mental maps (spec 041)
+	// legitimately grew both the per-tick work (perception sweep, knowledge-
+	// gated reflex resolution) and — dominant here — the state bytes the
+	// InjectSocial dry-run round-trips per injection (Marshal/Unmarshal of a
+	// probe now carrying every agent's fact list), which this max-speed
+	// mock-LLM harness hammers at a cadence no live world reaches. Under
+	// -race the run lands around 150s (plain runs stay ~10s); a cheaper
+	// dry-run clone is the flagged follow-up if this budget creeps again.
+	entries := h.waitEvents(t, 240*time.Second, func(e store.Event) bool {
 		return e.Type == "chronicle.entry"
 	})
 	if len(entries) == 0 {

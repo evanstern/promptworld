@@ -348,19 +348,19 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 // and dens ("den"; a den on cooldown still exists).
 func perceptionEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 	var events []store.Event
-	// Overlay membership sets, built once per sweep so the per-tile test is
-	// O(1) — lookups only, so map iteration order never matters.
-	cleared := make(map[Point]bool, len(s.Cleared))
-	for _, p := range s.Cleared {
-		cleared[p] = true
+	// Beat eligibility first (T034 hot-path finding): the overlay sets below
+	// are worth building only when some agent actually looks around this
+	// tick — at night the whole village sleeps and the sweep must be free.
+	onBeat := false
+	for i := range s.Agents {
+		a := &s.Agents[i]
+		if !a.Dead && !a.Asleep && a.Map != nil && (nextTick+int64(i)*3)%moveEveryTicks == 0 {
+			onBeat = true
+			break
+		}
 	}
-	harvested := make(map[Point]bool, len(s.Harvested))
-	for _, h := range s.Harvested {
-		harvested[Point{X: h.X, Y: h.Y}] = true
-	}
-	quarried := make(map[Point]bool, len(s.Quarried))
-	for _, p := range s.Quarried {
-		quarried[p] = true
+	if !onBeat {
+		return nil
 	}
 
 	for i := range s.Agents {
@@ -370,6 +370,31 @@ func perceptionEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 		}
 		if (nextTick+int64(i)*3)%moveEveryTicks != 0 {
 			continue // not this agent's perception beat
+		}
+		// Per-beat local membership sets (T034 hot-path finding): the whole-
+		// world overlay sets this sweep used to build EVERY tick were steady
+		// allocation churn (O(overlays) map inserts per tick, forever
+		// growing). Each beat instead scans the overlay slices once — no
+		// allocation for the misses — and keeps only the handful of points
+		// inside this agent's diamond. Lookup-only, so map iteration order
+		// never matters.
+		cleared := make(map[Point]bool)
+		for _, p := range s.Cleared {
+			if abs(p.X-a.X)+abs(p.Y-a.Y) <= witnessRadius {
+				cleared[p] = true
+			}
+		}
+		harvested := make(map[Point]bool)
+		for _, h := range s.Harvested {
+			if abs(h.X-a.X)+abs(h.Y-a.Y) <= witnessRadius {
+				harvested[Point{X: h.X, Y: h.Y}] = true
+			}
+		}
+		quarried := make(map[Point]bool)
+		for _, p := range s.Quarried {
+			if abs(p.X-a.X)+abs(p.Y-a.Y) <= witnessRadius {
+				quarried[p] = true
+			}
 		}
 		var news []PlaceFact
 		note := func(kind string, x, y int, detail int64) {
@@ -448,11 +473,13 @@ func perceptionEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 		// batches are disjoint by construction (a fact absent from ground
 		// truth is never in the saw diff).
 		var gone []PlaceFact
+		clearedAt := func(x, y int) bool { return cleared[Point{X: x, Y: y}] }
+		quarriedAt := func(x, y int) bool { return quarried[Point{X: x, Y: y}] }
 		for _, f := range a.Map.Facts {
 			if abs(f.X-a.X)+abs(f.Y-a.Y) > witnessRadius || !factFresh(f, nextTick) {
 				continue
 			}
-			if !groundFactPresent(s, m, f) {
+			if !groundFactPresentIn(s, m, f, clearedAt, quarriedAt) {
 				gone = append(gone, f)
 			}
 		}
@@ -479,14 +506,43 @@ func perceptionEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 // places and never correct; overlay-permanent removals (chopped tree,
 // quarried rock), drained piles, and removed structures are gone.
 func groundFactPresent(s *State, m *worldmap.Map, f PlaceFact) bool {
+	return groundFactPresentIn(s, m, f,
+		func(x, y int) bool {
+			for _, p := range s.Cleared {
+				if p.X == x && p.Y == y {
+					return true
+				}
+			}
+			return false
+		},
+		func(x, y int) bool {
+			for _, p := range s.Quarried {
+				if p.X == x && p.Y == y {
+					return true
+				}
+			}
+			return false
+		})
+}
+
+// groundFactPresentIn is groundFactPresent with caller-supplied cleared /
+// quarried membership tests (T034 hot-path finding): the perception sweep's
+// correction half runs this once per remembered in-radius fact per beat, and
+// the slice-scanning overlay checks (effectiveKind's shape) made it
+// O(facts × overlays); the sweep passes its per-beat local sets instead. The
+// two overlay tests must match the Cleared/Quarried semantics exactly —
+// groundFactPresent above is the reference wiring.
+func groundFactPresentIn(s *State, m *worldmap.Map, f PlaceFact, cleared, quarried func(x, y int) bool) bool {
 	if !m.InBounds(f.X, f.Y) {
 		return false
 	}
 	switch f.Kind {
 	case "tree":
-		return effectiveKind(m, s, f.X, f.Y) == worldmap.Tree
+		// effectiveKind's overlay rule: a cleared tree tile reads Grass.
+		return m.At(f.X, f.Y) == worldmap.Tree && !cleared(f.X, f.Y)
 	case "rock":
-		return effectiveKind(m, s, f.X, f.Y) == worldmap.Rock
+		// effectiveKind's overlay rule: a quarried outcrop reads Depleted.
+		return m.At(f.X, f.Y) == worldmap.Rock && !quarried(f.X, f.Y)
 	case "forage":
 		// Harvested spots regrow — the SPOT persists (static terrain).
 		return m.At(f.X, f.Y) == worldmap.Forage

@@ -145,9 +145,13 @@ func (mm *MentalMap) ExploredAt(w, h, x, y int) bool {
 
 // MarkExplored sets the explored bits within Manhattan distance radius of
 // (cx, cy), clipped to the w×h map bounds. Monotone by construction (bits are
-// only ever OR-ed in), so replay order of position changes cannot matter.
+// only ever OR-ed in), so replay order of position changes cannot matter. The
+// common case — a step inside already-explored land — changes no bit and
+// keeps the stored encoding untouched (T034 hot-path finding: re-encoding
+// every move was steady allocation churn for a no-op).
 func (mm *MentalMap) MarkExplored(w, h, cx, cy, radius int) {
 	bits := exploredBytes(mm.Explored, w, h)
+	changed := false
 	for dy := -radius; dy <= radius; dy++ {
 		y := cy + dy
 		if y < 0 || y >= h {
@@ -160,10 +164,15 @@ func (mm *MentalMap) MarkExplored(w, h, cx, cy, radius int) {
 				continue
 			}
 			i := y*w + x
-			bits[i/8] |= 1 << (i % 8)
+			if mask := byte(1 << (i % 8)); bits[i/8]&mask == 0 {
+				bits[i/8] |= mask
+				changed = true
+			}
 		}
 	}
-	mm.Explored = base64.StdEncoding.EncodeToString(bits)
+	if changed {
+		mm.Explored = base64.StdEncoding.EncodeToString(bits)
+	}
 }
 
 // markExplored is the derived explored-bit bookkeeping hook (research D2):
