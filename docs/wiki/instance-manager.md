@@ -9,7 +9,7 @@ sources:
   - internal/worlds/discover.go
   - internal/worlds/probe.go
   - cmd/promptworld/ps.go
-verified_against: 8be4440aae8d108884080cb6476782d2f11ad165
+verified_against: b5e315a18134cd33b8bcf1b7853923335d44c432
 ---
 
 # Instance manager
@@ -43,6 +43,13 @@ A bare **name** resolves worlds-home-first, then registry; a home/registry colli
 refused as ambiguous (both paths printed), an unknown name fails naming the home
 searched and suggesting `ps --all`, and a registry entry whose directory vanished gets
 a dedicated "last known at …, but that directory is gone" error (`ErrMissing`).
+Candidates are classified by `probeWorld` rather than a plain open-succeeded check: a
+directory whose `world.json` exists on disk but which `world.Open` rejects (e.g. an
+unsupported `format_version`) is **unopenable**, not unknown — resolution returns
+`ErrUnopenable` carrying the `world.Open` error verbatim (migrate hint included) instead
+of falling through to not-found, in both directions (old binary vs newer-format world
+and vice versa). An unopenable home candidate takes precedence over a healthy registry
+candidate of the same name, matching home-first ordering.
 
 **Discovery + probe** (`discover.go`, `probe.go`): `ps` candidates are the home scan ∪
 registry entries. Each candidate is classified concurrently under a ~1s per-world
