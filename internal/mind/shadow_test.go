@@ -62,14 +62,15 @@ func shadowRun(t *testing.T, mode string) (prompts map[int]string, injected []st
 		}
 		break
 	}
-	// Divergence injections detach (go emitCog); drain what arrives. In ""
-	// mode nothing may arrive — the grace window is what proves the negative.
-	deadline := time.After(300 * time.Millisecond)
+	// Divergence injections detach (go emitCog); drain to quiescence — a
+	// fresh grace window after every arrival, so slow goroutine scheduling
+	// never undercounts. In "" mode nothing may arrive — the first quiet
+	// window is what proves the negative.
 	for {
 		select {
 		case batch := <-inj.ch:
 			injected = append(injected, batch...)
-		case <-deadline:
+		case <-time.After(500 * time.Millisecond):
 			return prompts, injected
 		}
 	}
