@@ -100,10 +100,10 @@ Phase 6 (persona composition over proven seams) → Sonnet, escalate on gate fai
 
 **Independent Test**: quickstart.md Scenario 6
 
-- [ ] T029 [US4] Load SOUL.md fragments into `BundleSet.SoulFragments()` (cap 4000 chars, load order) in internal/bundle/load.go and append them to the metatron system prompt after charter in internal/metatron/turn.go (`turnSystemPrompt` seam), with prompt-content assertion in internal/metatron/turn_test.go
-- [ ] T030 [US4] Implement persona `capabilities.json` intersection narrowing in internal/bundle/load.go + application after the world-level grant in internal/metatron/turn.go (persona can narrow, never widen — reuse `grantSet` semantics from internal/metatron/charter.go:144-149), with unit tests covering narrow/no-widen/absent-file cases
-- [ ] T031 [P] [US4] Create the persona fixture in internal/bundle/testdata/worlds/persona/bundles/gandalf/ (SOUL.md, capabilities.json narrowing miracle_kinds, two tools — one valid, one with a broken manifest)
-- [ ] T032 [US4] Persona integration test in internal/metatron/bundle_integration_test.go: SOUL fragment present in system prompt; narrowed kind absent from work_miracle enum; valid tool on roster; broken tool skipped with T-rule BootReport while SOUL + grant + sibling stay active (clarification #1, quickstart Scenario 6)
+- [x] T029 [US4] Load SOUL.md fragments into `BundleSet.SoulFragments()` (cap 4000 chars, load order) in internal/bundle/load.go and append them to the metatron system prompt after charter in internal/metatron/turn.go (`turnSystemPrompt` seam), with prompt-content assertion in internal/metatron/turn_test.go
+- [x] T030 [US4] Implement persona `capabilities.json` intersection narrowing in internal/bundle/load.go + application after the world-level grant in internal/metatron/turn.go (persona can narrow, never widen — reuse `grantSet` semantics from internal/metatron/charter.go:144-149), with unit tests covering narrow/no-widen/absent-file cases
+- [x] T031 [P] [US4] Create the persona fixture in internal/bundle/testdata/worlds/persona/bundles/gandalf/ (SOUL.md, capabilities.json narrowing miracle_kinds, two tools — one valid, one with a broken manifest)
+- [x] T032 [US4] Persona integration test in internal/metatron/bundle_integration_test.go: SOUL fragment present in system prompt; narrowed kind absent from work_miracle enum; valid tool on roster; broken tool skipped with T-rule BootReport while SOUL + grant + sibling stay active (clarification #1, quickstart Scenario 6)
 
 **Checkpoint**: all four user stories independently functional
 
