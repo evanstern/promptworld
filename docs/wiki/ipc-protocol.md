@@ -5,7 +5,7 @@ kind: concept
 sources:
   - internal/ipc/protocol.go
   - specs/001-world-daemon/contracts/client-protocol.md
-verified_against: d23fbbfe471ec62c9b94ce79404870632a6eb60e
+verified_against: a7a96b3c6b12f49e0682ffe52b4a8a88ca22f867
 ---
 
 # IPC protocol
@@ -59,17 +59,36 @@ staleness-debt reading, folded in exactly like the `llm` section — [[cognition
 [[daemon-lifecycle]]); all three are zero/absent for a no-LLM world or an inert
 governor, so pre-028 status bytes are unchanged), `daemon` (pid, uptime_seconds,
 subscribers), `log`
-(last_seq), and — since spec 035 — a top-level `Warning` string
-(`json:"warning,omitempty"`) set ONLY on the `set_speed` reply (FR-002, FR-008):
-the requested speed lands on a notch where a bootstrap-seeded provider's
-watched cognition class is suppressed under its current estimate
-([[ipc-server]] composes it via [[cognition]]'s `SuppressedAt`). `status`,
-`pause`, and `resume` never set it, so their bytes stay unchanged; the
-warning is purely advisory — the speed change has already applied by the
-time it's set. `set_speed`'s existing refusal of uncapped `max` while an LLM is
-configured is retained unchanged (spec 028 FR-012) — the governor only ever
-moves `speed`/`effective_rate` along the capped ladder these fields describe,
-never `max`.
+(last_seq), and — since spec 035, widened by spec 039 — a top-level `Warning`
+string (`json:"warning,omitempty"`) set ONLY on the `set_speed` reply (FR-002,
+FR-008), now up to two newline-joined advisory texts: first, the spec 039
+teaching-posture override — on a teaching world whose requested speed exceeds
+the planner-safe posture rung, the router's per-class horizon arithmetic
+verbatim plus a plain-language degrade consequence, prefixed `above teaching
+posture Nx:` and "; "-joined across every suppressed class ([[ipc-server]]'s
+`postureWarning`) — this leg fires for a CALIBRATED teaching world too, unlike
+the second; then, the spec 035 leg, a bootstrap-seeded provider's watched
+cognition class suppressed under its current estimate ([[ipc-server]]'s
+`uncalibratedWarning`, composing via [[cognition]]'s `SuppressedAt`). Either
+leg may be empty; both empty means the field is omitted. `status`, `pause`,
+and `resume` never set it, so their bytes stay unchanged; the warning is
+purely advisory — the speed change has already applied by the time it's set.
+`set_speed`'s existing refusal of uncapped `max` while an LLM is configured is
+retained unchanged (spec 028 FR-012) — the governor only ever moves
+`speed`/`effective_rate` along the capped ladder these fields describe, never
+`max`, and the posture override never weakens this refusal either.
+
+Since spec 039 (US4, `contracts/posture.md` §4), `StatusData` also gains an
+additive `omitempty` `Posture *PostureStatus`, present ONLY for a teaching
+world with an orchestrator — unlike `Warning`, it rides `status`/`pause`/
+`resume`/`set_speed` alike (the `Horizon` precedent). `PostureStatus{Rung,
+Calibrated}` carries the current planner-safe ladder speed as a string
+("1x"…"32x", clamped to "1x" when even 1x suppresses the planner) and whether
+the serving provider is calibrated (`CalibratedAt != ""`) versus a provisional
+bootstrap derivation — recomputed per reply from the planner-serving
+provider's live estimate, via the identical [[cognition]] `MaxSafeSpeed` call
+the boot default and the `Warning` override use, so status, boot, and the
+override can never disagree ([[ipc-server]]'s `postureStatus`).
 
 Since spec 037 (`contracts/status-horizon.md`), `StatusData` also gains an
 additive `omitempty` `Horizon []HorizonClass` — unlike `Warning`, this rides
@@ -100,7 +119,8 @@ oversized reply → the substituted `reply too large` error above.
 
 [[ipc-server]] implements the daemon side; [[ipc-client]] the attach side;
 [[event-types]] defines what rides inside event pushes; [[cli-promptworld]] renders
-`StatusData` for humans. The [[tui-client]] consumes `state` + `subscribe` to run its
+`StatusData` for humans, including its `postureStatusLine` over `Posture` (spec
+039). The [[tui-client]] consumes `state` + `subscribe` to run its
 live replica. `miracle` is the CLI/IPC operator door into [[metatron-miracles]].
 
 ## Operational notes

@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/ipc/server.go
   - internal/ipc/socket.go
-verified_against: d23fbbfe471ec62c9b94ce79404870632a6eb60e
+verified_against: a7a96b3c6b12f49e0682ffe52b4a8a88ca22f867
 ---
 
 # IPC server
@@ -44,7 +44,32 @@ this one). The warning never blocks the speed change — it composes after the
 `max` gate, which is unchanged and still evaluated first — and `status`,
 `pause`, `resume` always pass `""` so their replies stay byte-identical.
 `replyStatus(id, cmd, speed, warning)` carries the extra parameter through to
-every caller; only the `set_speed` case supplies a non-empty value.
+every caller; only the `set_speed` case supplies a non-empty value — since
+spec 039 that value is `setSpeedWarning(speed)`, not `uncalibratedWarning`
+directly.
+
+Since spec 039 (US2/US4, `contracts/posture.md`), a teaching world
+(`s.w.Manifest.Teaching`) layers a second, independent advisory on top:
+`postureWarning(speed)` fires when the requested speed exceeds the
+planner-safe posture — computed live via [[cognition]]'s `MaxSafeSpeed` over
+the planner-serving provider's `EstimateForKind` estimate, the SAME call the
+daemon's boot default uses ([[daemon-lifecycle]]) — and composes, for every
+watched class `LiveHorizon` finds suppressed at the requested speed, the
+router's `Verdict.Arithmetic` string verbatim plus a plain-language
+`postureConsequence` (`"villagers will stop deep-thinking (reflex only)"` for
+`planner`, `"conversations will be skipped"` for `conversation`, `"meetings
+fall back to template speeches"` for `meeting`, a generic degrade phrase
+otherwise), joined under an `above teaching posture Nx:` prefix. Unlike
+`uncalibratedWarning`, this fires for a CALIBRATED teaching world too — that
+is the point of a soft cap. `setSpeedWarning(speed)` composes the two,
+posture first then uncalibrated, newline-joined when both fire (either may be
+empty), and is what the `set_speed` handler now calls instead of
+`uncalibratedWarning` directly. `postureStatus()` computes the teaching
+world's `*PostureStatus{Rung, Calibrated}` the status-family reply carries
+(`StatusData.Posture`, [[ipc-protocol]]) via the identical `MaxSafeSpeed` call
+— nil when no provider serves the planner class, so the field stays absent
+rather than reporting an ungrounded rung. `statusDataFull` sets it only when
+`s.w.Manifest.Teaching`, alongside the existing `Horizon` assignment.
 
 `statusData`/`statusDataFull` fold two optional per-world snapshots into the
 `clock`/`llm` sections the same way: the orchestrator's `StatusSnapshot` when
@@ -131,7 +156,11 @@ rendered by [[cli-promptworld]]'s `setSpeedLine`. `horizonClasses` reads
 `CalibratedAt`/`SuppressionCounts`, and its result rides
 `StatusData.Horizon` ([[ipc-protocol]]), rendered by [[cli-promptworld]]'s
 `horizonStatusLines` and [[tui-client]]'s header badge + metatron-pane
-`horizonLines`.
+`horizonLines`. Since spec 039, `postureWarning`/`postureStatus` read
+[[cognition]]'s `MaxSafeSpeed` and [[game-clock]]'s `SpeedForRate` (the same
+call [[daemon-lifecycle]]'s boot default makes), and their results ride
+`StatusData.Warning`/`StatusData.Posture` ([[ipc-protocol]]), rendered by
+[[cli-promptworld]]'s `setSpeedLine`/`postureStatusLine`.
 
 ## Operational notes
 

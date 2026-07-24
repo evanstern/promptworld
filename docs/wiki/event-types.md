@@ -15,7 +15,7 @@ sources:
   - internal/sim/consolidate.go
   - internal/sim/terrain.go
   - internal/daemon/daemon.go
-verified_against: 4c3807c4d3fcca5cb82367a1ea9b8c0696fda472
+verified_against: a7a96b3c6b12f49e0682ffe52b4a8a88ca22f867
 ---
 
 # Event types
@@ -97,6 +97,12 @@ daemon's operator-event door ([[sim-loop]]'s `InjectOperator`) on every
 provider-health transition (raise/reclassify/clear); it is operator-facing
 only, alongside `daemon.started`/`stopped` under the existing `daemon.*`
 no-op convention.
+Spec 039 (teaching-world speed posture — [[daemon-lifecycle]], [[cognition]])
+adds no new event type and no new emission door: on a teaching world with an
+orchestrator, boot computes the planner-safe posture rung and applies it
+through the loop's ordinary `set_speed` command, so it lands as an EXISTING
+`clock.speed_set` (below) with an ordinary `SpeedSetPayload{speed}` — a new
+emitter of that type, not a new type, which is why the format stays put.
 
 ## How it works
 
@@ -105,7 +111,7 @@ no-op convention.
 | `world.created` | `WorldCreatedPayload{name, seed}` | CLI `new`, tick 0 | none (genesis marker) |
 | `world.migrated` | `WorldMigratedPayload{from_format, source_events, source_tick, state}` (`state` embeds the full canonical `sim.State`) | `promptworld migrate` (client-side, offline — [[world-migration]]), once, right after a fresh `world.created` | replaces `State` wholesale (after checking `state.Seed` matches — a foreign payload is a no-op); the log alone (`world.created` → `world.migrated`) reproduces the migrated world with zero snapshots |
 | `clock.paused` / `clock.resumed` | `{}` | loop command | pause flag (+ snapshot on pause) |
-| `clock.speed_set` | `SpeedSetPayload{speed}` | loop command | `Speed` updated; since spec 028 also clears `State.RequestedSpeed` — a player command always collapses governed state (FR-009) |
+| `clock.speed_set` | `SpeedSetPayload{speed}` | loop command (player `set_speed`, or — since spec 039 — the daemon's teaching-posture default applying its computed rung through the same command at boot, [[daemon-lifecycle]]) | `Speed` updated; since spec 028 also clears `State.RequestedSpeed` — a player command always collapses governed state (FR-009) |
 | `clock.governor_shed` / `clock.governor_recovered` (spec 028 FR-008) | `GovernorPayload{requested, from, to, debt, jobs}`, shared by both | the daemon's governor sampler via the loop's `govern` command ([[cognition]], [[daemon-lifecycle]]) | `Speed = to`; `RequestedSpeed = requested` (shed) or cleared when `to == requested` (recovered reaching the ceiling); `EffectiveRate` follows `to` unless `Degraded` — never silent, so an operator can reconstruct every governed interval from the log alone (SC-005) |
 | `clock.degraded` / `clock.recovered` | `DegradedPayload{effective_rate}` / `{}` | loop auto-slow | degradation flags |
 | `sim.day_started` / `sim.night_started` | `DayPayload{day}` | executor, 06:00/22:00 | `Night` flag only — waking is explicit |
@@ -192,7 +198,10 @@ the single record standing in for the whole pre-break history, and the reducer's
 ## Connections
 
 [[sim-state-reducer]] applies these; the [[executor]], [[reflex-policy]], and
-[[sim-loop]] emit the sim/agent/clock families; `promptworld migrate`
+[[sim-loop]] emit the sim/agent/clock families — since spec 039,
+[[daemon-lifecycle]]'s teaching-posture boot default is a second caller of the
+loop's `set_speed` command that lands `clock.speed_set`, alongside the player;
+`promptworld migrate`
 ([[cli-promptworld]], [[world-migration]]) emits `world.migrated`; the mind driver and the loop's
 landing ladder emit the `cog.*` telemetry ([[cognition]]); [[daemon-lifecycle]]
 emits `daemon.*`; [[event-log]] stores them;

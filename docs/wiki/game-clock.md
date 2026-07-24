@@ -4,7 +4,7 @@ description: Game time math — 1 tick = 1 game second, epoch day 1 06:00, Speed
 kind: component
 sources:
   - internal/clock/clock.go
-verified_against: 6eb8b60ceb65d760408051eadf50a789603efa18
+verified_against: a7a96b3c6b12f49e0682ffe52b4a8a88ca22f867
 ---
 
 # Game clock
@@ -56,6 +56,13 @@ Key functions:
   1x floor, 4 = the 32x ceiling), or `-1` when `s` is off the ladder
   (`SpeedMax` or an unparsed value) — the governor's own floor/ceiling checks
   read this rather than re-deriving ladder position.
+- `SpeedForRate(tps float64) Speed` (spec 039 FR-002) — the inverse of
+  `Speed.TicksPerSecond()` over the capped ladder: the `Speed` whose rate
+  equals `tps`, or `Speed1x` (the floor) when `tps` matches no rung. Turns
+  [[cognition]]'s `MaxSafeSpeed` rung float into a ladder `Speed` for the
+  teaching-posture default and its status/`set_speed` overrides
+  ([[daemon-lifecycle]], [[ipc-server]]); a rung of 0 (even 1x suppresses the
+  planner) clamps to the 1x floor rather than an invalid speed.
 
 ## Connections
 
@@ -64,7 +71,10 @@ the current `Speed` and pause flag; the [[executor]] and [[event-types]] use
 day/night boundary detection; [[cli-promptworld]] prints `Format` output;
 [[metatron-miracles]]'s time-snap doors use `TickAt`/`ParseTimeOfDay` to resolve
 a target tick; [[cognition]]'s adaptive-throttle governor walks `CappedLadder`/
-`LadderIndex` to shed and recover notches ([[daemon-lifecycle]] samples it).
+`LadderIndex` to shed and recover notches ([[daemon-lifecycle]] samples it);
+since spec 039, [[daemon-lifecycle]]'s teaching-posture default and
+[[ipc-server]]'s posture overrides use `SpeedForRate` to turn [[cognition]]'s
+`MaxSafeSpeed` rung into a `Speed`.
 
 ## Operational notes
 
@@ -73,4 +83,7 @@ A game day is 86,400 ticks; at default 4x that is 6 real hours per game day. Nig
 are loop/state concerns. Spec 028 (adaptive throttle) added `CappedLadder`/`LadderIndex`
 as read-only ladder helpers over the existing six speed values — the clock still holds
 no governor state and computes nothing about debt; the package's earlier "unchanged by
-any speed-policy rework" claim held only up to this addition.
+any speed-policy rework" claim held only up to this addition. Spec 039 (teaching-world
+speed posture) added the read-only inverse, `SpeedForRate`, the same way — the clock
+still holds no posture state and decides nothing about teaching worlds; it only maps a
+rate back to the `Speed` that names it.

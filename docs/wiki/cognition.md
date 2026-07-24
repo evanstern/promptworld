@@ -132,7 +132,17 @@ posture can never disagree with the router. The summary body was moved verbatim
 from `cmd/promptworld/calibrate.go` so the daemon's boot warning, the
 `set_speed` warning, and `promptworld calibrate` all read the ONE
 implementation (FR-006): the printed horizon can never disagree with the
-router. `SuppressedAt(ticksPerSecond, secPerPtFor)` is the live-estimate twin
+router. `MaxSafeSpeed(class, secPerPt)` (spec 039 FR-002) is `HorizonSummary`'s
+per-class maxOK loop pulled out into its own export: the highest
+`horizonLadder` rung at which the named class still routes to the model under
+`secPerPt` (0 when even 1x suppresses it, or the class is unregistered) —
+`HorizonSummary` now calls it rather than duplicating the loop. It decides
+through the same `Route` call as everything else here, so a posture derived
+from it can never disagree with the router either; the teaching-posture
+default ([[daemon-lifecycle]]) and its `set_speed`/status overrides
+([[ipc-server]]) are its callers, clamping its 0 result to the ladder floor via
+[[game-clock]]'s `SpeedForRate`.
+`SuppressedAt(ticksPerSecond, secPerPtFor)` is the live-estimate twin
 — same watched classes and `Route` arithmetic, but at one live
 ticks-per-second against a per-class resolver that can exclude a class
 entirely (`ok=false`) when its serving provider is calibrated, so a
@@ -251,7 +261,9 @@ before any model is reachable and seeds the estimators from the profile;
 [[cli-promptworld]]'s `calibrate` subcommand benchmarks the host+model and
 writes the profile, delegating its own horizon printout to `HorizonSummary`.
 Since spec 035, [[daemon-lifecycle]]'s boot warning and [[ipc-server]]'s
-`set_speed` warning also read `HorizonSummary`/`SuppressedAt`, and
+`set_speed` warning also read `HorizonSummary`/`SuppressedAt`; since spec 039,
+[[daemon-lifecycle]]'s boot-time teaching-posture default and [[ipc-server]]'s
+`postureWarning`/`postureStatus` read `MaxSafeSpeed` the same way, and
 [[llm-orchestrator]]'s `SeedCalibration` reads `Calibrated` to stamp each
 provider's `calibratedAt`. Since spec 037, [[ipc-server]]'s `horizonClasses`
 also reads `LiveHorizon` directly (not just the `SuppressedAt` filter) to

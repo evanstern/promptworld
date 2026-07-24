@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/world/world.go
   - internal/world/migrate.go
-verified_against: 8be4440aae8d108884080cb6476782d2f11ad165
+verified_against: a7a96b3c6b12f49e0682ffe52b4a8a88ca22f867
 ---
 
 # World save directory
@@ -27,7 +27,13 @@ on `Open`), and an optional `meeting` block (TASK-36, `MeetingConfig`:
 `convene`/`open` as "HH:MM" 24-hour game clock times, optional `x`/`y` meeting
 place) — the per-world meeting convention the daemon seeds on boot
 ([[governance]], [[daemon-lifecycle]]); `promptworld new` never writes it, so
-emergent is the default. `World.Map()` regenerates the terrain from the seed and
+emergent is the default. It also carries an optional `teaching` bool
+(`Manifest.Teaching`, `omitempty`, decision-6/spec 039): absent means
+non-teaching (a non-teaching `world.json` round-trips byte-identically, no
+`FormatVersion` bump — an additive defaulting bool old readers ignore); when
+true, the daemon defaults the world's speed to the highest planner-safe
+ladder rung at every boot and surfaces the horizon arithmetic on override
+([[daemon-lifecycle]], [[cognition]]). `World.Map()` regenerates the terrain from the seed and
 dimensions — deterministic, so the map is never stored ([[worldmap-generation]]).
 
 - `Create(dir, name, seed)` refuses any existing non-empty directory, creates
@@ -38,6 +44,13 @@ dimensions — deterministic, so the map is never stored ([[worldmap-generation]
   `tick_game_seconds` other than 1, or a malformed `meeting` block (bad "HH:MM",
   or convene not strictly before open) is a hard error, so an old binary can
   never half-load a newer world.
+- `SetTeaching(dir, on)` (spec 039) is the offline read-modify-write for the
+  `Teaching` marker: `Open`s the manifest, flips the field, rewrites
+  `world.json`. A running daemon reads `Teaching` only at boot, so this is a
+  config edit the next start picks up, never a live toggle; `promptworld new
+  --teaching` calls it right after `Create` (keeping `Create`'s own signature
+  untouched for its other callers), and `promptworld teaching <world> on|off`
+  is its standalone door ([[cli-promptworld]]).
 - Path helpers centralize layout: `DBPath()` → `world.db`, `LLMConfigPath()` →
   `llm.json` (the [[llm-orchestrator]] config, written by `new`, deletable to
   disable inference), `CalibrationPath()` → `calibration.json` (the

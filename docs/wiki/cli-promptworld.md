@@ -8,7 +8,7 @@ sources:
   - cmd/promptworld/calibrate.go
   - cmd/promptworld/ps.go
   - cmd/promptworld/miracle.go
-verified_against: d23fbbfe471ec62c9b94ce79404870632a6eb60e
+verified_against: a7a96b3c6b12f49e0682ffe52b4a8a88ca22f867
 ---
 
 # promptworld CLI
@@ -32,7 +32,7 @@ bare names resolve through `resolveWorld` → `worlds.Resolve`
 ambiguous or unknown names exit 1). `worldArg`/`parseWorldFlags` wrap the older
 `dirArg`/`parseDirFlags` with that resolution.
 
-- `new <name> [--at DIR] [--seed]` / `new <path> [--name] [--seed]` — a bare-word
+- `new <name> [--at DIR] [--seed] [--teaching]` / `new <path> [--name] [--seed] [--teaching]` — a bare-word
   argument is a name: the world is created at `<worlds-home>/<name>` (or exactly
   `--at DIR`, which also registers it in the known-worlds registry), manifest name =
   the argument, validated by `worlds.ValidateName`. A path-shaped argument keeps the
@@ -47,7 +47,12 @@ ambiguous or unknown names exit 1). `worldArg`/`parseWorldFlags` wrap the older
   printed summary appends a line naming the fresh-world local model and its
   pull command (`local model: cogito:3b — pull it first if you haven't: ollama
   pull cogito:3b`), read from `llm.DefaultConfig()` itself so the hint can
-  never drift from what was just written ([[llm-orchestrator]]).
+  never drift from what was just written ([[llm-orchestrator]]). `--teaching`
+  (spec 039) stamps the manifest's `Teaching` marker at birth via
+  `world.SetTeaching` — set-after-create, so `world.Create`'s own signature
+  stays untouched for its other callers — telling the daemon to default this
+  world's speed to the highest planner-safe rung at every boot
+  ([[daemon-lifecycle]], [[cognition]]).
 - `migrate <world>` — the one-time upgrade of an older world (v1 or v2) to the
   current format (spec 012 US6 for v1→v2, spec 013 for v2→v3 —
   [[world-migration]]): resolves `<world>` via `resolveWorldForMigrate`, which
@@ -91,7 +96,12 @@ ambiguous or unknown names exit 1). `worldArg`/`parseWorldFlags` wrap the older
   (skipped N)` / `horizon: <class> thinking at <speed>` line per watched
   class in the wire's `Horizon`, mirroring the TUI's calibrate-vs-slow-down
   remedy split (`horizonRemedy`); absent entirely when `Horizon` is absent
-  (a no-LLM world's output is unchanged).
+  (a no-LLM world's output is unchanged). Since spec 039 (US4), a teaching
+  world's status additionally appends one `postureStatusLine` after the
+  horizon block: `teaching posture: <rung> (calibrated)` or `... (provisional
+  — run `promptworld calibrate <world>`)`, read from the wire's
+  `StatusData.Posture` — absent (and so the line omitted) for any non-teaching
+  or pure-sim world.
   Offline: last-known state reconstructed read-only from the store (latest
   snapshot + `LastEventTick`), clearly labeled "daemon not running".
 - `pause` / `resume` / `speed <v>` — one-shot time controls printing the resulting
@@ -102,6 +112,11 @@ ambiguous or unknown names exit 1). `worldArg`/`parseWorldFlags` wrap the older
   has already applied by the time the warning prints
   ([[ipc-server]], [[ipc-protocol]]). `pause`/`resume` replies never carry a
   warning.
+- `teaching <world> [on|off]` (spec 039 US4) — offline manifest toggle: with no
+  on/off argument, `cmdTeaching` reports the current marker; with one, it
+  rewrites `world.json` via `world.SetTeaching` and says the change applies at
+  the next daemon start (a running daemon reads `Teaching` only at boot). Never
+  fails on state, only on IO/parse errors.
 - `ui <world>` — the full-screen Bubble Tea client ([[tui-client]]): map, chronicle,
   metatron, villagers panes over a live world replica (villagers renamed from
   souls, spec 015); runs in the alternate screen.
@@ -202,7 +217,10 @@ pull-command hint read [[llm-provider-health]] and [[llm-orchestrator]];
 reads the [[ipc-server]]-composed `StatusData.Warning` ([[ipc-protocol]]).
 `status`'s `horizonStatusLines` reads the same [[ipc-server]]-composed
 `StatusData.Horizon`, the wire shape [[tui-client]]'s header badge and
-metatron-pane block also render.
+metatron-pane block also render. `status`'s `postureStatusLine` and `new`'s
+`--teaching` flag / the `teaching` subcommand read and write
+[[world-save-directory]]'s `Manifest.Teaching`/`SetTeaching` and
+[[ipc-protocol]]'s `StatusData.Posture` (spec 039).
 
 ## Operational notes
 

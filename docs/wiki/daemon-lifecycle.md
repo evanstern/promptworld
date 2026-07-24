@@ -4,7 +4,7 @@ description: Process lifecycle — startup recovery (snapshot+replay), pidfile w
 kind: pipeline
 sources:
   - internal/daemon/daemon.go
-verified_against: af13190c1771cd592ad26bcc2728f4e4377be894
+verified_against: a7a96b3c6b12f49e0682ffe52b4a8a88ca22f867
 ---
 
 # Daemon lifecycle
@@ -70,6 +70,16 @@ Startup sequence:
    boot-time + periodic model-existence probe in its own goroutine, fired and
    forgotten under the shutdown ctx exactly like the governor sampler — boot
    never blocks or fails on its results (see [[llm-provider-health]]).
+   On a teaching world (spec 039 US1/US3, `w.Manifest.Teaching` —
+   [[world-save-directory]]), boot also derives and prints the teaching-posture
+   default: `orch.EstimateForKind(llm.Kind("planner"))`'s live seconds-per-point
+   feeds [[cognition]]'s `MaxSafeSpeed("planner", est)` for the highest
+   planner-safe ladder rung, mapped to a `clock.Speed` via
+   [[game-clock]]'s `SpeedForRate`; `teachingPostureBootLine` prints it in a
+   calibrated flavor (the planner-serving provider's `CalibratedAt` is set) or
+   a provisional one that also prompts `promptworld calibrate <world>` — the
+   pessimistic bootstrap-seeded rung still applies either way, just honestly
+   labeled. No planner-serving provider means no posture line and no default.
    Boot also surfaces the agent tool-use loop's config warnings the same
    warn-not-error way as the concurrency knob (`llmCfg.Local.Workers()`'s
    `workersWarn`): `llmCfg.Rounds()` (an out-of-range `loop_max_rounds`), both
@@ -110,8 +120,12 @@ Startup sequence:
    command and Unix signals share one graceful path. `SetLoop` closes the
    loop↔server mutual reference. The stale socket is removed before `Listen`.
 8. `daemon.started` event appended (payload carries tick and `recovery_ms`) and
-   broadcast; then `srv.Serve()` in a goroutine and `loop.Run(ctx)` in the
-   foreground.
+   broadcast; then `srv.Serve()` in a goroutine, and — on a teaching world with
+   a computed default — a goroutine applies the teaching-posture speed through
+   the loop's normal `set_speed` command (`loop.Do("set_speed", sp)`) so it
+   lands as a recorded `clock.speed_set` event just like a player's own speed
+   change ([[event-types]]), replaying byte-identically; a failed apply (loop
+   already stopping) only logs. Then `loop.Run(ctx)` in the foreground.
 
 Shutdown: ctx cancellation (signal or `shutdown` cmd) returns from `Run` after the
 loop's final snapshot; `daemon.stopped` is appended; deferred cleanup closes the
@@ -129,8 +143,11 @@ without touching the world.
 is the foreground engine; [[ipc-server]] the concurrent face; [[event-types]] defines
 the `daemon.*` bookkeeping events it emits; [[cognition]] supplies the startup kind
 gate, the calibration profile it seeds into the orchestrator, (spec 035) the
-`HorizonSummary` the boot warning block quotes verbatim, and (spec 028)
-the debt arithmetic and hysteresis controller the governor sampler drives;
+`HorizonSummary` the boot warning block quotes verbatim, (spec 028)
+the debt arithmetic and hysteresis controller the governor sampler drives,
+and (spec 039) the `MaxSafeSpeed` the teaching-posture default computes from;
+[[game-clock]]'s `SpeedForRate` turns that rung into the `clock.Speed` applied
+through the loop's `set_speed` door;
 [[metatron-orders]] is what the `LoopControl` seam wired here (spec 029) drives.
 [[llm-provider-health]] is what the condition hook and preflight goroutine wired
 here (spec 034) drive; its durable event rides [[sim-loop]]'s `InjectOperator`

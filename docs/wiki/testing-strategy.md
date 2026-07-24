@@ -26,7 +26,7 @@ sources:
   - internal/persona/persona_test.go
   - e2e/daemon_e2e_test.go
   - e2e/determinism_e2e_test.go
-verified_against: 4c3807c4d3fcca5cb82367a1ea9b8c0696fda472
+verified_against: a7a96b3c6b12f49e0682ffe52b4a8a88ca22f867
 ---
 
 # Testing strategy
@@ -152,7 +152,24 @@ uncapped phrasing; a no-LLM world's reply carries no `horizon` key at all
 (byte-identical to pre-037); and `RecordSuppression` calls surface as each
 entry's `SuppressedCount`, keyed correctly per class with an unwatched class
 (`chronicle`) never leaking an extra entry. A byte-shape test pins that a
-zero `StatusData` omits `horizon` entirely. Large-reply
+zero `StatusData` omits `horizon` entirely. Spec 039 (teaching-world speed
+posture) adds its own posture coverage here: an uncalibrated teaching world
+set to 32x applies the speed and carries an `above teaching posture 16x`
+override naming the router's verbatim suppressed-class arithmetic and the
+plain-language degrade consequence for each; at or below the 16x posture the
+same world carries no warning text at all; a non-teaching world never carries
+the posture text (only the unchanged spec 035 uncalibrated leg); an
+overshooting uncalibrated teaching world gets BOTH texts, posture first then
+the calibrate prompt, newline-joined; a CALIBRATED teaching world
+(`SeedCalibration`) still warns on override — using the measured seconds-per-
+point in its arithmetic and carrying no uncalibrated text — proving the soft
+cap is independent of calibration state; the `set_speed max` refusal still
+precedes any posture text for a teaching LLM world; and on the status side, a
+calibrated teaching world's `status` reply carries `Posture{Rung, Calibrated:
+true}`, an uncalibrated one `Posture{Rung, Calibrated: false}`, a non-teaching
+world's reply omits the `posture` key entirely (byte-shape pinned on a zero
+`StatusData` too), and a teaching-but-pure-sim world (no orchestrator) also
+carries no posture block. Large-reply
 behavior (TASK-19) is proven against a `fakeDaemon` wire harness that speaks the
 protocol from canned replies: a >1 MiB `state` payload round-trips; a reply over
 the 64 MiB cap is substituted server-side with an actionable `reply too large`
