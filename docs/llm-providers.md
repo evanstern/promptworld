@@ -2,7 +2,8 @@
 
 How model traffic is configured in `llm.json` (in each world's save directory), as of
 spec 024 (multi-provider routing, TASK-35, PR #52), spec 025 (robustness knobs,
-TASK-72), and spec 029 (metatron agency, TASK-27). Formal shapes live in
+TASK-72), spec 029 (metatron agency, TASK-27), and spec 034 (fresh-world defaults +
+preflight, TASK-84). Formal shapes live in
 `specs/024-provider-routing/contracts/llm-config.md`; this is the operator-facing
 reference.
 
@@ -20,10 +21,20 @@ Two rules:
 - Config is read at boot only: edit `llm.json`, then restart the daemon
   (`promptworld stop <world> && promptworld start <world>`).
 
-New worlds (`promptworld new`) are written in the v2 shape with defaults semantically
-identical to the old two-tier defaults.
+New worlds (`promptworld new`) are written in the v2 shape. As of spec 034 the fresh-world
+default local provider is `cogito:3b` with `tool_mode: "json"` and `parallel: 4` — the
+configuration proven live (TASK-73 eval record: three 8-game-hour soaks, 789/896/982
+planner decisions) to make planner tool calls succeed with zero config editing. `promptworld
+new` prints the model name and an `ollama pull cogito:3b` command to make first-run
+painless. gemma-class models (e.g. `gemma4:12b-mlx`, shown in the example below) remain a
+documented upgrade path for operators who serve them, but a fresh world is not written
+expecting one.
 
 ## The v2 shape: providers + routes
+
+The example below is a hand-tuned, multi-provider upgrade — a live-proven division of
+labor across three named providers — not what a fresh world is written with; see above
+for the actual `promptworld new` default.
 
 ```json
 {

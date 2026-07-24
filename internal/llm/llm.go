@@ -271,6 +271,13 @@ type ProviderStatus struct {
 	Slots     int     `json:"slots"`
 	Contended bool    `json:"contended"`
 	SpentUSD  float64 `json:"spent_usd"`
+	// Operator-facing health condition (spec 034): the dominant problem holding
+	// this provider's condition slot, empty when healthy. All three are omitempty
+	// so a healthy provider serializes byte-identically to a pre-034 world — no
+	// existing `status --json` consumer sees a change until a condition is active.
+	Condition       string `json:"condition,omitempty"`
+	ConditionDetail string `json:"condition_detail,omitempty"`
+	ConditionRemedy string `json:"condition_remedy,omitempty"`
 }
 
 // Status feeds the protocol status shape and the TUI. The per-provider table
@@ -304,6 +311,67 @@ type result struct {
 	err  error
 }
 
+// ConditionKind classifies a provider's dominant operator-facing health problem
+// (spec 034). Empty means healthy. One slot per provider holds the single
+// dominant condition; precedence (unreachable > missing > tool-silent) decides
+// which problem occupies the slot when more than one is detected — the operator
+// sees the actionable diagnosis, not a pile of overlapping symptoms.
+type ConditionKind string
+
+const (
+	// CondModelMissing: the endpoint answers a model listing but does not serve
+	// the configured model id (preflight, spec 034 US1). Remedy: pull the model.
+	CondModelMissing ConditionKind = "model-missing"
+	// CondEndpointUnreachable: the endpoint refused the connection or timed out
+	// (preflight, spec 034 US1). Remedy: start the model server.
+	CondEndpointUnreachable ConditionKind = "endpoint-unreachable"
+	// CondToolSilent: the model answers but its tool-carrying calls keep coming
+	// back with zero tool calls (runtime detector, spec 034 US2). Remedy varies by
+	// resolved tool mode.
+	CondToolSilent ConditionKind = "tool-silent"
+)
+
+// condPrecedence ranks condition kinds by operator urgency: a higher rank
+// dominates the single slot (data-model.md). An unreachable endpoint hides the
+// model-missing question — you cannot list models you cannot reach — and
+// tool-silence is the lowest-priority, success-shaped failure. Zero
+// (healthy/unknown) ranks below all, so any real kind supersedes it.
+func condPrecedence(k ConditionKind) int {
+	switch k {
+	case CondEndpointUnreachable:
+		return 3
+	case CondModelMissing:
+		return 2
+	case CondToolSilent:
+		return 1
+	default:
+		return 0
+	}
+}
+
+// toolSilentThreshold is the number of CONSECUTIVE tool-free completions on
+// tool-carrying calls that raises the tool-silent condition (spec 034 US2,
+// research R4). 8 is high enough that a healthy provider's occasional
+// legitimately tool-free planner completion never trips it (TASK-73 soaks
+// sustained 789–982 tool calls per 8 game-hours — a run of 8 tool-free
+// completions does not occur on a healthy provider), yet low enough that a
+// never-function-calling model (cogito:3b in native mode) is flagged within
+// minutes. A package VAR, not a const, so tests can lower it and cross the
+// threshold without a pathological run.
+var toolSilentThreshold = 8
+
+// providerCondition is a provider's single dominant health condition (spec 034,
+// data-model.md). A zero value (empty kind) means healthy. It is the
+// operator-facing diagnosis — distinct from the circuit breaker's transport
+// bookkeeping — and rides the status wire, the daemon log, and the durable
+// daemon.llm_warning event on every transition.
+type providerCondition struct {
+	kind   ConditionKind
+	detail string // evidence, e.g. `model "cogito:3b" not served by …`
+	remedy string // operator action, e.g. `ollama pull cogito:3b`
+	since  time.Time
+}
+
 // provider is one declared model source and its private machinery (FR-005):
 // each owns a full instance of what every tier owned before — bounded queue +
 // interactive priority lane, N worker slots, a circuit breaker, and a live
@@ -333,6 +401,22 @@ type provider struct {
 	// today's behavior. Providers sharing one normalized endpoint in this process
 	// share the pool instance.
 	leases *leasePool
+	// condMu guards cond, the single operator-facing health condition slot
+	// (spec 034). Deliberately separate from tierHealth's mutex: the breaker
+	// counts transport failures (its own concern), while a condition is the
+	// operator-facing diagnosis — missing model, unreachable endpoint,
+	// tool-silence — that rides the status wire and the daemon log. Kept beside
+	// health so the worker success path, the preflight loop, and StatusSnapshot
+	// share one home without new plumbing.
+	condMu sync.Mutex
+	cond   providerCondition
+	// consecutiveToolFree counts CONSECUTIVE completed tool-CARRYING calls that
+	// returned zero tool calls (spec 034 US2, data-model.md) — the tool-silence
+	// symptom. Guarded by condMu because it and the condition slot are one
+	// coupled unit: at toolSilentThreshold it raises tool-silent, and a landed
+	// tool call resets it to 0 as it clears the condition. Untouched by non-tool
+	// calls and by transport failures (the breaker owns those).
+	consecutiveToolFree int
 }
 
 // priced reports whether a provider bills for traffic — the surviving budget
@@ -372,6 +456,16 @@ type Orchestrator struct {
 	// (prior) and the window median installed as the new estimate (adopted).
 	recalMu     sync.Mutex
 	recalibrate func(provider string, estimate, spikeRate, prior, adopted float64)
+
+	// condition is invoked on every provider health-condition transition (spec
+	// 034): a raise, a reclassify (kind or detail change), or a clear. The daemon
+	// wires it to a loud operator surface — a daemon-log line plus a durable,
+	// broadcast daemon.llm_warning event. Guarded by condHookMu, installed via
+	// SetConditionHook, mirroring the recalibrate hook above; nil until wired.
+	// Fired outside any provider lock, and only on genuine transitions, so a
+	// steady condition never spams the log or the event stream.
+	condHookMu sync.Mutex
+	condition  func(provider, kind, detail, remedy string, active bool)
 }
 
 func New(cfg Config, st MeterStore) (*Orchestrator, error) {
@@ -639,6 +733,157 @@ func (o *Orchestrator) SetRecalibrateHook(fn func(provider string, estimate, spi
 	o.recalMu.Unlock()
 }
 
+// SetConditionHook installs the provider-health-transition consumer (the daemon,
+// spec 034), mirroring SetRecalibrateHook. The hook fires on raise, reclassify,
+// and clear — transitions only — with (provider, kind, detail, remedy, active):
+// active=true for a raise/reclassify, active=false for a clear (remedy empty).
+func (o *Orchestrator) SetConditionHook(fn func(provider, kind, detail, remedy string, active bool)) {
+	o.condHookMu.Lock()
+	o.condition = fn
+	o.condHookMu.Unlock()
+}
+
+// fireCondition invokes the installed condition hook (if any) with one
+// transition. Called outside every provider lock so the daemon's hook — which
+// logs and appends a durable event — never runs while p.condMu is held.
+func (o *Orchestrator) fireCondition(provider, kind, detail, remedy string, active bool) {
+	o.condHookMu.Lock()
+	fn := o.condition
+	o.condHookMu.Unlock()
+	if fn != nil {
+		fn(provider, kind, detail, remedy, active)
+	}
+}
+
+// raiseCondition installs or upgrades a provider's operator-facing condition
+// (spec 034, data-model.md). Precedence keeps the one slot honest: a raise whose
+// kind ranks below the active condition is dropped (the dominant problem stays
+// visible — so the tool-silence detector never overwrites a preflight
+// model-missing/unreachable condition), while an equal-or-higher kind replaces
+// the slot (reclassify). The transition hook fires only on a genuine change — a
+// first raise, a kind change, or a detail change on the same kind — never on a
+// repeated identical raise, so the durable event log and daemon output stay
+// quiet under a steady condition (the periodic re-probe is the repeat surface).
+func (o *Orchestrator) raiseCondition(p *provider, kind ConditionKind, detail, remedy string) {
+	p.condMu.Lock()
+	prev := p.cond
+	// Lower-precedence raise while a higher-precedence condition holds: no-op.
+	if prev.kind != "" && condPrecedence(kind) < condPrecedence(prev.kind) {
+		p.condMu.Unlock()
+		return
+	}
+	// Identical condition (same kind AND detail): not a transition — leave the
+	// original `since` untouched and fire nothing.
+	if prev.kind == kind && prev.detail == detail {
+		p.condMu.Unlock()
+		return
+	}
+	p.cond = providerCondition{kind: kind, detail: detail, remedy: remedy, since: time.Now()}
+	p.condMu.Unlock()
+	o.fireCondition(p.name, string(kind), detail, remedy, true)
+}
+
+// clearCondition drops any active condition on a provider and fires the
+// transition hook with active=false (spec 034 FR-004, "traffic is truth"). A
+// no-op when the provider is already healthy, so clear fires exactly once per
+// recovery. The cleared kind and detail ride the hook for operator context; the
+// remedy is empty (there is nothing left to remedy once healthy).
+func (o *Orchestrator) clearCondition(p *provider) {
+	p.condMu.Lock()
+	prev := p.cond
+	if prev.kind == "" {
+		p.condMu.Unlock()
+		return
+	}
+	p.cond = providerCondition{}
+	p.condMu.Unlock()
+	o.fireCondition(p.name, string(prev.kind), prev.detail, "", false)
+}
+
+// conditionSnapshot reads a provider's current condition under its lock, for the
+// status wire. Returns the zero value (empty kind) when healthy.
+func (p *provider) conditionSnapshot() providerCondition {
+	p.condMu.Lock()
+	defer p.condMu.Unlock()
+	return p.cond
+}
+
+// observeSuccess reconciles a provider's operator-facing condition against one
+// COMPLETED call (no transport error) and drives the tool-silence detector (spec
+// 034 US2, FR-004). It is the KIND-AWARE successor to the Phase-2 blanket
+// clear-on-success — the reconciliation the worker path flagged for this phase:
+//
+//   - A success that LANDED a tool call proves the provider is fully alive —
+//     reachable, model served, AND tool-calling working — so it clears ANY
+//     condition (tool-silent included) and resets the consecutive counter.
+//   - A TOOL-FREE success on a tool-CARRYING call is the tool-silence symptom:
+//     it proves the model exists and answers (so it clears a stale PREFLIGHT
+//     condition) but NOT that tool-calling works (so it must never clear an
+//     active tool-silent condition). It increments the consecutive counter and,
+//     at toolSilentThreshold, raises tool-silent — precedence-guarded, so a live
+//     preflight condition keeps the slot and the raise is a no-op there.
+//   - A tool-free success on a NON-tool call (conversation, meeting) carries no
+//     tool-calling signal: the counter is untouched (FR-005 — kinds that never
+//     expect tool calls never count) and only a preflight condition clears.
+//
+// Transport failures never reach here (the worker replies before the success
+// path), so they neither count nor reset — the breaker owns transport health.
+func (o *Orchestrator) observeSuccess(p *provider, hadTools, landedToolCall bool) {
+	if landedToolCall {
+		// Tool calls are landing: the provider is fully alive. Reset the counter
+		// and clear ANY condition (a preflight kind, or a tool-silent condition
+		// that has now recovered — first landed tool call clears it, data-model.md).
+		p.condMu.Lock()
+		p.consecutiveToolFree = 0
+		p.condMu.Unlock()
+		o.clearCondition(p)
+		return
+	}
+	// A tool-free success. It proves the endpoint is reachable and the model is
+	// served, so a stale PREFLIGHT condition (model-missing / unreachable) clears
+	// — but it does NOT prove tool-calling works, so an active tool-silent
+	// condition must survive (clearPreflightCondition leaves it untouched).
+	o.clearPreflightCondition(p)
+	if !hadTools {
+		// A non-tool call legitimately returns no tool calls: no tool-silence
+		// signal, so the counter is untouched (FR-005).
+		return
+	}
+	// A tool-carrying call that came back empty: count it, and raise at the
+	// threshold. raiseCondition is precedence-guarded (a live preflight condition
+	// outranks tool-silent and keeps the slot) and no-ops an identical raise — so
+	// past the threshold the counter keeps climbing but the hook fires exactly
+	// once, on the transition, never per call.
+	p.condMu.Lock()
+	p.consecutiveToolFree++
+	crossed := p.consecutiveToolFree >= toolSilentThreshold
+	p.condMu.Unlock()
+	if crossed {
+		mode, _ := p.cfg.toolModeResolved(p.name)
+		o.raiseCondition(p, CondToolSilent,
+			// The detail is keyed to the fixed threshold, not the live counter, so
+			// every raise past the threshold carries an identical (kind, detail)
+			// and raiseCondition no-ops it — the warning persists via the status
+			// field rather than re-firing the transition hook per call.
+			fmt.Sprintf("%d consecutive tool-free completions on tool-carrying calls", toolSilentThreshold),
+			toolSilentRemedy(p.name, mode))
+	}
+}
+
+// toolSilentRemedy is the operator remedy for a tool-silent provider, keyed by
+// its RESOLVED tool mode (contracts/provider-conditions.md):
+//   - native → the model's native function-calling is not firing; switching that
+//     provider to the schema-constrained fallback envelope is the known fix (it
+//     rescued cogito:3b during TASK-73 bring-up).
+//   - json → the fallback envelope is ALREADY engaged and the model still never
+//     emits a tool call: the model itself is unsuited for tool work.
+func toolSilentRemedy(name, mode string) string {
+	if mode == ToolModeJSON {
+		return "model never emits tool calls even in json mode — use a model suited for tool work"
+	}
+	return fmt.Sprintf("set providers.%s.tool_mode to %q and restart", name, ToolModeJSON)
+}
+
 // Submit routes a request along its kind's chain and blocks until the serving
 // provider replies (or the caller's ctx expires). Admission control is immediate
 // per candidate — budget ceiling, open circuit, best-effort busy, and full queue
@@ -838,6 +1083,16 @@ func (o *Orchestrator) worker(t *provider) {
 				return
 			}
 			t.health.succeed()
+			// Traffic is truth (spec 034 FR-004), now KIND-AWARE (US2): a completed
+			// call reconciles this provider's operator condition against what the
+			// completion actually proves and drives the tool-silence detector. A
+			// landed tool call clears ANY condition; a tool-free success clears
+			// only a preflight condition and, on a tool-carrying call, feeds the
+			// consecutive-silence counter (raising tool-silent at the threshold).
+			// The two facts the detector needs are the request's tool declarations
+			// and the calls the model emitted (cr.toolCalls). A no-op on the healthy
+			// common path — no world restart required.
+			o.observeSuccess(t, len(j.req.Tools) > 0, len(cr.toolCalls) > 0)
 			resp := Response{
 				Text:      cr.text,
 				ToolCalls: cr.toolCalls,
@@ -893,12 +1148,18 @@ func (o *Orchestrator) StatusSnapshot() Status {
 	month, spent, budget, perProvider := o.meter.Snapshot()
 	rows := make([]ProviderStatus, 0, len(o.providers))
 	for _, p := range o.providers {
+		c := p.conditionSnapshot()
 		rows = append(rows, ProviderStatus{
 			Name: p.name, Model: p.cfg.Model, Endpoint: p.cfg.Endpoint,
 			Up: !p.health.down(), Queue: len(p.queue),
 			Inflight: int(p.inflight.Load()), Slots: p.slots,
 			Contended: p.leases != nil && p.leases.contended.Load(),
 			SpentUSD:  perProvider[p.name],
+			// Condition fields are empty (omitempty-dropped) for a healthy
+			// provider, so healthy worlds marshal exactly as before (spec 034).
+			Condition:       string(c.kind),
+			ConditionDetail: c.detail,
+			ConditionRemedy: c.remedy,
 		})
 	}
 	sort.Slice(rows, func(i, j int) bool { return rows[i].Name < rows[j].Name })

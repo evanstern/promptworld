@@ -192,8 +192,12 @@ func cmdNew(args []string) error {
 	if nameForm {
 		startHint = worldName
 	}
-	fmt.Printf("created world %q in %s (seed %d)\nllm config: %s (edit providers/routes/budget; delete the file to disable LLM traffic)\nstart it with: promptworld start %s\n",
-		worldName, dir, *seed, w.LLMConfigPath(), startHint)
+	// The fresh-world local model (spec 034 US3/T015): named from
+	// llm.DefaultConfig() rather than hardcoded, so this line can never drift
+	// from what WriteDefault actually wrote above (contracts/fresh-world-defaults.md).
+	localModel := llm.DefaultConfig().Providers["local"].Model
+	fmt.Printf("created world %q in %s (seed %d)\nllm config: %s (edit providers/routes/budget; delete the file to disable LLM traffic)\nstart it with: promptworld start %s\nlocal model: %s — pull it first if you haven't: ollama pull %s\n",
+		worldName, dir, *seed, w.LLMConfigPath(), startHint, localModel, localModel)
 	return nil
 }
 
@@ -508,9 +512,7 @@ func cmdStatus(args []string) error {
 		if *asJSON {
 			return printJSON(sd)
 		}
-		fmt.Printf("world %q (seed %d) — daemon running (pid %d, up %ds, %d subscriber(s))\n%s\nlog: last seq %d\n",
-			sd.World.Name, sd.World.Seed, sd.Daemon.Pid, sd.Daemon.UptimeSeconds, sd.Daemon.Subscribers,
-			clockLine(sd), sd.Log.LastSeq)
+		fmt.Print(renderStatusHuman(sd))
 		return nil
 	}
 
@@ -747,6 +749,46 @@ func cmdTail(args []string) error {
 		}
 	}
 	return nil
+}
+
+// renderStatusHuman renders `promptworld status`'s online human-readable
+// output: the world/daemon summary line, the clock line, one WARNING line
+// per provider carrying an active health condition (contracts/
+// provider-conditions.md "Human surfaces", spec 034 T009), and the log tail.
+// Factored out of cmdStatus so the WARNING-block logic is unit-testable
+// without a live daemon (T011). A healthy world — no LLM status, or an LLM
+// status whose providers are all condition-free — renders byte-identical to
+// pre-034 output; the loop below is a no-op in that case.
+func renderStatusHuman(sd *ipc.StatusData) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "world %q (seed %d) — daemon running (pid %d, up %ds, %d subscriber(s))\n%s\n",
+		sd.World.Name, sd.World.Seed, sd.Daemon.Pid, sd.Daemon.UptimeSeconds, sd.Daemon.Subscribers,
+		clockLine(sd))
+	for _, line := range llmConditionWarnings(sd) {
+		b.WriteString(line + "\n")
+	}
+	fmt.Fprintf(&b, "log: last seq %d\n", sd.Log.LastSeq)
+	return b.String()
+}
+
+// llmConditionWarnings renders one `WARNING llm provider …` line per
+// provider with an active health condition, per contracts/
+// provider-conditions.md: `WARNING llm provider %q: %s — %s` (name, detail,
+// remedy). nil when the world has no LLM status (offline-world fallback and
+// no-orchestrator worlds both carry sd.LLM == nil) or every provider is
+// healthy.
+func llmConditionWarnings(sd *ipc.StatusData) []string {
+	if sd.LLM == nil {
+		return nil
+	}
+	var lines []string
+	for _, p := range sd.LLM.Providers {
+		if p.Condition == "" {
+			continue
+		}
+		lines = append(lines, fmt.Sprintf("WARNING llm provider %q: %s — %s", p.Name, p.ConditionDetail, p.ConditionRemedy))
+	}
+	return lines
 }
 
 func clockLine(sd *ipc.StatusData) string {

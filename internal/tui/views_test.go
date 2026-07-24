@@ -6,9 +6,11 @@ package tui
 // contracts/status-protocol.md "TUI" §.
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/evanstern/promptworld/internal/ipc"
+	"github.com/evanstern/promptworld/internal/llm"
 )
 
 // TestHeaderViewUngovernedUnchanged is the regression pin: a world with no
@@ -91,5 +93,61 @@ func TestHeaderViewRequestedEqualSpeedUngoverned(t *testing.T) {
 	want := "test — tick 100 · Day 1, 06:00 · running · speed 16x (16.0 t/s)"
 	if got != want {
 		t.Errorf("header with RequestedSpeed==Speed = %q, want %q (no suffix)", got, want)
+	}
+}
+
+// --- T010: header LLM-condition badge (spec 034, contracts/
+// provider-conditions.md "Human surfaces": "[llm: <provider> <kind>]",
+// pattern of the existing [degraded] badge) ---
+
+// TestHeaderViewLLMConditionBadge: a provider carrying an active condition
+// appends the red "[llm: <provider> <kind>]" badge to the header.
+func TestHeaderViewLLMConditionBadge(t *testing.T) {
+	m := testModel(t)
+	m.connected = true
+	m.status = &ipc.StatusData{
+		Clock: ipc.ClockStatus{Tick: 100, GameTime: "Day 1, 06:00", Speed: "16x", EffectiveRate: 16.0},
+		LLM: &llm.Status{Providers: []llm.ProviderStatus{
+			{Name: "local", Model: "cogito:3b", Condition: "model-missing"},
+		}},
+	}
+	got := m.headerView()
+	if !strings.Contains(got, "[llm: local model-missing]") {
+		t.Errorf("header missing llm condition badge: %q", got)
+	}
+}
+
+// TestHeaderViewLLMConditionBadgeFirstAffected: with several providers, the
+// badge names the first one carrying an active condition (wire order), not
+// a healthy provider ahead of it.
+func TestHeaderViewLLMConditionBadgeFirstAffected(t *testing.T) {
+	m := testModel(t)
+	m.connected = true
+	m.status = &ipc.StatusData{
+		Clock: ipc.ClockStatus{Tick: 100, GameTime: "Day 1, 06:00", Speed: "16x", EffectiveRate: 16.0},
+		LLM: &llm.Status{Providers: []llm.ProviderStatus{
+			{Name: "cloud", Model: "claude-opus-4-8"},
+			{Name: "local", Model: "cogito:3b", Condition: "endpoint-unreachable"},
+		}},
+	}
+	got := m.headerView()
+	if !strings.Contains(got, "[llm: local endpoint-unreachable]") {
+		t.Errorf("header should badge the first affected provider: %q", got)
+	}
+}
+
+// TestHeaderViewNoLLMConditionUnchanged: no LLM status, and an LLM status
+// with every provider healthy, both render with no llm badge — the T010
+// regression pin alongside the pre-034 header tests above.
+func TestHeaderViewNoLLMConditionUnchanged(t *testing.T) {
+	m := testModel(t)
+	m.connected = true
+	m.status = &ipc.StatusData{
+		Clock: ipc.ClockStatus{Tick: 100, GameTime: "Day 1, 06:00", Speed: "16x", EffectiveRate: 16.0},
+		LLM:   &llm.Status{Providers: []llm.ProviderStatus{{Name: "local", Model: "cogito:3b", Up: true}}},
+	}
+	got := m.headerView()
+	if strings.Contains(got, "[llm:") {
+		t.Errorf("healthy LLM status should render no llm badge: %q", got)
 	}
 }

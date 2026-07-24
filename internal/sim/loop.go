@@ -70,10 +70,13 @@ type InjectArgs struct {
 }
 
 type command struct {
-	name   string // status | state | pause | resume | set_speed | govern | inject_intent | inject_social
+	name   string // status | state | pause | resume | set_speed | govern | inject_intent | inject_social | inject_operator
 	speed  clock.Speed
 	govern *governArgs
 	inject *InjectArgs
+	// social carries the event batch for the two injection doors — inject_social
+	// (the mind's model-output door) and inject_operator (the daemon's
+	// operator-event door). Distinct whitelists, one carrier.
 	social []store.Event
 	reply  chan commandResult
 }
@@ -264,6 +267,49 @@ var injectSocialWhitelist = map[string]bool{
 // pause is the one state where thought fidelity is perfect.
 func (l *Loop) InjectSocial(events []store.Event) error {
 	cmd := command{name: "inject_social", social: events, reply: make(chan commandResult, 1)}
+	select {
+	case l.commands <- cmd:
+	case <-l.done:
+		return errors.New("simulation loop is not running")
+	}
+	select {
+	case res := <-cmd.reply:
+		return res.err
+	case <-l.done:
+		return errors.New("simulation loop stopped")
+	}
+}
+
+// injectOperatorWhitelist is the DAEMON's operator-event door (spec 034 R8):
+// the event types the daemon may land while the loop runs. Kept deliberately
+// separate from injectSocialWhitelist — that door is the MIND's isolation
+// boundary (model output), this one is the daemon's operator surface, and the
+// two must never bleed into each other. Every type here is a reducer no-op
+// (operator-facing, never world state), so the batch needs no dry-run.
+var injectOperatorWhitelist = map[string]bool{
+	// Provider-health transitions (spec 034 US1/US2): the raise / reclassify /
+	// clear of a model-missing / endpoint-unreachable / tool-silent condition,
+	// broadcast for line-mode attach and durable for post-hoc audit. Same
+	// state-neutral class as daemon.started/stopped.
+	"daemon.llm_warning": true,
+}
+
+// InjectOperator lands a batch of daemon-authored OPERATOR events at the next
+// tick boundary, stamping each with the loop's current tick. It exists for one
+// reason (spec 034 R8): store.AppendEvents has no internal locking, and the sim
+// loop is the single writer to the log (Run's goroutine). daemon.started/stopped
+// are safe to append directly ONLY because they run outside Run's lifetime
+// (before Listen, after Run returns). A provider-health condition, by contrast,
+// fires from worker/preflight goroutines WHILE the loop runs — so its durable
+// event must ride a loop command door to preserve the single-writer invariant.
+// The condition hook is never fired from the loop goroutine itself, so this
+// synchronous door can never self-deadlock.
+//
+// Operator events never touch world state (the reducer no-ops them); the
+// whitelist is the boundary. Fails cleanly if the loop has stopped (the shutdown
+// window), letting the caller degrade to a log line, mirroring InjectSocial.
+func (l *Loop) InjectOperator(events []store.Event) error {
+	cmd := command{name: "inject_operator", social: events, reply: make(chan commandResult, 1)}
 	select {
 	case l.commands <- cmd:
 	case <-l.done:
@@ -519,6 +565,30 @@ func (l *Loop) handleCommand(cmd command) error {
 				err = fmt.Errorf("social batch rejected: %w", aerr)
 				break
 			}
+		}
+		if err != nil {
+			break
+		}
+		events = append(events, batch...)
+	case "inject_operator":
+		// The daemon's operator-event door (spec 034 R8): whitelisted daemon.*
+		// events landed on the loop goroutine so AppendEvents keeps its
+		// single-writer invariant. No dry-run — every whitelisted type is a
+		// reducer no-op, so there is no world-state atomicity to protect (unlike
+		// inject_social's world-mutating batch).
+		batch := cmd.social
+		if len(batch) == 0 {
+			err = fmt.Errorf("empty operator batch")
+			break
+		}
+		for i := range batch {
+			if !injectOperatorWhitelist[batch[i].Type] {
+				err = fmt.Errorf("event type %q not injectable via the operator door", batch[i].Type)
+				break
+			}
+			batch[i].Tick = l.state.Tick
+			batch[i].Seq = 0
+			batch[i].WallTime = ""
 		}
 		if err != nil {
 			break

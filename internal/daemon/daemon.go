@@ -136,6 +136,39 @@ func Run(dir string) error {
 		}
 		defer orch.Close()
 		srv.SetLLM(orch)
+		// Provider-health surface (spec 034 US1/US2): every condition transition
+		// (raise/reclassify/clear) is made loud on two operator channels — the
+		// daemon log and the durable, broadcast daemon.llm_warning event that
+		// line-mode attach streams and `status --json` audits. Transitions only,
+		// so the durable log stays quiet under a steady condition (the periodic
+		// re-probe below re-logs the plain line, never the event). The hook fires
+		// from worker/preflight goroutines WHILE the loop runs, so its durable-event
+		// leg MUST ride the loop's single-writer command door (loop.InjectOperator,
+		// spec 034 R8) rather than appending straight to the store — store
+		// AppendEvents has no internal locking, and the loop is the sole writer.
+		// The loop stamps the current tick; when it is not running (the shutdown
+		// window) InjectOperator errors and we degrade to the log line only,
+		// dropping the durable event — the status fields still carry the condition.
+		orch.SetConditionHook(func(provider, kind, detail, remedy string, active bool) {
+			if active {
+				fmt.Printf("daemon: WARNING llm provider %q: %s — %s\n", provider, detail, remedy)
+			} else {
+				fmt.Printf("daemon: llm provider %q recovered (%s cleared)\n", provider, kind)
+			}
+			payload, merr := json.Marshal(sim.LLMWarningPayload{
+				Provider: provider, Kind: kind, Detail: detail, Remedy: remedy, Active: active,
+			})
+			if merr != nil {
+				fmt.Printf("daemon: llm_warning payload marshal failed: %v\n", merr)
+				return
+			}
+			if ierr := loop.InjectOperator([]store.Event{{Type: "daemon.llm_warning", Payload: payload}}); ierr != nil {
+				// Loop not running (boot before Listen / shutdown after Run): the
+				// warning is already on the log and the status fields, so dropping
+				// the durable event is the safe degrade, never a boot failure.
+				fmt.Printf("daemon: llm_warning event not recorded (%v)\n", ierr)
+			}
+		})
 		// Adaptive-throttle debt sampler (spec 028 US1): a daemon-owned
 		// goroutine that reads aggregate staleness debt every GovernorCadence
 		// and exposes it for status. Built ONLY here, inside the orchestrator
@@ -146,6 +179,14 @@ func Run(dir string) error {
 		sampler := newGovernorSampler(orch, loop)
 		srv.SetGovernor(sampler)
 		go sampler.run(ctx)
+		// Provider-health preflight (spec 034 US1): a daemon-owned goroutine that
+		// probes each openai_compat provider's model listing once at boot, then
+		// re-probes (every 60s) only while a preflight condition is active — so a
+		// fresh world whose model is absent warns loudly within a probe RTT and
+		// recovers on its own once the model is pulled, with no restart. Boot NEVER
+		// blocks or fails on probe results (FR-002): the goroutine is fired and
+		// forgotten under the shutdown ctx, exactly like the sampler above.
+		go orch.RunPreflight(ctx)
 		// Seed the seconds-per-point estimators from the calibration
 		// profile before any traffic; a missing or unreadable file means
 		// pessimistic bootstrap defaults (fail toward reflex, never toward

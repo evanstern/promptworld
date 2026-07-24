@@ -121,7 +121,28 @@ func (m Model) headerView() string {
 	if c.Degraded {
 		line += " " + styleErr.Render("[degraded]")
 	}
+	if name, kind, ok := firstLLMCondition(m.status.LLM); ok {
+		line += " " + styleErr.Render(fmt.Sprintf("[llm: %s %s]", name, kind))
+	}
 	return styleHeader.Render(line)
+}
+
+// firstLLMCondition reports the first (wire-order, name-sorted) provider
+// carrying an active health condition — the header badge only needs one
+// name to point the operator at `promptworld status` for the rest
+// (contracts/provider-conditions.md "Human surfaces": "[llm: <provider>
+// <kind>]", pattern of the existing [degraded] badge). ok is false when
+// there is no LLM status or every provider is healthy.
+func firstLLMCondition(l *llm.Status) (name, kind string, ok bool) {
+	if l == nil {
+		return "", "", false
+	}
+	for _, p := range l.Providers {
+		if p.Condition != "" {
+			return p.Name, p.Condition, true
+		}
+	}
+	return "", "", false
 }
 
 // governedSpeedSuffix renders the plain-language annotation the header's
@@ -1464,7 +1485,10 @@ const (
 // provider's spend share of the month — sorted by name (the wire order,
 // StatusSnapshot already sorts). A trailing `(unattributed)` row appears
 // only when the global spend total exceeds Σ(rows), the legacy-spend
-// remainder contracts/status.md documents.
+// remainder contracts/status.md documents. A provider carrying an active
+// health condition (spec 034) gains an indented continuation line with the
+// condition's detail and remedy in the pane's error style, immediately
+// below its row.
 func llmProviderLines(l *llm.Status) []string {
 	if l == nil || len(l.Providers) == 0 {
 		return nil
@@ -1485,6 +1509,9 @@ func llmProviderLines(l *llm.Status) []string {
 			llmProviderNameWidth, truncateTail(p.Name, llmProviderNameWidth),
 			llmProviderModelWidth, truncateTail(p.Model, llmProviderModelWidth),
 			glyph, p.Queue, p.Inflight, p.Slots, contended, p.SpentUSD))
+		if p.Condition != "" {
+			lines = append(lines, "  "+styleErr.Render(fmt.Sprintf("%s — %s", p.ConditionDetail, p.ConditionRemedy)))
+		}
 	}
 	// The (unattributed) remainder (US4/US6): legacy-metered spend the
 	// per-provider rows don't cover. A cent of floating-point noise never

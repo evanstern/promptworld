@@ -1237,7 +1237,8 @@ func TestNilToolsByteIdentity(t *testing.T) {
 
 // TestConfigParallelRoundTrip (FR-007): llm.json loads with parallel present
 // or absent — any integer value, including out-of-range, never fails to load;
-// WriteDefault omits the field entirely (default 1).
+// WriteDefault emits the fresh-world default's parallel value (spec 034 R6/
+// T014: cogito:3b at parallel 4 — no longer the bare compat default of 1).
 func TestConfigParallelRoundTrip(t *testing.T) {
 	load := func(local string) *Config {
 		p := filepath.Join(t.TempDir(), "llm.json")
@@ -1266,7 +1267,8 @@ func TestConfigParallelRoundTrip(t *testing.T) {
 			t.Errorf("parallel %d not preserved on load: %d", v, cfg.Local.Parallel)
 		}
 	}
-	// WriteDefault omits the field: the default config has no parallelism knob.
+	// WriteDefault emits parallel: 4 on the local provider — the live-proven
+	// cogito:3b default (spec 034 R6), not the bare compat default of 1.
 	p := filepath.Join(t.TempDir(), "llm.json")
 	if err := WriteDefault(p); err != nil {
 		t.Fatal(err)
@@ -1275,8 +1277,8 @@ func TestConfigParallelRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Contains(string(raw), "parallel") {
-		t.Errorf("WriteDefault must omit parallel, got:\n%s", raw)
+	if !strings.Contains(string(raw), `"parallel": 4`) {
+		t.Errorf("WriteDefault must emit parallel: 4, got:\n%s", raw)
 	}
 }
 

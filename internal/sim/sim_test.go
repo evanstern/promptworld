@@ -354,4 +354,10 @@ func TestApplyClockEvents(t *testing.T) {
 	if err := s.Apply(store.Event{Type: "daemon.started", Payload: json.RawMessage(`{}`)}); err != nil {
 		t.Errorf("daemon.* events must be no-op, got %v", err)
 	}
+	// The spec-034 provider-health event is operator-facing only: it rides the
+	// same daemon.* no-op path (never mutates world state, never needs a reducer
+	// arm), matching the daemon.started precedent above.
+	if err := s.Apply(store.Event{Type: "daemon.llm_warning", Payload: json.RawMessage(`{"provider":"local","kind":"model-missing","active":true}`)}); err != nil {
+		t.Errorf("daemon.llm_warning must be a state no-op, got %v", err)
+	}
 }
