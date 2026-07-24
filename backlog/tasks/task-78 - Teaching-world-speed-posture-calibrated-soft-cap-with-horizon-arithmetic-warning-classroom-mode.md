@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-23 17:00'
-updated_date: '2026-07-24 19:05'
+updated_date: '2026-07-24 19:37'
 labels:
   - teaching-game
   - classroom-mode
@@ -34,10 +34,10 @@ Spec: specs/039-teaching-speed-posture
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Teaching worlds default to the highest calibrated planner-safe ladder speed, derived from the world's calibration profile (not hard-coded)
-- [ ] #2 Setting a speed above the posture succeeds and surfaces the horizon arithmetic for the classes it suppresses
-- [ ] #3 An uncalibrated teaching world prompts for calibrate rather than silently adopting the pessimistic bootstrap cap (aligns with TASK-40)
-- [ ] #4 Posture lives as per-world config consumable by TASK-68 stage presets; non-teaching worlds are unchanged
+- [x] #1 Teaching worlds default to the highest calibrated planner-safe ladder speed, derived from the world's calibration profile (not hard-coded)
+- [x] #2 Setting a speed above the posture succeeds and surfaces the horizon arithmetic for the classes it suppresses
+- [x] #3 An uncalibrated teaching world prompts for calibrate rather than silently adopting the pessimistic bootstrap cap (aligns with TASK-40)
+- [x] #4 Posture lives as per-world config consumable by TASK-68 stage presets; non-teaching worlds are unchanged
 - [ ] #5 Spec phase: Setup
 - [ ] #6 Spec phase: Foundational (Blocking Prerequisites)
 - [ ] #7 Spec phase: User Story 1 - Teaching world runs at the fastest honest speed by default (Priority: P1) 🎯 MVP
@@ -59,4 +59,6 @@ Spec Kit flow complete: specs/039-teaching-speed-posture (spec + plan + research
 Drift audit 2026-07-23: content holds; pin moved — horizonSummary is calibrate.go:241 with the 'suppressed above Nx' arithmetic at :261 (:173-197 is orchSampler). No teaching posture exists anywhere yet, confirmed.
 
 Model tier: Opus 4.8 (constitution V rubric): slice is cross-package (world/cognition/ipc/daemon/cmd), touches internal/cognition (rubric-listed), and the boot-time recorded speed_set event is replay-determinism/doctrine-adjacent (decision-4/-6 boundary must stay warn-never-block). Recorded per plan.md Constitution Check + research.md R7.
+
+Implementation complete on branch task-78-teaching-speed-posture (Opus 4.8 spec-implementer, T001-T017, commits faa0b14..dbfef22 + 2f201d8): go vet + full suite green (one PRE-EXISTING main failure internal/tui TestCatalogSweep — out of scope, filed as TASK-96). Planning-tier review PASSED: doctrine guards verified in diff (MaxSafeSpeed single-source via Route; boot default lands as recorded clock.speed_set through loop.Do — replay identity proven by T017; all wire fields additive omitempty, non-teaching byte-identity tested; max-gate untouched). Deviations adjudicated: verbatim Route '>' arithmetic and '; ' multi-class join ACCEPTED and pinned into contracts/posture.md (2f201d8). PR creation blocked by sustained GitHub 500s — branch pushed, retry loop running.
 <!-- SECTION:NOTES:END -->
