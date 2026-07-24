@@ -54,8 +54,8 @@ wire field.
 
 ### Implementation for User Story 2
 
-- [ ] T008 [US2] `(*Server).postureWarning(speed clock.Speed) string` in internal/ipc/server.go beside uncalibratedWarning: teaching + orchestrator + requested rung > posture rung ⇒ for each watched class whose `Route` at the requested speed disallows, emit `Verdict.Arithmetic` verbatim + degrade consequence phrase (contracts/posture.md §3); compose with uncalibratedWarning newline-joined into the one set_speed reply Warning; widen the Warning doc comment in internal/ipc/protocol.go to name the posture case (still set_speed-only, still never blocks, max-gate untouched)
-- [ ] T009 [US2] Tests in internal/ipc/server_test.go (or existing warning test home): above-posture warns with exact arithmetic; at/below posture no posture text; non-teaching unchanged; uncalibrated teaching world composes both texts; speed always applied; `max` still errors
+- [X] T008 [US2] `(*Server).postureWarning(speed clock.Speed) string` in internal/ipc/server.go beside uncalibratedWarning: teaching + orchestrator + requested rung > posture rung ⇒ for each watched class whose `Route` at the requested speed disallows, emit `Verdict.Arithmetic` verbatim + degrade consequence phrase (contracts/posture.md §3); compose with uncalibratedWarning newline-joined into the one set_speed reply Warning; widen the Warning doc comment in internal/ipc/protocol.go to name the posture case (still set_speed-only, still never blocks, max-gate untouched)
+- [X] T009 [US2] Tests in internal/ipc/server_test.go (or existing warning test home): above-posture warns with exact arithmetic; at/below posture no posture text; non-teaching unchanged; uncalibrated teaching world composes both texts; speed always applied; `max` still errors
 
 **Checkpoint**: US1 + US2 independently verifiable
 

@@ -112,12 +112,18 @@ type StatusData struct {
 	Log    LogStatus    `json:"log"`
 	// LLM is present only when the world has an orchestrator (llm.json).
 	LLM *llm.Status `json:"llm,omitempty"`
-	// Warning is set ONLY on the set_speed reply path (spec 035 FR-002): the
-	// requested speed lands on a notch where a bootstrap-seeded provider's
-	// cognition class is suppressed under its current estimate. Never set on
-	// status/pause/resume — omitempty keeps those replies byte-identical
-	// (FR-008). The warning never blocks the speed change; it always applied
-	// by the time this is set.
+	// Warning is set ONLY on the set_speed reply path (spec 035 FR-002; spec 039
+	// FR-003): up to two newline-joined advisory texts. First, the spec 039
+	// teaching-posture override — on a teaching world whose requested speed
+	// exceeds the planner-safe posture rung, the router's per-class horizon
+	// arithmetic plus its degrade consequence (fires for calibrated AND
+	// uncalibrated teaching worlds). Second, the spec 035 uncalibrated warning —
+	// a bootstrap-seeded provider's class suppressed at its current estimate.
+	// Never set on status/pause/resume — omitempty keeps those replies
+	// byte-identical (FR-008), and non-teaching worlds never carry the posture
+	// text. The warning never blocks the speed change (decision-4; the max-speed
+	// rejection is a separate hard error), and the change already applied by the
+	// time this is set.
 	Warning string `json:"warning,omitempty"`
 	// Horizon is the live per-class cognition horizon (spec 037,
 	// contracts/status-horizon.md): one entry per watched class the router
