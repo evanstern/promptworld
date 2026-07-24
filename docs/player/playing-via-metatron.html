@@ -4,9 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/wiki/metatron.md@e9213e17e6e48cf30da802949d9b59e0e3d78370">
-<meta name="promptworld-docs:source" content="docs/wiki/metatron-miracles.md@a7a96b3c6b12f49e0682ffe52b4a8a88ca22f867">
-<meta name="promptworld-docs:source" content="docs/wiki/metatron-orders.md@4c3807c4d3fcca5cb82367a1ea9b8c0696fda472">
+<meta name="promptworld-docs:source" content="docs/wiki/metatron.md@1e71b77f104dda982aa407b28ad2c994219e90d0">
+<meta name="promptworld-docs:source" content="docs/wiki/bundle-tools.md@1e71b77f104dda982aa407b28ad2c994219e90d0">
+<meta name="promptworld-docs:source" content="docs/wiki/metatron-miracles.md@1e71b77f104dda982aa407b28ad2c994219e90d0">
+<meta name="promptworld-docs:source" content="docs/wiki/metatron-orders.md@1e71b77f104dda982aa407b28ad2c994219e90d0">
 <meta name="promptworld-docs:source" content="docs/wiki/governance.md@2bc94f55c57880e07f0e52e5de20c9cd527ab340">
 <title>Playing via Metatron — promptworld player docs</title>
 <style>
@@ -98,6 +99,27 @@ never pass your literal words straight to a villager. Those two guardrails aren'
 editable — everything else about its voice and judgment is yours to shape. A related
 rule binds the abilities below: Metatron only acts when you ask it to, or when a
 standing order you placed authorizes it — never on its own initiative.</p>
+
+<h2>Giving your angel new tools: bundles</h2>
+<p>Beyond the charter, you can extend what Metatron can actually <em>do</em>. A
+<strong>bundle</strong> is a folder you drop into a <code>bundles/</code> directory
+inside your world's save directory — no rebuilding, no code changes to the game
+itself. Each tool inside a bundle is a small description file that names the tool,
+explains it, and says what it does in the world (move someone, hand over an item,
+whisper a memory), optionally with a short script for tools whose behavior should
+depend on the world — say, a light-conjuring tool that acts differently at night.
+Restart the world and the new tools simply appear in Metatron's repertoire,
+priced in the same charge economy as everything else.</p>
+<p>A bundle can also carry a whole <em>persona</em>: a <code>SOUL.md</code> file whose
+text joins the charter in shaping who your angel is, and its own
+<code>capabilities.json</code> that can narrow (never expand) what the world already
+allows. Broken bundles never break your world — at startup each problem is reported
+plainly in the world's log, naming the file and what's wrong, and everything valid
+still loads. If a bundle tool shares a name with a built-in ability, the built-in
+wins. Everything bundles do passes through the same safety valve as Metatron's own
+miracles: only pre-approved kinds of world changes can ever land, and a tool that
+misbehaves changes nothing at all. The full authoring guide lives in
+<code>docs/bundles.md</code> in the project repository.</p>
 
 <h2>Reaching a villager's mind: visions and omens</h2>
 <p>When Metatron decides to plant something in a villager's mind — rather than
