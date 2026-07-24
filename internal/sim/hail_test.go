@@ -441,6 +441,7 @@ func TestPlanStepTalkToHails(t *testing.T) {
 	s.Tick = 1000
 	s.Agents[0].X, s.Agents[0].Y = 10, 10
 	s.Agents[1].X, s.Agents[1].Y = 10, 40 // in hail range
+	sightAll(s, s.Tick)                   // spec 041: the hailer must know where its target is
 	s.Agents[0].Plan = []PlanStep{{Job: "p", Goal: "talk_to", Target: 1, Until: 5000}}
 	evs := planStepEvents(s, m, 0, 1001)
 	if countType(evs, "social.hailed") != 1 {

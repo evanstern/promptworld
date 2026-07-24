@@ -389,6 +389,14 @@ func TransformV3State(v3 *State, m *worldmap.Map) *State {
 			if len(granted) > 0 {
 				mm.Facts = append([]PlaceFact(nil), granted...)
 			}
+			// Spec 041 (T013): natives know each other — each living villager
+			// is granted a sighting of every other living villager at its
+			// current position, so talk_to stays viable across the break.
+			for j := range out.Agents {
+				if j != i && !out.Agents[j].Dead {
+					mm.sightPeer(j, out.Agents[j].X, out.Agents[j].Y, migTick)
+				}
+			}
 		}
 		a.Map = mm
 	}

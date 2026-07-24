@@ -63,6 +63,9 @@ func landingLoop(mutate func(*State)) *Loop {
 	if mutate != nil {
 		mutate(s)
 	}
+	// Spec 041: these tests' subject is the landing ladder, not knowledge —
+	// arrange the pre-041 worldview after the mutate's repositioning.
+	sightAll(s, s.Tick)
 	return &Loop{state: s, m: m}
 }
 

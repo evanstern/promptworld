@@ -772,6 +772,7 @@ func TestRebaseTaxonomyComplete(t *testing.T) {
 		"MeetingState.GatherStart":  shift,
 		"MetatronOrder.ExpiresTick": shift, // spec 029: a standing order's future expiry deadline
 		"PlaceFact.Seen":            shift, // spec 041: mental-map freshness anchor (Belief.Reinforced shape)
+		"PeerSighting.Seen":         shift, // spec 041 T013: sighting recency anchor, same shape
 		// KEEP — history / identity / counters.
 		"Agent.Generation":                 keep,
 		"Agent.LastConsolidatedNight":      keep,

@@ -24,6 +24,26 @@ import (
 type MentalMap struct {
 	Explored string      `json:"explored"`
 	Facts    []PlaceFact `json:"facts,omitempty"`
+	// Peers are last-seen sightings of the other villagers (spec 041 US1,
+	// T013): where the agent last saw each of them, keyed and sorted by agent
+	// index. Maintained DERIVATIONALLY (research D2's explored-bit class):
+	// villagers cross each other's sight constantly, so event-carrying every
+	// sighting would flood the log the way per-step explored events would —
+	// the sightings are high-frequency and meaningless individually, and the
+	// narratively-loud encounters already ride memories and rumors. Updated by
+	// notePresence from the position-changing and waking reducer arms; only
+	// ever upserted (a sighting is never forgotten, only superseded).
+	Peers []PeerSighting `json:"peers,omitempty"`
+}
+
+// PeerSighting is one remembered villager position: agent index, the tile the
+// agent was last seen on, and the tick of that sighting. talk_to/seek resolve
+// against this — never against live coordinates (spec 041 FR/US1).
+type PeerSighting struct {
+	Agent int   `json:"agent"`
+	X     int   `json:"x"`
+	Y     int   `json:"y"`
+	Seen  int64 `json:"seen"`
 }
 
 // PlaceFact is one known dynamic entity. Kind is a closed vocabulary: the
@@ -237,6 +257,152 @@ func (mm *MentalMap) KnownFresh(kind string, now int64) []PlaceFact {
 		}
 	}
 	return out
+}
+
+// --- knowledge predicates (spec 041 US1, research D3) -----------------------
+//
+// The resolver/reflex gate: candidates must hold a FRESH fact of the right
+// kind at their position in the ACTING agent's map. Standalone funcs over
+// *Agent so a nil map (a dead migrated native; bare test agents) uniformly
+// means "knows nothing".
+
+// knownFreshFact returns the agent's fresh fact of kind at (x, y), if held.
+func knownFreshFact(a *Agent, kind string, x, y int, now int64) (PlaceFact, bool) {
+	if a.Map == nil {
+		return PlaceFact{}, false
+	}
+	f, ok := a.Map.factAt(kind, x, y)
+	if !ok || !factFresh(f, now) {
+		return PlaceFact{}, false
+	}
+	return f, true
+}
+
+// knownFactAt reports a fresh fact of kind at (x, y) — the per-tile match
+// closure the gated resolvers include (O(log facts), BFS-safe).
+func knownFactAt(a *Agent, kind string, x, y int, now int64) bool {
+	_, ok := knownFreshFact(a, kind, x, y, now)
+	return ok
+}
+
+// knowsAnyFresh reports whether the agent holds ANY fresh fact of kind — the
+// knowledge-emptiness test behind the "you know of no <kind>" rejection
+// (contracts §4), checked BEFORE reachability so the two failure classes stay
+// distinct: knowing none is an epistemic failure; knowing some but reaching
+// none keeps the existing "no <kind> reachable" phrasing.
+func knowsAnyFresh(a *Agent, kind string, now int64) bool {
+	if a.Map == nil {
+		return false
+	}
+	for _, f := range a.Map.Facts {
+		if f.Kind == kind && factFresh(f, now) {
+			return true
+		}
+	}
+	return false
+}
+
+// knowsLitFire reports whether the agent remembers ANY fresh fire whose
+// remembered Detail (the FuelUntil as last seen) is still ahead of now — the
+// cook resolver's knowledge-emptiness test (spec 041 US1).
+func knowsLitFire(a *Agent, now int64) bool {
+	if a.Map == nil {
+		return false
+	}
+	for _, f := range a.Map.Facts {
+		if f.Kind == "fire" && factFresh(f, now) && f.Detail > now {
+			return true
+		}
+	}
+	return false
+}
+
+// warmKnownPredicate is the knowledge twin of warmAt: warmth the agent can
+// PLAN on — within fireWarmRadius of a fire it remembers as lit (remembered
+// Detail, the FuelUntil as last seen, still ahead of now — the agent can
+// predict burnout from its own knowledge), or on a shelter tile it knows.
+// Returns the per-tile predicate plus whether any warm place is known at all
+// (the "you know of no warm place" emptiness test). The known fires/shelters
+// are captured once, so the predicate is O(known warm places) per tile.
+func warmKnownPredicate(a *Agent, now int64) (func(x, y int) bool, bool) {
+	if a.Map == nil {
+		return func(int, int) bool { return false }, false
+	}
+	var fires, shelters []PlaceFact
+	for _, f := range a.Map.Facts {
+		switch {
+		case f.Kind == "fire" && factFresh(f, now) && f.Detail > now:
+			fires = append(fires, f)
+		case f.Kind == "shelter" && factFresh(f, now):
+			shelters = append(shelters, f)
+		}
+	}
+	pred := func(x, y int) bool {
+		for _, f := range fires {
+			if abs(f.X-x)+abs(f.Y-y) <= fireWarmRadius {
+				return true
+			}
+		}
+		for _, f := range shelters {
+			if f.X == x && f.Y == y {
+				return true
+			}
+		}
+		return false
+	}
+	return pred, len(fires)+len(shelters) > 0
+}
+
+// --- peer sightings (spec 041 US1, T013) -------------------------------------
+
+// peerSightingOf returns the agent's last sighting of peer, if any.
+func peerSightingOf(a *Agent, peer int) (PeerSighting, bool) {
+	if a.Map == nil {
+		return PeerSighting{}, false
+	}
+	i := sort.Search(len(a.Map.Peers), func(j int) bool { return a.Map.Peers[j].Agent >= peer })
+	if i < len(a.Map.Peers) && a.Map.Peers[i].Agent == peer {
+		return a.Map.Peers[i], true
+	}
+	return PeerSighting{}, false
+}
+
+// sightPeer upserts a sighting, keeping Peers sorted by agent index — the
+// canonical-bytes invariant (at most one sighting per peer).
+func (mm *MentalMap) sightPeer(peer, x, y int, seen int64) {
+	i := sort.Search(len(mm.Peers), func(j int) bool { return mm.Peers[j].Agent >= peer })
+	if i < len(mm.Peers) && mm.Peers[i].Agent == peer {
+		mm.Peers[i] = PeerSighting{Agent: peer, X: x, Y: y, Seen: seen}
+		return
+	}
+	mm.Peers = append(mm.Peers, PeerSighting{})
+	copy(mm.Peers[i+1:], mm.Peers[i:])
+	mm.Peers[i] = PeerSighting{Agent: peer, X: x, Y: y, Seen: seen}
+}
+
+// notePresence is the derived peer-sighting bookkeeping (D2's explored-bit
+// class — silent, no event, pure function of (state, event)): when agent idx
+// arrives somewhere — a walked step, a teleport, or waking up — it records
+// sightings of every living agent within the witness radius, and every awake
+// living agent within that radius records it back. Sleepers neither see nor
+// are updated (they look around on agent.woke, which also routes here).
+func (s *State) notePresence(idx int, tick int64) {
+	a := &s.Agents[idx]
+	for j := range s.Agents {
+		if j == idx {
+			continue
+		}
+		b := &s.Agents[j]
+		if b.Dead || abs(a.X-b.X)+abs(a.Y-b.Y) > witnessRadius {
+			continue
+		}
+		if !a.Asleep && a.Map != nil {
+			a.Map.sightPeer(j, b.X, b.Y, tick)
+		}
+		if !b.Asleep && b.Map != nil {
+			b.Map.sightPeer(idx, a.X, a.Y, tick)
+		}
+	}
 }
 
 // SawPayload — agent.saw (spec 041, contracts §1): the perception sweep's

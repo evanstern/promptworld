@@ -181,6 +181,10 @@ func (s *State) applyTimeSnapped(e store.Event) error {
 //	                      non-zero. Left unshifted, a snap would instantly stale
 //	                      every villager's knowledge — exactly the drift FR-009
 //	                      forbids.
+//	PeerSighting.Seen     mental-map sighting recency anchor (spec 041 T013) —
+//	                      same shape as PlaceFact.Seen; ONLY non-zero (genesis
+//	                      sightings carry tick 0 and stay put, like the
+//	                      grandfathered Belief.Reinforced zero).
 //
 // KEEP (history/identity — never rewritten): Agent.Generation,
 //
@@ -244,6 +248,9 @@ func rebaseTicks(s *State, delta int64) {
 				// Spec 041: the freshness anchor shifts so knowledge does not
 				// stale across the jump; Detail is remembered history (KEEP).
 				shift(&a.Map.Facts[j].Seen)
+			}
+			for j := range a.Map.Peers {
+				shift(&a.Map.Peers[j].Seen)
 			}
 		}
 	}
@@ -383,8 +390,10 @@ func (s *State) applyEntityMoved(e store.Event) error {
 		a.Intent = nil
 		a.IdleSince = e.Tick
 		// Spec 041 (research D2): a teleported villager knows where it landed —
-		// the same derived explored-bit bookkeeping as a walked step.
+		// the same derived explored-bit and peer-sighting bookkeeping as a
+		// walked step.
 		s.markExplored(a, p.ToX, p.ToY)
+		s.notePresence(idx, e.Tick)
 	case "structure":
 		i := s.structureIndexAt(p.X, p.Y)
 		if i < 0 {

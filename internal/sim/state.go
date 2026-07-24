@@ -136,6 +136,12 @@ func NewState(seed uint64, m *worldmap.Map) *State {
 			Map:   mm,
 		}
 	}
+	// Spec 041 (T013): villagers who spawn within sight of each other start
+	// knowing where their neighbors stand — nothing else (D7). Second pass so
+	// every map exists before the mutual sightings.
+	for i := range s.Agents {
+		s.notePresence(i, 0)
+	}
 	return s
 }
 
@@ -590,9 +596,11 @@ func (s *State) Apply(e store.Event) error {
 		}
 		a.X, a.Y = p.X, p.Y
 		// Spec 041 (research D2): silent derived bookkeeping — a mover's
-		// surroundings become explored terrain in its mental map. Pure
-		// function of (state, event); no event, no chronicle noise.
+		// surroundings become explored terrain in its mental map, and mover
+		// and bystanders record each other's positions. Pure function of
+		// (state, event); no event, no chronicle noise.
 		s.markExplored(a, p.X, p.Y)
+		s.notePresence(p.Agent, e.Tick)
 
 	case "agent.saw":
 		// Spec 041 (T007): the perception sweep's witnessed facts, fully
@@ -1313,6 +1321,9 @@ func (s *State) Apply(e store.Event) error {
 		}
 		a.Asleep = false
 		a.IdleSince = e.Tick
+		// Spec 041 (T013): a waker looks around — sleepers record no
+		// sightings, so waking refreshes who is nearby (derived, D2 class).
+		s.notePresence(p.Agent, e.Tick)
 
 	case "agent.needs_changed":
 		var p NeedsPayload

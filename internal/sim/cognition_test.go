@@ -230,6 +230,10 @@ func newLadderHarness(t *testing.T, mutate func(*State)) *ladderHarness {
 	if mutate != nil {
 		mutate(s)
 	}
+	// Spec 041: the ladder tests' subject is the landing doctrine, not
+	// knowledge — arrange the pre-041 worldview (everyone knows where
+	// everyone stands after the mutate's repositioning).
+	sightAll(s, s.Tick)
 	loop := NewLoop(s, m, st, nil)
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)

@@ -8,6 +8,49 @@ import (
 	"github.com/evanstern/promptworld/internal/store"
 )
 
+// --- test scaffolding (spec 041 US1) -----------------------------------------
+//
+// Pre-041 tests plant world state and resolve against it omnisciently; the
+// knowledge gate now requires the ACTING agent to know the planted places.
+// Tests whose subject is not knowledge use these arrangement helpers to grant
+// exactly the pre-041 worldview.
+
+// sightAll gives every living agent a current sighting of every other living
+// agent (the pre-041 talk_to worldview).
+func sightAll(s *State, tick int64) {
+	for i := range s.Agents {
+		a := &s.Agents[i]
+		if a.Dead || a.Map == nil {
+			continue
+		}
+		for j := range s.Agents {
+			if j != i && !s.Agents[j].Dead {
+				a.Map.sightPeer(j, s.Agents[j].X, s.Agents[j].Y, tick)
+			}
+		}
+	}
+}
+
+// grantStructureFacts gives every living agent fresh witnessed facts for
+// every current structure and pile (fires carrying FuelUntil as Detail) —
+// the pre-041 structure worldview.
+func grantStructureFacts(s *State, tick int64) {
+	for i := range s.Agents {
+		a := &s.Agents[i]
+		if a.Dead || a.Map == nil {
+			continue
+		}
+		for _, st := range s.Structures {
+			a.Map.upsertFact(PlaceFact{Kind: st.Kind, X: st.X, Y: st.Y, Seen: tick,
+				Provenance: ProvenanceWitnessed, Detail: st.FuelUntil})
+		}
+		for _, p := range s.Piles {
+			a.Map.upsertFact(PlaceFact{Kind: "pile", X: p.X, Y: p.Y, Seen: tick,
+				Provenance: ProvenanceWitnessed})
+		}
+	}
+}
+
 // TestExploredCodecRoundTrip (spec 041 T003): marked bits survive the
 // base64 encode/decode round trip exactly — no neighbors bleed, re-encoding
 // an unchanged map is byte-identical, and marking is monotone.

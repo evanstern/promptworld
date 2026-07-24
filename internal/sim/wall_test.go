@@ -284,6 +284,7 @@ func TestRepairFullHPNoResolve(t *testing.T) {
 	a := reviveAt(s, cx-1, cy)
 	a.Inv = Inventory{Planks: 5}
 	s.Structures = append(s.Structures, Structure{Kind: "wall_plank", X: cx, Y: cy, HP: wallPlankHP})
+	grantStructureFacts(s, 0) // spec 041: repair resolves against KNOWN walls
 
 	if _, _, err := resolveGoal(s, m, 0, "repair", -1, "", 0, 1); err == nil {
 		t.Error("repair on a full-health wall should error (nothing to repair)")

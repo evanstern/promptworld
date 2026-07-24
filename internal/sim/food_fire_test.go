@@ -376,13 +376,17 @@ func TestReflexRefuelsDyingFire(t *testing.T) {
 	fx, fy := a.X, a.Y
 
 	// Dying fire (under refuelDyingBelow left) + wood in hand ⇒ refuel.
+	// Spec 041: the reflex reads the agent's KNOWN fires (remembered Detail),
+	// so the planted fire is granted as a witnessed fact.
 	s.Structures = []Structure{{Kind: "fire", X: fx, Y: fy, FuelUntil: 100}}
+	grantStructureFacts(s, 0)
 	if d := decideIntent(s, m, 0, 0); d.intent == nil || d.intent.Goal != "refuel_fire" {
 		t.Fatalf("reflex should refuel a dying fire; got %+v", d)
 	}
 
 	// Healthy fire ⇒ the reflex must NOT refuel.
 	s.Structures = []Structure{{Kind: "fire", X: fx, Y: fy, FuelUntil: 100000}}
+	grantStructureFacts(s, 0)
 	if d := decideIntent(s, m, 0, 0); d.intent != nil && d.intent.Goal == "refuel_fire" {
 		t.Error("reflex refueled a healthy fire — should not")
 	}
