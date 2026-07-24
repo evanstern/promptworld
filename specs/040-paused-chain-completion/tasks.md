@@ -104,8 +104,8 @@ arm; full existing suite green.
 
 ## Phase 6: Polish & Cross-Cutting
 
-- [ ] T015 Run quickstart.md validation end-to-end (sections 1–3) inside the worktree and record the output in the PR description; tick spec ACs on board TASK-77 (`backlog task edit 77 --check-ac …` from repo root) and `spec-bridge:sync`
-- [ ] T016 Post-merge grounding (root, on main, after the PR merges): `/grounding-wiki:wiki-update` for notes sourcing internal/mind/mind.go, internal/mind/telemetry.go, internal/cognition/route.go (agent-mind, cognition-horizon et al.), then `node .claude/skills/player-docs/scripts/check-freshness.mjs --check` and refresh player docs if stale (constitution IV)
+- [x] T015 Run quickstart.md validation end-to-end (sections 1–3) inside the worktree and record the output in the PR description; tick spec ACs on board TASK-77 (`backlog task edit 77 --check-ac …` from repo root) and `spec-bridge:sync`
+- [x] T016 Post-merge grounding (root, on main, after the PR merges): `/grounding-wiki:wiki-update` for notes sourcing internal/mind/mind.go, internal/mind/telemetry.go, internal/cognition/route.go (agent-mind, cognition-horizon et al.), then `node .claude/skills/player-docs/scripts/check-freshness.mjs --check` and refresh player docs if stale (constitution IV)
 
 ---
 
