@@ -8,6 +8,27 @@
 
 **Input**: User description: "Per-agent mental maps: knowledge-gated spatial memory replaces omniscient nearest-target resolution (TASK-96). Each villager agent holds a private mental map of the 64x64 grid with an explicit unknown state; verb target resolution consults the agent's spatial knowledge instead of the current omniscient whole-map BFS; the planner prompt renders only agent-known structures/places; unknown space becomes deliberately explorable; remembered content can go stale and is corrected on arrival; spatial knowledge can spread socially through talk. Representation must have a documented extension path to future layered 3D grids. Replay determinism is a hard constraint. Grounding corpus: research/Agent-Mental-Maps/ vault branch (commit c70c53f)."
 
+## Clarifications
+
+### Session 2026-07-24
+
+- Q: What should an agent's spatial knowledge gate? → A: Target choice only — terrain is
+  common knowledge (villagers are natives); pathfinding runs on ground truth; knowledge
+  gates what to walk toward (structures, fires, resource sites, agents).
+- Q: Does the deterministic survival reflex use the same private map as cognition? → A:
+  Full parity — reflex resolves targets against the same mental map; world viability is
+  protected by seeded home knowledge and the search behavior, never by omniscient fallback.
+- Q: How does spatial knowledge spread when villagers talk? → A: Automatically on every
+  completed talk encounter — a small bounded set of relevant place-facts transfers with
+  told-by provenance and lower initial confidence; no LLM tool call required.
+- Q: How does the LLM planner consume the mental map? → A: Rendered prompt text only (the
+  known-places section replaces the global structure list); read-only map-query tools are
+  deferred to a future task.
+- Q: Decay rates for remembered dynamic facts? → A: Adopt the research-aligned default —
+  confidence decays toward unknown (never toward false) on the existing belief half-life
+  family, with volatile kinds (lit fires) decaying faster than durable ones (buildings);
+  exact constants are set during planning/tuning.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Agents act only on places they know (Priority: P1)
@@ -213,9 +234,10 @@ witnessed), and that B's prompt/story reflect learning it from A.
   behavior reports exhaustion honestly.
 - **FR-010**: The existing undirected wander remains available; search (FR-009) is a
   distinct, unknown-directed behavior.
-- **FR-011**: Talk encounters MUST be able to transfer a bounded amount of place-knowledge
-  between participants; transferred knowledge carries told-by provenance and the sharing is
-  observable in both agents' records.
+- **FR-011**: Every completed talk encounter MUST automatically transfer a bounded amount
+  of relevant place-knowledge between participants (no LLM tool call required); transferred
+  knowledge carries told-by provenance and lower initial confidence than witnessed
+  knowledge, and the sharing is observable in both agents' records.
 - **FR-012**: Confidence in remembered dynamic facts MUST decay with game time toward
   unknown (not toward false), on a scale consistent with the existing belief half-life
   machinery; decayed-out facts stop gating targets as known.
@@ -275,24 +297,10 @@ witnessed), and that B's prompt/story reflect learning it from A.
 
 ## Assumptions
 
-Defaults chosen where the description left room; the clarify phase should confirm or
-overturn the starred ones (they are the research MOC's open questions).
+The five formerly-open design questions (the research MOC's open questions) were decided in
+the 2026-07-24 clarification session — see Clarifications above; they are no longer
+assumptions. What remains below are the working defaults this spec rests on.
 
-- ★ **Gating scope**: knowledge gates *target choice* (what to walk toward), not *movement*
-  (how to walk there). Terrain is common knowledge (villagers are natives, not cave
-  explorers); pathfinding runs on ground truth. Rationale: preserves world viability and
-  matches fog-of-war convention of remembered/known terrain.
-- ★ **Reflex parity**: the survival reflex uses the same map as cognition (FR-013), with
-  viability protected by seed knowledge + search, not by reflex omniscience.
-- ★ **Social spread**: place-knowledge transfer rides existing talk encounters
-  automatically (bounded per talk), rather than requiring explicit LLM tool calls to share.
-  Trust: told facts enter the map directly but with told provenance and lower initial
-  confidence than witnessed ones.
-- ★ **LLM consumption**: the mental map reaches the model as rendered prompt text (known
-  places section) only, for this feature; read-only map-query tools are deferred.
-- ★ **Decay rates**: aligned to the existing belief-confidence half-life family (game-day
-  scale), with faster decay for volatile kinds (lit fires) than durable ones (buildings);
-  exact constants are a plan/tuning concern.
 - **Perception envelope**: perception reuses the existing witness radius (Manhattan 8) as
   the default "you can see it" range; no line-of-sight computation in this feature.
 - **talk_to gating**: targeting another villager uses last-known position (perceived or
