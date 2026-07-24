@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-24 17:50'
-updated_date: '2026-07-24 18:01'
+updated_date: '2026-07-24 18:02'
 labels:
   - bug
 dependencies: []
@@ -44,12 +44,12 @@ Spec: specs/038-loud-build-failure
 - [ ] #10 Spec phase: Polish & Cross-Cutting
 <!-- AC:END -->
 
-
-
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 Starting per constitution: full Spec Kit (specify → clarify → plan → tasks) before implementation; code exploration underway to ground the spec.
 
 AC#3 design choice: BUILD TOLERATES PASSERBY (not pathing avoidance). Rationale from code exploration: pathing is unweighted BFS (internal/sim/path.go) with no reservation index — soft-avoid would require a new tile-cost concept plus a Res-tile registry consulted inside passable() (terrain.go:38), which every movement step calls; large blast radius. Tolerance is surgical: split the guard at executor.go:657 — buildSite false = genuine failure (new failure event + situated failure memory); agentAt true = transient occupancy → build waits (completion deferred, never entombs), with a grace timeout so a permanent squatter becomes a loud failure instead of an infinite wait. Failure event + memory must come from the executor (mind never writes memories from intent_done; mind.go:218 just re-arms the planner).
+
+Implementation tier: Opus 4.8 (escalated from Sonnet default). Rubric lines: (1) cross-package change — internal/sim executor/reducer + internal/mind absorb re-arm + internal/tui digest; (2) doctrine-adjacent behavior change — alters belief/memory semantics (failure memories, falsifiability; adjacent to 030-epistemic-hygiene); plus deterministic replay byte-identity risk in the event-sourced hot path. Delegated to spec-implementer with model: opus on specs/038-loud-build-failure.
 <!-- SECTION:NOTES:END -->
