@@ -32,16 +32,10 @@ func WatchedClasses() []string {
 func HorizonSummary(secPerPt float64) string {
 	parts := []string{}
 	for _, class := range watchedClasses {
-		dc, ok := ClassFor(class)
-		if !ok {
+		if _, ok := ClassFor(class); !ok {
 			continue
 		}
-		maxOK := 0.0
-		for _, sp := range horizonLadder {
-			if Route(dc, sp, secPerPt).Allow {
-				maxOK = sp
-			}
-		}
+		maxOK := MaxSafeSpeed(class, secPerPt)
 		switch {
 		case maxOK == 0:
 			parts = append(parts, class+" always suppressed")
@@ -52,6 +46,27 @@ func HorizonSummary(secPerPt float64) string {
 		}
 	}
 	return strings.Join(parts, "; ")
+}
+
+// MaxSafeSpeed is the highest horizonLadder speed at which the named class
+// still routes to the model under secPerPt — the teaching posture rung
+// (spec 039 FR-002). It returns 0 when even 1x suppresses the class (or the
+// class is unregistered): the caller clamps that to the ladder floor. Like
+// HorizonSummary it decides through Route (the single routing rule), so a
+// posture can never disagree with the router (FR-004). Extracted from
+// HorizonSummary's maxOK loop, which now calls it.
+func MaxSafeSpeed(class string, secPerPt float64) float64 {
+	dc, ok := ClassFor(class)
+	if !ok {
+		return 0
+	}
+	maxOK := 0.0
+	for _, sp := range horizonLadder {
+		if Route(dc, sp, secPerPt).Allow {
+			maxOK = sp
+		}
+	}
+	return maxOK
 }
 
 // ClassStanding is one watched class's live standing at a given speed: the

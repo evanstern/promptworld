@@ -14,7 +14,7 @@ wire field.
 
 ## Phase 1: Setup
 
-- [ ] T001 Create worktree `.worktrees/task-78` on branch `task-78-teaching-speed-posture` from fresh `origin/main`; confirm `go build ./...` and `go test ./...` green at baseline
+- [X] T001 Create worktree `.worktrees/task-78` on branch `task-78-teaching-speed-posture` from fresh `origin/main`; confirm `go build ./...` and `go test ./...` green at baseline
 
 ---
 
@@ -22,9 +22,9 @@ wire field.
 
 **Purpose**: the manifest marker and the exported rung arithmetic — every story reads both
 
-- [ ] T002 [P] Add `Teaching bool` with `json:"teaching,omitempty"` to `Manifest` in internal/world/world.go (doc comment: teaching posture marker, decision-6/spec 039); add a `SetTeaching(dir string, on bool) error` read-modify-write helper beside Load/Create
-- [ ] T003 [P] Extract `MaxSafeSpeed(class string, secPerPt float64) float64` in internal/cognition/horizon.go from HorizonSummary's maxOK loop (highest horizonLadder rung where `Route(...).Allow`; 0 when none); refactor `HorizonSummary` to call it — output strings byte-identical
-- [ ] T004 [P] Table tests: manifest round-trip (absent field ⇒ false; non-teaching world.json byte-identical on rewrite; old manifest loads) in internal/world/world_test.go; `MaxSafeSpeed` rungs at 5.0/17.0/20.0/1000.0 s/pt + HorizonSummary unchanged-output regression in internal/cognition/horizon_test.go
+- [X] T002 [P] Add `Teaching bool` with `json:"teaching,omitempty"` to `Manifest` in internal/world/world.go (doc comment: teaching posture marker, decision-6/spec 039); add a `SetTeaching(dir string, on bool) error` read-modify-write helper beside Load/Create
+- [X] T003 [P] Extract `MaxSafeSpeed(class string, secPerPt float64) float64` in internal/cognition/horizon.go from HorizonSummary's maxOK loop (highest horizonLadder rung where `Route(...).Allow`; 0 when none); refactor `HorizonSummary` to call it — output strings byte-identical
+- [X] T004 [P] Table tests: manifest round-trip (absent field ⇒ false; non-teaching world.json byte-identical on rewrite; old manifest loads) in internal/world/world_test.go; `MaxSafeSpeed` rungs at 5.0/17.0/20.0/1000.0 s/pt + HorizonSummary unchanged-output regression in internal/cognition/horizon_test.go
 
 **Checkpoint**: marker + arithmetic exist; all stories can proceed
 

@@ -145,6 +145,90 @@ func TestOpenAcceptsMeeting(t *testing.T) {
 	}
 }
 
+// TestTeachingMarkerDefaultsFalse (spec 039 FR-001/US4 AC3): a manifest with no
+// teaching field loads as a non-teaching world — the marker is a defaulting
+// bool, so pre-039 worlds are backward compatible.
+func TestTeachingMarkerDefaultsFalse(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, ManifestName),
+		[]byte(`{"name":"x","seed":1,"format_version":3,"tick_game_seconds":1}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	w, err := Open(dir)
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	if w.Manifest.Teaching {
+		t.Errorf("absent teaching field should default to false, got true")
+	}
+}
+
+// TestNonTeachingManifestByteIdentical (spec 039 FR-008): a non-teaching
+// manifest re-marshals byte-for-byte as it did before the field existed — the
+// teaching key is absent (omitempty), so existing world.json files never gain a
+// spurious "teaching":false on rewrite.
+func TestNonTeachingManifestByteIdentical(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "w")
+	w, err := Create(dir, "plain", 7)
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	data, err := os.ReadFile(filepath.Join(dir, ManifestName))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(data), "teaching") {
+		t.Errorf("non-teaching manifest must not carry the teaching key, got:\n%s", data)
+	}
+	if w.Manifest.Teaching {
+		t.Errorf("Create must not set the teaching marker by default")
+	}
+}
+
+// TestSetTeachingRoundTrip (spec 039 FR-001/US4): SetTeaching flips the marker
+// on disk both ways, the value survives Open, and turning it back off removes
+// the key entirely (omitempty) so the file is byte-identical to a world that
+// was never teaching.
+func TestSetTeachingRoundTrip(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "w")
+	if _, err := Create(dir, "teach", 7); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	before, err := os.ReadFile(filepath.Join(dir, ManifestName))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := SetTeaching(dir, true); err != nil {
+		t.Fatalf("SetTeaching on: %v", err)
+	}
+	w, err := Open(dir)
+	if err != nil {
+		t.Fatalf("Open after on: %v", err)
+	}
+	if !w.Manifest.Teaching {
+		t.Errorf("teaching marker did not persist as true")
+	}
+
+	if err := SetTeaching(dir, false); err != nil {
+		t.Fatalf("SetTeaching off: %v", err)
+	}
+	w, err = Open(dir)
+	if err != nil {
+		t.Fatalf("Open after off: %v", err)
+	}
+	if w.Manifest.Teaching {
+		t.Errorf("teaching marker did not clear to false")
+	}
+	after, err := os.ReadFile(filepath.Join(dir, ManifestName))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(after) != string(before) {
+		t.Errorf("toggling teaching off should restore byte-identical world.json:\nbefore:\n%s\nafter:\n%s", before, after)
+	}
+}
+
 func TestCalibrationPath(t *testing.T) {
 	w := &World{Dir: "/tmp/w"}
 	if got := w.CalibrationPath(); got != filepath.Join("/tmp/w", "calibration.json") {

@@ -41,6 +41,13 @@ type Manifest struct {
 	// unless one emerges in-world. `promptworld new` never writes it —
 	// emergent is the default.
 	Meeting *MeetingConfig `json:"meeting,omitempty"`
+	// Teaching marks a teaching-posture world (decision-6, spec 039): the
+	// daemon defaults its speed to the highest planner-safe ladder rung at each
+	// boot and surfaces the horizon arithmetic on override. Absent ⇒
+	// non-teaching, and a non-teaching world.json round-trips byte-identically
+	// (omitempty, FR-008); no FormatVersion bump — an additive defaulting bool
+	// old readers ignore.
+	Teaching bool `json:"teaching,omitempty"`
 }
 
 // MeetingConfig declares when (and optionally where) the daily assembly
@@ -145,6 +152,24 @@ func Open(dir string) (*World, error) {
 		}
 	}
 	return &World{Dir: dir, Manifest: m}, nil
+}
+
+// SetTeaching flips a world's teaching-posture marker on disk (spec 039): read
+// the manifest, set Teaching, rewrite world.json. A running daemon is
+// unaffected — it reads the marker only at its next boot, so the toggle is an
+// offline config edit. Used by `promptworld new --teaching` (birth) and
+// `promptworld teaching <world> on|off`.
+func SetTeaching(dir string, on bool) error {
+	w, err := Open(dir)
+	if err != nil {
+		return err
+	}
+	w.Manifest.Teaching = on
+	data, err := json.MarshalIndent(w.Manifest, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(dir, ManifestName), append(data, '\n'), 0o644)
 }
 
 // Map regenerates the world's terrain from the manifest — deterministic, so
