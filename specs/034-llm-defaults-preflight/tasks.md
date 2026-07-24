@@ -78,9 +78,9 @@ pull; docs and README tell the same story. See contracts/fresh-world-defaults.md
 
 **Tier**: Sonnet (config default + CLI output + doc reconciliation).
 
-- [ ] T014 [P] [US3] Change DefaultConfig() local provider to `{model: "cogito:3b", tool_mode: "json", parallel: 4}` (comment updated; cloud/routes untouched) in internal/llm/config.go, with golden assertions updated in internal/llm/config_test.go
-- [ ] T015 [P] [US3] Append the expected-model + `ollama pull cogito:3b` guidance line to cmdNew stdout (after commands.go:195-196) in cmd/promptworld/commands.go
-- [ ] T016 [P] [US3] Align docs: docs/llm-providers.md presents cogito:3b+json+parallel-4 as the fresh-world default and gemma-class as the upgrade path; README.md (~line 86) names cogito:3b with the pull command (FR-009, SC-004)
+- [x] T014 [P] [US3] Change DefaultConfig() local provider to `{model: "cogito:3b", tool_mode: "json", parallel: 4}` (comment updated; cloud/routes untouched) in internal/llm/config.go, with golden assertions updated in internal/llm/config_test.go
+- [x] T015 [P] [US3] Append the expected-model + `ollama pull cogito:3b` guidance line to cmdNew stdout (after commands.go:195-196) in cmd/promptworld/commands.go
+- [x] T016 [P] [US3] Align docs: docs/llm-providers.md presents cogito:3b+json+parallel-4 as the fresh-world default and gemma-class as the upgrade path; README.md (~line 86) names cogito:3b with the pull command (FR-009, SC-004)
 
 **Checkpoint**: quickstart V4/V5 pass
 
