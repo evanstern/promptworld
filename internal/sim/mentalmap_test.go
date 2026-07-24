@@ -939,3 +939,92 @@ func TestPlaceRevealedThroughDoor(t *testing.T) {
 		t.Errorf("companion memory Origin = %q, want %q", mems[1].Origin, OriginOmen)
 	}
 }
+
+// --- spec 041 polish: dead-agent hygiene (T033) -------------------------------
+
+// TestDeadAgentKnowledgeHygiene (data-model invariant): death excludes an
+// agent's map and peer sightings from every read path — the perception sweep,
+// talk founding (and with it the place-knowledge transfer), and the seek
+// resolver's live Dead gate — while the map DATA stays in state for
+// historical fidelity (nothing un-knows the dead).
+func TestDeadAgentKnowledgeHygiene(t *testing.T) {
+	const seed = 42
+	m := testMap(seed)
+	s := NewState(seed, m)
+	a, b := &s.Agents[0], &s.Agents[1]
+	b.X, b.Y = a.X, a.Y+1 // adjacent — a founded talk's shape, were both alive
+
+	// The dead agent holds unique fresh knowledge the living one lacks, and
+	// the living one holds a fresh sighting of the dead one.
+	a.Map.Facts = nil
+	b.Map.Facts = nil
+	a.Map.upsertFact(PlaceFact{Kind: "fire", X: 30, Y: 30, Seen: 900, Provenance: ProvenanceWitnessed, Detail: 999999})
+	b.Map.sightPeer(0, a.X, a.Y, 900)
+	if err := s.Apply(store.Event{Tick: 950, Type: "agent.died",
+		Payload: mustPayload(DiedPayload{Agent: 0, Cause: "starvation"})}); err != nil {
+		t.Fatal(err)
+	}
+
+	const tick = int64(1000)
+
+	// The perception sweep never runs for the dead: no agent.saw, no
+	// agent.map_corrected, on any beat.
+	for probe := tick; probe < tick+moveEveryTicks; probe++ {
+		for _, e := range perceptionEvents(s, m, probe) {
+			var p struct {
+				Agent int `json:"agent"`
+			}
+			mustUnmarshal(t, e.Payload, &p)
+			if p.Agent == 0 {
+				t.Fatalf("the dead perceived: %s %s", e.Type, e.Payload)
+			}
+		}
+	}
+
+	// The social beat never founds a talk with the dead — so the dead agent's
+	// map is neither told from (teller) nor told into (receiver).
+	for _, e := range socialEvents(s, tick) {
+		switch e.Type {
+		case "agent.talked", "social.place_told", "social.rumor_told":
+			t.Fatalf("the dead joined the social fabric: %s %s", e.Type, e.Payload)
+		}
+	}
+
+	// A living agent's remembered sighting of the dead does not resolve: the
+	// live Dead gate refuses at the door (death knowledge is out of the fact
+	// model's scope — the accepted deviation).
+	if _, _, err := resolveGoal(s, m, 1, "talk_to", 0, "", 0, tick); err == nil {
+		t.Fatal("seek toward a dead agent resolved")
+	} else if !strings.Contains(err.Error(), "dead") {
+		t.Fatalf("seek refusal should name death, got: %v", err)
+	}
+
+	// Historical fidelity: the dead agent's map survives in state and across
+	// a snapshot round trip — excluded from reads, never erased.
+	var round State
+	if err := json.Unmarshal(s.Marshal(), &round); err != nil {
+		t.Fatal(err)
+	}
+	dead := round.Agents[0]
+	if !dead.Dead || dead.Map == nil {
+		t.Fatal("the dead agent's map was erased")
+	}
+	if f, ok := dead.Map.factAt("fire", 30, 30); !ok || f.Seen != 900 {
+		t.Fatalf("the dead agent's knowledge was mutated: %+v", f)
+	}
+
+	// notePresence records nothing about (or for) the dead: a living walker
+	// arriving beside the corpse neither refreshes its own sighting of the
+	// dead nor stamps the dead agent's peer list.
+	deadPeersBefore := len(round.Agents[0].Map.Peers)
+	if err := s.Apply(store.Event{Tick: tick + 5, Type: "agent.moved",
+		Payload: mustPayload(AgentMovedPayload{Agent: 1, X: a.X, Y: a.Y})}); err != nil {
+		t.Fatal(err)
+	}
+	if sight, ok := peerSightingOf(&s.Agents[1], 0); ok && sight.Seen > 900 {
+		t.Fatalf("a living walker refreshed its sighting of the dead: %+v", sight)
+	}
+	if len(s.Agents[0].Map.Peers) != deadPeersBefore {
+		t.Fatal("the dead agent's peer list grew after death")
+	}
+}
