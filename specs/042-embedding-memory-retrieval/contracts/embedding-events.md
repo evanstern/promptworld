@@ -33,6 +33,14 @@ contents — copy-verbatim only (model-free sim doctrine, spec 030 lineage).
   this feature).
 - Runs ONLY when the `embedding` route exists in llm.json. Absent route → driver not
   wired (vectorless world).
+- **Warm-pin (keep the model perma-loaded)**: at driver start, and on a slow re-warm
+  interval (hourly class), POST the Ollama-native endpoint (`<base without /v1>/api/embed`)
+  with `{"model": <pinned model>, "keep_alive": -1}`. Empirically verified 2026-07-24:
+  the native pin makes the model resident indefinitely and OpenAI-compat traffic does
+  NOT reset it, while `keep_alive` in the compat body is ignored. Best-effort and
+  Ollama-specific: on 404/error (non-Ollama server), log once at boot and continue —
+  correctness never depends on the pin, only cold-load latency does. The pin targets the
+  embedding model only; chat-model eviction is untouched.
 
 ## 3. Determinism rules (the non-negotiables)
 

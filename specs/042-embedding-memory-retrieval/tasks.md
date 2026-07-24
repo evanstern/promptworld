@@ -68,8 +68,9 @@ replay passes with Ollama stopped; kill-Ollama run stays loud + non-fatal.
       the exact recorded text (fixed-byte truncation cap constant), inject
       `agent.memory_embedded` via `InjectSocial`; debounced `daemon.llm_warning` on
       transport failure; never blocks absorb/plan; wired only when the `embedding`
-      route exists — new file `internal/mind/embedder.go`
-      (contracts/embedding-events.md §2)
+      route exists; warm-pins the embedding model at driver start + slow re-warm
+      (native `/api/embed` `keep_alive:-1`, best-effort, per contract §2) — new file
+      `internal/mind/embedder.go` (contracts/embedding-events.md §2)
 - [ ] T009 [US1] Boot wiring: construct/start the embedder alongside the consolidation
       driver when llm.json has the `embedding` route, in `internal/daemon/daemon.go`
 - [ ] T010 [P] [US1] Driver unit tests: emission-ordered per-agent companions, failure
@@ -154,7 +155,8 @@ decision + polish.
 ## Phase 6: Polish & cross-cutting
 
 - [ ] T023 [P] Operator docs: `embedding` kind + provider example + `memory_relevance`
-      flag + shadow→on gate procedure in `docs/llm-providers.md` and the event
+      flag + shadow→on gate procedure + warm-pin/keep-alive note (perma-loaded embed
+      model; chat models untouched) in `docs/llm-providers.md` and the event
       additions in `contracts/events.md` (the repo's event catalog — keep
       TestCatalogSweep green)
 - [ ] T024 Throughput check (SC-005): wall-clock per game-day, embedding on vs off,
