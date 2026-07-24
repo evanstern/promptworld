@@ -41,6 +41,8 @@ Usage:
                                                    benchmark seconds-per-point per declared
                                                    provider, write calibration.json
                                                    (--tier is a deprecated alias, see --help)
+  promptworld divergence <world> [--json]          summarize recorded memory-rank divergence
+                                                   (shadow-mode gate evidence, per agent/day)
 `
 
 func main() {
@@ -83,6 +85,8 @@ func main() {
 		err = cmdLLM(args)
 	case "calibrate":
 		err = cmdCalibrate(args)
+	case "divergence":
+		err = cmdDivergence(args)
 	case "metatron":
 		err = cmdMetatron(args)
 	case "miracle":
