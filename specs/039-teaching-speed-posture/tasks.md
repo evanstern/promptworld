@@ -69,8 +69,8 @@ wire field.
 
 ### Implementation for User Story 3
 
-- [ ] T010 [US3] Teaching flavor of the uncalibrated boot path in internal/daemon/daemon.go: when the teaching posture derives from a bootstrap-seeded provider (`CalibratedAt == ""`), mark the posture line provisional and extend `uncalibratedBootWarning` (or add the teaching variant beside it) with the explicit "posture cannot yet be honest — run `promptworld calibrate <world>`" prompt per contracts/posture.md §2; the posture rung is still applied
-- [ ] T011 [US3] Tests in internal/daemon/daemon_test.go: uncalibrated teaching boot output (provisional + prompt, golden-style like the existing uncalibratedBootWarning test); calibrated teaching boot has neither; uncalibrated NON-teaching boot output byte-identical to pre-039
+- [X] T010 [US3] Teaching flavor of the uncalibrated boot path in internal/daemon/daemon.go: when the teaching posture derives from a bootstrap-seeded provider (`CalibratedAt == ""`), mark the posture line provisional and extend `uncalibratedBootWarning` (or add the teaching variant beside it) with the explicit "posture cannot yet be honest — run `promptworld calibrate <world>`" prompt per contracts/posture.md §2; the posture rung is still applied
+- [X] T011 [US3] Tests in internal/daemon/daemon_test.go: uncalibrated teaching boot output (provisional + prompt, golden-style like the existing uncalibratedBootWarning test); calibrated teaching boot has neither; uncalibrated NON-teaching boot output byte-identical to pre-039
 
 **Checkpoint**: all warning/prompt paths honest
 

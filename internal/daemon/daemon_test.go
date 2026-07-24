@@ -150,6 +150,20 @@ func TestUncalibratedBootWarningContainsContractElements(t *testing.T) {
 	}
 }
 
+// TestUncalibratedBootWarningNoTeachingFlavor (spec 039 US3 AC3, FR-008): the
+// spec-035 uncalibrated boot warning is untouched — it carries no teaching or
+// provisional-posture wording, so a NON-teaching uncalibrated world's boot
+// output is byte-identical to pre-039. The teaching flavor lives only in
+// teachingPostureBootLine, which non-teaching boots never call.
+func TestUncalibratedBootWarningNoTeachingFlavor(t *testing.T) {
+	got := uncalibratedBootWarning("plain")
+	for _, banned := range []string{"teaching", "posture", "provisional"} {
+		if strings.Contains(got, banned) {
+			t.Errorf("uncalibrated boot warning leaked teaching wording %q: %q", banned, got)
+		}
+	}
+}
+
 // TestTeachingPostureBootLineCalibrated (spec 039 US1, contracts/posture.md §2):
 // a measured planner estimate renders the plain "defaulting speed to Nx" line
 // with the calibration timestamp and no provisional/calibrate prompt.
