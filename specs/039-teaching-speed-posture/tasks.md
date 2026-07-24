@@ -84,10 +84,10 @@ wire field.
 
 ### Implementation for User Story 4
 
-- [ ] T012 [US4] Add `PostureStatus{Rung string; Calibrated bool}` + `StatusData.Posture *PostureStatus` (`json:"posture,omitempty"`, doc comment per contracts/posture.md §4) in internal/ipc/protocol.go; compose in the status path in internal/ipc/server.go only when `s.w.Manifest.Teaching && s.llm != nil`, recomputed per reply from the planner-serving provider
-- [ ] T013 [P] [US4] `promptworld teaching <world> [on|off]` subcommand in cmd/promptworld/commands.go using `world.SetTeaching` (print-current with no arg; note "applies at next daemon start"); register in the command table/help
-- [ ] T014 [US4] Render the posture line in `promptworld status` output in cmd/promptworld/commands.go (calibrated vs provisional wording per contracts/posture.md §5)
-- [ ] T015 [US4] Tests: status reply carries posture only for teaching+LLM (byte-identity for non-teaching and pure-sim replies) in internal/ipc/server_test.go; toggle round-trip + status line rendering in cmd/promptworld tests
+- [X] T012 [US4] Add `PostureStatus{Rung string; Calibrated bool}` + `StatusData.Posture *PostureStatus` (`json:"posture,omitempty"`, doc comment per contracts/posture.md §4) in internal/ipc/protocol.go; compose in the status path in internal/ipc/server.go only when `s.w.Manifest.Teaching && s.llm != nil`, recomputed per reply from the planner-serving provider
+- [X] T013 [P] [US4] `promptworld teaching <world> [on|off]` subcommand in cmd/promptworld/commands.go using `world.SetTeaching` (print-current with no arg; note "applies at next daemon start"); register in the command table/help
+- [X] T014 [US4] Render the posture line in `promptworld status` output in cmd/promptworld/commands.go (calibrated vs provisional wording per contracts/posture.md §5)
+- [X] T015 [US4] Tests: status reply carries posture only for teaching+LLM (byte-identity for non-teaching and pure-sim replies) in internal/ipc/server_test.go; toggle round-trip + status line rendering in cmd/promptworld tests
 
 **Checkpoint**: all stories independently functional
 

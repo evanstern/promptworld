@@ -1209,6 +1209,96 @@ func TestPostureMaxGateStillPrecedes(t *testing.T) {
 	}
 }
 
+// --- spec 039: teaching-posture status block (US4) ---
+
+// TestStatusPostureCalibrated (spec 039 US4 AC2, contract §4): a calibrated
+// teaching world's status carries the posture block with the measured rung and
+// calibrated=true, recomputed from the planner-serving provider.
+func TestStatusPostureCalibrated(t *testing.T) {
+	h := newHarness(t, clock.Speed4x)
+	h.w.Manifest.Teaching = true
+	orch := llmForWarningTests(t, h)
+	orch.SeedCalibration(slowCalibratedProfile()) // 17.0 s/pt ⇒ 16x
+	c := h.dial(t)
+
+	sd, err := c.Status("status", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sd.Posture == nil {
+		t.Fatal("teaching+LLM status must carry the posture block")
+	}
+	if sd.Posture.Rung != "16x" || !sd.Posture.Calibrated {
+		t.Errorf("posture = %+v, want {16x true}", *sd.Posture)
+	}
+}
+
+// TestStatusPostureProvisional (spec 039 US4 AC2): an uncalibrated teaching
+// world reports the bootstrap-derived rung with calibrated=false (provisional).
+func TestStatusPostureProvisional(t *testing.T) {
+	h := newHarness(t, clock.Speed4x)
+	h.w.Manifest.Teaching = true
+	llmForWarningTests(t, h) // no SeedCalibration ⇒ bootstrap 20 s/pt ⇒ 16x
+	c := h.dial(t)
+
+	sd, err := c.Status("status", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sd.Posture == nil {
+		t.Fatal("teaching+LLM status must carry the posture block")
+	}
+	if sd.Posture.Rung != "16x" || sd.Posture.Calibrated {
+		t.Errorf("posture = %+v, want {16x false}", *sd.Posture)
+	}
+}
+
+// TestStatusPostureAbsentNonTeaching (spec 039 FR-008): a non-teaching LLM
+// world's reply carries no posture block — the wire key is absent.
+func TestStatusPostureAbsentNonTeaching(t *testing.T) {
+	h := newHarness(t, clock.Speed4x)
+	llmForWarningTests(t, h) // Teaching stays false
+	c := h.dial(t)
+
+	sd, err := c.Status("status", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sd.Posture != nil {
+		t.Errorf("non-teaching world carried a posture block: %+v", sd.Posture)
+	}
+	b, _ := json.Marshal(sd)
+	if strings.Contains(string(b), "posture") {
+		t.Errorf("non-teaching reply must omit \"posture\": %s", b)
+	}
+}
+
+// TestStatusPostureAbsentPureSim (spec 039 edge case): a teaching world with no
+// orchestrator (pure sim) carries no posture block — there is no cognition to
+// derive a rung from, so the field stays absent.
+func TestStatusPostureAbsentPureSim(t *testing.T) {
+	h := newHarness(t, clock.Speed4x)
+	h.w.Manifest.Teaching = true // teaching, but no LLM attached
+	c := h.dial(t)
+
+	sd, err := c.Status("status", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sd.Posture != nil {
+		t.Errorf("pure-sim teaching world carried a posture block: %+v", sd.Posture)
+	}
+}
+
+// TestStatusDataPostureOmitempty: the zero StatusData omits "posture" from the
+// wire (the additive omitempty that keeps non-teaching replies byte-identical).
+func TestStatusDataPostureOmitempty(t *testing.T) {
+	b, _ := json.Marshal(StatusData{})
+	if strings.Contains(string(b), "posture") {
+		t.Errorf("zero StatusData must omit \"posture\", got %s", b)
+	}
+}
+
 // horizonByClass indexes a horizon slice by class name for assertions.
 func horizonByClass(h []HorizonClass) map[string]HorizonClass {
 	m := make(map[string]HorizonClass, len(h))

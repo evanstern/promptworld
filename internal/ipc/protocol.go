@@ -125,6 +125,14 @@ type StatusData struct {
 	// rejection is a separate hard error), and the change already applied by the
 	// time this is set.
 	Warning string `json:"warning,omitempty"`
+	// Posture is the teaching world's effective speed posture (spec 039 US4,
+	// contracts/posture.md §4): the planner-safe rung and its calibrated-vs-
+	// provisional provenance, recomputed per reply from the planner-serving
+	// provider's live estimate. Present ONLY for a teaching world with an
+	// orchestrator (precedent: Horizon) — omitempty keeps every other reply
+	// (non-teaching, pure-sim) byte-identical (FR-006/FR-008). The carrier
+	// TASK-68 stage presets read; nothing here re-derives calibration by hand.
+	Posture *PostureStatus `json:"posture,omitempty"`
 	// Horizon is the live per-class cognition horizon (spec 037,
 	// contracts/status-horizon.md): one entry per watched class the router
 	// would evaluate at the CURRENT effective speed under live estimates.
@@ -147,6 +155,17 @@ type HorizonClass struct {
 	Verdict         string `json:"verdict"`          // cognition.Verdict.Arithmetic verbatim
 	Calibrated      bool   `json:"calibrated"`       // serving provider has a calibration-profile entry
 	SuppressedCount int64  `json:"suppressed_count"` // daemon-lifetime router suppressions for this class
+}
+
+// PostureStatus is the teaching world's effective speed posture on the
+// status-family reply (spec 039 US4, contracts/posture.md §4). Rung is the
+// current planner-safe ladder speed ("1x"…"32x", clamped to "1x" when even 1x
+// suppresses), recomputed per reply. Calibrated mirrors the serving provider's
+// CalibratedAt != "" — the same provenance predicate as spec 035/037; false
+// means the rung is the pessimistic bootstrap derivation (provisional).
+type PostureStatus struct {
+	Rung       string `json:"rung"`
+	Calibrated bool   `json:"calibrated"`
 }
 
 type WorldStatus struct {

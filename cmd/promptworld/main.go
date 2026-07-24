@@ -29,6 +29,7 @@ Usage:
   promptworld pause <world>                        pause game time
   promptworld resume <world>                       resume game time
   promptworld speed <world> <1x|4x|8x|16x|32x|max>     set game speed
+  promptworld teaching <world> [on|off]            show or toggle the teaching-world posture (applies at next daemon start)
   promptworld metatron <world> [message...]        converse with the angel (no message: status peek)
   promptworld miracle <world> <snap-time|give|move|remove> ... [--force]
                                                    land a Metatron miracle (--force waives the charge)
@@ -76,6 +77,8 @@ func main() {
 		err = cmdTimeCtl("resume", args)
 	case "speed":
 		err = cmdSpeed(args)
+	case "teaching":
+		err = cmdTeaching(args)
 	case "llm":
 		err = cmdLLM(args)
 	case "calibrate":

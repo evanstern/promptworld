@@ -604,6 +604,54 @@ func cmdSpeed(args []string) error {
 	return nil
 }
 
+// cmdTeaching prints or toggles a world's teaching-posture marker (spec 039
+// US4, contracts/posture.md §5). With no on|off argument it reports the current
+// marker; with one it rewrites the manifest offline (world.SetTeaching) — the
+// daemon reads the new value at its next boot, so the command says so. Exit
+// non-zero only on IO/parse errors, never on state.
+func cmdTeaching(args []string) error {
+	fs := flag.NewFlagSet("teaching", flag.ContinueOnError)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if fs.NArg() < 1 {
+		return fmt.Errorf("usage: promptworld teaching <world> [on|off]")
+	}
+	dir, err := resolveWorld(fs.Arg(0))
+	if err != nil {
+		return err
+	}
+	if fs.NArg() < 2 {
+		w, err := world.Open(dir)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("teaching: %s\n", onOff(w.Manifest.Teaching))
+		return nil
+	}
+	var on bool
+	switch fs.Arg(1) {
+	case "on":
+		on = true
+	case "off":
+		on = false
+	default:
+		return fmt.Errorf("teaching: want on or off, got %q", fs.Arg(1))
+	}
+	if err := world.SetTeaching(dir, on); err != nil {
+		return err
+	}
+	fmt.Printf("teaching %s (applies at next daemon start)\n", onOff(on))
+	return nil
+}
+
+func onOff(b bool) string {
+	if b {
+		return "on"
+	}
+	return "off"
+}
+
 func cmdUI(args []string) error {
 	fs := flag.NewFlagSet("ui", flag.ContinueOnError)
 	dir, err := worldArg(fs, args)
@@ -787,8 +835,26 @@ func renderStatusHuman(sd *ipc.StatusData) string {
 	for _, line := range horizonStatusLines(sd) {
 		b.WriteString(line + "\n")
 	}
+	if line := postureStatusLine(sd); line != "" {
+		b.WriteString(line + "\n")
+	}
 	fmt.Fprintf(&b, "log: last seq %d\n", sd.Log.LastSeq)
 	return b.String()
+}
+
+// postureStatusLine renders the teaching-posture line for `promptworld status`
+// (spec 039 US4, contracts/posture.md §5): the effective planner-safe rung and
+// whether it is measured (calibrated) or a provisional bootstrap derivation
+// (which points the operator at calibrate). Empty for non-teaching and pure-sim
+// worlds — the wire field is absent, so their output is unchanged.
+func postureStatusLine(sd *ipc.StatusData) string {
+	if sd.Posture == nil {
+		return ""
+	}
+	if sd.Posture.Calibrated {
+		return fmt.Sprintf("teaching posture: %s (calibrated)", sd.Posture.Rung)
+	}
+	return fmt.Sprintf("teaching posture: %s (provisional — run `promptworld calibrate %s`)", sd.Posture.Rung, sd.World.Name)
 }
 
 // horizonStatusLines renders the live cognition-horizon section (spec 037 US3,

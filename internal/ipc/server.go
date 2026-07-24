@@ -216,6 +216,12 @@ func (s *Server) statusDataFull(cs sim.Status) StatusData {
 		st := s.llm.StatusSnapshot()
 		sd.LLM = &st
 		sd.Horizon = s.horizonClasses(cs)
+		// Teaching-posture block (spec 039 US4): present only for a teaching
+		// world with an orchestrator, recomputed per reply — omitempty keeps
+		// every non-teaching and pure-sim reply byte-identical (FR-006/FR-008).
+		if s.w.Manifest.Teaching {
+			sd.Posture = s.postureStatus()
+		}
 	}
 	// Governor debt (spec 028 US1): folded exactly like the LLM snapshot — a nil
 	// governor (no-LLM world) leaves the zero values, which omitempty drops from
@@ -366,6 +372,27 @@ func (s *Server) setSpeedWarning(speed clock.Speed) string {
 		parts = append(parts, u)
 	}
 	return strings.Join(parts, "\n")
+}
+
+// postureStatus computes the teaching world's effective speed posture for the
+// status reply (spec 039 US4, contracts/posture.md §4): the planner-safe rung
+// and its provenance, derived live from the planner-serving provider's estimate
+// via the same cognition.MaxSafeSpeed the boot default and postureWarning use —
+// so status, boot, and the override warning can never disagree. Returns nil
+// when no provider serves the planner class, so the field stays absent
+// (omitempty) rather than reporting a rung the world cannot honor.
+func (s *Server) postureStatus() *PostureStatus {
+	if s.llm == nil {
+		return nil
+	}
+	name, est, ok := s.llm.EstimateForKind(llm.Kind("planner"))
+	if !ok {
+		return nil
+	}
+	return &PostureStatus{
+		Rung:       string(clock.SpeedForRate(cognition.MaxSafeSpeed("planner", est))),
+		Calibrated: s.llm.CalibratedAt(name) != "",
+	}
 }
 
 // session is one attached client.
