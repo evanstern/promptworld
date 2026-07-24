@@ -216,6 +216,12 @@ func (s *Server) statusDataFull(cs sim.Status) StatusData {
 		st := s.llm.StatusSnapshot()
 		sd.LLM = &st
 		sd.Horizon = s.horizonClasses(cs)
+		// Teaching-posture block (spec 039 US4): present only for a teaching
+		// world with an orchestrator, recomputed per reply — omitempty keeps
+		// every non-teaching and pure-sim reply byte-identical (FR-006/FR-008).
+		if s.w.Manifest.Teaching {
+			sd.Posture = s.postureStatus()
+		}
 	}
 	// Governor debt (spec 028 US1): folded exactly like the LLM snapshot — a nil
 	// governor (no-LLM world) leaves the zero values, which omitempty drops from
@@ -297,6 +303,98 @@ func (s *Server) uncalibratedWarning(speed clock.Speed) string {
 		speed, strings.Join(suppressed, ", "), s.w.Manifest.Name)
 }
 
+// postureWarning composes the set_speed reply's teaching-posture override text
+// (spec 039 FR-003, contracts/posture.md §3): non-empty only when this is a
+// teaching world with an orchestrator AND the requested speed exceeds the
+// planner-safe posture rung, computed live from the planner-serving provider's
+// estimate via the same cognition.MaxSafeSpeed the boot default uses. For every
+// watched class the requested speed suppresses it emits the router's own
+// Verdict.Arithmetic verbatim (FR-004 — the warning and the routing can never
+// disagree) plus a plain-language degrade consequence. Unlike uncalibratedWarning
+// it fires for CALIBRATED teaching worlds too — that is the whole point; the two
+// compose on the one Warning field when both apply. Empty for non-teaching
+// worlds, when no provider serves the planner class, and at or below the posture.
+func (s *Server) postureWarning(speed clock.Speed) string {
+	if s.llm == nil || !s.w.Manifest.Teaching {
+		return ""
+	}
+	_, plannerEst, ok := s.llm.EstimateForKind(llm.Kind("planner"))
+	if !ok {
+		return ""
+	}
+	posture := cognition.MaxSafeSpeed("planner", plannerEst)
+	if speed.TicksPerSecond() <= posture {
+		return "" // at or below the planner-safe rung — no override to warn about
+	}
+	var parts []string
+	for _, cs := range cognition.LiveHorizon(speed.TicksPerSecond(), func(class string) (float64, bool) {
+		_, est, ok := s.llm.EstimateForKind(llm.Kind(class))
+		return est, ok
+	}) {
+		if !cs.Suppressed {
+			continue
+		}
+		parts = append(parts, fmt.Sprintf("%s %s — %s", cs.Class, cs.Verdict.Arithmetic, postureConsequence(cs.Class)))
+	}
+	if len(parts) == 0 {
+		return ""
+	}
+	return fmt.Sprintf("above teaching posture %s: %s", clock.SpeedForRate(posture), strings.Join(parts, "; "))
+}
+
+// postureConsequence is the plain-language degrade phrase for a watched class
+// suppressed above the posture (spec 039 contracts/posture.md §3): what the
+// village loses so the operator understands the trade the override made.
+func postureConsequence(class string) string {
+	switch class {
+	case "planner":
+		return "villagers will stop deep-thinking (reflex only)"
+	case "conversation":
+		return "conversations will be skipped"
+	case "meeting":
+		return "meetings fall back to template speeches"
+	default:
+		return "the class degrades to its deterministic floor"
+	}
+}
+
+// setSpeedWarning composes the set_speed reply's advisory Warning (spec 039
+// contracts/posture.md §3): the teaching-posture override text first, then the
+// spec 035 uncalibrated warning, newline-joined when both fire. Either or both
+// may be empty. Set only on the set_speed reply path; the change already
+// applied by the time this is read — the warning never blocks it.
+func (s *Server) setSpeedWarning(speed clock.Speed) string {
+	var parts []string
+	if p := s.postureWarning(speed); p != "" {
+		parts = append(parts, p)
+	}
+	if u := s.uncalibratedWarning(speed); u != "" {
+		parts = append(parts, u)
+	}
+	return strings.Join(parts, "\n")
+}
+
+// postureStatus computes the teaching world's effective speed posture for the
+// status reply (spec 039 US4, contracts/posture.md §4): the planner-safe rung
+// and its provenance, derived live from the planner-serving provider's estimate
+// via the same cognition.MaxSafeSpeed the boot default and postureWarning use —
+// so status, boot, and the override warning can never disagree. Returns nil
+// when no provider serves the planner class, so the field stays absent
+// (omitempty) rather than reporting a rung the world cannot honor.
+func (s *Server) postureStatus() *PostureStatus {
+	if s.llm == nil {
+		return nil
+	}
+	name, est, ok := s.llm.EstimateForKind(llm.Kind("planner"))
+	if !ok {
+		return nil
+	}
+	return &PostureStatus{
+		Rung:       string(clock.SpeedForRate(cognition.MaxSafeSpeed("planner", est))),
+		Calibrated: s.llm.CalibratedAt(name) != "",
+	}
+}
+
 // session is one attached client.
 type session struct {
 	srv  *Server
@@ -375,7 +473,7 @@ func (c *session) handle(req Request) {
 				Error: "speed max is reserved for pure-sim worlds; this world has an LLM configured — top speed is 32x (delete llm.json to unlock max)"})
 			return
 		}
-		c.replyStatus(req.ID, "set_speed", clock.Speed(args.Speed), c.srv.uncalibratedWarning(clock.Speed(args.Speed)))
+		c.replyStatus(req.ID, "set_speed", clock.Speed(args.Speed), c.srv.setSpeedWarning(clock.Speed(args.Speed)))
 	case "llm_call":
 		if c.srv.llm == nil {
 			c.writeResponse(Response{ID: req.ID, OK: false, Error: "llm orchestrator disabled (no llm.json in the save directory)"})

@@ -14,7 +14,7 @@ wire field.
 
 ## Phase 1: Setup
 
-- [ ] T001 Create worktree `.worktrees/task-78` on branch `task-78-teaching-speed-posture` from fresh `origin/main`; confirm `go build ./...` and `go test ./...` green at baseline
+- [X] T001 Create worktree `.worktrees/task-78` on branch `task-78-teaching-speed-posture` from fresh `origin/main`; confirm `go build ./...` and `go test ./...` green at baseline
 
 ---
 
@@ -22,9 +22,9 @@ wire field.
 
 **Purpose**: the manifest marker and the exported rung arithmetic — every story reads both
 
-- [ ] T002 [P] Add `Teaching bool` with `json:"teaching,omitempty"` to `Manifest` in internal/world/world.go (doc comment: teaching posture marker, decision-6/spec 039); add a `SetTeaching(dir string, on bool) error` read-modify-write helper beside Load/Create
-- [ ] T003 [P] Extract `MaxSafeSpeed(class string, secPerPt float64) float64` in internal/cognition/horizon.go from HorizonSummary's maxOK loop (highest horizonLadder rung where `Route(...).Allow`; 0 when none); refactor `HorizonSummary` to call it — output strings byte-identical
-- [ ] T004 [P] Table tests: manifest round-trip (absent field ⇒ false; non-teaching world.json byte-identical on rewrite; old manifest loads) in internal/world/world_test.go; `MaxSafeSpeed` rungs at 5.0/17.0/20.0/1000.0 s/pt + HorizonSummary unchanged-output regression in internal/cognition/horizon_test.go
+- [X] T002 [P] Add `Teaching bool` with `json:"teaching,omitempty"` to `Manifest` in internal/world/world.go (doc comment: teaching posture marker, decision-6/spec 039); add a `SetTeaching(dir string, on bool) error` read-modify-write helper beside Load/Create
+- [X] T003 [P] Extract `MaxSafeSpeed(class string, secPerPt float64) float64` in internal/cognition/horizon.go from HorizonSummary's maxOK loop (highest horizonLadder rung where `Route(...).Allow`; 0 when none); refactor `HorizonSummary` to call it — output strings byte-identical
+- [X] T004 [P] Table tests: manifest round-trip (absent field ⇒ false; non-teaching world.json byte-identical on rewrite; old manifest loads) in internal/world/world_test.go; `MaxSafeSpeed` rungs at 5.0/17.0/20.0/1000.0 s/pt + HorizonSummary unchanged-output regression in internal/cognition/horizon_test.go
 
 **Checkpoint**: marker + arithmetic exist; all stories can proceed
 
@@ -38,9 +38,9 @@ wire field.
 
 ### Implementation for User Story 1
 
-- [ ] T005 [US1] Daemon boot posture default in internal/daemon/daemon.go: for `w.Manifest.Teaching` worlds with an orchestrator, after calibration seeding compute rung via `cognition.MaxSafeSpeed("planner", est)` from `orch.EstimateForKind(llm.Kind("planner"))` (rung 0 ⇒ clamp to lowest capped rung), issue the loop's normal `set_speed` command so it lands as a recorded `clock.speed_set` event; print the posture line per contracts/posture.md §2 (calibrated flavor: rung + s/pt + CalibratedAt). Pure-sim teaching worlds: no-op
-- [ ] T006 [US1] `--teaching` flag on `promptworld new` in cmd/promptworld/commands.go threading to `world.Create` (extend Create's signature or set-after-create via `world.SetTeaching`) so the manifest carries the marker from birth
-- [ ] T007 [US1] Tests: boot-default table test (teaching+calibrated ⇒ posture speed event + stdout line; teaching+no-LLM ⇒ no-op; non-teaching ⇒ byte-identical boot output) in internal/daemon/daemon_test.go; `new --teaching` manifest assertion in cmd/promptworld tests beside existing cmdNew coverage
+- [X] T005 [US1] Daemon boot posture default in internal/daemon/daemon.go: for `w.Manifest.Teaching` worlds with an orchestrator, after calibration seeding compute rung via `cognition.MaxSafeSpeed("planner", est)` from `orch.EstimateForKind(llm.Kind("planner"))` (rung 0 ⇒ clamp to lowest capped rung), issue the loop's normal `set_speed` command so it lands as a recorded `clock.speed_set` event; print the posture line per contracts/posture.md §2 (calibrated flavor: rung + s/pt + CalibratedAt). Pure-sim teaching worlds: no-op
+- [X] T006 [US1] `--teaching` flag on `promptworld new` in cmd/promptworld/commands.go threading to `world.Create` (extend Create's signature or set-after-create via `world.SetTeaching`) so the manifest carries the marker from birth
+- [X] T007 [US1] Tests: boot-default table test (teaching+calibrated ⇒ posture speed event + stdout line; teaching+no-LLM ⇒ no-op; non-teaching ⇒ byte-identical boot output) in internal/daemon/daemon_test.go; `new --teaching` manifest assertion in cmd/promptworld tests beside existing cmdNew coverage
 
 **Checkpoint**: US1 fully functional — MVP
 
@@ -54,8 +54,8 @@ wire field.
 
 ### Implementation for User Story 2
 
-- [ ] T008 [US2] `(*Server).postureWarning(speed clock.Speed) string` in internal/ipc/server.go beside uncalibratedWarning: teaching + orchestrator + requested rung > posture rung ⇒ for each watched class whose `Route` at the requested speed disallows, emit `Verdict.Arithmetic` verbatim + degrade consequence phrase (contracts/posture.md §3); compose with uncalibratedWarning newline-joined into the one set_speed reply Warning; widen the Warning doc comment in internal/ipc/protocol.go to name the posture case (still set_speed-only, still never blocks, max-gate untouched)
-- [ ] T009 [US2] Tests in internal/ipc/server_test.go (or existing warning test home): above-posture warns with exact arithmetic; at/below posture no posture text; non-teaching unchanged; uncalibrated teaching world composes both texts; speed always applied; `max` still errors
+- [X] T008 [US2] `(*Server).postureWarning(speed clock.Speed) string` in internal/ipc/server.go beside uncalibratedWarning: teaching + orchestrator + requested rung > posture rung ⇒ for each watched class whose `Route` at the requested speed disallows, emit `Verdict.Arithmetic` verbatim + degrade consequence phrase (contracts/posture.md §3); compose with uncalibratedWarning newline-joined into the one set_speed reply Warning; widen the Warning doc comment in internal/ipc/protocol.go to name the posture case (still set_speed-only, still never blocks, max-gate untouched)
+- [X] T009 [US2] Tests in internal/ipc/server_test.go (or existing warning test home): above-posture warns with exact arithmetic; at/below posture no posture text; non-teaching unchanged; uncalibrated teaching world composes both texts; speed always applied; `max` still errors
 
 **Checkpoint**: US1 + US2 independently verifiable
 
@@ -69,8 +69,8 @@ wire field.
 
 ### Implementation for User Story 3
 
-- [ ] T010 [US3] Teaching flavor of the uncalibrated boot path in internal/daemon/daemon.go: when the teaching posture derives from a bootstrap-seeded provider (`CalibratedAt == ""`), mark the posture line provisional and extend `uncalibratedBootWarning` (or add the teaching variant beside it) with the explicit "posture cannot yet be honest — run `promptworld calibrate <world>`" prompt per contracts/posture.md §2; the posture rung is still applied
-- [ ] T011 [US3] Tests in internal/daemon/daemon_test.go: uncalibrated teaching boot output (provisional + prompt, golden-style like the existing uncalibratedBootWarning test); calibrated teaching boot has neither; uncalibrated NON-teaching boot output byte-identical to pre-039
+- [X] T010 [US3] Teaching flavor of the uncalibrated boot path in internal/daemon/daemon.go: when the teaching posture derives from a bootstrap-seeded provider (`CalibratedAt == ""`), mark the posture line provisional and extend `uncalibratedBootWarning` (or add the teaching variant beside it) with the explicit "posture cannot yet be honest — run `promptworld calibrate <world>`" prompt per contracts/posture.md §2; the posture rung is still applied
+- [X] T011 [US3] Tests in internal/daemon/daemon_test.go: uncalibrated teaching boot output (provisional + prompt, golden-style like the existing uncalibratedBootWarning test); calibrated teaching boot has neither; uncalibrated NON-teaching boot output byte-identical to pre-039
 
 **Checkpoint**: all warning/prompt paths honest
 
@@ -84,10 +84,10 @@ wire field.
 
 ### Implementation for User Story 4
 
-- [ ] T012 [US4] Add `PostureStatus{Rung string; Calibrated bool}` + `StatusData.Posture *PostureStatus` (`json:"posture,omitempty"`, doc comment per contracts/posture.md §4) in internal/ipc/protocol.go; compose in the status path in internal/ipc/server.go only when `s.w.Manifest.Teaching && s.llm != nil`, recomputed per reply from the planner-serving provider
-- [ ] T013 [P] [US4] `promptworld teaching <world> [on|off]` subcommand in cmd/promptworld/commands.go using `world.SetTeaching` (print-current with no arg; note "applies at next daemon start"); register in the command table/help
-- [ ] T014 [US4] Render the posture line in `promptworld status` output in cmd/promptworld/commands.go (calibrated vs provisional wording per contracts/posture.md §5)
-- [ ] T015 [US4] Tests: status reply carries posture only for teaching+LLM (byte-identity for non-teaching and pure-sim replies) in internal/ipc/server_test.go; toggle round-trip + status line rendering in cmd/promptworld tests
+- [X] T012 [US4] Add `PostureStatus{Rung string; Calibrated bool}` + `StatusData.Posture *PostureStatus` (`json:"posture,omitempty"`, doc comment per contracts/posture.md §4) in internal/ipc/protocol.go; compose in the status path in internal/ipc/server.go only when `s.w.Manifest.Teaching && s.llm != nil`, recomputed per reply from the planner-serving provider
+- [X] T013 [P] [US4] `promptworld teaching <world> [on|off]` subcommand in cmd/promptworld/commands.go using `world.SetTeaching` (print-current with no arg; note "applies at next daemon start"); register in the command table/help
+- [X] T014 [US4] Render the posture line in `promptworld status` output in cmd/promptworld/commands.go (calibrated vs provisional wording per contracts/posture.md §5)
+- [X] T015 [US4] Tests: status reply carries posture only for teaching+LLM (byte-identity for non-teaching and pure-sim replies) in internal/ipc/server_test.go; toggle round-trip + status line rendering in cmd/promptworld tests
 
 **Checkpoint**: all stories independently functional
 
@@ -95,8 +95,8 @@ wire field.
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T016 Run quickstart.md end-to-end (all six sections) in the worktree; `go vet ./... && go test ./...` green; fix fallout
-- [ ] T017 Replay determinism check: teaching world's log replays byte-identical including the boot `clock.speed_set` event (reuse spec 036's replay harness pattern)
+- [X] T016 Run quickstart.md end-to-end (all six sections) in the worktree; `go vet ./... && go test ./...` green; fix fallout
+- [X] T017 Replay determinism check: teaching world's log replays byte-identical including the boot `clock.speed_set` event (reuse spec 036's replay harness pattern)
 - [ ] T018 Open PR from `.worktrees/task-78` (one TASK, one PR); after merge at root: `/grounding-wiki:wiki-update` re-pin (notes sourcing world.go, horizon.go, protocol.go, server.go, daemon.go, commands.go), then player-docs freshness (`node .claude/skills/player-docs/scripts/check-freshness.mjs --check`) and regenerate if stale
 
 ---

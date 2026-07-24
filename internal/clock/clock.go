@@ -74,6 +74,20 @@ func LadderIndex(s Speed) int {
 	return -1
 }
 
+// SpeedForRate returns the capped-ladder Speed whose tick rate equals tps, or
+// Speed1x (the floor) when tps matches no rung — the mapping the teaching
+// posture uses to turn cognition.MaxSafeSpeed's rung float into a ladder speed
+// (spec 039 FR-002). Rung 0 (even 1x suppresses the planner) clamps to the 1x
+// floor, so a teaching world always boots to a real ladder speed.
+func SpeedForRate(tps float64) Speed {
+	for _, sp := range cappedLadder {
+		if speeds[sp] == tps {
+			return sp
+		}
+	}
+	return Speed1x
+}
+
 func ParseSpeed(s string) (Speed, error) {
 	sp := Speed(s)
 	if _, ok := speeds[sp]; !ok {

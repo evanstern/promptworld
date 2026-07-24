@@ -116,6 +116,13 @@ func Run(dir string) error {
 	loop := sim.NewLoop(state, w.Map(), st, notify)
 	srv.SetLoop(loop)
 
+	// Teaching-posture default (spec 039 US1): the highest planner-safe ladder
+	// speed, computed inside the orchestrator branch and applied through the
+	// loop's normal command door below so it lands as a recorded clock.speed_set
+	// event (R3, replay byte-identity). Stays empty for non-teaching and
+	// pure-sim teaching worlds — neither applies a default.
+	var teachingPostureSpeed clock.Speed
+
 	// LLM orchestrator: optional (config-gated), fully outside the sim loop —
 	// an unreachable model degrades the AI layer, never the world.
 	if llmCfg, err := llm.LoadConfig(w.LLMConfigPath()); err != nil {
@@ -201,6 +208,19 @@ func Run(dir string) error {
 		} else {
 			fmt.Print(uncalibratedBootWarning(w.Manifest.Name))
 		}
+		// Teaching posture (spec 039 US1/US3): default the clock to the highest
+		// planner-safe ladder rung, derived live from the planner-serving
+		// provider's estimate — never hard-coded, so recalibration or provider
+		// failover moves it at the next boot (SC-005). An uncalibrated
+		// (bootstrap-seeded) provider still gets the rung applied, but the line
+		// marks it provisional and prompts calibrate (US3). No planner-serving
+		// provider ⇒ no posture (edge: treated as uncalibrated for posture).
+		if w.Manifest.Teaching {
+			if name, est, ok := orch.EstimateForKind(llm.Kind("planner")); ok {
+				teachingPostureSpeed = clock.SpeedForRate(cognition.MaxSafeSpeed("planner", est))
+				fmt.Print(teachingPostureBootLine(w.Manifest.Name, teachingPostureSpeed, est, orch.CalibratedAt(name)))
+			}
+		}
 		cloudDesc := llmCfg.Cloud.Model
 		if llmCfg.Cloud.Provider == llm.ProviderOpenAICompat {
 			cloudDesc = fmt.Sprintf("%s @ %s", llmCfg.Cloud.Model, llmCfg.Cloud.Endpoint)
@@ -283,6 +303,19 @@ func Run(dir string) error {
 
 	go srv.Serve()
 
+	// Apply the teaching-posture default through the loop's normal set_speed
+	// door so it is recorded as a clock.speed_set event — replay reproduces it
+	// byte-identically (spec 039 R3). The goroutine blocks on the command
+	// channel until Run drains it as the first command; a set that fails
+	// (loop already stopping) is logged, never fatal.
+	if teachingPostureSpeed != "" {
+		go func(sp clock.Speed) {
+			if _, err := loop.Do("set_speed", sp); err != nil {
+				fmt.Printf("daemon: teaching posture default not applied (%v)\n", err)
+			}
+		}(teachingPostureSpeed)
+	}
+
 	runErr := loop.Run(ctx) // returns after final snapshot
 
 	if err := appendDaemonEvent(st, srv, "daemon.stopped",
@@ -309,6 +342,25 @@ func uncalibratedBootWarning(worldName string) string {
 			"daemon: run `promptworld calibrate %s` to measure this rig\n",
 		cognition.BootstrapLocalSecPerPt, cognition.BootstrapCloudSecPerPt,
 		cognition.HorizonSummary(cognition.BootstrapLocalSecPerPt), worldName)
+}
+
+// teachingPostureBootLine renders the teaching world's boot posture line
+// (spec 039 contracts/posture.md §2). calibratedAt is the planner-serving
+// provider's calibration timestamp: non-empty prints the measured flavor;
+// empty prints the provisional bootstrap flavor and appends the explicit
+// `promptworld calibrate <world>` prompt (US3) — the pessimistic rung is still
+// applied, but the operator is told it cannot yet be honest. Only teaching
+// worlds reach this, so non-teaching and uncalibrated-non-teaching boot output
+// stays byte-identical (FR-008, US3 AC3).
+func teachingPostureBootLine(worldName string, speed clock.Speed, secPerPt float64, calibratedAt string) string {
+	if calibratedAt != "" {
+		return fmt.Sprintf("daemon: teaching posture: defaulting speed to %s (planner-safe at %.1fs/pt, calibrated %s)\n",
+			speed, secPerPt, calibratedAt)
+	}
+	return fmt.Sprintf(
+		"daemon: teaching posture: defaulting speed to %s (provisional — planner-safe at %.1fs/pt bootstrap estimate)\n"+
+			"daemon: teaching posture cannot yet be honest — run `promptworld calibrate %s` so the classroom default reflects this rig\n",
+		speed, secPerPt, worldName)
 }
 
 // seedMeetingConvention injects the config-declared meeting convention on boot

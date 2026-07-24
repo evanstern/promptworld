@@ -45,6 +45,110 @@ func TestCmdNewNameFormCreatesUnderWorldsHome(t *testing.T) {
 	}
 }
 
+// TestCmdNewTeachingMarksManifest (spec 039 US1/T006): `new --teaching` stamps
+// the teaching marker from birth; without the flag the marker is absent.
+func TestCmdNewTeachingMarksManifest(t *testing.T) {
+	isolatedHome(t)
+	if err := cmdNew([]string{"class", "--seed", "1", "--teaching"}); err != nil {
+		t.Fatal(err)
+	}
+	home, err := worlds.WorldsHome()
+	if err != nil {
+		t.Fatal(err)
+	}
+	w, err := world.Open(filepath.Join(home, "class"))
+	if err != nil {
+		t.Fatalf("Open teaching world: %v", err)
+	}
+	if !w.Manifest.Teaching {
+		t.Errorf("--teaching did not set the manifest marker")
+	}
+
+	if err := cmdNew([]string{"plain", "--seed", "1"}); err != nil {
+		t.Fatal(err)
+	}
+	w, err = world.Open(filepath.Join(home, "plain"))
+	if err != nil {
+		t.Fatalf("Open plain world: %v", err)
+	}
+	if w.Manifest.Teaching {
+		t.Errorf("world created without --teaching should not be a teaching world")
+	}
+}
+
+// TestCmdTeachingToggleRoundTrip (spec 039 US4/T013): `teaching <world> on|off`
+// rewrites the manifest offline both ways and survives Open; a bare invocation
+// prints the current marker without changing it.
+func TestCmdTeachingToggleRoundTrip(t *testing.T) {
+	isolatedHome(t)
+	if err := cmdNew([]string{"class", "--seed", "1"}); err != nil {
+		t.Fatal(err)
+	}
+	home, err := worlds.WorldsHome()
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := filepath.Join(home, "class")
+
+	out := captureStdout(t, func() {
+		if err := cmdTeaching([]string{"class"}); err != nil {
+			t.Fatal(err)
+		}
+	})
+	if !strings.Contains(out, "teaching: off") {
+		t.Errorf("bare teaching should report off, got %q", out)
+	}
+
+	if err := cmdTeaching([]string{"class", "on"}); err != nil {
+		t.Fatal(err)
+	}
+	if w, err := world.Open(dir); err != nil || !w.Manifest.Teaching {
+		t.Fatalf("teaching on did not persist: %v %+v", err, w)
+	}
+	out = captureStdout(t, func() {
+		if err := cmdTeaching([]string{"class"}); err != nil {
+			t.Fatal(err)
+		}
+	})
+	if !strings.Contains(out, "teaching: on") {
+		t.Errorf("bare teaching should report on after toggle, got %q", out)
+	}
+
+	if err := cmdTeaching([]string{"class", "off"}); err != nil {
+		t.Fatal(err)
+	}
+	if w, err := world.Open(dir); err != nil || w.Manifest.Teaching {
+		t.Fatalf("teaching off did not persist: %v %+v", err, w)
+	}
+
+	if err := cmdTeaching([]string{"class", "sideways"}); err == nil {
+		t.Error("teaching with a non on/off argument should error")
+	}
+}
+
+// TestPostureStatusLineRendering (spec 039 US4/T014, contract §5): the status
+// posture line reads calibrated vs provisional, points a provisional world at
+// calibrate, and is empty when the world carries no posture block.
+func TestPostureStatusLineRendering(t *testing.T) {
+	calibrated := &ipc.StatusData{
+		World:   ipc.WorldStatus{Name: "class"},
+		Posture: &ipc.PostureStatus{Rung: "16x", Calibrated: true},
+	}
+	if got := postureStatusLine(calibrated); got != "teaching posture: 16x (calibrated)" {
+		t.Errorf("calibrated line = %q", got)
+	}
+	provisional := &ipc.StatusData{
+		World:   ipc.WorldStatus{Name: "class"},
+		Posture: &ipc.PostureStatus{Rung: "16x", Calibrated: false},
+	}
+	if got := postureStatusLine(provisional); got != "teaching posture: 16x (provisional — run `promptworld calibrate class`)" {
+		t.Errorf("provisional line = %q", got)
+	}
+	if got := postureStatusLine(&ipc.StatusData{}); got != "" {
+		t.Errorf("no posture block should render nothing, got %q", got)
+	}
+}
+
 // TestCmdNewPrintsLocalModelPullGuidance (spec 034 US3/T015): `promptworld new`
 // prints a closing line naming the fresh-world default's local model and a
 // copy-pasteable `ollama pull` command, derived from llm.DefaultConfig() so it

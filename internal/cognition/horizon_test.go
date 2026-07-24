@@ -53,6 +53,73 @@ func TestHorizonSummaryAgreesWithRoute(t *testing.T) {
 	}
 }
 
+// TestMaxSafeSpeedRungs (spec 039 FR-002): the extracted posture rung is the
+// highest ladder speed at which the planner still routes, per Route's
+// arithmetic (planner: 3pt, budget 1200 ticks). 5.0 s/pt clears the ceiling;
+// 17.0 and the 20.0 bootstrap seed cap at 16x; a pathological 1000.0 s/pt
+// suppresses even 1x, returning 0 for the caller to clamp to the floor.
+func TestMaxSafeSpeedRungs(t *testing.T) {
+	cases := []struct {
+		secPerPt float64
+		want     float64
+	}{
+		{5.0, 32},
+		{17.0, 16},
+		{20.0, 16},
+		{1000.0, 0},
+	}
+	for _, c := range cases {
+		if got := MaxSafeSpeed("planner", c.secPerPt); got != c.want {
+			t.Errorf("MaxSafeSpeed(planner, %.1f) = %g, want %g", c.secPerPt, got, c.want)
+		}
+	}
+}
+
+// TestMaxSafeSpeedUnknownClass: an unregistered class has no rung — 0, which the
+// caller clamps to the floor, never a panic.
+func TestMaxSafeSpeedUnknownClass(t *testing.T) {
+	if got := MaxSafeSpeed("nonesuch", 1.0); got != 0 {
+		t.Errorf("MaxSafeSpeed(nonesuch) = %g, want 0", got)
+	}
+}
+
+// TestMaxSafeSpeedAgreesWithRoute: the rung MaxSafeSpeed returns is allowed by
+// Route, and the next ladder rung above it is not — the extraction preserves
+// the exact maxOK semantics HorizonSummary relied on (FR-004).
+func TestMaxSafeSpeedAgreesWithRoute(t *testing.T) {
+	for _, secPerPt := range []float64{BootstrapLocalSecPerPt, BootstrapCloudSecPerPt, 0.94, 5.0, 17.0} {
+		for _, class := range watchedClasses {
+			dc, _ := ClassFor(class)
+			rung := MaxSafeSpeed(class, secPerPt)
+			if rung != 0 && !Route(dc, rung, secPerPt).Allow {
+				t.Errorf("secPerPt=%.2f class=%s: rung %g not allowed by Route", secPerPt, class, rung)
+			}
+			// No higher ladder rung may be allowed.
+			for _, sp := range horizonLadder {
+				if sp > rung && Route(dc, sp, secPerPt).Allow {
+					t.Errorf("secPerPt=%.2f class=%s: rung %g but Route allows higher %g", secPerPt, class, rung, sp)
+				}
+			}
+		}
+	}
+}
+
+// TestHorizonSummaryUnchangedAfterExtraction (spec 039 T004 regression): the
+// refactor onto MaxSafeSpeed leaves HorizonSummary's output byte-identical to
+// the pre-extraction strings across representative seconds-per-point.
+func TestHorizonSummaryUnchangedAfterExtraction(t *testing.T) {
+	cases := map[float64]string{
+		BootstrapLocalSecPerPt: "planner suppressed above 16x; conversation suppressed above 16x; meeting OK at 32x",
+		0.94:                   "planner OK at 32x; conversation OK at 32x; meeting OK at 32x",
+		1000.0:                 "planner always suppressed; conversation always suppressed; meeting suppressed above 1x",
+	}
+	for secPerPt, want := range cases {
+		if got := HorizonSummary(secPerPt); got != want {
+			t.Errorf("HorizonSummary(%.2f) = %q, want %q", secPerPt, got, want)
+		}
+	}
+}
+
 // TestSuppressedAtAgreesWithRoute (spec 035 contracts/warnings.md Test
 // obligations): SuppressedAt says a class is suppressed exactly when Route
 // disallows it at that (ticksPerSecond, secPerPt) point, across the ladder ×

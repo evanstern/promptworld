@@ -1054,6 +1054,251 @@ func TestStatusDataWarningOmitempty(t *testing.T) {
 	}
 }
 
+// --- spec 039: teaching-posture soft-cap warning (US2) ---
+
+// slowCalibratedProfile seeds a measured 17.0 s/pt profile — planner-safe up to
+// 16x — so a CALIBRATED teaching world still overshoots its posture at 32x.
+func slowCalibratedProfile() *cognition.Profile {
+	return &cognition.Profile{
+		CalibratedAt: "2026-07-24T12:00:00Z",
+		Tiers: map[string]cognition.TierProfile{
+			"local": {SecondsPerPoint: 17.0},
+			"cloud": {SecondsPerPoint: 17.0},
+		},
+	}
+}
+
+// TestPostureWarnsAboveTeachingPosture (spec 039 US2 AC1, SC-002): an
+// uncalibrated teaching world (posture 16x at the 20 s/pt bootstrap seed) set to
+// 32x applies the speed AND carries the posture override — the router's verbatim
+// arithmetic (> budget) plus the plain-language degrade consequence, per
+// suppressed watched class.
+func TestPostureWarnsAboveTeachingPosture(t *testing.T) {
+	h := newHarness(t, clock.Speed1x)
+	h.w.Manifest.Teaching = true
+	llmForWarningTests(t, h)
+	c := h.dial(t)
+
+	sd, err := c.Status("set_speed", SetSpeedArgs{Speed: "32x"})
+	if err != nil {
+		t.Fatalf("set_speed 32x: %v", err)
+	}
+	if sd.Clock.Speed != "32x" {
+		t.Errorf("speed = %s, want 32x (soft cap: the warning never blocks)", sd.Clock.Speed)
+	}
+	for _, want := range []string{
+		"above teaching posture 16x",
+		"planner 3pt x 20.0s/pt x 32x = 1920 ticks > budget 1200",
+		"villagers will stop deep-thinking (reflex only)",
+		"conversations will be skipped", // conversation also suppressed at 32x/20s
+	} {
+		if !strings.Contains(sd.Warning, want) {
+			t.Errorf("posture warning missing %q:\n%q", want, sd.Warning)
+		}
+	}
+}
+
+// TestPostureSilentAtOrBelowRung (spec 039 US2 AC2, SC-002): at or below the
+// posture rung a teaching world carries no posture text (and no uncalibrated
+// text, since nothing is suppressed there).
+func TestPostureSilentAtOrBelowRung(t *testing.T) {
+	h := newHarness(t, clock.Speed1x)
+	h.w.Manifest.Teaching = true
+	llmForWarningTests(t, h)
+	c := h.dial(t)
+
+	for _, speed := range []string{"16x", "8x"} {
+		sd, err := c.Status("set_speed", SetSpeedArgs{Speed: speed})
+		if err != nil {
+			t.Fatalf("set_speed %s: %v", speed, err)
+		}
+		if sd.Warning != "" {
+			t.Errorf("set_speed %s (at/below posture 16x) carried a warning: %q", speed, sd.Warning)
+		}
+	}
+}
+
+// TestPostureAbsentNonTeaching (spec 039 US2 AC4, FR-008): a non-teaching world
+// warns exactly as spec 035 does — the uncalibrated text, never the posture text.
+func TestPostureAbsentNonTeaching(t *testing.T) {
+	h := newHarness(t, clock.Speed1x)
+	llmForWarningTests(t, h) // Teaching stays false
+	c := h.dial(t)
+
+	sd, err := c.Status("set_speed", SetSpeedArgs{Speed: "32x"})
+	if err != nil {
+		t.Fatalf("set_speed 32x: %v", err)
+	}
+	if strings.Contains(sd.Warning, "teaching posture") {
+		t.Errorf("non-teaching world must never carry the posture text: %q", sd.Warning)
+	}
+	if !strings.Contains(sd.Warning, "uncalibrated world at") {
+		t.Errorf("non-teaching uncalibrated warning unchanged expected, got: %q", sd.Warning)
+	}
+}
+
+// TestPostureComposesWithUncalibrated (spec 039 contract §3, research R4): an
+// uncalibrated teaching world overshooting its posture gets BOTH texts,
+// newline-joined with the posture override first, then the calibrate prompt.
+func TestPostureComposesWithUncalibrated(t *testing.T) {
+	h := newHarness(t, clock.Speed1x)
+	h.w.Manifest.Teaching = true
+	llmForWarningTests(t, h)
+	c := h.dial(t)
+
+	sd, err := c.Status("set_speed", SetSpeedArgs{Speed: "32x"})
+	if err != nil {
+		t.Fatalf("set_speed 32x: %v", err)
+	}
+	posIdx := strings.Index(sd.Warning, "above teaching posture")
+	calIdx := strings.Index(sd.Warning, "uncalibrated world at")
+	if posIdx < 0 || calIdx < 0 {
+		t.Fatalf("expected both posture and uncalibrated texts, got: %q", sd.Warning)
+	}
+	if posIdx > calIdx {
+		t.Errorf("posture text must precede the uncalibrated text: %q", sd.Warning)
+	}
+	if !strings.Contains(sd.Warning, "\n") {
+		t.Errorf("the two texts must be newline-joined: %q", sd.Warning)
+	}
+	if !strings.Contains(sd.Warning, "promptworld calibrate") {
+		t.Errorf("uncalibrated leg must keep its calibrate prompt: %q", sd.Warning)
+	}
+}
+
+// TestPostureFiresForCalibratedWorld (spec 039 research R4): the posture override
+// fires on a CALIBRATED teaching world too (its whole point) — and without the
+// uncalibrated text, since the serving provider is measured.
+func TestPostureFiresForCalibratedWorld(t *testing.T) {
+	h := newHarness(t, clock.Speed1x)
+	h.w.Manifest.Teaching = true
+	orch := llmForWarningTests(t, h)
+	orch.SeedCalibration(slowCalibratedProfile())
+	c := h.dial(t)
+
+	sd, err := c.Status("set_speed", SetSpeedArgs{Speed: "32x"})
+	if err != nil {
+		t.Fatalf("set_speed 32x: %v", err)
+	}
+	if sd.Clock.Speed != "32x" {
+		t.Errorf("speed = %s, want 32x", sd.Clock.Speed)
+	}
+	if !strings.Contains(sd.Warning, "above teaching posture 16x") {
+		t.Errorf("calibrated teaching world must still warn on override: %q", sd.Warning)
+	}
+	if !strings.Contains(sd.Warning, "planner 3pt x 17.0s/pt x 32x = 1632 ticks > budget 1200") {
+		t.Errorf("posture arithmetic must use the measured 17.0 s/pt: %q", sd.Warning)
+	}
+	if strings.Contains(sd.Warning, "uncalibrated world at") {
+		t.Errorf("a calibrated world must not carry the uncalibrated text: %q", sd.Warning)
+	}
+}
+
+// TestPostureMaxGateStillPrecedes (spec 039 FR-007): the max-speed rejection is
+// untouched for a teaching LLM world — the posture never weakens it.
+func TestPostureMaxGateStillPrecedes(t *testing.T) {
+	h := newHarness(t, clock.Speed1x)
+	h.w.Manifest.Teaching = true
+	llmForWarningTests(t, h)
+	c := h.dial(t)
+
+	if _, err := c.Status("set_speed", SetSpeedArgs{Speed: "max"}); err == nil {
+		t.Fatal("teaching LLM world must still refuse speed max")
+	} else if !strings.Contains(err.Error(), "32x") {
+		t.Errorf("max refusal should still point at 32x: %v", err)
+	}
+}
+
+// --- spec 039: teaching-posture status block (US4) ---
+
+// TestStatusPostureCalibrated (spec 039 US4 AC2, contract §4): a calibrated
+// teaching world's status carries the posture block with the measured rung and
+// calibrated=true, recomputed from the planner-serving provider.
+func TestStatusPostureCalibrated(t *testing.T) {
+	h := newHarness(t, clock.Speed4x)
+	h.w.Manifest.Teaching = true
+	orch := llmForWarningTests(t, h)
+	orch.SeedCalibration(slowCalibratedProfile()) // 17.0 s/pt ⇒ 16x
+	c := h.dial(t)
+
+	sd, err := c.Status("status", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sd.Posture == nil {
+		t.Fatal("teaching+LLM status must carry the posture block")
+	}
+	if sd.Posture.Rung != "16x" || !sd.Posture.Calibrated {
+		t.Errorf("posture = %+v, want {16x true}", *sd.Posture)
+	}
+}
+
+// TestStatusPostureProvisional (spec 039 US4 AC2): an uncalibrated teaching
+// world reports the bootstrap-derived rung with calibrated=false (provisional).
+func TestStatusPostureProvisional(t *testing.T) {
+	h := newHarness(t, clock.Speed4x)
+	h.w.Manifest.Teaching = true
+	llmForWarningTests(t, h) // no SeedCalibration ⇒ bootstrap 20 s/pt ⇒ 16x
+	c := h.dial(t)
+
+	sd, err := c.Status("status", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sd.Posture == nil {
+		t.Fatal("teaching+LLM status must carry the posture block")
+	}
+	if sd.Posture.Rung != "16x" || sd.Posture.Calibrated {
+		t.Errorf("posture = %+v, want {16x false}", *sd.Posture)
+	}
+}
+
+// TestStatusPostureAbsentNonTeaching (spec 039 FR-008): a non-teaching LLM
+// world's reply carries no posture block — the wire key is absent.
+func TestStatusPostureAbsentNonTeaching(t *testing.T) {
+	h := newHarness(t, clock.Speed4x)
+	llmForWarningTests(t, h) // Teaching stays false
+	c := h.dial(t)
+
+	sd, err := c.Status("status", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sd.Posture != nil {
+		t.Errorf("non-teaching world carried a posture block: %+v", sd.Posture)
+	}
+	b, _ := json.Marshal(sd)
+	if strings.Contains(string(b), "posture") {
+		t.Errorf("non-teaching reply must omit \"posture\": %s", b)
+	}
+}
+
+// TestStatusPostureAbsentPureSim (spec 039 edge case): a teaching world with no
+// orchestrator (pure sim) carries no posture block — there is no cognition to
+// derive a rung from, so the field stays absent.
+func TestStatusPostureAbsentPureSim(t *testing.T) {
+	h := newHarness(t, clock.Speed4x)
+	h.w.Manifest.Teaching = true // teaching, but no LLM attached
+	c := h.dial(t)
+
+	sd, err := c.Status("status", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sd.Posture != nil {
+		t.Errorf("pure-sim teaching world carried a posture block: %+v", sd.Posture)
+	}
+}
+
+// TestStatusDataPostureOmitempty: the zero StatusData omits "posture" from the
+// wire (the additive omitempty that keeps non-teaching replies byte-identical).
+func TestStatusDataPostureOmitempty(t *testing.T) {
+	b, _ := json.Marshal(StatusData{})
+	if strings.Contains(string(b), "posture") {
+		t.Errorf("zero StatusData must omit \"posture\", got %s", b)
+	}
+}
+
 // horizonByClass indexes a horizon slice by class name for assertions.
 func horizonByClass(h []HorizonClass) map[string]HorizonClass {
 	m := make(map[string]HorizonClass, len(h))

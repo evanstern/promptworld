@@ -37,10 +37,12 @@ non-blocking texts, newline-joined, in this order:
 
 1. **Posture override** (new; teaching world + orchestrator + requested rung >
    posture rung): per suppressed watched class, the router's own
-   `Verdict.Arithmetic` verbatim plus a plain-language consequence. Example:
+   `Verdict.Arithmetic` verbatim (route.go's exact `>` form — FR-004) plus a
+   plain-language consequence, `"; "`-joined under one `above teaching posture
+   Nx:` prefix when multiple classes suppress. Example:
 
    ```
-   above teaching posture 16x: planner 3pt x 17.0s/pt x 32x = 1632 ticks over budget 1200 — villagers will stop deep-thinking (reflex only)
+   above teaching posture 16x: planner 3pt x 17.0s/pt x 32x = 1632 ticks > budget 1200 — villagers will stop deep-thinking (reflex only)
    ```
 
    Fires for calibrated AND uncalibrated teaching worlds. Never fires at or below the

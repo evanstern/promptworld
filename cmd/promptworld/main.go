@@ -15,8 +15,8 @@ PROMPTWORLD_HOME) then the known-worlds list; a path (contains "/", or
 starts with "." or "~") is used exactly as given.
 
 Usage:
-  promptworld new <name> [--at DIR] [--seed N]     create a world by name in the worlds home
-  promptworld new <path> [--name NAME] [--seed N]  create a world at an explicit path (legacy form)
+  promptworld new <name> [--at DIR] [--seed N] [--teaching]  create a world by name in the worlds home
+  promptworld new <path> [--name NAME] [--seed N] [--teaching] create a world at an explicit path (legacy form)
   promptworld migrate <world>                      migrate a stopped older world (v1/v2) to the current format
   promptworld ps [--all] [--json]                  list world daemons machine-wide
   promptworld daemon <world>                       run the daemon in the foreground
@@ -29,6 +29,7 @@ Usage:
   promptworld pause <world>                        pause game time
   promptworld resume <world>                       resume game time
   promptworld speed <world> <1x|4x|8x|16x|32x|max>     set game speed
+  promptworld teaching <world> [on|off]            show or toggle the teaching-world posture (applies at next daemon start)
   promptworld metatron <world> [message...]        converse with the angel (no message: status peek)
   promptworld miracle <world> <snap-time|give|move|remove> ... [--force]
                                                    land a Metatron miracle (--force waives the charge)
@@ -76,6 +77,8 @@ func main() {
 		err = cmdTimeCtl("resume", args)
 	case "speed":
 		err = cmdSpeed(args)
+	case "teaching":
+		err = cmdTeaching(args)
 	case "llm":
 		err = cmdLLM(args)
 	case "calibrate":
