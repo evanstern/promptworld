@@ -143,6 +143,17 @@ Recorded during US1 review; these refine the model above and are the as-built tr
 - **Walls and paths render grouped in the prompt** (count + nearest), not individually —
   per-tile runs would bloat the prompt; landmark kinds (fire/shelter/oven/chest) render
   individually with no cap, which is what SC-002 measures.
+- **`metatron.place_revealed` stamps normatively in the reducer**: the emitter bakes place
+  identity only; the arm stamps `Seen` (landing tick), `Provenance` (revealed), and
+  `Detail` (ground truth at landing) — the model-side emitter cannot know the landing tick
+  under InjectSocial re-stamping, and the stamps are a pure function of (state, event).
+  The arm validates rather than clamps: a vision naming a false place rejects the whole
+  batch at the dry-run door (the god reveals what is).
+- **Polish perf relief (T034)**: per-beat local overlay sets, `groundFactPresentIn`, and a
+  `MarkExplored` no-change fast path — emission order and payload bytes proven unchanged.
+  Known honest costs left for follow-up: gated resolvers run more BFS on
+  know-something-reach-nothing cases; the InjectSocial dry-run's full-state round-trip got
+  heavier with fact-bearing state (candidate: structured State clone).
 - **US3 re-examination of the availability split (accepted)**: permanent-availability
   ground conditions (forage/den/chest/wall) stay load-bearing forever; absence-class
   conditions (tree/rock/pile) became redundancy-with-benefits under correction — kept as

@@ -124,12 +124,12 @@ told-by-A.
 
 ## Phase 8: Polish & Cross-Cutting
 
-- [ ] T032 Metatron reveal channel (FR-014): optional place grant on `send_vision` → `metatron.place_revealed` event; payload + reducer arm (upsert revealed + Origin-omen memory); `injectSocialWhitelist` entry in `internal/sim/loop.go`; Metatron tool arg in `internal/tool/registry.go`; digest row + fixture + `docs/wiki/event-types.md` row + chronicle grammar
-- [ ] T033 [P] Dead-agent hygiene: death excludes the agent's map from resolver/prompt/talk-transfer read paths (data-model invariant); test in `internal/sim/`
-- [ ] T034 Full-suite gates: `go test ./...` and `go test -race ./...` green; `go test ./e2e/ -run TestDeterminism_FullBinary` green (SC-003 end-to-end)
-- [ ] T035 Viability soak (SC-007): `TestVillageSurvivesTwoDays` and `internal/sim/whole_feature_test.go` green with gating + seeding; tune freshness horizons/search cadence if starvation regresses; record chosen constants in research.md D6 addendum
-- [ ] T036 Quickstart validation sweep: execute quickstart.md fast loop + migration check; live smoke optional; note outcomes in PR description
-- [ ] T037 gofmt/vet sweep over touched files; ensure new exported identifiers have doc comments in repo voice
+- [x] T032 Metatron reveal channel (FR-014): optional place grant on `send_vision` → `metatron.place_revealed` event; payload + reducer arm (upsert revealed + Origin-omen memory); `injectSocialWhitelist` entry in `internal/sim/loop.go`; Metatron tool arg in `internal/tool/registry.go`; digest row + fixture + `docs/wiki/event-types.md` row + chronicle grammar
+- [x] T033 [P] Dead-agent hygiene: death excludes the agent's map from resolver/prompt/talk-transfer read paths (data-model invariant); test in `internal/sim/`
+- [x] T034 Full-suite gates: `go test ./...` and `go test -race ./...` green; `go test ./e2e/ -run TestDeterminism_FullBinary` green (SC-003 end-to-end)
+- [x] T035 Viability soak (SC-007): `TestVillageSurvivesTwoDays` and `internal/sim/whole_feature_test.go` green with gating + seeding; tune freshness horizons/search cadence if starvation regresses; record chosen constants in research.md D6 addendum
+- [x] T036 Quickstart validation sweep: execute quickstart.md fast loop + migration check; live smoke optional; note outcomes in PR description
+- [x] T037 gofmt/vet sweep over touched files; ensure new exported identifiers have doc comments in repo voice
 - [ ] T038 Wiki re-pin (constitution IV): `/grounding-wiki:wiki-update` covering touched sources (reflex-policy, agent-mind, cognition, tool-registry, event-types, sim-state-reducer, snapshots, social-fabric, tool-loop, worldmap-generation as applicable)
 - [ ] T039 Player docs freshness: `node .claude/skills/player-docs/scripts/check-freshness.mjs --check`; regenerate `docs/player/` via the player-docs skill if stale
 - [ ] T040 Board close-out: `spec-bridge:sync` moves TASK-96 per artifacts; tick board ACs #3–#7 with evidence; PR opened from `.worktrees/task-96` (one task, one PR)
