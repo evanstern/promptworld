@@ -140,6 +140,16 @@ type Agent struct {
 	// stays map-less on replay. Facts mutated only by knowledge-event reducer
 	// arms; explored bits by the derived markExplored bookkeeping (D2).
 	Map *MentalMap `json:"map,omitempty"`
+	// SitVec/SitVecModel/SitVecTick (spec 042) are the agent's rolling
+	// situation (query) vector: set by the reducer from a recorded
+	// agent.situation_embedded companion (copy-verbatim — the sim never
+	// computes an embedding), refreshed by the mind-side embedder at planner
+	// cadence while it runs. Absent (nil Vec) ⇒ selection falls back to the
+	// legacy ranking. All three omitempty keep pre-042 snapshots byte-stable
+	// (precedent: Generation, Plan, Hail).
+	SitVec      []float32 `json:"sit_vec,omitempty"`
+	SitVecModel string    `json:"sit_vec_model,omitempty"`
+	SitVecTick  int64     `json:"sit_vec_tick,omitempty"`
 }
 
 // AgentHail is the courtesy pause a talk_to landing lays on its target: who
@@ -175,16 +185,28 @@ type MemoryPlace struct {
 // perception (see DirectPerception). Closed vocabulary (OriginAction..
 // OriginDigest); absent (pre-030, "") classifies as secondhand, the
 // conservative direction. omitempty keeps every pre-030 Memory byte-identical.
+//
+// Seq/Vec/VecModel (spec 042) are the embedding-retrieval identity and vector:
+// Seq is the store seq of the emitting agent.memory_added event, stamped by
+// the reducer at apply time — the memory's stable identity for companion
+// events (research D4; unique where (agent, tick) is not). Vec/VecModel are
+// attached by the reducer from a recorded agent.memory_embedded companion,
+// copy-verbatim (the sim never computes an embedding) and set together or not
+// at all; nil Vec = vectorless (neutral relevance, FR-010). All three
+// omitempty keep every pre-042 Memory byte-identical.
 type Memory struct {
 	Text     string       `json:"text"`
 	Salience int          `json:"salience"`
 	Tick     int64        `json:"tick"`
 	Subject  int          `json:"subject"`
 	Tone     int          `json:"tone,omitempty"`
-	Where    *MemoryPlace `json:"where,omitempty"`  // location at emission (nil = none)
-	Why      string       `json:"why,omitempty"`    // driving intent reason, verbatim ("" = none)
-	Conv     int64        `json:"conv,omitempty"`   // conversation ref (founding-talk tick; 0 = none)
-	Origin   string       `json:"origin,omitempty"` // spec 030: provenance class stamped at emission
+	Where    *MemoryPlace `json:"where,omitempty"`    // location at emission (nil = none)
+	Why      string       `json:"why,omitempty"`      // driving intent reason, verbatim ("" = none)
+	Conv     int64        `json:"conv,omitempty"`     // conversation ref (founding-talk tick; 0 = none)
+	Origin   string       `json:"origin,omitempty"`   // spec 030: provenance class stamped at emission
+	Seq      int64        `json:"seq,omitempty"`      // spec 042: emitting event's store seq (0 = pre-042)
+	Vec      []float32    `json:"vec,omitempty"`      // spec 042: recorded embedding (nil = vectorless)
+	VecModel string       `json:"vec_model,omitempty"` // spec 042: producing model identity (FR-009)
 }
 
 // Structure is player-visible built stuff; the map itself never contains
@@ -859,6 +881,31 @@ type (
 		Why      string       `json:"why,omitempty"`    // spec 019: driving intent reason, verbatim
 		Conv     int64        `json:"conv,omitempty"`   // spec 019: conversation ref (founding-talk tick)
 		Origin   string       `json:"origin,omitempty"` // spec 030: provenance class stamped at emission
+	}
+	// MemoryEmbeddedPayload — agent.memory_embedded (spec 042): the mind-side
+	// embedder driver's recorded companion attaching a vector to the memory
+	// whose agent.memory_added event carried store seq MemSeq. The reducer
+	// copies Vec/Model verbatim onto the matching memory and no-ops when the
+	// target is gone (agent died / memory consolidated away). Emitted ONLY by
+	// the embedder through InjectSocial (whitelisted).
+	MemoryEmbeddedPayload struct {
+		Agent  int       `json:"agent"`
+		MemSeq int64     `json:"mem_seq"`
+		Vec    []float32 `json:"vec"`
+		Model  string    `json:"model"`
+	}
+	// SituationEmbeddedPayload — agent.situation_embedded (spec 042): the
+	// embedder driver's per-agent rolling situation (query) vector, rendered
+	// from a deterministic situation template at planner cadence. Text is the
+	// audit surface for divergence review; the reducer stores Vec/Model/Tick as
+	// the agent's current SitVec* fields. Emitted ONLY by the embedder through
+	// InjectSocial (whitelisted).
+	SituationEmbeddedPayload struct {
+		Agent int       `json:"agent"`
+		Tick  int64     `json:"tick"`
+		Text  string    `json:"text"`
+		Vec   []float32 `json:"vec"`
+		Model string    `json:"model"`
 	}
 	ThoughtPayload struct {
 		Agent  int    `json:"agent"`

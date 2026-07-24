@@ -132,6 +132,13 @@ func TestWhitelistDiffIdentical(t *testing.T) {
 		// vision's divine place grant, declared in send_vision's Events
 		// (pinned ⊆ this whitelist by ValidateToolCoverage).
 		"metatron.place_revealed": true,
+		// Spec 042 (embedding memory retrieval) deliberately widens the boundary
+		// by three entries: the embedder driver's two reducer-armed vector
+		// companions, and the shadow-mode rank-divergence telemetry (a cog.*
+		// reducer no-op like the four above).
+		"agent.memory_embedded":    true,
+		"agent.situation_embedded": true,
+		"cog.memory_divergence":    true,
 	}
 	for typ := range want {
 		if !injectSocialWhitelist[typ] {

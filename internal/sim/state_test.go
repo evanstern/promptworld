@@ -224,3 +224,144 @@ func TestMapOmitemptyStable(t *testing.T) {
 		t.Errorf("fact not serialized in canonical field order:\n%s", got)
 	}
 }
+
+// memoryAddedEvent builds a reducer-applied agent.memory_added event carrying
+// a store seq — the spec-042 identity the reducer stamps onto the Memory.
+func memoryAddedEvent(seq, tick int64, agent int, text string) store.Event {
+	return store.Event{Seq: seq, Tick: tick, Type: "agent.memory_added",
+		Payload: mustPayload(MemoryAddedPayload{Agent: agent, Text: text, Salience: 3, Subject: -1})}
+}
+
+// TestPre042RoundTripByteIdentical (spec 042 T004, data-model invariants): a
+// state built from pre-042 events marshals with NONE of the spec-042 JSON keys
+// (seq/vec/vec_model on memories, sit_vec* on agents) when the events carry no
+// seqs — so a pre-042 snapshot round-trips byte-identically, no FormatVersion
+// bump. The 019 precedent test, one spec later.
+func TestPre042RoundTripByteIdentical(t *testing.T) {
+	s := NewState(42, testMap(42))
+	// A pre-042 log: memory events with NO store seq (as a pre-042 snapshot's
+	// reduced memories would round-trip — the field absent).
+	if err := s.Apply(memoryAddedEvent(0, 100, 0, "Built a fire.")); err != nil {
+		t.Fatal(err)
+	}
+	got := s.Marshal()
+	for _, key := range []string{`"seq"`, `"vec"`, `"vec_model"`, `"sit_vec"`, `"sit_vec_model"`, `"sit_vec_tick"`} {
+		if bytes.Contains(got, []byte(key)) {
+			t.Errorf("pre-042 state leaked the spec-042 key %s:\n%s", key, got)
+		}
+	}
+	// Round-trip: unmarshal + re-marshal is byte-identical (the recovery path).
+	s2 := NewState(42, testMap(42))
+	if err := json.Unmarshal(got, s2); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if again := s2.Marshal(); !bytes.Equal(got, again) {
+		t.Errorf("pre-042 snapshot did not round-trip byte-identically:\n%s\n---\n%s", got, again)
+	}
+}
+
+// TestMemorySeqStampedFromEvent (spec 042 T005, contracts/embedding-events.md
+// §3.3): the reducer stamps Memory.Seq from the emitting event's store seq,
+// and two replays of the same stream agree byte-for-byte — seq stamping is
+// replay-stable because seq is part of the recorded stream.
+func TestMemorySeqStampedFromEvent(t *testing.T) {
+	log := []store.Event{
+		memoryAddedEvent(7, 100, 0, "Foraged by the river."),
+		memoryAddedEvent(8, 100, 0, "Saw Birch there."),
+		memoryAddedEvent(9, 200, 1, "Chopped wood."),
+	}
+	replay := func() *State {
+		s := NewState(42, testMap(42))
+		for _, e := range log {
+			if err := s.Apply(e); err != nil {
+				t.Fatalf("apply: %v", err)
+			}
+		}
+		return s
+	}
+	s := replay()
+	if got := s.Agents[0].Memories; len(got) != 2 || got[0].Seq != 7 || got[1].Seq != 8 {
+		t.Errorf("agent 0 memory seqs = %+v, want 7 then 8", got)
+	}
+	if got := s.Agents[1].Memories; len(got) != 1 || got[0].Seq != 9 {
+		t.Errorf("agent 1 memory seq = %+v, want 9", got)
+	}
+	if a, b := string(replay().Marshal()), string(replay().Marshal()); a != b {
+		t.Errorf("two replays of the same stream diverged:\n%s\n---\n%s", a, b)
+	}
+}
+
+// TestMemoryEmbeddedReducer (spec 042 T006, contracts/embedding-events.md §1):
+// agent.memory_embedded attaches Vec/VecModel to the {agent, mem_seq} memory,
+// copy-verbatim; a missing target is a NO-OP (agent died / memory consolidated
+// away), and a zero mem_seq never matches pre-042 (seq-less) memories.
+func TestMemoryEmbeddedReducer(t *testing.T) {
+	s := NewState(42, testMap(42))
+	if err := s.Apply(memoryAddedEvent(0, 50, 0, "A seq-less pre-042 memory.")); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Apply(memoryAddedEvent(7, 100, 0, "Foraged by the river.")); err != nil {
+		t.Fatal(err)
+	}
+
+	embed := func(agent int, memSeq int64, vec []float32) error {
+		return s.Apply(store.Event{Seq: 20, Tick: 120, Type: "agent.memory_embedded",
+			Payload: mustPayload(MemoryEmbeddedPayload{Agent: agent, MemSeq: memSeq, Vec: vec, Model: "all-minilm"})})
+	}
+	if err := embed(0, 7, []float32{0.1, 0.2}); err != nil {
+		t.Fatalf("embed: %v", err)
+	}
+	m := s.Agents[0].Memories[1]
+	if len(m.Vec) != 2 || m.Vec[0] != 0.1 || m.VecModel != "all-minilm" {
+		t.Errorf("memory did not gain the vector verbatim: %+v", m)
+	}
+
+	// Absent target: a deliberate no-op, never an error.
+	before := string(s.Marshal())
+	if err := embed(0, 999, []float32{1}); err != nil {
+		t.Fatalf("missing target must no-op, got: %v", err)
+	}
+	if got := string(s.Marshal()); got != before {
+		t.Errorf("no-op companion mutated state:\n%s\n---\n%s", before, got)
+	}
+	// Zero mem_seq: must not attach to the seq-less pre-042 memory.
+	if err := embed(0, 0, []float32{1}); err != nil {
+		t.Fatalf("zero mem_seq must no-op, got: %v", err)
+	}
+	if pre := s.Agents[0].Memories[0]; pre.Vec != nil {
+		t.Errorf("zero mem_seq matched a pre-042 memory: %+v", pre)
+	}
+}
+
+// TestSituationEmbeddedReducer (spec 042 T006): agent.situation_embedded sets
+// the agent's rolling SitVec/SitVecModel/SitVecTick; a later event overwrites
+// (selection reads the latest at-or-before its tick).
+func TestSituationEmbeddedReducer(t *testing.T) {
+	s := NewState(42, testMap(42))
+	sit := func(tick int64, vec []float32) error {
+		return s.Apply(store.Event{Seq: 30, Tick: tick, Type: "agent.situation_embedded",
+			Payload: mustPayload(SituationEmbeddedPayload{Agent: 2, Tick: tick, Text: "midday · by the river", Vec: vec, Model: "all-minilm"})})
+	}
+	if err := sit(100, []float32{0.5}); err != nil {
+		t.Fatal(err)
+	}
+	a := &s.Agents[2]
+	if a.SitVecTick != 100 || a.SitVecModel != "all-minilm" || len(a.SitVec) != 1 || a.SitVec[0] != 0.5 {
+		t.Errorf("situation vector not stored: %+v", a)
+	}
+	if err := sit(400, []float32{0.9}); err != nil {
+		t.Fatal(err)
+	}
+	if a.SitVecTick != 400 || a.SitVec[0] != 0.9 {
+		t.Errorf("later situation vector did not overwrite: tick=%d vec=%v", a.SitVecTick, a.SitVec)
+	}
+	// cog.memory_divergence is a reducer no-op (telemetry, cog.* class).
+	before := string(s.Marshal())
+	if err := s.Apply(store.Event{Seq: 31, Tick: 401, Type: "cog.memory_divergence",
+		Payload: mustPayload(map[string]any{"agent": 2, "tick": 401, "mode": "shadow"})}); err != nil {
+		t.Fatalf("cog.memory_divergence must be a no-op, got: %v", err)
+	}
+	if got := string(s.Marshal()); got != before {
+		t.Errorf("cog.memory_divergence mutated state")
+	}
+}

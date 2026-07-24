@@ -37,7 +37,9 @@ func TestWindowDeterministic(t *testing.T) {
 		t.Fatal("selection sizes differ")
 	}
 	for i := range w1 {
-		if w1[i] != w2[i] {
+		// Memory carries a []float32 vector since spec 042, so struct equality
+		// no longer compiles; these vectorless fixtures compare identity fields.
+		if w1[i].Tick != w2[i].Tick || w1[i].Text != w2[i].Text || w1[i].Salience != w2[i].Salience {
 			t.Fatalf("selection differs at %d: %+v vs %+v", i, w1[i], w2[i])
 		}
 	}

@@ -258,6 +258,19 @@ var injectSocialWhitelist = map[string]bool{
 	// this whitelist at boot.
 	"journal.entry_written": true,
 	"journal.entry_deleted": true,
+	// Embedding companions (spec 042 US1): the mind-side embedder driver's two
+	// reducer-armed vector events — attach a recorded vector to the {agent,
+	// mem_seq} memory, and refresh the agent's rolling situation vector. Door
+	// ordering guarantees a memory's companion never precedes the memory
+	// itself: the driver only sees an agent.memory_added AFTER it was
+	// committed and notified, so by the time the companion reaches this door
+	// its target memory is already reduced state.
+	"agent.memory_embedded":    true,
+	"agent.situation_embedded": true,
+	// Shadow-mode rank-divergence telemetry (spec 042 US2): recorded
+	// observability, reducer no-op — same isolation class as the other cog.*
+	// types above.
+	"cog.memory_divergence": true,
 }
 
 // InjectableSocialEvent reports whether t is a social event type the
@@ -456,6 +469,21 @@ func (l *Loop) Run(ctx context.Context) error {
 	}
 }
 
+// stampSeqs pre-assigns the batch's contiguous store seqs before the reducer
+// applies it (spec 042): AppendEvents assigns last+i+1 inside its transaction,
+// but the loop applies BEFORE appending, and the agent.memory_added arm
+// records the emitting event's seq as the memory's durable identity
+// (Memory.Seq). The loop is the log's single writer while running, so
+// pre-computing the same last+i+1 here makes live state and replayed state
+// carry identical seqs — the replay-stability invariant CheckContiguity
+// guards. AppendEvents re-assigns the identical values.
+func (l *Loop) stampSeqs(events []store.Event) {
+	last := l.st.LastSeq()
+	for i := range events {
+		events[i].Seq = last + int64(i) + 1
+	}
+}
+
 // runTick advances exactly one tick: events are a pure function of
 // (state, nextTick), applied through the reducer, committed as one batch,
 // then published.
@@ -463,6 +491,7 @@ func (l *Loop) runTick() error {
 	nextTick := l.state.Tick + 1
 	events := stepEvents(l.state, l.m, nextTick)
 	l.state.Tick = nextTick
+	l.stampSeqs(events)
 	for _, e := range events {
 		if err := l.state.Apply(e); err != nil {
 			return fmt.Errorf("tick %d: %w", nextTick, err)
@@ -621,6 +650,7 @@ func (l *Loop) handleCommand(cmd command) error {
 	// err AND emits its rejection record (the only command that pairs the
 	// two); every other error path emits nothing.
 	{
+		l.stampSeqs(events)
 		for _, e := range events {
 			if aerr := l.state.Apply(e); aerr != nil {
 				return aerr
@@ -680,6 +710,7 @@ func (l *Loop) observeWindow(interval time.Duration) error {
 			Tick: l.state.Tick, Type: "clock.recovered", Payload: mustPayload(struct{}{}),
 		})
 	}
+	l.stampSeqs(events)
 	for _, e := range events {
 		if err := l.state.Apply(e); err != nil {
 			return err
