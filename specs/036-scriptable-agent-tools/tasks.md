@@ -19,9 +19,9 @@ Phase 6 (persona composition over proven seams) → Sonnet, escalate on gate fai
 
 **Purpose**: dependency + package skeleton
 
-- [ ] T001 Add `go.starlark.net` as a direct dependency (`go get go.starlark.net@latest && go mod tidy`) in go.mod
-- [ ] T002 [P] Create `internal/bundle/` package skeleton (doc.go with package comment stating the invariants: effects-not-events, boot-frozen, whitelist-subset) and `internal/bundle/testdata/` fixture root
-- [ ] T003 [P] Add `BundlesDir()` accessor (`<dir>/bundles`) to internal/world/world.go with unit coverage in internal/world/world_test.go
+- [x] T001 Add `go.starlark.net` as a direct dependency (`go get go.starlark.net@latest && go mod tidy`) in go.mod
+- [x] T002 [P] Create `internal/bundle/` package skeleton (doc.go with package comment stating the invariants: effects-not-events, boot-frozen, whitelist-subset) and `internal/bundle/testdata/` fixture root
+- [x] T003 [P] Add `BundlesDir()` accessor (`<dir>/bundles`) to internal/world/world.go with unit coverage in internal/world/world_test.go
 
 ---
 
