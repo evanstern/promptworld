@@ -204,6 +204,32 @@ func TestHandlerWorldVerbRejectedGate(t *testing.T) {
 	}
 }
 
+// TestHandlerKnowledgeRejectionVerbatim (spec 041 T016): a gated verb whose
+// actor knows of no matching place is rejected at the door with the KNOWLEDGE
+// phrasing (contracts §4), and the handler feeds it to the model VERBATIM as
+// a rejected_gate — so "you know of no fires" lands in the next prompt cycle,
+// distinguishable from an existence failure.
+func TestHandlerKnowledgeRejectionVerbatim(t *testing.T) {
+	lm := newLoopMind(t)
+	// Wood in hand (the precondition passes) but a genesis map: no fire has
+	// ever been witnessed, so the knowledge gate is the failing rung.
+	lm.md.replica.Agents[0].Inv.Wood = 2
+	job := lm.newJob(0)
+	d := &villagerDispatch{md: lm.md, job: job, start: time.Now()}
+	h := lm.md.villagerHandlers(d)
+
+	out := h["refuel_fire"](context.Background(), call("refuel_fire", `{}`))
+	if out.Verdict != toolloop.VerdictRejectedGate {
+		t.Fatalf("verdict = %q, want rejected_gate (%s)", out.Verdict, out.ResultForModel)
+	}
+	if want := sim.OutcomeRejectedGuard + ": you know of no fires"; out.ResultForModel != want {
+		t.Errorf("ResultForModel = %q, want the knowledge phrasing verbatim %q", out.ResultForModel, want)
+	}
+	if !d.doorOutcome {
+		t.Error("a door rejection must set the door-outcome flag")
+	}
+}
+
 // TestHandlerWorldVerbUnknownTarget: an unknown talk_to target is rejected
 // before touching the door (no cog.outcome recorded), fed back for repair.
 func TestHandlerWorldVerbUnknownTarget(t *testing.T) {
