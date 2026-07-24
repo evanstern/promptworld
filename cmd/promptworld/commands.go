@@ -590,7 +590,7 @@ func cmdSpeed(args []string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(clockLine(sd))
+	fmt.Println(setSpeedLine(sd))
 	return nil
 }
 
@@ -680,7 +680,7 @@ func cmdAttach(args []string) error {
 			if sd, err := c.Status("set_speed", ipc.SetSpeedArgs{Speed: fields[1]}); err != nil {
 				fmt.Printf("error: %v\n", err)
 			} else {
-				fmt.Println(clockLine(sd))
+				fmt.Println(setSpeedLine(sd))
 			}
 		default:
 			fmt.Printf("unknown command %q\n", fields[0])
@@ -767,6 +767,13 @@ func renderStatusHuman(sd *ipc.StatusData) string {
 	for _, line := range llmConditionWarnings(sd) {
 		b.WriteString(line + "\n")
 	}
+	// Per-provider calibration state (spec 035 FR-004/US3): visible for the
+	// whole life of the daemon, not just the boot line that scrolled away.
+	if sd.LLM != nil {
+		for _, p := range sd.LLM.Providers {
+			b.WriteString(providerCalibrationLine(p) + "\n")
+		}
+	}
 	fmt.Fprintf(&b, "log: last seq %d\n", sd.Log.LastSeq)
 	return b.String()
 }
@@ -802,6 +809,30 @@ func clockLine(sd *ipc.StatusData) string {
 	}
 	return fmt.Sprintf("tick %d (%s) — %s, speed %s (%.1f ticks/s effective)%s",
 		sd.Clock.Tick, sd.Clock.GameTime, state, sd.Clock.Speed, sd.Clock.EffectiveRate, extra)
+}
+
+// setSpeedLine renders a set_speed reply (spec 035 FR-002): the clock line,
+// plus the calibration-UX warning when the daemon sent one — additive; the
+// speed change has already applied by the time this prints (the warning
+// never blocks it).
+func setSpeedLine(sd *ipc.StatusData) string {
+	line := clockLine(sd)
+	if sd.Warning != "" {
+		line += "\nWARNING: " + sd.Warning
+	}
+	return line
+}
+
+// providerCalibrationLine renders one provider's calibration state for the
+// human status rendering (spec 035 FR-004): the profile timestamp when
+// seeded, or an explicit "uncalibrated (bootstrap)" marker when the wire's
+// calibrated_at is absent (the bootstrap signal, FR-008).
+func providerCalibrationLine(p llm.ProviderStatus) string {
+	state := "uncalibrated (bootstrap)"
+	if p.CalibratedAt != "" {
+		state = "calibrated " + p.CalibratedAt
+	}
+	return fmt.Sprintf("  llm %s (%s): %s", p.Name, p.Model, state)
 }
 
 func eventLine(e store.Event) string {
