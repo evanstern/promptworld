@@ -3,9 +3,10 @@ id: TASK-91
 title: >-
   Guard-cancelled builds fail silently: phantom-wall belief loop (world-01 has
   no wall despite wall talk)
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-24 17:50'
+updated_date: '2026-07-24 18:01'
 labels:
   - bug
 dependencies: []
@@ -25,6 +26,8 @@ Root causes (from world-01 event log, ~/.promptworld/worlds/world-01/world.db):
 2. **Sociality is adversarial to adjacent-builds.** Wall work attracts "go join/help them" planner intents; helpers path to the builder and step through the res tile, tripping the never-entomb occupancy guard. Building a wall near other villagers — exactly the social activity walls are — is nearly impossible.
 
 Secondary: the only other real attempt (Cedar, tick 459994) was gate-rejected for lacking 2 refined stone; the material pipeline rarely completes because stone is spent elsewhere. This is behavior, not a bug per se, but the silent-cancel loop above prevents retry pressure from ever building.
+
+Spec: specs/038-loud-build-failure
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
@@ -33,4 +36,20 @@ Secondary: the only other real attempt (Cedar, tick 459994) was gate-rejected fo
 - [ ] #2 The builder receives a situated failure memory (origin action) stating the build did NOT complete and why, so the belief is falsifiable
 - [ ] #3 Transient occupancy no longer permanently kills a build: pathing avoids active build res tiles OR the build tolerates/waits out a passerby on the res tile (design choice recorded on this task)
 - [ ] #4 Regression test: helper agent paths onto the res tile mid-build; assert failure event + failure memory (or successful wall under the chosen tolerance design), never a silent bare intent_done
+- [ ] #5 Spec phase: Setup
+- [ ] #6 Spec phase: Foundational (Blocking Prerequisites)
+- [ ] #7 Spec phase: User Story 1 — Loud, distinguishable build failure (Priority: P1) 🎯 MVP
+- [ ] #8 Spec phase: User Story 2 — Builder remembers the failure (Priority: P1)
+- [ ] #9 Spec phase: User Story 3 — Passerby no longer kills the build (Priority: P2)
+- [ ] #10 Spec phase: Polish & Cross-Cutting
 <!-- AC:END -->
+
+
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Starting per constitution: full Spec Kit (specify → clarify → plan → tasks) before implementation; code exploration underway to ground the spec.
+
+AC#3 design choice: BUILD TOLERATES PASSERBY (not pathing avoidance). Rationale from code exploration: pathing is unweighted BFS (internal/sim/path.go) with no reservation index — soft-avoid would require a new tile-cost concept plus a Res-tile registry consulted inside passable() (terrain.go:38), which every movement step calls; large blast radius. Tolerance is surgical: split the guard at executor.go:657 — buildSite false = genuine failure (new failure event + situated failure memory); agentAt true = transient occupancy → build waits (completion deferred, never entombs), with a grace timeout so a permanent squatter becomes a loud failure instead of an infinite wait. Failure event + memory must come from the executor (mind never writes memories from intent_done; mind.go:218 just re-arms the planner).
+<!-- SECTION:NOTES:END -->
