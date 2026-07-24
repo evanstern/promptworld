@@ -17,21 +17,21 @@ tier: cross-package, doctrine-adjacent, determinism-sensitive).
 
 ## Phase 1: Setup
 
-- [ ] T001 Baseline: in `.worktrees/task-96`, run `go test ./...` and record the pre-feature green baseline (plus known-red list, if any) in the PR notes; confirm branch is rebased on current `origin/main`
+- [x] T001 Baseline: in `.worktrees/task-96`, run `go test ./...` and record the pre-feature green baseline (plus known-red list, if any) in the PR notes; confirm branch is rebased on current `origin/main`
 
 ## Phase 2: Foundational (blocking all stories)
 
 **⚠️ No user-story work until this phase is complete.**
 
-- [ ] T002 Create `internal/sim/mentalmap.go`: `MentalMap{Explored string; Facts []PlaceFact}` + `PlaceFact{Kind,X,Y,Seen,Provenance,Source,Detail}` per data-model.md; base64 W×H bitmap codec (row-major); canonical (Kind,X,Y) fact ordering with binary-search upsert/remove; freshness-horizon constants (volatile vs durable kinds) and `fresh(fact, now)`; accessors `Explored(x,y)`, `MarkExplored(x,y,radius)` (map-bounds clipped), `KnownFresh(kind, now)` iterator
-- [ ] T003 [P] Unit tests in `internal/sim/mentalmap_test.go`: codec round-trip, upsert ordering determinism (shuffled insert → identical bytes), freshness horizons, bounds clipping
-- [ ] T004 Add `Map *MentalMap json:"map,omitempty"` to `Agent` in `internal/sim/agents.go` (after `Journal`); snapshot byte-stability twin test `TestMapOmitemptyStable` in `internal/sim/state_test.go` (pattern: `TestAxesOmitemptyStable`) proving pre-feature snapshots round-trip byte-identically
-- [ ] T005 Derived explored-bit bookkeeping in `internal/sim/state.go` reducer arms: on position-changing events (`agent.moved`, genesis-adjacent arms, miracle move) mark mover's surroundings explored within perception radius (reuse `witnessRadius`); research D2 — silent, no new events
-- [ ] T006 Genesis seeding in `internal/sim/state.go` `NewState`: each agent's spawn surroundings marked explored (perception radius); worlds start with zero structures so no facts granted (research D7)
-- [ ] T007 Perception sweep + `agent.saw` event: emitter in `internal/sim/executor.go` `stepEvents` (per-beat, awake agents: diff ground truth within perception radius against agent's map → `SawPayload{Agent, Facts}` for new/changed facts only, gated kinds incl. resource tiles/dens/piles per data-model.md); payload struct + reducer arm (upsert witnessed) in `internal/sim/state.go`
-- [ ] T008 [P] Gates for `agent.saw`: digest registry entry + catalog fixture row in `internal/tui/digest.go` / `internal/tui/digest_test.go`; backticked row in `docs/wiki/event-types.md`; `TestCatalogSweep` green
-- [ ] T009 Format bump + migration: `FormatVersion` 3→4 in `internal/world/world.go`; v3→v4 transform in `internal/sim/migrate.go` granting each living agent explored area around current position + witnessed facts for all current structures and piles (research D7); migration test (v3 fixture world loads, agents hold seeded knowledge)
-- [ ] T010 Replay determinism harness: mental-map replay-byte-identical test (pattern: `internal/mind/replay_test.go` `TestJournalAndSituatedReplayByteIdentical`) covering moved/saw sequences; extend `internal/sim/sim_test.go` determinism tests to assert map bytes equal across same-seed runs
+- [x] T002 Create `internal/sim/mentalmap.go`: `MentalMap{Explored string; Facts []PlaceFact}` + `PlaceFact{Kind,X,Y,Seen,Provenance,Source,Detail}` per data-model.md; base64 W×H bitmap codec (row-major); canonical (Kind,X,Y) fact ordering with binary-search upsert/remove; freshness-horizon constants (volatile vs durable kinds) and `fresh(fact, now)`; accessors `Explored(x,y)`, `MarkExplored(x,y,radius)` (map-bounds clipped), `KnownFresh(kind, now)` iterator
+- [x] T003 [P] Unit tests in `internal/sim/mentalmap_test.go`: codec round-trip, upsert ordering determinism (shuffled insert → identical bytes), freshness horizons, bounds clipping
+- [x] T004 Add `Map *MentalMap json:"map,omitempty"` to `Agent` in `internal/sim/agents.go` (after `Journal`); snapshot byte-stability twin test `TestMapOmitemptyStable` in `internal/sim/state_test.go` (pattern: `TestAxesOmitemptyStable`) proving pre-feature snapshots round-trip byte-identically
+- [x] T005 Derived explored-bit bookkeeping in `internal/sim/state.go` reducer arms: on position-changing events (`agent.moved`, genesis-adjacent arms, miracle move) mark mover's surroundings explored within perception radius (reuse `witnessRadius`); research D2 — silent, no new events
+- [x] T006 Genesis seeding in `internal/sim/state.go` `NewState`: each agent's spawn surroundings marked explored (perception radius); worlds start with zero structures so no facts granted (research D7)
+- [x] T007 Perception sweep + `agent.saw` event: emitter in `internal/sim/executor.go` `stepEvents` (per-beat, awake agents: diff ground truth within perception radius against agent's map → `SawPayload{Agent, Facts}` for new/changed facts only, gated kinds incl. resource tiles/dens/piles per data-model.md); payload struct + reducer arm (upsert witnessed) in `internal/sim/state.go`
+- [x] T008 [P] Gates for `agent.saw`: digest registry entry + catalog fixture row in `internal/tui/digest.go` / `internal/tui/digest_test.go`; backticked row in `docs/wiki/event-types.md`; `TestCatalogSweep` green
+- [x] T009 Format bump + migration: `FormatVersion` 3→4 in `internal/world/world.go`; v3→v4 transform in `internal/sim/migrate.go` granting each living agent explored area around current position + witnessed facts for all current structures and piles (research D7); migration test (v3 fixture world loads, agents hold seeded knowledge)
+- [x] T010 Replay determinism harness: mental-map replay-byte-identical test (pattern: `internal/mind/replay_test.go` `TestJournalAndSituatedReplayByteIdentical`) covering moved/saw sequences; extend `internal/sim/sim_test.go` determinism tests to assert map bytes equal across same-seed runs
 
 **Checkpoint**: maps exist, fill from perception, survive save/replay/migration byte-identically.
 
