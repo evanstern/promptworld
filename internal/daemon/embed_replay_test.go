@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -210,5 +212,207 @@ func TestEmbeddingReplayByteIdentical(t *testing.T) {
 	}
 	if got := string(fresh.Marshal()); got != string(live) {
 		t.Errorf("genesis replay diverged from the live state:\nlive:     %s\nreplayed: %s", live, got)
+	}
+}
+
+// TestOnWorldReplayByteIdentical (spec 042 T022, US3 AC4): a world whose
+// manifest carries memory_relevance "on" runs UNPAUSED with the embedder
+// wired — natural sim events cross a PlannerCadenceTicks bucket edge, so
+// recorded situation vectors land alongside memory companions — then the log
+// replays byte-identically through both recovery paths with zero embedding
+// calls: selection under "on" is a pure function of exactly this recorded
+// state, so replay determinism is untouched by the mode.
+func TestOnWorldReplayByteIdentical(t *testing.T) {
+	dir := t.TempDir() + "/w"
+	w, err := world.Create(dir, "on-world", 42)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Flip the world to "on" on disk (the operator's world.json edit) and
+	// re-open through the validated path.
+	w.Manifest.MemoryRelevance = world.MemoryRelevanceOn
+	data, err := json.MarshalIndent(w.Manifest, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, world.ManifestName), append(data, '\n'), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if w, err = world.Open(dir); err != nil {
+		t.Fatalf("re-open on-mode world: %v", err)
+	}
+	if w.Manifest.MemoryRelevance != world.MemoryRelevanceOn {
+		t.Fatal("memory_relevance did not persist as on")
+	}
+	st, err := store.Open(w.DBPath())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+
+	var totalHits atomic.Int64
+	srv := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		totalHits.Add(1)
+		switch r.URL.Path {
+		case "/embeddings":
+			var req struct {
+				Input []string `json:"input"`
+			}
+			json.NewDecoder(r.Body).Decode(&req)
+			data := make([]map[string]any, len(req.Input))
+			for i, text := range req.Input {
+				data[i] = map[string]any{"index": i, "embedding": []float32{float32(len(text)), 0.5}}
+			}
+			rw.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(rw).Encode(map[string]any{"data": data})
+		case "/api/embed":
+			rw.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(rw).Encode(map[string]any{"model": "all-minilm"})
+		default:
+			http.NotFound(rw, r)
+		}
+	}))
+	defer srv.Close()
+
+	routes := map[string]llm.RouteConfig{string(llm.KindEmbedding): {Chain: []string{"embedder"}}}
+	for _, k := range llm.Kinds() {
+		routes[string(k)] = llm.RouteConfig{Chain: []string{"chat"}}
+	}
+	orch, err := llm.New(llm.Config{
+		MonthlyBudgetUSD: 100,
+		Providers: map[string]llm.ProviderConfig{
+			"chat":     {Transport: llm.ProviderOpenAICompat, Endpoint: "http://127.0.0.1:1/v1", Model: "never-called"},
+			"embedder": {Transport: llm.ProviderOpenAICompat, Endpoint: srv.URL, Model: "all-minilm"},
+		},
+		Routes: routes,
+	}, st)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer orch.Close()
+
+	state := sim.NewState(w.Manifest.Seed, w.Map())
+	var emb *mind.Embedder
+	notify := func(evs []store.Event) {
+		if emb != nil {
+			emb.Observe(evs)
+		}
+	}
+	loop := sim.NewLoop(state, w.Map(), st, notify)
+	emb, err = mind.NewEmbedder(orch, loop, nil, w.Map(), w.Manifest.Seed, state.Marshal())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer emb.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() { done <- loop.Run(ctx) }()
+
+	// Spin to cross the 1800-tick cadence bucket fast — through the recorded
+	// set_speed door, so genesis replay reproduces the speed byte-identically
+	// (the TestTeachingPostureReplayByteIdentical rule: never poke state
+	// directly around a running loop).
+	if _, err := loop.Do("set_speed", "max"); err != nil {
+		t.Fatalf("set_speed: %v", err)
+	}
+
+	// Run until a recorded situation vector lands (the bucket edge fired and
+	// its companion committed), then freeze the world and seed memories so
+	// both companion kinds are in the log.
+	countType := func(typ string) int {
+		n := 0
+		st.ReplayEvents(0, func(e store.Event) error {
+			if e.Type == typ {
+				n++
+			}
+			return nil
+		})
+		return n
+	}
+	deadline := time.Now().Add(20 * time.Second)
+	for countType("agent.situation_embedded") == 0 {
+		if time.Now().After(deadline) {
+			t.Fatal("no agent.situation_embedded landed within 20s of max-speed running")
+		}
+		time.Sleep(30 * time.Millisecond)
+	}
+	if _, err := loop.Do("pause", ""); err != nil {
+		t.Fatalf("pause: %v", err)
+	}
+	memory := func(agent int, text string) store.Event {
+		b, _ := json.Marshal(sim.MemoryAddedPayload{Agent: agent, Text: text, Salience: 4, Subject: -1, Origin: sim.OriginAction})
+		return store.Event{Type: "agent.memory_added", Payload: b}
+	}
+	if err := loop.InjectSocial([]store.Event{
+		memory(0, "Watched the river rise."),
+		memory(1, "Shared a meal at the fire."),
+	}); err != nil {
+		t.Fatalf("inject memories: %v", err)
+	}
+	for countType("agent.memory_embedded") < 2 {
+		if time.Now().After(deadline) {
+			t.Fatal("injected memories never gained companions")
+		}
+		time.Sleep(30 * time.Millisecond)
+	}
+
+	cancel()
+	if err := <-done; err != nil {
+		t.Fatalf("loop.Run: %v", err)
+	}
+	live := state.Marshal()
+
+	// Stop the driver and drain to endpoint quiescence: a natural memory
+	// dequeued just before shutdown may still complete its embed call (its
+	// companion is refused by the stopped loop — vectorless forever, fine).
+	// Those trailing driver calls are NOT replay computation; meter replay
+	// only once the endpoint has gone quiet.
+	emb.Close()
+	prev := totalHits.Load()
+	for {
+		time.Sleep(150 * time.Millisecond)
+		cur := totalHits.Load()
+		if cur == prev {
+			break
+		}
+		prev = cur
+	}
+
+	// Replay both recovery paths with the embedder unwired: byte-identical,
+	// zero calls of any kind to the embedding endpoint.
+	hitsBefore := totalHits.Load()
+	replayed, err := recoverState(w, st)
+	if err != nil {
+		t.Fatalf("recoverState: %v", err)
+	}
+	if got := string(replayed.Marshal()); got != string(live) {
+		t.Error("on-world snapshot recovery diverged from the live state")
+	}
+	fresh := sim.NewState(w.Manifest.Seed, w.Map())
+	if err := st.ReplayEvents(0, func(e store.Event) error {
+		if e.Tick > fresh.Tick {
+			fresh.Tick = e.Tick
+		}
+		return fresh.Apply(e)
+	}); err != nil {
+		t.Fatalf("full replay: %v", err)
+	}
+	if got := string(fresh.Marshal()); got != string(live) {
+		t.Error("on-world genesis replay diverged from the live state")
+	}
+	if totalHits.Load() != hitsBefore {
+		t.Errorf("replay reached the embedding endpoint (%d extra calls)", totalHits.Load()-hitsBefore)
+	}
+	// The recorded situation vectors — the "on" selector's query inputs — are
+	// reproduced purely from the log.
+	found := false
+	for _, a := range replayed.Agents {
+		if len(a.SitVec) > 0 && a.SitVecModel == "all-minilm" && a.SitVecTick > 0 {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("replayed state carries no situation vector — the on-mode query inputs did not survive replay")
 	}
 }

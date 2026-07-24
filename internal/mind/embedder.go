@@ -7,6 +7,7 @@ import (
 	"log"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/evanstern/promptworld/internal/sim"
@@ -93,9 +94,10 @@ type Embedder struct {
 	replica    *sim.State
 	lastBucket int64
 
-	events chan []store.Event
-	jobs   chan embedJob
-	done   chan struct{}
+	events    chan []store.Event
+	jobs      chan embedJob
+	done      chan struct{}
+	closeOnce sync.Once
 
 	// failing tracks the current failure episode (worker goroutine only): the
 	// FIRST failure of an episode fires warn, later ones stay quiet, and a
@@ -137,7 +139,9 @@ func (e *Embedder) Observe(events []store.Event) {
 	}
 }
 
-func (e *Embedder) Close() { close(e.done) }
+// Close is idempotent (the orchestrator's closeOnce pattern): the daemon's
+// deferred close and an explicit shutdown may both fire.
+func (e *Embedder) Close() { e.closeOnce.Do(func() { close(e.done) }) }
 
 // run drains observed batches into embed jobs, preserving the committed
 // log's order — the jobs channel is FIFO and the worker single-flight, so
