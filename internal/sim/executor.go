@@ -650,11 +650,12 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 		valid = buildSite(m, s, in.TargetX, in.TargetY)
 	case "build_wall_plank", "build_wall_stone":
 		// Spec 032 US1 (FR-007, research R2): walls build ADJACENT — the wall
-		// lands on the Res tile while the builder stands on Target. Re-validate
-		// the Res tile is still a build site AND holds no agent (never entomb
-		// someone by walling their tile); a failed guard resolves via intent_done
-		// with no wall and no spend (contested/occupancy pattern).
-		valid = buildSite(m, s, in.ResX, in.ResY) && !agentAt(s, in.ResX, in.ResY)
+		// lands on the Res tile while the builder stands on Target. Spec 038: the
+		// reserved-tile OCCUPANCY guard no longer cancels here — during work only
+		// the SITE is re-validated (a vanished site fails loudly below), and the
+		// never-entomb guard moves to the completion moment (defer, then a bounded
+		// loud fail) so a passerby crossing the tile no longer kills the build.
+		valid = buildSite(m, s, in.ResX, in.ResY)
 	case "demolish":
 		// Contested-wall (research R5): someone else may have destroyed this wall
 		// while the demolisher worked — a vanished wall resolves via intent_done.
@@ -682,6 +683,14 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 		valid = s.structureAt("oven", in.TargetX, in.TargetY)
 	}
 	if !valid {
+		// Spec 038: a build goal whose site re-validation fails mid-work resolves
+		// LOUDLY and distinctly — agent.build_failed + a situated failure memory —
+		// so a cancelled build is never mistaken for a finished one (the root of
+		// the phantom-wall belief loop). Every non-build goal keeps the silent
+		// intent_done resolution (out of scope, research D5).
+		if isBuildGoal(in.Goal) {
+			return append(events, buildFailedEvents(s, i, a, in, buildFailSiteUnbuildable, nextTick)...)
+		}
 		emit("agent.intent_done", AgentPayload{Agent: i})
 		return events
 	}
@@ -805,6 +814,20 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 			}
 		}
 	case "build_wall_plank", "build_wall_stone":
+		// Spec 038: at the completion moment an occupied reserved tile DEFERS the
+		// build rather than cancelling it — never entomb an agent in a wall. The
+		// deferral is bounded: once an occupant outlasts wallOccupancyGraceTicks
+		// beyond the due tick (a permanent squatter), the build fails loudly
+		// (site blocked too long) instead of waiting forever. The bound is a pure
+		// function of WorkStart, so no new state is needed and replay is trivially
+		// deterministic (research D2). Site loss is already caught loudly by the
+		// validity switch above; here only occupancy remains.
+		if agentAt(s, in.ResX, in.ResY) {
+			if nextTick-in.WorkStart >= workDuration(s, a, in)+wallOccupancyGraceTicks {
+				return append(events, buildFailedEvents(s, i, a, in, buildFailSiteBlocked, nextTick)...)
+			}
+			return events // defer: no event this tick; completion fires the first clear tick
+		}
 		// Spec 032 US1: the wall lands on the Res tile (adjacent-stand build). The
 		// reducer stamps HP = wallMaxHP(kind) and spends the recipe inputs. A
 		// situated builder memory rides along at the shelter salience tier
@@ -905,6 +928,66 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 			"Took a hot bath at the oven — warm, clean, and content."))
 	}
 	return events
+}
+
+// isBuildGoal reports whether goal is one of the seven build_* goals whose
+// mid-work re-validation failures resolve LOUDLY via agent.build_failed (spec
+// 038, research D5). Every other goal keeps the silent intent_done resolution.
+func isBuildGoal(goal string) bool {
+	switch goal {
+	case "build_fire", "build_shelter", "build_oven", "build_chest", "build_path",
+		"build_wall_plank", "build_wall_stone":
+		return true
+	}
+	return false
+}
+
+// buildStructureName is the player-facing noun for a build goal, for the
+// builder's failure memory ("My stone wall was never built …").
+func buildStructureName(goal string) string {
+	switch goal {
+	case "build_fire":
+		return "fire"
+	case "build_shelter":
+		return "shelter"
+	case "build_oven":
+		return "oven"
+	case "build_chest":
+		return "chest"
+	case "build_path":
+		return "path"
+	case "build_wall_plank":
+		return "plank wall"
+	case "build_wall_stone":
+		return "stone wall"
+	}
+	return "structure"
+}
+
+// buildFailureCause renders a stable build-failure reason as a natural clause
+// for the builder's memory text (no internal em-dash, so a driving Why appends
+// its own single em-dash cleanly — the spear-broke double-dash precedent).
+func buildFailureCause(reason string) string {
+	if reason == buildFailSiteBlocked {
+		return "the site stayed blocked too long"
+	}
+	return "the site was no longer buildable"
+}
+
+// buildFailedEvents resolves a cancelled build LOUDLY (spec 038): agent.build_failed
+// — which clears the intent exactly like intent_done, spending no material and
+// standing no structure — paired SAME-TICK with a situated first-person failure
+// memory (OriginAction, shelter salience so it competes with the success memory
+// it falsifies). Every build-failure site routes through here so the event and
+// its memory always travel together (data-model invariant 3). The memory is
+// situated by the builder's own stand tile and carries the driving intent Reason
+// as its Why, matching the wall-built success memory it contradicts.
+func buildFailedEvents(s *State, i int, a *Agent, in *Intent, reason string, nextTick int64) []store.Event {
+	return []store.Event{
+		{Tick: nextTick, Type: "agent.build_failed", Payload: mustPayload(BuildFailedPayload{Agent: i, Goal: in.Goal, Reason: reason})},
+		situatedMemoryEvent(nextTick, i, salShelter, PlaceAt(s, a.X, a.Y), in.Reason, OriginAction,
+			"My %s was never built: %s.", buildStructureName(in.Goal), buildFailureCause(reason)),
+	}
 }
 
 // workDuration is the completion-timing rule for the two goals whose

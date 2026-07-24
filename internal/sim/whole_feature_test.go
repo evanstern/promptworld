@@ -3,6 +3,7 @@ package sim
 import (
 	"bytes"
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/evanstern/promptworld/internal/store"
@@ -721,15 +722,46 @@ func TestReplayByteIdentityWallsAxesPaths(t *testing.T) {
 		t.Fatal("no path after build_path")
 	}
 
-	// Every required spec-032 event actually occurred.
+	// --- a build that fails LOUDLY (spec 038) ---
+	// Reuse the just-built path tile as an unbuildable reserved tile: a wall build
+	// injected onto it re-validates buildSite(res)=false mid-work and resolves via
+	// agent.build_failed + a paired situated failure memory, instead of a bare
+	// agent.intent_done. Both new events ride the log, so replaying from genesis
+	// must still land byte-identically (FR-009). Landing is bypassed (setIntent
+	// injects the intent_set directly), so the unbuildable site is only caught at
+	// the executor's mid-work re-validation — exactly the path spec 038 guards.
+	failStand, failRes, ok := nearestAdjacentTo(m, live, a.X, a.Y, func(x, y int) bool {
+		return x == pSite.X && y == pSite.Y
+	})
+	if !ok {
+		t.Fatal("no stand tile adjacent to the occupied path tile")
+	}
+	log = append(log, setIntent("build_wall_stone", failStand.X, failStand.Y, failRes.X, failRes.Y))
+	log = append(log, stepUntil(live.Tick+budget, isType("agent.build_failed"))...)
+	var failMemory bool
+	for _, e := range log {
+		if e.Type != "agent.memory_added" {
+			continue
+		}
+		var p MemoryAddedPayload
+		mustUnmarshal(t, e.Payload, &p)
+		if p.Agent == 0 && p.Origin == OriginAction && strings.Contains(p.Text, "never built") {
+			failMemory = true
+		}
+	}
+	if !failMemory {
+		t.Fatal("no paired situated failure memory after the loud build failure")
+	}
+
+	// Every required spec-032 event (and the spec-038 build failure) actually occurred.
 	seen := map[string]bool{}
 	for _, e := range log {
 		seen[e.Type] = true
 	}
 	for _, typ := range []string{"agent.crafted", "agent.chopped", "agent.built",
-		"agent.wall_chipped", "agent.wall_destroyed"} {
+		"agent.wall_chipped", "agent.wall_destroyed", "agent.build_failed"} {
 		if !seen[typ] {
-			t.Errorf("required spec-032 event %q never occurred", typ)
+			t.Errorf("required event %q never occurred", typ)
 		}
 	}
 

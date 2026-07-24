@@ -1,10 +1,93 @@
 package sim
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/evanstern/promptworld/internal/store"
 )
+
+// TestBuildSiteVanishedFailsLoudOven is spec 038 US1/US2 (FR-001/FR-003/FR-007)
+// over a NON-wall build: a build_oven whose buildSite(Target) becomes invalid
+// mid-work fails LOUDLY like a wall — one agent.build_failed (site no longer
+// buildable) with goal build_oven, a paired first-person failure memory, no bare
+// intent_done, no oven, and no material spent. Non-wall builds have no
+// reserved-tile occupancy guard, so only the site-vanished path applies.
+func TestBuildSiteVanishedFailsLoudOven(t *testing.T) {
+	const seed = 42
+	m := testMap(seed)
+	s := NewState(seed, m)
+	isolateAgents(s)
+
+	a := &s.Agents[0]
+	a.Dead = false
+	a.Needs = Needs{Health: 1000, Food: 900, Rest: 900, Warmth: 900, Morale: 900}
+	a.Inv.RefinedStone = 4
+	a.Inv.Planks = 2
+	site, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool { return buildSite(m, s, x, y) })
+	if !ok {
+		t.Fatal("no build site reachable from agent 0's genesis position")
+	}
+	a.X, a.Y = site.X, site.Y
+	fx, fy := a.X, a.Y
+	a.Intent = &Intent{Goal: "build_oven", TargetX: fx, TargetY: fy, WorkStart: 1 - buildOvenTicks}
+	// The stand-on-target site is no longer buildable — a structure now sits on it.
+	s.Structures = append(s.Structures, Structure{Kind: "shelter", X: fx, Y: fy})
+
+	log := driveTicks(t, s, m, 3, nil)
+
+	failed, built, done := 0, 0, 0
+	var reason, goal string
+	var failTick int64
+	memTick := int64(-1)
+	for _, e := range log {
+		switch e.Type {
+		case "agent.build_failed":
+			var p BuildFailedPayload
+			mustUnmarshal(t, e.Payload, &p)
+			if p.Agent == 0 {
+				failed++
+				reason, goal, failTick = p.Reason, p.Goal, e.Tick
+			}
+		case "agent.built":
+			built++
+		case "agent.intent_done":
+			var p AgentPayload
+			mustUnmarshal(t, e.Payload, &p)
+			if p.Agent == 0 {
+				done++
+			}
+		case "agent.memory_added":
+			var p MemoryAddedPayload
+			mustUnmarshal(t, e.Payload, &p)
+			if p.Agent == 0 && p.Origin == OriginAction && p.Salience == salShelter &&
+				strings.Contains(p.Text, "never built") && strings.Contains(p.Text, "oven") {
+				memTick = e.Tick
+			}
+		}
+	}
+	if failed != 1 {
+		t.Fatalf("build_failed for the builder = %d, want exactly 1", failed)
+	}
+	if goal != "build_oven" {
+		t.Errorf("goal = %q, want build_oven", goal)
+	}
+	if reason != buildFailSiteUnbuildable {
+		t.Errorf("reason = %q, want %q", reason, buildFailSiteUnbuildable)
+	}
+	if built != 0 {
+		t.Error("no oven should be built on a vanished site")
+	}
+	if done != 0 {
+		t.Error("a vanished-site build must not resolve via a bare intent_done")
+	}
+	if memTick != failTick {
+		t.Errorf("failure memory tick = %d, want it paired same-tick with the event (%d)", memTick, failTick)
+	}
+	if a.Inv.RefinedStone != 4 || a.Inv.Planks != 2 {
+		t.Errorf("inventory = %d refined stone / %d planks, want 4/2 (unspent)", a.Inv.RefinedStone, a.Inv.Planks)
+	}
+}
 
 // TestOvenBuildCost is spec 012 US4 AC#1 + T030: building an oven consumes
 // 4 RefinedStone + 2 Planks (recipes.go, the single source), adds the

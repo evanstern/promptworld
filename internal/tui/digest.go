@@ -275,6 +275,18 @@ var digestRegistry = map[string]digestFunc{
 		}
 		return join([]seg{nameOf(names, p.Agent), txt(" finished")}), true
 	},
+	"agent.build_failed": func(e store.Event, names []string) ([]seg, bool) {
+		// Spec 038: a cancelled build renders as a FAILURE naming the builder,
+		// the goal, and the reason — visibly distinct from "finished" so an
+		// observer can never mistake a failed build for a completed one.
+		p, ok := decode[sim.BuildFailedPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{
+			nameOf(names, p.Agent), txt("'s "), emph(p.Goal), txt(" failed — "), emph(p.Reason),
+		}), true
+	},
 	"agent.intent_rejected": func(e store.Event, names []string) ([]seg, bool) {
 		p, ok := decode[sim.IntentRejectedPayload](e)
 		if !ok {
