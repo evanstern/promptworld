@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
 <meta name="promptworld-docs:source" content="docs/llm-providers.md@8fcc79cee5fc24f2b1e7e6fd67189cf58828bfc2">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-orchestrator.md@ce15d80522aae111e2c359287459b51401d18364">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-orchestrator.md@af13190c1771cd592ad26bcc2728f4e4377be894">
 <meta name="promptworld-docs:source" content="README.md@8fcc79cee5fc24f2b1e7e6fd67189cf58828bfc2">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@ce15d80522aae111e2c359287459b51401d18364">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@af13190c1771cd592ad26bcc2728f4e4377be894">
 <title>AI setup basics — promptworld player docs</title>
 <style>
   :root {
@@ -125,8 +125,17 @@ much you've spent this month.</li>
 tells you which model actually answered.</li>
 <li><code>promptworld calibrate demo</code> benchmarks your setup and tells you which
 game speeds are safe to run at with your hardware and model choice — worth running
-once after any setup change.</li>
+once after any setup change. It measures one response at a time, so it prints a
+reminder that a real, busy village asking the same model for many things at once will
+run somewhat slower than the number it reports — the number is a floor, and the world
+adjusts its own sense of pace upward as it actually runs.</li>
 </ul>
+<p>A world you've never calibrated isn't broken — it just runs on cautious built-in
+guesses instead of a measured pace, and says so with a one-time warning the first time
+you start it. <code>promptworld status</code> also lists, per configured AI provider,
+either the date you last ran <code>calibrate</code> on it or
+<code>uncalibrated (bootstrap)</code> if you haven't yet, so you can always tell at a
+glance.</p>
 <p>You shouldn't even need to go looking, though: promptworld watches its own model
 connection and speaks up the moment something's actually wrong. If the model named in
 <code>llm.json</code> isn't there, or its server can't be reached, or it's a model that

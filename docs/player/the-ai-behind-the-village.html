@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
 <meta name="promptworld-docs:source" content="docs/wiki/agent-mind.md@2bc94f55c57880e07f0e52e5de20c9cd527ab340">
-<meta name="promptworld-docs:source" content="docs/wiki/cognition.md@be38288fa137064174eedbfb3b8a94cc5b1fb0b9">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-orchestrator.md@ce15d80522aae111e2c359287459b51401d18364">
+<meta name="promptworld-docs:source" content="docs/wiki/cognition.md@af13190c1771cd592ad26bcc2728f4e4377be894">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-orchestrator.md@af13190c1771cd592ad26bcc2728f4e4377be894">
 <meta name="promptworld-docs:source" content="docs/wiki/nightly-consolidation.md@2bc94f55c57880e07f0e52e5de20c9cd527ab340">
 <meta name="promptworld-docs:source" content="docs/wiki/social-fabric.md@2bc94f55c57880e07f0e52e5de20c9cd527ab340">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@ce15d80522aae111e2c359287459b51401d18364">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@af13190c1771cd592ad26bcc2728f4e4377be894">
 <title>The AI behind the village — promptworld player docs</title>
 <style>
   :root {
@@ -159,6 +159,16 @@ long this normally takes" to match what's actually happening now, instead of
 clinging to an outdated number. That keeps every speed and staleness decision
 honest — grounded in how the AI is actually performing right now, not how it used to
 perform a while back.</p>
+<p>You can always see where that sense of pace came from: <code>promptworld status</code>
+lists, per configured AI provider, either the date you last ran
+<code>promptworld calibrate</code> on it, or <code>uncalibrated (bootstrap)</code> if
+you never have. A world starts out uncalibrated, running on cautious built-in guesses
+rather than a measured pace, and says so loudly the first time you start it. Running
+<code>calibrate</code> is worth doing once your setup is settled — and its own output
+is honest about its limits too: it measures one AI response at a time, while a real,
+busy village asks the same model for many things at once, so the number it reports is
+a floor, not a ceiling — the live world's own sense of pace adapts upward from there as
+it actually runs.</p>
 
 <h2>The world would rather slow down than let a thought go stale</h2>
 <p>The autopilot fallback above is a last resort, not the first line of defense.

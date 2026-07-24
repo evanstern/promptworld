@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
 <meta name="promptworld-docs:source" content="README.md@8fcc79cee5fc24f2b1e7e6fd67189cf58828bfc2">
-<meta name="promptworld-docs:source" content="docs/wiki/cli-promptworld.md@ce15d80522aae111e2c359287459b51401d18364">
-<meta name="promptworld-docs:source" content="docs/wiki/daemon-lifecycle.md@ce15d80522aae111e2c359287459b51401d18364">
-<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@ce15d80522aae111e2c359287459b51401d18364">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@ce15d80522aae111e2c359287459b51401d18364">
+<meta name="promptworld-docs:source" content="docs/wiki/cli-promptworld.md@af13190c1771cd592ad26bcc2728f4e4377be894">
+<meta name="promptworld-docs:source" content="docs/wiki/daemon-lifecycle.md@af13190c1771cd592ad26bcc2728f4e4377be894">
+<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@af13190c1771cd592ad26bcc2728f4e4377be894">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@af13190c1771cd592ad26bcc2728f4e4377be894">
 <title>Getting started — promptworld player docs</title>
 <style>
   :root {
@@ -123,6 +123,16 @@ the terminal) and confirms it's up before handing control back to you. From this
 moment the world is running 24/7, ticking away even if you don't attach to it again
 until tomorrow. If something goes wrong, promptworld will point you at
 <code>daemon.log</code> inside the world's save directory.</p>
+<p>If your world has AI-driven villagers and you haven't run
+<code>promptworld calibrate</code> on it yet, the very first start prints a loud,
+one-time warning: the world has never been benchmarked against your actual computer,
+so it's making cautious built-in guesses about how long AI thinking takes instead of a
+measured one. The warning names which kinds of villager thinking — planning,
+conversations, meetings — would get paused at which speeds under those cautious
+guesses, and gives you the exact command to fix it, e.g.
+<code>promptworld calibrate demo</code>. Nothing is broken and nothing is blocked
+while you're uncalibrated; the world runs fine either way, calibrating just makes its
+speed decisions match your actual setup instead of a worst-case guess.</p>
 <p>You can check on any world, running or not, from anywhere:</p>
 <pre><code>promptworld ps        # every running world you have, at a glance
 promptworld status demo   # this world's tick, game time, and speed</code></pre>
@@ -130,7 +140,9 @@ promptworld status demo   # this world's tick, game time, and speed</code></pre>
 never actually cooperating with the game's instructions, promptworld notices on its
 own and says so loudly — a <code>WARNING</code> line right in <code>status</code>,
 naming the problem and what to do about it. It clears itself the moment the problem is
-fixed, with no restart needed.</p>
+fixed, with no restart needed. <code>status</code> also lists, per configured AI
+provider, whether it's been calibrated — the date you last ran <code>calibrate</code>,
+or <code>uncalibrated (bootstrap)</code> if you haven't yet.</p>
 
 <h2>4. Watch it live</h2>
 <p>Two ways to watch, both non-destructive — quitting either one just detaches; the

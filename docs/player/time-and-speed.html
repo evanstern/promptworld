@@ -6,7 +6,7 @@
 <meta name="promptworld-docs:generated-by" content="player-docs">
 <meta name="promptworld-docs:source" content="docs/wiki/game-clock.md@6eb8b60ceb65d760408051eadf50a789603efa18">
 <meta name="promptworld-docs:source" content="docs/wiki/sim-loop.md@ce15d80522aae111e2c359287459b51401d18364">
-<meta name="promptworld-docs:source" content="docs/wiki/cli-promptworld.md@ce15d80522aae111e2c359287459b51401d18364">
+<meta name="promptworld-docs:source" content="docs/wiki/cli-promptworld.md@af13190c1771cd592ad26bcc2728f4e4377be894">
 <title>Time and speed — promptworld player docs</title>
 <style>
   :root {
@@ -98,6 +98,14 @@ full-screen client with the <code>[</code> and <code>]</code> keys (which cycle
 ladder, reachable only by naming it directly):</p>
 <pre><code>promptworld speed demo 8x
 promptworld speed demo max</code></pre>
+<p>If your world has never been benchmarked with <code>promptworld calibrate</code>,
+raising the speed to a point where villager thinking would have to be paused to keep
+up now prints a warning naming exactly which kinds of thinking that is (planning,
+conversations, meetings) and suggesting you run <code>calibrate</code>. The speed
+change itself still happens either way — nothing is blocked, this is just a heads-up
+that your setup hasn't actually been measured yet, so the world is guessing
+conservatively. A calibrated world, or a speed change that doesn't pause anything,
+never shows this warning.</p>
 
 <h2>Pause and resume are player verbs</h2>
 <p>Pausing is something you do on purpose — it's different from just detaching your
