@@ -68,9 +68,9 @@ Phase 6 (persona composition over proven seams) → Sonnet, escalate on gate fai
 
 **Independent Test**: quickstart.md Scenario 5
 
-- [ ] T019 [P] [US2] Author the dogfood bundle in examples/bundles/dogfood-move/tools/miracle_move/ (tool.json re-expressing the `work_miracle` move kind: `move_entity` + the exact perception memory text from internal/metatron/miracle_batch.go:40-43), tracked in-repo as the shipped example
-- [ ] T020 [US2] Equivalence test in internal/metatron/dogfood_test.go: identical-seed worlds — built-in `work_miracle{kind:move}` vs bundle `miracle_move` with same args → equivalent events, narration memories, and charge deduction (SC-004)
-- [ ] T021 [US2] Collision test in internal/bundle/load_test.go: install a bundle tool named `work_miracle` → C1 boot warning, built-in wins, exactly one roster entry (clarification #2)
+- [x] T019 [P] [US2] Author the dogfood bundle in examples/bundles/dogfood-move/tools/miracle_move/ (tool.json re-expressing the `work_miracle` move kind: `move_entity` + the exact perception memory text from internal/metatron/miracle_batch.go:40-43), tracked in-repo as the shipped example
+- [x] T020 [US2] Equivalence test in internal/metatron/dogfood_test.go: identical-seed worlds — built-in `work_miracle{kind:move}` vs bundle `miracle_move` with same args → equivalent events, narration memories, and charge deduction (SC-004)
+- [x] T021 [US2] Collision test in internal/bundle/load_test.go: install a bundle tool named `work_miracle` → C1 boot warning, built-in wins, exactly one roster entry (clarification #2)
 
 **Checkpoint**: bundle format proven sufficient for real shipped tools
 
@@ -82,13 +82,13 @@ Phase 6 (persona composition over proven seams) → Sonnet, escalate on gate fai
 
 **Independent Test**: quickstart.md Scenarios 3–4
 
-- [ ] T022 [US3] Implement the invoker-scoped world view in internal/bundle/worldview.go per contracts/script-api.md: `tick`, `time_of_day`, `map_width/height`, `agents()`, `agent(name)`, `rand(purpose,index)` backed by the internal/sim/rng.go:11-16 `rngAt` pattern with purpose `"bundle:<tool>:<purpose>"`; frozen starlark values; nothing else exposed
-- [ ] T023 [US3] Implement the Starlark executor in internal/bundle/script.go: program compiled once at boot, per-invocation `starlark.Thread` with step cap from manifest limits (default 100k, ceiling 1M), recursion off, no `load()`, predeclared `args` (frozen dict) + `world`; `apply()` return value fed to the T006 compiler; deterministic abort → descriptive error
-- [ ] T024 [US3] Wire script-mode tools through the handler factory in internal/bundle/handlers.go (script path replaces template expansion; identical downstream compile/validate/inject) and extend boot validation T6 to compile-check the program
-- [ ] T025 [P] [US3] Sandbox + cap unit tests in internal/bundle/script_test.go: step-cap exhaustion aborts deterministically with no state change; no time/io/net/module access (probe each); undeclared event kind from script rejected by compiler; malformed return shapes rejected; `fail()` propagates as invocation failure (SC-006)
-- [ ] T026 [P] [US3] Create the cast_light scripted fixture in internal/bundle/testdata/worlds/scripted/bundles/demo/tools/cast_light/{tool.json,tool.star} branching on `world.time_of_day` per contracts/script-api.md example
-- [ ] T027 [US3] Integration test in internal/metatron/bundle_integration_test.go: cast_light under night vs day produces the branch-correct narration; only declared events land (quickstart Scenario 3)
-- [ ] T028 [US3] Scripted replay byte-identity test (variant of T017) exercising `world.rand`: live vs replay hashes identical; second test proving replay is bundle-independent — delete the bundle dir, replay still reproduces the hash (SC-003, FR-011)
+- [x] T022 [US3] Implement the invoker-scoped world view in internal/bundle/worldview.go per contracts/script-api.md: `tick`, `time_of_day`, `map_width/height`, `agents()`, `agent(name)`, `rand(purpose,index)` backed by the internal/sim/rng.go:11-16 `rngAt` pattern with purpose `"bundle:<tool>:<purpose>"`; frozen starlark values; nothing else exposed
+- [x] T023 [US3] Implement the Starlark executor in internal/bundle/script.go: program compiled once at boot, per-invocation `starlark.Thread` with step cap from manifest limits (default 100k, ceiling 1M), recursion off, no `load()`, predeclared `args` (frozen dict) + `world`; `apply()` return value fed to the T006 compiler; deterministic abort → descriptive error
+- [x] T024 [US3] Wire script-mode tools through the handler factory in internal/bundle/handlers.go (script path replaces template expansion; identical downstream compile/validate/inject) and extend boot validation T6 to compile-check the program
+- [x] T025 [P] [US3] Sandbox + cap unit tests in internal/bundle/script_test.go: step-cap exhaustion aborts deterministically with no state change; no time/io/net/module access (probe each); undeclared event kind from script rejected by compiler; malformed return shapes rejected; `fail()` propagates as invocation failure (SC-006)
+- [x] T026 [P] [US3] Create the cast_light scripted fixture in internal/bundle/testdata/worlds/scripted/bundles/demo/tools/cast_light/{tool.json,tool.star} branching on `world.time_of_day` per contracts/script-api.md example
+- [x] T027 [US3] Integration test in internal/metatron/bundle_integration_test.go: cast_light under night vs day produces the branch-correct narration; only declared events land (quickstart Scenario 3)
+- [x] T028 [US3] Scripted replay byte-identity test (variant of T017) exercising `world.rand`: live vs replay hashes identical; second test proving replay is bundle-independent — delete the bundle dir, replay still reproduces the hash (SC-003, FR-011)
 
 **Checkpoint**: scripting runtime live, sandboxed, provably deterministic
 
