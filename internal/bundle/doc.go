@@ -21,13 +21,7 @@
 //   - Pure, sandboxed, step-capped scripts: a scripted tool's apply() runs in
 //     a starlark.Thread with no wall clock, no I/O, no ambient randomness,
 //     recursion off, and a hard step cap (manifest-configurable, capped at
-//     1,000,000) — determinism and replay byte-identity depend on it.
-//
-// go.starlark.net is pinned here as a direct dependency ahead of the
-// executor (script.go, spec 036 Phase 5/T023); the blank import below keeps
-// it live in go.mod until that file lands.
+//     1,000,000) — determinism and replay byte-identity depend on it. Boot
+//     validation (validate.go) compiles the script and checks it defines
+//     apply(); execution lands in Phase 5.
 package bundle
-
-import (
-	_ "go.starlark.net/starlark"
-)

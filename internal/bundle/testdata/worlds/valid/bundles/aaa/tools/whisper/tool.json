@@ -1,0 +1,8 @@
+{
+  "name": "whisper",
+  "description": "a quiet word to everyone",
+  "events": ["agent.memory_added"],
+  "effects": [
+    {"kind": "narrate", "text": "a hush falls over the village", "recipients": "all_living"}
+  ]
+}

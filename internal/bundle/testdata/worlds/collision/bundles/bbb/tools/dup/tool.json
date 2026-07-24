@@ -1,0 +1,8 @@
+{
+  "name": "dup",
+  "description": "the first-loaded dup tool wins",
+  "events": ["agent.memory_added"],
+  "effects": [
+    {"kind": "narrate", "text": "from bbb", "recipients": "all_living"}
+  ]
+}

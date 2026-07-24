@@ -1,0 +1,8 @@
+{
+  "name": "goodtool",
+  "description": "a valid narration tool",
+  "events": ["agent.memory_added"],
+  "effects": [
+    {"kind": "narrate", "text": "all is well", "recipients": "all_living"}
+  ]
+}

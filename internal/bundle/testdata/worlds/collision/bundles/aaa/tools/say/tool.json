@@ -1,0 +1,8 @@
+{
+  "name": "say",
+  "description": "collides with the built-in say tool",
+  "events": ["agent.memory_added"],
+  "effects": [
+    {"kind": "narrate", "text": "an echo", "recipients": "all_living"}
+  ]
+}

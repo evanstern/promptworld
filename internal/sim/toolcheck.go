@@ -61,7 +61,7 @@ func validateCoverage(tools []tool.Tool) error {
 			}
 		case tool.Expressive:
 			for _, ev := range t.Events {
-				if !injectSocialWhitelist[ev] {
+				if !InjectableSocialEvent(ev) {
 					errs = append(errs, fmt.Errorf("expressive tool %q declares event %q not in injectSocialWhitelist", t.Name, ev))
 				}
 			}

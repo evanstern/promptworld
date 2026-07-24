@@ -1,0 +1,6 @@
+{
+  "name": "broken",
+  "description": "a scripted tool whose script never defines apply()",
+  "events": ["agent.memory_added"],
+  "script": "tool.star"
+}
