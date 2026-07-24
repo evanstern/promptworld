@@ -4,7 +4,7 @@ title: 'Scriptable agent tools: pluggable script-defined tools over an engine AP
 status: In Progress
 assignee: []
 created_date: '2026-07-24 03:02'
-updated_date: '2026-07-24 19:46'
+updated_date: '2026-07-24 19:58'
 labels:
   - idea
 dependencies: []
@@ -34,7 +34,7 @@ Spec: specs/036-scriptable-agent-tools
 - [x] #10 Spec phase: User Story 2 — Dogfood: built-in re-expressed as bundle (Priority: P2)
 - [x] #11 Spec phase: User Story 3 — Scripted tools, sandboxed + deterministic (Priority: P3)
 - [x] #12 Spec phase: User Story 4 — Persona bundles (Priority: P4)
-- [ ] #13 Spec phase: Polish & Cross-Cutting
+- [x] #13 Spec phase: Polish & Cross-Cutting
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -83,4 +83,6 @@ Phases 4+5 landed (c184bf2 dogfood, 6167581 starlark runtime). AC#6: miracle_mov
 Phase 6 landed (00dfd35): SOUL fragments into system prompt (charter->souls->skills order, byte-identical when absent), persona grant intersection (narrow-never-widen, commutative across personas, reaches roster+guidance+door), loadManifest cosmetic-notice fix, gandalf fixture + Scenario 6 integration test. Sonnet tier, no escalation needed.
 
 Phase 7 polish landed (ead97e7 after rebase): quickstart 6/6 validated — Scenarios 1-2 manual with captured boot logs (clean load line; T3 and B3 rejection lines naming file+rule+value), 3-6 via the automated suite (named test-to-scenario mapping in PR body). Boot-perf: 32 bundles/256 tools discover+validate in 43-58ms. docs/bundles.md authoring guide linked from README. Branch task-85-scriptable-agent-tools pushed (7 commits, rebased on main); PR creation retrying against GitHub API outage.
+
+Merged to main as 18a0376 (direct merge per user instruction, GitHub PR API outage; branch + worktree cleaned up, remote branch deleted). Full suite green on merged main except TestCatalogSweep — pre-existing, refiled as TASK-100. Spec 036 at 36/36 tasks, Done-eligible per spec-bridge. HOLDING at In Progress for the constitution-IV wiki re-pin: this change touches wiki-pinned sources (tool-registry, sim-loop, metatron-miracles, metatron, deterministic-rng, event-types, world-save-directory) and a concurrent session has in-flight edits to docs/wiki/ at root right now — wiki-update must run after their work lands, then TASK-85 -> Done + player-docs freshness check.
 <!-- SECTION:NOTES:END -->
