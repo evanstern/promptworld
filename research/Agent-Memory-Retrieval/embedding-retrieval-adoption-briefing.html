@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Embedding Memory Retrieval — Adoption Briefing</title>
+<style>
+  /* praxisflux:tokens:start */
+  :root{
+    --bg:#f4f6f9; --card:#ffffff; --ink:#1b2733; --muted:#5a6776;
+    --accent:#4f46e5; --accent2:#0e9488; --warn:#b4530a;
+    --line:#dde3ea; --chip:#f3f5f8;
+    --callout-bg:#f5f5ff; --warn-bg:#fff6ee; --ok-bg:#eefaf7;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+    --s1:#4f46e5; --s2:#0e9488;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0e141b; --card:#161d26; --ink:#e7ecf2; --muted:#9aa7b5;
+      --accent:#8b83ff; --accent2:#3ac9b8; --warn:#e8903f;
+      --line:#28323e; --chip:#1d2630;
+      --callout-bg:#1b1d38; --warn-bg:#33220f; --ok-bg:#0f2a27;
+      --s1:#7a71f5; --s2:#16a394;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0e141b; --card:#161d26; --ink:#e7ecf2; --muted:#9aa7b5;
+    --accent:#8b83ff; --accent2:#3ac9b8; --warn:#e8903f;
+    --line:#28323e; --chip:#1d2630;
+    --callout-bg:#1b1d38; --warn-bg:#33220f; --ok-bg:#0f2a27;
+    --s1:#7a71f5; --s2:#16a394;
+  }
+  :root[data-theme="light"]{
+    --bg:#f4f6f9; --card:#ffffff; --ink:#1b2733; --muted:#5a6776;
+    --accent:#4f46e5; --accent2:#0e9488; --warn:#b4530a;
+    --line:#dde3ea; --chip:#f3f5f8;
+    --callout-bg:#f5f5ff; --warn-bg:#fff6ee; --ok-bg:#eefaf7;
+    --s1:#4f46e5; --s2:#0e9488;
+  }
+  /* praxisflux:tokens:end */
+
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55;
+    -webkit-text-size-adjust:100%;padding:0}
+  .wrap{max-width:900px;margin:0 auto;padding:40px 24px 80px}
+  h1{font-size:2rem;line-height:1.15;letter-spacing:-.02em;margin:0 0 .4em;text-wrap:balance}
+  h2{font-size:1.35rem;margin:2.2em 0 .5em;letter-spacing:-.01em;text-wrap:balance}
+  p,li{font-size:1.02rem;color:var(--ink);max-width:70ch}
+  .muted{color:var(--muted)}
+  a{color:var(--accent)}
+  code,.mono{font-family:var(--mono);background:var(--chip);border:1px solid var(--line);
+    border-radius:6px;padding:1px 6px;font-size:.88em}
+  .callout{border-left:4px solid var(--accent);background:var(--callout-bg);
+    border-radius:0 10px 10px 0;padding:14px 18px;margin:16px 0}
+  .callout.warn{border-left-color:var(--warn);background:var(--warn-bg)}
+  .callout.ok{border-left-color:var(--accent2);background:var(--ok-bg)}
+  .callout p{margin:.3em 0}
+
+  table.data{border-collapse:collapse;width:100%;margin:16px 0;font-size:.95rem}
+  table.data caption{text-align:left;color:var(--muted);font-size:.88rem;margin-bottom:6px}
+  table.data th,table.data td{border:1px solid var(--line);padding:8px 12px;text-align:left}
+  table.data thead th{background:var(--chip);font-weight:700}
+  table.data td.num{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--mono)}
+  .table-scroll{overflow-x:auto}
+
+  .theme-toggle{position:fixed;top:14px;right:14px;z-index:50;font:inherit;font-size:.9rem;
+    color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:8px;
+    padding:6px 12px;cursor:pointer}
+  .theme-toggle:hover{background:var(--chip)}
+  .theme-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  @media print{ .theme-toggle{display:none} body{background:#fff} }
+
+  /* ---- briefing layer ---- */
+  .eyebrow{font-size:.78rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);
+    margin:0 0 .8em;font-weight:600}
+  .eyebrow b{color:var(--accent2);font-weight:700}
+  .verdict{border:1px solid var(--line);border-left:5px solid var(--accent2);background:var(--ok-bg);
+    border-radius:0 12px 12px 0;padding:20px 24px;margin:24px 0}
+  .verdict p{margin:.4em 0;font-size:1.08rem}
+  .verdict .lede{font-weight:700;font-size:1.18rem}
+
+  /* three-term equation */
+  .equation{display:flex;flex-wrap:wrap;align-items:stretch;gap:10px;margin:20px 0}
+  .term{flex:1 1 180px;border:1px solid var(--line);border-radius:10px;background:var(--card);
+    padding:12px 14px;position:relative}
+  .term .t-name{font-weight:700;font-size:1rem}
+  .term .t-how{font-size:.86rem;color:var(--muted);margin-top:2px}
+  .term .t-state{display:inline-block;margin-top:8px;font-size:.75rem;font-weight:700;
+    text-transform:uppercase;letter-spacing:.08em;border-radius:999px;padding:2px 10px}
+  .term.have{border-top:3px solid var(--s1)}
+  .term.have .t-state{background:var(--chip);color:var(--muted)}
+  .term.missing{border-top:3px solid var(--s2)}
+  .term.missing .t-state{background:var(--accent2);color:#fff}
+  .plus{align-self:center;font-size:1.4rem;color:var(--muted);font-family:var(--mono)}
+
+  /* build order */
+  .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:20px 0}
+  .step{border:1px solid var(--line);border-radius:10px;background:var(--card);padding:14px 16px}
+  .step .n{font-family:var(--mono);font-size:.8rem;font-weight:700;color:var(--accent);
+    letter-spacing:.06em}
+  .step h3{margin:.25em 0 .3em;font-size:1.02rem;line-height:1.3}
+  .step p{font-size:.88rem;color:var(--muted);margin:0}
+  .step.defer{background:var(--chip);border-style:dashed}
+  .step.defer .n{color:var(--warn)}
+
+  /* scale chart */
+  figure.chart{margin:20px 0;border:1px solid var(--line);border-radius:12px;background:var(--card);
+    padding:16px 18px 8px}
+  figure.chart figcaption{font-size:.88rem;color:var(--muted);padding:6px 2px 8px}
+  .chart-scroll{overflow-x:auto}
+  .scale-svg{display:block;min-width:640px;width:100%;height:auto}
+  .scale-svg .axis{stroke:var(--line);stroke-width:1}
+  .scale-svg .tick-label{fill:var(--muted);font-family:var(--mono);font-size:11px}
+  .scale-svg .zone-pw{fill:var(--s2);opacity:.22}
+  .scale-svg .zone-edge{stroke:var(--s2);stroke-width:2}
+  .scale-svg .zone-label{fill:var(--ink);font-size:12px;font-weight:700}
+  .scale-svg .zone-sub{fill:var(--muted);font-size:11px}
+  .scale-svg .mark{stroke-width:2}
+  .scale-svg .mark.ann{stroke:var(--s1)}
+  .scale-svg .mark.prod{stroke:var(--warn)}
+  .scale-svg .dotlab{fill:var(--muted);font-size:11px}
+  .scale-svg .hit{fill:transparent;cursor:default}
+  .tooltip{position:fixed;z-index:60;pointer-events:none;background:var(--card);color:var(--ink);
+    border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:.85rem;
+    box-shadow:0 4px 14px rgba(0,0,0,.18);max-width:280px;display:none}
+  .tooltip b{display:block;margin-bottom:2px}
+
+  /* guardrails + tensions */
+  .duo{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin:16px 0}
+  .panel{border:1px solid var(--line);border-radius:10px;background:var(--card);padding:14px 18px}
+  .panel h3{margin:.1em 0 .4em;font-size:1rem}
+  .panel p{font-size:.92rem;color:var(--muted);margin:.3em 0}
+  .panel.reject{border-left:4px solid var(--warn)}
+  .panel.instrument{border-left:4px solid var(--accent)}
+
+  footer{margin-top:48px;border-top:1px solid var(--line);padding-top:16px;font-size:.85rem;
+    color:var(--muted)}
+  footer p{font-size:.85rem;color:var(--muted)}
+  @media (prefers-reduced-motion: reduce){ *{transition:none!important;animation:none!important} }
+</style>
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle light/dark theme">◐ theme</button>
+<div class="wrap">
+
+  <p class="eyebrow">promptworld · research vault · <b>Agent-Memory-Retrieval</b> · analysis briefing · 2026-07-24</p>
+  <h1>Should promptworld adopt embedding-based memory retrieval?</h1>
+  <p class="muted">Rendering of <span class="mono">Analysis-Embedding-Retrieval-Adoption.md</span> —
+    the verdict, the build order, the determinism rule, and what cuts against it. Every figure
+    traces to the branch grounding.</p>
+
+  <div class="verdict">
+    <p class="lede">Yes — as a read-time relevance term and a consolidation trigger. Never as a
+      write-time replacement for the salience table.</p>
+    <p>Determinism is satisfied by one rule: <strong>embeddings are recorded at emission and
+      replay never re-embeds.</strong> Vectors are payload data; every derived score is a pure
+      function of recorded floats.</p>
+  </div>
+
+  <h2>promptworld is one term short of the reference architecture</h2>
+  <p>The canonical retrieval score (Park et al. 2023, ablation-validated in Smallville — the
+    closest published analog) is a weighted sum of three normalized terms. promptworld already
+    has two of them.</p>
+  <div class="equation" role="img" aria-label="Retrieval score = importance (have, as salience) + recency (have, as half-life decay) + relevance (missing)">
+    <div class="term have">
+      <div class="t-name">Importance</div>
+      <div class="t-how">= the salience table (1–10, stamped at emission)</div>
+      <span class="t-state">already have</span>
+    </div>
+    <div class="plus">+</div>
+    <div class="term have">
+      <div class="t-name">Recency</div>
+      <div class="t-how">= half-life decay per game-day in <span class="mono">SelectMemories</span></div>
+      <span class="t-state">already have</span>
+    </div>
+    <div class="plus">+</div>
+    <div class="term missing">
+      <div class="t-name">Relevance</div>
+      <div class="t-how">= cosine(memory vector, current-situation vector)</div>
+      <span class="t-state">the missing term</span>
+    </div>
+  </div>
+
+  <h2>The cost side collapses at village scale</h2>
+  <p>Per-agent memory stores (hundreds to low thousands of vectors) sit orders of magnitude below
+    where vector-search machinery becomes necessary. Exact brute-force cosine is sub-millisecond
+    here; a 384-dim local model embeds in ~4&nbsp;ms on CPU.</p>
+
+  <figure class="chart">
+    <div class="chart-scroll">
+    <svg class="scale-svg" viewBox="0 0 760 190" xmlns="http://www.w3.org/2000/svg" aria-labelledby="scaleTitle" role="img">
+      <title id="scaleTitle">Store size on a log scale: promptworld per-agent stores sit far below the ANN crossover and production-budget regimes</title>
+      <!-- log axis 10^1 .. 10^7 mapped to x=60..700 ; x = 60 + (log10(n)-1)*(640/6) -->
+      <line class="axis" x1="60" y1="130" x2="700" y2="130"/>
+      <g>
+        <line class="axis" x1="60"  y1="126" x2="60"  y2="134"/><text class="tick-label" x="60"  y="150" text-anchor="middle">10¹</text>
+        <line class="axis" x1="166" y1="126" x2="166" y2="134"/><text class="tick-label" x="166" y="150" text-anchor="middle">10²</text>
+        <line class="axis" x1="273" y1="126" x2="273" y2="134"/><text class="tick-label" x="273" y="150" text-anchor="middle">10³</text>
+        <line class="axis" x1="380" y1="126" x2="380" y2="134"/><text class="tick-label" x="380" y="150" text-anchor="middle">10⁴</text>
+        <line class="axis" x1="486" y1="126" x2="486" y2="134"/><text class="tick-label" x="486" y="150" text-anchor="middle">10⁵</text>
+        <line class="axis" x1="593" y1="126" x2="593" y2="134"/><text class="tick-label" x="593" y="150" text-anchor="middle">10⁶</text>
+        <line class="axis" x1="700" y1="126" x2="700" y2="134"/><text class="tick-label" x="700" y="150" text-anchor="middle">10⁷</text>
+      </g>
+      <text class="tick-label" x="380" y="176" text-anchor="middle">vectors in the store (log scale)</text>
+
+      <!-- promptworld zone: 10^2 .. 10^3.5 -->
+      <rect class="zone-pw" x="166" y="70" width="160" height="60" rx="4"/>
+      <line class="zone-edge" x1="166" y1="70" x2="166" y2="130"/>
+      <line class="zone-edge" x1="326" y1="70" x2="326" y2="130"/>
+      <text class="zone-label" x="246" y="58" text-anchor="middle">promptworld per-agent store</text>
+      <text class="zone-sub" x="246" y="93" text-anchor="middle">brute-force exact kNN:</text>
+      <text class="zone-sub" x="246" y="108" text-anchor="middle">sub-ms, 100% recall, no DB</text>
+      <rect class="hit" x="166" y="55" width="160" height="75"
+        data-tip="&lt;b&gt;promptworld per-agent store&lt;/b&gt;Hundreds to low thousands of memories per agent. Brute-force exact cosine over a few thousand 384-dim vectors is a few million multiply-adds — sub-millisecond on one CPU core (grounding §6)."/>
+
+      <!-- ANN crossover marker at 10^5 -->
+      <line class="mark ann" x1="486" y1="70" x2="486" y2="130" stroke-dasharray="5 4"/>
+      <text class="dotlab" x="486" y="58" text-anchor="middle">ANN preferred ≳10⁵</text>
+      <rect class="hit" x="466" y="55" width="40" height="75"
+        data-tip="&lt;b&gt;ANN crossover&lt;/b&gt;Indexes like HNSW become the preferred method when a dataset reaches hundreds of thousands of vectors; brute-force latency grows linearly with store size (grounding §6)."/>
+
+      <!-- production budgets marker at 10^6+ -->
+      <line class="mark prod" x1="593" y1="70" x2="593" y2="130" stroke-dasharray="2 4"/>
+      <text class="dotlab" x="593" y="40" text-anchor="middle">production latency budgets</text>
+      <text class="dotlab" x="593" y="55" text-anchor="middle">(40–80 ms two-stage) target here</text>
+      <rect class="hit" x="573" y="30" width="40" height="100"
+        data-tip="&lt;b&gt;Production regime&lt;/b&gt;Two-stage retrieval (approximate pool &lt;10 ms + reranker) totals 40–80 ms; HNSW at 1536-dim holds sub-50 ms at multi-million scale. That machinery addresses million-scale shared stores — not this one (grounding §5)."/>
+    </svg>
+    </div>
+    <figcaption>Store size vs the machinery it requires. promptworld's per-agent stores (teal band)
+      sit two-plus orders of magnitude below the ANN crossover (indigo dashed) and the regime
+      production latency budgets are written for (amber dashed). Hover the marks for the grounded
+      detail. Sources: grounding §5–§6.</figcaption>
+  </figure>
+
+  <h2>Build order</h2>
+  <p>Order carries the argument: (1) is the best-evidenced, cheapest win; (2) is what makes (1)
+    earn its keep; (3) reuses a slot that already exists; (4) loses on every axis measured.</p>
+  <div class="steps">
+    <div class="step">
+      <span class="n">STEP 1</span>
+      <h3>Embed-at-emission + relevance in selection</h3>
+      <p>Record each memory's vector at emission; add the cosine term to the window score.
+        Ablation-backed; near-free at this scale.</p>
+    </div>
+    <div class="step">
+      <span class="n">STEP 2</span>
+      <h3>Open-ended memory text</h3>
+      <p>Ship with or right after 1 — it gives the relevance term resolution. Situated
+        where/why texts + gists/digests/omens already vary enough to start.</p>
+    </div>
+    <div class="step">
+      <span class="n">STEP 3</span>
+      <h3>Consolidation clustering + habituation</h3>
+      <p>SAGE/RecMem cheap-geometry-first patterns in the nightly digest slot, which is
+        already licensed to reweigh.</p>
+    </div>
+    <div class="step defer">
+      <span class="n">DEFERRED</span>
+      <h3>Write-time kNN salience scoring</h3>
+      <p>Salience stays a deterministic control-plane signal. Neighbor-propagation from
+        self-inserted labels is an unevaluated feedback loop.</p>
+    </div>
+  </div>
+
+  <h2>Two guardrails the solution must carry</h2>
+  <div class="duo">
+    <div class="panel reject">
+      <h3>Reject recency-from-last-access</h3>
+      <p>The reference design decays recency from a memory's <em>last access</em> — retrieval
+        mutates state on read. That is hostile to a pure selection function and to byte-identical
+        replay. Keep creation-time decay; if access-refreshing is ever wanted, accesses must
+        become recorded events.</p>
+    </div>
+    <div class="panel instrument">
+      <h3>Instrument rank-divergence first</h3>
+      <p>In a world where days repeat, relevance may just echo recency. Before the three-term
+        score drives prompts, log the rank-divergence between it and today's salience×recency
+        score — if the divergence is negligible, the relevance term demotes below consolidation
+        work.</p>
+    </div>
+  </div>
+
+  <h2>What cuts against the verdict</h2>
+  <ul>
+    <li><strong>Operational surface.</strong> A local embedding model (ONNX bindings or a
+      llama.cpp sidecar) is a new moving part in a pure-Go project; the model file becomes part
+      of replay hygiene — old and new vectors must share a space, or re-embedding must be
+      modeled as events.</li>
+    <li><strong>Temporal structure beat dense similarity on benchmarks.</strong> Zep's temporal
+      knowledge graph scored 63.8% vs Mem0's 49.0% on LongMemEval. promptworld's
+      tick/subject/origin metadata is already strong temporal-relational structure — relevance
+      complements it; metadata-aware retrieval (filter by subject, then rank by cosine) likely
+      beats naive cosine over everything.</li>
+    <li><strong>What is given up:</strong> the "one embedding pipeline scores everything"
+      elegance. Salience and relevance stay separate signals — which is the shape of the systems
+      that actually work.</li>
+  </ul>
+
+  <h2>The figures, auditable</h2>
+  <div class="table-scroll">
+    <table class="data">
+      <caption>Every number above, traced to the branch grounding (research/Agent-Memory-Retrieval/_grounding.md, 2026-07-24)</caption>
+      <thead><tr><th>Claim</th><th class="num">Figure</th><th>Source (grounding §)</th></tr></thead>
+      <tbody>
+        <tr><td>Reference recency decay (per hour, from last access)</td><td class="num">0.995</td><td>§1 · Park et al. 2023</td></tr>
+        <tr><td>Reflection trigger (summed importance)</td><td class="num">≈150</td><td>§1 · Park et al. 2023</td></tr>
+        <tr><td>Reflection cadence in practice</td><td class="num">2–3 / day</td><td>§1 · Park et al. 2023</td></tr>
+        <tr><td>SAGE add-phase API cost reduction</td><td class="num">3.4×</td><td>§3 · arXiv:2605.30711</td></tr>
+        <tr><td>SAGE add-phase latency reduction</td><td class="num">2.5×</td><td>§3 · arXiv:2605.30711</td></tr>
+        <tr><td>SAGE LLM calls skipped (as A-MEM gate)</td><td class="num">16–18%</td><td>§3 · arXiv:2605.30711</td></tr>
+        <tr><td>Zep vs Mem0 on LongMemEval (GPT-4o)</td><td class="num">63.8% vs 49.0%</td><td>§5 · arXiv:2604.04853</td></tr>
+        <tr><td>ANN preferred above (store size)</td><td class="num">~10⁵ vectors</td><td>§6 · Vectroid / Weaviate</td></tr>
+        <tr><td>Two-stage production retrieval budget</td><td class="num">40–80 ms</td><td>§5 · Supermemory</td></tr>
+        <tr><td>Quantized MiniLM-class CPU throughput</td><td class="num">~266 q/s (≈4 ms)</td><td>§8 · Optimum/ONNX</td></tr>
+        <tr><td>Vector storage per memory (384 × float32)</td><td class="num">≈1.5 KB</td><td>derived · analysis</td></tr>
+        <tr><td>Small-model embedding dimension</td><td class="num">384</td><td>§8 · MiniLM / bge-small</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <footer>
+    <p><strong>Basis.</strong> Verdict and argument: Analysis-Embedding-Retrieval-Adoption.md.
+      Facts: _grounding.md (13-search web fan-out, 2026-07-24) and the branch notes
+      Retrieval-Scoring-Functions · Write-Time-Importance-Scoring · Novelty-Gates-and-Habituation ·
+      Consolidation-and-Clustering · Memory-Systems-and-Game-NPC-Practice ·
+      Small-Scale-Vector-Search-and-Latency · Embedding-Determinism-and-Local-Inference.
+      Confidence: moderately high on ordering and record-at-emission; medium on the behavioral
+      magnitude of the relevance term at village scale (unmeasured in any gathered source).</p>
+  </footer>
+</div>
+
+<div class="tooltip" id="tip" role="tooltip"></div>
+<script>
+  // praxisflux:theme:start
+  function praxisfluxCycleTheme(btn){
+    const order=["auto","light","dark"], label={auto:"◐ auto",light:"☀ light",dark:"☾ dark"};
+    const next=order[(order.indexOf(btn.dataset.mode||"auto")+1)%order.length];
+    if(next==="auto") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme",next);
+    btn.dataset.mode=next; btn.textContent=label[next]; return next;
+  }
+  // praxisflux:theme:end
+  document.getElementById('themeToggle').addEventListener('click',(e)=>praxisfluxCycleTheme(e.currentTarget));
+
+  // chart hover tooltips (per-mark, hit targets larger than the marks)
+  const tip=document.getElementById('tip');
+  document.querySelectorAll('.hit').forEach(el=>{
+    el.addEventListener('mousemove',ev=>{
+      tip.innerHTML=el.dataset.tip;
+      tip.style.display='block';
+      const pad=14, w=tip.offsetWidth, h=tip.offsetHeight;
+      let x=ev.clientX+pad, y=ev.clientY+pad;
+      if(x+w>window.innerWidth-8) x=ev.clientX-w-pad;
+      if(y+h>window.innerHeight-8) y=ev.clientY-h-pad;
+      tip.style.left=x+'px'; tip.style.top=y+'px';
+    });
+    el.addEventListener('mouseleave',()=>{ tip.style.display='none'; });
+  });
+</script>
+</body>
+</html>
