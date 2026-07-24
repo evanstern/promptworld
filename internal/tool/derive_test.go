@@ -236,6 +236,52 @@ func TestRestrictEnum(t *testing.T) {
 	}
 }
 
+// TestMetatronToolGuidancePromptGlossFallback (spec 036 T012): a tool absent
+// from metatronToolDesc — a bundle tool — renders its PromptGloss as the gloss
+// and its Params as the argument surface, so a bundle tool on the roster gets
+// real guidance instead of an empty description.
+func TestMetatronToolGuidancePromptGlossFallback(t *testing.T) {
+	bundleTool := Tool{
+		Name:        "teleport",
+		Effect:      Expressive,
+		PromptGloss: "Whisk a villager across the map",
+		Params: []Param{
+			{Name: "target", Kind: AgentName, Required: true},
+			{Name: "x", Kind: Number},
+			{Name: "y", Kind: Number},
+		},
+		Gate: Charge,
+		Cost: Cost{Charges: 1},
+	}
+	g := MetatronToolGuidance([]Tool{bundleTool})
+	want := "  • teleport(target, x, y) — Whisk a villager across the map (1 charge)\n"
+	if g != want {
+		t.Errorf("bundle-tool guidance = %q, want %q", g, want)
+	}
+}
+
+// TestMetatronToolGuidanceByteIdentity (spec 036 T012 caution): the PromptGloss
+// fallback must not change the rendered line for ANY tool already in
+// metatronToolDesc. For every such tool this recomputes the line the pre-036
+// code produced — desc taken straight from the map — and asserts the current
+// renderer matches it byte-for-byte, so a future fallback edit that perturbs a
+// built-in's guidance fails loudly. work_miracle (the multi-line kind renderer)
+// is exercised by TestMetatronToolGuidanceDrift and skipped here.
+func TestMetatronToolGuidanceByteIdentity(t *testing.T) {
+	for _, tl := range LoopRosterMetatron() {
+		desc, ok := metatronToolDesc[tl.Name]
+		if !ok || tl.Name == "work_miracle" {
+			continue
+		}
+		got := MetatronToolGuidance([]Tool{tl})
+		want := fmt.Sprintf("  • %s(%s) — %s (%d %s)\n",
+			tl.Name, paramNameList(tl), desc, tl.Cost.Charges, chargeWord(tl.Cost.Charges))
+		if got != want {
+			t.Errorf("guidance for built-in %q changed: got %q, want %q", tl.Name, got, want)
+		}
+	}
+}
+
 // TestMetatronToolGuidanceDrift (spec 021 T007 / FR-008 / SC-004 / INV-3): the
 // derived guidance names every roster tool, renders every cost from the single
 // authoritative table, mentions no non-roster tool or ungranted kind, and is a

@@ -235,7 +235,15 @@ var miracleKindArgs = map[string]string{
 func MetatronToolGuidance(roster []Tool) string {
 	var b strings.Builder
 	for _, t := range roster {
-		desc := metatronToolDesc[t.Name]
+		// A registry tool renders its hand-written gloss; a BUNDLE tool (spec 036
+		// T012) is absent from this map, so it falls back to its own PromptGloss +
+		// param surface. The fallback is byte-inert for every map-covered tool —
+		// `ok` is true for all of them, so this branch never runs for a built-in
+		// and the shipped guidance stays byte-identical (TestMetatronToolGuidance*).
+		desc, ok := metatronToolDesc[t.Name]
+		if !ok {
+			desc = t.PromptGloss
+		}
 		if t.Name == "work_miracle" {
 			fmt.Fprintf(&b, "  • %s(kind, …) — %s; kind is\n", t.Name, desc)
 			for _, k := range enumValues(t, "kind") {

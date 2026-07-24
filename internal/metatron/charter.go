@@ -146,10 +146,29 @@ type grantSet struct {
 	kinds           map[string]bool // granted miracle kinds; meaningful only when restricted
 	kindsRestricted bool            // true ⇒ only kinds in `kinds` are offered for work_miracle
 	manifestDefault bool            // true ⇒ no capabilities.json on disk (full default grant)
+	// Bundle-tool grant (spec 036 T014). `tools` is confined to KNOWN built-in
+	// names (loadManifest drops unknowns), so it can never carry a bundle name;
+	// bundle tools are gated by the RAW request instead. toolsConstrained is true
+	// only when an explicit "tools" list is present — then a bundle tool is
+	// granted iff bundleAllowed names it. When false (no file, or the "tools" key
+	// omitted) every bundle tool is granted, mirroring the built-in default.
+	toolsConstrained bool
+	bundleAllowed    map[string]bool
 }
 
 // allows reports whether a metatron loop tool is granted this world.
 func (g grantSet) allows(name string) bool { return g.tools[name] }
+
+// allowsBundle reports whether a bundle tool is granted this world (spec 036
+// T014): the world-level capabilities.json "tools" list applies to bundle tools
+// the same way it does to built-ins — absent file or omitted key ⇒ granted, an
+// explicit list ⇒ the tool must be named.
+func (g grantSet) allowsBundle(name string) bool {
+	if !g.toolsConstrained {
+		return true
+	}
+	return g.bundleAllowed[name]
+}
 
 // allowsKind reports whether a miracle kind may land: unrestricted worlds allow
 // every kind; a restricted world allows only its declared subset.
@@ -263,13 +282,23 @@ func loadManifest(worldDir string) (grantSet, []string) {
 	}
 
 	tools := make(map[string]bool)
+	var bundleAllowed map[string]bool
+	toolsConstrained := false
 	if doc.Tools == nil {
 		for _, n := range order { // omitted key ⇒ unconstrained
 			tools[n] = true
 		}
 	} else {
+		// An explicit list constrains BOTH built-ins and bundle tools. Built-in
+		// names filter through `known` (an unknown built-in name is a noticed typo);
+		// the raw list gates bundle tools (spec 036 T014), which loadManifest cannot
+		// classify at this layer (it has no bundle roster), so a bundle name is not
+		// reported as an unknown tool here — allowsBundle honors it.
+		toolsConstrained = true
+		bundleAllowed = make(map[string]bool, len(doc.Tools))
 		var unknown []string
 		for _, n := range doc.Tools {
+			bundleAllowed[n] = true
 			if known[n] {
 				tools[n] = true
 			} else {
@@ -281,7 +310,7 @@ func loadManifest(worldDir string) (grantSet, []string) {
 		}
 	}
 
-	g := grantSet{tools: tools}
+	g := grantSet{tools: tools, toolsConstrained: toolsConstrained, bundleAllowed: bundleAllowed}
 	if doc.MiracleKinds != nil {
 		knownKind := make(map[string]bool)
 		for _, k := range tool.MiracleKinds() {

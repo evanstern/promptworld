@@ -8,6 +8,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/evanstern/promptworld/internal/bundle"
 	"github.com/evanstern/promptworld/internal/clock"
 	"github.com/evanstern/promptworld/internal/llm"
 	"github.com/evanstern/promptworld/internal/sim"
@@ -162,10 +163,41 @@ func (mt *Metatron) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 	for k, v := range mt.alive {
 		alive[k] = v
 	}
+	agentXY := make([][2]int, len(mt.agentXY))
+	copy(agentXY, mt.agentXY)
 	moments := append([]string(nil), mt.moments...)
 	story := append([]string(nil), mt.story...)
 	orders := append([]sim.MetatronOrder(nil), mt.orders...)
 	mt.stateMu.Unlock()
+
+	// Bundle tools (spec 036 T014): merge the granted bundle surface into all
+	// three gating layers — roster (declaration), handlers (door), and the
+	// derived guidance (via turnSystemPrompt → tool.MetatronToolGuidance's
+	// PromptGloss fallback, T012). Order is deterministic: built-ins first
+	// (grantedRoster), then bundle tools in BundleSet load order, grant-filtered
+	// the same way the world-level capabilities.json gates built-ins. The handler
+	// factory needs a read snapshot of sim state (villager names/positions/
+	// liveness) for target and recipient resolution — built from the same
+	// absorb-mirrored positions landMiracle uses, so the turn worker never races
+	// the replica the absorb goroutine owns.
+	bundleHandlers := map[string]toolloop.Handler{}
+	if mt.bundles != nil {
+		probe := &sim.State{Agents: make([]sim.Agent, len(agentXY))}
+		for i := range agentXY {
+			probe.Agents[i] = sim.Agent{Name: sim.AgentNames[i], X: agentXY[i][0], Y: agentXY[i][1], Dead: !alive[i]}
+		}
+		ic := bundle.InvocationContext{State: probe, Tick: tick, Invoker: "the angel", Inject: mt.social.InjectSocial}
+		for name, h := range mt.bundles.Handlers(ic) {
+			if grant.allowsBundle(name) {
+				bundleHandlers[name] = h
+			}
+		}
+		for _, bt := range mt.bundles.Roster() {
+			if grant.allowsBundle(bt.Name) {
+				roster = append(roster, bt)
+			}
+		}
+	}
 
 	// One correlation id per turn, mirroring mind's "<class>-<agent>-<tick>"
 	// convention (telemetry.go newMeta): the console turn's class is "turn"; a
@@ -184,6 +216,15 @@ func (mt *Metatron) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 	result := TurnResult{}
 	d := &turnDispatch{mt: mt, charges: charges, alive: alive, night: night, tick: tick, result: &result, grant: grant}
 
+	// Built-in handlers first, then the grant-filtered bundle handlers layered on
+	// top (no name overlap survives boot — C1 skips a bundle tool that collides
+	// with a built-in), so the merged map is the union both the roster and the
+	// guidance already reflect.
+	handlers := mt.turnHandlers(d)
+	for name, h := range bundleHandlers {
+		handlers[name] = h
+	}
+
 	callCtx, cancel := context.WithTimeout(ctx, turnTimeout)
 	res, err := mt.runLoop(callCtx, toolloop.Job{
 		JobID:     jobID,
@@ -191,7 +232,7 @@ func (mt *Metatron) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 		System:    turnSystemPrompt(charter, skills, roster),
 		Seed:      turnUserPrompt(tick, charges, alive, orders, moments, story, mt.soulTail(), mt.transcriptTail(), directive),
 		Roster:    roster,
-		Handlers:  mt.turnHandlers(d),
+		Handlers:  handlers,
 		MaxRounds: mt.loopRounds,
 		MaxTokens: mt.turnTokens, // llm.json max_tokens.metatron_turn (spec 025 US2), default 1024
 		Record:    d.record,

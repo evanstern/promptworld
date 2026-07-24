@@ -1,0 +1,15 @@
+{
+  "name": "teleport",
+  "description": "Whisk a villager across the map in a puff of smoke",
+  "params": [
+    {"name": "target", "kind": "agent_name", "required": true, "description": "the villager to whisk away"},
+    {"name": "x", "kind": "number", "required": true, "description": "destination column"},
+    {"name": "y", "kind": "number", "required": true, "description": "destination row"}
+  ],
+  "events": ["metatron.entity_moved", "agent.memory_added"],
+  "charges": 1,
+  "effects": [
+    {"kind": "move_entity", "target": "{args.target}", "to_x": "{args.x}", "to_y": "{args.y}"},
+    {"kind": "narrate", "text": "{args.target} vanished in a poof of smoke", "recipients": "all_living"}
+  ]
+}
