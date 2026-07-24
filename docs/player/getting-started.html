@@ -4,10 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="README.md@be38288fa137064174eedbfb3b8a94cc5b1fb0b9">
-<meta name="promptworld-docs:source" content="docs/wiki/cli-promptworld.md@be38288fa137064174eedbfb3b8a94cc5b1fb0b9">
-<meta name="promptworld-docs:source" content="docs/wiki/daemon-lifecycle.md@be38288fa137064174eedbfb3b8a94cc5b1fb0b9">
-<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@c25c4ac7c97dbac543e2eceaa15d9e76dceb62c1">
+<meta name="promptworld-docs:source" content="README.md@8fcc79cee5fc24f2b1e7e6fd67189cf58828bfc2">
+<meta name="promptworld-docs:source" content="docs/wiki/cli-promptworld.md@ce15d80522aae111e2c359287459b51401d18364">
+<meta name="promptworld-docs:source" content="docs/wiki/daemon-lifecycle.md@ce15d80522aae111e2c359287459b51401d18364">
+<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@ce15d80522aae111e2c359287459b51401d18364">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@ce15d80522aae111e2c359287459b51401d18364">
 <title>Getting started — promptworld player docs</title>
 <style>
   :root {
@@ -87,7 +88,9 @@ need any AI model configured to get a world running — without one, villagers s
 walk around and handle their basic needs, just without model-driven decisions
 ("reflex-only" minds). If you do want AI-driven villagers, you'll want a local model
 server (an OpenAI-compatible endpoint, e.g. <a href="https://ollama.com">Ollama</a>
-running something like <code>gemma4:12b-mlx</code>) and optionally an
+running at its default address) with <code>cogito:3b</code> pulled — that's the model
+a fresh world expects out of the box, chosen because it reliably follows the game's
+instructions rather than needing extra tuning — and optionally an
 <code>ANTHROPIC_API_KEY</code> for the higher-quality cloud-narrated story feature.
 The <a href="llm-setup-basics.html">AI setup basics page</a> covers the minimum you
 need to flip that on; you can always come back to it.</p>
@@ -107,7 +110,11 @@ generation; the same seed always regenerates the identical map and starting
 conditions, so it's worth writing down if you want to recreate a world later. Leave it
 off and promptworld picks one for you.</p>
 <p>Genesis also writes each villager's starting personality and Metatron's starting
-"charter" — more on both in a moment.</p>
+"charter" — more on both in a moment. The summary printed when the world is created
+also names the AI model it's expecting and the exact command to fetch it if you
+haven't already (<code>local model: cogito:3b — pull it first if you haven't: ollama
+pull cogito:3b</code>) — that line always matches what was actually written, so there's
+never a mismatch between what the world wants and what it tells you to install.</p>
 
 <h2>3. Start it</h2>
 <pre><code>promptworld start demo</code></pre>
@@ -119,6 +126,11 @@ until tomorrow. If something goes wrong, promptworld will point you at
 <p>You can check on any world, running or not, from anywhere:</p>
 <pre><code>promptworld ps        # every running world you have, at a glance
 promptworld status demo   # this world's tick, game time, and speed</code></pre>
+<p>If you did set up a local AI model and it's missing, unreachable, or answering but
+never actually cooperating with the game's instructions, promptworld notices on its
+own and says so loudly — a <code>WARNING</code> line right in <code>status</code>,
+naming the problem and what to do about it. It clears itself the moment the problem is
+fixed, with no restart needed.</p>
 
 <h2>4. Watch it live</h2>
 <p>Two ways to watch, both non-destructive — quitting either one just detaches; the
@@ -147,7 +159,9 @@ asked for a speed the world can't quite keep sensible thoughts up with — a sho
 like <code>asked 32x — 3 minds in flight, debt 140%</code>, meaning the world has
 quietly dropped a notch on its own for now. The
 <a href="time-and-speed.html">time & speed page</a> explains what those numbers mean
-and why that happens.</p>
+and why that happens. That same header also grows a red <code>[llm: ...]</code> badge
+if your AI model runs into trouble — the same condition <code>status</code> warns
+about, just visible at a glance while you're watching.</p>
 
 <h2>5. When you're done for now</h2>
 <p>Quitting <code>attach</code> or <code>ui</code> only detaches your view — the daemon

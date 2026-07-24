@@ -6,9 +6,10 @@
 <meta name="promptworld-docs:generated-by" content="player-docs">
 <meta name="promptworld-docs:source" content="docs/wiki/agent-mind.md@2bc94f55c57880e07f0e52e5de20c9cd527ab340">
 <meta name="promptworld-docs:source" content="docs/wiki/cognition.md@be38288fa137064174eedbfb3b8a94cc5b1fb0b9">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-orchestrator.md@be38288fa137064174eedbfb3b8a94cc5b1fb0b9">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-orchestrator.md@ce15d80522aae111e2c359287459b51401d18364">
 <meta name="promptworld-docs:source" content="docs/wiki/nightly-consolidation.md@2bc94f55c57880e07f0e52e5de20c9cd527ab340">
 <meta name="promptworld-docs:source" content="docs/wiki/social-fabric.md@2bc94f55c57880e07f0e52e5de20c9cd527ab340">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@ce15d80522aae111e2c359287459b51401d18364">
 <title>The AI behind the village — promptworld player docs</title>
 <style>
   :root {
@@ -116,7 +117,18 @@ quality for — most notably nightly memory digestion (below) and the narrated
 <a href="reading-the-story.html">chronicle</a>, plus Metatron's own conversation with
 you. This split is configurable, and the
 <a href="llm-setup-basics.html">setup basics page</a> walks through the minimum you
-need to turn it on.</p>
+need to turn it on. A brand-new world's local model is <code>cogito:3b</code> by
+default — chosen because it was proven, across long test runs, to reliably follow
+the game's instructions rather than quietly talking past them.</p>
+<p>Because a villager's decisions depend entirely on that local model actually
+cooperating, promptworld watches its own back: if the configured model turns out to
+be missing, its server unreachable, or it keeps answering without ever actually
+following through on an instruction, that's exactly the kind of silent failure that
+would otherwise just look like villagers stuck endlessly on autopilot (see below) with
+no explanation. Instead it's surfaced loudly — a warning in
+<code>promptworld status</code> and a red badge in the full-screen client — and it
+goes away by itself the moment the problem is fixed, no restart required. See the
+<a href="getting-started.html">getting started page</a> for what that looks like.</p>
 <p>There's a third, much smaller kind of AI call too: when you've asked Metatron to
 watch for something loosely phrased ("when Rowan seems heartbroken"), confirming
 that a matching moment really fits what you described takes one tiny, cheap yes/no
