@@ -1,6 +1,9 @@
 package cognition
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 // TestRouteSanityTable pins the contract's speed ladder at the measured
 // ~17 s/pt local baseline (contracts/registry.md).
@@ -82,6 +85,47 @@ func TestRouteTruthfulAfterAdoption(t *testing.T) {
 	// crosses 1200 ticks above ~33.3 t/s, so 40 t/s -> 1440 ticks > 1200.
 	if v := Route(dc, 40, adopted); v.Allow || v.PredictedDriftTicks != 1440 {
 		t.Errorf("adopted @40t/s: allow=%v drift=%d (%s); want suppress at 1440 ticks", v.Allow, v.PredictedDriftTicks, v.Arithmetic)
+	}
+}
+
+// TestRoutePaused (spec 040 US2, FR-004/FR-005; contract C1): a paused world
+// cannot drift, so every class is allowed at zero predicted drift, the wall-ms
+// prediction is unchanged (wall time passes while frozen), and the recorded
+// arithmetic names the paused state in place of the set-speed drift math.
+func TestRoutePaused(t *testing.T) {
+	const spp = 20.0
+	cases := []struct {
+		class string
+		want  string
+	}{
+		{"planner", "3pt x 20.0s/pt while paused = 0 ticks <= budget 1200"},
+		{"conversation", "13pt x 20.0s/pt while paused = 0 ticks <= budget 7200"},
+		{"meeting", "2pt x 20.0s/pt while paused = 0 ticks <= budget 3600"},
+	}
+	for _, c := range cases {
+		dc, ok := ClassFor(c.class)
+		if !ok {
+			t.Fatalf("class %q missing", c.class)
+		}
+		v := RoutePaused(dc, spp)
+		if !v.Allow {
+			t.Errorf("%s: paused verdict must allow", c.class)
+		}
+		if v.PredictedDriftTicks != 0 {
+			t.Errorf("%s: predicted drift %d, want 0 (a frozen world does not drift)", c.class, v.PredictedDriftTicks)
+		}
+		if wantMs := int64(float64(dc.Points) * spp * 1000); v.PredictedWallMs != wantMs {
+			t.Errorf("%s: wall-ms %d, want %d (still predicted while frozen)", c.class, v.PredictedWallMs, wantMs)
+		}
+		if v.Class != c.class || v.Points != dc.Points || v.BudgetTicks != dc.BudgetTicks {
+			t.Errorf("%s: registry fields unpopulated: %+v", c.class, v)
+		}
+		if v.Arithmetic != c.want {
+			t.Errorf("%s: arithmetic\n got %q\nwant %q", c.class, v.Arithmetic, c.want)
+		}
+		if !strings.Contains(v.Arithmetic, "paused") {
+			t.Errorf("%s: arithmetic does not name the paused state: %q", c.class, v.Arithmetic)
+		}
 	}
 }
 

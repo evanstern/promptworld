@@ -226,6 +226,22 @@ func (md *Mind) absorb(batch []store.Event) {
 			for i := range md.replica.Agents {
 				md.arm(i, e.Seq)
 			}
+		case "metatron.nudged":
+			// Paused authoring chain-completion (spec 040 FR-001/FR-002,
+			// decision-6): while the world is frozen, a landed nudge wakes each
+			// targeted villager for one debounce-bounded round at the frozen tick,
+			// the nudge event's Seq the arming stimulus. Gated on the replica's
+			// paused flag (FR-003): a nudge landed while running arms nothing — the
+			// game-time debounce is the only bound (D4), never reopening while
+			// frozen, so one nudge buys at most one round.
+			if md.replica.Paused {
+				var p sim.MetatronNudgedPayload
+				if json.Unmarshal(e.Payload, &p) == nil {
+					for _, t := range p.Targets {
+						md.arm(t, e.Seq)
+					}
+				}
+			}
 		case "agent.moved":
 			md.armEncounters(e)
 		case "agent.talked":

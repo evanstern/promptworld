@@ -272,6 +272,26 @@ func (h *harness) waitEvents(t *testing.T, timeout time.Duration, match func(sto
 	return found
 }
 
+// TestRunningNudgeDoesNotArm (spec 040 US3, FR-003): a metatron.nudged absorbed
+// while the world is RUNNING arms nothing — the paused gate is the whole of the
+// new wake, so unpaused arming stimuli stay exactly today's set. A bare Mind runs
+// absorb inline (no goroutines), so the assertion is race-free; the tick is set
+// into an open debounce window, so an ungated arm WOULD yield a thought and this
+// guard fails loudly on any future un-gating.
+func TestRunningNudgeDoesNotArm(t *testing.T) {
+	state := sim.NewState(42, worldmap.Generate(42, 64, 64))
+	state.Paused = false
+	state.Tick = 5000
+	md := &Mind{replica: state}
+
+	const target = 3
+	md.absorb(nudgeBatchEvents(700, 5000, "vision", "a running-world vision", target))
+
+	if md.pending[target] {
+		t.Fatalf("a nudge landed while running armed villager %d — running behavior must be byte-identical (FR-003)", target)
+	}
+}
+
 // TestParseMusing covers the reply hygiene: plain line in, JSON and empties out.
 func TestParseMusing(t *testing.T) {
 	if got, err := parseMusing("  \"I miss the sound of the river.\"  \nsecond line"); err != nil || got != "I miss the sound of the river." {
