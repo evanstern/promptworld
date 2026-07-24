@@ -13,8 +13,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/evanstern/promptworld/internal/sim"
-	"go.starlark.net/starlark"
-	"go.starlark.net/syntax"
 )
 
 // The boot validation ladder (contracts/boot-validation.md). B1–B4 are
@@ -154,11 +152,18 @@ func validateTool(bundlesRoot, bundleName, toolDir string) (*BundleTool, *BootIs
 	}
 
 	var templates []effectTemplate
+	var script *scriptProgram
 	if m.scriptMode() {
-		// T6: script exists, parses, defines apply().
-		if err := checkScript(toolDir, m.Script); err != nil {
+		// T6: script exists, parses, defines apply(), and compiles cleanly — the
+		// compiled program is retained on the tool so no invocation ever re-parses
+		// (spec 036 US3, T024). Init runs the top level under the step ceiling, so a
+		// hostile top level cannot burn unbounded work at boot. The limits ceiling is
+		// already enforced in Parse (T7); maxSteps() resolves the per-invocation cap.
+		sp, err := compileScript(toolDir, m.Script)
+		if err != nil {
 			return nil, fail("T6", "tool %q %v", toolName, err)
 		}
+		script = sp
 	} else {
 		// T5: every effect template well-formed; producible events == declared.
 		ts, err := ParseTemplates(m.Effects)
@@ -178,30 +183,7 @@ func validateTool(bundlesRoot, bundleName, toolDir string) (*BundleTool, *BootIs
 		templates = ts
 	}
 
-	return &BundleTool{Name: toolName, Tool: m.synthesize(), Manifest: m, Templates: templates, Dir: toolDir}, nil
-}
-
-// checkScript performs the boot-time T6 gate: the script file exists, parses via
-// starlark.SourceProgram (predeclaring the args/world values scripts receive),
-// and defines a top-level apply() function. Execution lands in Phase 5; this is
-// syntax + apply-presence only.
-func checkScript(toolDir, scriptName string) error {
-	path := filepath.Join(toolDir, scriptName)
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return fmt.Errorf("script file %q is missing or unreadable", scriptName)
-	}
-	predeclared := func(name string) bool { return name == "args" || name == "world" }
-	f, _, err := starlark.SourceProgram(scriptName, data, predeclared)
-	if err != nil {
-		return fmt.Errorf("script %q does not parse: %v", scriptName, err)
-	}
-	for _, stmt := range f.Stmts {
-		if def, ok := stmt.(*syntax.DefStmt); ok && def.Name != nil && def.Name.Name == "apply" {
-			return nil
-		}
-	}
-	return fmt.Errorf("script %q does not define apply()", scriptName)
+	return &BundleTool{Name: toolName, Tool: m.synthesize(), Manifest: m, Templates: templates, Script: script, Dir: toolDir}, nil
 }
 
 // parseGrant strict-decodes a capabilities.json into a GrantDoc (B3).

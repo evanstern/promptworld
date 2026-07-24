@@ -186,7 +186,10 @@ func (mt *Metatron) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 		for i := range agentXY {
 			probe.Agents[i] = sim.Agent{Name: sim.AgentNames[i], X: agentXY[i][0], Y: agentXY[i][1], Dead: !alive[i]}
 		}
-		ic := bundle.InvocationContext{State: probe, Tick: tick, Invoker: "the angel", Inject: mt.social.InjectSocial}
+		ic := bundle.InvocationContext{State: probe, Tick: tick, Invoker: "the angel", Inject: mt.social.InjectSocial, Seed: mt.seed}
+		if mt.m != nil {
+			ic.MapWidth, ic.MapHeight = mt.m.W, mt.m.H
+		}
 		for name, h := range mt.bundles.Handlers(ic) {
 			if grant.allowsBundle(name) {
 				bundleHandlers[name] = h

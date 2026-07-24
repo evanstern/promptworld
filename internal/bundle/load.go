@@ -28,12 +28,15 @@ type GrantDoc struct {
 
 // BundleTool is a validated tool: its synthesized tool.Tool (roster surface)
 // plus the manifest and parsed effect templates the handler factory (Phase 3)
-// needs. Templates is nil for script-mode tools.
+// needs. Templates is nil for script-mode tools; Script is the compiled,
+// compile-once Starlark program (spec 036 US3, T024) and is nil for declarative
+// tools. Exactly one of Templates/Script is populated, matching the manifest.
 type BundleTool struct {
 	Name      string
 	Tool      tool.Tool
 	Manifest  *Manifest
 	Templates []effectTemplate
+	Script    *scriptProgram
 	Dir       string
 }
 

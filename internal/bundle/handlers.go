@@ -34,11 +34,20 @@ import (
 // compiler can resolve a target villager and expand an all_living / named
 // narration audience; it is never mutated. Inject is the InjectSocial door
 // (mt.social.InjectSocial), the SOLE path a bundle batch reaches the world.
+//
+// Seed and MapWidth/MapHeight feed the script-mode world view (spec 036 US3): the
+// world seed backs world.rand's coordinate-seeded draw, and the map dimensions
+// back world.map_width/map_height. Both are boot-immutable, so reading them
+// turn-side never races the absorb goroutine. They are zero for declarative-only
+// worlds, which never build a world view.
 type InvocationContext struct {
-	State   *sim.State
-	Tick    int64
-	Invoker string
-	Inject  func([]store.Event) error
+	State     *sim.State
+	Tick      int64
+	Invoker   string
+	Inject    func([]store.Event) error
+	Seed      uint64
+	MapWidth  int
+	MapHeight int
 }
 
 // Handlers builds one toolloop.Handler per bundle tool for a single invocation
@@ -57,31 +66,41 @@ func (bs *BundleSet) Handlers(ic InvocationContext) map[string]toolloop.Handler 
 	return h
 }
 
-// handlerFor builds the handler for one bundle tool. The declarative path
-// expands the cached templates; script mode (Phase 5) is not yet wired, so a
-// script tool refuses in-fiction rather than landing — it is a validated roster
-// member, so it must have a handler (the loop rejects a tool with none as
-// rejected_unknown, which would be the wrong story).
+// handlerFor builds the handler for one bundle tool. Both modes share the SAME
+// downstream pipeline once they have resolved effects: CompileEffects (closed
+// vocabulary, batch caps, declared-events subset gate) then InjectSocial. Only the
+// front half differs — the declarative path expands cached templates against the
+// stringified args; the script path runs the compiled apply() against a frozen
+// args dict and the invoker-scoped world view (spec 036 US3, T024).
 func (bs *BundleSet) handlerFor(bt BundleTool, ic InvocationContext) toolloop.Handler {
 	return func(_ context.Context, call llm.ToolCall) toolloop.Outcome {
-		if bt.Manifest.scriptMode() {
-			return reject("this tool's script runtime is not yet available")
-		}
-		args, why := stringArgs(bt.Manifest, call.Args)
-		if why != "" {
-			return reject(why)
-		}
 		in := CompileInput{
 			State:    ic.State,
 			Tick:     ic.Tick,
-			Args:     args,
 			Invoker:  ic.Invoker,
 			Declared: declaredSet(bt.Manifest.Events),
 		}
-		effects, err := ExpandTemplates(bt.Templates, in)
-		if err != nil {
-			return reject(err.Error())
+
+		var effects []Effect
+		if bt.Manifest.scriptMode() {
+			evs, why := runScript(bt, ic, call.Args)
+			if why != "" {
+				return reject(why)
+			}
+			effects = evs
+		} else {
+			args, why := stringArgs(bt.Manifest, call.Args)
+			if why != "" {
+				return reject(why)
+			}
+			in.Args = args
+			evs, err := ExpandTemplates(bt.Templates, in)
+			if err != nil {
+				return reject(err.Error())
+			}
+			effects = evs
 		}
+
 		batch, err := CompileEffects(effects, in)
 		if err != nil {
 			return reject(err.Error())
@@ -94,6 +113,36 @@ func (bs *BundleSet) handlerFor(bt BundleTool, ic InvocationContext) toolloop.Ha
 		}
 		return toolloop.Outcome{Verdict: toolloop.VerdictLanded, ResultForModel: "the " + bt.Name + " took effect"}
 	}
+}
+
+// runScript executes a script-mode tool's compiled apply() against a frozen args
+// dict and the invoker-scoped world view, returning resolved effects or an
+// in-fiction rejection reason. Every script failure — fail(), a type error, a
+// deterministic step-cap abort, or a malformed return — is an author-level
+// rejection (nothing lands, no charge spent), never an infrastructure error.
+func runScript(bt BundleTool, ic InvocationContext, rawArgs json.RawMessage) ([]Effect, string) {
+	argsDict, err := scriptArgs(bt.Manifest, rawArgs)
+	if err != nil {
+		return nil, err.Error()
+	}
+	world := newWorldView(bt.Name, ic.Tick, ic.Seed, ic.MapWidth, ic.MapHeight, agentInfos(ic.State))
+	effects, err := bt.Script.execute(argsDict, world, bt.Manifest.maxSteps())
+	if err != nil {
+		return nil, err.Error()
+	}
+	return effects, ""
+}
+
+// agentInfos projects a snapshot state's agents into the flat name/position/
+// liveness view the script world exposes (agents() / agent(name)).
+func agentInfos(s *sim.State) []agentInfo {
+	out := make([]agentInfo, 0, len(s.Agents))
+	for i := range s.Agents {
+		out = append(out, agentInfo{
+			name: s.Agents[i].Name, x: s.Agents[i].X, y: s.Agents[i].Y, alive: !s.Agents[i].Dead,
+		})
+	}
+	return out
 }
 
 // reject wraps an author-level failure as a rejected_gate Outcome — the door's

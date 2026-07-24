@@ -70,6 +70,7 @@ type Metatron struct {
 
 	replica *sim.State
 	m       *worldmap.Map
+	seed    uint64 // world seed — boot-immutable; backs the script world view's world.rand (spec 036 US3)
 
 	turnBusy atomic.Bool // one console turn at a time
 
@@ -166,6 +167,7 @@ func New(orch Submitter, social Injector, loop LoopControl, m *worldmap.Map, see
 		worldDir:        worldDir,
 		replica:         replica,
 		m:               m,
+		seed:            seed,
 		alive:           map[int]bool{},
 		digQ:            make(chan digJob, 4),
 		digCarry:        make(chan []string, 1),

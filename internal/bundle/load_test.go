@@ -146,8 +146,10 @@ func TestCollisions(t *testing.T) {
 // missing apply() is skipped with a T6 issue naming the problem.
 func TestScriptedToolValidation(t *testing.T) {
 	bs := discover(t, "scripted")
-	if got := rosterNames(bs); !reflect.DeepEqual(got, []string{"lamp"}) {
-		t.Errorf("roster = %v, want [lamp]", got)
+	// Tool dirs load in ascending name order: broken (skipped, no apply), then the
+	// valid cast_light and lamp.
+	if got := rosterNames(bs); !reflect.DeepEqual(got, []string{"cast_light", "lamp"}) {
+		t.Errorf("roster = %v, want [cast_light lamp]", got)
 	}
 	iss := findIssue(bs, "T6", "broken")
 	if iss == nil || !strings.Contains(iss.Message, "does not define apply()") {

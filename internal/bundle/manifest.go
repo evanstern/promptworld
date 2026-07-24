@@ -87,6 +87,16 @@ func ruleErr(rule, format string, a ...any) ruleError {
 // effects). Only meaningful after Parse has confirmed exactly one is present.
 func (m *Manifest) scriptMode() bool { return m.Script != "" }
 
+// maxSteps is the script step budget the executor caps each invocation at: the
+// manifest's limits.max_steps when set (Parse already bounded it to (0, ceiling]),
+// otherwise the default. Script mode only.
+func (m *Manifest) maxSteps() uint64 {
+	if m.Limits != nil && m.Limits.MaxSteps > 0 {
+		return uint64(m.Limits.MaxSteps)
+	}
+	return defaultMaxSteps
+}
+
 // Parse strict-decodes and validates a tool.json against the manifest contract,
 // returning the parsed manifest. folderName is the tool-dir basename the
 // manifest's name must equal (T1). All failures are ruleError-tagged

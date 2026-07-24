@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/evanstern/promptworld/internal/bundle"
+	"github.com/evanstern/promptworld/internal/clock"
 	"github.com/evanstern/promptworld/internal/sim"
 	"github.com/evanstern/promptworld/internal/tool"
 )
@@ -157,5 +158,87 @@ func TestBundleBootRejectionReachesRoster(t *testing.T) {
 	}
 	if strings.Contains(sys, "healtool") {
 		t.Error("system prompt leaks the rejected tool healtool")
+	}
+}
+
+// TestBundleCastLightNightVsDay is US3 / quickstart Scenario 3 (T027): the scripted
+// cast_light tool branches on world.time_of_day. Driven at night, the light blooms
+// for every living villager; driven by day, only its target notices, with the
+// daylight text — and either way only the declared agent.memory_added lands. The
+// clock is driven by setting the replica tick and re-mirroring, exactly the surface
+// the turn worker reads.
+func TestBundleCastLightNightVsDay(t *testing.T) {
+	nightTick := clock.TickAt(1, 23, 0, 0) // 23:00 → night
+	dayTick := clock.TickAt(1, 13, 0, 0)   // 13:00 → day
+
+	const nightText = "A soft light blooms over Ash."
+	const dayText = "The light is invisible in daylight."
+
+	t.Run("night", func(t *testing.T) {
+		mt, _, inj, _ := newTestAngel(t, "the light is cast")
+		mt.SetBundles(bundleWorld(t, "scripted"))
+		mt.replica.Tick = nightTick
+		mt.mirrorState()
+
+		mt.runLoop = actLoop(mt, "cast_light", `{"target":"Ash"}`)
+		if _, err := mt.Turn(context.Background(), "cast light on Ash"); err != nil {
+			t.Fatalf("Turn: %v", err)
+		}
+
+		living, saw := 0, 0
+		for i := range inj.state.Agents {
+			if inj.state.Agents[i].Dead {
+				continue
+			}
+			living++
+			if memoryContains(inj.state.Agents[i], nightText) {
+				saw++
+			}
+		}
+		if saw != living {
+			t.Errorf("night bloom reached %d of %d living villagers, want all", saw, living)
+		}
+		assertOnlyBundleEvents(t, inj)
+	})
+
+	t.Run("day", func(t *testing.T) {
+		mt, _, inj, _ := newTestAngel(t, "the light is cast")
+		mt.SetBundles(bundleWorld(t, "scripted"))
+		mt.replica.Tick = dayTick
+		mt.mirrorState()
+
+		mt.runLoop = actLoop(mt, "cast_light", `{"target":"Ash"}`)
+		if _, err := mt.Turn(context.Background(), "cast light on Ash"); err != nil {
+			t.Fatalf("Turn: %v", err)
+		}
+
+		// The day branch narrates the daylight text to the target only.
+		if !memoryContains(inj.state.Agents[0], dayText) {
+			t.Errorf("day branch: Ash (target) did not receive the daylight narration")
+		}
+		for i := range inj.state.Agents {
+			if memoryContains(inj.state.Agents[i], "A soft light blooms") {
+				t.Errorf("day branch leaked the night bloom to %s", inj.state.Agents[i].Name)
+			}
+			if i > 0 && memoryContains(inj.state.Agents[i], dayText) {
+				t.Errorf("day branch reached %s beyond the target (recipients \"target\")", inj.state.Agents[i].Name)
+			}
+		}
+		assertOnlyBundleEvents(t, inj)
+	})
+}
+
+// assertOnlyBundleEvents fails if any landed event is outside cast_light's declared
+// surface (agent.memory_added) plus the loop's own cog.tool_call telemetry.
+func assertOnlyBundleEvents(t *testing.T, inj *stateInjector) {
+	t.Helper()
+	for _, batch := range inj.batches {
+		for _, e := range batch {
+			switch e.Type {
+			case "agent.memory_added", "cog.tool_call":
+			default:
+				t.Errorf("unexpected event type landed: %q", e.Type)
+			}
+		}
 	}
 }
