@@ -160,7 +160,7 @@ serves this for embedding models).
 ```json
   "providers": {
     "embedder": { "transport": "openai_compat", "endpoint": "http://localhost:11434/v1",
-                  "model": "all-minilm" }
+                  "model": "all-minilm:latest" }
   },
   "routes": {
     "embedding": ["embedder"]
@@ -169,7 +169,13 @@ serves this for embedding models).
 
 Setup: `ollama pull all-minilm` (the 384-dim reference pin), add the provider +
 route above, restart the daemon — the boot line reads
-`daemon: embedder on (all-minilm via provider "embedder")`.
+`daemon: embedder on (all-minilm:latest via provider "embedder")`.
+
+Use the **fully tagged id** (`all-minilm:latest`, exactly as `ollama list` prints
+it), not the bare alias: Ollama resolves the alias fine for the calls themselves,
+but the provider-health preflight compares ids against the server's model listing
+and a bare `all-minilm` raises a spurious (persistent) `model-missing` warning —
+live-found during the spec-042 walkthrough.
 
 The kind is deliberately unusual in three ways:
 
