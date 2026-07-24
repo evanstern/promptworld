@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/evanstern/promptworld/internal/tool"
 )
 
 func discover(t *testing.T, world string) *BundleSet {
@@ -157,6 +159,36 @@ func TestScriptedToolValidation(t *testing.T) {
 			if tl.Name == "lamp" && (len(tl.Templates) != 0 || tl.Manifest.Script != "tool.star") {
 				t.Errorf("lamp tool = %+v", tl)
 			}
+		}
+	}
+}
+
+// TestBuiltinNameCollision (T021, US2 / clarification #2): a bundle tool named
+// exactly like a built-in (work_miracle — the dogfood-relevant name) loses to C1,
+// the built-in wins, and there is exactly ONE work_miracle system-wide (the
+// built-in in tool.Lookup, never a second bundle roster entry). Its valid
+// bundlemate survives, proving the collision skips only the offender.
+func TestBuiltinNameCollision(t *testing.T) {
+	bs := discover(t, "builtincollision")
+
+	// work_miracle is skipped (C1); the valid sibling reaches the roster.
+	if got := rosterNames(bs); !reflect.DeepEqual(got, []string{"aura"}) {
+		t.Errorf("roster = %v, want [aura] (work_miracle lost C1)", got)
+	}
+
+	c1 := findIssue(bs, "C1", "work_miracle")
+	if c1 == nil || c1.Severity != "warning" || !strings.Contains(c1.Message, "built-in") {
+		t.Errorf("C1 issue = %+v, want a warning naming the built-in", c1)
+	}
+
+	// Exactly one work_miracle: the built-in remains registered, and the bundle
+	// roster never carries a second one.
+	if _, ok := tool.Lookup("work_miracle"); !ok {
+		t.Fatal("built-in work_miracle is missing from the registry")
+	}
+	for _, n := range rosterNames(bs) {
+		if n == "work_miracle" {
+			t.Error("bundle roster leaked a second work_miracle entry — the built-in must win")
 		}
 	}
 }

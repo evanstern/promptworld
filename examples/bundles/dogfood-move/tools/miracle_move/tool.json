@@ -1,0 +1,15 @@
+{
+  "name": "miracle_move",
+  "description": "Lift a villager by name and set them down on a chosen tile — the work_miracle move kind, re-expressed as a shippable bundle tool (spec 036 US2 dogfood).",
+  "params": [
+    {"name": "target", "kind": "agent_name", "required": true, "description": "the villager to lift and set down"},
+    {"name": "to_x", "kind": "number", "required": true, "description": "destination column"},
+    {"name": "to_y", "kind": "number", "required": true, "description": "destination row"}
+  ],
+  "events": ["metatron.entity_moved", "agent.memory_added"],
+  "charges": 1,
+  "effects": [
+    {"kind": "move_entity", "target": "{args.target}", "to_x": "{args.to_x}", "to_y": "{args.to_y}"},
+    {"kind": "narrate", "text": "An unseen hand lifted you and set you down in a strange place.", "recipients": "target"}
+  ]
+}
