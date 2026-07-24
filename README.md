@@ -170,3 +170,14 @@ switch that provider's knob — not a code change.
 Doctrine, unchanged by which wire shape is in play: a tool call is a request, never
 a fact; switching `tool_mode` changes how the request is transported, never what
 gets recorded as an event.
+
+## Bundle tools (`bundles/`, TASK-85)
+
+World authors can add new agent-callable tools — and even a persona identity —
+without touching Go code by dropping a folder into `<world>/bundles/`: a
+`tool.json` manifest (declarative effect templates, or a sandboxed, deterministic
+`tool.star` script) is discovered and validated once at boot alongside the
+built-in tool registry, and a bad bundle never bricks the world — only the
+broken piece is skipped, loudly, naming the file and the rule. Full authoring
+reference, including the effect vocabulary, the script API, and the boot
+validation ladder: **[docs/bundles.md](docs/bundles.md)**.
