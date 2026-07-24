@@ -131,7 +131,7 @@ told-by-A.
 - [x] T036 Quickstart validation sweep: execute quickstart.md fast loop + migration check; live smoke optional; note outcomes in PR description
 - [x] T037 gofmt/vet sweep over touched files; ensure new exported identifiers have doc comments in repo voice
 - [x] T038 Wiki re-pin (constitution IV): `/grounding-wiki:wiki-update` covering touched sources (reflex-policy, agent-mind, cognition, tool-registry, event-types, sim-state-reducer, snapshots, social-fabric, tool-loop, worldmap-generation as applicable)
-- [ ] T039 Player docs freshness: `node .claude/skills/player-docs/scripts/check-freshness.mjs --check`; regenerate `docs/player/` via the player-docs skill if stale
+- [x] T039 Player docs freshness: `node .claude/skills/player-docs/scripts/check-freshness.mjs --check`; regenerate `docs/player/` via the player-docs skill if stale
 - [ ] T040 Board close-out: `spec-bridge:sync` moves TASK-96 per artifacts; tick board ACs #3–#7 with evidence; PR opened from `.worktrees/task-96` (one task, one PR)
 
 ## Dependencies
