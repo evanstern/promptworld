@@ -64,8 +64,8 @@ provider with occasional tool-free completions never flags.
 
 **Tier**: Opus 4.8 (worker hot path).
 
-- [ ] T012 [US2] Per-provider consecutiveToolFree counter in the worker (llm.go:828-866): increment on completed call with `len(req.Tools) > 0` and zero tool calls, reset on any returned tool call, ignore transport failures and non-tool calls; at ≥8 raise `tool-silent` (never overwrite an active preflight condition), remedy text by resolved tool mode per contracts/provider-conditions.md, in internal/llm/llm.go
-- [ ] T013 [US2] Detector tests: raise at exactly 8, reset on tool call, non-tool kinds never count, transport failures don't count, preflight condition precedence, clear on first landed tool call, in internal/llm/llm_test.go
+- [x] T012 [US2] Per-provider consecutiveToolFree counter in the worker (llm.go:828-866): increment on completed call with `len(req.Tools) > 0` and zero tool calls, reset on any returned tool call, ignore transport failures and non-tool calls; at ≥8 raise `tool-silent` (never overwrite an active preflight condition), remedy text by resolved tool mode per contracts/provider-conditions.md, in internal/llm/llm.go
+- [x] T013 [US2] Detector tests: raise at exactly 8, reset on tool call, non-tool kinds never count, transport failures don't count, preflight condition precedence, clear on first landed tool call, in internal/llm/llm_test.go
 
 **Checkpoint**: US1 + US2 both independently demoable
 
