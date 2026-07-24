@@ -4,7 +4,7 @@ title: 'Scriptable agent tools: pluggable script-defined tools over an engine AP
 status: In Progress
 assignee: []
 created_date: '2026-07-24 03:02'
-updated_date: '2026-07-24 19:27'
+updated_date: '2026-07-24 19:46'
 labels:
   - idea
 dependencies: []
@@ -81,4 +81,6 @@ Correction: AC#2/#3 unticked — both assert script-tool properties; they become
 Phases 4+5 landed (c184bf2 dogfood, 6167581 starlark runtime). AC#6: miracle_move bundle twin byte-identical to work_miracle{kind:move} (events+payloads+State.Hash+charge). AC#2/#3/#5 now true: apply(args, world) pure functions, frozen invoker-scoped view, sandbox proofs (step-cap deterministic abort, no clock/io/load, NaN/float rejection at script->Effect conversion), world.rand via new sim.BundleRand over rngAt; replay byte-identity incl. bundle-dir-deleted independence (FR-011). time_of_day pinned to sim's 22:00-06:00 night definition. Remaining: Phase 6 personas (Sonnet), Phase 7 polish.
 
 Phase 6 landed (00dfd35): SOUL fragments into system prompt (charter->souls->skills order, byte-identical when absent), persona grant intersection (narrow-never-widen, commutative across personas, reaches roster+guidance+door), loadManifest cosmetic-notice fix, gandalf fixture + Scenario 6 integration test. Sonnet tier, no escalation needed.
+
+Phase 7 polish landed (ead97e7 after rebase): quickstart 6/6 validated — Scenarios 1-2 manual with captured boot logs (clean load line; T3 and B3 rejection lines naming file+rule+value), 3-6 via the automated suite (named test-to-scenario mapping in PR body). Boot-perf: 32 bundles/256 tools discover+validate in 43-58ms. docs/bundles.md authoring guide linked from README. Branch task-85-scriptable-agent-tools pushed (7 commits, rebased on main); PR creation retrying against GitHub API outage.
 <!-- SECTION:NOTES:END -->

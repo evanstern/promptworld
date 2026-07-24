@@ -111,9 +111,9 @@ Phase 6 (persona composition over proven seams) → Sonnet, escalate on gate fai
 
 ## Phase 7: Polish & Cross-Cutting
 
-- [ ] T033 Run the full quickstart.md validation (Scenarios 1–6) against a scratch world; record outcomes in the PR description
-- [ ] T034 [P] `go vet ./...` + `go test ./... -count=1` full-suite green; boot-time validation of a 32-bundle world <1s sanity check (plan Technical Context)
-- [ ] T035 [P] Author docs/bundles.md — bundle authoring guide distilled from contracts/ (manifest reference, script API, validation errors), linked from README.md
+- [x] T033 Run the full quickstart.md validation (Scenarios 1–6) against a scratch world; record outcomes in the PR description
+- [x] T034 [P] `go vet ./...` + `go test ./... -count=1` full-suite green; boot-time validation of a 32-bundle world <1s sanity check (plan Technical Context)
+- [x] T035 [P] Author docs/bundles.md — bundle authoring guide distilled from contracts/ (manifest reference, script API, validation errors), linked from README.md
 - [ ] T036 Reconcile board: tick TASK-85 ACs #2–#6 with evidence, record tier choices per phase, `spec-bridge:sync`
 
 **Post-merge obligation (constitution IV, not a PR gate)**: `/grounding-wiki:wiki-update` re-pin
