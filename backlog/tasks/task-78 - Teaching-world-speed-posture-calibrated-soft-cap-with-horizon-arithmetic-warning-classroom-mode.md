@@ -3,10 +3,10 @@ id: TASK-78
 title: >-
   Teaching-world speed posture: calibrated soft cap with horizon-arithmetic
   warning (classroom mode)
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-23 17:00'
-updated_date: '2026-07-24 19:37'
+updated_date: '2026-07-24 20:06'
 labels:
   - teaching-game
   - classroom-mode
@@ -38,13 +38,13 @@ Spec: specs/039-teaching-speed-posture
 - [x] #2 Setting a speed above the posture succeeds and surfaces the horizon arithmetic for the classes it suppresses
 - [x] #3 An uncalibrated teaching world prompts for calibrate rather than silently adopting the pessimistic bootstrap cap (aligns with TASK-40)
 - [x] #4 Posture lives as per-world config consumable by TASK-68 stage presets; non-teaching worlds are unchanged
-- [ ] #5 Spec phase: Setup
-- [ ] #6 Spec phase: Foundational (Blocking Prerequisites)
-- [ ] #7 Spec phase: User Story 1 - Teaching world runs at the fastest honest speed by default (Priority: P1) 🎯 MVP
-- [ ] #8 Spec phase: User Story 2 - Exceeding the posture teaches the horizon instead of blocking (Priority: P2)
-- [ ] #9 Spec phase: User Story 3 - Uncalibrated teaching worlds are told to calibrate (Priority: P2)
-- [ ] #10 Spec phase: User Story 4 - The posture is a per-world fact other features can read (Priority: P3)
-- [ ] #11 Spec phase: Polish & Cross-Cutting Concerns
+- [x] #5 Spec phase: Setup
+- [x] #6 Spec phase: Foundational (Blocking Prerequisites)
+- [x] #7 Spec phase: User Story 1 - Teaching world runs at the fastest honest speed by default (Priority: P1) 🎯 MVP
+- [x] #8 Spec phase: User Story 2 - Exceeding the posture teaches the horizon instead of blocking (Priority: P2)
+- [x] #9 Spec phase: User Story 3 - Uncalibrated teaching worlds are told to calibrate (Priority: P2)
+- [x] #10 Spec phase: User Story 4 - The posture is a per-world fact other features can read (Priority: P3)
+- [x] #11 Spec phase: Polish & Cross-Cutting Concerns
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -61,4 +61,12 @@ Drift audit 2026-07-23: content holds; pin moved — horizonSummary is calibrate
 Model tier: Opus 4.8 (constitution V rubric): slice is cross-package (world/cognition/ipc/daemon/cmd), touches internal/cognition (rubric-listed), and the boot-time recorded speed_set event is replay-determinism/doctrine-adjacent (decision-4/-6 boundary must stay warn-never-block). Recorded per plan.md Constitution Check + research.md R7.
 
 Implementation complete on branch task-78-teaching-speed-posture (Opus 4.8 spec-implementer, T001-T017, commits faa0b14..dbfef22 + 2f201d8): go vet + full suite green (one PRE-EXISTING main failure internal/tui TestCatalogSweep — out of scope, filed as TASK-96). Planning-tier review PASSED: doctrine guards verified in diff (MaxSafeSpeed single-source via Route; boot default lands as recorded clock.speed_set through loop.Do — replay identity proven by T017; all wire fields additive omitempty, non-teaching byte-identity tested; max-gate untouched). Deviations adjudicated: verbatim Route '>' arithmetic and '; ' multi-class join ACCEPTED and pinned into contracts/posture.md (2f201d8). PR creation blocked by sustained GitHub 500s — branch pushed, retry loop running.
+
+spec-bridge sync: Setup: 1/1 · Foundational (Blocking Prerequisites): 3/3 · User Story 1 - Teaching world runs at the fastest honest speed by default (Priority: P1) 🎯 MVP: 3/3 · User Story 2 - Exceeding the posture teaches the horizon instead of blocking (Priority: P2): 2/2 · User Story 3 - Uncalibrated teaching worlds are told to calibrate (Priority: P2): 2/2 · User Story 4 - The posture is a per-world fact other features can read (Priority: P3): 4/4 · Polish & Cross-Cutting Concerns: 3/3 — status In Progress → Done
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+All spec tasks complete (Setup: 1/1 · Foundational (Blocking Prerequisites): 3/3 · User Story 1 - Teaching world runs at the fastest honest speed by default (Priority: P1) 🎯 MVP: 3/3 · User Story 2 - Exceeding the posture teaches the horizon instead of blocking (Priority: P2): 2/2 · User Story 3 - Uncalibrated teaching worlds are told to calibrate (Priority: P2): 2/2 · User Story 4 - The posture is a per-world fact other features can read (Priority: P3): 4/4 · Polish & Cross-Cutting Concerns: 3/3). Derived Done by spec-bridge sync.
+<!-- SECTION:FINAL_SUMMARY:END -->
