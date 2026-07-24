@@ -3,9 +3,11 @@ package sim
 import (
 	"bytes"
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/evanstern/promptworld/internal/store"
+	"github.com/evanstern/promptworld/internal/worldmap"
 )
 
 // --- test scaffolding (spec 041 US1) -----------------------------------------
@@ -438,5 +440,234 @@ func TestMentalMapReplayByteIdentical(t *testing.T) {
 	}
 	if live.Hash() != replayed.Hash() {
 		t.Fatal("whole-state hash diverged on replay")
+	}
+}
+
+// TestMapCorrectionOnArrival (spec 041 US3, SC-005): a villager learns a fire
+// by witnessing it, walks away, the fire is removed while unobserved, and on
+// walking back the perception beat emits agent.map_corrected carrying the
+// fact AS REMEMBERED plus a companion situated memory — after application the
+// fact is gone, the memory is stamped, and the next resolution uses the
+// corrected knowledge (the honest "you know of no fires").
+func TestMapCorrectionOnArrival(t *testing.T) {
+	const seed = 42
+	m := testMap(seed)
+	s := NewState(seed, m)
+	a := &s.Agents[0]
+	a.Inv.Wood = 2
+
+	far, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool {
+		return abs(x-a.X)+abs(y-a.Y) >= 25 && buildSite(m, s, x, y)
+	})
+	if !ok {
+		t.Skip("seed lacks a far fire site")
+	}
+	stand, ok := nearest(m, s, far.X, far.Y, func(x, y int) bool {
+		return passable(m, s, x, y) && abs(x-far.X)+abs(y-far.Y) <= 2
+	})
+	if !ok {
+		t.Skip("no stand tile near the fire site")
+	}
+	move := func(tick int64, x, y int) {
+		if err := s.Apply(store.Event{Tick: tick, Type: "agent.moved",
+			Payload: mustPayload(AgentMovedPayload{Agent: 0, X: x, Y: y})}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	sweep := func(tick int64) []store.Event { // agent 0's beat: tick%5 == 0
+		evs := perceptionEvents(s, m, tick)
+		for _, e := range evs {
+			if err := s.Apply(e); err != nil {
+				t.Fatalf("apply %s: %v", e.Type, err)
+			}
+		}
+		return evs
+	}
+
+	// Learn the fire by witnessing it.
+	s.Structures = []Structure{{Kind: "fire", X: far.X, Y: far.Y, FuelUntil: 900000}}
+	move(100, stand.X, stand.Y)
+	sweep(105)
+	remembered, ok := a.Map.factAt("fire", far.X, far.Y)
+	if !ok || remembered.Detail != 900000 {
+		t.Fatalf("fire not witnessed: %+v", remembered)
+	}
+
+	// Walk far away; the fire is removed while unobserved — no correction
+	// fires from out of range.
+	awayX, awayY := s.Agents[0].X, s.Agents[0].Y
+	if home, ok := nearest(m, s, far.X, far.Y, func(x, y int) bool {
+		return passable(m, s, x, y) && abs(x-far.X)+abs(y-far.Y) > witnessRadius+2
+	}); ok {
+		awayX, awayY = home.X, home.Y
+	}
+	move(200, awayX, awayY)
+	s.Structures = nil // demolished/removed while away
+	for _, e := range sweep(205) {
+		if e.Type == "agent.map_corrected" {
+			t.Fatal("correction fired outside the witness radius")
+		}
+	}
+	if _, ok := a.Map.factAt("fire", far.X, far.Y); !ok {
+		t.Fatal("unwitnessed removal must not touch the map")
+	}
+
+	// Walk back: arrival's beat perceives the absence.
+	move(300, stand.X, stand.Y)
+	evs := sweep(305)
+	var corrected *MapCorrectedPayload
+	var memText string
+	for _, e := range evs {
+		switch e.Type {
+		case "agent.map_corrected":
+			var p MapCorrectedPayload
+			mustUnmarshal(t, e.Payload, &p)
+			if p.Agent == 0 {
+				corrected = &p
+			}
+		case "agent.memory_added":
+			var p MemoryAddedPayload
+			mustUnmarshal(t, e.Payload, &p)
+			if p.Agent == 0 && p.Origin == OriginWitness {
+				memText = p.Text
+			}
+		}
+	}
+	if corrected == nil || len(corrected.Gone) != 1 {
+		t.Fatalf("arrival did not emit the correction: %+v", corrected)
+	}
+	if corrected.Gone[0] != remembered {
+		t.Errorf("Gone fact %+v != the fact as remembered %+v", corrected.Gone[0], remembered)
+	}
+	// situateText composes the place clause onto the base text (spec 019), so
+	// assert the discovery stem, not the full composed line.
+	stem := strings.TrimSuffix(mapCorrectedText(remembered), ".")
+	if !strings.HasPrefix(memText, stem) {
+		t.Errorf("companion memory %q does not carry the discovery %q", memText, stem)
+	}
+	if _, ok := a.Map.factAt("fire", far.X, far.Y); ok {
+		t.Error("corrected fact still in the map")
+	}
+	found := false
+	for _, mm := range a.Memories {
+		if strings.HasPrefix(mm.Text, stem) && mm.Origin == OriginWitness {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("discovery memory not stamped on the soul")
+	}
+	// The next plan uses the corrected knowledge.
+	if _, _, err := resolveGoal(s, m, 0, "refuel_fire", -1, "", 0, 310); err == nil ||
+		err.Error() != "you know of no fires" {
+		t.Errorf("post-correction resolution = %v, want the honest knowledge failure", err)
+	}
+}
+
+// TestCorrectionSparesAvailabilityLapses (spec 041 US3): a harvested forage
+// spot and a cooling den are places whose AVAILABILITY lapsed, not places
+// gone — the correction never removes them (they regrow/re-arm; the
+// resolvers' ground conditions cover the gap). A chopped tree is genuinely
+// gone (the cleared overlay is permanent) and corrects.
+func TestCorrectionSparesAvailabilityLapses(t *testing.T) {
+	const seed = 42
+	m := testMap(seed)
+	s := NewState(seed, m)
+	a := &s.Agents[0]
+
+	// Stand the agent somewhere with both a forage spot and a tree in radius
+	// (the tiles themselves need not be passable — the sweep notes any tile
+	// within the radius). Deterministic row-major scan.
+	inRadius := func(cx, cy int, kind worldmap.TileKind) (Point, bool) {
+		for y := cy - witnessRadius; y <= cy+witnessRadius; y++ {
+			for x := cx - witnessRadius; x <= cx+witnessRadius; x++ {
+				if m.InBounds(x, y) && abs(x-cx)+abs(y-cy) <= witnessRadius && m.At(x, y) == kind {
+					return Point{X: x, Y: y}, true
+				}
+			}
+		}
+		return Point{}, false
+	}
+	var spot, treeTile Point
+	placed := false
+	for y := 0; y < m.H && !placed; y++ {
+		for x := 0; x < m.W && !placed; x++ {
+			if !passable(m, s, x, y) {
+				continue
+			}
+			f, ok1 := inRadius(x, y, worldmap.Forage)
+			tr, ok2 := inRadius(x, y, worldmap.Tree)
+			if ok1 && ok2 {
+				spot, treeTile = f, tr
+				if err := s.Apply(store.Event{Tick: 1, Type: "agent.moved",
+					Payload: mustPayload(AgentMovedPayload{Agent: 0, X: x, Y: y})}); err != nil {
+					t.Fatal(err)
+				}
+				placed = true
+			}
+		}
+	}
+	if !placed {
+		t.Skip("map has no vantage with both forage and tree in radius")
+	}
+
+	// Witness both, then harvest the spot and fell the tree.
+	for _, e := range perceptionEvents(s, m, 5) {
+		if err := s.Apply(e); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, ok := a.Map.factAt("forage", spot.X, spot.Y); !ok {
+		t.Fatal("forage spot not witnessed")
+	}
+	if _, ok := a.Map.factAt("tree", treeTile.X, treeTile.Y); !ok {
+		t.Skip("tree tile not witnessed on this seed")
+	}
+	s.Harvested = append(s.Harvested, Harvest{X: spot.X, Y: spot.Y, Regrow: 999999})
+	s.Cleared = append(s.Cleared, treeTile)
+
+	for _, e := range perceptionEvents(s, m, 10) {
+		if err := s.Apply(e); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, ok := a.Map.factAt("forage", spot.X, spot.Y); !ok {
+		t.Error("a harvested spot was corrected away — availability is not absence")
+	}
+	if _, ok := a.Map.factAt("tree", treeTile.X, treeTile.Y); ok {
+		t.Error("a felled tree survived correction — the cleared overlay is permanent")
+	}
+}
+
+// TestStalePlanStepExpiresWithoutOmniscience (spec 041 US3, T022): a plan
+// step whose target kind was corrected away fails via agent.plan_expired
+// carrying the knowledge reason — it never re-resolves omnisciently to a fire
+// the agent has not learned.
+func TestStalePlanStepExpiresWithoutOmniscience(t *testing.T) {
+	const seed = 42
+	m := testMap(seed)
+	s := NewState(seed, m)
+	a := &s.Agents[0]
+	a.Inv.Wood = 2
+	// An unknown fire exists in the world; the agent's own fire knowledge was
+	// just corrected away (map holds no fire facts).
+	s.Structures = []Structure{{Kind: "fire", X: 40, Y: 40, FuelUntil: 900000}}
+	a.Map.Facts = nil
+	a.Plan = []PlanStep{{Job: "p", Goal: "refuel_fire", Target: -1, Until: 999999}}
+
+	evs := planStepEvents(s, m, 0, 1000)
+	var expired *PlanStepPayload
+	for _, e := range evs {
+		if e.Type == "agent.intent_set" {
+			t.Fatalf("stale plan step re-resolved omnisciently: %s", e.Payload)
+		}
+		if e.Type == "agent.plan_expired" {
+			var p PlanStepPayload
+			mustUnmarshal(t, e.Payload, &p)
+			expired = &p
+		}
+	}
+	if expired == nil || expired.Reason != "you know of no fires" {
+		t.Fatalf("plan step should expire with the knowledge reason, got %+v", expired)
 	}
 }

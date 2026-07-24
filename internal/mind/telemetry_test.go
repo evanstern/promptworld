@@ -701,3 +701,49 @@ func TestEmitSuppressedSeamlessOrchNoOp(t *testing.T) {
 	md := &Mind{orch: &scriptedModel{}, social: nil}
 	md.emitSuppressed("planner", 0, 100, cognition.Verdict{Class: "planner"})
 }
+
+// TestMapCorrectionRearmsMatchingIntent (spec 041 US3, T021 / contracts §1):
+// an agent.map_corrected absorb re-arms the planner ONLY when a removed fact
+// matches the acting agent's current intent target (Target or Res tile) — a
+// correction touching nothing the agent acts on stays quiet, and other
+// agents are never armed by it.
+func TestMapCorrectionRearmsMatchingIntent(t *testing.T) {
+	state := sim.NewState(42, worldmap.Generate(42, 64, 64))
+	md := &Mind{replica: state}
+
+	corrected := func(agent int, x, y int, seq int64) store.Event {
+		b, _ := json.Marshal(sim.MapCorrectedPayload{Agent: agent, Gone: []sim.PlaceFact{
+			{Kind: "fire", X: x, Y: y, Seen: 100, Provenance: "witnessed"},
+		}})
+		return store.Event{Seq: seq, Tick: 500, Type: "agent.map_corrected", Payload: b}
+	}
+
+	// No intent: quiet.
+	md.absorb([]store.Event{corrected(0, 10, 10, 71)})
+	if md.pending[0] {
+		t.Fatal("correction with no intent in flight armed the planner")
+	}
+
+	// Intent elsewhere: quiet.
+	state.Agents[0].Intent = &sim.Intent{Goal: "refuel_fire", TargetX: 30, TargetY: 30}
+	md.absorb([]store.Event{corrected(0, 10, 10, 72)})
+	if md.pending[0] {
+		t.Fatal("correction not touching the intent target armed the planner")
+	}
+
+	// Removed fact at the intent target: re-armed with the correction's seq.
+	md.absorb([]store.Event{corrected(0, 30, 30, 73)})
+	if !md.pending[0] || md.pendingSeq[0] != 73 {
+		t.Fatalf("matching correction did not re-arm: pending=%v seq=%d", md.pending[0], md.pendingSeq[0])
+	}
+
+	// A work goal's Res tile matches too; other agents stay quiet throughout.
+	state.Agents[1].Intent = &sim.Intent{Goal: "chop", TargetX: 5, TargetY: 5, ResX: 6, ResY: 5}
+	md.absorb([]store.Event{corrected(1, 6, 5, 74)})
+	if !md.pending[1] || md.pendingSeq[1] != 74 {
+		t.Fatal("Res-tile correction did not re-arm")
+	}
+	if md.pending[2] {
+		t.Fatal("a correction armed an unrelated agent")
+	}
+}
