@@ -38,3 +38,25 @@ func Route(dc DecisionClass, ticksPerSecond, secondsPerPoint float64) Verdict {
 		dc.Points, secondsPerPoint, ticksPerSecond, v.PredictedDriftTicks, rel, dc.BudgetTicks)
 	return v
 }
+
+// RoutePaused is Route's paused counterpart (spec 040 D2, decision-6): a frozen
+// world cannot drift, so predicted drift is zero — within every staleness budget
+// — and the verdict allows every class, whatever the SET speed (including
+// uncapped max). Wall time still passes while frozen, so PredictedWallMs is
+// predicted exactly as Route does it; only the drift math is replaced. The
+// arithmetic names the paused state (FR-005) in place of the set-speed drift
+// string. Pure — the mind supplies the paused fact from its event-reduced
+// replica, never a wall-clock read (FR-006). Route is left untouched (SC-005).
+func RoutePaused(dc DecisionClass, secondsPerPoint float64) Verdict {
+	wallSec := float64(dc.Points) * secondsPerPoint
+	return Verdict{
+		Allow:               true,
+		Class:               dc.Class,
+		Points:              dc.Points,
+		PredictedWallMs:     int64(wallSec * 1000),
+		PredictedDriftTicks: 0,
+		BudgetTicks:         dc.BudgetTicks,
+		Arithmetic: fmt.Sprintf("%dpt x %.1fs/pt while paused = 0 ticks <= budget %d",
+			dc.Points, secondsPerPoint, dc.BudgetTicks),
+	}
+}
