@@ -9,7 +9,7 @@
 <meta name="promptworld-docs:source" content="docs/wiki/llm-orchestrator.md@d23fbbfe471ec62c9b94ce79404870632a6eb60e">
 <meta name="promptworld-docs:source" content="docs/wiki/nightly-consolidation.md@2bc94f55c57880e07f0e52e5de20c9cd527ab340">
 <meta name="promptworld-docs:source" content="docs/wiki/social-fabric.md@2bc94f55c57880e07f0e52e5de20c9cd527ab340">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@4c3807c4d3fcca5cb82367a1ea9b8c0696fda472">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@a7a96b3c6b12f49e0682ffe52b4a8a88ca22f867">
 <title>The AI behind the village — promptworld player docs</title>
 <style>
   :root {
@@ -214,6 +214,19 @@ for what this looks like in the full-screen client's header and chronicle feed.<
 first, buying villagers more real thinking time; only if you're already down at the
 slowest speed on the watchable ladder and villagers are still falling behind does the
 autopilot fallback above kick in.</p>
+
+<h2>Teaching worlds pick their speed to protect that thinking</h2>
+<p>Everything above about a villager's thinking getting suppressed at very high speed
+is exactly what a <strong>teaching world</strong> is built to avoid by default. Mark a
+world as a teaching world (at creation with <code>--teaching</code>, or later with
+<code>promptworld teaching demo on</code>) and it starts each session at the fastest
+speed its own measured setup can honestly keep villager thinking running at — worked
+out from that world's calibration, not a guess or a fixed number. You can still push
+the speed higher; it isn't blocked, but the game tells you, in the same terms as the
+horizon lines above, exactly which kinds of thinking (planning, conversations,
+meetings) that would suppress. An uncalibrated teaching world can't know its own honest
+number yet, so it asks for <code>promptworld calibrate</code> first. See the
+<a href="time-and-speed.html">time & speed page</a> for the full story.</p>
 
 <h2>Sleep is when a soul actually grows</h2>
 <p>Once a night, when a villager sleeps, one AI call (using the higher-quality cloud

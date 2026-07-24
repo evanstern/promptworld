@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
 <meta name="promptworld-docs:source" content="README.md@ead97e7619572a625a35b2ee3e82243ff6f9e3f4">
-<meta name="promptworld-docs:source" content="docs/wiki/cli-promptworld.md@d23fbbfe471ec62c9b94ce79404870632a6eb60e">
-<meta name="promptworld-docs:source" content="docs/wiki/daemon-lifecycle.md@af13190c1771cd592ad26bcc2728f4e4377be894">
+<meta name="promptworld-docs:source" content="docs/wiki/cli-promptworld.md@a7a96b3c6b12f49e0682ffe52b4a8a88ca22f867">
+<meta name="promptworld-docs:source" content="docs/wiki/daemon-lifecycle.md@a7a96b3c6b12f49e0682ffe52b4a8a88ca22f867">
 <meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@4c3807c4d3fcca5cb82367a1ea9b8c0696fda472">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@4c3807c4d3fcca5cb82367a1ea9b8c0696fda472">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@a7a96b3c6b12f49e0682ffe52b4a8a88ca22f867">
 <title>Getting started — promptworld player docs</title>
 <style>
   :root {
@@ -109,6 +109,11 @@ configuration file. The <code>--seed</code> is a starting number for the world's
 generation; the same seed always regenerates the identical map and starting
 conditions, so it's worth writing down if you want to recreate a world later. Leave it
 off and promptworld picks one for you.</p>
+<p>Add <code>--teaching</code> if you want a <strong>teaching world</strong> — one that
+always starts at the fastest speed its measured setup can honestly keep villagers
+genuinely thinking at, rather than the ordinary default speed (you can also flip this
+on or off later with <code>promptworld teaching demo on</code> / <code>off</code>). The
+<a href="time-and-speed.html">time & speed page</a> covers what that means in practice.</p>
 <p>Genesis also writes each villager's starting personality and Metatron's starting
 "charter" — more on both in a moment. The summary printed when the world is created
 also names the AI model it's expecting and the exact command to fetch it if you
@@ -132,7 +137,11 @@ conversations, meetings — would get paused at which speeds under those cautiou
 guesses, and gives you the exact command to fix it, e.g.
 <code>promptworld calibrate demo</code>. Nothing is broken and nothing is blocked
 while you're uncalibrated; the world runs fine either way, calibrating just makes its
-speed decisions match your actual setup instead of a worst-case guess.</p>
+speed decisions match your actual setup instead of a worst-case guess. A
+<strong>teaching world</strong> (see step 2) leans on this even more directly: it can't
+honestly pick its fastest-safe default speed until it's calibrated, so an uncalibrated
+teaching world asks you to run <code>promptworld calibrate demo</code> before it can
+show you a real number instead of a cautious guess.</p>
 <p>You can check on any world, running or not, from anywhere:</p>
 <pre><code>promptworld ps        # every running world you have, at a glance
 promptworld status demo   # this world's tick, game time, and speed</code></pre>

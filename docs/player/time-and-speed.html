@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/wiki/game-clock.md@6eb8b60ceb65d760408051eadf50a789603efa18">
+<meta name="promptworld-docs:source" content="docs/wiki/game-clock.md@a7a96b3c6b12f49e0682ffe52b4a8a88ca22f867">
 <meta name="promptworld-docs:source" content="docs/wiki/sim-loop.md@ce15d80522aae111e2c359287459b51401d18364">
-<meta name="promptworld-docs:source" content="docs/wiki/cli-promptworld.md@d23fbbfe471ec62c9b94ce79404870632a6eb60e">
+<meta name="promptworld-docs:source" content="docs/wiki/cli-promptworld.md@a7a96b3c6b12f49e0682ffe52b4a8a88ca22f867">
 <title>Time and speed — promptworld player docs</title>
 <style>
   :root {
@@ -115,6 +115,31 @@ thoughts each kind has lost to speed since the daemon started. Drop back to a sp
 within your calibrated (or guessed) limits and the affected kinds go back to
 "thinking"; the skipped count itself only resets when the daemon restarts, so it's a
 running tally of what that session's speed has actually cost you, not a snapshot.</p>
+
+<h2>Teaching worlds: a speed that's honest by default</h2>
+<p>A world can be marked a <strong>teaching world</strong> — either up front
+(<code>promptworld new demo --teaching</code>) or later on an existing one
+(<code>promptworld teaching demo on</code>, and <code>off</code> to undo it;
+a running world only picks up the change the next time it starts). A teaching
+world starts each session at the <strong>fastest speed its measured setup can
+honestly support</strong> — the highest rung on the ladder above where
+villager planning would otherwise get suppressed, worked out from that
+world's own calibration, not a fixed number. A world that calibrates fast
+defaults to something like 32x; a slower one defaults lower, like 8x — either
+way, the village you see at startup is genuinely thinking, not coasting on
+autopilot.</p>
+<p>You can still ask for more. Pushing the speed above a teaching world's
+default still works — nothing is blocked — but the game explains, in
+numbers, exactly which kinds of villager thinking will shut down at that
+speed and why, the same arithmetic <code>calibrate</code> itself uses. It's
+meant to be its own small lesson about the trade-off, not a wall.</p>
+<p>If a teaching world has never been calibrated, it can't honestly compute
+that fastest-safe speed yet, so it asks you to run <code>promptworld
+calibrate demo</code> — the same prompt an uncalibrated world shows anyone,
+just phrased for a world whose whole point is running at a number it can
+stand behind. <code>promptworld status</code> shows the teaching posture
+right in its output — the rung it's defaulting to, and whether that number
+comes from a real calibration or is still provisional.</p>
 
 <h2>Pause and resume are player verbs</h2>
 <p>Pausing is something you do on purpose — it's different from just detaching your
