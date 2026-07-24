@@ -173,7 +173,12 @@ func (e *Embedder) run() {
 			if bucket := e.replica.Tick / sim.PlannerCadenceTicks; bucket > e.lastBucket {
 				e.lastBucket = bucket
 				for i := range e.replica.Agents {
-					if e.replica.Agents[i].Dead {
+					// Dead agents never plan again; asleep agents don't plan
+					// until they wake (which re-renders next bucket) — neither
+					// needs a fresh query vector, so skip the wasted embeds
+					// (behavior-neutral: selection falls back / uses the last
+					// recorded vector either way).
+					if e.replica.Agents[i].Dead || e.replica.Agents[i].Asleep {
 						continue
 					}
 					e.enqueue(embedJob{agent: i, sit: true, tick: e.replica.Tick,

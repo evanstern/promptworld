@@ -383,7 +383,7 @@ func (md *Mind) plan() {
 			agent:  i,
 			name:   a.Name,
 			system: systemPrompt(a.Name, md.personas[i]),
-			prompt: userPrompt(md.replica, i, md.k),
+			prompt: userPrompt(md.replica, i, md.k, md.memoryRelevance),
 			meta:   md.newMeta("planner", i, tick, md.pendingSeq[i], llm.KindPlanner),
 		}
 		job.meta.generation = a.Generation

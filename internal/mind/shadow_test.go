@@ -2,6 +2,7 @@ package mind
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 	"time"
 
@@ -169,5 +170,49 @@ func TestShadowInvariant(t *testing.T) {
 	}
 	if got := string(s.Marshal()); got != before {
 		t.Error("cog.memory_divergence mutated state — replay would diverge")
+	}
+}
+
+// TestOnModeConsumesRelevantWindow (spec 042 T019, contracts §3 row 3): with
+// memory_relevance "on", the SAME fixture state feeds the plan prompt the
+// relevance-augmented window — the old situation-matching memory the legacy
+// window excludes now reaches the model — and divergence is still recorded,
+// mode-stamped "on". Off-mode prompts remain free of it, so this is the one
+// mode that changes agent-visible behavior, exactly as gated.
+func TestOnModeConsumesRelevantWindow(t *testing.T) {
+	offPrompts, _ := shadowRun(t, "")
+	onPrompts, onEvents := shadowRun(t, "on")
+
+	const marker = "Robbed at the river."
+	off, on := offPrompts[0], onPrompts[0]
+	if off == "" || on == "" {
+		t.Fatal("agent 0 enqueued no plan job")
+	}
+	if strings.Contains(off, marker) {
+		t.Fatalf("legacy window already carries the old memory — fixture lost its bite:\n%s", off)
+	}
+	if !strings.Contains(on, marker) {
+		t.Errorf("\"on\" prompt missing the relevance-promoted memory %q:\n%s", marker, on)
+	}
+
+	// Divergence keeps recording in "on" (contract §3), mode-stamped.
+	found := false
+	for _, e := range onEvents {
+		if e.Type != "cog.memory_divergence" {
+			continue
+		}
+		var p sim.MemoryDivergencePayload
+		if err := json.Unmarshal(e.Payload, &p); err != nil {
+			t.Fatal(err)
+		}
+		if p.Agent == 0 {
+			found = true
+			if p.Mode != "on" {
+				t.Errorf("divergence mode = %q, want on", p.Mode)
+			}
+		}
+	}
+	if !found {
+		t.Error("\"on\" mode stopped recording divergence — the guardrail must keep running")
 	}
 }

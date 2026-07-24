@@ -392,7 +392,7 @@ func TestPromptWindowBound(t *testing.T) {
 	}
 	state.Tick = 150 * 60
 
-	prompt := userPrompt(state, 0, sim.WindowK)
+	prompt := userPrompt(state, 0, sim.WindowK, "")
 	lines := 0
 	for _, l := range strings.Split(prompt, "\n") {
 		if strings.HasPrefix(l, "- ") {

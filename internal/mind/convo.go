@@ -174,7 +174,10 @@ func (md *Mind) snapshotConvo(tick int64, a, b int) convoCtx {
 		}
 		cc.rels = append(cc.rels, strings.Join(feelings, "; "))
 		var mem []string
-		for _, m := range sim.SelectMemories(&ag, s.Seed, id, tick, 5) {
+		// The scene's k=5 snapshot window is mode-gated exactly like the
+		// planner window (spec 042 US3): "on" consumes the relevance selector,
+		// everything else stays today's SelectMemories bit-identically.
+		for _, m := range selectWindow(s, id, 5, tick, md.memoryRelevance) {
 			mem = append(mem, sim.FormatMemory(m))
 		}
 		cc.memories = append(cc.memories, mem)
