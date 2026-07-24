@@ -451,3 +451,116 @@ func TestMigratedReducerRejectsForeignSeed(t *testing.T) {
 		t.Error("a foreign-seed migration event should not mutate state")
 	}
 }
+
+// --- v3→v4 transform (spec 041 T009) ----------------------------------------
+
+// buildV3Fixture assembles a representative v3-shaped state by running the
+// real 2→3 step over the v2 fixture — exactly what a v3 daemon would have
+// snapshotted (the spill piles at (5,5) and (9,9) included), with every
+// Agent.Map nil.
+func buildV3Fixture(seed uint64, tick int64) *State {
+	return TransformV2State(buildV2Fixture(seed, tick))
+}
+
+// TestTransformV3GrantsKnowledge is spec 041 T009 (research D7): the v3→v4
+// transform carries people AND land verbatim and grants knowledge — each
+// living villager gets explored terrain around its current position plus
+// witnessed facts for ALL current structures and piles (natives, not
+// strangers); dead villagers get an empty sized map (present, so snapshot
+// merge over a genesis state and from-genesis replay agree — see the
+// transform's doc block).
+func TestTransformV3GrantsKnowledge(t *testing.T) {
+	const seed = 42
+	const tick = int64(300000)
+	m := testMap(seed)
+	v3 := buildV3Fixture(seed, tick)
+	s := TransformV3State(v3, m)
+
+	// Clock continuity; derived fields freshened (the 2→3 shape).
+	if s.Tick != tick || s.Seed != seed || !s.Night || s.Speed != clock.Speed4x {
+		t.Errorf("clock/identity not carried: tick=%d seed=%d night=%v speed=%v", s.Tick, s.Seed, s.Night, s.Speed)
+	}
+	if s.Degraded || s.EffectiveRate != clock.Speed4x.TicksPerSecond() {
+		t.Errorf("derived clock fields not freshened: degraded=%v rate=%v", s.Degraded, s.EffectiveRate)
+	}
+	// Land and fabric carried verbatim.
+	if len(s.Structures) != 1 || s.Structures[0].FuelUntil != 5000 || len(s.Piles) != 2 {
+		t.Errorf("land not carried verbatim: structures=%+v piles=%d", s.Structures, len(s.Piles))
+	}
+
+	// The grant, per living agent: fire + both spill piles, witnessed at the
+	// migration tick, in canonical order; home area explored.
+	wantFacts := []PlaceFact{
+		{Kind: "fire", X: 10, Y: 10, Seen: tick, Provenance: ProvenanceWitnessed, Detail: 5000},
+		{Kind: "pile", X: 5, Y: 5, Seen: tick, Provenance: ProvenanceWitnessed},
+		{Kind: "pile", X: 9, Y: 9, Seen: tick, Provenance: ProvenanceWitnessed},
+	}
+	for i := range s.Agents {
+		a := &s.Agents[i]
+		if a.Map == nil {
+			t.Fatalf("agent %d migrated without a map", i)
+		}
+		if a.Dead {
+			if a.Map.Facts != nil {
+				t.Errorf("dead agent %d granted facts: %+v", i, a.Map.Facts)
+			}
+			if a.Map.ExploredAt(m.W, m.H, a.X, a.Y) {
+				t.Errorf("dead agent %d granted explored terrain", i)
+			}
+			continue
+		}
+		if len(a.Map.Facts) != len(wantFacts) {
+			t.Fatalf("agent %d facts = %+v, want %+v", i, a.Map.Facts, wantFacts)
+		}
+		for j, want := range wantFacts {
+			if a.Map.Facts[j] != want {
+				t.Errorf("agent %d fact[%d] = %+v, want %+v", i, j, a.Map.Facts[j], want)
+			}
+		}
+		if !a.Map.ExploredAt(m.W, m.H, a.X, a.Y) {
+			t.Errorf("living agent %d does not know its own tile", i)
+		}
+		// (63,63) is more than the perception radius from every fixture agent.
+		if a.Map.ExploredAt(m.W, m.H, 63, 63) {
+			t.Errorf("living agent %d knows terrain beyond its home area", i)
+		}
+	}
+
+	// Purity: the v3 input was not mutated.
+	for i := range v3.Agents {
+		if v3.Agents[i].Map != nil {
+			t.Fatalf("TransformV3State mutated its input: agent %d gained a map", i)
+		}
+	}
+}
+
+// TestTransformV3ChainReducerReplay proves the v3→v4 output replays
+// byte-identically through the reducer from genesis (world.created →
+// world.migrated, zero snapshots) — the determinism half of the format bump.
+// Genesis now seeds maps, so this also proves the wholesale replacement
+// overwrites them with the transform's grant.
+func TestTransformV3ChainReducerReplay(t *testing.T) {
+	const seed = 42
+	const tick = int64(300000)
+	m := testMap(seed)
+	want := TransformV3State(buildV3Fixture(seed, tick), m)
+
+	got := NewState(seed, m)
+	events := []store.Event{
+		{Tick: tick, Type: "world.created", Payload: mustPayload(WorldCreatedPayload{Name: "w", Seed: seed})},
+		{Tick: tick, Type: "world.migrated", Payload: mustPayload(WorldMigratedPayload{
+			FromFormat: 3, SourceEvents: 99, SourceTick: tick, State: *want,
+		})},
+	}
+	for _, e := range events {
+		if err := got.Apply(e); err != nil {
+			t.Fatalf("apply %s: %v", e.Type, err)
+		}
+		if e.Tick > got.Tick {
+			got.Tick = e.Tick
+		}
+	}
+	if got.Hash() != want.Hash() {
+		t.Fatalf("replayed v3→v4 state diverged:\nwant %s\ngot  %s", string(want.Marshal()), string(got.Marshal()))
+	}
+}

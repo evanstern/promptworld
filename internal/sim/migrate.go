@@ -1,12 +1,13 @@
 package sim
 
 // World migration — the migration-only seam (spec 012 US6 for v1→v2, research
-// R10; spec 013 for v2→v3, research R3). This file holds the pure transforms:
-// the typed v1 legacy decode + v1→v2 transform, and the v2→v3 transform.
-// Neither runs on the live reducer path — the migrate command (internal/world)
-// decodes a world's covering snapshot, transforms it here, and writes the
-// result as a single world.migrated event whose reducer case (state.go)
-// replaces state wholesale. A v1 world chains 1→2→3 in one run.
+// R10; spec 013 for v2→v3, research R3; spec 041 for v3→v4, research D7).
+// This file holds the pure transforms: the typed v1 legacy decode + v1→v2
+// transform, the v2→v3 transform, and the v3→v4 transform. None runs on the
+// live reducer path — the migrate command (internal/world) decodes a world's
+// covering snapshot, transforms it here, and writes the result as a single
+// world.migrated event whose reducer case (state.go) replaces state
+// wholesale. An older world chains every step (1→2→3→4) in one run.
 //
 // The v1→v2 transform's contract is "keep the people, reset the land": every
 // villager and the whole social/governance fabric carry over verbatim (tick
@@ -325,5 +326,84 @@ func TransformV2Snapshot(v2StateJSON []byte) (*State, int64, error) {
 		return nil, 0, fmt.Errorf("decode v2 state: %w", err)
 	}
 	out := TransformV2State(&v2)
+	return out, out.Tick, nil
+}
+
+// --- v3→v4 transform (spec 041, research D7) --------------------------------
+//
+// The v4 format break gives every villager a private mental map (Agent.Map)
+// and gates target resolution on it, so a v3 world loaded with all-nil maps
+// would leave every villager knowing nothing — mass starvation. Like 2→3 the
+// transform is people- AND land-preserving: everything carries verbatim; the
+// one addition is knowledge. Villagers are NATIVES, not strangers (spec edge
+// "cold start"): each living agent is granted (a) explored terrain around its
+// current position at the perception radius and (b) witnessed place-facts for
+// ALL current structures and ground piles, stamped at the migration tick.
+// Dead agents get an empty sized map, not nil: genesis now seeds maps, and a
+// replica/recovery unmarshal MERGES a snapshot over a genesis state — a
+// map-absent agent would silently resurrect the genesis map there while a
+// from-genesis replay (world.created → world.migrated) produces the
+// transform's value, so every agent must carry an explicit map for the two
+// paths to agree byte-for-byte. (Deviation from tasks.md's "living agents"
+// phrasing, recorded for the planning tier; data-model.md's "dead agents: map
+// retained" invariant already wants the field present.)
+
+// TransformV3State is the pure v3→v4 transform. It carries the whole v3 state
+// verbatim (the migration tick is the carried tick, so the clock simply
+// continues; derived clock fields start fresh and non-degraded, the 1→2 and
+// 2→3 precedent) and grants each agent its mental map as above. Pure: the
+// input state and its slices are never mutated. m must be the regeneration of
+// the world's seed (it sizes the explored bitmaps).
+func TransformV3State(v3 *State, m *worldmap.Map) *State {
+	migTick := v3.Tick
+	out := *v3 // carry every field verbatim (slice headers shared, read-only)
+	out.Degraded = false
+	out.EffectiveRate = out.Speed.TicksPerSecond()
+	out.m = m
+	// Own the Agents slice (we attach maps) so the input is never mutated.
+	out.Agents = make([]Agent, len(v3.Agents))
+	copy(out.Agents, v3.Agents)
+
+	// The knowledge grant, baked once: witnessed facts for every current
+	// structure (fires carrying FuelUntil as Detail) and ground pile, in
+	// canonical (Kind, X, Y) order.
+	granted := make([]PlaceFact, 0, len(v3.Structures)+len(v3.Piles))
+	for _, st := range v3.Structures {
+		granted = append(granted, PlaceFact{
+			Kind: st.Kind, X: st.X, Y: st.Y, Seen: migTick,
+			Provenance: ProvenanceWitnessed, Detail: st.FuelUntil,
+		})
+	}
+	for _, p := range v3.Piles {
+		granted = append(granted, PlaceFact{
+			Kind: "pile", X: p.X, Y: p.Y, Seen: migTick, Provenance: ProvenanceWitnessed,
+		})
+	}
+	sortFacts(granted)
+
+	for i := range out.Agents {
+		a := &out.Agents[i]
+		mm := newMentalMap(m.W, m.H)
+		if !a.Dead {
+			mm.MarkExplored(m.W, m.H, a.X, a.Y, witnessRadius)
+			if len(granted) > 0 {
+				mm.Facts = append([]PlaceFact(nil), granted...)
+			}
+		}
+		a.Map = mm
+	}
+	return &out
+}
+
+// TransformV3Snapshot decodes a v3 covering-snapshot state JSON (structurally
+// a subset of v4 — Agent.Map is additive and omitempty) and applies the pure
+// v3→v4 transform, returning the v4 state and the carried migration tick. The
+// migrate command's 3→4 entry point.
+func TransformV3Snapshot(v3StateJSON []byte, m *worldmap.Map) (*State, int64, error) {
+	var v3 State
+	if err := json.Unmarshal(v3StateJSON, &v3); err != nil {
+		return nil, 0, fmt.Errorf("decode v3 state: %w", err)
+	}
+	out := TransformV3State(&v3, m)
 	return out, out.Tick, nil
 }

@@ -15,13 +15,15 @@ import (
 
 const (
 	ManifestName = "world.json"
-	// FormatVersion 3 is the inventory/storage break (spec 013): the bulk cap,
-	// yield truncation, death spill, and give-guard change the replay semantics
-	// of existing event shapes, so a v2 log replayed under v3 code would
-	// diverge — the format gate is the shield (research R3). A v2 (or v1) world
-	// is refused with instructions to run `promptworld migrate`. FormatVersion 2
-	// was the spec 012 resources/food/crafting break.
-	FormatVersion = 3
+	// FormatVersion 4 is the mental-maps break (spec 041): per-agent private
+	// spatial knowledge gates target resolution, so a v3 world loaded without
+	// seeded maps would leave every villager knowing nothing — mass starvation;
+	// the semantics of existing worlds change, which is exactly what format
+	// bumps are for (research D7). An older world is refused with instructions
+	// to run `promptworld migrate`. FormatVersion 3 was the spec 013
+	// inventory/storage break (bulk cap, yield truncation, death spill);
+	// FormatVersion 2 the spec 012 resources/food/crafting break.
+	FormatVersion = 4
 )
 
 type Manifest struct {
