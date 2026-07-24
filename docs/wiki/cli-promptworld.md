@@ -8,7 +8,7 @@ sources:
   - cmd/promptworld/calibrate.go
   - cmd/promptworld/ps.go
   - cmd/promptworld/miracle.go
-verified_against: ce15d80522aae111e2c359287459b51401d18364
+verified_against: af13190c1771cd592ad26bcc2728f4e4377be894
 ---
 
 # promptworld CLI
@@ -79,12 +79,23 @@ ambiguous or unknown names exit 1). `worldArg`/`parseWorldFlags` wrap the older
   (`renderStatusHuman`), which — since spec 034 — prints one
   `WARNING llm provider "<name>": <detail> — <remedy>` line per provider
   carrying an active health condition, right after the clock line
-  (`llmConditionWarnings`, [[llm-provider-health]]); a world with no LLM
-  status or every provider healthy renders byte-identical to pre-034 output.
+  (`llmConditionWarnings`, [[llm-provider-health]]); then — since spec 035
+  (FR-004/US3) — one `providerCalibrationLine` per provider (`  llm <name>
+  (<model>): calibrated <timestamp>` or `... : uncalibrated (bootstrap)` when
+  the wire's `calibrated_at` is empty), so a provider's calibration state is
+  visible for the whole life of the daemon, not just a boot line that
+  scrolled away. A world with no LLM status or every provider healthy and
+  calibrated renders byte-identical to pre-034 output plus these rows.
   Offline: last-known state reconstructed read-only from the store (latest
   snapshot + `LastEventTick`), clearly labeled "daemon not running".
 - `pause` / `resume` / `speed <v>` — one-shot time controls printing the resulting
-  clock line.
+  clock line; `speed` (and the `attach` REPL's `speed` command) go through
+  `setSpeedLine` (spec 035 FR-002), which appends a `WARNING: <text>` line
+  after the clock line whenever the `set_speed` reply carries
+  `StatusData.Warning` — additive and non-blocking, since the speed change
+  has already applied by the time the warning prints
+  ([[ipc-server]], [[ipc-protocol]]). `pause`/`resume` replies never carry a
+  warning.
 - `ui <world>` — the full-screen Bubble Tea client ([[tui-client]]): map, chronicle,
   metatron, villagers panes over a live world replica (villagers renamed from
   souls, spec 015); runs in the alternate screen.
@@ -134,10 +145,19 @@ ambiguous or unknown names exit 1). `worldArg`/`parseWorldFlags` wrap the older
   samples per shape; priced-provider spend is opt-in and announced up front),
   takes the median seconds-per-point, writes/merges `calibration.json` (one
   profile entry per provider name — the shape `cognition.SeedFor` reads), and
-  prints the horizon the hardware buys (e.g. "planner suppressed above 16x") by
-  evaluating the registry
+  prints the horizon the hardware buys (e.g. "planner suppressed above 16x") via
+  `horizonSummary`, which since spec 035 (R1/T004) delegates to
+  `cognition.HorizonSummary` — the same function the daemon's boot warning and
+  the `set_speed` warning read, so the printed horizon can never disagree with
+  the router (FR-006, [[cognition]]) — evaluating the registry
   across the watchable speed ladder (`planner`/`conversation`/`meeting` — `musing`
-  dropped from the ladder with its retirement as a scheduled kind, spec 017). Since
+  dropped from the ladder with its retirement as a scheduled kind, spec 017).
+  Every run also prints `sequentialFloorDisclosure` exactly once, adjacent to
+  the horizon summary when one printed (a cloud-only or priced-only run with
+  no horizon line still gets it): a reminder that calibration measures one
+  reference call at a time while a live world drives the same endpoint
+  concurrently, so the measured seconds-per-point is a floor and the live
+  estimator adapts upward at runtime (spec 035 US4/FR-005). Since
   spec 017 (FR-011) the `planner-3pt` shape is a LOOP probe, not a bare
   completion: `villagerProbeJob` drives `toolloop.Run` with the real
   `tool.LoopRosterVillager()` roster and a no-op handler per tool (every read
@@ -170,7 +190,10 @@ command; [[world-save-directory]] and [[event-log]] back the offline paths;
 profile [[cognition]] routes with; `migrate` hands off to [[world-migration]];
 `miracle` hands off to [[metatron-miracles]]; `metatron`'s standing-orders
 rendering reads [[metatron-orders]]; `status`'s WARNING block and `new`'s
-pull-command hint read [[llm-provider-health]] and [[llm-orchestrator]].
+pull-command hint read [[llm-provider-health]] and [[llm-orchestrator]];
+`status`'s calibration rows and `calibrate`'s horizon summary both read
+[[cognition]]'s `Calibrated`/`HorizonSummary`; `speed`'s appended WARNING line
+reads the [[ipc-server]]-composed `StatusData.Warning` ([[ipc-protocol]]).
 
 ## Operational notes
 

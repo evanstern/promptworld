@@ -4,7 +4,7 @@ description: Process lifecycle — startup recovery (snapshot+replay), pidfile w
 kind: pipeline
 sources:
   - internal/daemon/daemon.go
-verified_against: ce15d80522aae111e2c359287459b51401d18364
+verified_against: af13190c1771cd592ad26bcc2728f4e4377be894
 ---
 
 # Daemon lifecycle
@@ -90,11 +90,19 @@ Startup sequence:
    hard startup gate: every call kind must resolve to a registered decision class
    before a model is ever reachable ([[cognition]]). After it is built,
    `cognition.LoadProfile(w.CalibrationPath())` seeds the seconds-per-point
-   estimators (`orch.SeedCalibration`); a missing or unreadable `calibration.json`
-   falls back to pessimistic bootstrap defaults
+   estimators (`orch.SeedCalibration`, which since spec 035 also records each
+   provider's `calibratedAt` from the profile — [[llm-orchestrator]]); a
+   missing or unreadable `calibration.json` falls back to pessimistic
+   bootstrap defaults
    (`cognition.BootstrapLocalSecPerPt`/`BootstrapCloudSecPerPt` — fail toward
-   reflex, never toward stale action), with a printed hint to run
-   `promptworld calibrate`. `orch.SetRecalibrateHook(md.RecalibrateSignal)` wires
+   reflex, never toward stale action), and since spec 035 (FR-001,
+   contracts/warnings.md §1) both branches print the full
+   `uncalibratedBootWarning(worldName)` block instead of a one-line hint: the
+   UNCALIBRATED statement, `cognition.HorizonSummary` evaluated at the
+   bootstrap seeds (the identical string `promptworld calibrate` itself
+   prints, FR-006 — [[cognition]]), and the exact `promptworld calibrate
+   <world>` command to run. The profile-seeded branch is untouched and stays
+   byte-identical (US2 AC2). `orch.SetRecalibrateHook(md.RecalibrateSignal)` wires
    the drift signal: a provider's estimator breaching its spike-rate threshold lands
    as `cog.recalibration_recommended` telemetry.
 7. Wire-up: `ipc.NewServer(w, st, cancel)` where cancel is the
@@ -120,7 +128,8 @@ without touching the world.
 [[cli-promptworld]] runs this via `daemon` and detaches it via `start`; [[sim-loop]]
 is the foreground engine; [[ipc-server]] the concurrent face; [[event-types]] defines
 the `daemon.*` bookkeeping events it emits; [[cognition]] supplies the startup kind
-gate, the calibration profile it seeds into the orchestrator, and (spec 028)
+gate, the calibration profile it seeds into the orchestrator, (spec 035) the
+`HorizonSummary` the boot warning block quotes verbatim, and (spec 028)
 the debt arithmetic and hysteresis controller the governor sampler drives;
 [[metatron-orders]] is what the `LoopControl` seam wired here (spec 029) drives.
 [[llm-provider-health]] is what the condition hook and preflight goroutine wired

@@ -26,7 +26,7 @@ sources:
   - internal/persona/persona_test.go
   - e2e/daemon_e2e_test.go
   - e2e/determinism_e2e_test.go
-verified_against: ce15d80522aae111e2c359287459b51401d18364
+verified_against: af13190c1771cd592ad26bcc2728f4e4377be894
 ---
 
 # Testing strategy
@@ -123,7 +123,18 @@ with none of them present); a `Loop.Govern`-driven test proves status reports
 both the effective and requested speed while governed and that a player
 `set_speed` below the governed notch collapses `RequestedSpeed` back to empty;
 and a regression test pins that `set_speed max` is still refused with an LLM
-configured (FR-012) while `32x` is accepted, unchanged by the governor. Large-reply
+configured (FR-012) while `32x` is accepted, unchanged by the governor. Spec
+035 (calibration UX) adds its own `set_speed`-warning coverage here: an
+uncalibrated world raised into suppressing territory (32x) warns naming the
+suppressed classes and the calibrate command while the speed change still
+applies, and the same world dropped to a non-suppressing notch (4x) carries
+none; a calibrated world (`SeedCalibration` with a profile) gets no warning
+even at a speed that would suppress at bootstrap estimates (the gate is seed
+state, not raw arithmetic); a no-LLM world never warns at any speed; the
+pre-035 `set_speed max` refusal still precedes the warning and carries no
+`StatusData` at all; `status`/`pause`/`resume` never carry the warning even
+on an uncalibrated world sitting at a suppressing speed; and a byte-shape
+test pins that a zero `StatusData` omits `warning` entirely. Large-reply
 behavior (TASK-19) is proven against a `fakeDaemon` wire harness that speaks the
 protocol from canned replies: a >1 MiB `state` payload round-trips; a reply over
 the 64 MiB cap is substituted server-side with an actionable `reply too large`

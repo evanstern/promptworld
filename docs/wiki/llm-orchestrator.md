@@ -10,7 +10,7 @@ sources:
   - internal/llm/providers.go
   - internal/llm/lease.go
   - internal/llm/pending.go
-verified_against: ce15d80522aae111e2c359287459b51401d18364
+verified_against: af13190c1771cd592ad26bcc2728f4e4377be894
 ---
 
 # LLM orchestrator
@@ -166,7 +166,17 @@ a live `cognition.Estimator` of seconds-per-point — the worker samples each
 1 samples include server-side contention, converging on true concurrent-rate cost.
 Estimators seed from `cognition.SeedFor(profile, name, zeroPriced)` — profile keyed
 by provider name (legacy worlds' derived `local`/`cloud` keep matching), miss falls
-back by pricing class; `SeedCalibration` re-seeds all providers at daemon start. The
+back by pricing class; `SeedCalibration` re-seeds all providers at daemon start and —
+since spec 035 (R3) — also records each provider's seed PROVENANCE: `calibratedAt`
+is set to the profile's `CalibratedAt` when `cognition.Calibrated(p, name)` finds a
+usable entry, else cleared to `""` (bootstrap-seeded) — the exact presence test
+`SeedFor` applies, so the seed value and its provenance can never disagree.
+`Orchestrator.CalibratedAt(name)` reads it back (`""` for an unknown provider or one
+never seeded); it is set exactly once per `SeedCalibration` call and never mutated
+by live estimator adaptation (spec 031) or drift — the seed-state fact and the live
+estimate are deliberately independent (research R2). This is the read
+[[ipc-server]]'s `set_speed` uncalibrated-warning gate and [[cli-promptworld]]'s
+`providerCalibrationLine` both use. The
 mind-facing exports (spec 024): `EstimateForKind(kind)` returns the kind's CURRENT
 ADMISSIBLE chain head's name + estimate (`admissibleHead`, a non-mutating read —
 falls back to the chain head when none admissible), `ResolveProvider(kind)` is the
@@ -221,7 +231,11 @@ shows rows `local`/`cloud`). `ProviderStatus{Name, Model, Endpoint, Up, Queue,
 Inflight, Slots, Contended, SpentUSD}`, plus three `omitempty` operator-health
 fields (`Condition`, `ConditionDetail`, `ConditionRemedy`, spec 034) a healthy
 provider never populates — see [[llm-provider-health]] for the condition slot,
-the preflight probe, and the tool-silence detector that feed them.
+the preflight probe, and the tool-silence detector that feed them — and, since
+spec 035 (FR-004/FR-008), an additive `omitempty` `CalibratedAt` string
+(`json:"calibrated_at,omitempty"`): the provider's `calibratedAt` seed-provenance
+field verbatim, empty for a bootstrap-seeded provider. [[cli-promptworld]]'s
+`status` rendering turns this into one `providerCalibrationLine` per provider.
 
 **Fresh-world defaults** (`DefaultConfig`, spec 034 R6): the local provider a
 brand-new `llm.json` ships with is `{model: "cogito:3b", tool_mode: "json",
@@ -276,6 +290,10 @@ conversation scenes pin per scene through the same `Request.Provider` field.
 machinery (condition slot beside `tierHealth`, the worker's success path,
 `SetConditionHook`) to make a dead or tool-silent provider operator-visible;
 [[daemon-lifecycle]] wires its hook and starts its preflight goroutine.
+Since spec 035, [[ipc-server]]'s `set_speed` warning reads `EstimateForKind`
+and `CalibratedAt` together (gating on bootstrap-seeded providers only), and
+[[cognition]]'s `Calibrated` is what `SeedCalibration` reads to set
+`calibratedAt` in the first place.
 
 ## Operational notes
 

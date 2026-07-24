@@ -11,7 +11,7 @@ sources:
   - internal/daemon/daemon.go
   - cmd/promptworld/commands.go
   - internal/tui/views.go
-verified_against: ce15d80522aae111e2c359287459b51401d18364
+verified_against: af13190c1771cd592ad26bcc2728f4e4377be894
 ---
 
 # LLM provider health (preflight + tool-silence detection)
@@ -110,11 +110,18 @@ than the first-run experience.
 - **Status wire** (`ProviderStatus`, [[llm-orchestrator]]): three `omitempty`
   fields, `Condition`/`ConditionDetail`/`ConditionRemedy`, populated by
   `StatusSnapshot` from each provider's `conditionSnapshot()`; a healthy
-  provider marshals byte-identically to a pre-034 world.
+  provider marshals byte-identically to a pre-034 world for these three
+  fields (spec 035 adds its own additive `CalibratedAt` field alongside them
+  — [[llm-orchestrator]]).
 - **`promptworld status`** ([[cli-promptworld]]): `renderStatusHuman` prints
   one `WARNING llm provider "<name>": <detail> — <remedy>` line
   (`llmConditionWarnings`) per affected provider, right after the clock line;
-  no active condition renders byte-identical pre-034 output.
+  no active condition renders byte-identical pre-034 output for this block.
+  Since spec 035 (FR-004/US3), one `providerCalibrationLine` per provider
+  follows right after — unconditionally, whenever the world has an LLM
+  section, independent of condition state — so a healthy, uncalibrated world's
+  human status output is no longer byte-identical to pre-034: it now always
+  gains the calibration rows.
 - **TUI** ([[tui-client]]): the header gains a red `[llm: <provider> <kind>]`
   badge (`firstLLMCondition`, the `[degraded]` badge's pattern) while any
   condition is active; the metatron pane's provider table
@@ -133,7 +140,12 @@ door is the sole path the durable `daemon.llm_warning` event
 like `daemon.started`/`stopped` ([[sim-state-reducer]]). [[cli-promptworld]]
 and [[tui-client]] render the condition fields; [[cognition]]'s per-provider
 estimator and this feature's condition slot are independent — a governed,
-throttled world and a dead-tier warning can both be true at once.
+throttled world and a dead-tier warning can both be true at once. Spec 035's
+calibration-UX surfaces (the boot `uncalibratedBootWarning`, `set_speed`'s
+uncalibrated warning, and `providerCalibrationLine`) are a separate,
+independent signal riding alongside this one on the same `renderStatusHuman`
+output and the same `ProviderStatus` struct — a dead/tool-silent condition
+and an uncalibrated provider are orthogonal facts that can both be true.
 
 ## Operational notes
 

@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/ipc/server.go
   - internal/ipc/socket.go
-verified_against: 6eb8b60ceb65d760408051eadf50a789603efa18
+verified_against: af13190c1771cd592ad26bcc2728f4e4377be894
 ---
 
 # IPC server
@@ -33,6 +33,18 @@ policy (TASK-20): `max` is refused with an actionable error whenever the world
 has an LLM configured (`llm != nil`) — uncapped ticking is for pure-sim worlds;
 the watchable ceiling is 32x ([[game-clock]]); the spec 028 governor changes
 nothing here — it never touches uncapped speed, so this refusal is unchanged.
+Since spec 035 (FR-002), a `set_speed` reply that clears the `max` refusal
+additionally carries `uncalibratedWarning(speed)` on `StatusData.Warning`:
+non-empty only when the world has an orchestrator and the requested speed's
+ticks/sec would suppress one or more of [[cognition]]'s watched classes
+(`SuppressedAt`) evaluated at their CURRENT live estimates, gated to classes
+whose serving provider is still bootstrap-seeded (`s.llm.CalibratedAt(name)
+== ""` — a calibrated provider's live drift is the governor's signal, not
+this one). The warning never blocks the speed change — it composes after the
+`max` gate, which is unchanged and still evaluated first — and `status`,
+`pause`, `resume` always pass `""` so their replies stay byte-identical.
+`replyStatus(id, cmd, speed, warning)` carries the extra parameter through to
+every caller; only the `set_speed` case supplies a non-empty value.
 
 `statusData`/`statusDataFull` fold two optional per-world snapshots into the
 `clock`/`llm` sections the same way: the orchestrator's `StatusSnapshot` when
@@ -95,7 +107,10 @@ listener and every session and removes the socket file.
 gap-fill; [[ipc-protocol]] defines the wire shapes; [[daemon-lifecycle]] constructs the
 server (with `SetLoop` breaking the mutual reference) and calls `Close` on exit;
 `handleMiracle` is one of the two doors into [[metatron-miracles]] (the other is
-the angel's turn reply, [[metatron]]).
+the angel's turn reply, [[metatron]]). `uncalibratedWarning` reads
+[[cognition]]'s `SuppressedAt` and [[llm-orchestrator]]'s `EstimateForKind`/
+`CalibratedAt`, and its result rides `StatusData.Warning` ([[ipc-protocol]]),
+rendered by [[cli-promptworld]]'s `setSpeedLine`.
 
 ## Operational notes
 

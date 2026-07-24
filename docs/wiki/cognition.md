@@ -8,9 +8,10 @@ sources:
   - internal/cognition/estimate.go
   - internal/cognition/route.go
   - internal/cognition/calibration.go
+  - internal/cognition/horizon.go
   - internal/cognition/governor.go
   - internal/sim/cognition.go
-verified_against: be38288fa137064174eedbfb3b8a94cc5b1fb0b9
+verified_against: af13190c1771cd592ad26bcc2728f4e4377be894
 ---
 
 # Cognition horizon
@@ -98,6 +99,31 @@ estimator observes via `Orchestrator.ObserveCognition` ([[tool-loop]]), so a
 seeded baseline and a live observation stay directly comparable and the
 router's suppression arithmetic stays truthful when a cognition spends N
 model calls, not one.
+`profileEntry(p, name)` (spec 035 R3) is the single presence test ("a usable,
+positive-`SecondsPerPoint` entry exists for this provider") that both
+`SeedFor`'s seed-value choice and the exported `Calibrated(p, name) bool`
+apply, so "what seed?" and "is this provider calibrated?" can never disagree.
+`Calibrated` is the provenance a caller outside this package records —
+`llm.Orchestrator.SeedCalibration` stamps each provider's `calibratedAt` from
+it ([[llm-orchestrator]]), and the CLI/status surfaces render "uncalibrated
+(bootstrap)" for a provider where it's false ([[cli-promptworld]],
+[[llm-provider-health]]).
+
+**Horizon summaries** (`horizon.go`, spec 035 R1): `WatchedClasses()` returns
+a copy of the fixed `planner`/`conversation`/`meeting` set the operator-facing
+surfaces summarize or gate on. `HorizonSummary(secPerPt)` evaluates `Route`
+for each watched class across the fixed speed ladder (1/4/8/16/32) at one
+seconds-per-point and joins the per-class verdict ("planner suppressed above
+16x", "conversation OK at 32x", or "… always suppressed") — moved verbatim
+from `cmd/promptworld/calibrate.go` so the daemon's boot warning, the
+`set_speed` warning, and `promptworld calibrate` all read the ONE
+implementation (FR-006): the printed horizon can never disagree with the
+router. `SuppressedAt(ticksPerSecond, secPerPtFor)` is the live-estimate twin
+— same watched classes and `Route` arithmetic, but at one live
+ticks-per-second against a per-class resolver that can exclude a class
+entirely (`ok=false`) when its serving provider is calibrated, so a
+calibrated class never contributes to the warning; this backs the
+`set_speed` uncalibrated-warning composition ([[ipc-server]]).
 
 **Adaptive-throttle governor** (`governor.go`, spec 028, doctrine research R6):
 extends the horizon from the other side — instead of only scoping what a
@@ -191,7 +217,11 @@ rejected (`OutcomeRejectedStale`) at the injection door in
 `internal/sim/loop.go`. The daemon ([[daemon-lifecycle]]) runs `ValidateKinds`
 before any model is reachable and seeds the estimators from the profile;
 [[cli-promptworld]]'s `calibrate` subcommand benchmarks the host+model and
-writes the profile. The daemon's governor sampler ([[daemon-lifecycle]])
+writes the profile, delegating its own horizon printout to `HorizonSummary`.
+Since spec 035, [[daemon-lifecycle]]'s boot warning and [[ipc-server]]'s
+`set_speed` warning also read `HorizonSummary`/`SuppressedAt`, and
+[[llm-orchestrator]]'s `SeedCalibration` reads `Calibrated` to stamp each
+provider's `calibratedAt`. The daemon's governor sampler ([[daemon-lifecycle]])
 drives `Debt`/`Governor` from [[llm-orchestrator]]'s `PendingCognition`
 snapshot and the [[sim-loop]]'s status/`Govern` doors; the router
 ([[sim-loop]]'s landing ladder, and every `Route` call above) reads the
@@ -202,9 +232,12 @@ extending decision-4 from the other side).
 ## Operational notes
 
 No environment variables; the only file read is `calibration.json` in the
-world directory, and only `promptworld calibrate` writes it. With no profile,
-bootstrap defaults (local 20 s/pt, cloud 10 s/pt) apply and the daemon prints
-a reminder to run calibrate. Telemetry: router verdicts land as `cog.outcome`
+world directory, and only `promptworld calibrate` writes it. With no profile
+(or an unreadable one), bootstrap defaults (local 20 s/pt, cloud 10 s/pt)
+apply and — since spec 035 — the daemon prints a full boot WARNING block
+(uncalibrated statement, `HorizonSummary` at the bootstrap seeds, and the
+exact `promptworld calibrate <world>` command), not just a one-line reminder
+([[daemon-lifecycle]]). Telemetry: router verdicts land as `cog.outcome`
 events with the arithmetic string as the reason; estimator drift surfaces as
 `cog.recalibration_recommended` (fires once per breach episode, and since spec
 031 the same episode adopts — the payload's additive `prior_s_per_pt` →

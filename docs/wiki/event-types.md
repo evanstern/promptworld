@@ -15,7 +15,7 @@ sources:
   - internal/sim/consolidate.go
   - internal/sim/terrain.go
   - internal/daemon/daemon.go
-verified_against: ce15d80522aae111e2c359287459b51401d18364
+verified_against: af13190c1771cd592ad26bcc2728f4e4377be894
 ---
 
 # Event types

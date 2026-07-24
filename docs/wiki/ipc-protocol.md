@@ -5,7 +5,7 @@ kind: concept
 sources:
   - internal/ipc/protocol.go
   - specs/001-world-daemon/contracts/client-protocol.md
-verified_against: 6eb8b60ceb65d760408051eadf50a789603efa18
+verified_against: af13190c1771cd592ad26bcc2728f4e4377be894
 ---
 
 # IPC protocol
@@ -59,7 +59,14 @@ staleness-debt reading, folded in exactly like the `llm` section — [[cognition
 [[daemon-lifecycle]]); all three are zero/absent for a no-LLM world or an inert
 governor, so pre-028 status bytes are unchanged), `daemon` (pid, uptime_seconds,
 subscribers), `log`
-(last_seq). `set_speed`'s existing refusal of uncapped `max` while an LLM is
+(last_seq), and — since spec 035 — a top-level `Warning` string
+(`json:"warning,omitempty"`) set ONLY on the `set_speed` reply (FR-002, FR-008):
+the requested speed lands on a notch where a bootstrap-seeded provider's
+watched cognition class is suppressed under its current estimate
+([[ipc-server]] composes it via [[cognition]]'s `SuppressedAt`). `status`,
+`pause`, and `resume` never set it, so their bytes stay unchanged; the
+warning is purely advisory — the speed change has already applied by the
+time it's set. `set_speed`'s existing refusal of uncapped `max` while an LLM is
 configured is retained unchanged (spec 028 FR-012) — the governor only ever
 moves `speed`/`effective_rate` along the capped ladder these fields describe,
 never `max`.
