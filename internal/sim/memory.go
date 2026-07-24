@@ -2,6 +2,7 @@ package sim
 
 import (
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 
@@ -397,6 +398,120 @@ func SelectMemories(a *Agent, seed uint64, agentIdx int, tick int64, k int) []Me
 		out = out[:k]
 	}
 	return out
+}
+
+// --- spec 042: query-conditioned relevance selection ---
+
+// SelectMemoriesRelevant is the three-term sibling of SelectMemories
+// (contracts/relevance-scoring.md §1): per memory,
+//
+//	score = sal01 + rel01
+//	sal01 = (salience halved per whole game-day of age) / MaxSalience  — EXACTLY
+//	        today's decayed weight, normalized to [0,1]
+//	rel01 = (cosine(m.Vec, query) + 1) / 2 when the memory carries a vector
+//	        produced by queryModel; 0.5 (neutral) otherwise — vectorless and
+//	        cross-model memories are neither promoted nor punished (FR-009/FR-010)
+//
+// Everything around the score is byte-for-byte SelectMemories: nil query
+// delegates to it verbatim (no situation vector recorded yet — the legacy
+// fallback); n ≤ k returns everything reverse-chronologically; ties break
+// newer-first; the two serendipity tail picks run today's exact algorithm
+// (same "serendipity" rng stream key, same cadence bucket). Selection is a
+// pure function of recorded data — it mutates nothing (FR-004), and its only
+// memory source is a.Memories (FR-005 isolation by construction).
+func SelectMemoriesRelevant(a *Agent, seed uint64, agentIdx int, tick int64, k int, query []float32, queryModel string) []Memory {
+	if query == nil {
+		return SelectMemories(a, seed, agentIdx, tick, k)
+	}
+	n := len(a.Memories)
+	if n == 0 || k <= 0 {
+		return nil
+	}
+	if n <= k {
+		out := append([]Memory(nil), a.Memories...)
+		sort.SliceStable(out, func(i, j int) bool { return out[i].Tick > out[j].Tick })
+		return out
+	}
+
+	type scored struct {
+		m     Memory
+		score float64
+		idx   int
+	}
+	all := make([]scored, n)
+	for i, m := range a.Memories {
+		age := tick - m.Tick
+		if age < 0 {
+			age = 0
+		}
+		// integer-friendly decay: halve per whole game-day of age (EXACTLY
+		// SelectMemories' weight), normalized by the salience ceiling.
+		w := float64(m.Salience)
+		for d := age / halfLifeTicks; d > 0; d-- {
+			w /= 2
+		}
+		all[i] = scored{m: m, score: w/MaxSalience + relevance01(m, query, queryModel), idx: i}
+	}
+	sort.SliceStable(all, func(i, j int) bool {
+		if all[i].score != all[j].score {
+			return all[i].score > all[j].score
+		}
+		return all[i].m.Tick > all[j].m.Tick // ties: newer wins
+	})
+
+	take := k - windowTailPick
+	picked := map[int]bool{}
+	var out []Memory
+	for i := 0; i < take && i < n; i++ {
+		out = append(out, all[i].m)
+		picked[all[i].idx] = true
+	}
+
+	// Serendipity: byte-for-byte today's tail — seeded picks from the oldest
+	// half, bucketed to the planner cadence so retries in one window agree.
+	oldHalf := n / 2
+	if oldHalf > 0 {
+		r := rngAt(seed, "serendipity", tick/PlannerCadenceTicks, agentIdx)
+		for t := 0; t < windowTailPick; t++ {
+			for tries := 0; tries < 8; tries++ {
+				i := int(r.Uint64N(uint64(oldHalf)))
+				if !picked[i] {
+					picked[i] = true
+					out = append(out, a.Memories[i])
+					break
+				}
+			}
+		}
+	}
+
+	sort.SliceStable(out, func(i, j int) bool { return out[i].Tick > out[j].Tick })
+	if len(out) > k {
+		out = out[:k]
+	}
+	return out
+}
+
+// relevance01 is the relevance term in [0,1]: (cosine + 1) / 2 when the memory
+// carries a vector comparable to the query — same producing model (the FR-009
+// cross-model guard), same dimensionality — else the 0.5 neutral midpoint.
+// Cosine accumulates sequentially in float64 over the float32 inputs in fixed
+// index order, so the value is deterministic on every platform (contract §1);
+// a zero-magnitude vector is incomparable, not infinitely similar → neutral.
+func relevance01(m Memory, query []float32, queryModel string) float64 {
+	if len(m.Vec) == 0 || m.VecModel != queryModel || len(m.Vec) != len(query) {
+		return 0.5
+	}
+	var dot, mm, qq float64
+	for i := range query {
+		mv, qv := float64(m.Vec[i]), float64(query[i])
+		dot += mv * qv
+		mm += mv * mv
+		qq += qv * qv
+	}
+	if mm == 0 || qq == 0 {
+		return 0.5
+	}
+	return (dot/(math.Sqrt(mm)*math.Sqrt(qq)) + 1) / 2
 }
 
 // FormatMemory renders one memory line as prompts and soul.md show it.

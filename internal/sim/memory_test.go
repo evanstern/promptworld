@@ -2,6 +2,7 @@ package sim
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -220,5 +221,178 @@ func TestResolveGoalErrors(t *testing.T) {
 	}
 	if in, _, err := resolveGoal(s, m, 0, "talk_to", 1, "", 0, 0); err != nil || in.Goal != "seek" {
 		t.Errorf("talk_to should resolve to seek: %v %v", in, err)
+	}
+}
+
+// --- spec 042 T014: SelectMemoriesRelevant scorer tests ---
+
+// memVec builds a vectored memory in the given model.
+func memVec(tick int64, sal int, text string, vec []float32, model string) Memory {
+	return Memory{Text: text, Salience: sal, Tick: tick, Vec: vec, VecModel: model}
+}
+
+// windowsEqual compares two selections field-by-field (Memory carries a slice,
+// so struct equality does not compile).
+func windowsEqual(a, b []Memory) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i].Tick != b[i].Tick || a[i].Text != b[i].Text || a[i].Salience != b[i].Salience || a[i].Seq != b[i].Seq {
+			return false
+		}
+	}
+	return true
+}
+
+// TestRelevantNilQueryDelegates (contract §2 row 1): a nil query — no
+// situation vector recorded yet — returns SelectMemories' output verbatim.
+func TestRelevantNilQueryDelegates(t *testing.T) {
+	a := &Agent{Name: "Ash"}
+	for i := int64(0); i < 60; i++ {
+		a.Memories = append(a.Memories, memAt(i*600, 1+int(i%10), "m"))
+	}
+	legacy := SelectMemories(a, 7, 0, 40_000, WindowK)
+	got := SelectMemoriesRelevant(a, 7, 0, 40_000, WindowK, nil, "all-minilm")
+	if !windowsEqual(legacy, got) {
+		t.Errorf("nil query must delegate to SelectMemories verbatim:\nlegacy %+v\ngot    %+v", legacy, got)
+	}
+}
+
+// TestRelevantNeutralMatchesLegacy (contract §1 tail + §2 neutrality): when
+// every memory scores the 0.5 neutral relevance (all vectorless here), the
+// score is a monotonic transform of the legacy weight — head ordering, tie
+// behavior, AND the seeded serendipity tail come out byte-identical to
+// SelectMemories. This is the no-signal ⇒ no-behavior-change guarantee.
+func TestRelevantNeutralMatchesLegacy(t *testing.T) {
+	a := &Agent{Name: "Ash"}
+	for i := int64(0); i < 80; i++ {
+		a.Memories = append(a.Memories, memAt(i*700, 1+int(i%9), "m"))
+	}
+	query := []float32{1, 0, 0}
+	for _, tick := range []int64{50_000, 60_000, 100_000} {
+		legacy := SelectMemories(a, 42, 3, tick, WindowK)
+		got := SelectMemoriesRelevant(a, 42, 3, tick, WindowK, query, "all-minilm")
+		if !windowsEqual(legacy, got) {
+			t.Errorf("tick %d: all-neutral relevance diverged from legacy:\nlegacy %+v\ngot    %+v", tick, legacy, got)
+		}
+	}
+}
+
+// TestRelevance01FallbackLadder (contract §2): every neutral row — vectorless,
+// cross-model, zero-magnitude (either side), dimension mismatch — scores
+// exactly 0.5; a comparable identical vector scores 1.0 and an opposite one 0.
+func TestRelevance01FallbackLadder(t *testing.T) {
+	q := []float32{1, 0}
+	cases := []struct {
+		name  string
+		m     Memory
+		query []float32
+		want  float64
+	}{
+		{"vectorless", memAt(0, 5, "m"), q, 0.5},
+		{"cross-model", memVec(0, 5, "m", []float32{1, 0}, "other-model"), q, 0.5},
+		{"zero-magnitude memory", memVec(0, 5, "m", []float32{0, 0}, "all-minilm"), q, 0.5},
+		{"zero-magnitude query", memVec(0, 5, "m", []float32{1, 0}, "all-minilm"), []float32{0, 0}, 0.5},
+		{"dimension mismatch", memVec(0, 5, "m", []float32{1, 0, 0}, "all-minilm"), q, 0.5},
+		{"identical vector", memVec(0, 5, "m", []float32{1, 0}, "all-minilm"), q, 1.0},
+		{"opposite vector", memVec(0, 5, "m", []float32{-1, 0}, "all-minilm"), q, 0.0},
+		{"orthogonal vector", memVec(0, 5, "m", []float32{0, 1}, "all-minilm"), q, 0.5},
+	}
+	for _, c := range cases {
+		if got := relevance01(c.m, c.query, "all-minilm"); got != c.want {
+			t.Errorf("%s: relevance01 = %v, want %v", c.name, got, c.want)
+		}
+	}
+}
+
+// TestRelevantPromotesSituationMatch (the SC-004 mechanism at unit scale): an
+// old, low-salience memory whose vector matches the query enters the relevant
+// window while the legacy ranking provably excludes it; unrelated old
+// memories stay out.
+func TestRelevantPromotesSituationMatch(t *testing.T) {
+	a := &Agent{Name: "Ash"}
+	query := []float32{1, 0}
+	// One old, low-salience, situation-matching memory…
+	a.Memories = append(a.Memories, memVec(100, 2, "Robbed at the river.", []float32{1, 0}, "all-minilm"))
+	// …buried under plenty of newer, louder, unrelated ones. Salience 5: the
+	// equal-weight form's maximum relevance advantage is +0.5 — five decayed
+	// salience points — so a perfect match (rel 1.0 vs the crowd's neutral-ish
+	// 0.5) overcomes exactly this class of gap (contract §1 reference default).
+	for i := int64(1); i <= 40; i++ {
+		a.Memories = append(a.Memories, memVec(100_000+i*600, 5, "Routine day.", []float32{0, 1}, "all-minilm"))
+	}
+	tick := int64(130_000)
+
+	contains := func(w []Memory, text string) bool {
+		for _, m := range w {
+			if m.Text == text {
+				return true
+			}
+		}
+		return false
+	}
+	// The legacy head (top k−2 by decayed salience) can never hold it: at this
+	// age its weight is 0. Serendipity could luck into it, so assert on the
+	// deterministic head by checking the legacy window at a bucket where the
+	// seeded tail misses it.
+	legacy := SelectMemories(a, 42, 0, tick, WindowK)
+	if contains(legacy, "Robbed at the river.") {
+		t.Skip("seeded serendipity tail surfaced the old memory in the legacy window at this bucket; scenario needs the deterministic-exclusion baseline")
+	}
+	got := SelectMemoriesRelevant(a, 42, 0, tick, WindowK, query, "all-minilm")
+	if !contains(got, "Robbed at the river.") {
+		t.Errorf("situation-matching old memory missing from the relevant window:\n%+v", got)
+	}
+}
+
+// TestRelevantTiesNewerWins (contract §1): equal scores order newer-first —
+// same salience, same age bucket, same relevance ⇒ the later tick leads.
+func TestRelevantTiesNewerWins(t *testing.T) {
+	a := &Agent{Name: "Ash"}
+	// 20 identical-score memories (same salience, all inside one half-life,
+	// all neutral relevance) at ascending ticks.
+	for i := int64(0); i < 20; i++ {
+		a.Memories = append(a.Memories, memAt(1000+i, 5, fmt.Sprintf("m%d", i)))
+	}
+	got := SelectMemoriesRelevant(a, 7, 0, 2000, WindowK, []float32{1}, "all-minilm")
+	if len(got) == 0 || got[0].Tick != 1019 {
+		t.Fatalf("tie-break did not favor the newest: head %+v", got[:1])
+	}
+}
+
+// TestRelevantPure (FR-004): selection mutates nothing — the agent's memory
+// list is byte-identical before and after, and two runs agree exactly.
+func TestRelevantPure(t *testing.T) {
+	a := &Agent{Name: "Ash"}
+	for i := int64(0); i < 50; i++ {
+		a.Memories = append(a.Memories, memVec(i*900, 1+int(i%10), "m", []float32{float32(i), 1}, "all-minilm"))
+	}
+	before, err := json.Marshal(a.Memories)
+	if err != nil {
+		t.Fatal(err)
+	}
+	q := []float32{3, 1}
+	w1 := SelectMemoriesRelevant(a, 9, 1, 60_000, WindowK, q, "all-minilm")
+	w2 := SelectMemoriesRelevant(a, 9, 1, 60_000, WindowK, q, "all-minilm")
+	if !windowsEqual(w1, w2) {
+		t.Errorf("two identical selections diverged:\n%+v\n%+v", w1, w2)
+	}
+	after, _ := json.Marshal(a.Memories)
+	if string(before) != string(after) {
+		t.Errorf("selection mutated memory state (FR-004):\nbefore %s\nafter  %s", before, after)
+	}
+}
+
+// TestRelevantSmallSoulUnchanged (contract §2): n ≤ k returns every memory
+// reverse-chronologically, exactly as SelectMemories does.
+func TestRelevantSmallSoulUnchanged(t *testing.T) {
+	a := &Agent{Name: "Ash"}
+	for i := int64(0); i < 5; i++ {
+		a.Memories = append(a.Memories, memAt(i*100, 3, fmt.Sprintf("m%d", i)))
+	}
+	got := SelectMemoriesRelevant(a, 7, 0, 1000, WindowK, []float32{1}, "all-minilm")
+	if len(got) != 5 || got[0].Tick != 400 || got[4].Tick != 0 {
+		t.Errorf("small soul must return all memories reverse-chronologically: %+v", got)
 	}
 }
