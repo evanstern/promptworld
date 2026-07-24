@@ -374,12 +374,14 @@ func TestOrderStatusLineFields(t *testing.T) {
 // contracts/provider-conditions.md "Human surfaces") ---
 
 // TestRenderStatusHumanWarningBlock is the golden test for cmdStatus's
-// online human render: no LLM status and an all-healthy LLM status both
-// render byte-identical to pre-034 output (no WARNING line at all — the
-// offline-world fallback path never even reaches this function, but a
-// no-orchestrator or fully-healthy world must render exactly as before);
-// one and two affected providers each print one WARNING line, in wire
-// order, in the exact contract format.
+// online human render: a no-LLM status renders byte-identical to pre-034
+// output, and a healthy LLM status renders no WARNING line at all (the
+// offline-world fallback path never even reaches this function); one and
+// two affected providers each print one WARNING line, in wire order, in
+// the exact contract format. Any LLM status additionally renders one
+// calibration-state row per provider after the WARNING block — spec 035
+// US3/FR-004, a conscious retune of 034's healthy-world byte-identity to
+// the wire surface only (spec 035 SC-002).
 func TestRenderStatusHumanWarningBlock(t *testing.T) {
 	base := ipc.StatusData{
 		World:  ipc.WorldStatus{Name: "aria", Seed: 42},
@@ -447,6 +449,13 @@ func TestRenderStatusHumanWarningBlock(t *testing.T) {
 			for _, l := range tt.wantLines {
 				want += l + "\n"
 			}
+			// Calibration-state rows (spec 035 US3): one per provider,
+			// after the WARNING block, before the log line.
+			if tt.llm != nil {
+				for _, p := range tt.llm.Providers {
+					want += providerCalibrationLine(p) + "\n"
+				}
+			}
 			want += fmt.Sprintf("log: last seq %d\n", sd.Log.LastSeq)
 
 			if got != want {
@@ -456,5 +465,55 @@ func TestRenderStatusHumanWarningBlock(t *testing.T) {
 				t.Errorf("healthy/no-LLM world should render no WARNING line: %q", got)
 			}
 		})
+	}
+}
+
+// --- T009/T013: calibration-UX rendering (spec 035) ---
+
+// TestSetSpeedLineWithWarning: a set_speed reply carrying a warning renders
+// it on its own line, visually distinct from the clock line.
+func TestSetSpeedLineWithWarning(t *testing.T) {
+	sd := &ipc.StatusData{Warning: "uncalibrated world at 32x: planner, conversation suppressed at current estimates — run `promptworld calibrate demo`"}
+	sd.Clock.Speed = "32x"
+	sd.Clock.GameTime = "day 1, 06:00"
+	out := setSpeedLine(sd)
+	if !strings.Contains(out, "speed 32x") {
+		t.Errorf("clock line missing from output: %q", out)
+	}
+	if !strings.Contains(out, "WARNING: uncalibrated world at 32x") {
+		t.Errorf("warning missing/misrendered: %q", out)
+	}
+}
+
+// TestSetSpeedLineWithoutWarning: no warning field means no WARNING line —
+// a calibrated (or no-LLM) world's rendering is unchanged.
+func TestSetSpeedLineWithoutWarning(t *testing.T) {
+	sd := &ipc.StatusData{}
+	sd.Clock.Speed = "4x"
+	sd.Clock.GameTime = "day 1, 06:00"
+	out := setSpeedLine(sd)
+	if strings.Contains(out, "WARNING") {
+		t.Errorf("no-warning reply must not render a WARNING line: %q", out)
+	}
+}
+
+// TestProviderCalibrationLineBootstrap: an empty CalibratedAt renders the
+// explicit "uncalibrated (bootstrap)" marker (FR-004).
+func TestProviderCalibrationLineBootstrap(t *testing.T) {
+	line := providerCalibrationLine(llm.ProviderStatus{Name: "local", Model: "gemma3:12b"})
+	if !strings.Contains(line, "local") || !strings.Contains(line, "uncalibrated (bootstrap)") {
+		t.Errorf("bootstrap provider line = %q", line)
+	}
+}
+
+// TestProviderCalibrationLineCalibrated: a present CalibratedAt renders the
+// profile's timestamp, not the bootstrap marker.
+func TestProviderCalibrationLineCalibrated(t *testing.T) {
+	line := providerCalibrationLine(llm.ProviderStatus{Name: "cloud", Model: "claude-opus-4-8", CalibratedAt: "2026-07-20T21:40:00Z"})
+	if !strings.Contains(line, "2026-07-20T21:40:00Z") {
+		t.Errorf("calibrated provider line missing timestamp: %q", line)
+	}
+	if strings.Contains(line, "bootstrap") {
+		t.Errorf("calibrated provider line must not show the bootstrap marker: %q", line)
 	}
 }
