@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-24 19:03'
-updated_date: '2026-07-24 19:29'
+updated_date: '2026-07-24 19:54'
 labels:
   - epistemics
   - spatial-memory
@@ -54,4 +54,6 @@ SEQUENCING AND RIGOR: needs full Spec Kit (specify -> clarify -> plan -> tasks) 
 
 <!-- SECTION:NOTES:BEGIN -->
 Research grounding is durable: vault branch research/Agent-Mental-Maps/ (56-source _grounding.md + 10 notes, branch gate green) committed as c70c53f on task-96-agent-mental-maps (worktree .worktrees/task-96), cut from origin/main dee6c01. Task activated 2026-07-24. Next step per AC #1: Spec Kit specify -> clarify, then spec-bridge:link back to this task before any implementation.
+
+Specify phase complete: specs/041-agent-mental-maps/spec.md + requirements checklist (all items pass) committed to main as 1bd5db5 and pushed. Task branch rebased onto it (research commit now 4101500); worktree feature.json points at specs/041-agent-mental-maps (f404233). Five starred defaults in spec Assumptions await /speckit-clarify (AC #2); spec-bridge:link after tasks phase (AC #1). [note recovered by the TASK-77 session: it had been appended to the contested task-96 file during the ID collision and was autostashed during the refile to TASK-100; original edit preserved in git stash]
 <!-- SECTION:NOTES:END -->
