@@ -50,7 +50,24 @@ type Manifest struct {
 	// (omitempty, FR-008); no FormatVersion bump — an additive defaulting bool
 	// old readers ignore.
 	Teaching bool `json:"teaching,omitempty"`
+	// MemoryRelevance gates memory-window selection (spec 042): "" (absent,
+	// the default) keeps today's salience+recency ranking; "shadow" computes
+	// the relevance-augmented ranking too and records rank divergence while
+	// prompts still get the legacy window; "on" lets the augmented window feed
+	// prompts (divergence still recorded). The shadow→on flip is an operator
+	// world.json edit gated on the documented divergence threshold decision
+	// (FR-007). Additive omitempty string (Teaching precedent): a pre-042
+	// world.json round-trips byte-identically, no FormatVersion bump.
+	MemoryRelevance string `json:"memory_relevance,omitempty"`
 }
+
+// The three legal memory_relevance states (spec 042). Any other value is
+// refused at Open — a typo must never silently run as "off".
+const (
+	MemoryRelevanceOff    = ""
+	MemoryRelevanceShadow = "shadow"
+	MemoryRelevanceOn     = "on"
+)
 
 // MeetingConfig declares when (and optionally where) the daily assembly
 // convenes. Convene and Open are 24-hour game clock times, "HH:MM"; Convene
@@ -152,6 +169,11 @@ func Open(dir string) (*World, error) {
 		if _, _, err := m.Meeting.Seconds(); err != nil {
 			return nil, fmt.Errorf("corrupt %s: %w", ManifestName, err)
 		}
+	}
+	switch m.MemoryRelevance {
+	case MemoryRelevanceOff, MemoryRelevanceShadow, MemoryRelevanceOn:
+	default:
+		return nil, fmt.Errorf("corrupt %s: memory_relevance %q unknown (want %q, %q, or the key absent)", ManifestName, m.MemoryRelevance, MemoryRelevanceShadow, MemoryRelevanceOn)
 	}
 	return &World{Dir: dir, Manifest: m}, nil
 }

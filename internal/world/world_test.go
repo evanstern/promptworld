@@ -242,3 +242,59 @@ func TestBundlesDir(t *testing.T) {
 		t.Errorf("BundlesDir = %q", got)
 	}
 }
+
+// TestMemoryRelevanceRoundTrip (spec 042 T003, Teaching precedent): each legal
+// memory_relevance state survives Open; a manifest without the key defaults to
+// off; and a manifest that never sets it re-marshals byte-identically — the
+// omitempty key stays absent, so pre-042 world.json files never gain a
+// spurious "memory_relevance":"" on rewrite.
+func TestMemoryRelevanceRoundTrip(t *testing.T) {
+	for _, mode := range []string{MemoryRelevanceShadow, MemoryRelevanceOn} {
+		dir := t.TempDir()
+		manifest := `{"name":"x","seed":1,"format_version":3,"tick_game_seconds":1,"memory_relevance":"` + mode + `"}`
+		if err := os.WriteFile(filepath.Join(dir, ManifestName), []byte(manifest), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		w, err := Open(dir)
+		if err != nil {
+			t.Fatalf("Open with memory_relevance %q: %v", mode, err)
+		}
+		if w.Manifest.MemoryRelevance != mode {
+			t.Errorf("MemoryRelevance = %q, want %q", w.Manifest.MemoryRelevance, mode)
+		}
+	}
+
+	// Absent key ⇒ off (the default), byte-identical round-trip.
+	dir := filepath.Join(t.TempDir(), "w")
+	w, err := Create(dir, "plain", 7)
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	if w.Manifest.MemoryRelevance != MemoryRelevanceOff {
+		t.Errorf("fresh world MemoryRelevance = %q, want off (empty)", w.Manifest.MemoryRelevance)
+	}
+	data, err := os.ReadFile(filepath.Join(dir, ManifestName))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(data), "memory_relevance") {
+		t.Errorf("off-mode manifest must not carry the memory_relevance key, got:\n%s", data)
+	}
+}
+
+// TestOpenRejectsBadMemoryRelevance (spec 042 T003): an unknown mode is refused
+// at Open naming the value — a typo must never silently run as off.
+func TestOpenRejectsBadMemoryRelevance(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, ManifestName),
+		[]byte(`{"name":"x","seed":1,"format_version":3,"tick_game_seconds":1,"memory_relevance":"sometimes"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, err := Open(dir)
+	if err == nil {
+		t.Fatal("Open should reject an unknown memory_relevance value")
+	}
+	if !strings.Contains(err.Error(), "sometimes") {
+		t.Errorf("refusal error should name the bad value, got: %v", err)
+	}
+}
