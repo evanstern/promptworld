@@ -145,9 +145,8 @@ func reflexRefuelIntent(s *State, m *worldmap.Map, a *Agent, tick int64) (*Inten
 
 // foodIntent is the reflex's get-food rung: the nearest KNOWN forage spot,
 // else the nearest KNOWN ready den (spec 041 T014 — same predicates as the
-// forage/hunt resolvers; an agent that knows of no food source dead-ends here
-// and falls through the ladder, until US4's search verb gives ignorance a
-// plan).
+// forage/hunt resolvers), else the nearest exploration frontier (US4 T026 —
+// an agent that knows of no food source goes LOOKING for one).
 func foodIntent(s *State, m *worldmap.Map, a *Agent, tick int64) (*Intent, bool) {
 	if p, ok := nearestKnown(m, s, a, "forage", tick, func(x, y int) bool {
 		return effectiveKind(m, s, x, y) == worldmap.Forage
@@ -158,6 +157,13 @@ func foodIntent(s *State, m *worldmap.Map, a *Agent, tick int64) (*Intent, bool)
 		return denReadyAt(s, x, y, tick)
 	}); ok {
 		return &Intent{Goal: "hunt", TargetX: p.X, TargetY: p.Y}, true
+	}
+	// Spec 041 US4 (T026, FR-013 parity without omniscience): knowing of no
+	// food source, the rung searches the frontier instead of dead-ending —
+	// ignorance becomes a plan. Fully-explored maps still dead-end (wander
+	// remains the ladder's floor, FR-010).
+	if p, ok := nearestFrontier(m, s, a); ok {
+		return &Intent{Goal: "search", TargetX: p.X, TargetY: p.Y}, true
 	}
 	return nil, false
 }
@@ -550,6 +556,17 @@ func buildGoalResolvers() map[string]goalResolver {
 				return &Intent{Goal: "goto_warmth", TargetX: p.X, TargetY: p.Y}, "", nil
 			}
 			return nil, "", fmt.Errorf("no warmth anywhere")
+		},
+		"search": func(s *State, m *worldmap.Map, a *Agent, idx int, goal string, targetAgent int, kind string, qty int, tick int64) (*Intent, string, error) {
+			// Spec 041 US4 (research D4): walk to the nearest frontier of the
+			// KNOWN world — explored, passable, adjacent to unexplored land.
+			// Arrival is an instant goal (wander-class); the perception sweep
+			// then grows the map and the planner re-arms with fresh knowledge.
+			// A fully-explored reachable world fails honestly (contracts §4).
+			if p, ok := nearestFrontier(m, s, a); ok {
+				return &Intent{Goal: "search", TargetX: p.X, TargetY: p.Y}, "", nil
+			}
+			return nil, "", fmt.Errorf("nothing left unexplored")
 		},
 		"wander": func(s *State, m *worldmap.Map, a *Agent, idx int, goal string, targetAgent int, kind string, qty int, tick int64) (*Intent, string, error) {
 			r := rngAt(s.Seed, "wander", tick, idx)

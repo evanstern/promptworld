@@ -193,6 +193,7 @@ func TestWorldToolDurationsMatchSimConstants(t *testing.T) {
 		"craft_axe": craftSpearTicks,
 		// Spec 032 US3 (path).
 		"build_path": buildPathTicks,
+		"search":     0, // spec 041 US4: instant, wander-class (arrival completes it)
 	}
 
 	seen := make(map[string]bool, len(want))

@@ -172,10 +172,10 @@ func TestWitnessThenResolve(t *testing.T) {
 	}
 }
 
-// TestReflexParityNoOmniscientFallback (T014, clarify Q2): a hungry villager
-// whose map holds no place-facts never resolves to an unseen food source —
-// the get-food rung dead-ends honestly (until US4's search) and the ladder
-// falls through to wander/idle.
+// TestReflexParityNoOmniscientFallback (T014, clarify Q2; T026): a hungry
+// villager whose map holds no place-facts never resolves to an unseen food
+// source — the get-food rung searches the frontier instead (US4), turning
+// ignorance into exploration rather than omniscience.
 func TestReflexParityNoOmniscientFallback(t *testing.T) {
 	const seed = 42
 	m := testMap(seed)
@@ -188,12 +188,8 @@ func TestReflexParityNoOmniscientFallback(t *testing.T) {
 	if d.directEvent != "" {
 		t.Fatalf("nothing to eat, got direct event %q", d.directEvent)
 	}
-	if d.intent != nil {
-		switch d.intent.Goal {
-		case "forage", "hunt", "chop", "goto_warmth", "refuel_fire":
-			t.Fatalf("empty-map reflex resolved %q to (%d,%d) — omniscient fallback",
-				d.intent.Goal, d.intent.TargetX, d.intent.TargetY)
-		}
+	if d.intent == nil || d.intent.Goal != "search" {
+		t.Fatalf("empty-map hungry reflex should search the frontier, got %+v", d.intent)
 	}
 
 	// Same villager granted a forage fact: the SAME rung now resolves — the
@@ -239,5 +235,124 @@ func TestTalkResolvesFromSighting(t *testing.T) {
 	if in.TargetX != oldX || in.TargetY != oldY {
 		t.Errorf("seek target (%d,%d), want the last sighting (%d,%d) — live coordinates leaked",
 			in.TargetX, in.TargetY, oldX, oldY)
+	}
+}
+
+// --- spec 041 US4: deliberate search of the unknown (T027) -------------------
+
+// TestFrontierTargetProperties (T027): the search resolver's target is
+// explored, passable, adjacent to in-bounds unexplored land, and — sharing
+// nearest's BFS — deterministic across calls.
+func TestFrontierTargetProperties(t *testing.T) {
+	const seed = 42
+	m := testMap(seed)
+	s := NewState(seed, m)
+	a := &s.Agents[0]
+
+	in, _, err := resolveGoal(s, m, 0, "search", -1, "", 0, 100)
+	if err != nil || in == nil || in.Goal != "search" {
+		t.Fatalf("search did not resolve: %+v %v", in, err)
+	}
+	w, h := m.W, m.H
+	if !a.Map.ExploredAt(w, h, in.TargetX, in.TargetY) {
+		t.Error("frontier target is unexplored — the agent cannot know it")
+	}
+	if !passable(m, s, in.TargetX, in.TargetY) {
+		t.Error("frontier target is impassable")
+	}
+	edge := false
+	for _, d := range neighborOrder {
+		nx, ny := in.TargetX+d[0], in.TargetY+d[1]
+		if m.InBounds(nx, ny) && !a.Map.ExploredAt(w, h, nx, ny) {
+			edge = true
+		}
+	}
+	if !edge {
+		t.Error("frontier target does not border unexplored land")
+	}
+	in2, _, err2 := resolveGoal(s, m, 0, "search", -1, "", 0, 100)
+	if err2 != nil || in2.TargetX != in.TargetX || in2.TargetY != in.TargetY {
+		t.Errorf("frontier selection is not deterministic: %+v vs %+v", in, in2)
+	}
+}
+
+// TestSearchGrowsCoverageAndTerminates (SC-004): repeatedly searching —
+// resolve, walk there (reducer-applied moves mark explored terrain) —
+// monotonically grows explored coverage and ends in the honest exhaustion
+// once the reachable world is fully explored.
+func TestSearchGrowsCoverageAndTerminates(t *testing.T) {
+	const seed = 42
+	m := testMap(seed)
+	s := NewState(seed, m)
+	a := &s.Agents[0]
+	w, h := m.W, m.H
+
+	coverage := func() int {
+		n := 0
+		for y := 0; y < h; y++ {
+			for x := 0; x < w; x++ {
+				if a.Map.ExploredAt(w, h, x, y) {
+					n++
+				}
+			}
+		}
+		return n
+	}
+
+	prev := coverage()
+	tick := int64(100)
+	exhausted := false
+	for i := 0; i < 4096; i++ { // hard bound: must exhaust well before this
+		in, _, err := resolveGoal(s, m, 0, "search", -1, "", 0, tick)
+		if err != nil {
+			if err.Error() != "nothing left unexplored" {
+				t.Fatalf("search failed with %v, want the exhaustion phrasing", err)
+			}
+			exhausted = true
+			break
+		}
+		tick++
+		if err := s.Apply(store.Event{Tick: tick, Type: "agent.moved",
+			Payload: mustPayload(AgentMovedPayload{Agent: 0, X: in.TargetX, Y: in.TargetY})}); err != nil {
+			t.Fatal(err)
+		}
+		cur := coverage()
+		if cur < prev {
+			t.Fatal("explored coverage shrank — exploration must be monotone")
+		}
+		if cur == prev {
+			t.Fatalf("search step %d grew nothing — the frontier walk must expand the map", i)
+		}
+		prev = cur
+	}
+	if !exhausted {
+		t.Fatal("search never exhausted — non-terminating exploration")
+	}
+	// Exhausted means every reachable frontier is gone; the agent's map must
+	// now cover a substantial region, not just the spawn area.
+	if prev < 145 { // more than one perception diamond (2r²+2r+1 = 145 at r=8)
+		t.Errorf("exhaustion after only %d explored tiles — search barely moved", prev)
+	}
+}
+
+// TestSearchExhaustionAndWanderUntouched (T027, FR-010): a fully-explored map
+// rejects search with the exhaustion phrasing, while wander stays available
+// and map-free.
+func TestSearchExhaustionAndWanderUntouched(t *testing.T) {
+	const seed = 42
+	m := testMap(seed)
+	s := NewState(seed, m)
+	a := &s.Agents[0]
+	a.Map.MarkExplored(m.W, m.H, m.W/2, m.H/2, m.W+m.H) // everything explored
+
+	if _, _, err := resolveGoal(s, m, 0, "search", -1, "", 0, 100); err == nil ||
+		err.Error() != "nothing left unexplored" {
+		t.Fatalf("fully-explored search = %v, want the exhaustion phrasing", err)
+	}
+	// Wander is untouched: it resolves regardless of the map's state — even a
+	// map-less agent wanders.
+	a.Map = nil
+	if in, _, err := resolveGoal(s, m, 0, "wander", -1, "", 0, 100); err != nil || in.Goal != "wander" {
+		t.Fatalf("wander must stay knowledge-free: %+v %v", in, err)
 	}
 }

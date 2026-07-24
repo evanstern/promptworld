@@ -313,6 +313,13 @@ var worldToolsBase = []Tool{
 	{Name: "craft_axe", Effect: World, Gate: Resolvable, Cost: Cost{DurationTicks: 240}, PlanStep: true, PromptGloss: glossCraftAxe},
 	// Spec 032 US3 (path): a buildable tile improvement, planner-only.
 	{Name: "build_path", Effect: World, Gate: Resolvable, Cost: Cost{DurationTicks: 240}, PlanStep: true, PromptGloss: glossBuildPath},
+	// Spec 041 US4 (contracts §2): deliberate exploration of the unknown —
+	// appended after build_path so the registration-order byte anchor holds.
+	// No args in v1 (a kind hint is a documented future extension; selection
+	// is nearest-frontier regardless). Instant, wander-class; reflex-eligible
+	// (the get-food fallback rung).
+	{Name: "search", Effect: World, Gate: Resolvable, Cost: Cost{DurationTicks: 0}, PlanStep: true, ReflexEligible: true,
+		PromptGloss: `Search unexplored land: walk toward the nearest edge of what you know, looking around as you go. Use when you need something you know no place for.`},
 }
 
 // setPlanTool is the loop-only planning tool (spec 017 R11): Effect World

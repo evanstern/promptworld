@@ -102,6 +102,40 @@ func nearestKnownAdjacentTo(m *worldmap.Map, s *State, a *Agent, kind string, no
 	})
 }
 
+// nearestFrontier finds the agent's nearest exploration frontier (spec 041
+// US4, research D4 — Yamauchi-style): the closest reachable tile that the
+// agent's map marks EXPLORED and that 4-neighbors at least one in-bounds
+// UNEXPLORED tile. The BFS runs over ground-truth passability with the shared
+// deterministic neighbor order, so tie-breaking matches every other nearest-*
+// helper; the bitmap is decoded once and shared by the whole search. Not
+// found means the reachable world is fully explored — the search verb's
+// honest exhaustion. A map-less agent has no frontier.
+func nearestFrontier(m *worldmap.Map, s *State, a *Agent) (Point, bool) {
+	if a.Map == nil {
+		return Point{}, false
+	}
+	bits := exploredBytes(a.Map.Explored, m.W, m.H)
+	explored := func(x, y int) bool {
+		if x < 0 || y < 0 || x >= m.W || y >= m.H {
+			return false
+		}
+		i := y*m.W + x
+		return bits[i/8]&(1<<(i%8)) != 0
+	}
+	return nearest(m, s, a.X, a.Y, func(x, y int) bool {
+		if !explored(x, y) {
+			return false
+		}
+		for _, d := range neighborOrder {
+			nx, ny := x+d[0], y+d[1]
+			if m.InBounds(nx, ny) && !explored(nx, ny) {
+				return true
+			}
+		}
+		return false
+	})
+}
+
 // nearestAdjacentTo finds the closest passable tile that neighbors a tile
 // satisfying matchRes (e.g. stand beside a tree to chop it). Returns both
 // the standing tile and the resource tile.
