@@ -12,7 +12,7 @@ sources:
   - internal/persona/files.go
   - internal/scribe/scribe.go
   - internal/sim/memory.go
-verified_against: 4c3807c4d3fcca5cb82367a1ea9b8c0696fda472
+verified_against: 8e0c7a09ce3ffaf14b2951e7f1304e23cfb552c9
 ---
 
 # Agent mind
@@ -134,7 +134,12 @@ per-agent cadence (1800 ticks, staggered by index; since TASK-44 the stagger is
 phase-preserving — every re-arm steps in whole cadence multiples from the agent's
 own due via `nextPhasePreservingDue`, never from the current tick, so a shared
 stall cannot collapse agents into lockstep) plus triggers — wake, completion
-idle, nightfall, first-adjacency encounters (2-game-hour pair cooldown) — floored
+idle, nightfall, first-adjacency encounters (2-game-hour pair cooldown), and —
+only while the replica is paused (spec 040, decision-6's paused authoring
+chain) — a landed Metatron nudge (`metatron.nudged`), which arms each targeted
+villager with the nudge event's seq as the causality edge; the game-time
+debounce cannot reopen while frozen, so one nudge buys at most one round at
+the frozen tick, and a nudge landed while running arms nothing — floored
 by a 5-game-minute per-agent debounce (completion triggers otherwise form a
 feedback loop that saturates the planner's provider). Planner prompts carry a social
 context block (bonds, debts, reputation, loudest rumor, and the
@@ -161,7 +166,11 @@ Before enqueue, each due agent passes the cognition-horizon gate
 (`routeVerdict` in telemetry.go, backed by [[cognition]]'s deterministic
 router): a planner thought whose predicted drift exceeds its staleness budget
 at the current speed is never attempted — a `cog.outcome{suppressed}` records
-the arithmetic, and the reflex floor is the degrade action. Since spec 037
+the arithmetic, and the reflex floor is the degrade action. While the replica
+is paused, `routeVerdict` short-circuits to [[cognition]]'s `RoutePaused`
+(spec 040): a frozen world cannot drift, so every class routes allow at zero
+predicted drift with an arithmetic string naming the paused state — checked
+before the uncapped branch, so paused wins even on a world set to max. Since spec 037
 (FR-004), `emitSuppressed` (telemetry.go) also reports the suppression to
 [[llm-orchestrator]]'s daemon-lifetime per-class counters through the
 optional `suppressionCounting{RecordSuppression(class)}` seam (the same
@@ -174,10 +183,13 @@ worker — a model call must never block the absorb loop, or the events channel
 overflows at high speed and edge triggers are dropped. Each job carries a
 `thoughtMeta` identity (job id, decision class, snapshot tick, agent
 generation, trigger seq, predicted wall-ms and landing tick from
-[[cognition]]'s latency estimate) plus a snapshot of every agent's position
+[[cognition]]'s latency estimate; while paused, `newMeta` predicts the landing
+AT the snapshot tick — spec 040's truth rule: a frozen-tick thought lands now,
+not at the set-speed projection) plus a snapshot of every agent's position
 (`agentSnap`) — the assumptions guards are built from. Because the planner
 class is `FutureDated`, the prompt opens with `futureDated` (prompt.go): "your
-decision will take effect around <landing clock> — plan for then". Each job now
+decision will take effect around <landing clock> — plan for then" — a no-op
+while paused, since landing ≤ now, so prompt, gate, and record agree. Each job now
 drives a bounded **tool-use loop** (spec 017, `toolloop.Run`, [[tool-loop]])
 rather than one bare planner call: `runPlan` builds a `villagerDispatch` (the
 job, a wall-clock start, a buffered `CallRecord` sink, and the `doorOutcome`

@@ -11,7 +11,7 @@ sources:
   - internal/cognition/horizon.go
   - internal/cognition/governor.go
   - internal/sim/cognition.go
-verified_against: d23fbbfe471ec62c9b94ce79404870632a6eb60e
+verified_against: 8e0c7a09ce3ffaf14b2951e7f1304e23cfb552c9
 ---
 
 # Cognition horizon
@@ -60,6 +60,15 @@ yield the identical `Verdict`. The verdict carries the arithmetic verbatim as
 a string (e.g. `3pt x 17.0s/pt x 32x = 1632 ticks > budget 1200`) so every
 suppression is auditable in telemetry. `ticksPerSecond <= 0` (uncapped max
 speed) always suppresses — prediction at unbounded speed is meaningless.
+`RoutePaused(dc, secondsPerPoint)` (spec 040, decision-6) is `Route`'s paused
+counterpart: a frozen world cannot drift, so predicted drift is zero — within
+every budget — and the verdict allows every class whatever the SET speed,
+including uncapped max; only the drift math is replaced (wall-ms is still
+predicted, since wall time passes while frozen), and the arithmetic names the
+paused state (`3pt x 20.0s/pt while paused = 0 ticks <= budget 1200`). The
+paused fact is the caller's to supply from event-reduced state — the function
+stays pure. `Route` itself is untouched, so running-world verdicts are
+byte-identical to pre-040.
 
 **Estimation** (`estimate.go`): `Estimator` holds one provider's live
 seconds-per-point as an EWMA (`EWMAAlpha` 0.2) over per-point-normalized call
@@ -114,7 +123,12 @@ a copy of the fixed `planner`/`conversation`/`meeting` set the operator-facing
 surfaces summarize or gate on. `HorizonSummary(secPerPt)` evaluates `Route`
 for each watched class across the fixed speed ladder (1/4/8/16/32) at one
 seconds-per-point and joins the per-class verdict ("planner suppressed above
-16x", "conversation OK at 32x", or "… always suppressed") — moved verbatim
+16x", "conversation OK at 32x", or "… always suppressed"); its per-class
+max-safe-rung loop is extracted (spec 039 FR-002) as
+`MaxSafeSpeed(class, secPerPt)` — the highest ladder speed at which the class
+still routes to the model, 0 when even 1x suppresses (callers clamp to the
+ladder floor), the teaching-posture rung that decides through `Route` so a
+posture can never disagree with the router. The summary body was moved verbatim
 from `cmd/promptworld/calibrate.go` so the daemon's boot warning, the
 `set_speed` warning, and `promptworld calibrate` all read the ONE
 implementation (FR-006): the printed horizon can never disagree with the
@@ -213,7 +227,9 @@ inventing its own payload shape.
 
 The [[agent-mind]] consults `Route` before every enqueue (`routeVerdict` in
 `internal/mind/telemetry.go`) and records suppressions and thought outcomes as
-`cog.thought` / `cog.outcome` events ([[event-types]]); the suppression floors
+`cog.thought` / `cog.outcome` events ([[event-types]]); while the mind's
+replica is paused, `routeVerdict` short-circuits to `RoutePaused` — before the
+uncapped branch, so paused wins even at max (spec 040) — and the suppression floors
 are the [[reflex-policy]] and pre-authored templates. The [[llm-orchestrator]]
 owns one `Estimator` per provider (spec 024), feeds it each completed call's
 duration normalized by the kind's point cost (successes only), and exposes the
