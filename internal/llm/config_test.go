@@ -115,9 +115,12 @@ func TestLegacyCloudProviderTransportMapping(t *testing.T) {
 	}
 }
 
-// TestDefaultV2SemanticallyEqualsLegacy (spec 024 FR-017, T006): the v2 default
-// WriteDefault emits derives the SAME registry a legacy default would — proving
-// the new-world scaffold is semantically identical to today's two-tier defaults.
+// TestDefaultV2SemanticallyEqualsLegacy (spec 024 FR-017, T006; local provider
+// updated by spec 034 R6/T014): the v2 default WriteDefault emits derives the
+// SAME registry an equivalent legacy config would — proving the new-world
+// scaffold's shape (two named providers, today's routes) still round-trips
+// through the legacy derivation path, now carrying the live-proven cogito:3b
+// fresh-world default instead of the old gemma4 default.
 func TestDefaultV2SemanticallyEqualsLegacy(t *testing.T) {
 	vp, vr, err := DefaultConfig().resolveRegistry()
 	if err != nil {
@@ -125,7 +128,7 @@ func TestDefaultV2SemanticallyEqualsLegacy(t *testing.T) {
 	}
 	legacy := Config{
 		MonthlyBudgetUSD: 100,
-		Local:            LocalConfig{Endpoint: "http://localhost:11434/v1", Model: "gemma4:12b-mlx"},
+		Local:            LocalConfig{Endpoint: "http://localhost:11434/v1", Model: "cogito:3b", Parallel: 4, ToolMode: "json"},
 		Cloud:            CloudConfig{Model: "claude-opus-4-8", InputUSDPerMTok: 5, OutputUSDPerMTok: 25, APIKeyEnv: "ANTHROPIC_API_KEY"},
 	}
 	lp, lr, err := legacy.resolveRegistry()
@@ -137,6 +140,45 @@ func TestDefaultV2SemanticallyEqualsLegacy(t *testing.T) {
 	}
 	if !reflect.DeepEqual(vr, lr) {
 		t.Errorf("v2 default routes differ from legacy:\n v2=%+v\nleg=%+v", vr, lr)
+	}
+}
+
+// TestDefaultConfigLocalProvider (spec 034 R6/T014): the fresh-world default
+// local provider is the TASK-73 live-proven shape — cogito:3b, tool_mode
+// "json", parallel 4 — not the old gemma4:12b-mlx default. This is the golden
+// assertion the docs/README alignment (T016) and cmdNew guidance line (T015)
+// both depend on staying true.
+func TestDefaultConfigLocalProvider(t *testing.T) {
+	local := DefaultConfig().Providers["local"]
+	if local.Model != "cogito:3b" {
+		t.Errorf("default local model = %q, want cogito:3b", local.Model)
+	}
+	if local.ToolMode != "json" {
+		t.Errorf("default local tool_mode = %q, want json", local.ToolMode)
+	}
+	if local.Parallel != 4 {
+		t.Errorf("default local parallel = %d, want 4", local.Parallel)
+	}
+	if local.Endpoint != "http://localhost:11434/v1" {
+		t.Errorf("default local endpoint = %q, want http://localhost:11434/v1", local.Endpoint)
+	}
+}
+
+// TestWriteDefaultEmitsCogitoDefault (spec 034 R6/T014): WriteDefault's actual
+// on-disk llm.json — what `promptworld new` writes — carries the same
+// cogito:3b/json/4 shape, not just the in-memory DefaultConfig() value.
+func TestWriteDefaultEmitsCogitoDefault(t *testing.T) {
+	p := filepath.Join(t.TempDir(), "llm.json")
+	if err := WriteDefault(p); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := LoadConfig(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	local := cfg.Providers["local"]
+	if local.Model != "cogito:3b" || local.ToolMode != "json" || local.Parallel != 4 {
+		t.Errorf("WriteDefault local provider = %+v, want model cogito:3b, tool_mode json, parallel 4", local)
 	}
 }
 

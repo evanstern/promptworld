@@ -443,15 +443,23 @@ func resolveReasoningEffort(v *string, def string) string {
 
 // DefaultConfig matches the grounding decisions in the v2 registry shape
 // (FR-017): local Ollama for the per-agent chatter, Claude for the nightly/
-// narrative work, $100/month hard ceiling — semantically identical to today's
-// two-tier defaults, expressed as two named providers with today's routes.
+// narrative work, $100/month hard ceiling, expressed as two named providers
+// with today's routes. The local provider is the fresh-world default proven
+// live (spec 034 R6 / TASK-73 eval record: three 8-game-hour soaks on
+// cogito:3b + tool_mode "json", 789/896/982 planner decisions) rather than
+// today's two-tier defaults verbatim — gemma4:12b-mlx never function-called
+// reliably out of the box and isn't a stock registry pull.
 func DefaultConfig() Config {
 	return Config{
 		MonthlyBudgetUSD: 100,
 		Providers: map[string]ProviderConfig{
-			// The operator's always-on local model; cogito:3b is the lighter
-			// "budget" alternative if kept perma-loaded.
-			"local": {Transport: ProviderOpenAICompat, Endpoint: "http://localhost:11434/v1", Model: "gemma4:12b-mlx"},
+			// cogito:3b + tool_mode "json" is the live-proven fresh-world
+			// default (TASK-73 eval record, spec 034 R6): it's a stock
+			// `ollama pull cogito:3b` away and its planner tool calls
+			// succeed out of the box. gemma-class models (e.g.
+			// gemma4:12b-mlx) remain the documented upgrade path for
+			// operators who serve them (docs/llm-providers.md).
+			"local": {Transport: ProviderOpenAICompat, Endpoint: "http://localhost:11434/v1", Model: "cogito:3b", Parallel: 4, ToolMode: "json"},
 			"cloud": {Transport: ProviderAnthropic, Model: "claude-opus-4-8", InputUSDPerMTok: 5, OutputUSDPerMTok: 25, APIKeyEnv: "ANTHROPIC_API_KEY"},
 		},
 		Routes: defaultRoutes(),
