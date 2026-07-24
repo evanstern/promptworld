@@ -165,11 +165,11 @@ to the horizon summary, in both config generations' output.
 - [x] T015 Run quickstart.md end-to-end: `go test ./...` green, gofmt clean on touched files,
       and the live walk-through (steps 1–3, 5) against a scratch world where feasible; record
       outcomes in specs/035-calibration-ux/quickstart-results.md
-- [ ] T016 Re-ground the wiki (constitution Principle IV): run `/grounding-wiki:wiki-update` —
+- [x] T016 Re-ground the wiki (constitution Principle IV): run `/grounding-wiki:wiki-update` —
       docs/wiki/cognition.md pins estimate.go/daemon boot behavior among sources; also re-verify
       any note sourcing internal/ipc protocol/server, internal/llm status, or
       cmd/promptworld/calibrate.go
-- [ ] T017 Player docs freshness (project rule): run
+- [x] T017 Player docs freshness (project rule): run
       `node .claude/skills/player-docs/scripts/check-freshness.mjs --check` after the wiki
       re-pin and regenerate docs/player/ via the player-docs skill if stale
 
