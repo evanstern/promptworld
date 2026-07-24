@@ -396,3 +396,95 @@ func TestRelevantSmallSoulUnchanged(t *testing.T) {
 		t.Errorf("small soul must return all memories reverse-chronologically: %+v", got)
 	}
 }
+
+// TestSC004RelevancePromotedMemory (spec 042 T020, SC-004): the acceptance
+// scenario end-to-end at the selector — an old, low-salience,
+// situation-matching memory enters the "on" window AND is provably absent
+// from the legacy window (head by decayed-salience arithmetic, tail by the
+// seeded serendipity draw at this exact seed/bucket — all deterministic, so
+// the absence is a hard assertion, not luck).
+func TestSC004RelevancePromotedMemory(t *testing.T) {
+	a := &Agent{Name: "Ash"}
+	query := []float32{1, 0}
+	const marker = "Robbed at the river."
+	a.Memories = append(a.Memories, memVec(100, 2, marker, []float32{1, 0}, "all-minilm"))
+	for i := int64(1); i <= 40; i++ {
+		a.Memories = append(a.Memories, memVec(100_000+i*600, 5, "Routine day.", []float32{0, 1}, "all-minilm"))
+	}
+	const seed, agentIdx, tick = 42, 0, 130_000
+
+	contains := func(w []Memory) bool {
+		for _, m := range w {
+			if m.Text == marker {
+				return true
+			}
+		}
+		return false
+	}
+	legacy := SelectMemories(a, seed, agentIdx, tick, WindowK)
+	if contains(legacy) {
+		t.Fatalf("legacy window contains the old memory at this seed/bucket — pick fixture constants where the exclusion is provable:\n%+v", legacy)
+	}
+	on := SelectMemoriesRelevant(a, seed, agentIdx, tick, WindowK, query, "all-minilm")
+	if !contains(on) {
+		t.Fatalf("SC-004: the situation-matching memory never entered the relevance window:\n%+v", on)
+	}
+}
+
+// TestSC006IsolationByConstruction (spec 042 T021, SC-006/FR-005): two agents
+// with near-identical private memories; mutating agent A's memories leaves
+// agent B's selection output byte-identical in EVERY mode — legacy, the
+// shadow pair (both rankings), and "on". Selection's only memory source is
+// the agent's own list, so cross-agent influence is impossible by
+// construction; this proves it at the output bytes.
+func TestSC006IsolationByConstruction(t *testing.T) {
+	build := func() *State {
+		s := NewState(42, testMap(42))
+		s.Tick = 130_000
+		for _, idx := range []int{0, 1} {
+			ag := &s.Agents[idx]
+			ag.Memories = append(ag.Memories, memVec(100, 2, "Robbed at the river.", []float32{1, 0}, "all-minilm"))
+			for i := int64(1); i <= 30; i++ {
+				ag.Memories = append(ag.Memories, memVec(100_000+i*600, 5, "Routine day.", []float32{0, 1}, "all-minilm"))
+			}
+			ag.SitVec = []float32{1, 0}
+			ag.SitVecModel = "all-minilm"
+			ag.SitVecTick = 129_000
+		}
+		return s
+	}
+	// Every selection surface B has, marshalled: legacy, relevant (B's own
+	// query), and relevant with nil query (the fallback row).
+	selectAllModes := func(s *State) string {
+		b := &s.Agents[1]
+		out := [][]Memory{
+			SelectMemories(b, s.Seed, 1, s.Tick, WindowK),
+			SelectMemoriesRelevant(b, s.Seed, 1, s.Tick, WindowK, b.SitVec, b.SitVecModel),
+			SelectMemoriesRelevant(b, s.Seed, 1, s.Tick, WindowK, nil, ""),
+		}
+		j, err := json.Marshal(out)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(j)
+	}
+
+	s := build()
+	before := selectAllModes(s)
+
+	// Mutate agent A every way that could plausibly leak: rewrite vectors to
+	// match B's query perfectly, inflate salience, then drop memories entirely.
+	aAg := &s.Agents[0]
+	for i := range aAg.Memories {
+		aAg.Memories[i].Vec = []float32{1, 0}
+		aAg.Memories[i].Salience = 10
+	}
+	if got := selectAllModes(s); got != before {
+		t.Fatal("mutating agent A's vectors/salience changed agent B's selection (SC-006 broken)")
+	}
+	aAg.Memories = nil
+	aAg.SitVec = nil
+	if got := selectAllModes(s); got != before {
+		t.Fatal("removing agent A's memories changed agent B's selection (SC-006 broken)")
+	}
+}
