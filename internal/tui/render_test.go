@@ -380,6 +380,48 @@ func TestLLMProviderLinesConditionAnnotation(t *testing.T) {
 	}
 }
 
+// --- T005: metatron-pane cognition-horizon block (spec 037 US1, FR-006/FR-007) ---
+
+// TestHorizonLinesMixedStandings: a header plus one row per entry — thinking
+// classes read "thinking at <speed>"; suppressed classes read "suppressed at
+// <speed>" with the remedy split by calibration (uncalibrated → "calibrate or
+// slow down"; calibrated → "slow down") and the router's verdict arithmetic as
+// trailing verbatim detail.
+func TestHorizonLinesMixedStandings(t *testing.T) {
+	horizon := []ipc.HorizonClass{
+		{Class: "planner", Suppressed: true, Calibrated: false, Verdict: "3pt x 20.0s/pt x 32x = 1920 ticks > budget 1200"},
+		{Class: "conversation", Suppressed: true, Calibrated: true, Verdict: "13pt x 0.9s/pt x 32x = 374 ticks > budget 300"},
+		{Class: "meeting", Suppressed: false, Calibrated: true},
+	}
+	lines := horizonLines(horizon, "32x")
+	if len(lines) != 4 {
+		t.Fatalf("got %d lines, want 4 (header + 3 rows): %v", len(lines), lines)
+	}
+	if !strings.Contains(lines[1], "planner suppressed at 32x") || !strings.Contains(lines[1], "calibrate or slow down") {
+		t.Errorf("uncalibrated suppressed row wrong: %q", lines[1])
+	}
+	if !strings.Contains(lines[1], "3pt x 20.0s/pt x 32x = 1920 ticks > budget 1200") {
+		t.Errorf("suppressed row must carry the verbatim verdict detail: %q", lines[1])
+	}
+	if !strings.Contains(lines[2], "conversation suppressed at 32x") || !strings.Contains(lines[2], "slow down") {
+		t.Errorf("calibrated suppressed row wrong: %q", lines[2])
+	}
+	if strings.Contains(lines[2], "calibrate") {
+		t.Errorf("a calibrated class must never be told to calibrate: %q", lines[2])
+	}
+	if !strings.Contains(lines[3], "meeting thinking at 32x") {
+		t.Errorf("thinking row wrong: %q", lines[3])
+	}
+}
+
+// TestHorizonLinesEmpty: a world with no horizon (no-LLM) renders no block —
+// the metatron pane shows nothing extra.
+func TestHorizonLinesEmpty(t *testing.T) {
+	if lines := horizonLines(nil, "8x"); lines != nil {
+		t.Errorf("no horizon should render no lines, got %v", lines)
+	}
+}
+
 // TestOrderStatusLinesFields (spec 029 T023): the metatron pane's
 // standing-orders block carries id, fuzzy marker, origin, expiry day, status,
 // and condition for every order, headed by a count line.

@@ -151,3 +151,51 @@ func TestHeaderViewNoLLMConditionUnchanged(t *testing.T) {
 		t.Errorf("healthy LLM status should render no llm badge: %q", got)
 	}
 }
+
+// --- T004: header suppression badge (spec 037 US1, FR-005) ---
+
+// TestHeaderViewSuppressionBadge: ≥1 suppressed horizon entry appends the
+// "[suppressed: <classes>]" badge, listing the suppressed classes in wire
+// order (thinking classes excluded). headerView is shared by the widescreen
+// and narrow layouts, so this pins the badge for both.
+func TestHeaderViewSuppressionBadge(t *testing.T) {
+	m := testModel(t)
+	m.connected = true
+	m.status = &ipc.StatusData{
+		Clock: ipc.ClockStatus{Tick: 100, GameTime: "Day 1, 06:00", Speed: "32x", EffectiveRate: 32.0},
+		Horizon: []ipc.HorizonClass{
+			{Class: "planner", Suppressed: true},
+			{Class: "conversation", Suppressed: true},
+			{Class: "meeting", Suppressed: false},
+		},
+	}
+	got := m.headerView()
+	if !strings.Contains(got, "[suppressed: planner, conversation]") {
+		t.Errorf("header missing suppression badge (wire-ordered, thinking excluded): %q", got)
+	}
+}
+
+// TestHeaderViewNoSuppressionBadge: a horizon with everything thinking, and a
+// world with no horizon at all, both render no suppression badge — the FR-005
+// "MUST NOT show it otherwise" pin.
+func TestHeaderViewNoSuppressionBadge(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		horizon []ipc.HorizonClass
+	}{
+		{"all thinking", []ipc.HorizonClass{{Class: "planner"}, {Class: "conversation"}, {Class: "meeting"}}},
+		{"no horizon", nil},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			m := testModel(t)
+			m.connected = true
+			m.status = &ipc.StatusData{
+				Clock:   ipc.ClockStatus{Tick: 100, GameTime: "Day 1, 06:00", Speed: "8x", EffectiveRate: 8.0},
+				Horizon: tc.horizon,
+			}
+			if got := m.headerView(); strings.Contains(got, "[suppressed:") {
+				t.Errorf("%s: header should carry no suppression badge: %q", tc.name, got)
+			}
+		})
+	}
+}

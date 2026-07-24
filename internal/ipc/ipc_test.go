@@ -1053,3 +1053,137 @@ func TestStatusDataWarningOmitempty(t *testing.T) {
 		t.Errorf("zero StatusData must omit \"warning\", got %s", b)
 	}
 }
+
+// horizonByClass indexes a horizon slice by class name for assertions.
+func horizonByClass(h []HorizonClass) map[string]HorizonClass {
+	m := make(map[string]HorizonClass, len(h))
+	for _, e := range h {
+		m[e.Class] = e
+	}
+	return m
+}
+
+// TestHorizonComposedUncalibrated (spec 037 US1 AC1, contract rules 1-3): an
+// uncalibrated LLM world at 32x carries a horizon entry per watched class in
+// WatchedClasses order, with planner/conversation suppressed and meeting
+// thinking (the bootstrap-seed arithmetic), a verbatim verdict string, and
+// calibrated=false throughout.
+func TestHorizonComposedUncalibrated(t *testing.T) {
+	h := newHarness(t, clock.Speed32x)
+	llmForWarningTests(t, h)
+	c := h.dial(t)
+
+	sd, err := c.Status("status", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := cognition.WatchedClasses()
+	if len(sd.Horizon) != len(want) {
+		t.Fatalf("horizon has %d entries, want %d (%v)", len(sd.Horizon), len(want), sd.Horizon)
+	}
+	for i, e := range sd.Horizon {
+		if e.Class != want[i] {
+			t.Errorf("entry %d class=%q, want %q (WatchedClasses order)", i, e.Class, want[i])
+		}
+		if e.Verdict == "" {
+			t.Errorf("entry %s: empty verdict (must carry Route's arithmetic verbatim)", e.Class)
+		}
+		if e.Calibrated {
+			t.Errorf("entry %s: calibrated=true on a bootstrap-seeded world", e.Class)
+		}
+		if e.SuppressedCount != 0 {
+			t.Errorf("entry %s: SuppressedCount=%d, want 0 (no suppressions recorded)", e.Class, e.SuppressedCount)
+		}
+	}
+	byClass := horizonByClass(sd.Horizon)
+	if !byClass["planner"].Suppressed || !byClass["conversation"].Suppressed {
+		t.Errorf("planner/conversation should be suppressed at 32x bootstrap: %+v", sd.Horizon)
+	}
+	if byClass["meeting"].Suppressed {
+		t.Errorf("meeting should be thinking at 32x bootstrap: %+v", byClass["meeting"])
+	}
+}
+
+// TestHorizonCalibratedIncluded (spec 037 US1 AC2 / research R4, contract rule
+// 2): a calibrated world is INCLUDED in the horizon (unlike the set_speed
+// warning, which gates calibrated classes out) with calibrated=true; a fast
+// calibrated rig at 32x suppresses nothing.
+func TestHorizonCalibratedIncluded(t *testing.T) {
+	h := newHarness(t, clock.Speed32x)
+	orch := llmForWarningTests(t, h)
+	orch.SeedCalibration(&cognition.Profile{
+		CalibratedAt: "2026-07-20T21:40:00Z",
+		Tiers: map[string]cognition.TierProfile{
+			"local": {SecondsPerPoint: 0.94},
+			"cloud": {SecondsPerPoint: 0.94},
+		},
+	})
+	c := h.dial(t)
+
+	sd, err := c.Status("status", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(sd.Horizon) != len(cognition.WatchedClasses()) {
+		t.Fatalf("calibrated world must still surface every watched class: %+v", sd.Horizon)
+	}
+	for _, e := range sd.Horizon {
+		if !e.Calibrated {
+			t.Errorf("entry %s: calibrated=false after SeedCalibration", e.Class)
+		}
+		if e.Suppressed {
+			t.Errorf("entry %s: suppressed on a 0.94 s/pt rig at 32x, want thinking", e.Class)
+		}
+	}
+}
+
+// TestHorizonUncappedSuppressesAll (spec 037 FR-003, contract rule 3): at
+// uncapped max speed every included class is suppressed with Route's uncapped
+// phrasing. Composed directly (an LLM world refuses to RUN at max, but the
+// pure composition must still report the verdict).
+func TestHorizonUncappedSuppressesAll(t *testing.T) {
+	h := newHarness(t, clock.Speed32x)
+	llmForWarningTests(t, h)
+
+	got := h.srv.horizonClasses(sim.Status{Speed: clock.SpeedMax})
+	if len(got) != len(cognition.WatchedClasses()) {
+		t.Fatalf("uncapped horizon has %d entries, want %d", len(got), len(cognition.WatchedClasses()))
+	}
+	for _, e := range got {
+		if !e.Suppressed {
+			t.Errorf("entry %s: want suppressed at uncapped speed", e.Class)
+		}
+		if !strings.Contains(e.Verdict, "uncapped speed - suppressed") {
+			t.Errorf("entry %s: verdict=%q, want Route's uncapped phrasing", e.Class, e.Verdict)
+		}
+	}
+}
+
+// TestHorizonAbsentNoLLM (spec 037 SC-004, contract rule 1): a no-LLM world's
+// status reply carries no horizon field — the decoded struct's slice is nil
+// and the marshaled reply has no "horizon" key (byte-identical to pre-037).
+func TestHorizonAbsentNoLLM(t *testing.T) {
+	h := newHarness(t, clock.Speed32x)
+	c := h.dial(t)
+
+	sd, err := c.Status("status", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sd.Horizon != nil {
+		t.Errorf("no-LLM world carried a horizon: %+v", sd.Horizon)
+	}
+	b, _ := json.Marshal(sd)
+	if strings.Contains(string(b), "horizon") {
+		t.Errorf("no-LLM status reply must omit \"horizon\": %s", b)
+	}
+}
+
+// TestStatusDataHorizonOmitempty: the zero StatusData omits "horizon" from the
+// wire (the additive omitempty that keeps a no-LLM reply byte-identical).
+func TestStatusDataHorizonOmitempty(t *testing.T) {
+	b, _ := json.Marshal(StatusData{})
+	if strings.Contains(string(b), "horizon") {
+		t.Errorf("zero StatusData must omit \"horizon\", got %s", b)
+	}
+}
