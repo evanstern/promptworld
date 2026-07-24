@@ -1,10 +1,10 @@
 ---
 id: TASK-85
 title: 'Scriptable agent tools: pluggable script-defined tools over an engine API'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-24 03:02'
-updated_date: '2026-07-24 03:49'
+updated_date: '2026-07-24 17:56'
 labels:
   - idea
 dependencies: []
@@ -16,16 +16,25 @@ ordinal: 5500
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Idea capture (2026-07-23): make agent/angel tools scriptable and pluggable instead of hard-coded. An embedded scripting layer (e.g. Lua) calls a stable engine API surface (move_agent, emit_event, broadcast, heal, ...). A 'tool' becomes a script + manifest: e.g. a teleport tool that calls move_agent on itself and emits 'vanished in a poof of smoke'. Existing built-in tools would be converted to the same form (major shift, highly extensible). Personas become installable bundles dropped into the world folder, e.g. gandalf/{SOUL.md, tools/cast_light.lua, influence_verbal.lua, water_magic.lua}. Key work: (1) design the engine API surface area, (2) pick/sandbox the scripting runtime, (3) tool manifest -> LLM tool schema, (4) convert existing tools, (5) bundle install/validation. Needs a spec before implementation.
+
+Spec: specs/036-scriptable-agent-tools
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Full Spec Kit spec (specify -> clarify -> plan -> tasks) authored and linked to this task via spec-bridge:link before implementation starts
+- [x] #1 Full Spec Kit spec (specify -> clarify -> plan -> tasks) authored and linked to this task via spec-bridge:link before implementation starts
 - [ ] #2 Script tools are pure functions (args + read-only world view -> event batch + narration); every emitted event is validated against the InjectSocial whitelist — scripts cannot mutate state directly or invent event types
 - [ ] #3 v1 scope holds: instantaneous angel/expressive tools are scriptable; tick-simulated villager world verbs (hunt/forage/build...) remain native Go
 - [ ] #4 Persona bundle (SOUL/charter fragment + capabilities.json + tools/ manifests+scripts) installs by dropping a folder into the world dir, with boot-time validation: manifest schema, declared events subset-of whitelist, script parses, step/memory caps set
 - [ ] #5 Determinism preserved: scripts have no wall clock and no unseeded RNG; replaying a world containing scripted-tool events reproduces identical state hashes
 - [ ] #6 At least one existing metatron tool is re-expressed as a loadable bundle tool (dogfood) proving the manifest -> registry -> derive -> handler pipeline
+- [ ] #7 Spec phase: Setup
+- [ ] #8 Spec phase: Foundational (Blocking Prerequisites)
+- [ ] #9 Spec phase: User Story 1 — Declarative tool bundle end-to-end (Priority: P1) 🎯 MVP
+- [ ] #10 Spec phase: User Story 2 — Dogfood: built-in re-expressed as bundle (Priority: P2)
+- [ ] #11 Spec phase: User Story 3 — Scripted tools, sandboxed + deterministic (Priority: P3)
+- [ ] #12 Spec phase: User Story 4 — Persona bundles (Priority: P4)
+- [ ] #13 Spec phase: Polish & Cross-Cutting
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -60,4 +69,6 @@ Manifest maps onto the existing Tool struct so derive.go keeps generating LLM sc
 
 <!-- SECTION:NOTES:BEGIN -->
 Priority/ordering rationale (2026-07-23): placed HIGH, tail of the HIGH group (ordinal 76000) — above all mediums, below the four live-defect highs (TASK-84/40/86/87). Reason: very large surface area (internal/tool, toolloop, sim whitelist/reducers, metatron loaders, world-dir format) means longer drift = more staleness risk on a bigger issue; do it sooner rather than let the design sketch rot. Constitution tiering: architectural/cross-package -> Opus 4.8 implementation slices; full Spec Kit mandatory (already an AC).
+
+Spec Kit complete 2026-07-24: specs/036-scriptable-agent-tools (specify -> clarify [4 Qs: persona per-tool failure, built-ins win collisions, invoker-scoped world view, failures free] -> plan -> tasks, 36 tasks / 7 phases). Constitution Check PASS pre-Phase-0 and post-Phase-1. Tier decisions (Principle V rubric): Phases 2-5 (new internal/bundle package, cross-package metatron/tool/sim seams, sandboxed starlark runtime, replay-determinism-critical code) -> Opus 4.8 spec-implementer; Phases 1, 6, 7 (dep setup, persona composition over proven seams, docs/polish) -> Sonnet, one-way escalation on gate failure. Runtime decision: go.starlark.net (hermetic+deterministic by construction, native step caps) over gopher-lua (research.md R1).
 <!-- SECTION:NOTES:END -->
