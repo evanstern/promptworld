@@ -45,6 +45,24 @@ func TestCmdNewNameFormCreatesUnderWorldsHome(t *testing.T) {
 	}
 }
 
+// TestCmdNewPrintsLocalModelPullGuidance (spec 034 US3/T015): `promptworld new`
+// prints a closing line naming the fresh-world default's local model and a
+// copy-pasteable `ollama pull` command, derived from llm.DefaultConfig() so it
+// can never drift from the model WriteDefault actually wrote.
+func TestCmdNewPrintsLocalModelPullGuidance(t *testing.T) {
+	isolatedHome(t)
+	out := captureStdout(t, func() {
+		if err := cmdNew([]string{"aria", "--seed", "1"}); err != nil {
+			t.Fatal(err)
+		}
+	})
+	model := llm.DefaultConfig().Providers["local"].Model
+	wantLine := fmt.Sprintf("local model: %s — pull it first if you haven't: ollama pull %s", model, model)
+	if !strings.Contains(out, wantLine) {
+		t.Errorf("cmdNew stdout missing pull guidance line:\n got: %q\nwant substring: %q", out, wantLine)
+	}
+}
+
 func TestCmdNewNameFormRefusesDuplicateUntouched(t *testing.T) {
 	isolatedHome(t)
 	if err := cmdNew([]string{"aria", "--seed", "1"}); err != nil {

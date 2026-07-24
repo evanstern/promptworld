@@ -192,8 +192,12 @@ func cmdNew(args []string) error {
 	if nameForm {
 		startHint = worldName
 	}
-	fmt.Printf("created world %q in %s (seed %d)\nllm config: %s (edit providers/routes/budget; delete the file to disable LLM traffic)\nstart it with: promptworld start %s\n",
-		worldName, dir, *seed, w.LLMConfigPath(), startHint)
+	// The fresh-world local model (spec 034 US3/T015): named from
+	// llm.DefaultConfig() rather than hardcoded, so this line can never drift
+	// from what WriteDefault actually wrote above (contracts/fresh-world-defaults.md).
+	localModel := llm.DefaultConfig().Providers["local"].Model
+	fmt.Printf("created world %q in %s (seed %d)\nllm config: %s (edit providers/routes/budget; delete the file to disable LLM traffic)\nstart it with: promptworld start %s\nlocal model: %s — pull it first if you haven't: ollama pull %s\n",
+		worldName, dir, *seed, w.LLMConfigPath(), startHint, localModel, localModel)
 	return nil
 }
 
