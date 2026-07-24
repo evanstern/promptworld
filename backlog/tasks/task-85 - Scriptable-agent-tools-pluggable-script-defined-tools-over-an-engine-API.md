@@ -4,7 +4,7 @@ title: 'Scriptable agent tools: pluggable script-defined tools over an engine AP
 status: In Progress
 assignee: []
 created_date: '2026-07-24 03:02'
-updated_date: '2026-07-24 18:24'
+updated_date: '2026-07-24 19:27'
 labels:
   - idea
 dependencies: []
@@ -23,21 +23,19 @@ Spec: specs/036-scriptable-agent-tools
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 Full Spec Kit spec (specify -> clarify -> plan -> tasks) authored and linked to this task via spec-bridge:link before implementation starts
-- [ ] #2 Script tools are pure functions (args + read-only world view -> event batch + narration); every emitted event is validated against the InjectSocial whitelist — scripts cannot mutate state directly or invent event types
-- [ ] #3 v1 scope holds: instantaneous angel/expressive tools are scriptable; tick-simulated villager world verbs (hunt/forage/build...) remain native Go
-- [ ] #4 Persona bundle (SOUL/charter fragment + capabilities.json + tools/ manifests+scripts) installs by dropping a folder into the world dir, with boot-time validation: manifest schema, declared events subset-of whitelist, script parses, step/memory caps set
-- [ ] #5 Determinism preserved: scripts have no wall clock and no unseeded RNG; replaying a world containing scripted-tool events reproduces identical state hashes
-- [ ] #6 At least one existing metatron tool is re-expressed as a loadable bundle tool (dogfood) proving the manifest -> registry -> derive -> handler pipeline
+- [x] #2 Script tools are pure functions (args + read-only world view -> event batch + narration); every emitted event is validated against the InjectSocial whitelist — scripts cannot mutate state directly or invent event types
+- [x] #3 v1 scope holds: instantaneous angel/expressive tools are scriptable; tick-simulated villager world verbs (hunt/forage/build...) remain native Go
+- [x] #4 Persona bundle (SOUL/charter fragment + capabilities.json + tools/ manifests+scripts) installs by dropping a folder into the world dir, with boot-time validation: manifest schema, declared events subset-of whitelist, script parses, step/memory caps set
+- [x] #5 Determinism preserved: scripts have no wall clock and no unseeded RNG; replaying a world containing scripted-tool events reproduces identical state hashes
+- [x] #6 At least one existing metatron tool is re-expressed as a loadable bundle tool (dogfood) proving the manifest -> registry -> derive -> handler pipeline
 - [x] #7 Spec phase: Setup
 - [x] #8 Spec phase: Foundational (Blocking Prerequisites)
-- [ ] #9 Spec phase: User Story 1 — Declarative tool bundle end-to-end (Priority: P1) 🎯 MVP
-- [ ] #10 Spec phase: User Story 2 — Dogfood: built-in re-expressed as bundle (Priority: P2)
-- [ ] #11 Spec phase: User Story 3 — Scripted tools, sandboxed + deterministic (Priority: P3)
-- [ ] #12 Spec phase: User Story 4 — Persona bundles (Priority: P4)
+- [x] #9 Spec phase: User Story 1 — Declarative tool bundle end-to-end (Priority: P1) 🎯 MVP
+- [x] #10 Spec phase: User Story 2 — Dogfood: built-in re-expressed as bundle (Priority: P2)
+- [x] #11 Spec phase: User Story 3 — Scripted tools, sandboxed + deterministic (Priority: P3)
+- [x] #12 Spec phase: User Story 4 — Persona bundles (Priority: P4)
 - [ ] #13 Spec phase: Polish & Cross-Cutting
 <!-- AC:END -->
-
-
 
 ## Implementation Plan
 
@@ -75,4 +73,12 @@ Priority/ordering rationale (2026-07-23): placed HIGH, tail of the HIGH group (o
 Spec Kit complete 2026-07-24: specs/036-scriptable-agent-tools (specify -> clarify [4 Qs: persona per-tool failure, built-ins win collisions, invoker-scoped world view, failures free] -> plan -> tasks, 36 tasks / 7 phases). Constitution Check PASS pre-Phase-0 and post-Phase-1. Tier decisions (Principle V rubric): Phases 2-5 (new internal/bundle package, cross-package metatron/tool/sim seams, sandboxed starlark runtime, replay-determinism-critical code) -> Opus 4.8 spec-implementer; Phases 1, 6, 7 (dep setup, persona composition over proven seams, docs/polish) -> Sonnet, one-way escalation on gate failure. Runtime decision: go.starlark.net (hermetic+deterministic by construction, native step caps) over gopher-lua (research.md R1).
 
 Phase 2 foundational landed (worktree commit d36da4d): manifest strict-decode + tool.Tool synthesis, 5-kind effect compiler byte-compatible with BuildMiracleBatch payloads, deterministic loader + B1-B4/T1-T7/C1-C2 ladder, sim.InjectableSocialEvent accessor (pure refactor of toolcheck). Known v1 limitation recorded: remove_entity/move_entity address living villagers by name only; structure/pile/terrain addressing grammar unspecified by contracts — deferred, needs follow-up card. NaN/Inf script-value guard deliberately deferred to Phase 5 executor.
+
+Phase 3 US1 MVP landed (36eae00, rebased onto post-#41/#68 main): handler factory (InvocationContext{State,Tick,Invoker,Inject} — bundle importable by metatron, no reverse edge), daemon boot BundleSet wiring + BootReport logging, turn-assembly roster/handler merge (built-ins first), teleport fixture, TestBundleToolReplayByteIdentity green. AC#2 proven for declarative path (pure args+state -> whitelist-validated batch; scripts get same guarantee in Phase 5). AC#3 holds (expressive-only surface; world verbs untouched). Cosmetic note for Phase 6: capabilities.json naming a bundle tool emits a spurious 'unknown tool ignored' notice from loadManifest.
+
+Correction: AC#2/#3 unticked — both assert script-tool properties; they become true in Phase 5 (US3), not with the declarative-only MVP.
+
+Phases 4+5 landed (c184bf2 dogfood, 6167581 starlark runtime). AC#6: miracle_move bundle twin byte-identical to work_miracle{kind:move} (events+payloads+State.Hash+charge). AC#2/#3/#5 now true: apply(args, world) pure functions, frozen invoker-scoped view, sandbox proofs (step-cap deterministic abort, no clock/io/load, NaN/float rejection at script->Effect conversion), world.rand via new sim.BundleRand over rngAt; replay byte-identity incl. bundle-dir-deleted independence (FR-011). time_of_day pinned to sim's 22:00-06:00 night definition. Remaining: Phase 6 personas (Sonnet), Phase 7 polish.
+
+Phase 6 landed (00dfd35): SOUL fragments into system prompt (charter->souls->skills order, byte-identical when absent), persona grant intersection (narrow-never-widen, commutative across personas, reaches roster+guidance+door), loadManifest cosmetic-notice fix, gandalf fixture + Scenario 6 integration test. Sonnet tier, no escalation needed.
 <!-- SECTION:NOTES:END -->
