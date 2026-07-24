@@ -671,3 +671,144 @@ func TestStalePlanStepExpiresWithoutOmniscience(t *testing.T) {
 		t.Fatalf("plan step should expire with the knowledge reason, got %+v", expired)
 	}
 }
+
+// --- spec 041 US5: spatial knowledge spreads through talk (T031) -------------
+
+// TestPlaceTellTransfer (SC-006): a founded talk passes at most placeTellCap
+// facts per direction — told provenance, the TELLER's Seen tick, Source = the
+// teller — the receiver's map gains them, companion memories ride both sides,
+// and the receiver can act on the told fact at resolver level.
+func TestPlaceTellTransfer(t *testing.T) {
+	const seed = 42
+	m := testMap(seed)
+	s := NewState(seed, m)
+	a, b := &s.Agents[0], &s.Agents[1]
+	b.X, b.Y = a.X, a.Y+1 // adjacent (a founded talk's shape)
+	a.Map.Facts = nil
+	b.Map.Facts = nil
+	b.Inv.Wood = 2
+
+	// A knows three fresh places; B knows nothing.
+	a.Map.upsertFact(PlaceFact{Kind: "fire", X: 30, Y: 30, Seen: 900, Provenance: ProvenanceWitnessed, Detail: 999999})
+	a.Map.upsertFact(PlaceFact{Kind: "tree", X: 12, Y: 12, Seen: 800, Provenance: ProvenanceWitnessed})
+	a.Map.upsertFact(PlaceFact{Kind: "forage", X: 14, Y: 14, Seen: 700, Provenance: ProvenanceWitnessed})
+	s.Structures = []Structure{{Kind: "fire", X: 30, Y: 30, FuelUntil: 999999}}
+
+	const tick = int64(1000)
+	evs := talkEvents(s, 0, 1, tick)
+	var told *PlaceToldPayload
+	tellerMem, listenerMem := false, false
+	for _, e := range evs {
+		switch e.Type {
+		case "social.place_told":
+			var p PlaceToldPayload
+			mustUnmarshal(t, e.Payload, &p)
+			if p.From == 0 && p.To == 1 {
+				if told != nil {
+					t.Fatal("more than one A→B place_told in a single talk")
+				}
+				q := p
+				told = &q
+			} else if p.From == 1 {
+				t.Fatalf("empty-map B told A something: %+v", p)
+			}
+		case "agent.memory_added":
+			var p MemoryAddedPayload
+			mustUnmarshal(t, e.Payload, &p)
+			if p.Agent == 0 && strings.HasPrefix(p.Text, "Told Birch about the") {
+				tellerMem = true
+			}
+			if p.Agent == 1 && strings.HasPrefix(p.Text, "Ash told you of a") {
+				listenerMem = true
+			}
+		}
+	}
+	if told == nil {
+		t.Fatal("no A→B social.place_told on a founded talk")
+	}
+	if len(told.Facts) != placeTellCap {
+		t.Fatalf("transfer carried %d facts, want the cap %d", len(told.Facts), placeTellCap)
+	}
+	// Selection: freshest first → the fire (Seen 900) and the tree (Seen 800).
+	kinds := map[string]int64{}
+	for _, f := range told.Facts {
+		kinds[f.Kind] = f.Seen
+		if f.Provenance != ProvenanceTold || f.Source != 0 {
+			t.Errorf("fact not baked told-by-teller: %+v", f)
+		}
+	}
+	if kinds["fire"] != 900 || kinds["tree"] != 800 {
+		t.Errorf("selection should carry the two freshest with the TELLER's Seen: %+v", told.Facts)
+	}
+	if !tellerMem || !listenerMem {
+		t.Errorf("companion memories missing: teller=%v listener=%v", tellerMem, listenerMem)
+	}
+
+	// Apply the batch: B holds the told facts and acts on the fire.
+	for _, e := range evs {
+		if err := s.Apply(e); err != nil {
+			t.Fatalf("apply %s: %v", e.Type, err)
+		}
+	}
+	got, ok := b.Map.factAt("fire", 30, 30)
+	if !ok || got.Provenance != ProvenanceTold || got.Seen != 900 || got.Source != 0 {
+		t.Fatalf("receiver's told fact wrong: %+v", got)
+	}
+	in, _, err := resolveGoal(s, m, 1, "refuel_fire", -1, "", 0, tick+10)
+	if err != nil || in.TargetX != 30 || in.TargetY != 30 {
+		t.Fatalf("receiver should act on the told fire: %+v %v", in, err)
+	}
+}
+
+// TestPlaceTellStalerNeverOverwrites (SC-006): a fact the listener holds at
+// least as freshly is never offered, and a staler told fact applied through
+// the reducer never overwrites fresher knowledge.
+func TestPlaceTellStalerNeverOverwrites(t *testing.T) {
+	const seed = 42
+	m := testMap(seed)
+	s := NewState(seed, m)
+	a, b := &s.Agents[0], &s.Agents[1]
+	a.Map.Facts = nil
+	b.Map.Facts = nil
+	a.Map.upsertFact(PlaceFact{Kind: "fire", X: 30, Y: 30, Seen: 500, Provenance: ProvenanceWitnessed, Detail: 700})
+	b.Map.upsertFact(PlaceFact{Kind: "fire", X: 30, Y: 30, Seen: 900, Provenance: ProvenanceWitnessed, Detail: 999})
+
+	if facts := tellablePlaces(s, 0, 1, 1000); len(facts) != 0 {
+		t.Fatalf("a staler fact was offered to a fresher holder: %+v", facts)
+	}
+	// Defensive reducer half: a staler payload still never overwrites.
+	e := store.Event{Tick: 1000, Type: "social.place_told", Payload: mustPayload(PlaceToldPayload{
+		From: 0, To: 1, Facts: []PlaceFact{{Kind: "fire", X: 30, Y: 30, Seen: 500, Provenance: ProvenanceTold, Source: 0, Detail: 700}},
+	})}
+	if err := s.Apply(e); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := b.Map.factAt("fire", 30, 30); got.Seen != 900 || got.Provenance != ProvenanceWitnessed {
+		t.Fatalf("fresher firsthand knowledge was overwritten by staler hearsay: %+v", got)
+	}
+}
+
+// TestPlaceTellSecondhandKeepsOriginalSeen (SC-006): a relayed fact keeps the
+// ORIGINAL observer's Seen (secondhand-of-secondhand is never fresher) while
+// Source updates to the immediate teller.
+func TestPlaceTellSecondhandKeepsOriginalSeen(t *testing.T) {
+	const seed = 42
+	m := testMap(seed)
+	s := NewState(seed, m)
+	b, c := &s.Agents[1], &s.Agents[2]
+	b.Map.Facts = nil
+	c.Map.Facts = nil
+	// B holds a fact it was TOLD by A (agent 0), original Seen 400.
+	b.Map.upsertFact(PlaceFact{Kind: "oven", X: 20, Y: 20, Seen: 400, Provenance: ProvenanceTold, Source: 0})
+
+	facts := tellablePlaces(s, 1, 2, 1000)
+	if len(facts) != 1 {
+		t.Fatalf("relay offered %d facts, want 1", len(facts))
+	}
+	if facts[0].Seen != 400 {
+		t.Errorf("relay freshened the fact: Seen %d, want the original 400", facts[0].Seen)
+	}
+	if facts[0].Source != 1 || facts[0].Provenance != ProvenanceTold {
+		t.Errorf("relay must name the immediate teller: %+v", facts[0])
+	}
+}

@@ -71,6 +71,10 @@ var catalogFixture = map[string]digestFixture{
 		`{"agent":1,"gone":[{"kind":"fire","x":4,"y":5,"seen":100,"prov":"witnessed","detail":9000}]}`,
 		`Birch found fire at (4,5) gone`,
 	},
+	"social.place_told": {
+		`{"from":0,"to":1,"facts":[{"kind":"fire","x":4,"y":5,"seen":100,"prov":"told","detail":9000},{"kind":"tree","x":6,"y":5,"seen":100,"prov":"told"}]}`,
+		`Ash told Birch of fire at (4,5) (+1 more)`,
+	},
 	"agent.foraged":         {`{"agent":0,"x":1,"y":1}`, `Ash foraged at (1,1)`},
 	"agent.chopped":         {`{"agent":0,"x":1,"y":1}`, `Ash chopped wood at (1,1)`},
 	"agent.hunted":          {`{"agent":0,"x":1,"y":1}`, `Ash hunted at (1,1)`},

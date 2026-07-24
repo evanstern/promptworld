@@ -319,6 +319,21 @@ var digestRegistry = map[string]digestFunc{
 		}
 		return join(segs), true
 	},
+	// social.place_told (spec 041 US5): directions passed on a talk — the
+	// agent.saw first-fact-plus-count shape.
+	"social.place_told": func(e store.Event, names []string) ([]seg, bool) {
+		p, ok := decode[sim.PlaceToldPayload](e)
+		if !ok || len(p.Facts) == 0 {
+			return nil, false
+		}
+		f := p.Facts[0]
+		segs := []seg{nameOf(names, p.From), txt(" told "), nameOf(names, p.To),
+			txt(" of "), emph(f.Kind), txt(" at "), coord(f.X, f.Y)}
+		if more := len(p.Facts) - 1; more > 0 {
+			segs = append(segs, txt(" (+"), emphN(more), txt(" more)"))
+		}
+		return join(segs), true
+	},
 	// agent.map_corrected (spec 041 US3): the believe-act-discover moment —
 	// same first-fact-plus-count shape as agent.saw.
 	"agent.map_corrected": func(e store.Event, names []string) ([]seg, bool) {

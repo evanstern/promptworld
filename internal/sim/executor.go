@@ -598,6 +598,30 @@ func talkEvents(s *State, i, j int, nextTick int64) []store.Event {
 	} else if tell, ok := TellableFor(s, j, i); ok {
 		events = append(events, rumorTellEvent(nextTick, j, i, tell))
 	}
+	// Spec 041 US5 (research D5): the place-knowledge exchange rides EVERY
+	// founded talk beside the rumor slot — up to placeTellCap facts per
+	// direction the other lacks or holds staler (tellablePlaces), one
+	// social.place_told per direction with facts baked at emission, plus
+	// companion situated memories both sides (the map_corrected shape:
+	// memories accrete only via agent.memory_added). Direction order i→j
+	// then j→i is fixed for determinism.
+	for _, dir := range [2][2]int{{i, j}, {j, i}} {
+		from, to := dir[0], dir[1]
+		facts := tellablePlaces(s, from, to, nextTick)
+		if len(facts) == 0 {
+			continue
+		}
+		events = append(events,
+			store.Event{Tick: nextTick, Type: "social.place_told",
+				Payload: mustPayload(PlaceToldPayload{From: from, To: to, Facts: facts})},
+			situatedMemoryEvent(nextTick, from, salPlaceTold,
+				PlaceAt(s, s.Agents[from].X, s.Agents[from].Y), "", OriginAction,
+				"%s", placeToldText(s.Agents[to].Name, facts, true)),
+			situatedMemoryEvent(nextTick, to, salPlaceTold,
+				PlaceAt(s, s.Agents[to].X, s.Agents[to].Y), "", OriginReport,
+				"%s", placeToldText(s.Agents[from].Name, facts, false)),
+		)
+	}
 	return events
 }
 

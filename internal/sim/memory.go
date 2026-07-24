@@ -268,7 +268,28 @@ const (
 	// well below the generation-interrupting band (the absorb trigger, not
 	// salience, does the re-arming).
 	salMapCorrected = 5
+	// salPlaceTold (spec 041 US5): giving/getting directions — the talk band
+	// (salTalk), social texture rather than a formative moment.
+	salPlaceTold = 3
 )
+
+// placeToldText renders the two sides of a place-knowledge exchange (spec 041
+// US5, data-model: "Told Birch about the fire by the rock." / "Birch told you
+// of a fire at (x,y)."). Voiced by the FIRST fact in the payload's canonical
+// order, a second fact folding into "and another place" — one memory per
+// side, never one per fact (the talk band stays quiet).
+func placeToldText(other string, facts []PlaceFact, asTeller bool) string {
+	f := facts[0]
+	what := strings.ReplaceAll(f.Kind, "_", " ")
+	more := ""
+	if len(facts) > 1 {
+		more = ", and another place"
+	}
+	if asTeller {
+		return fmt.Sprintf("Told %s about the %s at (%d,%d)%s.", other, what, f.X, f.Y, more)
+	}
+	return fmt.Sprintf("%s told you of a %s at (%d,%d)%s.", other, what, f.X, f.Y, more)
+}
 
 // mapCorrectedText renders the situated first-person discovery of a remembered
 // place found gone (spec 041 US3, data-model: "The fire … was cold and dead

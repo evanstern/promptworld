@@ -1457,7 +1457,8 @@ func (s *State) Apply(e store.Event) error {
 
 	case "social.relation_changed", "social.gave", "social.promise_broken",
 		"social.rumor_told", "social.secret_seeded",
-		"social.conversation_turn", "social.conversation", "social.chest_taken":
+		"social.conversation_turn", "social.conversation", "social.chest_taken",
+		"social.place_told":
 		return s.applySocial(e)
 
 	case "agent.memory_promoted", "agent.memory_faded", "agent.belief_revised",

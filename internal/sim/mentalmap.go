@@ -473,6 +473,67 @@ type SawPayload struct {
 	Facts []PlaceFact `json:"facts"`
 }
 
+// PlaceToldPayload — social.place_told (spec 041 US5, research D5): the talk
+// sidecar's per-direction place-knowledge transfer. Facts are baked at
+// emission: the TELLER's Seen (secondhand is never fresher — staleness IS the
+// trust model), Provenance told, Source = the immediate teller (a relayed
+// fact keeps its original Seen but names its latest teller), Detail carried
+// verbatim. Canonical (Kind, X, Y) order. The reducer upserts into the
+// receiver's map only where absent-or-staler.
+type PlaceToldPayload struct {
+	From  int         `json:"from"`
+	To    int         `json:"to"`
+	Facts []PlaceFact `json:"facts"`
+}
+
+// placeTellCap bounds the per-direction transfer (research D5): directions
+// exist, but a single chat never merges whole maps — information asymmetry is
+// the feature's point.
+const placeTellCap = 2
+
+// tellablePlaces selects what teller passes listener on a talk (spec 041 US5):
+// the teller's FRESH facts the listener lacks or holds staler, ordered
+// freshest → nearest-to-listener → coordinate order, capped at placeTellCap,
+// then baked for the payload (told provenance, teller's Seen, Source =
+// teller) in canonical order. Pure function of (state, tick).
+func tellablePlaces(s *State, teller, listener int, tick int64) []PlaceFact {
+	t, l := &s.Agents[teller], &s.Agents[listener]
+	if t.Map == nil || l.Map == nil {
+		return nil
+	}
+	var cands []PlaceFact
+	for _, f := range t.Map.Facts {
+		if !factFresh(f, tick) {
+			continue // stale knowledge is invisible to read paths — never retold
+		}
+		if held, ok := l.Map.factAt(f.Kind, f.X, f.Y); ok && held.Seen >= f.Seen {
+			continue // the listener already knows, at least as freshly
+		}
+		cands = append(cands, f)
+	}
+	sort.Slice(cands, func(i, j int) bool {
+		a, b := cands[i], cands[j]
+		if a.Seen != b.Seen {
+			return a.Seen > b.Seen // freshest first
+		}
+		da, db := abs(a.X-l.X)+abs(a.Y-l.Y), abs(b.X-l.X)+abs(b.Y-l.Y)
+		if da != db {
+			return da < db // then nearest to the listener
+		}
+		return factLess(a, b) // then coordinate order
+	})
+	if len(cands) > placeTellCap {
+		cands = cands[:placeTellCap]
+	}
+	out := make([]PlaceFact, len(cands))
+	for i, f := range cands {
+		out[i] = PlaceFact{Kind: f.Kind, X: f.X, Y: f.Y, Seen: f.Seen,
+			Provenance: ProvenanceTold, Source: teller, Detail: f.Detail}
+	}
+	sortFacts(out)
+	return out
+}
+
 // MapCorrectedPayload — agent.map_corrected (spec 041 US3, contracts §1): the
 // perception sweep found remembered facts ABSENT from ground truth. Gone
 // carries the facts AS REMEMBERED (verbatim from the agent's map, canonical

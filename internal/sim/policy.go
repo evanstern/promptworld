@@ -29,10 +29,18 @@ func decideIntent(s *State, m *worldmap.Map, idx int, tick int64) decision {
 		return decision{directEvent: "agent.ate"}
 	}
 
-	// Hungry with nothing carried: get food (forage first, hunt as backup).
+	// Hungry with nothing carried: get food (forage first, hunt as backup),
+	// or — knowing of no available food source — go LOOKING for one (spec 041
+	// US4 T026, FR-013 parity without omniscience). The search fallback is
+	// hunger-only: the larder top-up below stays opportunistic (a fed
+	// villager doesn't mount expeditions — constant frontier treks desync the
+	// village from its forage-regrow rotation and starve marginal maps).
 	if a.Needs.Food < hungryAt {
 		if d, ok := foodIntent(s, m, a, tick); ok {
 			return decision{intent: d}
+		}
+		if p, ok := nearestFrontier(m, s, a); ok {
+			return decision{intent: &Intent{Goal: "search", TargetX: p.X, TargetY: p.Y}}
 		}
 	}
 
@@ -143,10 +151,11 @@ func reflexRefuelIntent(s *State, m *worldmap.Map, a *Agent, tick int64) (*Inten
 	return nil, false
 }
 
-// foodIntent is the reflex's get-food rung: the nearest KNOWN forage spot,
-// else the nearest KNOWN ready den (spec 041 T014 — same predicates as the
-// forage/hunt resolvers), else the nearest exploration frontier (US4 T026 —
-// an agent that knows of no food source goes LOOKING for one).
+// foodIntent is the reflex's shared food lookup: the nearest KNOWN forage
+// spot, else the nearest KNOWN ready den (spec 041 T014 — same predicates as
+// the forage/hunt resolvers). The US4 search fallback lives on the HUNGRY
+// call site in decideIntent, not here — the larder rung shares this lookup
+// but never searches.
 func foodIntent(s *State, m *worldmap.Map, a *Agent, tick int64) (*Intent, bool) {
 	if p, ok := nearestKnown(m, s, a, "forage", tick, func(x, y int) bool {
 		return effectiveKind(m, s, x, y) == worldmap.Forage
@@ -157,13 +166,6 @@ func foodIntent(s *State, m *worldmap.Map, a *Agent, tick int64) (*Intent, bool)
 		return denReadyAt(s, x, y, tick)
 	}); ok {
 		return &Intent{Goal: "hunt", TargetX: p.X, TargetY: p.Y}, true
-	}
-	// Spec 041 US4 (T026, FR-013 parity without omniscience): knowing of no
-	// food source, the rung searches the frontier instead of dead-ending —
-	// ignorance becomes a plan. Fully-explored maps still dead-end (wander
-	// remains the ladder's floor, FR-010).
-	if p, ok := nearestFrontier(m, s, a); ok {
-		return &Intent{Goal: "search", TargetX: p.X, TargetY: p.Y}, true
 	}
 	return nil, false
 }

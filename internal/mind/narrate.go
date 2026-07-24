@@ -152,6 +152,15 @@ func (md *Mind) chronicleNote(e store.Event) {
 			line = fmt.Sprintf("%s went looking for the %s at (%d,%d) and found it gone.",
 				name(p.Agent), what, f.X, f.Y)
 		}
+	case "social.place_told":
+		// Spec 041 (US5, T030): directions change hands — voiced by the first
+		// fact (canonical order), the correction grammar's convention.
+		var p sim.PlaceToldPayload
+		if json.Unmarshal(e.Payload, &p) == nil && len(p.Facts) > 0 {
+			f := p.Facts[0]
+			line = fmt.Sprintf("%s told %s about the %s at (%d,%d).",
+				name(p.From), name(p.To), strings.ReplaceAll(f.Kind, "_", " "), f.X, f.Y)
+		}
 	case "agent.thought":
 		var p sim.ThoughtPayload
 		if json.Unmarshal(e.Payload, &p) == nil && p.Source == "musing" {
