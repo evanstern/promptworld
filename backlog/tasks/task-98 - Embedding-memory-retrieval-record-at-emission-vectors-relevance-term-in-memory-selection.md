@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-24 19:45'
-updated_date: '2026-07-24 21:08'
+updated_date: '2026-07-24 21:34'
 labels:
   - memory
   - embeddings
@@ -41,7 +41,7 @@ Spec: specs/042-embedding-memory-retrieval
 - [x] #9 Spec phase: Setup
 - [x] #10 Spec phase: Foundational (blocking prerequisites for all stories)
 - [x] #11 Spec phase: User Story 1 — vectors from birth, replay never recomputes (P1) 🎯 MVP
-- [ ] #12 Spec phase: User Story 2 — shadow-mode divergence instrumentation (P2)
+- [x] #12 Spec phase: User Story 2 — shadow-mode divergence instrumentation (P2)
 - [ ] #13 Spec phase: User Story 3 — relevance shapes the window (P3)
 - [ ] #14 Spec phase: Polish & cross-cutting
 <!-- AC:END -->
@@ -56,4 +56,6 @@ Model-tier decision (constitution V): core slices delegated to spec-implementer 
 Ops decision (2026-07-24): embedding model kept perma-loaded on the serving host (localhost Ollama — all world endpoints are local). Mechanism: embedder driver warm-pin via native /api/embed keep_alive:-1 at start + hourly re-warm (empirically: compat traffic preserves the pin; compat-body keep_alive ignored). Scope: embed model only (~46MB); chat models keep default eviction (24GB RAM). Contract §2 + T008/T023 updated, committed to main.
 
 spec-bridge sync: Setup: 3/3 · Foundational (blocking prerequisites for all stories): 4/4 · User Story 1 — vectors from birth, replay never recomputes (P1) 🎯 MVP: 4/4 · User Story 2 — shadow-mode divergence instrumentation (P2): 0/7 · User Story 3 — relevance shapes the window (P3): 0/4 · Polish & cross-cutting: 0/3
+
+spec-bridge sync: Setup: 3/3 · Foundational (blocking prerequisites for all stories): 4/4 · User Story 1 — vectors from birth, replay never recomputes (P1) 🎯 MVP: 4/4 · User Story 2 — shadow-mode divergence instrumentation (P2): 7/7 · User Story 3 — relevance shapes the window (P3): 0/4 · Polish & cross-cutting: 0/3
 <!-- SECTION:NOTES:END -->
