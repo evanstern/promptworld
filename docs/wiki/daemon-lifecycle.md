@@ -4,7 +4,7 @@ description: Process lifecycle — startup recovery (snapshot+replay), pidfile w
 kind: pipeline
 sources:
   - internal/daemon/daemon.go
-verified_against: be38288fa137064174eedbfb3b8a94cc5b1fb0b9
+verified_against: ce15d80522aae111e2c359287459b51401d18364
 ---
 
 # Daemon lifecycle
@@ -60,6 +60,16 @@ Startup sequence:
    issuing shed/recover decisions through the loop's `Govern` door — a no-LLM
    world builds zero governor machinery (FR-003, SC-004; see [[cognition]] for
    the debt arithmetic and controller, [[sim-loop]] for the `govern` command).
+   In the same conditional branch, spec 034's provider-health surface is wired:
+   `orch.SetConditionHook` installs a closure that prints a `daemon: WARNING
+   llm provider …` (or recovered) log line and lands a durable
+   `daemon.llm_warning` event through `loop.InjectOperator` — the loop's
+   single-writer-preserving operator-event door ([[sim-loop]]); if the loop
+   isn't running (the shutdown window) the durable leg is dropped and the log
+   line is the sole record. `go orch.RunPreflight(ctx)` then starts the
+   boot-time + periodic model-existence probe in its own goroutine, fired and
+   forgotten under the shutdown ctx exactly like the governor sampler — boot
+   never blocks or fails on its results (see [[llm-provider-health]]).
    Boot also surfaces the agent tool-use loop's config warnings the same
    warn-not-error way as the concurrency knob (`llmCfg.Local.Workers()`'s
    `workersWarn`): `llmCfg.Rounds()` (an out-of-range `loop_max_rounds`), both
@@ -113,6 +123,9 @@ the `daemon.*` bookkeeping events it emits; [[cognition]] supplies the startup k
 gate, the calibration profile it seeds into the orchestrator, and (spec 028)
 the debt arithmetic and hysteresis controller the governor sampler drives;
 [[metatron-orders]] is what the `LoopControl` seam wired here (spec 029) drives.
+[[llm-provider-health]] is what the condition hook and preflight goroutine wired
+here (spec 034) drive; its durable event rides [[sim-loop]]'s `InjectOperator`
+door.
 
 ## Operational notes
 

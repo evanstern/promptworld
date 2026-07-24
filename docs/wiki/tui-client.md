@@ -9,7 +9,7 @@ sources:
   - internal/tui/grammar.go
   - internal/tui/digest.go
   - internal/tui/decisions.go
-verified_against: c25c4ac7c97dbac543e2eceaa15d9e76dceb62c1
+verified_against: ce15d80522aae111e2c359287459b51401d18364
 ---
 
 # TUI client
@@ -38,7 +38,11 @@ while `StatusData.Clock.RequestedSpeed` is set and differs from `Speed` (the
 governor has shed at least one notch) — gains a plain-language suffix via
 `governedSpeedSuffix`: `"asked 32x — 3 minds in flight, debt 140%"`. An
 ungoverned world (`RequestedSpeed` empty) renders byte-identically to
-pre-028. `debtPercent` (`digest.go`) is the one shared arithmetic behind both
+pre-028. Since spec 034, the header also gains a red `[llm: <provider>
+<kind>]` badge (the `[degraded]` badge's pattern) whenever any provider
+carries an active health condition — `firstLLMCondition` reports the first
+name-sorted affected provider; no condition active renders no badge
+([[llm-provider-health]]). `debtPercent` (`digest.go`) is the one shared arithmetic behind both
 this suffix and the digest lines below: the measured debt expressed as a
 whole percent of `cognition.ShedThreshold`, rounded to the nearest percent.
 The raw chronicle feed's digest grammar gains two entries for the same
@@ -122,7 +126,10 @@ status, and condition — present only while orders stand; the
 same pane renders the LLM provider table since spec 024 — `llmProviderLines`,
 one row per provider with name, model, up/down glyph, queue, inflight/slots, a
 contended marker, and spend share, plus an `(unattributed)` row for pre-024
-months, followed by a `spend $X of $Y` wallet line — [[llm-orchestrator]]), and **villagers** (renamed from
+months, followed by a `spend $X of $Y` wallet line — [[llm-orchestrator]]; a
+provider carrying an active health condition (spec 034) gains an indented
+continuation line rendering the condition's detail and remedy in the pane's
+error style, immediately below its row — [[llm-provider-health]]), and **villagers** (renamed from
 "souls", spec 015/TASK-56 — now a two-view inspector rather than a flat
 roster). The villagers **roster** shows per agent: a selection cursor,
 status, current goal, needs gauges, a leading `bulk n/24` derived-load
@@ -225,7 +232,10 @@ governor digest lines read [[cognition]]'s `ShedThreshold` and the
 `clock.governor_shed`/`clock.governor_recovered` payload the [[daemon-lifecycle]]
 governor sampler emits through the loop. The metatron pane's standing-orders
 block and transcript lines project [[metatron-orders]]' `Status.Orders`/
-`TurnResult` fields verbatim, with no client-side re-derivation.
+`TurnResult` fields verbatim, with no client-side re-derivation. The header's
+`[llm: …]` badge and the metatron pane's per-provider condition line read
+[[llm-provider-health]]'s `ProviderStatus.Condition`/`ConditionDetail`/
+`ConditionRemedy` fields off the same polled `Status.LLM`.
 
 ## Operational notes
 

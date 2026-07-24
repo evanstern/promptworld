@@ -11,7 +11,7 @@ sources:
   - internal/mind/handlers.go
   - internal/scribe/scribe.go
   - internal/persona/files.go
-verified_against: e9213e17e6e48cf30da802949d9b59e0e3d78370
+verified_against: ce15d80522aae111e2c359287459b51401d18364
 ---
 
 # Agent journal

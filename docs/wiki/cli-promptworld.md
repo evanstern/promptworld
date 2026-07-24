@@ -8,7 +8,7 @@ sources:
   - cmd/promptworld/calibrate.go
   - cmd/promptworld/ps.go
   - cmd/promptworld/miracle.go
-verified_against: be38288fa137064174eedbfb3b8a94cc5b1fb0b9
+verified_against: ce15d80522aae111e2c359287459b51401d18364
 ---
 
 # promptworld CLI
@@ -43,7 +43,11 @@ ambiguous or unknown names exit 1). `worldArg`/`parseWorldFlags` wrap the older
   charter (`persona.Genesis`, the one-and-only persona write — [[agent-mind]],
   [[metatron]]), and
   appends the tick-0 secret events ([[social-fabric]]). Random default seed (crypto-random,
-  right-shifted 12 bits to stay comfortably printable).
+  right-shifted 12 bits to stay comfortably printable). Since spec 034, the
+  printed summary appends a line naming the fresh-world local model and its
+  pull command (`local model: cogito:3b — pull it first if you haven't: ollama
+  pull cogito:3b`), read from `llm.DefaultConfig()` itself so the hint can
+  never drift from what was just written ([[llm-orchestrator]]).
 - `migrate <world>` — the one-time upgrade of an older world (v1 or v2) to the
   current format (spec 012 US6 for v1→v2, spec 013 for v2→v3 —
   [[world-migration]]): resolves `<world>` via `resolveWorldForMigrate`, which
@@ -71,9 +75,14 @@ ambiguous or unknown names exit 1). `worldArg`/`parseWorldFlags` wrap the older
 - `stop <world>` — sends `shutdown` over the socket (falls back to SIGTERM if the
   socket is dead but the pid lives), waits ≤30 s for the pidfile to clear. Idempotent:
   "daemon not running" exits 0.
-- `status <world> [--json]` — online: full `StatusData` via the client. Offline:
-  last-known state reconstructed read-only from the store (latest snapshot +
-  `LastEventTick`), clearly labeled "daemon not running".
+- `status <world> [--json]` — online: full `StatusData` via the client
+  (`renderStatusHuman`), which — since spec 034 — prints one
+  `WARNING llm provider "<name>": <detail> — <remedy>` line per provider
+  carrying an active health condition, right after the clock line
+  (`llmConditionWarnings`, [[llm-provider-health]]); a world with no LLM
+  status or every provider healthy renders byte-identical to pre-034 output.
+  Offline: last-known state reconstructed read-only from the store (latest
+  snapshot + `LastEventTick`), clearly labeled "daemon not running".
 - `pause` / `resume` / `speed <v>` — one-shot time controls printing the resulting
   clock line.
 - `ui <world>` — the full-screen Bubble Tea client ([[tui-client]]): map, chronicle,
@@ -160,7 +169,8 @@ command; [[world-save-directory]] and [[event-log]] back the offline paths;
 [[game-clock]] formats times in `clockLine`/`eventLine`; `calibrate` writes the
 profile [[cognition]] routes with; `migrate` hands off to [[world-migration]];
 `miracle` hands off to [[metatron-miracles]]; `metatron`'s standing-orders
-rendering reads [[metatron-orders]].
+rendering reads [[metatron-orders]]; `status`'s WARNING block and `new`'s
+pull-command hint read [[llm-provider-health]] and [[llm-orchestrator]].
 
 ## Operational notes
 

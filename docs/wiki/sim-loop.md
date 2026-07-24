@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/loop.go
   - internal/sim/landing.go
-verified_against: e9213e17e6e48cf30da802949d9b59e0e3d78370
+verified_against: ce15d80522aae111e2c359287459b51401d18364
 ---
 
 # Sim loop
@@ -168,8 +168,25 @@ Model output enters
 the sim only through these two doors, as recorded input. The protocol `Status`
 carries `MetatronCharges` so clients render the ⚡ bank without a state fetch.
 
+`Loop.InjectOperator` (the `inject_operator` command, spec 034 R8) is a THIRD
+door, distinct from both above: the daemon's operator-event door, whitelisted
+to `daemon.llm_warning` only (`injectOperatorWhitelist`, kept separate from
+`injectSocialWhitelist` — one door is the mind's model-output isolation
+boundary, the other is the daemon's operator surface, and the two must never
+share a whitelist). It exists because `store.AppendEvents` has no internal
+locking and the loop is the log's single writer; `daemon.started`/`stopped`
+append directly only because they run outside `Run`'s lifetime, but a
+provider-health condition transition ([[llm-provider-health]]) fires from
+worker/preflight goroutines *while the loop runs*, so its durable event must
+ride this command door to keep seq assignment and tick-stamping inside the
+loop goroutine. Every whitelisted type is a reducer no-op, so `handleCommand`
+skips `InjectSocial`'s dry-run entirely — there is no world-state atomicity to
+protect. It fails cleanly (mirroring `InjectSocial`) if the loop has stopped,
+letting the daemon's condition hook degrade to a log line only.
+
 ## Connections
 
+[[llm-provider-health]]'s condition hook is `InjectOperator`'s sole caller.
 [[game-clock]] supplies intervals; the [[executor]] supplies tick events;
 [[sim-state-reducer]] is the mutation path; [[event-log]] and [[snapshots]] persist;
 [[ipc-server]] feeds commands in and broadcasts events out; [[daemon-lifecycle]] owns

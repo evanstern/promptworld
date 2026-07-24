@@ -15,7 +15,7 @@ sources:
   - internal/sim/consolidate.go
   - internal/sim/terrain.go
   - internal/daemon/daemon.go
-verified_against: e9213e17e6e48cf30da802949d9b59e0e3d78370
+verified_against: ce15d80522aae111e2c359287459b51401d18364
 ---
 
 # Event types
@@ -90,6 +90,13 @@ feature — `agent.axe_broke` (a `spear_broke` clone) and the wall work cycle
 `build_wall_plank`/`build_wall_stone`/`build_path`, `demolish`, and `repair` are
 new goals reusing the existing `agent.crafted`/`agent.built` types (no new event
 types for those).
+Spec 034 (provider health conditions + preflight — [[llm-provider-health]]) is
+also format-stable: one new whitelisted type, `daemon.llm_warning`
+(`LLMWarningPayload{provider, kind, detail, remedy, active}`), rides the
+daemon's operator-event door ([[sim-loop]]'s `InjectOperator`) on every
+provider-health transition (raise/reclassify/clear); it is operator-facing
+only, alongside `daemon.started`/`stopped` under the existing `daemon.*`
+no-op convention.
 
 ## How it works
 
@@ -136,6 +143,7 @@ types for those).
 | `journal.entry_written` | `JournalWrittenPayload{agent, text}` (`journal.go`) | mind journal tool (`write_journal_entry`, injected via `InjectSocial` — spec 019 US3) | the ONLY journal-growth path: appends a reducer-id'd `JournalEntry{id, tick, text}` to the agent's `Journal` via `appendEntry`, which enforces the per-agent `journalBudgetRunes` (4000) rune budget INSIDE `Apply` — the `InjectSocial` dry-run turns an over-budget append into a door rejection, so no over-budget event lands (SC-005, [[agent-mind]]) |
 | `journal.entry_deleted` | `JournalDeletedPayload{agent, entry}` (`journal.go`) | mind journal tool (`delete_from_journal`, injected) | removes the entry with that id from the agent's `Journal` (survivor order preserved, ids never reused or renumbered so freed runes are immediately reclaimable); a missing id errors at the door |
 | `daemon.started` / `daemon.stopped` | `DaemonStartedPayload` / `DaemonStoppedPayload` | daemon lifecycle | none |
+| `daemon.llm_warning` (spec 034) | `LLMWarningPayload{provider, kind, detail, remedy?, active}` | daemon condition hook, via [[sim-loop]]'s `InjectOperator` door, on a provider-health raise/reclassify/clear ([[llm-provider-health]]) | none — operator-facing only, same no-op class as `daemon.started`/`stopped` |
 | `social.*` family | see `specs/003-social-fabric/contracts/social-events.md` | executor rules, genesis, convo driver (injected) | edges, ledger, rumors, secrets; `social.conversation` appends the bounded record ring (TASK-22, [[social-fabric]]); `social.gave` (spec 013 US1) is additionally skipped by the executor when the receiver has zero free bulk and the reducer clamps defensively (never over `bulkCap`) |
 | `social.chest_taken` | `ChestTakenPayload{owner, taker, x, y}` (`social.go`) | executor, same batch as a non-owner `agent.withdrew` (spec 013 US4, FR-011) | none beyond the record itself — the distinct taking happening; chronicle/TUI material ([[social-fabric]]) |
 | consolidation family: `agent.memory_promoted` / `agent.memory_faded` / `agent.belief_revised` / `agent.narrative_set` / `agent.consolidated` | payload structs in `internal/sim/consolidate.go`; contract in `specs/004-nightly-consolidation/contracts/` (spec 030 additions in `specs/030-epistemic-hygiene/contracts/`) | consolidation driver (injected) | salience boost / memory removal / belief create-or-revise / narrative replace / once-per-night ledger ([[nightly-consolidation]]); all reducer-total (vanished targets no-op); spec 030 threads two payload additions through — `belief_revised`'s `evidence` (the validator's resolved `MemoryRef{tick, hash}` citations) and `direct` (whether any cited evidence is direct perception; only a `direct` revision refreshes the belief's `Reinforced` decay anchor — a myth retold nightly on hearsay alone never re-anchors), and `consolidated`'s `coerced` (telemetry: beliefs the validator downgraded off `"witnessed"` for lack of direct evidence, never a rejection) |
@@ -187,7 +195,8 @@ the single record standing in for the whole pre-break history, and the reducer's
 ([[cli-promptworld]], [[world-migration]]) emits `world.migrated`; the mind driver and the loop's
 landing ladder emit the `cog.*` telemetry ([[cognition]]); [[daemon-lifecycle]]
 emits `daemon.*`; [[event-log]] stores them;
-[[ipc-protocol]] pushes them to subscribers verbatim. The `metatron.*` miracle
+[[ipc-protocol]] pushes them to subscribers verbatim. [[llm-provider-health]]
+emits `daemon.llm_warning` through [[sim-loop]]'s `InjectOperator` door. The `metatron.*` miracle
 family is emitted through [[metatron]]'s two doors and reduced in
 `internal/sim/miracles.go` — see [[metatron-miracles]] for the cost table,
 gratis doctrine, and the shift-semantics re-base taxonomy. The standing-order

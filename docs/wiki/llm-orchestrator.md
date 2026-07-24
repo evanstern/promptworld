@@ -10,7 +10,7 @@ sources:
   - internal/llm/providers.go
   - internal/llm/lease.go
   - internal/llm/pending.go
-verified_against: be38288fa137064174eedbfb3b8a94cc5b1fb0b9
+verified_against: ce15d80522aae111e2c359287459b51401d18364
 ---
 
 # LLM orchestrator
@@ -218,7 +218,22 @@ no new call-admission behavior.
 **Status** (`StatusSnapshot`, spec 024 US6): `Status{Providers []ProviderStatus,
 Month, Spent, Budget}`, sorted by name — one shape for legacy and v2 worlds (legacy
 shows rows `local`/`cloud`). `ProviderStatus{Name, Model, Endpoint, Up, Queue,
-Inflight, Slots, Contended, SpentUSD}`.
+Inflight, Slots, Contended, SpentUSD}`, plus three `omitempty` operator-health
+fields (`Condition`, `ConditionDetail`, `ConditionRemedy`, spec 034) a healthy
+provider never populates — see [[llm-provider-health]] for the condition slot,
+the preflight probe, and the tool-silence detector that feed them.
+
+**Fresh-world defaults** (`DefaultConfig`, spec 034 R6): the local provider a
+brand-new `llm.json` ships with is `{model: "cogito:3b", tool_mode: "json",
+parallel: 4}` — the configuration the TASK-73 eval record proved live (three
+8-game-hour soaks, 789–982 planner decisions each) — rather than the earlier
+`gemma4:12b-mlx`/native default, a machine-local MLX build that never
+reliably function-called out of the box and isn't a stock registry pull;
+gemma-class models remain the documented upgrade path for operators who serve
+them (docs/llm-providers.md). Existing worlds' `llm.json` files are untouched
+by construction (config is per-world, read once at boot). `cmdNew`
+([[cli-promptworld]]) prints the expected model and its pull command read
+straight from `DefaultConfig()`.
 
 **Config** (`config.go`): `llm.json` in the save directory, written v2 by
 `promptworld new`; deleting the file disables the orchestrator entirely. Hosted keys
@@ -257,6 +272,10 @@ by both [[agent-mind]]'s `runPlan` and [[metatron]]'s `Turn`. [[social-fabric]]'
 conversation scenes pin per scene through the same `Request.Provider` field.
 [[daemon-lifecycle]]'s governor sampler polls `PendingCognition` every
 `GovernorCadence` and feeds it to [[cognition]]'s `Debt`/`Governor`.
+[[llm-provider-health]] builds on this package's `provider`/worker/breaker
+machinery (condition slot beside `tierHealth`, the worker's success path,
+`SetConditionHook`) to make a dead or tool-silent provider operator-visible;
+[[daemon-lifecycle]] wires its hook and starts its preflight goroutine.
 
 ## Operational notes
 
