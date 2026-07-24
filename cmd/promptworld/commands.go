@@ -774,8 +774,47 @@ func renderStatusHuman(sd *ipc.StatusData) string {
 			b.WriteString(providerCalibrationLine(p) + "\n")
 		}
 	}
+	for _, line := range horizonStatusLines(sd) {
+		b.WriteString(line + "\n")
+	}
 	fmt.Fprintf(&b, "log: last seq %d\n", sd.Log.LastSeq)
 	return b.String()
+}
+
+// horizonStatusLines renders the live cognition-horizon section (spec 037 US3,
+// FR-008): one line per watched class — its standing at the current effective
+// speed, the calibrate-vs-slow-down remedy when suppressed, and the
+// daemon-lifetime "skipped N" count. nil when the world carries no horizon, so
+// a no-LLM world's output is unchanged (the wire field is absent).
+func horizonStatusLines(sd *ipc.StatusData) []string {
+	if len(sd.Horizon) == 0 {
+		return nil
+	}
+	speed := sd.Clock.Speed
+	lines := make([]string, 0, len(sd.Horizon))
+	for _, e := range sd.Horizon {
+		var line string
+		if e.Suppressed {
+			line = fmt.Sprintf("horizon: %s suppressed at %s — %s", e.Class, speed, horizonRemedy(e.Calibrated))
+		} else {
+			line = fmt.Sprintf("horizon: %s thinking at %s", e.Class, speed)
+		}
+		if e.Suppressed || e.SuppressedCount > 0 {
+			line += fmt.Sprintf(" (skipped %d)", e.SuppressedCount)
+		}
+		lines = append(lines, line)
+	}
+	return lines
+}
+
+// horizonRemedy mirrors the TUI's calibrate-vs-slow-down split (spec 037
+// FR-007): an uncalibrated class may still benefit from calibration; a
+// calibrated one can only slow down.
+func horizonRemedy(calibrated bool) string {
+	if calibrated {
+		return "slow down"
+	}
+	return "calibrate or slow down"
 }
 
 // llmConditionWarnings renders one `WARNING llm provider …` line per
