@@ -4,12 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/wiki/agent-mind.md@8e0c7a09ce3ffaf14b2951e7f1304e23cfb552c9">
+<meta name="promptworld-docs:source" content="docs/wiki/agent-mind.md@3b7dd17b478ab5aa64e4c99c44b77bc565d71376">
 <meta name="promptworld-docs:source" content="docs/wiki/cognition.md@8e0c7a09ce3ffaf14b2951e7f1304e23cfb552c9">
 <meta name="promptworld-docs:source" content="docs/wiki/llm-orchestrator.md@d23fbbfe471ec62c9b94ce79404870632a6eb60e">
 <meta name="promptworld-docs:source" content="docs/wiki/nightly-consolidation.md@2bc94f55c57880e07f0e52e5de20c9cd527ab340">
-<meta name="promptworld-docs:source" content="docs/wiki/social-fabric.md@2bc94f55c57880e07f0e52e5de20c9cd527ab340">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@1e71b77f104dda982aa407b28ad2c994219e90d0">
+<meta name="promptworld-docs:source" content="docs/wiki/social-fabric.md@3b7dd17b478ab5aa64e4c99c44b77bc565d71376">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@3b7dd17b478ab5aa64e4c99c44b77bc565d71376">
+<meta name="promptworld-docs:source" content="docs/wiki/mental-maps.md@3b7dd17b478ab5aa64e4c99c44b77bc565d71376">
 <title>The AI behind the village — promptworld player docs</title>
 <style>
   :root {
@@ -91,6 +92,43 @@ persona and recent memories as the basis for the decision. This mix is why a vil
 can run smoothly at high speed instead of grinding to a halt waiting on AI responses
 for every little thing: most of a villager's second-to-second existence is free,
 and AI is spent where it actually matters.</p>
+
+<h2>Each villager only knows what they've actually seen</h2>
+<p>Villagers aren't born knowing the map. Each one carries their own private
+sense of the world — the ground they've personally walked over, plus a list of
+things they've actually seen: this fire, that stand of trees, a shelter over
+there. A villager will only ever act on a place they know about — if nobody in
+the village has laid eyes on a water's edge yet, nobody goes looking for one to
+drink from, because as far as any of them know, none exists. Two villagers who
+have lived very different days genuinely know different things about the same
+village.</p>
+<p>What a villager knows can go stale. A landmark they remember stays "known"
+for a while even after they've wandered off, but the game quietly treats older
+memories of changeable things (like a fire, which burns down) as less
+trustworthy than a memory of somewhere sturdier (like a shelter or a quarry).
+When a villager actually goes back to a remembered spot and finds it's changed
+— a fire gone cold, a tree already chopped down — that discovery lands as its
+own little moment, and it's often memorable enough to make the villager stop
+and rethink what they were about to do next.</p>
+<p>When a villager doesn't know of anything that would help — no known fire to
+warm up at, no known forage to eat — they can go <strong>searching</strong>:
+wander toward the edge of what they've explored so far, taking in whatever's
+out there as they go. It's a last resort, reached for only when hunger or cold
+leaves no better option, not something a well-provisioned villager bothers
+with.</p>
+<p>Directions change hands the same way news and rumors do: when two villagers
+talk, they'll naturally mention a place or two the other doesn't already know
+about (or only remembers less clearly) — so a villager who's never left home
+can still learn where the well is from someone who has. And because a
+<a href="playing-via-metatron.html">Metatron vision</a> can now show a
+villager exactly where a real place is, you can hand a lost or newly-arrived
+villager a landmark yourself instead of waiting for them to stumble onto it.</p>
+<p>None of this touches how you, the player, watch the village — the
+full-screen client's map still shows you everything, and the
+<a href="reading-the-story.html">chronicle</a> still narrates the whole village
+honestly. It's specifically what a <em>villager's own mind</em> has to work with when
+it's their turn to decide something, and it's why two villagers can react so
+differently to what looks, from your seat, like the same village.</p>
 
 <h2>One thought, one act</h2>
 <p>When a villager does stop to think, the AI is told three things, plainly: who this
