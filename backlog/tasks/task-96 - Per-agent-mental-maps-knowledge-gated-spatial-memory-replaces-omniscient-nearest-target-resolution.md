@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-24 19:03'
-updated_date: '2026-07-24 21:50'
+updated_date: '2026-07-24 22:23'
 labels:
   - epistemics
   - spatial-memory
@@ -57,8 +57,8 @@ Spec: specs/041-agent-mental-maps
 - [x] #10 Spec phase: User Story 1 — Agents act only on places they know (P1) 🎯 MVP
 - [x] #11 Spec phase: User Story 2 — Prompt renders only known places (P2)
 - [x] #12 Spec phase: User Story 3 — Stale memories corrected by reality (P3)
-- [ ] #13 Spec phase: User Story 4 — Deliberate search of the unknown (P4)
-- [ ] #14 Spec phase: User Story 5 — Spatial knowledge spreads through talk (P5)
+- [x] #13 Spec phase: User Story 4 — Deliberate search of the unknown (P4)
+- [x] #14 Spec phase: User Story 5 — Spatial knowledge spreads through talk (P5)
 - [ ] #15 Spec phase: Polish & Cross-Cutting
 <!-- AC:END -->
 
@@ -72,4 +72,6 @@ Specify phase complete: specs/041-agent-mental-maps/spec.md + requirements check
 US1 complete (T011-T016, worktree f55180a): omniscient resolution replaced for 14 verbs + reflex parity; full suite green except pre-existing TASK-100 red. Accepted deviations recorded in data-model.md addenda (PeerSighting, availability split, spec-040 fixture repair 9bff237). MVP checkpoint reached.
 
 US2+US3 complete (T017-T022, worktree b446a21): known-places prompt (first-6 cap retired, provenance phrasing, frontier line, peers from sightings) + agent.map_corrected loop with chronicle/digest/wiki gates. Full suite green except pre-existing TASK-100; one unrelated load-flake noted (metatron TestDigestFailureCarries, passes isolated). Deviations recorded in data-model addenda.
+
+US4+US5 complete (T023-T031): search verb (frontier BFS, exhaustion honesty, reflex get-food fallback) + social.place_told sidecar (≤2 facts/direction, told provenance, teller Seen). Race gate re-verified by orchestrator (agent watcher died post-suite-green). Remaining: polish T032-T040.
 <!-- SECTION:NOTES:END -->
