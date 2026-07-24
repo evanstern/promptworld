@@ -429,7 +429,7 @@ func TestHorizonLinesSkippedCount(t *testing.T) {
 	horizon := []ipc.HorizonClass{
 		{Class: "planner", Suppressed: true, SuppressedCount: 214, Verdict: "3pt ..."},
 		{Class: "conversation", Suppressed: false, SuppressedCount: 12}, // slowed down; count retained
-		{Class: "meeting", Suppressed: false, SuppressedCount: 0},        // never suppressed
+		{Class: "meeting", Suppressed: false, SuppressedCount: 0},       // never suppressed
 	}
 	lines := horizonLines(horizon, "8x")
 	if !strings.Contains(lines[1], "skipped 214") {
