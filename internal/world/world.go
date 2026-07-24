@@ -170,3 +170,9 @@ func (w *World) CharterPath() string     { return filepath.Join(w.Dir, "charter.
 func (w *World) VillageCharterPath() string { return filepath.Join(w.Dir, "village_charter.md") }
 func (w *World) MetatronDir() string        { return filepath.Join(w.Dir, "metatron") }
 func (w *World) LogPath() string            { return filepath.Join(w.Dir, "daemon.log") }
+
+// BundlesDir is the root for pluggable bundle-defined tools (spec
+// 036-scriptable-agent-tools): manifest + optional Starlark script folders
+// discovered, validated, and frozen into a BundleSet at daemon boot. An
+// absent directory is legal — the world boots with no bundle tools.
+func (w *World) BundlesDir() string { return filepath.Join(w.Dir, "bundles") }

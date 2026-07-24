@@ -151,3 +151,10 @@ func TestCalibrationPath(t *testing.T) {
 		t.Errorf("CalibrationPath = %q", got)
 	}
 }
+
+func TestBundlesDir(t *testing.T) {
+	w := &World{Dir: "/tmp/w"}
+	if got := w.BundlesDir(); got != filepath.Join("/tmp/w", "bundles") {
+		t.Errorf("BundlesDir = %q", got)
+	}
+}
