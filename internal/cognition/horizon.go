@@ -54,18 +54,30 @@ func HorizonSummary(secPerPt float64) string {
 	return strings.Join(parts, "; ")
 }
 
-// SuppressedAt returns, from the watched classes, those Route would suppress
-// at ticksPerSecond given a per-class seconds-per-point lookup — the same
-// arithmetic HorizonSummary applies at one fixed value, callable instead with
-// a live per-class estimate (the set_speed warning, spec 035 FR-002/FR-006).
+// ClassStanding is one watched class's live standing at a given speed: the
+// class name, whether Route would suppress it, and the router's full Verdict
+// (Arithmetic string included). The structured base LiveHorizon builds and the
+// string surfaces (SuppressedAt) filter from — so exactly one watched-class
+// iteration + Route call exists (spec 035 FR-006 posture, spec 037 FR-002).
+type ClassStanding struct {
+	Class      string
+	Suppressed bool
+	Verdict    Verdict
+}
+
+// LiveHorizon evaluates the watched classes against a per-class live estimate
+// at ticksPerSecond, returning each INCLUDED class's standing (verdict
+// arithmetic included) in WatchedClasses order — the one watched-class
+// iteration every operator-facing horizon surface delegates to, so no surface
+// can disagree with the router (spec 037 FR-002).
 //
 // secPerPtFor resolves one class to (secondsPerPoint, ok); ok=false EXCLUDES
-// the class from consideration entirely — the seed-state gate (research R2):
-// a class whose serving provider is calibrated must never contribute to the
-// warning, not merely evaluate as never-suppressed. Order follows
-// WatchedClasses.
-func SuppressedAt(ticksPerSecond float64, secPerPtFor func(class string) (secPerPt float64, ok bool)) []string {
-	var suppressed []string
+// the class entirely (no entry) — the serving-provider gate: a class whose
+// kind has no admissible provider is not guessed at (spec 037 R1/contract
+// rule 2). ticksPerSecond <= 0 (uncapped max speed) yields every included
+// class suppressed with Route's uncapped phrasing.
+func LiveHorizon(ticksPerSecond float64, secPerPtFor func(class string) (secPerPt float64, ok bool)) []ClassStanding {
+	var standings []ClassStanding
 	for _, class := range watchedClasses {
 		dc, ok := ClassFor(class)
 		if !ok {
@@ -75,8 +87,28 @@ func SuppressedAt(ticksPerSecond float64, secPerPtFor func(class string) (secPer
 		if !ok {
 			continue
 		}
-		if !Route(dc, ticksPerSecond, secPerPt).Allow {
-			suppressed = append(suppressed, class)
+		v := Route(dc, ticksPerSecond, secPerPt)
+		standings = append(standings, ClassStanding{Class: class, Suppressed: !v.Allow, Verdict: v})
+	}
+	return standings
+}
+
+// SuppressedAt returns, from the watched classes, those Route would suppress
+// at ticksPerSecond given a per-class seconds-per-point lookup — a
+// suppressed-names filter over LiveHorizon (one iteration total), callable
+// with a live per-class estimate (the set_speed warning, spec 035
+// FR-002/FR-006).
+//
+// secPerPtFor resolves one class to (secondsPerPoint, ok); ok=false EXCLUDES
+// the class from consideration entirely — the seed-state gate (research R2):
+// a class whose serving provider is calibrated must never contribute to the
+// warning, not merely evaluate as never-suppressed. Order follows
+// WatchedClasses.
+func SuppressedAt(ticksPerSecond float64, secPerPtFor func(class string) (secPerPt float64, ok bool)) []string {
+	var suppressed []string
+	for _, cs := range LiveHorizon(ticksPerSecond, secPerPtFor) {
+		if cs.Suppressed {
+			suppressed = append(suppressed, cs.Class)
 		}
 	}
 	return suppressed
