@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-24 19:03'
-updated_date: '2026-07-24 20:09'
+updated_date: '2026-07-24 20:45'
 labels:
   - epistemics
   - spatial-memory
@@ -52,8 +52,8 @@ Spec: specs/041-agent-mental-maps
 - [ ] #5 Unknown space is explorable: an agent with no known target can search deliberately rather than only random-wander
 - [ ] #6 Replay determinism preserved: mental-map state is reducer-owned and the determinism harness proves bit-identical replay
 - [ ] #7 Chosen representation has a documented 3D/layered-grid extension path in the spec
-- [ ] #8 Spec phase: Setup
-- [ ] #9 Spec phase: Foundational (blocking all stories)
+- [x] #8 Spec phase: Setup
+- [x] #9 Spec phase: Foundational (blocking all stories)
 - [ ] #10 Spec phase: User Story 1 — Agents act only on places they know (P1) 🎯 MVP
 - [ ] #11 Spec phase: User Story 2 — Prompt renders only known places (P2)
 - [ ] #12 Spec phase: User Story 3 — Stale memories corrected by reality (P3)
@@ -61,6 +61,8 @@ Spec: specs/041-agent-mental-maps
 - [ ] #14 Spec phase: User Story 5 — Spatial knowledge spreads through talk (P5)
 - [ ] #15 Spec phase: Polish & Cross-Cutting
 <!-- AC:END -->
+
+
 
 
 
