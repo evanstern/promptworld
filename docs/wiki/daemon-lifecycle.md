@@ -4,7 +4,7 @@ description: Process lifecycle — startup recovery (snapshot+replay), pidfile w
 kind: pipeline
 sources:
   - internal/daemon/daemon.go
-verified_against: a7a96b3c6b12f49e0682ffe52b4a8a88ca22f867
+verified_against: 1e71b77f104dda982aa407b28ad2c994219e90d0
 ---
 
 # Daemon lifecycle
@@ -23,7 +23,16 @@ Startup sequence:
    resolver and duration, every Expressive tool's events are whitelisted. A
    malformed registry or roster aborts boot with a config error, never a
    tick-time failure.
-1. `world.Open` — manifest validation ([[world-save-directory]]).
+1. `world.Open` — manifest validation ([[world-save-directory]]). Then, still
+   before the pidfile, spec 036's bundle gate: `bundle.Discover(dir)` scans the
+   world's `bundles/` folder once, validates every persona/tool bundle
+   ([[bundle-tools]]), and freezes the result into a `BundleSet`. Each
+   `BootReport` entry — a skipped tool or rejected bundle — prints one boot
+   line naming its file, rule id, and offending value; a summary line
+   (`daemon: bundles on (N tool(s) from M bundle(s))`) prints only when
+   something loaded. Bundles are additive: an invalid bundle never bricks
+   boot, an absent/empty `bundles/` changes nothing, and only an I/O failure
+   reading the root is fatal.
 2. `acquirePidfile` — one daemon per world: an existing pidfile with a live process
    (checked via `kill(pid, 0)`, EPERM counts as alive) is a hard error; a stale one
    (crash leftover) is swept along with the stale socket. Then `registerWorld`
@@ -90,7 +99,9 @@ Startup sequence:
    clamp/default rather than aborting boot (TASK-52, [[llm-orchestrator]]). The
    normalized round cap and effective budgets then thread into both loop
    consumers: `mind.New(..., loopRounds, plannerTokens, consolidationTokens)`
-   and `metatron.New(orch, loop, loop, ..., loopRounds, metatronTurnTokens)` —
+   and `metatron.New(orch, loop, loop, ..., loopRounds, metatronTurnTokens)`
+   (followed by `mt.SetBundles(bundleSet)` — spec 036 hands the boot-frozen
+   bundle surface to the turn assembly, [[bundle-tools]]) —
    since spec 029 (US5) the loop is passed twice: once as the `Injector` it
    was always passed as, once as the new `LoopControl` seam Metatron's
    `pause`/`start`/`adjust_speed` meta tools drive ([[metatron-orders]],

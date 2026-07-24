@@ -10,7 +10,7 @@ sources:
   - internal/tool/registry.go
   - internal/ipc/server.go
   - cmd/promptworld/miracle.go
-verified_against: a7a96b3c6b12f49e0682ffe52b4a8a88ca22f867
+verified_against: 1e71b77f104dda982aa407b28ad2c994219e90d0
 ---
 
 # Metatron's miracles
@@ -163,7 +163,11 @@ exactly as memorable as an angelic omen or vision:
   pile/terrain removal).
 
 **The two doors**: both are thin translators onto the SAME `BuildMiracleBatch` +
-`InjectSocial` path, so they cannot drift.
+`InjectSocial` path, so they cannot drift. (Spec 036's bundle tools
+([[bundle-tools]]) are a third batch producer on the same door: their effect
+compiler builds the identical payload structs — including the trailing
+perception `agent.memory_added` pattern this note describes — which is what the
+dogfood equivalence test pins byte-identical to `BuildMiracleBatch`'s output.)
 
 - **The angel's turn** (`internal/metatron/turn.go`, `toolcalls.go`): since spec
   017 the turn runs through [[tool-loop]]'s bounded loop ([[metatron]]); "at most

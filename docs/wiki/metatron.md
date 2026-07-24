@@ -1,6 +1,6 @@
 ---
 name: metatron
-description: The gatekeeper angel (TASK-12) — console AND system-authored turns driven through the bounded tool-use loop (spec 017), omen/vision influence and standing-order agency behind a structural prompt firewall (spec 029), event-sourced charge economy, charge-free clock-control meta tools, digests + drama moments, and the staged player-editable instruction surface (charter + skills/ + capabilities.json, spec 021)
+description: The gatekeeper angel (TASK-12) — console AND system-authored turns driven through the bounded tool-use loop (spec 017), omen/vision influence and standing-order agency behind a structural prompt firewall (spec 029), event-sourced charge economy, charge-free clock-control meta tools, digests + drama moments, and the staged player-editable instruction surface (charter + skills/ + capabilities.json, spec 021); spec 036 composes drop-in bundle tools and persona SOUL fragments into the same turn assembly
 kind: component
 sources:
   - internal/metatron/metatron.go
@@ -12,7 +12,7 @@ sources:
   - internal/metatron/miracle_batch.go
   - internal/sim/metatron.go
   - internal/persona/charter.go
-verified_against: e9213e17e6e48cf30da802949d9b59e0e3d78370
+verified_against: 1e71b77f104dda982aa407b28ad2c994219e90d0
 ---
 
 # Metatron
@@ -46,7 +46,10 @@ suppresses moment consumption (the player-facing queue awaits the next console o
 the trigger worker queues the system turn's own outcome moment). The console CAS-fails
 fast with `ErrTurnBusy`; a system turn WAITS bounded for the slot ([[metatron-orders]]).
 The prompt stacks the charter (re-read every turn — edits are live by construction,
-with restore/empty/truncate fallbacks and in-reply notices, `charter.go`), then the
+with restore/empty/truncate fallbacks and in-reply notices, `charter.go`), then —
+since spec 036 — any persona SOUL fragments from the boot-frozen bundle surface
+(`mt.bundles.SoulFragments()`, load order, each ≤4,000 chars, validated at boot
+by [[bundle-tools]]; zero fragments leaves the prompt byte-identical), then the
 skill files (spec 021: `loadSkills` composes eligible `skills/*.md` — regular `.md`
 direct children, ascending bytewise filename order, ≤8 files, ≤4,000 chars each via
 `persona.CharterMaxChars`, each under a `--- skill: <name> ---` separator, with the
@@ -77,7 +80,18 @@ defense-in-depth `grant.allows` checks in the landers; an ungranted
 tool is structurally absent from the declared schemas, never merely prose-forbidden;
 missing manifest = full roster byte-compatibly, malformed = full roster + notice,
 `tools: []` = conversation-only — converse is never gateable), which lands through
-its existing door;
+its existing door. Spec 036 extends the same composition with the bundle surface
+([[bundle-tools]]): `runTurn` narrows the world grant by each persona bundle's
+`capabilities.json` via `narrowGrantForBundles`/`intersectGrant` (intersection —
+a persona can exclude tools or miracle kinds, never resurrect what the world
+excludes; commutative across personas), then appends the grant-filtered bundle
+roster and handlers after the built-ins (`grantedRoster(grant)` first, then
+`BundleSet.Roster()` order), so declaration, guidance prose (via the spec-036
+`PromptGloss` fallback, [[tool-registry]]), and the handler map stay one
+composition; `loadManifest` takes the known bundle-tool names so a world
+manifest naming a bundle tool no longer draws a spurious unknown-tool notice.
+The frozen `BundleSet` arrives once at boot via `mt.SetBundles`
+([[daemon-lifecycle]]), read only from the turn worker;
 the driver's one-acting-call cardinality enforces "at most one mediated act per
 turn" structurally, so the pre-loop nudge-wins-over-miracle precedence dissolves —
 the model just picks its one act. The retired `turnReply`/`parseTurn` free-text

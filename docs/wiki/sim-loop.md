@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/loop.go
   - internal/sim/landing.go
-verified_against: ce15d80522aae111e2c359287459b51401d18364
+verified_against: 1e71b77f104dda982aa407b28ad2c994219e90d0
 ---
 
 # Sim loop
@@ -146,6 +146,9 @@ the whitelist is only the isolation boundary — `metatron.order_placed`/
 whitelist the same way (placement/cancellation/trigger-match validation lives
 in the reducer arm); `metatron.order_expired` needs no whitelist entry — it is
 executor-emitted, never injected, the `charge_regenerated` precedent —
+(since spec 036 whitelist membership is also readable from outside the package
+via `InjectableSocialEvent(t)`, the single-source accessor both the tool
+coverage gate and the bundle boot gate ([[bundle-tools]]) enforce against) —
 `meeting.proposal_rephrased` swaps
 an enacted norm's text and nothing else,
 the `cog.*` telemetry — `cog.thought`, `cog.outcome`,

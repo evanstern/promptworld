@@ -8,7 +8,7 @@ sources:
   - cmd/promptworld/calibrate.go
   - cmd/promptworld/ps.go
   - cmd/promptworld/miracle.go
-verified_against: a7a96b3c6b12f49e0682ffe52b4a8a88ca22f867
+verified_against: 1e71b77f104dda982aa407b28ad2c994219e90d0
 ---
 
 # promptworld CLI

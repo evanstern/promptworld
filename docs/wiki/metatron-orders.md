@@ -14,7 +14,7 @@ sources:
   - internal/tool/registry.go
   - internal/llm/llm.go
   - internal/llm/config.go
-verified_against: 4c3807c4d3fcca5cb82367a1ea9b8c0696fda472
+verified_against: 1e71b77f104dda982aa407b28ad2c994219e90d0
 ---
 
 # Metatron's standing orders
@@ -178,7 +178,9 @@ as a `rejected_gate` the model may repair. The turn prompt carries active orders
 angel's counsel stays truthful to live state, and the model-free `metatron.Status`
 surface lists them (`Status.Orders`, `OrderStatus{id, condition, origin, fuzzy,
 expires_day, status}`, FR-016). The fixed frame's `metatronInitiativeFrame` (a
-compile-time constant appended last, beneath any charter/skill) binds standing-order and
+compile-time constant appended last, beneath any charter/soul/skill text — spec
+036's persona SOUL fragments stack with the editable text, never above the
+frame) binds standing-order and
 meta-tool use to player-requested or pre-authorized action only — never the angel's own
 initiative — with the door-side grant gate backing it independently.
 

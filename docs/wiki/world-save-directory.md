@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/world/world.go
   - internal/world/migrate.go
-verified_against: a7a96b3c6b12f49e0682ffe52b4a8a88ca22f867
+verified_against: 1e71b77f104dda982aa407b28ad2c994219e90d0
 ---
 
 # World save directory
@@ -61,7 +61,9 @@ dimensions — deterministic, so the map is never stored ([[worldmap-generation]
   prompt), `MetatronDir()` → `metatron/` (the angel's soul and transcript —
   [[metatron]]), and `VillageCharterPath()` → `village_charter.md` (the village's
   scribe-rendered law, deliberately distinct from Metatron's charter —
-  [[governance]], TASK-13).
+  [[governance]], TASK-13), and `BundlesDir()` → `bundles/` (spec 036: the
+  drop-in persona/tool bundle root, discovered and boot-frozen by
+  [[bundle-tools]]; absent means no bundles, never an error).
 
 Runtime files (`daemon.sock`, `daemon.pid`) exist only while a daemon runs and are
 swept by [[daemon-lifecycle]] when stale. The full layout is documented in

@@ -4,7 +4,7 @@ description: Game time math — 1 tick = 1 game second, epoch day 1 06:00, Speed
 kind: component
 sources:
   - internal/clock/clock.go
-verified_against: a7a96b3c6b12f49e0682ffe52b4a8a88ca22f867
+verified_against: 1e71b77f104dda982aa407b28ad2c994219e90d0
 ---
 
 # Game clock

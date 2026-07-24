@@ -4,7 +4,7 @@ description: Stateless randomness — every random decision is a PCG seeded from
 kind: pattern
 sources:
   - internal/sim/rng.go
-verified_against: 8be4440aae8d108884080cb6476782d2f11ad165
+verified_against: 1e71b77f104dda982aa407b28ad2c994219e90d0
 ---
 
 # Deterministic RNG
@@ -32,6 +32,14 @@ Consequences:
   iteration order can't shift anyone's rolls.
 - **Seed-sensitive**: different world seeds diverge immediately (tested by
   `TestDifferentSeedsDiverge` in `internal/sim/sim_test.go`).
+
+`sim.BundleRand(seed, purpose, tick, index) float64` (spec 036) is the one
+exported face of the pattern: a thin wrapper returning `rngAt(...).Float64()`,
+consumed by the bundle script runtime as `world.rand(purpose, index)` so
+Starlark tools ([[bundle-tools]]) draw replay-identical randomness from their
+coordinates alone. The `"bundle:<tool>:<purpose>"` namespacing lives in the
+caller (`internal/bundle/worldview.go`); the wrapper stays a generic seeded
+accessor.
 
 ## Connections
 

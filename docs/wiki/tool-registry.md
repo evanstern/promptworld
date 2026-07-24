@@ -9,7 +9,7 @@ sources:
   - internal/tool/derive.go
   - internal/tool/validate.go
   - internal/sim/toolcheck.go
-verified_against: e9213e17e6e48cf30da802949d9b59e0e3d78370
+verified_against: 1e71b77f104dda982aa407b28ad2c994219e90d0
 ---
 
 # Tool registry
@@ -168,7 +168,11 @@ only granted values), and `MetatronToolGuidance(roster)` renders the acting-tool
 guidance prose — per tool its name, argument surface (from `Params`, the same
 source `InputSchema` walks), and charge cost — replacing the hand-written prose
 list `turnSystemPrompt` used to carry, so described ≡ declared ≡ priced by
-construction (drift tests in `derive_test.go`).
+construction (drift tests in `derive_test.go`). Since spec 036 the per-tool
+description falls back to the tool's own `PromptGloss` when `metatronToolDesc`
+has no entry — the branch bundle tools ([[bundle-tools]]) render through; it is
+byte-inert for every map-covered built-in, pinned by the before/after
+byte-identity test in `derive_test.go`.
 
 **Derived surfaces** (`derive.go`): each consumer is one walk of the registry —
 `VocabularyLine()` (the prompt's goal list, byte-identical to the old constant,
@@ -216,6 +220,14 @@ and declaring it would trap a `converse` call as `rejected_unknown` (Metatron
 installs no `converse` handler by design). The journal tools are villager-only
 — `LoopRosterMetatron` is untouched, since journals are private.
 
+The registry is deliberately closed: spec 036's bundle tools ([[bundle-tools]])
+NEVER enter it. `internal/bundle` synthesizes its own `tool.Tool` values
+(Effect Expressive, `PromptGloss` from the manifest) and the metatron turn
+assembly appends them to the per-job roster and handler map after
+`grantedRoster` — built-ins always win name collisions at bundle load, so no
+dynamic registration can perturb the registration-order byte-identity the
+derived prompt surfaces depend on.
+
 **Validation** (`validate.go` + `internal/sim/toolcheck.go`): `tool.Validate()`
 checks the registry's internal consistency (unique non-empty names, known effect
 classes, Events ⇒ Expressive, PlanStep/ReflexEligible only on World tools, Number
@@ -227,7 +239,10 @@ naming one was no longer a `Validate` error — spec 019 ships the first two,
 `search_journal`/`read_journal`, both on `LoopRosterVillager`). `sim.ValidateToolCoverage()` checks the sim side —
 every GOAL-DOOR World tool (Effect World AND PlanStep true — the same
 `isLegacyWorldTool` predicate) has a resolver-table entry and a duration, and
-every Expressive tool's declared `Events` ⊆ the `InjectSocial` whitelist.
+every Expressive tool's declared `Events` ⊆ the `InjectSocial` whitelist —
+read through `sim.InjectableSocialEvent` (spec 036), the exported membership
+accessor that keeps this gate and the bundle boot gate ([[bundle-tools]])
+enforcing the SAME whitelist the door does.
 `set_plan` is a World tool that deliberately carries `PlanStep: false`, so
 `validateCoverage` skips it — it grounds through its own door (`injectPlan`, each
 step resolving its own already-covered goal), never through `resolveGoal`/
