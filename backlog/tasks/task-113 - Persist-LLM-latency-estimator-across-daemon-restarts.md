@@ -1,10 +1,10 @@
 ---
 id: TASK-113
 title: Persist LLM latency estimator across daemon restarts
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-25 03:00'
-updated_date: '2026-07-25 04:54'
+updated_date: '2026-07-25 05:21'
 labels: []
 dependencies: []
 priority: medium
@@ -19,10 +19,16 @@ World-01 evidence: the live per-provider sec/pt estimate (cognition/estimate.go:
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 learned s/pt survives a daemon restart (persisted in world dir, reseeded at boot)
-- [ ] #2 reseed takes the max of calibration seed and persisted value
-- [ ] #3 staleness-storm-after-restart no longer reproduces on world-01
+- [x] #1 learned s/pt survives a daemon restart (persisted in world dir, reseeded at boot)
+- [x] #2 reseed takes the max of calibration seed and persisted value
+- [x] #3 staleness-storm-after-restart no longer reproduces on world-01
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Delivered in PR #75 (squash-merged 2026-07-25). estimator_state.json in the world dir, calibration.json posture (boot-loaded, daemon-written every 5min + shutdown, never event-sourced, never read during replay — replay safety verified, not asserted). Boot reseed = max(calibration seed, persisted) via cognition.ReseedValue + Orchestrator.SeedPersisted. Restart-storm regression test drives the world-01 drift shape (10->60 s/pt) with zero re-adoptions after reseed. BreachRate 0.3->0.2 taken as separate characterized commit (adoption bar 7/20 -> 5/20 spikes, one-shot-rejection regression unchanged). Full -race suite green. Implemented by Sonnet spec-implementer per tier rubric; reviewed and merged by orchestrator. Wiki re-pin follows (cognition.md claims now stale).
+<!-- SECTION:NOTES:END -->
 
 ## Comments
 
