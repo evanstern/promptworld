@@ -19,7 +19,7 @@ happens in the `.worktrees/task-123` worktree on branch
 
 **Purpose**: branch/worktree and taxonomy skeleton.
 
-- [ ] T001 Create worktree `.worktrees/task-123` on branch
+- [x] T001 Create worktree `.worktrees/task-123` on branch
       `task-123-tui-design-reference-v2` from fresh `origin/main`; create
       `docs/design/tui/overlays/` directory.
 
@@ -30,13 +30,13 @@ happens in the `.worktrees/task-123` worktree on branch
 **Purpose**: conventions every page references — must exist before any page is
 authored or reconciled.
 
-- [ ] T002 Author `docs/design/tui/patterns/skin-tokens.md` per research.md R7:
+- [x] T002 Author `docs/design/tui/patterns/skin-tokens.md` per research.md R7:
       `{{skin.<domain>.<name>}}` mockup placeholder convention, control-table
       skin-token column semantics, token index table (token · default-skin/angel
       value · used-by page), explicit deferral of the runtime lookup contract to
       TASK-121. Frontmatter per contracts/frontmatter-and-pins.md
       (`status: specified`).
-- [ ] T003 Rewrite `docs/design/tui/INDEX.md`: authority statement, the v2 taxonomy
+- [x] T003 Rewrite `docs/design/tui/INDEX.md`: authority statement, the v2 taxonomy
       map (all files from plan.md Project Structure), the gate rules (same-PR
       amendment — extends old rule 4 to "any change"; run
       `node scripts/check-tui-design.mjs --changed` before any PR touching
@@ -57,46 +57,46 @@ research.md R1; staleness sweep set: specs 015, 018, 020, 021, 024, 028/031/033,
 **Independent test**: spec.md US1 acceptance scenarios — pick any shipped element,
 reach its accurate owning page in ≤2 hops from anatomy.md.
 
-- [ ] T004 [US1] Rewrite `docs/design/tui/panels/dock.md` as tab-container chrome
+- [x] T004 [US1] Rewrite `docs/design/tui/panels/dock.md` as tab-container chrome
       only (tab row, badges incl. `metatron •` dot pattern, tab-switch keys,
       solo-zoom seam); move all tab content out (destinations: T005–T007). Add
       frontmatter + pin (`status: shipped`), canonical control table.
-- [ ] T005 [P] [US1] Author `docs/design/tui/panels/guardian.md` (fiction-layer tab
+- [x] T005 [P] [US1] Author `docs/design/tui/panels/guardian.md` (fiction-layer tab
       content split from dock.md, D10): transcript/replies, ⚡ standing-order lines,
       ⏲ pause/start lines, `👁 standing orders (n)` block (spec 029), instruction
       surface (spec 021), miracle feedback (spec 016) — fiction strings as skin
       tokens (T002 conventions). Mockup + control table + pin.
-- [ ] T006 [P] [US1] Author `docs/design/tui/panels/systems.md` (telemetry tab —
+- [x] T006 [P] [US1] Author `docs/design/tui/panels/systems.md` (telemetry tab —
       never skinned, D10): provider table (spec 024) with health-condition rows
       (spec 034), horizon block (spec 037), throttle/debt/spend surfaces (specs
       028/031/033), calibration UX (spec 035). Mockup + control table + pin.
-- [ ] T007 [P] [US1] Author `docs/design/tui/panels/villagers.md` (villagers tab,
+- [x] T007 [P] [US1] Author `docs/design/tui/panels/villagers.md` (villagers tab,
       specs 015/020): roster → detail → decision-trace drill-down, verdict rows,
       states. Mockup + control table + pin.
-- [ ] T008 [P] [US1] Update `docs/design/tui/panels/chronicle.md` +
+- [x] T008 [P] [US1] Update `docs/design/tui/panels/chronicle.md` +
       `docs/design/tui/patterns/chronicle-grammar.md`: verify against shipped digest
       grammar (spec 018), suppression/remedy rows, verdict glossary; document the
       reserved `⏎` jump-to-source seam as `specified` for Wave 2 (D3). Canonical
       control table on the panel page; pins on both.
-- [ ] T009 [P] [US1] Update `docs/design/tui/panels/map.md` and
+- [x] T009 [P] [US1] Update `docs/design/tui/panels/map.md` and
       `docs/design/tui/panels/minibuffer.md`: verify against shipped reality (night
       dimming, priority carve-outs; minibuffer states + truncation behavior), note
       Wave-5 condition overlays as `specified` stub rows; canonical control tables +
       pins.
-- [ ] T010 [P] [US1] Update `docs/design/tui/pages/home.md` and
+- [x] T010 [P] [US1] Update `docs/design/tui/pages/home.md` and
       `docs/design/tui/pages/solo-views.md`: header segments reconciled (stage
       segment spec 046, `[llm: …]` badge spec 034, `[suppressed: …]` badge spec 037,
       `[degraded]`, ENDED token spec 044, speed posture spec 039); new chrome rows
       composed (references to T014–T016 pages); solo-views gains the new
       tabs/pages. Pins on both.
-- [ ] T011 [US1] Extract the help overlay from `docs/design/tui/patterns/keymap.md`
+- [x] T011 [US1] Extract the help overlay from `docs/design/tui/patterns/keymap.md`
       into `docs/design/tui/overlays/help.md`: shipped spec-045 sections (tiered
       keys, screen walkthrough, lessons seam) reconciled against
       `specs/045-tui-help-overlay/contracts/help-content.md` and
       `internal/tui/help.go`; leave keymap.md a pure printable card (parity rule
       added in T021). Canonical control table + pin. (Guardian section lands in
       T017; byte-identity classification in T023.)
-- [ ] T012 [US1] Author `docs/design/tui/anatomy.md`: every visible region, strip,
+- [x] T012 [US1] Author `docs/design/tui/anatomy.md`: every visible region, strip,
       badge, chrome row → owning file (data-model.md anatomy invariants — both
       directions complete), with stage-default visibility and fold-behavior
       references. Covers all files from T004–T020.
