@@ -1,14 +1,28 @@
+---
+title: Pattern — keymap
+class: pattern
+status: shipped
+verified_against: c8906da39be3a5b861c2272af37db0a83dcded7a
+sources:
+  - internal/tui/tui.go
+  - internal/tui/help.go
+---
+
 # Pattern: keymap
 
 Every key, every mode. Three modes total; a key means one thing per mode. The
-footer always shows the current mode's primary hints.
+footer always shows the current mode's primary hints. This is the one
+printable reference card — one page, every binding — kept deliberately
+separate from [../overlays/help.md](../overlays/help.md) (this feature
+extracted the in-app help overlay's content there; this page never grows a
+walkthrough or lessons section of its own).
 
 ## Mode: global (minibuffer unfocused — the normal state)
 
 | Key | Action |
 |---|---|
 | `1` | home composite (from solo: return home; on home: map is already primary) |
-| `2` / `3` / `4` | select dock tab chronicle / metatron / villagers; **same key again** → solo zoom; again → back home |
+| `2` / `3` / `4` | select dock tab chronicle / `{{skin.guardian.tab_label}}` / villagers; **same key again** → solo zoom; again → back home |
 | `m` | focus the minibuffer |
 | `space` | pause / resume the clock |
 | `[` / `]` | speed down / up |
@@ -76,29 +90,21 @@ loaded (or an empty roster) `j/k/g/G/⏎` are strict no-ops.
 
 `?` opens a context-sensitive help overlay from every mode above except
 minibuffer focus (there it types like any other character — the table's "no
-other key does anything silently" rule wins). The overlay is the new head of
-the esc-release chain: while open it owns the keyboard entirely, and closing
-it (`esc` or `?` again) releases only the overlay layer, restoring whatever
-was beneath exactly as it was (contract: `specs/045-tui-help-overlay/
-contracts/help-content.md`).
+other key does anything silently" rule wins). Its full content, sections,
+tiers, and control table are specified in
+[../overlays/help.md](../overlays/help.md) (extracted there, this feature);
+this card keeps only the top-level binding so the printable page stays
+complete without duplicating the overlay's own reference:
 
 | Key | Action |
 |---|---|
 | `?` | open help (from any mode except minibuffer focus); while open, dismiss (toggle) |
 | `esc` | dismiss (same as `?`) |
-| `tab` / `shift+tab` | cycle the overlay's three sections: keys → the screen → lessons |
-| `t` | (keys section only) advance basic ↔ advanced tier |
-| `n` / `p` | (keys section only) page through every mode's key table — the only way to read the minibuffer's page, since `?` doesn't open help there |
-| `J` / `K` | scroll the current page (same pager as the chronicle detail pane) |
-
-Content is static, local, and model-independent (identical on a no-LLM
-world) and is never derived from live status/replica — see `internal/tui/
-help.go`.
 
 ## Footer hints per mode
 
 ```
-global            2 chronicle 3 metatron 4 villagers (again: solo) · m ask · space pause · q quit · ? help
+global            2 chronicle 3 {{skin.guardian.tab_label}} 4 villagers (again: solo) · m ask · space pause · q quit · ? help
 minibuffer        esc release · ⏎ send · ↑↓ history
 inspect           j/k select · J/K scroll detail · space resume · m ask · ? help
 villagers roster  j/k select · ⏎ inspect · space pause · q quit · ? help
