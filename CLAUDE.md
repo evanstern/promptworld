@@ -54,10 +54,6 @@ grounding-wiki (docs/wiki) ──corpus──▶ codebase-to-course (docs/course
   the wiki + README.md + docs/llm-providers.md by the `player-docs` project skill — run it
   after `/grounding-wiki:wiki-update` re-pins notes; check freshness with
   `node .claude/skills/player-docs/scripts/check-freshness.mjs --check`.
-- **TUI design reference:** `docs/design/tui/` is the living page-by-page, control-by-control
-  UI authority (spec 047) — before opening any PR that touches `internal/tui/`, run
-  `node scripts/check-tui-design.mjs --changed` and amend `docs/design/tui/` in the same PR
-  (re-verify + re-pin every affected page).
 
 <!-- pdlc:peer:backlog BEGIN -->
 ## Backlog.md — the board (officially supported peer)
@@ -89,6 +85,13 @@ Features are specified with GitHub Spec Kit (`specify`) under `specs/NNN-<featur
   mirrored criteria are internal breakdown, not PR boundaries.
 <!-- pdlc:peer:spec-kit END -->
 <!-- pdlc:grounding END -->
+
+## TUI design reference — the UI authority gate (spec 047)
+
+`docs/design/tui/` is the living page-by-page, control-by-control UI authority
+(spec 047). Before opening any PR that touches `internal/tui/`, run
+`node scripts/check-tui-design.mjs --changed` and amend `docs/design/tui/` in the
+same PR (re-verify + re-pin every affected page).
 
 ## Model-tiered workflow (constitution Principle V, v1.1.0)
 
