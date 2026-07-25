@@ -2,7 +2,7 @@
 title: Panel — dock (tab container)
 class: panel
 status: shipped
-verified_against: c8d80800fc5d34c5c31ab54751ebfb3ba80efc5b
+verified_against: 6edc43e785eea624a0984e8604d1cdfa98709d1a
 sources:
   - internal/tui/tui.go
   - internal/tui/views.go
@@ -72,7 +72,7 @@ seam — the same container regardless of which tab is active.
 
 | control/region | states | data source | renderer | keys+mouse | introduced-by | skin-token |
 |---|---|---|---|---|---|---|
-| tab row | active · inactive | `Model.dockTab` | `dockTabsRow` | `2`/`3`/`4`/`5` select · — | TASK-34 | — |
+| tab row | active · inactive | `Model.dockTab` | `dockTabsRow` | `2`/`3`/`4`/`5` (+`6` on scenario worlds) select · — | TASK-34 | — |
 | chronicle tab label | active · inactive | `Model.dockTab` | `dockTabsRow` | `2` · — | TASK-34 | — |
 | guardian tab label | active · inactive · unseen-badge | `Model.dockTab`, `Model.guardianUnseen` | `dockTabsRow` | `3` · — | TASK-34 | `skin.guardian.tab_label` |
 | villagers tab label | active · inactive | `Model.dockTab` | `dockTabsRow` | `4` · — | spec 015 | — |

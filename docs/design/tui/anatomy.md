@@ -2,7 +2,7 @@
 title: Anatomy — region index
 class: index
 status: shipped
-verified_against: ed8300ffa44a0590ded7d8119fe9f2bda29dd8f9
+verified_against: 6edc43e785eea624a0984e8604d1cdfa98709d1a
 ---
 
 # Anatomy: the region index
