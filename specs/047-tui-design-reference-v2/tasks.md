@@ -252,7 +252,7 @@ classes + doc-only range passes).
 - [x] T031 Run the full acceptance sweep per quickstart.md §4 (SC-001, SC-002,
       SC-005, SC-006 manual sweeps) and §5 regression (`go test ./...`,
       player-docs `check-freshness.mjs --check`); record results in task notes.
-- [ ] T032 Open the single PR from `.worktrees/task-123`
+- [x] T032 Open the single PR from `.worktrees/task-123`
       (`task-123-tui-design-reference-v2` → main) with the validation transcript;
       after review/merge: `spec-bridge:sync`, tick board ACs, worktree cleanup.
 
