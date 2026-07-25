@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-25 04:43'
-updated_date: '2026-07-25 18:55'
+updated_date: '2026-07-25 19:30'
 labels:
   - learning-game
   - metatron
@@ -46,4 +46,12 @@ Spec: specs/059-grounded-feedback
 Reorient 2026-07-25 rescope (docs/design/reorient-2026-07-25-ui.md, D5/D9/D2): report card renders as a guardian-console card at natural stopping points (run end / pause / exercise resolution; badges between) and inside the postmortem takeover (TASK-127) — never a mid-run interruption. The stage's grantable verbs + one example ask per verb must also be reachable from the deterministic ? floor (D9 guardian section), not only via the tutor. All new fiction strings are skin-token-resolved (D2 — token contract from TASK-121 ships first). Render surface page authored in TASK-123 before build.
 
 Model tier: Opus 4.8 (spec-implementer, model=opus). Rubric: guardian turn-pipeline/prompt-composition (injection-adjacent) + new llm route kind, cross-package — senior tier per constitution Principle V and the runbook Lane 3 assignment. Standing resolutions recorded in spec: report card = checklist + attribution note (one artifact); tutor guide = compiled game substrate, not a player skill (stage-3 lock untouched). DISPATCH GATED on TASK-121's merge (skin contract; console seam already merged via #87).
+
+OPERATOR DECISION (2026-07-25, team review): SPEC RENUMBER. Two spec dirs were both numbered 059 on main — specs/059-grounded-feedback (this task) and specs/059-metatron-survival-autonomy (TASK-111). TASK-111 KEEPS 059 (it was actively being worked in the MVLS session); THIS task's spec directory renumbers.
+
+CAUTION — the review recommended 060, but 060 IS NO LONGER FREE: specs/060-village-lens, 061-conversation-loop-damper and 062-instinct-yields were all claimed while the review was running. Next free number is 063. Claim it by creating the directory, not by looking — see the root-cause note below.
+
+Root cause (review finding): spec-number allocation is a read-then-write race with no lock. Two sessions checking origin/main:specs/ within the same minute both see the same max and both claim next. It has now failed FOUR times in one day (commit f3b0842 'renumbered off 055/058 collisions', plus this 059 pair). The prescribed mitigation in both runbooks ('check origin/main:specs/ before claiming an NNN') CANNOT work. Fix belongs in check-merge-drift.mjs worktree mode — the takenSpecNumbers() helper (:1102-1123) already computes the right thing, it just runs too late.
+
+Note also: this task's spec is already written against 'internal/guardian' (post-TASK-121 rename) while TASK-111's is written against 'internal/metatron' — the queue is spec'd against two names for one package until 121 lands.
 <!-- SECTION:NOTES:END -->

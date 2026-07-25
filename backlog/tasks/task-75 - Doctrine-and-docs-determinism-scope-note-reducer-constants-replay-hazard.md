@@ -4,7 +4,7 @@ title: 'Doctrine and docs: determinism scope note + reducer-constants replay haz
 status: To Do
 assignee: []
 created_date: '2026-07-23 06:35'
-updated_date: '2026-07-25 19:13'
+updated_date: '2026-07-25 19:31'
 labels:
   - review-2026-07-22
   - code-quality
@@ -38,4 +38,6 @@ From the 2026-07-22 team review (improvements 5 and the replay-hazard removal no
 Drift audit 2026-07-23: substance verified, pins moved. EffectiveRate measured at loop.go:567 (observeWindow, wall-clock), emitted in clock.degraded at loop.go:578, baked into State.EffectiveRate (state.go:35, reducer :369) — hazard confirmed. No doc yet states per-log-not-per-seed (deterministic-rng.md:40 and README.md:78 still claim per-seed). Hunt-yield re-derivation now state.go:596-600 (was ~504-511). Note: sim-state-reducer.md:132 already documents emitter-computes for agent.memory_added (spec 019) — the doctrine note here should reconcile with that precedent.
 
 Pointer (spec 057 / TASK-108, 2026-07-25): the reducer-constants replay hazard this task documents now has a durable §6 note in docs/design/control-surface-and-calibration.md AND a structural mitigation for new worlds — the genesis tuning pin (promptworld new seeds sim.tuning_applied with the birth default set). Residual hazard scope: pre-057 and migrated worlds only.
+
+POINTER (2026-07-25, team review): the migration machinery this task explicitly scopes out ('migrating them is future work, not this task') is now carded as TASK-134 — event-log format_version + migration path, driven by the operator decision that the metatron.* event names get MIGRATED rather than aliased. Land this task's doctrine note first or alongside; 134 supplies the machinery this note points at. Review re-confirmed both hazards: no format_version exists anywhere in the repo, and README.md:80 plus deterministic-rng.md:50 still claim per-seed determinism.
 <!-- SECTION:NOTES:END -->

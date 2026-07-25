@@ -1,0 +1,39 @@
+---
+id: TASK-134
+title: >-
+  Event-log format_version + migration path (prerequisite for the guardian
+  rename)
+status: To Do
+assignee: []
+created_date: '2026-07-25 19:29'
+labels:
+  - replay-doctrine
+  - review-2026-07-25
+  - guardian-rename
+dependencies: []
+priority: high
+ordinal: 104000
+---
+
+## Description
+
+<!-- SECTION:DESCRIPTION:BEGIN -->
+Operator decision (2026-07-25, team review): the metatron.* persisted event names get MIGRATED, not aliased. That decision has a prerequisite this repo does not have — there is NO format_version anywhere in the event log.
+
+Evidence (team review 2026-07-25): at least 13 persisted event types carry the fiction in their names (metatron.charge_regenerated, metatron.entity_removed, metatron.order_triggered, metatron.time_snapped, ...). Renaming them rewrites the replay of every existing world. The only thing standing between a rename and silently-broken replay today is recipes_test.go:75-76, a VALUE PIN that a deliberate retune simply edits. Related hazard, same root: state.go:887-893 re-derives hunt yield from huntYieldSpear (agents.go:733) at apply time.
+
+Scope: introduce an event-log format_version (or equivalent log-level schema stamp), a migration path that rewrites or translates old logs on load, and the doctrine that a persisted-name or reducer-re-derivation change REQUIRES a version bump + migration. The cmd/promptworld 'migrate' command is the natural driver.
+
+Relationship to TASK-75: 75 is the docs/doctrine task and explicitly scopes migration OUT ('migrating them is future work, not this task'). This task is that future work. 75 should land its doctrine note first or alongside; this task supplies the machinery 75 points at.
+
+Sequencing: this BLOCKS TASK-121 (skinnable guardian). 121's rename sweep cannot honestly proceed until the versioning exists — otherwise the sweep is a one-way replay-compat door with no migration behind it. Non-trivial: full Spec Kit before implementation. Expect Opus tier (replay/reducer doctrine, cross-package).
+<!-- SECTION:DESCRIPTION:END -->
+
+## Acceptance Criteria
+<!-- AC:BEGIN -->
+- [ ] #1 Event log carries a format_version (or equivalent schema stamp) written at genesis and on every append-path that needs it
+- [ ] #2 A migration path translates pre-version logs on load; an existing world-01-shaped log replays byte-identically before and after migration
+- [ ] #3 Doctrine recorded: persisted-name changes and reducer-re-derivation changes require a version bump + migration; sites commented
+- [ ] #4 TASK-121's metatron.* -> guardian.* rename is demonstrated end-to-end through the migration on a seeded world
+- [ ] #5 Wiki re-pinned (event-log / sim-state-reducer notes) and freshness gate green
+<!-- AC:END -->

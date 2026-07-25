@@ -4,7 +4,7 @@ title: Needs-conditioned recovery intents with parameters
 status: To Do
 assignee: []
 created_date: '2026-07-25 02:41'
-updated_date: '2026-07-25 18:18'
+updated_date: '2026-07-25 19:30'
 labels:
   - goal-quality
   - instinct-layer
@@ -32,4 +32,14 @@ Direction B from spike TASK-101. Recovery goals complete on the NEED, not the lo
 
 <!-- SECTION:NOTES:BEGIN -->
 Design together with TASK-103: a villager loitering-to-recover must not register as idle to the instinct layer (the 120-tick idle grace is what let the larder rule hijack Sage at the fire).
+
+REVIEW FINDING (2026-07-25) — THIS TASK OWNS A LIVE, UNINTERRUPTIBLE DEATH PATH. Raised to High.
+
+TASK-108's survival audit routed 'wake-to-cold' here. The review independently confirmed the mechanism and it is worse than a gap: wakeReason (internal/sim/executor.go) returns true ONLY for day-plus-rested, or a hunger emergency with food in hand. COLD IS NOT A WAKE CONDITION. decayNeeds drains warmth 4/min at night when not warm; at Warmth==0 health drains 3/min. policy.go:74 will put a cold agent with no wood and no known warmth to sleep anyway. A sleeping villager therefore freezes to death with no wake path — almost certainly world-01's Oak.
+
+Root cause shared with TASK-103: internal/sim/policy.go contains ZERO reads of .Warmth (verified by grep; Needs.Food/Needs.Rest have four). Warmth is not a need to the instinct layer at all — every warmth rung keys on warmAt(tile), a LOCATION predicate, plus s.Night. That is why this task is foundational rather than the third step: warm_up(until warmth>=N) is the first time warmth becomes a need the ladder can see.
+
+OPERATOR DECISION (2026-07-25): sequence 104 BEFORE 103 — 103's AC#2 ('day-branch warmth gap closed') is unwritable until this task exists, because there is nothing to check in the day branch except a need the ladder cannot read. CONFLICT TO RESOLVE: TASK-103 was dispatched In Progress against spec 062 before this decision was recorded. Reconcile with the MVLS session.
+
+Also: any new threshold this task introduces must ship as a tuning.json dial (spec 048 / 057 US2 genesis pin), not a bare const.
 <!-- SECTION:NOTES:END -->
