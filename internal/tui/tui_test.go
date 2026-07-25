@@ -249,24 +249,26 @@ func TestMapRendersPathGlyph(t *testing.T) {
 	}
 }
 
-// TestMapRendersGraveGlyph covers spec 044 T025 (US4, FR-017): the grave
-// glyph appears on the map and the legend documents it — rendered from the
-// shared mapGlyphs table (help.go), so this exercises the same seam
-// TestHelpWalkthroughGlyphPageMatchesSharedTable cross-checks against the
-// overlay. Placed off any agent's own tile deliberately: a dead agent's
-// frozen "†" occupies the agents map at its exact death position forever
-// (renderMapGrid never clears a dead agent's tile), and the agent lookup
-// wins over the structures lookup in tile() — the same agent-outranks-
-// structure precedent the chest/path tests above document. A grave under a
-// dead body is therefore not the tile this test can assert the glyph on;
-// the glyph is what a witness or later passerby sees at any grave tile that
-// isn't also a dead agent's own frozen position.
+// TestMapRendersGraveGlyph covers spec 044 T025 (US4, FR-017) and the
+// ratified render-priority follow-up: the grave glyph must actually render
+// at a REAL death tile, not just somewhere a grave happens to sit unoccupied
+// — every post-044 death places its grave at the SAME tile the dead agent's
+// own frozen position occupies, so asserting the glyph only off that tile
+// would test a case the map never produces. The honest version: a dead
+// agent AND a grave at the same tile renders "✝" (the body becomes the
+// grave), overriding the plain dead marker that agent would otherwise show.
+// A graveless dead agent (pre-044 replay/history, or any hand-built replica
+// that never placed one) is unaffected and still renders "†" — covered here
+// at a second agent/tile so both branches are exercised in one test.
 func TestMapRendersGraveGlyph(t *testing.T) {
 	m := testModel(t)
 	cx, cy := m.gameMap.W/2, m.gameMap.H/2
-	m.replica.Agents = []sim.Agent{{Name: "Ash", X: cx, Y: cy}}
+	m.replica.Agents = []sim.Agent{
+		{Name: "Ash", X: cx, Y: cy, Dead: true},       // dies WITH a grave at its own tile
+		{Name: "Birch", X: cx + 3, Y: cy, Dead: true}, // graveless dead agent (pre-044 shape)
+	}
 	m.replica.Structures = []sim.Structure{
-		{Kind: "grave", X: cx + 1, Y: cy}, // off the agent's own tile
+		{Kind: "grave", X: cx, Y: cy}, // co-located with Ash's own tile
 	}
 	view := m.mapView()
 	lines := strings.Split(view, "\n")
@@ -274,7 +276,10 @@ func TestMapRendersGraveGlyph(t *testing.T) {
 	legend := lines[len(lines)-1]
 
 	if !strings.Contains(gridOnly, styleGrave.Render("✝")) {
-		t.Error("grave glyph ✝ (grave style) missing from map grid")
+		t.Error("grave glyph ✝ (grave style) missing from map grid at the dead agent's own death tile")
+	}
+	if !strings.Contains(gridOnly, styleErr.Render("†")) {
+		t.Error("a graveless dead agent should still render the plain † marker")
 	}
 	if !strings.Contains(legend, "✝grave") {
 		t.Errorf("legend key should document the grave glyph, got: %s", legend)

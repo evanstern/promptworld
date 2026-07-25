@@ -464,6 +464,17 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 
 	agents := map[[2]int]string{}
 	structures := map[[2]int]string{}
+	// Graves (spec 044 US4, ratified follow-up): every post-044 death places
+	// its grave at the SAME tile the dead agent's own frozen position
+	// occupies, so a dead-agent lookup in tile() would otherwise always win
+	// and the grave glyph could never actually render there — a dishonest
+	// legend/overlay entry. A dedicated set (not folded into `structures`,
+	// same reasoning as Quarried/Piles below) lets the agents loop below
+	// check "is this dead agent's own tile a grave" and render the grave
+	// glyph instead of the plain dead marker when so — the body becomes the
+	// grave. A dead agent with no grave at its tile (pre-044 replay/history,
+	// or a hand-built test replica) is unaffected: it keeps the plain "†".
+	graves := map[[2]int]bool{}
 	// Quarried (spec 012, US1): depleted rock outcrops are dynamic overlay
 	// state (never part of the static gm.At tile), so the set comes from the
 	// replica just like structures/dens below.
@@ -495,13 +506,16 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 				structures[[2]int{st.X, st.Y}] = styleChest.Render("☐")
 			case "grave":
 				// Spec 044 US4 (FR-017): reducer-placed at a death tile, never
-				// player-built. Like every other structure, a dead agent's own
-				// frozen "†" glyph on the SAME tile still wins in tile()
-				// (agents map checked before structures) — the same
-				// agent-outranks-structure precedent path/chest tests already
-				// document; the grave is what a witness or later passerby sees
-				// once nothing living (or freshly dead) occupies the tile.
+				// player-built. Recorded in `structures` (so a grave whose
+				// tile no longer holds the dead agent — e.g. a future
+				// migration/edge case — still renders here) AND in the
+				// dedicated `graves` set the agents loop below consults: the
+				// common case is a grave sharing its tile with the dead
+				// agent it belongs to, and there the agent glyph branch
+				// overrides itself to the grave (ratified follow-up) rather
+				// than let the frozen "†" permanently hide it.
 				structures[[2]int{st.X, st.Y}] = styleGrave.Render("✝")
+				graves[[2]int{st.X, st.Y}] = true
 			case "path":
 				// Spec 032 US3: a path is a walkable tile improvement, so it
 				// renders at TERRAIN level (below agents/structures/piles) rather
@@ -538,6 +552,13 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 		for _, a := range m.replica.Agents {
 			g := strings.ToUpper(a.Name[:1])
 			switch {
+			case a.Dead && graves[[2]int{a.X, a.Y}]:
+				// Ratified follow-up: the body becomes the grave. Every
+				// post-044 death places its grave at the dead agent's own
+				// tile, so this is the common case; the plain "†" below is
+				// what a graveless dead agent (pre-044 replay/history, or a
+				// hand-built test replica) still shows.
+				g = styleGrave.Render("✝")
 			case a.Dead:
 				g = styleErr.Render("†")
 			case a.Asleep:
