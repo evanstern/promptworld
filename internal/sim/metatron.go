@@ -65,6 +65,93 @@ const (
 	// MetatronPlayerOrderCap is the concurrent ACTIVE player-placed order cap
 	// (FR-007); system-origin deferral orders are exempt (FR-012).
 	MetatronPlayerOrderCap = 3
+	// MetatronOriginPlayer / MetatronOriginSystem are the two MetatronOrder.Origin
+	// values (spec 029): a player console monitor_and_act places "player" orders;
+	// the daytime-omen deferral (spec 029 T016) and the survival watches (spec 059)
+	// place "system" orders. Named here so the origin-keyed exemptions (cap/TTL/
+	// cancel) have a single home rather than scattered string literals.
+	MetatronOriginPlayer = "player"
+	MetatronOriginSystem = "system"
+)
+
+// Survival watch kinds (spec 059 US1): the three canonical system-origin survival
+// watches. A MetatronOrder whose Survival is one of these is matched by the
+// survival-band predicate (not the structural orderMatches), is cap/TTL/cancel
+// exempt (origin-keyed), and drives a survival-authority turn (US2). Empty
+// Survival ("") is every pre-059 order — the ordinary structural watch.
+const (
+	SurvivalNearDeath  = "near_death"
+	SurvivalStarvation = "starvation"
+	SurvivalExposure   = "exposure"
+)
+
+// Survival watch bands (spec 059 FR-008): the danger thresholds the three
+// survival watches match on, each REUSING an existing sim doctrine constant as
+// its single home rather than a new magic number — promoted-dial-ready (named,
+// one place) but deliberately NOT added to tuning.json (dials are earned by
+// evidence). near_death reuses the near-death latch band (nearDeathBelow) and
+// its hysteresis reset (nearDeathResetAt); starvation/exposure reuse decayNeeds'
+// OWN health-loss predicate — Food==0 / Warmth==0, the exact conditions that
+// drain health and stamp the "starvation"/"exposure" death causes — with the
+// reflex hunger band (hungryAt) and the freezing-night band (coldNightBelow) as
+// the recovery (re-arm) thresholds so a watch cannot flap on a one-tick wobble.
+const (
+	SurvivalNearDeathBelow = nearDeathBelow   // 200: health danger band (agents.go)
+	SurvivalNearDeathRearm = nearDeathResetAt // 400: recovered — re-arm
+	SurvivalStarvingAt     = 0                // Food==0: out of food, losing health
+	SurvivalStarvingRearm  = hungryAt         // 350: fed enough to re-arm
+	SurvivalFreezingAt     = 0                // Warmth==0: freezing, losing health
+	SurvivalFreezingRearm  = coldNightBelow   // 350: warm enough to re-arm
+)
+
+// IsSurvivalKind reports whether s names a canonical survival watch kind
+// (spec 059): the reducer uses it to keep the order_placed door authoritative on
+// the Survival discriminator (an unknown non-empty value is refused).
+func IsSurvivalKind(s string) bool {
+	switch s {
+	case SurvivalNearDeath, SurvivalStarvation, SurvivalExposure:
+		return true
+	}
+	return false
+}
+
+// SurvivalWatchDefs returns the three canonical system-origin survival watches
+// (spec 059 US1/FR-001) as ready-to-land MetatronOrders at the given tick — the
+// SINGLE home the genesis/boot seeder and tests both build from. Ids are fixed
+// and human-readable ("sys-watch-<kind>") so re-seeding is idempotent (the
+// reducer rejects a duplicate id; the boot guard skips re-injection). Each
+// watches agent.needs_changed (the per-game-minute heartbeat carrying the danger
+// band, matched by the survival-band predicate, not the structural filter),
+// pins no agent (Agent -1 = all villagers), and is non-expiring (ExpiresTick is
+// ignored for a survival watch — set to PlacedTick as an honest placeholder).
+// Condition/Action are the in-fiction standing duty the survival turn narrates
+// under; the specific endangered villager is supplied at trigger time.
+func SurvivalWatchDefs(tick int64) []MetatronOrder {
+	def := func(kind, cond, act string) MetatronOrder {
+		return MetatronOrder{
+			ID:          "sys-watch-" + kind,
+			Origin:      MetatronOriginSystem,
+			Survival:    kind,
+			Condition:   cond,
+			Action:      act,
+			EventTypes:  []string{"agent.needs_changed"},
+			Agent:       -1,
+			PlacedTick:  tick,
+			ExpiresTick: tick, // ignored — a survival watch never expires
+			Status:      "active",
+		}
+	}
+	return []MetatronOrder{
+		def(SurvivalNearDeath, "a villager is near death",
+			"A villager stands at the brink of death. Act on your own authority to save a life if you can — send a vision or work a miracle — or, if nothing can be done, keep the watch and record it."),
+		def(SurvivalStarvation, "a villager is starving",
+			"A villager has run out of food and is starving. Act on your own authority to save a life if you can — send a vision toward food, or work a miracle — or, if nothing can be done, keep the watch and record it."),
+		def(SurvivalExposure, "a villager is freezing",
+			"A villager is freezing in the cold and is losing their life to exposure. Act on your own authority to save a life if you can — send a vision toward warmth, or work a miracle — or, if nothing can be done, keep the watch and record it."),
+	}
+}
+
+const (
 	// metatronOrderRetain bounds retained NON-ACTIVE orders (data-model §1): the
 	// slice keeps every active order plus the most recent 32 consumed ones, so
 	// the status/trail shows recent history without unbounded growth.
@@ -86,8 +173,9 @@ type MetatronOrder struct {
 	Keywords    []string `json:"keywords,omitempty"` // coarse text filter, lowercase
 	Confirm     bool     `json:"confirm,omitempty"`  // fuzzy: needs the watch confirm
 	PlacedTick  int64    `json:"placed_tick"`
-	ExpiresTick int64    `json:"expires_tick"` // placed + ttl_days game days
-	Status      string   `json:"status"`       // "active" | "triggered" | "cancelled" | "expired"
+	ExpiresTick int64    `json:"expires_tick"`       // placed + ttl_days game days (IGNORED for a survival watch — non-expiring)
+	Status      string   `json:"status"`             // "active" | "triggered" | "cancelled" | "expired"
+	Survival    string   `json:"survival,omitempty"` // spec 059: "" = ordinary structural order; else a survival watch kind (near_death|starvation|exposure)
 }
 
 // OrderTriggeredPayload records a matched order's one-shot consumption (spec
@@ -232,15 +320,33 @@ func (s *State) applyMetatron(e store.Event) error {
 			}
 		}
 		switch o.Origin {
-		case "player", "system":
+		case MetatronOriginPlayer, MetatronOriginSystem:
 		default:
 			return fmt.Errorf("apply %s: unknown origin %q", e.Type, o.Origin)
+		}
+		// A survival watch (spec 059) is a system-origin order with a known kind;
+		// it is exempt from the TTL bounds below (non-expiring). A non-empty
+		// Survival on a player order, or an unknown kind, is refused — the door
+		// stays authoritative on the discriminator.
+		if o.Survival != "" {
+			if o.Origin != MetatronOriginSystem {
+				return fmt.Errorf("apply %s: survival watch must be system origin", e.Type)
+			}
+			if !IsSurvivalKind(o.Survival) {
+				return fmt.Errorf("apply %s: unknown survival kind %q", e.Type, o.Survival)
+			}
 		}
 		if len(o.EventTypes) == 0 {
 			return fmt.Errorf("apply %s: order has no event_types (uncompilable condition)", e.Type)
 		}
-		if ttl := o.ExpiresTick - o.PlacedTick; ttl < MetatronOrderTTLMinDays*ticksPerGameDay || ttl > MetatronOrderTTLMaxDays*ticksPerGameDay {
-			return fmt.Errorf("apply %s: ttl %d ticks outside %d..%d game days", e.Type, ttl, MetatronOrderTTLMinDays, MetatronOrderTTLMaxDays)
+		// TTL bounds hold for every order EXCEPT a survival watch, which is
+		// non-expiring by nature (spec 059 FR-002) — its ExpiresTick is ignored
+		// here and by the executor's expiry sweep alike (origin-keyed exemption,
+		// not a giant TTL).
+		if o.Survival == "" {
+			if ttl := o.ExpiresTick - o.PlacedTick; ttl < MetatronOrderTTLMinDays*ticksPerGameDay || ttl > MetatronOrderTTLMaxDays*ticksPerGameDay {
+				return fmt.Errorf("apply %s: ttl %d ticks outside %d..%d game days", e.Type, ttl, MetatronOrderTTLMinDays, MetatronOrderTTLMaxDays)
+			}
 		}
 		if o.Agent < -1 || o.Agent >= len(s.Agents) {
 			return fmt.Errorf("apply %s: agent index %d out of range", e.Type, o.Agent)
@@ -278,6 +384,15 @@ func (s *State) applyMetatron(e store.Event) error {
 		var p OrderIDPayload
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
+		}
+		// A survival watch is the angel's nature, not a player configuration
+		// (spec 059 FR-002): the player-order surface cannot cancel it. Refuse at
+		// the door, keyed on the Survival discriminator, so the in-fiction refusal
+		// is authoritative rather than advisory.
+		for i := range s.MetatronOrders {
+			if s.MetatronOrders[i].ID == p.ID && s.MetatronOrders[i].Survival != "" {
+				return fmt.Errorf("apply %s: order %q is a survival watch and cannot be cancelled", e.Type, p.ID)
+			}
 		}
 		return s.transitionMetatronOrder(e.Type, p.ID, "cancelled")
 	case "metatron.order_expired":

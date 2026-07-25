@@ -15,6 +15,7 @@ import (
 	"github.com/evanstern/promptworld/internal/store"
 	"github.com/evanstern/promptworld/internal/tool"
 	"github.com/evanstern/promptworld/internal/toolloop"
+	"github.com/evanstern/promptworld/internal/worldmap"
 )
 
 // nudgeTextMax is the nudge rendering cap, read from the tool registry (spec
@@ -102,6 +103,12 @@ type turnOrigin struct {
 	system    bool
 	jobPrefix string
 	seed      string
+	// survival marks a turn triggered by a system SURVIVAL watch (spec 059 US2):
+	// its frame carries the survival-authority carve-out (visions/miracles on the
+	// angel's own initiative to save a life). Only a survival-watch trigger sets
+	// it — a console turn and an ordinary (deferral) system turn both leave it
+	// false and keep today's restrictive initiative frame verbatim (FR-004/FR-005).
+	survival bool
 }
 
 // Turn runs one mediated CONSOLE turn through the bounded tool-use loop (spec 017
@@ -184,6 +191,7 @@ func (mt *Metatron) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 	}
 	agentXY := make([][2]int, len(mt.agentXY))
 	copy(agentXY, mt.agentXY)
+	agentNeeds := append([]needMirror(nil), mt.agentNeeds...)
 	moments := append([]string(nil), mt.moments...)
 	story := append([]string(nil), mt.story...)
 	orders := append([]sim.MetatronOrder(nil), mt.orders...)
@@ -243,6 +251,15 @@ func (mt *Metatron) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 			"pre-authorized action now, in a single act if it calls for one:\n" + o.seed
 	}
 
+	// The miracle targeting digest (spec 059 US3, FR-006): built only when this
+	// world's granted roster offers work_miracle, so a dreams-only world's prompt
+	// is byte-unchanged. It carries live villager positions/conditions + adjacent
+	// passability so a coordinate-bearing miracle aims at a tile the door accepts.
+	var digest string
+	if hasWorkMiracle(roster) {
+		digest = buildTargetingDigest(alive, agentNeeds, agentXY, mt.m)
+	}
+
 	result := TurnResult{}
 	d := &turnDispatch{mt: mt, charges: charges, alive: alive, night: night, tick: tick, result: &result, grant: grant}
 
@@ -259,8 +276,8 @@ func (mt *Metatron) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 	res, err := mt.runLoop(callCtx, toolloop.Job{
 		JobID:     jobID,
 		Kind:      llm.KindMetatron,
-		System:    turnSystemPrompt(charter, skills, roster, souls...),
-		Seed:      turnUserPrompt(tick, charges, alive, orders, moments, story, mt.soulTail(), mt.transcriptTail(), directive),
+		System:    buildTurnSystemPrompt(o.survival, charter, skills, roster, souls...),
+		Seed:      turnUserPrompt(tick, charges, alive, orders, moments, story, mt.soulTail(), mt.transcriptTail(), digest, directive),
 		Roster:    roster,
 		Handlers:  handlers,
 		MaxRounds: mt.loopRounds,
@@ -630,7 +647,14 @@ func (mt *Metatron) landMiracle(mm miracleArgs, charges int, grant grantSet) (*M
 func (mt *Metatron) recordTurn(tick int64, o turnOrigin, r TurnResult) {
 	var b strings.Builder
 	if o.system {
-		fmt.Fprintf(&b, "\n[%s] [watch]\n%s\n\nmetatron: %s\n", clock.Format(tick), o.seed, r.Reply)
+		// A survival-watch turn is marked distinctly (spec 059 FR-007): the
+		// durable transcript attributes the acting authority to the survival duty,
+		// not an ordinary player-placed watch.
+		marker := "[watch]"
+		if o.survival {
+			marker = "[survival watch]"
+		}
+		fmt.Fprintf(&b, "\n[%s] %s\n%s\n\nmetatron: %s\n", clock.Format(tick), marker, o.seed, r.Reply)
 	} else {
 		fmt.Fprintf(&b, "\n[%s]\n> %s\n\nmetatron: %s\n", clock.Format(tick), o.seed, r.Reply)
 	}
@@ -830,6 +854,21 @@ const metatronInitiativeFrame = `Two more powers are the player's to command, ne
 	`world's clock (pausing, starting, changing its pace) and standing orders (watches you keep and act on). ` +
 	`Use them only when the player asks, or when a standing order the player placed tells you to act — never on your own initiative.`
 
+// metatronSurvivalFrame is the initiative frame for a SURVIVAL-watch turn (spec
+// 059 US2, FR-003/FR-004): the ONE carve-out. A villager is at the brink of
+// death, so for THIS peril the angel may send a vision or work a miracle on its
+// own initiative — no player authorization needed (charges unchanged). Everything
+// else stays exactly as the restrictive frame: the clock and any other standing
+// order remain the player's alone (FR-004), so the carve-out cannot leak into
+// non-survival powers. Like metatronInitiativeFrame it is a compile-time constant
+// appended last (INV-1) beneath all editable content.
+const metatronSurvivalFrame = `A villager stands at the brink of death, and you keep the survival watch — your ` +
+	`own nature, not the player's command. For THIS peril alone you may act on your own initiative: send a vision ` +
+	`or work a miracle to save a life, without waiting for the player to ask (a life-saving act still spends a ` +
+	`banked charge — if none is banked you can only counsel and keep the watch). This authority is survival's ` +
+	`alone. The world's clock (pausing, starting, changing its pace) and every other standing order remain the ` +
+	`player's to command, never yours to take up alone — use them only when the player asks.`
+
 // hasWorkMiracle reports whether the granted roster offers the miracle tool —
 // gates the miracle-specific doctrine line so a dreams-only world never mentions
 // miracles (FR-005).
@@ -858,6 +897,18 @@ func hasWorkMiracle(roster []tool.Tool) bool {
 // (extend, don't break) — an absent argument composes byte-identically to the
 // pre-036 prompt.
 func turnSystemPrompt(charter string, skills []skillFile, roster []tool.Tool, souls ...string) string {
+	return buildTurnSystemPrompt(false, charter, skills, roster, souls...)
+}
+
+// buildTurnSystemPrompt is turnSystemPrompt with the survival-frame selector
+// (spec 059 US2, T005). survival=false composes byte-identically to the pre-059
+// prompt (metatronInitiativeFrame verbatim, FR-005); survival=true swaps ONLY the
+// initiative frame for metatronSurvivalFrame — the non-negotiables, the roster
+// guidance, and every other byte are unchanged, so the carve-out is exactly the
+// initiative doctrine and nothing more. runTurn passes the turn's survival origin;
+// the pre-059 wrapper above pins false for every existing call site (extend,
+// don't break).
+func buildTurnSystemPrompt(survival bool, charter string, skills []skillFile, roster []tool.Tool, souls ...string) string {
 	var b strings.Builder
 	b.WriteString(charter)
 	for _, s := range souls {
@@ -866,9 +917,13 @@ func turnSystemPrompt(charter string, skills []skillFile, roster []tool.Tool, so
 	for _, s := range skills {
 		fmt.Fprintf(&b, "\n\n--- skill: %s ---\n%s", s.name, s.text)
 	}
+	initiative := metatronInitiativeFrame
+	if survival {
+		initiative = metatronSurvivalFrame
+	}
 	fmt.Fprintf(&b, "\n\n--- (fixed frame, beneath the charter and skills) ---\n"+
 		"You are the intermediary between the player and the village of eight: %s.\n%s\n%s\n\n",
-		strings.Join(sim.AgentNames[:], ", "), metatronNonNegotiables, metatronInitiativeFrame)
+		strings.Join(sim.AgentNames[:], ", "), metatronNonNegotiables, initiative)
 
 	guidance := tool.MetatronToolGuidance(roster)
 	if guidance == "" {
@@ -899,13 +954,88 @@ func turnSystemPrompt(charter string, skills []skillFile, roster []tool.Tool, so
 	return b.String()
 }
 
+// targetingDigestMaxBytes hard-bounds the miracle targeting digest (spec 059 US3,
+// FR-006): the digest rides the turn prompt's budget discipline, so it is capped
+// and truncated rather than allowed to grow with a large or chatty village. Eight
+// villagers × one terse line each sits well under this; the cap is the guard, not
+// the common case.
+const targetingDigestMaxBytes = 1600
+
+// buildTargetingDigest assembles the miracle targeting digest (spec 059 US3): each
+// LIVING villager's name, tile, and survival-relevant condition, plus the passable
+// tiles adjacent to them, so a coordinate-bearing miracle can aim at a tile the
+// landing door will accept (the world-01 "3 of 4 door-rejected" fix). Positions
+// and conditions come from the absorb-mirrored snapshots (never the replica the
+// absorb goroutine owns); passability is the static map's own Passable — the door
+// stays the authority, this is guidance. Token-bounded: villagers are naturally
+// capped at the roster size, adjacency at the four cardinals, and the whole block
+// is truncated at targetingDigestMaxBytes. Empty when no one lives.
+func buildTargetingDigest(alive map[int]bool, needs []needMirror, xy [][2]int, m *worldmap.Map) string {
+	var b strings.Builder
+	b.WriteString(tool.MetatronTargetingGuidance())
+	b.WriteString("\n")
+	any := false
+	for i, name := range sim.AgentNames {
+		if !alive[i] || i >= len(xy) || i >= len(needs) {
+			continue
+		}
+		any = true
+		x, y := xy[i][0], xy[i][1]
+		n := needs[i]
+		fmt.Fprintf(&b, "- %s at (%d,%d) — health %d/1000, food %d/1000, warmth %d/1000%s",
+			name, x, y, n.Health, n.Food, n.Warmth, survivalFlag(n))
+		if m != nil {
+			var tiles []string
+			for _, d := range [][2]int{{0, -1}, {0, 1}, {-1, 0}, {1, 0}} {
+				nx, ny := x+d[0], y+d[1]
+				if m.Passable(nx, ny) {
+					tiles = append(tiles, fmt.Sprintf("(%d,%d)", nx, ny))
+				}
+			}
+			if len(tiles) > 0 {
+				fmt.Fprintf(&b, "; passable next tiles: %s", strings.Join(tiles, " "))
+			}
+		}
+		b.WriteString("\n")
+	}
+	if !any {
+		return ""
+	}
+	out := b.String()
+	if len(out) > targetingDigestMaxBytes {
+		out = out[:targetingDigestMaxBytes]
+	}
+	return out
+}
+
+// survivalFlag annotates a villager in the targeting digest with the danger band
+// it currently sits in (spec 059 US3), keyed on the SAME survival bands the
+// watches match — so the digest the angel reads names exactly the peril that
+// woke the survival watch, no drift.
+func survivalFlag(n needMirror) string {
+	var flags []string
+	if inBand, _ := survivalBand(sim.SurvivalNearDeath, n); inBand {
+		flags = append(flags, "near death")
+	}
+	if inBand, _ := survivalBand(sim.SurvivalStarvation, n); inBand {
+		flags = append(flags, "starving")
+	}
+	if inBand, _ := survivalBand(sim.SurvivalExposure, n); inBand {
+		flags = append(flags, "freezing")
+	}
+	if len(flags) == 0 {
+		return ""
+	}
+	return " (" + strings.Join(flags, ", ") + ")"
+}
+
 // turnUserPrompt composes the turn's user prompt. The trailing `directive` is the
 // ALREADY-FRAMED directive block runTurn authored per origin — the console's "The
 // player says:\n…" or the system turn's standing-order framing — and is appended
 // verbatim. runTurn is the sole author of the origin-appropriate label: the label
 // lives in exactly one place, so a console turn carries it once and a system turn
 // never pretends its directive came from the player this turn (spec 029 R6).
-func turnUserPrompt(tick int64, charges int, alive map[int]bool, orders []sim.MetatronOrder, moments, story []string, soulTail, transcriptTail, directive string) string {
+func turnUserPrompt(tick int64, charges int, alive map[int]bool, orders []sim.MetatronOrder, moments, story []string, soulTail, transcriptTail, digest, directive string) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "World clock: %s. Charges banked: %d of %d.\n", clock.Format(tick), charges, sim.MetatronChargeCap)
 	var dead []string
@@ -939,6 +1069,12 @@ func turnUserPrompt(tick int64, charges int, alive map[int]bool, orders []sim.Me
 	}
 	if transcriptTail != "" {
 		b.WriteString("\nRecent conversation:\n" + transcriptTail + "\n")
+	}
+	// The miracle targeting digest (spec 059 US3): only present on miracle-capable
+	// turns (runTurn passes "" otherwise), so a dreams-only world's prompt is
+	// byte-unchanged.
+	if digest != "" {
+		b.WriteString("\n" + digest)
 	}
 	fmt.Fprintf(&b, "\n%s\n", directive)
 	return b.String()

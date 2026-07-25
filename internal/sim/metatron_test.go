@@ -2,6 +2,7 @@ package sim
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/evanstern/promptworld/internal/store"
@@ -426,6 +427,85 @@ func TestMetatronOrderExpiryExecutor(t *testing.T) {
 	// A later tick does not re-emit (the order is no longer active).
 	if got := countType(stepEvents(s, m, o.ExpiresTick+ticksPerGameDay), "metatron.order_expired"); got != 0 {
 		t.Errorf("post-expiry tick re-emitted %d order_expired, want 0", got)
+	}
+}
+
+// TestSurvivalWatchReducer (spec 059 US1, FR-002): a system-origin survival watch
+// is (a) admitted without a valid TTL (non-expiring — the bounds are skipped),
+// (b) exempt from the player-order cap, (c) refused for player cancellation at the
+// door, and (d) skipped by the executor's expiry sweep. An unknown survival kind
+// or a player-origin survival value is refused.
+func TestSurvivalWatchReducer(t *testing.T) {
+	m := worldmap.Generate(7, 32, 32)
+
+	// (a) Non-expiring: a survival watch whose ExpiresTick would be an illegal TTL
+	// (0 days from placed) still lands — the TTL bounds do not apply.
+	s := NewState(7, m)
+	watches := SurvivalWatchDefs(0)
+	for _, o := range watches {
+		if o.ExpiresTick-o.PlacedTick >= MetatronOrderTTLMinDays*ticksPerGameDay {
+			t.Fatalf("fixture %s is not TTL-illegal; the exemption is not being exercised", o.ID)
+		}
+		if err := s.Apply(orderEvent(t, "metatron.order_placed", 0, o)); err != nil {
+			t.Fatalf("survival watch %s refused despite the TTL exemption: %v", o.ID, err)
+		}
+	}
+	if len(s.MetatronOrders) != 3 {
+		t.Fatalf("survival watches landed %d, want 3", len(s.MetatronOrders))
+	}
+
+	// (b) Cap-exempt: the three survival watches stand AND the player may still
+	// place a full cap of player orders.
+	for i := 0; i < MetatronPlayerOrderCap; i++ {
+		id := "ord-p" + string(rune('0'+i))
+		if err := s.Apply(orderEvent(t, "metatron.order_placed", int64(100+i), validOrder(id, "player", int64(100+i)))); err != nil {
+			t.Fatalf("player order %d refused with survival watches standing (cap must count only player orders): %v", i, err)
+		}
+	}
+	if err := s.Apply(orderEvent(t, "metatron.order_placed", 200, validOrder("ord-p3", "player", 200))); err == nil {
+		t.Error("a 4th player order was admitted — the cap must still bite on player orders")
+	}
+
+	// (c) Player cancel of a survival watch refuses at the door, in-fiction-worthy.
+	err := s.Apply(orderEvent(t, "metatron.order_cancelled", 300, OrderIDPayload{ID: "sys-watch-" + SurvivalNearDeath}))
+	if err == nil || !strings.Contains(err.Error(), "survival watch") {
+		t.Errorf("survival watch cancel not refused at the door: %v", err)
+	}
+	// The watch is untouched.
+	for i := range s.MetatronOrders {
+		if s.MetatronOrders[i].ID == "sys-watch-"+SurvivalNearDeath && s.MetatronOrders[i].Status != "active" {
+			t.Errorf("a refused cancel still changed the survival watch: %+v", s.MetatronOrders[i])
+		}
+	}
+
+	// (d) The executor's expiry sweep never expires a survival watch — even far
+	// past any TTL. A clean state with ONLY the survival watches (no player orders
+	// whose real TTLs would legitimately expire and confound the count).
+	sd := NewState(7, m)
+	for _, o := range SurvivalWatchDefs(0) {
+		if err := sd.Apply(orderEvent(t, "metatron.order_placed", 0, o)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got := countType(stepEvents(sd, m, 30*ticksPerGameDay), "metatron.order_expired"); got != 0 {
+		t.Errorf("expiry sweep emitted %d order_expired for standing survival watches, want 0", got)
+	}
+	for i := range sd.MetatronOrders {
+		if sd.MetatronOrders[i].Status != "active" {
+			t.Errorf("survival watch %s no longer active after 30 days: %q", sd.MetatronOrders[i].ID, sd.MetatronOrders[i].Status)
+		}
+	}
+
+	// Unknown / mis-origin survival discriminator is refused.
+	bad := validOrder("ord-bad", "system", 0)
+	bad.Survival = "boredom"
+	if err := NewState(7, m).Apply(orderEvent(t, "metatron.order_placed", 0, bad)); err == nil {
+		t.Error("an unknown survival kind must be refused")
+	}
+	badOrigin := validOrder("ord-bad2", "player", 0)
+	badOrigin.Survival = SurvivalNearDeath
+	if err := NewState(7, m).Apply(orderEvent(t, "metatron.order_placed", 0, badOrigin)); err == nil {
+		t.Error("a player-origin survival watch must be refused")
 	}
 }
 

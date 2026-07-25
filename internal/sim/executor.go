@@ -64,7 +64,10 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 	// reproduces it deterministically without the angel running — unlike a
 	// trigger, which is a live-only injection (a matched condition, never replay).
 	for i := range s.MetatronOrders {
-		if o := &s.MetatronOrders[i]; o.Status == "active" && nextTick >= o.ExpiresTick {
+		// A survival watch (spec 059) never expires — it is the angel's standing
+		// nature, not a timed order — so the expiry sweep skips it (origin-keyed
+		// TTL exemption, matching the reducer's order_placed arm).
+		if o := &s.MetatronOrders[i]; o.Status == "active" && o.Survival == "" && nextTick >= o.ExpiresTick {
 			emit("metatron.order_expired", OrderIDPayload{ID: o.ID})
 		}
 	}

@@ -173,6 +173,10 @@ func (mt *Metatron) cancelOrder(id string, grant grantSet) string {
 			return fmt.Sprintf("I keep no watch called %q", id)
 		case strings.Contains(msg, "not active"):
 			return fmt.Sprintf("the watch %q has already lapsed", id)
+		case strings.Contains(msg, "survival watch"):
+			// A survival watch is the angel's own nature (spec 059 FR-002), not a
+			// player configuration — it cannot be released by the order surface.
+			return "that watch is my own nature — I keep it over every living soul, and I cannot set it aside"
 		default:
 			return "the world would not let me release that watch (" + msg + ")"
 		}
@@ -199,6 +203,82 @@ func orderRefusal(err error) string {
 		return "say the watch more briefly and I will hold it"
 	default:
 		return "the world would not let me set that watch (" + msg + ")"
+	}
+}
+
+// needMirror is the turn-side snapshot of one villager's survival-relevant needs
+// (spec 059): health/food/warmth, refreshed per absorb batch (mirrorState), read
+// by the targeting digest so the turn worker never races the replica.
+type needMirror struct{ Health, Food, Warmth int }
+
+// survivalBand reports, for a survival watch kind and a villager's needs, whether
+// the villager is IN the danger band (fire) and whether it has recovered above the
+// re-arm threshold (clear the latch). The bands REUSE the sim's own doctrine
+// constants (spec 059 FR-008) — no thresholds live here. inBand and rearm are
+// mutually exclusive by the hysteresis gap (band < rearm), so a villager between
+// them (recovering but not yet re-armed) neither fires nor clears — it stays
+// latched, which is the intended debounce.
+func survivalBand(kind string, n needMirror) (inBand, rearm bool) {
+	switch kind {
+	case sim.SurvivalNearDeath:
+		return n.Health < sim.SurvivalNearDeathBelow, n.Health >= sim.SurvivalNearDeathRearm
+	case sim.SurvivalStarvation:
+		return n.Food <= sim.SurvivalStarvingAt, n.Food >= sim.SurvivalStarvingRearm
+	case sim.SurvivalExposure:
+		return n.Warmth <= sim.SurvivalFreezingAt, n.Warmth >= sim.SurvivalFreezingRearm
+	}
+	return false, false
+}
+
+// matchSurvival matches one survival watch against a live event batch (spec 059
+// US1). Unlike the structural orderMatches, it evaluates the danger BAND against
+// agent.needs_changed payloads, with per-villager hysteresis latching so a
+// villager staying in-band does not re-fire the watch every game-minute. Re-arm
+// (recovery) is processed for every villager on every batch regardless of the
+// in-flight marker, so the latch always tracks reality; a FIRE is gated by
+// pendingTrigger (one survival turn per watch in flight, matching the spec's
+// "watches don't queue duplicate turns for the same crisis while one is in
+// flight") and by the per-villager latch. At most one job is enqueued per watch
+// per batch (one survival turn may address any/all villagers in crisis).
+func (mt *Metatron) matchSurvival(o sim.MetatronOrder, batch []store.Event, pending bool) {
+	for _, e := range batch {
+		if e.Type != "agent.needs_changed" {
+			continue
+		}
+		var p sim.NeedsPayload
+		if json.Unmarshal(e.Payload, &p) != nil {
+			continue
+		}
+		inBand, rearm := survivalBand(o.Survival, needMirror{Health: p.Health, Food: p.Food, Warmth: p.Warmth})
+		mt.stateMu.Lock()
+		if rearm {
+			if set := mt.survivalLatch[o.ID]; set != nil {
+				delete(set, p.Agent)
+			}
+			mt.stateMu.Unlock()
+			continue
+		}
+		if !inBand || pending || mt.survivalLatch[o.ID][p.Agent] {
+			mt.stateMu.Unlock()
+			continue
+		}
+		if mt.survivalLatch[o.ID] == nil {
+			mt.survivalLatch[o.ID] = map[int]bool{}
+		}
+		mt.survivalLatch[o.ID][p.Agent] = true
+		mt.pendingTrigger[o.ID] = true
+		mt.stateMu.Unlock()
+		pending = true // one survival turn per watch per batch; keep processing re-arm
+		select {
+		case mt.triggerQ <- triggerJob{order: o, matched: e, matchedType: e.Type, matchedTick: e.Tick}:
+		default:
+			log.Printf("metatron: trigger queue full, survival watch %s dropped", o.ID)
+			mt.stateMu.Lock()
+			delete(mt.pendingTrigger, o.ID)
+			delete(mt.survivalLatch[o.ID], p.Agent)
+			mt.stateMu.Unlock()
+			pending = false
+		}
 	}
 }
 
@@ -315,6 +395,13 @@ func (mt *Metatron) matchOrders(batch []store.Event) {
 		mt.stateMu.Lock()
 		pending := mt.pendingTrigger[o.ID]
 		mt.stateMu.Unlock()
+		// Survival watches (spec 059) use the danger-band matcher with its own
+		// hysteresis latch — re-arm must run even while a turn is in flight, so the
+		// pending short-circuit below does not apply to them.
+		if o.Survival != "" {
+			mt.matchSurvival(o, batch, pending)
+			continue
+		}
 		if pending {
 			continue
 		}
@@ -542,6 +629,14 @@ func (mt *Metatron) runTrigger(job triggerJob) {
 		mt.stateMu.Unlock()
 	}()
 
+	// A survival watch (spec 059 US2) never consumes: it is the angel's standing
+	// nature, not a one-shot order, so it lands NO order_triggered (that would
+	// deactivate it) and runs its own survival-authority turn.
+	if job.order.Survival != "" {
+		mt.runSurvivalTrigger(job)
+		return
+	}
+
 	trig := []store.Event{{Type: "metatron.order_triggered", Payload: mustJSON(sim.OrderTriggeredPayload{
 		ID: job.order.ID, MatchedType: job.matchedType, MatchedTick: job.matchedTick})}}
 	if err := mt.social.InjectSocial(trig); err != nil {
@@ -572,6 +667,88 @@ func (mt *Metatron) runTrigger(job triggerJob) {
 		return
 	}
 	mt.queueMoment(mt.triggeredMoment(job.matchedTick, job.order, res))
+}
+
+// runSurvivalTrigger runs a survival watch's turn (spec 059 US2). It differs from
+// runTrigger in three ways that follow from a survival watch's nature:
+//
+//  1. NO order_triggered — the watch is non-expiring and non-consuming, so it
+//     stays active for the world's whole life (the authority trail is the soul
+//     line + transcript + moment, all attributed to the survival duty, FR-007).
+//  2. NO empty-bank short-circuit — the turn ALWAYS runs (edge case: "the turn
+//     still happens … it must not burn the match silently — record the helpless
+//     turn"). At zero charges every acting tool refuses in-fiction and the angel
+//     narrates helplessly; the transcript + a helpless moment are the record.
+//  3. The frame carries the survival-authority carve-out (turnOrigin.survival),
+//     and the seed names the endangered villager + peril so the angel can aim.
+func (mt *Metatron) runSurvivalTrigger(job triggerJob) {
+	agent := survivalMatchedAgent(job.matched)
+	name := "a villager"
+	if agent >= 0 && agent < len(sim.AgentNames) {
+		name = sim.AgentNames[agent]
+	}
+	peril := survivalPeril(job.order.Survival)
+	mt.appendFile(mt.soulPath(), fmt.Sprintf("\n- %s — the survival watch woke me: %s is %s\n",
+		clock.Format(job.matchedTick), name, peril))
+
+	if !mt.acquireTurnBusy() {
+		mt.queueMoment(fmt.Sprintf("%s — the survival watch woke (%s is %s), but I was too long attending another matter to act.",
+			clock.Format(job.matchedTick), name, peril))
+		return
+	}
+	seed := fmt.Sprintf("The survival watch has woken you: %s is %s and may die. %s",
+		name, peril, job.order.Action)
+	res, err := mt.runTurn(context.Background(), turnOrigin{system: true, survival: true, jobPrefix: "watch", seed: seed})
+	mt.turnBusy.Store(false)
+
+	if err != nil {
+		mt.queueMoment(mt.degradedMoment(job.matchedTick, err))
+		return
+	}
+	mt.queueMoment(mt.survivalMoment(job.matchedTick, name, peril, res))
+}
+
+// survivalPeril renders a survival watch kind as the villager's plight, for the
+// soul/moment trail (spec 059 US2 attribution).
+func survivalPeril(kind string) string {
+	switch kind {
+	case sim.SurvivalNearDeath:
+		return "near death"
+	case sim.SurvivalStarvation:
+		return "starving"
+	case sim.SurvivalExposure:
+		return "freezing"
+	}
+	return "in mortal danger"
+}
+
+// survivalMatchedAgent decodes the endangered villager index from the survival
+// watch's matched agent.needs_changed event (-1 if unreadable).
+func survivalMatchedAgent(e store.Event) int {
+	var p sim.NeedsPayload
+	if json.Unmarshal(e.Payload, &p) != nil {
+		return -1
+	}
+	return p.Agent
+}
+
+// survivalMoment renders the model-free moment describing a completed survival
+// turn (spec 059 US2/FR-007): it names the life-saving act when one landed, else
+// records that the watch woke and the angel could do nothing — the "helpless turn"
+// the spec insists is recorded, never silent. Every branch attributes the moment
+// to the survival watch.
+func (mt *Metatron) survivalMoment(tick int64, name, peril string, r TurnResult) string {
+	switch {
+	case r.Nudge != nil:
+		return fmt.Sprintf("%s — the survival watch woke (%s is %s): I sent a %s to %s.",
+			clock.Format(tick), name, peril, r.Nudge.Form, strings.Join(r.Nudge.Targets, ", "))
+	case r.Miracle != nil:
+		return fmt.Sprintf("%s — the survival watch woke (%s is %s): I worked a miracle — %s.",
+			clock.Format(tick), name, peril, r.Miracle.Summary)
+	default:
+		return fmt.Sprintf("%s — the survival watch woke (%s is %s), but I could do nothing to save them.",
+			clock.Format(tick), name, peril)
+	}
 }
 
 // knownActEmptyBank reports whether an order's action is a KNOWN charge-spending
