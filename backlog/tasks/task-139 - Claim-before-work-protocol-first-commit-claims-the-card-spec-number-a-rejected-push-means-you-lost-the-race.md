@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-25 20:22'
-updated_date: '2026-07-25 22:19'
+updated_date: '2026-07-25 22:31'
 labels:
   - gates
   - process
@@ -40,7 +40,7 @@ Spec: specs/065-claim-before-work
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Doctrine in CLAUDE.md + runbook template: first commit claims card and spec number, pushed immediately; a rejected push is a stop-the-lane signal
+- [x] #1 Doctrine in CLAUDE.md + runbook template: first commit claims card and spec number, pushed immediately; a rejected push is a stop-the-lane signal
 - [x] #2 check-merge-drift worktree mode warns when the task card is not In Progress on origin/main
 - [x] #3 Creating a specs/NNN-* whose number is already taken on origin/main is blocked at claim time, not detected after
 - [x] #4 Task branches push on first commit so in-flight work is auditable from any clone
@@ -62,4 +62,6 @@ Tier decision: Opus 4.8 (rubric: doctrine-adjacent behavior change — modifies 
 Implementation complete on task-139-claim-before-work (Opus 4.8 spec-implementer): claim mode, worktree --task card check + claim-aware --spec, session branch-unpushed, pre-bash spec-dir matchers + new pre-write hook (Write|Edit), CLAUDE.md doctrine block, two-clone race simulation (10 tests; 14/14 suite green post-rebase). PR #97 open — merge held: operator permission required in this session. Implementer found+fixed git ls-tree C-quoting bug on non-ASCII card filenames. T014: no wiki notes pin the touched files — no wiki-update needed. AC #1 half-landed (CLAUDE.md in PR); runbook-template half + T011 pending in praxis repo.
 
 spec-bridge sync: Setup: 1/1 · Foundational (blocking prerequisites for the gate stories): 2/2 · User Story 2 — the gates stop the second session mechanically (P1) 🎯 MVP: 5/5 · User Story 3 — in-flight work auditable from any clone (P2): 1/1 · User Story 1 — doctrine: the protocol itself (P1): 1/2 · User Story 4 — two-session race simulation (P2): 1/1 · Polish & cross-cutting: 2/2
+
+Companion landed: praxisflux TASK-47 / PR #55 merged (merge commit c9c209b) — sweep runbook template now carries the claim-before-work doctrine; sweep skill 0.2.0→0.3.0, marketplace 0.12.1→0.13.0, praxis wiki re-pinned (25/25 fresh), per-task course docs/courses/TASK-47 gate-green, 157/157 tests. AC #1 fully proven. All 14 spec tasks ticked — spec derives Done-eligible; holding In Progress until PR #97 merges (operator) so status never exceeds merged artifacts.
 <!-- SECTION:NOTES:END -->
