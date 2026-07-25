@@ -45,12 +45,12 @@ type v1State struct {
 	Structures      []sim.Structure `json:"structures,omitempty"`
 	Relations       []sim.Relation  `json:"relations,omitempty"`
 	Debts           []sim.Debt      `json:"debts,omitempty"`
-	MetatronCharges int             `json:"metatron_charges"`
+	GuardianCharges int             `json:"metatron_charges"`
 }
 
 // v1StateJSON builds a representative v1 covering-snapshot state: eight souls
 // (one carrying wood+legacy-food with a mid-flight intent, one near-death), a
-// standing fire, an open debt and a relation, and Metatron charges.
+// standing fire, an open debt and a relation, and Guardian charges.
 func v1StateJSON(t *testing.T, seed uint64, tick int64) []byte {
 	t.Helper()
 	agents := make([]v1Agent, sim.AgentCount)
@@ -80,7 +80,7 @@ func v1StateJSON(t *testing.T, seed uint64, tick int64) []byte {
 		Structures:      []sim.Structure{{Kind: "fire", X: 10, Y: 10}},
 		Relations:       []sim.Relation{{From: 0, To: 1, Trust: 250, Affection: 150}},
 		Debts:           []sim.Debt{{ID: 1, Debtor: 0, Creditor: 1, Kind: "food", Due: tick + 3600, Status: "open"}},
-		MetatronCharges: 3,
+		GuardianCharges: 3,
 	}
 	b, err := json.Marshal(vs)
 	if err != nil {
@@ -213,8 +213,8 @@ func TestMigrateHappyPath(t *testing.T) {
 	if len(s.Structures) != 0 {
 		t.Errorf("structures should reset, got %+v", s.Structures)
 	}
-	if len(s.Relations) != 1 || len(s.Debts) != 1 || s.MetatronCharges != 3 {
-		t.Errorf("fabric not carried: rel=%v debt=%v charges=%d", s.Relations, s.Debts, s.MetatronCharges)
+	if len(s.Relations) != 1 || len(s.Debts) != 1 || s.GuardianCharges != 3 {
+		t.Errorf("fabric not carried: rel=%v debt=%v charges=%d", s.Relations, s.Debts, s.GuardianCharges)
 	}
 	// Outcrops exist in the reborn land (the format break's whole point).
 	if m.CountKind(worldmap.Rock) == 0 {
@@ -438,7 +438,7 @@ func v2StateJSON(t *testing.T, seed uint64, tick int64) []byte {
 		Cleared:         []sim.Point{{X: 2, Y: 2}},
 		Harvested:       []sim.Harvest{{X: 3, Y: 3, Regrow: tick + 1000}},
 		Relations:       []sim.Relation{{From: 0, To: 1, Trust: 250, Affection: 150}},
-		MetatronCharges: 3,
+		GuardianCharges: 3,
 	}
 	return s.Marshal()
 }
@@ -527,8 +527,8 @@ func TestMigrateV2HappyPath(t *testing.T) {
 	if len(s.Quarried) != 1 || len(s.Cleared) != 1 || len(s.Harvested) != 1 {
 		t.Errorf("overlays should carry verbatim: q=%v c=%v h=%v", s.Quarried, s.Cleared, s.Harvested)
 	}
-	if len(s.Relations) != 1 || s.MetatronCharges != 3 {
-		t.Errorf("fabric not carried: rel=%v charges=%d", s.Relations, s.MetatronCharges)
+	if len(s.Relations) != 1 || s.GuardianCharges != 3 {
+		t.Errorf("fabric not carried: rel=%v charges=%d", s.Relations, s.GuardianCharges)
 	}
 	// Positions verbatim — exact coordinates, no re-placement.
 	if s.Agents[0].X != 5 || s.Agents[0].Y != 5 || s.Agents[3].X != 9 || s.Agents[3].Y != 9 {
@@ -755,7 +755,7 @@ func v3StateJSON(t *testing.T, seed uint64, tick int64) []byte {
 		Agents:          agents,
 		Structures:      []sim.Structure{{Kind: "fire", X: 10, Y: 10, FuelUntil: 5000}},
 		Piles:           []sim.Pile{{X: 12, Y: 12, Wood: 4}},
-		MetatronCharges: 3,
+		GuardianCharges: 3,
 	}
 	return s.Marshal()
 }

@@ -443,7 +443,7 @@ func TestOversizedRawLineFailsFastNotForever(t *testing.T) {
 }
 
 // TestMiracleMoveRoundTrip (spec 016 T011): the operator "miracle" command
-// lands a villager move over the wire on a pure-sim world (no LLM/angel), spends
+// lands a villager move over the wire on a pure-sim world (no LLM/guardian), spends
 // a charge, and the move is visible in the next state fetch. The world is paused
 // first so the villagers hold still for a deterministic before/after.
 func TestMiracleMoveRoundTrip(t *testing.T) {
@@ -583,8 +583,8 @@ func TestMiracleForcedMoveZeroBank(t *testing.T) {
 	if err := json.Unmarshal(sd2.State, &after); err != nil {
 		t.Fatal(err)
 	}
-	if after.MetatronCharges != 0 {
-		t.Errorf("state bank = %d after forced move, want 0", after.MetatronCharges)
+	if after.GuardianCharges != 0 {
+		t.Errorf("state bank = %d after forced move, want 0", after.GuardianCharges)
 	}
 	if after.Agents[0].X != ax || after.Agents[0].Y != ay {
 		t.Errorf("forced move did not land: agent 0 at (%d,%d), want (%d,%d)", after.Agents[0].X, after.Agents[0].Y, ax, ay)

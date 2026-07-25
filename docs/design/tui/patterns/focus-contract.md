@@ -2,7 +2,7 @@
 title: Pattern — focus contract
 class: pattern
 status: shipped
-verified_against: c8906da39be3a5b861c2272af37db0a83dcded7a
+verified_against: c8d80800fc5d34c5c31ab54751ebfb3ba80efc5b
 sources:
   - internal/tui/tui.go
 ---
@@ -10,8 +10,9 @@ sources:
 # Pattern: focus contract
 
 Who owns the keyboard, when. This replaces the current rule at
-`internal/tui/tui.go:305-309` ("the metatron console owns the keyboard while the
-pane is active"), which traps users: once pane 3 is active, `1–4`, `q`, and
+`internal/tui/tui.go:305-309`
+(`the metatron console owns the keyboard while the pane is active` — the
+historical rule, quoted verbatim), which traps users: once pane 3 is active, `1–4`, `q`, and
 spacebar-pause are silently swallowed and only an undiscoverable `esc` (or
 `ctrl+c`) escapes.
 

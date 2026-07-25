@@ -193,12 +193,12 @@ func RestrictEnum(t Tool, param string, allowed []string) Tool {
 	return t
 }
 
-// metatronToolDesc is the one-line human gloss rendered beside each metatron
+// guardianToolDesc is the one-line human gloss rendered beside each guardian
 // acting tool's name in the derived guidance. Keyed, so a tool absent from the
 // granted roster contributes no line (spec 021 FR-005/FR-008). This map supplies
 // only the "what it does" prose; the tool NAMES, ARGUMENT surfaces, and COSTS in
 // the guidance all derive from the registry, so described ≡ declared.
-var metatronToolDesc = map[string]string{
+var guardianToolDesc = map[string]string{
 	"send_vision":     "a waking vision for ONE living villager, at any hour",
 	"send_omen":       "an omen at night for one villager, a named group, or everyone",
 	"monitor_and_act": "place a standing order: watch for a condition, then act",
@@ -221,8 +221,8 @@ var miracleKindArgs = map[string]string{
 	"time_snap": `day and time ("HH:MM")`,
 }
 
-// MetatronToolGuidance renders the human-shaped acting-tool guidance for the
-// metatron turn prompt FROM the granted roster (spec 021 R6 / FR-008): one
+// GuardianToolGuidance renders the human-shaped acting-tool guidance for the
+// guardian turn prompt FROM the granted roster (spec 021 R6 / FR-008): one
 // bullet per tool, in roster order, naming the tool, its argument surface (from
 // Params — the same source InputSchema derives from), and its charge cost (from
 // the authoritative MiracleCost table for miracle kinds, Cost.Charges for the
@@ -232,15 +232,15 @@ var miracleKindArgs = map[string]string{
 // can never drift from the enforced one. Output is deterministic: roster order
 // and each tool's own Enum/Params slices drive every list; no map is iterated
 // into the output. Empty for an empty roster (a conversation-only world).
-func MetatronToolGuidance(roster []Tool) string {
+func GuardianToolGuidance(roster []Tool) string {
 	var b strings.Builder
 	for _, t := range roster {
 		// A registry tool renders its hand-written gloss; a BUNDLE tool (spec 036
 		// T012) is absent from this map, so it falls back to its own PromptGloss +
 		// param surface. The fallback is byte-inert for every map-covered tool —
 		// `ok` is true for all of them, so this branch never runs for a built-in
-		// and the shipped guidance stays byte-identical (TestMetatronToolGuidance*).
-		desc, ok := metatronToolDesc[t.Name]
+		// and the shipped guidance stays byte-identical (TestGuardianToolGuidance*).
+		desc, ok := guardianToolDesc[t.Name]
 		if !ok {
 			desc = t.PromptGloss
 		}
@@ -258,17 +258,20 @@ func MetatronToolGuidance(roster []Tool) string {
 	return b.String()
 }
 
-// MetatronTargetingGuidance is the one-line instruction that introduces the
+// GuardianTargetingGuidance is the one-line instruction that introduces the
 // miracle targeting digest in a miracle-capable turn's prompt (spec 059 US3,
 // FR-006): it tells the model the village's live positions and passability follow
 // and that coordinate-bearing miracles (move/remove) must aim at listed tiles, so
 // a miracle stops dying at the door on invalid coordinates. Additive and static —
 // the digest DATA is assembled turn-side (the tool package has no world state);
-// this is only the prose pointer, kept here beside MetatronToolGuidance so the
+// this is only the prose pointer, kept here beside GuardianToolGuidance so the
 // miracle-guidance vocabulary has one home.
-func MetatronTargetingGuidance() string {
-	return "Aim your miracles: the village's living positions, conditions, and the " +
-		"passable tiles around each villager follow below. A miracle that names " +
+func GuardianTargetingGuidance() string {
+	// Prompt-side prose (spec 052 sweep): "working" is the display vocabulary
+	// for the frozen work_miracle tool family; the tool id itself is what the
+	// model calls.
+	return "Aim your workings: the village's living positions, conditions, and the " +
+		"passable tiles around each villager follow below. A working (work_miracle) that names " +
 		"coordinates (move, remove) must target a tile listed there, or the world " +
 		"will reject it."
 }

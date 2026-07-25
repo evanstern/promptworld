@@ -39,7 +39,9 @@ var registry = map[string]DecisionClass{
 	"meeting":       {Class: "meeting", Points: 2, BudgetTicks: 3600, Degrade: DegradeTemplate},
 	"consolidation": {Class: "consolidation", Points: 5, BudgetTicks: 28800, Degrade: DegradeSkip},
 	"chronicle":     {Class: "chronicle", Points: 5, BudgetTicks: 86400, Degrade: DegradeSkip},
-	"metatron":      {Class: "metatron", Points: 5, BudgetTicks: 86400, Degrade: DegradeSkip},
+	// The "metatron" class/kind strings are FROZEN (spec 052 ruling 2):
+	// recorded cog.* payloads carry the class, and llm.json routes the kind.
+	"metatron": {Class: "metatron", Points: 5, BudgetTicks: 86400, Degrade: DegradeSkip},
 }
 
 // kindToClass maps every llm call kind (as a string, keeping this package
@@ -53,7 +55,7 @@ var kindToClass = map[string]string{
 	"narrator":      "chronicle",
 	"drama":         "chronicle",
 	"metatron":      "metatron",
-	// The angel's fuzzy-order watch confirm (spec 029) shares the metatron
+	// The guardian's fuzzy-order watch confirm (spec 029) shares the guardian
 	// decision class: same actor, DegradeSkip (an unconfirmed/failed confirm
 	// leaves the order armed — nothing runs), long staleness budget (the confirm
 	// is event-triggered, never cadence-scheduled). Reusing the class keeps this

@@ -30,16 +30,16 @@ Usage:
   promptworld start <world>                        start a detached daemon
   promptworld stop <world>                         gracefully stop the daemon
   promptworld status <world> [--json]              report world/daemon status
-  promptworld ui <world>                           full-screen TUI (map, chronicle, metatron, villagers)
+  promptworld ui <world>                           full-screen TUI (map, chronicle, guardian, villagers)
   promptworld attach <world>                       line-mode event stream + commands
   promptworld tail <world> [--since SEQ] [--follow] print events from the log
   promptworld pause <world>                        pause game time
   promptworld resume <world>                       resume game time
   promptworld speed <world> <1x|4x|8x|16x|32x|max>     set game speed
   promptworld teaching <world> [on|off]            show or toggle the teaching-world posture (applies at next daemon start)
-  promptworld metatron <world> [message...]        converse with the angel (no message: status peek)
-  promptworld miracle <world> <snap-time|give|move|remove> ... [--force]
-                                                   land a Metatron miracle (--force waives the charge)
+  promptworld guardian <world> [message...]        converse with the guardian (no message: status peek)
+  promptworld work <world> <snap-time|give|move|remove> ... [--force]
+                                                   land a guardian working (--force waives the charge)
   promptworld llm <world> <kind> <prompt...>       one-shot LLM call via the daemon; prints the
                                                    serving provider and any fallback skips
                                                    (kinds: planner, conversation,
@@ -55,61 +55,72 @@ Usage:
                                                    and your earned state
 `
 
+// dispatch resolves a subcommand name to its handler. Canonical names only in
+// the usage text above; the pre-052 fiction names (`guardian`, `miracle`)
+// stay as HIDDEN, fully functional compatibility aliases (spec 052 FR-008) —
+// old scripts and habits keep working forever, the frozen-vocabulary ruling.
+func dispatch(cmd string) (func([]string) error, bool) {
+	switch cmd {
+	case "new":
+		return cmdNew, true
+	case "migrate":
+		return cmdMigrate, true
+	case "ps":
+		return cmdPs, true
+	case "daemon":
+		return cmdDaemon, true
+	case "start":
+		return cmdStart, true
+	case "stop":
+		return cmdStop, true
+	case "status":
+		return cmdStatus, true
+	case "ui":
+		return cmdUI, true
+	case "attach":
+		return cmdAttach, true
+	case "tail":
+		return cmdTail, true
+	case "pause":
+		return func(args []string) error { return cmdTimeCtl("pause", args) }, true
+	case "resume":
+		return func(args []string) error { return cmdTimeCtl("resume", args) }, true
+	case "speed":
+		return cmdSpeed, true
+	case "teaching":
+		return cmdTeaching, true
+	case "llm":
+		return cmdLLM, true
+	case "calibrate":
+		return cmdCalibrate, true
+	case "divergence":
+		return cmdDivergence, true
+	case "stages":
+		return cmdStages, true
+	case "guardian", "metatron": // "metatron" is the hidden compat alias (spec 052 FR-008)
+		return cmdGuardian, true
+	case "work", "miracle": // "miracle" is the hidden compat alias (spec 052 FR-008)
+		return cmdWork, true
+	}
+	return nil, false
+}
+
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Fprint(os.Stderr, usage)
 		os.Exit(2)
 	}
 	cmd, args := os.Args[1], os.Args[2:]
-	var err error
-	switch cmd {
-	case "new":
-		err = cmdNew(args)
-	case "migrate":
-		err = cmdMigrate(args)
-	case "ps":
-		err = cmdPs(args)
-	case "daemon":
-		err = cmdDaemon(args)
-	case "start":
-		err = cmdStart(args)
-	case "stop":
-		err = cmdStop(args)
-	case "status":
-		err = cmdStatus(args)
-	case "ui":
-		err = cmdUI(args)
-	case "attach":
-		err = cmdAttach(args)
-	case "tail":
-		err = cmdTail(args)
-	case "pause":
-		err = cmdTimeCtl("pause", args)
-	case "resume":
-		err = cmdTimeCtl("resume", args)
-	case "speed":
-		err = cmdSpeed(args)
-	case "teaching":
-		err = cmdTeaching(args)
-	case "llm":
-		err = cmdLLM(args)
-	case "calibrate":
-		err = cmdCalibrate(args)
-	case "divergence":
-		err = cmdDivergence(args)
-	case "stages":
-		err = cmdStages(args)
-	case "metatron":
-		err = cmdMetatron(args)
-	case "miracle":
-		err = cmdMiracle(args)
-	case "help", "-h", "--help":
+	if cmd == "help" || cmd == "-h" || cmd == "--help" {
 		fmt.Print(usage)
-	default:
+		return
+	}
+	fn, ok := dispatch(cmd)
+	if !ok {
 		fmt.Fprintf(os.Stderr, "promptworld: unknown command %q\n\n%s", cmd, usage)
 		os.Exit(2)
 	}
-	if err != nil {
+	if err := fn(args); err != nil {
 		fmt.Fprintf(os.Stderr, "promptworld %s: %v\n", cmd, err)
 		os.Exit(1)
 	}

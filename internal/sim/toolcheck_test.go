@@ -99,7 +99,7 @@ func TestWhitelistDiffIdentical(t *testing.T) {
 		"agent.thought":           true,
 		"chronicle.entry":         true,
 		"metatron.nudged":         true,
-		// Spec 016 (metatron miracles) deliberately widens the isolation
+		// Spec 016 (guardian miracles) deliberately widens the isolation
 		// boundary by four recorded miracle event types (contracts §4). They
 		// land through the same InjectSocial door as the nudge; they are NOT
 		// registry-tool events (see the registry-doctrine note below), so they
@@ -119,7 +119,7 @@ func TestWhitelistDiffIdentical(t *testing.T) {
 		// whitelist by ValidateToolCoverage).
 		"journal.entry_written": true,
 		"journal.entry_deleted": true,
-		// Spec 029 (metatron agency) widens the boundary by the injected standing-
+		// Spec 029 (guardian agency) widens the boundary by the injected standing-
 		// order events. order_placed / order_cancelled are the monitor_and_act /
 		// cancel_order tool Events (pinned ⊆ this whitelist by ValidateToolCoverage);
 		// order_triggered is the trigger worker's injection. order_expired is

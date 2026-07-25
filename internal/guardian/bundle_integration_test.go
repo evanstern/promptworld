@@ -1,4 +1,4 @@
-package metatron
+package guardian
 
 import (
 	"context"
@@ -34,15 +34,15 @@ func bundleWorld(t *testing.T, name string) *bundle.BundleSet {
 	return bs
 }
 
-// TestBundleTeleportEndToEnd is US1 / quickstart Scenario 1 through the metatron
+// TestBundleTeleportEndToEnd is US1 / quickstart Scenario 1 through the guardian
 // turn seam (T016): a world with the declarative teleport bundle puts `teleport`
-// on the angel's roster with its derived schema, and invoking it moves the target
+// on the guardian's roster with its derived schema, and invoking it moves the target
 // villager, narrates to every living villager, and lands only the declared event
 // types — the whole declarative pipeline, boot-frozen set through turn assembly.
 func TestBundleTeleportEndToEnd(t *testing.T) {
-	mt, orch, inj, _ := newTestAngel(t, "It is done.")
+	mt, orch, inj, _ := newTestGuardian(t, "It is done.")
 	mt.SetBundles(bundleWorld(t, "declarative"))
-	inj.state.MetatronCharges = 3
+	inj.state.GuardianCharges = 3
 
 	// The derived schema is correct: required target/x/y over the roster tool.
 	bt := mt.bundles.Roster()[0]
@@ -62,7 +62,7 @@ func TestBundleTeleportEndToEnd(t *testing.T) {
 	if ax == bx && ay == by {
 		t.Skip("fixture seed placed Ash and Birch on the same tile")
 	}
-	before := inj.state.MetatronCharges
+	before := inj.state.GuardianCharges
 	living := len(inj.state.LivingAgents())
 
 	mt.runLoop = actLoop(mt, "teleport", fmt.Sprintf(`{"target":"Ash","x":%d,"y":%d}`, bx, by))
@@ -70,7 +70,7 @@ func TestBundleTeleportEndToEnd(t *testing.T) {
 		t.Fatalf("Turn: %v", err)
 	}
 
-	// The teleport tool named itself on the angel's turn surface (roster ⇒
+	// The teleport tool named itself on the guardian's turn surface (roster ⇒
 	// guidance via the PromptGloss fallback, T012).
 	sys := orch.requests()[0].System
 	if !strings.Contains(sys, "teleport(target, x, y)") {
@@ -82,8 +82,8 @@ func TestBundleTeleportEndToEnd(t *testing.T) {
 		t.Errorf("Ash at (%d,%d), want (%d,%d)", inj.state.Agents[0].X, inj.state.Agents[0].Y, bx, by)
 	}
 	// A charge was spent by the move (reducer-authoritative — no turn-side gate).
-	if inj.state.MetatronCharges >= before {
-		t.Errorf("charges = %d, want < %d (a charge should have been spent)", inj.state.MetatronCharges, before)
+	if inj.state.GuardianCharges >= before {
+		t.Errorf("charges = %d, want < %d (a charge should have been spent)", inj.state.GuardianCharges, before)
 	}
 	// Every living villager gained the narration memory; only declared types landed.
 	got := 0
@@ -113,9 +113,9 @@ func TestBundleTeleportEndToEnd(t *testing.T) {
 // TestBundleBootRejectionReachesRoster is US1 / quickstart Scenario 2 (T018): a
 // world with one valid and one off-whitelist bundle tool boots; the BootReport
 // names the offending file + rule (T3), and the VALID sibling still reaches the
-// angel's turn roster while the rejected tool is absent everywhere.
+// guardian's turn roster while the rejected tool is absent everywhere.
 func TestBundleBootRejectionReachesRoster(t *testing.T) {
-	mt, orch, _, _ := newTestAngel(t, "All is well.")
+	mt, orch, _, _ := newTestGuardian(t, "All is well.")
 	bs := bundleWorld(t, "offwhitelist")
 	mt.SetBundles(bs)
 
@@ -147,7 +147,7 @@ func TestBundleBootRejectionReachesRoster(t *testing.T) {
 		t.Fatalf("roster = %v, want [goodtool]", names)
 	}
 
-	// The valid tool reaches the angel's turn surface; the rejected one never does.
+	// The valid tool reaches the guardian's turn surface; the rejected one never does.
 	mt.runLoop = converseLoop(mt)
 	if _, err := mt.Turn(context.Background(), "what can you do?"); err != nil {
 		t.Fatalf("Turn: %v", err)
@@ -175,7 +175,7 @@ func TestBundleCastLightNightVsDay(t *testing.T) {
 	const dayText = "The light is invisible in daylight."
 
 	t.Run("night", func(t *testing.T) {
-		mt, _, inj, _ := newTestAngel(t, "the light is cast")
+		mt, _, inj, _ := newTestGuardian(t, "the light is cast")
 		mt.SetBundles(bundleWorld(t, "scripted"))
 		mt.replica.Tick = nightTick
 		mt.mirrorState()
@@ -202,7 +202,7 @@ func TestBundleCastLightNightVsDay(t *testing.T) {
 	})
 
 	t.Run("day", func(t *testing.T) {
-		mt, _, inj, _ := newTestAngel(t, "the light is cast")
+		mt, _, inj, _ := newTestGuardian(t, "the light is cast")
 		mt.SetBundles(bundleWorld(t, "scripted"))
 		mt.replica.Tick = dayTick
 		mt.mirrorState()
@@ -235,7 +235,7 @@ func TestBundleCastLightNightVsDay(t *testing.T) {
 // (clarification #1) while the SOUL fragment, the grant narrowing, and the
 // valid tool all stay active — a per-tool failure never rejects the persona.
 func TestBundlePersonaComposesIdentityGrantAndTools(t *testing.T) {
-	mt, orch, _, _ := newTestAngel(t, "As you wish.")
+	mt, orch, _, _ := newTestGuardian(t, "As you wish.")
 	bs := bundleWorld(t, "persona")
 	mt.SetBundles(bs)
 

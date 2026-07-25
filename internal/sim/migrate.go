@@ -87,10 +87,10 @@ type legacyState struct {
 	NextDebtID   int        `json:"next_debt_id,omitempty"`
 	NextRumorID  int        `json:"next_rumor_id,omitempty"`
 	NextBeliefID int        `json:"next_belief_id,omitempty"`
-	// Conversation ring, chronicle ring, Metatron's bank (carried verbatim).
+	// Conversation ring, chronicle ring, Guardian's bank (carried verbatim).
 	Conversations   []ConvoRecord    `json:"conversations,omitempty"`
 	Chronicle       []ChronicleEntry `json:"chronicle,omitempty"`
-	MetatronCharges int              `json:"metatron_charges"`
+	GuardianCharges int              `json:"metatron_charges"`
 	// Governance/charter: the norms and their id counters carry; the in-flight
 	// Meeting session and the MeetingConvention/Place are reset (re-seeded from
 	// world.json on next boot, or re-emerge).
@@ -138,10 +138,10 @@ func MigrateState(v1 *legacyState, m *worldmap.Map) *State {
 		NextDebtID:   v1.NextDebtID,
 		NextRumorID:  v1.NextRumorID,
 		NextBeliefID: v1.NextBeliefID,
-		// Conversation ring, chronicle ring, Metatron bank — carried verbatim.
+		// Conversation ring, chronicle ring, Guardian bank — carried verbatim.
 		Conversations:   v1.Conversations,
 		Chronicle:       v1.Chronicle,
-		MetatronCharges: v1.MetatronCharges,
+		GuardianCharges: v1.GuardianCharges,
 		// Governance: norms + charter carry; the meeting session/convention are
 		// reset (nil) — MeetingConvention/MeetingPlace/Meeting left zero.
 		Norms:          v1.Norms,

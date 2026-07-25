@@ -81,7 +81,7 @@ func leaseConfig(url string, capacity, parallel int) Config {
 			string(KindConsolidation): {Chain: []string{"shared"}},
 			string(KindNarrator):      {Chain: []string{"shared"}},
 			string(KindDrama):         {Chain: []string{"shared"}},
-			string(KindMetatron):      {Chain: []string{"shared"}},
+			string(KindGuardian):      {Chain: []string{"shared"}},
 		},
 	}
 }

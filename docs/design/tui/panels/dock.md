@@ -2,7 +2,7 @@
 title: Panel — dock (tab container)
 class: panel
 status: shipped
-verified_against: cb89a4c7811962243ac907e0aeed43619b4d4f2d
+verified_against: c8d80800fc5d34c5c31ab54751ebfb3ba80efc5b
 sources:
   - internal/tui/tui.go
   - internal/tui/views.go
@@ -15,7 +15,7 @@ Since this feature (D10, the skin-boundary-as-file-boundary ruling), tab
 *content* is documented on its own per-tab page, not here:
 
 - [guardian.md](guardian.md) — fiction-layer tab content (transcript, standing
-  orders, instruction surface, miracle feedback)
+  orders, instruction surface, working feedback)
 - [systems.md](systems.md) — engine telemetry (never skinned)
 - [villagers.md](villagers.md) — the villagers roster/detail/decisions tab
 
@@ -66,10 +66,10 @@ seam — the same container regardless of which tab is active.
 |---|---|---|---|---|---|---|
 | tab row | active · inactive | `Model.dockTab` | `dockTabsRow` | `2`/`3`/`4`/`5` select · — | TASK-34 | — |
 | chronicle tab label | active · inactive | `Model.dockTab` | `dockTabsRow` | `2` · — | TASK-34 | — |
-| guardian tab label | active · inactive · unseen-badge | `Model.dockTab`, `Model.metatronUnseen` | `dockTabsRow` | `3` · — | TASK-34 | `skin.guardian.tab_label` |
+| guardian tab label | active · inactive · unseen-badge | `Model.dockTab`, `Model.guardianUnseen` | `dockTabsRow` | `3` · — | TASK-34 | `skin.guardian.tab_label` |
 | villagers tab label | active · inactive | `Model.dockTab` | `dockTabsRow` | `4` · — | spec 015 | — |
 | systems tab label | active · inactive | `Model.dockTab` | `dockTabsRow` | `5` · — | spec 053 | — |
-| unseen-reply badge dot | shown · hidden | `Model.metatronUnseen` | `dockTabsRow` | — (display-only) | TASK-34 | — |
+| unseen-reply badge dot | shown · hidden | `Model.guardianUnseen` | `dockTabsRow` | — (display-only) | TASK-34 | — |
 | tab-switch → solo zoom | home,tab=k · solo(k) | `Model.solo`, `Model.dockTab` | `selectTab`, `widescreenView` | same key twice · — | TASK-34 | — |
 | solo → home / switch | solo(k) · home | `Model.solo` | `selectTab` | `1`/`esc` (home) · a different tab key (switch) · — | TASK-34 | — |
 | dock panel chrome | dormant border | — (static box) | `dockPanelView` | — | TASK-34 | — |

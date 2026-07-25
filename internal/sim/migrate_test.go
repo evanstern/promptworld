@@ -11,7 +11,7 @@ import (
 // needs, memories, beliefs, carried wood+legacy-food, a mid-flight intent and
 // an asleep flag (both must reset), one near-death latch (must carry), plus the
 // social/governance fabric (relations, an open debt, a rumor, a chronicle
-// entry, Metatron charges, a norm) that the migration carries verbatim.
+// entry, Guardian charges, a norm) that the migration carries verbatim.
 func buildV1Fixture(seed uint64, tick int64) *legacyState {
 	agents := make([]legacyAgent, AgentCount)
 	for i := range agents {
@@ -52,7 +52,7 @@ func buildV1Fixture(seed uint64, tick int64) *legacyState {
 		Chronicle: []ChronicleEntry{
 			{Tick: 1000, Day: 1, FromTick: 0, ToTick: 1000, Text: "The village woke to frost."},
 		},
-		MetatronCharges: 2,
+		GuardianCharges: 2,
 		Norms:           []Norm{{ID: 1, Kind: "curfew", Target: -1, Text: "home by dark", Proposer: 4, DayPassed: 2, Tally: "6-2", Active: true}},
 		NextNormID:      2,
 	}
@@ -161,8 +161,8 @@ func TestMigrateStateCarriesPeopleResetsLand(t *testing.T) {
 	if len(s.Chronicle) != 1 {
 		t.Errorf("chronicle ring not carried: %+v", s.Chronicle)
 	}
-	if s.MetatronCharges != 2 {
-		t.Errorf("Metatron charges = %d, want 2", s.MetatronCharges)
+	if s.GuardianCharges != 2 {
+		t.Errorf("Guardian charges = %d, want 2", s.GuardianCharges)
 	}
 	if len(s.Norms) != 1 || !s.Norms[0].Active {
 		t.Errorf("norms not carried: %+v", s.Norms)
@@ -259,7 +259,7 @@ func buildV2Fixture(seed uint64, tick int64) *State {
 		Relations:       []Relation{{From: 0, To: 1, Trust: 250, Affection: 150}},
 		Rumors:          []Rumor{{ID: 1, Subject: 2, Tone: -20, OriginAgent: 3, OriginTick: 800}},
 		NextRumorID:     2,
-		MetatronCharges: 3,
+		GuardianCharges: 3,
 	}
 }
 
@@ -292,8 +292,8 @@ func TestTransformV2StateCarriesVerbatimSpillsOverCap(t *testing.T) {
 	if len(s.Quarried) != 1 || len(s.Cleared) != 1 || len(s.Harvested) != 1 {
 		t.Errorf("overlays should carry verbatim: quarried=%v cleared=%v harvested=%v", s.Quarried, s.Cleared, s.Harvested)
 	}
-	if len(s.Relations) != 1 || len(s.Rumors) != 1 || s.NextRumorID != 2 || s.MetatronCharges != 3 {
-		t.Errorf("social fabric not carried: rel=%v rumors=%v next=%d charges=%d", s.Relations, s.Rumors, s.NextRumorID, s.MetatronCharges)
+	if len(s.Relations) != 1 || len(s.Rumors) != 1 || s.NextRumorID != 2 || s.GuardianCharges != 3 {
+		t.Errorf("social fabric not carried: rel=%v rumors=%v next=%d charges=%d", s.Relations, s.Rumors, s.NextRumorID, s.GuardianCharges)
 	}
 
 	// Positions carried verbatim (exact coordinates — no re-placement).

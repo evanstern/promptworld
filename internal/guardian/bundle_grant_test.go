@@ -1,4 +1,4 @@
-package metatron
+package guardian
 
 import (
 	"strings"
@@ -13,7 +13,7 @@ import (
 // already grants, but it can never widen past what the world excludes. These
 // tests exercise intersectGrant/narrowGrantForBundles directly, in isolation
 // from disk and from the turn assembly; internal/bundle/load_test.go's
-// TestDiscoverPersona and internal/metatron/bundle_integration_test.go cover
+// TestDiscoverPersona and internal/guardian/bundle_integration_test.go cover
 // the same semantics end-to-end through a real fixture (T031/T032).
 
 // TestIntersectGrantNarrowsKinds: an unrestricted world (fullGrant, "all

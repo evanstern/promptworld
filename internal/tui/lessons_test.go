@@ -65,7 +65,7 @@ func lessonFixtureEventPayload(t *testing.T, id string) store.Event {
 	case "first-custom-charter":
 		return mkEvent("metatron.charter_observed", sim.CharterObservedPayload{Fingerprint: "abcd1234", Default: false})
 	case "first-fuzzy-order":
-		return mkEvent("metatron.order_placed", sim.MetatronOrder{ID: "ord-2", Confirm: true})
+		return mkEvent("metatron.order_placed", sim.GuardianOrder{ID: "ord-2", Confirm: true})
 	}
 	t.Fatalf("lessonFixtureEvent: no fixture wired for id %q", id)
 	return store.Event{}
@@ -111,7 +111,7 @@ func TestLessonCatalogMinimumTaxonomy(t *testing.T) {
 func TestLessonSkinResolveNoRawTokens(t *testing.T) {
 	for _, e := range lessonCatalog {
 		for field, s := range map[string]string{"Title": e.Title, "Body": e.Body, "Text": e.Text, "Pointer": e.Pointer} {
-			if resolved := lessonSkinResolve(s); strings.Contains(resolved, "{{") {
+			if resolved := lessonSkinResolve(s, nil); strings.Contains(resolved, "{{") {
 				t.Errorf("%s.%s resolves with a raw token literal: %q", e.ID, field, resolved)
 			}
 		}
@@ -128,7 +128,7 @@ func TestLessonSkinResolveNoRawTokens(t *testing.T) {
 func TestLessonPointerSuffixFitsNarrowWidth(t *testing.T) {
 	const narrowWidth = 80
 	for _, e := range lessonCatalog {
-		line := lessonSkinResolve(e.Pointer) + "  " + lessonPullSuffix
+		line := lessonSkinResolve(e.Pointer, nil) + "  " + lessonPullSuffix
 		if w := len([]rune(line)); w > narrowWidth {
 			t.Errorf("%s: pointer+suffix is %d runes, wider than a plausible narrow terminal (%d): %q", e.ID, w, narrowWidth, line)
 		}
@@ -190,7 +190,7 @@ func TestLessonPromptingTriggersDiscriminate(t *testing.T) {
 		ev   store.Event
 	}{
 		{"non-fuzzy order does not trigger the fuzzy-order lesson",
-			mkEvent("metatron.order_placed", sim.MetatronOrder{ID: "o1", Confirm: false})},
+			mkEvent("metatron.order_placed", sim.GuardianOrder{ID: "o1", Confirm: false})},
 		{"default charter does not trigger the custom-charter lesson",
 			mkEvent("metatron.charter_observed", sim.CharterObservedPayload{Fingerprint: "x", Default: true})},
 		{"a landed tool call does not trigger the rejected-tool-call lesson",
@@ -326,7 +326,7 @@ func TestLessonTriggersDoneSignalClearsAndRecordsSeen(t *testing.T) {
 
 	// A non-fuzzy order placed is the done-signal here — clears the active
 	// lesson but is not itself a new trigger (Confirm is false).
-	placed := mkEvent("metatron.order_placed", sim.MetatronOrder{ID: "o2", Confirm: false})
+	placed := mkEvent("metatron.order_placed", sim.GuardianOrder{ID: "o2", Confirm: false})
 	got := lt.ingest(placed, now.Add(time.Millisecond))
 	if got != nil {
 		t.Errorf("the done-signal event is not itself a new lesson trigger here, got %v", got)
@@ -346,7 +346,7 @@ func TestLessonTriggersDoneSignalAndNewTriggerSameEvent(t *testing.T) {
 	now := time.Now()
 	lt.ingest(lessonFixtureEvent(t, "first-order-expired"), now)
 
-	fuzzyPlaced := mkEvent("metatron.order_placed", sim.MetatronOrder{ID: "o2", Confirm: true})
+	fuzzyPlaced := mkEvent("metatron.order_placed", sim.GuardianOrder{ID: "o2", Confirm: true})
 	surfaced := lt.ingest(fuzzyPlaced, now.Add(time.Millisecond))
 	if surfaced != nil {
 		t.Errorf("expected the fuzzy-order lesson to queue (spacing just started by the same-event clear), got %v", surfaced)
@@ -409,7 +409,7 @@ func TestXKeyDismissesActiveLessonAndNoOpsOtherwise(t *testing.T) {
 func TestPopulateHelpLessonsCatalogEquality(t *testing.T) {
 	orig := helpLessons
 	t.Cleanup(func() { helpLessons = orig })
-	populateHelpLessons()
+	populateHelpLessons(nil)
 
 	if len(helpLessons) != len(lessonCatalog) {
 		t.Fatalf("helpLessons has %d entries, catalog has %d", len(helpLessons), len(lessonCatalog))
@@ -512,7 +512,7 @@ func TestLessonBadgeAtStage3AndPreLadder(t *testing.T) {
 // bought back enough body.
 func TestLessonRowFoldsBeforeGuardianStripUnderHeightPressure(t *testing.T) {
 	m := withStage(widescreenModel(t), "stage-1")
-	m.status.Clock = ipc.ClockStatus{MetatronCharges: 2, Tick: 100}
+	m.status.Clock = ipc.ClockStatus{GuardianCharges: 2, Tick: 100}
 	m.applyEvent(lessonFixtureEvent(t, "first-death"))
 
 	m.height = 40

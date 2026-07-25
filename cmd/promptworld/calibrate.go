@@ -64,7 +64,7 @@ func refShapesFor(priced bool) []refShape {
 	if priced {
 		// Consolidation is a single-shot kind (it did not adopt the loop —
 		// spec 017 FR-014), so it stays a plain Submit probe and its per-point
-		// timing remains a valid sample for the provider's estimator. Metatron
+		// timing remains a valid sample for the provider's estimator. Guardian
 		// IS a loop cognition, but calibrating it would drive extra metered
 		// calls per sample — a new spend path the spec 017 contract does not
 		// invite (contracts/loop-api.md scopes the calibrate change to the

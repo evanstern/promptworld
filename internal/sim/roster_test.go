@@ -39,7 +39,7 @@ func TestVillagerDoorRejectsOutOfRoster(t *testing.T) {
 		}
 	}
 
-	// The rejection is data-driven: the metatron tools are simply absent from
+	// The rejection is data-driven: the guardian tools are simply absent from
 	// the villager roster.
 	for _, n := range []string{"nudge_dream", "nudge_omen", "converse"} {
 		if tool.OnRoster(tool.RosterVillager, n) {
@@ -60,25 +60,25 @@ func TestVillagerDoorRejectsOutOfRoster(t *testing.T) {
 	}
 }
 
-// TestMetatronReducerRejectsOutOfRoster (US3 scenario 2): a nudge whose form is
+// TestGuardianReducerRejectsOutOfRoster (US3 scenario 2): a nudge whose form is
 // not a metatron-roster nudge tool is refused by the reducer dry-run, and no
 // charge is spent — the same non-fatal handling as an unknown form.
-func TestMetatronReducerRejectsOutOfRoster(t *testing.T) {
+func TestGuardianReducerRejectsOutOfRoster(t *testing.T) {
 	m := worldmap.Generate(7, 32, 32)
 	for _, form := range []string{"converse", "whisper"} {
 		s := NewState(7, m)
-		before := s.MetatronCharges
-		err := s.Apply(nudgeEvent(t, 50, MetatronNudgedPayload{Form: form, Targets: []int{0}, Text: "x"}))
+		before := s.GuardianCharges
+		err := s.Apply(nudgeEvent(t, 50, GuardianNudgedPayload{Form: form, Targets: []int{0}, Text: "x"}))
 		if err == nil {
 			t.Errorf("form %q: reducer accepted an out-of-roster nudge form", form)
 		}
-		if s.MetatronCharges != before {
-			t.Errorf("form %q: rejected nudge changed charges %d -> %d", form, before, s.MetatronCharges)
+		if s.GuardianCharges != before {
+			t.Errorf("form %q: rejected nudge changed charges %d -> %d", form, before, s.GuardianCharges)
 		}
 	}
 
-	// The metatron roster names only converse and the two nudge forms.
-	if tool.OnRoster(tool.RosterMetatron, "nudge_whisper") {
-		t.Error("nudge_whisper is unexpectedly on the metatron roster")
+	// The guardian roster names only converse and the two nudge forms.
+	if tool.OnRoster(tool.RosterGuardian, "nudge_whisper") {
+		t.Error("nudge_whisper is unexpectedly on the guardian roster")
 	}
 }

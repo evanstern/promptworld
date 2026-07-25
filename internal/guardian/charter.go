@@ -1,4 +1,4 @@
-package metatron
+package guardian
 
 import (
 	"crypto/sha256"
@@ -22,9 +22,9 @@ import (
 // The charter is the game's base player-editable prompt, joined by an optional
 // folder of player-authored skill files (spec 021) — the assistant-shaped
 // instruction surface (CLAUDE.md + SKILL.md). Every one of these files is read
-// fresh at the start of every Metatron turn and status peek — that per-read
+// fresh at the start of every Guardian turn and status peek — that per-read
 // discipline IS the "edits are live next turn" mechanism (no watcher, no
-// cache). The angel never runs charterless: missing files are restored, empty
+// cache). The guardian never runs charterless: missing files are restored, empty
 // files fall back, oversized files are truncated, over-cap skill folders are
 // trimmed — and each case is reported in a `notice` so the next reply can tell
 // the player, one model of "the game tells you when your file didn't load".
@@ -32,7 +32,7 @@ import (
 // presetCharter resolves a world's charter_preset name (world.json, spec 046)
 // to its authored constant: ""/"default" is persona.DefaultCharter; "tutor" is
 // the stage-1 orientation preset. Unknown names (already refused at world.Open)
-// fall back to the default — the angel never runs charterless.
+// fall back to the default — the guardian never runs charterless.
 func presetCharter(preset string) string {
 	switch preset {
 	case "", "default":
@@ -75,7 +75,9 @@ func loadCharter(worldDir string, preset ...string) (text, notice string) {
 
 // charterIsDefault reports whether the file on disk matches the authored
 // default (for status display) — preset-aware (spec 046): a world created with
-// a charter preset compares against that preset's constant.
+// a charter preset compares against that preset's constant. LEGACY-aware
+// (spec 052 SC-003): a pre-052 world's untouched guardian-voiced seed is still
+// game-authored text — never reclassified player-authored on upgrade.
 func charterIsDefault(worldDir string, preset ...string) bool {
 	def := persona.DefaultCharter
 	if len(preset) > 0 {
@@ -85,7 +87,15 @@ func charterIsDefault(worldDir string, preset ...string) bool {
 	if err != nil {
 		return true
 	}
-	return string(data) == def
+	return string(data) == def || isLegacyDefault(string(data))
+}
+
+// isLegacyDefault reports whether text is one of the retired game-authored
+// default charters (spec 052 SC-003): the long-lived pre-059 legacy seed, or
+// the brief post-059/pre-052 variant carrying the survival paragraph. Either
+// way it is game-authored text — never reclassified player-authored.
+func isLegacyDefault(text string) bool {
+	return text == persona.LegacyDefaultCharter || text == persona.LegacyDefaultCharterSurvival
 }
 
 // Instruction-surface gating by stage (spec 046 FR-005, the ladder): stage-1
@@ -103,7 +113,11 @@ func stageBindsSkills(stage string) bool  { return stage != "stage-1" && stage !
 // silent ignoring). A missing file is restored to the preset so the player has
 // a file to edit when stage-2 unlocks — no notice, since what binds never
 // changed. Every other stage behaves byte-identically to today's loadCharter.
-func stageCharter(worldDir, stage, preset string) (text, notice string) {
+// The lock notices resolve the unlocking stage's display name through the
+// WORLD skin when one is in scope (spec 052 T004) — variadic so every
+// pre-052 call site (and every direct-arg test) keeps compiling with the
+// default-skin behavior, the loadCharter preset precedent.
+func stageCharter(worldDir, stage, preset string, sk ...*skin.Skin) (text, notice string) {
 	if !stageLocksCharter(stage) {
 		return loadCharter(worldDir, preset)
 	}
@@ -116,9 +130,17 @@ func stageCharter(worldDir, stage, preset string) (text, notice string) {
 	}
 	if err == nil && string(data) != text {
 		return text, fmt.Sprintf("charter.md does not bind at this stage — %s (stage-2) unlocks instruction authoring",
-			skin.StageName("stage-2"))
+			skinOrDefault(sk).StageName("stage-2"))
 	}
 	return text, ""
+}
+
+// skinOrDefault unwraps a variadic skin argument (nil-safe either way).
+func skinOrDefault(sk []*skin.Skin) *skin.Skin {
+	if len(sk) > 0 {
+		return sk[0]
+	}
+	return nil
 }
 
 // stageSkills is the stage fork over loadSkills (spec 046 FR-005): skill files
@@ -126,13 +148,13 @@ func stageCharter(worldDir, stage, preset string) (text, notice string) {
 // unlock. At stage-1/-2, present skill files are never silently ignored: one
 // notice names the unlocking stage. Absent stage = pre-ladder = today's
 // behavior.
-func stageSkills(worldDir, stage string) ([]skillFile, []string) {
+func stageSkills(worldDir, stage string, sk ...*skin.Skin) ([]skillFile, []string) {
 	if stageBindsSkills(stage) {
 		return loadSkills(worldDir)
 	}
 	if names := skillNames(worldDir); len(names) > 0 {
 		return nil, []string{fmt.Sprintf("skill files do not bind at this stage — %s (stage-3) unlocks skill files",
-			skin.StageName("stage-3"))}
+			skinOrDefault(sk).StageName("stage-3"))}
 	}
 	return nil, nil
 }
@@ -141,7 +163,7 @@ func stageSkills(worldDir, stage string) ([]skillFile, []string) {
 // FR-008, research R8): a short content hash (12 hex chars of SHA-256) over
 // EXACTLY the text loadCharter returned — the post-fallback, post-truncation
 // bytes the model actually runs under — so the recorded revision can never
-// name a charter the angel never executed.
+// name a charter the guardian never executed.
 func charterFingerprint(text string) string {
 	sum := sha256.Sum256([]byte(text))
 	return hex.EncodeToString(sum[:6])
@@ -152,7 +174,7 @@ func charterFingerprint(text string) string {
 // recorded one (State.CharterFingerprint, read via the absorb-side mirror),
 // the turn emits metatron.charter_observed through the same InjectSocial
 // door every other turn effect rides — fingerprint-at-effect semantics: the
-// timeline records what the angel actually ran with, at the turns it ran.
+// timeline records what the guardian actually ran with, at the turns it ran.
 // The first turn of a world always emits (the mirror starts empty). Ended
 // worlds skip: the door narrows to recorded prose after run end
 // (endedProseWhitelist) and a finished run's evidence timeline is closed.
@@ -167,7 +189,7 @@ func charterFingerprint(text string) string {
 // evidence timeline and the stage-2→3 unlock gate (sim.EvaluateUnlock, via
 // sim.CharterObservedEvidence's Custom = !default derivation) both depend on
 // this: preset text must never masquerade as a player-authored charter.
-func (mt *Metatron) observeCharter(text string) {
+func (mt *Guardian) observeCharter(text string) {
 	fp := charterFingerprint(text)
 	mt.stateMu.Lock()
 	known, ended := mt.charterFP, mt.ended
@@ -175,10 +197,15 @@ func (mt *Metatron) observeCharter(text string) {
 	if ended || fp == known {
 		return
 	}
+	// Default derivation is legacy-aware (spec 052 SC-003): a pre-052
+	// world's untouched guardian-voiced seed is game-authored, and the
+	// stage-2→3 unlock gate (Custom = !default) must not count it as a
+	// player-authored revision after an upgrade.
+	def := text == presetCharter(mt.charterPreset) || isLegacyDefault(text)
 	batch := []store.Event{{Type: "metatron.charter_observed", Payload: mustJSON(sim.CharterObservedPayload{
-		Fingerprint: fp, Default: text == presetCharter(mt.charterPreset)})}}
+		Fingerprint: fp, Default: def})}}
 	if err := mt.social.InjectSocial(batch); err != nil {
-		log.Printf("metatron: charter observation rejected at the door: %v", err)
+		log.Printf("guardian: charter observation rejected at the door: %v", err)
 		return
 	}
 	// Optimistic mirror update so a back-to-back turn cannot double-emit
@@ -272,12 +299,12 @@ func skillNames(worldDir string) []string {
 }
 
 // grantSet is a world's effective capability grant for one turn/peek (spec 021
-// US2): which metatron loop tools are offered, and (when restricted) which
+// US2): which guardian loop tools are offered, and (when restricted) which
 // miracle kinds. It drives all three gating layers alike — the declared roster,
 // the derived guidance, and the door — so they cannot disagree (FR-005). Maps
 // are used for O(1) membership; nothing is ever iterated into ordered output.
 type grantSet struct {
-	tools           map[string]bool // granted metatron loop-tool names
+	tools           map[string]bool // granted guardian loop-tool names
 	kinds           map[string]bool // granted miracle kinds; meaningful only when restricted
 	kindsRestricted bool            // true ⇒ only kinds in `kinds` are offered for work_miracle
 	manifestDefault bool            // true ⇒ no capabilities.json on disk (full default grant)
@@ -291,7 +318,7 @@ type grantSet struct {
 	bundleAllowed    map[string]bool
 }
 
-// allows reports whether a metatron loop tool is granted this world.
+// allows reports whether a guardian loop tool is granted this world.
 func (g grantSet) allows(name string) bool { return g.tools[name] }
 
 // allowsBundle reports whether a bundle tool is granted this world (spec 036
@@ -314,11 +341,11 @@ func (g grantSet) allowsKind(kind string) bool {
 	return g.kinds[kind]
 }
 
-// grantedTools returns the granted metatron loop-tool names in registry order
-// (LoopRosterMetatron order) — the deterministic surface Status renders.
+// grantedTools returns the granted guardian loop-tool names in registry order
+// (LoopRosterGuardian order) — the deterministic surface Status renders.
 func (g grantSet) grantedTools() []string {
 	var out []string
-	for _, t := range tool.LoopRosterMetatron() {
+	for _, t := range tool.LoopRosterGuardian() {
 		if g.tools[t.Name] {
 			out = append(out, t.Name)
 		}
@@ -362,11 +389,11 @@ func grantedToolLabels(g grantSet) []string {
 }
 
 // fullGrant is the default grant a world with no (or an unusable) manifest gets:
-// the entire metatron loop roster, all miracle kinds — byte-compatible with the
-// pre-021 angel (FR-007, SC-003).
+// the entire guardian loop roster, all miracle kinds — byte-compatible with the
+// pre-021 guardian (FR-007, SC-003).
 func fullGrant() grantSet {
 	tools := make(map[string]bool)
-	for _, t := range tool.LoopRosterMetatron() {
+	for _, t := range tool.LoopRosterGuardian() {
 		tools[t.Name] = true
 	}
 	return grantSet{tools: tools}
@@ -384,7 +411,7 @@ type manifestDoc struct {
 // the effective grant set plus one notice per issue, mirroring the charter's
 // permissive-fallback teaching model (spec 021 R4, contracts/capability-manifest.md):
 //   - no file → full grant, NO notice, manifestDefault true (byte-compatible today);
-//   - unreadable / malformed JSON → full grant + notice (a typo never bricks the angel);
+//   - unreadable / malformed JSON → full grant + notice (a typo never bricks the guardian);
 //   - unknown tool/kind names → ignored + notice, the valid remainder applies;
 //   - omitted "tools" key → unconstrained (all tools), symmetric with an omitted
 //     "miracle_kinds" meaning all kinds; explicit "tools": [] → conversation-only;
@@ -418,7 +445,7 @@ func loadManifest(worldDir string, knownBundleTools ...string) (grantSet, []stri
 	var notices []string
 	known := make(map[string]bool)
 	var order []string
-	for _, t := range tool.LoopRosterMetatron() {
+	for _, t := range tool.LoopRosterGuardian() {
 		known[t.Name] = true
 		order = append(order, t.Name)
 	}
@@ -475,7 +502,7 @@ func loadManifest(worldDir string, knownBundleTools ...string) (grantSet, []stri
 			}
 		}
 		if len(unknown) > 0 {
-			notices = append(notices, "capabilities.json lists unknown miracle kind(s): "+strings.Join(unknown, ", ")+" — ignored")
+			notices = append(notices, "capabilities.json lists unknown miracle_kinds entries: "+strings.Join(unknown, ", ")+" — ignored")
 		}
 		g.kinds = kinds
 		g.kindsRestricted = true
@@ -483,14 +510,14 @@ func loadManifest(worldDir string, knownBundleTools ...string) (grantSet, []stri
 	return g, notices
 }
 
-// grantedRoster is the effective metatron loop roster for a turn: the full loop
+// grantedRoster is the effective guardian loop roster for a turn: the full loop
 // roster filtered to granted tools, with work_miracle's kind enum narrowed to
 // the granted kinds when restricted (copy-on-write via tool.RestrictEnum, the
 // registry untouched). This ONE roster feeds all three gating layers — Job.Roster
-// (declaration), MetatronToolGuidance (prose), and the handler set (door) — so an
+// (declaration), GuardianToolGuidance (prose), and the handler set (door) — so an
 // ungranted tool or kind is structurally absent from every one of them (FR-005).
 func grantedRoster(g grantSet) []tool.Tool {
-	full := tool.LoopRosterMetatron()
+	full := tool.LoopRosterGuardian()
 	out := make([]tool.Tool, 0, len(full))
 	for _, t := range full {
 		if !g.tools[t.Name] {
@@ -587,7 +614,7 @@ func intersectGrant(g grantSet, gd *bundle.GrantDoc) grantSet {
 //
 // stage1CeilingTools is the pinned stage-1 tool ceiling — the honest "base
 // conversational + basic nudge + the watch primitive" subset of the live loop
-// roster (tool.LoopRosterMetatron), recorded in the contract in-PR. Conversation
+// roster (tool.LoopRosterGuardian), recorded in the contract in-PR. Conversation
 // is never a roster tool (it is the reply channel and never gateable); the
 // basic nudges send_vision/send_omen ARE the stage-1 grant. RATIFIED AMENDMENT
 // (TASK-119 board artifact, "first-night teaches visions+orders", applied to

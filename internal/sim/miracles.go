@@ -11,15 +11,15 @@ import (
 	"github.com/evanstern/promptworld/internal/worldmap"
 )
 
-// Metatron's miracles (spec 016): four recorded, charge-priced world edits that
-// land through the same InjectSocial door the nudge uses. Like applyMetatron,
+// Guardian's miracles (spec 016): four recorded, charge-priced world edits that
+// land through the same InjectSocial door the nudge uses. Like applyGuardian,
 // these arms validate rather than clamp — the door's dry-run runs them on a
 // state copy, so an invalid miracle is rejected before recording and a recorded
 // miracle always re-applies cleanly at the same log position in replay
 // (spec 016 R1). Charge pricing lives here in the reducer (not the console) so
 // replay re-validates every spend identically (R2). `gratis` waives the charge
 // and nothing else; it is unreachable from model output by construction (the
-// angel's turn contract has no gratis field).
+// guardian's turn contract has no gratis field).
 
 // Miracle event payloads (canonical JSON, struct-ordered). No new persistent
 // entities: miracles mutate existing fields only (data-model.md).
@@ -83,10 +83,10 @@ func (s *State) spendMiracleCharge(eventType string, gratis bool) error {
 	if gratis {
 		return nil
 	}
-	if s.MetatronCharges < cost {
-		return fmt.Errorf("apply %s: need %d charge(s), only %d banked", eventType, cost, s.MetatronCharges)
+	if s.GuardianCharges < cost {
+		return fmt.Errorf("apply %s: need %d charge(s), only %d banked", eventType, cost, s.GuardianCharges)
 	}
-	s.MetatronCharges -= cost
+	s.GuardianCharges -= cost
 	return nil
 }
 
@@ -104,7 +104,7 @@ func (s *State) applyMiracle(e store.Event) error {
 	case "metatron.entity_removed":
 		return s.applyEntityRemoved(e)
 	}
-	return fmt.Errorf("apply %s: unknown miracle type", e.Type)
+	return fmt.Errorf("apply %s: unknown working type", e.Type)
 }
 
 // applyTimeSnapped jumps the clock forward to ToTick with shift semantics
@@ -184,7 +184,7 @@ func (s *State) applyTimeSnapped(e store.Event) error {
 //	                      only while the gru is abroad
 //	Meeting.OpenedTick    assembly-phase anchor; ONLY non-zero (in-flight meeting)
 //	Meeting.GatherStart   emergent-gathering-watch anchor; ONLY non-zero
-//	MetatronOrder.ExpiresTick  standing-order expiry deadline (spec 029); shifted
+//	GuardianOrder.ExpiresTick  standing-order expiry deadline (spec 029); shifted
 //	                      ONLY for ACTIVE orders (a consumed order's deadline is a
 //	                      spent artifact), so the remaining lifetime survives the jump
 //	PlaceFact.Seen        mental-map freshness anchor (spec 041: fresh iff
@@ -214,7 +214,7 @@ func (s *State) applyTimeSnapped(e store.Event) error {
 //
 // KEEP (history/identity — never rewritten): Agent.Generation,
 //
-//	MetatronOrder.PlacedTick (spec 029: when the order was placed, history),
+//	GuardianOrder.PlacedTick (spec 029: when the order was placed, history),
 //	Agent.LastGoalTick, Agent.LastConsolidatedNight, Agent.ConsolidatedUpTo,
 //	Agent.LastConsolidateMark, IntentRecord.Tick / IntentRecord.OutcomeTick
 //	(spec 043: when an intent landed / when its outcome landed — a historical
@@ -305,12 +305,12 @@ func rebaseTicks(s *State, delta int64) {
 	for i := range s.Debts {
 		shift(&s.Debts[i].Due)
 	}
-	for i := range s.MetatronOrders {
+	for i := range s.GuardianOrders {
 		// A standing order's expiry is a future deadline: shift only ACTIVE orders
 		// so the remaining lifetime is preserved across the jump. PlacedTick is a
 		// historical timestamp and is left unshifted (KEEP).
-		if s.MetatronOrders[i].Status == "active" {
-			shift(&s.MetatronOrders[i].ExpiresTick)
+		if s.GuardianOrders[i].Status == "active" {
+			shift(&s.GuardianOrders[i].ExpiresTick)
 		}
 	}
 	if s.Gru != nil {
@@ -664,7 +664,7 @@ func (s *State) VillagerAt(x, y int) int {
 // AgentIndexByName resolves a villager name (case-insensitive, trimmed) to its
 // roster index, or -1 when no villager bears it. Exported for the IPC miracle
 // door, which receives a give_item's target by NAME (contracts §2); it resolves
-// against the same AgentNames roster the metatron package's own resolver walks,
+// against the same AgentNames roster the guardian package's own resolver walks,
 // so both doors turn a name into the same index and cannot drift. Map-free.
 func AgentIndexByName(name string) int {
 	name = strings.ToLower(strings.TrimSpace(name))

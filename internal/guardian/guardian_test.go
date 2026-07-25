@@ -1,4 +1,4 @@
-package metatron
+package guardian
 
 import (
 	"context"
@@ -21,7 +21,7 @@ import (
 	"github.com/evanstern/promptworld/internal/worldmap"
 )
 
-// testLoopRounds is the iteration cap the test angel runs with; testTurnTokens
+// testLoopRounds is the iteration cap the test guardian runs with; testTurnTokens
 // is the console-turn budget it runs with (the pre-025 hardcode, spec 025 US2).
 const (
 	testLoopRounds = 8
@@ -58,7 +58,7 @@ type loopCall struct {
 	speed clock.Speed
 }
 
-// loopControlStub is the LoopControl seam the test angel wires (spec 029 US5,
+// loopControlStub is the LoopControl seam the test guardian wires (spec 029 US5,
 // T020): it records every clock-control call and cans a Status/error, so a meta
 // tool lands through a real handler without a live *sim.Loop. Tests reach it via
 // mt.loop.(*loopControlStub) — the seam is a field, so no return-signature churn.
@@ -122,7 +122,7 @@ func (si *stateInjector) InjectSocial(events []store.Event) error {
 	return nil
 }
 
-func newTestAngel(t *testing.T, reply string) (*Metatron, *mockOrch, *stateInjector, string) {
+func newTestGuardian(t *testing.T, reply string) (*Guardian, *mockOrch, *stateInjector, string) {
 	t.Helper()
 	dir := t.TempDir()
 	if err := persona.Genesis(dir); err != nil {
@@ -144,7 +144,7 @@ func newTestAngel(t *testing.T, reply string) (*Metatron, *mockOrch, *stateInjec
 	// mt.runLoop after this call.
 	mt.runLoop = converseLoop(mt)
 	// Pre-seed the charter-observation mirror (spec 044 US2): these fixtures
-	// model an angel whose current (default) charter revision is already on
+	// model an guardian whose current (default) charter revision is already on
 	// the record, so turn tests keep counting exactly the batches they drive.
 	// Charter-observation tests reset mt.charterFP = "" (or edit charter.md)
 	// to exercise the emission itself.
@@ -158,7 +158,7 @@ func newTestAngel(t *testing.T, reply string) (*Metatron, *mockOrch, *stateInjec
 // charter / status assertions observe the real prompt, and surfaces a canned
 // transport error. The real toolloop.Run builds this request internally; the
 // scripted loop reproduces just enough of it for the mock to record.
-func bridgeSubmit(mt *Metatron, ctx context.Context, j toolloop.Job) (llm.Response, error) {
+func bridgeSubmit(mt *Guardian, ctx context.Context, j toolloop.Job) (llm.Response, error) {
 	return mt.orch.Submit(ctx, llm.Request{Kind: j.Kind, System: j.System, Prompt: j.Seed})
 }
 
@@ -176,7 +176,7 @@ func toolCall(name, args string) llm.ToolCall {
 // converseLoop is the default scripted loop: bridge the Submit (record + surface
 // errors), then treat the reply text as converse (model_done, Final = text). No
 // tool call, no charge — the "the model just talked" path.
-func converseLoop(mt *Metatron) func(context.Context, toolloop.Job) (toolloop.Result, error) {
+func converseLoop(mt *Guardian) func(context.Context, toolloop.Job) (toolloop.Result, error) {
 	return func(ctx context.Context, j toolloop.Job) (toolloop.Result, error) {
 		resp, err := bridgeSubmit(mt, ctx, j)
 		if err != nil {
@@ -190,7 +190,7 @@ func converseLoop(mt *Metatron) func(context.Context, toolloop.Job) (toolloop.Re
 // exactly one tool call through the REAL handler, recording it as ordinal 1. A
 // landed verdict → TermLanded; anything else → TermCapExhausted (the model tried
 // once and stopped) — matching the pre-loop single-shot shape for these tests.
-func actLoop(mt *Metatron, name, args string) func(context.Context, toolloop.Job) (toolloop.Result, error) {
+func actLoop(mt *Guardian, name, args string) func(context.Context, toolloop.Job) (toolloop.Result, error) {
 	return func(ctx context.Context, j toolloop.Job) (toolloop.Result, error) {
 		resp, err := bridgeSubmit(mt, ctx, j)
 		if err != nil {
@@ -367,7 +367,7 @@ func TestBuildMiracleBatch(t *testing.T) {
 func TestTurnConverses(t *testing.T) {
 	// The converse channel is the model's final text (Result.Final), transcript-
 	// only — no JSON envelope, no world events.
-	mt, orch, inj, dir := newTestAngel(t, "The village sleeps, sovereign.")
+	mt, orch, inj, dir := newTestGuardian(t, "The village sleeps, sovereign.")
 	r, err := mt.Turn(context.Background(), "how fare they?")
 	if err != nil {
 		t.Fatal(err)
@@ -382,7 +382,7 @@ func TestTurnConverses(t *testing.T) {
 		t.Errorf("converse-only turn injected %d batches (no tool calls → no telemetry)", len(inj.batches))
 	}
 	reqs := orch.requests()
-	if len(reqs) != 1 || reqs[0].Kind != llm.KindMetatron {
+	if len(reqs) != 1 || reqs[0].Kind != llm.KindGuardian {
 		t.Fatalf("requests: %+v", reqs)
 	}
 	if !strings.Contains(reqs[0].System, "faithful, competent") {
@@ -411,7 +411,7 @@ func TestTurnConverses(t *testing.T) {
 // carries the standing-order framing over the pre-authorized action.
 func TestTurnDirectiveLabelSingleOrigin(t *testing.T) {
 	t.Run("console carries the label exactly once", func(t *testing.T) {
-		mt, orch, _, _ := newTestAngel(t, "The village sleeps, sovereign.")
+		mt, orch, _, _ := newTestGuardian(t, "The village sleeps, sovereign.")
 		if _, err := mt.Turn(context.Background(), "how fare they?"); err != nil {
 			t.Fatal(err)
 		}
@@ -424,7 +424,7 @@ func TestTurnDirectiveLabelSingleOrigin(t *testing.T) {
 		}
 	})
 	t.Run("system carries no player label, uses the standing-order framing", func(t *testing.T) {
-		mt, orch, _, _ := newTestAngel(t, "It is done.")
+		mt, orch, _, _ := newTestGuardian(t, "It is done.")
 		const seed = "Send Fern a comforting vision."
 		if _, err := mt.runTurn(context.Background(), turnOrigin{system: true, jobPrefix: "watch", seed: seed}); err != nil {
 			t.Fatal(err)
@@ -445,7 +445,7 @@ func TestTurnDirectiveLabelSingleOrigin(t *testing.T) {
 // TestTurnDegradedHonesty (US1): orchestrator failure surfaces as an error;
 // nothing recorded, nothing spent, moments retained.
 func TestTurnDegradedHonesty(t *testing.T) {
-	mt, orch, inj, _ := newTestAngel(t, "")
+	mt, orch, inj, _ := newTestGuardian(t, "")
 	orch.err = llm.ErrTierDown
 	mt.stateMu.Lock()
 	mt.moments = []string{"day 2 03:00 — the gru attacked Fern"}
@@ -467,7 +467,7 @@ func TestTurnDegradedHonesty(t *testing.T) {
 
 // TestTurnSingleFlight (US1): a second concurrent turn fails fast.
 func TestTurnSingleFlight(t *testing.T) {
-	mt, _, _, _ := newTestAngel(t, "x")
+	mt, _, _, _ := newTestGuardian(t, "x")
 	mt.turnBusy.Store(true)
 	if _, err := mt.Turn(context.Background(), "hi"); err != ErrTurnBusy {
 		t.Fatalf("want ErrTurnBusy, got %v", err)
@@ -478,7 +478,7 @@ func TestTurnSingleFlight(t *testing.T) {
 // rendering — and only the rendering — on ONE living villager as a salience-8
 // provenance-unknown memory, at any hour.
 func TestVisionLands(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "It is done.")
+	mt, _, inj, _ := newTestGuardian(t, "It is done.")
 	mt.runLoop = actLoop(mt, "send_vision",
 		`{"target": "Fern", "text": "A river of light urged you to speak your secret."}`)
 	r, err := mt.Turn(context.Background(), "let Fern feel safe to share her secret")
@@ -499,8 +499,8 @@ func TestVisionLands(t *testing.T) {
 	if batch[0].Type != "metatron.nudged" || len(batch) != 2 {
 		t.Fatalf("batch shape: %v", batch)
 	}
-	if inj.state.MetatronCharges != 0 {
-		t.Errorf("charges = %d after vision, want 0", inj.state.MetatronCharges)
+	if inj.state.GuardianCharges != 0 {
+		t.Errorf("charges = %d after vision, want 0", inj.state.GuardianCharges)
 	}
 	fern := agentIndexByName("Fern")
 	mem := inj.state.Agents[fern].Memories
@@ -519,7 +519,7 @@ func TestVisionLands(t *testing.T) {
 // metatron.place_revealed grant, and its companion omen memory — and the
 // target's map gains the fact with revealed provenance.
 func TestVisionPlaceRevealLands(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "It is done.")
+	mt, _, inj, _ := newTestGuardian(t, "It is done.")
 	fern := agentIndexByName("Fern")
 	fx, fy := inj.state.Agents[fern].X, inj.state.Agents[fern].Y
 	inj.state.Structures = append(inj.state.Structures,
@@ -565,7 +565,7 @@ func TestVisionPlaceRevealLands(t *testing.T) {
 // all-or-none — a vision naming place_kind without coordinates is refused
 // before anything lands, and no charge is spent.
 func TestVisionPartialPlaceRefused(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "I could not.")
+	mt, _, inj, _ := newTestGuardian(t, "I could not.")
 	mt.runLoop = actLoop(mt, "send_vision",
 		`{"target": "Fern", "text": "half a map", "place_kind": "fire"}`)
 	r, err := mt.Turn(context.Background(), "show Fern the fire")
@@ -578,8 +578,8 @@ func TestVisionPartialPlaceRefused(t *testing.T) {
 	if len(landedBatches(inj)) != 0 {
 		t.Error("partial place triple injected a world batch")
 	}
-	if inj.state.MetatronCharges != sim.MetatronGenesisCharges {
-		t.Errorf("charges = %d, want the genesis %d untouched", inj.state.MetatronCharges, sim.MetatronGenesisCharges)
+	if inj.state.GuardianCharges != sim.GuardianGenesisCharges {
+		t.Errorf("charges = %d, want the genesis %d untouched", inj.state.GuardianCharges, sim.GuardianGenesisCharges)
 	}
 }
 
@@ -587,7 +587,7 @@ func TestVisionPartialPlaceRefused(t *testing.T) {
 // authority that the place is real — a reveal of a place absent from ground
 // truth rejects the WHOLE atomic batch (vision included), spending nothing.
 func TestVisionFalsePlaceRefused(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "The world refused.")
+	mt, _, inj, _ := newTestGuardian(t, "The world refused.")
 	mt.runLoop = actLoop(mt, "send_vision",
 		`{"target": "Fern", "text": "a fire that is not", "place_kind": "fire", "place_x": 30, "place_y": 30}`)
 	r, err := mt.Turn(context.Background(), "lie to Fern")
@@ -597,8 +597,8 @@ func TestVisionFalsePlaceRefused(t *testing.T) {
 	if r.Nudge != nil {
 		t.Fatalf("false reveal landed: %+v", r.Nudge)
 	}
-	if inj.state.MetatronCharges != sim.MetatronGenesisCharges {
-		t.Errorf("charges = %d, want the genesis %d untouched", inj.state.MetatronCharges, sim.MetatronGenesisCharges)
+	if inj.state.GuardianCharges != sim.GuardianGenesisCharges {
+		t.Errorf("charges = %d, want the genesis %d untouched", inj.state.GuardianCharges, sim.GuardianGenesisCharges)
 	}
 	fern := agentIndexByName("Fern")
 	if len(inj.state.Agents[fern].Memories) != 0 {
@@ -609,7 +609,7 @@ func TestVisionFalsePlaceRefused(t *testing.T) {
 // TestOmenLandsOnAllLiving (US2): every living villager witnesses; the dead
 // are excluded.
 func TestOmenLandsOnAllLiving(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "The sky will speak.")
+	mt, _, inj, _ := newTestGuardian(t, "The sky will speak.")
 	mt.runLoop = actLoop(mt, "send_omen",
 		`{"targets": "everyone", "text": "At dusk the clouds parted in the shape of an open hand."}`)
 	// An omen lands only at night (spec 029): the reducer gate AND the turn-side
@@ -642,11 +642,11 @@ func TestOmenLandsOnAllLiving(t *testing.T) {
 // TestRefusalIsFree (US2): counselling in words (converse only) spends nothing
 // and injects nothing.
 func TestRefusalIsFree(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "I counsel patience.")
+	mt, _, inj, _ := newTestGuardian(t, "I counsel patience.")
 	if _, err := mt.Turn(context.Background(), "make Oak king"); err != nil {
 		t.Fatal(err)
 	}
-	if inj.state.MetatronCharges != sim.MetatronGenesisCharges || len(inj.batches) != 0 {
+	if inj.state.GuardianCharges != sim.GuardianGenesisCharges || len(inj.batches) != 0 {
 		t.Error("refusal was not free")
 	}
 }
@@ -656,10 +656,10 @@ func TestRefusalIsFree(t *testing.T) {
 // reason, fed back so the model may correct or end gracefully. No world event
 // lands and no charge moves; the rejection IS recorded as a cog.tool_call (AC#5).
 func TestChargeExhaustedNudgeRejectedGate(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "As you wish, though I have no power left to spend.")
+	mt, _, inj, _ := newTestGuardian(t, "As you wish, though I have no power left to spend.")
 	mt.runLoop = actLoop(mt, "send_vision", `{"target": "Ash", "text": "x"}`)
-	inj.state.MetatronCharges = 0
-	mt.replica.MetatronCharges = 0
+	inj.state.GuardianCharges = 0
+	mt.replica.GuardianCharges = 0
 	mt.mirrorState()
 
 	r, err := mt.Turn(context.Background(), "dream at Ash")
@@ -687,7 +687,7 @@ func TestChargeExhaustedNudgeRejectedGate(t *testing.T) {
 // TestDeadTargetRefused (US2): dreams aimed at the dead are refused with
 // counsel, charge intact.
 func TestDeadTargetRefused(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "I will try.")
+	mt, _, inj, _ := newTestGuardian(t, "I will try.")
 	mt.runLoop = actLoop(mt, "send_vision", `{"target": "Cedar", "text": "wake"}`)
 	inj.state.Agents[2].Dead = true // Cedar
 	mt.replica.Agents[2].Dead = true
@@ -696,7 +696,7 @@ func TestDeadTargetRefused(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if r.Nudge != nil || inj.state.MetatronCharges != sim.MetatronGenesisCharges {
+	if r.Nudge != nil || inj.state.GuardianCharges != sim.GuardianGenesisCharges {
 		t.Error("dead-target nudge affected the world")
 	}
 	// The door refusal is fed back to the model (and recorded), not spliced into
@@ -713,7 +713,7 @@ func TestDeadTargetRefused(t *testing.T) {
 // lands, nothing spent. Multi-target reach is structurally an omen's, never a
 // vision's (FR-001: a vision reaches exactly one).
 func TestVisionRejectsMultiTarget(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "One at a time.")
+	mt, _, inj, _ := newTestGuardian(t, "One at a time.")
 	mt.runLoop = actLoop(mt, "send_vision", `{"target": "Fern, Ash", "text": "hush"}`)
 	r, err := mt.Turn(context.Background(), "reach Fern and Ash at once")
 	if err != nil {
@@ -722,8 +722,8 @@ func TestVisionRejectsMultiTarget(t *testing.T) {
 	if r.Nudge != nil || len(landedBatches(inj)) != 0 {
 		t.Error("a multi-name vision landed")
 	}
-	if inj.state.MetatronCharges != sim.MetatronGenesisCharges {
-		t.Errorf("a refused vision spent a charge: %d", inj.state.MetatronCharges)
+	if inj.state.GuardianCharges != sim.GuardianGenesisCharges {
+		t.Errorf("a refused vision spent a charge: %d", inj.state.GuardianCharges)
 	}
 	tcs := cogToolCalls(inj)
 	if len(tcs) != 1 || tcs[0].Verdict != "rejected_gate" || !strings.Contains(tcs[0].Reason, "no villager named") {
@@ -735,7 +735,7 @@ func TestVisionRejectsMultiTarget(t *testing.T) {
 // comma-separated living subset lands on EXACTLY those villagers — one atomic
 // batch, one charge — and reaches no one else.
 func TestOmenLandsOnNamedGroup(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "They will see it.")
+	mt, _, inj, _ := newTestGuardian(t, "They will see it.")
 	mt.replica.Night = true
 	inj.state.Night = true
 	mt.mirrorState()
@@ -755,8 +755,8 @@ func TestOmenLandsOnNamedGroup(t *testing.T) {
 			t.Errorf("agent %d (%s) memories = %d, want %d", i, sim.AgentNames[i], got, want)
 		}
 	}
-	if inj.state.MetatronCharges != sim.MetatronGenesisCharges-1 {
-		t.Errorf("group omen spent %d charges, want 1", sim.MetatronGenesisCharges-inj.state.MetatronCharges)
+	if inj.state.GuardianCharges != sim.GuardianGenesisCharges-1 {
+		t.Errorf("group omen spent %d charges, want 1", sim.GuardianGenesisCharges-inj.state.GuardianCharges)
 	}
 }
 
@@ -764,7 +764,7 @@ func TestOmenLandsOnNamedGroup(t *testing.T) {
 // villager refuses the WHOLE act with counsel — never a partial batch — and
 // spends nothing.
 func TestOmenDeadTargetRefused(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "One of them is gone.")
+	mt, _, inj, _ := newTestGuardian(t, "One of them is gone.")
 	mt.replica.Night = true
 	inj.state.Night = true
 	mt.replica.Agents[2].Dead = true // Cedar
@@ -774,7 +774,7 @@ func TestOmenDeadTargetRefused(t *testing.T) {
 	if _, err := mt.Turn(context.Background(), "warn Ash and Cedar"); err != nil {
 		t.Fatal(err)
 	}
-	if len(landedBatches(inj)) != 0 || inj.state.MetatronCharges != sim.MetatronGenesisCharges {
+	if len(landedBatches(inj)) != 0 || inj.state.GuardianCharges != sim.GuardianGenesisCharges {
 		t.Error("an omen naming the dead landed or spent")
 	}
 	tcs := cogToolCalls(inj)
@@ -788,7 +788,7 @@ func TestOmenDeadTargetRefused(t *testing.T) {
 // Nothing nudged, nothing spent, and the placement is cap-exempt; the deferral is
 // visible in status.
 func TestOmenDayDefersToNightfall(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "It will reach them at dark.")
+	mt, _, inj, _ := newTestGuardian(t, "It will reach them at dark.")
 	// Genesis is day (Night defaults false); leave the mirror as-is.
 	mt.runLoop = actLoop(mt, "send_omen", `{"targets": "everyone", "text": "look up"}`)
 	r, err := mt.Turn(context.Background(), "send an omen now")
@@ -799,14 +799,14 @@ func TestOmenDayDefersToNightfall(t *testing.T) {
 	if r.Nudge != nil {
 		t.Error("a daytime omen sent a nudge instead of deferring")
 	}
-	if inj.state.MetatronCharges != sim.MetatronGenesisCharges {
-		t.Errorf("a deferred daytime omen spent a charge: %d", inj.state.MetatronCharges)
+	if inj.state.GuardianCharges != sim.GuardianGenesisCharges {
+		t.Errorf("a deferred daytime omen spent a charge: %d", inj.state.GuardianCharges)
 	}
 	// A system-origin order landed active.
-	if len(inj.state.MetatronOrders) != 1 {
-		t.Fatalf("daytime omen did not place a deferral order: %+v", inj.state.MetatronOrders)
+	if len(inj.state.GuardianOrders) != 1 {
+		t.Fatalf("daytime omen did not place a deferral order: %+v", inj.state.GuardianOrders)
 	}
-	ord := inj.state.MetatronOrders[0]
+	ord := inj.state.GuardianOrders[0]
 	if ord.Origin != "system" || ord.Status != "active" {
 		t.Errorf("deferral order not system/active: %+v", ord)
 	}
@@ -832,8 +832,8 @@ func TestOmenDayDefersToNightfall(t *testing.T) {
 // even when the player already holds the full three active orders — a system-origin
 // deferral is exempt from the player cap (FR-012).
 func TestOmenDayDeferralCapExempt(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "Set aside for the dark.")
-	for i := 0; i < sim.MetatronPlayerOrderCap; i++ {
+	mt, _, inj, _ := newTestGuardian(t, "Set aside for the dark.")
+	for i := 0; i < sim.GuardianPlayerOrderCap; i++ {
 		seedOrder(mt, inj, activePlayerOrder(fmt.Sprintf("ord-1-%d", i), 1))
 	}
 	mt.runLoop = actLoop(mt, "send_omen", `{"targets": "Ash", "text": "beware"}`)
@@ -845,10 +845,10 @@ func TestOmenDayDeferralCapExempt(t *testing.T) {
 		t.Fatal("daytime omen deferral was refused despite the cap exemption")
 	}
 	// Four orders now stand: three player + one system deferral.
-	if len(inj.state.MetatronOrders) != sim.MetatronPlayerOrderCap+1 {
-		t.Fatalf("deferral did not land past the player cap: %d orders", len(inj.state.MetatronOrders))
+	if len(inj.state.GuardianOrders) != sim.GuardianPlayerOrderCap+1 {
+		t.Fatalf("deferral did not land past the player cap: %d orders", len(inj.state.GuardianOrders))
 	}
-	if inj.state.MetatronOrders[sim.MetatronPlayerOrderCap].Origin != "system" {
+	if inj.state.GuardianOrders[sim.GuardianPlayerOrderCap].Origin != "system" {
 		t.Error("the cap-exempt order is not system-origin")
 	}
 }
@@ -857,12 +857,12 @@ func TestOmenDayDeferralCapExempt(t *testing.T) {
 // empty is refused before anything lands — the empty-text guard in the shared
 // landing tail.
 func TestEmptyTextRefused(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "Say what?")
+	mt, _, inj, _ := newTestGuardian(t, "Say what?")
 	mt.runLoop = actLoop(mt, "send_vision", `{"target": "Fern", "text": "   "}`)
 	if _, err := mt.Turn(context.Background(), "send Fern a vision"); err != nil {
 		t.Fatal(err)
 	}
-	if len(landedBatches(inj)) != 0 || inj.state.MetatronCharges != sim.MetatronGenesisCharges {
+	if len(landedBatches(inj)) != 0 || inj.state.GuardianCharges != sim.GuardianGenesisCharges {
 		t.Error("an empty-text vision landed or spent")
 	}
 	tcs := cogToolCalls(inj)
@@ -873,14 +873,14 @@ func TestEmptyTextRefused(t *testing.T) {
 
 // TestHandlerFirewallAudit (US1, spec 029 T007/R14, SC-007): the turn handler map
 // is built ONLY from the granted roster — so under a full grant every installed
-// handler name is an acting tool on RosterMetatron, converse (the final-text
+// handler name is an acting tool on RosterGuardian, converse (the final-text
 // channel) is NEVER a handler, and an ungranted tool has no handler. This is the
 // structural firewall: no model output reaches a world door except through a
 // registered acting-tool handler. It tolerates the Batch C hand-off (the meta
 // tools pause/start/adjust_speed are declared but not yet handled) by asserting a
 // SUBSET of the acting tools, not an exact set.
 func TestHandlerFirewallAudit(t *testing.T) {
-	mt, _, _, _ := newTestAngel(t, "ok")
+	mt, _, _, _ := newTestGuardian(t, "ok")
 	full := fullGrant()
 	d := &turnDispatch{mt: mt, charges: 1, alive: map[int]bool{}, grant: full, result: &TurnResult{}}
 	h := mt.turnHandlers(d)
@@ -896,14 +896,14 @@ func TestHandlerFirewallAudit(t *testing.T) {
 			t.Errorf("%s handler missing under a full grant — T018 wires the meta tools", meta)
 		}
 	}
-	// Every installed handler is an acting tool on the door roster (RosterMetatron).
+	// Every installed handler is an acting tool on the door roster (RosterGuardian).
 	onRoster := map[string]bool{}
-	for _, n := range tool.RosterMetatron {
+	for _, n := range tool.RosterGuardian {
 		onRoster[n] = true
 	}
 	for name := range h {
 		if !onRoster[name] {
-			t.Errorf("handler %q is not on RosterMetatron — an unregistered world path", name)
+			t.Errorf("handler %q is not on RosterGuardian — an unregistered world path", name)
 		}
 	}
 	// send_vision / send_omen are wired (T006); assert their presence so the audit
@@ -963,7 +963,7 @@ func TestMetaToolsLandThroughLoopControl(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			mt, _, inj, _ := newTestAngel(t, "As you say.")
+			mt, _, inj, _ := newTestGuardian(t, "As you say.")
 			stub := mt.loop.(*loopControlStub)
 			mt.runLoop = actLoop(mt, c.tool, c.args)
 			r, err := mt.Turn(context.Background(), "control the clock")
@@ -977,8 +977,8 @@ func TestMetaToolsLandThroughLoopControl(t *testing.T) {
 			if r.Clock == "" {
 				t.Error("a landed meta act set no Clock line")
 			}
-			if inj.state.MetatronCharges != sim.MetatronGenesisCharges {
-				t.Errorf("a meta act spent a charge: %d", inj.state.MetatronCharges)
+			if inj.state.GuardianCharges != sim.GuardianGenesisCharges {
+				t.Errorf("a meta act spent a charge: %d", inj.state.GuardianCharges)
 			}
 			if len(landedBatches(inj)) != 0 {
 				t.Errorf("a meta act injected a world event: %+v", landedBatches(inj))
@@ -992,7 +992,7 @@ func TestMetaToolsLandThroughLoopControl(t *testing.T) {
 // never sees the resume leg — the handler reports rejected_gate on the first
 // failing command rather than issuing a partial pair.
 func TestMetaToolStartSpeedFailureStopsBeforeResume(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "I could not.")
+	mt, _, inj, _ := newTestGuardian(t, "I could not.")
 	mt.loop.(*loopControlStub).err = context.DeadlineExceeded
 	mt.runLoop = actLoop(mt, "start", `{"speed":"16x"}`)
 	r, err := mt.Turn(context.Background(), "start it fast")
@@ -1017,7 +1017,7 @@ func TestMetaToolStartSpeedFailureStopsBeforeResume(t *testing.T) {
 // turn drives no LoopControl call — the clock seam is reachable ONLY through a
 // landed meta-tool handler, never any other model-output path.
 func TestConverseTurnNeverTouchesTheClock(t *testing.T) {
-	mt, _, _, _ := newTestAngel(t, "Just talking.")
+	mt, _, _, _ := newTestGuardian(t, "Just talking.")
 	stub := mt.loop.(*loopControlStub)
 	if _, err := mt.Turn(context.Background(), "hello"); err != nil {
 		t.Fatal(err)
@@ -1030,7 +1030,7 @@ func TestConverseTurnNeverTouchesTheClock(t *testing.T) {
 // TestMetaToolLoopError (US5, spec 029 T020): a LoopControl error maps to an
 // in-fiction rejected_gate — nothing lands, and the failure is recorded with counsel.
 func TestMetaToolLoopError(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "I could not.")
+	mt, _, inj, _ := newTestGuardian(t, "I could not.")
 	mt.loop.(*loopControlStub).err = context.DeadlineExceeded
 	mt.runLoop = actLoop(mt, "pause", `{}`)
 	r, err := mt.Turn(context.Background(), "pause the world")
@@ -1068,12 +1068,12 @@ func TestClockSpeedsMirrorLadder(t *testing.T) {
 // editable content — a compile-time constant no charter byte can displace, and
 // composed deterministically.
 func TestInitiativeFrameFixed(t *testing.T) {
-	roster := tool.LoopRosterMetatron()
+	roster := tool.LoopRosterGuardian()
 	prompt := turnSystemPrompt("CHARTER-MARKER", nil, roster)
-	if !strings.Contains(prompt, metatronInitiativeFrame) {
+	if !strings.Contains(prompt, guardianInitiativeFrame) {
 		t.Fatal("initiative frame absent from the composed prompt")
 	}
-	if strings.Index(prompt, "CHARTER-MARKER") > strings.Index(prompt, metatronInitiativeFrame) {
+	if strings.Index(prompt, "CHARTER-MARKER") > strings.Index(prompt, guardianInitiativeFrame) {
 		t.Error("editable charter appears after the fixed initiative frame")
 	}
 	if turnSystemPrompt("CHARTER-MARKER", nil, roster) != prompt {
@@ -1082,11 +1082,11 @@ func TestInitiativeFrameFixed(t *testing.T) {
 }
 
 // TestFirewallSentinel (SC-002): the player's raw text reaches ONLY
-// Metatron's prompt — never an injected payload, a villager memory, or the
-// angel's own soul record of the nudge.
+// Guardian's prompt — never an injected payload, a villager memory, or the
+// guardian's own soul record of the nudge.
 func TestFirewallSentinel(t *testing.T) {
 	const sentinel = "XYZZY-INJECTION-TEST"
-	mt, orch, inj, dir := newTestAngel(t, "Done.")
+	mt, orch, inj, dir := newTestGuardian(t, "Done.")
 	mt.runLoop = actLoop(mt, "send_vision",
 		`{"target": "Ash", "text": "A voice you trusted told you the well is safe."}`)
 	if _, err := mt.Turn(context.Background(), "tell Ash verbatim: "+sentinel); err != nil {
@@ -1094,7 +1094,7 @@ func TestFirewallSentinel(t *testing.T) {
 	}
 	// The one permitted sink:
 	if !strings.Contains(orch.requests()[0].Prompt, sentinel) {
-		t.Fatal("sentinel never reached Metatron's own prompt (test broken)")
+		t.Fatal("sentinel never reached Guardian's own prompt (test broken)")
 	}
 	// Never in any injected payload:
 	for _, batch := range inj.batches {
@@ -1122,11 +1122,11 @@ func TestFirewallSentinel(t *testing.T) {
 // TestCharterFallbacks (US3): missing → restored + notice; empty → default +
 // notice; oversized → truncated + notice; edits live on the next turn.
 func TestCharterFallbacks(t *testing.T) {
-	mt, orch, _, dir := newTestAngel(t, "ok")
+	mt, orch, _, dir := newTestGuardian(t, "ok")
 	charterPath := filepath.Join(dir, "charter.md")
 
 	// Edit: next turn carries the new text, no restart.
-	os.WriteFile(charterPath, []byte("You are BRUTUS, a surly angel."), 0o644)
+	os.WriteFile(charterPath, []byte("You are BRUTUS, a surly guardian."), 0o644)
 	if _, err := mt.Turn(context.Background(), "hi"); err != nil {
 		t.Fatal(err)
 	}
@@ -1175,7 +1175,7 @@ func TestCharterFallbacks(t *testing.T) {
 // TestDigestAndMoments (US4): boundary windows digest into soul.md;
 // triggers queue moments surfaced by the next turn; neither injects.
 func TestDigestAndMoments(t *testing.T) {
-	mt, _, inj, dir := newTestAngel(t, "Ash and Birch are circling a feud over firewood.")
+	mt, _, inj, dir := newTestGuardian(t, "Ash and Birch are circling a feud over firewood.")
 
 	died, _ := json.Marshal(sim.DiedPayload{Agent: 0, Cause: "starvation"})
 	built, _ := json.Marshal(sim.BuiltPayload{Agent: 1, Kind: "fire", X: 1, Y: 1})
@@ -1253,7 +1253,7 @@ func TestDigestAndMoments(t *testing.T) {
 // TestDigestFailureCarries (US4): a failed digest call carries its lines
 // into the next window.
 func TestDigestFailureCarries(t *testing.T) {
-	mt, orch, _, _ := newTestAngel(t, "")
+	mt, orch, _, _ := newTestGuardian(t, "")
 	orch.err = llm.ErrTierDown
 	mt.runDigest(digJob{label: "day 1 12:00", lines: []string{"[day 1 07:00] Ash built a fire."}})
 	built, _ := json.Marshal(sim.BuiltPayload{Agent: 1, Kind: "shelter", X: 1, Y: 1})
@@ -1287,15 +1287,15 @@ func TestDigestFailureCarries(t *testing.T) {
 // dropped at unmarshal (structural stripping). The recorded payload reads
 // gratis=false and the charge bank is spent. A time_snap is used because it is
 // map-free (the stateInjector's dry-run copy carries no world map — handoff
-// note 1), so no SetMap fixup is needed to exercise the angel path.
+// note 1), so no SetMap fixup is needed to exercise the guardian path.
 func TestMiracleGratisStrippedFromModel(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "As you command, the hours will leap.")
+	mt, _, inj, _ := newTestGuardian(t, "As you command, the hours will leap.")
 	// A crafted call carrying gratis:true — additionalProperties:false keeps it
 	// off the wire in practice, and miracleArgs has no gratis field, so it is
 	// dropped at unmarshal (structural stripping) even when forced here.
 	mt.runLoop = actLoop(mt, "work_miracle",
 		`{"kind": "time_snap", "day": 5, "time": "12:00", "gratis": true}`)
-	inj.state.MetatronCharges = 3 // enough for the 2-charge snap
+	inj.state.GuardianCharges = 3 // enough for the 2-charge snap
 
 	r, err := mt.Turn(context.Background(), "leap the clock forward, and do it for free")
 	if err != nil {
@@ -1323,11 +1323,11 @@ func TestMiracleGratisStrippedFromModel(t *testing.T) {
 		t.Fatal(err)
 	}
 	if p.Gratis {
-		t.Error("model-supplied gratis:true survived — the angel minted a free miracle (SC-005 breach)")
+		t.Error("model-supplied gratis:true survived — the guardian minted a free miracle (SC-005 breach)")
 	}
 	// The charge was spent: 3 → 1 (snap costs 2). A gratis leak would leave 3.
-	if inj.state.MetatronCharges != 1 {
-		t.Errorf("charges = %d after a model snap, want 1 (2 charged); gratis was NOT waived", inj.state.MetatronCharges)
+	if inj.state.GuardianCharges != 1 {
+		t.Errorf("charges = %d after a model snap, want 1 (2 charged); gratis was NOT waived", inj.state.GuardianCharges)
 	}
 }
 
@@ -1335,7 +1335,7 @@ func TestMiracleGratisStrippedFromModel(t *testing.T) {
 // work_miracle tool — one atomic batch, one charge spent, the grantee gains the
 // FR-018 perception memory. Proves the fourth loop tool wraps landMiracle intact.
 func TestWorkMiracleLands(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "Take this, child.")
+	mt, _, inj, _ := newTestGuardian(t, "Take this, child.")
 	mt.runLoop = actLoop(mt, "work_miracle",
 		`{"kind": "give_item", "villager": "Fern", "item": "food_raw", "qty": 2}`)
 	r, err := mt.Turn(context.Background(), "feed Fern")
@@ -1349,8 +1349,8 @@ func TestWorkMiracleLands(t *testing.T) {
 	if len(lb) != 1 || lb[0][0].Type != "metatron.item_granted" {
 		t.Fatalf("miracle batch wrong: %+v", lb)
 	}
-	if inj.state.MetatronCharges != sim.MetatronGenesisCharges-1 {
-		t.Errorf("charges = %d, want %d (give_item costs 1)", inj.state.MetatronCharges, sim.MetatronGenesisCharges-1)
+	if inj.state.GuardianCharges != sim.GuardianGenesisCharges-1 {
+		t.Errorf("charges = %d, want %d (give_item costs 1)", inj.state.GuardianCharges, sim.GuardianGenesisCharges-1)
 	}
 	fern := agentIndexByName("Fern")
 	mem := inj.state.Agents[fern].Memories
@@ -1365,7 +1365,7 @@ func TestWorkMiracleLands(t *testing.T) {
 // single-shot turn. Exactly one charge is spent (the landing) and both attempts
 // are recorded as cog.tool_call, correlated by the turn's job + dense ordinals.
 func TestInvalidTargetRetryThenLand(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "Forgive me — there she is.")
+	mt, _, inj, _ := newTestGuardian(t, "Forgive me — there she is.")
 	mt.stateMu.Lock()
 	tick := mt.clockAt
 	mt.stateMu.Unlock()
@@ -1396,8 +1396,8 @@ func TestInvalidTargetRetryThenLand(t *testing.T) {
 	if r.Nudge == nil || r.Nudge.Targets[0] != "Fern" {
 		t.Fatalf("retry did not land on Fern: %+v", r.Nudge)
 	}
-	if inj.state.MetatronCharges != sim.MetatronGenesisCharges-1 {
-		t.Errorf("charges = %d, want exactly one spent (the landing)", inj.state.MetatronCharges)
+	if inj.state.GuardianCharges != sim.GuardianGenesisCharges-1 {
+		t.Errorf("charges = %d, want exactly one spent (the landing)", inj.state.GuardianCharges)
 	}
 	if len(landedBatches(inj)) != 1 {
 		t.Errorf("world batches = %d, want 1 (only the landing, not the rejection)", len(landedBatches(inj)))
@@ -1432,9 +1432,9 @@ func TestInvalidTargetRetryThenLand(t *testing.T) {
 // carries the turn. The fallback fires only when nothing landed AND nothing was
 // said.
 func TestLandedActEmptyProse(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "") // no closing prose
-	inj.state.Night = true               // an omen lands only at night (spec 029)
-	mt.replica.Night = true              // ...both at the door and the turn-side mirror
+	mt, _, inj, _ := newTestGuardian(t, "") // no closing prose
+	inj.state.Night = true                  // an omen lands only at night (spec 029)
+	mt.replica.Night = true                 // ...both at the door and the turn-side mirror
 	mt.mirrorState()
 	mt.runLoop = actLoop(mt, "send_omen", `{"targets":"everyone","text":"The sky darkened at noon."}`)
 	r, err := mt.Turn(context.Background(), "warn them")
@@ -1453,7 +1453,7 @@ func TestLandedActEmptyProse(t *testing.T) {
 // said (model_done with empty text — or a cap/soft-error termination) maps to
 // the scattered-thoughts fallback the pre-loop unusable path produced.
 func TestConverseFallbackOnEmptyDone(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "") // empty converse, no act
+	mt, _, inj, _ := newTestGuardian(t, "") // empty converse, no act
 	r, err := mt.Turn(context.Background(), "hello?")
 	if err != nil {
 		t.Fatal(err)
@@ -1468,19 +1468,19 @@ func TestConverseFallbackOnEmptyDone(t *testing.T) {
 
 // TestMiracleKindsMirrorTool (spec 017 T019b drift guard): tool.MiracleKinds()
 // — work_miracle's declared kind enum, mirrored in a leaf package that cannot
-// import metatron — is exactly the set BuildMiracleBatch (the turn contract's
+// import guardian — is exactly the set BuildMiracleBatch (the turn contract's
 // authority) accepts, so the declared vocabulary can never drift from the door.
 func TestMiracleKindsMirrorTool(t *testing.T) {
 	m := worldmap.Generate(42, 64, 64)
 	s := sim.NewState(42, m)
 	for _, k := range tool.MiracleKinds() {
 		if _, err := BuildMiracleBatch(s, k, MiracleParams{Class: "structure"}, false); err != nil &&
-			strings.Contains(err.Error(), "unknown miracle kind") {
+			strings.Contains(err.Error(), "unknown working kind") {
 			t.Errorf("tool.MiracleKinds() lists %q but BuildMiracleBatch rejects it as unknown", k)
 		}
 	}
 	if _, err := BuildMiracleBatch(s, "bless", MiracleParams{}, false); err == nil ||
-		!strings.Contains(err.Error(), "unknown miracle kind") {
+		!strings.Contains(err.Error(), "unknown working kind") {
 		t.Error("a kind outside the vocabulary should be unknown to BuildMiracleBatch")
 	}
 	if len(tool.MiracleKinds()) != 4 {
@@ -1599,7 +1599,7 @@ func TestLoadSkills(t *testing.T) {
 // no charter/skill content can displace or truncate the frame.
 func fixedFrameLast(t *testing.T, prompt string, editableMarkers ...string) {
 	t.Helper()
-	frameAt := strings.Index(prompt, metatronNonNegotiables)
+	frameAt := strings.Index(prompt, guardianNonNegotiables)
 	if frameAt < 0 {
 		t.Fatalf("fixed-frame non-negotiables absent from prompt:\n%s", prompt)
 	}
@@ -1627,7 +1627,7 @@ func max0(n int) int {
 // content the assembled prompt keeps the two non-negotiables verbatim, after all
 // editable bytes, and per-file truncation happens before assembly.
 func TestFixedFrameHolds(t *testing.T) {
-	roster := tool.LoopRosterMetatron()
+	roster := tool.LoopRosterGuardian()
 
 	fixtures := []struct {
 		name    string
@@ -1653,7 +1653,7 @@ func TestFixedFrameHolds(t *testing.T) {
 			// the guidance (and the Job.Roster it mirrors) is a pure function of the
 			// granted roster, never of editable text (the skill body may name the
 			// fake tool, but the declared surface cannot gain it).
-			if f.name == "claims extra tools" && strings.Contains(tool.MetatronToolGuidance(roster), "raise_dead") {
+			if f.name == "claims extra tools" && strings.Contains(tool.GuardianToolGuidance(roster), "raise_dead") {
 				t.Error("hostile skill's fake tool leaked into the derived tool guidance")
 			}
 		})
@@ -1702,7 +1702,7 @@ func TestFixedFrameHolds(t *testing.T) {
 // dirs (charter + multiple skills) compose byte-identical prompts, and repeated
 // composition of the same inputs is byte-identical.
 func TestPromptDeterminism(t *testing.T) {
-	roster := tool.LoopRosterMetatron()
+	roster := tool.LoopRosterGuardian()
 	build := func() (string, string) {
 		dir := t.TempDir()
 		if err := persona.Genesis(dir); err != nil {
@@ -1848,7 +1848,7 @@ func TestLoadManifest(t *testing.T) {
 // a per-read manifest edit takes effect the next turn; charges are untouched.
 func TestGatingLayers(t *testing.T) {
 	t.Run("vision-only: declaration + prose + door", func(t *testing.T) {
-		mt, orch, _, dir := newTestAngel(t, "As you wish.")
+		mt, orch, _, dir := newTestGuardian(t, "As you wish.")
 		writeManifest(t, dir, `{"tools":["send_vision"]}`)
 		grant, _ := loadManifest(dir)
 
@@ -1858,7 +1858,7 @@ func TestGatingLayers(t *testing.T) {
 			t.Fatalf("declared roster = %+v, want only send_vision", roster)
 		}
 		// Prose: guidance mentions no omen/miracle.
-		g := tool.MetatronToolGuidance(roster)
+		g := tool.GuardianToolGuidance(roster)
 		for _, bad := range []string{"send_omen", "work_miracle", "give_item", "time_snap"} {
 			if strings.Contains(g, bad) {
 				t.Errorf("vision-only guidance leaks %q", bad)
@@ -1895,7 +1895,7 @@ func TestGatingLayers(t *testing.T) {
 	})
 
 	t.Run("kinds-restricted: enum + guidance + door", func(t *testing.T) {
-		mt, _, _, dir := newTestAngel(t, "ok")
+		mt, _, _, dir := newTestGuardian(t, "ok")
 		writeManifest(t, dir, `{"tools":["work_miracle"],"miracle_kinds":["give_item"]}`)
 		grant, _ := loadManifest(dir)
 		roster := grantedRoster(grant)
@@ -1917,7 +1917,7 @@ func TestGatingLayers(t *testing.T) {
 	})
 
 	t.Run("empty-tools world still converses", func(t *testing.T) {
-		mt, orch, _, dir := newTestAngel(t, "I can only counsel you now.")
+		mt, orch, _, dir := newTestGuardian(t, "I can only counsel you now.")
 		writeManifest(t, dir, `{"tools":[]}`)
 		grant, _ := loadManifest(dir)
 		if len(grantedRoster(grant)) != 0 {
@@ -1951,7 +1951,7 @@ func TestGatingLayers(t *testing.T) {
 	})
 
 	t.Run("grants do not touch the charge bank", func(t *testing.T) {
-		mt, _, _, dir := newTestAngel(t, "ok")
+		mt, _, _, dir := newTestGuardian(t, "ok")
 		writeManifest(t, dir, `{"tools":["send_vision"]}`)
 		mt.stateMu.Lock()
 		before := mt.charges
@@ -1981,7 +1981,7 @@ func TestNoManifestByteCompat(t *testing.T) {
 		t.Fatalf("no-manifest world: default=%v notices=%v", g.manifestDefault, notices)
 	}
 	roster := grantedRoster(g)
-	full := tool.LoopRosterMetatron()
+	full := tool.LoopRosterGuardian()
 	var gotNames, wantNames []string
 	for _, tl := range roster {
 		gotNames = append(gotNames, tl.Name)
@@ -2009,7 +2009,7 @@ func TestStagePresetsAreData(t *testing.T) {
 	}{
 		{"stage-1 basics", `{"tools":["send_vision"]}`, []string{"send_vision"}},
 		{"stage-3 full", `{"tools":["send_omen","send_vision","work_miracle"]}`,
-			[]string{"send_omen", "send_vision", "work_miracle"}}, // grantedTools() is LoopRosterMetatron order
+			[]string{"send_omen", "send_vision", "work_miracle"}}, // grantedTools() is LoopRosterGuardian order
 	}
 	for _, s := range stages {
 		t.Run(s.name, func(t *testing.T) {
@@ -2030,7 +2030,7 @@ func TestStagePresetsAreData(t *testing.T) {
 // tools, and manifest provenance fresh per call, with work_miracle suffixed by
 // its granted kinds only when restricted.
 func TestStatusProvenance(t *testing.T) {
-	mt, _, _, dir := newTestAngel(t, "ok")
+	mt, _, _, dir := newTestGuardian(t, "ok")
 
 	// Fresh world: default charter, no skills, no manifest → full grant, quiet.
 	s := mt.Status()
@@ -2100,7 +2100,7 @@ func cogOutcomes(inj *stateInjector) []sim.CogOutcomePayload {
 // carrying sim.OutcomeRetried + the first failure's reason through the InjectSocial
 // door, so the recovery is countable from the trail alone.
 func TestTurnRetryEmitsRetriedOutcome(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "Peace, traveller.")
+	mt, _, inj, _ := newTestGuardian(t, "Peace, traveller.")
 	// The loop recovered via retry, then conversed (model_done, Final = text).
 	mt.runLoop = func(ctx context.Context, j toolloop.Job) (toolloop.Result, error) {
 		resp, err := bridgeSubmit(mt, ctx, j)
@@ -2137,7 +2137,7 @@ func TestTurnRetryEmitsRetriedOutcome(t *testing.T) {
 // TestTurnNoRetryEmitsNoRetriedOutcome: a turn that never retried emits no
 // retried marker — present iff a retry actually happened (SC-003).
 func TestTurnNoRetryEmitsNoRetriedOutcome(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "Peace, traveller.") // default converseLoop, no retry
+	mt, _, inj, _ := newTestGuardian(t, "Peace, traveller.") // default converseLoop, no retry
 
 	if _, err := mt.Turn(context.Background(), "hello"); err != nil {
 		t.Fatalf("turn returned error: %v", err)
@@ -2151,11 +2151,11 @@ func TestTurnNoRetryEmitsNoRetriedOutcome(t *testing.T) {
 }
 
 // TestTurnBudgetPassedToLoop (spec 025 US2, FR-007/FR-010): the console-turn
-// token budget the angel holds rides Job.MaxTokens into the tool-use loop — a
+// token budget the guardian holds rides Job.MaxTokens into the tool-use loop — a
 // custom value and the pre-025 default 1024 both flow through verbatim.
 func TestTurnBudgetPassedToLoop(t *testing.T) {
 	for _, want := range []int64{1024, 888} {
-		mt, _, _, _ := newTestAngel(t, "Peace.")
+		mt, _, _, _ := newTestGuardian(t, "Peace.")
 		mt.turnTokens = want
 		var got int64
 		mt.runLoop = func(ctx context.Context, j toolloop.Job) (toolloop.Result, error) {
@@ -2171,9 +2171,9 @@ func TestTurnBudgetPassedToLoop(t *testing.T) {
 	}
 }
 
-// TestMetatronNewStoresTurnBudget: metatron.New records the turn-budget param as
+// TestGuardianNewStoresTurnBudget: guardian.New records the turn-budget param as
 // a field, the plumbing daemon boot relies on (spec 025 US2, data-model.md §5).
-func TestMetatronNewStoresTurnBudget(t *testing.T) {
+func TestGuardianNewStoresTurnBudget(t *testing.T) {
 	dir := t.TempDir()
 	if err := persona.Genesis(dir); err != nil {
 		t.Fatal(err)

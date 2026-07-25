@@ -123,14 +123,14 @@ func TestCompileEachKind(t *testing.T) {
 // error and name the field.
 func TestTemplateSubstitution(t *testing.T) {
 	st := testState([]string{"Alice"}, []int{0}, []int{0})
-	in := CompileInput{State: st, Invoker: "the angel", Args: map[string]string{"target": "Alice", "who": "Alice"}, Declared: decl("agent.memory_added")}
+	in := CompileInput{State: st, Invoker: "the guardian", Args: map[string]string{"target": "Alice", "who": "Alice"}, Declared: decl("agent.memory_added")}
 	evs, err := compileRaw(t, `[{"kind":"narrate","text":"{invoker} blessed {args.who}","recipients":"target"}]`, in)
 	if err != nil {
 		t.Fatal(err)
 	}
 	var p sim.MemoryAddedPayload
 	mustUnmarshal(t, evs[0].Payload, &p)
-	if p.Text != "the angel blessed Alice" {
+	if p.Text != "the guardian blessed Alice" {
 		t.Errorf("text = %q", p.Text)
 	}
 

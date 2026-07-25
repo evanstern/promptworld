@@ -26,7 +26,7 @@ func TestEventFamilyOf(t *testing.T) {
 		{"norm.violated", familyGovernance},
 		{"gru.emerged", familyGru},
 		{"chronicle.entry", familyChronicle},
-		{"metatron.nudged", familyMetatron},
+		{"metatron.nudged", familyGuardian},
 		{"daemon.started", familyDaemon},
 		{"cog.thought", familyCog},
 		{"future.unknown_type", familyUnknown}, // new namespaces land here until promoted
@@ -46,7 +46,7 @@ func TestEventFamilyOf(t *testing.T) {
 func TestFormatChronicleLineFallback(t *testing.T) {
 	e := store.Event{Seq: 1, Tick: 60, Type: "future.unknown_type",
 		Payload: json.RawMessage(`{"agent":0,"x":1,"y":1}`)}
-	l := formatChronicleLine(e, testNames)
+	l := formatChronicleLine(e, testNames, nil)
 	if l.Family != familyUnknown {
 		t.Errorf("family = %v, want familyUnknown", l.Family)
 	}
@@ -63,7 +63,7 @@ func TestFormatChronicleLineFallback(t *testing.T) {
 // like a registry miss.
 func TestFormatChronicleLineFallbackOnUnmarshalFailure(t *testing.T) {
 	e := store.Event{Seq: 1, Tick: 1, Type: "agent.moved", Payload: json.RawMessage(`not json`)}
-	l := formatChronicleLine(e, testNames)
+	l := formatChronicleLine(e, testNames, nil)
 	if len(l.Summary) != 1 || l.Summary[0].Role != segText {
 		t.Fatalf("unmarshal failure should fall back to one segText span: %+v", l.Summary)
 	}
@@ -75,7 +75,7 @@ func TestFormatChronicleLineFallbackOnUnmarshalFailure(t *testing.T) {
 func TestFormatChronicleLineSpeechPrivilege(t *testing.T) {
 	e := store.Event{Seq: 1201, Tick: 8846, Type: "social.conversation_turn",
 		Payload: json.RawMessage(`{"conv":102,"speaker":3,"listener":0,"text":"I stacked wood at dawn"}`)}
-	l := formatChronicleLine(e, testNames)
+	l := formatChronicleLine(e, testNames, nil)
 	if want := `Rowan→Ash "I stacked wood at dawn"`; plainSegs(l.Summary) != want {
 		t.Errorf("plain summary = %q, want %q", plainSegs(l.Summary), want)
 	}
@@ -88,7 +88,7 @@ func TestFormatChronicleLineSpeechPrivilege(t *testing.T) {
 
 	rumor := store.Event{Seq: 1203, Tick: 8900, Type: "social.rumor_told",
 		Payload: json.RawMessage(`{"from":1,"to":2,"rumor_id":0,"subject":0,"tone":30,"text":"ash lets the fire die","confidence":40}`)}
-	l2 := formatChronicleLine(rumor, testNames)
+	l2 := formatChronicleLine(rumor, testNames, nil)
 	if want := `Birch→Cedar rumor: "ash lets the fire die"`; plainSegs(l2.Summary) != want {
 		t.Errorf("rumor plain summary = %q, want %q", plainSegs(l2.Summary), want)
 	}
@@ -103,7 +103,7 @@ func TestFormatChronicleLineSpeechPrivilege(t *testing.T) {
 func TestFormatChronicleLineOutOfRangeIndex(t *testing.T) {
 	e := store.Event{Seq: 1, Tick: 1, Type: "agent.moved",
 		Payload: json.RawMessage(`{"agent":99,"x":3,"y":4}`)}
-	l := formatChronicleLine(e, testNames)
+	l := formatChronicleLine(e, testNames, nil)
 	if want := `#99 → (3,4)`; plainSegs(l.Summary) != want {
 		t.Errorf("summary = %q, want %q", plainSegs(l.Summary), want)
 	}
@@ -123,7 +123,7 @@ func TestFormatChronicleLineHail(t *testing.T) {
 	}
 	for _, c := range cases {
 		e := store.Event{Seq: 1, Tick: 1, Type: c.eventType, Payload: json.RawMessage(c.payload)}
-		l := formatChronicleLine(e, testNames)
+		l := formatChronicleLine(e, testNames, nil)
 		if got := plainSegs(l.Summary); got != c.want {
 			t.Errorf("%s summary = %q, want %q", c.eventType, got, c.want)
 		}
@@ -149,7 +149,7 @@ func TestFormatChronicleLineStorage(t *testing.T) {
 	}
 	for _, c := range cases {
 		e := store.Event{Seq: 1, Tick: 1, Type: c.eventType, Payload: json.RawMessage(c.payload)}
-		l := formatChronicleLine(e, testNames)
+		l := formatChronicleLine(e, testNames, nil)
 		if got := plainSegs(l.Summary); got != c.want {
 			t.Errorf("%s summary = %q, want %q", c.eventType, got, c.want)
 		}
@@ -251,7 +251,7 @@ func TestComputeChronicleColumnsAlignment(t *testing.T) {
 	if capped.TypeWidth != typeColumnCapSolo {
 		t.Errorf("TypeWidth = %d, want cap %d", capped.TypeWidth, typeColumnCapSolo)
 	}
-	padded := padType(longType, capped)
+	padded := padType(chronicleLine{Type: longType}, capped)
 	if got := len([]rune(padded)); got != typeColumnCapSolo {
 		t.Errorf("padded type width = %d, want %d", got, typeColumnCapSolo)
 	}
@@ -334,7 +334,7 @@ func TestStyleWrapLinePlainEquivalence(t *testing.T) {
 	}
 	for typ, fx := range catalogFixture {
 		e := store.Event{Seq: 1, Tick: 12345, Type: typ, Payload: json.RawMessage(fx.payload)}
-		l := formatChronicleLine(e, names)
+		l := formatChronicleLine(e, names, nil)
 		for _, w := range widths {
 			cols := computeChronicleColumns([]chronicleLine{l}, w.dock)
 			plain := wrapOrTruncatePlain(plainChronicleLine(l, cols), w.width, w.maxWrap)
@@ -362,7 +362,7 @@ func TestStyleWrapLinePlainEquivalence(t *testing.T) {
 // flattening to one string before finding word boundaries) would corrupt.
 func TestStyleWrapLineMidWordRoleBoundary(t *testing.T) {
 	e := store.Event{Seq: 1, Tick: 1, Type: "agent.spear_broke", Payload: json.RawMessage(`{"agent":0}`)}
-	l := formatChronicleLine(e, testNames)
+	l := formatChronicleLine(e, testNames, nil)
 	if want := "Ash's spear broke"; plainSegs(l.Summary) != want {
 		t.Fatalf("setup: summary = %q, want %q", plainSegs(l.Summary), want)
 	}

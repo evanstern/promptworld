@@ -1,4 +1,4 @@
-package metatron
+package guardian
 
 import (
 	"fmt"
@@ -8,10 +8,10 @@ import (
 )
 
 // The shared miracle batch-builder (spec 016 R6). Both doors — the operator's
-// IPC `miracle` command and the angel's landMiracle — compose their event batch
+// IPC `miracle` command and the guardian's landMiracle — compose their event batch
 // HERE, so the miracle event and its FR-018 perception memories can never drift
-// between the two channels. It is a package function (not a *Metatron method):
-// the IPC server calls it without an angel present, on pure-sim worlds.
+// between the two channels. It is a package function (not a *Guardian method):
+// the IPC server calls it without an guardian present, on pure-sim worlds.
 //
 // The builder only COMPOSES; it does not validate. Validation (entity presence,
 // destination terrain, charge sufficiency) lives in the sim reducer arms and is
@@ -36,7 +36,7 @@ type MiracleParams struct {
 
 // Perception-memory templates (FR-018): fixed, deterministic, written for the
 // villager's world (no player, no game, no outside voice), landed at SalDream —
-// miracles are exactly as memorable as an angelic dream (research R7).
+// miracles are exactly as memorable as an otherworldly dream (research R7).
 const (
 	memMoved   = "An unseen hand lifted you and set you down in a strange place."
 	memSnapped = "The light lurched across the sky; a great span of time passed in a single breath."
@@ -77,7 +77,7 @@ func BuildMiracleBatch(s *sim.State, kind string, p MiracleParams, gratis bool) 
 			Class: p.Class, X: p.X, Y: p.Y, Gratis: gratis})}
 		// No perception memory in v1 (no villager is directly affected).
 	default:
-		return nil, fmt.Errorf("unknown miracle kind %q", kind)
+		return nil, fmt.Errorf("unknown working kind %q", kind)
 	}
 
 	batch := []store.Event{main}

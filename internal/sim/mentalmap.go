@@ -69,7 +69,7 @@ type PlaceFact struct {
 	Detail     int64  `json:"detail,omitempty"`
 }
 
-// ProvenanceRevealed marks a place-fact granted by a Metatron vision (spec 041
+// ProvenanceRevealed marks a place-fact granted by a Guardian vision (spec 041
 // FR-014) — the third provenance beside the Belief vocabulary's witnessed/told
 // (consolidate.go), which place-facts reuse.
 const ProvenanceRevealed = "revealed"
@@ -547,10 +547,10 @@ func tellablePlaces(s *State, teller, listener int, tick int64) []PlaceFact {
 // PlaceRevealedPayload — metatron.place_revealed (spec 041 FR-014, contracts
 // §1): a divine place grant riding a send_vision batch through the
 // InjectSocial door. Facts carries the revealed places in canonical
-// (Kind, X, Y) order; the emitter (the metatron's vision lander) bakes only
+// (Kind, X, Y) order; the emitter (the guardian's vision lander) bakes only
 // the place identity (Kind, X, Y, Provenance revealed) — Seen and Detail are
 // stamped NORMATIVELY by the reducer arm (Seen = the landing tick, Detail =
-// ground truth at landing), the MetatronOrder.Status-ignored shape: the
+// ground truth at landing), the GuardianOrder.Status-ignored shape: the
 // model-side emitter cannot know the landing tick, and the arm's stamps are a
 // pure function of (state, event) so live, dry-run, and replay agree. The
 // dry-run enforces the fact names a REAL place (groundFactPresent) — the god

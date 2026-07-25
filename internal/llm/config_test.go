@@ -67,7 +67,7 @@ func TestLegacyShapeDerivesRegistry(t *testing.T) {
 		}
 		// The watch kind (spec 029) is the one multi-entry default chain:
 		// cheap-first local with a reliable cloud fallback (contracts/routing.md).
-		if kind == KindMetatronWatch {
+		if kind == KindGuardianWatch {
 			if rc.NoFallback || !reflect.DeepEqual(rc.Chain, []string{"local", "cloud"}) {
 				t.Errorf("route %q = %+v, want a [local cloud] fallback chain", kind, rc)
 			}
@@ -195,7 +195,7 @@ func v2Body(routes string) string {
 // validRoutes covers exactly the accepted kinds — the baseline a matrix case
 // mutates. metatron_watch (spec 029) is routed explicitly here with declared
 // providers so the positive controls stay complete without leaning on the
-// missing-route backfill (which TestMetatronWatchRouteBackfill exercises on its
+// missing-route backfill (which TestGuardianWatchRouteBackfill exercises on its
 // own incomplete config).
 const validRoutes = `{"planner":["gemma"],"conversation":["gemma"],"meeting":["gemma"],` +
 	`"consolidation":["anthropic"],"narrator":["anthropic"],"drama":["anthropic"],"metatron":["anthropic"],` +
@@ -298,12 +298,12 @@ func TestValidV2Loads(t *testing.T) {
 	}
 }
 
-// TestMetatronWatchRouteBackfill (spec 029 T001, contracts/routing.md / research
+// TestGuardianWatchRouteBackfill (spec 029 T001, contracts/routing.md / research
 // R8): a v2 llm.json written before metatron_watch shipped is MISSING its route.
 // validateV2 backfills it from defaultRoutes() with one boot log line rather than
 // failing the boot, so pre-existing worlds keep booting on upgrade; the post-load
 // invariant (every accepted kind routed) still holds.
-func TestMetatronWatchRouteBackfill(t *testing.T) {
+func TestGuardianWatchRouteBackfill(t *testing.T) {
 	// A default-shaped v2 world (providers local/cloud) whose routes predate the
 	// watch kind: all seven pre-029 kinds routed, metatron_watch absent.
 	body := `{"monthly_budget_usd":100,` +
@@ -326,7 +326,7 @@ func TestMetatronWatchRouteBackfill(t *testing.T) {
 	if err != nil {
 		t.Fatalf("resolveRegistry: %v", err)
 	}
-	rc, ok := routes[KindMetatronWatch]
+	rc, ok := routes[KindGuardianWatch]
 	if !ok {
 		t.Fatal("metatron_watch route was not backfilled — post-load completeness invariant broken")
 	}
@@ -336,12 +336,12 @@ func TestMetatronWatchRouteBackfill(t *testing.T) {
 	// The backfill announces itself on the boot channel, naming the kind.
 	named := false
 	for _, l := range logged {
-		if strings.Contains(l, string(KindMetatronWatch)) {
+		if strings.Contains(l, string(KindGuardianWatch)) {
 			named = true
 		}
 	}
 	if !named {
-		t.Errorf("backfill emitted no boot log line naming %q; got %v", KindMetatronWatch, logged)
+		t.Errorf("backfill emitted no boot log line naming %q; got %v", KindGuardianWatch, logged)
 	}
 }
 
@@ -363,10 +363,10 @@ func TestUnknownRouteKeyStillErrors(t *testing.T) {
 // new watch kind, so a fresh world and every legacy-derived world pick it up for
 // free — DefaultConfig, defaultRoutes(), and the accepted-kind set agree.
 func TestDefaultsIncludeWatchKind(t *testing.T) {
-	if _, ok := acceptedKinds[KindMetatronWatch]; !ok {
-		t.Fatal("KindMetatronWatch is not an accepted kind")
+	if _, ok := acceptedKinds[KindGuardianWatch]; !ok {
+		t.Fatal("KindGuardianWatch is not an accepted kind")
 	}
-	rc, ok := defaultRoutes()[string(KindMetatronWatch)]
+	rc, ok := defaultRoutes()[string(KindGuardianWatch)]
 	if !ok {
 		t.Fatal("defaultRoutes() has no metatron_watch entry")
 	}
@@ -378,7 +378,7 @@ func TestDefaultsIncludeWatchKind(t *testing.T) {
 	if err != nil {
 		t.Fatalf("DefaultConfig resolveRegistry: %v", err)
 	}
-	if _, ok := routes[KindMetatronWatch]; !ok {
+	if _, ok := routes[KindGuardianWatch]; !ok {
 		t.Error("DefaultConfig does not route metatron_watch")
 	}
 }
@@ -391,7 +391,7 @@ func TestDefaultsIncludeWatchKind(t *testing.T) {
 // The custom marshaler bypasses the struct-tag omitempty, so this pins the
 // hand-rolled carry the reconciliation added.
 func TestMaxTokensRoundTripsThroughShapeAwareMarshal(t *testing.T) {
-	budgets := &TokenBudgets{Planner: 700, Consolidation: 2000} // MetatronTurn 0 → dropped by TokenBudgets' own omitempty
+	budgets := &TokenBudgets{Planner: 700, Consolidation: 2000} // GuardianTurn 0 → dropped by TokenBudgets' own omitempty
 	shapes := map[string]Config{
 		"v2": {
 			MonthlyBudgetUSD: 100,
@@ -414,7 +414,7 @@ func TestMaxTokensRoundTripsThroughShapeAwareMarshal(t *testing.T) {
 			if err != nil {
 				t.Fatalf("marshal: %v", err)
 			}
-			// MetatronTurn 0 must be suppressed; planner/consolidation carried.
+			// GuardianTurn 0 must be suppressed; planner/consolidation carried.
 			if got := string(raw); !strings.Contains(got, `"max_tokens":{"planner":700,"consolidation":2000}`) {
 				t.Fatalf("max_tokens not carried verbatim: %s", got)
 			}
@@ -437,8 +437,8 @@ func TestMaxTokensRoundTripsThroughShapeAwareMarshal(t *testing.T) {
 			if n, _ := back.PlannerTokens(); n != 700 {
 				t.Errorf("PlannerTokens = %d, want 700", n)
 			}
-			if n, _ := back.MetatronTurnTokens(); n != defaultMetatronTurnTokens {
-				t.Errorf("MetatronTurnTokens = %d, want default %d", n, defaultMetatronTurnTokens)
+			if n, _ := back.GuardianTurnTokens(); n != defaultGuardianTurnTokens {
+				t.Errorf("GuardianTurnTokens = %d, want default %d", n, defaultGuardianTurnTokens)
 			}
 			if n, _ := back.ConsolidationTokens(); n != 2000 {
 				t.Errorf("ConsolidationTokens = %d, want 2000", n)
@@ -475,8 +475,8 @@ func TestMaxTokensLoadsFromV2File(t *testing.T) {
 	if n, _ := cfg.PlannerTokens(); n != 300 {
 		t.Errorf("PlannerTokens = %d, want 300", n)
 	}
-	if n, _ := cfg.MetatronTurnTokens(); n != 1500 {
-		t.Errorf("MetatronTurnTokens = %d, want 1500", n)
+	if n, _ := cfg.GuardianTurnTokens(); n != 1500 {
+		t.Errorf("GuardianTurnTokens = %d, want 1500", n)
 	}
 	if n, _ := cfg.ConsolidationTokens(); n != 900 {
 		t.Errorf("ConsolidationTokens = %d, want 900", n)

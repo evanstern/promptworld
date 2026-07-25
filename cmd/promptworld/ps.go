@@ -126,7 +126,7 @@ type psClock struct {
 	Speed           string  `json:"speed"`
 	EffectiveRate   float64 `json:"effective_rate,omitempty"`
 	Degraded        bool    `json:"degraded,omitempty"`
-	MetatronCharges int     `json:"metatron_charges,omitempty"`
+	GuardianCharges int     `json:"metatron_charges,omitempty"` // FROZEN JSON key (spec 052 ruling 2)
 }
 
 type psDaemon struct {
@@ -153,7 +153,7 @@ func psRowFor(inst worlds.Instance) psRow {
 		row.Clock = &psClock{
 			Tick: sd.Clock.Tick, GameTime: sd.Clock.GameTime, Paused: sd.Clock.Paused,
 			Speed: sd.Clock.Speed, EffectiveRate: sd.Clock.EffectiveRate,
-			Degraded: sd.Clock.Degraded, MetatronCharges: sd.Clock.MetatronCharges,
+			Degraded: sd.Clock.Degraded, GuardianCharges: sd.Clock.GuardianCharges,
 		}
 		row.Daemon = &psDaemon{Pid: sd.Daemon.Pid, UptimeSeconds: sd.Daemon.UptimeSeconds, Subscribers: sd.Daemon.Subscribers}
 		row.LLM = sd.LLM

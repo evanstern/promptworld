@@ -336,13 +336,13 @@ func TestResumeNoBurst(t *testing.T) {
 // --- spec 040 US1: a nudge wakes the nudged villager while paused (TASK-77) ---
 
 // nudgeBatchEvents builds the landed-nudge batch the mind absorbs — the shape
-// internal/metatron/turn.go's landNudgeBatch commits: one metatron.nudged
+// internal/guardian/turn.go's landNudgeBatch commits: one metatron.nudged
 // carrying the arming Seq, then one prefixed agent.memory_added per target. Fed
 // straight to the mind's Observe path: the mind consumes an ALREADY-landed nudge
 // (the door's charge/night validation is upstream — spec 040 D1), so it arms
 // every Target regardless of the reducer's form gates.
 func nudgeBatchEvents(seq, tick int64, form, text string, targets ...int) []store.Event {
-	nb, _ := json.Marshal(sim.MetatronNudgedPayload{Form: form, Targets: targets, Text: text})
+	nb, _ := json.Marshal(sim.GuardianNudgedPayload{Form: form, Targets: targets, Text: text})
 	batch := []store.Event{{Seq: seq, Tick: tick, Type: "metatron.nudged", Payload: nb}}
 	prefix := "You saw a vision: "
 	if form == "omen" {

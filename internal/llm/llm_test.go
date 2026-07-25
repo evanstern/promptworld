@@ -126,7 +126,7 @@ func TestRouting(t *testing.T) {
 		{KindConsolidation, TierCloud},
 		{KindNarrator, TierCloud},
 		{KindDrama, TierCloud},
-		{KindMetatron, TierCloud},
+		{KindGuardian, TierCloud},
 		{KindMeeting, TierLocal},
 	}
 	for _, c := range cases {
@@ -1401,7 +1401,7 @@ func TestTokenBudgetNormalization(t *testing.T) {
 		def     int64
 	}{
 		{"planner", Config.PlannerTokens, "max_tokens.planner", 512},
-		{"metatron_turn", Config.MetatronTurnTokens, "max_tokens.metatron_turn", 1024},
+		{"metatron_turn", Config.GuardianTurnTokens, "max_tokens.metatron_turn", 1024},
 		{"consolidation", Config.ConsolidationTokens, "max_tokens.consolidation", 1024},
 	}
 	for _, tc := range cases {
@@ -1412,7 +1412,7 @@ func TestTokenBudgetNormalization(t *testing.T) {
 				case "planner":
 					b.Planner = v
 				case "metatron_turn":
-					b.MetatronTurn = v
+					b.GuardianTurn = v
 				case "consolidation":
 					b.Consolidation = v
 				}
@@ -1455,11 +1455,11 @@ func TestTokenBudgetNormalization(t *testing.T) {
 // coexist and each normalizes on its own — one clamp warning does not suppress
 // another, and a valid sibling stays verbatim while an invalid one warns.
 func TestTokenBudgetsNormalizeIndependently(t *testing.T) {
-	cfg := Config{MaxTokens: &TokenBudgets{Planner: 768, MetatronTurn: -1, Consolidation: 999999}}
+	cfg := Config{MaxTokens: &TokenBudgets{Planner: 768, GuardianTurn: -1, Consolidation: 999999}}
 	if n, warn := cfg.PlannerTokens(); n != 768 || warn != "" {
 		t.Errorf("planner → (%d,%q), want (768,\"\") verbatim", n, warn)
 	}
-	if n, warn := cfg.MetatronTurnTokens(); n != 1024 || warn == "" {
+	if n, warn := cfg.GuardianTurnTokens(); n != 1024 || warn == "" {
 		t.Errorf("metatron_turn → (%d,%q), want (1024, warning)", n, warn)
 	}
 	if n, warn := cfg.ConsolidationTokens(); n != 4096 || warn == "" {

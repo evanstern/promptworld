@@ -1,11 +1,11 @@
-// Package metatron is the gatekeeper angel (TASK-12): the player's sole
+// Package guardian is the gatekeeper guardian (TASK-12): the player's sole
 // influence channel. A daemon-hosted notify consumer with its own replica
 // (the mind/scribe pattern), it converses with the player, digests the event
 // stream into an accreting soul, flags dramatic moments, and mediates nudges
 // — whose only path into the world is the InjectSocial door, carrying only
-// Metatron's own rendering. Raw player text has exactly one sink: Metatron's
+// Guardian's own rendering. Raw player text has exactly one sink: Guardian's
 // prompt.
-package metatron
+package guardian
 
 import (
 	"context"
@@ -21,17 +21,18 @@ import (
 	"github.com/evanstern/promptworld/internal/clock"
 	"github.com/evanstern/promptworld/internal/llm"
 	"github.com/evanstern/promptworld/internal/sim"
+	"github.com/evanstern/promptworld/internal/skin"
 	"github.com/evanstern/promptworld/internal/store"
 	"github.com/evanstern/promptworld/internal/toolloop"
 	"github.com/evanstern/promptworld/internal/worldmap"
 )
 
-// Submitter is the orchestrator surface Metatron needs (test seam).
+// Submitter is the orchestrator surface Guardian needs (test seam).
 type Submitter interface {
 	Submit(ctx context.Context, req llm.Request) (llm.Response, error)
 }
 
-// Injector is the loop surface Metatron needs (test seam).
+// Injector is the loop surface Guardian needs (test seam).
 type Injector interface {
 	InjectSocial(events []store.Event) error
 }
@@ -55,7 +56,7 @@ const (
 	transcriptTailTurns = 6
 )
 
-type Metatron struct {
+type Guardian struct {
 	orch     Submitter
 	social   Injector
 	loop     LoopControl // clock control for the meta tools (spec 029 US5)
@@ -77,6 +78,15 @@ type Metatron struct {
 	stage         string
 	charterPreset string
 
+	// skin is the world's boot-frozen display skin (spec 052 FR-003), set once
+	// by the daemon after New via SetSkin — the SetBundles/SetStage discipline.
+	// nil (the default, and every pre-052 test) is the default Guardian skin
+	// (every skin.Skin method is nil-safe). It shapes prompt composition (the
+	// voice at the SOUL seam, name substitution in the keeper/confirm prompts)
+	// and display text ONLY — never a recorded payload (ruling 1: the event
+	// log is skin-free).
+	skin *skin.Skin
+
 	replica *sim.State
 	m       *worldmap.Map
 	seed    uint64 // world seed — boot-immutable; backs the script world view's world.rand (spec 036 US3)
@@ -95,7 +105,7 @@ type Metatron struct {
 	// max_tokens.metatron_turn, spec 025 US2), threaded from the daemon exactly
 	// as loopRounds is. Absent resolves to the built-in default (1024) at the
 	// config boundary, so this is always an effective value. It governs the
-	// console-turn loop ONLY — the metatron digest budget (400) is a different
+	// console-turn loop ONLY — the guardian digest budget (400) is a different
 	// call and stays hardcoded (spec 025 Assumption 2).
 	turnTokens int64
 
@@ -128,12 +138,12 @@ type Metatron struct {
 	ended     bool
 
 	// Standing-order mirror (spec 029 US2/US3, data-model §5): the replica's
-	// MetatronOrders is the authority; the turn worker reads this copy under
+	// GuardianOrders is the authority; the turn worker reads this copy under
 	// stateMu (like charges/alive), and the absorb path matches live events
 	// against it. lastPlaceTick/lastPlaceSeq disambiguate same-tick order ids
 	// (research R7) when the async mirror has not yet reflected a just-placed
 	// order — placements are serialized under turnBusy, so a plain counter is safe.
-	orders        []sim.MetatronOrder
+	orders        []sim.GuardianOrder
 	lastPlaceTick int64
 	lastPlaceSeq  int
 
@@ -146,7 +156,7 @@ type Metatron struct {
 	pendingTrigger map[string]bool
 
 	// lastConfirmTick rate-caps fuzzy-order confirms (spec 029 US6, R9): at most
-	// one KindMetatronWatch confirm per confirmRateTicks per order. Absorb-owned
+	// one KindGuardianWatch confirm per confirmRateTicks per order. Absorb-owned
 	// and NOT event-sourced — a skipped confirm is an economy decision, never world
 	// history (data-model §5) — guarded by stateMu alongside pendingTrigger (the
 	// absorb goroutine writes it via matchOrders; unit tests drive matchOrders too).
@@ -171,7 +181,7 @@ type Metatron struct {
 	done   chan struct{}
 }
 
-// New starts the angel from a state snapshot. The metatron/ dir and an
+// New starts the guardian from a state snapshot. The metatron/ dir and an
 // empty soul are created on first flight; existing files are kept.
 //
 // loop is the clock-control seam the meta tools drive (spec 029 US5): the daemon
@@ -183,12 +193,12 @@ type Metatron struct {
 // seam: it installs a scripted loop BEFORE any goroutine starts, for tests that
 // stub the model rather than pass a real *llm.Orchestrator. Production omits it —
 // New wires runLoop from the concrete orchestrator.
-func New(orch Submitter, social Injector, loop LoopControl, m *worldmap.Map, seed uint64, stateJSON []byte, worldDir string, loopRounds int, turnTokens int64, runLoopOverride ...func(context.Context, toolloop.Job) (toolloop.Result, error)) (*Metatron, error) {
+func New(orch Submitter, social Injector, loop LoopControl, m *worldmap.Map, seed uint64, stateJSON []byte, worldDir string, loopRounds int, turnTokens int64, runLoopOverride ...func(context.Context, toolloop.Job) (toolloop.Result, error)) (*Guardian, error) {
 	replica := sim.NewState(seed, m)
 	if err := json.Unmarshal(stateJSON, replica); err != nil {
 		return nil, err
 	}
-	mt := &Metatron{
+	mt := &Guardian{
 		orch:            orch,
 		social:          social,
 		loop:            loop,
@@ -219,11 +229,14 @@ func New(orch Submitter, social Injector, loop LoopControl, m *worldmap.Map, see
 	if len(runLoopOverride) > 0 && runLoopOverride[0] != nil {
 		mt.runLoop = runLoopOverride[0]
 	}
-	if err := os.MkdirAll(mt.metatronDir(), 0o755); err != nil {
+	if err := os.MkdirAll(mt.guardianDir(), 0o755); err != nil {
 		return nil, err
 	}
 	if _, err := os.Stat(mt.soulPath()); os.IsNotExist(err) {
-		header := "# The soul of Metatron\n\n*The reign begins. The angel has seen nothing yet.*\n"
+		// Genesis header (spec 052 US2 AS-5): guardian-voiced DEFAULT-skin
+		// text — SetSkin lands after New, so a custom skin's first soul
+		// header still says guardian; existing files are never rewritten.
+		header := "# The soul of the Guardian\n\n*The watch begins. The guardian has seen nothing yet.*\n"
 		if err := os.WriteFile(mt.soulPath(), []byte(header), 0o644); err != nil {
 			return nil, err
 		}
@@ -237,35 +250,49 @@ func New(orch Submitter, social Injector, loop LoopControl, m *worldmap.Map, see
 }
 
 // Observe is the loop-notify path: never blocks.
-func (mt *Metatron) Observe(events []store.Event) {
+func (mt *Guardian) Observe(events []store.Event) {
 	select {
 	case mt.events <- events:
 	default:
 	}
 }
 
-func (mt *Metatron) Close() { close(mt.done) }
+func (mt *Guardian) Close() { close(mt.done) }
 
 // SetBundles installs the boot-frozen bundle set the turn assembly merges into
 // its roster/handler surface (spec 036 T013/T014). The daemon calls it once
 // after New and before serving; only the turn worker reads it, so no lock is
-// needed. A nil set (never installed) leaves the angel's surface unchanged.
-func (mt *Metatron) SetBundles(bs *bundle.BundleSet) { mt.bundles = bs }
+// needed. A nil set (never installed) leaves the guardian's surface unchanged.
+func (mt *Guardian) SetBundles(bs *bundle.BundleSet) { mt.bundles = bs }
 
 // SetStage installs the world's immutable curriculum stage and charter preset
 // (spec 046 US2) from the opened manifest. The daemon calls it once after New
 // and before serving (the SetBundles discipline); only the turn worker and
 // Status read it, so no lock is needed. Zero values (never installed) leave
-// the angel ungated with the default charter — pre-ladder behavior.
-func (mt *Metatron) SetStage(stage, charterPreset string) {
+// the guardian ungated with the default charter — pre-ladder behavior.
+func (mt *Guardian) SetStage(stage, charterPreset string) {
 	mt.stage, mt.charterPreset = stage, charterPreset
 }
 
-func (mt *Metatron) metatronDir() string    { return filepath.Join(mt.worldDir, "metatron") }
-func (mt *Metatron) soulPath() string       { return filepath.Join(mt.metatronDir(), "soul.md") }
-func (mt *Metatron) transcriptPath() string { return filepath.Join(mt.metatronDir(), "transcript.md") }
+// SetSkin installs the world's boot-frozen display skin (spec 052 FR-003).
+// The daemon calls it once after New and before serving (the SetBundles
+// discipline); only the turn/trigger workers and Status read it, so no lock
+// is needed. Never installed (nil) is the default Guardian skin.
+func (mt *Guardian) SetSkin(s *skin.Skin) { mt.skin = s }
 
-func (mt *Metatron) run() {
+// sk returns the active skin — nil-safe by skin.Skin's own contract, so the
+// zero-value agent (every pre-052 test) resolves the default table.
+func (mt *Guardian) sk() *skin.Skin { return mt.skin }
+
+// The on-disk directory name "metatron" (and the soul.md/transcript.md files
+// inside it) is FROZEN serialized vocabulary (spec 052 ruling 2): existing
+// worlds' files must keep loading forever. Display references use the skin's
+// notes label, never the raw path.
+func (mt *Guardian) guardianDir() string    { return filepath.Join(mt.worldDir, "metatron") }
+func (mt *Guardian) soulPath() string       { return filepath.Join(mt.guardianDir(), "soul.md") }
+func (mt *Guardian) transcriptPath() string { return filepath.Join(mt.guardianDir(), "transcript.md") }
+
+func (mt *Guardian) run() {
 	for {
 		select {
 		case <-mt.done:
@@ -283,7 +310,7 @@ func (mt *Metatron) run() {
 			// Standing-order matching runs HERE — after the replica applies the
 			// batch and the mirror refreshes — so it sees only LIVE events (spec 029
 			// US3/R6). Replay reconstructs state via json.Unmarshal + Apply with no
-			// angel running, so a predicate can never match during reconstruction.
+			// guardian running, so a predicate can never match during reconstruction.
 			mt.matchOrders(batch)
 		}
 	}
@@ -291,10 +318,10 @@ func (mt *Metatron) run() {
 
 // mirrorState refreshes the tiny snapshot the turn worker may read while
 // the absorb goroutine keeps ticking the replica.
-func (mt *Metatron) mirrorState() {
+func (mt *Guardian) mirrorState() {
 	mt.stateMu.Lock()
 	defer mt.stateMu.Unlock()
-	mt.charges = mt.replica.MetatronCharges
+	mt.charges = mt.replica.GuardianCharges
 	mt.clockAt = mt.replica.Tick
 	mt.night = mt.replica.Night
 	// The charter mirror only ever moves FORWARD to a recorded value: after
@@ -321,9 +348,9 @@ func (mt *Metatron) mirrorState() {
 	}
 	// The standing-order mirror (spec 029): the replica is the authority, copied
 	// so the turn worker reads orders under stateMu without racing the replica.
-	mt.orders = append(mt.orders[:0], mt.replica.MetatronOrders...)
+	mt.orders = append(mt.orders[:0], mt.replica.GuardianOrders...)
 	// The narrated chronicle (TASK-11) is the village's own story — the
-	// angel reads its tail so conversation is grounded even before its
+	// guardian reads its tail so conversation is grounded even before its
 	// soul has accreted (fresh reigns, upgraded worlds).
 	mt.story = mt.story[:0]
 	ring := mt.replica.Chronicle
@@ -339,8 +366,8 @@ func maxOf(a, b int) int {
 	return b
 }
 
-// appendFile appends a block to one of Metatron's files (soul/transcript).
-func (mt *Metatron) appendFile(path, block string) {
+// appendFile appends a block to one of Guardian's files (soul/transcript).
+func (mt *Guardian) appendFile(path, block string) {
 	mt.fileMu.Lock()
 	defer mt.fileMu.Unlock()
 	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)

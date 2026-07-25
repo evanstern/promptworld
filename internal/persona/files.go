@@ -63,7 +63,7 @@ func Genesis(worldDir string, preset ...string) error {
 			return err
 		}
 	}
-	// Metatron's charter (TASK-12): seeded once, then the file belongs to
+	// Guardian's charter (TASK-12): seeded once, then the file belongs to
 	// the player — genesis never overwrites an existing charter.
 	charterText := DefaultCharter
 	if len(preset) > 0 && preset[0] == "tutor" {

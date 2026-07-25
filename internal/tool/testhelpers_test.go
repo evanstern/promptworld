@@ -35,17 +35,17 @@ func withExtraTool(extra Tool) func() {
 
 // swapRegistry replaces the registry and rosters wholesale (for malformed-case
 // validation). Returns a restore closure.
-func swapRegistry(reg []Tool, villager, metatron []string) func() {
+func swapRegistry(reg []Tool, villager, guardian []string) func() {
 	savedReg, savedIdx := registry, byName
-	savedV, savedM := RosterVillager, RosterMetatron
+	savedV, savedM := RosterVillager, RosterGuardian
 
 	registry = reg
 	rebuildIndex()
 	RosterVillager = villager
-	RosterMetatron = metatron
+	RosterGuardian = guardian
 
 	return func() {
 		registry, byName = savedReg, savedIdx
-		RosterVillager, RosterMetatron = savedV, savedM
+		RosterVillager, RosterGuardian = savedV, savedM
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 
 	"github.com/evanstern/promptworld/internal/llm"
+	"github.com/evanstern/promptworld/internal/skin"
 	"github.com/evanstern/promptworld/internal/store"
 )
 
@@ -60,18 +61,18 @@ type LLMCallArgs struct {
 	MaxTokens int64  `json:"max_tokens,omitempty"`
 }
 
-// MetatronChatArgs carries one console turn (TASK-12); the response Data is
-// a metatron.TurnResult. "metatron_status" takes no args and answers a
-// metatron.Status (the model-free peek).
-type MetatronChatArgs struct {
+// GuardianChatArgs carries one console turn (TASK-12); the response Data is
+// a guardian.TurnResult. "metatron_status" takes no args and answers a
+// guardian.Status (the model-free peek).
+type GuardianChatArgs struct {
 	Text string `json:"text"`
 }
 
 // MiracleArgs carries the "miracle" command (spec 016) — the operator door for
-// Metatron's world edits. kind selects the miracle; the remaining fields are the
+// Guardian's world edits. kind selects the miracle; the remaining fields are the
 // kind-specific arguments (contracts §2). This is the ONLY surface that accepts
-// gratis: --force sets it, waiving the charge; the angel path has no equivalent.
-// The handler needs only the sim loop — no LLM / angel presence (pure-sim ok).
+// gratis: --force sets it, waiving the charge; the guardian path has no equivalent.
+// The handler needs only the sim loop — no LLM / guardian presence (pure-sim ok).
 type MiracleArgs struct {
 	Kind     string `json:"kind"`
 	Day      int    `json:"day,omitempty"`      // time_snap
@@ -141,6 +142,19 @@ type StatusData struct {
 	// output (omitempty; the composer never runs). Never an empty slice —
 	// either absent or ≥1 entry.
 	Horizon []HorizonClass `json:"horizon,omitempty"`
+	// Resolved skin display facts (spec 052 FR-012, contract §7): the
+	// boot-frozen world skin, resolved daemon-side so clients render skin
+	// vocabulary without ever reading world files. Identity fields are always
+	// sent by a post-052 daemon (resolved against the compiled default
+	// table); SkinStrings/SkinStages carry only a world skin's overrides.
+	// Additive omitempty — absent fields (a pre-052 daemon) mean the default
+	// Guardian skin, so old daemons and old clients interoperate unchanged.
+	SkinName        string                        `json:"skin_name,omitempty"`
+	SkinEpithet     string                        `json:"skin_epithet,omitempty"`
+	SkinTabLabel    string                        `json:"skin_tab_label,omitempty"`
+	SkinFamilyLabel string                        `json:"skin_family_label,omitempty"`
+	SkinStrings     map[string]string             `json:"skin_strings,omitempty"`
+	SkinStages      map[string]skin.StageIdentity `json:"skin_stages,omitempty"`
 }
 
 // HorizonClass is one watched decision class's live standing on the status
@@ -188,9 +202,9 @@ type ClockStatus struct {
 	Speed         string  `json:"speed"`
 	EffectiveRate float64 `json:"effective_rate"`
 	Degraded      bool    `json:"degraded"`
-	// MetatronCharges is the nudge bank (TASK-12) — surfaced here so
+	// GuardianCharges is the nudge bank (TASK-12) — surfaced here so
 	// clients render ⚡ without a state fetch.
-	MetatronCharges int `json:"metatron_charges"`
+	GuardianCharges int `json:"metatron_charges"`
 	// Adaptive-throttle governor surface (spec 028 US1/US2). All three are
 	// additive-omitempty so pre-028 status bytes are byte-identical when the
 	// governor is inert (no-LLM worlds, or an LLM world with zero pending

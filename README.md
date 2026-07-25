@@ -27,8 +27,10 @@ menus and zones, you tweak your dwarf by talking to it. The prompt *is* the beha
 Grounded and building. The design was interrogated in a Socratic grounding session
 (see `docs/design/grounded-assumptions.md`) — promptworld is an **ambient, always-on
 world**: a daemon simulates the village 24/7; the terminal UI is an attachable client;
-all player influence flows through **Metatron**, an editable intermediary agent. The
-board lives in `backlog/`; specs in `specs/`.
+all player influence flows through **the Guardian**, an editable intermediary agent
+whose fiction layer is itself skinnable per-world data (spec 052: drop a `skin.json`
+beside `charter.md` — see `examples/skins/`). The board lives in `backlog/`; specs
+in `specs/`.
 
 ### What runs today
 
@@ -37,7 +39,7 @@ deterministic tick loop (1 tick = 1 game second), an append-only SQLite event lo
 with snapshots, per-world save directories, and a Unix-socket client protocol —
 carrying eight villagers with needs, LLM planner minds, conversations, rumors and
 debts, nightly memory consolidation, the nocturnal gru, a cloud-narrated chronicle
-(the catch-up mechanism), **Metatron** (TASK-12): the player's sole influence
+(the catch-up mechanism), **the Guardian** (TASK-12): the player's sole influence
 channel, conversing in the TUI console, mediating visions and omens on a regenerating
 charge economy, placing standing orders that watch and act while the player is away
 (spec 029), governed by `charter.md` — the game's only player-editable prompt —
@@ -59,8 +61,8 @@ promptworld pause demo                    # pause is a player verb (detaching is
 promptworld resume demo                   # counterpart of pause
 promptworld speed demo max                # real-time up to as-fast-as-affordable
 promptworld tail demo --follow            # stream the event log
-promptworld ui demo                       # full-screen TUI: map, chronicle, metatron, souls
-promptworld metatron demo "who thrives, who struggles?"   # converse with your angel
+promptworld ui demo                       # full-screen TUI: map, chronicle, guardian, villagers
+promptworld guardian demo "who thrives, who struggles?"   # converse with your guardian
 promptworld stop demo                     # graceful stop; kill -9 also resumes lossless
 promptworld help                          # full command list incl. daemon, llm, calibrate
 ```
@@ -94,8 +96,10 @@ configured? The world still runs — reflex-only minds.
 - `providers` — named model sources (transport `openai_compat` or `anthropic`,
   endpoint, model, pricing, `parallel` worker slots, `tool_mode`,
   `reasoning_effort`, opt-in `endpoint_capacity` for shared-endpoint coordination).
-- `routes` — every call kind (planner, conversation, consolidation, narrator, drama,
-  metatron, meeting, metatron_watch) maps to an **ordered chain** of provider names.
+- `routes` — every call kind (`planner`, `conversation`, `consolidation`, `narrator`,
+  `drama`, `metatron`, `meeting`, `metatron_watch` — the kind names are frozen
+  serialized vocabulary; `metatron`/`metatron_watch` are the guardian's turn and
+  watch-confirm kinds) maps to an **ordered chain** of provider names.
   Chain order is the whole routing policy: first admissible candidate serves; skips
   happen only for mechanical reasons (circuit open / budget / queue full) and are
   recorded.

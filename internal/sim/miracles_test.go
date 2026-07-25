@@ -33,7 +33,7 @@ func TestMiracleCostDerivedFromTool(t *testing.T) {
 	}
 }
 
-// Metatron miracles (spec 016 US1): the entity move/remove reducer arms.
+// Guardian miracles (spec 016 US1): the entity move/remove reducer arms.
 // validate-not-clamp, reject-whole, no charge spent on rejection, no partial
 // application, and a scripted move+remove sequence replays byte-identically.
 
@@ -77,7 +77,7 @@ func TestMiracleMoveVillager(t *testing.T) {
 	const seed = 42
 	m := testMap(seed)
 	s := NewState(seed, m)
-	s.MetatronCharges = 3
+	s.GuardianCharges = 3
 	a := &s.Agents[0]
 	src := Point{X: a.X, Y: a.Y}
 	dst, ok := passableTileExcept(m, s, src)
@@ -99,8 +99,8 @@ func TestMiracleMoveVillager(t *testing.T) {
 	if a.IdleSince != 100 {
 		t.Errorf("IdleSince = %d, want the landing tick 100", a.IdleSince)
 	}
-	if s.MetatronCharges != 2 {
-		t.Errorf("charges = %d, want 2 (one spent)", s.MetatronCharges)
+	if s.GuardianCharges != 2 {
+		t.Errorf("charges = %d, want 2 (one spent)", s.GuardianCharges)
 	}
 }
 
@@ -108,7 +108,7 @@ func TestMiracleMoveStructureWhole(t *testing.T) {
 	const seed = 42
 	m := testMap(seed)
 	s := NewState(seed, m)
-	s.MetatronCharges = 3
+	s.GuardianCharges = 3
 	bx, by, ok := findBuildTile(m, s)
 	if !ok {
 		t.Skip("no build tile")
@@ -141,7 +141,7 @@ func TestMiracleMovePileMerges(t *testing.T) {
 	const seed = 42
 	m := testMap(seed)
 	s := NewState(seed, m)
-	s.MetatronCharges = 3
+	s.GuardianCharges = 3
 	srcT, ok := passableTileExcept(m, s)
 	if !ok {
 		t.Skip("no passable tile")
@@ -173,7 +173,7 @@ func TestMiracleMoveRejectsImpassableDestination(t *testing.T) {
 	const seed = 42
 	m := testMap(seed)
 	s := NewState(seed, m)
-	s.MetatronCharges = 3
+	s.GuardianCharges = 3
 	water, ok := firstTileOfKind(m, worldmap.Water)
 	if !ok {
 		t.Skip("no water on this map")
@@ -194,7 +194,7 @@ func TestMiracleMoveRejectsAbsentClass(t *testing.T) {
 	const seed = 42
 	m := testMap(seed)
 	s := NewState(seed, m)
-	s.MetatronCharges = 3
+	s.GuardianCharges = 3
 	// A tile with no villager on it.
 	empty, ok := passableTileExcept(m, s, agentPoints(s)...)
 	if !ok {
@@ -216,7 +216,7 @@ func TestMiracleRemoveVillagerRejected(t *testing.T) {
 	const seed = 42
 	m := testMap(seed)
 	s := NewState(seed, m)
-	s.MetatronCharges = 3
+	s.GuardianCharges = 3
 	a := &s.Agents[0]
 	before := s.Marshal()
 	err := applyMiracleErr(s, 40, "metatron.entity_removed", EntityRemovedPayload{
@@ -233,7 +233,7 @@ func TestMiracleRemoveChestSpillsContents(t *testing.T) {
 	const seed = 42
 	m := testMap(seed)
 	s := NewState(seed, m)
-	s.MetatronCharges = 3
+	s.GuardianCharges = 3
 	tile, ok := passableTileExcept(m, s)
 	if !ok {
 		t.Skip("no passable tile")
@@ -271,7 +271,7 @@ func TestMiracleRemovePileDestroysContents(t *testing.T) {
 	const seed = 42
 	m := testMap(seed)
 	s := NewState(seed, m)
-	s.MetatronCharges = 3
+	s.GuardianCharges = 3
 	tile, ok := passableTileExcept(m, s)
 	if !ok {
 		t.Skip("no passable tile")
@@ -286,8 +286,8 @@ func TestMiracleRemovePileDestroysContents(t *testing.T) {
 	if s.pileAt(tile.X, tile.Y) != nil {
 		t.Error("pile not removed")
 	}
-	if s.MetatronCharges != 2 {
-		t.Errorf("charges = %d, want 2", s.MetatronCharges)
+	if s.GuardianCharges != 2 {
+		t.Errorf("charges = %d, want 2", s.GuardianCharges)
 	}
 }
 
@@ -318,7 +318,7 @@ func TestMiracleRemoveTerrainRouting(t *testing.T) {
 				t.Skipf("no %s tile", c.label)
 			}
 			s := NewState(seed, m)
-			s.MetatronCharges = 3
+			s.GuardianCharges = 3
 			if err := applyMiracleErr(s, 30, "metatron.entity_removed", EntityRemovedPayload{
 				Class: "terrain", X: p.X, Y: p.Y}); err != nil {
 				t.Fatalf("%s remove rejected: %v", c.label, err)
@@ -343,7 +343,7 @@ func TestMiracleInsufficientChargeRejected(t *testing.T) {
 	const seed = 42
 	m := testMap(seed)
 	s := NewState(seed, m)
-	s.MetatronCharges = 0
+	s.GuardianCharges = 0
 	a := &s.Agents[0]
 	dst, ok := passableTileExcept(m, s, Point{X: a.X, Y: a.Y})
 	if !ok {
@@ -364,7 +364,7 @@ func TestMiracleGratisWaivesChargeOnly(t *testing.T) {
 	const seed = 42
 	m := testMap(seed)
 	s := NewState(seed, m)
-	s.MetatronCharges = 0 // empty bank
+	s.GuardianCharges = 0 // empty bank
 	a := &s.Agents[0]
 	dst, ok := passableTileExcept(m, s, Point{X: a.X, Y: a.Y})
 	if !ok {
@@ -375,8 +375,8 @@ func TestMiracleGratisWaivesChargeOnly(t *testing.T) {
 		Class: "villager", X: a.X, Y: a.Y, ToX: dst.X, ToY: dst.Y, Gratis: true}); err != nil {
 		t.Fatalf("gratis move with empty bank rejected: %v", err)
 	}
-	if s.MetatronCharges != 0 {
-		t.Errorf("gratis spent a charge: bank = %d", s.MetatronCharges)
+	if s.GuardianCharges != 0 {
+		t.Errorf("gratis spent a charge: bank = %d", s.GuardianCharges)
 	}
 	// Gratis does NOT waive the destination check.
 	water, ok := firstTileOfKind(m, worldmap.Water)
@@ -415,7 +415,7 @@ func TestMiracleReplayByteIdentity(t *testing.T) {
 		for i := 1; i < len(s.Agents); i++ {
 			s.Agents[i].Dead = true // lone living villager keeps the run quiet
 		}
-		s.MetatronCharges = 3
+		s.GuardianCharges = 3
 		s.Structures = append(s.Structures, Structure{
 			Kind: "chest", X: chestTile.X, Y: chestTile.Y, Owner: 0,
 			Store: &Inventory{Wood: 5, FoodRaw: 3, Spears: []int{2}}})
@@ -511,7 +511,7 @@ func TestGratisValidationSurvives(t *testing.T) {
 			// in-run (no partial application).
 			run := func(gratis bool) (after string, err error) {
 				s := NewState(seed, m)
-				s.MetatronCharges = 3
+				s.GuardianCharges = 3
 				a := &s.Agents[0]
 				pl := c.mk(gratis)
 				if mv, isMove := pl.(EntityMovedPayload); isMove {
@@ -557,7 +557,7 @@ func TestGratisIsLoggedVisible(t *testing.T) {
 		for i := 1; i < len(s.Agents); i++ {
 			s.Agents[i].Dead = true
 		}
-		s.MetatronCharges = 0 // empty bank: only a gratis move can land
+		s.GuardianCharges = 0 // empty bank: only a gratis move can land
 		return s
 	}
 	commands := map[int64][]store.Event{
@@ -588,8 +588,8 @@ func TestGratisIsLoggedVisible(t *testing.T) {
 	if !found {
 		t.Fatal("forced move missing from the log")
 	}
-	if live.MetatronCharges != 0 {
-		t.Errorf("gratis move spent a charge from an empty bank: %d", live.MetatronCharges)
+	if live.GuardianCharges != 0 {
+		t.Errorf("gratis move spent a charge from an empty bank: %d", live.GuardianCharges)
 	}
 }
 
@@ -611,7 +611,7 @@ func TestSnapForwardOnly(t *testing.T) {
 	m := testMap(seed)
 	s := NewState(seed, m)
 	s.Tick = 5000
-	s.MetatronCharges = 3
+	s.GuardianCharges = 3
 	for _, to := range []int64{5000, 4999, 0} {
 		before := s.Marshal()
 		if err := applyMiracleErr(s, 5000, "metatron.time_snapped", TimeSnappedPayload{ToTick: to}); err == nil {
@@ -636,7 +636,7 @@ func TestSnapPreservesRemainingDurations(t *testing.T) {
 	const delta = int64(12345)
 	const to = old + delta
 	s.Tick = old
-	s.MetatronCharges = 3
+	s.GuardianCharges = 3
 
 	a := &s.Agents[0]
 	a.IdleSince = 40000
@@ -686,8 +686,8 @@ func TestSnapPreservesRemainingDurations(t *testing.T) {
 	if s.Tick != to {
 		t.Fatalf("Tick = %d, want %d", s.Tick, to)
 	}
-	if s.MetatronCharges != 1 {
-		t.Errorf("charges = %d, want 1 (2 spent on the snap)", s.MetatronCharges)
+	if s.GuardianCharges != 1 {
+		t.Errorf("charges = %d, want 1 (2 spent on the snap)", s.GuardianCharges)
 	}
 
 	eq := func(label string, got, want int64) {
@@ -781,7 +781,7 @@ func TestRebaseTaxonomyComplete(t *testing.T) {
 		"Gru.LastAttack":            shift,
 		"MeetingState.OpenedTick":   shift,
 		"MeetingState.GatherStart":  shift,
-		"MetatronOrder.ExpiresTick": shift, // spec 029: a standing order's future expiry deadline
+		"GuardianOrder.ExpiresTick": shift, // spec 029: a standing order's future expiry deadline
 		"PlaceFact.Seen":            shift, // spec 041: mental-map freshness anchor (Belief.Reinforced shape)
 		"PeerSighting.Seen":         shift, // spec 041 T013: sighting recency anchor, same shape
 		"Agent.NeedsAnchorTick":     shift, // spec 043 US2: trajectory-window edge anchor (Belief.Reinforced shape), 0 = unset
@@ -814,7 +814,7 @@ func TestRebaseTaxonomyComplete(t *testing.T) {
 		"Norm.DayRepealed":                 keep,
 		"Norm.DayAmended":                  keep,
 		"NormViolation.Tick":               keep,
-		"MetatronOrder.PlacedTick":         keep, // spec 029: when the order was placed (history)
+		"GuardianOrder.PlacedTick":         keep, // spec 029: when the order was placed (history)
 		"PlaceFact.Detail":                 keep, // spec 041: remembered value baked at emission, never re-derived (see rebaseTicks)
 		"RunEnd.Tick":                      keep, // spec 044: when the run ended (history; the world never ticks again)
 		"DeathRecord.Tick":                 keep, // spec 044: when the death happened (history, like NormViolation.Tick)
@@ -906,7 +906,7 @@ func TestSnapWholeDayNoDrift(t *testing.T) {
 	genesis := func() *State {
 		s := NewState(seed, m)
 		s.Tick = t0
-		s.MetatronCharges = 3
+		s.GuardianCharges = 3
 		for i := range s.Agents {
 			s.Agents[i].Dead = true
 		}
@@ -987,23 +987,23 @@ func TestSnapMintsNoCharges(t *testing.T) {
 	t.Run("charged pays only its price", func(t *testing.T) {
 		s := NewState(seed, m)
 		s.Tick = 5000
-		s.MetatronCharges = 3
+		s.GuardianCharges = 3
 		if err := applyMiracleErr(s, 5000, "metatron.time_snapped", TimeSnappedPayload{ToTick: to}); err != nil {
 			t.Fatalf("snap rejected: %v", err)
 		}
-		if s.MetatronCharges != 1 {
-			t.Errorf("charges = %d, want 1 (only the 2-charge cost; skipped boundaries mint nothing)", s.MetatronCharges)
+		if s.GuardianCharges != 1 {
+			t.Errorf("charges = %d, want 1 (only the 2-charge cost; skipped boundaries mint nothing)", s.GuardianCharges)
 		}
 	})
 	t.Run("gratis leaves the bank untouched", func(t *testing.T) {
 		s := NewState(seed, m)
 		s.Tick = 5000
-		s.MetatronCharges = 1
+		s.GuardianCharges = 1
 		if err := applyMiracleErr(s, 5000, "metatron.time_snapped", TimeSnappedPayload{ToTick: to, Gratis: true}); err != nil {
 			t.Fatalf("gratis snap rejected: %v", err)
 		}
-		if s.MetatronCharges != 1 {
-			t.Errorf("charges = %d, want 1 (gratis waives cost; skipped boundaries mint nothing)", s.MetatronCharges)
+		if s.GuardianCharges != 1 {
+			t.Errorf("charges = %d, want 1 (gratis waives cost; skipped boundaries mint nothing)", s.GuardianCharges)
 		}
 	})
 }
@@ -1017,7 +1017,7 @@ func TestSnapWhilePaused(t *testing.T) {
 	s := NewState(seed, m)
 	s.Tick = 1000
 	s.Paused = true
-	s.MetatronCharges = 3
+	s.GuardianCharges = 3
 	if err := applyMiracleErr(s, 1000, "metatron.time_snapped", TimeSnappedPayload{ToTick: 5000}); err != nil {
 		t.Fatalf("paused snap rejected: %v", err)
 	}
@@ -1027,8 +1027,8 @@ func TestSnapWhilePaused(t *testing.T) {
 	if !s.Paused {
 		t.Error("snap must leave a paused world paused")
 	}
-	if s.MetatronCharges != 1 {
-		t.Errorf("charges = %d, want 1", s.MetatronCharges)
+	if s.GuardianCharges != 1 {
+		t.Errorf("charges = %d, want 1", s.GuardianCharges)
 	}
 }
 
@@ -1048,7 +1048,7 @@ func TestMiracleSnapReplayByteIdentity(t *testing.T) {
 		for i := 1; i < len(s.Agents); i++ {
 			s.Agents[i].Dead = true // lone living villager keeps the run quiet
 		}
-		s.MetatronCharges = 3
+		s.GuardianCharges = 3
 		return s
 	}
 	commands := map[int64][]store.Event{
@@ -1092,7 +1092,7 @@ func TestMiracleGrantHappy(t *testing.T) {
 	const seed = 42
 	m := testMap(seed)
 	s := NewState(seed, m)
-	s.MetatronCharges = 3
+	s.GuardianCharges = 3
 	s.Agents[0].Inv = Inventory{} // known-empty pouch for an exact delta
 
 	if err := applyMiracleErr(s, 100, "metatron.item_granted", ItemGrantedPayload{
@@ -1105,8 +1105,8 @@ func TestMiracleGrantHappy(t *testing.T) {
 	if bulk(s.Agents[0].Inv) != 3 {
 		t.Errorf("bulk = %d, want 3 (nothing else touched)", bulk(s.Agents[0].Inv))
 	}
-	if s.MetatronCharges != 2 {
-		t.Errorf("charges = %d, want 2 (one spent)", s.MetatronCharges)
+	if s.GuardianCharges != 2 {
+		t.Errorf("charges = %d, want 2 (one spent)", s.GuardianCharges)
 	}
 }
 
@@ -1117,7 +1117,7 @@ func TestMiracleGrantOverCapWholeReject(t *testing.T) {
 	const seed = 42
 	m := testMap(seed)
 	s := NewState(seed, m)
-	s.MetatronCharges = 3
+	s.GuardianCharges = 3
 	s.Agents[0].Inv = Inventory{Wood: bulkCap} // exactly full
 	before := s.Marshal()
 
@@ -1137,7 +1137,7 @@ func TestMiracleGrantUnknownKindReject(t *testing.T) {
 	const seed = 42
 	m := testMap(seed)
 	s := NewState(seed, m)
-	s.MetatronCharges = 3
+	s.GuardianCharges = 3
 	before := s.Marshal()
 
 	if err := applyMiracleErr(s, 40, "metatron.item_granted", ItemGrantedPayload{
@@ -1161,7 +1161,7 @@ func TestMiracleGrantDeadVillagerReject(t *testing.T) {
 	const seed = 42
 	m := testMap(seed)
 	s := NewState(seed, m)
-	s.MetatronCharges = 3
+	s.GuardianCharges = 3
 	s.Agents[0].Dead = true
 	before := s.Marshal()
 
@@ -1183,7 +1183,7 @@ func TestMiracleGrantNonPositiveQtyReject(t *testing.T) {
 	const seed = 42
 	m := testMap(seed)
 	s := NewState(seed, m)
-	s.MetatronCharges = 3
+	s.GuardianCharges = 3
 	before := s.Marshal()
 
 	for _, qty := range []int{0, -5} {
@@ -1204,7 +1204,7 @@ func TestMiracleGrantSpearShape(t *testing.T) {
 	const seed = 42
 	m := testMap(seed)
 	s := NewState(seed, m)
-	s.MetatronCharges = 3
+	s.GuardianCharges = 3
 	s.Agents[0].Inv = Inventory{Spears: []int{1}} // one worn spear already carried
 
 	if err := applyMiracleErr(s, 100, "metatron.item_granted", ItemGrantedPayload{
@@ -1223,7 +1223,7 @@ func TestMiracleGrantGratisZeroBank(t *testing.T) {
 	const seed = 42
 	m := testMap(seed)
 	s := NewState(seed, m)
-	s.MetatronCharges = 0
+	s.GuardianCharges = 0
 	s.Agents[0].Inv = Inventory{}
 
 	if err := applyMiracleErr(s, 40, "metatron.item_granted", ItemGrantedPayload{
@@ -1233,8 +1233,8 @@ func TestMiracleGrantGratisZeroBank(t *testing.T) {
 	if s.Agents[0].Inv.Meals != 2 {
 		t.Errorf("Meals = %d, want 2", s.Agents[0].Inv.Meals)
 	}
-	if s.MetatronCharges != 0 {
-		t.Errorf("gratis grant spent a charge: bank = %d", s.MetatronCharges)
+	if s.GuardianCharges != 0 {
+		t.Errorf("gratis grant spent a charge: bank = %d", s.GuardianCharges)
 	}
 }
 
@@ -1250,7 +1250,7 @@ func TestMiracleGrantReplayByteIdentity(t *testing.T) {
 		for i := 1; i < len(s.Agents); i++ {
 			s.Agents[i].Dead = true // lone living villager keeps the run quiet
 		}
-		s.MetatronCharges = 3
+		s.GuardianCharges = 3
 		s.Agents[0].Inv = Inventory{}
 		return s
 	}

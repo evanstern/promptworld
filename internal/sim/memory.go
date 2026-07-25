@@ -44,7 +44,7 @@ const (
 	OriginAction  = "action"  // own executed act (situated personal constructors)
 	OriginWitness = "witness" // saw it happen (situated about-event constructor)
 	OriginReport  = "report"  // learned of it at any distance (chest-owner taking memory)
-	OriginOmen    = "omen"    // a delivered omen/dream/miracle (Metatron)
+	OriginOmen    = "omen"    // a delivered omen/dream/working (the guardian) — FROZEN payload value (spec 052 ruling 2)
 	OriginGist    = "gist"    // a conversation summary written into memory
 	OriginDigest  = "digest"  // a nightly day-gist
 )
@@ -235,7 +235,7 @@ const (
 	salColdNight      = 5
 	salNearDeath      = 9
 	salWitnessDeath   = 10
-	// SalDream: Metatron's dreams/omens (TASK-12) — exported for the
+	// SalDream: Guardian's dreams/omens (TASK-12) — exported for the
 	// injection builder; between shelter and near-death so the divine
 	// reliably surfaces without outranking real trauma.
 	SalDream = 8

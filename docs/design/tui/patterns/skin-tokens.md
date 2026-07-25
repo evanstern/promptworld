@@ -1,72 +1,107 @@
 ---
-title: Pattern — skin tokens (documentation conventions)
+title: Pattern — skin tokens (doc conventions + the runtime contract)
 class: pattern
-status: specified
-verified_against: c8906da39be3a5b861c2272af37db0a83dcded7a
+status: shipped
+verified_against: c8d80800fc5d34c5c31ab54751ebfb3ba80efc5b
 ---
 
 # Pattern: skin tokens
 
-**Documentation conventions only.** This page fixes how the v2 reference itself
-writes fiction strings so it never accumulates new bare literals ahead of the
-runtime skin contract (reorientation D2 sequencing). The runtime token *lookup*
-— file format, resolution order, fallback behavior — is TASK-121's spec to
-design; this page is deliberately silent on it and MUST be adopted or amended
-by that spec's own PR once it lands.
+This page is two things: (1) the documentation conventions for how this
+reference writes fiction strings, and (2) — since spec 052 (TASK-121) — the
+**doc twin of the runtime skin contract** (`internal/skin`,
+`specs/052-skinnable-guardian/contracts/skin-contract.md`). The interim
+"documentation conventions only" posture, and this page's own requirement
+that TASK-121's PR adopt or amend it, is **satisfied by that PR**: the token
+index below is promoted into the runtime default-skin table.
 
-## Why this exists now
+## Why this exists
 
-The reorientation renames the fiction-bearing dock tab and its family of new
-surfaces around the generic word **guardian** (`panels/guardian.md`,
-`pages/guardian-console.md`, `panels/guardian-strip.md` — never
-`metatron.md`), because the *displayed* proper name is skin data, not a fixed
-identifier. Today's shipped client hard-codes the angel-fiction skin
-(`internal/tui` prints the default proper name and epithet literally — see
-the token index below); the design reference
-speaks in the generic vocabulary throughout and marks every place a fiction
-string would render with a token instead, so a future skin swap is a content
-change, never a doc rewrite.
+The fiction layer is skinnable data (spec 052): the *displayed* proper name,
+epithet, tab label, and narration vocabulary are skin data, not fixed
+identifiers. The design reference speaks in the generic vocabulary
+(**guardian**) throughout and marks every place a fiction string renders with
+a token; the shipped client resolves the same tokens at runtime through
+`internal/skin`. A skin swap is a content change (a per-world `skin.json`),
+never a doc rewrite or a code change.
 
-## Conventions
+## The runtime contract (spec 052)
+
+- **Lookup**: `internal/skin` — `(*skin.Skin).Resolve(token)` plus typed
+  accessors (`Name()`, `Epithet()`, `TabLabel()`, `FamilyLabel()`,
+  `WorkingNoun()`, `FormNoun(form)`, `Stage(id)`/`StageName(id)`).
+- **Resolution order**: world `skin.json` override → compiled default table →
+  **the token path itself** (visibly wrong, never an empty string). A
+  rendered token path is a bug; the token-completeness test
+  (`internal/skin/completeness_test.go`) fails before it ships.
+- **Skin bundle**: `<world>/skin.json` beside `charter.md` — identity fields
+  (`name`, `epithet`, `tab_label`), a `strings` token-override map, `stages`
+  display identities, and one long-form `voice` composed at the guardian
+  prompt's editable-zone SOUL seam. Boot-frozen; capabilities.json fallback
+  discipline (missing → default silently; malformed/invalid field → default +
+  one notice; unknown keys/tokens ignored + notice). Format authority:
+  `specs/052-skinnable-guardian/contracts/skin-contract.md` §1; living
+  example: `examples/skins/raven.json`.
+- **Transport**: clients never read world files — the daemon resolves the
+  skin at boot and the status surfaces carry the display facts (`skin_*`
+  fields, additive omitempty); absent fields (an old daemon) render the
+  default skin.
+- **Never skinnable**: the fixed frame (spec 021), mechanics (tool ids,
+  costs, charges, reducer rules), the event log (recorded types, payloads,
+  memory text, correlation ids), and systems/telemetry content (D10 — no
+  tokens exist for it, by construction of the table below).
+
+### Downstream obligations (TASK-115/117 and later)
+
+1. **No new bare fiction literal** — every fiction string a new surface
+   renders is a token lookup; the repo-wide fiction-denylist sweep test
+   enforces this.
+2. **New tokens** land in the same commit in all three places: the default
+   table (`internal/skin`), this page's table below, and the
+   token-completeness test's reach (automatic — it enumerates the table).
+3. **Non-fiction chrome** (telemetry, key hints, structural labels) stays
+   literal with `—` in the skin-token column (rule 5 below).
+
+## Doc conventions
 
 1. **Mockups** (fenced ASCII blocks): every fiction string is written as
    `{{skin.<domain>.<name>}}` — double-brace, the token's dotted path, no
-   quoting. Example: a dock tab row renders `{{skin.guardian.tab_label}}`
-   where today's shipped UI shows literal `metatron`/`METATRON`.
+   quoting. Example: a dock tab row renders `{{skin.guardian.tab_label}}`.
 2. **Control tables**: the `skin-token` column (contracts/control-table.md)
-   names the token in unbraced dotted form — `skin.guardian.name` — or `—` for
-   non-fiction controls (telemetry rows, chrome structure, keys).
+   names the token in unbraced dotted form — `skin.guardian.name` — or `—`
+   for non-fiction controls (telemetry rows, chrome structure, keys).
 3. **Prose**: describes the *role*, never the fiction word — "the guardian
    tab", "the guardian's proper name" — except when quoting exactly what a
    mockup or control table cell shows, which follows rules 1–2.
 4. **Case is a rendering detail, not a token detail.** One token covers every
    case-transformed rendering of the same string (e.g. the dock tab's
-   lowercase-inactive / uppercase-active styling) — the page that uses it says
-   so in prose once; the token itself never forks by case.
+   lowercase-inactive / uppercase-active styling, the pane header's
+   uppercased `{{skin.guardian.name}}`) — the page that uses it says so in
+   prose once; the token itself never forks by case.
 5. **Non-fiction strings** (chrome labels, telemetry, key hints, glyphs) are
    literal text with `—` in the skin-token column — most of the reference.
    Systems-tab content (panels/systems.md) is never skinned by design (D10):
    it carries no tokens at all.
 
-## Token index
+## The default skin table (normative doc twin)
 
-Default values are the shipped angel-fiction skin (today's only skin, and the
-literal text a fresh clone still renders). This table grows as later waves
-introduce fiction strings; TASK-121 is expected to promote it into the runtime
-contract's default-skin table rather than replace it.
+Default values are the shipped secular-mythic **Guardian** skin (spec 052
+ruling 3). This table is the doc twin of `internal/skin`'s compiled default
+table; the token-completeness test asserts the two never drift. Old worlds'
+already-written files and every serialized identifier (event types
+`metatron.*`, tool ids `send_vision`/`send_omen`/`work_miracle`, paths,
+`metatron_*` wire names) are **frozen** and deliberately not in this table.
 
-| Token | Default (angel-skin) value | Used by |
+| Token | Default value | Used by |
 |---|---|---|
-| `skin.guardian.name` | `Metatron` | `panels/guardian.md` (pane header `{{skin.guardian.name}} · charges…`, transcript verdict rows, chronicle stage line reference), `patterns/keymap.md` (dock-tab table) |
-| `skin.guardian.tab_label` | `metatron` (case-transformed active/inactive by the dock's existing tab styling) | `panels/dock.md` (tab row), `patterns/keymap.md` |
-| `skin.guardian.epithet` | `angel` | `panels/guardian.md` (`you`/`{{skin.guardian.epithet}}` transcript labels, "the {{skin.guardian.epithet}} is answering…"/"unreachable" copy), `panels/minibuffer.md` (dormant placeholder "speak with the {{skin.guardian.epithet}}…") |
-
-## Deferred to TASK-121
-
-Out of scope for this page and this feature: the on-disk token/skin file
-format, resolution order (world skin → default), fallback behavior when a
-token is missing, and the sweep enumerating every literal in
-`internal/tui/help.go`, footer hints, `stagesLadder`, this design corpus, and
-`docs/player/` that TASK-121 must retarget at runtime lookups. This page only
-guarantees the design corpus itself writes no new bare literal in the
-meantime.
+| `skin.guardian.name` | `Guardian` | `panels/guardian.md` (pane header `{{skin.guardian.name}} · charges…`, uppercased per rule 4), chronicle narration subject lines (digest grammar), prompt name substitution (digest keeper, watch confirmer) |
+| `skin.guardian.epithet` | `guardian` | `panels/guardian.md` (transcript labels, "the {{skin.guardian.epithet}} is answering…"/"unreachable"/"voice is stilled" copy), `panels/minibuffer.md` (dormant placeholder), help overlay copy, morgue watch line |
+| `skin.guardian.tab_label` | `guardian` | `panels/dock.md` (tab row, case-transformed active/inactive), `patterns/keymap.md` footer hints, narrow-fallback tabs |
+| `skin.guardian.family_label` | `guardian` | chronicle Type-column display alias for the frozen `metatron.*` event family (spec 052 FR-013); dock short-form and the detail pane's verbatim type stay raw |
+| `skin.guardian.working_noun` | `working` | transcript/chronicle/CLI display of the frozen `work_miracle` mechanics family; prompt doctrine glosses |
+| `skin.guardian.working_noun_plural` | `workings` | granted-tool console summary, chronicle grant vocabulary |
+| `skin.guardian.notes_label` | `the guardian's notes` | display references to the frozen `metatron/soul.md` path |
+| `skin.guardian.vision_noun` | `vision` | display rendering of the frozen `"vision"` nudge form (payloads/tool ids frozen; default-skin-retained folk vocabulary) |
+| `skin.guardian.omen_noun` | `omen` | display rendering of the frozen `"omen"` nudge form |
+| `skin.stage.stage-1.name` … `skin.stage.stage-4.name` | The Voice / The Written Word / The Craft / The Stewardship | stage display identities (`internal/skin` StageIdentity; spec 046 surfaces) |
+| `skin.stage.stage-1.line` … `skin.stage.stage-4.line` | "you speak, it acts" / "your law outlives the conversation" / "you shape what it can do" / "a world in your care" | one-line stage identity descriptions |

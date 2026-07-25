@@ -1,9 +1,9 @@
-package metatron
+package guardian
 
-// The metatron console turn's tool-use loop wiring (spec 017 T020): the loop
+// The guardian console turn's tool-use loop wiring (spec 017 T020): the loop
 // handlers that wrap landNudge / landMiracle, and the cog.tool_call telemetry
 // landing (the T018 pattern, mirrored from internal/mind/telemetry.go through
-// metatron's own social door).
+// guardian's own social door).
 //
 // Doctrine (spec 017): a tool call is a REQUEST; the door decides. The handlers
 // never mutate the world — they call landNudge / landMiracle, which land through
@@ -33,7 +33,7 @@ import (
 // Nudge/Miracle report onto. Only one act ever lands (the driver's cardinality),
 // so at most one of result.Nudge / result.Miracle is ever set.
 type turnDispatch struct {
-	mt      *Metatron
+	mt      *Guardian
 	charges int
 	alive   map[int]bool
 	night   bool // mirrored State.Night at turn start — the omen gate (spec 029 T005)
@@ -54,7 +54,7 @@ func (d *turnDispatch) record(r toolloop.CallRecord) {
 // wrap the influence landers; monitor_and_act / cancel_order wrap the standing-
 // order door (spec 029 T009); work_miracle wraps landMiracle. converse is absent
 // by design — it is the final-text channel, and it is not on the declared loop
-// roster (tool.LoopRosterMetatron), so the model never calls it as a tool.
+// roster (tool.LoopRosterGuardian), so the model never calls it as a tool.
 //
 // Capability gating (spec 021 US2, door layer / R5.3): a handler is installed
 // ONLY for a tool the world grants. An ungranted tool therefore has no handler
@@ -66,7 +66,7 @@ func (d *turnDispatch) record(r toolloop.CallRecord) {
 // ungranted), and drives mt.loop.Do — the SAME clock control the IPC server uses.
 // They inject no world event and spend no charge (Effect Expressive, EMPTY Events)
 // but consume the turn's one act.
-func (mt *Metatron) turnHandlers(d *turnDispatch) map[string]toolloop.Handler {
+func (mt *Guardian) turnHandlers(d *turnDispatch) map[string]toolloop.Handler {
 	h := make(map[string]toolloop.Handler, 9)
 	if d.grant.allows("send_vision") {
 		h["send_vision"] = mt.handleVision(d)
@@ -100,7 +100,7 @@ func (mt *Metatron) turnHandlers(d *turnDispatch) map[string]toolloop.Handler {
 // carrying the human-readable reason, fed back so the model may correct a bad
 // target within the round cap. The optional place grant (spec 041 FR-014) is
 // parsed here — a partial place_* triple is refused before anything lands.
-func (mt *Metatron) handleVision(d *turnDispatch) toolloop.Handler {
+func (mt *Guardian) handleVision(d *turnDispatch) toolloop.Handler {
 	return func(_ context.Context, call llm.ToolCall) toolloop.Outcome {
 		target := argString(call.Args, "target")
 		text := argString(call.Args, "text")
@@ -123,7 +123,7 @@ func (mt *Metatron) handleVision(d *turnDispatch) toolloop.Handler {
 // system-origin standing order (order) — the ResultForModel promises nightfall so
 // the model's reply sets the player's expectation. A bad name / ungranted tool /
 // rejected deferral is fed back as a rejected_gate the model may repair.
-func (mt *Metatron) handleOmen(d *turnDispatch) toolloop.Handler {
+func (mt *Guardian) handleOmen(d *turnDispatch) toolloop.Handler {
 	return func(_ context.Context, call llm.ToolCall) toolloop.Outcome {
 		targets := argString(call.Args, "targets")
 		text := argString(call.Args, "text")
@@ -150,7 +150,7 @@ func (mt *Metatron) handleOmen(d *turnDispatch) toolloop.Handler {
 // the model may repair within the round cap. The driver's schema already rejected
 // an empty event_types as rejected_malformed; a semantically uncompilable
 // condition (e.g. unknown agent) is this gate's refusal-with-counsel (research R5).
-func (mt *Metatron) handleMonitor(d *turnDispatch) toolloop.Handler {
+func (mt *Guardian) handleMonitor(d *turnDispatch) toolloop.Handler {
 	return func(_ context.Context, call llm.ToolCall) toolloop.Outcome {
 		if order, why := mt.placeOrder("player", parseOrderArgs(call.Args), d.tick, d.grant); order != nil {
 			d.result.Order = &OrderReport{ID: order.ID, Condition: order.Condition}
@@ -165,7 +165,7 @@ func (mt *Metatron) handleMonitor(d *turnDispatch) toolloop.Handler {
 // metatron.order_cancelled for the named id. The reducer resolves the
 // cancel/expiry/trigger race — an unknown or already-lapsed id refuses with
 // counsel. A landed cancel records the id and ends the turn.
-func (mt *Metatron) handleCancelOrder(d *turnDispatch) toolloop.Handler {
+func (mt *Guardian) handleCancelOrder(d *turnDispatch) toolloop.Handler {
 	return func(_ context.Context, call llm.ToolCall) toolloop.Outcome {
 		id := argString(call.Args, "id")
 		if why := mt.cancelOrder(id, d.grant); why == "" {
@@ -178,11 +178,11 @@ func (mt *Metatron) handleCancelOrder(d *turnDispatch) toolloop.Handler {
 }
 
 // handleMiracle wraps landMiracle. Same accept/reject translation as handleVision.
-func (mt *Metatron) handleMiracle(d *turnDispatch) toolloop.Handler {
+func (mt *Guardian) handleMiracle(d *turnDispatch) toolloop.Handler {
 	return func(_ context.Context, call llm.ToolCall) toolloop.Outcome {
 		if miracle, why := mt.landMiracle(parseMiracleArgs(call.Args), d.charges, d.grant); miracle != nil {
 			d.result.Miracle = miracle
-			return toolloop.Outcome{Verdict: toolloop.VerdictLanded, ResultForModel: "the miracle is worked: " + miracle.Summary}
+			return toolloop.Outcome{Verdict: toolloop.VerdictLanded, ResultForModel: "the " + mt.sk().WorkingNoun() + " is worked: " + miracle.Summary}
 		} else {
 			return toolloop.Outcome{Verdict: toolloop.VerdictRejectedGate, ResultForModel: refusal(why)}
 		}
@@ -195,7 +195,7 @@ func (mt *Metatron) handleMiracle(d *turnDispatch) toolloop.Handler {
 // spend no charge, and consume the turn's one act. The mapping is R10's:
 // pause→Do("pause"), start→Do("resume", speed-or-empty), adjust_speed→
 // Do("set_speed", speed). A LoopControl error maps to an in-fiction rejected_gate.
-func (mt *Metatron) handlePause(d *turnDispatch) toolloop.Handler {
+func (mt *Guardian) handlePause(d *turnDispatch) toolloop.Handler {
 	return func(_ context.Context, _ llm.ToolCall) toolloop.Outcome {
 		if why := mt.controlLoop(d, "pause", "", "the world holds still — I have paused it"); why != "" {
 			return toolloop.Outcome{Verdict: toolloop.VerdictRejectedGate, ResultForModel: refusal(why)}
@@ -210,7 +210,7 @@ func (mt *Metatron) handlePause(d *turnDispatch) toolloop.Handler {
 // a bare start is Do("resume", "") as always, but a start WITH a speed issues
 // two loop commands for the one tool call: Do("set_speed", speed) THEN
 // Do("resume", ""), so the world both paces and moves in a single act.
-func (mt *Metatron) handleStart(d *turnDispatch) toolloop.Handler {
+func (mt *Guardian) handleStart(d *turnDispatch) toolloop.Handler {
 	return func(_ context.Context, call llm.ToolCall) toolloop.Outcome {
 		speed := clock.Speed(argString(call.Args, "speed"))
 		if speed != "" {
@@ -228,7 +228,7 @@ func (mt *Metatron) handleStart(d *turnDispatch) toolloop.Handler {
 // handleAdjustSpeed sets the clock pace (spec 029 R10): adjust_speed→
 // Do("set_speed", speed). The `speed` arg is a required Enum over clockSpeeds, so
 // the driver already gated membership; ParseSpeed is the door-side re-check.
-func (mt *Metatron) handleAdjustSpeed(d *turnDispatch) toolloop.Handler {
+func (mt *Guardian) handleAdjustSpeed(d *turnDispatch) toolloop.Handler {
 	return func(_ context.Context, call llm.ToolCall) toolloop.Outcome {
 		raw := argString(call.Args, "speed")
 		speed, err := clock.ParseSpeed(raw)
@@ -248,7 +248,7 @@ func (mt *Metatron) handleAdjustSpeed(d *turnDispatch) toolloop.Handler {
 // Returns "" on success or an in-fiction refusal the handler feeds back as a
 // rejected_gate. A nil seam (a world wired without loop control) refuses in
 // fiction rather than panicking — defense-in-depth behind handler absence.
-func (mt *Metatron) controlLoop(d *turnDispatch, name string, speed clock.Speed, clockLine string) string {
+func (mt *Guardian) controlLoop(d *turnDispatch, name string, speed clock.Speed, clockLine string) string {
 	if mt.loop == nil {
 		return "I cannot touch the flow of time in this world"
 	}
@@ -348,11 +348,11 @@ func verdictRequiresReason(v toolloop.Verdict) bool {
 // snapshotTick is the turn's world tick. The reason invariant is enforced here:
 // an empty reason on a verdict that requires one is backfilled with the verdict
 // name and logged as the driver-contract violation it would be.
-func (mt *Metatron) toolCallEvent(r toolloop.CallRecord, snapshotTick int64) store.Event {
+func (mt *Guardian) toolCallEvent(r toolloop.CallRecord, snapshotTick int64) store.Event {
 	reason := r.Reason
 	if reason == "" && verdictRequiresReason(r.Verdict) {
 		reason = string(r.Verdict)
-		log.Printf("metatron: cog.tool_call %s ordinal %d verdict %s missing reason; backfilled", r.JobID, r.Ordinal, r.Verdict)
+		log.Printf("guardian: cog.tool_call %s ordinal %d verdict %s missing reason; backfilled", r.JobID, r.Ordinal, r.Verdict)
 	}
 	b, _ := json.Marshal(sim.NewCogToolCallPayload(
 		r.JobID, r.Ordinal, r.Tool, r.Args,
@@ -368,7 +368,7 @@ func (mt *Metatron) toolCallEvent(r toolloop.CallRecord, snapshotTick int64) sto
 // door the nudge/miracle grounding events used — a separate batch, so it neither
 // reorders nor entangles with them. Events go out in ordinal order. An empty
 // buffer (a converse-only turn) emits nothing — no empty batch.
-func (mt *Metatron) emitToolCalls(records []toolloop.CallRecord, snapshotTick int64) {
+func (mt *Guardian) emitToolCalls(records []toolloop.CallRecord, snapshotTick int64) {
 	if mt.social == nil || len(records) == 0 {
 		return
 	}
@@ -381,7 +381,7 @@ func (mt *Metatron) emitToolCalls(records []toolloop.CallRecord, snapshotTick in
 	if err := mt.social.InjectSocial(events); err != nil {
 		// The world outlives its observability — a rejected telemetry batch is
 		// logged, never fatal (mirrors mind's emitCog).
-		log.Printf("metatron: cog.tool_call telemetry rejected: %v", err)
+		log.Printf("guardian: cog.tool_call telemetry rejected: %v", err)
 	}
 }
 
@@ -393,7 +393,7 @@ func (mt *Metatron) emitToolCalls(records []toolloop.CallRecord, snapshotTick in
 // digest catalog stays green), and a silent retry is a contract violation: this
 // makes the recovery countable from the trail alone. jobID/snapshotTick match
 // the turn's cog.tool_call correlation key so the marker joins the same chain.
-func (mt *Metatron) emitRetried(jobID string, snapshotTick int64, reason string) {
+func (mt *Guardian) emitRetried(jobID string, snapshotTick int64, reason string) {
 	if mt.social == nil {
 		return
 	}
@@ -405,6 +405,6 @@ func (mt *Metatron) emitRetried(jobID string, snapshotTick int64, reason string)
 	})
 	if err := mt.social.InjectSocial([]store.Event{{Type: "cog.outcome", Payload: b}}); err != nil {
 		// The world outlives its observability — logged, never fatal.
-		log.Printf("metatron: retry telemetry rejected: %v", err)
+		log.Printf("guardian: retry telemetry rejected: %v", err)
 	}
 }

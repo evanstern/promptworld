@@ -29,7 +29,7 @@ func TestBundleToolReplayByteIdentity(t *testing.T) {
 	// move reducer's passability check resolves.
 	genesis := func() *sim.State {
 		s := sim.NewState(seed, m)
-		s.MetatronCharges = sim.MetatronChargeCap
+		s.GuardianCharges = sim.GuardianChargeCap
 		return s
 	}
 
@@ -43,7 +43,7 @@ func TestBundleToolReplayByteIdentity(t *testing.T) {
 		State:    base,
 		Tick:     0,
 		Args:     map[string]string{"target": "Ash", "x": strconv.Itoa(bx), "y": strconv.Itoa(by)},
-		Invoker:  "the angel",
+		Invoker:  "the guardian",
 		Declared: map[string]bool{"metatron.entity_moved": true, "agent.memory_added": true},
 	}
 	effects, err := ExpandTemplates(templates, in)

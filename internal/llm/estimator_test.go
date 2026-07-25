@@ -26,7 +26,7 @@ func fallbackConfig(fastURL, slowURL string) Config {
 			string(KindConsolidation): {Chain: []string{"slow"}},
 			string(KindNarrator):      {Chain: []string{"slow"}},
 			string(KindDrama):         {Chain: []string{"slow"}},
-			string(KindMetatron):      {Chain: []string{"slow"}},
+			string(KindGuardian):      {Chain: []string{"slow"}},
 		},
 	}
 }
@@ -48,7 +48,7 @@ func walletFallbackConfig(url string) Config {
 			string(KindConsolidation): {Chain: []string{"premium"}},
 			string(KindNarrator):      {Chain: []string{"premium"}},
 			string(KindDrama):         {Chain: []string{"premium"}},
-			string(KindMetatron):      {Chain: []string{"premium"}},
+			string(KindGuardian):      {Chain: []string{"premium"}},
 		},
 	}
 }

@@ -87,7 +87,7 @@ func Validate() error {
 	for _, r := range []struct {
 		name  string
 		names []string
-	}{{"villager", RosterVillager}, {"metatron", RosterMetatron}} {
+	}{{"villager", RosterVillager}, {"metatron", RosterGuardian}} {
 		for _, n := range r.names {
 			if _, ok := Lookup(n); !ok {
 				errs = append(errs, fmt.Errorf("%s roster names %q, which is not in the registry", r.name, n))

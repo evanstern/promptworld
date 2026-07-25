@@ -14,9 +14,10 @@ import (
 
 	"github.com/evanstern/promptworld/internal/clock"
 	"github.com/evanstern/promptworld/internal/cognition"
+	"github.com/evanstern/promptworld/internal/guardian"
 	"github.com/evanstern/promptworld/internal/llm"
-	"github.com/evanstern/promptworld/internal/metatron"
 	"github.com/evanstern/promptworld/internal/sim"
+	"github.com/evanstern/promptworld/internal/skin"
 	"github.com/evanstern/promptworld/internal/store"
 	"github.com/evanstern/promptworld/internal/world"
 )
@@ -49,8 +50,9 @@ type Server struct {
 	st       *store.Store
 	loop     *sim.Loop
 	llm      *llm.Orchestrator // nil when the world has no llm.json
-	metatron Angel             // nil when the world has no llm.json
+	guardian Guardian          // nil when the world has no llm.json
 	governor Governor          // nil when the world has no llm.json
+	skin     *skin.Skin        // boot-frozen world skin (spec 052); nil = default
 	shutdown func()            // requests daemon shutdown (graceful)
 	started  time.Time
 
@@ -74,20 +76,25 @@ func NewServer(w *world.World, st *store.Store, shutdown func()) *Server {
 // SetLLM attaches the optional orchestrator (before Serve).
 func (s *Server) SetLLM(o *llm.Orchestrator) { s.llm = o }
 
-// Angel is the Metatron surface the server needs (TASK-12; test seam).
-type Angel interface {
-	Turn(ctx context.Context, text string) (metatron.TurnResult, error)
-	Status() metatron.Status
+// Guardian is the Guardian surface the server needs (TASK-12; test seam).
+type Guardian interface {
+	Turn(ctx context.Context, text string) (guardian.TurnResult, error)
+	Status() guardian.Status
 }
 
-// SetMetatron attaches the optional angel (before Serve).
-func (s *Server) SetMetatron(a Angel) { s.metatron = a }
+// SetGuardian attaches the optional guardian (before Serve).
+func (s *Server) SetGuardian(a Guardian) { s.guardian = a }
+
+// SetSkin attaches the world's boot-frozen display skin (spec 052 FR-012;
+// before Serve — the SetLLM discipline). nil renders the default skin, so a
+// no-skin world (and every pre-052 test) needs no call at all.
+func (s *Server) SetSkin(sk *skin.Skin) { s.skin = sk }
 
 // Governor is the daemon governor's status surface (spec 028 US1): the latest
 // sampled staleness debt and the count of pending model-bound thoughts driving
 // it. nil when the world has no orchestrator, so a no-LLM world folds zero
 // governor values into status and preserves pre-028 bytes (FR-003, SC-004).
-// Kept as a local interface (like Angel) so ipc never imports the daemon.
+// Kept as a local interface (like Guardian) so ipc never imports the daemon.
 type Governor interface {
 	GovernorStatus() (debt float64, jobs int)
 }
@@ -198,7 +205,7 @@ func (s *Server) statusData(cs sim.Status) StatusData {
 			Speed:           string(cs.Speed),
 			EffectiveRate:   cs.EffectiveRate,
 			Degraded:        cs.Degraded,
-			MetatronCharges: cs.MetatronCharges,
+			GuardianCharges: cs.GuardianCharges,
 			// RequestedSpeed folds from the sim-state ceiling (spec 028 US2);
 			// empty/omitempty when ungoverned keeps the pre-028 byte shape.
 			RequestedSpeed: string(cs.RequestedSpeed),
@@ -213,6 +220,15 @@ func (s *Server) statusData(cs sim.Status) StatusData {
 			Subscribers:   s.subscriberCount(),
 		},
 		Log: LogStatus{LastSeq: cs.LastSeq},
+		// Skin display facts (spec 052 contract §7): identity fields resolved
+		// (nil s.skin resolves the default table — skin.Skin is nil-safe);
+		// override maps only when a world skin overrides.
+		SkinName:        s.skin.Name(),
+		SkinEpithet:     s.skin.Epithet(),
+		SkinTabLabel:    s.skin.TabLabel(),
+		SkinFamilyLabel: s.skin.FamilyLabel(),
+		SkinStrings:     s.skin.StringOverrides(),
+		SkinStages:      s.skin.StageOverrides(),
 	}
 }
 
@@ -509,17 +525,20 @@ func (c *session) handle(req Request) {
 			return
 		}
 		c.writeResponse(Response{ID: req.ID, OK: true, Data: data})
+	// "metatron_chat" / "metatron_status" / "miracle" are FROZEN wire method
+	// names (spec 052 ruling 2): old clients must keep working forever. The
+	// canonical CLI vocabulary is guardian/work; only the wire keeps these.
 	case "metatron_chat":
-		if c.srv.metatron == nil {
-			c.writeResponse(Response{ID: req.ID, OK: false, Error: "metatron is not present in this world (no llm config)"})
+		if c.srv.guardian == nil {
+			c.writeResponse(Response{ID: req.ID, OK: false, Error: "the guardian is not present in this world (no llm config)"})
 			return
 		}
-		var args MetatronChatArgs
+		var args GuardianChatArgs
 		if req.Args == nil || json.Unmarshal(req.Args, &args) != nil || args.Text == "" {
 			c.writeResponse(Response{ID: req.ID, OK: false, Error: "malformed args (need text)"})
 			return
 		}
-		result, err := c.srv.metatron.Turn(context.Background(), args.Text)
+		result, err := c.srv.guardian.Turn(context.Background(), args.Text)
 		if err != nil {
 			c.writeResponse(Response{ID: req.ID, OK: false, Error: err.Error()})
 			return
@@ -531,11 +550,11 @@ func (c *session) handle(req Request) {
 		}
 		c.writeResponse(Response{ID: req.ID, OK: true, Data: data})
 	case "metatron_status":
-		if c.srv.metatron == nil {
-			c.writeResponse(Response{ID: req.ID, OK: false, Error: "metatron is not present in this world (no llm config)"})
+		if c.srv.guardian == nil {
+			c.writeResponse(Response{ID: req.ID, OK: false, Error: "the guardian is not present in this world (no llm config)"})
 			return
 		}
-		data, err := json.Marshal(c.srv.metatron.Status())
+		data, err := json.Marshal(c.srv.guardian.Status())
 		if err != nil {
 			c.writeResponse(Response{ID: req.ID, OK: false, Error: err.Error()})
 			return
@@ -569,7 +588,7 @@ func (c *session) handle(req Request) {
 }
 
 // handleMiracle lands one operator miracle (spec 016). It needs only the sim
-// loop — never srv.llm or srv.metatron — so miracles work on pure-sim worlds:
+// loop — never srv.llm or srv.guardian — so miracles work on pure-sim worlds:
 // the charge bank is sim state, the reducer validates at the InjectSocial
 // dry-run, and the shared BuildMiracleBatch composes the batch both doors use.
 // The current state is fetched only to resolve the perception-memory recipients
@@ -587,7 +606,7 @@ func (c *session) handleMiracle(id int64, args MiracleArgs) {
 		return
 	}
 
-	var params metatron.MiracleParams
+	var params guardian.MiracleParams
 	var summary string
 	switch args.Kind {
 	case "move":
@@ -595,14 +614,14 @@ func (c *session) handleMiracle(id int64, args MiracleArgs) {
 			c.writeResponse(Response{ID: id, OK: false, Error: "move needs a class (villager|structure|pile)"})
 			return
 		}
-		params = metatron.MiracleParams{Class: args.Class, X: args.X, Y: args.Y, ToX: args.ToX, ToY: args.ToY}
+		params = guardian.MiracleParams{Class: args.Class, X: args.X, Y: args.Y, ToX: args.ToX, ToY: args.ToY}
 		summary = fmt.Sprintf("moved %s at (%d,%d) to (%d,%d)", args.Class, args.X, args.Y, args.ToX, args.ToY)
 	case "remove":
 		if args.Class == "" {
 			c.writeResponse(Response{ID: id, OK: false, Error: "remove needs a class (structure|pile|terrain)"})
 			return
 		}
-		params = metatron.MiracleParams{Class: args.Class, X: args.X, Y: args.Y}
+		params = guardian.MiracleParams{Class: args.Class, X: args.X, Y: args.Y}
 		summary = fmt.Sprintf("removed %s at (%d,%d)", args.Class, args.X, args.Y)
 	case "time_snap":
 		// Door-side day/HH:MM → tick (spec 016 US3); the reducer enforces
@@ -612,7 +631,7 @@ func (c *session) handleMiracle(id int64, args MiracleArgs) {
 			c.writeResponse(Response{ID: id, OK: false, Error: perr.Error()})
 			return
 		}
-		params = metatron.MiracleParams{ToTick: clock.TickAt(int64(args.Day), hour, min, 0)}
+		params = guardian.MiracleParams{ToTick: clock.TickAt(int64(args.Day), hour, min, 0)}
 		summary = fmt.Sprintf("snapped time to day %d %02d:%02d", args.Day, hour, min)
 	case "give_item":
 		// Door-side villager name → index (contracts §2); the reducer validates
@@ -627,14 +646,14 @@ func (c *session) handleMiracle(id int64, args MiracleArgs) {
 			c.writeResponse(Response{ID: id, OK: false, Error: fmt.Sprintf("no villager named %q", args.Villager)})
 			return
 		}
-		params = metatron.MiracleParams{Agent: idx, Item: args.Item, Qty: args.Qty}
+		params = guardian.MiracleParams{Agent: idx, Item: args.Item, Qty: args.Qty}
 		summary = fmt.Sprintf("granted %d %s to %s", args.Qty, args.Item, sim.AgentNames[idx])
 	default:
-		c.writeResponse(Response{ID: id, OK: false, Error: fmt.Sprintf("unknown miracle kind %q", args.Kind)})
+		c.writeResponse(Response{ID: id, OK: false, Error: fmt.Sprintf("unknown working kind %q", args.Kind)})
 		return
 	}
 
-	batch, err := metatron.BuildMiracleBatch(&state, args.Kind, params, args.Gratis)
+	batch, err := guardian.BuildMiracleBatch(&state, args.Kind, params, args.Gratis)
 	if err != nil {
 		c.writeResponse(Response{ID: id, OK: false, Error: err.Error()})
 		return
@@ -648,7 +667,7 @@ func (c *session) handleMiracle(id int64, args MiracleArgs) {
 		c.writeResponse(Response{ID: id, OK: false, Error: err.Error()})
 		return
 	}
-	data, err := json.Marshal(MiracleData{Kind: args.Kind, Charges: cs.MetatronCharges, Gratis: args.Gratis, Summary: summary})
+	data, err := json.Marshal(MiracleData{Kind: args.Kind, Charges: cs.GuardianCharges, Gratis: args.Gratis, Summary: summary})
 	if err != nil {
 		c.writeResponse(Response{ID: id, OK: false, Error: err.Error()})
 		return

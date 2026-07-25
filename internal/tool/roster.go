@@ -65,15 +65,15 @@ var RosterVillager = func() []string {
 	return append(out, villagerExpressive...)
 }()
 
-// RosterMetatron is the metatron capability set (the door name set): its
+// RosterGuardian is the guardian capability set (the door name set): its
 // converse channel and the acting tools it may use (spec 029 — send_vision/
 // send_omen replace the retired nudge_dream/nudge_omen; monitor_and_act,
 // cancel_order, work_miracle, and the meta tools pause/start/adjust_speed join
-// it). It mirrors LoopRosterMetatron's names plus converse. Since spec 029 the
+// it). It mirrors LoopRosterGuardian's names plus converse. Since spec 029 the
 // nudge form is validated against the reducer's explicit form set, not this
 // roster (contracts/events.md), so this set's live consumer is the boot-time
 // name-resolution check in Validate; keeping it in step keeps that gate honest.
-var RosterMetatron = []string{"converse", "send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed"}
+var RosterGuardian = []string{"converse", "send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed"}
 
 // OnRoster reports whether name is on roster — the door membership check.
 func OnRoster(roster []string, name string) bool {
@@ -111,7 +111,7 @@ func LoopRosterVillager() []Tool {
 	}
 	// Journal tools (spec 019, US3): the villager's private notebook — two
 	// acting (Expressive) and two Read. Appended after muse so no existing
-	// declared tool's position shifts; villager-only (the metatron roster is
+	// declared tool's position shifts; villager-only (the guardian roster is
 	// untouched, journals are private).
 	for _, n := range []string{"write_journal_entry", "delete_from_journal", "search_journal", "read_journal"} {
 		if t, ok := Lookup(n); ok {
@@ -121,27 +121,27 @@ func LoopRosterVillager() []Tool {
 	return out
 }
 
-// loopMetatronTools is the ordered declared-tool list the metatron tool-use
+// loopGuardianTools is the ordered declared-tool list the guardian tool-use
 // loop presents to the model (spec 017 T020; the agency surface, spec 029 R2):
 // send_omen, send_vision, monitor_and_act, cancel_order, work_miracle, then the
-// meta tools pause/start/adjust_speed. It is NOT RosterMetatron: converse is
+// meta tools pause/start/adjust_speed. It is NOT RosterGuardian: converse is
 // DELIBERATELY excluded. converse is the final-answer channel, not a callable
-// tool — the angel speaks by replying with text (toolloop Result Final), and the
+// tool — the guardian speaks by replying with text (toolloop Result Final), and the
 // loop ends naturally (model_done) when it does. Declaring converse would trap a
-// converse call as rejected_unknown (metatron installs no converse handler, by
+// converse call as rejected_unknown (guardian installs no converse handler, by
 // design: "converse is the transcript, not a door"), so it is offered only as
 // the implicit text channel, never as a tool the model can call.
-var loopMetatronTools = []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed"}
+var loopGuardianTools = []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed"}
 
-// LoopRosterMetatron returns the ordered declared-tool list the metatron
-// tool-use loop presents to the model (loopMetatronTools), resolved to full
+// LoopRosterGuardian returns the ordered declared-tool list the guardian
+// tool-use loop presents to the model (loopGuardianTools), resolved to full
 // Tool values — InputSchema (derive.go) needs each tool's Params, not just its
-// name. RosterMetatron stays the pre-loop, name-only DOOR roster (landNudge's
+// name. RosterGuardian stays the pre-loop, name-only DOOR roster (landNudge's
 // OnRoster check); this is the loop's DECLARED surface, which differs (converse
 // excluded, work_miracle included).
-func LoopRosterMetatron() []Tool {
-	out := make([]Tool, 0, len(loopMetatronTools))
-	for _, n := range loopMetatronTools {
+func LoopRosterGuardian() []Tool {
+	out := make([]Tool, 0, len(loopGuardianTools))
+	for _, n := range loopGuardianTools {
 		if t, ok := Lookup(n); ok {
 			out = append(out, t)
 		}

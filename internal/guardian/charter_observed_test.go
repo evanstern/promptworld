@@ -1,4 +1,4 @@
-package metatron
+package guardian
 
 import (
 	"context"
@@ -39,7 +39,7 @@ func charterObservations(t *testing.T, inj *stateInjector) []sim.CharterObserved
 // nothing further; an edit is observed on the NEXT turn with a new
 // fingerprint and default=false — fingerprint-at-effect semantics.
 func TestCharterObservationEmitted(t *testing.T) {
-	mt, _, inj, dir := newTestAngel(t, "I am here.")
+	mt, _, inj, dir := newTestGuardian(t, "I am here.")
 	mt.charterFP = "" // undo the fixture pre-seed: this test IS the observation
 
 	// Turn 1: first observation — the default charter, by its content hash.
@@ -96,7 +96,7 @@ func TestCharterObservationEmitted(t *testing.T) {
 // reaches an authoring stage and the player actually revises charter.md, the
 // next observation records default=false — that contrast is the point.
 func TestCharterObservationTutorPresetIsDefault(t *testing.T) {
-	mt, _, inj, dir := newTestAngel(t, "Watch with me.")
+	mt, _, inj, dir := newTestGuardian(t, "Watch with me.")
 	mt.SetStage("stage-1", "tutor")
 	mt.charterFP = ""
 
@@ -149,7 +149,7 @@ func TestCharterObservationTutorPresetIsDefault(t *testing.T) {
 // preset charter for the turn, and the closed evidence timeline still wins:
 // no observation is emitted. Neither gate disturbs the other.
 func TestCharterObservationEndedStageOneCoexists(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "The watch is over.")
+	mt, _, inj, _ := newTestGuardian(t, "The watch is over.")
 	mt.SetStage("stage-1", "tutor")
 	mt.charterFP = ""
 	mt.replica.Apply(store.Event{Tick: 1, Type: "run.ended", Payload: mustJSON(sim.RunEndedPayload{
@@ -168,7 +168,7 @@ func TestCharterObservationEndedStageOneCoexists(t *testing.T) {
 // evidence timeline is closed — a turn on it emits no observation (the
 // narrowed door would refuse it anyway; the skip keeps the log quiet).
 func TestCharterObservationSkippedWhenEnded(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "It is over.")
+	mt, _, inj, _ := newTestGuardian(t, "It is over.")
 	mt.charterFP = ""
 	mt.replica.Apply(store.Event{Tick: 1, Type: "run.ended", Payload: mustJSON(sim.RunEndedPayload{
 		Tick: 1, Deaths: []sim.DeathRecord{{Agent: 0, Tick: 1, Cause: "starvation"}}, FinalCause: "starvation"})})

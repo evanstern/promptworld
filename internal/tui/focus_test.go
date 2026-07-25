@@ -27,7 +27,7 @@ func TestFocusContractCheck1_NoFocusOnNavigation(t *testing.T) {
 			var mdl tea.Model = m
 			mdl = update(mdl, "3")
 			if mdl.(Model).mbFocused {
-				t.Fatal("selecting the metatron tab/pane must not focus the minibuffer")
+				t.Fatal("selecting the guardian tab/pane must not focus the minibuffer")
 			}
 			mdl = update(mdl, "1")
 			mm := mdl.(Model)
@@ -218,14 +218,14 @@ func TestSoloZoomStateMachine(t *testing.T) {
 		t.Fatal("same key again must return home")
 	}
 
-	// home, tab=chronicle --3--> home, tab=metatron (select, not solo)
+	// home, tab=chronicle --3--> home, tab=guardian (select, not solo)
 	mdl = update(mdl, "3")
 	mm = mdl.(Model)
-	if mm.solo || mm.dockTab != paneMetatron {
+	if mm.solo || mm.dockTab != paneGuardian {
 		t.Fatalf("different key selects, does not solo: solo=%v tab=%s", mm.solo, paneNames[mm.dockTab])
 	}
 
-	// home, tab=metatron --3--> solo(metatron) --1--> home, tab=metatron
+	// home, tab=guardian --3--> solo(guardian) --1--> home, tab=guardian
 	mdl = update(mdl, "3")
 	if !mdl.(Model).solo {
 		t.Fatal("second '3' press should zoom solo")
@@ -235,12 +235,12 @@ func TestSoloZoomStateMachine(t *testing.T) {
 	if mm.solo {
 		t.Fatal("'1' must exit solo (solo-views.md state machine)")
 	}
-	if mm.dockTab != paneMetatron {
+	if mm.dockTab != paneGuardian {
 		t.Fatal("'1' returns home with the tab selection intact")
 	}
 
 	// esc also exits solo.
-	mdl = update(mdl, "3") // solo(metatron) again
+	mdl = update(mdl, "3") // solo(guardian) again
 	if !mdl.(Model).solo {
 		t.Fatal("setup: expected solo")
 	}

@@ -14,7 +14,7 @@
 // The driver is transport-agnostic and sim-agnostic. It imports only
 // internal/llm (the wire) and internal/tool (the schema/roster source);
 // handlers, artifact recording, and event emission are injected by the
-// consumer (internal/mind, internal/metatron), keeping this package a shared
+// consumer (internal/mind, internal/guardian), keeping this package a shared
 // leaf below both (research R1).
 package toolloop
 

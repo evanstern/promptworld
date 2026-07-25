@@ -14,7 +14,7 @@ import (
 )
 
 // The morgue (spec 044 US2): the run's accumulating legacy document —
-// one factual epitaph per death (facts + the angel-policy evidence in force
+// one factual epitaph per death (facts + the guardian-policy evidence in force
 // at that moment) closed by a run-end summary, with the narrator's recorded
 // epilogues blockquoted beneath their sections' facts.
 //
@@ -220,7 +220,7 @@ func captureEpitaph(st *sim.State, agent int, tick int64, cause string, charter 
 	}
 	// Standing orders active at this moment (spec 044 FR-008): condition,
 	// action, and watch subjects — the instruction half of the evidence.
-	for _, o := range st.MetatronOrders {
+	for _, o := range st.GuardianOrders {
 		if o.Status != "active" {
 			continue
 		}
@@ -339,7 +339,9 @@ func writeEpitaph(b *strings.Builder, ep morgueEpitaph, deeds []morgueDeed) {
 	}
 	fmt.Fprintf(b, "- **Debts**: owed — %s · owed to them — %s\n", owed, owedTo)
 
-	b.WriteString("- **The angel's watch at that moment**: ")
+	// Freshly rendered morgue prose de-themes to the default guardian
+	// vocabulary (spec 052 T012); already-written morgue files are history.
+	b.WriteString("- **The guardian's watch at that moment**: ")
 	if ep.charter == nil {
 		b.WriteString("no charter observation recorded before this death")
 	} else {

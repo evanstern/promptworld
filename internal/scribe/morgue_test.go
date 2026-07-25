@@ -75,7 +75,7 @@ func morgueHistory(t *testing.T) []store.Event {
 		// The player edits the charter (observed day 2) and places a watch;
 		// Birch dies under BOTH.
 		ev(90000, "metatron.charter_observed", sim.CharterObservedPayload{Fingerprint: "bbbb33334444", Default: false}),
-		ev(91000, "metatron.order_placed", sim.MetatronOrder{
+		ev(91000, "metatron.order_placed", sim.GuardianOrder{
 			ID: "ord-91000-1", Origin: "player",
 			Condition: "anyone goes hungry", Action: "send a vision toward food",
 			EventTypes: []string{"agent.needs_changed"}, Agent: 1,
@@ -131,7 +131,7 @@ func readMorgue(t *testing.T, dir string) string {
 // TestMorgueRendersFactualEpitaph (SC-002 / FR-007): on a no-LLM history,
 // every factual epitaph field is present and derived from recorded history —
 // name, days survived, cause, notable deeds, notable memories, relationships,
-// and debts — plus the angel-policy evidence (SC-003 / FR-008): the charter
+// and debts — plus the guardian-policy evidence (SC-003 / FR-008): the charter
 // revision in force at EACH death and the active orders' watch subjects.
 func TestMorgueRendersFactualEpitaph(t *testing.T) {
 	_, _, dir := newMorgueScribe(t, morgueHistory(t))

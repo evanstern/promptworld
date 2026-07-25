@@ -54,7 +54,7 @@ func teleportWorld(t *testing.T) (*sim.State, *worldmap.Map) {
 	t.Helper()
 	m := worldmap.Generate(42, 64, 64)
 	s := sim.NewState(42, m)
-	s.MetatronCharges = sim.MetatronChargeCap
+	s.GuardianCharges = sim.GuardianChargeCap
 	return s, m
 }
 
@@ -71,7 +71,7 @@ func TestHandlerLandsBatch(t *testing.T) {
 	ax, ay := s.Agents[0].X, s.Agents[0].Y
 	bx, by := s.Agents[1].X, s.Agents[1].Y
 
-	ic := InvocationContext{State: snapshot(s), Tick: 100, Invoker: "the angel", Inject: ci.inject}
+	ic := InvocationContext{State: snapshot(s), Tick: 100, Invoker: "the guardian", Inject: ci.inject}
 	h := bs.Handlers(ic)["teleport"]
 	args, _ := json.Marshal(map[string]any{"target": "Ash", "x": bx, "y": by})
 	out := h(context.Background(), llm.ToolCall{ID: "c1", Name: "teleport", Args: args})
@@ -112,7 +112,7 @@ func TestHandlerRejectsUnknownTarget(t *testing.T) {
 	bs := teleportSet(t)
 	s, _ := teleportWorld(t)
 	ci := &captureInjector{state: s}
-	ic := InvocationContext{State: snapshot(s), Tick: 100, Invoker: "the angel", Inject: ci.inject}
+	ic := InvocationContext{State: snapshot(s), Tick: 100, Invoker: "the guardian", Inject: ci.inject}
 	h := bs.Handlers(ic)["teleport"]
 	args, _ := json.Marshal(map[string]any{"target": "Nobody", "x": 1, "y": 1})
 	out := h(context.Background(), llm.ToolCall{Name: "teleport", Args: args})
@@ -134,7 +134,7 @@ func TestHandlerDoorRefusalIsRejectedGate(t *testing.T) {
 	bs := teleportSet(t)
 	s, _ := teleportWorld(t)
 	ci := &captureInjector{state: s, failErr: context.DeadlineExceeded}
-	ic := InvocationContext{State: snapshot(s), Tick: 100, Invoker: "the angel", Inject: ci.inject}
+	ic := InvocationContext{State: snapshot(s), Tick: 100, Invoker: "the guardian", Inject: ci.inject}
 	h := bs.Handlers(ic)["teleport"]
 	bx, by := s.Agents[1].X, s.Agents[1].Y
 	args, _ := json.Marshal(map[string]any{"target": "Ash", "x": bx, "y": by})
@@ -145,7 +145,7 @@ func TestHandlerDoorRefusalIsRejectedGate(t *testing.T) {
 }
 
 // snapshot builds a read-only probe with the fields the effect compiler resolves
-// against (name/position/liveness), mirroring the metatron turn assembly's probe.
+// against (name/position/liveness), mirroring the guardian turn assembly's probe.
 func snapshot(s *sim.State) *sim.State {
 	p := &sim.State{Agents: make([]sim.Agent, len(s.Agents))}
 	for i := range s.Agents {

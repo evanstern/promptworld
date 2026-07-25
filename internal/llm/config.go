@@ -40,10 +40,10 @@ type Config struct {
 	// never fails to boot over a tuning knob (mirrors LocalConfig.Workers()).
 	LoopMaxRounds int `json:"loop_max_rounds,omitempty"`
 	// MaxTokens carries the per-kind cognition token budgets (spec 025 US2):
-	// planner loop / metatron console turn / nightly consolidation. Optional and
+	// planner loop / guardian console turn / nightly consolidation. Optional and
 	// additive — an absent object (every pre-025 world) yields today's built-in
 	// defaults byte-for-byte (FR-010). Each field normalizes independently via
-	// PlannerTokens()/MetatronTurnTokens()/ConsolidationTokens(), warn-not-error
+	// PlannerTokens()/GuardianTurnTokens()/ConsolidationTokens(), warn-not-error
 	// like Rounds(). A POINTER so json:"omitempty" actually suppresses it —
 	// WriteDefault must not emit the object (contracts/llm-json.md: the knob
 	// stays opt-in and a default file stays byte-for-byte compatible). A value
@@ -58,7 +58,7 @@ type Config struct {
 // never see a raw operator value.
 type TokenBudgets struct {
 	Planner       int64 `json:"planner,omitempty"`       // villager planner tool-loop round budget
-	MetatronTurn  int64 `json:"metatron_turn,omitempty"` // metatron console-turn round budget
+	GuardianTurn  int64 `json:"metatron_turn,omitempty"` // guardian console-turn round budget
 	Consolidation int64 `json:"consolidation,omitempty"` // nightly consolidation call budget
 }
 
@@ -75,7 +75,7 @@ type TokenBudgets struct {
 // (16) an order of magnitude above their sweet spot.
 const (
 	defaultPlannerTokens       = 512
-	defaultMetatronTurnTokens  = 1024
+	defaultGuardianTurnTokens  = 1024
 	defaultConsolidationTokens = 1024
 	maxTokenBudget             = 4096
 )
@@ -111,16 +111,16 @@ func (c Config) tokenBudgets() TokenBudgets {
 	return *c.MaxTokens
 }
 
-// PlannerTokens / MetatronTurnTokens / ConsolidationTokens resolve each per-kind
+// PlannerTokens / GuardianTurnTokens / ConsolidationTokens resolve each per-kind
 // budget to (effective, warning), independently and accumulating (spec 025
 // US2). The daemon prints any warning on its boot channel and passes the
-// effective value into mind.New / metatron.New (data-model.md §5).
+// effective value into mind.New / guardian.New (data-model.md §5).
 func (c Config) PlannerTokens() (int64, string) {
 	return normalizeTokenBudget("planner", c.tokenBudgets().Planner, defaultPlannerTokens)
 }
 
-func (c Config) MetatronTurnTokens() (int64, string) {
-	return normalizeTokenBudget("metatron_turn", c.tokenBudgets().MetatronTurn, defaultMetatronTurnTokens)
+func (c Config) GuardianTurnTokens() (int64, string) {
+	return normalizeTokenBudget("metatron_turn", c.tokenBudgets().GuardianTurn, defaultGuardianTurnTokens)
 }
 
 func (c Config) ConsolidationTokens() (int64, string) {
@@ -477,11 +477,11 @@ func defaultRoutes() map[string]RouteConfig {
 		string(KindConsolidation): {Chain: []string{"cloud"}},
 		string(KindNarrator):      {Chain: []string{"cloud"}},
 		string(KindDrama):         {Chain: []string{"cloud"}},
-		string(KindMetatron):      {Chain: []string{"cloud"}},
+		string(KindGuardian):      {Chain: []string{"cloud"}},
 		// The watch confirm (spec 029) is the one multi-entry default chain:
 		// cheap-first local for a bare yes/no, reliable cloud fallback. Operators
 		// re-route it like any kind.
-		string(KindMetatronWatch): {Chain: []string{"local", "cloud"}},
+		string(KindGuardianWatch): {Chain: []string{"local", "cloud"}},
 	}
 }
 
@@ -493,7 +493,7 @@ func defaultRoutes() map[string]RouteConfig {
 // Kinds NOT in this set still require an explicit route (completeness/typo
 // protection unchanged), and an unknown route KEY is still a boot error.
 var defaultBackfillKinds = map[Kind]struct{}{
-	KindMetatronWatch: {},
+	KindGuardianWatch: {},
 }
 
 // configWarnf surfaces a config boot log line (warn-not-error), mirroring

@@ -1,6 +1,6 @@
-package metatron
+package guardian
 
-// Tests for the metatron survival autonomy feature (spec 059): system-origin
+// Tests for the guardian survival autonomy feature (spec 059): system-origin
 // survival watches (US1), the survival-authority turn frame + attribution (US2),
 // and the targeting digest (US3).
 
@@ -17,9 +17,9 @@ import (
 )
 
 // seededSurvivalWatch installs the near-death survival watch into both the
-// injector state (the door) and the angel's replica + mirror, the seedOrder way.
-func seededSurvivalWatch(mt *Metatron, inj *stateInjector, kind string) sim.MetatronOrder {
-	var o sim.MetatronOrder
+// injector state (the door) and the guardian's replica + mirror, the seedOrder way.
+func seededSurvivalWatch(mt *Guardian, inj *stateInjector, kind string) sim.GuardianOrder {
+	var o sim.GuardianOrder
 	for _, w := range sim.SurvivalWatchDefs(0) {
 		if w.Survival == kind {
 			o = w
@@ -40,9 +40,9 @@ func needsEvent(agent, health, food, warmth int, tick int64) store.Event {
 
 // TestSurvivalWatchRefusesPlayerCancel (spec 059 US1 AC-4): a player cancel naming
 // a system survival watch is refused with in-fiction counsel — the reducer rejects
-// it at the door, and cancelOrder maps that to the angel's own voice.
+// it at the door, and cancelOrder maps that to the guardian's own voice.
 func TestSurvivalWatchRefusesPlayerCancel(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "ok")
+	mt, _, inj, _ := newTestGuardian(t, "ok")
 	o := seededSurvivalWatch(mt, inj, sim.SurvivalNearDeath)
 
 	why := mt.cancelOrder(o.ID, fullGrant())
@@ -53,8 +53,8 @@ func TestSurvivalWatchRefusesPlayerCancel(t *testing.T) {
 		t.Errorf("cancel refusal not in-fiction: %q", why)
 	}
 	// Nothing landed / the watch still stands active.
-	if inj.state.MetatronOrders[0].Status != "active" {
-		t.Errorf("a refused cancel still changed the survival watch: %+v", inj.state.MetatronOrders[0])
+	if inj.state.GuardianOrders[0].Status != "active" {
+		t.Errorf("a refused cancel still changed the survival watch: %+v", inj.state.GuardianOrders[0])
 	}
 }
 
@@ -63,7 +63,7 @@ func TestSurvivalWatchRefusesPlayerCancel(t *testing.T) {
 // danger band, and does NOT re-fire while the villager stays in-band (the latch),
 // but re-arms and fires again once the villager recovers and relapses.
 func TestSurvivalWatchMatchesNeedsBand(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "ok")
+	mt, _, inj, _ := newTestGuardian(t, "ok")
 	seededSurvivalWatch(mt, inj, sim.SurvivalStarvation)
 
 	fire := func(agent, food int, tick int64) bool {
@@ -106,35 +106,35 @@ func TestSurvivalWatchMatchesNeedsBand(t *testing.T) {
 // loop roster the survival turn runs under, so the digest gate (hasWorkMiracle)
 // and the survival authority both apply.
 func TestSurvivalWatchIsMiracleCapableRoster(t *testing.T) {
-	if !hasWorkMiracle(tool.LoopRosterMetatron()) {
-		t.Fatal("work_miracle absent from the metatron loop roster")
+	if !hasWorkMiracle(tool.LoopRosterGuardian()) {
+		t.Fatal("work_miracle absent from the guardian loop roster")
 	}
 	_ = context.Background
 }
 
-// --- US2: the angel acts on survival without permission (spec 059) ---
+// --- US2: the guardian acts on survival without permission (spec 059) ---
 
 // TestSurvivalFrameCarveOut (spec 059 US2 AC-2/AC-3, SC-003): the survival frame
-// permits vision/miracle on the angel's own initiative BUT keeps the clock and
+// permits vision/miracle on the guardian's own initiative BUT keeps the clock and
 // non-survival orders the player's in BOTH frames; the non-survival frame stays
 // today's restrictive doctrine verbatim (FR-004/FR-005).
 func TestSurvivalFrameCarveOut(t *testing.T) {
-	roster := tool.LoopRosterMetatron()
+	roster := tool.LoopRosterGuardian()
 	normal := buildTurnSystemPrompt(false, "CHARTER", nil, roster)
 	survival := buildTurnSystemPrompt(true, "CHARTER", nil, roster)
 
 	// The non-survival frame is byte-identical to the pinned initiative doctrine.
-	if !strings.Contains(normal, metatronInitiativeFrame) {
+	if !strings.Contains(normal, guardianInitiativeFrame) {
 		t.Error("non-survival frame lost the restrictive initiative doctrine (FR-005)")
 	}
-	if strings.Contains(normal, metatronSurvivalFrame) {
+	if strings.Contains(normal, guardianSurvivalFrame) {
 		t.Error("non-survival frame leaked the survival carve-out")
 	}
 	// The survival frame carries the carve-out and drops the restrictive one.
-	if !strings.Contains(survival, metatronSurvivalFrame) {
+	if !strings.Contains(survival, guardianSurvivalFrame) {
 		t.Error("survival frame missing the survival carve-out (FR-003)")
 	}
-	if strings.Contains(survival, metatronInitiativeFrame) {
+	if strings.Contains(survival, guardianInitiativeFrame) {
 		t.Error("survival frame still carries the full restrictive frame verbatim")
 	}
 	// Clock control stays the player's in BOTH frames (SC-003 / FR-004).
@@ -147,7 +147,7 @@ func TestSurvivalFrameCarveOut(t *testing.T) {
 	}
 	// The two non-negotiables ride both frames unchanged.
 	for _, p := range []string{normal, survival} {
-		if !strings.Contains(p, metatronNonNegotiables) {
+		if !strings.Contains(p, guardianNonNegotiables) {
 			t.Error("a frame lost the persona-firewall non-negotiables")
 		}
 	}
@@ -158,13 +158,13 @@ func TestSurvivalFrameCarveOut(t *testing.T) {
 // gated; the watch is NOT consumed (non-expiring), and the act is attributed to
 // the survival duty in the durable record (moment + transcript, FR-007).
 func TestSurvivalTurnActsWithoutPlayer(t *testing.T) {
-	mt, _, inj, dir := newTestAngel(t, "The child will not starve tonight.")
+	mt, _, inj, dir := newTestGuardian(t, "The child will not starve tonight.")
 	o := seededSurvivalWatch(mt, inj, sim.SurvivalNearDeath)
 	ash := agentIndexByName("Ash")
 	mt.runLoop = systemActLoop(mt, "work_miracle",
 		`{"kind":"give_item","villager":"Ash","item":"food_raw","qty":3}`)
 
-	before := inj.state.MetatronCharges
+	before := inj.state.GuardianCharges
 	mt.runTrigger(triggerJob{order: o, matched: needsEvent(ash, 100, 0, 800, 5000),
 		matchedType: "agent.needs_changed", matchedTick: 5000})
 
@@ -174,12 +174,12 @@ func TestSurvivalTurnActsWithoutPlayer(t *testing.T) {
 	}
 	// Charge-gated: exactly one charge spent (the survival carve-out changes
 	// authority, not the economy — FR-003).
-	if inj.state.MetatronCharges != before-1 {
-		t.Errorf("survival miracle spent %d charges, want 1", before-inj.state.MetatronCharges)
+	if inj.state.GuardianCharges != before-1 {
+		t.Errorf("survival miracle spent %d charges, want 1", before-inj.state.GuardianCharges)
 	}
 	// The watch is non-consuming: it still stands active for the next crisis.
-	if inj.state.MetatronOrders[0].Status != "active" {
-		t.Errorf("survival watch was consumed: %+v", inj.state.MetatronOrders[0])
+	if inj.state.GuardianOrders[0].Status != "active" {
+		t.Errorf("survival watch was consumed: %+v", inj.state.GuardianOrders[0])
 	}
 	// No order_triggered was ever emitted for a survival watch.
 	for _, b := range inj.batches {
@@ -193,7 +193,7 @@ func TestSurvivalTurnActsWithoutPlayer(t *testing.T) {
 	mt.stateMu.Lock()
 	moments := append([]string(nil), mt.moments...)
 	mt.stateMu.Unlock()
-	if len(moments) != 1 || !strings.Contains(moments[0], "survival watch") || !strings.Contains(moments[0], "miracle") {
+	if len(moments) != 1 || !strings.Contains(moments[0], "survival watch") || !strings.Contains(moments[0], "working") {
 		t.Fatalf("survival moment not attributed to the duty: %+v", moments)
 	}
 	// The transcript marks the turn as a survival watch (auditable authority trail).
@@ -206,12 +206,12 @@ func TestSurvivalTurnActsWithoutPlayer(t *testing.T) {
 
 // TestSurvivalZeroChargeTurnRecorded (spec 059 US2 edge case / T008): a survival
 // watch firing on an empty bank still RUNS the turn (not the deferral empty-bank
-// short-circuit) — the acting tools refuse, the angel narrates, and a helpless
+// short-circuit) — the acting tools refuse, the guardian narrates, and a helpless
 // moment is recorded, never silent.
 func TestSurvivalZeroChargeTurnRecorded(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "I see you, and I cannot reach you.")
-	mt.replica.MetatronCharges = 0
-	inj.state.MetatronCharges = 0
+	mt, _, inj, _ := newTestGuardian(t, "I see you, and I cannot reach you.")
+	mt.replica.GuardianCharges = 0
+	inj.state.GuardianCharges = 0
 	mt.mirrorState()
 	o := seededSurvivalWatch(mt, inj, sim.SurvivalExposure)
 	oak := agentIndexByName("Oak")
@@ -233,8 +233,8 @@ func TestSurvivalZeroChargeTurnRecorded(t *testing.T) {
 	if !called {
 		t.Fatal("a zero-charge survival watch skipped the turn (it must still run and record)")
 	}
-	if inj.state.MetatronCharges != 0 {
-		t.Errorf("a helpless survival turn spent from an empty bank: %d", inj.state.MetatronCharges)
+	if inj.state.GuardianCharges != 0 {
+		t.Errorf("a helpless survival turn spent from an empty bank: %d", inj.state.GuardianCharges)
 	}
 	// Nothing landed in the world, but the helpless turn is recorded.
 	if len(landedBatches(inj)) != 0 {
@@ -257,12 +257,12 @@ func TestSurvivalZeroChargeTurnRecorded(t *testing.T) {
 // miracle-capable turn's prompt carries the positions/conditions/passability
 // digest, and the digest is within its token budget.
 func TestTargetingDigestPresentAndBounded(t *testing.T) {
-	mt, orch, _, _ := newTestAngel(t, "The village holds.")
+	mt, orch, _, _ := newTestGuardian(t, "The village holds.")
 	if _, err := mt.Turn(context.Background(), "how fare they?"); err != nil {
 		t.Fatal(err)
 	}
 	prompt := orch.requests()[0].Prompt
-	if !strings.Contains(prompt, "Aim your miracles") {
+	if !strings.Contains(prompt, "Aim your workings") {
 		t.Fatalf("miracle-capable prompt missing the targeting guidance: %q", prompt)
 	}
 	// A concrete villager position line is present.
@@ -290,7 +290,7 @@ func TestTargetingDigestPresentAndBounded(t *testing.T) {
 func TestTargetingDigestNotOnDreamsOnlyWorld(t *testing.T) {
 	// A roster without work_miracle → hasWorkMiracle false → no digest built.
 	dreamsOnly := []tool.Tool{}
-	for _, tl := range tool.LoopRosterMetatron() {
+	for _, tl := range tool.LoopRosterGuardian() {
 		if tl.Name != "work_miracle" {
 			dreamsOnly = append(dreamsOnly, tl)
 		}
@@ -304,7 +304,7 @@ func TestTargetingDigestNotOnDreamsOnlyWorld(t *testing.T) {
 // miracle targeted at a tile the digest lists as passable is accepted by the
 // landing door — the regression for world-01's 3-of-4 coordinate rejections.
 func TestMiracleFromDigestCoordinatesPassesDoor(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "It is moved.")
+	mt, _, inj, _ := newTestGuardian(t, "It is moved.")
 
 	// Find a living villager whose tile has a map-passable neighbor, and compute
 	// that neighbor the SAME way the digest does.
@@ -339,9 +339,9 @@ func TestMiracleFromDigestCoordinatesPassesDoor(t *testing.T) {
 		t.Fatalf("digest does not list the passable destination %s:\n%s", dest, digest)
 	}
 
-	// The angel works a move miracle to that DIGEST-listed tile — it must pass the
+	// The guardian works a move miracle to that DIGEST-listed tile — it must pass the
 	// landing door (no rejection), spending one charge.
-	before := inj.state.MetatronCharges
+	before := inj.state.GuardianCharges
 	sx, sy := xy[vi][0], xy[vi][1]
 	miracle, why := mt.landMiracle(miracleArgs{
 		Kind: "move", Class: "villager", X: sx, Y: sy, ToX: tx, ToY: ty,
@@ -352,8 +352,8 @@ func TestMiracleFromDigestCoordinatesPassesDoor(t *testing.T) {
 	if miracle == nil {
 		t.Fatal("no miracle returned despite a valid digest target")
 	}
-	if inj.state.MetatronCharges != before-1 {
-		t.Errorf("move miracle spent %d charges, want 1", before-inj.state.MetatronCharges)
+	if inj.state.GuardianCharges != before-1 {
+		t.Errorf("move miracle spent %d charges, want 1", before-inj.state.GuardianCharges)
 	}
 	if inj.state.Agents[vi].X != tx || inj.state.Agents[vi].Y != ty {
 		t.Errorf("villager did not land at the digest tile: at (%d,%d), want (%d,%d)",

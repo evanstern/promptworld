@@ -2,7 +2,7 @@
 title: Pattern — stage-shaped layout defaults
 class: pattern
 status: specified
-verified_against: c8906da39be3a5b861c2272af37db0a83dcded7a
+verified_against: c8d80800fc5d34c5c31ab54751ebfb3ba80efc5b
 ---
 
 # Pattern: stage-defaults
@@ -21,9 +21,9 @@ restating its own; if a value ever needs to change, it changes here once.
    pull path back to full content.
 2. **Pre-ladder worlds get everything** — the default set for a pre-ladder
    world (`Stage == ""`) is the union of every stage's default-on set, the
-   same "ungated, stage-4 semantics" posture `internal/metatron`'s stage
+   same "ungated, stage-4 semantics" posture `internal/guardian`'s stage
    ceiling already carries ([[curriculum-ladder]]).
-3. **Capability locks stay angel-only** (spec 046 doctrine, untouched by
+3. **Capability locks stay guardian-only** (spec 046 doctrine, untouched by
    this feature): nothing in this table is a capability lock. The stage
    ceiling and the stage-1 charter lock govern what the *guardian* may do;
    this table only governs what the *layout* shows by default. A player at

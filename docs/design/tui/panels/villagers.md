@@ -2,7 +2,7 @@
 title: Panel — villagers (roster, detail, decisions)
 class: panel
 status: shipped
-verified_against: c8906da39be3a5b861c2272af37db0a83dcded7a
+verified_against: c8d80800fc5d34c5c31ab54751ebfb3ba80efc5b
 sources:
   - internal/tui/views.go
   - internal/tui/decisions.go
@@ -27,7 +27,7 @@ health. Rows beyond the height budget are dropped from the bottom (never a
 partial row).
 
 ```
-┌─ chronicle │ metatron │ VILLAGERS ┐
+┌─ chronicle │ {{skin.guardian.tab_label}} │ VILLAGERS ┐
 ├───────────────────────────────────┤
 │▌ Ash    awake · chop · (12,9)     │
 │    health █████ food ███░░ ...    │
@@ -50,7 +50,7 @@ when height runs short — memories are shed first, identity/objective/
 inventory are never pushed off-screen.
 
 ```
-┌─ chronicle │ metatron │ VILLAGERS ┐
+┌─ chronicle │ {{skin.guardian.tab_label}} │ VILLAGERS ┐
 ├───────────────────────────────────┤
 │ ASH                                │
 │                                    │
@@ -84,7 +84,7 @@ inventory are never pushed off-screen.
 ## Mockup — decisions (after `d`, spec 020/TASK-63)
 
 ```
-┌─ chronicle │ metatron │ VILLAGERS ┐
+┌─ chronicle │ {{skin.guardian.tab_label}} │ VILLAGERS ┐
 ├───────────────────────────────────┤
 │ ASH · decisions                    │
 │                                    │

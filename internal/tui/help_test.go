@@ -392,7 +392,7 @@ func TestHelpKeymapSweepLiveDispatch(t *testing.T) {
 // (views.go) can render — including every conditional badge — has a
 // matching walkthrough row (US2-AS2).
 func TestHelpWalkthroughCoversEveryHeaderBadge(t *testing.T) {
-	lines := strings.Join(helpWalkthroughLines(200), "\n")
+	lines := strings.Join(Model{}.helpWalkthroughLines(200), "\n")
 	for _, want := range []string{
 		"running / PAUSED", "speed (t/s)", "asked", "[degraded]", "[llm:", "[suppressed:", "disconnected",
 	} {
@@ -407,7 +407,7 @@ func TestHelpWalkthroughCoversEveryHeaderBadge(t *testing.T) {
 // impossible by construction (both the overlay and renderMapGrid's legend
 // render from the same var), asserted anyway per data-model.md T010.
 func TestHelpWalkthroughGlyphPageMatchesSharedTable(t *testing.T) {
-	lines := strings.Join(helpWalkthroughLines(200), "\n")
+	lines := strings.Join(Model{}.helpWalkthroughLines(200), "\n")
 	for _, g := range mapGlyphs {
 		if !strings.Contains(lines, g.Meaning) {
 			t.Errorf("walkthrough missing glyph %q's meaning: %q", g.Glyph, g.Meaning)
@@ -427,8 +427,8 @@ func TestHelpWalkthroughGlyphPageMatchesSharedTable(t *testing.T) {
 // TestHelpWalkthroughCoversEveryDockTab: every dock tab (paneNames/
 // dockTabKey) has a walkthrough row.
 func TestHelpWalkthroughCoversEveryDockTab(t *testing.T) {
-	lines := strings.Join(helpWalkthroughLines(200), "\n")
-	for _, name := range []string{paneNames[paneChronicle], paneNames[paneMetatron], paneNames[paneVillagers], paneNames[paneSystems]} {
+	lines := strings.Join(Model{}.helpWalkthroughLines(200), "\n")
+	for _, name := range []string{paneNames[paneChronicle], paneNames[paneGuardian], paneNames[paneVillagers], paneNames[paneSystems]} {
 		if !strings.Contains(lines, name) {
 			t.Errorf("walkthrough missing dock tab %q", name)
 		}
@@ -442,12 +442,12 @@ func TestHelpWalkthroughScrollsAt80x24(t *testing.T) {
 	m := testModel(t) // 80x30, narrow — exercises the narrow overlay path too
 	m.helpOpen = true
 	m.helpSection = helpSectionWalkthrough
-	full := strings.Join(helpWalkthroughLines(76), "\n")
+	full := strings.Join(Model{}.helpWalkthroughLines(76), "\n")
 	// Confirm the content genuinely overflows a small pane so this test is
 	// meaningful, then walk the pager to prove every line is reachable.
 	var seen []string
 	for scroll := 0; scroll < 200; scroll++ {
-		page := paginateHelpContent(helpWalkthroughLines(76), scroll, 6)
+		page := paginateHelpContent(Model{}.helpWalkthroughLines(76), scroll, 6)
 		seen = append(seen, page...)
 		if !strings.Contains(strings.Join(page, "\n"), "J to scroll") {
 			break

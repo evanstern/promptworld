@@ -15,7 +15,7 @@ func TestValidateRejectsMalformed(t *testing.T) {
 		name     string
 		reg      []Tool
 		villager []string
-		metatron []string
+		guardian []string
 		want     string
 	}{
 		{
@@ -78,7 +78,7 @@ func TestValidateRejectsMalformed(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			restore := swapRegistry(tc.reg, tc.villager, tc.metatron)
+			restore := swapRegistry(tc.reg, tc.villager, tc.guardian)
 			defer restore()
 
 			err := Validate()

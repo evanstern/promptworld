@@ -2,7 +2,7 @@
 title: Pattern — chronicle grammar
 class: pattern
 status: shipped
-verified_against: c8906da39be3a5b861c2272af37db0a83dcded7a
+verified_against: c8d80800fc5d34c5c31ab54751ebfb3ba80efc5b
 sources:
   - internal/tui/digest.go
   - internal/tui/grammar.go
@@ -97,7 +97,7 @@ Family = the event type's namespace prefix (`world`, `clock`, `sim`,
 
 | Family | Voice |
 |---|---|
-| agent, social, sim, world, governance, gru, metatron, chronicle | natural phrase — e.g. `Ash foraged at (14,9)`, `Ash→Rowan "the fire's low again"` |
+| agent, social, sim, world, governance, gru, `metatron`, chronicle | natural phrase — e.g. `Ash foraged at (14,9)`, `Ash→Rowan "the fire's low again"` |
 | cog, clock, daemon | labeled fields, space-separated, stable order — e.g. `job=j1 landed agent=Ash stale=10t wall=220ms` |
 
 Emphasis roles inside a phrase-voice summary: **name** (every resolved agent
@@ -160,7 +160,7 @@ token block — roles, never raw colors, at every call site):
 | `family/governance` | `styleFamilyGovernance` | amber (meeting.\*/norm.\*) |
 | `family/gru` | `styleFamilyGru` | bold red — predator threat |
 | `family/chronicle` | `styleFamilyChronicle` | bright magenta — the narrator's voice |
-| `family/metatron` | `styleFamilyMetatron` | violet — the angel, otherworldly |
+| `family/metatron` | `styleFamilyGuardian` | violet — the guardian, otherworldly |
 | `family/cog` | `styleFamilyCog` | faint — telemetry noise |
 | `name` | `styleFeedName` | resolved agent names, bold green — unchanged |
 | `speech` | `styleFeedSpeech` | quoted utterances, bold — unchanged |

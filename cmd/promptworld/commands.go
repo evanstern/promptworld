@@ -18,9 +18,9 @@ import (
 
 	"github.com/evanstern/promptworld/internal/clock"
 	"github.com/evanstern/promptworld/internal/daemon"
+	"github.com/evanstern/promptworld/internal/guardian"
 	"github.com/evanstern/promptworld/internal/ipc"
 	"github.com/evanstern/promptworld/internal/llm"
-	"github.com/evanstern/promptworld/internal/metatron"
 	"github.com/evanstern/promptworld/internal/persona"
 	"github.com/evanstern/promptworld/internal/sim"
 	"github.com/evanstern/promptworld/internal/skin"
@@ -393,15 +393,16 @@ func formatLLMOneShot(resp llm.Response) string {
 	return b.String()
 }
 
-// cmdMetatron is the console one-shot (TASK-12): with a message, one
-// mediated turn; without, the model-free status peek.
-func cmdMetatron(args []string) error {
-	fs := flag.NewFlagSet("metatron", flag.ContinueOnError)
+// cmdGuardian is the console one-shot (TASK-12; canonical name `guardian`
+// since spec 052 FR-008, with `guardian` as a hidden compat alias): with a
+// message, one mediated turn; without, the model-free status peek.
+func cmdGuardian(args []string) error {
+	fs := flag.NewFlagSet("guardian", flag.ContinueOnError)
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
 	if fs.NArg() < 1 {
-		return fmt.Errorf("usage: promptworld metatron <world> [message...]")
+		return fmt.Errorf("usage: promptworld guardian <world> [message...]")
 	}
 	dir, err := resolveWorld(fs.Arg(0))
 	if err != nil {
@@ -418,7 +419,7 @@ func cmdMetatron(args []string) error {
 	defer c.Close()
 
 	if fs.NArg() == 1 {
-		st, err := c.MetatronStatus()
+		st, err := c.GuardianStatus()
 		if err != nil {
 			return err
 		}
@@ -427,7 +428,7 @@ func cmdMetatron(args []string) error {
 			charter = "default charter"
 		}
 		fmt.Printf("charges %s (%d/%d) · %s · charter.md at %s\n",
-			chargeGlyphs(st.Charges), st.Charges, sim.MetatronChargeCap, charter, w.CharterPath())
+			chargeGlyphs(st.Charges), st.Charges, sim.GuardianChargeCap, charter, w.CharterPath())
 		if len(st.Orders) > 0 {
 			fmt.Printf("\n--- standing orders ---\n")
 			for _, o := range st.Orders {
@@ -440,7 +441,7 @@ func cmdMetatron(args []string) error {
 		return nil
 	}
 
-	r, err := c.MetatronChat(strings.Join(fs.Args()[1:], " "))
+	r, err := c.GuardianChat(strings.Join(fs.Args()[1:], " "))
 	if err != nil {
 		return err
 	}
@@ -460,14 +461,14 @@ func cmdMetatron(args []string) error {
 	if r.Clock != "" {
 		fmt.Printf("\n⏲ %s\n", r.Clock)
 	}
-	fmt.Printf("\n[charges %s %d/%d]\n", chargeGlyphs(r.Charges), r.Charges, sim.MetatronChargeCap)
+	fmt.Printf("\n[charges %s %d/%d]\n", chargeGlyphs(r.Charges), r.Charges, sim.GuardianChargeCap)
 	return nil
 }
 
 // orderStatusLine renders one standing order for the CLI status peek (spec 029
 // T023): id, a fuzzy marker, origin, remaining game-day, and status, followed
 // by the condition text — the same fields the console/TUI surfaces show.
-func orderStatusLine(o metatron.OrderStatus) string {
+func orderStatusLine(o guardian.OrderStatus) string {
 	fuzzy := ""
 	if o.Fuzzy {
 		fuzzy = " (fuzzy)"
@@ -476,7 +477,7 @@ func orderStatusLine(o metatron.OrderStatus) string {
 }
 
 func chargeGlyphs(n int) string {
-	return strings.Repeat("⚡", n) + strings.Repeat("·", sim.MetatronChargeCap-n)
+	return strings.Repeat("⚡", n) + strings.Repeat("·", sim.GuardianChargeCap-n)
 }
 
 func cmdDaemon(args []string) error {

@@ -1,4 +1,4 @@
-package metatron
+package guardian
 
 import (
 	"bytes"
@@ -33,7 +33,7 @@ func TestDogfoodMiracleMoveEquivalence(t *testing.T) {
 	m := worldmap.Generate(seed, 64, 64)
 	genesis := func() *sim.State {
 		s := sim.NewState(seed, m)
-		s.MetatronCharges = sim.MetatronChargeCap
+		s.GuardianCharges = sim.GuardianChargeCap
 		return s
 	}
 
@@ -82,7 +82,7 @@ func TestDogfoodMiracleMoveEquivalence(t *testing.T) {
 			Name: bundleState.Agents[i].Name, X: bundleState.Agents[i].X,
 			Y: bundleState.Agents[i].Y, Dead: bundleState.Agents[i].Dead}
 	}
-	ic := bundle.InvocationContext{State: probe, Tick: 0, Invoker: "the angel", Inject: inject}
+	ic := bundle.InvocationContext{State: probe, Tick: 0, Invoker: "the guardian", Inject: inject}
 	h := bs.Handlers(ic)["miracle_move"]
 	if h == nil {
 		t.Fatal("no handler for miracle_move")
@@ -116,11 +116,11 @@ func TestDogfoodMiracleMoveEquivalence(t *testing.T) {
 		t.Fatalf("twin states diverged:\n built-in: %s\n bundle:   %s", builtinState.Marshal(), bundleState.Marshal())
 	}
 	// The move actually spent a charge (an equivalence over a no-op would be hollow).
-	if builtinState.MetatronCharges != sim.MetatronChargeCap-1 {
-		t.Errorf("built-in charges = %d, want %d", builtinState.MetatronCharges, sim.MetatronChargeCap-1)
+	if builtinState.GuardianCharges != sim.GuardianChargeCap-1 {
+		t.Errorf("built-in charges = %d, want %d", builtinState.GuardianCharges, sim.GuardianChargeCap-1)
 	}
-	if bundleState.MetatronCharges != builtinState.MetatronCharges {
-		t.Errorf("charge deduction diverged: built-in %d, bundle %d", builtinState.MetatronCharges, bundleState.MetatronCharges)
+	if bundleState.GuardianCharges != builtinState.GuardianCharges {
+		t.Errorf("charge deduction diverged: built-in %d, bundle %d", builtinState.GuardianCharges, bundleState.GuardianCharges)
 	}
 }
 

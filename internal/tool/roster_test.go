@@ -81,24 +81,24 @@ func TestDormantVerbsStayOnTheDoorAndExecutorSurfaces(t *testing.T) {
 	}
 }
 
-// TestLoopRosterMetatronContents (spec 017 T020; spec 029 R2): the metatron loop
+// TestLoopRosterGuardianContents (spec 017 T020; spec 029 R2): the guardian loop
 // roster is the agency surface — send_omen, send_vision, monitor_and_act,
 // cancel_order, work_miracle, then the meta tools pause/start/adjust_speed. It is
-// the DECLARED loop surface, which differs from RosterMetatron: converse is
+// the DECLARED loop surface, which differs from RosterGuardian: converse is
 // excluded (it is the final-answer text channel, not a callable tool).
-func TestLoopRosterMetatronContents(t *testing.T) {
+func TestLoopRosterGuardianContents(t *testing.T) {
 	want := []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed"}
-	got := namesOf(LoopRosterMetatron())
+	got := namesOf(LoopRosterGuardian())
 	if !reflect.DeepEqual(got, want) {
-		t.Errorf("LoopRosterMetatron() names = %v, want %v", got, want)
+		t.Errorf("LoopRosterGuardian() names = %v, want %v", got, want)
 	}
 	// converse must NOT be declared to the loop (it has no handler by design).
 	if OnRoster(got, "converse") {
-		t.Error("converse leaked into the metatron loop roster — it is the text channel, not a tool")
+		t.Error("converse leaked into the guardian loop roster — it is the text channel, not a tool")
 	}
-	for _, tl := range LoopRosterMetatron() {
+	for _, tl := range LoopRosterGuardian() {
 		if tl.Name == "" {
-			t.Error("LoopRosterMetatron returned a zero-value Tool")
+			t.Error("LoopRosterGuardian returned a zero-value Tool")
 		}
 	}
 }
@@ -142,7 +142,7 @@ func TestWorkMiracleSchema(t *testing.T) {
 		t.Errorf("required = %v, want [kind]", schema.Required)
 	}
 	if _, ok := schema.Properties["gratis"]; ok {
-		t.Error("work_miracle schema declares a gratis property — the angel can never waive a charge (SC-005)")
+		t.Error("work_miracle schema declares a gratis property — the guardian can never waive a charge (SC-005)")
 	}
 	if !reflect.DeepEqual(schema.Properties["kind"].Enum, MiracleKinds()) {
 		t.Errorf("kind enum = %v, want %v", schema.Properties["kind"].Enum, MiracleKinds())

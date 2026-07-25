@@ -10,10 +10,11 @@ package tui
 // (views.go) with a bounded queue and opportunity decay (data-model.md).
 
 import (
-	"strings"
+	"regexp"
 	"time"
 
 	"github.com/evanstern/promptworld/internal/sim"
+	"github.com/evanstern/promptworld/internal/skin"
 	"github.com/evanstern/promptworld/internal/store"
 )
 
@@ -163,37 +164,26 @@ var lessonCatalog = []lessonEntry{
 			if e.Type != "metatron.order_placed" {
 				return false
 			}
-			p, ok := decode[sim.MetatronOrder](e)
+			p, ok := decode[sim.GuardianOrder](e)
 			return ok && p.Confirm
 		},
 	},
 }
 
-// lessonSkinTokens is the bounded fallback skin-token table (research.md R1):
-// TASK-121 (spec 052) has not yet merged its runtime token-resolution
-// substrate to main as of this feature's implementation — only the minimal
-// StageIdentity table exists (internal/skin/skin.go), not the full §2
-// lookup. Rather than block on 121 or duplicate its in-flight work, this
-// table resolves ONLY the tokens lessonCatalog actually uses, with values
-// from the PUBLISHED contract's §3 default-skin table
-// (specs/052-skinnable-guardian/contracts/skin-contract.md). Swap
-// lessonSkinResolve's body to delegate to 121's real resolver (a
-// single-function change) once it merges — do not grow this table for
-// tokens no lesson string uses.
-var lessonSkinTokens = map[string]string{
-	"{{skin.guardian.epithet}}":   "guardian",
-	"{{skin.guardian.tab_label}}": "guardian",
-}
+// lessonTokenRe matches one {{skin.*}} token in a lesson string — the design
+// corpus's double-brace convention (patterns/skin-tokens.md rule 1).
+var lessonTokenRe = regexp.MustCompile(`\{\{(skin\.[a-z0-9_.-]+)\}\}`)
 
-// lessonSkinResolve resolves every skin token in s to its (currently
-// default-only) value — FR-008/SC-005: no rendered lesson string may ever
-// contain a raw "{{" literal. See lessonSkinTokens' doc comment for the
-// TASK-121 swap-over plan.
-func lessonSkinResolve(s string) string {
-	for token, value := range lessonSkinTokens {
-		s = strings.ReplaceAll(s, token, value)
-	}
-	return s
+// lessonSkinResolve resolves every skin token in s through spec 052's real
+// runtime lookup (the swap-over the interim fallback table's doc comment
+// planned for): world override → default table → the token path itself —
+// FR-008/SC-005 still holds structurally, since Resolve never returns an
+// empty string and the completeness test (internal/skin) pins every token
+// the catalog names to a default-table row. sk nil is the default skin.
+func lessonSkinResolve(s string, sk *skin.Skin) string {
+	return lessonTokenRe.ReplaceAllStringFunc(s, func(m string) string {
+		return sk.Resolve(m[2 : len(m)-2])
+	})
 }
 
 // --- T012/US3: the help overlay's pull half (one catalog, two surfaces) ---
@@ -208,10 +198,10 @@ func lessonSkinResolve(s string) string {
 // boot-time resolution is stable" — the boot in question is THIS client's,
 // not the process's). Bodies are skin-resolved at population time, same as
 // the row; the overlay itself (helpLessonsLines) does no further resolution.
-func populateHelpLessons() {
+func populateHelpLessons(sk *skin.Skin) {
 	entries := make([]helpLesson, len(lessonCatalog))
 	for i, e := range lessonCatalog {
-		entries[i] = helpLesson{ID: e.ID, Title: lessonSkinResolve(e.Title), Body: lessonSkinResolve(e.Body)}
+		entries[i] = helpLesson{ID: e.ID, Title: lessonSkinResolve(e.Title, sk), Body: lessonSkinResolve(e.Body, sk)}
 	}
 	helpLessons = entries
 }

@@ -18,31 +18,32 @@ import (
 	"strings"
 
 	"github.com/evanstern/promptworld/internal/sim"
+	"github.com/evanstern/promptworld/internal/skin"
 	"github.com/evanstern/promptworld/internal/store"
 )
 
 // decisionChainCap bounds the projection per agent (data-model.md, spec
 // FR-002/SC-005): the oldest chain is evicted from both indexes once a
-// 21st arrives. metatronAgent is the dedicated sentinel Metatron's own
+// 21st arrives. guardianAgent is the dedicated sentinel Guardian's own
 // turn-metatron-* jobs attribute to — never a real replica agent index, and
 // distinct from -1 ("not yet attributed").
 const (
 	decisionChainCap = 20
-	metatronAgent    = -2
+	guardianAgent    = -2
 
 	conversationJobPrefix = "conversation-" // shared two-agent scenes — no single-agent attribution (spec Assumptions); never ingested
-	metatronJobPrefix     = "turn-metatron-"
+	guardianJobPrefix     = "turn-metatron-"
 )
 
 // decisionChain is one cognition's causal record for display (data-model.md),
-// keyed by job ID and attributed to one villager (or Metatron). attributed/
+// keyed by job ID and attributed to one villager (or Guardian). attributed/
 // HasThought are ingest-only bookkeeping (research D1/D2) — neither is
 // rendered directly; they exist so a job is attributed at most once (R3) and
 // so a router suppression (outcome with no thought, no calls) can be told
 // apart from an ordinary in-flight fragment.
 type decisionChain struct {
 	Job           string
-	Agent         int // -1 unattributed (invisible in the villager surface, R3); metatronAgent for Metatron
+	Agent         int // -1 unattributed (invisible in the villager surface, R3); guardianAgent for Guardian
 	Class         string
 	Tick          int64
 	TriggerSeq    int64
@@ -147,10 +148,10 @@ func (dt decisionTraces) chainsFor(agent int) []*decisionChain {
 // applyEvent (tui.go) after the seq-skip guard, before the chronicle ring
 // append (research D1) — ring is that ring as it stood before this event,
 // which is what stimulus resolution (resolveStimulus) needs.
-func (dt *decisionTraces) ingest(e store.Event, names []string, ring []store.Event) {
+func (dt *decisionTraces) ingest(e store.Event, names []string, ring []store.Event, sk *skin.Skin) {
 	switch e.Type {
 	case "cog.thought":
-		dt.ingestThought(e, names, ring)
+		dt.ingestThought(e, names, ring, sk)
 	case "cog.tool_call":
 		dt.ingestToolCall(e)
 	case "cog.outcome":
@@ -158,7 +159,7 @@ func (dt *decisionTraces) ingest(e store.Event, names []string, ring []store.Eve
 	}
 }
 
-func (dt *decisionTraces) ingestThought(e store.Event, names []string, ring []store.Event) {
+func (dt *decisionTraces) ingestThought(e store.Event, names []string, ring []store.Event, sk *skin.Skin) {
 	p, ok := decode[sim.CogThoughtPayload](e)
 	if !ok || strings.HasPrefix(p.Job, conversationJobPrefix) {
 		return
@@ -168,10 +169,10 @@ func (dt *decisionTraces) ingestThought(e store.Event, names []string, ring []st
 	c.Class = p.Class
 	c.Tick = p.SnapshotTick
 	c.TriggerSeq = p.TriggerSeq
-	c.Stimulus = resolveStimulus(p.TriggerSeq, ring, names)
+	c.Stimulus = resolveStimulus(p.TriggerSeq, ring, names, sk)
 	c.HasThought = true
-	if strings.HasPrefix(p.Job, metatronJobPrefix) {
-		dt.attribute(c, metatronAgent, true)
+	if strings.HasPrefix(p.Job, guardianJobPrefix) {
+		dt.attribute(c, guardianAgent, true)
 	} else {
 		dt.attribute(c, p.Agent, true)
 	}
@@ -190,8 +191,8 @@ func (dt *decisionTraces) ingestToolCall(e store.Event) {
 	c.Calls = insertOrdinal(c.Calls, decisionCall{
 		Ordinal: p.Ordinal, Tool: p.Tool, Verdict: p.Verdict, Reason: p.Reason, Args: compactArgs(p.Args),
 	})
-	if strings.HasPrefix(p.Job, metatronJobPrefix) {
-		dt.attribute(c, metatronAgent, true)
+	if strings.HasPrefix(p.Job, guardianJobPrefix) {
+		dt.attribute(c, guardianAgent, true)
 	} else if agent, ok := parseVillagerJobAgent(p.Job); ok {
 		// Fragment rescue (research D2, FR-008): this cognition's cog.thought
 		// was folded into the pre-connect snapshot and never seen, so the
@@ -230,8 +231,8 @@ func (dt *decisionTraces) ingestOutcome(e store.Event) {
 	// for the job (mind/telemetry.go emitSuppressed). Any calls already
 	// ingested (fragment) rule it out.
 	c.Suppressed = !c.HasThought && len(c.Calls) == 0
-	if strings.HasPrefix(p.Job, metatronJobPrefix) {
-		dt.attribute(c, metatronAgent, true)
+	if strings.HasPrefix(p.Job, guardianJobPrefix) {
+		dt.attribute(c, guardianAgent, true)
 	} else {
 		dt.attribute(c, p.Agent, true)
 	}
@@ -284,12 +285,12 @@ func insertOrdinal(calls []decisionCall, c decisionCall) []decisionCall {
 // inventing a second one (FR-005); a miss (the trigger predates this
 // client's subscription, or — vanishingly rarely — was already evicted)
 // degrades to a neutral reference naming the seq.
-func resolveStimulus(triggerSeq int64, ring []store.Event, names []string) string {
+func resolveStimulus(triggerSeq int64, ring []store.Event, names []string, sk *skin.Skin) string {
 	if triggerSeq == 0 {
 		return "cadence — the villager's own rhythm, not a triggering event"
 	}
 	if e, ok := findRingEvent(ring, triggerSeq); ok {
-		return plainSegs(formatChronicleLine(e, names).Summary)
+		return plainSegs(formatChronicleLine(e, names, sk).Summary)
 	}
 	return fmt.Sprintf("stimulus #%d (before this view connected)", triggerSeq)
 }
@@ -324,7 +325,7 @@ func compactArgs(raw json.RawMessage) string {
 
 // verdictGlossary maps every toolloop verdict and sim outcome string to a
 // plain-language phrase — the single authority both the decisions sub-view
-// and the Metatron transcript render through (FR-007). Sweep-tested against
+// and the Guardian transcript render through (FR-007). Sweep-tested against
 // internal/toolloop's Verdict constants and internal/sim's Outcome*
 // constants (decisions_test.go) so a value added to either taxonomy without
 // a phrase here fails the build rather than silently falling through to its
@@ -380,7 +381,7 @@ func verdictPhrase(v string) string {
 // callLine renders one call/verdict as plain language — "tool — phrase",
 // with the reason parenthesized when present — the one place a tool name +
 // raw verdict + reason becomes prose (FR-007), shared by the decisions
-// sub-view (renderDecisionChain, views.go, contract R9) and the Metatron
+// sub-view (renderDecisionChain, views.go, contract R9) and the Guardian
 // inline transcript row below (R12).
 func callLine(tool, verdict, reason string) string {
 	line := tool + " — " + verdictPhrase(verdict)
@@ -390,23 +391,23 @@ func callLine(tool, verdict, reason string) string {
 	return line
 }
 
-// --- Metatron inline verdict rows (research D6, contract §3) ---
+// --- Guardian inline verdict rows (research D6, contract §3) ---
 
 // transcriptVerdictPrefix marks a verdict row appended to Model.transcript at
 // ingest; classifyTranscriptLine (views.go) strips it and styles the row as
-// telemetry, distinct from you:/angel: rows (contract R12).
+// telemetry, distinct from you:/guardian: rows (contract R12).
 const transcriptVerdictPrefix = "» "
 
-// metatronVerdictRow builds the transcript row one turn-metatron- cog.tool_call
+// guardianVerdictRow builds the transcript row one turn-metatron- cog.tool_call
 // appends (contract R12–R14): ok is false for every other event — including
 // a villager's own cog.tool_call — so applyEvent (tui.go) can gate on it
 // directly without re-deriving the prefix check.
-func metatronVerdictRow(e store.Event) (string, bool) {
+func guardianVerdictRow(e store.Event) (string, bool) {
 	if e.Type != "cog.tool_call" {
 		return "", false
 	}
 	p, ok := decode[sim.CogToolCallPayload](e)
-	if !ok || !strings.HasPrefix(p.Job, metatronJobPrefix) {
+	if !ok || !strings.HasPrefix(p.Job, guardianJobPrefix) {
 		return "", false
 	}
 	return transcriptVerdictPrefix + callLine(p.Tool, p.Verdict, p.Reason), true

@@ -2,7 +2,7 @@
 title: Panel — guardian strip
 class: panel
 status: shipped
-verified_against: ed93211ced3deb76e9b1f2fa4902c6f3d9dbc59d
+verified_against: c8d80800fc5d34c5c31ab54751ebfb3ba80efc5b
 ---
 
 # Panel: guardian strip
@@ -38,11 +38,11 @@ faith, is reserved but not yet implemented — see below):
 
 1. **Charge bank** — the same `⚡`-filled/`·`-empty glyph run
    `panels/guardian.md`'s pane header already renders
-   (`Status.Clock.MetatronCharges` / `sim.MetatronChargeCap`), plus the
+   (`Status.Clock.GuardianCharges` / `sim.GuardianChargeCap`), plus the
    numeric form `(N/cap)` for at-a-glance reading without counting glyphs.
    Present whenever a status snapshot exists.
 2. **Regen** — `next +1 @ <time>`, the next absolute 6-game-hour boundary at
-   which `metatron.charge_regenerated` fires ([[metatron]]'s charge-economy
+   which `metatron.charge_regenerated` fires (`[[metatron]]`'s charge-economy
    rule, cadence exported read-only as `sim.MetatronChargeRegenTicks`) — a
    plain restatement of a mechanic that already exists, not a new one.
    **Omitted at a full bank** (spec 050 ruling, research R4.1): the executor
@@ -105,7 +105,7 @@ second row.
 - **Carried in narrow** (`patterns/layout.md` ruling b) — decision 7's
   "always visible" is width-independent; the narrow fallback keeps this row
   exactly as widescreen does. Reconciliation note: the narrow fallback's
-  only minibuffer instance lives inside `metatronView` (the guardian pane) —
+  only minibuffer instance lives inside `guardianView` (the guardian pane) —
   narrow's other panes (map/chronicle/villagers) have no composer at all
   pre-existing this feature — so "carried, above the minibuffer" lands
   there, unconditionally (narrow has no `computeRows`/fold arithmetic of its
@@ -123,7 +123,7 @@ CLI/IPC protocol already carries. This feature added no new wire field.
 
 | control/region | states | data source | renderer | keys+mouse | introduced-by | skin-token |
 |---|---|---|---|---|---|---|
-| charge-bank segment | 0..cap charges | `Status.Clock.MetatronCharges`, `sim.MetatronChargeCap` | `guardianStripView` | — (display-only) | reorient decision 7 / spec 050 | — |
+| charge-bank segment | 0..cap charges | `Status.Clock.GuardianCharges`, `sim.GuardianChargeCap` | `guardianStripView` | — (display-only) | reorient decision 7 / spec 050 | — |
 | regen segment | next boundary time · omitted at full bank | `Status.Clock.Tick`, `sim.MetatronChargeRegenTicks` | `guardianStripView` | — | reorient decision 7 / spec 050 | — |
 | standing-order count segment | 0..N (0 is a true value) | client replica `MetatronOrders` (length) | `guardianStripView` | — | reorient decision 7 / spec 050 | — |
 | faith segment | absent (pre-TASK-118) · present-dashed · populated | TASK-118's future status field | `unbuilt (pending TASK-118)` | — | reorient decision 7 | — |

@@ -192,7 +192,7 @@ func TestCogToolCallInjectableAndNoOp(t *testing.T) {
 
 // TestNewCogToolCallPayload: the sim-side constructor (spec 017 T018, option c)
 // assembles the canonical payload from plain fields, so both loop consumers
-// (mind, metatron) build cog.tool_call the same way without importing toolloop
+// (mind, guardian) build cog.tool_call the same way without importing toolloop
 // here. It is a pure shaper — the reason invariant is the caller's to enforce.
 func TestNewCogToolCallPayload(t *testing.T) {
 	args := json.RawMessage(`{"steps":[{"goal":"chop"}]}`)

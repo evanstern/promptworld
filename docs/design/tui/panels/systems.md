@@ -2,7 +2,7 @@
 title: Panel — systems (engine telemetry)
 class: panel
 status: shipped
-verified_against: cb89a4c7811962243ac907e0aeed43619b4d4f2d
+verified_against: c8d80800fc5d34c5c31ab54751ebfb3ba80efc5b
 sources:
   - internal/tui/views.go
   - internal/tui/tui.go
@@ -21,12 +21,12 @@ fallback call sites). Every renderer this page describes was already
 shipped before this feature (spec 024/034/035/037) and moves here
 unchanged — a relocation, not a rewrite: `llmProviderLines`, `horizonLines`/
 `horizonRow`/`horizonRemedy` are the exact same functions the guardian tab's
-`metatronView` used to call directly.
+`guardianView` used to call directly.
 
 ## Mockup
 
 ```
-┌─ chronicle │ metatron │ villagers │ SYSTEMS (Wave 2–3) ┐
+┌─ chronicle │ {{skin.guardian.tab_label}} │ villagers │ SYSTEMS (Wave 2–3) ┐
 ├─────────────────────────────────────────────────────────┤
 │ local      cogito              ● q0  1/2   $0.42        │
 │   uncalibrated — suppressed at 32x — calibrate or slow  │

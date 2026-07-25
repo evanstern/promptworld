@@ -109,8 +109,8 @@ var headerAnatomy = []headerAnatomyRow{
 	{"speed (t/s)", "the requested speed step and its effective ticks/second"},
 	{"asked … in flight, debt …%", "governed speed: the operator asked for more speed than the governor currently allows"},
 	{"[degraded]", "the clock's effective rate has fallen behind its target"},
-	{"[llm: provider kind]", "the first LLM provider carrying an active health condition (see the metatron tab for the rest)"},
-	{"[suppressed: classes]", "cognition classes currently being skipped at this speed (see the metatron tab for remedies)"},
+	{"[llm: provider kind]", "the first LLM provider carrying an active health condition (see the guardian tab for the rest)"},
+	{"[suppressed: classes]", "cognition classes currently being skipped at this speed (see the guardian tab for remedies)"},
 }
 
 // dockTabEntry is one dock tab's key/name/purpose (from paneNames/
@@ -121,11 +121,17 @@ type dockTabEntry struct {
 	Purpose string
 }
 
-var dockTabs = []dockTabEntry{
-	{dockTabKey[paneChronicle], paneNames[paneChronicle], "the event feed — narrated story or raw log; pauses into inspect mode when the clock is paused"},
-	{dockTabKey[paneMetatron], paneNames[paneMetatron], "the angel's transcript and standing orders (fiction-layer content only)"},
-	{dockTabKey[paneVillagers], paneNames[paneVillagers], "the roster — select a villager for full detail, decisions, and inventory"},
-	{dockTabKey[paneSystems], paneNames[paneSystems], "engine telemetry — LLM provider health, spend, and the cognition horizon (spec 053, never skinned)"},
+// dockTabEntries resolves the dock-tab walkthrough rows through the world
+// skin (spec 052 FR-007): the guardian tab's label and epithet are skin
+// data; the other tabs — the systems tab by D10 design — are non-fiction
+// chrome.
+func (m Model) dockTabEntries() []dockTabEntry {
+	return []dockTabEntry{
+		{dockTabKey[paneChronicle], paneNames[paneChronicle], "the event feed — narrated story or raw log; pauses into inspect mode when the clock is paused"},
+		{dockTabKey[paneGuardian], m.paneName(paneGuardian), "the " + m.sk().Epithet() + "'s transcript and standing orders (fiction-layer content only)"},
+		{dockTabKey[paneVillagers], paneNames[paneVillagers], "the roster — select a villager for full detail, decisions, and inventory"},
+		{dockTabKey[paneSystems], paneNames[paneSystems], "engine telemetry — LLM provider health, spend, and the cognition horizon (spec 053, never skinned)"},
+	}
 }
 
 // --- T012: the lessons pull-reference seam (US4, FR-010, SC-006) ---
@@ -205,12 +211,12 @@ type helpModePage struct {
 var (
 	rowHome      = helpKeyRow{"1", []string{"1"}, "return to the map (exits solo, if solo'd)"}
 	rowTab2      = helpKeyRow{"2", []string{"2"}, "select the chronicle tab; press again to solo it (or return home if already solo'd)"}
-	rowTab3      = helpKeyRow{"3", []string{"3"}, "select the metatron tab; press again to solo it (or return home if already solo'd)"}
+	rowTab3      = helpKeyRow{"3", []string{"3"}, "select the guardian tab; press again to solo it (or return home if already solo'd)"}
 	rowTab4      = helpKeyRow{"4", []string{"4"}, "select the villagers tab; press again to solo it (or return home if already solo'd)"}
 	rowTab5      = helpKeyRow{"5", []string{"5"}, "select the systems tab; press again to solo it (or return home if already solo'd)"}
 	rowDockCycle = helpKeyRow{"tab/shift+tab", []string{"tab", "shift+tab"}, "cycle the dock tabs (alias for 2/3/4/5)"}
 	rowConsole   = helpKeyRow{"G", []string{"G"}, "open the guardian console — a full-screen page for the conversation, charter/skills, and $EDITOR (G/1/esc closes)"}
-	rowAsk       = helpKeyRow{"m", []string{"m"}, "focus the minibuffer — ask the angel"}
+	rowAsk       = helpKeyRow{"m", []string{"m"}, "focus the minibuffer — ask the guardian"}
 	rowPause     = helpKeyRow{"space", []string{" "}, "pause / resume the clock"}
 	rowSpeed     = helpKeyRow{"[ ]", []string{"[", "]"}, "speed down / up"}
 	rowPan       = helpKeyRow{"←↑↓→", []string{"up", "down", "left", "right"}, "pan the map"}
@@ -220,7 +226,7 @@ var (
 	rowChronR    = helpKeyRow{"r", []string{"r"}, "chronicle: toggle raw ↔ narrated (chronicle tab only)"}
 	rowExitSolo  = helpKeyRow{"esc", []string{"esc"}, "exit solo zoom (no effect when already home)"}
 	rowQuit      = helpKeyRow{"q", []string{"q"}, "quit"}
-	rowNarrowMB  = helpKeyRow{"enter", []string{"enter"}, "narrow fallback: focus the minibuffer from the metatron pane (no effect in the widescreen composite)"}
+	rowNarrowMB  = helpKeyRow{"enter", []string{"enter"}, "narrow fallback: focus the minibuffer from the guardian pane (no effect in the widescreen composite)"}
 )
 
 // globalRows is the complete flattened set the two rows above partition —
@@ -372,7 +378,7 @@ func (m Model) helpContentLines(width, maxLines int) []string {
 	var raw []string
 	switch m.helpSection {
 	case helpSectionWalkthrough:
-		raw = helpWalkthroughLines(width)
+		raw = m.helpWalkthroughLines(width)
 	case helpSectionLessons:
 		raw = helpLessonsLines(width)
 	default:
@@ -403,8 +409,9 @@ func (m Model) helpKeysLines(width int) []string {
 
 // helpWalkthroughLines is US2's screen walkthrough: header anatomy, the map
 // glyph legend (rendered long-form from the same mapGlyphs table
-// renderMapGrid's compact legend uses — FR-005), and the dock tabs.
-func helpWalkthroughLines(width int) []string {
+// renderMapGrid's compact legend uses — FR-005), and the dock tabs (skin-
+// resolved, spec 052).
+func (m Model) helpWalkthroughLines(width int) []string {
 	lines := []string{styleHeader.Render("Header anatomy")}
 	for _, r := range headerAnatomy {
 		lines = append(lines, clipLine(fmt.Sprintf("%-28s %s", r.Element, r.Meaning), width))
@@ -419,7 +426,7 @@ func helpWalkthroughLines(width int) []string {
 		clipLine(fmt.Sprintf("%-4s %s", "", mapControlNote), width),
 	)
 	lines = append(lines, "", styleHeader.Render("Dock tabs"))
-	for _, d := range dockTabs {
+	for _, d := range m.dockTabEntries() {
 		lines = append(lines, clipLine(fmt.Sprintf("%s %-10s %s", d.Key, d.Name, d.Purpose), width))
 	}
 	return lines
