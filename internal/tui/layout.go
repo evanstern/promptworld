@@ -19,6 +19,18 @@ const (
 	headerRows     = 1
 	minibufferRows = 3
 	footerRows     = 1
+	// stripRows is the guardian strip's row cost when visible (spec 050;
+	// patterns/layout.md re-derived row budget) — exactly 1, borderless.
+	stripRows = 1
+	// bodyMin is the fold threshold (patterns/layout.md ruling a): chrome
+	// folds, one step at a time, until body >= bodyMin or the floor is
+	// reached. The guardian strip is the only foldable row this feature
+	// implements (the villager strip and lesson row are later waves), so it
+	// folds at exactly this threshold — layout.md's total fold order names
+	// it step 4, the last step, because decision 7 says the budget is
+	// always visible; folding relocates it (minibufferView's dormant line)
+	// rather than hiding it.
+	bodyMin = 10
 )
 
 // isWidescreen reports whether width is enough for the composite home page.
@@ -48,20 +60,31 @@ func computeColumns(totalCols int) columnBudget {
 // rowBudget is the widescreen composite's vertical split.
 type rowBudget struct {
 	Header     int
+	Strip      int // 0 or 1 — 0 once folded (patterns/layout.md ruling a step 4)
 	Body       int
 	Minibuffer int
 	Footer     int
 }
 
 // computeRows splits totalRows between the fixed-height chrome (header,
-// minibuffer, footer) and the body (map ‖ dock), which takes whatever is
-// left. Body never goes negative — panels shed rows before that happens.
+// guardian strip, minibuffer, footer) and the body (map ‖ dock), which
+// takes whatever is left. The guardian strip is the last chrome to fold
+// (patterns/layout.md ruling a step 4): it stays visible as long as folding
+// it isn't needed to keep the body at or above bodyMin, and is preferred
+// over letting the body dip below that floor. Below the floor (no more
+// foldable rows in this feature's code), body may still go under bodyMin,
+// or even to 0 on a starved resize — the pre-reorientation "existing
+// behavior" layout.md's Floor layout section keeps.
 func computeRows(totalRows int) rowBudget {
-	body := totalRows - headerRows - minibufferRows - footerRows
+	fixed := headerRows + minibufferRows + footerRows
+	if bodyWithStrip := totalRows - fixed - stripRows; bodyWithStrip >= bodyMin {
+		return rowBudget{Header: headerRows, Strip: stripRows, Body: bodyWithStrip, Minibuffer: minibufferRows, Footer: footerRows}
+	}
+	body := totalRows - fixed
 	if body < 0 {
 		body = 0
 	}
-	return rowBudget{Header: headerRows, Body: body, Minibuffer: minibufferRows, Footer: footerRows}
+	return rowBudget{Header: headerRows, Strip: 0, Body: body, Minibuffer: minibufferRows, Footer: footerRows}
 }
 
 // mapViewportTiles converts a panel's (cols, rows) into terrain tiles: 2
