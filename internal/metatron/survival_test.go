@@ -6,6 +6,7 @@ package metatron
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -247,5 +248,115 @@ func TestSurvivalZeroChargeTurnRecorded(t *testing.T) {
 	}
 	if !strings.Contains(moments[0], "nothing") {
 		t.Errorf("helpless moment does not read as helpless: %q", moments[0])
+	}
+}
+
+// --- US3: miracles can aim — the targeting digest (spec 059) ---
+
+// TestTargetingDigestPresentAndBounded (spec 059 US3 AC-1, SC-004): a
+// miracle-capable turn's prompt carries the positions/conditions/passability
+// digest, and the digest is within its token budget.
+func TestTargetingDigestPresentAndBounded(t *testing.T) {
+	mt, orch, _, _ := newTestAngel(t, "The village holds.")
+	if _, err := mt.Turn(context.Background(), "how fare they?"); err != nil {
+		t.Fatal(err)
+	}
+	prompt := orch.requests()[0].Prompt
+	if !strings.Contains(prompt, "Aim your miracles") {
+		t.Fatalf("miracle-capable prompt missing the targeting guidance: %q", prompt)
+	}
+	// A concrete villager position line is present.
+	if !strings.Contains(prompt, sim.AgentNames[0]+" at (") {
+		t.Errorf("targeting digest missing villager positions: %q", prompt)
+	}
+	if !strings.Contains(prompt, "passable next tiles:") {
+		t.Errorf("targeting digest missing passability guidance: %q", prompt)
+	}
+	// The digest block itself is within budget.
+	mt.stateMu.Lock()
+	digest := buildTargetingDigest(mt.alive, mt.agentNeeds, mt.agentXY, mt.m)
+	mt.stateMu.Unlock()
+	if len(digest) == 0 {
+		t.Fatal("digest empty on a populated world")
+	}
+	if len(digest) > targetingDigestMaxBytes {
+		t.Errorf("digest %d bytes exceeds the %d budget", len(digest), targetingDigestMaxBytes)
+	}
+}
+
+// TestTargetingDigestNotOnDreamsOnlyWorld (spec 059 FR-006): a world whose grant
+// withholds work_miracle carries no digest (the prompt stays byte-unchanged for a
+// non-miracle-capable turn).
+func TestTargetingDigestNotOnDreamsOnlyWorld(t *testing.T) {
+	// A roster without work_miracle → hasWorkMiracle false → no digest built.
+	dreamsOnly := []tool.Tool{}
+	for _, tl := range tool.LoopRosterMetatron() {
+		if tl.Name != "work_miracle" {
+			dreamsOnly = append(dreamsOnly, tl)
+		}
+	}
+	if hasWorkMiracle(dreamsOnly) {
+		t.Fatal("test roster still carries work_miracle")
+	}
+}
+
+// TestMiracleFromDigestCoordinatesPassesDoor (spec 059 US3 AC-2, SC-004): a move
+// miracle targeted at a tile the digest lists as passable is accepted by the
+// landing door — the regression for world-01's 3-of-4 coordinate rejections.
+func TestMiracleFromDigestCoordinatesPassesDoor(t *testing.T) {
+	mt, _, inj, _ := newTestAngel(t, "It is moved.")
+
+	// Find a living villager whose tile has a map-passable neighbor, and compute
+	// that neighbor the SAME way the digest does.
+	mt.stateMu.Lock()
+	alive := mt.alive
+	xy := mt.agentXY
+	needs := mt.agentNeeds
+	m := mt.m
+	var vi, tx, ty int = -1, 0, 0
+	for i := range xy {
+		if !alive[i] {
+			continue
+		}
+		for _, d := range [][2]int{{0, -1}, {0, 1}, {-1, 0}, {1, 0}} {
+			nx, ny := xy[i][0]+d[0], xy[i][1]+d[1]
+			if m.Passable(nx, ny) {
+				vi, tx, ty = i, nx, ny
+				break
+			}
+		}
+		if vi >= 0 {
+			break
+		}
+	}
+	digest := buildTargetingDigest(alive, needs, xy, m)
+	mt.stateMu.Unlock()
+	if vi < 0 {
+		t.Skip("no villager with a passable neighbor on this seed (map-specific)")
+	}
+	dest := fmt.Sprintf("(%d,%d)", tx, ty)
+	if !strings.Contains(digest, dest) {
+		t.Fatalf("digest does not list the passable destination %s:\n%s", dest, digest)
+	}
+
+	// The angel works a move miracle to that DIGEST-listed tile — it must pass the
+	// landing door (no rejection), spending one charge.
+	before := inj.state.MetatronCharges
+	sx, sy := xy[vi][0], xy[vi][1]
+	miracle, why := mt.landMiracle(miracleArgs{
+		Kind: "move", Class: "villager", X: sx, Y: sy, ToX: tx, ToY: ty,
+	}, before, fullGrant())
+	if why != "" {
+		t.Fatalf("miracle at digest coordinates was rejected at the door: %q", why)
+	}
+	if miracle == nil {
+		t.Fatal("no miracle returned despite a valid digest target")
+	}
+	if inj.state.MetatronCharges != before-1 {
+		t.Errorf("move miracle spent %d charges, want 1", before-inj.state.MetatronCharges)
+	}
+	if inj.state.Agents[vi].X != tx || inj.state.Agents[vi].Y != ty {
+		t.Errorf("villager did not land at the digest tile: at (%d,%d), want (%d,%d)",
+			inj.state.Agents[vi].X, inj.state.Agents[vi].Y, tx, ty)
 	}
 }

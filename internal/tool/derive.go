@@ -258,6 +258,21 @@ func MetatronToolGuidance(roster []Tool) string {
 	return b.String()
 }
 
+// MetatronTargetingGuidance is the one-line instruction that introduces the
+// miracle targeting digest in a miracle-capable turn's prompt (spec 059 US3,
+// FR-006): it tells the model the village's live positions and passability follow
+// and that coordinate-bearing miracles (move/remove) must aim at listed tiles, so
+// a miracle stops dying at the door on invalid coordinates. Additive and static —
+// the digest DATA is assembled turn-side (the tool package has no world state);
+// this is only the prose pointer, kept here beside MetatronToolGuidance so the
+// miracle-guidance vocabulary has one home.
+func MetatronTargetingGuidance() string {
+	return "Aim your miracles: the village's living positions, conditions, and the " +
+		"passable tiles around each villager follow below. A miracle that names " +
+		"coordinates (move, remove) must target a tile listed there, or the world " +
+		"will reject it."
+}
+
 // chargeWord pluralizes the charge count for the guidance prose.
 func chargeWord(n int) string {
 	if n == 1 {

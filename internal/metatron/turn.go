@@ -15,6 +15,7 @@ import (
 	"github.com/evanstern/promptworld/internal/store"
 	"github.com/evanstern/promptworld/internal/tool"
 	"github.com/evanstern/promptworld/internal/toolloop"
+	"github.com/evanstern/promptworld/internal/worldmap"
 )
 
 // nudgeTextMax is the nudge rendering cap, read from the tool registry (spec
@@ -190,6 +191,7 @@ func (mt *Metatron) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 	}
 	agentXY := make([][2]int, len(mt.agentXY))
 	copy(agentXY, mt.agentXY)
+	agentNeeds := append([]needMirror(nil), mt.agentNeeds...)
 	moments := append([]string(nil), mt.moments...)
 	story := append([]string(nil), mt.story...)
 	orders := append([]sim.MetatronOrder(nil), mt.orders...)
@@ -249,6 +251,15 @@ func (mt *Metatron) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 			"pre-authorized action now, in a single act if it calls for one:\n" + o.seed
 	}
 
+	// The miracle targeting digest (spec 059 US3, FR-006): built only when this
+	// world's granted roster offers work_miracle, so a dreams-only world's prompt
+	// is byte-unchanged. It carries live villager positions/conditions + adjacent
+	// passability so a coordinate-bearing miracle aims at a tile the door accepts.
+	var digest string
+	if hasWorkMiracle(roster) {
+		digest = buildTargetingDigest(alive, agentNeeds, agentXY, mt.m)
+	}
+
 	result := TurnResult{}
 	d := &turnDispatch{mt: mt, charges: charges, alive: alive, night: night, tick: tick, result: &result, grant: grant}
 
@@ -266,7 +277,7 @@ func (mt *Metatron) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 		JobID:     jobID,
 		Kind:      llm.KindMetatron,
 		System:    buildTurnSystemPrompt(o.survival, charter, skills, roster, souls...),
-		Seed:      turnUserPrompt(tick, charges, alive, orders, moments, story, mt.soulTail(), mt.transcriptTail(), directive),
+		Seed:      turnUserPrompt(tick, charges, alive, orders, moments, story, mt.soulTail(), mt.transcriptTail(), digest, directive),
 		Roster:    roster,
 		Handlers:  handlers,
 		MaxRounds: mt.loopRounds,
@@ -943,13 +954,88 @@ func buildTurnSystemPrompt(survival bool, charter string, skills []skillFile, ro
 	return b.String()
 }
 
+// targetingDigestMaxBytes hard-bounds the miracle targeting digest (spec 059 US3,
+// FR-006): the digest rides the turn prompt's budget discipline, so it is capped
+// and truncated rather than allowed to grow with a large or chatty village. Eight
+// villagers × one terse line each sits well under this; the cap is the guard, not
+// the common case.
+const targetingDigestMaxBytes = 1600
+
+// buildTargetingDigest assembles the miracle targeting digest (spec 059 US3): each
+// LIVING villager's name, tile, and survival-relevant condition, plus the passable
+// tiles adjacent to them, so a coordinate-bearing miracle can aim at a tile the
+// landing door will accept (the world-01 "3 of 4 door-rejected" fix). Positions
+// and conditions come from the absorb-mirrored snapshots (never the replica the
+// absorb goroutine owns); passability is the static map's own Passable — the door
+// stays the authority, this is guidance. Token-bounded: villagers are naturally
+// capped at the roster size, adjacency at the four cardinals, and the whole block
+// is truncated at targetingDigestMaxBytes. Empty when no one lives.
+func buildTargetingDigest(alive map[int]bool, needs []needMirror, xy [][2]int, m *worldmap.Map) string {
+	var b strings.Builder
+	b.WriteString(tool.MetatronTargetingGuidance())
+	b.WriteString("\n")
+	any := false
+	for i, name := range sim.AgentNames {
+		if !alive[i] || i >= len(xy) || i >= len(needs) {
+			continue
+		}
+		any = true
+		x, y := xy[i][0], xy[i][1]
+		n := needs[i]
+		fmt.Fprintf(&b, "- %s at (%d,%d) — health %d/1000, food %d/1000, warmth %d/1000%s",
+			name, x, y, n.Health, n.Food, n.Warmth, survivalFlag(n))
+		if m != nil {
+			var tiles []string
+			for _, d := range [][2]int{{0, -1}, {0, 1}, {-1, 0}, {1, 0}} {
+				nx, ny := x+d[0], y+d[1]
+				if m.Passable(nx, ny) {
+					tiles = append(tiles, fmt.Sprintf("(%d,%d)", nx, ny))
+				}
+			}
+			if len(tiles) > 0 {
+				fmt.Fprintf(&b, "; passable next tiles: %s", strings.Join(tiles, " "))
+			}
+		}
+		b.WriteString("\n")
+	}
+	if !any {
+		return ""
+	}
+	out := b.String()
+	if len(out) > targetingDigestMaxBytes {
+		out = out[:targetingDigestMaxBytes]
+	}
+	return out
+}
+
+// survivalFlag annotates a villager in the targeting digest with the danger band
+// it currently sits in (spec 059 US3), keyed on the SAME survival bands the
+// watches match — so the digest the angel reads names exactly the peril that
+// woke the survival watch, no drift.
+func survivalFlag(n needMirror) string {
+	var flags []string
+	if inBand, _ := survivalBand(sim.SurvivalNearDeath, n); inBand {
+		flags = append(flags, "near death")
+	}
+	if inBand, _ := survivalBand(sim.SurvivalStarvation, n); inBand {
+		flags = append(flags, "starving")
+	}
+	if inBand, _ := survivalBand(sim.SurvivalExposure, n); inBand {
+		flags = append(flags, "freezing")
+	}
+	if len(flags) == 0 {
+		return ""
+	}
+	return " (" + strings.Join(flags, ", ") + ")"
+}
+
 // turnUserPrompt composes the turn's user prompt. The trailing `directive` is the
 // ALREADY-FRAMED directive block runTurn authored per origin — the console's "The
 // player says:\n…" or the system turn's standing-order framing — and is appended
 // verbatim. runTurn is the sole author of the origin-appropriate label: the label
 // lives in exactly one place, so a console turn carries it once and a system turn
 // never pretends its directive came from the player this turn (spec 029 R6).
-func turnUserPrompt(tick int64, charges int, alive map[int]bool, orders []sim.MetatronOrder, moments, story []string, soulTail, transcriptTail, directive string) string {
+func turnUserPrompt(tick int64, charges int, alive map[int]bool, orders []sim.MetatronOrder, moments, story []string, soulTail, transcriptTail, digest, directive string) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "World clock: %s. Charges banked: %d of %d.\n", clock.Format(tick), charges, sim.MetatronChargeCap)
 	var dead []string
@@ -983,6 +1069,12 @@ func turnUserPrompt(tick int64, charges int, alive map[int]bool, orders []sim.Me
 	}
 	if transcriptTail != "" {
 		b.WriteString("\nRecent conversation:\n" + transcriptTail + "\n")
+	}
+	// The miracle targeting digest (spec 059 US3): only present on miracle-capable
+	// turns (runTurn passes "" otherwise), so a dreams-only world's prompt is
+	// byte-unchanged.
+	if digest != "" {
+		b.WriteString("\n" + digest)
 	}
 	fmt.Fprintf(&b, "\n%s\n", directive)
 	return b.String()
