@@ -49,6 +49,7 @@ that note (re-pin with `/grounding-wiki:wiki-update`).
 - [[bundle-tools]] — drop-in persona/tool bundles (spec 036): manifest/Starlark tools compiled to whitelisted effect batches, boot-frozen, sandboxed, replay-deterministic
 - [[agent-mind]] — personas, souls, memory window, and the planner driver
 - [[memory-retrieval]] — spec-042 embedding relevance: vectors recorded at emission, situation vectors, the three-term selector, shadow/on gating, divergence evidence
+- [[decision-context]] — spec-043 per-turn context grounding: the fixed-order block inventory (self-history, need trajectories, plan echo, budgeted memories/journal), the drop priority under the size budget, and the deliberate absences
 - [[agent-journal]] — the agent-authored journal: per-villager markdown notebook, one rune budget gated in the reducer, four roster tools
 - [[social-fabric]] — relationships, rumors, debts, secrets, conversations
 - [[nightly-consolidation]] — sleep-triggered soul digestion behind the persona firewall
