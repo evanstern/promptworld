@@ -8,6 +8,7 @@ import (
 	"github.com/evanstern/promptworld/internal/clock"
 	"github.com/evanstern/promptworld/internal/sim"
 	"github.com/evanstern/promptworld/internal/store"
+	"github.com/evanstern/promptworld/internal/worldmap"
 )
 
 // legacyUserPrompt is a FROZEN byte-for-byte copy of userPrompt as it stood
@@ -199,11 +200,12 @@ func TestContextTelemetrySizes(t *testing.T) {
 	}
 }
 
-// TestContextDropOrder (T005, FR-008, contract §Budget): under budget pressure
-// whole blocks drop lowest-priority-first — journal/serendipity/plan_echo are
-// absent this slice, so the droppable order is memories → social_law →
-// known_places. A budget of 0 sheds all three, in that order; survival blocks
-// (frame, needs, self_history, inventory) are never dropped, at any budget.
+// TestContextDropOrder (T005 + T021, FR-008, contract §Budget): under budget
+// pressure whole blocks drop lowest-priority-first. In this fixture (4 memories
+// = exactly the protected floor, no serendipity, no journal, no plan) the only
+// droppable blocks are social_law (4) and known_places (5); the memories block's
+// floor is NEVER dropped, so "memories" survives at every budget. Survival
+// blocks (frame, needs, self_history, inventory) are never dropped either.
 func TestContextDropOrder(t *testing.T) {
 	s := richContextState(t)
 
@@ -218,30 +220,31 @@ func TestContextDropOrder(t *testing.T) {
 		}
 	}
 
-	// Zero budget: every droppable block sheds, in ascending-priority order;
-	// survival blocks remain.
+	// Zero budget: the droppable blocks shed in ascending-priority order;
+	// survival blocks AND the memories floor remain.
 	starved := assembleBudget(s, 0, sim.WindowK, "", "", 0)
-	wantDropped := []string{"memories", "social_law", "known_places"}
+	wantDropped := []string{"social_law", "known_places"}
 	if strings.Join(starved.droppedBlocks, ",") != strings.Join(wantDropped, ",") {
 		t.Errorf("drop order = %v, want %v", starved.droppedBlocks, wantDropped)
 	}
-	for _, survive := range []string{"frame", "needs", "self_history", "inventory"} {
+	for _, survive := range []string{"frame", "needs", "self_history", "inventory", "memories"} {
 		if _, ok := starved.blockBytes[survive]; !ok {
-			t.Errorf("survival block %q dropped under zero budget: blocks=%v dropped=%v", survive, starved.blockBytes, starved.droppedBlocks)
+			t.Errorf("protected block %q dropped under zero budget: blocks=%v dropped=%v", survive, starved.blockBytes, starved.droppedBlocks)
 		}
 	}
 	for _, d := range starved.droppedBlocks {
-		if d == "frame" || d == "needs" || d == "self_history" || d == "inventory" {
-			t.Errorf("survival block %q appears in dropped set", d)
+		switch d {
+		case "frame", "needs", "self_history", "inventory", "memories":
+			t.Errorf("protected block %q appears in dropped set", d)
 		}
 	}
 
-	// A budget just below the full size drops ONLY the lowest-priority block
-	// first (memories), never a higher-priority one before it.
+	// A budget just below the full size drops ONLY the lowest-priority present
+	// block first (social_law), never a higher-priority one before it.
 	fullTokens := approxTokens(full.promptBytes)
 	oneDrop := assembleBudget(s, 0, sim.WindowK, "", "", fullTokens-1)
-	if len(oneDrop.droppedBlocks) == 0 || oneDrop.droppedBlocks[0] != "memories" {
-		t.Errorf("first block dropped = %v, want memories first", oneDrop.droppedBlocks)
+	if len(oneDrop.droppedBlocks) == 0 || oneDrop.droppedBlocks[0] != "social_law" {
+		t.Errorf("first block dropped = %v, want social_law first", oneDrop.droppedBlocks)
 	}
 }
 
@@ -575,5 +578,273 @@ func TestPlanEchoClearedAfterCompletion(t *testing.T) {
 	apply(1010, "agent.plan_step_started", sim.PlanStepPayload{Agent: 0, Job: "j", Step: "forage"})
 	if got := renderPlanEcho(s, 0); got != "" {
 		t.Errorf("stale plan echo after the plan completed: %q", got)
+	}
+}
+
+// --- spec 043 US4 (T019-T023): journal block, memory floor, budget ---
+
+// ladderState extends richContextState so every droppable tier is present: >K
+// memories (⇒ a serendipity tail + above-floor entries), a journal entry that
+// matches a worst-need term ("warmth"), and a standing plan (plan_echo). The
+// full drop ladder can then be exercised end to end.
+func ladderState(t *testing.T) *sim.State {
+	t.Helper()
+	s := richContextState(t) // 4 memories, known_places, social_law (debt)
+	a := &s.Agents[0]
+	for i := int64(0); i < 20; i++ {
+		a.Memories = append(a.Memories, sim.Memory{
+			Text:     fmt.Sprintf("Older memory %d about the woods.", i),
+			Salience: 3, Tick: 200 + i, Subject: -1, Seq: 100 + i,
+		})
+	}
+	a.Journal = &sim.Journal{NextID: 1, Entries: []sim.JournalEntry{
+		{ID: 0, Tick: 50, Text: "I banked the fire to keep my warmth up through the cold night."},
+	}}
+	a.Plan = []sim.PlanStep{{Job: "j", Goal: "rest"}}
+	return s
+}
+
+// TestContextDropOrderFullLadder (T021, FR-008, contract §Budget + research R7):
+// with every tier present, a zero budget sheds them in the exact documented
+// order — journal (1), memories_serendipity (2), memories above-floor (3),
+// social_law (4), known_places (5), plan_echo (6) — while the survival blocks
+// AND the memories floor never drop.
+func TestContextDropOrderFullLadder(t *testing.T) {
+	s := ladderState(t)
+
+	// Sanity: every droppable tier is actually present at an ample budget.
+	full := assembleContext(s, 0, sim.WindowK, "", "")
+	for _, name := range []string{"memories", "memories_serendipity", "journal", "social_law", "known_places", "plan_echo"} {
+		if _, ok := full.blockBytes[name]; !ok {
+			t.Fatalf("ladder fixture missing droppable tier %q — the ladder cannot bite: %v", name, full.blockBytes)
+		}
+	}
+
+	starved := assembleBudget(s, 0, sim.WindowK, "", "", 0)
+	want := []string{"journal", "memories_serendipity", "memories", "social_law", "known_places", "plan_echo"}
+	if strings.Join(starved.droppedBlocks, ",") != strings.Join(want, ",") {
+		t.Errorf("drop ladder = %v\nwant                %v", starved.droppedBlocks, want)
+	}
+	// The memories floor survives (block still present) and the serendipity /
+	// journal tiers are gone from the accounting.
+	for _, survive := range []string{"frame", "needs", "self_history", "inventory", "memories"} {
+		if _, ok := starved.blockBytes[survive]; !ok {
+			t.Errorf("protected block %q dropped under zero budget: %v", survive, starved.blockBytes)
+		}
+	}
+	for _, gone := range []string{"memories_serendipity", "journal", "social_law", "known_places", "plan_echo"} {
+		if _, ok := starved.blockBytes[gone]; ok {
+			t.Errorf("block %q should be dropped but is still accounted: %v", gone, starved.blockBytes)
+		}
+	}
+	// The surviving memories block is exactly the floor (memoryFloor lines).
+	if lines := strings.Count(starved.text, "\n- "); lines < 1 {
+		t.Errorf("memories floor did not render any lines:\n%s", starved.text)
+	}
+}
+
+// TestMemoriesFloorProtectedByteAccounting (T021, FR-010): the per-block bytes
+// plus the fixed closer account for every assembled byte even after the
+// serendipity + above-floor tiers are partially dropped — the split is honest
+// accounting, not a byte leak.
+func TestMemoriesFloorProtectedByteAccounting(t *testing.T) {
+	s := ladderState(t)
+	for _, budget := range []int{0, 50, 200, contextBudgetTokens} {
+		asm := assembleBudget(s, 0, sim.WindowK, "", "", budget)
+		sum := len(promptCloser)
+		for _, sz := range asm.blockBytes {
+			sum += sz
+		}
+		if sum != asm.promptBytes {
+			t.Errorf("budget %d: block bytes + closer = %d, want promptBytes %d (blocks=%v)", budget, sum, asm.promptBytes, asm.blockBytes)
+		}
+	}
+}
+
+// TestContextByteIdenticalMemorySplit (T021, contract §Determinism / task
+// constraint): with nothing dropped, splitting the memory window into
+// `memories` + `memories_serendipity` is an accounting change only — the
+// assembled text is byte-identical to a single interleaved "You remember:" list
+// (the pre-043 rendering), for a >K soul that actually carries a serendipity
+// tail.
+func TestContextByteIdenticalMemorySplit(t *testing.T) {
+	s := ladderState(t)
+	s.Agents[0].Journal = nil // isolate the memory chunk
+	s.Agents[0].Plan = nil
+
+	asm := assembleContext(s, 0, sim.WindowK, "", "")
+	// Reconstruct the pre-043 single-list rendering from the same selection.
+	window := selectWindow(s, 0, sim.WindowK, s.Tick, "")
+	var want strings.Builder
+	want.WriteString("\nYou remember:\n")
+	for _, m := range window {
+		fmt.Fprintf(&want, "- %s\n", sim.FormatMemory(m))
+	}
+	if !strings.Contains(asm.text, want.String()) {
+		t.Errorf("memory chunk is not byte-identical to the interleaved single list:\nassembled: %q\nwant sub:  %q", asm.text, want.String())
+	}
+}
+
+// TestMemoriesDegradedModePassthrough (T021, US4 AS-4, FR-006): "on" mode with
+// NO recorded situation vector falls back to legacy selection — the memories
+// block still renders, and the assembled prompt is byte-identical to "" mode.
+// Nothing crashes.
+func TestMemoriesDegradedModePassthrough(t *testing.T) {
+	s := richContextState(t) // no SitVec recorded
+	on := assembleContext(s, 0, sim.WindowK, "on", "")
+	if _, ok := on.blockBytes["memories"]; !ok {
+		t.Error("degraded 'on' mode dropped the memories block")
+	}
+	if !strings.Contains(on.text, "You remember:") {
+		t.Error("memories block did not render in degraded mode")
+	}
+	legacy := assembleContext(s, 0, sim.WindowK, "", "")
+	if on.text != legacy.text {
+		t.Errorf("degraded 'on' diverged from legacy selection:\non:     %q\nlegacy: %q", on.text, legacy.text)
+	}
+}
+
+// TestJournalBlockRendersAndOmits (T020, FR-007): the journal block includes a
+// bounded excerpt of a situationally-relevant entry (matched on a worst-need
+// term), omits irrelevant entries, and is absent entirely when nothing matches
+// or there is no journal. It reaches the assembled prompt.
+func TestJournalBlockRendersAndOmits(t *testing.T) {
+	s := knownPlacesState(t)
+	a := &s.Agents[0]
+	a.Needs = sim.Needs{Health: 800, Food: 200, Rest: 700, Warmth: 300, Morale: 900} // worst: food, warmth
+
+	// No journal → omitted.
+	if got := renderJournal(s, 0); got != "" {
+		t.Errorf("no-journal villager rendered a journal block: %q", got)
+	}
+
+	a.Journal = &sim.Journal{NextID: 2, Entries: []sim.JournalEntry{
+		{ID: 0, Tick: 10, Text: "Foraged berries near the river; my food stores are low."},
+		{ID: 1, Tick: 20, Text: "A quiet day mending my spear."},
+	}}
+	got := renderJournal(s, 0)
+	if !strings.Contains(got, "From your journal:") {
+		t.Errorf("journal header missing:\n%s", got)
+	}
+	if !strings.Contains(got, "(#0)") || !strings.Contains(got, "food stores are low") {
+		t.Errorf("relevant journal entry (food) missing:\n%s", got)
+	}
+	if strings.Contains(got, "mending my spear") {
+		t.Errorf("irrelevant journal entry included:\n%s", got)
+	}
+	if !strings.Contains(userPrompt(s, 0, sim.WindowK, ""), "From your journal:") {
+		t.Error("journal block missing from assembled prompt")
+	}
+
+	// No matching entry → omitted.
+	a.Journal = &sim.Journal{NextID: 1, Entries: []sim.JournalEntry{{ID: 0, Tick: 10, Text: "A calm, unremarkable morning."}}}
+	if got := renderJournal(s, 0); got != "" {
+		t.Errorf("no-match journal rendered a block: %q", got)
+	}
+}
+
+// TestPlantedMemoryRelevance (T022, SC-006, US4 AS-1): an agent carrying a
+// situationally-relevant memory (vector matching its situation vector) buried
+// under louder, irrelevant high-salience memories has the relevant memory in the
+// assembled window in at least 80% of thoughts across seeds — within budget —
+// while the legacy window would exclude it. Vectors are constructed directly, no
+// live embedder.
+func TestPlantedMemoryRelevance(t *testing.T) {
+	const marker = "Robbed at the river."
+	build := func(seed uint64) *sim.State {
+		s := sim.NewState(seed, worldmap.Generate(seed, 64, 64))
+		s.Tick = 130_000
+		a := &s.Agents[0]
+		// One old, low-salience, situation-matching memory…
+		a.Memories = append(a.Memories, sim.Memory{Text: marker, Salience: 2, Tick: 100, Subject: -1, Seq: 1, Vec: []float32{1, 0}, VecModel: "all-minilm"})
+		// …buried under many newer, unrelated ones. Salience 5 is the reference
+		// gap the equal-weight relevance term (+0.5 max) is tuned to overcome
+		// (contracts/relevance-scoring.md §1): a perfect match beats it, a louder
+		// salience-8 crowd would not — the point is relevance, not salience.
+		for i := int64(1); i <= 40; i++ {
+			a.Memories = append(a.Memories, sim.Memory{Text: "Routine day.", Salience: 5, Tick: 100_000 + i*600, Subject: -1, Seq: 1 + i, Vec: []float32{0, 1}, VecModel: "all-minilm"})
+		}
+		a.SitVec = []float32{1, 0}
+		a.SitVecModel = "all-minilm"
+		a.SitVecTick = 129_000
+		return s
+	}
+
+	seeds := []uint64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+	hits := 0
+	for _, seed := range seeds {
+		s := build(seed)
+		asm := assembleContext(s, 0, sim.WindowK, "on", "")
+		if tok := approxTokens(asm.promptBytes); tok > contextBudgetTokens {
+			t.Errorf("seed %d: assembled context %d approx-tokens exceeds budget %d", seed, tok, contextBudgetTokens)
+		}
+		if strings.Contains(asm.text, marker) {
+			hits++
+		}
+	}
+	if frac := float64(hits) / float64(len(seeds)); frac < 0.8 {
+		t.Errorf("relevant memory present in %d/%d assembled contexts (%.0f%%), want ≥80%%", hits, len(seeds), frac*100)
+	}
+}
+
+// syntheticState builds a deterministic, varied villager world for the budget
+// aggregate: per-agent randomized needs, memory counts, an optional journal, an
+// optional plan, and a recent intent — a hermetic stand-in for the diverse
+// states a running world produces.
+func syntheticState(t *testing.T, seed uint64) *sim.State {
+	t.Helper()
+	s := sim.NewState(seed, worldmap.Generate(seed, 64, 64))
+	s.Tick = int64(500_000 + seed*137)
+	r := seed + 1
+	next := func(mod uint64) int {
+		r = r*6364136223846793005 + 1442695040888963407
+		return int((r >> 33) % mod)
+	}
+	for i := range s.Agents {
+		a := &s.Agents[i]
+		a.Needs = sim.Needs{Health: next(1000), Food: next(1000), Rest: next(1000), Warmth: next(1000), Morale: next(1000)}
+		for m := 0; m < next(30); m++ {
+			a.Memories = append(a.Memories, sim.Memory{
+				Text:     fmt.Sprintf("Memory %d for agent %d in a long-remembered place.", m, i),
+				Salience: 1 + next(10), Tick: s.Tick - int64(next(400_000)), Subject: -1, Seq: int64(m + 1),
+			})
+		}
+		if next(2) == 0 {
+			a.Journal = &sim.Journal{NextID: 1, Entries: []sim.JournalEntry{
+				{ID: 0, Tick: 10, Text: "Kept my warmth and food steady through a long, restful day."},
+			}}
+		}
+		if next(3) == 0 {
+			a.Plan = []sim.PlanStep{{Job: "j", Goal: "forage"}, {Job: "j", Goal: "rest"}}
+		}
+		a.IntentLog = append(a.IntentLog, sim.IntentRecord{Goal: "forage", Source: "reflex", Tick: s.Tick - 100})
+	}
+	return s
+}
+
+// TestBudgetFitAggregate (T023, SC-005, FR-010): aggregating PromptBytes /
+// DroppedBlocks across many assembled thoughts over varied synthetic states, at
+// least 99% land within the configured budget, and every overflow records its
+// dropped blocks. This is the hermetic half of SC-005; the live multi-day
+// scratch-world measurement remains for the orchestrator (see the T023 report).
+func TestBudgetFitAggregate(t *testing.T) {
+	total, within := 0, 0
+	for seed := uint64(0); seed < 200; seed++ {
+		s := syntheticState(t, seed)
+		for i := range s.Agents {
+			asm := assembleContext(s, i, sim.WindowK, "on", "")
+			total++
+			if approxTokens(asm.promptBytes) <= contextBudgetTokens {
+				within++
+			} else if len(asm.droppedBlocks) == 0 {
+				t.Errorf("seed %d agent %d over budget (%d approx-tokens) but recorded no drops", seed, i, approxTokens(asm.promptBytes))
+			}
+		}
+	}
+	if frac := float64(within) / float64(total); frac < 0.99 {
+		t.Errorf("within-budget fraction %.4f (%d/%d), want ≥0.99", frac, within, total)
+	}
+	if total == 0 {
+		t.Fatal("no thoughts assembled")
 	}
 }

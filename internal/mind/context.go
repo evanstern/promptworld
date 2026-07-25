@@ -2,6 +2,7 @@ package mind
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/evanstern/promptworld/internal/clock"
@@ -63,12 +64,14 @@ type assembled struct {
 	droppedBlocks []string
 }
 
-// contextBlocks builds the registry for one agent in fixed contract order
-// (contracts/context-blocks.md). Blocks not yet implemented by a landed slice
-// (memories_serendipity, journal) are simply absent from the registry; they
-// insert at their contract position when their story lands. The futureLine is
+// fixedBlocks builds the whole-block registry for one agent — contract blocks
+// 1-7 in fixed order (contracts/context-blocks.md). The memory window (blocks 8
+// `memories` + 9 `memories_serendipity`) and the journal (block 10) are NOT
+// here: the memory chunk drops per-tier (floor never, above-floor + serendipity
+// by priority) rather than whole, and the journal renders after the memory
+// chunk, so both are assembled specially in assembleBudget. The futureLine is
 // the FR-016 future-dating line, part of the frame block.
-func contextBlocks(s *sim.State, idx, k int, mode, futureLine string) []contextBlock {
+func fixedBlocks(s *sim.State, idx int, futureLine string) []contextBlock {
 	return []contextBlock{
 		{Name: "frame", Priority: neverDrop, Render: func() string { return renderFrame(s, idx, futureLine) }},
 		{Name: "needs", Priority: neverDrop, Render: func() string { return renderNeeds(s, idx) }},
@@ -77,7 +80,6 @@ func contextBlocks(s *sim.State, idx, k int, mode, futureLine string) []contextB
 		{Name: "plan_echo", Priority: 6, Render: func() string { return renderPlanEcho(s, idx) }},
 		{Name: "known_places", Priority: 5, Render: func() string { return renderKnownPlaces(s, idx) }},
 		{Name: "social_law", Priority: 4, Render: func() string { return renderSocialLaw(s, idx) }},
-		{Name: "memories", Priority: 3, Render: func() string { return renderMemories(s, idx, k, mode) }},
 	}
 }
 
@@ -86,62 +88,148 @@ func assembleContext(s *sim.State, idx, k int, mode, futureLine string) assemble
 	return assembleBudget(s, idx, k, mode, futureLine, contextBudgetTokens)
 }
 
-// assembleBudget renders in fixed contract order, measures each non-empty
-// block, and — while the total (block bytes + the fixed closer) exceeds the
-// budget in approx-tokens — drops whole blocks lowest-priority-first, recording
-// each drop in order. Deterministic: identical world state ⇒ identical bytes,
-// identical drops. The budget is a parameter so tests can shrink it; production
-// passes contextBudgetTokens.
+// assembleBudget renders in fixed contract order, measures each block, and —
+// while the total (kept block bytes + the fixed closer) exceeds the budget in
+// approx-tokens — sheds content lowest-priority-first, recording each drop in
+// order. Drop candidates and their priorities (contracts/context-blocks.md,
+// research R7):
+//
+//	journal (1) → memories_serendipity (2) → memories above-floor (3) →
+//	social_law (4) → known_places (5) → plan_echo (6) → [never] frame, needs,
+//	self_history, inventory, and the protected floor of the memories block.
+//
+// The memory window is one contiguous rendered chunk (blocks 8-9) so nothing is
+// reordered — splitting `memories`/`memories_serendipity` is an accounting
+// change, not a wording one: with no drops the chunk is byte-identical to the
+// pre-043 single "You remember:" list. Under pressure the serendipity tail and
+// then the above-floor entries are shed by re-rendering the kept lines in place;
+// the floor of memoryFloor entries is never dropped. Deterministic: identical
+// world state ⇒ identical bytes, identical drops. The budget is a parameter so
+// tests can shrink it; production passes contextBudgetTokens.
 func assembleBudget(s *sim.State, idx, k int, mode, futureLine string, budget int) assembled {
-	blocks := contextBlocks(s, idx, k, mode, futureLine)
-
 	type rendered struct {
 		name     string
 		priority int
 		text     string
+		kept     bool
 	}
-	present := make([]rendered, 0, len(blocks))
-	for _, b := range blocks {
+
+	// Blocks 1-7 (whole-block droppable).
+	var fixed []rendered
+	for _, b := range fixedBlocks(s, idx, futureLine) {
 		if t := b.Render(); t != "" {
-			present = append(present, rendered{name: b.Name, priority: b.Priority, text: t})
+			fixed = append(fixed, rendered{name: b.Name, priority: b.Priority, text: t, kept: true})
 		}
 	}
 
-	total := func(rs []rendered) int {
-		n := len(promptCloser)
-		for _, r := range rs {
-			n += len(r.text)
+	// Memory chunk (blocks 8-9): the annotated window split into floor /
+	// above-floor / serendipity line groups.
+	memLines := buildMemLines(s, idx, k, mode)
+	hasAbove, hasSeren := false, false
+	for _, l := range memLines {
+		switch {
+		case l.serendipity:
+			hasSeren = true
+		case !l.floor:
+			hasAbove = true
+		}
+	}
+	dropSeren, dropAbove := false, false
+
+	// Journal (block 10): whole-block, first dropped (priority 1).
+	journalText := renderJournal(s, idx)
+	journalKept := journalText != ""
+
+	total := func() int {
+		n := len(promptCloser) + len(renderMemLines(memLines, dropSeren, dropAbove))
+		for _, r := range fixed {
+			if r.kept {
+				n += len(r.text)
+			}
+		}
+		if journalKept {
+			n += len(journalText)
 		}
 		return n
 	}
 
 	var dropped []string
-	for approxTokens(total(present)) > budget {
-		// Lowest-priority droppable block goes first. Survival blocks
-		// (neverDrop) are never candidates; if only survival blocks remain we
-		// stop — the budget cannot be met without shedding a protected block,
-		// and the contract protects it (research R7).
-		victim := -1
-		for i := range present {
-			if present[i].priority == neverDrop {
-				continue
-			}
-			if victim < 0 || present[i].priority < present[victim].priority {
-				victim = i
+	for approxTokens(total()) > budget {
+		// Lowest-priority droppable candidate goes first. Protected content
+		// (neverDrop fixed blocks + the memory floor) is never a candidate; when
+		// only protected content remains the budget cannot be met and we stop
+		// (research R7 — the contract protects it).
+		const (
+			kindNone = iota
+			kindFixed
+			kindSeren
+			kindAbove
+			kindJournal
+		)
+		bestPri, bestKind, bestFixed := neverDrop, kindNone, -1
+		consider := func(pri, kind, fi int) {
+			if pri < bestPri {
+				bestPri, bestKind, bestFixed = pri, kind, fi
 			}
 		}
-		if victim < 0 {
-			break
+		for i := range fixed {
+			if fixed[i].kept && fixed[i].priority != neverDrop {
+				consider(fixed[i].priority, kindFixed, i)
+			}
 		}
-		dropped = append(dropped, present[victim].name)
-		present = append(present[:victim], present[victim+1:]...)
+		if journalKept {
+			consider(1, kindJournal, -1)
+		}
+		if hasSeren && !dropSeren {
+			consider(2, kindSeren, -1)
+		}
+		if hasAbove && !dropAbove {
+			consider(3, kindAbove, -1)
+		}
+		switch bestKind {
+		case kindFixed:
+			fixed[bestFixed].kept = false
+			dropped = append(dropped, fixed[bestFixed].name)
+		case kindJournal:
+			journalKept = false
+			dropped = append(dropped, "journal")
+		case kindSeren:
+			dropSeren = true
+			dropped = append(dropped, "memories_serendipity")
+		case kindAbove:
+			// Partial drop of the memories block: the above-floor entries are
+			// shed, the floor survives, so "memories" stays present in
+			// blockBytes (floor bytes) while appearing in DroppedBlocks to mark
+			// the trim (contract block 8: floor never dropped).
+			dropAbove = true
+			dropped = append(dropped, "memories")
+		default:
+			// Nothing droppable left; protected content overflows the budget.
+			goto assemble
+		}
 	}
 
+assemble:
 	var b strings.Builder
-	blockBytes := make(map[string]int, len(present))
-	for _, r := range present {
-		b.WriteString(r.text)
-		blockBytes[r.name] = len(r.text)
+	blockBytes := make(map[string]int)
+	for _, r := range fixed {
+		if r.kept {
+			b.WriteString(r.text)
+			blockBytes[r.name] = len(r.text)
+		}
+	}
+	b.WriteString(renderMemLines(memLines, dropSeren, dropAbove))
+	if memBytes, serenBytes := memAccount(memLines, dropSeren, dropAbove); memBytes > 0 || serenBytes > 0 {
+		if memBytes > 0 {
+			blockBytes["memories"] = memBytes
+		}
+		if serenBytes > 0 {
+			blockBytes["memories_serendipity"] = serenBytes
+		}
+	}
+	if journalKept {
+		b.WriteString(journalText)
+		blockBytes["journal"] = len(journalText)
 	}
 	b.WriteString(promptCloser)
 	text := b.String()
@@ -326,19 +414,145 @@ func renderSocialLaw(s *sim.State, idx int) string {
 	return socialContext(s, idx) + villageLaw(s, idx)
 }
 
-// renderMemories is contract block 8: the selected working-memory window (spec
-// 042 relevance-blended when memory_relevance is "on", legacy otherwise). The
-// window is the ONLY memory content that ever reaches a prompt. This slice
-// renders it as one block; US4 splits floor/serendipity and adds the journal.
-func renderMemories(s *sim.State, idx, k int, mode string) string {
-	window := selectWindow(s, idx, k, s.Tick, mode)
+// memHeader opens the working-memory list. It belongs to the `memories` block
+// (accounted there) and is written whenever any memory line survives.
+const memHeader = "\nYou remember:\n"
+
+// memoryFloor is the protected count of working-memory entries in the `memories`
+// block (spec 043 US4, contracts/context-blocks.md block 8): the most-recent
+// this-many scored (non-serendipity) entries are never dropped under budget
+// pressure, so a survival-relevant recollection always reaches the model.
+// Entries above the floor shed at drop priority 3; the serendipity tail at 2.
+const memoryFloor = 4
+
+// memLine is one working-memory entry as it renders, tagged with the drop tier
+// it belongs to: a serendipity tail pick (block 9, priority 2), a protected
+// floor entry (block 8, never dropped), or an above-floor entry (block 8,
+// priority 3). The lines stay in the window's reverse-chronological order, so
+// with nothing dropped the concatenation is byte-identical to the pre-043
+// single "You remember:" list — the floor/serendipity split is accounting, not
+// reordering.
+type memLine struct {
+	text        string
+	serendipity bool
+	floor       bool
+}
+
+// buildMemLines renders contract blocks 8-9 into ordered, tiered lines. The
+// window is the annotated selection (spec 042 relevance-blended when
+// memory_relevance is "on" with a recorded situation vector, legacy otherwise);
+// the first memoryFloor non-serendipity entries in render order are the
+// protected floor. Nil (no memories) → no lines, so no header ever renders.
+func buildMemLines(s *sim.State, idx, k int, mode string) []memLine {
+	window := selectWindowAnnotated(s, idx, k, s.Tick, mode)
 	if len(window) == 0 {
+		return nil
+	}
+	lines := make([]memLine, len(window))
+	floorCount := 0
+	for i, sm := range window {
+		l := memLine{text: fmt.Sprintf("- %s\n", sim.FormatMemory(sm.Memory)), serendipity: sm.Serendipity}
+		if !sm.Serendipity && floorCount < memoryFloor {
+			l.floor = true
+			floorCount++
+		}
+		lines[i] = l
+	}
+	return lines
+}
+
+// renderMemLines writes the working-memory chunk (blocks 8-9) with the dropped
+// tiers omitted: serendipity picks when dropSeren, above-floor entries when
+// dropAbove. Order is preserved (reverse-chronological), so with no drops the
+// output equals the pre-043 rendering exactly. Empty when every line is dropped
+// or there are no memories (no bare header).
+func renderMemLines(lines []memLine, dropSeren, dropAbove bool) string {
+	var body strings.Builder
+	for _, l := range lines {
+		if l.serendipity {
+			if dropSeren {
+				continue
+			}
+		} else if !l.floor && dropAbove {
+			continue
+		}
+		body.WriteString(l.text)
+	}
+	if body.Len() == 0 {
+		return ""
+	}
+	return memHeader + body.String()
+}
+
+// memAccount splits the kept memory-chunk bytes into the two contract block
+// names: `memories` (the header + kept floor/above-floor lines) and
+// `memories_serendipity` (kept serendipity lines). The header is attributed to
+// `memories` — the floor is never dropped, so whenever any memory renders the
+// header rides with it. memBytes + serenBytes == len(renderMemLines(...)), so
+// the per-block telemetry accounts for every assembled byte.
+func memAccount(lines []memLine, dropSeren, dropAbove bool) (memBytes, serenBytes int) {
+	for _, l := range lines {
+		switch {
+		case l.serendipity:
+			if !dropSeren {
+				serenBytes += len(l.text)
+			}
+		case l.floor || !dropAbove:
+			memBytes += len(l.text)
+		}
+	}
+	if memBytes > 0 || serenBytes > 0 {
+		memBytes += len(memHeader)
+	}
+	return memBytes, serenBytes
+}
+
+// situationTerms is the deterministic query-term set the journal block matches
+// against — the same situation signals renderSituation embeds (embedder.go):
+// the two worst needs' names and the active-or-last intent goal (research R5).
+// Pure over agent state; identical state ⇒ identical terms.
+func situationTerms(a sim.Agent) []string {
+	needs := []struct {
+		name string
+		v    int
+	}{
+		{"health", a.Needs.Health}, {"food", a.Needs.Food}, {"rest", a.Needs.Rest},
+		{"warmth", a.Needs.Warmth}, {"morale", a.Needs.Morale},
+	}
+	sort.SliceStable(needs, func(i, j int) bool { return needs[i].v < needs[j].v })
+	terms := []string{needs[0].name, needs[1].name}
+	goal := ""
+	if a.Intent != nil {
+		goal = a.Intent.Goal
+	} else if a.LastGoal != "" {
+		goal = a.LastGoal
+	}
+	if goal != "" {
+		terms = append(terms, goal)
+	}
+	return terms
+}
+
+// renderJournal is contract block 10 (spec 043 US4, FR-007): up to
+// JournalExcerptCap term-matched journal entries, each a ≤JournalExcerptRunes
+// excerpt with its entry id, selected deterministically for the current
+// situation (situationTerms). The assembler stuffs them so the villager need
+// not spend reasoning turns fetching its own journal; no match → omitted
+// entirely. Drop priority 1 (first shed under budget pressure). Model-free, so
+// always available even in degraded mode.
+func renderJournal(s *sim.State, idx int) string {
+	a := s.Agents[idx]
+	if a.Journal == nil {
+		return ""
+	}
+	ex := a.Journal.SelectJournalExcerpts(situationTerms(a))
+	if len(ex) == 0 {
 		return ""
 	}
 	var b strings.Builder
-	b.WriteString("\nYou remember:\n")
-	for _, m := range window {
-		fmt.Fprintf(&b, "- %s\n", sim.FormatMemory(m))
+	b.WriteString("\nFrom your journal:\n")
+	for _, e := range ex {
+		fmt.Fprintf(&b, "- (#%d) %s\n", e.ID, e.Text)
 	}
 	return b.String()
 }

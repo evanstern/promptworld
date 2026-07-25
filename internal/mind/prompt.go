@@ -77,15 +77,25 @@ func futureDated(now, landing int64) string {
 // alike are today's SelectMemories, byte-identical (the shadow invariant).
 // Divergence recording is separate (recordDivergence) and unchanged by mode.
 func selectWindow(s *sim.State, idx, k int, tick int64, mode string) []sim.Memory {
+	return sim.StripSelected(selectWindowAnnotated(s, idx, k, tick, mode))
+}
+
+// selectWindowAnnotated is selectWindow returning the window annotated with the
+// serendipity tail flag (spec 043 US4), for the assembler's floor/serendipity
+// drop accounting. Same mode logic as selectWindow — "on" with a recorded
+// situation vector consumes the relevance window, everything else (no vector,
+// "", "shadow") the legacy window — so StripSelected of this equals selectWindow
+// byte-for-byte, and the shadow invariant (""/"shadow" identical) is preserved.
+func selectWindowAnnotated(s *sim.State, idx, k int, tick int64, mode string) []sim.SelectedMemory {
 	a := &s.Agents[idx]
 	if mode == world.MemoryRelevanceOn {
 		var query []float32
 		if len(a.SitVec) > 0 {
 			query = a.SitVec
 		}
-		return sim.SelectMemoriesRelevant(a, s.Seed, idx, tick, k, query, a.SitVecModel)
+		return sim.SelectMemoriesWindow(a, s.Seed, idx, tick, k, query, a.SitVecModel)
 	}
-	return sim.SelectMemories(a, s.Seed, idx, tick, k)
+	return sim.SelectMemoriesWindow(a, s.Seed, idx, tick, k, nil, "")
 }
 
 // userPrompt renders the situation + memory window. The window is the ONLY
