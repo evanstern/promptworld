@@ -4,7 +4,7 @@ title: Instinct yields to intelligence — reflex/planner arbitration
 status: In Progress
 assignee: []
 created_date: '2026-07-25 02:41'
-updated_date: '2026-07-25 19:31'
+updated_date: '2026-07-25 20:06'
 labels:
   - goal-quality
   - instinct-layer
@@ -26,14 +26,14 @@ Spec: specs/062-instinct-yields
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Reflex never overrides a live/recent planner decision except on survival-threshold breach
-- [ ] #2 Day-branch warmth gap closed
-- [ ] #3 Replay/sim test demonstrates Sage-style thrash episode no longer occurs
-- [ ] #4 Spec phase: Foundational
-- [ ] #5 Spec phase: User Story 1 — Prep yields (P1)
-- [ ] #6 Spec phase: User Story 2 — Day warmth rung (P1)
-- [ ] #7 Spec phase: User Story 3 — Night search fallback (P3, droppable by amendment)
-- [ ] #8 Spec phase: User Story 4 — Thrash regression (P1)
+- [x] #1 Reflex never overrides a live/recent planner decision except on survival-threshold breach
+- [x] #2 Day-branch warmth gap closed
+- [x] #3 Replay/sim test demonstrates Sage-style thrash episode no longer occurs
+- [x] #4 Spec phase: Foundational
+- [x] #5 Spec phase: User Story 1 — Prep yields (P1)
+- [x] #6 Spec phase: User Story 2 — Day warmth rung (P1)
+- [x] #7 Spec phase: User Story 3 — Night search fallback (P3, droppable by amendment)
+- [x] #8 Spec phase: User Story 4 — Thrash regression (P1)
 - [ ] #9 Spec phase: Polish & Cross-Cutting
 <!-- AC:END -->
 
@@ -55,4 +55,8 @@ THE SURVIVAL/HOUSEKEEPING SPLIT DOES NOT EXIST IN THE CODE. decideIntent is one 
 HAZARD NO TASK NAMES: Agent.LastGoalTick (agents.go:201) is classified 'keep' in the rebase taxonomy and read only by the TUI (tui/views.go:2518). The moment this task uses it as a recency test (nextTick - LastGoalTick < N) it becomes a duration anchor and MUST flip to 'shift', or a Metatron timeline rebase silently corrupts arbitration. Same for IntentRecord.Tick/OutcomeTick. TestRebaseTaxonomyComplete will NOT catch this — it verifies a field IS classified, never that the classification is CORRECT.
 
 Any new threshold ships as a tuning.json dial (spec 048 / 057 US2), not a bare const.
+
+spec-bridge sync: Foundational: 3/3 · User Story 1 — Prep yields (P1): 2/2 · User Story 2 — Day warmth rung (P1): 2/2 · User Story 3 — Night search fallback (P3, droppable by amendment): 2/2 · User Story 4 — Thrash regression (P1): 1/1 · Polish & Cross-Cutting: 1/2
+
+PR #93 squash-merged as 46b1841. Human ACs proven: #1 prep yields to window+danger bands (survival-threshold breach = survival rungs, unconditioned); #2 day warmth rung shipped (gated deviation: no day chop tail — degraded-mode 8/8 sacred, pinned by test); #3 Sage-shape regression proves the loop dead both directions. Runbook 104-before-103 amendment reconciled with evidence (premise disproven — Needs.Warmth was always readable; the gap was policy not reading it, which IS this fix).
 <!-- SECTION:NOTES:END -->
