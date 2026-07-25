@@ -1,10 +1,10 @@
 ---
 id: TASK-121
 title: 'Skinnable guardian persona: de-theme the angel fiction, persona as data'
-status: Done
+status: In Progress
 assignee: []
 created_date: '2026-07-25 06:20'
-updated_date: '2026-07-25 20:44'
+updated_date: '2026-07-25 21:07'
 labels:
   - learning-game
   - design
@@ -71,6 +71,8 @@ TASK-134 sequencing resolved by operator checkpoint: merge proceeds as the freez
 spec-bridge sync: 23/23 tasks done — merged via PR #94 (70acb2e) after four rebase rounds reconciling seven sibling merges (#84–#93). All gates green at merge: full race suite, token-completeness, fiction denylist, hostile-skin battery, two-skin equivalence, SC-003 compat, design + merge-drift gates. Frozen-vocabulary verification: zero persisted strings changed (byte-identical diff evidence incl. PR #90's survival watch definitions). AC #6 (wiki re-pin + player docs) pending the dispatched re-ground agents.
 
 spec-bridge sync: Setup: 1/1 · Foundational — the skin substrate: 4/4 · User Story 1 — The skin-token contract exists (P1) 🎯 Lane-3 unblock: 2/2 · User Story 2 — The default experience is de-themed (P1): 6/6 · User Story 3 — A custom skin is a per-world data bundle (P2): 4/4 · User Story 4 — The internals stop lying (P3): 3/3 · Polish & Cross-Cutting Concerns: 3/3 — status In Progress → Done
+
+Status corrected Done → In Progress (board reconcile, 2026-07-25): a sibling session's sync moved this to Done on spec Done-eligibility, but human AC #6 is still open — wiki half IS re-ground (10b3247: guardian.md renames + skin.md), player-docs half is NOT (freshness: 6 stale + 1 broken-ref from the metatron→guardian note renames). Done again once the player-docs refresh runs (currently deferred under an operator halt).
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
