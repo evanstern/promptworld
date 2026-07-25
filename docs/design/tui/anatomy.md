@@ -55,6 +55,7 @@ forthcoming.
 |---|---|---|
 | tab row, tab-switch keys, solo-zoom seam | `panels/dock.md` | container chrome only (D10 split) |
 | unseen-reply badge dot | `panels/dock.md` | guardian tab only today |
+| chronicle tab (default) — running feed + paused inspect | `panels/chronicle.md` | spec 018/TASK-60; line format governed by `patterns/chronicle-grammar.md` |
 | guardian tab — pane header (name, charge bank, instruction/capability provenance, stage segment) | `panels/guardian.md` | specs 021/046 |
 | guardian tab — transcript (you/guardian rows, `⚡`/`👁`/`⏲`/`»` special rows) | `panels/guardian.md` | specs 016/029/020 |
 | guardian tab — standing-orders block | `panels/guardian.md` | spec 029 |

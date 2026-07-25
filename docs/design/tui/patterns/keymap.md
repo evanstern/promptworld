@@ -86,6 +86,17 @@ Unlike inspect mode, this does **not** require the clock to be paused.
 solo → home — each press of `esc` releases exactly one layer. With no world state
 loaded (or an empty roster) `j/k/g/G/⏎` are strict no-ops.
 
+## New global keys (specified, unbuilt — this feature)
+
+Three new global keys this feature's new-surface pages introduce; none
+exist in `internal/tui` yet (`unbuilt` in each page's own control table):
+
+| Key | Action | Specified in |
+|---|---|---|
+| `G` | open the guardian console (toggle back with `G` again, or `1`/`esc`) | [pages/guardian-console.md](../pages/guardian-console.md) |
+| `x` | dismiss the active lesson row | [panels/lesson-row.md](../panels/lesson-row.md) |
+| `p` | reopen the postmortem takeover (only while the run has ended) | [overlays/postmortem.md](../overlays/postmortem.md) |
+
 ## Mode: help overlay (spec 045-tui-help-overlay, TASK-116)
 
 `?` opens a context-sensitive help overlay from every mode above except
@@ -115,6 +126,51 @@ Minibuffer's hint carries no `? help`: focused, `?` types into the buffer
 (FR-001) — advertising it as a help trigger in that one mode would be wrong.
 Minibuffer help is still reachable, just from any other mode's overlay
 (`n`/`p` paging above).
+
+## Input-parity doctrine (reorientation decision 8)
+
+Ratified doctrine, binding on this entire corpus, not just this page:
+
+1. **Every action is reachable by both keyboard and mouse.** Every
+   control-table row's `keys+mouse` column (contracts/control-table.md)
+   states the mouse target directly beside the keyboard binding — `—` only
+   for a genuinely display-only control, never as a stand-in for "not done
+   yet."
+2. **Keyboard is primary and complete.** The keyboard alone can always
+   reach 100% of the app's functionality — mouse support is additive
+   convenience, never a second, richer control scheme with keyboard-only
+   gaps. This corpus's mockups and behavior sections are written keyboard-
+   first for exactly this reason.
+3. **Rollout is incremental, honestly tracked.** As of this feature, **zero**
+   controls anywhere in `docs/design/tui/` have a real mouse target —
+   `internal/tui` predates this doctrine entirely. Every panel/overlay page
+   in this corpus carries a **"Parity rollout"** note listing its keyed-but-
+   mouseless controls rather than silently marking them `—` as if display-
+   only; a control graduates out of that note the moment its page's control
+   table gains a real mouse target, one control (or one page) at a time.
+   This page's own footer/mode-key tables have no mouse column of their own
+   (they're the printable card, not a control table) — the authoritative
+   per-control mouse status lives on each control's owning
+   panel/overlay page, cross-referenced from here by page link.
+
+## Binding-selection rules
+
+Two conventions this corpus's key choices follow, made explicit here so a
+future page's key choice is principled rather than arbitrary:
+
+- **Mnemonic keys**, when an unclaimed letter matches the concept it
+  controls, are preferred over an arbitrary free key: `G`uardian console,
+  `p`ostmortem reopen, `d`ecisions toggle (existing, spec 020). `x` (lesson
+  dismiss) is the one exception — `d`, `l`, and other lesson-adjacent
+  letters were already claimed or read as ambiguous in context, so `x` (a
+  conventional "close/dismiss" mnemonic in terminal UIs) was chosen instead
+  and is called out here rather than silently deviating from the rule.
+- **Reserved seams are wired to a documented no-op**, never left an
+  undiscovered gap: the chronicle's `⏎` (jump-to-source, Wave 2/D3) is the
+  precedent this corpus already follows — a key that does nothing today
+  still appears in this card and its owning page's control table, with the
+  future behavior named, so a player who presses it sees documented
+  "nothing yet" rather than wondering whether the app is broken.
 
 ## Migration notes
 

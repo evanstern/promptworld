@@ -1,3 +1,12 @@
+---
+title: Pattern — focus contract
+class: pattern
+status: shipped
+verified_against: c8906da39be3a5b861c2272af37db0a83dcded7a
+sources:
+  - internal/tui/tui.go
+---
+
 # Pattern: focus contract
 
 Who owns the keyboard, when. This replaces the current rule at
@@ -27,11 +36,21 @@ spacebar-pause are silently swallowed and only an undiscoverable `esc` (or
 
 ## Scope
 
-- Widescreen: the minibuffer is the only focusable input, so the contract has
-  exactly one client.
-- Narrow fallback: the Metatron pane keeps its input line, but it obeys this same
+- Widescreen: the minibuffer ([../panels/minibuffer.md](../panels/minibuffer.md))
+  is the only focusable input, so the contract has exactly one client.
+- Narrow fallback: the guardian pane keeps its input line, but it obeys this same
   contract — entering pane 3 does **not** focus it; `m` (or `⏎`) does, and the
   focused/dormant states render the same hints.
+- **This feature's new permanent chrome is display-only** — the villager strip
+  ([../panels/villager-strip.md](../panels/villager-strip.md)), lesson row
+  ([../panels/lesson-row.md](../panels/lesson-row.md)), and guardian strip
+  ([../panels/guardian-strip.md](../panels/guardian-strip.md)) introduce no new
+  focusable surface; none of them capture keyboard input at all, so this
+  contract's "exactly one client" claim is unchanged by their addition. The
+  guardian console ([../pages/guardian-console.md](../pages/guardian-console.md))
+  introduces no second client either: its composer IS the minibuffer, reused,
+  not a new input widget — the console honors this contract by construction
+  rather than by exception.
 
 ## Acceptance checks
 
