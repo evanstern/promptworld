@@ -40,6 +40,11 @@ type Status struct {
 	// MetatronCharges surfaces the nudge bank (TASK-12) so clients can
 	// display ⚡ without a state fetch.
 	MetatronCharges int `json:"metatron_charges"`
+	// Ended/EndedDay (spec 044 US1): the run-over posture, additive omitempty
+	// so a living world's status bytes are unchanged. EndedDay is the game
+	// day of the run end, for human rendering without a state fetch.
+	Ended    bool  `json:"ended,omitempty"`
+	EndedDay int64 `json:"ended_day,omitempty"`
 }
 
 // InjectArgs carries a planner decision into deterministic space.
@@ -273,6 +278,16 @@ var injectSocialWhitelist = map[string]bool{
 	"cog.memory_divergence": true,
 }
 
+// endedProseWhitelist is the surviving slice of the inject_social door once a
+// run has ended (spec 044, contracts/status.md): recorded prose ABOUT the
+// ended run — types that mutate only bounded prose rings, never simulation
+// state (the executor guard guarantees no sim event follows run.ended).
+// Everything else on injectSocialWhitelist is refused after run end.
+// morgue.epilogue joins this set with US2.
+var endedProseWhitelist = map[string]bool{
+	"chronicle.entry": true,
+}
+
 // InjectableSocialEvent reports whether t is a social event type the
 // InjectSocial door accepts — a read-only view of injectSocialWhitelist
 // membership, exported so out-of-package boot validation (internal/bundle,
@@ -378,10 +393,10 @@ func (l *Loop) status() Status {
 	if eff == 0 && !s.Paused {
 		eff = s.Speed.TicksPerSecond()
 	}
-	if s.Paused {
+	if s.Paused || s.Ended {
 		eff = 0
 	}
-	return Status{
+	st := Status{
 		Tick:            s.Tick,
 		GameTime:        clock.Format(s.Tick),
 		Paused:          s.Paused,
@@ -392,6 +407,14 @@ func (l *Loop) status() Status {
 		LastSeq:         l.st.LastSeq(),
 		MetatronCharges: s.MetatronCharges,
 	}
+	if s.Ended {
+		st.Ended = true
+		if s.RunEnd != nil {
+			day, _, _, _ := clock.GameTime(s.RunEnd.Tick)
+			st.EndedDay = day
+		}
+	}
+	return st
 }
 
 // Run drives the world until ctx is canceled, then takes a final snapshot.
@@ -401,6 +424,23 @@ func (l *Loop) Run(ctx context.Context) error {
 	next := time.Now()
 
 	for {
+		if l.state.Ended {
+			// Ended (spec 044 FR-002): the terminal paused-mode posture — no
+			// timer, ever again; reads keep serving through the command door
+			// and the daemon's Serve goroutine (research R2). Unlike the
+			// paused branch there is no pacing to restart: no command can
+			// resume an ended world (handleCommand refuses the mutators).
+			select {
+			case <-ctx.Done():
+				return l.finalSnapshot()
+			case cmd := <-l.commands:
+				if err := l.handleCommand(cmd); err != nil {
+					return err
+				}
+			}
+			continue
+		}
+
 		if l.state.Paused {
 			// Paused: no timer, just wait for commands or shutdown.
 			select {
@@ -511,6 +551,30 @@ func (l *Loop) runTick() error {
 }
 
 func (l *Loop) handleCommand(cmd command) error {
+	// Ended gate (spec 044 FR-002/FR-003, contracts/status.md): a finished
+	// world refuses every clock/world-mutating command with an explicit
+	// error; reads (status/state) serve unchanged, and inject_social narrows
+	// to recorded prose about the ended run (endedProseWhitelist).
+	// inject_operator stays open — its whitelisted types are reducer no-ops
+	// (daemon lifecycle, never world state), the same reason shutdown is
+	// unaffected (daemon lifecycle ≠ run lifecycle).
+	if l.state.Ended {
+		switch cmd.name {
+		case "pause", "resume", "set_speed", "govern", "inject_intent":
+			cmd.reply <- commandResult{status: l.status(),
+				err: fmt.Errorf("run has ended: %q refused — the world is a read-only archive", cmd.name)}
+			return nil
+		case "inject_social":
+			for _, e := range cmd.social {
+				if !endedProseWhitelist[e.Type] {
+					cmd.reply <- commandResult{status: l.status(),
+						err: fmt.Errorf("run has ended: social event %q refused — only recorded prose may land", e.Type)}
+					return nil
+				}
+			}
+		}
+	}
+
 	var events []store.Event
 	emit := func(typ string, payload any) {
 		events = append(events, store.Event{Tick: l.state.Tick, Type: typ, Payload: mustPayload(payload)})

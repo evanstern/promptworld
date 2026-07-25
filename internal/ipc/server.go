@@ -200,6 +200,10 @@ func (s *Server) statusData(cs sim.Status) StatusData {
 			// RequestedSpeed folds from the sim-state ceiling (spec 028 US2);
 			// empty/omitempty when ungoverned keeps the pre-028 byte shape.
 			RequestedSpeed: string(cs.RequestedSpeed),
+			// Run-end posture (spec 044): zero values omitempty away on
+			// living worlds, keeping their status bytes unchanged.
+			Ended:    cs.Ended,
+			EndedDay: cs.EndedDay,
 		},
 		Daemon: DaemonStatus{
 			Pid:           os.Getpid(),

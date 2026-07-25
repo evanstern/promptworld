@@ -541,16 +541,6 @@ func governanceEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 	return events
 }
 
-func livingCount(s *State) int {
-	n := 0
-	for i := range s.Agents {
-		if !s.Agents[i].Dead {
-			n++
-		}
-	}
-	return n
-}
-
 // deriveMeetingPlace: the village gathers where the first fire was lit —
 // else the first shelter, else the passable tile nearest map center. Pure
 // function of (state, map); persisted forever by the designation event.

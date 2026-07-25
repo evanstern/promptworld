@@ -93,6 +93,17 @@ type State struct {
 	Norms             []Norm             `json:"norms,omitempty"`
 	NextNormID        int                `json:"next_norm_id,omitempty"`
 	NextProposalID    int                `json:"next_proposal_id,omitempty"`
+	// Run outcome (spec 044 US1) — all event-sourced. Deaths is the run's
+	// death ledger, appended by the agent.died arm in application (= event)
+	// order; it exists so the run.ended emission stays a pure function of
+	// (state, batch) — stepEvents cannot scan the log for earlier deaths.
+	// Bounded by agentCount. Ended latches true on run.ended and is never
+	// cleared by any event, so snapshot+replay restores the posture on
+	// restart for free (research R2). omitempty on all three keeps every
+	// pre-044 snapshot byte-identical — no format_version bump.
+	Deaths []DeathRecord `json:"deaths,omitempty"`
+	Ended  bool          `json:"ended,omitempty"`
+	RunEnd *RunEnd       `json:"run_end,omitempty"`
 
 	// m is the static generated map for this world (seed + dimensions). It is
 	// unexported and never serialized — canonical state bytes are unchanged by
@@ -269,6 +280,48 @@ type (
 		State        State `json:"state"`
 	}
 )
+
+// RunEnd is the run's durable summary, set once by the run.ended reducer arm
+// (spec 044 FR-001/FR-005): the declaration tick, every death of the run in
+// event order, and the final death's cause. Small (≤ agentCount deaths), kept
+// on state so status and the morgue render without a log scan.
+type RunEnd struct {
+	Tick       int64         `json:"tick"`
+	Deaths     []DeathRecord `json:"deaths"`
+	FinalCause string        `json:"final_cause"`
+}
+
+// DeathRecord is one death of the run: who, when, and what killed them.
+type DeathRecord struct {
+	Agent int    `json:"agent"`
+	Tick  int64  `json:"tick"`
+	Cause string `json:"cause"`
+}
+
+// RunEndedPayload declares the run over — emitted by stepEvents in the same
+// batch as the run's final agent.died, ordered after every same-tick death,
+// exactly once per world, ever (contracts/events.md). Outcome-shaped: it
+// carries the whole run's summary so the reducer sets State.RunEnd verbatim
+// and downstream consumers (status, morgue, TASK-119 scenario machinery)
+// need no log scan.
+type RunEndedPayload struct {
+	Tick       int64         `json:"tick"`
+	Deaths     []DeathRecord `json:"deaths"`
+	FinalCause string        `json:"final_cause"`
+}
+
+// livingCount is the number of villagers not yet dead — the governance
+// quorum denominator (governance.go) and the run-end detector's
+// remaining-living check (executor.go, spec 044 R1).
+func livingCount(s *State) int {
+	n := 0
+	for i := range s.Agents {
+		if !s.Agents[i].Dead {
+			n++
+		}
+	}
+	return n
+}
 
 func mustPayload(v any) json.RawMessage {
 	b, err := json.Marshal(v)
@@ -1435,6 +1488,11 @@ func (s *State) Apply(e store.Event) error {
 		a.Dead = true
 		a.Asleep = false
 		a.Intent = nil
+		// Death ledger (spec 044): application order == event order, so the
+		// run.ended emission (and later the morgue) can carry the run's full
+		// death history without a log scan. omitempty — pre-044 snapshots
+		// (field absent) stay byte-identical.
+		s.Deaths = append(s.Deaths, DeathRecord{Agent: p.Agent, Tick: e.Tick, Cause: p.Cause})
 		// The dead shed any hail (TASK-47); the hailer's seek proceeds or
 		// fails exactly as today.
 		a.Hail = nil
@@ -1464,6 +1522,17 @@ func (s *State) Apply(e store.Event) error {
 			}
 			a.Inv = Inventory{}
 		}
+
+	case "run.ended":
+		var p RunEndedPayload
+		if err := json.Unmarshal(e.Payload, &p); err != nil {
+			return fmt.Errorf("apply %s: %w", e.Type, err)
+		}
+		// Terminal latch (spec 044 FR-001/FR-002): no event ever clears it,
+		// so replay/restart lands back in the ended posture and migration
+		// tooling cannot resurrect a finished run without rewriting history.
+		s.Ended = true
+		s.RunEnd = &RunEnd{Tick: p.Tick, Deaths: p.Deaths, FinalCause: p.FinalCause}
 
 	case "social.hailed":
 		var p HailedPayload
