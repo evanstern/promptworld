@@ -45,7 +45,8 @@ _One run, one directory. This document is regenerated from the world's history._
    section's factual fields; removing all epilogues leaves a complete document.
 2. **No scoring language**: the angel-policy section states what was instructed and what
    happened. Contract-banned vocabulary in the factual render: score, grade, blame,
-   fault, should have (FR-008).
+   fault, should have (FR-008). Ratified clarification: enforced at word boundaries
+   ("default" contains the substring "fault" and is fine).
 3. **Byte-identity under replay**: the factual render (all content except epilogue
    blockquotes) is byte-identical across replays of the same history (SC-004). Stable
    ordering everywhere: deaths in event order, memories by (salience desc, tick asc),

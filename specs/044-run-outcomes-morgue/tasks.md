@@ -75,30 +75,30 @@ frozen, all reading surfaces work — including across a daemon restart (spec US
 **Independent Test**: no-AI world, cause a death, verify all seven factual fields
 against history; add a narrator, verify separated epilogue and unchanged facts (spec US2).
 
-- [ ] T013 [P] [US2] `MorguePath()` helper beside the path cluster —
+- [x] T013 [P] [US2] `MorguePath()` helper beside the path cluster —
       internal/world/world.go:205-236
-- [ ] T014 [US2] Charter revision identity: content hash of the effective charter at
+- [x] T014 [US2] Charter revision identity: content hash of the effective charter at
       turn load; emit `metatron.charter_observed{fingerprint, default}` when it
       differs from `State.CharterFingerprint` (first turn always emits); reducer arm +
       `State.CharterFingerprint (omitempty)` — internal/metatron/turn.go,
       internal/metatron/charter.go, internal/sim/state.go (R8)
-- [ ] T015 [US2] `morgue.epilogue` event: payload struct, `injectSocialWhitelist` entry
+- [x] T015 [US2] `morgue.epilogue` event: payload struct, `injectSocialWhitelist` entry
       (internal/sim/loop.go:193), bounded `State.MorgueEpilogues` ring + reducer arm
       (chronicle-ring pattern) — internal/sim/state.go, internal/sim/chronicle.go
       pattern (R9)
-- [ ] T016 [US2] `renderMorgue` in internal/scribe/scribe.go: whole-file render per
+- [x] T016 [US2] `renderMorgue` in internal/scribe/scribe.go: whole-file render per
       contracts/morgue-document.md — epitaphs (replica relations/debts/retained
       memories + typed event scans for deeds and lifetime notable memories + charter
       timeline alignment + active orders), run-end summary from `State.RunEnd`,
       recorded epilogues blockquoted; render on batches containing
       agent.died/run.ended/morgue.epilogue and at boot (R6, R7)
-- [ ] T017 [US2] Narrator epilogue job: on absorbing `agent.died`/`run.ended`, enqueue
+- [x] T017 [US2] Narrator epilogue job: on absorbing `agent.died`/`run.ended`, enqueue
       an epilogue on the existing single-flight narrator worker (`llm.KindNarrator`,
       chronicle decision class), land prose via InjectSocial as `morgue.epilogue`;
       chronicle failure doctrine (gap, never stall) — internal/mind/narrate.go (R9)
-- [ ] T018 [P] [US2] Digest + catalog rows for `metatron.charter_observed` and
+- [x] T018 [P] [US2] Digest + catalog rows for `metatron.charter_observed` and
       `morgue.epilogue` — internal/tui/digest.go, docs/wiki/event-types.md
-- [ ] T019 [US2] Tests: golden-file morgue render on a scripted no-LLM history (all
+- [x] T019 [US2] Tests: golden-file morgue render on a scripted no-LLM history (all
       seven fields, SC-002); replay byte-identity of factual render (SC-004); evidence
       alignment (edited charter + active order named at death, SC-003); epilogue
       separation (facts byte-identical with narrator on/off); regeneration after file

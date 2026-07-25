@@ -57,6 +57,17 @@ later batch (asynchronous narrator) or never; the factual render is complete wit
 
 ### Epitaph (per death, render-time projection — not a stored struct)
 
+**Ratified US2 deviation (2026-07-25)**: epitaph facts are captured by a **genesis
+replay fold** — `renderMorgue` replays the full event log into a fresh reducer state
+and snapshots each epitaph *at its death event* — not from the live scribe replica.
+Live state violates the append-shape invariant and SC-004: open debts can later break
+and orders expire, so a boot re-render from now-state would rewrite past epitaphs.
+Cost: one full-log replay per render (per-death/boot — rare; blessed by plan
+Performance Goals). "Source" rows below are read from the fold state at the death
+event. Deterministic caps (ratified, constants in `internal/scribe/morgue.go`):
+12 memories / 20 deeds per epitaph, 60 run-summary notable events — each with an
+explicit "(N earlier … not shown)" line; lifetime-memory scan threshold = salience ≥ 7.
+
 | Field | Source | Determinism |
 |---|---|---|
 | name, death day, days survived | replica agent + `clock.GameTime(tick)` | pure |
