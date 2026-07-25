@@ -10,6 +10,7 @@ package sim
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -143,6 +144,98 @@ func (j *Journal) SearchJournal(query string) []JournalEntry {
 		}
 	}
 	return out
+}
+
+// Journal excerpt sizing (spec 043 US4, research R5). Constants, not config:
+// the context assembler stuffs at most journalExcerptCap term-matched entries,
+// each trimmed to journalExcerptRunes runes, as the lowest-priority (first
+// dropped) context block. Deterministic and model-free — the same term match
+// SearchJournal exposes, no embeddings (embed-at-write is deferred per R5).
+const (
+	journalExcerptCap   = 2
+	journalExcerptRunes = 300
+)
+
+// JournalExcerptRunes exports the per-excerpt rune cap for the mind-side block
+// renderer + tests, so the number the assembler enforces is defined once here.
+const JournalExcerptRunes = journalExcerptRunes
+
+// JournalExcerptCap exports the per-thought excerpt count cap.
+const JournalExcerptCap = journalExcerptCap
+
+// JournalExcerpt is one term-matched journal entry trimmed for the decision
+// context (spec 043 US4): the entry id + tick and a rune-bounded excerpt of its
+// text. The id lets a villager follow up with its own read_journal tool.
+type JournalExcerpt struct {
+	ID   int
+	Tick int64
+	Text string
+}
+
+// SelectJournalExcerpts returns up to journalExcerptCap journal entries relevant
+// to the given situation terms, each trimmed to journalExcerptRunes runes — the
+// deterministic, model-free journal retrieval the context assembler stuffs into
+// the decision prompt so the villager need not spend its own reasoning turns
+// fetching them (spec 043 US4, FR-007, research R5). Each term is matched via
+// SearchJournal (case-insensitive substring, newest-first); the union across
+// terms is de-duplicated by id and presented newest-first, so an entry matching
+// two terms appears once and recency orders the result. Blank terms are
+// skipped; a nil/absent journal or no match returns nil. Excerpting truncates
+// on a rune boundary (never mid-rune) and never fabricates text: a trimmed entry
+// ends with an ellipsis marker so the reader knows it was cut. Determinism: the
+// same journal + terms always yields the same excerpts (SearchJournal is
+// deterministic; the union sort is stable on tick then id).
+func (j *Journal) SelectJournalExcerpts(terms []string) []JournalExcerpt {
+	if j == nil {
+		return nil
+	}
+	seen := map[int]bool{}
+	var matched []JournalEntry
+	for _, term := range terms {
+		if strings.TrimSpace(term) == "" {
+			continue
+		}
+		for _, e := range j.SearchJournal(term) {
+			if seen[e.ID] {
+				continue
+			}
+			seen[e.ID] = true
+			matched = append(matched, e)
+		}
+	}
+	if len(matched) == 0 {
+		return nil
+	}
+	// Union newest-first (tick desc, id desc as a stable tiebreak) then cap.
+	sort.SliceStable(matched, func(a, b int) bool {
+		if matched[a].Tick != matched[b].Tick {
+			return matched[a].Tick > matched[b].Tick
+		}
+		return matched[a].ID > matched[b].ID
+	})
+	if len(matched) > journalExcerptCap {
+		matched = matched[:journalExcerptCap]
+	}
+	out := make([]JournalExcerpt, len(matched))
+	for i, e := range matched {
+		out[i] = JournalExcerpt{ID: e.ID, Tick: e.Tick, Text: excerptRunes(e.Text, journalExcerptRunes)}
+	}
+	return out
+}
+
+// excerptRunes returns s trimmed to at most max runes, truncating on a rune
+// boundary (rune-slicing never splits a multi-byte rune) and appending a single
+// ellipsis rune to mark the cut — so the total stays ≤ max runes. Text at or
+// under the cap is returned unchanged.
+func excerptRunes(s string, max int) string {
+	r := []rune(s)
+	if len(r) <= max {
+		return s
+	}
+	if max <= 0 {
+		return ""
+	}
+	return string(r[:max-1]) + "…"
 }
 
 // FindJournalEntry returns the entry with id, or ok=false when absent — the
