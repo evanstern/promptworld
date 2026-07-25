@@ -1,10 +1,10 @@
 ---
 id: TASK-68
 title: 'Curriculum ladder: learning topics gated to angel capabilities'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-23 03:28'
-updated_date: '2026-07-25 06:20'
+updated_date: '2026-07-25 06:26'
 labels:
   - review-2026-07-22
   - teaching-game
@@ -23,6 +23,10 @@ From the 2026-07-22 team review (new-ideas item 6), SHAPED by the client's state
 Scope: (a) Curriculum design artifact: the ladder of stages, each stage naming the prompt-engineering concept taught (conversational prompting; instruction-file authoring; capability/tool design; indirect influence and prompt-injection awareness — which the Metatron fiction already teaches natively), the world features it requires, and its pass signal. (b) Stage presets: world templates/configs per stage — stage 1 world grants base tools only; stage 2 enables charter editing; stage 3 opens the tool manifest (all substrate from TASK-64). Seeded scenario worlds as exercises ("survive the first night", "get your law passed") using existing systems (needs, gru, norms/votes, secrets) as lesson material, with the chronicle as the score narrative. (c) Gating mechanism: how a stage unlocks — self-serve manual unlock vs artifact-gated (this repo's educate plugin already models topic lifecycles and progress gates; evaluate reusing its shape for player-facing lessons vs a simpler in-game unlock file). Keep v1 gating simple: a per-world stage field in config that the capability manifest reads.
 
 Depends on TASK-64 (instruction surface + tool gating is the substrate). The horizon decision (TASK-66) informs per-stage speed posture.
+
+NOTE (2026-07-25): fiction naming now rides the TASK-121 skinnable-persona pivot — stages are neutral ids + concept descriptions in the substrate; the active skin supplies display identities.
+
+Spec: specs/046-curriculum-ladder
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
