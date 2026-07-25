@@ -46,6 +46,15 @@ ls -d specs/*/ | sed 's|specs/0*||;s|-.*||' | sort -n | tail -1   # highest spec
   contains zero reads of `.Warmth`, so 103's day-branch warmth AC is unwritable until 104
   makes warmth a need the ladder can see. TASK-103 was dispatched before this landed;
   reconcile rather than assuming the old order.
+- **Reconciliation of the 104-before-103 amendment (2026-07-25, orchestrator):**
+  the amendment's premise — "policy.go contains zero reads of `.Warmth`, so 103's
+  day-branch warmth AC is unwritable until 104" — did not hold: `Agent.Needs.Warmth`
+  is an existing need (the `needs_changed` payload's `warmth` field), and pre-062
+  policy.go not reading it was precisely the Gap-B defect 103 existed to fix, not a
+  capability boundary. TASK-103 shipped its day-warmth rung reading the need
+  directly, full suite green, merged as PR #93 (46b1841) — per the amendment's own
+  "reconcile rather than assuming the old order," 103 stands and 104 follows in its
+  original lane-3 slot (needs-conditioned recovery semantics, unchanged scope).
 - **Spec numbers are a read-then-write RACE, not a convention.** Checking `origin/main:specs/`
   before claiming cannot work — two sessions checking in the same minute both see the same max.
   It has failed four times in one day. Until a mechanical allocator exists, claim by *creating
@@ -224,3 +233,4 @@ sweep; this log complete and status flipped to done.
 | 2026-07-25 | TASK-111 | #90 | 7367216 | wiki re-pinned; human ACs 3b/5 → TASK-136/137 (operator-requested cards) |
 | 2026-07-25 | TASK-109 | #91 | 1debe18 | all human ACs proven; shim-note.md added |
 | 2026-07-25 | TASK-110 | #92 | 7e76246 | lane 1 code complete; AC5 after-rate pends world-01 runtime on new binary |
+| 2026-07-25 | TASK-103 | #93 | 46b1841 | day-rung-drops-chop deviation gated+pinned; 104-before-103 amendment reconciled (premise disproven) |
