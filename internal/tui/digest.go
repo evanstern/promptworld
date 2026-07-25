@@ -197,6 +197,23 @@ var digestRegistry = map[string]digestFunc{
 		}
 		return labeled(fmt.Sprintf("tick=%d", p.Tick)), true
 	},
+	// daemon.llm_warning (spec 034/038): the provider-health preflight
+	// transition — a raise/reclassify (Active true) carries the detail (and
+	// remedy, when the daemon supplied one); a clear (Active false) is terse.
+	"daemon.llm_warning": func(e store.Event, names []string) ([]seg, bool) {
+		p, ok := decode[sim.LLMWarningPayload](e)
+		if !ok {
+			return nil, false
+		}
+		if !p.Active {
+			return labeled("provider="+p.Provider, "kind="+p.Kind, "cleared"), true
+		}
+		pairs := []string{"provider=" + p.Provider, "kind=" + p.Kind, "warning", "detail=" + p.Detail}
+		if p.Remedy != "" {
+			pairs = append(pairs, "remedy="+p.Remedy)
+		}
+		return labeled(pairs...), true
+	},
 
 	// --- sim ---
 

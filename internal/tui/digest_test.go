@@ -44,6 +44,10 @@ var catalogFixture = map[string]digestFixture{
 	},
 	"daemon.started": {`{"tick":100,"recovery_ms":250}`, `tick=100 recovery_ms=250`},
 	"daemon.stopped": {`{"tick":100}`, `tick=100`},
+	"daemon.llm_warning": {
+		`{"provider":"local","kind":"model-missing","detail":"model not found","remedy":"ollama pull llama3","active":true}`,
+		`provider=local kind=model-missing warning detail=model not found remedy=ollama pull llama3`,
+	},
 
 	// --- sim ---
 	"sim.day_started":        {`{"day":3}`, `day 3 begins`},
@@ -309,7 +313,8 @@ func TestDigestRoleSpans(t *testing.T) {
 
 	// Labeled voice (contract §2): cog/clock/daemon render key=value spans.
 	for _, typ := range []string{"cog.thought", "cog.outcome", "cog.recalibration_recommended", "cog.tool_call",
-		"clock.speed_set", "clock.degraded", "daemon.started", "daemon.stopped", "agent.needs_changed"} {
+		"clock.speed_set", "clock.degraded", "daemon.started", "daemon.stopped", "daemon.llm_warning",
+		"agent.needs_changed"} {
 		fx := catalogFixture[typ]
 		if !anyRole(digestOf(t, typ, fx.payload), segLabel) {
 			t.Errorf("%s: expected a segLabel span", typ)
@@ -331,6 +336,16 @@ func TestDigestMemoryAddedNoSubject(t *testing.T) {
 func TestDigestGatheringDispersed(t *testing.T) {
 	segs := digestOf(t, "sim.gathering_observed", `{"x":0,"y":0,"start":0}`)
 	if want := "gathering dispersed"; plainSegs(segs) != want {
+		t.Errorf("plain summary = %q, want %q", plainSegs(segs), want)
+	}
+}
+
+// TestDigestLLMWarningCleared: an Active=false payload is the clear flavor —
+// terse, no "warning"/detail/remedy clause (spec 034/038 provider-health
+// preflight; the raise/reclassify flavor is covered by catalogFixture).
+func TestDigestLLMWarningCleared(t *testing.T) {
+	segs := digestOf(t, "daemon.llm_warning", `{"provider":"local","kind":"model-missing","active":false}`)
+	if want := "provider=local kind=model-missing cleared"; plainSegs(segs) != want {
 		t.Errorf("plain summary = %q, want %q", plainSegs(segs), want)
 	}
 }
