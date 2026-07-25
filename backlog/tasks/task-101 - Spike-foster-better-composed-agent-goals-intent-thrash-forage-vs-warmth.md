@@ -1,10 +1,10 @@
 ---
 id: TASK-101
 title: 'Spike: foster better-composed agent goals (intent thrash: forage vs warmth)'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-24 21:45'
-updated_date: '2026-07-24 21:51'
+updated_date: '2026-07-25 02:42'
 labels:
   - spike
 dependencies: []
@@ -49,4 +49,12 @@ C. SELF-HISTORY IN THE PROMPT (prompt-side, medium): feed back (a) current/last 
 D. THRASH DETECTION AS PERCEPT (medium): detect k intent-alternations within a window in-sim and inject as an observation/memory: 'you have walked between the fire and the berry patch 5 times; neither need has improved.' Lets the LLM's actual competence engage the pattern; pairs with a prompt nudge 'when two needs compete, prefer a plan that co-locates them (e.g. build a fire near food).'
 E. STRONGER PLAN MECHANICS (bigger): plan resume instead of clear-on-break, longer/renewable expiry, and possibly location anchors on build verbs — though forage→build_fire already composes 'fire at the food site' since build_fire builds near where you stand.
 Tradeoffs: A+B are sim-only and testable deterministically but don't make the LLM smarter; C+D spend prompt tokens per thought and need tuning to avoid nagging; E touches plan.go semantics that spec 014/017 deliberately kept conservative. Recommended order: A/B first (removes the structural saboteur), then C, then D; E only if composition still doesn't emerge.
+
+DECISIONS (Evan, 2026-07-24): A — yes; framing is 'instinct yields to intelligence'; also prune hard-coded reflex behavior where possible → TASK-103. B — yes; generalize as parameterized intents (warm_up WITH arguments) → TASK-104. C — 100%, almost more important than A/B; includes full audit of per-turn context and richer grounding via relevant-memory/journal retrieval stuffed per turn (4-5 loop turns ⇒ affordable on a moderately hostable model) → TASK-105. D — agreed but starts as research: define what constitutes a detection and how to detect → TASK-106. E — deferred; only if tests after A-D show composition still doesn't emerge (no card; revisit from this note).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Spike complete. Oscillation confirmed in world-01 logs (Sage 436 forage↔goto_warmth flips; excerpt on task). Root cause: reflex/planner counter-scheduling + recovery-not-representable + self-blind prompt, NOT LLM comprehension. Five design directions written up; decisions taken and fanned out to TASK-103 (A), TASK-104 (B), TASK-105 (C), TASK-106 (D research); E deferred pending evidence.
+<!-- SECTION:FINAL_SUMMARY:END -->

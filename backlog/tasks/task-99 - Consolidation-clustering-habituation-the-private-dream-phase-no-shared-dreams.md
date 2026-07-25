@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-07-24 19:45'
+updated_date: '2026-07-25 03:10'
 labels:
   - memory
   - embeddings
@@ -17,7 +18,7 @@ references:
   - research/Agent-Memory-Retrieval/Novelty-Gates-and-Habituation.md
   - research/Agent-Memory-Retrieval/Consolidation-and-Clustering.md
 priority: medium
-ordinal: 83000
+ordinal: 8000
 ---
 
 ## Description

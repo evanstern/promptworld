@@ -4,13 +4,13 @@ title: Story feed cannot render daemon.llm_warning — TestCatalogSweep red on m
 status: To Do
 assignee: []
 created_date: '2026-07-24 19:51'
-updated_date: '2026-07-24 20:20'
+updated_date: '2026-07-25 03:10'
 labels:
   - bug
   - tui
 dependencies: []
 priority: high
-ordinal: 82000
+ordinal: 10000
 ---
 
 ## Description
