@@ -750,6 +750,9 @@ func (m Model) villagersVisible() bool {
 // against the catalog; the extra ExerciseByID check keeps a stale binary
 // honest rather than rendering an empty definition).
 func (m Model) exerciseID() string {
+	if m.w == nil {
+		return "" // zero-value Model (render tests, pre-connect) — ambient
+	}
 	if sc := m.w.Manifest.Scenario; sc != nil {
 		if _, ok := sim.ExerciseByID(sc.Exercise); ok {
 			return sc.Exercise
