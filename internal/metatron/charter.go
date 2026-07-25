@@ -580,22 +580,29 @@ func intersectGrant(g grantSet, gd *bundle.GrantDoc) grantSet {
 // The curriculum-ladder stage ceiling (spec 046 US2, contracts/stage-gating.md).
 //
 // stage1CeilingTools is the pinned stage-1 tool ceiling — the honest "base
-// conversational + basic nudge" subset of the live loop roster
-// (tool.LoopRosterMetatron), recorded in the contract in-PR. Conversation is
-// never a roster tool (it is the reply channel and never gateable); the basic
-// nudges send_vision/send_omen ARE the stage-1 grant. Everything else is
-// beyond the stage: work_miracle (world-shaping), monitor_and_act/cancel_order
-// (standing-order power tools — a daytime omen's nightfall deferral still
-// works: system-origin placement carries send_omen's gate, orders.go), and
-// pause/start/adjust_speed (clock control; neither query nor nudge). No bundle
-// tools (the empty-intersection effect of the explicit list below).
-var stage1CeilingTools = []string{"send_omen", "send_vision"}
+// conversational + basic nudge + the watch primitive" subset of the live loop
+// roster (tool.LoopRosterMetatron), recorded in the contract in-PR. Conversation
+// is never a roster tool (it is the reply channel and never gateable); the
+// basic nudges send_vision/send_omen ARE the stage-1 grant. RATIFIED AMENDMENT
+// (TASK-119 board artifact, "first-night teaches visions+orders", applied to
+// spec 046 stage-gating.md in-branch): monitor_and_act/cancel_order — standing
+// orders — join the stage-1 ceiling too, because the first-night exercise
+// (contracts/exercises.md) teaches the watch as the stage-1 primitive
+// alongside visions/omens; a daytime omen's system-origin nightfall deferral
+// already carried send_omen's gate regardless (orders.go), so this only adds
+// the PLAYER-placed watch. Still beyond the stage: work_miracle
+// (world-shaping) and pause/start/adjust_speed (clock control; neither query
+// nor nudge — the player keeps direct CLI/TUI clock control at every stage).
+// No bundle tools (the empty-intersection effect of the explicit list below).
+var stage1CeilingTools = []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order"}
 
 // stageCeiling returns the stage's capability ceiling as a narrowing doc —
 // the same shape a persona bundle's grant uses, so intersectGrant applies it
 // with identical semantics — or nil when the stage imposes none. The ladder:
 //
-//	stage-1  send_omen + send_vision; no miracle kinds; no bundles
+//	stage-1  send_omen + send_vision + monitor_and_act + cancel_order; no
+//	         miracle kinds; no bundles (ratified amendment: standing orders are
+//	         the watch primitive first-night teaches)
 //	stage-2  identical to stage-1 — the unlock is the instruction surface
 //	         (charter binds), not new tools
 //	stage-3  no ceiling: skill files compose and the grantable manifest opens

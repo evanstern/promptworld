@@ -44,8 +44,8 @@ func TestStageCeilingRosterTable(t *testing.T) {
 		want  []string
 	}{
 		{"", fullLoopRosterNames()}, // pre-ladder world: ungated
-		{"stage-1", []string{"send_omen", "send_vision"}},
-		{"stage-2", []string{"send_omen", "send_vision"}}, // stage-2 unlocks the charter, not tools
+		{"stage-1", []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order"}}, // ratified amendment: standing orders are the stage-1 watch primitive
+		{"stage-2", []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order"}}, // stage-2 unlocks the charter, not tools
 		{"stage-3", fullLoopRosterNames()},
 		{"stage-4", fullLoopRosterNames()},
 	}
@@ -89,12 +89,14 @@ func TestStageCeilingIntersectsManifest(t *testing.T) {
 		t.Errorf("within-ceiling narrowing: got %v, want [send_vision]", got)
 	}
 
-	// A manifest naming beyond-stage tools cannot exceed the ceiling.
+	// A manifest naming beyond-stage tools cannot exceed the ceiling
+	// (monitor_and_act is IN the stage-1 ceiling per the ratified amendment;
+	// work_miracle is not).
 	write(`{"tools":["work_miracle","monitor_and_act","send_omen"]}`)
 	g, _ = loadManifest(dir)
 	g = applyStageCeiling(g, "stage-1")
-	if got := g.grantedTools(); !reflect.DeepEqual(got, []string{"send_omen"}) {
-		t.Errorf("beyond-ceiling manifest: got %v, want [send_omen]", got)
+	if got := g.grantedTools(); !reflect.DeepEqual(got, []string{"send_omen", "monitor_and_act"}) {
+		t.Errorf("beyond-ceiling manifest: got %v, want [send_omen monitor_and_act]", got)
 	}
 	// The same manifest at stage-4 keeps its full (valid) grant — the ceiling,
 	// not the manifest, is what changed.
@@ -121,10 +123,11 @@ func TestStageCeilingIntersectsManifest(t *testing.T) {
 	}
 }
 
-// TestStageDoorRefusesBeyondStage (T007): the door layer — a stage-1 grant
-// installs no handler for beyond-stage tools (structural absence) and refuses
-// a world-shaping miracle and a player order placement in-fiction even if a
-// call is conjured (defense-in-depth).
+// TestStageDoorRefusesBeyondStage (T007; ratified amendment): the door layer —
+// a stage-1 grant installs no handler for beyond-stage tools (structural
+// absence) and refuses a world-shaping miracle in-fiction even if a call is
+// conjured (defense-in-depth), while the watch primitive (monitor_and_act /
+// cancel_order) — ratified into the stage-1 ceiling — lands normally.
 func TestStageDoorRefusesBeyondStage(t *testing.T) {
 	mt, _, _, dir := newTestAngel(t, "so be it")
 	mt.SetStage("stage-1", "")
@@ -133,12 +136,12 @@ func TestStageDoorRefusesBeyondStage(t *testing.T) {
 
 	d := &turnDispatch{mt: mt, charges: 3, alive: map[int]bool{0: true}, tick: 1, result: &TurnResult{}, grant: g}
 	h := mt.turnHandlers(d)
-	for _, beyond := range []string{"work_miracle", "monitor_and_act", "cancel_order", "pause", "start", "adjust_speed"} {
+	for _, beyond := range []string{"work_miracle", "pause", "start", "adjust_speed"} {
 		if _, ok := h[beyond]; ok {
 			t.Errorf("stage-1 handlers should not install %s (structural absence at the door)", beyond)
 		}
 	}
-	for _, granted := range []string{"send_vision", "send_omen"} {
+	for _, granted := range []string{"send_vision", "send_omen", "monitor_and_act", "cancel_order"} {
 		if _, ok := h[granted]; !ok {
 			t.Errorf("stage-1 handlers missing the granted %s", granted)
 		}
@@ -148,8 +151,10 @@ func TestStageDoorRefusesBeyondStage(t *testing.T) {
 	if m, why := mt.landMiracle(miracleArgs{Kind: "give_item", Villager: sim.AgentNames[0], Item: "berries", Qty: 1}, 3, g); m != nil || why == "" {
 		t.Errorf("stage-1 miracle should refuse at the door, got (%v, %q)", m, why)
 	}
-	if o, why := mt.placeOrder("player", orderArgs{Condition: "x", Action: "y", EventTypes: []string{"sim.night_started"}}, 0, g); o != nil || why == "" {
-		t.Errorf("stage-1 player order should refuse at the door, got (%v, %q)", o, why)
+	// The watch primitive is IN the stage-1 ceiling (ratified amendment): a
+	// well-formed placement lands rather than refusing.
+	if o, why := mt.placeOrder("player", orderArgs{Condition: "x", Action: "y", EventTypes: []string{"sim.night_started"}}, 0, g); o == nil || why != "" {
+		t.Errorf("stage-1 player order should land at the door (ratified amendment), got (%v, %q)", o, why)
 	}
 	// The granted surface still works: a vision lands through the same grant.
 	if n, why := mt.landVision(sim.AgentNames[0], "beware the night", nil, 1, map[int]bool{0: true}, g); n == nil || why != "" {
@@ -166,21 +171,27 @@ func TestStageThreeLayerCoherence(t *testing.T) {
 	g = applyStageCeiling(g, "stage-1")
 	roster := grantedRoster(g)
 
-	// Declaration: only ceiling tools are declared.
+	// Declaration: only ceiling tools are declared (ratified amendment: the
+	// watch primitive is in the stage-1 ceiling).
 	for _, tl := range roster {
-		if tl.Name != "send_omen" && tl.Name != "send_vision" {
+		switch tl.Name {
+		case "send_omen", "send_vision", "monitor_and_act", "cancel_order":
+		default:
 			t.Errorf("declared roster leaks beyond-stage tool %s", tl.Name)
 		}
 	}
 	// Prose: the derived guidance names granted tools only.
 	guidance := tool.MetatronToolGuidance(roster)
-	for _, beyond := range []string{"work_miracle", "monitor_and_act", "cancel_order", "adjust_speed"} {
+	for _, beyond := range []string{"work_miracle", "adjust_speed"} {
 		if strings.Contains(guidance, beyond) {
 			t.Errorf("tool guidance mentions beyond-stage %s", beyond)
 		}
 	}
 	if !strings.Contains(guidance, "send_vision") || !strings.Contains(guidance, "send_omen") {
 		t.Error("tool guidance should describe the granted nudges")
+	}
+	if !strings.Contains(guidance, "monitor_and_act") || !strings.Contains(guidance, "cancel_order") {
+		t.Error("tool guidance should describe the granted watch primitive")
 	}
 	// Door: the grant refuses what the roster omits.
 	if g.allows("work_miracle") || g.allowsKind("give_item") == true && g.allows("work_miracle") {
@@ -237,7 +248,7 @@ func TestStageOneInstructionLock(t *testing.T) {
 	if st.Skills != nil {
 		t.Errorf("status Skills should be empty below stage-3 (nothing composes), got %v", st.Skills)
 	}
-	if !reflect.DeepEqual(st.GrantedTools, []string{"send_omen", "send_vision"}) {
+	if !reflect.DeepEqual(st.GrantedTools, []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order"}) {
 		t.Errorf("status granted tools = %v, want the stage-1 ceiling", st.GrantedTools)
 	}
 
@@ -378,7 +389,7 @@ func TestCrossStageDeterminism(t *testing.T) {
 	if reflect.DeepEqual(s1.granted, s4.granted) {
 		t.Error("granted surfaces should differ across stages (the diff isolates the surface)")
 	}
-	if !reflect.DeepEqual(s1.granted, []string{"send_omen", "send_vision"}) {
+	if !reflect.DeepEqual(s1.granted, []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order"}) {
 		t.Errorf("stage-1 surface = %v", s1.granted)
 	}
 	if !reflect.DeepEqual(s4.granted, fullLoopRosterNames()) {
