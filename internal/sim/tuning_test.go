@@ -66,7 +66,7 @@ func TestTuningNilAccessorsMatchOldConstants(t *testing.T) {
 	assertDefaults(t, NewState(7, m))
 
 	want := map[string]int64{
-		"refuel_dying_below":       3600,
+		"refuel_dying_below":       10800, // spec 057 / TASK-108 raised this 3600 → 10800 (3 h)
 		"fire_burn_per_wood":       14400,
 		"gru_emerge_per_mille":     600,
 		"planner_cadence_ticks":    1800,
@@ -356,9 +356,9 @@ func TestTunedRefuelDyingBelowMovesTriggerWindow(t *testing.T) {
 	const seed = 42
 	m := testMap(seed)
 
-	// A fire with 5000 ticks of fuel left: healthy under the default 3600 window,
-	// dying under a tuned 10000 window.
-	const fuelLeft = 5000
+	// A fire with 15000 ticks of fuel left: healthy under the default 10800
+	// window (spec 057), dying under a tuned 20000 window.
+	const fuelLeft = 15000
 	setup := func(s *State) {
 		a := &s.Agents[0]
 		a.Needs = Needs{Health: 1000, Food: 600, Rest: 600, Warmth: 600, Morale: 600}
@@ -367,23 +367,69 @@ func TestTunedRefuelDyingBelowMovesTriggerWindow(t *testing.T) {
 		grantStructureFacts(s, 0)
 	}
 
-	// Default window: no refuel (5000 >= 3600).
+	// Default window: no refuel (15000 >= 10800).
 	base := NewState(seed, m)
 	setup(base)
 	if d := decideIntent(base, m, 0, 0); d.intent != nil && d.intent.Goal == "refuel_fire" {
 		t.Fatalf("default window (%d) should treat %d-fuel fire as healthy — got refuel", defaultRefuelDyingBelow, fuelLeft)
 	}
 
-	// Tuned window 10000: the same fire is now dying → refuel.
+	// Tuned window 20000: the same fire is now dying → refuel.
 	tunedS := NewState(seed, m)
 	tt := defaultTuning()
-	tt.RefuelDyingBelow = 10000
+	tt.RefuelDyingBelow = 20000
 	if err := tunedS.Apply(NewTuningEvent(tunedS.Tick, tt)); err != nil {
 		t.Fatal(err)
 	}
 	setup(tunedS)
 	if d := decideIntent(tunedS, m, 0, 0); d.intent == nil || d.intent.Goal != "refuel_fire" {
-		t.Fatalf("tuned window (10000) should treat %d-fuel fire as dying — got %+v", fuelLeft, d.intent)
+		t.Fatalf("tuned window (20000) should treat %d-fuel fire as dying — got %+v", fuelLeft, d.intent)
+	}
+}
+
+// --- spec 057 / TASK-108 US1: the refuel-default raise (SC-001) --------------
+
+// TestRefuelDefaultRaisedToThreeHours is the US1 acceptance test: a fire with
+// 2.5 game-hours of fuel left and a wood-carrying villager gets a refuel intent
+// under the new default (10800); under a tuning.json pinning the OLD value
+// (3600) the same fire is healthy and no refuel arms — the dial still wins over
+// the doctrine default (dial semantics unchanged, spec 048 preserved).
+func TestRefuelDefaultRaisedToThreeHours(t *testing.T) {
+	const seed = 42
+	m := testMap(seed)
+
+	// 2.5 game-hours remaining: dying under the new 10800 default, healthy under
+	// the old 3600 window.
+	const fuelLeft = 9000 // 2.5 * 3600
+	setup := func(s *State) {
+		a := &s.Agents[0]
+		a.Needs = Needs{Health: 1000, Food: 600, Rest: 600, Warmth: 600, Morale: 600}
+		a.Inv.Wood = 2
+		s.Structures = []Structure{{Kind: "fire", X: a.X, Y: a.Y, FuelUntil: fuelLeft}}
+		grantStructureFacts(s, 0)
+	}
+
+	// New default (nil Tuning ⇒ 10800): the fire is dying → refuel.
+	def := NewState(seed, m)
+	setup(def)
+	if got := def.RefuelDyingBelow(); got != 10800 {
+		t.Fatalf("default RefuelDyingBelow() = %d, want 10800 (spec 057)", got)
+	}
+	if d := decideIntent(def, m, 0, 0); d.intent == nil || d.intent.Goal != "refuel_fire" {
+		t.Fatalf("new default (10800) should treat a %d-fuel fire as dying — got %+v", fuelLeft, d.intent)
+	}
+
+	// A tuning.json pinning the OLD default (3600): the same fire is healthy →
+	// no refuel. The dial overrides the doctrine default (spec 048 semantics).
+	pinned := NewState(seed, m)
+	old := defaultTuning()
+	old.RefuelDyingBelow = 3600
+	if err := pinned.Apply(NewTuningEvent(pinned.Tick, old)); err != nil {
+		t.Fatal(err)
+	}
+	setup(pinned)
+	if d := decideIntent(pinned, m, 0, 0); d.intent != nil && d.intent.Goal == "refuel_fire" {
+		t.Fatalf("manifest pinning 3600 should treat a %d-fuel fire as healthy — got a refuel (dial did not win)", fuelLeft)
 	}
 }
 

@@ -102,8 +102,9 @@ hungry 350, tired 250, near-death 200 (reset 400), cold-night 350, satiety 900. 
 
 **Fire** (`sim/agents.go`, defaults now in `sim/tuning.go`): build cost 2 wood / 600 ticks; burn 4
 game-hours per wood (`fire_burn_per_wood`, **tuning.json-promoted**, spec 048); fuel cap 12 h
-(unpromoted); reflex refuel only below 1 h remaining (`refuel_dying_below`=3600,
-**tuning.json-promoted**).
+(unpromoted); reflex refuel below 3 h remaining (`refuel_dying_below`=10800,
+**tuning.json-promoted**; default raised 3600 → 10800 in spec 057 / TASK-108 to cut the burnout
+losses §3 documents — 42 burnouts vs 8 builds on world-01).
 
 **Actions** — durations 60–1200 ticks, yields (forage 2, hunt 8/12, chop 1/3, quarry 1/3, planks
 4), costs (shelter 5 wood + 8 planks, oven 4 refined stone + 2 planks, walls 2/2), durability
@@ -373,7 +374,7 @@ world-01 evidence, each defaulting to its current constant with a documented cla
 
 | Dial (JSON key) | Default | Clamp | Behavior |
 |---|---|---|---|
-| `refuel_dying_below` | 3600 | [0, 86400] | reflex refuel trigger window |
+| `refuel_dying_below` | 10800 | [0, 86400] | reflex refuel trigger window (default raised 3600 → 10800 in spec 057 / TASK-108) |
 | `fire_burn_per_wood` | 14400 | [600, 86400] | fuel added per wood (still capped by `fireFuelCap`) |
 | `gru_emerge_per_mille` | 600 | [0, 1000] | nightly gru emergence chance (0 = never) |
 | `planner_cadence_ticks` | 1800 | [60, 86400] | mind planner cadence, boot stagger, embedder buckets |
