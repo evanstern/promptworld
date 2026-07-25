@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/loop.go
   - internal/sim/landing.go
-verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
+verified_against: 0b42d204718819d773be44c40ed26d42aba055f8
 ---
 
 # Sim loop
@@ -170,7 +170,10 @@ former cross-loop flags. The extraction is behavior-identical; the rungs:
    rides onto the landed `agent.intent_set` event's `Reason` field (reflex-
    and executor-authored intent_set events carry none), so the planner's
    free-text reason survives to completion as recorded input rather than a
-   second event. A
+   second event. Since spec 064 R3, a resolved `warm_up` (or any other
+   completion-conditioned resolution) also carries its `UntilNeed`/
+   `UntilValue` onto the landed `agent.intent_set` — zero for every
+   conditionless goal, unchanged. A
    successful `talk_to` landing with a `hailable` target additionally emits
    `social.hailed` (in- or out-of-radius — the courtesy pause is uniform;
    [[executor]] enforces it and resolves met/expiry).

@@ -9,7 +9,7 @@ sources:
   - internal/sim/terrain.go
   - internal/sim/recipes.go
   - internal/sim/memory.go
-verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
+verified_against: 6fa099b3025fae6702b2ec716cb69640918f2322
 ---
 
 # Executor
@@ -151,6 +151,46 @@ conditional cadence slot (spec 032 US3): the staggered phase-0 tick always steps
 but a phase-2 tick also steps when the agent is standing ON a path tile
 (`pathAt`) — stepping FROM a paved tile doubles effective speed along it, while
 an unpaved agent never sees the extra slot, so nothing else about movement changes.
+
+**Needs-conditioned recovery** (spec 064, from the TASK-101 spike Direction B):
+`Intent` gains an OPTIONAL completion condition — `UntilNeed` (a member of the
+closed set `warmth`/`rest`/`food`) and `UntilValue`, a need level — plus
+`HoldRef`, the need level captured at the hold's anchor tick; all three
+`omitempty`, so a conditionless intent (every pre-064 intent) marshals
+byte-identically. When `UntilNeed` is set, `executeAtTarget` intercepts BEFORE
+the per-goal switch and hands off to `recoveryHoldEvents` instead of the goal's
+default arrive-and-done: the intent HOLDS at its target (visibly recovering,
+not idle) and is checked every tick against the live need — already-satisfied
+completes at once, a threshold crossing completes normally (arming the spec-062
+yield window iff the ring source `isMindSource`, so a reflex-issued recovery
+never arms it), a higher-priority survival need (the reflex ladder's order,
+food > warmth > rest) crossing into ITS danger band ends the hold so the
+agent re-decides (no new preemption immunity — a hold is LESS sticky than an
+ordinary intent, never more), and no net gain over a full `recoveryStallTicks`
+(300, ~5 needs heartbeats) window aborts with the distinct `agent.recovery_stalled`
+outcome (dead fire, displaced source, unreachable threshold) rather than
+loitering forever. `warm_up` is the evidenced consumer — a planner tool
+resolving exactly like `goto_warmth` but carrying the condition, with an
+optional `until_warmth` clamped (spec 058 clamp-with-notice posture) into
+`[warmthRecoverFloor, needMax]` (`warmthRecoverFloor` = `dangerWarmthBelow`,
+350; `needMax` 1000) via the single `clampWarmUp`/`ClampWarmUp` clamp home,
+defaulting to the doctrine constant `warmthRecoverTo` (800, a healthy margin
+above the danger band) when absent — and the [[reflex-policy]] day AND night
+warmth rungs (`reachKnownWarmth`) now issue the same conditioned `goto_warmth`
+at the doctrine default, so a reflex-driven recovery also holds at the fire
+instead of arriving, idling, and wandering off cold (the world-01
+arrive-idle-vacuum, this spec's Direction B). `wakeReason` (US4, the audit's
+Gap C) gains a matching cold-emergency wake arm — a sleeper whose warmth falls
+below `exposureWakeBelow` (150, the hunger-emergency wake's shape and
+magnitude exactly, a deliberate deviation from the plan's nominated 350: an
+emergency floor, not the routine-dip danger band, so a sleeper isn't roused
+merely for being cold) wakes only when night AND the reflex's own warmth
+ladder finds something actionable (the hunger wake's "food in hand" analog,
+the churn bound); a cozy fire-side sleeper sleeps through untouched.
+`wakeReason` now takes the state/map/tick it needs to run that ladder check,
+rather than the bare `(agent, night)` it took before. Held-pinned villagers are excluded from the
+emergent-gathering quorum ([[governance]]) — a survival hold is not an
+elective assembly.
 
 **The v2 goal set** adds `quarry`/`collect_water` (gather, like forage/chop/hunt),
 `craft_planks`/`craft_stone`/`craft_spear` (hand-crafts, `SiteAnywhere` — no travel,

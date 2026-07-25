@@ -11,7 +11,7 @@ sources:
   - internal/sim/terrain.go
   - internal/sim/morgue.go
   - internal/sim/curriculum.go
-verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
+verified_against: 9e8fb36e750dda15a633ba3ff8c44141f02debf2
 ---
 
 # Sim state & reducer
@@ -58,7 +58,9 @@ reducer-DERIVED self-knowledge surfaces maintained by existing arms with no
 new event type: `IntentLog []IntentRecord` (US1, `omitempty`) — the
 recent-intent ring, capacity `intentLogCap` (8), each record
 `{Goal, Source, Reason, Tick, Outcome, OutcomeTick}` with `Outcome` empty
-while executing then `done`/`failed`/`rejected`/`expired` — and
+while executing then `done`/`failed`/`rejected`/`expired` (since spec 064,
+also `stalled` — a needs-conditioned recovery's honest dead-source abort,
+below) — and
 `NeedsAnchor *Needs`/`NeedsAnchorTick` (US2, `omitempty`; a POINTER on the
 Journal/Hail precedent, deliberately deviating from the spec's value type so
 a pre-043 snapshot round-trips byte-identically) — the trajectory window's
@@ -189,7 +191,11 @@ governor's decision logic and [[event-types]] for the payload shape;
 `sim.night_started`/`sim.day_started` flip `Night` (waking is an explicit
 `agent.woke`, never implicit); `sim.forage_regrown` clears a harvest overlay; the
 `agent.*` family ([[event-types]]) drives intents (`agent.intent_set` carries a
-storage goal's `Kind`/`Qty` onto the `Intent`, spec 013 R4, and also stamps
+storage goal's `Kind`/`Qty` onto the `Intent`, spec 013 R4 — since spec 064 R1
+it also carries an OPTIONAL completion condition (`UntilNeed`/`UntilValue`)
+onto the intent, but ONLY when `UntilNeed` names a valid closed-set need
+(`isRecoveryNeed` — `warmth`/`rest`/`food`); a malformed or absent need leaves
+both fields zero, the pre-064 arrive-and-done shape — and also stamps
 `Agent.LastGoal`/`LastGoalTick` — spec 015 R1, `omitempty`, written here and
 never cleared by any event, so the [[tui-client]] villagers tab can show an
 idle villager's most recent objective from any snapshot; since spec 017 the
@@ -282,6 +288,19 @@ PREP gate's yield-window anchor; a `agent.build_failed` closure (`"failed"`,
 never a completion) does not arm it, and neither does a reflex-sourced
 `"done"` closure (`isMindSource("reflex")` is false), so a no-planner world's
 anchor stays the permanent 0 sentinel;
+since spec 064 ([[executor]], [[reflex-policy]]) `agent.intent_set` carries an
+OPTIONAL completion condition onto the intent (above), `agent.work_started`
+gains a companion `Ref` field (`omitempty`) — a conditioned hold's work-started
+doubles as its hold anchor, so `Ref` captures the need level the per-tick
+no-net-gain check baselines against (0 and unread for every ordinary work
+goal, byte-inert); and a NEW arm, `agent.recovery_stalled`
+(`RecoveryStalledPayload{agent, goal, need}`), mirrors `agent.build_failed`'s
+state effect (`Intent = nil`, `IdleSince` stamped) for a needs-conditioned
+hold whose need showed no net gain across a full `recoveryStallTicks` window
+(dead fire, displaced source, unreachable threshold) — an honest abort, not a
+completion, so `stampIntentOutcome` closes the ring `"stalled"` rather than
+`"done"` and, like `build_failed`, never arms `LastMindIntentDone` (the
+build_failed precedent: an abort is not intelligence completing);
 [[mental-maps]]'s two knowledge-growth arms mutate `Agent.Map` directly:
 `agent.saw` upserts the perception sweep's fully-baked facts verbatim
 (`Map.upsertFact`), `agent.map_corrected` removes facts the sweep found gone

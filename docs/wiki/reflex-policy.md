@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/policy.go
   - internal/sim/path.go
-verified_against: 4387d32bc066407c8dbdf9a8ca4b0d929de02d15
+verified_against: 9e8fb36e750dda15a633ba3ff8c44141f02debf2
 ---
 
 # Reflex policy & pathfinding
@@ -91,7 +91,13 @@ the old flip and the new non-loop in one deterministic test.
    mounts an expedition just to top up the larder.
 3. **Night, cold** (`!warmAt`) — the night `warmthLadder` (spec 062 R5, the
    exact pre-062 body factored into a shared helper): `reachKnownWarmth`
-   (reach a remembered-lit fire, `goto_warmth`, via `warmKnownPredicate`; else
+   (reach a remembered-lit fire, `goto_warmth` — since spec 064, WITH a
+   needs-conditioned completion (`UntilNeed: "warmth", UntilValue:
+   warmthRecoverTo`), so the agent HOLDS at the fire and actually warms up
+   instead of arriving, idling, and wandering off cold ([[executor]]'s
+   `recoveryHoldEvents`; the world-01 arrive-idle-vacuum this spec kills from
+   the recovery side, 062 having already killed it from the scheduling side)
+   — via `warmKnownPredicate`; else
    `reflexRefuelIntent`, T020/FR-012, relighting/topping up a KNOWN cold or
    dying fire when carrying wood — cheaper than a fresh build) → build a fire
    with `fireWoodCost` (2) wood already in hand (`buildWarmthIfWood`) → chop
@@ -109,7 +115,8 @@ the old flip and the new non-loop in one deterministic test.
 6. **Day warmth rung** (spec 062 US2, FR-004, 057 audit Gap B) — a
    cold-but-not-tired villager by day (`Needs.Warmth < dangerWarmthBelow`,
    350, and not already standing in warmth) runs `dayWarmthLadder`: the SAME
-   `reachKnownWarmth` → `buildWarmthIfWood` rungs the night ladder uses (`R5`,
+   `reachKnownWarmth` (since spec 064, holding conditioned) → `buildWarmthIfWood`
+   rungs the night ladder uses (`R5`,
    shared helpers, no drift), BEFORE any PREP rung — so "Sage forages while
    freezing" becomes impossible at the reflex layer. **Deliberately omits**
    the night ladder's chop tail (a flagged plan deviation, recorded in
@@ -283,6 +290,20 @@ reflex uses:
   against `warmKnownPredicate` — a remembered-lit fire or a KNOWN shelter,
   never a live warmth read — failing honestly ("you know of no warm place")
   rather than falling through to build/chop when nothing known is warm.
+- **`warm_up`** (spec 064 R3/FR-002) is the planner's warmth-RECOVERY verb,
+  new and planner-only (not `ReflexEligible` — the reflex's own warmth rungs
+  issue the equivalent conditioned `goto_warmth` themselves, above): target
+  resolution is `goto_warmth`'s exactly (`warmKnownPredicate` + `nearest`),
+  but the returned `Intent` carries a completion condition
+  (`UntilNeed: "warmth"`), so it HOLDS at the fire and completes on warmth
+  ([[executor]]) instead of arriving and finishing. The threshold rides in
+  through the resolver's generic `qty` argument (the storage verbs'
+  per-verb-use precedent): 0 defaults to the doctrine constant
+  `warmthRecoverTo` (800); any other value is clamped into
+  `[warmthRecoverFloor, needMax]` by the single `clampWarmUp` home
+  (clamp-with-notice, the spec-058 posture) — the same clamp the mind
+  handler's `ClampWarmUp` wrapper consults to phrase the model-facing notice,
+  so the two can never drift.
   `talk_to`/`seek` (spec 041, T013) resolves to the target's LAST KNOWN
   sighting (`peerSightingOf`, the mental map's peer record) rather than the
   target's live coordinates — a stale sighting walks honestly to where the

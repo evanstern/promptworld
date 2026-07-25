@@ -19,7 +19,7 @@ sources:
   - internal/sim/curriculum.go
   - internal/daemon/daemon.go
   - internal/daemon/curriculum.go
-verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
+verified_against: 0b42d204718819d773be44c40ed26d42aba055f8
 ---
 
 # Event types
@@ -223,6 +223,25 @@ reflex-sourced `"done"` closure, so a no-planner world's anchor stays 0
 forever (FR-007, SC-003). `stampIntentOutcome` (`agents.go`) now returns the
 closed record's `Source` and whether one was open, so the arm can read it
 without a second ring scan.
+Spec 064 (needs-conditioned recovery — [[executor]], [[reflex-policy]]) adds
+NO format bump: `Intent` gains `omitempty` `UntilNeed`/`UntilValue`/`HoldRef`
+(a completion condition and its hold anchor — absent on every pre-064 intent,
+so a conditionless intent marshals byte-identically), `IntentSetPayload`
+gains `omitempty` `UntilNeed`/`UntilValue` (carried onto the intent only when
+`UntilNeed` names a valid closed-set need — `warmth`/`rest`/`food` — a
+malformed or absent need leaves the intent conditionless), and
+`WorkStartedPayload` gains `omitempty` `Ref` (the need level captured at a
+conditioned hold's anchor tick; 0 and unread for every ordinary work goal).
+ONE new event type, `agent.recovery_stalled` (`RecoveryStalledPayload{agent,
+goal, need}`), is the executor emission class (no whitelist entry, the
+`metatron.order_expired`/`curriculum.*` pattern): a needs-conditioned hold
+whose need shows no net gain across a full `recoveryStallTicks` window
+(dead fire, displaced source, unreachable threshold) aborts with this
+DISTINCT outcome — mirroring `agent.build_failed`'s state effect (`Intent`
+cleared, `IdleSince` stamped) but stamping the intent ring `"stalled"`
+(joining `done`/`failed`/`rejected`/`expired`) rather than a completion, so
+it never arms the spec-062 yield window (the `build_failed` precedent: an
+abort is not intelligence completing).
 
 ## How it works
 
@@ -236,9 +255,10 @@ without a second ring scan.
 | `clock.degraded` / `clock.recovered` | `DegradedPayload{effective_rate}` / `{}` | loop auto-slow | degradation flags |
 | `sim.day_started` / `sim.night_started` | `DayPayload{day}` | executor, 06:00/22:00 | `Night` flag only — waking is explicit |
 | `sim.forage_regrown` | `RegrownPayload{x, y}` | executor, regrow tick | harvest overlay removed |
-| `agent.intent_set` | `IntentSetPayload{agent, goal, target, res, source, kind?, qty?, job?, reason?}` | reflex (grace-gated), planner injection, or a plan step firing | intent installed; `source` (`reflex`/`planner`/`plan`/`meeting`) says which mind chose it; also stamps `Agent.LastGoal`/`LastGoalTick` (spec 015 — never cleared by any event, the villagers tab's past-objective line, [[tui-client]]); `job` (spec 017, omitempty) is set ONLY at the `inject_intent` landing site from `InjectArgs.JobID` — a planner-loop landing carries its job id, reflex/executor-authored intents carry none; `reason` (spec 019, omitempty, now the LAST field) is likewise set ONLY at that landing site from `InjectArgs.Reason` — the planner's free-text reason, copied onto `Intent.Reason` by the reducer so it survives to completion where the executor bakes it into a memory's `why`; both `omitempty` tails stay empty on reflex/executor emissions, so those marshal byte-identically to pre-feature; spec 043 US1: also appends an `IntentRecord{goal, source, reason, tick}` to `Agent.IntentLog` (ring, cap 8) — a previous still-open record stays open, so an override reads as open-then-new ([[decision-context]]) |
-| `agent.work_started` | `WorkStartedPayload{agent, tick}` | executor at target | `WorkStart` stamped |
-| `agent.intent_done` | `AgentPayload{agent}` | executor (done/invalid/unreachable) | intent cleared — but since spec 038, a **build** goal (`build_fire`/`build_shelter`/`build_oven`/`build_chest`/`build_path`/`build_wall_plank`/`build_wall_stone`) whose mid-work re-validation fails no longer funnels through here; it emits the distinct `agent.build_failed` below instead. `intent_done` remains the resolution for successful non-build completion paths, non-build no-ops (craft/cook/bathe/deposit contested re-checks), and every non-build goal's invalid/unreachable exit; spec 043 US1: also closes the newest still-open `IntentLog` record `"done"`; spec 062: when the closed record's `Source` `isMindSource` (`planner`/`plan`/`meeting`), also arms `Agent.LastMindIntentDone = e.Tick` — the reflex PREP gate's yield-window anchor ([[reflex-policy]]); a reflex-sourced closure never arms it |
+| `agent.intent_set` | `IntentSetPayload{agent, goal, target, res, source, kind?, qty?, job?, reason?, until_need?, until_value?}` | reflex (grace-gated), planner injection, or a plan step firing | intent installed; `source` (`reflex`/`planner`/`plan`/`meeting`) says which mind chose it; also stamps `Agent.LastGoal`/`LastGoalTick` (spec 015 — never cleared by any event, the villagers tab's past-objective line, [[tui-client]]); `job` (spec 017, omitempty) is set ONLY at the `inject_intent` landing site from `InjectArgs.JobID` — a planner-loop landing carries its job id, reflex/executor-authored intents carry none; `reason` (spec 019, omitempty) is likewise set ONLY at that landing site from `InjectArgs.Reason` — the planner's free-text reason, copied onto `Intent.Reason` by the reducer so it survives to completion where the executor bakes it into a memory's `why`; `until_need`/`until_value` (spec 064, omitempty, now the LAST fields) carry the optional needs-conditioned completion — set by the warm_up resolver and the reflex's conditioned warmth rungs — onto `Intent.UntilNeed`/`UntilValue`, but ONLY when `until_need` names a valid closed-set need (`warmth`/`rest`/`food`); every `omitempty` tail stays empty on reflex/executor emissions carrying none, so those marshal byte-identically to pre-feature; spec 043 US1: also appends an `IntentRecord{goal, source, reason, tick}` to `Agent.IntentLog` (ring, cap 8) — a previous still-open record stays open, so an override reads as open-then-new ([[decision-context]]) |
+| `agent.work_started` | `WorkStartedPayload{agent, tick, ref?}` | executor at target | `WorkStart` stamped; since spec 064 (omitempty) `ref` also stamps `Intent.HoldRef` — a needs-conditioned hold's anchor need level, inert (0, unread) for every ordinary work goal |
+| `agent.intent_done` | `AgentPayload{agent}` | executor (done/invalid/unreachable) | intent cleared — but since spec 038, a **build** goal (`build_fire`/`build_shelter`/`build_oven`/`build_chest`/`build_path`/`build_wall_plank`/`build_wall_stone`) whose mid-work re-validation fails no longer funnels through here; it emits the distinct `agent.build_failed` below instead, and since spec 064 a needs-conditioned recovery hold with a dead source aborts via the distinct `agent.recovery_stalled` below instead. `intent_done` remains the resolution for successful non-build completion paths (including a satisfied or threshold-crossed recovery hold), non-build no-ops (craft/cook/bathe/deposit contested re-checks), and every non-build goal's invalid/unreachable exit; spec 043 US1: also closes the newest still-open `IntentLog` record `"done"`; spec 062: when the closed record's `Source` `isMindSource` (`planner`/`plan`/`meeting`), also arms `Agent.LastMindIntentDone = e.Tick` — the reflex PREP gate's yield-window anchor ([[reflex-policy]]); a reflex-sourced closure never arms it (a reflex-issued recovery's completion is exempt on the same rule) |
+| `agent.recovery_stalled` (spec 064) | `RecoveryStalledPayload{agent, goal, need}` | executor, a needs-conditioned hold ([[executor]]'s `recoveryHoldEvents`) whose need shows no net gain across a full `recoveryStallTicks` (300) window while holding at its target — dead fire, displaced source, or an unreachable threshold | intent cleared (`Intent = nil`, `IdleSince` stamped) — identical to `agent.intent_done`'s state effect, but the DISTINCT, honest abort outcome: closes the newest still-open `IntentLog` record `"stalled"` (never `"done"`) and — the `agent.build_failed` precedent — never arms `Agent.LastMindIntentDone` (an abort is not intelligence completing) |
 | `agent.build_failed` (spec 038) | `BuildFailedPayload{agent, goal, reason}` | executor, mid-work re-validation of a build goal (the seven `build_*` above) — emitted **instead of** a bare `agent.intent_done` when the build genuinely fails: `reason` is `site no longer buildable` (any build goal whose `buildSite` re-check fails) or `site blocked too long` (walls only, once a reserved-tile occupant outlasts `wallOccupancyGraceTicks` past the due tick — [[executor]]) | intent cleared (`Intent = nil`, `IdleSince` stamped) — identical to `agent.intent_done`, so no material spent and no structure stands; a paired same-tick `agent.memory_added` (`OriginAction`, `salShelter`) rides along stating the build did NOT complete and why, so the builder can falsify a phantom-structure belief; the builder's mind re-arms its planner exactly as for `agent.intent_done` ([[agent-mind]]). Distinct from `agent.intent_rejected` (up-front landing refusal) — this clears an accepted intent; spec 043 US1: also closes the newest still-open `IntentLog` record `"failed"`. TUI digest renders it as a failure line (builder, goal, reason), never "finished" ([[tui-client]]) |
 | `agent.moved` | `AgentMovedPayload{agent, x, y}` | executor pathing | position updated; spec 041: the mover's surroundings (perception radius) are marked explored in its private mental map, and mover + awake bystanders within the witness radius record each other's positions as peer sightings (`MentalMap.Peers` — what `talk_to`/`seek` resolve against) — silent derived bookkeeping, no companion event (`agent.woke` and `metatron.entity_moved` villager moves run the same sighting pass) |
 | `agent.saw` (spec 041) | `SawPayload{agent, facts}` — `facts` are fully-baked `PlaceFact`s (kind, x, y, seen, prov, src?, detail?), sorted (kind, x, y) at emission | executor perception sweep, on the agent's movement-cadence beat: ground truth within the witness radius (structures, ground piles, standing trees / unharvested forage / unquarried rock, water shoreline, dens) diffed against the agent's mental map — new, changed (a fire's `FuelUntil` detail), horizon-staled, or provenance-upgraded facts only, so a settled map emits nothing | each fact upserted verbatim into `Agents[agent].Map.Facts` (provenance `witnessed`, `Seen` = event tick); digest-only — deliberately NO chronicle line (too chatty) and not an absorb trigger |
@@ -371,7 +391,12 @@ no-op). [[morgue]] owns the spec 044 surface — the [[executor]] emits
 escalated-kill semantics on `gru.attacked`/`agent.died`. [[decision-context]]
 covers the spec 043 ring/anchor surfaces the intent-lifecycle and needs rows
 maintain, and the prompt whose size `cog.thought`'s `prompt_bytes` tail
-records. [[curriculum-ladder]] owns the spec 046 `curriculum.*` family end to
+records. [[executor]] and [[reflex-policy]] jointly own the spec 064
+needs-conditioned recovery surface end to end — the `intent_set`/
+`work_started` field additions and the new `agent.recovery_stalled` type
+above; [[governance]] excludes a recovery-held villager from the
+emergent-gathering quorum, a reducer-side read of `Intent.UntilNeed` with no
+event of its own. [[curriculum-ladder]] owns the spec 046 `curriculum.*` family end to
 end — payloads and reducer arms in `internal/sim/curriculum.go` (executor
 emission class, no whitelist entries; TASK-119's rubric machinery is the
 intended production emitter, fixtures the only in-tree one today), the

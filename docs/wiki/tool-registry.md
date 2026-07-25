@@ -9,7 +9,7 @@ sources:
   - internal/tool/derive.go
   - internal/tool/validate.go
   - internal/sim/toolcheck.go
-verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
+verified_against: 28b19f9d14c60c505e62fda0c4fb940cb8134159
 ---
 
 # Tool registry
@@ -36,10 +36,19 @@ World verb, `search` (`Effect: World, Gate: Resolvable, Cost.DurationTicks: 0,
 PlanStep: true, ReflexEligible: true`) — deliberate exploration, appended after
 `build_path` so the registration-order byte anchor holds; no args in v1 (a kind
 hint is a documented future extension, since selection is nearest-frontier
-regardless) — assembled in order: `worldTools`
-(now 31 World verbs: the 24 legacy verbs in the old goal-vocabulary order, then
+regardless); and spec 064 (needs-conditioned recovery, [[executor]]/
+[[reflex-policy]]) adds one more still, `warm_up` (`Effect: World, Gate:
+Resolvable, Cost.DurationTicks: 0, PlanStep: true`, NOT `ReflexEligible` — the
+reflex's own warmth rungs issue the equivalent conditioned `goto_warmth`
+themselves, so `warm_up` is planner-only), appended after `search` — the
+warmth-RECOVERY verb — walk to known warmth and LOITER there until warmth
+actually recovers, instead of `goto_warmth`'s arrive-and-done — with an
+optional `until_warmth` `Number` param (no `Min`/`Max`; the driver never
+rejects it, the sim clamps it with notice, spec 064 R3 / the 058 clamp
+posture) — assembled in order: `worldTools`
+(now 32 World verbs: the 24 legacy verbs in the old goal-vocabulary order, then
 `build_wall_plank`/`build_wall_stone`/`demolish`/`repair`/`craft_axe`/`build_path`/
-`search`,
+`search`/`warm_up`,
 appended after `withdraw` so no existing tool's registration position shifts —
 `worldToolsBase` wraps these too, so every one also gains the shared `reason`
 param), `set_plan`, `expressiveTools` (`say`/`gist`/`muse`), `guardianTools`
@@ -350,7 +359,11 @@ runs the boot gates; [[agent-journal]] is the spec-019 consumer of the four
 journal tools (`write_journal_entry`/`delete_from_journal`/`search_journal`/
 `read_journal`) declared here. [[mental-maps]] is the spec-041 consumer of
 `search` and `send_vision`'s place grant, and the source of the
-`placeFactKinds` vocabulary hand-mirrored onto `place_kind`'s Enum. [[tool-loop]]
+`placeFactKinds` vocabulary hand-mirrored onto `place_kind`'s Enum.
+[[executor]]/[[reflex-policy]] are the spec-064 consumers of `warm_up` —
+the resolver, the completion-hold state machine, and the reflex's own
+conditioned-`goto_warmth` issuance all read this note's registry entry and
+clamp home. [[tool-loop]]
 owns the spec-058 `Clamp` enforcement (`validateArgs`'s clamp-with-notice,
 `VerdictLandedClamped`); [[sim-loop]]'s landing guard owns the matching
 `set_plan` step-count clamp (`OutcomeClamped`); [[agent-mind]]'s scene parser

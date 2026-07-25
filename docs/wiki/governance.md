@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/governance.go
   - internal/mind/meeting.go
-verified_against: 381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9
+verified_against: e718294e2a9db4053323a4a9e42746ca53fb149c
 ---
 
 # Governance (norms and votes)
@@ -32,7 +32,12 @@ convention yet, appended to the log like genesis; and **emergent** — while no
 convention exists, a per-game-minute detector (`emergentGatheringEvents`)
 watches for ≥2 awake, non-exiled villagers sustaining a daytime gathering at
 one fire or shelter (`gatheringStructure`, deterministic tie-break on
-structure order). The watch is itself event-sourced (`sim.gathering_observed`
+structure order; since spec 064 a villager pinned to that fire by a
+needs-conditioned recovery hold — `Intent.UntilNeed != ""`, [[executor]]'s
+`warm_up`/conditioned `goto_warmth` — is EXCLUDED from the quorum count: the
+emergent signal is villagers electively CONGREGATING, and a warmth-recovery
+loiter is survival, not assembly; byte-inert for pre-064 worlds, where no
+intent ever carried a condition). The watch is itself event-sourced (`sim.gathering_observed`
 advancing `Meeting.GatherStart/X/Y`, so replay reconstructs it); unbroken for
 1800 ticks (`emergentGatherTicks`), the convention is born — place = that
 structure, convene = the observed half-hour, open = a half-hour later.

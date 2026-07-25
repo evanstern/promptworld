@@ -14,7 +14,7 @@ sources:
   - internal/scribe/scribe.go
   - internal/scribe/morgue.go
   - internal/sim/memory.go
-verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
+verified_against: b19ca0e41d11229478cbe650e2ef79fe16514d07
 ---
 
 # Agent mind
@@ -311,7 +311,15 @@ REQUESTS through the door and translates its verdict into a `toolloop.Outcome`.
 verb (the same `InjectArgs` fields, minus the free-text reason, which the tool
 era carries via `muse` instead of a per-action field); `talk_to` keeps its
 mind-side `buildTalkToGuards` (target alive + present in the job's snapshot
-worldview). `handleSetPlan` parses the tool call's `steps` argument into
+worldview). Since spec 064 (`warm_up`), `handleWorldVerb` also special-cases
+one world verb's argument: an explicit `until_warmth` rides in on the generic
+`Qty` slot (the storage verbs' per-verb-arg precedent), and the handler
+phrases the model-facing clamp notice via the SAME `sim.ClampWarmUp` the sim's
+own resolver clamps with — so the notice and the landed value can never drift
+(the `set_plan` const-vs-const precedent) — returning `VerdictLandedClamped`
+when the requested threshold was out of range, the first time that verdict
+(previously `set_plan`/`muse`-only, spec 058) applies to an ordinary world
+verb. `handleSetPlan` parses the tool call's `steps` argument into
 `[]sim.PlanStep` (`parsePlanSteps`) and lands them via `InjectIntent`'s `Plan`
 path, mirroring the retired `injectPlan`; since spec 058 (US2, FR-003) it also
 notices when the submitted step count exceeds `sim.PlanStepCap` BEFORE the
