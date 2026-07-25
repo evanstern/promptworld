@@ -21,6 +21,7 @@ import (
 	"github.com/evanstern/promptworld/internal/clock"
 	"github.com/evanstern/promptworld/internal/llm"
 	"github.com/evanstern/promptworld/internal/sim"
+	"github.com/evanstern/promptworld/internal/skin"
 	"github.com/evanstern/promptworld/internal/store"
 	"github.com/evanstern/promptworld/internal/toolloop"
 	"github.com/evanstern/promptworld/internal/worldmap"
@@ -76,6 +77,15 @@ type Metatron struct {
 	// world with the default charter: behavior byte-identical to before.
 	stage         string
 	charterPreset string
+
+	// skin is the world's boot-frozen display skin (spec 052 FR-003), set once
+	// by the daemon after New via SetSkin — the SetBundles/SetStage discipline.
+	// nil (the default, and every pre-052 test) is the default Guardian skin
+	// (every skin.Skin method is nil-safe). It shapes prompt composition (the
+	// voice at the SOUL seam, name substitution in the keeper/confirm prompts)
+	// and display text ONLY — never a recorded payload (ruling 1: the event
+	// log is skin-free).
+	skin *skin.Skin
 
 	replica *sim.State
 	m       *worldmap.Map
@@ -260,6 +270,16 @@ func (mt *Metatron) SetBundles(bs *bundle.BundleSet) { mt.bundles = bs }
 func (mt *Metatron) SetStage(stage, charterPreset string) {
 	mt.stage, mt.charterPreset = stage, charterPreset
 }
+
+// SetSkin installs the world's boot-frozen display skin (spec 052 FR-003).
+// The daemon calls it once after New and before serving (the SetBundles
+// discipline); only the turn/trigger workers and Status read it, so no lock
+// is needed. Never installed (nil) is the default Guardian skin.
+func (mt *Metatron) SetSkin(s *skin.Skin) { mt.skin = s }
+
+// sk returns the active skin — nil-safe by skin.Skin's own contract, so the
+// zero-value agent (every pre-052 test) resolves the default table.
+func (mt *Metatron) sk() *skin.Skin { return mt.skin }
 
 func (mt *Metatron) metatronDir() string    { return filepath.Join(mt.worldDir, "metatron") }
 func (mt *Metatron) soulPath() string       { return filepath.Join(mt.metatronDir(), "soul.md") }

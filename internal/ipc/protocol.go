@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 
 	"github.com/evanstern/promptworld/internal/llm"
+	"github.com/evanstern/promptworld/internal/skin"
 	"github.com/evanstern/promptworld/internal/store"
 )
 
@@ -141,6 +142,19 @@ type StatusData struct {
 	// output (omitempty; the composer never runs). Never an empty slice —
 	// either absent or ≥1 entry.
 	Horizon []HorizonClass `json:"horizon,omitempty"`
+	// Resolved skin display facts (spec 052 FR-012, contract §7): the
+	// boot-frozen world skin, resolved daemon-side so clients render skin
+	// vocabulary without ever reading world files. Identity fields are always
+	// sent by a post-052 daemon (resolved against the compiled default
+	// table); SkinStrings/SkinStages carry only a world skin's overrides.
+	// Additive omitempty — absent fields (a pre-052 daemon) mean the default
+	// Guardian skin, so old daemons and old clients interoperate unchanged.
+	SkinName        string                        `json:"skin_name,omitempty"`
+	SkinEpithet     string                        `json:"skin_epithet,omitempty"`
+	SkinTabLabel    string                        `json:"skin_tab_label,omitempty"`
+	SkinFamilyLabel string                        `json:"skin_family_label,omitempty"`
+	SkinStrings     map[string]string             `json:"skin_strings,omitempty"`
+	SkinStages      map[string]skin.StageIdentity `json:"skin_stages,omitempty"`
 }
 
 // HorizonClass is one watched decision class's live standing on the status

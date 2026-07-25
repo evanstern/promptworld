@@ -25,6 +25,7 @@ import (
 	"github.com/evanstern/promptworld/internal/persona"
 	"github.com/evanstern/promptworld/internal/scribe"
 	"github.com/evanstern/promptworld/internal/sim"
+	"github.com/evanstern/promptworld/internal/skin"
 	"github.com/evanstern/promptworld/internal/store"
 	"github.com/evanstern/promptworld/internal/tool"
 	"github.com/evanstern/promptworld/internal/world"
@@ -139,6 +140,17 @@ func Run(dir string) error {
 	defer cancel()
 
 	srv := ipc.NewServer(w, st, cancel)
+
+	// The world's display skin (spec 052 FR-003): loaded once here —
+	// boot-frozen, the SetBundles/SetStage discipline — and handed to every
+	// surface that renders fiction vocabulary (status via srv, prompts via
+	// the guardian agent below). Loader notices are operator-facing boot
+	// lines, the bundle BootIssue convention: a typo never bricks the world.
+	worldSkin, skinNotices := skin.Load(dir)
+	for _, n := range skinNotices {
+		fmt.Printf("daemon: skin: %s\n", n)
+	}
+	srv.SetSkin(worldSkin)
 
 	// Notify fan-out: the IPC broadcast, the always-on soul scribe, and
 	// (when an orchestrator exists) the mind driver. All consumers are
@@ -402,10 +414,11 @@ func Run(dir string) error {
 		// manifest to the turn assembly — the stage ceiling and the stage-1
 		// instruction lock derive from these, boot-frozen like the bundle set.
 		mt.SetStage(w.Manifest.Stage, w.Manifest.CharterPreset)
+		mt.SetSkin(worldSkin) // spec 052: boot-frozen display skin (loaded below srv.SetSkin's site)
 		defer mt.Close()
 		consumers = append(consumers, mt.Observe)
 		srv.SetMetatron(mt)
-		fmt.Printf("daemon: metatron on (charges %d/%d)\n", state.MetatronCharges, sim.MetatronChargeCap)
+		fmt.Printf("daemon: guardian on (charges %d/%d)\n", state.MetatronCharges, sim.MetatronChargeCap)
 	}
 
 	// Stale socket from a crashed daemon: the pidfile said no one is alive.

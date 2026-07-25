@@ -17,6 +17,7 @@ import (
 	"github.com/evanstern/promptworld/internal/llm"
 	"github.com/evanstern/promptworld/internal/metatron"
 	"github.com/evanstern/promptworld/internal/sim"
+	"github.com/evanstern/promptworld/internal/skin"
 	"github.com/evanstern/promptworld/internal/store"
 	"github.com/evanstern/promptworld/internal/world"
 )
@@ -51,6 +52,7 @@ type Server struct {
 	llm      *llm.Orchestrator // nil when the world has no llm.json
 	metatron Angel             // nil when the world has no llm.json
 	governor Governor          // nil when the world has no llm.json
+	skin     *skin.Skin        // boot-frozen world skin (spec 052); nil = default
 	shutdown func()            // requests daemon shutdown (graceful)
 	started  time.Time
 
@@ -82,6 +84,11 @@ type Angel interface {
 
 // SetMetatron attaches the optional angel (before Serve).
 func (s *Server) SetMetatron(a Angel) { s.metatron = a }
+
+// SetSkin attaches the world's boot-frozen display skin (spec 052 FR-012;
+// before Serve — the SetLLM discipline). nil renders the default skin, so a
+// no-skin world (and every pre-052 test) needs no call at all.
+func (s *Server) SetSkin(sk *skin.Skin) { s.skin = sk }
 
 // Governor is the daemon governor's status surface (spec 028 US1): the latest
 // sampled staleness debt and the count of pending model-bound thoughts driving
@@ -213,6 +220,15 @@ func (s *Server) statusData(cs sim.Status) StatusData {
 			Subscribers:   s.subscriberCount(),
 		},
 		Log: LogStatus{LastSeq: cs.LastSeq},
+		// Skin display facts (spec 052 contract §7): identity fields resolved
+		// (nil s.skin resolves the default table — skin.Skin is nil-safe);
+		// override maps only when a world skin overrides.
+		SkinName:        s.skin.Name(),
+		SkinEpithet:     s.skin.Epithet(),
+		SkinTabLabel:    s.skin.TabLabel(),
+		SkinFamilyLabel: s.skin.FamilyLabel(),
+		SkinStrings:     s.skin.StringOverrides(),
+		SkinStages:      s.skin.StageOverrides(),
 	}
 }
 

@@ -20,9 +20,12 @@ import "strings"
 // stage and its one-line identity description, presented at world creation
 // and on status surfaces. Never easy-mode framing (TASK-68 AC #7) — an
 // identity, not a difficulty label.
+// The JSON tags are the status surface's wire form (spec 052 contract §7,
+// skin_stages) — additive, and unused by the skin.json loader (which has its
+// own parse target in load.go).
 type StageIdentity struct {
-	Name string // display name, e.g. "The Voice"
-	Line string // one-line identity description
+	Name string `json:"name"` // display name, e.g. "The Voice"
+	Line string `json:"line"` // one-line identity description
 }
 
 // defaultStages maps neutral stage ids to the default Guardian skin's display

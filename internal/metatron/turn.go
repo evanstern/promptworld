@@ -12,6 +12,7 @@ import (
 	"github.com/evanstern/promptworld/internal/clock"
 	"github.com/evanstern/promptworld/internal/llm"
 	"github.com/evanstern/promptworld/internal/sim"
+	"github.com/evanstern/promptworld/internal/skin"
 	"github.com/evanstern/promptworld/internal/store"
 	"github.com/evanstern/promptworld/internal/tool"
 	"github.com/evanstern/promptworld/internal/toolloop"
@@ -699,6 +700,18 @@ type Status struct {
 	CharterLocked bool   `json:"charter_locked,omitempty"`
 	CharterPreset string `json:"charter_preset,omitempty"` // the binding preset name when locked ("default" | "tutor")
 	SkillsLocked  bool   `json:"skills_locked,omitempty"`
+	// Resolved skin display facts (spec 052 FR-012, contract §7) — additive
+	// omitempty, the spec-021 precedent, so clients render skin vocabulary
+	// without reading world files. The identity fields are always sent
+	// (resolved against the default table); SkinStrings/SkinStages carry only
+	// the world's overrides. Absent fields (a pre-052 daemon) mean the
+	// default Guardian skin.
+	SkinName        string                        `json:"skin_name,omitempty"`
+	SkinEpithet     string                        `json:"skin_epithet,omitempty"`
+	SkinTabLabel    string                        `json:"skin_tab_label,omitempty"`
+	SkinFamilyLabel string                        `json:"skin_family_label,omitempty"`
+	SkinStrings     map[string]string             `json:"skin_strings,omitempty"`
+	SkinStages      map[string]skin.StageIdentity `json:"skin_stages,omitempty"`
 }
 
 // OrderStatus is the model-free peek at one standing order (spec 029 US2/US3,
@@ -744,6 +757,14 @@ func (mt *Metatron) Status() Status {
 		Stage:           mt.stage,
 		CharterLocked:   stageLocksCharter(mt.stage),
 		SkillsLocked:    mt.stage != "" && !stageBindsSkills(mt.stage),
+		// Skin display facts (spec 052 contract §7): identity fields resolved
+		// (never empty), override maps only when a world skin overrides.
+		SkinName:        mt.sk().Name(),
+		SkinEpithet:     mt.sk().Epithet(),
+		SkinTabLabel:    mt.sk().TabLabel(),
+		SkinFamilyLabel: mt.sk().FamilyLabel(),
+		SkinStrings:     mt.sk().StringOverrides(),
+		SkinStages:      mt.sk().StageOverrides(),
 	}
 	if s.CharterLocked {
 		s.CharterPreset = mt.charterPreset
