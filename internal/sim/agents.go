@@ -123,14 +123,21 @@ func (a *Agent) appendIntent(r IntentRecord) {
 // record open behind the new one; that older record stays open (the
 // open-then-superseded shape the alternation view preserves), so closing the
 // newest is correct. A no-op when no record is open.
-func (a *Agent) stampIntentOutcome(outcome string, tick int64) {
+//
+// It returns the closed record's Source ("planner" | "reflex" | "plan" |
+// "meeting") and true, so the completion arm can arm the yield window on a
+// non-reflex completion (spec 062 US1) from the SAME event-sourced record it
+// closes — no source is carried on the bare intent itself. Returns ("", false)
+// when no record was open (the source is unknowable, so the window never arms).
+func (a *Agent) stampIntentOutcome(outcome string, tick int64) (string, bool) {
 	for i := len(a.IntentLog) - 1; i >= 0; i-- {
 		if a.IntentLog[i].Outcome == "" {
 			a.IntentLog[i].Outcome = outcome
 			a.IntentLog[i].OutcomeTick = tick
-			return
+			return a.IntentLog[i].Source, true
 		}
 	}
+	return "", false
 }
 
 // stampOrAppendExpired records a plan step's expiry (spec 043, plan end visible
@@ -168,6 +175,20 @@ type Agent struct {
 	// IdleSince is the tick this agent last became idle/awake — reducer-
 	// maintained so the reflex grace is a pure function of event history.
 	IdleSince int64 `json:"idle_since"`
+	// LastMindIntentDone (spec 062 US1, FR-003) is the tick the agent's most
+	// recent NON-REFLEX intent (planner/plan/meeting = "intelligence")
+	// completed — the yield-window anchor the reflex consults to defer its PREP
+	// rungs (elapsed = tick-LastMindIntentDone; prep yields while that is under
+	// prepYieldTicks). Written ONLY by the intent-completion reducer arm, and
+	// ONLY when the completing intent's ring-record source is non-reflex: a
+	// reflex completion never arms the window (instinct yielding to itself would
+	// deadlock prep in a no-planner world — the sentinel then stays 0 forever,
+	// so degraded mode never suppresses on this clause). Reducer-derived ⇒
+	// replay-safe; rebase taxonomy SHIFT (a duration anchor, ONLY non-zero —
+	// the Belief.Reinforced/NeedsAnchorTick shape). omitempty keeps a
+	// never-mind-driven agent's canonical bytes identical to a pre-062 snapshot
+	// (precedent: NeedsAnchorTick, LastGoalTick).
+	LastMindIntentDone int64 `json:"last_mind_intent_done,omitempty"`
 	// NearDeath latches the "nearly died" memory once per health collapse.
 	NearDeath bool `json:"near_death,omitempty"`
 	// Generation counts high-salience interrupts (TASK-32, FR-014): bumped
@@ -679,6 +700,53 @@ const (
 	talkCooldownSec  = 2 * 3600
 	talkMoraleBonus  = 50
 )
+
+// --- spec 062 (instinct yields to intelligence): reflex/planner arbitration ---
+//
+// The doctrine home for the PREP-gate constants (FR-006): named, single home,
+// dial-READY but NOT tuning.json dials (earned, not speculative). The PREP
+// rungs of decideIntent yield — do not fire — while either clause holds:
+//
+//	(a) yield window: a recent non-reflex intent completion (LastMindIntentDone)
+//	    is under prepYieldTicks old — instinct defers to the mind's own follow-up;
+//	(b) danger band: any need is below its band — the survival rung for that need
+//	    owns the agent, so prep must not counter-schedule.
+const (
+	// Danger bands (R3): a need "in danger" == "a survival rung would or will
+	// imminently act". Anchored EXACTLY at the existing survival-rung triggers —
+	// no padding (an evidenced pad would be flagged): food at the hunger trigger,
+	// warmth at the freezing-night warmth-effect threshold, rest at the nap
+	// trigger. Because those same thresholds gate the SURVIVAL rungs that run
+	// before PREP, the food/rest bands are largely subsumed (survival returns
+	// first); the warmth band is the one that bites by day — it is what suppresses
+	// prep for a villager recovering AT a fire (warmAt, so the day-warmth rung is
+	// skipped) whose warmth need is still low. Dial-ready, not dialed.
+	dangerFoodBelow   = hungryAt       // 350: food danger == hungry (eat/get-food trigger)
+	dangerWarmthBelow = coldNightBelow // 350: warmth danger == freezing-night threshold
+	dangerRestBelow   = tiredAt        // 250: rest danger == daytime nap trigger
+
+	// prepYieldTicks (R4): the post-intelligence quiet period for prep instinct —
+	// one default planner cadence, so the mind gets one beat to follow up its own
+	// completed intent before instinct resumes prep. Deliberately THIS CONSTANT,
+	// not the tuned planner-cadence dial (PlannerCadence()): the window is
+	// arbitration DOCTRINE, not scheduling — a cadence-tuned world must not
+	// silently stretch instinct's deference. Dial-ready, not dialed.
+	prepYieldTicks = 1800
+)
+
+// isMindSource reports whether an intent's ring-record source counts as
+// "intelligence" for the yield window (spec 062 US1): planner, plan, and
+// meeting sources all do; a "reflex" source (or an empty/unknown one) does not
+// — instinct must never arm its own deference (that would deadlock prep in a
+// no-planner world). The single classifier the completion reducer arm consults.
+func isMindSource(source string) bool {
+	switch source {
+	case "planner", "plan", "meeting":
+		return true
+	default:
+		return false
+	}
+}
 
 // --- spec 012 resources/food/crafting v2 tuning ---
 //

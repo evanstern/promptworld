@@ -161,6 +161,12 @@ func (s *State) applyTimeSnapped(e store.Event) error {
 //	                     UNCONDITIONALLY — a PRESENT record is always a real
 //	                     exchange tick (absence of the record is "never talked"),
 //	                     so there is no zero sentinel to guard.
+//	Agent.LastMindIntentDone  yield-window anchor (spec 062: elapsed =
+//	                     tick-LastMindIntentDone gates prep deference); ONLY
+//	                     non-zero (0 = never mind-driven — a no-planner world's
+//	                     permanent sentinel — must stay 0 so the window never
+//	                     spuriously arms after a snap; the Belief.Reinforced /
+//	                     NeedsAnchorTick elapsed-anchor shape)
 //	Intent.WorkStart     work-in-progress; ONLY non-zero (0 = not started)
 //	AgentHail.Until       courtesy-pause deadline (a present hail is non-zero)
 //	PlanStep.Until        plan-step validity deadline; ONLY when > 0 (0 = no
@@ -254,7 +260,8 @@ func rebaseTicks(s *State, delta int64) {
 		a.IdleSince += delta // unconditional: zero is genesis-idle, not "never"
 		shift(&a.LastTalk)
 		shift(&a.LastGive)
-		shift(&a.NeedsAnchorTick) // spec 043 US2: trajectory-window edge anchor; 0 = unset, stays 0
+		shift(&a.LastMindIntentDone) // spec 062 US1: yield-window anchor (Belief.Reinforced shape); 0 = never mind-driven, stays 0
+		shift(&a.NeedsAnchorTick)    // spec 043 US2: trajectory-window edge anchor; 0 = unset, stays 0
 		for j := range a.Beliefs {
 			shift(&a.Beliefs[j].Reinforced) // spec 030: decay anchor (elapsed = tick-Reinforced); 0 = grandfather, stays 0
 		}
