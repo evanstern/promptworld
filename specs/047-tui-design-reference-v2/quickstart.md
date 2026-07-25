@@ -46,8 +46,11 @@ echo $?   # expect 0
 - **SC-002 (tables/tokens)**: `node scripts/check-tui-design.mjs` covers table
   presence/shape mechanically; additionally
   `grep -rn "Metatron" docs/design/tui/ --include="*.md"` — hits allowed only inside
-  `patterns/skin-tokens.md`'s default-skin value column and `INDEX.md`'s verbatim
-  TASK-34 history blockquote (fiction appears only as tokens elsewhere).
+  `patterns/skin-tokens.md`'s default-skin value column, `INDEX.md`'s verbatim
+  TASK-34 history blockquote, and backtick-quoted Go code identifiers (e.g.
+  `metatronView`, `sim.MetatronChargeCap` — renderer/data-source columns name real
+  symbols per the control-table contract; they are not fiction prose). Fiction
+  appears only as tokens elsewhere.
 - **SC-004 (ten pages)**: confirm all ten new-surface pages/sections exist with
   mockup + control table + stage defaults + linear-stream projection:
   `pages/guardian-console.md`, `panels/systems.md`, `panels/exercise.md`,

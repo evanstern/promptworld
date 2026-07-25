@@ -198,13 +198,13 @@ exist since the rulings reference them.)
 
 **Independent test**: spec.md US3 acceptance scenarios; SC-002 sweep.
 
-- [ ] T024 [US3] Add the input-parity doctrine to
+- [x] T024 [US3] Add the input-parity doctrine to
       `docs/design/tui/patterns/keymap.md` (decision 8): every action reachable by
       keyboard AND mouse, keyboard primary and complete, incremental rollout with
       honest per-page "parity rollout" notes (contracts/control-table.md rule 4);
       keep the one-page printable card format; document the mnemonic-key and
       reserved-seam binding rules; pin.
-- [ ] T025 [US3] Corpus conformance pass: every `panels/*` and `overlays/*` page has
+- [x] T025 [US3] Corpus conformance pass: every `panels/*` and `overlays/*` page has
       exactly one canonical control table (contracts/control-table.md header,
       byte-exact), keys+mouse column filled per rule 4, `introduced-by` filled,
       zero bare fiction literals outside `patterns/skin-tokens.md`'s default-value
@@ -223,20 +223,20 @@ finished corpus.)
 **Independent test**: quickstart.md §§1–3 (clean pass + all five seeded violation
 classes + doc-only range passes).
 
-- [ ] T026 [US4] Frontmatter/pin conformance pass over every `.md` under
+- [x] T026 [US4] Frontmatter/pin conformance pass over every `.md` under
       `docs/design/tui/` per contracts/frontmatter-and-pins.md: `title`, `class`
       matching directory, `status`, `verified_against` = a commit containing the
       branch's reconciliation state, optional `sources` on shipped pages.
-- [ ] T027 [US4] Implement `scripts/check-tui-design.mjs` per
+- [x] T027 [US4] Implement `scripts/check-tui-design.mjs` per
       contracts/check-script.md: Node ≥18 ESM, zero deps, read-only; checks
       file-set, pins, control-tables, anatomy, and `--changed [range]` same-PR
       gate (default `origin/main...HEAD`); `--json` mode; exit codes 0/1/2;
       actionable violation messages naming files.
-- [ ] T028 [US4] Validate the script per quickstart.md §§1–3: clean tree passes;
+- [x] T028 [US4] Validate the script per quickstart.md §§1–3: clean tree passes;
       each of the five seeded violation classes fails with the contracted message;
       doc-only range passes `--changed`. Record the transcript in the PR
       description / task notes.
-- [ ] T029 [US4] Wire the gate: add the run-the-check rule to `CLAUDE.md` (one line
+- [x] T029 [US4] Wire the gate: add the run-the-check rule to `CLAUDE.md` (one line
       beside the player-docs freshness rule: run
       `node scripts/check-tui-design.mjs --changed` before any PR touching
       `internal/tui/`); confirm INDEX.md's gate-rules section (T003) matches the
@@ -246,10 +246,10 @@ classes + doc-only range passes).
 
 ## Phase 8: Polish & cross-cutting
 
-- [ ] T030 Fix `docs/wiki/tui-client.md` prose references to renamed/split design
+- [x] T030 Fix `docs/wiki/tui-client.md` prose references to renamed/split design
       files (lines ~83/295/297 cite `docs/design/tui/` paths — prose fix only, no
       pin re-verification; constitution IV watch item from plan.md).
-- [ ] T031 Run the full acceptance sweep per quickstart.md §4 (SC-001, SC-002,
+- [x] T031 Run the full acceptance sweep per quickstart.md §4 (SC-001, SC-002,
       SC-005, SC-006 manual sweeps) and §5 regression (`go test ./...`,
       player-docs `check-freshness.mjs --check`); record results in task notes.
 - [ ] T032 Open the single PR from `.worktrees/task-123`
