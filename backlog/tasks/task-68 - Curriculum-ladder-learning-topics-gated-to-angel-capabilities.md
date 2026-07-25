@@ -4,7 +4,7 @@ title: 'Curriculum ladder: learning topics gated to angel capabilities'
 status: In Progress
 assignee: []
 created_date: '2026-07-23 03:28'
-updated_date: '2026-07-25 06:49'
+updated_date: '2026-07-25 07:35'
 labels:
   - review-2026-07-22
   - teaching-game
@@ -41,9 +41,9 @@ Spec: specs/046-curriculum-ladder
 - [ ] #8 Stage unlocks are artifact-gated on event-log evidence, not menu toggles
 - [ ] #9 Each stage ships a per-stage quickstart page via the player-docs skill
 - [ ] #10 Stage-1 orientation is delivered in-game via the tutor charter preset
-- [ ] #11 Spec phase: Setup
-- [ ] #12 Spec phase: Foundational (blocking prerequisites)
-- [ ] #13 Spec phase: User Story 2 — The world grants what the stage teaches (P1) 🎯 co-MVP
+- [x] #11 Spec phase: Setup
+- [x] #12 Spec phase: Foundational (blocking prerequisites)
+- [x] #13 Spec phase: User Story 2 — The world grants what the stage teaches (P1) 🎯 co-MVP
 - [ ] #14 Spec phase: User Story 1 — Choosing a stage is choosing an identity (P1) 🎯 co-MVP
 - [ ] #15 Spec phase: User Story 3 — Earning the next stage, told in-game (P2)
 - [ ] #16 Spec phase: User Story 4 — Two exercises exist and teach (P2)
@@ -59,6 +59,12 @@ Curriculum decisions ratified (operator, 2026-07-25, spec session): (1) LADDER =
 AC#5 client review held 2026-07-25 (operator = client in session): ladder verified against the stated three-stage progression — stage 1 base-tools/locked-instructions, stage 2 charter authoring w/ fingerprint-evidenced gate, stage 3 skills+tool manifest, stage 4 graduation capstone (ratified addition). Draft guardian-skin stage names APPROVED as spec'd: The Voice / The Written Word / The Craft / The Stewardship. Hold released — proceeding to /speckit-plan.
 
 spec-bridge sync: Setup: 0/1 · Foundational (blocking prerequisites): 0/3 · User Story 2 — The world grants what the stage teaches (P1) 🎯 co-MVP: 0/3 · User Story 1 — Choosing a stage is choosing an identity (P1) 🎯 co-MVP: 0/4 · User Story 3 — Earning the next stage, told in-game (P2): 0/4 · User Story 4 — Two exercises exist and teach (P2): 0/1 · User Story 5 — The stage has a floor and a guide (P3): 0/3 · Polish & Cross-Cutting: 0/3
+
+Implementation dispatched 2026-07-25: T001-T007 (Setup+Foundational+US2 gating slice) to spec-implementer on Opus 4.8 — rubric: capability gating in the metatron turn pipeline is injection-adjacent doctrine (T005-T007); T002-T004 foundational ride the same slice for worktree coherence. Branch task-68-curriculum-ladder in .worktrees/task-68. charter_observed dependency: implemented on task-31 branch (US2 complete, unmerged) — T012 stub plan stands.
+
+spec-bridge sync: Setup: 1/1 · Foundational (blocking prerequisites): 3/3 · User Story 2 — The world grants what the stage teaches (P1) 🎯 co-MVP: 3/3 · User Story 1 — Choosing a stage is choosing an identity (P1) 🎯 co-MVP: 0/4 · User Story 3 — Earning the next stage, told in-game (P2): 0/4 · User Story 4 — Two exercises exist and teach (P2): 0/1 · User Story 5 — The stage has a floor and a guide (P3): 0/3 · Polish & Cross-Cutting: 0/3
+
+Gating slice ratified 2026-07-25: (a) skills bind at stage-3 (implementer correctly followed spec over a dispatch-prompt error); (b) RESOLVED from TASK-119 artifact ("first-night teaches visions+orders"): stage-1 ceiling GAINS monitor_and_act + cancel_order — orders are the watch primitive first-night teaches; folded into next slice with contract amendment on the branch; (c) clock tools stage-3+ ratified (player keeps direct CLI/TUI clock control at stage-1/2). Remaining slices T008-T022 dispatched to Sonnet (routine: CLI surfaces, unlocks record, catalog wiring, exercises content, tutor preset, docs pages).
 <!-- SECTION:NOTES:END -->
 
 ## Comments
