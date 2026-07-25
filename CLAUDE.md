@@ -107,6 +107,11 @@ Exit 0 = pass (clean or warnings-only), 1 = blocked (do not proceed), 2 = usage/
 error. The script never rebases, merges, commits to, or resets any task branch or its
 worktree — resolution always stays with the owning session.
 
+These gates are also hook-enforced at the harness level (`.claude/settings.json`,
+`scripts/hooks/merge-drift-hook.mjs`): a PreToolUse hook blocks `gh pr create` and
+`git worktree add` when the corresponding gate exits nonzero, and a SessionStart hook
+injects the session gate's report as context without ever blocking session start.
+
 ## Model-tiered workflow (constitution Principle V, v1.1.0)
 
 Three tiers, enforced by delegation (`.specify/memory/constitution.md`, Principle V):
