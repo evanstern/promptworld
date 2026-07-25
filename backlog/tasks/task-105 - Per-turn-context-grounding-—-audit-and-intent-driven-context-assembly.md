@@ -4,7 +4,7 @@ title: Per-turn context grounding — audit and intent-driven context assembly
 status: In Progress
 assignee: []
 created_date: '2026-07-25 02:41'
-updated_date: '2026-07-25 03:45'
+updated_date: '2026-07-25 04:18'
 labels:
   - goal-quality
 dependencies: []
@@ -27,8 +27,8 @@ Spec: specs/043-context-grounding
 - [ ] #1 Written per-turn context inventory (present vs absent) exists as a durable artifact
 - [ ] #2 Self-history, need trajectories, and active-plan echo added to the decision prompt
 - [ ] #3 Relevant-memory/journal retrieval feeds the prompt with measured token budget
-- [ ] #4 Spec phase: Setup
-- [ ] #5 Spec phase: Foundational (blocking prerequisites)
+- [x] #4 Spec phase: Setup
+- [x] #5 Spec phase: Foundational (blocking prerequisites)
 - [ ] #6 Spec phase: US5 — Operators can see exactly what an agent knew (P1) 🎯 co-MVP
 - [ ] #7 Spec phase: US1 — An agent knows what it was just doing (P1) 🎯 co-MVP
 - [ ] #8 Spec phase: US2 — An agent feels which way its needs are moving (P2)
@@ -37,12 +37,14 @@ Spec: specs/043-context-grounding
 - [ ] #11 Spec phase: Polish & cross-cutting
 <!-- AC:END -->
 
-
-
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 Synergies (2026-07-24 board pass): TASK-110 prunes dead verbs from the roster — shrinks the tool surface this task's context budget pays for; do 110's roster prune before or with the context redesign. Relevant-memory retrieval leans on the embedding work: TASK-98 (in progress, spec 042) provides record-at-emission vectors + relevance term; TASK-102 (embed preflight warning bug) should land so embedding-path signal is clean.
 
 Spec drafted and committed to main (996d503): specs/043-context-grounding/spec.md — 5 user stories (P1 self-history + P1 context inventory audit, P2 need trajectories, P3 plan echo, P4 relevance retrieval under token budget), 10 FRs, 7 measurable SCs incl. flip-rate reduction vs the world-01 baseline. Requirements checklist passes; zero NEEDS CLARIFICATION (defaults in Assumptions). Next: speckit-plan → speckit-tasks → spec-bridge:link, then delegated implementation.
+
+Implementation dispatch (constitution Principle V): Foundational + US1 slice (T001-T012, T013 stretch) → Opus 4.8 spec-implementer. Rubric: touches internal/sim reducer state and internal/mind orchestration (doctrine-adjacent, cross-package), shadow-invariant byte-identity constraint — senior tier required. US5 (T006-T007, wiki note + capture) → Sonnet, dispatched after the code slice lands on the branch.
+
+Foundational + US1 slice landed on task-105-context-grounding (commits 9de0665, d2bbd7f, 1e1b97d; Opus 4.8 implementer). Assembler + byte-identity wrap, cog.thought sizes, IntentRecord ring + 5 reducer arms, self_history block. Whole-repo tests, vet, gofmt green; shadow invariant holds. Gate-checked by orchestrator (targeted sim/mind tests re-run). T013 stretch: SC-004 confirmed via read-only probe of world-01 (Sage tick 265,864 ring shows instinct forage + alternation); committed harness deferred to T024/T027 pattern (needs replay-to-tick helper + env-guarded skip). Deviations accepted: intent_rejected now state-mutating per data-model (split from cog.* no-op arm); IntentRecord ticks KEEP in rebase taxonomy; self_history always renders (empty state line); future-dating line owned by frame block.
 <!-- SECTION:NOTES:END -->
