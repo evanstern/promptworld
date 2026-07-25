@@ -83,6 +83,7 @@ var familyByNamespace = map[string]eventFamily{
 	"norm":      familyGovernance,
 	"gru":       familyGru,
 	"chronicle": familyChronicle,
+	"morgue":    familyChronicle, // morgue.epilogue (spec 044): narrated prose, chronicle voice
 	"metatron":  familyMetatron,
 	"daemon":    familyDaemon,
 	"cog":       familyCog,

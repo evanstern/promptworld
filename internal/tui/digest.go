@@ -990,6 +990,33 @@ var digestRegistry = map[string]digestFunc{
 		}
 		return join([]seg{txt("Metatron's watch lapsed ("), emph(p.ID), txt(")")}), true
 	},
+	// metatron.charter_observed (spec 044 US2): the charter-revision
+	// fingerprint stamp a turn ran under — the angel's evidence timeline the
+	// morgue aligns deaths against.
+	"metatron.charter_observed": func(e store.Event, names []string) ([]seg, bool) {
+		p, ok := decode[sim.CharterObservedPayload](e)
+		if !ok {
+			return nil, false
+		}
+		prov := "player-authored"
+		if p.Default {
+			prov = "default"
+		}
+		return join([]seg{txt("Metatron ran under charter "), emph(p.Fingerprint), txt(" (" + prov + ")")}), true
+	},
+	// morgue.epilogue (spec 044 US2): the narrator's recorded mourning prose
+	// — agent -1 is the run-end epilogue. chronicle.entry's truncation manner.
+	"morgue.epilogue": func(e store.Event, names []string) ([]seg, bool) {
+		p, ok := decode[sim.MorgueEpiloguePayload](e)
+		if !ok {
+			return nil, false
+		}
+		who := []seg{txt("the run")}
+		if p.Agent >= 0 {
+			who = []seg{nameOf(names, p.Agent)}
+		}
+		return join([]seg{txt("epilogue for ")}, who, []seg{txt(": "), txt(truncateRunes(p.Text, 80))}), true
+	},
 
 	// metatron.time_snapped / item_granted / entity_moved / entity_removed
 	// (TASK-59, spec 016) predate this contract (specs/018) — no template

@@ -181,10 +181,18 @@ var catalogFixture = map[string]digestFixture{
 	"metatron.order_triggered": {`{"id":"ord-100-1","matched_type":"sim.forage_regrown","matched_tick":150}`, `Metatron's watch came true (sim.forage_regrown @ t150)`},
 	"metatron.order_cancelled": {`{"id":"ord-100-1"}`, `Metatron released a watch (ord-100-1)`},
 	"metatron.order_expired":   {`{"id":"ord-100-1"}`, `Metatron's watch lapsed (ord-100-1)`},
-	"metatron.time_snapped":    {`{"to_tick":106200,"gratis":false}`, `Metatron snapped time forward to day 2 11:30`},
-	"metatron.item_granted":    {`{"agent":0,"kind":"food_raw","qty":2,"gratis":false}`, `Metatron granted Ash 2 food_raw`},
-	"metatron.entity_moved":    {`{"class":"pile","x":3,"y":4,"to_x":6,"to_y":7,"gratis":false}`, `Metatron moved the pile at (3,4) to (6,7)`},
-	"metatron.entity_removed":  {`{"class":"structure","x":12,"y":8,"gratis":false}`, `Metatron removed the structure at (12,8)`},
+	"metatron.charter_observed": {
+		`{"fingerprint":"ab12cd34ef56","default":false}`,
+		`Metatron ran under charter ab12cd34ef56 (player-authored)`,
+	},
+	"morgue.epilogue": {
+		`{"agent":0,"text":"Ash kept the fire until the end."}`,
+		`epilogue for Ash: Ash kept the fire until the end.`,
+	},
+	"metatron.time_snapped":   {`{"to_tick":106200,"gratis":false}`, `Metatron snapped time forward to day 2 11:30`},
+	"metatron.item_granted":   {`{"agent":0,"kind":"food_raw","qty":2,"gratis":false}`, `Metatron granted Ash 2 food_raw`},
+	"metatron.entity_moved":   {`{"class":"pile","x":3,"y":4,"to_x":6,"to_y":7,"gratis":false}`, `Metatron moved the pile at (3,4) to (6,7)`},
+	"metatron.entity_removed": {`{"class":"structure","x":12,"y":8,"gratis":false}`, `Metatron removed the structure at (12,8)`},
 
 	// --- cog (labeled) ---
 	"cog.thought": {
