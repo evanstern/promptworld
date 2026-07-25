@@ -124,6 +124,15 @@ func Run(dir string) error {
 	if err := seedTuning(w, st, state); err != nil {
 		return err
 	}
+	// Survival watches (spec 059 US1): the three system-origin survival watches
+	// (near-death, starvation, exposure) exist in every world — seeded here at
+	// boot for a fresh world and back-seeded once for a pre-059 world lacking
+	// them. The seed-if-absent guard makes this replay-safe and idempotent: the
+	// events land in the log, replay reconstructs the watches, and a later boot
+	// finds them present and injects nothing.
+	if err := seedSurvivalWatches(w, st, state); err != nil {
+		return err
+	}
 	recoveryMs := time.Since(startWall).Milliseconds()
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
@@ -549,6 +558,45 @@ func seedTuning(w *world.World, st *store.Store, state *sim.State) error {
 		return err
 	}
 	return st.AppendEvents([]store.Event{ev})
+}
+
+// seedSurvivalWatches injects the three system-origin survival watches (spec 059
+// US1, FR-001) on boot if the world carries none yet — the seedMeetingConvention /
+// seedTuning shape: build events → state.Apply → st.AppendEvents, so the seed
+// lands in the log like genesis and replay re-applies it (the boot-time seed
+// never fires twice). No spec-057 genesis seam exists on the fork (persona.Genesis
+// seeds only the charter file, not an event genesis), so this uses the boot
+// seed-if-absent pattern alone — which covers BOTH cases: a fresh world's FIRST
+// boot seeds the watches (no prior events), and a pre-059 world's first boot
+// after upgrade back-seeds them; either way a later boot finds them in replayed
+// state and skips. The guard keys on an ACTIVE survival watch already standing,
+// so the watches (non-expiring, uncancellable) are seeded exactly once per world.
+func seedSurvivalWatches(w *world.World, st *store.Store, state *sim.State) error {
+	for i := range state.MetatronOrders {
+		if o := &state.MetatronOrders[i]; o.Survival != "" && o.Status == "active" {
+			return nil // already standing — replay-safe idempotence
+		}
+	}
+	var events []store.Event
+	for _, o := range sim.SurvivalWatchDefs(state.Tick) {
+		ev := store.Event{Tick: state.Tick, Type: "metatron.order_placed", Payload: mustJSONDaemon(o)}
+		if err := state.Apply(ev); err != nil {
+			return fmt.Errorf("seed survival watch %s: %w", o.ID, err)
+		}
+		events = append(events, ev)
+	}
+	return st.AppendEvents(events)
+}
+
+// mustJSONDaemon marshals a seed payload; a survival-watch order is literal Go
+// data, so marshaling cannot fail — panic is the honest response to the
+// impossible, matching the metatron package's mustJSON.
+func mustJSONDaemon(v any) []byte {
+	b, err := json.Marshal(v)
+	if err != nil {
+		panic("daemon: survival watch marshal: " + err.Error())
+	}
+	return b
 }
 
 func appendDaemonEvent(st *store.Store, srv *ipc.Server, typ string, payload any, tick int64) error {

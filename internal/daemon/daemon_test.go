@@ -302,3 +302,70 @@ func TestTeachingPostureSpeedDerivation(t *testing.T) {
 		}
 	}
 }
+
+// TestSeedSurvivalWatches (spec 059 US1, SC-001): a fresh world's boot seeds the
+// three system-origin survival watches once; they ride the log so a replayed
+// daemon re-establishes them; and a second boot with them already standing
+// injects nothing (replay-safe idempotence).
+func TestSeedSurvivalWatches(t *testing.T) {
+	w := openWorldWithMeeting(t, ``)
+	st, err := store.Open(w.DBPath())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+
+	state := sim.NewState(w.Manifest.Seed, w.Map())
+	if err := seedSurvivalWatches(w, st, state); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+
+	// State now carries exactly the three canonical survival watches, all active,
+	// all system origin, one per kind.
+	kinds := map[string]int{}
+	for i := range state.MetatronOrders {
+		o := state.MetatronOrders[i]
+		if o.Survival == "" {
+			continue
+		}
+		if o.Origin != sim.MetatronOriginSystem || o.Status != "active" {
+			t.Errorf("survival watch %s not active/system: %+v", o.ID, o)
+		}
+		kinds[o.Survival]++
+	}
+	for _, k := range []string{sim.SurvivalNearDeath, sim.SurvivalStarvation, sim.SurvivalExposure} {
+		if kinds[k] != 1 {
+			t.Errorf("survival kind %q seeded %d times, want 1", k, kinds[k])
+		}
+	}
+
+	// The events persist: a fresh state rebuilt from the log carries them.
+	replayed := sim.NewState(w.Manifest.Seed, w.Map())
+	var placed int
+	if err := st.ReplayEvents(0, func(e store.Event) error {
+		if e.Type == "metatron.order_placed" {
+			placed++
+		}
+		return replayed.Apply(e)
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if placed != 3 {
+		t.Errorf("%d order_placed events in the log, want exactly 3", placed)
+	}
+
+	// Idempotent: a second boot with the watches already standing injects nothing.
+	if err := seedSurvivalWatches(w, st, replayed); err != nil {
+		t.Fatal(err)
+	}
+	var after int
+	st.ReplayEvents(0, func(e store.Event) error {
+		if e.Type == "metatron.order_placed" {
+			after++
+		}
+		return nil
+	})
+	if after != 3 {
+		t.Errorf("re-seed injected duplicates: %d order_placed events, want 3", after)
+	}
+}

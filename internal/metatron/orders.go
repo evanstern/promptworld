@@ -173,6 +173,10 @@ func (mt *Metatron) cancelOrder(id string, grant grantSet) string {
 			return fmt.Sprintf("I keep no watch called %q", id)
 		case strings.Contains(msg, "not active"):
 			return fmt.Sprintf("the watch %q has already lapsed", id)
+		case strings.Contains(msg, "survival watch"):
+			// A survival watch is the angel's own nature (spec 059 FR-002), not a
+			// player configuration — it cannot be released by the order surface.
+			return "that watch is my own nature — I keep it over every living soul, and I cannot set it aside"
 		default:
 			return "the world would not let me release that watch (" + msg + ")"
 		}
@@ -199,6 +203,82 @@ func orderRefusal(err error) string {
 		return "say the watch more briefly and I will hold it"
 	default:
 		return "the world would not let me set that watch (" + msg + ")"
+	}
+}
+
+// needMirror is the turn-side snapshot of one villager's survival-relevant needs
+// (spec 059): health/food/warmth, refreshed per absorb batch (mirrorState), read
+// by the targeting digest so the turn worker never races the replica.
+type needMirror struct{ Health, Food, Warmth int }
+
+// survivalBand reports, for a survival watch kind and a villager's needs, whether
+// the villager is IN the danger band (fire) and whether it has recovered above the
+// re-arm threshold (clear the latch). The bands REUSE the sim's own doctrine
+// constants (spec 059 FR-008) — no thresholds live here. inBand and rearm are
+// mutually exclusive by the hysteresis gap (band < rearm), so a villager between
+// them (recovering but not yet re-armed) neither fires nor clears — it stays
+// latched, which is the intended debounce.
+func survivalBand(kind string, n needMirror) (inBand, rearm bool) {
+	switch kind {
+	case sim.SurvivalNearDeath:
+		return n.Health < sim.SurvivalNearDeathBelow, n.Health >= sim.SurvivalNearDeathRearm
+	case sim.SurvivalStarvation:
+		return n.Food <= sim.SurvivalStarvingAt, n.Food >= sim.SurvivalStarvingRearm
+	case sim.SurvivalExposure:
+		return n.Warmth <= sim.SurvivalFreezingAt, n.Warmth >= sim.SurvivalFreezingRearm
+	}
+	return false, false
+}
+
+// matchSurvival matches one survival watch against a live event batch (spec 059
+// US1). Unlike the structural orderMatches, it evaluates the danger BAND against
+// agent.needs_changed payloads, with per-villager hysteresis latching so a
+// villager staying in-band does not re-fire the watch every game-minute. Re-arm
+// (recovery) is processed for every villager on every batch regardless of the
+// in-flight marker, so the latch always tracks reality; a FIRE is gated by
+// pendingTrigger (one survival turn per watch in flight, matching the spec's
+// "watches don't queue duplicate turns for the same crisis while one is in
+// flight") and by the per-villager latch. At most one job is enqueued per watch
+// per batch (one survival turn may address any/all villagers in crisis).
+func (mt *Metatron) matchSurvival(o sim.MetatronOrder, batch []store.Event, pending bool) {
+	for _, e := range batch {
+		if e.Type != "agent.needs_changed" {
+			continue
+		}
+		var p sim.NeedsPayload
+		if json.Unmarshal(e.Payload, &p) != nil {
+			continue
+		}
+		inBand, rearm := survivalBand(o.Survival, needMirror{Health: p.Health, Food: p.Food, Warmth: p.Warmth})
+		mt.stateMu.Lock()
+		if rearm {
+			if set := mt.survivalLatch[o.ID]; set != nil {
+				delete(set, p.Agent)
+			}
+			mt.stateMu.Unlock()
+			continue
+		}
+		if !inBand || pending || mt.survivalLatch[o.ID][p.Agent] {
+			mt.stateMu.Unlock()
+			continue
+		}
+		if mt.survivalLatch[o.ID] == nil {
+			mt.survivalLatch[o.ID] = map[int]bool{}
+		}
+		mt.survivalLatch[o.ID][p.Agent] = true
+		mt.pendingTrigger[o.ID] = true
+		mt.stateMu.Unlock()
+		pending = true // one survival turn per watch per batch; keep processing re-arm
+		select {
+		case mt.triggerQ <- triggerJob{order: o, matched: e, matchedType: e.Type, matchedTick: e.Tick}:
+		default:
+			log.Printf("metatron: trigger queue full, survival watch %s dropped", o.ID)
+			mt.stateMu.Lock()
+			delete(mt.pendingTrigger, o.ID)
+			delete(mt.survivalLatch[o.ID], p.Agent)
+			mt.stateMu.Unlock()
+			pending = false
+		}
 	}
 }
 
@@ -315,6 +395,13 @@ func (mt *Metatron) matchOrders(batch []store.Event) {
 		mt.stateMu.Lock()
 		pending := mt.pendingTrigger[o.ID]
 		mt.stateMu.Unlock()
+		// Survival watches (spec 059) use the danger-band matcher with its own
+		// hysteresis latch — re-arm must run even while a turn is in flight, so the
+		// pending short-circuit below does not apply to them.
+		if o.Survival != "" {
+			mt.matchSurvival(o, batch, pending)
+			continue
+		}
 		if pending {
 			continue
 		}

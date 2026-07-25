@@ -114,8 +114,12 @@ type Metatron struct {
 	// so a console turn can resolve a tile-addressed miracle's perception-memory
 	// recipient without racing the replica the absorb goroutine owns (spec 016).
 	agentXY [][2]int
-	moments []string // queued, surfaced oldest-first at the next turn
-	story   []string // recent chronicle entries (TASK-11), prompt grounding
+	// agentNeeds mirrors each villager's health/food/warmth (absorb-owned,
+	// refreshed per batch) — the turn worker reads it to build the miracle
+	// targeting digest (spec 059 US3) without racing the replica.
+	agentNeeds []needMirror
+	moments    []string // queued, surfaced oldest-first at the next turn
+	story      []string // recent chronicle entries (TASK-11), prompt grounding
 	// charterFP / ended mirror State.CharterFingerprint / State.Ended (spec
 	// 044 US2): the turn worker's charter observation (observeCharter) reads
 	// them under stateMu to decide whether a metatron.charter_observed emission
@@ -147,6 +151,15 @@ type Metatron struct {
 	// history (data-model §5) — guarded by stateMu alongside pendingTrigger (the
 	// absorb goroutine writes it via matchOrders; unit tests drive matchOrders too).
 	lastConfirmTick map[string]int64
+
+	// survivalLatch debounces the survival watches (spec 059 US1): per watch id,
+	// the set of villager indices currently IN the danger band and already fired
+	// upon. A villager staying in-band across the per-game-minute heartbeat does
+	// NOT re-fire (the latch is set); it clears when the villager recovers above
+	// the watch's re-arm threshold, so a later relapse fires afresh. Absorb-owned
+	// and NOT event-sourced (matching is live-only by construction — the hysteresis
+	// latch never runs in replay), guarded by stateMu alongside pendingTrigger.
+	survivalLatch map[string]map[int]bool
 
 	// digest collection (US4) — absorb-owned.
 	digLines []string
@@ -190,6 +203,7 @@ func New(orch Submitter, social Injector, loop LoopControl, m *worldmap.Map, see
 		triggerQ:        make(chan triggerJob, 64),
 		pendingTrigger:  map[string]bool{},
 		lastConfirmTick: map[string]int64{},
+		survivalLatch:   map[string]map[int]bool{},
 		done:            make(chan struct{}),
 	}
 	mt.loopRounds = loopRounds
@@ -296,9 +310,14 @@ func (mt *Metatron) mirrorState() {
 	if len(mt.agentXY) != len(mt.replica.Agents) {
 		mt.agentXY = make([][2]int, len(mt.replica.Agents))
 	}
+	if len(mt.agentNeeds) != len(mt.replica.Agents) {
+		mt.agentNeeds = make([]needMirror, len(mt.replica.Agents))
+	}
 	for i := range mt.replica.Agents {
 		mt.alive[i] = !mt.replica.Agents[i].Dead
 		mt.agentXY[i] = [2]int{mt.replica.Agents[i].X, mt.replica.Agents[i].Y}
+		n := mt.replica.Agents[i].Needs
+		mt.agentNeeds[i] = needMirror{Health: n.Health, Food: n.Food, Warmth: n.Warmth}
 	}
 	// The standing-order mirror (spec 029): the replica is the authority, copied
 	// so the turn worker reads orders under stateMu without racing the replica.
