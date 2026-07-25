@@ -1,10 +1,10 @@
 ---
 id: TASK-68
 title: 'Curriculum ladder: learning topics gated to angel capabilities'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-23 03:28'
-updated_date: '2026-07-25 08:26'
+updated_date: '2026-07-25 08:44'
 labels:
   - review-2026-07-22
   - teaching-game
@@ -31,24 +31,24 @@ Spec: specs/046-curriculum-ladder
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Curriculum ladder artifact exists: stages, concept taught per stage, required features, pass signal per stage
-- [ ] #2 Per-stage world presets exist and are creatable (new --stage or template worlds)
-- [ ] #3 Stage gating mechanism decided and implemented (capability manifest honors the world stage)
-- [ ] #4 At least two seeded scenario exercises defined with their score-narrative framing
+- [x] #1 Curriculum ladder artifact exists: stages, concept taught per stage, required features, pass signal per stage
+- [x] #2 Per-stage world presets exist and are creatable (new --stage or template worlds)
+- [x] #3 Stage gating mechanism decided and implemented (capability manifest honors the world stage)
+- [x] #4 At least two seeded scenario exercises defined with their score-narrative framing
 - [x] #5 Reviewed with the client against their three-stage progression before implementation
-- [ ] #6 Scenario/stage pass signals are event-derived and surface in-game (chronicle/status), not only in docs
-- [ ] #7 Stages are fiction-named identities (never easy-mode framing), presented as an informed first-startup choice
-- [ ] #8 Stage unlocks are artifact-gated on event-log evidence, not menu toggles
-- [ ] #9 Each stage ships a per-stage quickstart page via the player-docs skill
-- [ ] #10 Stage-1 orientation is delivered in-game via the tutor charter preset
+- [x] #6 Scenario/stage pass signals are event-derived and surface in-game (chronicle/status), not only in docs
+- [x] #7 Stages are fiction-named identities (never easy-mode framing), presented as an informed first-startup choice
+- [x] #8 Stage unlocks are artifact-gated on event-log evidence, not menu toggles
+- [x] #9 Each stage ships a per-stage quickstart page via the player-docs skill
+- [x] #10 Stage-1 orientation is delivered in-game via the tutor charter preset
 - [x] #11 Spec phase: Setup
 - [x] #12 Spec phase: Foundational (blocking prerequisites)
 - [x] #13 Spec phase: User Story 2 — The world grants what the stage teaches (P1) 🎯 co-MVP
-- [ ] #14 Spec phase: User Story 1 — Choosing a stage is choosing an identity (P1) 🎯 co-MVP
-- [ ] #15 Spec phase: User Story 3 — Earning the next stage, told in-game (P2)
-- [ ] #16 Spec phase: User Story 4 — Two exercises exist and teach (P2)
-- [ ] #17 Spec phase: User Story 5 — The stage has a floor and a guide (P3)
-- [ ] #18 Spec phase: Polish & Cross-Cutting
+- [x] #14 Spec phase: User Story 1 — Choosing a stage is choosing an identity (P1) 🎯 co-MVP
+- [x] #15 Spec phase: User Story 3 — Earning the next stage, told in-game (P2)
+- [x] #16 Spec phase: User Story 4 — Two exercises exist and teach (P2)
+- [x] #17 Spec phase: User Story 5 — The stage has a floor and a guide (P3)
+- [x] #18 Spec phase: Polish & Cross-Cutting
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -69,6 +69,10 @@ Gating slice ratified 2026-07-25: (a) skills bind at stage-3 (implementer correc
 T008-T022 complete on branch (10 commits): stages/new CLI, unlock chain + ~/.promptworld/unlocks.json, curriculum catalog wiring, both exercises, TutorCharter (approved by planning tier; guardian-voiced, teaches the four stage-1 verbs), 4 quickstart pages (player-docs gate 13/13). Escalation honored: 044-merge reconciliation (charter_observed Custom-vs-Default polarity, 3 spots per branch WALKTHROUGH.md) dispatched to Opus 4.8 — rubric: capability-gating-adjacent cross-branch integration.
 
 Client review 2026-07-25: TutorCharter text APPROVED as drafted (guardian-voiced, four stage-1 verbs, stage-2 tease) — no wording changes requested. Ships in the TASK-68 PR as persona.TutorCharter.
+
+spec-bridge sync: Setup: 1/1 · Foundational (blocking prerequisites): 3/3 · User Story 2 — The world grants what the stage teaches (P1) 🎯 co-MVP: 3/3 · User Story 1 — Choosing a stage is choosing an identity (P1) 🎯 co-MVP: 4/4 · User Story 3 — Earning the next stage, told in-game (P2): 4/4 · User Story 4 — Two exercises exist and teach (P2): 1/1 · User Story 5 — The stage has a floor and a guide (P3): 3/3 · Polish & Cross-Cutting: 3/3 — status In Progress → Done
+
+Human ACs verified against PR #79 (merged 3fad349): #1 ladder artifact = spec 046 ladder table (4 stages, concepts, grants, pass signals); #2 new --stage creates per-stage worlds; #3 stage ceiling intersects the capability-manifest derivation (three-layer coherence proven); #4 first-night + the-law with score-narrative framing; #6 pass/unlock surface via chronicle line + stages/status (fixture-proven; production emission = TASK-119); #7 skin-provided identities at an informed first-startup choice with explicit override; #8 unlocks artifact-gated on event-log evidence with auditable pointers (advisory-never-authority record); #9 four quickstart pages, freshness 13/13; #10 TutorCharter (client-approved) seeded by default at stage-1. PR #79 merged; post-merge wiki/player-docs cycle running.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -79,3 +83,9 @@ created: 2026-07-25 04:42
 Promoted to High per learning-game synthesis (docs/design/learning-game-synthesis.md, 2026-07-25): this task is the spine of the v1 game. Absorbed ACs from both vault analyses (Analysis-Learning-Game-Fit, Analysis-In-Game-First-Teaching): Cogmind difficulty-rebrand lesson (stages as identities), artifact-gated unlocks per repo gate doctrine, DF per-audience quickstarts. Operator decisions 1-3 (staged sessions, director-lite, hybrid scoring) are given constraints.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+All spec tasks complete (Setup: 1/1 · Foundational (blocking prerequisites): 3/3 · User Story 2 — The world grants what the stage teaches (P1) 🎯 co-MVP: 3/3 · User Story 1 — Choosing a stage is choosing an identity (P1) 🎯 co-MVP: 4/4 · User Story 3 — Earning the next stage, told in-game (P2): 4/4 · User Story 4 — Two exercises exist and teach (P2): 1/1 · User Story 5 — The stage has a floor and a guide (P3): 3/3 · Polish & Cross-Cutting: 3/3). Derived Done by spec-bridge sync.
+<!-- SECTION:FINAL_SUMMARY:END -->
