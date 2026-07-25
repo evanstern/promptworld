@@ -42,10 +42,42 @@ func decideIntent(s *State, m *worldmap.Map, idx int, tick int64) decision {
 	if d, ok := survivalDecision(s, m, a, tick); ok {
 		return d
 	}
-	if d, ok := prepDecision(s, m, a, tick); ok {
-		return d
+	// PREP yields to intelligence (spec 062 US1, FR-002): the prep group runs
+	// only when it is not deferring to a recent non-reflex intent or to a need
+	// in its danger band. When it yields, the agent wanders (idle filler) —
+	// instinct stops counter-scheduling the mind and stops foraging a villager
+	// whose survival need should own it.
+	if !prepYields(s, a, tick) {
+		if d, ok := prepDecision(s, m, a, tick); ok {
+			return d
+		}
 	}
 	return wanderDecision(s, m, a, idx, tick)
+}
+
+// prepYields reports whether the PREP rung group must defer this round (spec
+// 062 US1, FR-002): instinct yields to intelligence. Two independent clauses,
+// either of which holds prep back:
+//
+//   - yield window: the agent's most recent NON-REFLEX intent completed under
+//     prepYieldTicks ago — the mind gets its beat to follow up its own intent
+//     before instinct resumes upkeep. A never-mind-driven agent (the 0
+//     sentinel — every agent in a no-planner world) never yields on this
+//     clause, so degraded mode stays byte-identical except the danger band
+//     (FR-007).
+//   - danger band: any need is below its band (dangerFoodBelow / dangerWarmthBelow
+//     / dangerRestBelow) — the survival rung for that need owns the agent, and
+//     prep must not counter-schedule around it.
+//
+// SURVIVAL rungs are exempt: they decide before this gate is consulted.
+func prepYields(s *State, a *Agent, tick int64) bool {
+	if a.LastMindIntentDone != 0 && tick-a.LastMindIntentDone < prepYieldTicks {
+		return true
+	}
+	if a.Needs.Food < dangerFoodBelow || a.Needs.Warmth < dangerWarmthBelow || a.Needs.Rest < dangerRestBelow {
+		return true
+	}
+	return false
 }
 
 // survivalDecision is the SURVIVAL rung group (spec 062 R2): the life-saving
