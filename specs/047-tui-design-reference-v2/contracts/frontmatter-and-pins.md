@@ -24,8 +24,12 @@ sources:            # optional; Go files this page's shipped claims were read ag
    renderers, and re-pins.
 3. Re-pinning happens whenever a page is re-verified — at minimum in every PR that
    touches `internal/tui/` (same-PR gate): the author re-reads affected pages,
-   amends what changed, and bumps `verified_against` to a commit containing the TUI
-   change (in practice: the PR's own head, matching the wiki's pin convention).
+   amends what changed, and bumps `verified_against`. Pins MUST point at a commit
+   that is (or will remain) an ancestor of `main` — in practice the PR's merge-base
+   with `origin/main` (the mainline state whose `internal/tui` was actually
+   verified). Never pin to a task-branch head: this repo squash-merges, so branch
+   commits vanish from mainline history and the pin becomes unresolvable for fresh
+   clones.
 4. Pins are edited by humans/authors, never rewritten by the check script (the
    script is read-only).
 5. `class` must match the file's directory (cross-check by the script's file-set
