@@ -4,12 +4,12 @@ title: Per-turn context grounding — audit and intent-driven context assembly
 status: In Progress
 assignee: []
 created_date: '2026-07-25 02:41'
-updated_date: '2026-07-25 06:54'
+updated_date: '2026-07-25 07:14'
 labels:
   - goal-quality
 dependencies: []
 references:
-  - specs/043-context-grounding
+  - 'https://github.com/evanstern/promptworld/pull/77'
 priority: high
 ordinal: 14000
 ---
@@ -30,7 +30,7 @@ Spec: specs/043-context-grounding
 - [x] #4 Spec phase: Setup
 - [x] #5 Spec phase: Foundational (blocking prerequisites)
 - [x] #6 Spec phase: US5 — Operators can see exactly what an agent knew (P1) 🎯 co-MVP
-- [ ] #7 Spec phase: US1 — An agent knows what it was just doing (P1) 🎯 co-MVP
+- [x] #7 Spec phase: US1 — An agent knows what it was just doing (P1) 🎯 co-MVP
 - [x] #8 Spec phase: US2 — An agent feels which way its needs are moving (P2)
 - [x] #9 Spec phase: US3 — An agent continues its plan instead of restarting it (P3)
 - [x] #10 Spec phase: US4 — What an agent remembers is chosen for the moment (P4)
@@ -53,4 +53,6 @@ US2+US3 slice landed (commits 94978fc, 4b4db49; Opus 4.8). Need trajectories (an
 US4 slice landed (653f2a7, 41b0502; Opus 4.8). Journal term-match excerpts (≤2×300 runes, deterministic), memories floor(4)/serendipity split via a shared annotated selection core (byte-identical by construction, drift-guard test), planted-memory relevance 10/10, hermetic budget-fit 1600 thoughts ≥99%. T023 live multi-day measurement + T007 capture folded into US5 dispatch. WATCH ITEM (implementer flag): journal term match keys on raw goal names (goto_warmth) which rarely appear in free text — worst-need names carry the matching; if live recall is weak, split goal tokens on _ or take R5's embed-at-write follow-on.
 
 US5 slice landed (7374d1b; Sonnet): docs/wiki/decision-context.md inventory (10 blocks + deliberate absences, pinned 41b0502) + INDEX entry; live evidence: SC-001 contract-vs-capture MATCH over 1,055 planner thoughts; SC-005 100% within 2000-token budget (PromptBytes min 623 / median 2426 / max 3165 ≈ 156/607/791 approx-tokens), 0 live drops (drop mechanics covered by unit tests); run ctx-043-check seed 424301, 2.017 game-days at 32x, cogito:3b (gemma4:12b-mlx not pulled — deviation recorded in evidence). Throwaway world + binary cleaned up. Note: the agent stalled waiting for an untracked daemon; orchestrator resumed it via message — future dispatches with long background runs should poll in-agent, not await notification. Remaining: T013 harness (absorbed into T024), polish T024-T025, PR; post-merge T026-T027.
+
+Polish slice landed (d76d00b; Opus 4.8): TestContextReplayByteIdentical (snapshot + genesis replay, -race), replayToTick helper + env-guarded TestSageThrashWindowContextReplay (SC-004 evidence committed — Sage tick 265,864 self_history shows instinct/planner alternation verbatim), full suite + vet + gofmt green, merge-tree vs origin/main conflict-free. US1 phase now 6/6 (T013 done). PR OPENED: https://github.com/evanstern/promptworld/pull/77 — one task, one PR. Remaining post-merge: T026 wiki re-pin + player docs, T027 SC-007 flip-rate run; then task Done via spec-bridge:sync.
 <!-- SECTION:NOTES:END -->
