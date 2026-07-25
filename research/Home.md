@@ -20,3 +20,5 @@ here, in your head, and nowhere else.
 | ----- | ----- |
 | [[Agent-Mental-Maps]] | How agents build private spatial maps of grid worlds (64x64 → layered 3D) — trees, belief grids, fog of war, decay, hierarchical pathfinding |
 | [[Agent-Memory-Retrieval]] | Embedding-based memory retrieval for LLM agent sims — recency/importance/relevance scoring, novelty gates, consolidation, small-N kNN, embedding determinism, Go inference |
+| [[Game-Player-Docs]] | How complex sim / TUI games write "how do I actually play this?" docs — quickstart patterns (DF), screen orientation (NetHack), contextual help (RimWorld, Cogmind), manual conventions |
+| [[Game-Gameplay-Patterns]] | Gameplay patterns from the same game family — storyteller pacing (RimWorld), losing-is-fun emergent narrative (DF), god-game indirect control, observation-driven play (Progress Quest, Smallville), difficulty framing (Cogmind) |
