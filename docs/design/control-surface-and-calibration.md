@@ -100,8 +100,10 @@ shelter, warmth −4 cold / +6 fire / +2 day, health −3 starving-freezing / +1
 hungry 350, tired 250, near-death 200 (reset 400), cold-night 350, satiety 900. Start: health
 1000, food 600, rest 800, warmth 800, morale 600 (scale 0–1000).
 
-**Fire** (`sim/agents.go:527,575-576,571`): build cost 2 wood / 600 ticks; burn 4 game-hours per
-wood; fuel cap 12 h; reflex refuel only below 1 h remaining (`refuelDyingBelow`=3600).
+**Fire** (`sim/agents.go`, defaults now in `sim/tuning.go`): build cost 2 wood / 600 ticks; burn 4
+game-hours per wood (`fire_burn_per_wood`, **tuning.json-promoted**, spec 048); fuel cap 12 h
+(unpromoted); reflex refuel only below 1 h remaining (`refuel_dying_below`=3600,
+**tuning.json-promoted**).
 
 **Actions** — durations 60–1200 ticks, yields (forage 2, hunt 8/12, chop 1/3, quarry 1/3, planks
 4), costs (shelter 5 wood + 8 planks, oven 4 refined stone + 2 planks, walls 2/2), durability
@@ -113,7 +115,9 @@ registry, `agents.go:748`).
 / rock 6% / forage 4.5% / 4 dens (`worldmap/worldmap.go:36,101-106`); forage regrow 12 h, den
 cooldown 6 h.
 
-**Gru predator** (`sim/gru.go:34-48`): sight 8, light-aversion 3, wound 250, 60%/night emergence.
+**Gru predator** (`sim/gru.go:34-48`, emergence default now in `sim/tuning.go`): sight 8,
+light-aversion 3, wound 250, 60%/night emergence (`gru_emerge_per_mille`=600,
+**tuning.json-promoted**, spec 048).
 
 ### 2.5 Memory, beliefs, consolidation (doctrine)
 
@@ -130,8 +134,10 @@ cooldown 6 h.
 
 Talk cooldown 2 game-hours + morale +50 (`sim/agents.go:543-545`); conversation scenes: cap 4,
 join radius 2, 2 turns/side, 10-min deadline (`mind/convo.go:75-238`, `sim/social.go:85`);
-encounter cooldown 2 game-hours per pair, radius 1, planner debounce 5 game-min
-(`mind/mind.go:36-49`); planner cadence 30 game-min (`sim/agents.go:537`). Trust/affection deltas,
+encounter cooldown 2 game-hours per pair (`encounter_cooldown_ticks`, **tuning.json-promoted**,
+spec 048; default now in `sim/tuning.go`), radius 1, planner debounce 5 game-min (`mind/mind.go`);
+planner cadence 30 game-min (`planner_cadence_ticks`, **tuning.json-promoted**; default now in
+`sim/tuning.go`). Trust/affection deltas,
 rumor decay 4/5 per hop, secret gate 700 trust: `sim/social.go:55-96`. Meetings: turn 360t,
 timebox 3600t, quorum 2; vote weights (self-interest +400, align/oppose 8/10); exile hostility
 gate −600: `sim/governance.go:29-65`.
@@ -348,15 +354,42 @@ status:
 
 1. **Const → manifest field** read at boot, defaulted to the current constant, with a validation
    clamp (the `max_tokens`/`loop_max_rounds` pattern in `llm/config.go`).
+   — **SHIPPED** (spec 048 / TASK-107) as the per-world `tuning.json` manifest.
 2. **Log the value as an event** at boot (or on change), so replays reproduce behavior — the same
    discipline `calibration.json` and `format_version` already follow.
+   — **SHIPPED** (spec 048 / TASK-107) as the `sim.tuning_applied` event: the daemon seeds one
+   full-set event at boot when the manifest's effective values differ from what event-sourced
+   state carries, and replay derives tuning exclusively from that event (never the file).
 3. **Only then** consider hot exposure (IPC command, angel tool, TUI setting), with reducer-side
-   enforcement of bounds — the clock-speed/charge-economy pattern.
+   enforcement of bounds — the clock-speed/charge-economy pattern. **Still future**, per dial.
 
-Candidates that have earned promotion on world-01 evidence: `refuelDyingBelow`,
-`fireBurnPerWood`, a conversation pair-cooldown, `gruEmergePerMille`, and the planner cadence.
-Candidates that have *not*: everything nobody has yet needed to touch. Dials should be earned by
-evidence, not speculatively multiplied.
+### The shipped mechanism (`tuning.json`, spec 048)
+
+`tuning.json` is an optional, sparse, per-world file (a peer of `manifest.json` /
+`calibration.json` / `llm.json`; an absent file is exactly today's behavior — every dial keeps
+its doctrine-constant default, no event appended). It promotes the five dials that earned it on
+world-01 evidence, each defaulting to its current constant with a documented clamp
+(`specs/048-tuning-manifest/contracts/tuning.md` is the authoritative schema/clamp table):
+
+| Dial (JSON key) | Default | Clamp | Behavior |
+|---|---|---|---|
+| `refuel_dying_below` | 3600 | [0, 86400] | reflex refuel trigger window |
+| `fire_burn_per_wood` | 14400 | [600, 86400] | fuel added per wood (still capped by `fireFuelCap`) |
+| `gru_emerge_per_mille` | 600 | [0, 1000] | nightly gru emergence chance (0 = never) |
+| `planner_cadence_ticks` | 1800 | [60, 86400] | mind planner cadence, boot stagger, embedder buckets |
+| `encounter_cooldown_ticks` | 7200 | [0, 86400] | per-pair conversation encounter cooldown |
+
+Out-of-range values of a known field **clamp** to the nearest bound with an operator warning;
+malformed JSON, wrong types, or unknown field names **fail boot** (fail-closed — a typo'd dial
+must never silently no-op). Values are consumed in one place: nil-safe accessors on `sim.State`
+(`internal/sim/tuning.go`), read reducer-side and off the mind's replica alike. Editing the file
+takes effect at the next daemon boot only (hot exposure is step 3, above).
+
+Candidates that have earned promotion on world-01 evidence — and are now the shipped five above:
+`refuelDyingBelow`, `fireBurnPerWood`, a conversation pair-cooldown, `gruEmergePerMille`, and the
+planner cadence. Candidates that have *not*: everything nobody has yet needed to touch (e.g.
+`fireFuelCap`, deliberately left unpromoted). Dials should be earned by evidence, not speculatively
+multiplied.
 
 ---
 
