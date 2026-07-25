@@ -47,10 +47,11 @@
 //   2  usage/environment error (bad invocation, not a git repo, git < 2.38,
 //      or fetch failure in a fail-closed mode: pr, worktree)
 
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 
 // ---------------------------------------------------------------------------
 // Usage / preflight
@@ -264,7 +265,7 @@ function changedFiles(base, ref, cwd, paths) {
 
 const RANK = { info: 0, warn: 1, block: 2 };
 
-function fingerprint(gate, rule, key, evidence) {
+export function fingerprint(gate, rule, key, evidence) {
   const sorted = [...evidence].sort().join(',');
   const h = createHash('sha256').update(`${gate}|${rule}|${key || ''}|${sorted}`).digest('hex');
   return h.slice(0, 12);
@@ -512,13 +513,13 @@ function computeDelegatedSurface(name, mainWt, relScriptPath, args, extractTouch
   return { name, checker: 'delegated', stale: r.status !== 0, touched: [...new Set(touched)] };
 }
 
-function computePlayerDocsSurface(mainWt) {
+export function computePlayerDocsSurface(mainWt) {
   return computeDelegatedSurface(
     'player-docs',
     mainWt,
     '.claude/skills/player-docs/scripts/check-freshness.mjs',
     ['--check', '--json'],
-    (parsed) => (parsed.pages || []).filter((p) => p.verdict !== 'fresh').flatMap((p) => p.sources || [])
+    (parsed) => (parsed.pages || []).filter((p) => p.verdict !== 'fresh').flatMap((p) => (p.sources || []).map((s) => s.path))
   );
 }
 
@@ -1363,4 +1364,20 @@ function main() {
   process.exit(report.exitCode);
 }
 
-main();
+// Guard so this file is importable (e.g. from a node:test regression test)
+// without spawning the CLI's side effects — only run main() when invoked
+// directly as `node check-merge-drift.mjs ...`. Default is to RUN: skipping
+// requires positive proof this is an import, via resolved real paths (so a
+// symlinked invocation — e.g. through a worktree reached via a symlinked
+// ancestor directory — still matches). If we can't tell, run anyway; a gate
+// script must never silently no-op.
+function invokedDirectly() {
+  try {
+    return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    return true;
+  }
+}
+if (invokedDirectly()) {
+  main();
+}
