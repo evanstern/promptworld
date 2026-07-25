@@ -153,7 +153,7 @@ func NewEmbedder(client EmbedClient, social SocialInjector, warn func(detail str
 		social:     social,
 		warn:       warn,
 		replica:    replica,
-		lastBucket: replica.Tick / sim.PlannerCadenceTicks,
+		lastBucket: replica.Tick / replica.PlannerCadence(),
 		events:     make(chan []store.Event, 256),
 		jobs:       make(chan embedJob, 1024),
 		done:       make(chan struct{}),
@@ -209,7 +209,7 @@ func (e *Embedder) run() {
 			// memories the same batch carried. Gaps are legal — a bucket with
 			// no committed events fires late or not at all, and selection
 			// falls back to the legacy ranking.
-			if bucket := e.replica.Tick / sim.PlannerCadenceTicks; bucket > e.lastBucket {
+			if bucket := e.replica.Tick / e.replica.PlannerCadence(); bucket > e.lastBucket {
 				e.lastBucket = bucket
 				var sits []sitRender
 				for i := range e.replica.Agents {

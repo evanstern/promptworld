@@ -79,7 +79,7 @@ func TestGatherTuningMirror(t *testing.T) {
 		{"foodCookedRestore", foodCookedRestore, 80},
 		{"mealRestore", mealRestore, 100},
 		{"satietyAt", satietyAt, 900},
-		{"fireBurnPerWood", fireBurnPerWood, 4 * 3600},
+		{"defaultFireBurnPerWood", defaultFireBurnPerWood, 4 * 3600},
 		{"fireFuelCap", fireFuelCap, 12 * 3600},
 		{"spearDurability", spearDurability, 3},
 		{"restRegenShelter", restRegenShelter, 6},

@@ -116,6 +116,14 @@ func Run(dir string) error {
 	if err := seedMeetingConvention(w, st, state); err != nil {
 		return err
 	}
+	// World tuning manifest (spec 048): load tuning.json, clamp+warn or fail
+	// boot, and seed one sim.tuning_applied event when the effective set differs
+	// from what recovered state carries — before the loop runs and before
+	// mind.New, so no tick or planner schedule ever runs ahead of the tuned
+	// values.
+	if err := seedTuning(w, st, state); err != nil {
+		return err
+	}
 	recoveryMs := time.Since(startWall).Milliseconds()
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
@@ -338,7 +346,7 @@ func Run(dir string) error {
 		// threshold lands as cog.recalibration_recommended telemetry.
 		orch.SetRecalibrateHook(md.RecalibrateSignal)
 		fmt.Printf("daemon: mind driver on (%d villagers, cadence %d game-min)\n",
-			sim.AgentCount, sim.PlannerCadenceTicks/60)
+			sim.AgentCount, state.PlannerCadence()/60)
 		// Embedding driver (spec 042 US1): wired ONLY when llm.json routes the
 		// embedding kind — a peer of the consolidation driver, watching
 		// committed agent.memory_added events and injecting recorded
@@ -493,6 +501,50 @@ func seedMeetingConvention(w *world.World, st *store.Store, state *sim.State) er
 		return err // already validated in world.Open; defensive
 	}
 	ev := sim.NewConventionEvent(state, w.Map(), state.Tick, convene, open, mc.X, mc.Y)
+	if err := state.Apply(ev); err != nil {
+		return err
+	}
+	return st.AppendEvents([]store.Event{ev})
+}
+
+// seedTuning loads the optional per-world tuning.json and, when present, applies
+// the promoted-dial manifest (spec 048). It follows the seedMeetingConvention
+// shape: build event → state.Apply → st.AppendEvents, so the seed lands in the
+// log like genesis and replay re-applies it (the boot-time seed never fires
+// twice). I/O and operator reporting live here in the daemon; doctrine (parse,
+// clamp, event shape) lives in sim.
+//
+//   - Absent file: seeds NOTHING — state keeps whatever tuning it carries
+//     (defaults for a fresh world, or values already in the log). This is the
+//     "absent tuning.json == current behavior" invariant.
+//   - Present file: ParseTuning clamps out-of-range values (each printed as an
+//     operator warning) and fails boot on malformed JSON / wrong types / unknown
+//     keys. The resolved effective set is compared against the in-effect set
+//     (nil state tuning ≡ the default set); an event is appended only when they
+//     differ, so restarting with an unchanged file never grows the log.
+func seedTuning(w *world.World, st *store.Store, state *sim.State) error {
+	data, err := os.ReadFile(w.TuningPath())
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil // absent file seeds nothing
+		}
+		return fmt.Errorf("read %s: %w", w.TuningPath(), err)
+	}
+	parsed, warns, err := sim.ParseTuning(data)
+	if err != nil {
+		// ParseTuning errors already self-identify as "tuning.json: ..."; add the
+		// world dir for location without repeating the filename.
+		return fmt.Errorf("%s: %w", w.Dir, err)
+	}
+	for _, warn := range warns {
+		fmt.Printf("daemon: %s\n", warn)
+	}
+	if *parsed == state.EffectiveTuning() {
+		return nil // effective set unchanged — no redundant event on restart
+	}
+	fmt.Printf("daemon: tuning.json applied: refuel_dying_below=%d fire_burn_per_wood=%d gru_emerge_per_mille=%d planner_cadence_ticks=%d encounter_cooldown_ticks=%d\n",
+		parsed.RefuelDyingBelow, parsed.FireBurnPerWood, parsed.GruEmergePerMille, parsed.PlannerCadenceTicks, parsed.EncounterCooldownTicks)
+	ev := sim.NewTuningEvent(state.Tick, *parsed)
 	if err := state.Apply(ev); err != nil {
 		return err
 	}

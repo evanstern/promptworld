@@ -667,16 +667,17 @@ const (
 	// TASK-7: the reflex is the fallback mind — it only acts on agents idle
 	// past this grace, leaving room for planner injections.
 	reflexGraceTicks = 120 // 2 game-minutes
-	// PlannerCadenceTicks is the mind driver's per-agent baseline.
-	PlannerCadenceTicks = 1800 // 30 game-minutes
-	witnessRadius       = 8
-	nearDeathBelow      = 200
-	nearDeathResetAt    = 400
-	coldNightBelow      = 350
-	forageRegrowSec     = 12 * 3600
-	denCooldownSec      = 6 * 3600
-	talkCooldownSec     = 2 * 3600
-	talkMoraleBonus     = 50
+	// The mind driver's per-agent baseline cadence is spec-048-promoted: the
+	// default lives in tuning.go as defaultPlannerCadenceTicks and reads go
+	// through State.PlannerCadence() (nil-safe accessor).
+	witnessRadius    = 8
+	nearDeathBelow   = 200
+	nearDeathResetAt = 400
+	coldNightBelow   = 350
+	forageRegrowSec  = 12 * 3600
+	denCooldownSec   = 6 * 3600
+	talkCooldownSec  = 2 * 3600
+	talkMoraleBonus  = 50
 )
 
 // --- spec 012 resources/food/crafting v2 tuning ---
@@ -700,14 +701,12 @@ const (
 	// over the finer raw unit (contracts/recipes.md sizing).
 	stockFoodRawTo = 8
 
-	// refuelDyingBelow (T020): the reflex refuels a fire whose remaining fuel
-	// has dropped below this window (1 game-hour) when carrying wood.
-	refuelDyingBelow = 3600
-
-	// Fire fuel window. A fresh fire (2 wood) burns 2×fireBurnPerWood; each
-	// refuel (1 wood) adds fireBurnPerWood, truncated to now + fireFuelCap.
-	fireBurnPerWood = 4 * 3600  // 4 game-hours per wood
-	fireFuelCap     = 12 * 3600 // remaining fuel ceiling
+	// The refuel-dying-below window and fire-burn-per-wood are spec-048-promoted
+	// dials: defaults live in tuning.go (defaultRefuelDyingBelow,
+	// defaultFireBurnPerWood) and reads go through State.RefuelDyingBelow() /
+	// State.FireBurnPerWood(). fireFuelCap is NOT promoted (research R6) — it
+	// still truncates the effective per-wood deadline.
+	fireFuelCap = 12 * 3600 // remaining fuel ceiling
 
 	// Spear durability: hunts a spear lasts before breaking.
 	spearDurability = 3

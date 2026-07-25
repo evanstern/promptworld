@@ -310,6 +310,12 @@ func (w *World) LLMConfigPath() string { return filepath.Join(w.Dir, "llm.json")
 // legal — pessimistic bootstrap defaults apply.
 func (w *World) CalibrationPath() string { return filepath.Join(w.Dir, "calibration.json") }
 
+// TuningPath is the optional per-world tuning manifest (spec 048): operator-
+// authored, sparse JSON promoting doctrine constants to per-world dials. An
+// absent file is the default state for every world — behavior is exactly the
+// doctrine constants. Never written by `promptworld new`.
+func (w *World) TuningPath() string { return filepath.Join(w.Dir, "tuning.json") }
+
 // EstimatorStatePath is the persisted live per-provider seconds-per-point
 // snapshot (TASK-113): unlike calibration.json (human-authored via `promptworld
 // calibrate`, daemon-read-only), this file IS daemon-written — periodically and

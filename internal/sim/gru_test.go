@@ -40,7 +40,7 @@ func TestGruNocturnalOnly(t *testing.T) {
 	// The roll is a pure function of (seed, night): the log must agree.
 	want := 0
 	for night := int64(1); night <= 2; night++ {
-		if rngAt(uint64(seed), "gru-emerge", night, 0).Uint64N(1000) < gruEmergePerMille {
+		if rngAt(uint64(seed), "gru-emerge", night, 0).Uint64N(1000) < defaultGruEmergePerMille {
 			want++
 		}
 	}
