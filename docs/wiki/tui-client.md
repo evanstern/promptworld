@@ -80,7 +80,11 @@ retrying, rendering the reason in the final view and exposing it via
 `Model.FatalErr()`, which `cmdUI` turns into a non-zero exit. A 1-second poll refreshes the clock/status line (quiet ticks produce no
 events, so the replica's tick alone would lag).
 
-Layout (TASK-34; design reference in `docs/design/tui/`): at ≥112 columns the
+Layout (TASK-34; design reference in `docs/design/tui/` — entry points
+`INDEX.md`/`anatomy.md`; since TASK-123's v2 taxonomy the dock's per-tab
+content is split across `panels/guardian.md` (fiction layer), `panels/
+systems.md` (telemetry), and `panels/villagers.md`, with `panels/dock.md`
+itself covering only the tab-container chrome): at ≥112 columns the
 client renders the **widescreen composite** — the map on the left and a tabbed
 **dock** on the right in a 50/50 split (`computeColumns` in layout.go; the map's
 viewport derives from the column budget via `mapViewportTiles`), a one-line
