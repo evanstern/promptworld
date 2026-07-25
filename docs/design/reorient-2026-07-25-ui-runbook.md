@@ -47,10 +47,9 @@ design pages are decided. Plan-of-record is the board.
   recorded, worktree cut at 622e559). Outside this runbook: TASK-131 (spec 051
   merge-drift gates, worktree present), TASK-107 (uncommitted wiki edits at root —
   leave them).
-- **Ambiguous claim — TASK-119:** `specs/054-scenario-machinery/` exists with spec.md +
-  requirements checklist only (no plan/tasks/link; board still To Do). Either a stalled
-  pre-work artifact or a session mid-specify. Confirm before claiming; if claimed,
-  resume from spec 054 rather than renumbering.
+- **TASK-119 attributed (operator confirmation, ~18:30):** `specs/054-scenario-machinery/`
+  is the sibling orchestrator session's in-progress specify — 119, 121, 125 (and 127,
+  spec 056) are all that session's claims. Session 3 does not touch them.
 - **Unblocked and unclaimed:** TASK-117 (Lane 3 gate satisfied — 121's skin-token
   contract is published on main via spec 052), TASK-127 (its two parked operator
   questions are RESOLVED in the spec-047 pages, which win per this runbook: ambient
