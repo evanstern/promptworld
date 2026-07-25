@@ -11,7 +11,7 @@ sources:
   - internal/sim/terrain.go
   - internal/sim/morgue.go
   - internal/sim/curriculum.go
-verified_against: d9d74924621b8816bbb4608afe48c41cda4321d7
+verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
 ---
 
 # Sim state & reducer
@@ -105,12 +105,13 @@ arm alongside `LastTalk`, absent record ≡ never talked, so every pre-061
 snapshot round-trips byte-identically — and the narrated story: the bounded
 `State.Chronicle`
 ring ([[chronicle]], TASK-11), which rides snapshots so attaching clients
-get catch-up history for free — Metatron's charge bank
-(`MetatronCharges`, genesis 1, deliberately not `omitempty` so a
-spent-to-zero bank round-trips as 0; [[metatron]], TASK-12) — the standing-order
-substrate (`MetatronOrders []MetatronOrder`, spec 029, `omitempty` — here an
+get catch-up history for free — the Guardian's charge bank
+(`GuardianCharges`, JSON tag `metatron_charges` (frozen, spec 052 ruling 2), genesis 1,
+deliberately not `omitempty` so a
+spent-to-zero bank round-trips as 0; [[guardian]], TASK-12) — the standing-order
+substrate (`GuardianOrders []GuardianOrder`, spec 029, `omitempty` — here an
 empty order set genuinely IS the zero value, unlike the charge bank, so a
-pre-029 snapshot with the field absent unmarshals to nil; [[metatron-orders]])
+pre-029 snapshot with the field absent unmarshals to nil; [[guardian-orders]])
 — and the village's
 law ([[governance]], TASK-13): `MeetingPlace` (set once), the `Meeting`
 lifecycle (including the TASK-36 emergent-gathering watch fields
@@ -126,7 +127,7 @@ rather than a log scan), the `Ended bool` terminal latch and `RunEnd *RunEnd`
 summary (`{tick, deaths, final_cause}`, set once by the `run.ended` arm and
 never cleared by any event, so snapshot+replay restores the ended posture on
 restart for free), `CharterFingerprint` (the most recent effective-charter
-content hash a Metatron turn ran under — the full revision timeline lives in
+content hash a Guardian turn ran under — the full revision timeline lives in
 the event log), and the `MorgueEpilogues []MorgueEpilogue` bounded ring
 (`morgueEpilogueCap` 32, the chronicle pattern) of narrator mourning prose —
 all `omitempty`, so every pre-044 snapshot stays byte-identical with no
@@ -287,7 +288,7 @@ anchor stays the permanent 0 sentinel;
 (`Map.removeFact`) — both no-op on a map-less agent (a pre-041 world mid-
 migration), keeping the reducer total; `social.place_told` (the talk
 sidecar's directions exchange) and `metatron.place_revealed` (a vision's
-optional place grant) route through the existing `applySocial`/`applyMetatron`
+optional place grant) route through the existing `applySocial`/`applyGuardian`
 dispatchers below, upserting into the RECEIVER's map only where the fact is
 absent or the agent's own knowledge is staler. Beside these, several
 EXISTING arms gained silent DERIVED bookkeeping with no new event: `agent.moved`,
@@ -302,17 +303,17 @@ the `meeting.*`/`norm.*` families — plus `meeting.convention_established` and
 the `sim.gathering_observed` watch event (TASK-36) — dispatch to
 `applyGovernance` in `governance.go` ([[governance]]); the four miracle types
 `metatron.time_snapped`/`metatron.item_granted`/`metatron.entity_moved`/
-`metatron.entity_removed` (spec 016, [[metatron-miracles]]) dispatch to
+`metatron.entity_removed` (spec 016, [[guardian-miracles]]) dispatch to
 `applyMiracle` in `miracles.go`, alongside `metatron.charge_regenerated`/
-`metatron.nudged`'s `applyMetatron` — which since spec 029 also arms the
+`metatron.nudged`'s `applyGuardian` — which since spec 029 also arms the
 standing-order lifecycle: `metatron.order_placed` validates and appends (id
 uniqueness, origin, non-empty `event_types`, a 1..7-game-day ttl, valid agent
 index, condition/action length caps, and — player-origin only — the 3-order
 active cap) then prunes to the active set plus the most recent 32 non-active;
 `metatron.order_triggered`/`metatron.order_cancelled`/`metatron.order_expired`
 each transition one order from active to a terminal status via the shared
-`transitionMetatronOrder`, rejecting an unknown id or one not currently active
-([[metatron-orders]]); since spec 044 (US2) `applyMetatron` also carries
+`transitionGuardianOrder`, rejecting an unknown id or one not currently active
+([[guardian-orders]]); since spec 044 (US2) `applyGuardian` also carries
 `metatron.charter_observed`, which validates a non-empty fingerprint (so the
 `InjectSocial` dry-run refuses a blank one at the door) then sets
 `State.CharterFingerprint` — state keeps only the CURRENT fingerprint, the
@@ -322,7 +323,7 @@ aligns each death against. `morgue.epilogue` dispatches to
 index (`-1` = the run-end epilogue) and non-empty text, then appends the
 bounded `State.MorgueEpilogues` ring (`morgueEpilogueCap` 32).
 The `curriculum.*` pair (spec 046, [[curriculum-ladder]]) dispatches to
-`applyCurriculum` in `curriculum.go` — validate-not-clamp, the metatron arm's
+`applyCurriculum` in `curriculum.go` — validate-not-clamp, the guardian arm's
 contract, since both types are the executor emission class (pure functions of
 recorded state, so a landed event always re-applies cleanly in replay while a
 malformed fixture is rejected at the door): `curriculum.exercise_passed`
@@ -445,7 +446,7 @@ spec 044 run-outcome types — `RunEnd`, `DeathRecord`, `RunEndedPayload` — an
 `MorgueEpilogue` ring types and `applyMorgueEpilogue` live in `morgue.go` —
 [[morgue]]);
 [[world-migration]]
-is the sole producer of `world.migrated`; [[metatron-miracles]] covers the
+is the sole producer of `world.migrated`; [[guardian-miracles]] covers the
 miracle payload shapes, cost table, and the `rebaseTicks` shift-semantics
 taxonomy `applyTimeSnapped` uses (which, since spec 029, also shifts an active
 standing order's `ExpiresTick` — never its `PlacedTick` — across a time snap;
@@ -455,7 +456,7 @@ KEEP, history never rewritten; since spec 061 it also SHIFTs every
 `PairTalks[].Tick` unconditionally — a present record is always a real
 exchange anchor, never a "never talked" sentinel, so unlike `NeedsAnchorTick`
 it needs no zero-guard);
-[[metatron-orders]] covers the standing-order lifecycle, placement validation,
+[[guardian-orders]] covers the standing-order lifecycle, placement validation,
 and the angel-side trigger/confirm mechanics built on top of this reducer arm.
 [[mental-maps]] covers `Agent.Map`'s type, its four knowledge events'
 reducer arms, and the derived explored/sighting bookkeeping several
@@ -471,7 +472,7 @@ surfaces this reducer derives — the `IntentLog` ring (types and mutators
 is the consumer of `Agent.LastMindIntentDone` (spec 062) this reducer arms —
 the PREP gate's yield-window anchor, read via `prepYields`, alongside the
 danger-band constants ([[reflex-policy]]'s own doctrine-home constants in
-`agents.go`); [[metatron-miracles]] classifies the field SHIFT (only
+`agents.go`); [[guardian-miracles]] classifies the field SHIFT (only
 non-zero) in the `rebaseTicks` taxonomy.
 [[curriculum-ladder]] covers the `curriculum.*` payload shapes,
 `EvaluateUnlock`'s per-stage gate conjuncts, the sanctioned

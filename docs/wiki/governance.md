@@ -124,7 +124,7 @@ MeetingPlace/Meeting/Norms; [[social-fabric]]'s edges are the vote substrate
 and receive the consequences; [[agent-mind]] renders the law into prompts,
 suppresses convened planners, and hosts the phrasing driver; [[chronicle]]
 narrates assemblies, tallies, exiles, and violations; [[event-types]] catalogs
-the `meeting.*`/`norm.*` families; [[metatron]] owns the *other* charter;
+the `meeting.*`/`norm.*` families; [[guardian]] owns the *other* charter;
 [[gru]] attacks are the canonical curfew fodder.
 
 ## Operational notes

@@ -10,7 +10,7 @@ sources:
   - internal/llm/providers.go
   - internal/llm/lease.go
   - internal/llm/pending.go
-verified_against: 1af833a2c4dab23932357d85cbf51e01089d66fc
+verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
 ---
 
 # LLM orchestrator
@@ -39,12 +39,13 @@ forever via `deriveLegacy` — a two-provider registry named `local`/`cloud` wit
 pre-024 routes (planner/conversation/meeting → local; consolidation/narrator/drama/
 metatron → cloud), byte-identical behavior; declaring both shapes in one file is a
 load error. `KindMusing` retired with spec 017: musing is a roster tool inside the
-planner loop ([[agent-mind]], [[tool-loop]]). Spec 029 adds `KindMetatronWatch`
-(`"metatron_watch"`) — the angel's fuzzy standing-order confirm, a single bare
-yes/no `Submit` (never a tool loop, [[metatron-orders]]); it is the one kind
+planner loop ([[agent-mind]], [[tool-loop]]). Spec 029 adds `KindGuardianWatch`
+(`"metatron_watch"` — the route-key string is FROZEN, spec 052 ruling 2) — the
+guardian's fuzzy standing-order confirm, a single bare
+yes/no `Submit` (never a tool loop, [[guardian-orders]]); it is the one kind
 whose `defaultRoutes()` chain is MULTI-ENTRY (`["local","cloud"]` — cheap-first
 local for the yes/no, cloud fallback), and it maps to [[cognition]]'s existing
-`metatron` decision class.
+`metatron` decision class (the class-name string is likewise frozen).
 
 **The embedding kind** (`llm.go`/`config.go`/`providers.go`, spec 042,
 [[memory-retrieval]]): `KindEmbedding` (`"embedding"`) is a valid route key
@@ -135,13 +136,13 @@ kind can resolve to it. The kind-scoped knobs stay TOP-LEVEL (a property of the
 thought class, never the provider — spec 024 R9): `Config.LoopMaxRounds`
 (`Rounds()`: absent/0 → 8, clamp 1–16, warn-not-error) and `Config.MaxTokens`
 (`*TokenBudgets`, spec 025 / TASK-72) — three per-kind response budgets, `planner`
-(default 512), `metatron_turn` (1024), `consolidation` (1024), each normalized by
-`PlannerTokens()`/`MetatronTurnTokens()`/`ConsolidationTokens()` (absent/0 → default,
+(default 512), `metatron_turn` (1024, the JSON key is FROZEN), `consolidation` (1024), each normalized by
+`PlannerTokens()`/`GuardianTurnTokens()`/`ConsolidationTokens()` (absent/0 → default,
 1–4096 verbatim, clamp with warning; a POINTER so `omitempty` genuinely suppresses
 the object and pre-025 configs round-trip byte-for-byte — preserved by the
 shape-aware v2 `Config.MarshalJSON`). The daemon resolves all three at boot and
-threads them into `mind.New`/`metatron.New`; conversation (128/224), meeting (72),
-narrator (800), and metatron digest (400) budgets are deliberately NOT governed by
+threads them into `mind.New`/`guardian.New`; conversation (128/224), meeting (72),
+narrator (800), and guardian digest (400) budgets are deliberately NOT governed by
 these knobs.
 
 **Whole-loop latency feed** (`ObserveCognition(kind, provider, totalMillis)`,
@@ -308,7 +309,7 @@ chain, `no_fallback` with chain length > 1, missing transport/model, `openai_com
 without endpoint, or both config shapes at once; tuning knobs clamp with warnings,
 never errors. One narrow exception to the completeness check (spec 029, research
 R8): kinds in `defaultBackfillKinds` — those introduced AFTER the v2 format shipped,
-currently just `KindMetatronWatch` — are BACKFILLED from `defaultRoutes()` with a
+currently just `KindGuardianWatch` — are BACKFILLED from `defaultRoutes()` with a
 boot log line (`configWarnf`, warn-not-error) rather than failing boot, so a v2
 `llm.json` written before the kind existed keeps booting on upgrade. This runs
 before the completeness loop; a missing route for any OTHER kind is still fatal, and
@@ -322,14 +323,14 @@ including top-level `max_tokens` — byte-for-byte.
 [[daemon-lifecycle]] starts it when config exists; [[ipc-server]] exposes `llm_call`
 and folds `StatusSnapshot` into the protocol status; [[cli-promptworld]]'s `llm`
 subcommand is the one-shot proof path (naming the serving provider and any skips) and
-its `calibrate` iterates declared providers; the [[tui-client]] metatron pane renders
+its `calibrate` iterates declared providers; the [[tui-client]] guardian pane renders
 the provider table and spend; the meter persists via [[event-log]]'s store (meta
 table). TASK-7 (agent minds), TASK-9 (consolidation), TASK-11 (narrator), and TASK-12
-(Metatron) are the callers. [[tool-loop]] is the transport's other consumer (spec
+(the guardian) are the callers. [[tool-loop]] is the transport's other consumer (spec
 017): it drives `Request.Tools`/`Turns`/`SkipObserve` and
 `Response.ToolCalls`/`Stop` through `Submit`, pins its run's provider via
 `ResolveProvider`, and reports whole-cognition latency via `ObserveCognition` — used
-by both [[agent-mind]]'s `runPlan` and [[metatron]]'s `Turn`. [[social-fabric]]'s
+by both [[agent-mind]]'s `runPlan` and [[guardian]]'s `Turn`. [[social-fabric]]'s
 conversation scenes pin per scene through the same `Request.Provider` field.
 [[daemon-lifecycle]]'s governor sampler polls `PendingCognition` every
 `GovernorCadence` and feeds it to [[cognition]]'s `Debt`/`Governor`.

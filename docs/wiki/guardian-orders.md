@@ -1,37 +1,37 @@
 ---
-name: metatron-orders
-description: The event-sourced standing-orders subsystem (spec 029, TASK-27) — monitor_and_act watches compiled once into free structural predicates, matched live in the absorb path, fired as system-authored turns through the single-flight door, with fuzzy confirm, budget-honest degradation, and daytime-omen deferral as a system-origin order; spec 059 adds three genesis/boot-seeded survival watches (near-death, starvation, exposure) — origin-keyed cap/TTL/cancel exemptions, live-only hysteresis matching, and a survival-turn frame permitting the angel to act on its own authority to save a life
+name: guardian-orders
+description: The event-sourced standing-orders subsystem (spec 029, TASK-27; package renamed internal/metatron → internal/guardian by spec 052/TASK-121, Go identifiers Metatron* → Guardian*) — monitor_and_act watches compiled once into free structural predicates, matched live in the absorb path, fired as system-authored turns through the single-flight door, with fuzzy confirm, budget-honest degradation, and daytime-omen deferral as a system-origin order; spec 059 adds three genesis/boot-seeded survival watches (near-death, starvation, exposure) — origin-keyed cap/TTL/cancel exemptions, live-only hysteresis matching, and a survival-turn frame permitting the guardian to act on its own authority to save a life; moment/notice text renders through the boot-frozen [[skin]] (spec 052) while every recorded event type/field stays FROZEN (`metatron.order_placed` et al.)
 kind: component
 sources:
-  - internal/metatron/orders.go
-  - internal/sim/metatron.go
+  - internal/guardian/orders.go
+  - internal/sim/guardian.go
   - internal/sim/executor.go
   - internal/sim/loop.go
   - internal/sim/state.go
-  - internal/metatron/turn.go
-  - internal/metatron/toolcalls.go
-  - internal/metatron/digest.go
+  - internal/guardian/turn.go
+  - internal/guardian/toolcalls.go
+  - internal/guardian/digest.go
   - internal/tool/registry.go
   - internal/llm/llm.go
   - internal/llm/config.go
   - internal/daemon/daemon.go
-verified_against: d9d74924621b8816bbb4608afe48c41cda4321d7
+verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
 ---
 
-# Metatron's standing orders
+# Guardian's standing orders
 
 A standing order is a pre-authorized watch-and-act instruction (spec 029, TASK-27):
-the player tells the angel "when Rowan next falls asleep, send her a comforting
+the player tells the guardian "when Rowan next falls asleep, send her a comforting
 vision" and walks away. The condition is compiled ONCE at placement into structural
-predicates evaluated for free as world events stream past; when it matches, the angel
-wakes and performs the pre-authorized action through exactly the [[metatron]] console
+predicates evaluated for free as world events stream past; when it matches, the guardian
+wakes and performs the pre-authorized action through exactly the [[guardian]] console
 turn's guarded machinery. Orders are **one-shot** (fire once, consumed), event-sourced
 (they ride `sim.State` through snapshots and replay), and never fire during
 reconstruction — replay rebuilds their state but only live observation triggers them.
 
 ## The entity and its lifecycle
 
-`sim.MetatronOrder` (`internal/sim/metatron.go`, data-model §1) is the event-sourced
+`sim.GuardianOrder` (`internal/sim/guardian.go`, data-model §1) is the event-sourced
 record: `ID` (`"ord-<placedTick>-<seq>"`, deterministic, no RNG — `nextOrderID` in
 `orders.go`), `Origin` (`"player"` | `"system"`), `Condition` (the original NL, ≤300
 runes), `Action` (the NL action instruction, ≤400 runes), `EventTypes` (the structural
@@ -40,24 +40,24 @@ or `-1` for any), `Keywords` (a lowercase coarse text filter, ≤6), `Confirm` (
 needs the watch confirm), `PlacedTick`, `ExpiresTick`, and `Status`
 (`active` → `triggered` | `cancelled` | `expired`, one-way).
 
-**Caps and bounds** (`sim` constants): at most `MetatronPlayerOrderCap` (3) ACTIVE
+**Caps and bounds** (`sim` constants): at most `GuardianPlayerOrderCap` (3) ACTIVE
 **player-origin** orders may stand concurrently — system-origin deferral orders are
 exempt (they are bookkeeping for an already-authorized act, FR-012). Every order carries
-a TTL in game days, player-specifiable, default 3, bounded `MetatronOrderTTLMinDays`..
-`MetatronOrderTTLMaxDays` (1..7); the reducer validates `ExpiresTick - PlacedTick`
+a TTL in game days, player-specifiable, default 3, bounded `GuardianOrderTTLMinDays`..
+`GuardianOrderTTLMaxDays` (1..7); the reducer validates `ExpiresTick - PlacedTick`
 against the same `ticksPerGameDay` (`24*3600`) literal the turn side computes from
 (mirrored in `orders.go` so the door and the placer can never diverge). The
-`MetatronOrders` slice is pruned to retain every active order plus the most recent
-`metatronOrderRetain` (32) non-active ones (`pruneMetatronOrders` — deterministic,
+`GuardianOrders` slice is pruned to retain every active order plus the most recent
+`guardianOrderRetain` (32) non-active ones (`pruneGuardianOrders` — deterministic,
 order-preserving, so replay prunes identically), giving the status/trail recent history
 without unbounded growth.
 
 ## Event sourcing
 
 Four event types carry the lifecycle, all cataloged in [[event-types]] and dispatched
-through [[sim-state-reducer]]'s `applyMetatron` arm:
+through [[sim-state-reducer]]'s `applyGuardian` arm:
 
-- **`metatron.order_placed`** (payload = the whole `MetatronOrder`) — landed through
+- **`metatron.order_placed`** (payload = the whole `GuardianOrder`) — landed through
   the [[sim-loop]] `InjectSocial` door by `placeOrder` (a `monitor_and_act` call) or by
   `deferOmen` (a system deferral). The reducer dry-run is the door authority: it rejects
   a duplicate id in ANY status, an unknown `Origin`, empty `EventTypes` (an uncompilable
@@ -71,22 +71,22 @@ through [[sim-state-reducer]]'s `applyMetatron` arm:
 - **`metatron.order_expired`** (`OrderIDPayload{id}`) — **executor-emitted**, a pure
   function of `(state, tick)` exactly like `metatron.charge_regenerated`: the [[executor]]
   emits it once when an active order's `ExpiresTick` elapses, so it is reproduced
-  deterministically in replay without the angel running (unlike a trigger). It is NOT on
+  deterministically in replay without the guardian running (unlike a trigger). It is NOT on
   the `injectSocialWhitelist` — `order_placed`/`order_cancelled`/`order_triggered` are
   the injected three; expiry is produced sim-side.
 
-`transitionMetatronOrder` performs every active→terminal move and rejects an unknown or
+`transitionGuardianOrder` performs every active→terminal move and rejects an unknown or
 already-non-active id — this is where the **cancel/expiry/trigger race resolves**:
 exactly one terminal lands, and the loser hits a non-active order and refuses at the
 door. Replay reconstructs order state through `json.Unmarshal` + `Apply` alone;
 `matchOrders` runs only in the absorb goroutine, so a predicate can never match during
 reconstruction (the edge-case guarantee — triggering is a live-observation behavior).
-`MetatronOrder.ExpiresTick` is a SHIFT field in the miracle `rebaseTicks` taxonomy
-(shifted only while active; `PlacedTick` is KEEP) — see [[metatron-miracles]].
+`GuardianOrder.ExpiresTick` is a SHIFT field in the miracle `rebaseTicks` taxonomy
+(shifted only while active; `PlacedTick` is KEEP) — see [[guardian-miracles]].
 
 ## Live matching (the absorb path)
 
-`matchOrders` runs in [[metatron]]'s `run()` loop AFTER the replica applies each batch
+`matchOrders` runs in [[guardian]]'s `run()` loop AFTER the replica applies each batch
 and the mirror refreshes, so it is live-only by construction. `orderMatches` is a PURE
 predicate — no state, no model call, evaluated free per event (SC-001): the event type
 is one of the order's `EventTypes`; if the order pins an agent (`>= 0`) the event
@@ -111,7 +111,7 @@ serialize with each other and — via the shared `turnBusy` — with console tur
 structural job fires straight through `runTrigger`; a fuzzy job first runs `runConfirm`.
 
 **The fuzzy confirm** (`confirmOrder`, spec 029 US6, `contracts/routing.md`): ONE bare
-`Submit` on [[llm-orchestrator]]'s new `llm.KindMetatronWatch` kind (routed to a cheap
+`Submit` on [[llm-orchestrator]]'s new `llm.KindGuardianWatch` kind (routed to a cheap
 default chain — `local`→`cloud` in `internal/llm/config.go`), `MaxTokens` 16, a fixed
 yes/no system prompt (`confirmSystem`), and a user prompt rendering the order's condition
 plus the matched event in the digest vocabulary (`describeEvent`, reading static
@@ -144,16 +144,18 @@ subject to the rate cap.
    stays intact for the next console open; the trigger worker queues the turn's OWN
    moment).
 5. `queueMoment` from the outcome: `triggeredMoment` names the landed act on success
-   (omen/vision/miracle), `degradedMoment` maps a failed turn to ONE model-free honest
+   (omen/vision/miracle — since spec 052 the moment text renders the display noun
+   through the active [[skin]], `mt.sk().FormNoun(form)`/`.WorkingNoun()`, never the
+   frozen tool id or recorded form value), `degradedMoment` maps a failed turn to ONE model-free honest
    moment per failure family — `ErrBudgetExhausted`/`ErrTierDown`/`ErrTierBusy` →
    "my sight dimmed", otherwise "I faltered" — never a retry (FR-011). Moments accrete to
-   `metatron/soul.md` and the queue so the next console reply leads with what the angel
+   `metatron/soul.md` and the queue so the next console reply leads with what the guardian
    did while the player was away (SC-003).
 
 ## Daytime-omen deferral
 
 A daytime `send_omen` never lands and never refuses (FR-012): `landOmen`'s day path calls
-`deferOmen` ([[metatron]]'s `turn.go`), which places a **system-origin** standing order —
+`deferOmen` ([[guardian]]'s `turn.go`), which places a **system-origin** standing order —
 `EventTypes` `["sim.night_started"]`, TTL 1 game day, cap-exempt — whose one-shot trigger
 re-runs the omen the instant night falls. Placement is FREE; the charge is spent at
 trigger-time landing, not at placement (SC-004). The action seed leads the night system
@@ -172,11 +174,11 @@ Where every order above is player-authored and player-authority, three
 in EVERY world without any player action: seeded once at boot
 (`seedSurvivalWatches`, [[daemon-lifecycle]], called right after `seedTuning`
 and before the loop starts) via `sim.SurvivalWatchDefs`, the single home both
-the boot seeder and tests build from. They are the angel's nature, not a
+the boot seeder and tests build from. They are the guardian's nature, not a
 player configuration:
 
-- **Origin-keyed exemptions** (`internal/sim/metatron.go`'s `applyMetatron`):
-  a non-empty `MetatronOrder.Survival` (`near_death`\|`starvation`\|
+- **Origin-keyed exemptions** (`internal/sim/guardian.go`'s `applyGuardian`):
+  a non-empty `GuardianOrder.Survival` (`near_death`\|`starvation`\|
   `exposure`, `sim.IsSurvivalKind`) must carry `Origin: "system"` and is
   refused otherwise; it is exempt from the TTL bounds entirely (`ExpiresTick`
   is set to `PlacedTick` as an honest placeholder and never validated or
@@ -184,10 +186,10 @@ player configuration:
   outright at the `order_cancelled` door regardless of status, in-fiction
   ("that watch is my own nature… I cannot set it aside", `cancelOrder`).
   System-origin was already cap-exempt (above) — the three watches never
-  count against `MetatronPlayerOrderCap`. The executor's `order_expired`
+  count against `GuardianPlayerOrderCap`. The executor's `order_expired`
   sweep (`stepEvents`) skips a survival watch outright, the same origin-keyed
   exemption mirrored on the reducer's `order_placed` arm.
-- **Danger bands** (`internal/metatron/orders.go`'s `survivalBand`, FR-008):
+- **Danger bands** (`internal/guardian/orders.go`'s `survivalBand`, FR-008):
   each watch REUSES an existing sim doctrine constant rather than a new
   dial — `near_death` the `nearDeathBelow`/`nearDeathResetAt` hysteresis
   band, `starvation`/`exposure` the exact `Food == 0`/`Warmth == 0` predicate
@@ -220,26 +222,26 @@ player configuration:
   distinctly, `[survival watch]` rather than the ordinary `[watch]`
   (`recordTurn`), attributing the authority trail to the survival duty
   (FR-007).
-- **The survival-turn frame** (`internal/metatron/turn.go`): `turnOrigin.survival`
+- **The survival-turn frame** (`internal/guardian/turn.go`): `turnOrigin.survival`
   is the ONLY thing that changes the turn's system prompt —
   `buildTurnSystemPrompt(survival, …)` swaps ONLY the initiative frame,
-  `metatronSurvivalFrame` in place of the ordinary `metatronInitiativeFrame`
+  `guardianSurvivalFrame` in place of the ordinary `guardianInitiativeFrame`
   (byte-identical otherwise; a non-survival call site still composes the
   pre-059 prompt verbatim, FR-005). The survival frame is the ONE carve-out:
-  for THIS peril alone the angel may send a vision or work a miracle on its
+  for THIS peril alone the guardian may send a vision or work a miracle on its
   own initiative — no player authorization needed, charge cost unchanged —
   while the world's clock and every OTHER standing order remain the
-  player's alone to command, exactly as before (FR-004). See [[metatron]]'s
+  player's alone to command, exactly as before (FR-004). See [[guardian]]'s
   Turns section for the frame-composition mechanics shared with every other
   console/system turn.
 - **The miracle targeting digest** (`buildTargetingDigest`, spec 059 US3) is
   a SEPARATE, independently-gated prompt addition (any turn whose granted
   roster offers `work_miracle`, not just a survival turn) — see
-  [[metatron-miracles]] for its mechanics.
+  [[guardian-miracles]] for its mechanics.
 
 ## Surfaces
 
-The player reads and cancels orders through the angel. `monitor_and_act` and
+The player reads and cancels orders through the guardian. `monitor_and_act` and
 `cancel_order` are registered [[tool-registry]] tools (`monitor_and_act` uses a hand-built
 `monitorAndActSchema` — arrays are unrepresentable in the scalar Param model, like
 `set_plan` — with `event_types` an enum over `observableEventTypes`, the curated
@@ -251,37 +253,37 @@ as a `rejected_gate` the model may repair. On a curriculum-ladder world
 ceiling — a ratified amendment added `monitor_and_act`/`cancel_order` to the
 stage-1 grant because the first-night exercise teaches the watch as a stage-1
 primitive — so standing orders are available at every stage the same way
-omens and visions are ([[metatron]]'s `applyStageCeiling`). The turn prompt carries active orders
+omens and visions are ([[guardian]]'s `applyStageCeiling`). The turn prompt carries active orders
 (`writeStandingOrders` — id, condition, days-left, fuzzy/structural — FR-017) so the
 angel's counsel stays truthful to live state, and the model-free `metatron.Status`
 surface lists them (`Status.Orders`, `OrderStatus{id, condition, origin, fuzzy,
-expires_day, status}`, FR-016). The fixed frame's `metatronInitiativeFrame` (a
+expires_day, status}`, FR-016). The fixed frame's `guardianInitiativeFrame` (a
 compile-time constant appended last, beneath any charter/soul/skill text — spec
 036's persona SOUL fragments stack with the editable text, never above the
 frame) binds standing-order and
-meta-tool use to player-requested or pre-authorized action only — never the angel's own
+meta-tool use to player-requested or pre-authorized action only — never the guardian's own
 initiative — with the door-side grant gate backing it independently. Since
 spec 059 this has exactly ONE carve-out, keyed on turn origin rather than
 tool: a **survival-watch** turn's frame (above) permits a vision or miracle
-on the angel's own initiative to save a life; standing orders and clock
+on the guardian's own initiative to save a life; standing orders and clock
 control are NOT part of that carve-out and remain player-authority in every
 turn, survival included (FR-004).
 
 ## Connections
 
-[[metatron]] hosts the trigger worker, the turn body (`runTurn`) both console and system
+[[guardian]] hosts the trigger worker, the turn body (`runTurn`) both console and system
 paths share, and the meta-tool/deferral wiring; [[sim-state-reducer]] holds the reducer
-arms (`applyMetatron`, `transitionMetatronOrder`, `pruneMetatronOrders`) and the
-`State.MetatronOrders` field; [[executor]] emits `metatron.order_expired` as a pure
+arms (`applyGuardian`, `transitionGuardianOrder`, `pruneGuardianOrders`) and the
+`State.GuardianOrders` field; [[executor]] emits `metatron.order_expired` as a pure
 function of state and tick; [[event-types]] catalogs the four order events; [[tool-loop]]
 drives the system-authored turn exactly as it drives the console turn; [[llm-orchestrator]]
-routes the fuzzy `KindMetatronWatch` confirm to its cheap chain; [[tool-registry]]
+routes the fuzzy `KindGuardianWatch` confirm to its cheap chain; [[tool-registry]]
 declares `monitor_and_act`/`cancel_order` and the observable-event vocabulary;
-[[metatron-miracles]] shares the `rebaseTicks` taxonomy that shifts an active order's
+[[guardian-miracles]] shares the `rebaseTicks` taxonomy that shifts an active order's
 expiry across a time snap. [[daemon-lifecycle]] seeds the three survival watches
-at boot (spec 059, `seedSurvivalWatches`, right after `seedTuning`); [[metatron]]
+at boot (spec 059, `seedSurvivalWatches`, right after `seedTuning`); [[guardian]]
 holds `persona/charter.go`'s `DefaultCharter`, which since spec 059 states the
-survival duty in-fiction so the angel's own narration stays honest about the
+survival duty in-fiction so the guardian's own narration stays honest about the
 carve-out. Spec: `specs/029-metatron-agency/` (TASK-27) — `spec.md` US2/
 US3/US4/US6, `data-model.md`, `contracts/events.md`, `contracts/routing.md`;
 `specs/059-metatron-survival-autonomy/` — `spec.md`, `plan.md`.

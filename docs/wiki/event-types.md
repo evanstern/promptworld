@@ -14,12 +14,12 @@ sources:
   - internal/sim/journal.go
   - internal/sim/consolidate.go
   - internal/sim/terrain.go
-  - internal/sim/metatron.go
+  - internal/sim/guardian.go
   - internal/sim/morgue.go
   - internal/sim/curriculum.go
   - internal/daemon/daemon.go
   - internal/daemon/curriculum.go
-verified_against: d9d74924621b8816bbb4608afe48c41cda4321d7
+verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
 ---
 
 # Event types
@@ -27,7 +27,7 @@ verified_against: d9d74924621b8816bbb4608afe48c41cda4321d7
 Every event has a namespaced `type` and a canonical-JSON payload defined as a Go
 struct in `internal/sim` (structs, never maps, so bytes are deterministic; core
 payloads live in `state.go`, families note their own file below).
-This catalog is the contract downstream consumers (chronicle, Metatron digests, the
+This catalog is the contract downstream consumers (chronicle, guardian digests, the
 TUI) will read. Spec 012 (resources/food/crafting) bumped the world save format to
 v2 ([[world-save-directory]]): a widened `Inventory`, a new `agent.ate` payload
 shape, and nine new event types. Spec 013 (inventory & storage — bulk cap, ground
@@ -51,10 +51,10 @@ Spec 028 (adaptive throttle) likewise adds **no** format bump: `State` gains
 snapshot is a valid ungoverned state), and two new reducer-applied types,
 `clock.governor_shed`/`clock.governor_recovered`, land the governor's
 speed-ladder decisions ([[cognition]]).
-Spec 029 (Metatron agency — [[metatron]], [[metatron-orders]]) likewise adds
-**no** format bump: `State` gains `MetatronOrders []MetatronOrder`
+Spec 029 (guardian agency — [[guardian]], [[guardian-orders]]) likewise adds
+**no** format bump: `State` gains `GuardianOrders []GuardianOrder`
 (`omitempty` — an empty order set is genuinely zero-value, unlike
-`MetatronCharges`'s spent-to-zero precedent, so a pre-029 snapshot with the
+`GuardianCharges`'s spent-to-zero precedent, so a pre-029 snapshot with the
 field absent unmarshals to nil), and FOUR new event types drive a standing
 order's lifecycle — `metatron.order_placed` (monitor_and_act), one-shot
 `metatron.order_triggered` (the trigger worker, live-only, never replayed),
@@ -165,10 +165,10 @@ an event, but crossing a ladder gate is (`sim.EvaluateUnlock` decides the
 gate conjuncts; full shapes and reducer effects in the table below). The
 `world.json` Manifest itself gains three additive fields outside this
 event-sourced state — `stage`, `stage_overridden`, `charter_preset`
-([[world-save-directory]], [[metatron]]) — validated at `world.Open` against
+([[world-save-directory]], [[guardian]]) — validated at `world.Open` against
 a closed vocabulary exactly like `memory_relevance` above.
-Spec 059 (metatron survival autonomy — [[metatron-orders]], [[metatron]]) is
-also format-stable: `MetatronOrder` gains `omitempty` `Survival` (`""` = an
+Spec 059 (metatron survival autonomy — [[guardian-orders]], [[guardian]]) is
+also format-stable: `GuardianOrder` gains `omitempty` `Survival` (`""` = an
 ordinary structural order, the pre-059 shape; `near_death`/`starvation`/
 `exposure` names one of the three canonical system-origin survival watches),
 so a pre-059 order round-trips byte-identically. No new event types: the
@@ -190,7 +190,7 @@ DERIVED write with no new event type (the `markExplored`/`notePresence`
 precedent, spec 041): it now also upserts `PairTalks` via `recordPairTalk`,
 read back by the sim-side hail cooldown gate (`rungPairCooldown`/
 `pairCooled`, [[sim-loop]]) and the mind-side novelty SHIM
-(`maybeStartConversation`, [[social-fabric]]). `rebaseTicks` ([[metatron-miracles]])
+(`maybeStartConversation`, [[social-fabric]]). `rebaseTicks` ([[guardian-miracles]])
 gains a matching SHIFT arm for every `PairTalks[].Tick` (unconditional — a
 present record is always a real exchange tick, never a "never talked"
 sentinel, so unlike some anchors it needs no zero-guard).
@@ -283,16 +283,16 @@ without a second ring scan.
 | `agent.belief_reinforced` (spec 030 US2, FR-008) | `BeliefReinforcedPayload{agent, belief_id}` in `internal/sim/consolidate.go` | whitelisted through `InjectSocial`'s injection door (the grounded-observation seam) — ships as consumer only; no in-tree emitter yet, the perception-of-absence work is the intended future producer | re-anchors the named belief's `Reinforced` decay-clock field to `now` (`e.Tick`); a vanished belief id no-ops, reducer-total like its siblings |
 | `gru.emerged` / `gru.moved` / `gru.sighted` / `gru.attacked` / `gru.withdrew` | payload structs in `internal/sim/gru.go`; `GruAttackedPayload.Health` (spec 044 US3): >= `gruWoundFloor` when pre-attack health was >= `nearDeathBelow` (healthy targets never die from one attack); may be 0 when the target was already weakened (pre-attack health < `nearDeathBelow`) — immediately followed, same batch, by `agent.died{cause:"gru"}` | `gruStep` (executor tick) | `State.Gru` lifecycle/position; sighting latch; attack sets absolute post-wound health, wakes victim, clears intent ([[gru]]); reducer-total (vanished gru no-ops); a killing blow (health 0) additionally lands the standard `agent.died` fallout in the same batch |
 | `chronicle.entry` | `ChronicleEntryPayload{day, from_tick, to_tick, text, thread, agents}` in `internal/sim/chronicle.go` | narrator driver (injected, TASK-11) | appends the bounded `State.Chronicle` ring ([[chronicle]]) |
-| `metatron.charge_regenerated` | `ChargeRegeneratedPayload{}` in `internal/sim/metatron.go` | executor, absolute 6-game-hour boundaries below cap | `MetatronCharges` +1, cap 3 ([[metatron]]) |
-| `metatron.nudged` | `MetatronNudgedPayload{form, targets, text}` | Metatron console turn (injected, TASK-12) | validates (charges > 0, form ∈ vision\|omen\|dream, living targets, text cap) then `MetatronCharges` −1; `vision` (spec 029, replaces `dream` as the live one-target form) needs exactly one living target at any hour; `omen` needs ≥1 living targets AND `State.Night`; `dream` is legacy-only (grandfathered exactly-one-target validation so historical events replay, but no tool can emit a new one); villager memories ride companion `agent.memory_added` events in the same atomic batch |
+| `metatron.charge_regenerated` | `ChargeRegeneratedPayload{}` in `internal/sim/guardian.go` | executor, absolute 6-game-hour boundaries below cap | `GuardianCharges` +1, cap 3 ([[guardian]]) |
+| `metatron.nudged` | `GuardianNudgedPayload{form, targets, text}` | Guardian console turn (injected, TASK-12) | validates (charges > 0, form ∈ vision\|omen\|dream, living targets, text cap) then `GuardianCharges` −1; `vision` (spec 029, replaces `dream` as the live one-target form) needs exactly one living target at any hour; `omen` needs ≥1 living targets AND `State.Night`; `dream` is legacy-only (grandfathered exactly-one-target validation so historical events replay, but no tool can emit a new one); villager memories ride companion `agent.memory_added` events in the same atomic batch |
 | `metatron.place_revealed` (spec 041 FR-014) | `PlaceRevealedPayload{agent, facts}` in `internal/sim/mentalmap.go` — the emitter bakes only the place identity (kind, x, y, prov `revealed`); `seen` and `detail` are the reducer arm's NORMATIVE stamps | `send_vision`'s optional place grant (`place_kind`/`place_x`/`place_y` argument triple, all-or-none), riding the vision's atomic `InjectSocial` batch after the nudge memories | validates (living target, every fact names a REAL place — `groundFactPresent`, so the god reveals what is, never what isn't) then upserts into the target's mental map with `Seen` = landing tick, provenance `revealed`, `Detail` = ground truth at landing (a fire's `FuelUntil`); the companion Origin-omen memory ("The vision showed you the fire at (x,y).") rides the same batch as `agent.memory_added`; chronicle grammar line; absorb rides the batch's `metatron.nudged` (paused-authoring trigger) |
-| `metatron.order_placed` (spec 029, [[metatron-orders]]) | `MetatronOrder{id, origin, condition, action, event_types, agent, keywords?, confirm?, placed_tick, expires_tick, status, survival?}` | Metatron's `monitor_and_act` tool (injected via `InjectSocial`), or — since spec 059 — the daemon's boot-time `seedSurvivalWatches` for the three canonical system survival watches | validates (non-empty id not reused by any past order regardless of status, `origin` ∈ player\|system, non-empty `event_types`, `agent` index valid or −1 for any, `condition` ≤300 chars, `action` ≤400 chars, and — player-origin only — fewer than 3 already-active player orders, `MetatronPlayerOrderCap`; system-origin deferral orders are exempt from the cap); a non-empty `survival` (spec 059: `near_death`\|`starvation`\|`exposure`) MUST be `origin: system` and is EXEMPT from the ttl 1..7 game days bound (non-expiring by nature, `expires_tick` ignored); the payload's `status` is ignored — a landed order is always `active`; `MetatronOrders` appended then pruned to every active order plus the most recent 32 non-active (`pruneMetatronOrders`) |
-| `metatron.order_triggered` | `OrderTriggeredPayload{id, matched_type, matched_tick}` | the angel's trigger worker (injected, live-only — NEVER emitted during replay, since the matching runs off live events the replica sees post-batch) | the named order transitions active → triggered (one-shot consumption); rejects an unknown id or one not currently active; a survival watch (spec 059) never lands this — it is non-consuming, so its own trigger runs no `order_triggered` at all ([[metatron-orders]]) |
-| `metatron.order_cancelled` | `OrderIDPayload{id}` | Metatron's `cancel_order` tool, injected | the named order transitions active → cancelled; same rejection rule as triggered; since spec 059 a survival watch is refused outright regardless of status — it is the angel's own nature, not a player configuration, and the player order surface cannot release it |
+| `metatron.order_placed` (spec 029, [[guardian-orders]]) | `GuardianOrder{id, origin, condition, action, event_types, agent, keywords?, confirm?, placed_tick, expires_tick, status, survival?}` | the guardian's `monitor_and_act` tool (injected via `InjectSocial`), or — since spec 059 — the daemon's boot-time `seedSurvivalWatches` for the three canonical system survival watches | validates (non-empty id not reused by any past order regardless of status, `origin` ∈ player\|system, non-empty `event_types`, `agent` index valid or −1 for any, `condition` ≤300 chars, `action` ≤400 chars, and — player-origin only — fewer than 3 already-active player orders, `GuardianPlayerOrderCap`; system-origin deferral orders are exempt from the cap); a non-empty `survival` (spec 059: `near_death`\|`starvation`\|`exposure`) MUST be `origin: system` and is EXEMPT from the ttl 1..7 game days bound (non-expiring by nature, `expires_tick` ignored); the payload's `status` is ignored — a landed order is always `active`; `GuardianOrders` appended then pruned to every active order plus the most recent 32 non-active (`pruneGuardianOrders`) |
+| `metatron.order_triggered` | `OrderTriggeredPayload{id, matched_type, matched_tick}` | the angel's trigger worker (injected, live-only — NEVER emitted during replay, since the matching runs off live events the replica sees post-batch) | the named order transitions active → triggered (one-shot consumption); rejects an unknown id or one not currently active; a survival watch (spec 059) never lands this — it is non-consuming, so its own trigger runs no `order_triggered` at all ([[guardian-orders]]) |
+| `metatron.order_cancelled` | `OrderIDPayload{id}` | the guardian's `cancel_order` tool, injected | the named order transitions active → cancelled; same rejection rule as triggered; since spec 059 a survival watch is refused outright regardless of status — it is the guardian's own nature, not a player configuration, and the player order surface cannot release it |
 | `metatron.order_expired` | `OrderIDPayload{id}` | executor, `stepEvents`, once per order once `nextTick >= expires_tick` for an active order (the `charge_regenerated` pattern — a pure function of state + tick, so replay reproduces it without any angel running) | the named order transitions active → expired, freeing its slot against the player cap; since spec 059 a survival watch is skipped by this sweep entirely (origin-keyed TTL exemption, never evaluated) |
-| `metatron.charter_observed` (spec 044 US2) | `CharterObservedPayload{fingerprint, default}` in `internal/sim/metatron.go` — `fingerprint` is a short content hash (12 hex chars) of the EFFECTIVE charter text a turn ran under; `default` marks the authored default | the Metatron turn pipeline (`observeCharter`, injected via `InjectSocial` at charter load), only when the fingerprint differs from `State.CharterFingerprint` — the first turn always emits; skipped on ended worlds | sets `State.CharterFingerprint`; the log's observation sequence is the event-sourced charter-revision timeline the morgue aligns each death against (most recent observation ≤ the death, [[metatron]]) |
+| `metatron.charter_observed` (spec 044 US2) | `CharterObservedPayload{fingerprint, default}` in `internal/sim/guardian.go` — `fingerprint` is a short content hash (12 hex chars) of the EFFECTIVE charter text a turn ran under; `default` marks the authored default | the guardian turn pipeline (`observeCharter`, injected via `InjectSocial` at charter load), only when the fingerprint differs from `State.CharterFingerprint` — the first turn always emits; skipped on ended worlds | sets `State.CharterFingerprint`; the log's observation sequence is the event-sourced charter-revision timeline the morgue aligns each death against (most recent observation ≤ the death, [[guardian]]) |
 | `morgue.epilogue` (spec 044 US2) | `MorgueEpiloguePayload{agent, text}` in `internal/sim/morgue.go` — `agent` is the mourned villager, or −1 for the run-end epilogue | mind narrator worker (injected via `InjectSocial` on absorbing `agent.died`/`run.ended`; LLM-gated, so structurally absent in no-model worlds); one of the two prose types an ENDED world's door still accepts (`endedProseWhitelist`) | appends the bounded `State.MorgueEpilogues` ring (chronicle pattern) for replica/scribe rendering; the morgue's factual render never depends on it — narrator absence or failure is a gap, never a stall |
-| `metatron.time_snapped` | `TimeSnappedPayload{to_tick, gratis}` in `internal/sim/miracles.go` | angel's turn reply or the `promptworld miracle` CLI/IPC door (spec 016, [[metatron-miracles]]), injected via `InjectSocial` | rejects a target at or before the current tick (forward-only); spends 2 charges (the dearest miracle) unless `gratis`; `rebaseTicks` shifts every relative-duration field forward by the jump so remaining durations are preserved, then `State.Tick = to_tick`; the skipped regeneration boundaries mint no charges |
+| `metatron.time_snapped` | `TimeSnappedPayload{to_tick, gratis}` in `internal/sim/miracles.go` | angel's turn reply or the `promptworld miracle` CLI/IPC door (spec 016, [[guardian-miracles]]), injected via `InjectSocial` | rejects a target at or before the current tick (forward-only); spends 2 charges (the dearest miracle) unless `gratis`; `rebaseTicks` shifts every relative-duration field forward by the jump so remaining durations are preserved, then `State.Tick = to_tick`; the skipped regeneration boundaries mint no charges |
 | `metatron.item_granted` | `ItemGrantedPayload{agent, kind, qty, gratis}` | angel's turn reply or the CLI/IPC door, injected | validates a living villager, a known item kind, positive qty, and the bulk cap (reject-whole, never clamp); spends 1 charge unless `gratis`; adds `qty` units (a spear grant appends `qty` fresh `spearDurability` entries, kept sorted) |
 | `metatron.entity_moved` | `EntityMovedPayload{class, x, y, to_x, to_y, gratis}` (`class` ∈ villager\|structure\|pile) | angel's turn reply or the CLI/IPC door, injected | validates presence at the source and the destination's placement rule (villager/pile → passable, structure → buildSite); spends 1 charge unless `gratis`; relocates the entity (a moved villager drops its intent and goes idle at the landing tick; a moved structure carries its `FuelUntil`/`Owner`/`Store`; a moved pile merges onto any pile already at the destination) |
 | `metatron.entity_removed` | `EntityRemovedPayload{class, x, y, gratis}` (`class` ∈ structure\|pile\|terrain; villager is rejected — never removable) | angel's turn reply or the CLI/IPC door, injected | validates presence; spends 1 charge unless `gratis`; deletes the structure (a chest first spills its `Store` to a ground pile — goods are never silently destroyed) or the pile (with contents), or overlays the terrain through the executor's own vocabulary (tree→`Cleared`, forage→`Harvested` with regrow, rock→`Quarried`; an already-overlaid tile is rejected as a no-op target) |
@@ -344,11 +344,11 @@ landing ladder emit the `cog.*` telemetry ([[cognition]]); [[daemon-lifecycle]]
 emits `daemon.*`; [[event-log]] stores them;
 [[ipc-protocol]] pushes them to subscribers verbatim. [[llm-provider-health]]
 emits `daemon.llm_warning` through [[sim-loop]]'s `InjectOperator` door. The `metatron.*` miracle
-family is emitted through [[metatron]]'s two doors and reduced in
-`internal/sim/miracles.go` — see [[metatron-miracles]] for the cost table,
+family is emitted through [[guardian]]'s two doors and reduced in
+`internal/sim/miracles.go` — see [[guardian-miracles]] for the cost table,
 gratis doctrine, and the shift-semantics re-base taxonomy. The standing-order
-lifecycle (spec 029) reduces in `internal/sim/metatron.go` alongside
-`charge_regenerated`/`nudged` — see [[metatron-orders]] for the placement
+lifecycle (spec 029) reduces in `internal/sim/guardian.go` alongside
+`charge_regenerated`/`nudged` — see [[guardian-orders]] for the placement
 validation, trigger-matching, and confirm/degradation mechanics; `order_placed`/
 `order_triggered`/`order_cancelled` are whitelisted in [[sim-loop]]'s
 `InjectSocial` door exactly like the miracle types, while `order_expired`
@@ -356,7 +356,7 @@ needs no whitelist entry (executor-emitted, the `charge_regenerated`
 precedent). Since spec 059, [[daemon-lifecycle]]'s `seedSurvivalWatches` is a
 second `order_placed` emitter (boot-time, alongside `monitor_and_act`), and
 the `Survival` discriminator's cap/TTL/cancel exemptions reduce alongside the
-rest of `applyMetatron`. [[mental-maps]] owns the `agent.saw`/`agent.map_corrected`/
+rest of `applyGuardian`. [[mental-maps]] owns the `agent.saw`/`agent.map_corrected`/
 `social.place_told`/`metatron.place_revealed` family end to end — the
 executor's perception sweep and talk sidecar emit the first three, the
 `send_vision` door the fourth, and `internal/sim/mentalmap.go` reduces all
@@ -365,8 +365,8 @@ four. [[memory-retrieval]] owns `agent.memory_embedded`/
 embedder driver emits all three through [[sim-loop]]'s `InjectSocial` door,
 and [[sim-state-reducer]] reduces the first two (the third is a `cog.*`
 no-op). [[morgue]] owns the spec 044 surface — the [[executor]] emits
-`run.ended`, the Metatron turn pipeline injects `metatron.charter_observed`
-(reduced in `internal/sim/metatron.go`), and the mind narrator injects
+`run.ended`, the guardian turn pipeline injects `metatron.charter_observed`
+(reduced in `internal/sim/guardian.go`), and the mind narrator injects
 `morgue.epilogue` (reduced in `internal/sim/morgue.go`); [[gru]] covers the
 escalated-kill semantics on `gru.attacked`/`agent.died`. [[decision-context]]
 covers the spec 043 ring/anchor surfaces the intent-lifecycle and needs rows

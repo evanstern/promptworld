@@ -6,7 +6,7 @@ sources:
   - internal/daemon/daemon.go
   - internal/daemon/curriculum.go
   - internal/daemon/estimator_persist.go
-verified_against: 1debe184724bffe5eab8dbb5659a047c9ff63cc4
+verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
 ---
 
 # Daemon lifecycle
@@ -71,7 +71,7 @@ Startup sequence:
    `metatron.order_placed` events at the recovered tick; a fresh world's
    first boot seeds them, a pre-059 world's first boot after upgrade
    back-seeds them once, and every later boot finds them already active and
-   injects nothing ([[metatron-orders]]).
+   injects nothing ([[guardian-orders]]).
 6. Notify fan-out + companions: the loop's notify goes to the IPC broadcast, the
    always-on soul scribe (which since spec 044 is constructed with the open
    store as its event source — `scribe.New(dir, seed, map, snapshot, st)` —
@@ -88,8 +88,8 @@ Startup sequence:
    failure, so this advisory record can never perturb the loop — until
    TASK-119's rubric machinery emits the events it simply sits idle,
    [[curriculum-ladder]]), and — when an orchestrator exists — the mind driver
-   ([[agent-mind]]) and the Metatron component ([[metatron]], attached to the
-   server via `SetMetatron` for the console); all consumers are non-blocking by
+   ([[agent-mind]]) and the Guardian component ([[guardian]], attached to the
+   server via `SetGuardian` for the console); all consumers are non-blocking by
    contract. The LLM
    orchestrator ([[llm-orchestrator]]) starts only when `llm.json` exists
    (`llm.LoadConfig` → `llm.New` → `srv.SetLLM`), closed on exit — config-gated,
@@ -145,21 +145,24 @@ Startup sequence:
    `workersWarn`): `llmCfg.Rounds()` (an out-of-range `loop_max_rounds`), both
    tiers' `ToolModeResolved()` (an unknown `tool_mode`), and — since spec 025
    (TASK-72) — the three per-kind token budgets (`llmCfg.PlannerTokens()`/
-   `MetatronTurnTokens()`/`ConsolidationTokens()`, an out-of-range
+   `GuardianTurnTokens()`/`ConsolidationTokens()`, an out-of-range
    `max_tokens.<key>`) each print one line and
    clamp/default rather than aborting boot (TASK-52, [[llm-orchestrator]]). The
    normalized round cap and effective budgets then thread into both loop
    consumers: `mind.New(..., loopRounds, plannerTokens, consolidationTokens)`
-   and `metatron.New(orch, loop, loop, ..., loopRounds, metatronTurnTokens)`
+   and `guardian.New(orch, loop, loop, ..., loopRounds, guardianTurnTokens)`
    (followed by `mt.SetBundles(bundleSet)` — spec 036 hands the boot-frozen
    bundle surface to the turn assembly, [[bundle-tools]] — and
    `mt.SetStage(w.Manifest.Stage, w.Manifest.CharterPreset)` — spec 046 US2
    hands the immutable stage + charter preset from the opened manifest the
    same boot-frozen way, so the stage tool ceiling and the stage-1
-   instruction lock cannot be tampered mid-run, [[curriculum-ladder]]) —
+   instruction lock cannot be tampered mid-run, [[curriculum-ladder]] — and
+   `mt.SetSkin(worldSkin)`, handing the same boot-frozen display skin
+   `srv.SetSkin` (below) gave the status surface to the guardian turn
+   assembly's prompts, spec 052 FR-003) —
    since spec 029 (US5) the loop is passed twice: once as the `Injector` it
-   was always passed as, once as the new `LoopControl` seam Metatron's
-   `pause`/`start`/`adjust_speed` meta tools drive ([[metatron-orders]],
+   was always passed as, once as the new `LoopControl` seam Guardian's
+   `pause`/`start`/`adjust_speed` meta tools drive ([[guardian-orders]],
    [[sim-loop]]'s `Loop.Do` — the same two-interfaces-one-value pattern
    `mind.New(loop, loop)` already used for the mind driver).
    Before the orchestrator is built, `cognition.ValidateKinds(llm.Kinds())` is a
@@ -191,8 +194,15 @@ Startup sequence:
    as `cog.recalibration_recommended` telemetry.
 7. Wire-up: `ipc.NewServer(w, st, cancel)` where cancel is the
    `signal.NotifyContext(SIGTERM, SIGINT)` cancel — so the protocol `shutdown`
-   command and Unix signals share one graceful path. `SetLoop` closes the
-   loop↔server mutual reference. The stale socket is removed before `Listen`.
+   command and Unix signals share one graceful path. Right after, the world's
+   display skin (spec 052 FR-003) loads once — `skin.Load(dir)` — boot-frozen
+   like the bundle set, with any loader notices printed as one
+   `daemon: skin: <notice>` line each (the bundle `BootIssue` convention: a
+   typo never bricks the world); `srv.SetSkin` hands it to the status/console
+   surface, and — when an orchestrator exists — `mt.SetSkin` hands the same
+   boot-frozen skin to the guardian turn assembly's prompts (above). `SetLoop`
+   closes the loop↔server mutual reference. The stale socket is removed
+   before `Listen`.
 8. `daemon.started` event appended (payload carries tick and `recovery_ms`) and
    broadcast; then `srv.Serve()` in a goroutine, and — on a teaching world with
    a computed default — a goroutine applies the teaching-posture speed through
@@ -233,7 +243,7 @@ the debt arithmetic and hysteresis controller the governor sampler drives,
 and (spec 039) the `MaxSafeSpeed` the teaching-posture default computes from;
 [[game-clock]]'s `SpeedForRate` turns that rung into the `clock.Speed` applied
 through the loop's `set_speed` door;
-[[metatron-orders]] is what the `LoopControl` seam wired here (spec 029) drives.
+[[guardian-orders]] is what the `LoopControl` seam wired here (spec 029) drives.
 [[llm-provider-health]] is what the condition hook and preflight goroutine wired
 here (spec 034) drive; its durable event rides [[sim-loop]]'s `InjectOperator`
 door. [[memory-retrieval]] is the spec 042 embedding driver wired here only
@@ -243,7 +253,7 @@ when `orch.HasEmbedding()`; its failure warning shares [[sim-loop]]'s
 [[curriculum-ladder]] is what the always-on unlock observer and the
 `SetStage` handoff wired here (spec 046) serve.
 [[world-tuning]] is the spec 048 manifest `seedTuning` loads, clamps, and
-seeds right after the meeting-convention seed. [[metatron-orders]] is what
+seeds right after the meeting-convention seed. [[guardian-orders]] is what
 `seedSurvivalWatches` (spec 059) seeds right after the tuning seed and before
 the loop starts.
 

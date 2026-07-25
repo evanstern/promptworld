@@ -12,7 +12,7 @@ sources:
   - internal/cognition/horizon.go
   - internal/cognition/governor.go
   - internal/sim/cognition.go
-verified_against: ad4871faa7988ce5b2d7f029ada59f653afaa569
+verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
 ---
 
 # Cognition horizon
@@ -43,7 +43,7 @@ call kind gated by its own router entry — it is a roster tool inside the
 planner's tool-use loop, so it now shares the `planner` class's 3pt/1200t
 horizon gate rather than carrying its own 1pt/3600t budget ([[agent-mind]],
 [[tool-loop]]). Spec 029 adds no new class: the angel's fuzzy-order confirm
-kind (`metatron_watch`, [[metatron-orders]]) maps to the EXISTING `metatron`
+kind (`metatron_watch`, [[guardian-orders]]) maps to the EXISTING `metatron`
 class (5pt/86400t) — same actor, event-triggered not cadence-scheduled, a
 one-line `kindToClass` entry on the narrator/drama→`chronicle` precedent, so the
 spec-007 registry doctrine contract is untouched. `kindToClass` maps every LLM
@@ -243,7 +243,7 @@ landed_clamped (spec 058 FR-001/FR-003, `toolloop.VerdictLandedClamped` —
 `cog.*` doctrine as every other cognition event ([[event-types]]).
 `NewCogToolCallPayload` assembles the payload sim-side — deliberately with
 only plain/stdlib argument types (no `toolloop` or `mind` import) — so both
-loop consumers ([[agent-mind]]'s mind, [[metatron]]) unpack their own
+loop consumers ([[agent-mind]]'s mind, [[guardian]]) unpack their own
 `toolloop.CallRecord` and call this one shared constructor rather than each
 inventing its own payload shape.
 

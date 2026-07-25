@@ -13,7 +13,7 @@ sources:
   - internal/llm/providers.go
   - internal/world/world.go
   - cmd/promptworld/divergence.go
-verified_against: ad4871faa7988ce5b2d7f029ada59f653afaa569
+verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
 ---
 
 # Memory retrieval (embedding relevance)

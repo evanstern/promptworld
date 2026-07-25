@@ -4,7 +4,7 @@ description: Game time math — 1 tick = 1 game second, epoch day 1 06:00, Speed
 kind: component
 sources:
   - internal/clock/clock.go
-verified_against: 1e71b77f104dda982aa407b28ad2c994219e90d0
+verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
 ---
 
 # Game clock
@@ -41,7 +41,7 @@ Key functions:
   hours in prompts, narration, and the charter).
 - `TickAt(day, hour, min, sec) int64` — the inverse of `GameTime`: the tick
   ordinal for 1-based-day calendar coordinates (spec 016). Used by the
-  [[metatron-miracles]] time-snap doors to translate an operator/angel
+  [[guardian-miracles]] time-snap doors to translate an operator/angel
   "day N HH:MM" target into the tick the reducer snaps to; it does not judge
   direction — the clock is monotonic and forward-only, and the reducer rejects
   a non-forward target.
@@ -69,7 +69,7 @@ Key functions:
 [[sim-loop]] converts `Speed` to a scheduling interval; [[sim-state-reducer]] stores
 the current `Speed` and pause flag; the [[executor]] and [[event-types]] use
 day/night boundary detection; [[cli-promptworld]] prints `Format` output;
-[[metatron-miracles]]'s time-snap doors use `TickAt`/`ParseTimeOfDay` to resolve
+[[guardian-miracles]]'s time-snap doors use `TickAt`/`ParseTimeOfDay` to resolve
 a target tick; [[cognition]]'s adaptive-throttle governor walks `CappedLadder`/
 `LadderIndex` to shed and recover notches ([[daemon-lifecycle]] samples it);
 since spec 039, [[daemon-lifecycle]]'s teaching-posture default and

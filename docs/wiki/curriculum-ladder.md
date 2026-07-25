@@ -8,16 +8,16 @@ sources:
   - internal/worlds/unlocks.go
   - internal/skin/skin.go
   - internal/world/world.go
-  - internal/metatron/charter.go
+  - internal/guardian/charter.go
   - cmd/promptworld/stages.go
-verified_against: cea7b8f83fa07f9fcfefe4dd861aa05a78448f1b
+verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
 ---
 
 # Curriculum ladder
 
 The curriculum ladder (spec 046, TASK-68) turns promptworld into a staged
 teaching game: a world is created AT a stage, the stage sets what the player
-can do in it (which Metatron tools exist, whether instruction files bind),
+can do in it (which guardian tools exist, whether instruction files bind),
 and playing well — passing seeded exercises — earns the next stage for the
 player's FUTURE worlds. One prompt-engineering concept per stage, an identity
 per stage rather than a difficulty label, and every earned claim auditable
@@ -27,12 +27,14 @@ back to events in the proving world's own log.
 
 **The four stages.** The substrate knows only neutral ids — `stage-1` ..
 `stage-4`, the `world.Stage1`..`Stage4` constants ([[world-save-directory]]);
-what the player SEES is skin data: `internal/skin` (the INTERIM home TASK-121's
-skinnable-persona work absorbs — ids and semantics never move, only the lookup
-grows a skin dimension) maps them to the default guardian skin's
+what the player SEES is skin data: [[skin]] (spec 052, TASK-121 — landed as
+its own runtime substrate; ids and semantics never moved, the lookup just
+grew a skin dimension) maps them to the default Guardian skin's
 client-approved identities — **The Voice** ("you speak, it acts"), **The
 Written Word** ("your law outlives the conversation"), **The Craft** ("you
-shape what it can do"), **The Stewardship** ("a world in your care").
+shape what it can do"), **The Stewardship** ("a world in your care") —
+via `skin.Stage(id)`/`StageName(id)`, an alternate skin free to re-voice all
+four names while the ids and unlock semantics stay put.
 `cmd/promptworld/stages.go`'s `stagesLadder` carries the skin-INDEPENDENT
 ladder content beside those identities: per stage, the concept taught
 (conversational prompting → instruction authoring → capability design →
@@ -54,19 +56,19 @@ honesty marker that keeps overridden runs comparable as overridden runs.
 visible (identity, concept, grants, unlock evidence, earned state with the
 proving world), an informed identity table, never a difficulty menu.
 
-**The stage ceiling** (`internal/metatron/charter.go`): `stageCeiling` returns
+**The stage ceiling** (`internal/guardian/charter.go`): `stageCeiling` returns
 a stage's capability ceiling as a `bundle.GrantDoc` — the same narrowing shape
 a persona bundle's grant uses — and `applyStageCeiling` intersects it into the
 world-level grant at every manifest load site (turn + status), immediately
 after `loadManifest` and BEFORE `grantedRoster`, so declaration, prose, and
-door all inherit it rather than re-implementing it ([[metatron]]). Stage-1 and
+door all inherit it rather than re-implementing it ([[guardian]]). Stage-1 and
 stage-2 pin the roster to `stage1CeilingTools` — `send_omen`, `send_vision`,
 `monitor_and_act`, `cancel_order` (the ratified TASK-119 amendment put
 standing orders in the stage-1 grant because the first-night exercise teaches
 the watch), with no miracle kinds and the empty-intersection effect shutting
 out bundle tools; stage-3, stage-4, and pre-ladder worlds have no ceiling. A
 player's `capabilities.json` may narrow WITHIN the ceiling, never exceed it.
-The daemon hands the manifest's stage + preset to the angel boot-frozen via
+The daemon hands the manifest's stage + preset to the guardian boot-frozen via
 `mt.SetStage` (the `SetBundles` discipline), so the ceiling cannot be
 tampered mid-run ([[daemon-lifecycle]]).
 
@@ -139,11 +141,12 @@ TASK-119's scenario/rubric machinery is the consumer; the reserved
 `Manifest.Scenario` block is its schema seam ([[world-save-directory]]).
 Surfacing: `ipc.WorldStatus.Stage`/`StageOverridden` ride status, `promptworld
 status` renders a skin-named stage line, and the TUI digest narrates both
-`curriculum.*` types under the metatron grammar family.
+`curriculum.*` types under the guardian grammar family (the FROZEN `metatron`
+namespace's family-namespace mapping, [[tui-client]]).
 
 ## Connections
 
-[[metatron]] applies the stage ceiling and the instruction lock inside its
+[[guardian]] applies the stage ceiling and the instruction lock inside its
 turn/status assembly and emits the `metatron.charter_observed` events whose
 `default` flag the gate derivation inverts; [[morgue]] aligns deaths against
 that same observation timeline. [[sim-state-reducer]] owns the two
@@ -152,13 +155,15 @@ state; [[event-types]] catalogs the payload shapes. [[world-save-directory]]
 holds the `stage`/`stage_overridden`/`charter_preset` manifest facts and the
 reserved `scenario` block; [[daemon-lifecycle]] wires the always-on unlock
 observer and the boot-frozen `SetStage` handoff; [[cli-promptworld]] fronts
-`promptworld stages` and `new --stage`; [[testing-strategy]] catalogs the
-per-layer suites (reducer, metatron stage gating, daemon observer, unlocks
+`promptworld stages` and `new --stage`; [[skin]] supplies the four stages'
+player-visible identities (`Stage`/`StageName`) this note's ladder facts
+pair with; [[testing-strategy]] catalogs the
+per-layer suites (reducer, guardian stage gating, daemon observer, unlocks
 record, CLI).
 
 ## Operational notes
 
-The ladder gates the ANGEL's capabilities, never the villagers' world:
+The ladder gates the GUARDIAN's capabilities, never the villagers' world:
 `TestCrossStageDeterminism` pins that the same seed ticks identically at
 every stage. Deleting `~/.promptworld/unlocks.json` forgets earned
 convenience, not truth — any proving world's log still carries its

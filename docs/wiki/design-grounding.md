@@ -31,7 +31,7 @@ Decisions the current code embodies:
 
 Decisions the substrate anticipated but did not itself implement — the agent mind,
 Metatron, the social fabric, chronicle, and the gru — have all since landed (TASK-5
-through TASK-13; see [[agent-mind]], [[metatron]], [[social-fabric]], [[chronicle]],
+through TASK-13; see [[agent-mind]], [[guardian]], [[social-fabric]], [[chronicle]],
 [[gru]]); the `agents/` directory now holds per-agent persona/soul files at runtime.
 Five candidate Spec Kit specs are listed at the end of the assumptions doc;
 `specs/001-world-daemon` was #1.

@@ -4,7 +4,7 @@ description: Attach-side protocol client — dial with fast failure, request/res
 kind: component
 sources:
   - internal/ipc/client.go
-verified_against: 8be4440aae8d108884080cb6476782d2f11ad165
+verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
 ---
 
 # IPC client
@@ -45,8 +45,11 @@ Conveniences: `Status(cmd, args)` unmarshals the shared `StatusData` shape;
 `FetchState()` unmarshals the `state` command's `StateData` (full world state + the
 log position it reflects); `Subscribe(since *int64)` issues the subscribe command —
 read events from `Pushes()` and handle the `"dropped"` push by re-subscribing from
-its `last_seq`; `MetatronChat(text)` / `MetatronStatus()` carry the console pair
-([[metatron]]) — `MetatronChat` blocks for the angel's cloud round-trip.
+its `last_seq`; `GuardianChat(text)` / `GuardianStatus()` carry the console pair
+([[guardian]]) — `GuardianChat` blocks for the guardian's cloud round-trip. The
+wire commands underneath, `metatron_chat`/`metatron_status`, are frozen strings
+(spec 052 ruling 2) — only the Go-side names and the `internal/guardian` package
+they unmarshal into (`guardian.TurnResult`/`guardian.Status`) renamed.
 
 ## Connections
 

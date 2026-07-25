@@ -11,7 +11,7 @@ sources:
   - internal/daemon/daemon.go
   - cmd/promptworld/commands.go
   - internal/tui/views.go
-verified_against: d9d74924621b8816bbb4608afe48c41cda4321d7
+verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
 ---
 
 # LLM provider health (preflight + tool-silence detection)
@@ -79,7 +79,7 @@ within minutes), raises `tool-silent` via the precedence-guarded
 `raiseCondition` (a live preflight condition keeps the slot). A tool-free
 success on a NON-tool call (conversation, meeting) touches neither the
 counter nor a tool-silent condition — only kinds that declare
-`Request.Tools` (planner, Metatron console turns via [[tool-loop]]) count,
+`Request.Tools` (planner, Guardian console turns via [[tool-loop]]) count,
 per FR-005. `toolSilentRemedy` keys the remedy text to the RESOLVED
 `tool_mode` (`config.go`'s `toolModeResolved`): native → suggest
 `tool_mode: "json"`; json → the model itself is unsuited for tool work.
@@ -148,7 +148,7 @@ than the first-run experience.
   badge (`firstLLMCondition`, the `[degraded]` badge's pattern) while any
   condition is active; the provider table (`llmProviderLines` — since
   spec 053 rendered on the dedicated **systems** dock tab, key `5`, rather
-  than the guardian/metatron pane, per the D10 telemetry split) appends an
+  than the guardian pane, per the D10 telemetry split) appends an
   indented, error-styled detail+remedy line beneath an affected provider's
   row.
 

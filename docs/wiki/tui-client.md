@@ -1,6 +1,6 @@
 ---
 name: tui-client
-description: The Bubble Tea full-screen client — a widescreen map+dock composite (with minibuffer and narrow single-pane fallback) over a live world replica maintained by log shipping (state snapshot + event subscription through the shared reducer)
+description: The Bubble Tea full-screen client — a widescreen map+dock composite (with minibuffer and narrow single-pane fallback) over a live world replica maintained by log shipping (state snapshot + event subscription through the shared reducer); since spec 052 (TASK-121) the guardian pane's tab label, epithet, and the raw chronicle's Type-column family alias resolve through the boot-frozen [[skin]] the daemon's status carries
 kind: component
 sources:
   - internal/tui/tui.go
@@ -11,7 +11,7 @@ sources:
   - internal/tui/decisions.go
   - internal/tui/help.go
   - internal/tui/lessons.go
-verified_against: 033493973235cb8e392302b879d9dede77f44546
+verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
 ---
 
 # TUI client
@@ -91,10 +91,10 @@ client renders the **widescreen composite** — the map on the left and a tabbed
 viewport derives from the column budget via `mapViewportTiles`), a one-line
 borderless **guardian strip** (spec 050, reorient decision 7: charge-bank
 glyphs + `(N/cap)`, a `next +1 @ <time>` regen forecast derived from
-`sim.MetatronChargeRegenTicks`, and the replica's standing-order count —
+`sim.GuardianChargeRegenTicks`, and the replica's standing-order count —
 `guardianStripView`, each segment degrading to absence rather than a
 misleading zero), a one-line
-**Metatron minibuffer** above the footer, and per-mode footer hints. Since
+**Guardian minibuffer** above the footer, and per-mode footer hints. Since
 spec 055 (TASK-117, reorient decision 5) a two-line borderless **lesson row**
 sits above the guardian strip whenever a first-occurrence lesson is active
 and the stage default allows it (`lessonRowDefault` in layout.go: on at
@@ -177,7 +177,15 @@ chest's `Store` is a plain counts inventory rather than dated batches,
 because chests preserve food indefinitely (no rot deadlines to track).
 
 The **dock** hosts four tabs — keys `2`/`3`/`4`/`5` select, the same key
-again zooms the tab solo, `1`/`esc` return to the composite. Since spec 053
+again zooms the tab solo, `1`/`esc` return to the composite. Since spec 052
+the guardian tab's own label is [[skin]] data, never a compiled-in string:
+`Model.paneName(p)` (`tui.go`) resolves every OTHER tab from the static
+`paneNames` table but resolves `paneGuardian` through `m.sk().TabLabel()`
+(`m.sk()` reads the boot-resolved `*skin.Skin` the daemon's status carries,
+`FromFacts`-rebuilt client-side, [[skin]]) — the default renders `guardian`
+byte-identically, an alternate skin's tab label renders live with no client
+restart. The tab bar (`views.go`) and the help overlay's dock-tab table
+(`help.go`) both call `paneName`, so the two can never disagree. Since spec 053
 the guardian conversation also has a first-class full-height page: the
 **guardian console** (`Model.console`, `consoleView`), opened with global
 `G` from home/solo/narrow (shadowed only where inspect/villagers modes
@@ -191,11 +199,11 @@ a charter/skills read surface from status fields
 "charter changed — next turn binds it" one-shot notice, and the standard
 minibuffer as its composer (states/focus contract unchanged). The tabs:
 **chronicle** (default;
-see below), **metatron** (the angel transcript — replies stream here, or
-badge the tab `metatron •` when it isn't visible; the pane header shows the charge
+see below), **guardian** (the guardian transcript — replies stream here, or
+badge the tab `guardian •` when it isn't visible; the pane header shows the charge
 bank plus the spec-021 instruction/capability provenance summary — charter
 default/custom, skill-file count when non-zero, and the granted-tool summary from
-`Status.GrantedTools`, quiet for a full-grant default world — [[metatron]] —
+`Status.GrantedTools`, quiet for a full-grant default world — [[guardian]] —
 joined, since spec 046, by a `stage: <skin name>` segment
 (`consoleStageSummary` in tui.go) that appends `(charter locked to
 <preset>)` while the stage-1 instruction lock binds, read off the polled
@@ -206,10 +214,10 @@ transcript itself gains a `👁 watch set`/`👁 watch released` line for a
 placed/cancelled standing order and a `⏲` line for a landed pause/start/
 adjust_speed meta tool call, alongside the existing `⚡` vision/omen line;
 below the transcript, a `👁 standing orders (n)` block (spec 029,
-`orderStatusLines`, [[metatron-orders]]) renders one compact row per order
+`orderStatusLines`, [[guardian-orders]]) renders one compact row per order
 from `Status.Orders` — id, a `~` fuzzy marker, origin, remaining game-day,
 status, and condition — present only while orders stand. Since spec 053
-(TASK-125, the D10 telemetry split) the guardian/metatron tab carries
+(TASK-125, the D10 telemetry split) the guardian tab carries
 fiction-layer content ONLY — the telemetry below moved to a fourth
 **systems** dock tab (key `5`, `systemsView`/`systemsContentBody`, never
 skinned by design): the LLM provider table since spec 024 — `llmProviderLines`,
@@ -273,9 +281,9 @@ the screen (an unknown value gets a safe generic phrase). `j`/`k` scroll the
 sub-view (render-time clamped), and `esc` unwinds decisions → detail →
 roster ahead of the solo-release chain; selection state survives tab
 switches and is clamped on reconnect. Full soul.md persona files stay on
-disk per [[agent-mind]]. The same glossary feeds Metatron's inline verdict
+disk per [[agent-mind]]. The same glossary feeds the guardian's inline verdict
 rows: a `turn-metatron-*` `cog.tool_call` appends one `» tool — phrase`
-transcript row at ingest (`metatronVerdictRow`), which
+transcript row at ingest (`guardianVerdictRow`), which
 `classifyTranscriptLine` labels `note` and styles as cog telemetry — the
 angel's refused and landed calls are visible in the transcript where before
 only the RPC reply's `⚡` miracle lines appeared.
@@ -292,6 +300,15 @@ turning its payload into a readable per-type summary, so a feed line reads
 compact `key=value` fields for the telemetry families (`cog.*`, `clock.*`,
 `daemon.*`). Columns align at solo width (tick right-aligned, type padded);
 the narrow dock drops the tick and shortens the type to its last segment.
+Since spec 052 (FR-013), the solo Type COLUMN specifically — never the dock's
+short form, never the detail pane, never the grammar-miss raw fallback —
+aliases the FROZEN `metatron.*` namespace segment to the active skin's family
+label (`displayEventType`/`chronicleLine.DisplayType`, grammar.go:
+`metatron.nudged` renders `guardian.nudged` by default, `raven.nudged` under
+the example skin); `curriculum.*` and every other family render raw by design
+(inspector-class visibility, FR-020) — the Type column is the ONE display
+surface this note's `[[skin]]` link touches, everywhere else in the raw feed
+and inspector stays honest, unskinned wire vocabulary.
 Families carry color-role tints, key tokens (names, speech, amounts, causes)
 carry emphasis, and four high-salience types (`agent.died`, `gru.attacked`,
 `social.chest_taken`, `norm.violated`) render whole-line alert. Since spec 038,
@@ -305,8 +322,8 @@ all sharing a first-fact-plus-count shape (a full fact list would flood the
 line; the detail pane holds the payload verbatim): `agent.saw` ("Ash saw fire
 at (x,y) (+N more)"), `social.place_told` ("Ash told Birch of fire at (x,y)
 (+N more)"), `agent.map_corrected` ("Ash found fire at (x,y) gone (+N
-more)"), and `metatron.place_revealed` ("Metatron revealed fire at (x,y) to
-Ash (+N more)", Metatron as subject, the nudge convention). Since spec 042,
+more)"), and `metatron.place_revealed` ("Guardian revealed fire at (x,y) to
+Ash (+N more)", the guardian as subject, the nudge convention). Since spec 042,
 three [[memory-retrieval]] event types get registry entries with the raw
 vector deliberately elided (384 floats would drown the feed): `agent.memory_embedded`
 ("memory seq=N embedded dims=N model=…"), `agent.situation_embedded` (the
@@ -321,16 +338,16 @@ run ended · N dead · final cause <cause>" — the summary a postmortem reader
 wants on the feed line; the full ledger stays in the payload/detail pane),
 `morgue.epilogue` ("epilogue for <name>: <text>", 80-rune truncation like
 `chronicle.entry`; agent −1 renders as "the run" — the run-end epilogue),
-and `metatron.charter_observed` ("Metatron ran under charter <fingerprint>
+and `metatron.charter_observed` ("Guardian ran under charter <fingerprint>
 (default|player-authored)" — the charter-revision stamp the morgue aligns
 deaths against). Since spec 046, two [[curriculum-ladder]] types get registry
 entries, and `familyByNamespace` maps the new `curriculum` namespace onto the
-existing metatron family voice — the ladder is the guardian's domain, not a
+existing guardian family voice — the ladder is the guardian's domain, not a
 distinct visual role: `curriculum.exercise_passed` ("the <exercise> exercise
-was passed (<stage>)") and `curriculum.stage_unlocked` ("Metatron's watcher
+was passed (<stage>)") and `curriculum.stage_unlocked` ("The guardian's watcher
 earned <stage name> (proven by <exercise>)", the display name resolved
 through `skin.StageName` like the CLI's stage line). The four
-[[metatron-miracles]] types render in the metatron family voice, with a
+[[guardian-miracles]] types render in the guardian family voice, with a
 trailing emphasized `(forced)` annotation (`gratisMark`) whenever the
 payload's gratis flag waived the charge — an operator force is never
 indistinguishable from a charge-priced miracle in the feed. Unregistered
@@ -351,7 +368,7 @@ attachment point for future jump-off actions
 Input follows the **focus contract** (`docs/design/tui/patterns/focus-contract.md`):
 viewing never captures typing; `m` focuses the minibuffer (amber border, inline
 `esc release · ⏎ send` hint), `esc` always releases, and no keypress is a
-silent no-op — the old rule where the metatron pane owned every key while
+silent no-op — the old rule where the guardian pane owned every key while
 active is gone. Time controls (minibuffer unfocused): space toggles
 pause/resume based on last-known status; `[`/`]` step through `speedSteps`
 (1x → 4x → 8x → 16x → 32x — max is deliberately off the watchable ladder,
@@ -416,18 +433,18 @@ fills the story pane and [[event-types]] the raw feed; [[cli-promptworld]] mount
 it as the `ui` subcommand. The header's governed-speed suffix and the two
 governor digest lines read [[cognition]]'s `ShedThreshold` and the
 `clock.governor_shed`/`clock.governor_recovered` payload the [[daemon-lifecycle]]
-governor sampler emits through the loop. The metatron pane's standing-orders
-block and transcript lines project [[metatron-orders]]' `Status.Orders`/
+governor sampler emits through the loop. The guardian pane's standing-orders
+block and transcript lines project [[guardian-orders]]' `Status.Orders`/
 `TurnResult` fields verbatim, with no client-side re-derivation. The header's
-`[llm: …]` badge and the metatron pane's per-provider condition line read
+`[llm: …]` badge and the guardian pane's per-provider condition line read
 [[llm-provider-health]]'s `ProviderStatus.Condition`/`ConditionDetail`/
 `ConditionRemedy` fields off the same polled `Status.LLM`. The header's
-`[suppressed: …]` badge and the metatron pane's `horizonLines` block both
+`[suppressed: …]` badge and the guardian pane's `horizonLines` block both
 read the polled `Status.Horizon` — [[ipc-server]]'s `horizonClasses`
 composition backed by [[cognition]]'s `LiveHorizon` and
 [[llm-orchestrator]]'s `SuppressionCounts` — with no client-side
 re-derivation, the same "polled, not projected" posture as the LLM condition
-surfaces. The metatron pane's stage segment and the two curriculum digest
+surfaces. The guardian pane's stage segment and the two curriculum digest
 rows are [[curriculum-ladder]]'s TUI surfaces (spec 046), reading the
 angel's `Status.Stage`/lock fields and the `curriculum.*` event payloads. [[mental-maps]]'s four place-knowledge event types render through
 the raw digest feed with no dedicated pane of their own — the map/prompt
@@ -439,10 +456,10 @@ Rendering requires no daemon round trips — map updates come from pushed events
 UI stays smooth at max speed (the chronicle simply scrolls fast). The four spec-029
 standing-order event types (`metatron.order_placed`/`order_triggered`/
 `order_cancelled`/`order_expired`) carry `digestRegistry` entries (digest.go —
-"Metatron set a watch: …" / "…watch came true/released/lapsed", the placed
+"Guardian set a watch: …" / "…watch came true/released/lapsed", the placed
 condition truncated to 80 runes and quoted through the same speech helper as
 nudge text; the id-only lifecycle payloads reference the watch by id), so order
-activity reaches the raw chronicle feed as well as the dedicated metatron-pane
+activity reaches the raw chronicle feed as well as the dedicated guardian-pane
 block and transcript lines above; `TestCatalogSweep` pins the coverage against
 [[event-types]]' backticked catalog.
 Unit tests cover pane

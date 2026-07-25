@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/ipc/server.go
   - internal/ipc/socket.go
-verified_against: 723c464c35aac4936f2793d566a53c801516ae60
+verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
 ---
 
 # IPC server
@@ -26,9 +26,16 @@ plus the `last_seq` it reflects. `llm_call` submits to the optional
 [[llm-orchestrator]] (`SetLLM`; 2-minute timeout per call) — a slow or dead model
 blocks only the calling session, never the loop; `statusDataFull` appends the
 orchestrator's snapshot to status responses. `metatron_chat`/`metatron_status`
-dispatch to the optional angel through the `Angel` interface (`SetMetatron`,
-[[metatron]]) — same posture: a long console turn occupies only its session, and
-worlds without an LLM config answer with a clean "not present" error. `set_speed` enforces the speed
+(frozen wire command names, spec 052 ruling 2) dispatch to the optional
+guardian through the `Guardian` interface (`SetGuardian`,
+[[guardian]]) — same posture: a long console turn occupies only its session, and
+worlds without an LLM config answer with a clean "not present" error. Since
+spec 052 (FR-003), `SetSkin` attaches the world's boot-frozen display skin
+the same singleton-attachment way (`SetLoop`/`SetLLM`'s precedent) — nil-safe,
+so a no-skin world (and every pre-052 test) needs no call at all; `statusData`
+composes the resolved identity fields (`SkinName`/`SkinEpithet`/
+`SkinTabLabel`/`SkinFamilyLabel`) plus any override maps (`SkinStrings`/
+`SkinStages`) into every `StatusData` reply ([[ipc-protocol]]). `set_speed` enforces the speed
 policy (TASK-20): `max` is refused with an actionable error whenever the world
 has an LLM configured (`llm != nil`) — uncapped ticking is for pure-sim worlds;
 the watchable ceiling is 32x ([[game-clock]]); the spec 028 governor changes
@@ -104,14 +111,14 @@ below, which gates OUT calibrated classes, `horizonClasses` INCLUDES them
 membership. Returns nil (never an empty slice) when nothing is included, so
 `omitempty` keeps the field absent for a no-LLM world.
 
-`miracle` (spec 016, [[metatron-miracles]]) dispatches to `handleMiracle`, which
-needs only `srv.loop` — never `srv.llm` or `srv.metatron` — so it works on
-pure-sim worlds with no angel or orchestrator configured. It fetches the current
+`miracle` (spec 016, [[guardian-miracles]]) dispatches to `handleMiracle`, which
+needs only `srv.loop` — never `srv.llm` or `srv.guardian` — so it works on
+pure-sim worlds with no guardian or orchestrator configured. It fetches the current
 state via `loop.DoState` (to resolve door-side name/tile lookups: a `give_item`
 villager name through `sim.AgentIndexByName`, a `time_snap` day/`HH:MM` through
-`clock.ParseTimeOfDay`/`clock.TickAt`), builds `metatron.MiracleParams` from the
-kind-specific args, calls the shared `metatron.BuildMiracleBatch` (the same
-batch-builder the angel's turn uses) to compose the miracle event plus its
+`clock.ParseTimeOfDay`/`clock.TickAt`), builds `guardian.MiracleParams` from the
+kind-specific args, calls the shared `guardian.BuildMiracleBatch` (the same
+batch-builder the guardian's turn uses) to compose the miracle event plus its
 perception-memory companions, and lands it through `loop.InjectSocial` — so the
 door is validated by the exact same dry-run/reducer path as every other injected
 batch. Replies with the post-land charge bank and a one-line summary
@@ -155,15 +162,15 @@ listener and every session and removes the socket file.
 [[sim-loop]] feeds `Broadcast` and receives `Do` calls; [[event-log]] backs replay and
 gap-fill; [[ipc-protocol]] defines the wire shapes; [[daemon-lifecycle]] constructs the
 server (with `SetLoop` breaking the mutual reference) and calls `Close` on exit;
-`handleMiracle` is one of the two doors into [[metatron-miracles]] (the other is
-the angel's turn reply, [[metatron]]). `uncalibratedWarning` reads
+`handleMiracle` is one of the two doors into [[guardian-miracles]] (the other is
+the guardian's turn reply, [[guardian]]). `uncalibratedWarning` reads
 [[cognition]]'s `SuppressedAt` and [[llm-orchestrator]]'s `EstimateForKind`/
 `CalibratedAt`, and its result rides `StatusData.Warning` ([[ipc-protocol]]),
 rendered by [[cli-promptworld]]'s `setSpeedLine`. `horizonClasses` reads
 [[cognition]]'s `LiveHorizon` and [[llm-orchestrator]]'s `EstimateForKind`/
 `CalibratedAt`/`SuppressionCounts`, and its result rides
 `StatusData.Horizon` ([[ipc-protocol]]), rendered by [[cli-promptworld]]'s
-`horizonStatusLines` and [[tui-client]]'s header badge + metatron-pane
+`horizonStatusLines` and [[tui-client]]'s header badge + guardian-pane
 `horizonLines`. Since spec 039, `postureWarning`/`postureStatus` read
 [[cognition]]'s `MaxSafeSpeed` and [[game-clock]]'s `SpeedForRate` (the same
 call [[daemon-lifecycle]]'s boot default makes), and their results ride

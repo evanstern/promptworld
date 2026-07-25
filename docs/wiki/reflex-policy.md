@@ -326,7 +326,7 @@ is the per-agent knowledge store every goal resolver now reads through —
 are gated entirely on facts [[mental-maps]] and the executor's perception
 sweep populate. [[sim-state-reducer]] owns `Agent.LastMindIntentDone` and the
 `agent.intent_done` arm that arms it (spec 062); [[event-types]] catalogs that
-arm's effect; [[metatron-miracles]] classifies `LastMindIntentDone` SHIFT
+arm's effect; [[guardian-miracles]] classifies `LastMindIntentDone` SHIFT
 (only-non-zero) in the `rebaseTicks` taxonomy; [[testing-strategy]] tracks
 the spec-062 test files (`yield_state_test.go`, `day_warmth_test.go`,
 `night_search_test.go`, `thrash_regression_test.go`) alongside the updated

@@ -9,7 +9,7 @@ sources:
   - internal/sim/terrain.go
   - internal/sim/recipes.go
   - internal/sim/memory.go
-verified_against: d9d74924621b8816bbb4608afe48c41cda4321d7
+verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
 ---
 
 # Executor
@@ -430,7 +430,8 @@ call site to declare, so no new memory site can land unstamped. `origin` is a
 closed vocabulary (`memory.go`): `OriginAction` (an own executed act),
 `OriginWitness` (a seen event — `situatedMemoryAboutEvent`'s usual value),
 `OriginReport` (learned of at any distance, e.g. a chest-owner's theft
-notification), `OriginOmen` (a delivered omen/dream/miracle), `OriginGist` (a
+notification), `OriginOmen` (a delivered omen/dream/working — the guardian's
+FROZEN payload value, spec 052 ruling 2), `OriginGist` (a
 conversation summary written into memory), and `OriginDigest` (a nightly
 day-gist); an absent/legacy origin (`""`, any pre-030 payload) classifies as
 secondhand, the conservative direction. `DirectPerception(origin)` is the pure
@@ -440,12 +441,12 @@ counts as direct perception; it is the ONLY signal that decision uses, no text
 inspection. `Memory.Origin` (`omitempty`) rides the same copied-at-Apply,
 never-re-derived doctrine as `Where`/`Why`/`Conv`, so replay stays byte-identical
 and a pre-030 Memory (field absent) reduces to `Origin` `""`. It also regenerates
-Metatron's nudge charges (`metatron.charge_regenerated` at absolute 6-game-hour
-tick boundaries while below the cap — [[metatron]]) and, per tick, sweeps
-`State.MetatronOrders` for any active standing order whose `ExpiresTick` the
+Guardian's nudge charges (`metatron.charge_regenerated` at absolute 6-game-hour
+tick boundaries while below the cap — [[guardian]]) and, per tick, sweeps
+`State.GuardianOrders` for any active standing order whose `ExpiresTick` the
 new tick has reached, emitting `metatron.order_expired` (spec 029, the
 `charge_regenerated` pattern — a pure function of state + tick, so a
-lapsed watch reproduces on replay with no angel running — [[metatron-orders]];
+lapsed watch reproduces on replay with no guardian running — [[guardian-orders]];
 since spec 059 a survival watch is skipped by this sweep entirely — it is
 non-expiring by origin, not a timed order, so `ExpiresTick` is never
 consulted for it);

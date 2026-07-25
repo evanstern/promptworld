@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/migrate.go
   - internal/world/migrate.go
-verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
+verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
 ---
 
 # World migration
@@ -90,7 +90,7 @@ JSON). The transform then:
 - **Carries verbatim** (tick continuity intact): clock (`Tick`/`Paused`/`Speed`/
   `Night` — the migration tick *is* the carried v1 tick, so the clock simply
   continues), the whole social fabric (relations, debts, rumors + id counters), the
-  conversation ring, the chronicle ring, Metatron's charge bank, and governance
+  conversation ring, the chronicle ring, the Guardian's charge bank, and governance
   (norms + their id counters — the village's lived law); per-agent people-state
   (needs, memories, beliefs, narrative, generation, consolidation marks, talk/give
   cooldowns, known rumors, `NearDeath`, `Dead` — a villager who died in the old

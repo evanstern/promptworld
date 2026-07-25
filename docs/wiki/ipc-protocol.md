@@ -5,7 +5,7 @@ kind: concept
 sources:
   - internal/ipc/protocol.go
   - specs/001-world-daemon/contracts/client-protocol.md
-verified_against: 723c464c35aac4936f2793d566a53c801516ae60
+verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
 ---
 
 # IPC protocol
@@ -35,11 +35,14 @@ one loop iteration; subscribe with `since: last_seq` for a gapless live replica)
 `unsubscribe`, `pause`, `resume`, `set_speed` (`SetSpeedArgs{speed}`), `llm_call`
 (`LLMCallArgs{kind, system, prompt, max_tokens}` → an `llm.Response` with tier,
 model, tokens, cost, latency — errors when the world has no orchestrator), and
-`shutdown`, and the Metatron console pair (TASK-12, [[metatron]]): `metatron_chat`
-(`MetatronChatArgs{text}` → a `metatron.TurnResult` with reply, optional landed
+`shutdown`, and the Guardian console pair (TASK-12, [[guardian]]): `metatron_chat`
+(`GuardianChatArgs{text}` → a `guardian.TurnResult` with reply, optional landed
 nudge, charge bank, surfaced moments — a long call, one cloud round-trip) and
-`metatron_status` (no args → the model-free `metatron.Status` peek), and `miracle`
-(spec 016, [[metatron-miracles]]): `MiracleArgs{kind, day?, time?, villager?,
+`metatron_status` (no args → the model-free `guardian.Status` peek) — both wire
+command names are FROZEN strings (spec 052 ruling 2: player scripts and old
+clients keep working forever), even though the Go types/package renamed from
+`metatron.*` to `guardian.*` — and `miracle`
+(spec 016, [[guardian-miracles]]): `MiracleArgs{kind, day?, time?, villager?,
 item?, qty?, class?, x?, y?, to_x?, to_y?, gratis?}` where `kind` selects
 `time_snap`/`give_item`/`move`/`remove` and the remaining fields are that kind's
 arguments → `MiracleData{kind, charges, gratis, summary}`. `miracle` is the
@@ -115,6 +118,17 @@ field above, which stays gated to bootstrap-seeded providers), and the
 daemon-lifetime count of router suppressions [[llm-orchestrator]] has
 recorded for that class.
 
+Since spec 052 (FR-012, contract §7), `StatusData` also gains six additive
+`omitempty` skin-display fields, resolved daemon-side against the world's
+boot-frozen skin (`internal/skin`, [[ipc-server]]'s `SetSkin`) so clients
+render skin vocabulary without ever reading world files: `SkinName`,
+`SkinEpithet`, `SkinTabLabel`, `SkinFamilyLabel` (identity strings, always
+sent by a post-052 daemon — resolved against the compiled default table even
+when no world skin overrides anything), and `SkinStrings map[string]string`/
+`SkinStages map[string]skin.StageIdentity` (carrying only a world skin's
+overrides, empty/absent otherwise). Absent fields (a pre-052 daemon) mean the
+default Guardian skin — old daemons and old clients interoperate unchanged.
+
 Line caps (TASK-19): request lines are capped at 1 MiB, reply/push lines at
 64 MiB. The daemon never emits a line over the cap — a reply that would exceed
 it is substituted with an `ok:false` response whose `error` starts with
@@ -133,7 +147,7 @@ oversized reply → the substituted `reply too large` error above.
 `StatusData` for humans, including its `postureStatusLine` over `Posture` (spec
 039) and its `stageStatusLine` over `WorldStatus.Stage`/`StageOverridden`
 (spec 046, [[curriculum-ladder]]). The [[tui-client]] consumes `state` + `subscribe` to run its
-live replica. `miracle` is the CLI/IPC operator door into [[metatron-miracles]].
+live replica. `miracle` is the CLI/IPC operator door into [[guardian-miracles]].
 
 ## Operational notes
 

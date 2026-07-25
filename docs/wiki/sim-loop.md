@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/loop.go
   - internal/sim/landing.go
-verified_against: ad4871faa7988ce5b2d7f029ada59f653afaa569
+verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
 ---
 
 # Sim loop
@@ -93,7 +93,7 @@ specifically the EFFECTIVE speed, with `RequestedSpeed` carrying the player's
 ceiling only while governed ([[cognition]], [[sim-state-reducer]]).
 
 `Loop.Do(name, speed)` is the thread-safe entry used by IPC sessions — and, since
-spec 029 (US5, [[metatron-orders]]), by Metatron's `pause`/`start`/`adjust_speed`
+spec 029 (US5, [[guardian-orders]]), by the Guardian's `pause`/`start`/`adjust_speed`
 meta tools through a `LoopControl` seam the daemon wires onto the same `*Loop`
 ([[daemon-lifecycle]]): an angel-issued clock command lands `clock.paused`/
 `clock.resumed`/`clock.speed_set` indistinguishably from a console one. It
@@ -187,8 +187,8 @@ by construction.
 
 `Loop.InjectSocial` is the second door — the mind's injection
 door ([[social-fabric]], [[nightly-consolidation]], musings per [[agent-mind]],
-narrator entries per [[chronicle]], nudges and miracles per [[metatron]] /
-[[metatron-miracles]], standing orders per [[metatron-orders]], proposal rephrasing
+narrator entries per [[chronicle]], nudges and miracles per [[guardian]] /
+[[guardian-miracles]], standing orders per [[guardian-orders]], proposal rephrasing
 per [[governance]], place-knowledge per [[mental-maps]] — `agent.thought` is
 whitelisted as a reducer no-op, `chronicle.entry` appends the story ring,
 `metatron.nudged` spends a charge with a validating reducer the dry-run enforces,
@@ -227,7 +227,7 @@ memory itself, since the embedder only observes an `agent.memory_added` AFTER
 it is committed and notified; and `cog.memory_divergence`, the shadow-mode
 selector's rank-divergence record, riding the same reducer-no-op `cog.*`
 isolation class as the telemetry types below), and (since spec 044 US2) two
-more: `metatron.charter_observed` — the Metatron turn pipeline's
+more: `metatron.charter_observed` — the Guardian turn pipeline's
 fingerprint-at-effect stamp, the event-sourced charter-revision timeline the
 [[morgue]] aligns deaths against, whose reducer arm (and so the dry-run)
 enforces a non-empty fingerprint — and `morgue.epilogue`, the narrator's
@@ -242,7 +242,8 @@ map (`probe.SetMap(l.m)`) before applying, letting miracle arms validate the
 terrain vocabulary in the dry-run exactly as the real apply and replay will.
 Model output enters
 the sim only through these two doors, as recorded input. The protocol `Status`
-carries `MetatronCharges` so clients render the ⚡ bank without a state fetch.
+carries `GuardianCharges` (JSON tag `metatron_charges`, frozen — spec 052 ruling 2)
+so clients render the ⚡ bank without a state fetch.
 
 `Loop.InjectOperator` (the `inject_operator` command, spec 034 R8) is a THIRD
 door, distinct from both above: the daemon's operator-event door, whitelisted
@@ -269,16 +270,16 @@ letting the daemon's condition hook degrade to a log line only.
 the ctx whose cancellation triggers the final snapshot. The landing ladder's
 budgets and classes come from [[cognition]] (`cognition.ClassFor`), whose router
 and estimators produce the snapshot/landing metadata the ladder judges.
-[[metatron-miracles]]'s four event types ride `InjectSocial`'s whitelist, as do
-[[metatron-orders]]'s three injected order-lifecycle types and [[mental-maps]]'s
+[[guardian-miracles]]'s four event types ride `InjectSocial`'s whitelist, as do
+[[guardian-orders]]'s three injected order-lifecycle types and [[mental-maps]]'s
 `metatron.place_revealed`. [[memory-retrieval]]'s embedder driver injects
 `agent.memory_embedded`/`agent.situation_embedded` through the same door and
 records `cog.memory_divergence` alongside the other `cog.*` telemetry;
 `stampSeqs` exists specifically so its `Memory.Seq` targeting stays
 replay-stable ([[sim-state-reducer]]).
-[[tool-loop]] is the caller behind both doors' villager/metatron traffic since
+[[tool-loop]] is the caller behind both doors' villager/guardian traffic since
 spec 017 — its handlers wrap `InjectIntent` (world verbs, `set_plan`) and
-`InjectSocial` (`muse`, and Metatron's nudges/`work_miracle`), and its buffered
+`InjectSocial` (`muse`, and the Guardian's nudges/`work_miracle`), and its buffered
 `CallRecord`s land as the `cog.tool_call` batch through the same social door.
 The [[executor]]'s `run.ended` declaration is what flips the loop into the
 ended posture; the [[morgue]] is the consumer of the two spec 044 whitelist

@@ -14,10 +14,10 @@ sources:
   - internal/mind/prompt.go
   - internal/mind/context.go
   - internal/mind/mind.go
-  - internal/metatron/turn.go
-  - internal/metatron/toolcalls.go
+  - internal/guardian/turn.go
+  - internal/guardian/toolcalls.go
   - internal/tool/registry.go
-verified_against: d9d74924621b8816bbb4608afe48c41cda4321d7
+verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
 ---
 
 # Mental maps
@@ -175,9 +175,9 @@ own fresher knowledge never loses to secondhand); companion situated memories
 on both sides ride the same batch at `salPlaceTold` = 3 (the talk band) —
 "Told X about the fire at (x,y)." / "X told you of a fire at (x,y)."
 
-**The divine reveal** (FR-014, [[metatron]]): `send_vision` carries an
+**The divine reveal** (FR-014, [[guardian]]): `send_vision` carries an
 OPTIONAL place-grant triple, `place_kind`/`place_x`/`place_y`, all riding
-together — `internal/metatron/toolcalls.go`'s `parseReveal` refuses a partial
+together — `internal/guardian/toolcalls.go`'s `parseReveal` refuses a partial
 triple as a `rejected_gate` before anything lands. `place_kind`'s Enum is
 `placeFactKinds` (`internal/tool/registry.go`) — this note's closed
 vocabulary hand-mirrored, since `tool` must not import `sim`; a drift there
@@ -241,7 +241,7 @@ payload is fully baked at emission (never re-derived at Apply time), so live
 and replay agree byte-for-byte; `TestDeterminismSameSeedSameTimeline`
 additionally diffs each agent's canonical map bytes across two same-seed
 runs. `metatron.time_snapped`'s `rebaseTicks` (`internal/sim/miracles.go`,
-[[metatron-miracles]]) classifies `PlaceFact.Seen`/`PeerSighting.Seen` as
+[[guardian-miracles]]) classifies `PlaceFact.Seen`/`PeerSighting.Seen` as
 SHIFT (the freshness anchor, so a time snap cannot instantly stale every
 villager's knowledge) and `PlaceFact.Detail` as KEEP (a remembered value,
 never rewritten — the perception sweep simply re-witnesses the shifted
@@ -261,9 +261,9 @@ and re-arms the planner on a targeted `agent.map_corrected`. [[sim-state-reducer
 the four knowledge-event Apply arms. [[event-types]] catalogs
 `agent.saw`/`agent.map_corrected`/`social.place_told`/`metatron.place_revealed`.
 [[social-fabric]] is where the place-telling sidecar rides, beside rumors and
-gifts. [[metatron]] is the `send_vision` place grant's door, sharing this
+gifts. [[guardian]] is the `send_vision` place grant's door, sharing this
 note's closed vocabulary via `internal/tool/registry.go`'s `placeFactKinds`.
-[[metatron-miracles]] shares the `rebaseTicks` SHIFT/KEEP taxonomy and is
+[[guardian-miracles]] shares the `rebaseTicks` SHIFT/KEEP taxonomy and is
 what a miracle-moved villager's derived bookkeeping updates.
 [[world-migration]] carries the v3→v4 knowledge grant; [[world-save-directory]]
 is the format-version gate this bumped to v4. [[tui-client]] renders the four

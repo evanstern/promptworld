@@ -1,12 +1,12 @@
 ---
 name: tool-loop
-description: The bounded agent tool-use loop driver (spec 017) — submit/dispatch/feed-back to one landed action or a hard cap, transport-agnostic and sim-agnostic, shared by the villager planner and Metatron's console turn
+description: The bounded agent tool-use loop driver (spec 017) — submit/dispatch/feed-back to one landed action or a hard cap, transport-agnostic and sim-agnostic, shared by the villager planner and the Guardian's console turn
 kind: component
 sources:
   - internal/toolloop/loop.go
   - internal/toolloop/record.go
   - internal/toolloop/clamp.go
-verified_against: ad4871faa7988ce5b2d7f029ada59f653afaa569
+verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
 ---
 
 # Tool-use loop
@@ -20,7 +20,7 @@ hand-parsed against a hand-maintained vocabulary. The package is deliberately
 transport-agnostic and sim-agnostic: it imports only `internal/llm` (the wire)
 and `internal/tool` (the schema/roster source), and leaves handlers, artifact
 recording, and event emission to the consumer — a shared leaf below both
-[[agent-mind]] and [[metatron]] (research R1).
+[[agent-mind]] and [[guardian]] (research R1).
 
 ## How it works
 
@@ -43,7 +43,7 @@ existing cognition job identifier, threading every `CallRecord`), `Kind`,
 `System`, `Seed` (the initial user turn), `Roster []tool.Tool`, `Handlers
 map[string]Handler`, `MaxRounds`, `MaxTokens`, an optional `Provider` (an
 explicit pin — `promptworld calibrate` sets it so a reference sample measures a
-NAMED provider; empty for every live mind/metatron caller), and
+NAMED provider; empty for every live mind/guardian caller), and
 `Record func(CallRecord)`
 (the artifact sink; the consumer buffers/lands records — never touched by the
 driver beyond calling it). `MaxRounds <= 0` is defensively treated as 1 (the
@@ -156,7 +156,7 @@ prefix (a byte-boundary cut that splits a multi-byte rune drops the dangling
 partial rather than let `json.Marshal` substitute `U+FFFD`). The driver calls
 `j.Record` for every dispatch decision it makes — landed, every rejection
 kind, every read outcome, every `unlanded` — so a consumer's telemetry (both
-[[agent-mind]]'s mind and [[metatron]] land these as `cog.tool_call` events
+[[agent-mind]]'s mind and [[guardian]] land these as `cog.tool_call` events
 via the shared `sim.NewCogToolCallPayload`, [[event-types]], [[cognition]])
 can reconstruct the complete call trace even for a cognition where nothing
 ever landed. Since spec 058, `verdictRequiresReason` ([[agent-mind]]'s
@@ -211,7 +211,7 @@ turn per round would collide synthesized IDs across rounds.
 **Roster and schema wiring**: `Run` builds the wire-level `[]llm.ToolDecl`
 from `j.Roster` — `Name`, `Description: t.PromptGloss`, `InputSchema:
 tool.InputSchema(t)` ([[tool-registry]]) — once per invocation; the roster
-itself (`tool.LoopRosterVillager()` / `tool.LoopRosterMetatron()`) and its
+itself (`tool.LoopRosterVillager()` / `tool.LoopRosterGuardian()`) and its
 authored or derived schemas are the tool registry's responsibility, not this
 package's.
 
@@ -221,15 +221,15 @@ package's.
 `SkipObserve` out, `Response.ToolCalls`/`Stop` back, and
 `Orchestrator.ObserveCognition` for the whole-loop latency feed.
 [[tool-registry]] supplies the declared roster (`LoopRosterVillager`/
-`LoopRosterMetatron`) and each tool's wire schema (`InputSchema`,
+`LoopRosterGuardian`) and each tool's wire schema (`InputSchema`,
 `InputSchemaJSON` overrides). [[agent-mind]]'s `runPlan` is the villager
 consumer: it builds a `villagerDispatch`, wraps every acting tool's landing
 door in `villagerHandlers` (`internal/mind/handlers.go`), and reads `res.Term`
 to decide the terminal `cog.outcome` and rearm exactly as the pre-loop
-rejection/failure paths did. [[metatron]]'s `Turn` is the console consumer:
+rejection/failure paths did. [[guardian]]'s `Turn` is the console consumer:
 its `turnHandlers` wrap the spec-029 agency surface (`send_vision`/`send_omen`,
 `monitor_and_act`/`cancel_order`, `work_miracle`, and the meta tools
-`pause`/`start`/`adjust_speed` — see [[metatron-orders]]), and `converse` is
+`pause`/`start`/`adjust_speed` — see [[guardian-orders]]), and `converse` is
 deliberately NOT a declared tool — the model's closing prose
 (`Result.Final`) is the transcript-only answer channel. [[cognition]] owns
 the decision-class registry and staleness router both consumers gate on

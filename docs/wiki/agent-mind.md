@@ -14,7 +14,7 @@ sources:
   - internal/scribe/scribe.go
   - internal/scribe/morgue.go
   - internal/sim/memory.go
-verified_against: ad4871faa7988ce5b2d7f029ada59f653afaa569
+verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
 ---
 
 # Agent mind
@@ -31,8 +31,8 @@ events vs files (truth vs view), and mind vs loop (I/O vs determinism).
 write path exists anywhere (the structural half of the persona firewall; the
 validation half is [[nightly-consolidation]]'s validator, fed by the authored
 `persona.Anchors` and `persona.DriftMarkers`). `Load` reads them as the mind's
-stable prompt prefixes. Genesis also seeds Metatron's `charter.md` (the ONE
-player-editable prompt, never overwritten once present — [[metatron]]; since
+stable prompt prefixes. Genesis also seeds Guardian's `charter.md` (the ONE
+player-editable prompt, never overwritten once present — [[guardian]]; since
 spec 046 `Genesis` takes an optional variadic charter-preset parameter, so a
 `"tutor"` world seeds `persona.TutorCharter` instead of the default —
 [[curriculum-ladder]]), and the
@@ -179,7 +179,7 @@ one of the payload's gone facts matches the live intent's target or resolved
 coordinates — a correction elsewhere in the map stays quiet, carried into the
 next scheduled round as a memory instead; [[mental-maps]]), and —
 only while the replica is paused (spec 040, decision-6's paused authoring
-chain) — a landed Metatron nudge (`metatron.nudged`), which arms each targeted
+chain) — a landed Guardian nudge (`metatron.nudged`), which arms each targeted
 villager with the nudge event's seq as the causality edge; the game-time
 debounce cannot reopen while frozen, so one nudge buys at most one round at
 the frozen tick, and a nudge landed while running arms nothing — floored
@@ -377,7 +377,7 @@ land through the live `InjectSocial` door, not the snapshot.
 **Tool-call telemetry** (`telemetry.go`, spec 017 FR-007/T018): every buffered
 `CallRecord` the loop's `Record` sink collected lands as a `cog.tool_call`
 event (`emitToolCalls`/`toolCallEvent`, via the shared `sim.NewCogToolCallPayload`
-constructor also used by [[metatron]]) on EVERY termination path — landed,
+constructor also used by [[guardian]]) on EVERY termination path — landed,
 rejected, capped, or errored — so a call that never grounded is still queryable
 from the log (AC#5). Events are sorted by `Ordinal` before emission (the driver
 already buffers them ordinal-dense; sorting here makes the mind's emission

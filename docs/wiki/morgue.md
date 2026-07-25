@@ -8,7 +8,7 @@ sources:
   - internal/sim/state.go
   - internal/mind/narrate.go
   - internal/world/world.go
-verified_against: d9d74924621b8816bbb4608afe48c41cda4321d7
+verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
 ---
 
 # Morgue
@@ -22,7 +22,7 @@ blockquoted beneath each section's facts. A run ends exactly once
 event when every villager still living at the tick's start died within the
 batch; the reducer latches `State.Ended` and sets `State.RunEnd` — a
 terminal posture no event ever clears), and the morgue is what that run
-leaves behind: evidence of what happened and what the angel's instructions
+leaves behind: evidence of what happened and what the guardian's instructions
 were when it happened, never a score.
 
 ## How it works
@@ -54,7 +54,7 @@ violations — each line rendered against the state AS THE EVENT FOUND IT, so
 a broken promise still names its open debt); merged memories ("what they
 carried in memory"); standing bonds ("who mattered to them", relations in
 canonical state order); open debts at death, both directions; and the
-angel's watch at that moment (below). Every epitaph closes with the frame
+guardian's watch at that moment (below). Every epitaph closes with the frame
 line "_Stated as evidence; the reader draws the lesson._"
 
 **The deterministic caps**: memories merge the at-death retained set with a
@@ -68,12 +68,12 @@ explicit elision line ("_(N earlier deeds not shown)_") — truncation is
 always stated, never silent.
 
 **Charter and orders — the evidence alignment** (FR-008): each epitaph's
-"the angel's watch at that moment" aligns the death against the
+"the guardian's watch at that moment" aligns the death against the
 event-sourced charter-revision timeline: the render collects every
 `metatron.charter_observed` in the fold and pins the MOST RECENT observation
 at or before the death tick — "charter revision `<fingerprint>` (default |
 player-authored), in force since day N", or an explicit "no charter
-observation recorded before this death" ([[metatron]] owns the emission: the
+observation recorded before this death" ([[guardian]] owns the emission: the
 effective charter's content hash stamped at each turn). Since spec 046
 ([[curriculum-ladder]]) the observation's `default` flag is preset-aware —
 default means the effective text equals the WORLD's charter-preset constant,
@@ -82,7 +82,7 @@ so a tutor-preset world running its stage-1 orientation charter records
 text is authored by the game, and must never render here as a player-authored
 charter. Beside it stand the
 standing orders ACTIVE at the death moment, condition → action with watch
-subjects, read from the folding state ([[metatron-orders]]). Instruction and
+subjects, read from the folding state ([[guardian-orders]]). Instruction and
 outcome sit together as evidence; the reader draws the lesson.
 
 **The no-blame vocabulary contract** (contract invariant 2): the factual
@@ -137,8 +137,8 @@ ended-world door slot with `chronicle.entry`; [[event-types]] catalogs
 ledger + grave placement, the `run.ended` latch, and the epilogue ring;
 [[sim-loop]] owns the ended posture (mutators refused, `InjectSocial`
 narrowed to recorded prose) and the `Status.Ended`/`EndedDay` surface;
-[[metatron]] emits the charter-revision observations the epitaphs align
-against; [[metatron-orders]] is the standing-order evidence; [[mental-maps]]
+[[guardian]] emits the charter-revision observations the epitaphs align
+against; [[guardian-orders]] is the standing-order evidence; [[mental-maps]]
 carries the `grave` place-fact kind a death leaves in the world;
 [[agent-mind]] hosts the scribe that renders the file and the absorb hook
 that queues epilogues; [[world-save-directory]] is where `morgue.md` lives.

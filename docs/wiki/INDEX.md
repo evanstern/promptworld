@@ -46,7 +46,7 @@ that note (re-pin with `/grounding-wiki:wiki-update`).
 - [[llm-provider-health]] — operator-facing dead-tier/tool-silence conditions: boot+periodic model-existence preflight, worker-side tool-silence detector, daemon/status/TUI surfacing
 - [[cognition]] — the cognition horizon: Fibonacci-point decision registry, seconds-per-point calibration, deterministic LLM-vs-reflex routing by staleness budget, and the adaptive-throttle debt/governor feedback controller
 - [[tool-registry]] — one registry for every agent capability: derived vocabulary/validation/durations/rosters, boot-time coverage gates
-- [[tool-loop]] — the bounded agent tool-use loop driver: submit/dispatch/feed-back, one-landed-action cardinality, shared by the villager planner and Metatron's turn
+- [[tool-loop]] — the bounded agent tool-use loop driver: submit/dispatch/feed-back, one-landed-action cardinality, shared by the villager planner and the guardian's turn
 - [[bundle-tools]] — drop-in persona/tool bundles (spec 036): manifest/Starlark tools compiled to whitelisted effect batches, boot-frozen, sandboxed, replay-deterministic
 - [[agent-mind]] — personas, souls, memory window, and the planner driver
 - [[memory-retrieval]] — spec-042 embedding relevance: vectors recorded at emission, situation vectors, the three-term selector, shadow/on gating, divergence evidence
@@ -56,11 +56,12 @@ that note (re-pin with `/grounding-wiki:wiki-update`).
 - [[nightly-consolidation]] — sleep-triggered soul digestion behind the persona firewall
 - [[chronicle]] — the narrated story feed: cloud narrator, snapshot-carried catch-up ring
 - [[morgue]] — the run's legacy document: per-death epitaphs + run-end summary from a deterministic genesis replay fold, narrated epilogues blockquoted, charter/orders evidence alignment, regenerable morgue.md
-- [[metatron]] — the gatekeeper angel: console + system-authored turns, omen/vision influence, standing-order agency, clock-control meta tools, charges, the editable charter
-- [[metatron-miracles]] — charge-priced world edits: time snap, item grant, entity move/remove, gratis doctrine, shift-semantics re-base
-- [[metatron-orders]] — the standing-orders subsystem: event-sourced watches compiled to free structural predicates, live matching, system-authored triggered turns, fuzzy confirm, daytime-omen deferral
+- [[guardian]] — the guardian (spec 052/TASK-121 renamed from "Metatron", every serialized string frozen byte-identical): console + system-authored turns, omen/vision influence, standing-order agency, clock-control meta tools, charges, the editable charter
+- [[guardian-miracles]] — charge-priced world edits ("workings" to the player, spec 052): time snap, item grant, entity move/remove, gratis doctrine, shift-semantics re-base
+- [[guardian-orders]] — the standing-orders subsystem: event-sourced watches compiled to free structural predicates, live matching, system-authored triggered turns, fuzzy confirm, daytime-omen deferral
+- [[skin]] — the spec-052 runtime skin substrate: one token lookup (world skin.json → compiled default table → the token path) supplies every fiction display string (guardian name/epithet/vocabulary, curriculum stage identities); the event log and every serialized identifier stay skin-free
 - [[governance]] — norms and votes: the daily meeting under an event-sourced convention, relationship-driven law, the village charter
-- [[curriculum-ladder]] — the spec-046 four-stage teaching ladder: immutable world stage with informed override, the metatron tool ceiling + stage-1 instruction lock (default/tutor presets), curriculum.* unlock events with auditable evidence, the per-user unlocks record, seeded exercises
+- [[curriculum-ladder]] — the spec-046 four-stage teaching ladder: immutable world stage with informed override, the guardian's tool ceiling + stage-1 instruction lock (default/tutor presets), curriculum.* unlock events with auditable evidence, the per-user unlocks record, seeded exercises
 
 ## Lifecycle & quality
 

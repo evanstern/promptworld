@@ -7,20 +7,30 @@ sources:
   - cmd/promptworld/commands.go
   - cmd/promptworld/calibrate.go
   - cmd/promptworld/ps.go
-  - cmd/promptworld/miracle.go
+  - cmd/promptworld/work.go
   - cmd/promptworld/divergence.go
   - cmd/promptworld/stages.go
-verified_against: 483e90cb118019cd00956a2ebfce3d77ceba8353
+verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
 ---
 
 # promptworld CLI
 
 One binary serves every role: daemon, client tools, world management. `main.go` is a
 plain dispatch table; behavior lives in `commands.go`, except `calibrate` in its own
-`calibrate.go` and `ps` in `ps.go` ([[instance-manager]]). The prose contract is
+`calibrate.go`, `ps` in `ps.go` ([[instance-manager]]), and the guardian's operator
+door in `work.go`. The prose contract is
 `specs/001-world-daemon/contracts/cli.md` (extended by
 `specs/008-instance-manager/contracts/cli.md` for names/`ps`/`new`, and
 `specs/007-cognition-horizon/contracts/cli.md` for `calibrate`).
+
+Since spec 052 (TASK-121, FR-008) `dispatch` (`main.go`) advertises only the
+canonical, guardian-voiced subcommand names in the printed usage text —
+`guardian` and `work` — while the pre-052 fiction names `metatron` and
+`miracle` stay registered as HIDDEN, fully functional compatibility aliases
+(same handler function, so an old script can never drift from current
+behavior; `TestGuardianWorkAliases`/`TestUsageShowsCanonicalOnly` in
+`alias_test.go` pin both the equivalence and the usage text's silence on the
+retired names).
 
 ## How it works
 
@@ -44,9 +54,10 @@ ambiguous or unknown names exit 1). `worldArg`/`parseWorldFlags` wrap the older
   creation: `world.Create` + store + genesis `world.created`
   event plus the genesis tuning pin (spec 057: one `sim.tuning_applied` with
   the full default dial set, fixing the world's doctrine at birth —
-  [[world-tuning]]), writes the default `llm.json`, seeds the eight personas and Metatron's
+  [[world-tuning]]), writes the default `llm.json`, seeds the eight personas and the
+  guardian's
   charter (`persona.Genesis`, the one-and-only persona write — [[agent-mind]],
-  [[metatron]]), and
+  [[guardian]]), and
   appends the tick-0 secret events ([[social-fabric]]). Random default seed (crypto-random,
   right-shifted 12 bits to stay comfortably printable). Since spec 034, the
   printed summary appends a line naming the fresh-world local model and its
@@ -156,7 +167,7 @@ ambiguous or unknown names exit 1). `worldArg`/`parseWorldFlags` wrap the older
   the next daemon start (a running daemon reads `Teaching` only at boot). Never
   fails on state, only on IO/parse errors.
 - `ui <world>` — the full-screen Bubble Tea client ([[tui-client]]): map, chronicle,
-  metatron, villagers panes over a live world replica (villagers renamed from
+  guardian, villagers panes over a live world replica (villagers renamed from
   souls, spec 015); runs in the alternate screen.
   If the TUI quits on an unrecoverable protocol error (`Model.FatalErr()`, e.g. a
   reply over the IPC cap — TASK-19), the command returns it as a real error and
@@ -166,22 +177,27 @@ ambiguous or unknown names exit 1). `worldArg`/`parseWorldFlags` wrap the older
   `dropped` pushes by re-subscribing. Quit detaches; the world keeps running.
 - `tail <world> [--since SEQ] [--follow]` — history from the store (default last 20),
   works with no daemon; `--follow` additionally subscribes live and requires one.
-- `metatron <world> [message...]` — the console one-shot ([[metatron]], TASK-12): with
+- `guardian <world> [message...]` (canonical since spec 052 FR-008; the pre-052
+  name `metatron` survives as a hidden compat alias, same handler) — the
+  console one-shot ([[guardian]], TASK-12): with
   a message, one mediated turn (prints surfaced moments, the reply, any landed
   `⚡ vision/omen` line, a `👁 watch set`/`👁 watch released` line for a placed or
   cancelled standing order, a `⏲` line for a landed pause/start/adjust_speed
-  meta tool call (spec 029, [[metatron-orders]]), and the charge bank); without,
+  meta tool call (spec 029, [[guardian-orders]]), and the charge bank); without,
   a model-free status peek (charges, charter provenance, a `--- standing
   orders ---` block via `orderStatusLine` — id, fuzzy marker, origin,
   remaining game-day, status, condition — when any order stands, and recent
   soul notes).
-- `miracle <world> <snap-time|give|move|remove> ... [--force]` — the operator door
-  for Metatron's miracles ([[metatron-miracles]], spec 016 R6), a dedicated
-  subcommand family independent of the `metatron` conversational path: `snap-time
+- `work <world> <snap-time|give|move|remove> ... [--force]` (canonical since
+  spec 052 FR-008; the pre-052 name `miracle` survives as a hidden compat
+  alias, `work.go`) — the operator door
+  for the guardian's workings ([[guardian-miracles]], spec 016 R6), a dedicated
+  subcommand family independent of the `guardian` conversational path: `snap-time
   <day> <HH:MM>`, `give <villager> <item> <qty>`, `move <class> <x,y> <x1,y1>`,
   `remove <class> <x,y>` (`<class>` is `villager|structure|pile|terrain`; terrain
   is remove-only, villagers cannot be removed). Dials the daemon and calls the
-  `miracle` IPC command directly — no LLM involved. `--force` sets the gratis flag
+  `miracle` IPC command directly (the wire command name is FROZEN, spec 052
+  ruling 2) — no LLM involved. `--force` sets the gratis flag
   that waives the charge cost, an override reachable only from this CLI door, never
   from the angel's own turn. Prints the miracle summary (`(forced)` suffix when
   gratis) and the remaining charge bank.
@@ -230,7 +246,7 @@ ambiguous or unknown names exit 1). `worldArg`/`parseWorldFlags` wrap the older
   by PRICING CLASS (`refShapesFor(priced)`, spec 024 T020 generalizing the old
   tier branch): zero-priced providers get the loop probe, priced providers'
   `consolidation-5pt` shape stays a plain single-shot `Submit` (consolidation did
-  not adopt the loop, FR-014) — Metatron IS the cloud's loop cognition, but
+  not adopt the loop, FR-014) — the guardian IS the cloud's loop cognition, but
   calibrating it would drive extra metered cloud calls the spec 017 contract
   doesn't invite; its live whole-loop observations converge the cloud estimator
   at run time instead. Uses an in-memory meter so it never contends
@@ -275,22 +291,22 @@ resolution, discovery, and the `ps` probe; [[ipc-client]] carries every online
 command; [[world-save-directory]] and [[event-log]] back the offline paths;
 [[game-clock]] formats times in `clockLine`/`eventLine`; `calibrate` writes the
 profile [[cognition]] routes with; `migrate` hands off to [[world-migration]];
-`miracle` hands off to [[metatron-miracles]]; `metatron`'s standing-orders
-rendering reads [[metatron-orders]]; `status`'s WARNING block and `new`'s
+`work` (hidden alias `miracle`) hands off to [[guardian-miracles]]; `guardian`'s standing-orders
+rendering reads [[guardian-orders]]; `status`'s WARNING block and `new`'s
 pull-command hint read [[llm-provider-health]] and [[llm-orchestrator]];
 `status`'s calibration rows and `calibrate`'s horizon summary both read
 [[cognition]]'s `Calibrated`/`HorizonSummary`; `speed`'s appended WARNING line
 reads the [[ipc-server]]-composed `StatusData.Warning` ([[ipc-protocol]]).
 `status`'s `horizonStatusLines` reads the same [[ipc-server]]-composed
 `StatusData.Horizon`, the wire shape [[tui-client]]'s header badge and
-metatron-pane block also render. `status`'s `postureStatusLine` and `new`'s
+guardian-pane block also render. `status`'s `postureStatusLine` and `new`'s
 `--teaching` flag / the `teaching` subcommand read and write
 [[world-save-directory]]'s `Manifest.Teaching`/`SetTeaching` and
 [[ipc-protocol]]'s `StatusData.Posture` (spec 039). `divergence` reads
 `cog.memory_divergence` events [[memory-retrieval]]'s shadow-mode selector
 records, offline via the same store/`tail` pattern as `tail`/`status`'s
 offline path. `stages` and `new`'s stage resolution read the per-user
-unlocks record (`worlds.LoadUnlocks`) and the skin identity table, and
+unlocks record (`worlds.LoadUnlocks`) and [[skin]]'s stage identity table, and
 `status`'s stage line renders [[ipc-protocol]]'s
 `WorldStatus.Stage`/`StageOverridden` — the [[curriculum-ladder]]'s CLI
 surfaces (spec 046).

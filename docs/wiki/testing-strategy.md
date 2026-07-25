@@ -7,7 +7,7 @@ sources:
   - internal/sim/migrate_test.go
   - internal/sim/whole_feature_test.go
   - internal/sim/miracles_test.go
-  - internal/sim/metatron_test.go
+  - internal/sim/guardian_test.go
   - internal/sim/origin_test.go
   - internal/sim/belief_evidence_test.go
   - internal/sim/belief_decay_test.go
@@ -37,11 +37,11 @@ sources:
   - internal/mind/replay_test.go
   - internal/mind/provenance_test.go
   - internal/mind/belief_read_sites_test.go
-  - internal/metatron/metatron_test.go
-  - internal/metatron/metatron_gaps_test.go
-  - internal/metatron/orders_test.go
-  - internal/metatron/charter_observed_test.go
-  - internal/metatron/stage_test.go
+  - internal/guardian/guardian_test.go
+  - internal/guardian/guardian_gaps_test.go
+  - internal/guardian/orders_test.go
+  - internal/guardian/charter_observed_test.go
+  - internal/guardian/stage_test.go
   - internal/daemon/curriculum_test.go
   - internal/worlds/unlocks_test.go
   - internal/world/world_test.go
@@ -50,7 +50,7 @@ sources:
   - internal/persona/persona_test.go
   - e2e/daemon_e2e_test.go
   - e2e/determinism_e2e_test.go
-verified_against: d9d74924621b8816bbb4608afe48c41cda4321d7
+verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
 ---
 
 # Testing strategy
@@ -240,10 +240,10 @@ excluding wall-dependent `daemon.*`/`clock.*` bookkeeping.
 `TestMiracleCostDerivedFromTool` pins `sim.miracleCost` ≡
 `tool.MiracleCostsByEvent()` — the sim-side enforcement table is a derivation of
 the registry's single authoritative price source, not a mirror, so a price edit
-cannot half-propagate ([[tool-registry]], [[metatron-miracles]]).
+cannot half-propagate ([[tool-registry]], [[guardian-miracles]]).
 
 **Miracle reducer suite** (`internal/sim/miracles_test.go`, spec 016,
-[[metatron-miracles]]): per-arm coverage for all four types — move (villager/
+[[guardian-miracles]]): per-arm coverage for all four types — move (villager/
 structure-whole/pile-merge, impassable/absent-source rejection), remove
 (villager rejected, chest spill, pile destruction, terrain routing), grant
 (happy path, over-cap whole-reject, unknown kind, dead villager, non-positive
@@ -256,7 +256,7 @@ without a SHIFT/KEEP classification in `rebaseTicks`, so the taxonomy can never
 silently drift from the state struct (spec 030 extended this to
 `Belief.Reinforced`, the decay-curve anchor; spec 041 extends it again to
 `PlaceFact.Seen`/`PeerSighting.Seen` (SHIFT) and `PlaceFact.Detail` (KEEP),
-[[mental-maps]]/[[metatron-miracles]]; spec 042 extends it once more to
+[[mental-maps]]/[[guardian-miracles]]; spec 042 extends it once more to
 `Memory.Seq` (KEEP — the emitting event's store seq, an identity rather than a
 clock value) and `Agent.SitVecTick` (KEEP — when the situation text was
 rendered, [[memory-retrieval]]); spec 043 adds `Agent.NeedsAnchorTick` (SHIFT
@@ -280,7 +280,7 @@ event's store seq, an identity like `Memory.Seq` —
 `TestMiracleGrantReplayByteIdentity`) prove each miracle type replays to the
 same state hash as live application.
 
-**Memory-provenance and belief-decay suites** (spec 030, [[metatron]]):
+**Memory-provenance and belief-decay suites** (spec 030, [[guardian]]):
 `internal/sim/origin_test.go` proves the `DirectPerception` classifier's closed
 vocabulary (action/witness/omen direct; report/gist/digest/absent secondhand),
 that every situated constructor stamps `Origin` at emission, that the reducer
@@ -332,17 +332,17 @@ already KNOW before the ground-truth assertions run.
 
 **IPC miracle round trips** (`internal/ipc/ipc_test.go`, spec 016): the
 operator "miracle" command exercised over the real wire on a pure-sim world
-(no LLM/angel) — a move lands, spends a charge, and is visible in the next
+(no LLM/guardian) — a move lands, spends a charge, and is visible in the next
 state fetch; `--force`/`gratis` lands a miracle against an empty bank and
 leaves it untouched at zero, while a non-forced attempt against the same
 empty bank is refused; a `give_item` resolves the villager by name and the
 grant is visible in the next state fetch; unknown kinds/names are refused
 cleanly with the connection surviving.
 
-**Metatron behavioral suites** (`internal/metatron/metatron_test.go`,
-`internal/metatron/metatron_gaps_test.go`, TASK-74): the package's own tests
+**Guardian behavioral suites** (`internal/guardian/guardian_test.go`,
+`internal/guardian/guardian_gaps_test.go`, TASK-74): the package's own tests
 now prove the economy mirror, turn serialization, and context-window
-contracts, not just the TASK-64 instruction surface. `metatron_test.go`
+contracts, not just the TASK-64 instruction surface. `guardian_test.go`
 (pre-existing) covers turn converse/degraded/fallback paths, influence
 landing (charge decrement, atomicity, perception memories), zero-bank
 refusal, the firewall sentinel, charter fallbacks, skill-file
@@ -365,7 +365,7 @@ lands, charges untouched; `TestVisionFalsePlaceRefused`: the reducer dry-run
 rejects a reveal of a place absent from ground truth, the WHOLE batch
 including the vision itself, spending nothing — [[mental-maps]]), the
 extended handler-firewall audit (`TestHandlerFirewallAudit`,
-SC-007), the fixed `metatronInitiativeFrame` (`TestInitiativeFrameFixed`), the
+SC-007), the fixed `guardianInitiativeFrame` (`TestInitiativeFrameFixed`), the
 clock-speed ladder drift guard (`TestClockSpeedsMirrorLadder`), and the
 single-origin directive label — a console prompt carries exactly one
 "The player says:" and a system turn's carries none
@@ -373,13 +373,14 @@ single-origin directive label — a console prompt carries exactly one
 extended it with
 turn retry-visibility tests (a turn whose loop consumed its transport retry
 emits the non-terminal `cog.outcome` retried marker; a clean turn emits none)
-and turn token-budget plumbing tests (`metatron.New` stores and passes the
-`max_tokens.metatron_turn` budget; the default reproduces 1024). The
+and turn token-budget plumbing tests (`guardian.New` stores and passes the
+`max_tokens.metatron_turn` budget — the llm.json config key itself is frozen
+serialized vocabulary, spec 052 ruling 2; the default reproduces 1024). The
 tool-loop retry matrix itself lives in `internal/toolloop/retry_test.go`
-([[tool-loop]]), with the mind-side twins in `internal/mind/mind_test.go`. `metatron_gaps_test.go` closes what
+([[tool-loop]]), with the mind-side twins in `internal/mind/mind_test.go`. `guardian_gaps_test.go` closes what
 that suite left untested: `TestChargeMirrorAccrualAndCap` drives
 `metatron.charge_regenerated`/`metatron.nudged` through `Observe` → `run()` →
-`mirrorState` and proves the bank accrues and caps at `sim.MetatronChargeCap`
+`mirrorState` and proves the bank accrues and caps at `sim.GuardianChargeCap`
 without a sim executor; `TestTurnBusyConcurrent` runs two real goroutines
 against the `turnBusy` CAS (channel-gated, meaningful under `-race`) to prove
 exactly one `Turn` proceeds at a time; `TestObserveNeverBlocks` proves the
@@ -391,17 +392,17 @@ tail-window truncation rules (`tailOfFile`, the 4000-byte `soulTail`, the
 6-whole-turn `transcriptTail`). All new concurrency tests are channel-gated,
 never sleep-as-the-only-gate (the TASK-69 flake lesson).
 
-**Standing-order suites** (spec 029, TASK-27, [[metatron-orders]]): the lifecycle
-is proven on both sides of the door. Reducer-side (`internal/sim/metatron_test.go`):
-`TestMetatronOrderPlacedRejections` and `TestMetatronPlayerOrderCap` pin the
+**Standing-order suites** (spec 029, TASK-27, [[guardian-orders]]): the lifecycle
+is proven on both sides of the door. Reducer-side (`internal/sim/guardian_test.go`):
+`TestGuardianOrderPlacedRejections` and `TestGuardianPlayerOrderCap` pin the
 door validation (duplicate id, bad origin, empty event_types, TTL bounds, agent
 range, over-long condition/action, and the 3-active player cap with system-origin
-exemption); `TestMetatronOrderLifecycle` walks active→terminal transitions and the
-cancel/expiry/trigger race (exactly one terminal lands); `TestMetatronOrderExpiryExecutor`
+exemption); `TestGuardianOrderLifecycle` walks active→terminal transitions and the
+cancel/expiry/trigger race (exactly one terminal lands); `TestGuardianOrderExpiryExecutor`
 proves the executor emits `metatron.order_expired` as a pure function of state+tick;
-`TestMetatronOrdersSnapshotUpgrade` proves a pre-029 snapshot loads with empty order
-state; `TestMetatronOrdersReplayIdentically` proves from-genesis replay reconstructs
-the order set identically; `TestMetatronOrderPrune` pins the retain-32 rule.
+`TestGuardianOrdersSnapshotUpgrade` proves a pre-029 snapshot loads with empty order
+state; `TestGuardianOrdersReplayIdentically` proves from-genesis replay reconstructs
+the order set identically; `TestGuardianOrderPrune` pins the retain-32 rule.
 `TestSurvivalWatchReducer` (spec 059, FR-002) covers the origin-keyed
 exemptions door-side: a survival watch lands despite an illegal (0-day) TTL
 delta (the exemption, not a giant TTL), the cap still bites on player orders
@@ -410,7 +411,7 @@ watch is refused (`err` names "survival watch") and leaves it untouched, the
 executor's expiry sweep emits zero `order_expired` for standing survival
 watches even 30 days out, and an unknown `survival` kind or a player-origin
 survival watch is refused at the door.
-Metatron-side (`internal/metatron/orders_test.go`, 23 tests): the pure matcher and
+Guardian-side (`internal/guardian/orders_test.go`, 23 tests): the pure matcher and
 agent probe (`TestOrderMatches`, `TestEventConcernsAgent`), id sequencing, placement/
 cancel/expiry mirroring and prompt block, handler grant-gating, the end-to-end trigger
 firing and its serialization with a console turn through the shared `turnBusy`
@@ -450,7 +451,7 @@ full death fallout; a healthy one keeps the survival floor — [[gru]]).
 `internal/sim/toolcheck_test.go`'s `TestWhitelistDiffIdentical` — the
 injection-whitelist tripwire — accepts exactly the two declared boundary
 widenings (`metatron.charter_observed`, `morgue.epilogue`). On the mind side,
-`internal/metatron/charter_observed_test.go` proves the first turn emits the
+`internal/guardian/charter_observed_test.go` proves the first turn emits the
 charter observation, an unchanged fingerprint stays silent, and an ended
 world skips it (the shared fixtures pre-seed `charterFP` so turn tests keep
 counting exactly the batches they drive); `internal/mind/epilogue_test.go`
@@ -539,7 +540,7 @@ wrong-type/bad-payload rejections, `TestEvaluateUnlockFixtureChain` drives
 the full fixture pass→unlock chain, `TestExerciseDefinitionsParse` proves the
 two shipped exercise definitions are well-formed, and
 `TestCurriculumReplayDeterministic` proves a log carrying both types replays
-byte-identically. Metatron-side, `internal/metatron/stage_test.go` (US2,
+byte-identically. Guardian-side, `internal/guardian/stage_test.go` (US2,
 ~500 lines) pins the gate-to-feature pathway: `TestStageCeilingRosterTable`
 (per stage, the post-intersection roster equals the contract's ceiling
 exactly — stage-1/-2 the four-tool watch set, stage-3/-4 and pre-ladder the
@@ -594,12 +595,12 @@ writer vs IPC readers — now atomic).
 
 Exercises [[sim-loop]], [[sim-state-reducer]], [[deterministic-rng]] (unit),
 [[ipc-server]]/[[ipc-client]] (integration), and [[cli-promptworld]]/
-[[daemon-lifecycle]] (e2e). [[metatron-miracles]] and [[metatron-orders]] cover the
+[[daemon-lifecycle]] (e2e). [[guardian-miracles]] and [[guardian-orders]] cover the
 reducer arms and doors these suites exercise; [[tool-registry]]'s spec-032 world verbs
 (walls/axe/path) are what the new whole-feature and unit suites drive.
 [[agent-mind]]/[[tool-loop]] are what the
 loop-era replay suite drives through a real `Loop` + `loopMind`; the
-provenance/belief-decay suites prove the substrate [[metatron]]'s omen/vision/miracle
+provenance/belief-decay suites prove the substrate [[guardian]]'s omen/vision/miracle
 memories now stamp. [[mental-maps]]'s own dedicated suite
 (`internal/sim/mentalmap_test.go`) sits alongside the v3→v4 migration,
 rebase-taxonomy, determinism, and vision-place-reveal coverage this note

@@ -11,7 +11,7 @@ sources:
   - internal/mind/handlers.go
   - internal/scribe/scribe.go
   - internal/persona/files.go
-verified_against: d9d74924621b8816bbb4608afe48c41cda4321d7
+verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
 ---
 
 # Agent journal
@@ -75,7 +75,7 @@ the model is told.
 
 **The four roster tools** (`internal/tool/registry.go`, `roster.go`): spec 019
 adds `journalTools`, appended to `LoopRosterVillager()` AFTER `muse` (so no
-existing tool's position shifts) and villager-only — the metatron never sees
+existing tool's position shifts) and villager-only — the guardian never sees
 them, journals are private. Two are acting, two are reads:
 
 - `write_journal_entry` — `Effect: Expressive`, `Gate: None`, one required

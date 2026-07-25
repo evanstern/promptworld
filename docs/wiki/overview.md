@@ -6,7 +6,7 @@ sources:
   - README.md
   - cmd/promptworld/main.go
   - go.mod
-verified_against: 723c464c35aac4936f2793d566a53c801516ae60
+verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
 ---
 
 # Overview
@@ -15,9 +15,11 @@ promptworld is an ambient, always-on village simulation: a Go daemon advances th
 24/7 whether or not anyone is watching, and terminal clients attach and detach without
 affecting it. The current codebase is the **time substrate** (TASK-2 / spec
 `specs/001-world-daemon`): tick loop, clock, persistence, and client protocol. The
-village systems — agent minds, the social fabric, the chronicle, Metatron, and
-village self-governance (norms and votes, [[governance]]) — arrived in later
-tasks and plug into this substrate. Because model turns take real wall time while
+village systems — agent minds, the social fabric, the chronicle, the Guardian
+(spec 052: this player-facing persona is itself skinnable per-world data, a
+`skin.json` beside `charter.md`), and village self-governance (norms and
+votes, [[governance]]) — arrived in later tasks and plug into this substrate.
+Because model turns take real wall time while
 game time keeps flowing, the **cognition horizon** ([[cognition]], TASK-32 / spec
 `specs/007-cognition-horizon`) deterministically gates every model-reaching
 decision by how stale its answer will be when it lands.
@@ -87,5 +89,5 @@ the [[llm-orchestrator]] is the (strictly quarantined) voice of the models, and
 Local, single-operator posture: daemon and clients share a trusted host; the protocol
 has no authentication. Target platform is darwin/arm64 (homelab MacBook); nothing is
 platform-specific beyond Unix sockets. The full village stack — executor, minds, social
-fabric, chronicle, Metatron, governance — now runs on the substrate (see [[executor]],
+fabric, chronicle, the Guardian, governance — now runs on the substrate (see [[executor]],
 [[agent-mind]]).

@@ -1,29 +1,40 @@
 ---
-name: metatron-miracles
-description: The four charge-priced world-edit events (time snap, item grant, entity move, entity remove) — cost table, operator-only gratis doctrine, shift-semantics re-base taxonomy, perception memories, and the two doors
+name: guardian-miracles
+description: The four charge-priced world-edit events (time snap, item grant, entity move, entity remove) — cost table, operator-only gratis doctrine, shift-semantics re-base taxonomy, perception memories, and the two doors; package renamed internal/metatron → internal/guardian (spec 052/TASK-121); the frozen "miracle" mechanics (tool id, event types, IPC/CLI command name) now display to the player as "working" via the boot-frozen [[skin]]'s WorkingNoun, canonical CLI verb `promptworld work` (hidden `miracle` alias)
 kind: component
 sources:
   - internal/sim/miracles.go
-  - internal/metatron/miracle_batch.go
-  - internal/metatron/turn.go
-  - internal/metatron/toolcalls.go
+  - internal/guardian/miracle_batch.go
+  - internal/guardian/turn.go
+  - internal/guardian/toolcalls.go
   - internal/tool/registry.go
   - internal/tool/derive.go
   - internal/ipc/server.go
-  - cmd/promptworld/miracle.go
-verified_against: d9d74924621b8816bbb4608afe48c41cda4321d7
+  - cmd/promptworld/work.go
+verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
 ---
 
-# Metatron's miracles
+
+
+# Guardian's miracles
 
 Miracles (spec 016) are four direct, charge-priced world edits — spent from the same
-bank as a [[metatron]] omen or vision, but landing a concrete change rather than a
+bank as a [[guardian]] omen or vision, but landing a concrete change rather than a
 villager's subjective experience. Like an influence, a miracle lands through
 `Loop.InjectSocial` as
 one atomic, whitelisted batch; the reducer validates rather than clamps, so an
 invalid miracle is rejected wholesale before recording and a recorded miracle always
 re-applies cleanly in replay (spec 016 R1). No new persistent entities exist —
 miracles only mutate fields already in `sim.State`.
+
+Terminology (spec 052, TASK-121): "miracle" is the frozen mechanics name — the
+`work_miracle` tool id, the four `metatron.*` event types, the `miracle` IPC/CLI
+command, and this note's own name all keep it, unchanged. The PLAYER-FACING word is
+now "working" — the default [[skin]]'s `WorkingNoun()`/`WorkingNounPlural()`
+(`"working"`/`"workings"`) resolve wherever the guardian's turn or moment text
+names the act (`mt.sk().WorkingNoun()`, [[guardian]]); the canonical CLI verb is
+`promptworld work` (below). A custom skin may re-voice the display noun; the tool
+id, event vocabulary, and cost/validation mechanics below can never move.
 
 ## How it works
 
@@ -83,8 +94,8 @@ miracle costs 1. Since spec 021 (TASK-64) the AUTHORITATIVE per-kind table lives
 the leaf [[tool-registry]] (`tool.MiracleCost(kind)` / `tool.MiracleCostsByEvent()`,
 `internal/tool/registry.go`, beside `miracleKinds`); `sim.miracleCost` (`miracles.go`,
 a keyed map — never iterated into state, for determinism) is now DERIVED from
-`tool.MiracleCostsByEvent()` rather than a second literal, and the angel's turn
-prompt renders costs from the same source (`tool.MetatronToolGuidance`), so one edit
+`tool.MiracleCostsByEvent()` rather than a second literal, and the guardian's turn
+prompt renders costs from the same source (`tool.GuardianToolGuidance`), so one edit
 propagates to enforcement and every rendering (`TestMiracleCostDerivedFromTool`
 pins the derivation). Pricing remains doctrine, not caller input — a payload never
 carries its own price, so replay re-validates every spend identically (R2).
@@ -92,14 +103,16 @@ carries its own price, so replay re-validates every spend identically (R2).
 arm calls last, after all other validation passes: with `gratis` it returns
 immediately, waiving ONLY the charge (every other validation still runs in full);
 without it, it errors if the bank can't pay and decrements it otherwise. `gratis` is
-reachable from exactly one surface: the `promptworld miracle --force` CLI/IPC door
+reachable from exactly one surface: the `promptworld work --force` CLI/IPC door
+(canonical since spec 052 FR-008; `promptworld miracle --force` survives as a
+hidden compat alias, same handler)
 ([[cli-promptworld]], [[ipc-protocol]], [[ipc-server]]) — the operator's cheat door
-the angel structurally cannot reach. The angel's turn contract — since spec 017 the
-`work_miracle` tool call, parsed into `miracleArgs` (`internal/metatron/toolcalls.go`;
+the guardian structurally cannot reach. The guardian's turn contract — since spec 017 the
+`work_miracle` tool call, parsed into `miracleArgs` (`internal/guardian/toolcalls.go`;
 the retired `turnReply.Miracle` anonymous struct carried the identical flat field
 set pre-loop) — has **no gratis field at all** — a model can emit `"gratis":true`
 in its tool-call arguments and it is simply dropped at unmarshal, nothing to
-sanitize or forget. `landMiracle` (the angel's landing path) calls the shared
+sanitize or forget. `landMiracle` (the guardian's landing path) calls the shared
 builder with `gratis` hardcoded `false`, so a model-driven miracle
 is unconditionally charged (contracts §1, FR-007/SC-005).
 
@@ -118,7 +131,7 @@ classified SHIFT or KEEP in its doc comment:
   `Debt.Due`, `Belief.Reinforced` (spec 030: the decay-curve anchor, elapsed =
   tick − Reinforced; shifted only when non-zero — a legacy grandfathered belief
   stays at 0 so it never decays), `Gru.LastAttack`, `Meeting.OpenedTick`,
-  `Meeting.GatherStart`, and (spec 029) `MetatronOrder.ExpiresTick` — shifted ONLY
+  `Meeting.GatherStart`, and (spec 029) `GuardianOrder.ExpiresTick` — shifted ONLY
   for ACTIVE orders, so a standing order's remaining lifetime survives the jump (a
   consumed order's deadline is a spent artifact, left put). Spec 041
   ([[mental-maps]]) adds `PlaceFact.Seen` and `PeerSighting.Seen`, the mental
@@ -154,7 +167,7 @@ classified SHIFT or KEEP in its doc comment:
   was rendered — history/audit, the `Memory.Tick` shape), `JournalEntry.Tick`
   (spec 019: when the entry was written, a historical
   timestamp), `Belief.Tick`, `ChronicleEntry.Tick`/`Day`/`FromTick`/`ToTick`,
-  `MetatronOrder.PlacedTick` (spec 029: when the order was placed, history),
+  `GuardianOrder.PlacedTick` (spec 029: when the order was placed, history),
   `IntentRecord.Tick`/`IntentRecord.OutcomeTick` (spec 043: when an intent
   landed / when its outcome landed — the recent-intent ring is a historical
   self-history log, the `Memory.Tick` shape, never a future deadline),
@@ -164,7 +177,7 @@ classified SHIFT or KEEP in its doc comment:
   sweep simply re-witnesses the shifted reality on the next look), and every
   other identity/history field — see the doc comment for the full list.
   `TestRebaseTaxonomyComplete` caught both spec-019 additions, the spec-030
-  `Belief.Reinforced` field, (later) spec 029's `MetatronOrder.ExpiresTick`/
+  `Belief.Reinforced` field, (later) spec 029's `GuardianOrder.ExpiresTick`/
   `PlacedTick`, spec 041's `PlaceFact`/`PeerSighting` fields, spec 042's
   `Memory.Seq`/`Agent.SitVecTick` fields, spec 043's `IntentRecord.Tick`/
   `OutcomeTick` (KEEP) and `Agent.NeedsAnchorTick` (SHIFT), spec 061's
@@ -183,15 +196,15 @@ catch-all ("any future duration-anchored state") requires shifting, since leavin
 them unshifted would expire a pending plan step or fire a timed guard the instant a
 snap jumped past its absolute tick.
 
-**Perception memories** (`BuildMiracleBatch` in `internal/metatron/miracle_batch.go`):
+**Perception memories** (`BuildMiracleBatch` in `internal/guardian/miracle_batch.go`):
 the shared, door-neutral batch-builder both channels call, so the miracle event and
-its perception memories can never drift between the operator and angel paths. It
+its perception memories can never drift between the operator and guardian paths. It
 only COMPOSES — validation lives entirely in the reducer arms above, enforced by the
 `InjectSocial` dry-run, so both doors reject identically and a recorded miracle
 always re-applies in replay. `MiracleParams` is the door-neutral, already-resolved
 input (villager names resolved to indices, day/`HH:MM` resolved to a tick, by the
 caller). Fixed, deterministic memory templates land at `SalDream` — miracles are
-exactly as memorable as an angelic omen or vision:
+exactly as memorable as one of the guardian's omens or visions:
 
 - `time_snap` touches every living villager (`s.LivingAgents()`) with
   `"The light lurched across the sky; a great span of time passed in a single
@@ -213,8 +226,8 @@ compiler builds the identical payload structs — including the trailing
 perception `agent.memory_added` pattern this note describes — which is what the
 dogfood equivalence test pins byte-identical to `BuildMiracleBatch`'s output.)
 
-- **The angel's turn** (`internal/metatron/turn.go`, `toolcalls.go`): since spec
-  017 the turn runs through [[tool-loop]]'s bounded loop ([[metatron]]); "at most
+- **The guardian's turn** (`internal/guardian/turn.go`, `toolcalls.go`): since spec
+  017 the turn runs through [[tool-loop]]'s bounded loop ([[guardian]]); "at most
   one mediated act per turn" is now the driver's cardinality rule (one acting call
   lands, every other call this cognition is rejected) rather than a hand-written
   nudge-wins-over-miracle precedence — the model calls `work_miracle` (or one of the
@@ -222,17 +235,17 @@ dogfood equivalence test pins byte-identical to `BuildMiracleBatch`'s output.)
   meta tools, spec 029) and whichever lands first ends the turn. Since spec 021 the
   world's
   `capabilities.json` can withhold `work_miracle` entirely or restrict its `kind`
-  vocabulary ([[metatron]]): an ungranted tool/kind is structurally absent from the
+  vocabulary ([[guardian]]): an ungranted tool/kind is structurally absent from the
   declared schema and guidance, its handler is never installed, and `landMiracle`
   additionally refuses via the grant check ("that miracle is not granted in this
   world") — defense in depth ahead of the reducer dry-run, which remains the final
   authority. Since spec 046 ([[curriculum-ladder]]) a staged world's curriculum
   stage caps the grant the same way, upstream of the manifest: the stage-1/-2
   ceiling grants NO miracle kinds at all, so `work_miracle` is structurally
-  absent from the angel's roster until stage-3 opens the full grantable surface
-  ([[metatron]]'s `applyStageCeiling` — intersection-only, so a manifest can
+  absent from the guardian's roster until stage-3 opens the full grantable surface
+  ([[guardian]]'s `applyStageCeiling` — intersection-only, so a manifest can
   narrow within the ceiling but never exceed it). The operator CLI/IPC door
-  below is stage-blind — the ceiling gates the angel, not the operator. `handleMiracle` parses the call's
+  below is stage-blind — the ceiling gates the guardian, not the operator. `handleMiracle` parses the call's
   arguments into `miracleArgs` and calls `landMiracle`, which resolves
   `MiracleParams` from an `agentXY` snapshot (`mt.agentXY`, mirrored per batch by
   the absorb goroutine in `mirrorState`, so the turn worker never races the live
@@ -247,11 +260,14 @@ dogfood equivalence test pins byte-identical to `BuildMiracleBatch`'s output.)
   `miracleParams`, [[tool-registry]]). `TurnResult.Miracle` (`{kind, summary}`) is
   what the console surfaces; every call the loop saw — landed or rejected — also
   lands as a `cog.tool_call` telemetry event ([[event-types]], `toolcalls.go`).
-- **The operator CLI/IPC door** (`cmd/promptworld/miracle.go` → IPC `miracle`
-  command → `internal/ipc/server.go`'s `handleMiracle`): `promptworld miracle
-  <world> <snap-time|give|move|remove> ... [--force]`. `handleMiracle` needs only
-  `srv.loop` — never `srv.llm` or `srv.metatron` — so it works on pure-sim worlds
-  with no angel or orchestrator configured. It fetches the current state via
+- **The operator CLI/IPC door** (`cmd/promptworld/work.go` → IPC `miracle`
+  command — the wire command name is FROZEN, spec 052 ruling 2 —
+  → `internal/ipc/server.go`'s `handleMiracle`): `promptworld work
+  <world> <snap-time|give|move|remove> ... [--force]` (canonical since spec 052
+  FR-008; `promptworld miracle ...` survives as a hidden compat alias — same
+  handler, same behavior). `handleMiracle` needs only
+  `srv.loop` — never `srv.llm` or `srv.guardian` — so it works on pure-sim worlds
+  with no guardian or orchestrator configured. It fetches the current state via
   `loop.DoState` (to resolve door-side name/tile lookups — `give_item`'s villager
   name through `sim.AgentIndexByName`, `time_snap`'s day/`HH:MM` through
   [[game-clock]]'s `clock.ParseTimeOfDay`/`clock.TickAt`), builds `MiracleParams`,
@@ -260,15 +276,15 @@ dogfood equivalence test pins byte-identical to `BuildMiracleBatch`'s output.)
   `MiracleData{kind, charges, gratis, summary}`.
 
 **Miracle targeting digest** (spec 059 US3): world-01 evidence showed 3 of 4
-miracle attempts door-rejected on invalid coordinates — the angel had
+miracle attempts door-rejected on invalid coordinates — the guardian had
 authority to act but no aim. Since spec 059, any turn whose granted roster
-offers `work_miracle` (gated by `hasWorkMiracle`, `internal/metatron/turn.go`)
+offers `work_miracle` (gated by `hasWorkMiracle`, `internal/guardian/turn.go`)
 carries a token-bounded targeting digest in its user prompt: every living
 villager's tile, health/food/warmth, and the passable tiles immediately
 adjacent, assembled by `buildTargetingDigest` from the absorb-mirrored
 `agentXY`/`agentNeeds` snapshots (never the live replica) and the static
 map's own `Passable` — the door stays the authority, this is aim guidance
-only. `tool.MetatronTargetingGuidance()` ([[tool-registry]]) supplies the
+only. `tool.GuardianTargetingGuidance()` ([[tool-registry]]) supplies the
 one-line prose pointer introducing it. Prompt surface only — no new event,
 no new door, and the reducer dry-run (`applyEntityMoved`/
 `applyEntityRemoved`'s presence/placement checks, above) remains the sole
@@ -289,8 +305,8 @@ between the three contexts.
 
 ## Connections
 
-[[metatron]] hosts the angel's door (`landMiracle`, the `work_miracle` tool call
-parsed into `miracleArgs`); [[metatron-orders]] shares this note's `rebaseTicks`
+[[guardian]] hosts the guardian's door (`landMiracle`, the `work_miracle` tool call
+parsed into `miracleArgs`); [[guardian-orders]] shares this note's `rebaseTicks`
 taxonomy (a standing order's `ExpiresTick` is a SHIFT field);
 [[mental-maps]] shares it too (`PlaceFact.Seen`/`PeerSighting.Seen` SHIFT,
 `PlaceFact.Detail` KEEP) and is what a miracle-moved villager's derived
@@ -302,14 +318,14 @@ reattaches the static map to the dry-run probe; [[sim-state-reducer]] dispatches
 `applyMiracle` and carries the unexported `m *worldmap.Map` field the reducer arms
 need; [[event-types]] catalogs the four payload shapes; [[ipc-protocol]] and
 [[ipc-server]] define and implement the `miracle` wire command; [[cli-promptworld]]
-is the `promptworld miracle` operator door; [[game-clock]]'s `TickAt`/
+is the `promptworld work` operator door (hidden `miracle` alias); [[game-clock]]'s `TickAt`/
 `ParseTimeOfDay` resolve a time-snap target; [[world-migration]]'s `MigrateState`
 attaches the map so a migrated state is miracle-ready like a fresh genesis.
-[[tool-loop]] is the angel's door since spec 017: `work_miracle` is a declared
-loop tool ([[tool-registry]]'s `LoopRosterMetatron`) whose handler
+[[tool-loop]] is the guardian's door since spec 017: `work_miracle` is a declared
+loop tool ([[tool-registry]]'s `LoopRosterGuardian`) whose handler
 (`toolcalls.go`) wraps `landMiracle` exactly as described above.
-[[metatron-orders]] documents the spec 059 survival watches whose turn frame
-permits a miracle on the angel's own initiative (charge cost unchanged) —
+[[guardian-orders]] documents the spec 059 survival watches whose turn frame
+permits a miracle on the guardian's own initiative (charge cost unchanged) —
 this note's cost/rebase/door mechanics are identical either way, only the
 turn's authorization frame differs; [[mental-maps]] is the closed
 place-fact/passability vocabulary the targeting digest draws its adjacency

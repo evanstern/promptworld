@@ -10,7 +10,7 @@ sources:
   - internal/bundle/handlers.go
   - internal/bundle/script.go
   - internal/bundle/worldview.go
-verified_against: 1e71b77f104dda982aa407b28ad2c994219e90d0
+verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
 ---
 
 # Bundle tools
@@ -45,10 +45,10 @@ warn. Editing a bundle needs a world restart; there is no hot reload.
 **Manifest → tool**: `manifest.go` synthesizes a real `tool.Tool`
 (Effect Expressive, `PromptGloss` from the description, `Cost.Charges` as the
 gate minimum — the reducer's per-event price table stays authoritative,
-[[metatron-miracles]]), so schema derivation, arg validation, and guidance prose
+[[guardian-miracles]]), so schema derivation, arg validation, and guidance prose
 ride the existing [[tool-registry]] machinery; the registry itself is never
 touched — the turn assembly appends `BundleSet.Roster()` and `Handlers()` after
-`grantedRoster` ([[metatron]]).
+`grantedRoster` ([[guardian]]).
 
 **Invocation**: the handler (per tool, built by `handlers.go` over an
 `InvocationContext{State, Tick, Invoker, Seed, Inject}`) resolves declarative
@@ -74,7 +74,7 @@ Private memories, beliefs, relationships, and wall time are deliberately absent.
 
 **Personas**: a bundle's `SOUL.md` fragments stack into the turn prompt after
 the charter and before skills (the fixed frame still lands last —
-[[metatron-orders]]); its `capabilities.json` NARROWS the world grant by
+[[guardian-orders]]); its `capabilities.json` NARROWS the world grant by
 intersection (`intersectGrant` — a persona can exclude tools/miracle kinds,
 never resurrect what the world owner excluded).
 
@@ -87,10 +87,10 @@ pins its output byte-identical to `BuildMiracleBatch`'s `move` kind.
 ## Connections
 
 [[daemon-lifecycle]] discovers/freezes the set at boot and hands it to
-[[metatron]] via `SetBundles`; [[tool-registry]] supplies the `Tool` model,
+[[guardian]] via `SetBundles`; [[tool-registry]] supplies the `Tool` model,
 schema derivation, and the spec-036 `PromptGloss` guidance fallback;
 [[sim-loop]]'s `InjectSocial` door + whitelist (readable via
-`InjectableSocialEvent`) is the only path to state; [[metatron-miracles]]
+`InjectableSocialEvent`) is the only path to state; [[guardian-miracles]]
 defines the payloads the effect compiler reproduces; [[deterministic-rng]]
 backs `world.rand`; [[world-save-directory]] owns the `bundles/` layout;
 [[event-types]] catalogs every type a bundle may declare.

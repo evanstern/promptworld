@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/world/world.go
   - internal/world/migrate.go
-verified_against: 824932c630a9216dc761f78baa903cd07e5b9493
+verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
 ---
 
 # World save directory
@@ -58,7 +58,7 @@ stage, making overridden runs comparable as overridden runs), and
 `charter_preset` (`""`/`"default"` = the authored default charter, `"tutor"`
 = the stage-1 orientation preset — the constant that seeds `charter.md` at
 genesis and, at stage-1 where instruction files are locked, IS the effective
-charter regardless of edits ([[metatron]]); `Open` validates via
+charter regardless of edits ([[guardian]]); `Open` validates via
 `ValidCharterPreset`). A fourth addition, the optional `scenario` block
 (`ScenarioConfig{exercise}`, naming a `sim.ExerciseDefinition.ID`), is
 RESERVED on the `meeting`-block precedent: consumed by nothing yet and never
@@ -100,9 +100,9 @@ dimensions — deterministic, so the map is never stored ([[worldmap-generation]
   calibration/bootstrap alone; never event-sourced, never read during replay),
   `SockPath()` → `daemon.sock`, `PidPath()` → `daemon.pid`,
   `LogPath()` → `daemon.log`, `CharterPath()` → `charter.md` (the player-editable
-  prompt), `MetatronDir()` → `metatron/` (the angel's soul and transcript —
-  [[metatron]]), and `VillageCharterPath()` → `village_charter.md` (the village's
-  scribe-rendered law, deliberately distinct from Metatron's charter —
+  prompt), `GuardianDir()` → `metatron/` (dir name frozen, spec 052 ruling 2 — the Guardian's soul and transcript —
+  [[guardian]]), and `VillageCharterPath()` → `village_charter.md` (the village's
+  scribe-rendered law, deliberately distinct from the Guardian's charter —
   [[governance]], TASK-13), `MorguePath()` → `morgue.md` (spec 044: the run's
   accumulating legacy document — one factual epitaph per death plus a run-end
   summary, scribe-rendered; a regenerable view over the event history, never a
@@ -148,7 +148,7 @@ an older one ([[world-migration]]). [[mental-maps]] is the spec-041 subsystem th
 current format version exists to support. [[curriculum-ladder]] is the spec-046
 subsystem behind the `stage`/`stage_overridden`/`charter_preset` manifest
 fields — the daemon reads them at boot and hands them boot-frozen to
-[[metatron]] for the stage ceiling and the stage-1 instruction lock; the
+[[guardian]] for the stage ceiling and the stage-1 instruction lock; the
 per-user unlocks record that gates `promptworld new`'s default stage lives
 outside the save directory (in the worlds home), advisory and never an
 authority over anything in this directory. [[world-tuning]] is the spec-048
