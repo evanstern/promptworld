@@ -4,7 +4,7 @@ title: 'Permadeath runs, death escalation, and the morgue file: design session'
 status: In Progress
 assignee: []
 created_date: '2026-07-20 19:55'
-updated_date: '2026-07-25 04:54'
+updated_date: '2026-07-25 05:06'
 labels:
   - design
   - learning-game
@@ -44,5 +44,15 @@ Relabeled per learning-game synthesis (2026-07-25): learning-game PREREQUISITE �
 created: 2026-07-25 04:54
 ---
 Design session opened 2026-07-25 in main session (Fable): permadeath/run-outcomes/morgue + the learning-game synthesis open question 1 (player-attributable failure state).
+---
+
+created: 2026-07-25 05:02
+---
+Design session round 1 decided (operator, 2026-07-25): (1) RUN END = archive — run.ended halts the sim loop; daemon keeps serving reads (chronicle/morgue/event log, TUI postmortem mode); new run = new world dir, old runs are browsable archives. (2) ESCALATION = gru kills the already-wounded — health-1 floor stays for healthy villagers; a hit on a wounded/NearDeath agent can kill, so lethality emerges from compounding preventable spirals, not one-hit randomness. (3) FAILURE/ATTRIBUTION = all-dead run.ended is THE hard failure everywhere (scenarios add rubric fails on top); the morgue aligns each death against the charter/orders revision timeline — evidence, never a blame score. Resolves learning-game synthesis open question 1. (4) DIFFICULTY = folded into TASK-68 stage / TASK-119 scenario presets; no standalone difficulty field (identities not sliders; scenario id + seed already make runs comparable). Round 2 (morgue mechanism, graves scope) next; spec to follow.
+---
+
+created: 2026-07-25 05:06
+---
+Design session round 2 decided (operator, 2026-07-25): (5) MORGUE MECHANISM = deterministic core + narrated epilogue — reducer writes the factual event-derived record per death and at run end (days, cause, relationships, debts, deeds, charter/orders timeline alignment), works LLM-off; chronicle narrator appends a prose epilogue when available; facts never depend on the model. (6) GRAVES v1 = marker + memory/rumor hooks riding existing systems (mental-map place-facts, social fabric grief rumors); mourning morale effects and grave-visiting behaviors deferred. Orchestrator judgment calls (flagged, unobjected): single accumulating morgue.md per world (per-death epitaphs + run-end summary); format designed export-ready, Boatmurdered HTML export stays a separate Wave-3 task. Session decisions complete — spec drafting next (AC #1).
 ---
 <!-- COMMENTS:END -->

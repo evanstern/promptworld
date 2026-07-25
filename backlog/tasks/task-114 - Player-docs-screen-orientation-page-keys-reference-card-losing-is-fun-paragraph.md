@@ -3,10 +3,10 @@ id: TASK-114
 title: >-
   Player docs: screen-orientation page, keys reference card, losing-is-fun
   paragraph
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-25 04:26'
-updated_date: '2026-07-25 04:50'
+updated_date: '2026-07-25 05:06'
 labels: []
 dependencies: []
 ordinal: 85000
@@ -20,11 +20,17 @@ Approved 2026-07-25 (learning-game synthesis, docs/design/learning-game-synthesi
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 An eighth player-docs page exists answering 'what do all those things on screen mean', organized by screen region, with a complete map glyph table
-- [ ] #2 A keys reference card page/section exists, pure controls, unmixed with lore
-- [ ] #3 getting-started.html opens expectations with the losing-is-fun reassurance paragraph
-- [ ] #4 New pages pass the player-docs freshness gate (check-freshness.mjs --check)
+- [x] #1 An eighth player-docs page exists answering 'what do all those things on screen mean', organized by screen region, with a complete map glyph table
+- [x] #2 A keys reference card page/section exists, pure controls, unmixed with lore
+- [x] #3 getting-started.html opens expectations with the losing-is-fun reassurance paragraph
+- [x] #4 New pages pass the player-docs freshness gate (check-freshness.mjs --check)
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Delivered in PR #73 (squash-merged 2026-07-25). Two new pages (understanding-the-screen.html, keys-reference.html — standalone card by design, unmixed with concepts), losing-is-fun paragraph in getting-started.html, nav cross-links across all pages, player-docs skill machinery updated 7→9 pages. Freshness gate: 9 fresh / 0 stale / 0 missing. Implemented by Sonnet spec-implementer per tier rubric; reviewed and merged by orchestrator.
+<!-- SECTION:NOTES:END -->
 
 ## Comments
 
