@@ -742,7 +742,11 @@ func cmdUI(args []string) error {
 	if err != nil {
 		return err
 	}
-	m, err := tea.NewProgram(tui.New(w), tea.WithAltScreen()).Run()
+	// WithMouseCellMotion (spec 049, research R2) enables click reporting
+	// app-wide; only the chronicle inspect-list line click binds to it
+	// (internal/tui handleMouse) — every other mouse event is unhandled and
+	// falls through inert, so no existing keyboard behavior changes (FR-005).
+	m, err := tea.NewProgram(tui.New(w), tea.WithAltScreen(), tea.WithMouseCellMotion()).Run()
 	if err != nil {
 		return err
 	}

@@ -165,10 +165,37 @@ type Model struct {
 	helpTier     bool // false = basic, true = advanced
 	helpSection  helpSection
 	helpScroll   int
+
+	// chronHit (spec 049, data-model.md "chronHitRegion"; T009) is the
+	// chronicle inspect-mode list's last-rendered click geometry — a
+	// pointer so a value-receiver View() can still record it: Bubble Tea
+	// copies Model by value on every Update, but every copy carries the
+	// same pointer forward, so a write through it is visible to the very
+	// next Update() regardless of which copy performed the write. Recorded
+	// by chronicleInspectBody each View(), consumed by handleMouse the
+	// next Update() (contract §1, US2).
+	chronHit *chronHitRegion
+}
+
+// chronHitRegion is the chronicle inspect-list's rendered geometry: which
+// screen rows the list currently occupies and which event each row shows.
+// valid is false whenever the chronicle inspect list wasn't part of the
+// frame just rendered (other tab, running mode, narrow non-chronicle pane,
+// help overlay) — View() invalidates by default and chronicleInspectBody
+// re-validates only when it actually runs (data-model.md "State
+// transitions").
+type chronHitRegion struct {
+	valid            bool
+	originX, originY int   // top-left screen cell of row 0's line
+	width            int   // column span of a hit; row span is len(rowEvent)
+	rowEvent         []int // rowEvent[i] = m.events index for screen row originY+i
 }
 
 func New(w *world.World) Model {
-	return Model{w: w, gameMap: w.Map(), chronAgent: -1, dockTab: paneChronicle, chronSelected: -1, traces: newDecisionTraces()}
+	return Model{
+		w: w, gameMap: w.Map(), chronAgent: -1, dockTab: paneChronicle, chronSelected: -1,
+		traces: newDecisionTraces(), chronHit: &chronHitRegion{},
+	}
 }
 
 // FatalErr reports the unrecoverable error that made the TUI quit, if any —
@@ -373,6 +400,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		return m.handleKey(msg)
+
+	case tea.MouseMsg:
+		return m.handleMouse(msg)
 
 	case connectedMsg:
 		if m.client != nil {
@@ -957,10 +987,11 @@ func (m *Model) historyDown() {
 // handleInspectKey is patterns/keymap.md "Mode: inspect" — layered on top
 // of the global mode, never replacing it (handled is false for any key it
 // does not own, so handleKey falls through to handleGlobalKey). J/K scroll
-// the always-on detail pane (contract §5/§6, R6); ⏎ is reserved (R7) — the
-// pane's [future: actions] slot and detailActions are the documented
-// attachment point (FR-009, contract §5 "Extension point"), so it is
-// swallowed (handled=true) rather than left to fall through by accident.
+// the always-on detail pane (contract §5/§6, R6); ⏎ jumps the map camera to
+// the selected event's subject (spec 049, contract §1) — the seam this same
+// comment used to describe as reserved is now filled; jumpToSource is
+// shared with the chronicle-line click (handleMouse) so both input paths
+// apply identical rules (FR-004/FR-009, input-parity doctrine).
 func (m Model) handleInspectKey(msg tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 	switch msg.String() {
 	case "j":
@@ -984,9 +1015,135 @@ func (m Model) handleInspectKey(msg tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 		}
 		return m, nil, true
 	case "enter":
-		return m, nil, true // reserved no-op (contract §5 "Extension point")
+		mdl, cmd := m.jumpToSource()
+		return mdl, cmd, true
 	}
 	return m, nil, false
+}
+
+// --- jump-to-source (spec 049) ---
+
+// centerCameraOn sets the camera pan so the wanderer centroid + pan lands
+// exactly on (x,y) — research R1: a jump IS a pan, computed instead of
+// accumulated, so `c` (recenter, resets pan to 0,0) and the panned-title/
+// auto-follow-suspend behavior (renderMapGrid, mapPanelView) fall out of
+// the existing pan machinery for free; no new camera state, no new clamping
+// (render-time clampInt already bounds the visible window regardless of
+// panX/panY's magnitude, same as manual arrow-key panning).
+func (m *Model) centerCameraOn(x, y int) {
+	cx, cy := m.wandererCentroid()
+	m.panX = x - cx
+	m.panY = y - cy
+}
+
+// jumpToSource applies contract §1/§4 to the currently selected chronicle
+// event: resolveSubject decides jump-or-hint (FR-002/FR-003). A successful
+// jump centers the camera and, in the narrow fallback, switches the visible
+// pane to the map so the effect is actually seen (FR-007) rather than
+// landing invisibly behind the chronicle pane. An unlocatable event changes
+// nothing — the detail pane's actions bar (detailActions) is already the
+// visible explanation (contract §1), so there is nothing further to do
+// here. Shared by the ⏎ key (handleInspectKey) and the chronicle-line click
+// (handleMouse) — one behavior, two input paths (input-parity doctrine).
+func (m Model) jumpToSource() (tea.Model, tea.Cmd) {
+	sel := m.chronSelectionBase()
+	if sel < 0 {
+		return m, nil
+	}
+	_, x, y, ok := m.resolveSubject(m.events[sel])
+	if !ok {
+		return m, nil
+	}
+	m.centerCameraOn(x, y)
+	if !isWidescreen(m.width) {
+		m.active = paneMap // FR-007: land where the jump's effect is visible
+	}
+	return m, nil
+}
+
+// chronicleHitOrigin computes where the chronicle inspect list's row 0
+// lands on screen, per the layout currently active — pure arithmetic over
+// the same fixed chrome-row/column constants (header, box border, tab row,
+// divider) already literal in widescreenView/narrowView/dockPanelView/
+// soloPanelView, never the per-event wrap/window logic those functions also
+// contain (research R3: that part only the renderer itself may compute).
+// Only ever meaningful while chronicleInspectBody is actually rendering
+// (its caller is gated on m.inspecting()), so isWidescreen(m.width) and
+// m.solo alone are enough to tell which of the three layouts is live.
+func (m Model) chronicleHitOrigin() (originX, originY, width int) {
+	if !isWidescreen(m.width) {
+		// narrowView: headerView (1) + tabsView (1) + blank line (1).
+		return 0, 3, m.width
+	}
+	if m.solo {
+		// soloPanelView: header (1) + box top border (1) + title row (1).
+		return 0, 3, m.width
+	}
+	// dockPanelView beside mapPanelView: header (1) + box top border (1) +
+	// tab row (1) + divider (1); dock panel's columns start after the map
+	// panel + gutter (computeColumns, layout.go).
+	cols := computeColumns(m.width)
+	return cols.MapCols + cols.Gutter, 4, cols.DockCols
+}
+
+// recordChronHit stashes this frame's list-row → event-index geometry
+// (chronHitRegion) for the next Update's mouse routing — the renderer that
+// already knows the per-row event windowing (chronicleInspectBody's start/
+// end) is the only honest source (research R3); the click handler never
+// re-derives it.
+func (m Model) recordChronHit(start, end int) {
+	if m.chronHit == nil {
+		return
+	}
+	originX, originY, width := m.chronicleHitOrigin()
+	rowEvent := make([]int, end-start)
+	for i := range rowEvent {
+		rowEvent[i] = start + i
+	}
+	*m.chronHit = chronHitRegion{valid: true, originX: originX, originY: originY, width: width, rowEvent: rowEvent}
+}
+
+// invalidateChronHit marks the last-recorded hit region stale — called at
+// the top of every View() so a frame that never renders the chronicle
+// inspect list (other tab, running mode, help overlay) can't leave a stray
+// click acting on geometry from a previous frame.
+func (m Model) invalidateChronHit() {
+	if m.chronHit != nil {
+		m.chronHit.valid = false
+	}
+}
+
+// handleMouse routes tea.MouseMsg per contract §1 (US2, input-parity
+// doctrine decision 8): a left-button *release* landing inside the
+// chronicle's last-rendered list rows, while paused, selects that row and
+// applies the same jump rules ⏎ does (jumpToSource) — one behavior, two
+// input paths. Every other mouse event (wrong button/action, outside the
+// region, running clock, help/minibuffer focus, chronicle not visible) is a
+// no-op: mouse support adds no exclusive capability (FR-005), and this
+// feature binds nothing but the chronicle line click (research R2).
+func (m Model) handleMouse(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
+	if msg.Action != tea.MouseActionRelease || msg.Button != tea.MouseButtonLeft {
+		return m, nil
+	}
+	if m.helpOpen || m.mbFocused || !m.inspecting() {
+		return m, nil
+	}
+	hit := m.chronHit
+	if hit == nil || !hit.valid {
+		return m, nil
+	}
+	row := msg.Y - hit.originY
+	col := msg.X - hit.originX
+	if row < 0 || row >= len(hit.rowEvent) || col < 0 || col >= hit.width {
+		return m, nil
+	}
+	idx := hit.rowEvent[row]
+	if idx < 0 || idx >= len(m.events) {
+		return m, nil
+	}
+	m.chronSelected = idx
+	m.chronDetailScroll = 0 // data-model.md: reset on selection move, same as j/k
+	return m.jumpToSource()
 }
 
 // handleVillagersKey is contracts/state-and-keys.md's key grammar table,
@@ -1151,20 +1308,28 @@ func (m *Model) chronJumpLast() {
 	m.chronDetailScroll = 0
 }
 
-// detailAction is one future jump-off action attachable to the detail
-// pane's bottom-right "[future: actions]" slot (contract §5 "Extension
-// point", FR-009). Not populated by this feature — the hook exists so a
-// later feature can wire actions (e.g. "jump to related event") without
-// re-deriving where they attach; ⏎ (handleInspectKey) is the reserved key.
+// detailAction is one jump-off action attachable to the detail pane's
+// bottom-right actions bar (contract §3, FR-009). Spec 018/spec 047 reserved
+// this hook for exactly the feature that fills it (spec 049): jump-to-source
+// is the actions bar's first (and, today, only) action.
 type detailAction struct {
 	Label string
 }
 
-// detailActions returns the jump-off actions available for one event.
-// Always nil today; deliberately takes the event so a future
-// implementation doesn't need to change the call site.
-func detailActions(e store.Event) []detailAction {
-	return nil
+// detailActions returns the jump-off actions available for one event —
+// exactly one, always (data-model.md "Never nil after this feature" —
+// SC-002's totality is a property of this function, and TestJumpCatalogSweep
+// asserts it holds for every cataloged event type): the jump affordance
+// (contract §3) when resolveSubject locates a subject, the honest
+// no-location text otherwise. Takes the Model (for resolveSubject's live
+// replica) and the event, so a future action can extend this without
+// changing callers' shape.
+func (m Model) detailActions(e store.Event) []detailAction {
+	name, x, y, ok := m.resolveSubject(e)
+	if !ok {
+		return []detailAction{{Label: "no location for this event"}}
+	}
+	return []detailAction{{Label: fmt.Sprintf("⏎ jump to %s (%d,%d)", name, x, y)}}
 }
 
 func (m Model) handlePush(p ipc.Push) (tea.Model, tea.Cmd) {

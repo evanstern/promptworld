@@ -66,6 +66,10 @@ var (
 )
 
 func (m Model) View() string {
+	// Default the chronicle mouse hit region to invalid every frame (spec
+	// 049); chronicleInspectBody re-validates it below, synchronously in
+	// this same call, only when it actually renders this frame.
+	m.invalidateChronHit()
 	if m.quitting {
 		if m.fatalErr != "" {
 			return styleErr.Render("detached: "+m.fatalErr) + "\n"
@@ -427,6 +431,35 @@ func (m Model) dockTabContent(width, height int) string {
 
 // --- map (panels/map.md: "Rendering is unchanged") ---
 
+// wandererCentroid is the live (non-dead) agent centroid the camera follows
+// by default — falls back to the map's own center when there's no replica or
+// no living agent (renderMapGrid's original inline default). Extracted
+// (spec 049 T002, research R1) so the jump-to-source camera writer
+// (centerCameraOn, tui.go) computes the exact same number the map renderer
+// does — a jump is a pan targeting this same centroid, never a second,
+// slightly different notion of "center."
+func (m Model) wandererCentroid() (cx, cy int) {
+	if m.gameMap != nil {
+		cx, cy = m.gameMap.W/2, m.gameMap.H/2
+	}
+	if m.replica == nil {
+		return cx, cy
+	}
+	sx, sy, n := 0, 0, 0
+	for _, a := range m.replica.Agents {
+		if a.Dead {
+			continue
+		}
+		sx += a.X
+		sy += a.Y
+		n++
+	}
+	if n > 0 {
+		cx, cy = sx/n, sy/n
+	}
+	return cx, cy
+}
+
 // renderMapGrid draws the terrain+agents grid at exactly vw x vh tiles,
 // returning the grid block and legend line separately — the shared core
 // behind both the narrow mapView (today's vw/vh formula) and the
@@ -451,21 +484,9 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 	}
 
 	// Camera center: wanderer centroid + pan offset, clamped to the map.
-	cx, cy := gm.W/2, gm.H/2
-	if m.replica != nil {
-		sx, sy, n := 0, 0, 0
-		for _, a := range m.replica.Agents {
-			if a.Dead {
-				continue
-			}
-			sx += a.X
-			sy += a.Y
-			n++
-		}
-		if n > 0 {
-			cx, cy = sx/n, sy/n
-		}
-	}
+	// wandererCentroid is shared with centerCameraOn (spec 049 research R1)
+	// so the jump math and this default camera center can never drift apart.
+	cx, cy := m.wandererCentroid()
 	cx += m.panX
 	cy += m.panY
 	x0 := clampInt(cx-vw/2, 0, gm.W-vw)
@@ -1169,6 +1190,7 @@ func (m Model) chronicleInspectBody(width, rows int) string {
 		}
 		listOut = append(listOut, marker+renderChronicleRow(l, cols, width-2, 1, selected))
 	}
+	m.recordChronHit(start, end) // spec 049 T009: this frame's click geometry
 
 	// --- rule + detail pane (contract §5) ---
 	e := m.events[sel]
@@ -1176,7 +1198,11 @@ func (m Model) chronicleInspectBody(width, rows int) string {
 	out := append([]string{}, listOut...)
 	out = append(out, rule)
 	if paneRows > 0 {
-		out = append(out, chronicleDetailPane(e, names, m.chronDetailScroll, width, paneRows)...)
+		actionLabel := ""
+		if actions := m.detailActions(e); len(actions) > 0 {
+			actionLabel = actions[0].Label
+		}
+		out = append(out, chronicleDetailPane(e, names, m.chronDetailScroll, width, paneRows, actionLabel)...)
 	}
 	return strings.Join(out, "\n")
 }
@@ -1184,22 +1210,23 @@ func (m Model) chronicleInspectBody(width, rows int) string {
 // chronicleDetailPane windows formatInspector's verbatim-payload output to
 // exactly paneRows lines (contract §5): scroll clamps to content so J past
 // the end (or K before the start) is a no-op rather than drifting the view
-// blank; a footer replaces the last row with a remaining-line count plus
-// the [future: actions] slot (FR-009) whenever content overflows the pane.
-// Oversized payloads (world.migrated) are never processed beyond this
-// slice — the annotated string is built once, then only the visible lines
-// are touched, satisfying FR-011 structurally rather than by a size cap.
-func chronicleDetailPane(e store.Event, names []string, scroll, width, paneRows int) []string {
+// blank. The bottom row is always reserved for the actions bar (spec 049,
+// contract §3 "bottom-right slot") — a permanent corner of the pane, not
+// merely a byproduct of scrolling, so actionLabel renders there whether or
+// not the payload also overflows; when it does, the row carries both the
+// remaining-line count and the actions bar (the pre-existing single-row
+// layout). Oversized payloads (world.migrated) are never processed beyond
+// this slice — the annotated string is built once, then only the visible
+// lines are touched, satisfying FR-011 structurally rather than by a size
+// cap.
+func chronicleDetailPane(e store.Event, names []string, scroll, width, paneRows int, actionLabel string) []string {
 	content := strings.Split(formatInspector(e, names), "\n")
 
-	contentRows := paneRows
-	footerNeeded := len(content) > paneRows
-	if footerNeeded {
-		contentRows = paneRows - 1
-		if contentRows < 1 {
-			contentRows = 1
-		}
+	contentRows := paneRows - 1 // one row always reserved for the actions bar
+	if contentRows < 1 {
+		contentRows = 1
 	}
+	footerNeeded := len(content) > contentRows
 	maxScroll := len(content) - contentRows
 	if maxScroll < 0 {
 		maxScroll = 0
@@ -1219,16 +1246,21 @@ func chronicleDetailPane(e store.Event, names []string, scroll, width, paneRows 
 	for _, ln := range content[scroll:visEnd] {
 		out = append(out, indentBlock(ln, "  "))
 	}
+	for len(out) < contentRows { // pad the content area so the actions row is always last
+		out = append(out, "")
+	}
+
+	footer := ""
 	if footerNeeded {
 		remaining := len(content) - visEnd
-		footer := fmt.Sprintf("… (+%d more — J to scroll)", remaining)
-		actions := "[future: actions]" // detailActions' attachment slot (FR-009)
-		gap := width - len([]rune(footer)) - len([]rune(actions)) - 4
-		if gap < 2 {
-			gap = 2
-		}
-		out = append(out, styleDim.Render("  "+footer+strings.Repeat(" ", gap)+actions))
+		footer = fmt.Sprintf("… (+%d more — J to scroll)", remaining)
 	}
+	gap := width - len([]rune(footer)) - len([]rune(actionLabel)) - 4
+	if gap < 2 {
+		gap = 2
+	}
+	out = append(out, styleDim.Render("  "+footer+strings.Repeat(" ", gap)+actionLabel))
+
 	for len(out) < paneRows { // pad so the composite height is fixed (B1)
 		out = append(out, "")
 	}
