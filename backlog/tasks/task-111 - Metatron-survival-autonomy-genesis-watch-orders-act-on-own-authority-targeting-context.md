@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-25 03:00'
-updated_date: '2026-07-25 19:30'
+updated_date: '2026-07-25 19:37'
 labels:
   - learning-game
   - guardian-survival
@@ -54,6 +54,8 @@ OPERATOR DECISIONS (2026-07-25, team review):
 (3) DECISION OVERTAKEN BY EVENTS — RECORDED AS DEBT, NOT AS A PLAN. The operator decided merge order TASK-121 -> TASK-111, with 111 bound to the skin-token contract (extending D2). PR #90 merged this task FIRST, ~15 minutes after that decision was recorded and before it reached the MVLS session. Consequence to carry: TASK-121's sweep now rebases through this task's new survival-turn code in internal/metatron/turn.go and orders.go, and any survival order text / seeded soul header this task landed in Metatron voice must be swept by 121 and made to pass 052's T008 fiction-denylist. Add those sites to 121's sweep inventory rather than assuming the skin-token binding held.
 
 REVIEW FINDINGS (pinned-coordinate note now historical — the work merged): this task's three board coordinates had all drifted before dispatch — turn.go:749 was orderStatuses' loop body (the initiative frame is 817-831); turn.go:510 was landNudgeBatch's doc comment (guidance composes at :873); derive.go:235 was MetatronToolGuidance's func line. Kept as evidence for the standing rule: re-pin file:line diagnoses at dispatch, since the constitution's trivial-exemption and both runbooks lean on them. Also: internal/metatron is a THREE-program hotspot (052, 059-metatron, 115) that no runbook lists — specs 052 T012/T014, 059-metatron T005/T007 and 059-grounded-feedback T005 hold three incompatible expectations of the single constant metatronInitiativeFrame. That collision is now live in merged code.
+
+Live-evidence follow-ups carded (operator request 2026-07-25): TASK-136 (AC#3 live rejection-rate measurement) and TASK-137 (AC#5 charter-delta experiment). This task's remaining ACs resolve from their evidence.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
