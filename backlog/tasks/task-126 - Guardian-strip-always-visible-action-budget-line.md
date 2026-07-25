@@ -4,7 +4,7 @@ title: 'Guardian strip: always-visible action budget line'
 status: In Progress
 assignee: []
 created_date: '2026-07-25 14:44'
-updated_date: '2026-07-25 17:23'
+updated_date: '2026-07-25 17:51'
 labels:
   - learning-game
   - tui
@@ -24,17 +24,19 @@ Spec: specs/050-guardian-strip
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Strip visible in composite regardless of dock tab; content stage/skin-resolved; collapses per Wave-0 fold-order ruling
-- [ ] #2 Spec phase: Setup
-- [ ] #3 Spec phase: Foundational
-- [ ] #4 Spec phase: User Story 1 — The budget is one glance from the verb (P1) 🎯 MVP
-- [ ] #5 Spec phase: User Story 2 — The strip never lies (P2)
-- [ ] #6 Spec phase: User Story 3 — The strip survives pressure (P3)
-- [ ] #7 Spec phase: Polish & Cross-Cutting Concerns
+- [x] #1 Strip visible in composite regardless of dock tab; content stage/skin-resolved; collapses per Wave-0 fold-order ruling
+- [x] #2 Spec phase: Setup
+- [x] #3 Spec phase: Foundational
+- [x] #4 Spec phase: User Story 1 — The budget is one glance from the verb (P1) 🎯 MVP
+- [x] #5 Spec phase: User Story 2 — The strip never lies (P2)
+- [x] #6 Spec phase: User Story 3 — The strip survives pressure (P3)
+- [x] #7 Spec phase: Polish & Cross-Cutting Concerns
 <!-- AC:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 Model tier: Sonnet (spec-implementer default). Rubric: single-package rendering + pure layout arithmetic in internal/tui (one read-only const export in sim), tests alongside — routine tier per constitution Principle V. Dispatched by UI-sweep orchestrator per runbook Lane 1.
+
+spec-bridge sync: 14/14 tasks done — merged via PR #83 (f18e9a4) after clean rebase; gates green post-rebase (race suite + check-tui-design). Deviations recorded on the design page: replica-sourced order count; ⚡⚡· (2/3) segment form; pre-status empty fold prefix; narrow carry scoped to the guardian pane (the only narrow composer).
 <!-- SECTION:NOTES:END -->
