@@ -1,0 +1,36 @@
+{
+  "best_params": {
+    "window_game_hours": 4,
+    "K_aba_transitions": 8,
+    "need_clause": true,
+    "need_epsilon_0_1000": 5,
+    "rationale": "Catches 10/11 labeled-bad episodes (the miss, Sage day7 06:13, improved both needs ~650pts and is better classified healthy); zero detections on never-thrashing agents Ash and Hazel; 19 total detection-episodes over 6.2 game-days concentrated in the real day-4/5 storms; the clause removes all ~1251 healthy-interleave raw firings at this cell."
+  },
+  "detections_per_agent": {
+    "comment": "merged detection-episodes at W=4h,K=8 with need clause (raw in parentheses)",
+    "Ash": {"clause": 0, "raw": 0},
+    "Birch": {"clause": 4, "raw": 7},
+    "Cedar": {"clause": 2, "raw": 4},
+    "Rowan": {"clause": 3, "raw": 6},
+    "Fern": {"clause": 4, "raw": 5},
+    "Hazel": {"clause": 0, "raw": 1},
+    "Oak": {"clause": 3, "raw": 6},
+    "Sage": {"clause": 3, "raw": 4},
+    "total": {"clause": 19, "raw": 33}
+  },
+  "false_positive_notes": [
+    "Without the need clause the detector is unusable: 827 (W2K8) to 2736 (W8K3) raw firing-points per sweep cell occur in windows where both needs are >=500 AND at least one is improving (textbook healthy interleaving, e.g. Rowan day4: 47 flips but food +725 and warmth +902); the clause removes 100% of these by construction.",
+    "Flip volume alone is not pathology: several 100+ flip dawn-to-dusk days end with both needs far higher (Oak day4: +723 food, +902 warmth). The genuinely bad episodes are the flat/negative-need ones: Sage day5 (152 flips, food -56 over 15.6h), Sage day6 20:50 (25.7 flips/h, zero gain, 134 tiles/need-point), Fern day6 11:59 (+12 food for 773 tiles, 59.5 tiles/need-point), Cedar day5 13:02 (44 flips, food -365).",
+    "Thrash was village-wide on days 4-5 (Birch/Cedar/Rowan too, not just Sage/Fern/Oak) and daytime (06:00-22:00); per-agent alerts should aggregate to one village-level event.",
+    "Oak's exposure death (day7 04:04) was NOT oscillation: final ~6h emitted only chop(reflex)/wander(planner) intents while warmth drained 636->0; an oscillation detector cannot catch death-by-neglect — needs a separate 'critical need with zero intents in its class for T' detector.",
+    "Needs-capped edge case: the clause reads 'no improvement' as bad, so flipping with both needs pinned at 1000 would fire; guard with 'at least one need < cap - eps at window end'.",
+    "Switch-rate (all-class changes/game-hour) is a weak discriminator: healthy Hazel scores 8.63/h, above dead Oak's 8.31, because seek/wander churn dominates."
+  ],
+  "provenance": {
+    "db": "/Users/evanstern/.promptworld/worlds/world-01/world.v3.db",
+    "agents": ["Ash", "Birch", "Cedar", "Rowan", "Fern", "Hazel", "Oak", "Sage"],
+    "tick_base": "1 tick = 1 game-second; tick 0 = day1 06:00; 16h days, 8h nights",
+    "need_signal": "agent.needs_changed every 60 ticks per agent, 0-1000 scale",
+    "script": "analyze.py (this directory) -> raw_results.json"
+  }
+}

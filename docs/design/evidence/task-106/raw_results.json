@@ -1,0 +1,2317 @@
+{
+ "report2": {
+  "0": {
+   "name": "Ash",
+   "total": 440,
+   "by_goal": {
+    "chop": 2,
+    "build_fire": 1,
+    "forage": 75,
+    "wander": 308,
+    "goto_warmth": 17,
+    "collect_water": 23,
+    "cook": 2,
+    "refuel_fire": 2,
+    "sleep": 2,
+    "drop": 1,
+    "quarry": 6,
+    "hunt": 1
+   },
+   "by_source": {
+    "reflex": 368,
+    "planner": 70,
+    "plan": 2
+   },
+   "flips_subseq": 13,
+   "flips_strict": 9,
+   "class_intents": 96
+  },
+  "1": {
+   "name": "Birch",
+   "total": 1970,
+   "by_goal": {
+    "chop": 27,
+    "build_fire": 1,
+    "forage": 975,
+    "collect_water": 38,
+    "wander": 239,
+    "quarry": 19,
+    "goto_warmth": 126,
+    "refuel_fire": 11,
+    "seek": 449,
+    "cook": 31,
+    "sleep": 22,
+    "hunt": 23,
+    "craft_stone": 1,
+    "drop": 3,
+    "pick_up": 2,
+    "craft_spear": 1,
+    "attend_meeting": 2
+   },
+   "by_source": {
+    "reflex": 1042,
+    "planner": 877,
+    "plan": 49,
+    "meeting": 2
+   },
+   "flips_subseq": 227,
+   "flips_strict": 177,
+   "class_intents": 1136
+  },
+  "2": {
+   "name": "Cedar",
+   "total": 1950,
+   "by_goal": {
+    "chop": 110,
+    "build_fire": 1,
+    "forage": 505,
+    "quarry": 35,
+    "collect_water": 33,
+    "wander": 722,
+    "drop": 6,
+    "goto_warmth": 227,
+    "refuel_fire": 39,
+    "craft_planks": 12,
+    "cook": 22,
+    "hunt": 18,
+    "sleep": 71,
+    "craft_stone": 12,
+    "pick_up": 1,
+    "craft_spear": 2,
+    "seek": 123,
+    "build_oven": 3,
+    "bathe": 1,
+    "build_chest": 3,
+    "deposit": 1,
+    "attend_meeting": 2,
+    "build_wall_stone": 1
+   },
+   "by_source": {
+    "reflex": 1094,
+    "planner": 731,
+    "plan": 123,
+    "meeting": 2
+   },
+   "flips_subseq": 186,
+   "flips_strict": 126,
+   "class_intents": 790
+  },
+  "3": {
+   "name": "Rowan",
+   "total": 2032,
+   "by_goal": {
+    "chop": 33,
+    "build_fire": 1,
+    "forage": 653,
+    "collect_water": 33,
+    "wander": 690,
+    "goto_warmth": 220,
+    "hunt": 24,
+    "cook": 22,
+    "seek": 262,
+    "quarry": 19,
+    "drop": 6,
+    "sleep": 47,
+    "refuel_fire": 11,
+    "craft_stone": 3,
+    "pick_up": 3,
+    "craft_spear": 3,
+    "attend_meeting": 2
+   },
+   "by_source": {
+    "reflex": 1164,
+    "planner": 767,
+    "plan": 99,
+    "meeting": 2
+   },
+   "flips_subseq": 232,
+   "flips_strict": 182,
+   "class_intents": 909
+  },
+  "4": {
+   "name": "Fern",
+   "total": 1929,
+   "by_goal": {
+    "chop": 24,
+    "build_fire": 1,
+    "forage": 1059,
+    "collect_water": 60,
+    "wander": 256,
+    "goto_warmth": 221,
+    "cook": 34,
+    "quarry": 11,
+    "hunt": 11,
+    "sleep": 41,
+    "pick_up": 2,
+    "drop": 1,
+    "craft_stone": 4,
+    "seek": 201,
+    "attend_meeting": 2,
+    "build_wall_stone": 1
+   },
+   "by_source": {
+    "reflex": 1029,
+    "planner": 800,
+    "plan": 98,
+    "meeting": 2
+   },
+   "flips_subseq": 397,
+   "flips_strict": 359,
+   "class_intents": 1292
+  },
+  "5": {
+   "name": "Hazel",
+   "total": 2139,
+   "by_goal": {
+    "chop": 13,
+    "build_fire": 1,
+    "quarry": 13,
+    "forage": 450,
+    "goto_warmth": 147,
+    "collect_water": 25,
+    "wander": 1025,
+    "cook": 16,
+    "hunt": 12,
+    "pick_up": 2,
+    "craft_stone": 3,
+    "seek": 371,
+    "drop": 5,
+    "sleep": 50,
+    "refuel_fire": 4,
+    "attend_meeting": 2
+   },
+   "by_source": {
+    "reflex": 1308,
+    "planner": 803,
+    "plan": 26,
+    "meeting": 2
+   },
+   "flips_subseq": 64,
+   "flips_strict": 32,
+   "class_intents": 614
+  },
+  "6": {
+   "name": "Oak",
+   "total": 1667,
+   "by_goal": {
+    "chop": 74,
+    "build_fire": 2,
+    "forage": 792,
+    "collect_water": 48,
+    "refuel_fire": 19,
+    "wander": 210,
+    "quarry": 40,
+    "cook": 23,
+    "goto_warmth": 168,
+    "drop": 4,
+    "seek": 199,
+    "hunt": 21,
+    "sleep": 50,
+    "pick_up": 2,
+    "craft_stone": 4,
+    "craft_planks": 4,
+    "craft_spear": 4,
+    "attend_meeting": 3
+   },
+   "by_source": {
+    "reflex": 871,
+    "planner": 700,
+    "plan": 93,
+    "meeting": 3
+   },
+   "flips_subseq": 311,
+   "flips_strict": 256,
+   "class_intents": 1002
+  },
+  "7": {
+   "name": "Sage",
+   "total": 2005,
+   "by_goal": {
+    "chop": 20,
+    "build_fire": 1,
+    "forage": 804,
+    "collect_water": 43,
+    "wander": 495,
+    "goto_warmth": 244,
+    "cook": 21,
+    "seek": 255,
+    "quarry": 18,
+    "refuel_fire": 6,
+    "sleep": 80,
+    "craft_stone": 5,
+    "pick_up": 3,
+    "hunt": 6,
+    "craft_planks": 1,
+    "attend_meeting": 2,
+    "build_path": 1
+   },
+   "by_source": {
+    "reflex": 1156,
+    "planner": 791,
+    "plan": 56,
+    "meeting": 2
+   },
+   "flips_subseq": 461,
+   "flips_strict": 418,
+   "class_intents": 1061
+  }
+ },
+ "episodes": {
+  "Ash": [
+   {
+    "t0": 53409,
+    "t1": 61540,
+    "t0h": "day1 20:50",
+    "t1h": "day1 23:05",
+    "flips": 7,
+    "flips_per_h": 3.1,
+    "dur_h": 2.26,
+    "food_delta": 345,
+    "warmth_delta": -168,
+    "food_end": 345,
+    "warmth_end": 832
+   }
+  ],
+  "Birch": [
+   {
+    "t0": 1047,
+    "t1": 22767,
+    "t0h": "day1 06:17",
+    "t1h": "day1 12:19",
+    "flips": 12,
+    "flips_per_h": 2.0,
+    "dur_h": 6.03,
+    "food_delta": 198,
+    "warmth_delta": 166,
+    "food_end": 781,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 39533,
+    "t1": 58313,
+    "t0h": "day1 16:58",
+    "t1h": "day1 22:11",
+    "flips": 12,
+    "flips_per_h": 2.3,
+    "dur_h": 5.22,
+    "food_delta": -313,
+    "warmth_delta": -48,
+    "food_end": 509,
+    "warmth_end": 952
+   },
+   {
+    "t0": 80169,
+    "t1": 98949,
+    "t0h": "day2 04:16",
+    "t1h": "day2 09:29",
+    "flips": 23,
+    "flips_per_h": 4.4,
+    "dur_h": 5.22,
+    "food_delta": -73,
+    "warmth_delta": 992,
+    "food_end": 791,
+    "warmth_end": 992
+   },
+   {
+    "t0": 147293,
+    "t1": 148233,
+    "t0h": "day2 22:54",
+    "t1h": "day2 23:10",
+    "flips": 5,
+    "flips_per_h": 19.1,
+    "dur_h": 0.26,
+    "food_delta": -16,
+    "warmth_delta": -64,
+    "food_end": 450,
+    "warmth_end": 716
+   },
+   {
+    "t0": 166413,
+    "t1": 172806,
+    "t0h": "day3 04:13",
+    "t1h": "day3 06:00",
+    "flips": 5,
+    "flips_per_h": 2.8,
+    "dur_h": 1.78,
+    "food_delta": 173,
+    "warmth_delta": 262,
+    "food_end": 320,
+    "warmth_end": 934
+   },
+   {
+    "t0": 259333,
+    "t1": 274033,
+    "t0h": "day4 06:02",
+    "t1h": "day4 10:07",
+    "flips": 23,
+    "flips_per_h": 5.6,
+    "dur_h": 4.08,
+    "food_delta": 458,
+    "warmth_delta": 690,
+    "food_end": 458,
+    "warmth_end": 788
+   },
+   {
+    "t0": 298102,
+    "t1": 309973,
+    "t0h": "day4 16:48",
+    "t1h": "day4 20:06",
+    "flips": 10,
+    "flips_per_h": 3.0,
+    "dur_h": 3.3,
+    "food_delta": 42,
+    "warmth_delta": 0,
+    "food_end": 459,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 346817,
+    "t1": 403303,
+    "t0h": "day5 06:20",
+    "t1h": "day5 22:01",
+    "flips": 89,
+    "flips_per_h": 5.7,
+    "dur_h": 15.69,
+    "food_delta": 259,
+    "warmth_delta": 950,
+    "food_end": 504,
+    "warmth_end": 992
+   },
+   {
+    "t0": 424733,
+    "t1": 432893,
+    "t0h": "day6 03:58",
+    "t1h": "day6 06:14",
+    "flips": 5,
+    "flips_per_h": 2.2,
+    "dur_h": 2.27,
+    "food_delta": 104,
+    "warmth_delta": 304,
+    "food_end": 251,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 447075,
+    "t1": 454733,
+    "t0h": "day6 10:11",
+    "t1h": "day6 12:18",
+    "flips": 6,
+    "flips_per_h": 2.8,
+    "dur_h": 2.13,
+    "food_delta": -127,
+    "warmth_delta": 0,
+    "food_end": 447,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 520069,
+    "t1": 532033,
+    "t0h": "day7 06:27",
+    "t1h": "day7 09:47",
+    "flips": 30,
+    "flips_per_h": 9.0,
+    "dur_h": 3.32,
+    "food_delta": 40,
+    "warmth_delta": 528,
+    "food_end": 438,
+    "warmth_end": 584
+   }
+  ],
+  "Cedar": [
+   {
+    "t0": 1306,
+    "t1": 6497,
+    "t0h": "day1 06:21",
+    "t1h": "day1 07:48",
+    "flips": 5,
+    "flips_per_h": 3.5,
+    "dur_h": 1.44,
+    "food_delta": -87,
+    "warmth_delta": 150,
+    "food_end": 492,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 47166,
+    "t1": 57417,
+    "t0h": "day1 19:06",
+    "t1h": "day1 21:56",
+    "flips": 5,
+    "flips_per_h": 1.8,
+    "dur_h": 2.85,
+    "food_delta": 390,
+    "warmth_delta": 0,
+    "food_end": 764,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 166284,
+    "t1": 178081,
+    "t0h": "day3 04:11",
+    "t1h": "day3 07:28",
+    "flips": 15,
+    "flips_per_h": 4.6,
+    "dur_h": 3.28,
+    "food_delta": 563,
+    "warmth_delta": 320,
+    "food_end": 712,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 185606,
+    "t1": 201866,
+    "t0h": "day3 09:33",
+    "t1h": "day3 14:04",
+    "flips": 6,
+    "flips_per_h": 1.3,
+    "dur_h": 4.52,
+    "food_delta": 369,
+    "warmth_delta": 0,
+    "food_end": 956,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 211356,
+    "t1": 231446,
+    "t0h": "day3 16:42",
+    "t1h": "day3 22:17",
+    "flips": 9,
+    "flips_per_h": 1.6,
+    "dur_h": 5.58,
+    "food_delta": -175,
+    "warmth_delta": -72,
+    "food_end": 623,
+    "warmth_end": 928
+   },
+   {
+    "t0": 259346,
+    "t1": 279191,
+    "t0h": "day4 06:02",
+    "t1h": "day4 11:33",
+    "flips": 22,
+    "flips_per_h": 4.0,
+    "dur_h": 5.51,
+    "food_delta": 789,
+    "warmth_delta": 902,
+    "food_end": 947,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 345866,
+    "t1": 357561,
+    "t0h": "day5 06:04",
+    "t1h": "day5 09:19",
+    "flips": 34,
+    "flips_per_h": 10.5,
+    "dur_h": 3.25,
+    "food_delta": 645,
+    "warmth_delta": 694,
+    "food_end": 961,
+    "warmth_end": 704
+   },
+   {
+    "t0": 370933,
+    "t1": 402448,
+    "t0h": "day5 13:02",
+    "t1h": "day5 21:47",
+    "flips": 44,
+    "flips_per_h": 5.0,
+    "dur_h": 8.75,
+    "food_delta": -365,
+    "warmth_delta": 0,
+    "food_end": 453,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 433326,
+    "t1": 457135,
+    "t0h": "day6 06:22",
+    "t1h": "day6 12:58",
+    "flips": 24,
+    "flips_per_h": 3.6,
+    "dur_h": 6.61,
+    "food_delta": 164,
+    "warmth_delta": 0,
+    "food_end": 902,
+    "warmth_end": 1000
+   }
+  ],
+  "Rowan": [
+   {
+    "t0": 1319,
+    "t1": 14730,
+    "t0h": "day1 06:21",
+    "t1h": "day1 10:05",
+    "flips": 7,
+    "flips_per_h": 1.9,
+    "dur_h": 3.73,
+    "food_delta": -224,
+    "warmth_delta": 150,
+    "food_end": 355,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 39659,
+    "t1": 51619,
+    "t0h": "day1 17:00",
+    "t1h": "day1 20:20",
+    "flips": 9,
+    "flips_per_h": 2.7,
+    "dur_h": 3.32,
+    "food_delta": 360,
+    "warmth_delta": 0,
+    "food_end": 940,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 172821,
+    "t1": 178999,
+    "t0h": "day3 06:00",
+    "t1h": "day3 07:43",
+    "flips": 7,
+    "flips_per_h": 4.1,
+    "dur_h": 1.72,
+    "food_delta": -103,
+    "warmth_delta": 0,
+    "food_end": 417,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 203842,
+    "t1": 231339,
+    "t0h": "day3 14:37",
+    "t1h": "day3 22:15",
+    "flips": 9,
+    "flips_per_h": 1.2,
+    "dur_h": 7.64,
+    "food_delta": 102,
+    "warmth_delta": -64,
+    "food_end": 665,
+    "warmth_end": 936
+   },
+   {
+    "t0": 259359,
+    "t1": 278279,
+    "t0h": "day4 06:02",
+    "t1h": "day4 11:17",
+    "flips": 47,
+    "flips_per_h": 8.9,
+    "dur_h": 5.26,
+    "food_delta": 725,
+    "warmth_delta": 902,
+    "food_end": 923,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 297920,
+    "t1": 305684,
+    "t0h": "day4 16:45",
+    "t1h": "day4 18:54",
+    "flips": 9,
+    "flips_per_h": 4.2,
+    "dur_h": 2.16,
+    "food_delta": -129,
+    "warmth_delta": 0,
+    "food_end": 786,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 355619,
+    "t1": 359033,
+    "t0h": "day5 08:46",
+    "t1h": "day5 09:43",
+    "flips": 18,
+    "flips_per_h": 19.0,
+    "dur_h": 0.95,
+    "food_delta": 23,
+    "warmth_delta": 194,
+    "food_end": 937,
+    "warmth_end": 848
+   },
+   {
+    "t0": 381199,
+    "t1": 402579,
+    "t0h": "day5 15:53",
+    "t1h": "day5 21:49",
+    "flips": 44,
+    "flips_per_h": 7.4,
+    "dur_h": 5.94,
+    "food_delta": 204,
+    "warmth_delta": 0,
+    "food_end": 931,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 432139,
+    "t1": 437619,
+    "t0h": "day6 06:02",
+    "t1h": "day6 07:33",
+    "flips": 7,
+    "flips_per_h": 4.6,
+    "dur_h": 1.52,
+    "food_delta": -51,
+    "warmth_delta": 0,
+    "food_end": 867,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 451638,
+    "t1": 458248,
+    "t0h": "day6 11:27",
+    "t1h": "day6 13:17",
+    "flips": 5,
+    "flips_per_h": 2.7,
+    "dur_h": 1.84,
+    "food_delta": -30,
+    "warmth_delta": 0,
+    "food_end": 923,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 466919,
+    "t1": 469735,
+    "t0h": "day6 15:41",
+    "t1h": "day6 16:28",
+    "flips": 12,
+    "flips_per_h": 15.3,
+    "dur_h": 0.78,
+    "food_delta": -47,
+    "warmth_delta": 0,
+    "food_end": 732,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 485280,
+    "t1": 489619,
+    "t0h": "day6 20:48",
+    "t1h": "day6 22:00",
+    "flips": 9,
+    "flips_per_h": 7.5,
+    "dur_h": 1.21,
+    "food_delta": 408,
+    "warmth_delta": -4,
+    "food_end": 880,
+    "warmth_end": 996
+   },
+   {
+    "t0": 518619,
+    "t1": 534194,
+    "t0h": "day7 06:03",
+    "t1h": "day7 10:23",
+    "flips": 44,
+    "flips_per_h": 10.2,
+    "dur_h": 4.33,
+    "food_delta": 540,
+    "warmth_delta": 840,
+    "food_end": 937,
+    "warmth_end": 848
+   }
+  ],
+  "Fern": [
+   {
+    "t0": 1199,
+    "t1": 8527,
+    "t0h": "day1 06:19",
+    "t1h": "day1 08:22",
+    "flips": 5,
+    "flips_per_h": 2.5,
+    "dur_h": 2.04,
+    "food_delta": -123,
+    "warmth_delta": 162,
+    "food_end": 458,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 16936,
+    "t1": 22597,
+    "t0h": "day1 10:42",
+    "t1h": "day1 12:16",
+    "flips": 5,
+    "flips_per_h": 3.2,
+    "dur_h": 1.57,
+    "food_delta": -94,
+    "warmth_delta": 0,
+    "food_end": 784,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 39852,
+    "t1": 57712,
+    "t0h": "day1 17:04",
+    "t1h": "day1 22:01",
+    "flips": 8,
+    "flips_per_h": 1.6,
+    "dur_h": 4.96,
+    "food_delta": 183,
+    "warmth_delta": -8,
+    "food_end": 879,
+    "warmth_end": 992
+   },
+   {
+    "t0": 86430,
+    "t1": 99792,
+    "t0h": "day2 06:00",
+    "t1h": "day2 09:43",
+    "flips": 9,
+    "flips_per_h": 2.4,
+    "dur_h": 3.71,
+    "food_delta": 217,
+    "warmth_delta": 530,
+    "food_end": 617,
+    "warmth_end": 652
+   },
+   {
+    "t0": 260830,
+    "t1": 316751,
+    "t0h": "day4 06:27",
+    "t1h": "day4 21:59",
+    "flips": 109,
+    "flips_per_h": 7.0,
+    "dur_h": 15.53,
+    "food_delta": 548,
+    "warmth_delta": 852,
+    "food_end": 921,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 345732,
+    "t1": 402950,
+    "t0h": "day5 06:02",
+    "t1h": "day5 21:55",
+    "flips": 142,
+    "flips_per_h": 8.9,
+    "dur_h": 15.89,
+    "food_delta": 247,
+    "warmth_delta": 994,
+    "food_end": 685,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 432104,
+    "t1": 442852,
+    "t0h": "day6 06:01",
+    "t1h": "day6 09:00",
+    "flips": 15,
+    "flips_per_h": 5.0,
+    "dur_h": 2.99,
+    "food_delta": 541,
+    "warmth_delta": 0,
+    "food_end": 900,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 453561,
+    "t1": 469652,
+    "t0h": "day6 11:59",
+    "t1h": "day6 16:27",
+    "flips": 22,
+    "flips_per_h": 4.9,
+    "dur_h": 4.47,
+    "food_delta": 12,
+    "warmth_delta": 0,
+    "food_end": 893,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 485430,
+    "t1": 487525,
+    "t0h": "day6 20:50",
+    "t1h": "day6 21:25",
+    "flips": 13,
+    "flips_per_h": 22.3,
+    "dur_h": 0.58,
+    "food_delta": -35,
+    "warmth_delta": 0,
+    "food_end": 835,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 518532,
+    "t1": 534292,
+    "t0h": "day7 06:02",
+    "t1h": "day7 10:24",
+    "flips": 63,
+    "flips_per_h": 14.4,
+    "dur_h": 4.38,
+    "food_delta": 378,
+    "warmth_delta": 836,
+    "food_end": 856,
+    "warmth_end": 842
+   }
+  ],
+  "Hazel": [
+   {
+    "t0": 54139,
+    "t1": 57685,
+    "t0h": "day1 21:02",
+    "t1h": "day1 22:01",
+    "flips": 5,
+    "flips_per_h": 5.1,
+    "dur_h": 0.98,
+    "food_delta": -59,
+    "warmth_delta": -8,
+    "food_end": 759,
+    "warmth_end": 992
+   },
+   {
+    "t0": 345865,
+    "t1": 361045,
+    "t0h": "day5 06:04",
+    "t1h": "day5 10:17",
+    "flips": 17,
+    "flips_per_h": 4.0,
+    "dur_h": 4.22,
+    "food_delta": -13,
+    "warmth_delta": 906,
+    "food_end": 903,
+    "warmth_end": 916
+   },
+   {
+    "t0": 518525,
+    "t1": 528020,
+    "t0h": "day7 06:02",
+    "t1h": "day7 08:40",
+    "flips": 8,
+    "flips_per_h": 3.0,
+    "dur_h": 2.64,
+    "food_delta": -158,
+    "warmth_delta": 548,
+    "food_end": 760,
+    "warmth_end": 554
+   }
+  ],
+  "Oak": [
+   {
+    "t0": 1338,
+    "t1": 26549,
+    "t0h": "day1 06:22",
+    "t1h": "day1 13:22",
+    "flips": 12,
+    "flips_per_h": 1.7,
+    "dur_h": 7.0,
+    "food_delta": 220,
+    "warmth_delta": 144,
+    "food_end": 798,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 171724,
+    "t1": 186238,
+    "t0h": "day3 05:42",
+    "t1h": "day3 09:43",
+    "flips": 15,
+    "flips_per_h": 3.7,
+    "dur_h": 4.03,
+    "food_delta": 439,
+    "warmth_delta": 124,
+    "food_end": 817,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 208541,
+    "t1": 231398,
+    "t0h": "day3 15:55",
+    "t1h": "day3 22:16",
+    "flips": 7,
+    "flips_per_h": 1.1,
+    "dur_h": 6.35,
+    "food_delta": -141,
+    "warmth_delta": -68,
+    "food_end": 624,
+    "warmth_end": 932
+   },
+   {
+    "t0": 259358,
+    "t1": 316774,
+    "t0h": "day4 06:02",
+    "t1h": "day4 21:59",
+    "flips": 86,
+    "flips_per_h": 5.4,
+    "dur_h": 15.95,
+    "food_delta": 723,
+    "warmth_delta": 902,
+    "food_end": 881,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 345738,
+    "t1": 403244,
+    "t0h": "day5 06:02",
+    "t1h": "day5 22:00",
+    "flips": 132,
+    "flips_per_h": 8.3,
+    "dur_h": 15.97,
+    "food_delta": 202,
+    "warmth_delta": 990,
+    "food_end": 600,
+    "warmth_end": 996
+   },
+   {
+    "t0": 430438,
+    "t1": 438318,
+    "t0h": "day6 05:33",
+    "t1h": "day6 07:45",
+    "flips": 19,
+    "flips_per_h": 8.7,
+    "dur_h": 2.19,
+    "food_delta": 308,
+    "warmth_delta": 0,
+    "food_end": 455,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 454678,
+    "t1": 469778,
+    "t0h": "day6 12:17",
+    "t1h": "day6 16:29",
+    "flips": 16,
+    "flips_per_h": 3.8,
+    "dur_h": 4.19,
+    "food_delta": -12,
+    "warmth_delta": 0,
+    "food_end": 891,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 486840,
+    "t1": 489418,
+    "t0h": "day6 21:14",
+    "t1h": "day6 21:56",
+    "flips": 18,
+    "flips_per_h": 25.1,
+    "dur_h": 0.72,
+    "food_delta": 238,
+    "warmth_delta": 0,
+    "food_end": 844,
+    "warmth_end": 1000
+   }
+  ],
+  "Sage": [
+   {
+    "t0": 1311,
+    "t1": 18313,
+    "t0h": "day1 06:21",
+    "t1h": "day1 11:05",
+    "flips": 8,
+    "flips_per_h": 1.7,
+    "dur_h": 4.72,
+    "food_delta": 276,
+    "warmth_delta": 150,
+    "food_end": 855,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 44693,
+    "t1": 58071,
+    "t0h": "day1 18:24",
+    "t1h": "day1 22:07",
+    "flips": 6,
+    "flips_per_h": 1.6,
+    "dur_h": 3.72,
+    "food_delta": -223,
+    "warmth_delta": -22,
+    "food_end": 673,
+    "warmth_end": 978
+   },
+   {
+    "t0": 207251,
+    "t1": 231351,
+    "t0h": "day3 15:34",
+    "t1h": "day3 22:15",
+    "flips": 8,
+    "flips_per_h": 1.2,
+    "dur_h": 6.69,
+    "food_delta": 159,
+    "warmth_delta": -64,
+    "food_end": 825,
+    "warmth_end": 936
+   },
+   {
+    "t0": 261891,
+    "t1": 316631,
+    "t0h": "day4 06:44",
+    "t1h": "day4 21:57",
+    "flips": 111,
+    "flips_per_h": 7.3,
+    "dur_h": 15.21,
+    "food_delta": 7,
+    "warmth_delta": 766,
+    "food_end": 883,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 346958,
+    "t1": 403131,
+    "t0h": "day5 06:22",
+    "t1h": "day5 21:58",
+    "flips": 152,
+    "flips_per_h": 9.7,
+    "dur_h": 15.6,
+    "food_delta": -56,
+    "warmth_delta": 954,
+    "food_end": 722,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 432515,
+    "t1": 474251,
+    "t0h": "day6 06:08",
+    "t1h": "day6 17:44",
+    "flips": 98,
+    "flips_per_h": 8.5,
+    "dur_h": 11.59,
+    "food_delta": 144,
+    "warmth_delta": 982,
+    "food_end": 736,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 485458,
+    "t1": 489522,
+    "t0h": "day6 20:50",
+    "t1h": "day6 21:58",
+    "flips": 29,
+    "flips_per_h": 25.7,
+    "dur_h": 1.13,
+    "food_delta": -68,
+    "warmth_delta": 0,
+    "food_end": 722,
+    "warmth_end": 1000
+   },
+   {
+    "t0": 519231,
+    "t1": 532851,
+    "t0h": "day7 06:13",
+    "t1h": "day7 10:00",
+    "flips": 43,
+    "flips_per_h": 11.4,
+    "dur_h": 3.78,
+    "food_delta": 693,
+    "warmth_delta": 646,
+    "food_end": 920,
+    "warmth_end": 674
+   }
+  ]
+ },
+ "known_bad": [
+  [
+   "Sage",
+   {
+    "t0": 261891,
+    "t1": 316631,
+    "t0h": "day4 06:44",
+    "t1h": "day4 21:57",
+    "flips": 111,
+    "flips_per_h": 7.3,
+    "dur_h": 15.21,
+    "food_delta": 7,
+    "warmth_delta": 766,
+    "food_end": 883,
+    "warmth_end": 1000
+   }
+  ],
+  [
+   "Sage",
+   {
+    "t0": 346958,
+    "t1": 403131,
+    "t0h": "day5 06:22",
+    "t1h": "day5 21:58",
+    "flips": 152,
+    "flips_per_h": 9.7,
+    "dur_h": 15.6,
+    "food_delta": -56,
+    "warmth_delta": 954,
+    "food_end": 722,
+    "warmth_end": 1000
+   }
+  ],
+  [
+   "Sage",
+   {
+    "t0": 432515,
+    "t1": 474251,
+    "t0h": "day6 06:08",
+    "t1h": "day6 17:44",
+    "flips": 98,
+    "flips_per_h": 8.5,
+    "dur_h": 11.59,
+    "food_delta": 144,
+    "warmth_delta": 982,
+    "food_end": 736,
+    "warmth_end": 1000
+   }
+  ],
+  [
+   "Sage",
+   {
+    "t0": 485458,
+    "t1": 489522,
+    "t0h": "day6 20:50",
+    "t1h": "day6 21:58",
+    "flips": 29,
+    "flips_per_h": 25.7,
+    "dur_h": 1.13,
+    "food_delta": -68,
+    "warmth_delta": 0,
+    "food_end": 722,
+    "warmth_end": 1000
+   }
+  ],
+  [
+   "Sage",
+   {
+    "t0": 519231,
+    "t1": 532851,
+    "t0h": "day7 06:13",
+    "t1h": "day7 10:00",
+    "flips": 43,
+    "flips_per_h": 11.4,
+    "dur_h": 3.78,
+    "food_delta": 693,
+    "warmth_delta": 646,
+    "food_end": 920,
+    "warmth_end": 674
+   }
+  ],
+  [
+   "Fern",
+   {
+    "t0": 260830,
+    "t1": 316751,
+    "t0h": "day4 06:27",
+    "t1h": "day4 21:59",
+    "flips": 109,
+    "flips_per_h": 7.0,
+    "dur_h": 15.53,
+    "food_delta": 548,
+    "warmth_delta": 852,
+    "food_end": 921,
+    "warmth_end": 1000
+   }
+  ],
+  [
+   "Fern",
+   {
+    "t0": 345732,
+    "t1": 402950,
+    "t0h": "day5 06:02",
+    "t1h": "day5 21:55",
+    "flips": 142,
+    "flips_per_h": 8.9,
+    "dur_h": 15.89,
+    "food_delta": 247,
+    "warmth_delta": 994,
+    "food_end": 685,
+    "warmth_end": 1000
+   }
+  ],
+  [
+   "Fern",
+   {
+    "t0": 453561,
+    "t1": 469652,
+    "t0h": "day6 11:59",
+    "t1h": "day6 16:27",
+    "flips": 22,
+    "flips_per_h": 4.9,
+    "dur_h": 4.47,
+    "food_delta": 12,
+    "warmth_delta": 0,
+    "food_end": 893,
+    "warmth_end": 1000
+   }
+  ],
+  [
+   "Fern",
+   {
+    "t0": 518532,
+    "t1": 534292,
+    "t0h": "day7 06:02",
+    "t1h": "day7 10:24",
+    "flips": 63,
+    "flips_per_h": 14.4,
+    "dur_h": 4.38,
+    "food_delta": 378,
+    "warmth_delta": 836,
+    "food_end": 856,
+    "warmth_end": 842
+   }
+  ],
+  [
+   "Oak",
+   {
+    "t0": 259358,
+    "t1": 316774,
+    "t0h": "day4 06:02",
+    "t1h": "day4 21:59",
+    "flips": 86,
+    "flips_per_h": 5.4,
+    "dur_h": 15.95,
+    "food_delta": 723,
+    "warmth_delta": 902,
+    "food_end": 881,
+    "warmth_end": 1000
+   }
+  ],
+  [
+   "Oak",
+   {
+    "t0": 345738,
+    "t1": 403244,
+    "t0h": "day5 06:02",
+    "t1h": "day5 22:00",
+    "flips": 132,
+    "flips_per_h": 8.3,
+    "dur_h": 15.97,
+    "food_delta": 202,
+    "warmth_delta": 990,
+    "food_end": 600,
+    "warmth_end": 996
+   }
+  ]
+ ],
+ "sweep": {
+  "W=2h,K=3": {
+   "per_agent": {
+    "Ash": {
+     "fires_raw": 7,
+     "episodes_raw": 1,
+     "fires_clause": 0,
+     "episodes_clause": 0
+    },
+    "Birch": {
+     "fires_raw": 491,
+     "episodes_raw": 11,
+     "fires_clause": 92,
+     "episodes_clause": 6
+    },
+    "Cedar": {
+     "fires_raw": 246,
+     "episodes_raw": 9,
+     "fires_clause": 76,
+     "episodes_clause": 5
+    },
+    "Rowan": {
+     "fires_raw": 346,
+     "episodes_raw": 13,
+     "fires_clause": 97,
+     "episodes_clause": 9
+    },
+    "Fern": {
+     "fires_raw": 628,
+     "episodes_raw": 10,
+     "fires_clause": 130,
+     "episodes_clause": 6
+    },
+    "Hazel": {
+     "fires_raw": 74,
+     "episodes_raw": 4,
+     "fires_clause": 11,
+     "episodes_clause": 2
+    },
+    "Oak": {
+     "fires_raw": 478,
+     "episodes_raw": 7,
+     "fires_clause": 159,
+     "episodes_clause": 7
+    },
+    "Sage": {
+     "fires_raw": 701,
+     "episodes_raw": 7,
+     "fires_clause": 177,
+     "episodes_clause": 7
+    }
+   },
+   "bad_caught": {
+    "Sage@day4 06:44": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day5 06:22": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day6 06:08": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day6 20:50": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day7 06:13": {
+     "raw": true,
+     "clause": false
+    },
+    "Fern@day4 06:27": {
+     "raw": true,
+     "clause": true
+    },
+    "Fern@day5 06:02": {
+     "raw": true,
+     "clause": true
+    },
+    "Fern@day6 11:59": {
+     "raw": true,
+     "clause": true
+    },
+    "Fern@day7 06:02": {
+     "raw": true,
+     "clause": false
+    },
+    "Oak@day4 06:02": {
+     "raw": true,
+     "clause": true
+    },
+    "Oak@day5 06:02": {
+     "raw": true,
+     "clause": true
+    }
+   }
+  },
+  "W=2h,K=5": {
+   "per_agent": {
+    "Ash": {
+     "fires_raw": 2,
+     "episodes_raw": 1,
+     "fires_clause": 0,
+     "episodes_clause": 0
+    },
+    "Birch": {
+     "fires_raw": 321,
+     "episodes_raw": 7,
+     "fires_clause": 31,
+     "episodes_clause": 4
+    },
+    "Cedar": {
+     "fires_raw": 156,
+     "episodes_raw": 7,
+     "fires_clause": 59,
+     "episodes_clause": 4
+    },
+    "Rowan": {
+     "fires_raw": 242,
+     "episodes_raw": 10,
+     "fires_clause": 71,
+     "episodes_clause": 4
+    },
+    "Fern": {
+     "fires_raw": 494,
+     "episodes_raw": 8,
+     "fires_clause": 82,
+     "episodes_clause": 5
+    },
+    "Hazel": {
+     "fires_raw": 24,
+     "episodes_raw": 2,
+     "fires_clause": 0,
+     "episodes_clause": 0
+    },
+    "Oak": {
+     "fires_raw": 384,
+     "episodes_raw": 8,
+     "fires_clause": 119,
+     "episodes_clause": 5
+    },
+    "Sage": {
+     "fires_raw": 606,
+     "episodes_raw": 6,
+     "fires_clause": 139,
+     "episodes_clause": 6
+    }
+   },
+   "bad_caught": {
+    "Sage@day4 06:44": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day5 06:22": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day6 06:08": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day6 20:50": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day7 06:13": {
+     "raw": true,
+     "clause": false
+    },
+    "Fern@day4 06:27": {
+     "raw": true,
+     "clause": true
+    },
+    "Fern@day5 06:02": {
+     "raw": true,
+     "clause": true
+    },
+    "Fern@day6 11:59": {
+     "raw": true,
+     "clause": true
+    },
+    "Fern@day7 06:02": {
+     "raw": true,
+     "clause": false
+    },
+    "Oak@day4 06:02": {
+     "raw": true,
+     "clause": true
+    },
+    "Oak@day5 06:02": {
+     "raw": true,
+     "clause": true
+    }
+   }
+  },
+  "W=2h,K=8": {
+   "per_agent": {
+    "Ash": {
+     "fires_raw": 0,
+     "episodes_raw": 0,
+     "fires_clause": 0,
+     "episodes_clause": 0
+    },
+    "Birch": {
+     "fires_raw": 196,
+     "episodes_raw": 5,
+     "fires_clause": 0,
+     "episodes_clause": 0
+    },
+    "Cedar": {
+     "fires_raw": 112,
+     "episodes_raw": 5,
+     "fires_clause": 39,
+     "episodes_clause": 2
+    },
+    "Rowan": {
+     "fires_raw": 182,
+     "episodes_raw": 6,
+     "fires_clause": 51,
+     "episodes_clause": 2
+    },
+    "Fern": {
+     "fires_raw": 377,
+     "episodes_raw": 8,
+     "fires_clause": 55,
+     "episodes_clause": 4
+    },
+    "Hazel": {
+     "fires_raw": 3,
+     "episodes_raw": 1,
+     "fires_clause": 0,
+     "episodes_clause": 0
+    },
+    "Oak": {
+     "fires_raw": 268,
+     "episodes_raw": 8,
+     "fires_clause": 71,
+     "episodes_clause": 4
+    },
+    "Sage": {
+     "fires_raw": 484,
+     "episodes_raw": 7,
+     "fires_clause": 71,
+     "episodes_clause": 5
+    }
+   },
+   "bad_caught": {
+    "Sage@day4 06:44": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day5 06:22": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day6 06:08": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day6 20:50": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day7 06:13": {
+     "raw": true,
+     "clause": false
+    },
+    "Fern@day4 06:27": {
+     "raw": true,
+     "clause": true
+    },
+    "Fern@day5 06:02": {
+     "raw": true,
+     "clause": true
+    },
+    "Fern@day6 11:59": {
+     "raw": true,
+     "clause": true
+    },
+    "Fern@day7 06:02": {
+     "raw": true,
+     "clause": false
+    },
+    "Oak@day4 06:02": {
+     "raw": true,
+     "clause": true
+    },
+    "Oak@day5 06:02": {
+     "raw": true,
+     "clause": true
+    }
+   }
+  },
+  "W=4h,K=3": {
+   "per_agent": {
+    "Ash": {
+     "fires_raw": 11,
+     "episodes_raw": 1,
+     "fires_clause": 1,
+     "episodes_clause": 1
+    },
+    "Birch": {
+     "fires_raw": 669,
+     "episodes_raw": 9,
+     "fires_clause": 119,
+     "episodes_clause": 7
+    },
+    "Cedar": {
+     "fires_raw": 379,
+     "episodes_raw": 10,
+     "fires_clause": 111,
+     "episodes_clause": 4
+    },
+    "Rowan": {
+     "fires_raw": 523,
+     "episodes_raw": 8,
+     "fires_clause": 176,
+     "episodes_clause": 8
+    },
+    "Fern": {
+     "fires_raw": 839,
+     "episodes_raw": 7,
+     "fires_clause": 256,
+     "episodes_clause": 5
+    },
+    "Hazel": {
+     "fires_raw": 147,
+     "episodes_raw": 5,
+     "fires_clause": 20,
+     "episodes_clause": 2
+    },
+    "Oak": {
+     "fires_raw": 650,
+     "episodes_raw": 6,
+     "fires_clause": 261,
+     "episodes_clause": 6
+    },
+    "Sage": {
+     "fires_raw": 736,
+     "episodes_raw": 7,
+     "fires_clause": 213,
+     "episodes_clause": 5
+    }
+   },
+   "bad_caught": {
+    "Sage@day4 06:44": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day5 06:22": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day6 06:08": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day6 20:50": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day7 06:13": {
+     "raw": true,
+     "clause": false
+    },
+    "Fern@day4 06:27": {
+     "raw": true,
+     "clause": true
+    },
+    "Fern@day5 06:02": {
+     "raw": true,
+     "clause": true
+    },
+    "Fern@day6 11:59": {
+     "raw": true,
+     "clause": true
+    },
+    "Fern@day7 06:02": {
+     "raw": true,
+     "clause": true
+    },
+    "Oak@day4 06:02": {
+     "raw": true,
+     "clause": true
+    },
+    "Oak@day5 06:02": {
+     "raw": true,
+     "clause": true
+    }
+   }
+  },
+  "W=4h,K=5": {
+   "per_agent": {
+    "Ash": {
+     "fires_raw": 2,
+     "episodes_raw": 1,
+     "fires_clause": 0,
+     "episodes_clause": 0
+    },
+    "Birch": {
+     "fires_raw": 524,
+     "episodes_raw": 8,
+     "fires_clause": 83,
+     "episodes_clause": 5
+    },
+    "Cedar": {
+     "fires_raw": 221,
+     "episodes_raw": 5,
+     "fires_clause": 96,
+     "episodes_clause": 3
+    },
+    "Rowan": {
+     "fires_raw": 368,
+     "episodes_raw": 9,
+     "fires_clause": 91,
+     "episodes_clause": 4
+    },
+    "Fern": {
+     "fires_raw": 696,
+     "episodes_raw": 7,
+     "fires_clause": 200,
+     "episodes_clause": 5
+    },
+    "Hazel": {
+     "fires_raw": 86,
+     "episodes_raw": 3,
+     "fires_clause": 10,
+     "episodes_clause": 1
+    },
+    "Oak": {
+     "fires_raw": 550,
+     "episodes_raw": 5,
+     "fires_clause": 184,
+     "episodes_clause": 4
+    },
+    "Sage": {
+     "fires_raw": 701,
+     "episodes_raw": 5,
+     "fires_clause": 200,
+     "episodes_clause": 3
+    }
+   },
+   "bad_caught": {
+    "Sage@day4 06:44": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day5 06:22": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day6 06:08": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day6 20:50": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day7 06:13": {
+     "raw": true,
+     "clause": false
+    },
+    "Fern@day4 06:27": {
+     "raw": true,
+     "clause": true
+    },
+    "Fern@day5 06:02": {
+     "raw": true,
+     "clause": true
+    },
+    "Fern@day6 11:59": {
+     "raw": true,
+     "clause": true
+    },
+    "Fern@day7 06:02": {
+     "raw": true,
+     "clause": true
+    },
+    "Oak@day4 06:02": {
+     "raw": true,
+     "clause": true
+    },
+    "Oak@day5 06:02": {
+     "raw": true,
+     "clause": true
+    }
+   }
+  },
+  "W=4h,K=8": {
+   "per_agent": {
+    "Ash": {
+     "fires_raw": 0,
+     "episodes_raw": 0,
+     "fires_clause": 0,
+     "episodes_clause": 0
+    },
+    "Birch": {
+     "fires_raw": 370,
+     "episodes_raw": 7,
+     "fires_clause": 16,
+     "episodes_clause": 4
+    },
+    "Cedar": {
+     "fires_raw": 164,
+     "episodes_raw": 4,
+     "fires_clause": 58,
+     "episodes_clause": 2
+    },
+    "Rowan": {
+     "fires_raw": 254,
+     "episodes_raw": 6,
+     "fires_clause": 77,
+     "episodes_clause": 3
+    },
+    "Fern": {
+     "fires_raw": 539,
+     "episodes_raw": 5,
+     "fires_clause": 165,
+     "episodes_clause": 4
+    },
+    "Hazel": {
+     "fires_raw": 42,
+     "episodes_raw": 1,
+     "fires_clause": 0,
+     "episodes_clause": 0
+    },
+    "Oak": {
+     "fires_raw": 459,
+     "episodes_raw": 6,
+     "fires_clause": 153,
+     "episodes_clause": 3
+    },
+    "Sage": {
+     "fires_raw": 654,
+     "episodes_raw": 4,
+     "fires_clause": 188,
+     "episodes_clause": 3
+    }
+   },
+   "bad_caught": {
+    "Sage@day4 06:44": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day5 06:22": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day6 06:08": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day6 20:50": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day7 06:13": {
+     "raw": true,
+     "clause": false
+    },
+    "Fern@day4 06:27": {
+     "raw": true,
+     "clause": true
+    },
+    "Fern@day5 06:02": {
+     "raw": true,
+     "clause": true
+    },
+    "Fern@day6 11:59": {
+     "raw": true,
+     "clause": true
+    },
+    "Fern@day7 06:02": {
+     "raw": true,
+     "clause": true
+    },
+    "Oak@day4 06:02": {
+     "raw": true,
+     "clause": true
+    },
+    "Oak@day5 06:02": {
+     "raw": true,
+     "clause": true
+    }
+   }
+  },
+  "W=8h,K=3": {
+   "per_agent": {
+    "Ash": {
+     "fires_raw": 23,
+     "episodes_raw": 1,
+     "fires_clause": 16,
+     "episodes_clause": 1
+    },
+    "Birch": {
+     "fires_raw": 899,
+     "episodes_raw": 4,
+     "fires_clause": 211,
+     "episodes_clause": 8
+    },
+    "Cedar": {
+     "fires_raw": 579,
+     "episodes_raw": 7,
+     "fires_clause": 74,
+     "episodes_clause": 5
+    },
+    "Rowan": {
+     "fires_raw": 610,
+     "episodes_raw": 6,
+     "fires_clause": 156,
+     "episodes_clause": 7
+    },
+    "Fern": {
+     "fires_raw": 943,
+     "episodes_raw": 6,
+     "fires_clause": 330,
+     "episodes_clause": 9
+    },
+    "Hazel": {
+     "fires_raw": 270,
+     "episodes_raw": 6,
+     "fires_clause": 56,
+     "episodes_clause": 2
+    },
+    "Oak": {
+     "fires_raw": 740,
+     "episodes_raw": 4,
+     "fires_clause": 208,
+     "episodes_clause": 7
+    },
+    "Sage": {
+     "fires_raw": 747,
+     "episodes_raw": 6,
+     "fires_clause": 239,
+     "episodes_clause": 7
+    }
+   },
+   "bad_caught": {
+    "Sage@day4 06:44": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day5 06:22": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day6 06:08": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day6 20:50": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day7 06:13": {
+     "raw": true,
+     "clause": true
+    },
+    "Fern@day4 06:27": {
+     "raw": true,
+     "clause": true
+    },
+    "Fern@day5 06:02": {
+     "raw": true,
+     "clause": true
+    },
+    "Fern@day6 11:59": {
+     "raw": true,
+     "clause": true
+    },
+    "Fern@day7 06:02": {
+     "raw": true,
+     "clause": true
+    },
+    "Oak@day4 06:02": {
+     "raw": true,
+     "clause": true
+    },
+    "Oak@day5 06:02": {
+     "raw": true,
+     "clause": true
+    }
+   }
+  },
+  "W=8h,K=5": {
+   "per_agent": {
+    "Ash": {
+     "fires_raw": 7,
+     "episodes_raw": 1,
+     "fires_clause": 0,
+     "episodes_clause": 0
+    },
+    "Birch": {
+     "fires_raw": 732,
+     "episodes_raw": 5,
+     "fires_clause": 143,
+     "episodes_clause": 8
+    },
+    "Cedar": {
+     "fires_raw": 353,
+     "episodes_raw": 5,
+     "fires_clause": 35,
+     "episodes_clause": 4
+    },
+    "Rowan": {
+     "fires_raw": 543,
+     "episodes_raw": 6,
+     "fires_clause": 131,
+     "episodes_clause": 7
+    },
+    "Fern": {
+     "fires_raw": 880,
+     "episodes_raw": 6,
+     "fires_clause": 301,
+     "episodes_clause": 9
+    },
+    "Hazel": {
+     "fires_raw": 89,
+     "episodes_raw": 3,
+     "fires_clause": 11,
+     "episodes_clause": 1
+    },
+    "Oak": {
+     "fires_raw": 683,
+     "episodes_raw": 4,
+     "fires_clause": 185,
+     "episodes_clause": 6
+    },
+    "Sage": {
+     "fires_raw": 724,
+     "episodes_raw": 6,
+     "fires_clause": 230,
+     "episodes_clause": 7
+    }
+   },
+   "bad_caught": {
+    "Sage@day4 06:44": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day5 06:22": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day6 06:08": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day6 20:50": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day7 06:13": {
+     "raw": true,
+     "clause": true
+    },
+    "Fern@day4 06:27": {
+     "raw": true,
+     "clause": true
+    },
+    "Fern@day5 06:02": {
+     "raw": true,
+     "clause": true
+    },
+    "Fern@day6 11:59": {
+     "raw": true,
+     "clause": true
+    },
+    "Fern@day7 06:02": {
+     "raw": true,
+     "clause": true
+    },
+    "Oak@day4 06:02": {
+     "raw": true,
+     "clause": true
+    },
+    "Oak@day5 06:02": {
+     "raw": true,
+     "clause": true
+    }
+   }
+  },
+  "W=8h,K=8": {
+   "per_agent": {
+    "Ash": {
+     "fires_raw": 0,
+     "episodes_raw": 0,
+     "fires_clause": 0,
+     "episodes_clause": 0
+    },
+    "Birch": {
+     "fires_raw": 561,
+     "episodes_raw": 6,
+     "fires_clause": 102,
+     "episodes_clause": 6
+    },
+    "Cedar": {
+     "fires_raw": 259,
+     "episodes_raw": 4,
+     "fires_clause": 29,
+     "episodes_clause": 3
+    },
+    "Rowan": {
+     "fires_raw": 387,
+     "episodes_raw": 5,
+     "fires_clause": 108,
+     "episodes_clause": 3
+    },
+    "Fern": {
+     "fires_raw": 656,
+     "episodes_raw": 5,
+     "fires_clause": 191,
+     "episodes_clause": 7
+    },
+    "Hazel": {
+     "fires_raw": 58,
+     "episodes_raw": 1,
+     "fires_clause": 0,
+     "episodes_clause": 0
+    },
+    "Oak": {
+     "fires_raw": 604,
+     "episodes_raw": 5,
+     "fires_clause": 157,
+     "episodes_clause": 5
+    },
+    "Sage": {
+     "fires_raw": 679,
+     "episodes_raw": 4,
+     "fires_clause": 220,
+     "episodes_clause": 6
+    }
+   },
+   "bad_caught": {
+    "Sage@day4 06:44": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day5 06:22": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day6 06:08": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day6 20:50": {
+     "raw": true,
+     "clause": true
+    },
+    "Sage@day7 06:13": {
+     "raw": true,
+     "clause": true
+    },
+    "Fern@day4 06:27": {
+     "raw": true,
+     "clause": true
+    },
+    "Fern@day5 06:02": {
+     "raw": true,
+     "clause": true
+    },
+    "Fern@day6 11:59": {
+     "raw": true,
+     "clause": true
+    },
+    "Fern@day7 06:02": {
+     "raw": true,
+     "clause": true
+    },
+    "Oak@day4 06:02": {
+     "raw": true,
+     "clause": true
+    },
+    "Oak@day5 06:02": {
+     "raw": true,
+     "clause": true
+    }
+   }
+  }
+ },
+ "fp_table": {
+  "W=2h,K=3": 1396,
+  "W=2h,K=5": 1069,
+  "W=2h,K=8": 827,
+  "W=4h,K=3": 1878,
+  "W=4h,K=5": 1571,
+  "W=4h,K=8": 1251,
+  "W=8h,K=3": 2736,
+  "W=8h,K=5": 2423,
+  "W=8h,K=8": 2023
+ },
+ "switch": {
+  "Ash": {
+   "class_changes": 100,
+   "alive_hours": 28.1,
+   "per_hour": 3.56
+  },
+  "Birch": {
+   "class_changes": 1452,
+   "alive_hours": 149.7,
+   "per_hour": 9.7
+  },
+  "Cedar": {
+   "class_changes": 1151,
+   "alive_hours": 149.7,
+   "per_hour": 7.69
+  },
+  "Rowan": {
+   "class_changes": 1300,
+   "alive_hours": 149.7,
+   "per_hour": 8.69
+  },
+  "Fern": {
+   "class_changes": 1270,
+   "alive_hours": 149.7,
+   "per_hour": 8.49
+  },
+  "Hazel": {
+   "class_changes": 1292,
+   "alive_hours": 149.7,
+   "per_hour": 8.63
+  },
+  "Oak": {
+   "class_changes": 1180,
+   "alive_hours": 142.1,
+   "per_hour": 8.31
+  },
+  "Sage": {
+   "class_changes": 1434,
+   "alive_hours": 149.7,
+   "per_hour": 9.58
+  }
+ },
+ "travel": [
+  {
+   "agent": "Sage",
+   "t0h": "day4 06:44",
+   "t1h": "day4 21:57",
+   "walked_tiles": 1838.0,
+   "need_gain": 773,
+   "ratio": 2.37
+  },
+  {
+   "agent": "Sage",
+   "t0h": "day5 06:22",
+   "t1h": "day5 21:58",
+   "walked_tiles": 2533.0,
+   "need_gain": 954,
+   "ratio": 2.65
+  },
+  {
+   "agent": "Sage",
+   "t0h": "day6 06:08",
+   "t1h": "day6 17:44",
+   "walked_tiles": 1615.0,
+   "need_gain": 1126,
+   "ratio": 1.43
+  },
+  {
+   "agent": "Sage",
+   "t0h": "day6 20:50",
+   "t1h": "day6 21:58",
+   "walked_tiles": 134.0,
+   "need_gain": 0,
+   "ratio": 134.0
+  },
+  {
+   "agent": "Sage",
+   "t0h": "day7 06:13",
+   "t1h": "day7 10:00",
+   "walked_tiles": 654.0,
+   "need_gain": 1339,
+   "ratio": 0.49
+  },
+  {
+   "agent": "Fern",
+   "t0h": "day4 06:27",
+   "t1h": "day4 21:59",
+   "walked_tiles": 1829.0,
+   "need_gain": 1400,
+   "ratio": 1.31
+  },
+  {
+   "agent": "Fern",
+   "t0h": "day5 06:02",
+   "t1h": "day5 21:55",
+   "walked_tiles": 2583.0,
+   "need_gain": 1241,
+   "ratio": 2.08
+  },
+  {
+   "agent": "Fern",
+   "t0h": "day6 11:59",
+   "t1h": "day6 16:27",
+   "walked_tiles": 773.0,
+   "need_gain": 12,
+   "ratio": 59.46
+  },
+  {
+   "agent": "Fern",
+   "t0h": "day7 06:02",
+   "t1h": "day7 10:24",
+   "walked_tiles": 908.0,
+   "need_gain": 1214,
+   "ratio": 0.75
+  },
+  {
+   "agent": "Oak",
+   "t0h": "day4 06:02",
+   "t1h": "day4 21:59",
+   "walked_tiles": 1488.0,
+   "need_gain": 1625,
+   "ratio": 0.92
+  },
+  {
+   "agent": "Oak",
+   "t0h": "day5 06:02",
+   "t1h": "day5 22:00",
+   "walked_tiles": 2601.0,
+   "need_gain": 1192,
+   "ratio": 2.18
+  },
+  {
+   "agent": "Cedar (healthy baseline)",
+   "t0h": "day5 14:00",
+   "t1h": "day5 22:00",
+   "walked_tiles": 1093.0,
+   "need_gain": 0,
+   "ratio": 1093.0
+  },
+  {
+   "agent": "Rowan (healthy baseline)",
+   "t0h": "day5 14:00",
+   "t1h": "day5 22:00",
+   "walked_tiles": 1021.0,
+   "need_gain": 80,
+   "ratio": 12.6
+  }
+ ]
+}
