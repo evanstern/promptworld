@@ -1,113 +1,98 @@
-# Implementation Plan: [FEATURE]
+# Implementation Plan: Takeover surfaces — ceremony + postmortem
 
-**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
+**Branch**: `056-takeover-surfaces` | **Date**: 2026-07-25 | **Spec**: [spec.md](spec.md)
 
-**Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
-
-**Note**: This template is filled in by the `/speckit-plan` command. See `.specify/templates/plan-template.md` for the execution workflow.
+**Input**: Feature specification from `/specs/056-takeover-surfaces/spec.md`
 
 ## Summary
 
-[Extract from feature spec: primary requirement + technical approach from research]
+One takeover family in `internal/tui`: an overlay-owner state (none /
+ceremony / postmortem + deferred-ceremony flag) rendered in the existing
+body-replacement slot (help-overlay discipline), with postmortem-always-wins
+precedence; the postmortem composes run-end line + (scored only) the new
+shared report-card renderer + morgue evidence rows from replica facts; the
+ceremony composes the D6 authorship chapter + the same renderer
+(authoritative instrument). Dismiss/replay per the pages: `esc`, ceremony
+`q`-detach framing (D13), global `p` reopen (ended only), auto-open on
+attach to ended worlds, `?`-overlay ceremony-replay entry. The renderer is
+one implementation with concluded/live marker modes, composable into spec
+053's console card seam (production wiring is TASK-115's).
 
 ## Technical Context
 
-<!--
-  ACTION REQUIRED: Replace the content in this section with the technical details
-  for the project. The structure here is presented in advisory capacity to guide
-  the iteration process.
--->
+**Language/Version**: Go 1.24 (repo toolchain; no new deps)
 
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]
+**Primary Dependencies**: Bubble Tea/lipgloss (existing); `internal/sim` replica facts (death ledger, CurriculumPasses, exercise definitions); `internal/skin` lookups (TASK-121's contract when merged)
 
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]
+**Storage**: none — all content from recorded events/state; seen/replay content stored in the log + per-user unlocks (existing)
 
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
+**Testing**: `go test -race ./...`; precedence interleaving fixtures (SC-003); ambient/scored matrix (SC-002); renderer three-site equivalence (SC-005); attach-to-ended auto-open; narrow exact-height (existing harness)
 
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]
+**Target Platform**: terminal client
 
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
+**Project Type**: single package (`internal/tui`) + help-content amendment
 
-**Project Type**: [e.g., library/cli/web-service/mobile-app/compiler/desktop-app or NEEDS CLARIFICATION]
+**Performance Goals**: render-path only; morgue rows derive from the replica's ledger per open, not per frame
 
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]
+**Constraints**: body-replacement discipline (chrome visible, exact height); takeovers never stack; ENDED posture/read-only keys unaffected by dismissal; no new fiction literals (skin rules); same-PR design-doc amendments
 
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]
-
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+**Scale/Scope**: est. 600–1,000 LOC incl. tests; 4–5 design pages amended
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- **I. Artifact-Grounded Action** — PASS: spec dir `specs/056-*`; TASK-127 linked pre-implementation; the two parked questions resolved from the authored pages (artifact-derived, recorded in spec).
+- **II. One Task, One PR** — PASS: `.worktrees/task-127`, one branch, one PR.
+- **III. Gates Over Assertions** — PASS: design gate + race suite + spec-bridge gate.
+- **IV. Grounding Freshness** — PASS (planned): `internal/tui` sources → tui-client.md re-pin + player-docs in re-ground.
+- **V. Model-Tiered Workflow** — PASS: planned on Fable 5; implementation on **Sonnet** (single-package view/overlay state machine, tests alongside — routine tier); escalate per rubric only if overlay/focus interactions fail gates.
+
+**Post-Phase-1 re-check**: PASS — one overlay-owner enum + one renderer; no new packages. No Complexity Tracking entries.
 
 ## Project Structure
 
 ### Documentation (this feature)
 
 ```text
-specs/[###-feature]/
-├── plan.md              # This file (/speckit-plan command output)
-├── research.md          # Phase 0 output (/speckit-plan command)
-├── data-model.md        # Phase 1 output (/speckit-plan command)
-├── quickstart.md        # Phase 1 output (/speckit-plan command)
-├── contracts/           # Phase 1 output (/speckit-plan command)
-└── tasks.md             # Phase 2 output (/speckit-tasks command - NOT created by /speckit-plan)
+specs/056-takeover-surfaces/
+├── plan.md
+├── research.md          # overlay-owner state, renderer contract, morgue-row derivation,
+│                        #   replay surfaces, skin posture
+├── data-model.md
+├── quickstart.md
+├── contracts/
+│   └── takeovers.md     # trigger/precedence/dismiss grammar; renderer contract
+└── tasks.md
 ```
 
 ### Source Code (repository root)
-<!--
-  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
-  for this feature. Delete unused options and expand the chosen structure with
-  real paths (e.g., apps/admin, packages/something). The delivered plan must
-  not include Option labels.
--->
 
 ```text
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
-src/
-├── models/
-├── services/
-├── cli/
-└── lib/
+internal/tui/
+├── tui.go               # takeover owner state + precedence transitions; p key (ended only);
+│                        #   auto-open on runEnded() at connect; deferred-ceremony flag
+├── views.go             # postmortemView, ceremonyView (body-replacement slot, help precedent);
+│                        #   reportCardView (shared renderer, concluded/live modes);
+│                        #   morgue evidence rows from replica facts
+├── help.go              # ceremony-replay entry (spec 045 content contract amendment)
+├── tui_test.go          # precedence interleavings; p/esc/q; attach-to-ended auto-open
+├── render_test.go       # ambient/scored matrix; renderer three-site equivalence; exact-height
+└── focus_test.go        # overlay/focus regressions
 
-tests/
-├── contract/
-├── integration/
-└── unit/
-
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
-backend/
-├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
-└── tests/
-
-frontend/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
-
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
-
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
+docs/design/tui/
+├── overlays/ceremony.md     # specified → shipped, real symbols
+├── overlays/postmortem.md   # specified → shipped, real symbols (renderer authored here)
+├── overlays/help.md         # ceremony-replay entry recorded
+├── patterns/keymap.md       # p live; takeover keys; parity gaps
+├── pages/guardian-console.md# card-seam note names the shipped renderer
+└── re-pins on all touched pages
 ```
 
-**Structure Decision**: [Document the selected structure and reference the real
-directories captured above]
+**Structure Decision**: all in `internal/tui`; the renderer is a plain
+view function so all three sites (two here, one via 115) share it without
+interface ceremony beyond spec 053's existing consoleCard.
 
 ## Complexity Tracking
 
-> **Fill ONLY if Constitution Check has violations that must be justified**
-
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+No constitution violations — table intentionally empty.
