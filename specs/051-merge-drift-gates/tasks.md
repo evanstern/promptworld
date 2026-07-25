@@ -90,7 +90,7 @@ with the fingerprint line; identical second run appends nothing
 
 - [x] T017 [P] Add the "Merge-drift gates" section to `CLAUDE.md` adjacent to the spec-047 TUI gate block (FR-013): the three invocations verbatim from contracts/gate-cli.md and when each is mandatory (session start / before `git worktree add` / before opening any PR)
 - [x] T018 Run quickstart.md scenario 5 + offline check on this repo: two identical `session --json` runs diff empty (FR-012), wall time < 30 s (SC-002), no new reflog entries in any task worktree (SC-005/FR-009), unreachable-remote behavior per FR-014 (pr/worktree exit 2, session degrades); record timings and outputs in the task notes
-- [ ] T019 PR hygiene for the TASK-131 branch: check whether any `docs/wiki/` note lists `scripts/` or `CLAUDE.md` files among its `sources:` (if so, re-pin via `/grounding-wiki:wiki-update` in the same PR), and run `node scripts/check-tui-design.mjs --changed` (expect: no `internal/tui/` touches, passes trivially)
+- [x] T019 PR hygiene for the TASK-131 branch: check whether any `docs/wiki/` note lists `scripts/` or `CLAUDE.md` files among its `sources:` (if so, re-pin via `/grounding-wiki:wiki-update` in the same PR), and run `node scripts/check-tui-design.mjs --changed` (expect: no `internal/tui/` touches, passes trivially)
 
 ## Dependencies & Execution Order
 
