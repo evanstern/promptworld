@@ -33,8 +33,8 @@
 
 **Goal**: durable, freshness-gated context inventory. **Independent test**: read the note, capture a live decision context, verify block-for-block (SC-001).
 
-- [ ] T006 [US5] Write `docs/wiki/decision-context.md`: every block from contracts/context-blocks.md (source of truth, appearance conditions, caps, drop priority) plus deliberate absences (LastGoal history beyond the ring, full event log, other agents' private state); pin to current commit per wiki note conventions; add to `docs/wiki/INDEX.md`
-- [ ] T007 [US5] Contract-vs-capture check per quickstart §Contract-check: capture one real `cog.thought` `BlockBytes` + prompt text from a scratch world, verify against the note, record the capture in `specs/043-context-grounding/` as evidence (SC-001)
+- [x] T006 [US5] Write `docs/wiki/decision-context.md`: every block from contracts/context-blocks.md (source of truth, appearance conditions, caps, drop priority) plus deliberate absences (LastGoal history beyond the ring, full event log, other agents' private state); pin to current commit per wiki note conventions; add to `docs/wiki/INDEX.md`
+- [x] T007 [US5] Contract-vs-capture check per quickstart §Contract-check: capture one real `cog.thought` `BlockBytes` + prompt text from a scratch world, verify against the note, record the capture in `specs/043-context-grounding/` as evidence (SC-001)
 
 **Checkpoint**: US5 shippable alone (documents present-state even before US1-US4 blocks land; note updated as they do).
 
@@ -86,7 +86,7 @@
 - [x] T020 [P] [US4] Journal selection tests in `internal/sim/journal_test.go` + block tests in `internal/mind/context_test.go`: relevant-entry match, no-match omission, excerpt cap, determinism
 - [x] T021 [US4] Memories-block floor: protect 4 entries, drop-above-floor + serendipity-tail drop wiring in `internal/mind/context.go` (contract blocks 8-9); degraded-mode passthrough test (no SitVec ⇒ legacy selection, block renders, nothing crashes)
 - [x] T022 [US4] Planted-memory relevance test per quickstart §SC-006 in `internal/mind/context_test.go`: relevant items included ≥80% across seeds within budget
-- [ ] T023 [US4] Multi-day budget-fit run per quickstart §SC-005: aggregate `cog.thought` PromptBytes/DroppedBlocks from a scratch world, verify ≥99% within budget, record numbers on TASK-105
+- [x] T023 [US4] Multi-day budget-fit run per quickstart §SC-005: aggregate `cog.thought` PromptBytes/DroppedBlocks from a scratch world, verify ≥99% within budget, record numbers on TASK-105
 
 **Checkpoint**: all spec stories implemented.
 
