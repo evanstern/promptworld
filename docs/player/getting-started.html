@@ -5,11 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
 <meta name="promptworld-docs:source" content="README.md@ead97e7619572a625a35b2ee3e82243ff6f9e3f4">
-<meta name="promptworld-docs:source" content="docs/wiki/cli-promptworld.md@cc514f7ff456fefbcfe289471c5a1467b8e724df">
-<meta name="promptworld-docs:source" content="docs/wiki/daemon-lifecycle.md@1af833a2c4dab23932357d85cbf51e01089d66fc">
-<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@c9467f3cbabbd4c2259cc97a9ac0ede00e493712">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@c9467f3cbabbd4c2259cc97a9ac0ede00e493712">
-<meta name="promptworld-docs:source" content="docs/wiki/chronicle.md@cc514f7ff456fefbcfe289471c5a1467b8e724df">
+<meta name="promptworld-docs:source" content="docs/wiki/cli-promptworld.md@381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9">
+<meta name="promptworld-docs:source" content="docs/wiki/daemon-lifecycle.md@dee5f4bf60093cb5d775e10c8ced41c7e5b385ec">
+<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@dee5f4bf60093cb5d775e10c8ced41c7e5b385ec">
+<meta name="promptworld-docs:source" content="docs/wiki/chronicle.md@dee5f4bf60093cb5d775e10c8ced41c7e5b385ec">
+<meta name="promptworld-docs:source" content="docs/wiki/morgue.md@dee5f4bf60093cb5d775e10c8ced41c7e5b385ec">
+<meta name="promptworld-docs:source" content="docs/wiki/gru.md@72125c85abd1a0de6c19855aaae1757d8b976f17">
 <title>Getting started — promptworld player docs</title>
 <style>
   :root {
@@ -85,12 +87,24 @@ pause just because you looked away.</p>
 
 <p>Set your expectations now: your first village will probably see someone freeze or
 starve. That's the story working, not a bug. promptworld doesn't soften failure — a
-villager who dies stays dead, permanently, with no reload and no undo. That's exactly
-what makes the village's <a href="reading-the-story.html">chronicle</a> worth reading:
-it narrates a death the same as anything else that happened, and the postmortem — what
-led up to it, who was there, what changed after — is the payoff, not a punishment for
-playing wrong. Losing a villager, or even a whole village, is part of what you came
-here to watch.</p>
+villager who dies stays dead, permanently, with no reload and no undo. Even the gru,
+the night predator that stalks the village after dark, plays by honest rules: a
+healthy villager always survives its attack, but one already badly worn down — no
+fire, no food, wounds untreated — can now be killed outright. A death always traces
+back to neglect that could have been prevented, never to one unlucky roll. That's
+exactly what makes the village's <a href="reading-the-story.html">chronicle</a> worth
+reading: it narrates a death the same as anything else that happened, and the
+postmortem — what led up to it, who was there, what changed after — is the payoff,
+not a punishment for playing wrong. Losing a villager, or even a whole village, is
+part of what you came here to watch.</p>
+<p>And that goes all the way up: when your <em>last</em> villager dies, the run
+itself is over. The world stops — but it never disappears. It stays on disk as a
+readable archive: the narrated story, the raw event feed, and the
+<strong>morgue</strong>, a file holding a factual epitaph for everyone who died
+(the <a href="reading-the-story.html">reading the story page</a> covers all three).
+An ended world opens read-only — you can look at everything, you just can't run the
+clock again. Playing again means creating a new world; the old one keeps its story
+forever.</p>
 
 <h2>Before you start</h2>
 <p>You need <a href="https://go.dev">Go</a> installed to build the program. You do not

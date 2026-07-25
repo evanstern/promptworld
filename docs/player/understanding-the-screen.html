@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@c9467f3cbabbd4c2259cc97a9ac0ede00e493712">
+<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9">
 <title>What do all those things on screen mean? — promptworld player docs</title>
 <style>
   :root {
@@ -89,8 +89,8 @@ The one place <code>?</code> doesn't open it is while you're typing a message to
 Metatron (it types a question mark, as you'd want).</p>
 
 <h2>The header: the top line</h2>
-<p>The very top of the screen always shows the world's current speed. Two things can
-join it:</p>
+<p>The very top of the screen always shows the world's current speed. A few things
+can join — or replace — it:</p>
 <ul>
 <li>If you've got AI-driven villagers and asked for a speed the world can't quite
 keep sensible thinking up with, the speed gains a short plain-language suffix, for
@@ -106,9 +106,16 @@ cooperating with the game. It clears itself the moment the problem is fixed. See
 villager thinking (planning, conversations, meetings) is currently being skipped to
 keep the game running smoothly at your chosen speed. Also covered on the
 <a href="time-and-speed.html">time & speed page</a>.</li>
+<li>If your run has <strong>ended</strong> — the last villager has died — the usual
+running/<code>PAUSED</code> state gives way to a bold red <code>ENDED</code> marker.
+The world is now a read-only archive: the pause and speed keys do nothing (the
+footer hint changes to say <code>run ended (read-only)</code>), while everything you
+<em>read</em> — the map, the story, the villagers, the morgue — keeps working. The
+<a href="reading-the-story.html">reading the story page</a> covers what an ended
+world leaves you to read.</li>
 </ul>
-<p>Neither badge means anything is broken — both are the world being upfront about a
-trade-off it's making on your behalf.</p>
+<p>None of these means anything is broken — each is the world being upfront about
+its own state on your behalf.</p>
 
 <h2>The map</h2>
 <p>The map is a camera window that follows your villagers around as they move; arrow
@@ -153,9 +160,13 @@ the ground rather than stored in a chest</td></tr>
 <tr><th>Glyph</th><th>Meaning</th></tr>
 <tr><td>Capital letter</td><td>A villager, awake — their name's first initial</td></tr>
 <tr><td>Lowercase letter</td><td>That same villager, asleep</td></tr>
-<tr><td><code>†</code></td><td>A villager who has died. Death in promptworld is
-permanent — see the <a href="getting-started.html">getting started page</a> for why
-that's the point, not a bug</td></tr>
+<tr><td><code>✝</code></td><td>A grave — where a villager fell, their marker becomes
+a grave. Death in promptworld is permanent — see the
+<a href="getting-started.html">getting started page</a> for why that's the point,
+not a bug</td></tr>
+<tr><td><code>†</code></td><td>A villager who died before their grave exists — in an
+older world's history you may still see this plain death marker where a grave was
+never placed</td></tr>
 <tr><td><code>G</code> (shown in red)</td><td>The gru — a nocturnal threat — while it's
 out and about</td></tr>
 </table>

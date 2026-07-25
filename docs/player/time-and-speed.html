@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
 <meta name="promptworld-docs:source" content="docs/wiki/game-clock.md@1e71b77f104dda982aa407b28ad2c994219e90d0">
-<meta name="promptworld-docs:source" content="docs/wiki/sim-loop.md@cc514f7ff456fefbcfe289471c5a1467b8e724df">
-<meta name="promptworld-docs:source" content="docs/wiki/cli-promptworld.md@cc514f7ff456fefbcfe289471c5a1467b8e724df">
+<meta name="promptworld-docs:source" content="docs/wiki/sim-loop.md@dee5f4bf60093cb5d775e10c8ced41c7e5b385ec">
+<meta name="promptworld-docs:source" content="docs/wiki/cli-promptworld.md@381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9">
 <title>Time and speed — promptworld player docs</title>
 <style>
   :root {
@@ -157,6 +157,14 @@ resume, or change speed, in plain conversation — the same controls as the comm
 line and the full-screen client, free of charge. Metatron only touches the clock
 when you ask directly, or when a standing order you placed specifically authorizes
 it.</p>
+<p>One world refuses all of these controls: a run that has <strong>ended</strong>
+(your last villager died). An ended world won't pause, resume, or change speed — it
+answers with a plain "run has ended" refusal, and its clock line (in
+<code>promptworld status</code> and on screen) says it outright: the run ended on
+such-and-such a day, and the world is now a read-only archive. Everything readable
+still works; the clock just has nothing left to run. See the
+<a href="reading-the-story.html">reading the story page</a> for what an ended world
+leaves behind.</p>
 
 <h2>Your speed is a ceiling, not a promise</h2>
 <p>If you've got AI-driven villagers, the speed you set is the <em>fastest</em> the

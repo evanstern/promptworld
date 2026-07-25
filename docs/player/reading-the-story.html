@@ -4,8 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/wiki/chronicle.md@cc514f7ff456fefbcfe289471c5a1467b8e724df">
-<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@c9467f3cbabbd4c2259cc97a9ac0ede00e493712">
+<meta name="promptworld-docs:source" content="docs/wiki/chronicle.md@dee5f4bf60093cb5d775e10c8ced41c7e5b385ec">
+<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9">
+<meta name="promptworld-docs:source" content="docs/wiki/morgue.md@dee5f4bf60093cb5d775e10c8ced41c7e5b385ec">
 <meta name="promptworld-docs:source" content="docs/wiki/event-log.md@8be4440aae8d108884080cb6476782d2f11ad165">
 <meta name="promptworld-docs:source" content="docs/wiki/nightly-consolidation.md@2bc94f55c57880e07f0e52e5de20c9cd527ab340">
 <title>Reading the story — promptworld player docs</title>
@@ -83,8 +84,11 @@ promises broken, thefts from a chest, passing musings, and the village's own
 self-governance — meetings, grievances aired, proposals voted up or down, and any
 exiles. It also covers a villager's own sense of the map: going looking for
 something remembered and finding it gone, swapping directions with another
-villager in conversation, and a place a Metatron vision revealed to someone. Each
-entry is stamped with the in-world time it covers, so the story reads in order.</p>
+villager in conversation, and a place a Metatron vision revealed to someone. And if
+it ever comes to that, the chronicle records the end of the run itself: when the
+last villager dies, the story closes with a plain statement that the village stands
+empty. Each entry is stamped with the in-world time it covers, so the story reads
+in order.</p>
 <p>A day or night that has nothing notable in it costs nothing and gets no filler
 entry — you only get chapters when something actually happened.</p>
 <p>The chronicle travels with your world's save data, so the moment you reattach — no
@@ -148,6 +152,35 @@ memory or a villager's situation getting its "meaning fingerprint" computed,
 and a note about how a smarter memory pick would have compared to today's
 pick. These are there for the team to review evidence before turning that
 feature on for real; there's nothing in them you need to read or act on.</p>
+
+<h2>The morgue: every death leaves an epitaph</h2>
+<p>Alongside the chronicle, your world keeps one more readable document:
+<code>morgue.md</code>, sitting in the world's save folder right next to
+<code>chronicle.md</code>. It exists from the world's first day (opening with a
+one-line "no one has died" note while everyone lives), and every villager who dies
+gets a factual epitaph in it: which day they died and what killed them, the deeds
+they'll be remembered for — things built, gifts given, promises broken, brushes
+with the gru — what they carried in memory, who mattered to them, and any debts
+still open, in both directions, when they fell.</p>
+<p>Each epitaph also records <strong>what your instructions were at that
+moment</strong>: which version of your
+<a href="playing-via-metatron.html">charter</a> was in force when the villager
+died — whether that was still the starting default or your own writing — and which
+standing orders you had active, watching for what. It's stated plainly as evidence,
+instruction and outcome side by side; the morgue never scores you, grades you, or
+assigns blame. Every epitaph closes the same way: stated as evidence — the reader
+draws the lesson.</p>
+<p>If the run ends — the last villager dies — the morgue closes with a
+village-level summary of the whole run: how long it lasted, how the population
+declined day by day, every death with its cause, and the run's most notable
+events.</p>
+<p>When an AI narrator is configured, a short prose epilogue follows each section's
+facts — a few mourning lines for the villager, and one for the village when the run
+ends. With no AI configured, the facts stand complete on their own; and if the
+narrator ever hiccups, that's just a gap in the prose — the factual record never
+waits on it. Like the chronicle, the morgue is a generated view of the permanent
+record underneath: delete it or edit it by hand and the game simply regenerates it,
+facts intact.</p>
 
 <h2>Nothing is ever rewritten</h2>
 <p>Under all of this sits one append-only history of every single thing that has ever
