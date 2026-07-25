@@ -4,7 +4,7 @@ title: 'Skinnable guardian persona: de-theme the angel fiction, persona as data'
 status: Done
 assignee: []
 created_date: '2026-07-25 06:20'
-updated_date: '2026-07-25 22:09'
+updated_date: '2026-07-25 23:38'
 labels:
   - learning-game
   - design
@@ -31,7 +31,7 @@ Spec: specs/052-skinnable-guardian
 - [x] #3 Skin bundle = name + fiction strings + persona voice; fixed-frame invariants provably not overridable from any skin
 - [x] #4 Default secular-mythic guardian skin ships; mechanics byte-compatible across skins (same events, costs, rules)
 - [x] #5 A custom skin is loadable per world; one example alternate skin in-repo proves the format
-- [ ] #6 Post-sweep: wiki re-pinned (wiki-update) and player docs regenerated
+- [x] #6 Post-sweep: wiki re-pinned (wiki-update) and player docs regenerated
 - [x] #7 Skin-token contract published before 115/117 implementation; both consume it
 - [x] #8 Sweep covers help.go, footer hints, stagesLadder, lesson strings, player-docs page names, design-doc mockups
 - [x] #9 Skin boundary = guardian/systems tab split; systems content never skinnable
@@ -75,6 +75,8 @@ spec-bridge sync: Setup: 1/1 · Foundational — the skin substrate: 4/4 · User
 Status corrected Done → In Progress (board reconcile, 2026-07-25): a sibling session's sync moved this to Done on spec Done-eligibility, but human AC #6 is still open — wiki half IS re-ground (10b3247: guardian.md renames + skin.md), player-docs half is NOT (freshness: 6 stale + 1 broken-ref from the metatron→guardian note renames). Done again once the player-docs refresh runs (currently deferred under an operator halt).
 
 spec-bridge sync: Setup: 1/1 · Foundational — the skin substrate: 4/4 · User Story 1 — The skin-token contract exists (P1) 🎯 Lane-3 unblock: 2/2 · User Story 2 — The default experience is de-themed (P1): 6/6 · User Story 3 — A custom skin is a per-world data bundle (P2): 4/4 · User Story 4 — The internals stop lying (P3): 3/3 · Polish & Cross-Cutting Concerns: 3/3 — status In Progress → Done
+
+AC #6 closed by artifact reconcile (UI-sweep orchestrator, handoff 2026-07-25b step 1): wiki half re-ground at 10b3247 (guardian.md renames + skin.md); player-docs half satisfied by sibling MVLS session's regenerate at 998ea90 (13/13 fresh, broken metatron→guardian refs fixed). check-freshness --check green at session start; no separate refresh needed.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
