@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
 <meta name="promptworld-docs:source" content="docs/wiki/agent-mind.md@cc514f7ff456fefbcfe289471c5a1467b8e724df">
-<meta name="promptworld-docs:source" content="docs/wiki/cognition.md@cc514f7ff456fefbcfe289471c5a1467b8e724df">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-orchestrator.md@b6794f7e69895a0bfa45f21490373d25ba966895">
+<meta name="promptworld-docs:source" content="docs/wiki/cognition.md@1af833a2c4dab23932357d85cbf51e01089d66fc">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-orchestrator.md@1af833a2c4dab23932357d85cbf51e01089d66fc">
 <meta name="promptworld-docs:source" content="docs/wiki/nightly-consolidation.md@2bc94f55c57880e07f0e52e5de20c9cd527ab340">
 <meta name="promptworld-docs:source" content="docs/wiki/social-fabric.md@cc514f7ff456fefbcfe289471c5a1467b8e724df">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@b6794f7e69895a0bfa45f21490373d25ba966895">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@1af833a2c4dab23932357d85cbf51e01089d66fc">
 <meta name="promptworld-docs:source" content="docs/wiki/mental-maps.md@cc514f7ff456fefbcfe289471c5a1467b8e724df">
-<meta name="promptworld-docs:source" content="docs/wiki/memory-retrieval.md@cc514f7ff456fefbcfe289471c5a1467b8e724df">
+<meta name="promptworld-docs:source" content="docs/wiki/memory-retrieval.md@1af833a2c4dab23932357d85cbf51e01089d66fc">
 <title>The AI behind the village — promptworld player docs</title>
 <style>
   :root {
@@ -243,7 +243,10 @@ thoughts have run well over its expectation, and it updates its own sense of "ho
 long this normally takes" to match what's actually happening now, instead of
 clinging to an outdated number. That keeps every speed and staleness decision
 honest — grounded in how the AI is actually performing right now, not how it used to
-perform a while back.</p>
+perform a while back. What the game learns this way isn't forgotten when a world
+stops, either: the learned pace is saved with the world and picked up again on the
+next start, so restarting doesn't send it back to an over-optimistic guess it has
+to painfully re-learn.</p>
 <p>You can always see where that sense of pace came from: <code>promptworld status</code>
 lists, per configured AI provider, either the date you last ran
 <code>promptworld calibrate</code> on it, or <code>uncalibrated (bootstrap)</code> if

@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/world/world.go
   - internal/world/migrate.go
-verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
+verified_against: 1af833a2c4dab23932357d85cbf51e01089d66fc
 ---
 
 # World save directory
@@ -67,6 +67,9 @@ dimensions — deterministic, so the map is never stored ([[worldmap-generation]
   disable inference), `CalibrationPath()` → `calibration.json` (the
   seconds-per-point profile written only by `promptworld calibrate` —
   [[cognition]]; an absent file is legal, pessimistic bootstrap defaults apply),
+  `EstimatorStatePath()` → `estimator_state.json` (the daemon-written snapshot
+  of live latency estimates, TASK-113 — absent is legal, boot then seeds from
+  calibration/bootstrap alone; never event-sourced, never read during replay),
   `SockPath()` → `daemon.sock`, `PidPath()` → `daemon.pid`,
   `LogPath()` → `daemon.log`, `CharterPath()` → `charter.md` (the player-editable
   prompt), `MetatronDir()` → `metatron/` (the angel's soul and transcript —

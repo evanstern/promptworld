@@ -6,12 +6,13 @@ sources:
   - internal/cognition/doc.go
   - internal/cognition/registry.go
   - internal/cognition/estimate.go
+  - internal/cognition/estimator_state.go
   - internal/cognition/route.go
   - internal/cognition/calibration.go
   - internal/cognition/horizon.go
   - internal/cognition/governor.go
   - internal/sim/cognition.go
-verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
+verified_against: 1af833a2c4dab23932357d85cbf51e01089d66fc
 ---
 
 # Cognition horizon
@@ -75,7 +76,9 @@ seconds-per-point as an EWMA (`EWMAAlpha` 0.2) over per-point-normalized call
 durations. A sample beyond `SpikeFactor` (3.0) times the current estimate is
 excluded from the EWMA but retained — with its value — in a `WindowSize`-20
 ring of `{secPerPoint, spike}` slots; on the sample that first drives the
-rolling spike rate over a full window past `BreachRate` (0.3), the estimator
+rolling spike rate over a full window past `BreachRate` (0.2, lowered from
+0.3 in TASK-113 — adoption now needs ≥5 spikes per 20-window instead of ≥7,
+faster median adoption with the one-shot-rejection property intact), the estimator
 ADOPTS (spec 031, breach-adoption): it re-seeds `estimate` to the window
 median (all retained values, spike and non-spike alike), zeroes the ring, and
 `Sample` returns a non-nil `Adoption{Prior, Adopted, SpikeRate}` — the
@@ -85,7 +88,17 @@ before any further verdict, and post-adoption samples in the new regime are no
 longer spikes against the adopted estimate. One-shot lag spikes (too few to
 breach) are thus still rejected while systemic drift — including a step change
 larger than `SpikeFactor`, which pre-031 froze the estimate forever — is
-followed within one window. The estimator is process-lifetime only.
+followed within one window. Learned estimates survive restarts (TASK-113):
+`EstimatorState` persists every provider's live seconds-per-point to
+`estimator_state.json` in the world dir (`estimator_state.go` — daemon-written
+every 5 minutes and at shutdown, unlike the human-only `calibration.json`),
+and boot reseeds each provider to `ReseedValue` = max(calibration/bootstrap
+seed, persisted estimate) — the persisted value only ever RAISES a seed, never
+undercuts a fresher human calibration or the pessimistic bootstrap floor.
+Pre-113, the estimator was process-lifetime: world-01's 36 restarts reset it
+to the optimistic calibration floor 36 times, re-triggering the staleness
+storm each boot. The file never enters the event log and is never read during
+replay — the estimator sits outside the reducer entirely.
 
 **Calibration** (`calibration.go`): `Profile` is `calibration.json` in the
 world save directory (`World.CalibrationPath()`), written only by the

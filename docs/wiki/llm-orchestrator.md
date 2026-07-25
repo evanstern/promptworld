@@ -10,7 +10,7 @@ sources:
   - internal/llm/providers.go
   - internal/llm/lease.go
   - internal/llm/pending.go
-verified_against: b6794f7e69895a0bfa45f21490373d25ba966895
+verified_against: 1af833a2c4dab23932357d85cbf51e01089d66fc
 ---
 
 # LLM orchestrator
@@ -201,6 +201,12 @@ since spec 035 (R3) — also records each provider's seed PROVENANCE: `calibrate
 is set to the profile's `CalibratedAt` when `cognition.Calibrated(p, name)` finds a
 usable entry, else cleared to `""` (bootstrap-seeded) — the exact presence test
 `SeedFor` applies, so the seed value and its provenance can never disagree.
+After `SeedCalibration`, `SeedPersisted(state)` raises each provider's seed to
+`cognition.ReseedValue` = max(current seed, the provider's persisted live
+estimate from `estimator_state.json`) — TASK-113's restart persistence; it
+only ever raises, so a fresher human calibration or bootstrap floor is never
+undercut, and `SnapshotEstimators()` exports the live estimates for the
+daemon's periodic/shutdown flush ([[daemon-lifecycle]]).
 `Orchestrator.CalibratedAt(name)` reads it back (`""` for an unknown provider or one
 never seeded); it is set exactly once per `SeedCalibration` call and never mutated
 by live estimator adaptation (spec 031) or drift — the seed-state fact and the live

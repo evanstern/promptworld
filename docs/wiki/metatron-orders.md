@@ -14,7 +14,7 @@ sources:
   - internal/tool/registry.go
   - internal/llm/llm.go
   - internal/llm/config.go
-verified_against: b6794f7e69895a0bfa45f21490373d25ba966895
+verified_against: 1af833a2c4dab23932357d85cbf51e01089d66fc
 ---
 
 # Metatron's standing orders

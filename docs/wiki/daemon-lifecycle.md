@@ -4,7 +4,8 @@ description: Process lifecycle — startup recovery (snapshot+replay), pidfile w
 kind: pipeline
 sources:
   - internal/daemon/daemon.go
-verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
+  - internal/daemon/estimator_persist.go
+verified_against: 1af833a2c4dab23932357d85cbf51e01089d66fc
 ---
 
 # Daemon lifecycle
@@ -94,8 +95,9 @@ Startup sequence:
    provider-health hook just above (a daemon-log WARNING plus a durable
    `daemon.llm_warning`, `kind: "embedding-unavailable"`, through the same
    `loop.InjectOperator` door) but is debounced by the embedder driver itself,
-   not by [[llm-provider-health]]'s detectors — which never observe embed
-   traffic at all (a known gap, TASK-102).
+   not by [[llm-provider-health]]'s detectors — which never RAISE a condition
+   from embed traffic; since TASK-102 a successful embed does CLEAR a stale
+   preflight condition on the embedding provider ([[llm-provider-health]]).
    On a teaching world (spec 039 US1/US3, `w.Manifest.Teaching` —
    [[world-save-directory]]), boot also derives and prints the teaching-posture
    default: `orch.EstimateForKind(llm.Kind("planner"))`'s live seconds-per-point
@@ -140,7 +142,15 @@ Startup sequence:
    bootstrap seeds (the identical string `promptworld calibrate` itself
    prints, FR-006 — [[cognition]]), and the exact `promptworld calibrate
    <world>` command to run. The profile-seeded branch is untouched and stays
-   byte-identical (US2 AC2). `orch.SetRecalibrateHook(md.RecalibrateSignal)` wires
+   byte-identical (US2 AC2). After calibration seeding,
+   `cognition.LoadEstimatorState(w.EstimatorStatePath())` +
+   `orch.SeedPersisted` raise each provider's seed to any higher persisted
+   live estimate (TASK-113, max(seed, persisted) — a malformed
+   `estimator_state.json` downgrades to a warning, never a crash), and a
+   daemon-side persister goroutine flushes `orch.SnapshotEstimators()` back to
+   that file every 5 minutes plus once synchronously after `loop.Run(ctx)`
+   returns, so learned drift survives restarts.
+   `orch.SetRecalibrateHook(md.RecalibrateSignal)` wires
    the drift signal: a provider's estimator breaching its spike-rate threshold lands
    as `cog.recalibration_recommended` telemetry.
 7. Wire-up: `ipc.NewServer(w, st, cancel)` where cancel is the
