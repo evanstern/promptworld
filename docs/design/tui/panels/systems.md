@@ -1,8 +1,8 @@
 ---
 title: Panel — systems (engine telemetry)
 class: panel
-status: specified
-verified_against: c8906da39be3a5b861c2272af37db0a83dcded7a
+status: shipped
+verified_against: cb89a4c7811962243ac907e0aeed43619b4d4f2d
 sources:
   - internal/tui/views.go
   - internal/tui/tui.go
@@ -14,16 +14,14 @@ The dock's **never-skinned telemetry** content (D10 — the skin boundary is a
 file boundary; this page carries zero skin tokens, by design, unlike
 [guardian.md](guardian.md)).
 
-**Hybrid status, stated plainly**: `status: specified` because the *systems
-tab itself* — a fourth dock tab an operator selects with its own key — does
-not exist yet in `internal/tui` (it lands in a later reorientation wave,
-per D10's "systems tab" plan). But every control this page describes is
-**already shipped**, rendering today inside the single "metatron" tab
-alongside the fiction-layer content [guardian.md](guardian.md) now owns. This
-page is written spec-before-build for the *tab*, reconciliation-accurate for
-the *content*: the `renderer` column below names real, currently-executing Go
-symbols — not `unbuilt (wave N)` — because there is nothing left to build for
-the content itself, only the tab it will eventually move into.
+**Built** (spec 053, TASK-125): the fourth dock tab (key `5`) now exists in
+`internal/tui` — `paneSystems`/`dockTabKey[paneSystems]` (tui.go),
+`systemsContentBody`/`systemsView` (views.go, the dock/solo and narrow-
+fallback call sites). Every renderer this page describes was already
+shipped before this feature (spec 024/034/035/037) and moves here
+unchanged — a relocation, not a rewrite: `llmProviderLines`, `horizonLines`/
+`horizonRow`/`horizonRemedy` are the exact same functions the guardian tab's
+`metatronView` used to call directly.
 
 ## Mockup
 
@@ -64,6 +62,12 @@ the content itself, only the tab it will eventually move into.
    arithmetic as a dim trailing detail. A trailing "· skipped N" appears on
    every suppressed row and on a thinking row only once it has ever been
    suppressed. Absent entirely on a no-LLM world.
+4. **No-LLM absence, stated honestly** (spec 053 SC-002) — a world with no
+   `Status.LLM` at all (no `llm.json`) renders neither an empty provider
+   table nor blank chrome: `systemsContentBody` states "no LLM configured
+   for this world" outright, the tab's one honesty rule now that it's a
+   whole dedicated destination rather than a silently-empty corner of the
+   fiction-layer tab.
 
 ## Related telemetry rendered elsewhere (not owned by this page)
 
@@ -86,26 +90,30 @@ which one they start from.
 
 ## Narrow behavior
 
-No narrow-specific rendering: once built, the systems tab is reachable as a
-solo/narrow pane exactly like every other dock tab
-(`patterns/layout.md` ruling b — "systems tab: reachable as solo views, no
-new narrow-specific rendering"; [pages/solo-views.md](../pages/solo-views.md)).
-Content does not reflow differently below the 112-column breakpoint beyond
-the existing width-aware column-dropping every dock tab already does.
+No narrow-specific rendering: the systems tab is reachable as a solo/narrow
+pane exactly like every other dock tab (`patterns/layout.md` ruling b —
+"systems tab: reachable as solo views, no new narrow-specific rendering";
+[pages/solo-views.md](../pages/solo-views.md)) — `systemsView` (narrow
+fallback) shares the exact same `systemsContentBody` the dock/solo call
+sites use. Content does not reflow differently below the 112-column
+breakpoint beyond the existing width-aware column-dropping every dock tab
+already does.
 
 ## Control table
 
 | control/region | states | data source | renderer | keys+mouse | introduced-by | skin-token |
 |---|---|---|---|---|---|---|
-| systems tab (dock selection) | — | — | `unbuilt (wave 2-3)` — no 4th dock-tab key exists yet | `unbuilt` · — | reorient D10 | — |
+| systems tab (dock selection) | selected · unseen (never — no badge) | `Model.dockTab`, `paneSystems` | `dockTabsRow`, `dockTabContent`/`systemsView` | `5` select · — | spec 053 | — |
 | provider table row | up · down · contended | `Status.LLM.Providers[i]` | `llmProviderLines` | — | spec 024 | — |
 | provider health continuation line | absent · shown | `ProviderStatus.Condition`/`ConditionDetail`/`ConditionRemedy` | `llmProviderLines` | — | spec 034 | — |
 | `(unattributed)` spend row | absent · shown | `Status.LLM.Spent − Σ(provider.SpentUSD)` | `llmProviderLines` | — | spec 024 | — |
-| spend/budget wallet line | under budget · exhausted | `Status.LLM.Spent`/`.Budget` | `metatronView` (spend line) | — | spec 024 | — |
+| spend/budget wallet line | under budget · exhausted | `Status.LLM.Spent`/`.Budget` | `systemsContentBody` (spend line) | — | spec 024 | — |
+| no-LLM absence notice | absent (LLM configured) · shown | `Status.LLM == nil` | `systemsContentBody` | — | spec 053 | — |
 | horizon header | absent (no LLM) · shown | `Status.Horizon` | `horizonLines` | — | spec 037 | — |
 | horizon class row | thinking · suppressed | `ipc.HorizonClass` | `horizonRow` | — | spec 037 | — |
 | horizon remedy detail | calibrated · uncalibrated | `HorizonClass.Calibrated` | `horizonRemedy` | — | spec 035 | — |
 | horizon skipped-count | absent · N>0 | `HorizonClass.SuppressedCount` | `horizonRow` | — | spec 037 US2 | — |
 
-**Parity rollout**: this page is display-only end to end — no actionable
-control exists on it today (no tab key yet), so no parity gap to track.
+**Parity rollout**: every control above has a key (`5`) but no mouse
+target — tracked here rather than omitted, same as every other pre-decision-8
+dock control (`panels/dock.md`).

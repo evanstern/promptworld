@@ -2,7 +2,7 @@
 title: Page — solo views + narrow fallback
 class: page
 status: shipped
-verified_against: c8906da39be3a5b861c2272af37db0a83dcded7a
+verified_against: cb89a4c7811962243ac907e0aeed43619b4d4f2d
 sources:
   - internal/tui/views.go
   - internal/tui/tui.go
@@ -22,7 +22,7 @@ always-visible region of the home composite, so `1` has one job: return home
 (see patterns/keymap.md: "on home: map is already primary").
 
 ```
-state machine (per key k ∈ {2,3,4}):
+state machine (per key k ∈ {2,3,4,5}):
   home, tab≠k   --k-->  home, tab=k
   home, tab=k   --k-->  solo(k)
   solo(k)       --k-->  home, tab=k          (same key toggles back)
@@ -39,14 +39,16 @@ while solo'd switches which tab is zoomed rather than silently returning home
 so tab-switching keeps working at every width, and only the same key or
 `1`/`esc` drops back to the composite.
 
-**New tabs this feature specifies**: the state machine and "same component,
-two widths" rule extend to any future dock tab with no change here —
-[panels/systems.md](../panels/systems.md) (Wave 2–3) and
-[panels/exercise.md](../panels/exercise.md) (Wave 4) both reuse this exact
-seam once they exist as selectable tabs (specified, `unbuilt` today).
-[pages/guardian-console.md](guardian-console.md) (Wave 3) is **not** reached
-through this mechanism — it is a full-height page of its own, not a dock
-tab, with its own `G` key navigation, specified on its own page.
+**Extends to every dock tab with no change here**: the state machine and
+"same component, two widths" rule now cover all four dock tabs —
+[panels/systems.md](../panels/systems.md) (spec 053, key `5`, built) reuses
+this exact seam, proving the "adding a future tab = no new layout" claim
+([panels/dock.md](../panels/dock.md)) a second time; a future
+[panels/exercise.md](../panels/exercise.md) (Wave 4) will reuse it a third.
+[pages/guardian-console.md](guardian-console.md) (spec 053, built) is
+**not** reached through this mechanism — it is a full-height page of its
+own, not a dock tab, with its own `G` key navigation, specified on its own
+page.
 
 ### Mockup — solo chronicle (`2` `2`)
 
@@ -86,7 +88,7 @@ this mockup.)
 - Solo renders the **same component** as the dock tab, just wider — one
   implementation, two widths ([../panels/chronicle.md](../panels/chronicle.md),
   [../panels/guardian.md](../panels/guardian.md),
-  [../panels/systems.md](../panels/systems.md) once built,
+  [../panels/systems.md](../panels/systems.md),
   [../panels/villagers.md](../panels/villagers.md)). No solo-only features.
 - The minibuffer and footer persist in every solo view; the map's live state
   keeps updating underneath and is intact on return.
@@ -97,17 +99,18 @@ this mockup.)
 
 Below the widescreen breakpoint ([../patterns/layout.md](../patterns/layout.md)),
 the app renders **today's single-pane UI unchanged**: header + tab bar + one
-active pane + footer, keys `1–4` swap panes exactly as the current
-`internal/tui` does.
+active pane + footer, keys `1–5` swap panes exactly as the current
+`internal/tui` does (`5` selects the systems pane, spec 053, alongside `2`/
+`3`/`4`).
 
 ```
  promptworld · day 4 · 08:12 · 1×
- [ map ] chronicle  guardian  villagers
+ [ map ] chronicle  guardian  villagers  systems
  ┌───────────────────────────────────┐
  │ ~ ~ " ♠ ♠ A ♠ " . . ⌂ . B . .     │
  │ ~ . . ᴥ . " . . . S . . " " .     │
  └───────────────────────────────────┘
-  1-4 panes · space pause · q quit
+  1-5 panes · G console · space pause · q quit
 ```
 
 - The two focus-contract fixes still apply in fallback mode: the focus
@@ -129,7 +132,7 @@ active pane + footer, keys `1–4` swap panes exactly as the current
 | solo zoom (widescreen) | home(tab) · solo(tab) | `Model.solo`, `Model.dockTab` | `selectTab`, `soloPanelView` | same key twice · — | TASK-34 | — |
 | solo → home | solo(k) · home | `Model.solo` | `selectTab` | `1`/`esc` · — | TASK-34 | — |
 | solo tab switch | solo(k) · solo(k2) | `Model.dockTab` | `selectTab` | different tab key · — | TASK-34 | — |
-| narrow pane switch | map · chronicle · guardian · villagers | `Model.active` | `narrowView`, `tabsView` | `1`/`2`/`3`/`4` · — | TASK-34 | — |
+| narrow pane switch | map · chronicle · guardian · villagers · systems | `Model.active` | `narrowView`, `tabsView` | `1`/`2`/`3`/`4`/`5` · — | TASK-34 (systems: spec 053) | — |
 
 **Parity rollout**: every control above has a key but no mouse target today;
 tracked here rather than omitted (decision 8, formal doctrine in

@@ -2,7 +2,7 @@
 title: Overlay — help (`?`)
 class: overlay
 status: shipped
-verified_against: c8906da39be3a5b861c2272af37db0a83dcded7a
+verified_against: cb89a4c7811962243ac907e0aeed43619b4d4f2d
 sources:
   - internal/tui/help.go
   - internal/tui/tui.go
@@ -106,9 +106,11 @@ binding to exactly one tier (SC-003/FR-003).
   inventory (this feature added the wall/path/quarried/pile/grave rows to
   both the map page and, by construction, this shared table).
 - **Dock tabs** (`dockTabs`) — key/name/purpose for each dock tab, read off
-  `dockTabKey`/`paneNames` (never a second, hand-maintained list) — currently
-  chronicle/`{{skin.guardian.tab_label}}`/villagers; a future tab (systems,
-  exercise) is a new entry here with no structural change.
+  `dockTabKey`/`paneNames` (never a second, hand-maintained list) — now four:
+  chronicle/`{{skin.guardian.tab_label}}`/villagers/systems (spec 053 added
+  the fourth, proving the "a future tab is a new entry here with no
+  structural change" claim); a future tab (exercise, Wave 4) is a fifth with
+  the same zero-structural-change property.
 
 ### Section 3 — lessons (pull reference)
 
