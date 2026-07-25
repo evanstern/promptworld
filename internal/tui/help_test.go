@@ -246,13 +246,13 @@ var realModeKeys = map[helpModeKey][]string{
 	// "G" (spec 053) opens the guardian console; "5" selects the new
 	// systems dock tab.
 	helpModeGlobal: {
-		"q", "1", "2", "3", "4", "5", "G", "tab", "shift+tab", "m", "enter", "esc",
+		"q", "1", "2", "3", "4", "5", "6", "G", "tab", "shift+tab", "m", "enter", "esc",
 		"a", "t", "r", "up", "down", "left", "right", "c", " ", "[", "]",
 	},
 	// Same handler as global — solo/narrow drives it identically; only the
 	// basic/advanced split differs (R1/data-model.md).
 	helpModeSolo: {
-		"q", "1", "2", "3", "4", "5", "G", "tab", "shift+tab", "m", "enter", "esc",
+		"q", "1", "2", "3", "4", "5", "6", "G", "tab", "shift+tab", "m", "enter", "esc",
 		"a", "t", "r", "up", "down", "left", "right", "c", " ", "[", "]",
 	},
 	// handleMinibufferKey (tui.go) switches on msg.Type; represented here
@@ -270,7 +270,7 @@ var realModeKeys = map[helpModeKey][]string{
 	// "5" (tab-select) is unclaimed here, so it falls through to global.
 	helpModeInspect: {
 		"j", "k", "g", "G", "J", "K", "enter",
-		"q", "1", "2", "3", "4", "5", "tab", "shift+tab", "m", "esc",
+		"q", "1", "2", "3", "4", "5", "6", "tab", "shift+tab", "m", "esc",
 		"a", "t", "r", "up", "down", "left", "right", "c", " ", "[", "]",
 	},
 	// handleVillagersKey, roster state: j/k/g/G/enter always handled=true
@@ -280,14 +280,14 @@ var realModeKeys = map[helpModeKey][]string{
 	// binding (see the inspect-mode comment above); "5" falls through.
 	helpModeVillagersRoster: {
 		"j", "k", "g", "G", "enter",
-		"q", "1", "2", "3", "4", "5", "tab", "shift+tab", "m", "esc",
+		"q", "1", "2", "3", "4", "5", "6", "tab", "shift+tab", "m", "esc",
 		"a", "t", "r", "up", "down", "left", "right", "c", " ", "[", "]",
 	},
 	// handleVillagersKey, detail state: esc/d also become handled=true here
 	// (shadowing global's esc), alongside the always-true j/k/g/G/enter.
 	helpModeVillagersDetail: {
 		"j", "k", "g", "G", "enter", "esc", "d",
-		"q", "1", "2", "3", "4", "5", "tab", "shift+tab", "m",
+		"q", "1", "2", "3", "4", "5", "6", "tab", "shift+tab", "m",
 		"a", "t", "r", "up", "down", "left", "right", "c", " ", "[", "]",
 	},
 }
