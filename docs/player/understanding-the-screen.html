@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@723c464c35aac4936f2793d566a53c801516ae60">
+<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@3a04bf071ed3a3e994a52d26d9eed42e92e3fccd">
 <title>What do all those things on screen mean? — promptworld player docs</title>
 <style>
   :root {
@@ -215,6 +215,20 @@ beliefs, memories); from there, one more key opens a look at their recent decisi
 what they were reacting to, what they tried, and how it turned out. The
 <a href="the-ai-behind-the-village.html">AI behind the village page</a> covers what's
 actually behind those decisions.</p>
+
+<h2>The guardian strip: charge status, always in view</h2>
+<p>Above the box where you type to Metatron sits one plain line with no border,
+visible no matter which of the three tabs is open: your charge bank as a row of
+lightning-bolt glyphs plus a <code>(used/cap)</code> count, when your next charge
+arrives (<code>next +1 @ &lt;time&gt;</code>) if the bank isn't already full, and how
+many standing orders you currently have running. Anything that doesn't apply yet — no
+snapshot loaded yet, or a bank that's already full — simply doesn't show, rather than
+displaying a misleading zero.</p>
+<p>If your terminal window gets too short to fit everything, this strip is the very
+last thing to give way: instead of disappearing, its content folds into the dim
+placeholder text inside the empty message box instead. In a narrow terminal (below the
+map+dock split), it still appears in the same spot — right above the message box on
+Metatron's own tab.</p>
 
 <p>For the exact key for every one of these actions, see the
 <a href="keys-reference.html">keys reference card</a> — this page is about what
