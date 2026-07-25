@@ -29,6 +29,7 @@ that note (re-pin with `/grounding-wiki:wiki-update`).
 - [[worldmap-generation]] — seeded terrain (water/woods/forage/rock/dens); regenerated, never stored
 - [[event-log]] — append-only SQLite events table; seq contiguity; source of truth
 - [[snapshots]] — hash-verified recovery accelerator; cadence and fallback chain
+- [[world-tuning]] — spec-048 world tuning manifest (tuning.json): five promoted doctrine dials, clamp-validated at boot, event-logged as sim.tuning_applied, replay file-independent
 
 ## Interface
 
