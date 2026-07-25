@@ -20,6 +20,12 @@ import (
 // set width explicitly (>= widescreenBreakpoint) where they need it.
 func testModel(t *testing.T) Model {
 	t.Helper()
+	// Isolate the per-user lessons-seen record (spec 055, TASK-117): New()
+	// now loads worlds.LoadLessonsSeen() at construction, which resolves
+	// the REAL developer machine's ~/.promptworld absent this override —
+	// every test going through New() must not read or write outside its
+	// own t.TempDir() (the internal/worlds setHome(t) precedent).
+	t.Setenv("PROMPTWORLD_HOME", t.TempDir()+"/home")
 	w, err := world.Create(t.TempDir()+"/w", "test", 42)
 	if err != nil {
 		t.Fatal(err)

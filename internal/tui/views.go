@@ -98,6 +98,17 @@ func (m Model) narrowView() string {
 	var b strings.Builder
 	b.WriteString(m.headerView() + "\n")
 	b.WriteString(m.tabsView() + "\n\n")
+	if m.wantsLessonRow() {
+		// Lesson row narrow carry (patterns/layout.md ruling b, spec 055):
+		// carried with identical stage defaults. Unlike the guardian strip
+		// (confined to the metatron pane, the only place narrow has a
+		// minibuffer to sit above), the lesson row is chrome independent of
+		// any one pane, so it renders here — visible above whichever pane
+		// is active, regardless of which one that is. No fold-under-
+		// height-pressure in narrow this slice (the guardian-strip
+		// precedent: narrow has no row-budget arithmetic of its own yet).
+		b.WriteString(m.lessonRowView(m.width) + "\n\n")
+	}
 	switch {
 	case m.helpOpen:
 		// Body replacement (R2), same precedent as the pane switch below —
@@ -168,7 +179,79 @@ func (m Model) headerView() string {
 	if suppressed := suppressedHorizonClasses(m.status.Horizon); len(suppressed) > 0 {
 		line += " " + stylePaused.Render(fmt.Sprintf("[suppressed: %s]", strings.Join(suppressed, ", ")))
 	}
+	// Lesson row badge (panels/lesson-row.md, spec 055, patterns/stage-
+	// defaults.md): the row's folded/stage-off form — a quiet, permanent
+	// affordance ("there's a lessons system, press ? for it"), independent
+	// of whether anything is currently active (data-model.md: "badge ...
+	// stage 3+/pre-ladder default" names no active-state qualifier, unlike
+	// the "none" state below it, which is explicitly "nothing active").
+	if m.lessonBadgeVisible() {
+		line += " " + styleDim.Render("[lesson]")
+	}
 	return styleHeader.Render(line)
+}
+
+// currentStage reads the world's curriculum-ladder stage id directly off
+// the polled status (ipc/protocol.go WorldStatus.Stage) — "" for a
+// pre-status client or a pre-ladder/ungated world, both of which the
+// stage-defaults table treats identically (research.md R6).
+func (m Model) currentStage() string {
+	if m.status == nil {
+		return ""
+	}
+	return m.status.World.Stage
+}
+
+// wantsLessonRow reports whether the lesson row would like its 2-row budget
+// THIS frame: the stage default is on AND a lesson is actually active
+// (data-model.md "none" vs "showing" — stage-eligible with nothing to show
+// is still 0 rows, not a blank block). Feeds computeRows (layout.go); its
+// own eventual fold outcome is read back via rows.Lesson, not this value
+// directly.
+func (m Model) wantsLessonRow() bool {
+	return lessonRowDefault(m.currentStage()) && m.lessons.ActiveEntry() != nil
+}
+
+// lessonBadgeVisible reports whether the header's quiet `[lesson]` badge
+// should show: unconditionally at stage 3+/pre-ladder (the row's default
+// form there), or — at stage 1-2 with a lesson actually active — only once
+// height pressure has folded the row (patterns/layout.md ruling a step 3).
+// Narrow never folds under height pressure this slice (no computeRows/fold
+// arithmetic of its own yet, the guardian-strip precedent), so in narrow
+// this resolves to exactly the stage default: carried (no badge) at stage
+// 1-2, or the unconditional stage-3+/pre-ladder badge.
+func (m Model) lessonBadgeVisible() bool {
+	stage := m.currentStage()
+	if !lessonRowDefault(stage) {
+		return true
+	}
+	if m.lessons.ActiveEntry() == nil {
+		return false
+	}
+	if !isWidescreen(m.width) {
+		return false
+	}
+	return computeRows(m.height, true).Lesson == 0
+}
+
+// lessonRowView renders the active lesson's two borderless lines
+// (panels/lesson-row.md mockup): line 1 the lesson's plain-language
+// sentence, line 2 the UI-pointer phrase plus the pull-path suffix every
+// lesson string carries (lessonPullSuffix, lessons.go) — appended here, the
+// suffix's one rendering site. Every string passes through
+// lessonSkinResolve (FR-008/SC-005: no raw "{{" literal may ever reach the
+// screen). Blank when nothing is active — the caller (widescreenView/
+// narrowView) already gates on rows.Lesson/wantsLessonRow, so this is only
+// ever called when there IS an active lesson, but it degrades to "" rather
+// than panicking regardless (the guardian-strip pre-status precedent).
+func (m Model) lessonRowView(width int) string {
+	entry := m.lessons.ActiveEntry()
+	if entry == nil {
+		return ""
+	}
+	line1 := clipLine(lessonSkinResolve(entry.Text), width)
+	line2 := clipLine(lessonSkinResolve(entry.Pointer)+"  "+lessonPullSuffix, width)
+	return line1 + "\n" + line2
 }
 
 // suppressedHorizonClasses returns the names of the horizon entries the router
@@ -283,7 +366,7 @@ func (m Model) footerView() string {
 
 func (m Model) widescreenView() string {
 	cols := computeColumns(m.width)
-	rows := computeRows(m.height)
+	rows := computeRows(m.height, m.wantsLessonRow())
 
 	var body string
 	switch {
@@ -303,6 +386,13 @@ func (m Model) widescreenView() string {
 	var b strings.Builder
 	b.WriteString(m.headerView() + "\n")
 	b.WriteString(body + "\n")
+	if rows.Lesson > 0 {
+		// Lesson row (panels/lesson-row.md, spec 055): two borderless lines
+		// directly above the guardian strip — rows.Body already accounts
+		// for whether this row is visible (computeRows), so the composite's
+		// total height stays exact whether folded or not (B1).
+		b.WriteString(m.lessonRowView(m.width) + "\n")
+	}
 	if rows.Strip > 0 {
 		// Guardian strip (panels/guardian-strip.md, spec 050): one
 		// borderless row directly above the minibuffer, wired to the row
@@ -1988,7 +2078,7 @@ func (m Model) minibufferView(width int) string {
 		// the narrow fallback's only minibufferView call site (inside
 		// metatronView) always carries the strip as its own row instead
 		// (layout.md ruling b), so this branch never fires there.
-		if isWidescreen(m.width) && computeRows(m.height).Strip == 0 {
+		if isWidescreen(m.width) && computeRows(m.height, m.wantsLessonRow()).Strip == 0 {
 			if prefix := m.guardianBudgetPrefix(); prefix != "" {
 				placeholder = prefix + " · " + placeholder
 			}
