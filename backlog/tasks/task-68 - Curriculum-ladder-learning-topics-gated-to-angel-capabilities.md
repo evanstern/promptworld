@@ -4,7 +4,7 @@ title: 'Curriculum ladder: learning topics gated to angel capabilities'
 status: In Progress
 assignee: []
 created_date: '2026-07-23 03:28'
-updated_date: '2026-07-25 07:35'
+updated_date: '2026-07-25 08:26'
 labels:
   - review-2026-07-22
   - teaching-game
@@ -65,6 +65,10 @@ Implementation dispatched 2026-07-25: T001-T007 (Setup+Foundational+US2 gating s
 spec-bridge sync: Setup: 1/1 · Foundational (blocking prerequisites): 3/3 · User Story 2 — The world grants what the stage teaches (P1) 🎯 co-MVP: 3/3 · User Story 1 — Choosing a stage is choosing an identity (P1) 🎯 co-MVP: 0/4 · User Story 3 — Earning the next stage, told in-game (P2): 0/4 · User Story 4 — Two exercises exist and teach (P2): 0/1 · User Story 5 — The stage has a floor and a guide (P3): 0/3 · Polish & Cross-Cutting: 0/3
 
 Gating slice ratified 2026-07-25: (a) skills bind at stage-3 (implementer correctly followed spec over a dispatch-prompt error); (b) RESOLVED from TASK-119 artifact ("first-night teaches visions+orders"): stage-1 ceiling GAINS monitor_and_act + cancel_order — orders are the watch primitive first-night teaches; folded into next slice with contract amendment on the branch; (c) clock tools stage-3+ ratified (player keeps direct CLI/TUI clock control at stage-1/2). Remaining slices T008-T022 dispatched to Sonnet (routine: CLI surfaces, unlocks record, catalog wiring, exercises content, tutor preset, docs pages).
+
+T008-T022 complete on branch (10 commits): stages/new CLI, unlock chain + ~/.promptworld/unlocks.json, curriculum catalog wiring, both exercises, TutorCharter (approved by planning tier; guardian-voiced, teaches the four stage-1 verbs), 4 quickstart pages (player-docs gate 13/13). Escalation honored: 044-merge reconciliation (charter_observed Custom-vs-Default polarity, 3 spots per branch WALKTHROUGH.md) dispatched to Opus 4.8 — rubric: capability-gating-adjacent cross-branch integration.
+
+Client review 2026-07-25: TutorCharter text APPROVED as drafted (guardian-voiced, four stage-1 verbs, stage-2 tease) — no wording changes requested. Ships in the TASK-68 PR as persona.TutorCharter.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
