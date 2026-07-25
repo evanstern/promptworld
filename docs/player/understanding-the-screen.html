@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@033493973235cb8e392302b879d9dede77f44546">
+<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@e137b82bb699eb323eb26c6a69c3dc83ca474b27">
 <title>What do all those things on screen mean? — promptworld player docs</title>
 <style>
   :root {
@@ -84,9 +84,9 @@ same regions this page covers — the header and every badge it can show, the fu
 glyph table, and the four tabs. Press <code>tab</code> inside it to move between
 sections, and <code>?</code> or <code>esc</code> to close it and land exactly where
 you were — it never pauses or changes anything in the world. It works identically in
-a village with no AI configured, so help is always there even when the angel isn't.
-The one place <code>?</code> doesn't open it is while you're typing a message to
-Metatron (it types a question mark, as you'd want).</p>
+a village with no AI configured, so help is always there even when the guardian
+isn't. The one place <code>?</code> doesn't open it is while you're typing a
+message to the guardian (it types a question mark, as you'd want).</p>
 
 <h2>The header: the top line</h2>
 <p>The very top of the screen always shows the world's current speed. A few things
@@ -204,14 +204,15 @@ four tabs; the same key again makes that tab fill the whole screen, and again (o
 <h3>Chronicle tab</h3>
 <p>The story feed described above.</p>
 
-<h3>Metatron tab</h3>
-<p>Your conversation transcript with the angel, plus at a glance: your charge bank,
-your world's stage if it's on the learning ladder (at the first stage this also
-notes that the angel's charter is locked to its built-in preset), and any standing
-orders you've placed. This tab is purely the conversation and orders now — the
-technical dashboards that used to crowd it live on their own tab, next. See
-<a href="playing-via-metatron.html">playing via Metatron</a> for what all of that
-actually means.</p>
+<h3>Guardian tab</h3>
+<p>Your conversation transcript with the guardian (the village's watcher,
+previously called Metatron), plus at a glance: your charge bank, your world's
+stage if it's on the learning ladder (at the first stage this also notes that the
+guardian's charter is locked to its built-in preset), and any standing orders
+you've placed. This tab is purely the conversation and orders now — the technical
+dashboards that used to crowd it live on their own tab, next. See
+<a href="playing-via-metatron.html">playing via the guardian</a> for what all of
+that actually means.</p>
 
 <h3>Villagers tab</h3>
 <p>A roster list — one line per villager: a selection cursor, their status, current
@@ -223,7 +224,7 @@ what they were reacting to, what they tried, and how it turned out. The
 actually behind those decisions.</p>
 
 <h3>Systems tab</h3>
-<p>The technical dashboards, moved here out of the Metatron tab's way: a small table
+<p>The technical dashboards, moved here out of the guardian tab's way: a small table
 of every configured AI provider (model, whether it's currently up, how busy it is,
 and what it's cost you so far this month), followed by a "cognition horizon" block —
 one line per kind of villager thinking (planning, conversations, meetings) telling
@@ -236,8 +237,8 @@ of this actually means.</p>
 <h2>The guardian console: the conversation, full screen</h2>
 <p>Press <code>G</code> (capital) from the split view, a solo tab, or the narrow
 layout to open the guardian console — a dedicated full-screen page for your
-conversation with the angel, laid out as a readable document rather than the
-Metatron tab's compact scroll: each turn, yours and the angel's alike, gets its own
+conversation with the guardian, laid out as a readable document rather than the
+guardian tab's compact scroll: each turn, yours and the guardian's alike, gets its own
 labeled block. Beside the conversation sits a charter/skills panel showing exactly
 what's binding right now — whether your charter is the default, your own writing, or
 locked to a stage preset, and whether any skill files are bound or still locked.
@@ -247,15 +248,15 @@ in-game text editor, just a handoff to your own — and the moment you save and 
 the console confirms "charter changed — next turn binds it." <code>J</code> and
 <code>K</code> scroll back through earlier turns. <code>G</code>, <code>1</code>, or
 <code>esc</code> all return you to whatever view you had open before. See
-<a href="playing-via-metatron.html">playing via Metatron</a> for what the charter
+<a href="playing-via-metatron.html">playing via the guardian</a> for what the charter
 actually does, and the <a href="keys-reference.html">keys reference card</a> for
 every key the console responds to.</p>
 
 <h2>The lesson bar: the game teaching itself, once per lesson</h2>
 <p>In a young world (learning stages 1 and 2), the first time something new happens —
 the first time a thought is skipped for speed, the first gru attack, the first time
-one of your standing orders expires, the first death, the first time Metatron refuses
-an action — a two-line tip appears just above the guardian strip: one sentence saying
+one of your standing orders expires, the first death, the first time the guardian
+refuses an action — a two-line tip appears just above the guardian strip: one sentence saying
 what just happened, and an arrow line pointing at the key or tab that shows you more,
 always ending <code>(? for more · x dismiss)</code>.</p>
 <p>Three things keep it polite: only one tip shows at a time, each lesson appears
@@ -267,7 +268,7 @@ your way entirely — just the <code>[lesson]</code> header badge above, with ev
 in the overlay.</p>
 
 <h2>The guardian strip: charge status, always in view</h2>
-<p>Above the box where you type to Metatron sits one plain line with no border,
+<p>Above the box where you type to the guardian sits one plain line with no border,
 visible no matter which of the three tabs is open: your charge bank as a row of
 lightning-bolt glyphs plus a <code>(used/cap)</code> count, when your next charge
 arrives (<code>next +1 @ &lt;time&gt;</code>) if the bank isn't already full, and how
@@ -278,7 +279,7 @@ displaying a misleading zero.</p>
 last thing to give way: instead of disappearing, its content folds into the dim
 placeholder text inside the empty message box instead. In a narrow terminal (below the
 map+dock split), it still appears in the same spot — right above the message box on
-Metatron's own tab.</p>
+the guardian's own tab.</p>
 
 <p>For the exact key for every one of these actions, see the
 <a href="keys-reference.html">keys reference card</a> — this page is about what

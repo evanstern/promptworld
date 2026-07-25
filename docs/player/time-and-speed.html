@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/wiki/game-clock.md@1e71b77f104dda982aa407b28ad2c994219e90d0">
-<meta name="promptworld-docs:source" content="docs/wiki/sim-loop.md@dee5f4bf60093cb5d775e10c8ced41c7e5b385ec">
-<meta name="promptworld-docs:source" content="docs/wiki/cli-promptworld.md@824932c630a9216dc761f78baa903cd07e5b9493">
+<meta name="promptworld-docs:source" content="docs/wiki/game-clock.md@e137b82bb699eb323eb26c6a69c3dc83ca474b27">
+<meta name="promptworld-docs:source" content="docs/wiki/sim-loop.md@0b42d204718819d773be44c40ed26d42aba055f8">
+<meta name="promptworld-docs:source" content="docs/wiki/cli-promptworld.md@e137b82bb699eb323eb26c6a69c3dc83ca474b27">
 <title>Time and speed — promptworld player docs</title>
 <style>
   :root {
@@ -110,7 +110,7 @@ conservatively. A calibrated world, or a speed change that doesn't pause anythin
 never shows this warning.</p>
 <p>That warning is only the one-time heads-up, though. Once you're actually running
 at a speed that's suppressing some thinking, <code>promptworld status</code> and
-the full-screen client (its header badge and its Metatron pane) keep it visible
+the full-screen client (its header badge and its guardian pane) keep it visible
 live, kind by kind — planning, conversations, meetings — telling you which ones are
 currently being skipped and which are keeping up, plus a running count of how many
 thoughts each kind has lost to speed since the daemon started. Drop back to a speed
@@ -152,11 +152,11 @@ promptworld resume demo</code></pre>
 pause, the world truly freezes: any villager mid-thought at that instant gets to
 finish thinking and land its decision at the exact frozen moment, as if no time had
 passed for it — nothing new starts until you resume.</p>
-<p>You can also just <a href="playing-via-metatron.html">ask Metatron</a> to pause,
-resume, or change speed, in plain conversation — the same controls as the command
-line and the full-screen client, free of charge. Metatron only touches the clock
-when you ask directly, or when a standing order you placed specifically authorizes
-it.</p>
+<p>You can also just <a href="playing-via-metatron.html">ask the guardian</a> to
+pause, resume, or change speed, in plain conversation — the same controls as the
+command line and the full-screen client, free of charge. The guardian only touches
+the clock when you ask directly, or when a standing order you placed specifically
+authorizes it.</p>
 <p>One world refuses all of these controls: a run that has <strong>ended</strong>
 (your last villager died). An ended world won't pause, resume, or change speed — it
 answers with a plain "run has ended" refusal, and its clock line (in

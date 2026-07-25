@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/wiki/metatron.md@3a04bf071ed3a3e994a52d26d9eed42e92e3fccd">
-<meta name="promptworld-docs:source" content="docs/wiki/bundle-tools.md@1e71b77f104dda982aa407b28ad2c994219e90d0">
-<meta name="promptworld-docs:source" content="docs/wiki/metatron-miracles.md@723c464c35aac4936f2793d566a53c801516ae60">
-<meta name="promptworld-docs:source" content="docs/wiki/metatron-orders.md@3a04bf071ed3a3e994a52d26d9eed42e92e3fccd">
-<meta name="promptworld-docs:source" content="docs/wiki/curriculum-ladder.md@cea7b8f83fa07f9fcfefe4dd861aa05a78448f1b">
-<meta name="promptworld-docs:source" content="docs/wiki/governance.md@381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9">
-<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@033493973235cb8e392302b879d9dede77f44546">
+<meta name="promptworld-docs:source" content="docs/wiki/guardian.md@e137b82bb699eb323eb26c6a69c3dc83ca474b27">
+<meta name="promptworld-docs:source" content="docs/wiki/bundle-tools.md@e137b82bb699eb323eb26c6a69c3dc83ca474b27">
+<meta name="promptworld-docs:source" content="docs/wiki/guardian-miracles.md@e718294e2a9db4053323a4a9e42746ca53fb149c">
+<meta name="promptworld-docs:source" content="docs/wiki/guardian-orders.md@e718294e2a9db4053323a4a9e42746ca53fb149c">
+<meta name="promptworld-docs:source" content="docs/wiki/curriculum-ladder.md@e137b82bb699eb323eb26c6a69c3dc83ca474b27">
+<meta name="promptworld-docs:source" content="docs/wiki/governance.md@e718294e2a9db4053323a4a9e42746ca53fb149c">
+<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@e137b82bb699eb323eb26c6a69c3dc83ca474b27">
 <title>Playing via Metatron — promptworld player docs</title>
 <style>
   :root {
@@ -72,15 +72,20 @@
 <body>
 <h1>Playing via Metatron</h1>
 <p class="lede">You never touch a villager directly. Everything you do to the village
-goes through one character: Metatron, the angel who watches the world and mediates
-your influence.</p>
+goes through one character: your <strong>guardian</strong> — the watcher who observes
+the world and mediates your influence.</p>
 
-<h2>Metatron is your only verb</h2>
-<p>Your words as a player have exactly one destination: Metatron's own prompt.
-Villagers never see what you type — they can only ever receive whatever Metatron
+<p>You may know this character by its original name, Metatron — the game's own default
+name for the role is now simply <strong>the guardian</strong> (a world can even swap in
+a different name and voice entirely; more on that below). Nothing about how it works
+changed with the name.</p>
+
+<h2>The guardian is your only verb</h2>
+<p>Your words as a player have exactly one destination: the guardian's own prompt.
+Villagers never see what you type — they can only ever receive whatever the guardian
 decides to pass along, and only in the shaped forms described below. This is
-deliberate: Metatron is a gatekeeper, not a megaphone. You talk to it (in the console,
-or the Metatron pane of the full-screen client — see the
+deliberate: the guardian is a gatekeeper, not a megaphone. You talk to it (in the
+console, or the guardian pane of the full-screen client — see the
 <a href="understanding-the-screen.html">screen-orientation page</a> for what that pane
 shows and the <a href="keys-reference.html">keys reference card</a> for how to focus
 it), it watches the village, and it decides what — if anything — to do about what you
@@ -88,27 +93,28 @@ asked.</p>
 <p>For an extended back-and-forth, press <code>G</code> (capital) at any moment to
 open the <strong>guardian console</strong> — a dedicated, full-screen page for that
 same conversation, laid out as a readable document rather than the compact pane's
-scroll: your words and the angel's replies each get their own labeled block, easier
+scroll: your words and the guardian's replies each get their own labeled block, easier
 to read back through once a conversation runs long. <code>G</code>, <code>1</code>,
 or <code>esc</code> return you to whatever view you had open before; see the
 <a href="keys-reference.html">keys reference card</a> for the console's other keys.</p>
 
-<h2>Shaping your angel: the charter</h2>
-<p>The real meta-game is prompt-engineering Metatron itself. At the root of your
+<h2>Shaping your guardian: the charter</h2>
+<p>The real meta-game is prompt-engineering the guardian itself. At the root of your
 world's save directory sits <code>charter.md</code> — a plain text file, seeded when
 the world is created and never overwritten by the game, that you can edit anytime.
-It's read fresh every single turn, so an edit you make takes effect on Metatron's
-very next reply. Think of it like giving your angel a personality and standing
+It's read fresh every single turn, so an edit you make takes effect on the guardian's
+very next reply. Think of it like giving your guardian a personality and standing
 instructions: sarcastic, protective, meddling, hands-off — whatever tone and
-priorities you write in there is who Metatron becomes.</p>
+priorities you write in there is who the guardian becomes.</p>
 <p>The game also quietly keeps a record of which version of your charter was
 actually in force, turn by turn — so if a villager dies, the
 <a href="reading-the-story.html">morgue's epitaph</a> can state honestly what your
 standing instructions were at that moment.</p>
 <p>You can also add narrower instruction files in a <code>skills/</code> folder next
-to the charter, and control exactly which abilities Metatron is allowed to use — visions,
-omens, standing orders, miracles, and clock control alike — via a <code>capabilities.json</code>
-file. A world with no such file grants the full set of abilities by default.</p>
+to the charter, and control exactly which abilities the guardian is allowed to use —
+visions, omens, standing orders, workings, and clock control alike — via a
+<code>capabilities.json</code> file. A world with no such file grants the full set of
+abilities by default.</p>
 <p>The guardian console (press <code>G</code>) puts a live charter/skills panel right
 beside the conversation, showing at a glance whether your charter is the default, your
 own writing, or locked to a stage preset, and whether any skill files are bound or still
@@ -119,40 +125,41 @@ console confirms "charter changed — next turn binds it," so you know exactly w
 edit takes effect.</p>
 <p>One caveat if your world sits on the learning ladder (see
 <a href="getting-started.html">getting started</a>): at the first stage, The Voice,
-your angel's instruction file is fixed — a built-in preset charter guides it no
-matter what you write, and editing unlocks at The Written Word. Metatron's tool
+your guardian's instruction file is fixed — a built-in preset charter guides it no
+matter what you write, and editing unlocks at The Written Word. The guardian's tool
 roster grows with your stage too, so at the early stages some of the abilities on
-this page (miracles, skill files, bundles) simply aren't on its menu yet.</p>
+this page (workings, skill files, bundles) simply aren't on its menu yet.</p>
 <p>Underneath anything you write, two rules always hold no matter what the charter
-says: Metatron will never invent an event it didn't actually observe, and it will
+says: the guardian will never invent an event it didn't actually observe, and it will
 never pass your literal words straight to a villager. Those two guardrails aren't
 editable — everything else about its voice and judgment is yours to shape. A related
-rule binds the abilities below: Metatron only acts when you ask it to, or when a
+rule binds the abilities below: outside of the one survival carve-out described near
+the bottom of this page, the guardian only acts when you ask it to, or when a
 standing order you placed authorizes it — never on its own initiative.</p>
 
-<h2>Giving your angel new tools: bundles</h2>
-<p>Beyond the charter, you can extend what Metatron can actually <em>do</em>. A
+<h2>Giving your guardian new tools: bundles</h2>
+<p>Beyond the charter, you can extend what the guardian can actually <em>do</em>. A
 <strong>bundle</strong> is a folder you drop into a <code>bundles/</code> directory
 inside your world's save directory — no rebuilding, no code changes to the game
 itself. Each tool inside a bundle is a small description file that names the tool,
 explains it, and says what it does in the world (move someone, hand over an item,
 whisper a memory), optionally with a short script for tools whose behavior should
 depend on the world — say, a light-conjuring tool that acts differently at night.
-Restart the world and the new tools simply appear in Metatron's repertoire,
+Restart the world and the new tools simply appear in the guardian's repertoire,
 priced in the same charge economy as everything else.</p>
 <p>A bundle can also carry a whole <em>persona</em>: a <code>SOUL.md</code> file whose
-text joins the charter in shaping who your angel is, and its own
+text joins the charter in shaping who your guardian is, and its own
 <code>capabilities.json</code> that can narrow (never expand) what the world already
 allows. Broken bundles never break your world — at startup each problem is reported
 plainly in the world's log, naming the file and what's wrong, and everything valid
 still loads. If a bundle tool shares a name with a built-in ability, the built-in
-wins. Everything bundles do passes through the same safety valve as Metatron's own
-miracles: only pre-approved kinds of world changes can ever land, and a tool that
+wins. Everything bundles do passes through the same safety valve as the guardian's
+own workings: only pre-approved kinds of world changes can ever land, and a tool that
 misbehaves changes nothing at all. The full authoring guide lives in
 <code>docs/bundles.md</code> in the project repository.</p>
 
 <h2>Reaching a villager's mind: visions and omens</h2>
-<p>When Metatron decides to plant something in a villager's mind — rather than
+<p>When the guardian decides to plant something in a villager's mind — rather than
 changing the world directly — it has two forms, spent from the same bank of
 "charges" described below:</p>
 
@@ -161,7 +168,7 @@ changing the world directly — it has two forms, spent from the same bank of
 day or night. It lands as a memory the villager will interpret in their own persona
 — a vision doesn't force a villager to do anything, it just gives them something to
 react to, like anyone would react to a strange or striking dream. A vision can also
-carry a place: tell Metatron to show a villager where something actually is —
+carry a place: tell the guardian to show a villager where something actually is —
 a fire, a shelter, a stand of trees, a chest — and, so long as that place genuinely
 exists somewhere in the world, the villager now knows exactly where it is, the same
 as if they'd stumbled across it themselves. It's a way to hand a lost or
@@ -170,48 +177,67 @@ newly-arrived villager a landmark without walking them there yourself.</p>
 <h3>An omen — one villager, a named few, or everyone, but only after dark</h3>
 <p>An <strong>omen</strong> can reach one villager, a comma-separated handful of named
 villagers, or the whole village at once ("everyone") — but only at <strong>night</strong>.
-If you ask for an omen during the day, Metatron doesn't refuse and doesn't lose the
+If you ask for an omen during the day, the guardian doesn't refuse and doesn't lose the
 request: it quietly holds onto it and sends the very same omen automatically the
 moment night falls, to whoever is still alive by then. Either way, landing an omen
 costs exactly one charge, no matter how many villagers it reaches.</p>
 
 <h2>Standing orders: tell it once, and walk away</h2>
-<p>You can also give Metatron a standing instruction — "when Rowan next falls
-asleep, send her a comforting vision" — and simply walk away. The angel keeps
+<p>You can also give the guardian a standing instruction — "when Rowan next falls
+asleep, send her a comforting vision" — and simply walk away. The guardian keeps
 watching for that condition <strong>for free</strong>; it only spends a charge if and
 when the watched-for moment actually arrives and it acts on your behalf.</p>
 <ul>
 <li>Up to <strong>3</strong> of your own standing orders can be active at once.</li>
 <li>Each one expires on its own after a few game days if it never fires (you can
 choose a shorter or longer window when you place it).</li>
-<li>You can ask Metatron what orders currently stand, and cancel any of them,
+<li>You can ask the guardian what orders currently stand, and cancel any of them,
 any time.</li>
-<li>When an order fires, Metatron acts through all of its normal rules — the same
+<li>When an order fires, the guardian acts through all of its normal rules — the same
 charter, the same guardrails, the same charge economy as anything you ask for
 directly — and tells you what it did the next time you open the console, even if
 that's days later.</li>
-<li>If Metatron's charges (or its model budget) are exhausted right when an order
+<li>If the guardian's charges (or its model budget) are exhausted right when an order
 fires, it doesn't fake the act — it honestly tells you it couldn't follow through,
 rather than pretending something happened that didn't.</li>
 </ul>
 <p>A watch phrased loosely — "when Rowan seems heartbroken," rather than a plain
-named event — costs Metatron a small, cheap, rate-limited extra check each time
+named event — costs the guardian a small, cheap, rate-limited extra check each time
 something plausibly matches, just to confirm the fuzzy condition is really true
 before it acts on it. This never draws from your charge bank; only a landed vision,
-omen, or miracle does that.</p>
+omen, or working does that.</p>
+
+<h2>Watching over life and death, on its own</h2>
+<p>Separately from anything you set up yourself, every world is born with three
+standing watches the guardian keeps over the village's survival, for free, from the
+very first tick: one villager slipping toward death, one going hungry enough to
+starve, and one going cold enough to freeze. You never place these — they exist by
+the guardian's own nature, and you can't cancel them either. For these three perils
+alone, the guardian doesn't wait to be asked: it may send a vision or work one of its
+powers on its own initiative, right then, to try to save the villager in danger —
+spending a charge exactly as it would for anything you asked for directly. If its
+charge bank is empty when a life is on the line, it still wakes and tries — you'll
+see an honest account of a watch that woke to find itself unable to help, never a
+silent nothing.</p>
+<p>That's the one and only exception to "the guardian never acts on its own." Your
+world's clock and every <em>other</em> standing order remain entirely yours to
+command — the guardian will still never pause, resume, change speed, or act on a
+watch you didn't place, without you asking. Saving a life in the moment is the sole
+carve-out, and it doesn't reach any further than that.</p>
 
 <h2>Asking for pause, resume, or a speed change</h2>
-<p>You can also just ask Metatron in conversation to pause the world, start it back
+<p>You can also just ask the guardian in conversation to pause the world, start it back
 up (at a given speed, if you like), or change its speed — the same controls
 available from the command line or the full-screen client. This costs nothing, and
-Metatron will only ever touch the clock when you ask directly, or when a standing
+the guardian will only ever touch the clock when you ask directly, or when a standing
 order you placed specifically authorizes it — never on its own initiative.</p>
 
-<h2>Miracles — direct edits to the world</h2>
-<p>A <strong>miracle</strong> is a concrete, direct change to the world itself, of
-which there are exactly four kinds:</p>
+<h2>Workings — direct edits to the world</h2>
+<p>A <strong>working</strong> (what the game's own mechanics still call a "miracle"
+under the hood — you'll see that word if you ever poke at the raw event feed) is a
+concrete, direct change to the world itself, of which there are exactly four kinds:</p>
 <table>
-<tr><th>Miracle</th><th>What it does</th></tr>
+<tr><th>Working</th><th>What it does</th></tr>
 <tr><td>Snap time</td><td>Jump the world's clock forward to a specific time (forward
 only — you can't rewind)</td></tr>
 <tr><td>Give an item</td><td>Hand a chosen villager some quantity of an item</td></tr>
@@ -219,9 +245,9 @@ only — you can't rewind)</td></tr>
 a new spot — a moved villager also takes in their new surroundings on arrival,
 exactly as if they'd walked there, rather than landing blind</td></tr>
 <tr><td>Remove something</td><td>Delete a structure, a pile, or a patch of terrain —
-villagers themselves can never be removed by any miracle, ever</td></tr>
+villagers themselves can never be removed by any working, ever</td></tr>
 </table>
-<p>Miracles are memorable too — a time snap feels to every villager like time
+<p>Workings are memorable too — a time snap feels to every villager like time
 lurching forward in an instant; a moved villager feels like an unseen hand lifted them
 somewhere new; a given item just appears in the recipient's hands "as if set there by
 an unseen giver."</p>
@@ -229,17 +255,20 @@ an unseen giver."</p>
 <h2>The charge economy</h2>
 <p>You start with 1 charge, the bank caps at 3, and it regenerates by 1 every 6 game
 hours. A landed vision or omen costs 1 charge regardless of who it reaches; most
-miracles cost 1 charge too, with snapping time the priciest move at 2 charges. Run
-out, and Metatron will politely decline and explain why — that refusal costs
+workings cost 1 charge too, with snapping time the priciest move at 2 charges. Run
+out, and the guardian will politely decline and explain why — that refusal costs
 nothing, so you can always keep talking even with an empty bank. Placing a standing
-order, and Metatron simply watching for it, are both free; only the eventual landed
+order, and the guardian simply watching for it, are both free; only the eventual landed
 act spends a charge.</p>
 
-<h2>The village's own laws (not Metatron's business)</h2>
+<h2>The village's own laws (not the guardian's business)</h2>
 <p>Separately from anything you do, the village governs itself: once a day the
 villagers gather at a meeting, air grievances, and vote new rules (like a curfew, or
 banishing someone) into a standing charter of their own — <code>village_charter.md</code>,
-distinct from your <code>charter.md</code>. Whether a villager actually obeys a law is
+distinct from your <code>charter.md</code>. (A villager who's deliberately warming
+themselves at a fire right then doesn't count toward whether enough people have
+gathered to hold the meeting — someone recovering from the cold isn't the same as
+someone choosing to assemble.) Whether a villager actually obeys a law is
 up to their own persona; the rules aren't force fields, they're social pressure with
 real, witnessed consequences when broken. You can't vote or propose rules yourself,
 but the <a href="reading-the-story.html">chronicle</a> narrates the assemblies,
