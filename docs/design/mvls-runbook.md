@@ -234,3 +234,5 @@ sweep; this log complete and status flipped to done.
 | 2026-07-25 | TASK-109 | #91 | 1debe18 | all human ACs proven; shim-note.md added |
 | 2026-07-25 | TASK-110 | #92 | 7e76246 | lane 1 code complete; AC5 after-rate pends world-01 runtime on new binary |
 | 2026-07-25 | TASK-103 | #93 | 46b1841 | day-rung-drops-chop deviation gated+pinned; 104-before-103 amendment reconciled (premise disproven) |
+| 2026-07-25 | TASK-104 | #96 | 5acb5b5 | 4 deviations gated+accepted (exposureWakeBelow=150, survival-preemption yield, governance quorum exclusion, rest analog test-only); clean rebase across guardian rename |
+| 2026-07-25 | TASK-122 | — (measurement) | — | LAUNCHED: fresh world seed 4242, gemma @ 4x, ~24h wall; flip_count.py committed + baseline-validated |
