@@ -156,6 +156,11 @@ func (s *State) applyTimeSnapped(e store.Event) error {
 //	                     read by raw subtraction, not a "never" sentinel.
 //	Agent.LastTalk       talk cooldown; ONLY non-zero (0 = never, canTalk-checked)
 //	Agent.LastGive       gift cooldown; ONLY non-zero (0 = never, canGive-checked)
+//	PairTalk.Tick        pair last-exchange cooldown anchor (spec 061: cooldown
+//	                     elapsed = tick-Tick, the Agent.LastTalk shape); shifted
+//	                     UNCONDITIONALLY — a PRESENT record is always a real
+//	                     exchange tick (absence of the record is "never talked"),
+//	                     so there is no zero sentinel to guard.
 //	Intent.WorkStart     work-in-progress; ONLY non-zero (0 = not started)
 //	AgentHail.Until       courtesy-pause deadline (a present hail is non-zero)
 //	PlanStep.Until        plan-step validity deadline; ONLY when > 0 (0 = no
@@ -306,6 +311,14 @@ func rebaseTicks(s *State, delta int64) {
 	}
 	shift(&s.Meeting.OpenedTick)
 	shift(&s.Meeting.GatherStart)
+	for i := range s.PairTalks {
+		// Spec 061 (TASK-109): a present pair record's Tick is a real exchange
+		// anchor (cooldown elapsed = tick-Tick, the Agent.LastTalk shape), never
+		// a "never" sentinel — absence of the record is "never talked" — so it
+		// shifts UNCONDITIONALLY, preserving the remaining pair cooldown across
+		// the snap exactly as Agent.LastTalk does.
+		s.PairTalks[i].Tick += delta
+	}
 }
 
 // applyItemGranted provisions a living villager with known items, reject-never-

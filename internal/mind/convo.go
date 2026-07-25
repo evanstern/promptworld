@@ -74,6 +74,48 @@ func (md *Mind) sceneProvider() string {
 // utterance calls, and the local tier pays for every one.
 const sceneCap = 4
 
+// noveltySalienceFloor is the minimum memory salience that counts as "something
+// new to talk about" for the novelty SHIM (spec 061 US3, TASK-109). Set above
+// the routine social memories (salTalk=3, SalConvoGist=4) so neither the
+// founding talk's own memory nor the previous scene's gist self-satisfies the
+// gate; a villager needs a genuinely notable memory since the last exchange —
+// a fire/shelter raised, help given or received, a rough night's day-gist, a
+// witnessed event (salience >= 5) — to re-converse.
+//
+// PROMOTED-DIAL-READY (spec 061 FR-005): a single named home, documented, but
+// deliberately NOT added to tuning.json — dials are earned, and the pair
+// cooldown dial (EncounterCooldown, spec 048) already carries the frequency
+// doctrine. This is a per-package constant the way the pre-048 doctrine
+// constants were, ready to promote if a world ever needs to tune it.
+//
+// SHIM(TASK-109) — see maybeStartConversation's novelty gate for the full SHIM
+// rationale and removal condition.
+const noveltySalienceFloor = 5
+
+// hasNoveltySince reports whether either agent formed a memory at or above the
+// novelty salience floor strictly after the pair's PRIOR exchange — the SHIM's
+// "is there anything new to say" test (spec 061 US3, TASK-109).
+// priorExchange is the pair's last-exchange tick BEFORE the founding talk
+// (captured in absorb before the reducer overwrote PairTalks — one source of
+// truth, spec 061 R4). A never-talked pair (priorExchange 0) is vacuously
+// novel: first contact always founds.
+func (md *Mind) hasNoveltySince(a, b int, priorExchange int64) bool {
+	if priorExchange == 0 {
+		return true
+	}
+	for _, id := range [2]int{a, b} {
+		if id < 0 || id >= len(md.replica.Agents) {
+			continue
+		}
+		for _, m := range md.replica.Agents[id].Memories {
+			if m.Tick > priorExchange && m.Salience >= noveltySalienceFloor {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // sceneJoinRadius is how close (Manhattan, to the founding speaker) an
 // awake villager must be to join the scene.
 const sceneJoinRadius = 2
@@ -100,12 +142,33 @@ type convoCtx struct {
 
 // maybeStartConversation is called from absorb on agent.talked. Snapshot
 // everything needed, then run detached; slot=1 keeps local-tier load sane.
-func (md *Mind) maybeStartConversation(e store.Event) {
+// priorExchange is the pair's last-exchange tick BEFORE this founding talk
+// (captured in absorb before the reducer overwrote PairTalks) — the novelty
+// SHIM's "since when" anchor.
+func (md *Mind) maybeStartConversation(e store.Event, priorExchange int64) {
 	if md.social == nil {
 		return
 	}
 	var p sim.TalkedPayload
 	if json.Unmarshal(e.Payload, &p) != nil {
+		return
+	}
+	// Novelty SHIM(TASK-109) — spec 061 US3: even past the sim-side pair
+	// cooldown, a scene founds only when at least one of the pair has formed a
+	// notable memory (>= noveltySalienceFloor) since their last exchange;
+	// otherwise there is nothing new to say and the encounter stays the
+	// primitive talk that already landed. This compensates for weak model-side
+	// conversational variety (operator decision 2026-07-24: Birch's "I need to
+	// tell Sage everything" fixation, 248 hails) and is the FIRST thing to relax
+	// if conversations later feel too sparse.
+	//
+	// REMOVAL CONDITION: model tiers make the variety nudge unnecessary — when
+	// the conversation tier reliably varies its own dialogue, delete this gate
+	// (and the "already talked about this" prompt framing + noveltySalienceFloor)
+	// and let the sim-side cooldown carry the whole damper. Greppable via
+	// SHIM(TASK-109) (SC-005).
+	if !md.hasNoveltySince(p.A, p.B, priorExchange) {
+		md.emitNothingNew(p.A, e.Tick)
 		return
 	}
 	// Router gate (FR-007): a scene is the tier's most expensive thought
@@ -135,6 +198,22 @@ func (md *Mind) maybeStartConversation(e store.Event) {
 		md.emitCog(cogThoughtEvent(cc.meta))
 		md.runConversation(cc)
 	}()
+}
+
+// emitNothingNew records the novelty SHIM's refusal (spec 061 US3-AS1,
+// TASK-109): a scene the router/latch would allow but the novelty gate declined
+// because neither of the pair has anything new to say. Recorded as a suppressed
+// conversation outcome so the decision is queryable (SHIM(TASK-109)) — the
+// primitive talk that triggered it still stands. Detached like emitSuppressed
+// so telemetry never blocks the absorb loop.
+func (md *Mind) emitNothingNew(agent int, tick int64) {
+	b, _ := json.Marshal(sim.CogOutcomePayload{
+		Job:   fmt.Sprintf("conversation-%d", tick),
+		Class: "conversation", Agent: agent,
+		Outcome: sim.OutcomeSuppressed, SnapshotTick: tick,
+		Reason: "nothing new since last exchange",
+	})
+	go md.emitCog(store.Event{Type: "cog.outcome", Payload: b})
 }
 
 // snapshotConvo freezes the scene: the founding pair, any awake villager
@@ -437,7 +516,13 @@ func (md *Mind) utterance(ctx context.Context, cc convoCtx, sp int, transcript [
 		}
 	}
 	if cc.callback != "" {
-		fmt.Fprintf(&user, "\nLast time this pair talked: %s\n", cc.callback)
+		// SHIM(TASK-109) — spec 061 US3: the pair's last-conversation gist (via
+		// the convo_record machinery, LastConversationBetween in snapshotConvo)
+		// enters the scene prompt framed as "already covered", so the model
+		// varies the exchange instead of relooping the same topic (the Birch<->Sage
+		// fixation). Removable with the novelty gate when model tiers no longer
+		// need the nudge (see maybeStartConversation).
+		fmt.Fprintf(&user, "\nYou two recently talked about this: %s\nSay something new — don't just repeat it.\n", cc.callback)
 	}
 	if cc.debts != "" {
 		fmt.Fprintf(&user, "Standing debts here: %s.\n", cc.debts)

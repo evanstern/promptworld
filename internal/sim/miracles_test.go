@@ -673,6 +673,7 @@ func TestSnapPreservesRemainingDurations(t *testing.T) {
 	s.Rumors = []Rumor{{ID: 1, Subject: 2, OriginAgent: 0, OriginTick: 400}}
 	s.Gru = &Gru{X: 6, Y: 6, LastAttack: 56000}
 	s.Conversations = []ConvoRecord{{Conv: 500, Tick: 600, Participants: []int{0, 1}}}
+	s.PairTalks = []PairTalk{{A: 0, B: 1, Tick: 59000}} // spec 061: pair cooldown anchor, shifts
 	s.Chronicle = []ChronicleEntry{{Tick: 700, Day: 1, FromTick: 650, ToTick: 700}}
 	s.Meeting = MeetingState{Phase: "open", OpenedTick: 57000, GatherStart: 58000, LastMeetingDay: 2}
 	s.MeetingConvention = &MeetingConvention{ConveneSecond: 100, OpenSecond: 200, EstablishedDay: 1}
@@ -712,6 +713,7 @@ func TestSnapPreservesRemainingDurations(t *testing.T) {
 	eq("Meeting.OpenedTick", s.Meeting.OpenedTick, 57000+delta)
 	eq("Meeting.GatherStart", s.Meeting.GatherStart, 58000+delta)
 	eq("Agent.NeedsAnchorTick", a.NeedsAnchorTick, 43500+delta)
+	eq("PairTalk.Tick", s.PairTalks[0].Tick, 59000+delta)
 	// The anchor LEVELS ride the freeze untouched (need values, not ticks).
 	if a.NeedsAnchor == nil || a.NeedsAnchor.Warmth != 500 {
 		t.Errorf("NeedsAnchor levels changed across snap: %+v", a.NeedsAnchor)
@@ -763,6 +765,7 @@ func TestRebaseTaxonomyComplete(t *testing.T) {
 		// SHIFT — future deadlines / duration anchors.
 		"Agent.LastTalk":            shift,
 		"Agent.LastGive":            shift,
+		"PairTalk.Tick":             shift, // spec 061: pair last-exchange cooldown anchor (Agent.LastTalk shape)
 		"Agent.IdleSince":           shift,
 		"Intent.WorkStart":          shift,
 		"AgentHail.Until":           shift,

@@ -64,6 +64,14 @@ type State struct {
 	Gru *Gru `json:"gru,omitempty"`
 	// Conversation records (TASK-22) — bounded ring, event-sourced.
 	Conversations []ConvoRecord `json:"conversations,omitempty"`
+	// Pair last-exchange ledger (spec 061, TASK-109) — the event-sourced,
+	// unordered per-pair last-talk tick the conversation loop damper consults on
+	// the hail founding path. Updated by the agent.talked arm; a slice sorted by
+	// (A,B) with an A<B per-record invariant (canonical bytes forbid maps — R1),
+	// bounded by C(agentCount,2)=28. Absent record ≡ never talked; omitempty
+	// keeps every pre-061 snapshot byte-identical — no format_version bump (the
+	// Deaths-ledger precedent, spec 044).
+	PairTalks []PairTalk `json:"pair_talks,omitempty"`
 	// The chronicle (TASK-11) — narrated story entries, bounded ring. Riding
 	// State means every attaching client gets catch-up history in the snapshot.
 	Chronicle []ChronicleEntry `json:"chronicle,omitempty"`
@@ -419,6 +427,63 @@ func (s *State) removeEmptyPileAt(x, y int) {
 	if len(s.Piles) == 0 {
 		s.Piles = nil
 	}
+}
+
+// --- pair last-exchange ledger (spec 061, TASK-109) ---
+//
+// The conversation loop damper's world truth: an unordered per-pair record of
+// the tick the pair last exchanged words, event-sourced from agent.talked (the
+// pair-scoped companion to the per-agent LastTalk write). A sorted {A<B} slice
+// — never a map, which marshals non-deterministically and would break the
+// canonical-bytes discipline (R1) — bounded by C(agentCount,2). Absent record
+// ≡ never talked.
+
+// PairTalk is one unordered pair's last-exchange tick. A<B is a stored
+// invariant so both orderings of a pair resolve to the one record.
+type PairTalk struct {
+	A    int   `json:"a"`
+	B    int   `json:"b"`
+	Tick int64 `json:"tick"`
+}
+
+// PairLastTalk returns the recorded last-exchange tick for the unordered pair
+// (a,b), or 0 when they have never talked (absent record — the LastTalk==0
+// "never" sentinel that canTalk shares). Exported so the mind replica reads
+// this one source of truth for the novelty SHIM (spec 061 R4).
+func (s *State) PairLastTalk(a, b int) int64 {
+	lo, hi := a, b
+	if lo > hi {
+		lo, hi = hi, lo
+	}
+	for i := range s.PairTalks {
+		if s.PairTalks[i].A == lo && s.PairTalks[i].B == hi {
+			return s.PairTalks[i].Tick
+		}
+	}
+	return 0
+}
+
+// recordPairTalk upserts the unordered pair's last-exchange tick, keeping the
+// slice sorted by (A,B) so equal states marshal to equal bytes regardless of
+// the order talks arrived in (determinism, R1).
+func (s *State) recordPairTalk(a, b int, tick int64) {
+	lo, hi := a, b
+	if lo > hi {
+		lo, hi = hi, lo
+	}
+	for i := range s.PairTalks {
+		if s.PairTalks[i].A == lo && s.PairTalks[i].B == hi {
+			s.PairTalks[i].Tick = tick
+			return
+		}
+	}
+	s.PairTalks = append(s.PairTalks, PairTalk{A: lo, B: hi, Tick: tick})
+	sort.Slice(s.PairTalks, func(i, j int) bool {
+		if s.PairTalks[i].A != s.PairTalks[j].A {
+			return s.PairTalks[i].A < s.PairTalks[j].A
+		}
+		return s.PairTalks[i].B < s.PairTalks[j].B
+	})
 }
 
 // Apply is the reducer: the only mutation path for event-sourced state, used
@@ -1739,6 +1804,11 @@ func (s *State) Apply(e store.Event) error {
 		a.Needs.Morale = minInt(1000, a.Needs.Morale+talkMoraleBonus)
 		b.Needs.Morale = minInt(1000, b.Needs.Morale+talkMoraleBonus)
 		a.LastTalk, b.LastTalk = e.Tick, e.Tick
+		// Spec 061 (TASK-109): the pair-scoped companion to the LastTalk write —
+		// the conversation loop damper's hail cooldown reads this per-pair record
+		// (the per-agent LastTalk only gates the ambient beat). Both hail-founded
+		// and ambient talks update the one unordered record.
+		s.recordPairTalk(p.A, p.B, e.Tick)
 	}
 	return nil
 }
