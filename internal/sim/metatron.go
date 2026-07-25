@@ -21,6 +21,13 @@ const (
 	// grace (a reign begins with one favor).
 	MetatronChargeCap      = 3
 	MetatronGenesisCharges = 1
+	// MetatronChargeRegenTicks is chargeRegenTicks exported for internal/tui
+	// (guardian strip, spec 050: the next-regen forecast derives the next
+	// absolute boundary from this cadence), mirroring the BulkCap/
+	// MetatronChargeCap export pattern (agents.go) — sim stays the single
+	// source of truth for the doctrine constant; the TUI never carries its
+	// own copy of "6 game hours".
+	MetatronChargeRegenTicks = chargeRegenTicks
 )
 
 // NudgeTextMax caps the villager-bound rendering — read from the tool registry

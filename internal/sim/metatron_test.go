@@ -138,6 +138,36 @@ func TestRegenBoundaries(t *testing.T) {
 	}
 }
 
+// TestMetatronChargeRegenTicksMatchesExecutor (spec 050 T002): the exported
+// MetatronChargeRegenTicks must be exactly the modulus the executor fires
+// metatron.charge_regenerated on (executor.go's `nextTick%chargeRegenTicks
+// == 0` rule) — internal/tui derives the guardian strip's next-regen
+// forecast from the exported constant alone, so it must never silently
+// drift from the private value the executor actually uses.
+func TestMetatronChargeRegenTicksMatchesExecutor(t *testing.T) {
+	if MetatronChargeRegenTicks != chargeRegenTicks {
+		t.Fatalf("MetatronChargeRegenTicks = %d, want %d (chargeRegenTicks)", MetatronChargeRegenTicks, chargeRegenTicks)
+	}
+	m := worldmap.Generate(11, 32, 32)
+	s := NewState(11, m)
+	s.MetatronCharges = 1
+
+	fires := func(tick int64) bool {
+		for _, e := range stepEvents(s, m, tick) {
+			if e.Type == "metatron.charge_regenerated" {
+				return true
+			}
+		}
+		return false
+	}
+	if !fires(MetatronChargeRegenTicks) {
+		t.Error("exported cadence boundary tick did not fire charge_regenerated")
+	}
+	if fires(MetatronChargeRegenTicks + 1) {
+		t.Error("off-boundary tick (exported cadence + 1) fired charge_regenerated")
+	}
+}
+
 // TestOldSnapshotGainsGenesisCharge: pre-TASK-12 snapshots have no charges
 // field; unmarshal into genesis state keeps the default (documented upgrade).
 // A modern snapshot with a spent-to-zero bank must round-trip as 0.
