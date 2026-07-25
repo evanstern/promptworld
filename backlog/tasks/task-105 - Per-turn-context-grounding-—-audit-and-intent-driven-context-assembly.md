@@ -4,7 +4,7 @@ title: Per-turn context grounding — audit and intent-driven context assembly
 status: In Progress
 assignee: []
 created_date: '2026-07-25 02:41'
-updated_date: '2026-07-25 04:47'
+updated_date: '2026-07-25 06:54'
 labels:
   - goal-quality
 dependencies: []
@@ -24,16 +24,16 @@ Spec: specs/043-context-grounding
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Written per-turn context inventory (present vs absent) exists as a durable artifact
+- [x] #1 Written per-turn context inventory (present vs absent) exists as a durable artifact
 - [x] #2 Self-history, need trajectories, and active-plan echo added to the decision prompt
-- [ ] #3 Relevant-memory/journal retrieval feeds the prompt with measured token budget
+- [x] #3 Relevant-memory/journal retrieval feeds the prompt with measured token budget
 - [x] #4 Spec phase: Setup
 - [x] #5 Spec phase: Foundational (blocking prerequisites)
-- [ ] #6 Spec phase: US5 — Operators can see exactly what an agent knew (P1) 🎯 co-MVP
+- [x] #6 Spec phase: US5 — Operators can see exactly what an agent knew (P1) 🎯 co-MVP
 - [ ] #7 Spec phase: US1 — An agent knows what it was just doing (P1) 🎯 co-MVP
 - [x] #8 Spec phase: US2 — An agent feels which way its needs are moving (P2)
 - [x] #9 Spec phase: US3 — An agent continues its plan instead of restarting it (P3)
-- [ ] #10 Spec phase: US4 — What an agent remembers is chosen for the moment (P4)
+- [x] #10 Spec phase: US4 — What an agent remembers is chosen for the moment (P4)
 - [ ] #11 Spec phase: Polish & cross-cutting
 <!-- AC:END -->
 
@@ -49,4 +49,8 @@ Implementation dispatch (constitution Principle V): Foundational + US1 slice (T0
 Foundational + US1 slice landed on task-105-context-grounding (commits 9de0665, d2bbd7f, 1e1b97d; Opus 4.8 implementer). Assembler + byte-identity wrap, cog.thought sizes, IntentRecord ring + 5 reducer arms, self_history block. Whole-repo tests, vet, gofmt green; shadow invariant holds. Gate-checked by orchestrator (targeted sim/mind tests re-run). T013 stretch: SC-004 confirmed via read-only probe of world-01 (Sage tick 265,864 ring shows instinct forage + alternation); committed harness deferred to T024/T027 pattern (needs replay-to-tick helper + env-guarded skip). Deviations accepted: intent_rejected now state-mutating per data-model (split from cog.* no-op arm); IntentRecord ticks KEEP in rebase taxonomy; self_history always renders (empty state line); future-dating line owned by frame block.
 
 US2+US3 slice landed (commits 94978fc, 4b4db49; Opus 4.8). Need trajectories (anchor window 1800, deadband ±10, SHIFT taxonomy) + plan_echo block (guards in plain words, no stale echo). Full suite green; gate-checked. Deviations accepted and recorded as data-model addenda: *Needs pointer (json byte-identity), NeedsAnchorTick=SHIFT (overturned orchestrator's KEEP hypothesis with correct doctrinal reasoning). Original AC#2 (self-history + trajectories + plan echo in prompt) now true. Next: US4 (Opus), then US5 capture with all blocks present, then polish.
+
+US4 slice landed (653f2a7, 41b0502; Opus 4.8). Journal term-match excerpts (≤2×300 runes, deterministic), memories floor(4)/serendipity split via a shared annotated selection core (byte-identical by construction, drift-guard test), planted-memory relevance 10/10, hermetic budget-fit 1600 thoughts ≥99%. T023 live multi-day measurement + T007 capture folded into US5 dispatch. WATCH ITEM (implementer flag): journal term match keys on raw goal names (goto_warmth) which rarely appear in free text — worst-need names carry the matching; if live recall is weak, split goal tokens on _ or take R5's embed-at-write follow-on.
+
+US5 slice landed (7374d1b; Sonnet): docs/wiki/decision-context.md inventory (10 blocks + deliberate absences, pinned 41b0502) + INDEX entry; live evidence: SC-001 contract-vs-capture MATCH over 1,055 planner thoughts; SC-005 100% within 2000-token budget (PromptBytes min 623 / median 2426 / max 3165 ≈ 156/607/791 approx-tokens), 0 live drops (drop mechanics covered by unit tests); run ctx-043-check seed 424301, 2.017 game-days at 32x, cogito:3b (gemma4:12b-mlx not pulled — deviation recorded in evidence). Throwaway world + binary cleaned up. Note: the agent stalled waiting for an untracked daemon; orchestrator resumed it via message — future dispatches with long background runs should poll in-agent, not await notification. Remaining: T013 harness (absorbed into T024), polish T024-T025, PR; post-merge T026-T027.
 <!-- SECTION:NOTES:END -->
