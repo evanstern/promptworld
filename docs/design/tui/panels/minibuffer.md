@@ -2,7 +2,7 @@
 title: Panel — minibuffer (guardian input)
 class: panel
 status: shipped
-verified_against: c8906da39be3a5b861c2272af37db0a83dcded7a
+verified_against: ed93211ced3deb76e9b1f2fa4902c6f3d9dbc59d
 sources:
   - internal/tui/views.go
 ---
@@ -15,15 +15,20 @@ guardian pane. Governed by the focus contract
 ([../patterns/focus-contract.md](../patterns/focus-contract.md)); transcript and
 replies live in the dock's guardian tab ([guardian.md](guardian.md)).
 
-**Guardian strip (Wave 2, decision 7)**:
-[guardian-strip.md](guardian-strip.md) — specified, `unbuilt` today — pairs
-an always-visible action-budget line directly above this panel, so the
-minibuffer reads as *the* verb. Nothing on this page changes when that strip
-ships; it is a new sibling chrome row, not an edit to the minibuffer itself.
-It is also this page's fold-last destination: under height pressure the
+**Guardian strip (Wave 2, decision 7)**: **shipped** (spec 050) —
+[guardian-strip.md](guardian-strip.md) pairs an always-visible action-budget
+line directly above this panel, so the minibuffer reads as *the* verb.
+Nothing on this page's `minibufferView` structure changed for the strip
+itself; it is a sibling chrome row (`internal/tui/views.go`, composite
+insertion above the minibuffer, and inside `metatronView` for the narrow
+carry). It IS this page's fold-last destination: under height pressure the
 guardian strip's content relocates into this panel's **dormant-state** line
-rather than disappearing (`patterns/layout.md` ruling a, step 4) — the
-focused and busy states are unaffected.
+rather than disappearing (`patterns/layout.md` ruling a, step 4) — composed
+by `guardianBudgetPrefix` as `<bank glyphs> · 👁<N> · <existing placeholder>`,
+e.g. `⚡⚡· 👁2 · ⏎ m — speak with the angel…`, blank (no prefix) before the
+first status snapshot (same honesty rule as the strip itself). The focused
+and busy states are unaffected — verified byte-identical regardless of fold
+state by regression test (`internal/tui/render_test.go`).
 
 **Guardian console composer**: [pages/guardian-console.md](../pages/guardian-console.md)
 — specified, `unbuilt` today — reuses this exact component as its composer;
@@ -48,6 +53,11 @@ renderer (`minibufferView`) — the boxes below omit the illustrative
 
 Dim border, dim placeholder that names the focus key. Zero keyboard ownership —
 every global key works.
+
+**Folded-strip variant** (spec 050, see "Guardian strip" above): when the
+guardian strip has folded under height pressure, this line instead reads
+`⚡⚡· 👁2 · ⏎ m — speak with the angel…` — the relocated budget prefix ahead
+of the same placeholder text, still one line, still dim.
 
 ### 2 · Focused (`m`)
 

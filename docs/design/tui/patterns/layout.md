@@ -2,7 +2,7 @@
 title: Pattern — layout
 class: pattern
 status: shipped
-verified_against: c8906da39be3a5b861c2272af37db0a83dcded7a
+verified_against: ed93211ced3deb76e9b1f2fa4902c6f3d9dbc59d
 sources:
   - internal/tui/layout.go
   - internal/tui/views.go
@@ -85,6 +85,17 @@ pre-ladder-defaulted-off, the lesson row starts already folded (badge form,
 0 rows), so fixed chrome there is **7 rows** by default before any fold
 pressure applies.
 
+**Reconciliation note (spec 050)**: this section describes the full
+stage-1–2 target once all three new chrome rows exist. As of spec 050, only
+the **guardian strip** is actually built (the villager strip is Wave 5, the
+lesson row Wave 4 — both still `unbuilt`); the shipped `computeRows`
+(`internal/tui/layout.go`) therefore implements a reduced budget —
+`header(1) + strip(0 or 1) + minibuffer(3) + footer(1)` — folding the strip
+(the only foldable row this feature's code has) once `totalRows − 6 <
+bodyMin (10)`, per the fold order below. The 9-row figure and the villager-
+strip/lesson-row fold steps become live only as those waves land; nothing
+about the ruled total order changes when they do.
+
 ### Fold order (a total order over the collapsible rows)
 
 Chrome folds when body rows would drop below `bodyMin = 10`, reclaiming in
@@ -102,7 +113,12 @@ reached:
    line** (the budget text prefixes the dormant hint,
    `panels/guardian-strip.md`'s fold-relocation rule) — folds LAST because
    decision 7 says the budget is always visible; the fold keeps it visible,
-   one row cheaper, never hides it outright.
+   one row cheaper, never hides it outright. **Shipped** (spec 050):
+   `computeRows`'s `Strip` field drops to 0 at exactly this threshold, and
+   `minibufferView`'s dormant branch (`internal/tui/views.go`) composes the
+   relocated prefix via `guardianBudgetPrefix`. Steps 2 and 3 above remain
+   unbuilt (their chrome rows don't exist yet) — until they land, step 4 is
+   the only fold this total order's code actually performs.
 
 **Floor layout**: header + body(≥10) + minibuffer(3) + footer — the
 pre-reorientation stack. Terminals too short even for that (< 15 rows) keep
@@ -133,7 +149,12 @@ row, guardian strip, minibuffer, and footer all persist unchanged around it
 In the narrow (< 112 cols) single-pane layout:
 
 - **Guardian strip**: **carried** — 1 row above the minibuffer, identical
-  content (decision 7's "always visible" is width-independent).
+  content (decision 7's "always visible" is width-independent). **Shipped**
+  (spec 050) reconciliation: narrow's only minibuffer instance lives inside
+  `metatronView` (the guardian pane) — narrow's other panes have no
+  composer at all, pre-existing this feature — so the carry lands there,
+  unconditionally; narrow has no `computeRows`/fold arithmetic of its own to
+  drop the strip against.
 - **Lesson row**: **carried** with the same stage defaults as widescreen
   (on at stages 1–2, badge+overlay at 3+/pre-ladder); the same fold rule
   applies against `bodyMin` once narrow's own row budget is worked out

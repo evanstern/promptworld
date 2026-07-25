@@ -281,6 +281,15 @@ func (m Model) widescreenView() string {
 	var b strings.Builder
 	b.WriteString(m.headerView() + "\n")
 	b.WriteString(body + "\n")
+	if rows.Strip > 0 {
+		// Guardian strip (panels/guardian-strip.md, spec 050): one
+		// borderless row directly above the minibuffer, wired to the row
+		// budget above — rows.Body already accounts for whether this row
+		// is visible, so the composite's total height stays exact whether
+		// folded or not (B1's exact-height invariant, unchanged by this
+		// feature).
+		b.WriteString(m.guardianStripView(m.width) + "\n")
+	}
 	b.WriteString(m.minibufferView(m.width) + "\n")
 	b.WriteString(m.footerView())
 	return b.String()
@@ -1555,7 +1564,14 @@ func (m Model) metatronView() string {
 	// Sized to the same content width as the transcript above it (not the
 	// full terminal width) — this box nests inside metatronView's own
 	// bordered pane, which adds its own chrome on top.
-	content += "\n\n" + m.minibufferView(width)
+	//
+	// Guardian strip narrow carry (patterns/layout.md ruling b, spec 050):
+	// this is the ONLY place a minibuffer exists in the narrow fallback
+	// (narrowView's other panes have no composer at all — narrow keeps the
+	// pre-TASK-34 embedded-console pattern), so "carried, above the
+	// minibuffer, identical content" lands here, unconditionally — narrow
+	// has no rowBudget/fold machinery of its own to fold it against.
+	content += "\n\n" + m.guardianStripView(width) + "\n" + m.minibufferView(width)
 	return styleBox.Render(content)
 }
 
@@ -1687,6 +1703,126 @@ func horizonRemedy(calibrated bool) string {
 	return "calibrate or slow down"
 }
 
+// guardianStripView renders the always-visible action-budget row
+// (panels/guardian-strip.md, spec 050): charge bank, next-regen forecast,
+// and standing-order count, each degrading to absence rather than a
+// misleading value (contract §2/§4 — data-model.md's presence matrix). No
+// faith segment at all — TASK-118 hasn't shipped (research R4.3/spec
+// assumption). Shared verbatim by the widescreen composite and the narrow
+// fallback (layout.md ruling b: "carried exactly as widescreen does") — one
+// renderer, two call sites (research R5).
+func (m Model) guardianStripView(width int) string {
+	if m.status == nil {
+		// Pre-status (connecting): the row is present but blank — layout
+		// stays stable, no invented zeros (US2 AS-3, contract §2).
+		return ""
+	}
+
+	charges := m.status.Clock.MetatronCharges
+	segments := []string{
+		fmt.Sprintf("%s%s (%d/%d)",
+			strings.Repeat("⚡", charges),
+			strings.Repeat("·", clampInt(sim.MetatronChargeCap-charges, 0, sim.MetatronChargeCap)),
+			charges, sim.MetatronChargeCap),
+	}
+	if charges < sim.MetatronChargeCap {
+		// Regen is omitted at a full bank (research R4.1): the executor
+		// only fires metatron.charge_regenerated below cap
+		// (internal/sim/executor.go), so forecasting an arrival that isn't
+		// scheduled would be a lie.
+		cadence := int64(sim.MetatronChargeRegenTicks)
+		next := m.status.Clock.Tick + (cadence - m.status.Clock.Tick%cadence)
+		segments = append(segments, fmt.Sprintf("next +1 @ %s", clock.FormatTOD(int(clock.SecondOfDay(next)))))
+	}
+	// Standing orders: the client-side replica mirrors metatron.order_*
+	// events live (m.replica.Apply, tui.go), the same underlying data the
+	// guardian tab's orderStatusLines counts (len(m.consoleOrders), fed
+	// from an on-demand IPC peek) — the replica is used here instead
+	// because it updates every frame without waiting on a tab visit
+	// (US1 AS-2: "the next frame" reflects a spend/order change from ANY
+	// dock tab), and per contract §4.2 the two can never actually disagree
+	// since they're both projections of the same event stream.
+	orders := 0
+	if m.replica != nil {
+		orders = len(m.replica.MetatronOrders)
+	}
+	segments = append(segments, fmt.Sprintf("👁 %d standing orders", orders))
+
+	return joinStripSegments(segments, width)
+}
+
+// joinStripSegments joins the strip's present segments with " · " (contract
+// §2), truncating from the right when the joined line would exceed width
+// (edge case: "segments truncate from the right with …" — faith [never
+// rendered by this feature] → orders → regen → bank; the bank is the
+// headline and the last thing standing). Never returns more than one
+// line — if even the bank segment alone doesn't fit, it is hard-clipped
+// rather than wrapped (contract §1: the row budget is exactly 1).
+func joinStripSegments(segments []string, width int) string {
+	if width <= 0 || len(segments) == 0 {
+		return ""
+	}
+	for n := len(segments); n >= 1; n-- {
+		joined := strings.Join(segments[:n], " · ")
+		if n < len(segments) {
+			joined += "…"
+		}
+		if lipgloss.Width(joined) <= width {
+			return joined
+		}
+		if n == 1 {
+			return stripSegmentTail(joined, width)
+		}
+	}
+	return ""
+}
+
+// stripSegmentTail hard-truncates s to at most width display columns,
+// keeping its head and marking the cut with "…" — the last-resort floor
+// under joinStripSegments's segment-dropping truncation, for widths too
+// narrow even for the bank segment alone. Trims rune-by-rune re-checking
+// lipgloss.Width each step rather than slicing by rune COUNT: the strip's
+// own glyphs (⚡) render double-width, so rune count alone isn't a safe
+// proxy for display columns here (unlike truncateTail's plain-text input).
+func stripSegmentTail(s string, width int) string {
+	if width <= 0 {
+		return ""
+	}
+	if lipgloss.Width(s) <= width {
+		return s
+	}
+	if width == 1 {
+		return "…"
+	}
+	r := []rune(s)
+	for len(r) > 0 && lipgloss.Width(string(r)+"…") > width {
+		r = r[:len(r)-1]
+	}
+	return string(r) + "…"
+}
+
+// guardianBudgetPrefix composes the guardian strip's fold-relocation form
+// (patterns/layout.md ruling a step 4; panels/guardian-strip.md
+// "Fold-last relocation"): the charge-bank glyph run alone (no numeric —
+// this compact form leaves the exact count one tab away, data-model.md's
+// "Relocated dormant line") plus the standing-order count, no words. Blank
+// (no prefix at all) before the first status snapshot — the same honesty
+// rule as the strip itself extends to its folded form: no invented zeros
+// for a bank or order count the client doesn't actually know yet.
+func (m Model) guardianBudgetPrefix() string {
+	if m.status == nil {
+		return ""
+	}
+	charges := m.status.Clock.MetatronCharges
+	bank := strings.Repeat("⚡", charges) +
+		strings.Repeat("·", clampInt(sim.MetatronChargeCap-charges, 0, sim.MetatronChargeCap))
+	orders := 0
+	if m.replica != nil {
+		orders = len(m.replica.MetatronOrders)
+	}
+	return fmt.Sprintf("%s · 👁%d", bank, orders)
+}
+
 // minibufferView renders the one-line Metatron input at its three states
 // (minibuffer.md): dormant, focused (amber border + hint), busy.
 func (m Model) minibufferView(width int) string {
@@ -1741,7 +1877,22 @@ func (m Model) minibufferView(width int) string {
 	case m.mbFlash != "":
 		return styleBox.Width(inner).Render(clipContent(styleDim.Render(m.mbFlash), inner))
 	default:
-		return styleBox.Width(inner).Render(clipContent(styleDim.Render("⏎ m — speak with the angel…"), inner))
+		placeholder := "⏎ m — speak with the angel…"
+		// Fold-last relocation (patterns/layout.md ruling a step 4,
+		// panels/guardian-strip.md): once the widescreen composite's row
+		// budget has folded the guardian strip, its content prefixes THIS
+		// dormant line instead of disappearing — dormant state only; the
+		// focused/busy cases above are untouched. isWidescreen(m.width)
+		// guards this to the widescreen composite's own fold arithmetic —
+		// the narrow fallback's only minibufferView call site (inside
+		// metatronView) always carries the strip as its own row instead
+		// (layout.md ruling b), so this branch never fires there.
+		if isWidescreen(m.width) && computeRows(m.height).Strip == 0 {
+			if prefix := m.guardianBudgetPrefix(); prefix != "" {
+				placeholder = prefix + " · " + placeholder
+			}
+		}
+		return styleBox.Width(inner).Render(clipContent(styleDim.Render(placeholder), inner))
 	}
 }
 

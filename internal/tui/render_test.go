@@ -518,3 +518,219 @@ func TestMetatronViewRendersProviderTable(t *testing.T) {
 		}
 	}
 }
+
+// --- guardian strip (panels/guardian-strip.md, spec 050) ---
+
+// TestGuardianStripViewNoStatus: pre-status (connecting) renders a blank —
+// but present — row: no invented zeros (US2 AS-3, contract §2).
+func TestGuardianStripViewNoStatus(t *testing.T) {
+	m := testModel(t)
+	if got := m.guardianStripView(200); got != "" {
+		t.Errorf("no status snapshot: guardianStripView = %q, want blank", got)
+	}
+}
+
+// TestGuardianStripViewPresenceMatrix sweeps data-model.md's presence
+// matrix (SC-002): every rendered segment must be a true statement, every
+// absent segment genuinely absent — no dash, no invented zero.
+func TestGuardianStripViewPresenceMatrix(t *testing.T) {
+	cases := []struct {
+		name       string
+		charges    int
+		orders     int
+		wantRegen  bool
+		wantOrders string
+	}{
+		{"partial bank, N orders", 1, 2, true, "👁 2 standing orders"},
+		{"full bank omits regen", sim.MetatronChargeCap, 3, false, "👁 3 standing orders"},
+		{"zero orders is a true zero", 1, 0, true, "👁 0 standing orders"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			m := testModel(t)
+			m.status = &ipc.StatusData{Clock: ipc.ClockStatus{MetatronCharges: c.charges, Tick: 100}}
+			m.replica.MetatronOrders = make([]sim.MetatronOrder, c.orders)
+			for i := range m.replica.MetatronOrders {
+				m.replica.MetatronOrders[i] = sim.MetatronOrder{ID: fmt.Sprintf("o%d", i), Status: "active"}
+			}
+			got := m.guardianStripView(200)
+			if strings.Contains(got, "faith") {
+				t.Errorf("no faith segment must ever appear (TASK-118 unshipped): %q", got)
+			}
+			if hasRegen := strings.Contains(got, "next +1"); hasRegen != c.wantRegen {
+				t.Errorf("regen segment presence = %v, want %v: %q", hasRegen, c.wantRegen, got)
+			}
+			if !strings.Contains(got, c.wantOrders) {
+				t.Errorf("missing standing-order segment %q: %q", c.wantOrders, got)
+			}
+			bank := fmt.Sprintf("(%d/%d)", c.charges, sim.MetatronChargeCap)
+			if !strings.Contains(got, bank) {
+				t.Errorf("missing numeric bank form %q: %q", bank, got)
+			}
+		})
+	}
+}
+
+// TestGuardianStripViewLiveUpdate (US1 AS-2): a charge spend or a standing
+// order add is reflected on the very next frame — guardianStripView reads
+// m.status/m.replica directly, the same live fields the guardian tab header
+// already uses, no polling required.
+func TestGuardianStripViewLiveUpdate(t *testing.T) {
+	m := testModel(t)
+	m.status = &ipc.StatusData{Clock: ipc.ClockStatus{MetatronCharges: 2, Tick: 100}}
+	before := m.guardianStripView(200)
+	if !strings.Contains(before, "(2/3)") {
+		t.Fatalf("fixture setup wrong: %q", before)
+	}
+
+	// Spend a charge.
+	m.status.Clock.MetatronCharges = 1
+	afterSpend := m.guardianStripView(200)
+	if afterSpend == before || !strings.Contains(afterSpend, "(1/3)") {
+		t.Errorf("charge spend not reflected next frame: %q", afterSpend)
+	}
+
+	// Place a standing order (the same client-side replica mutation
+	// applying a live metatron.order_placed event performs, tui.go
+	// applyEvent/Apply).
+	m.replica.MetatronOrders = append(m.replica.MetatronOrders, sim.MetatronOrder{ID: "ord-1", Status: "active"})
+	afterOrder := m.guardianStripView(200)
+	if !strings.Contains(afterOrder, "👁 1 standing orders") {
+		t.Errorf("order add not reflected next frame: %q", afterOrder)
+	}
+
+	// An order transitioning to a terminal status is still retained
+	// (pruneMetatronOrders keeps recent non-active ones alongside active
+	// ones) — the count mirrors len(), exactly orderStatusLines' header
+	// count, so it does not drop until the retention prune eventually runs.
+	m.replica.MetatronOrders[0].Status = "expired"
+	afterExpiry := m.guardianStripView(200)
+	if !strings.Contains(afterExpiry, "👁 1 standing orders") {
+		t.Errorf("retained-but-terminal order count should match orderStatusLines' len() semantics: %q", afterExpiry)
+	}
+}
+
+// TestJoinStripSegmentsTruncatesRightToLeft is joinStripSegments as a pure
+// function (plain ASCII fixtures sidestep any emoji display-width
+// ambiguity): dropping segments right-to-left with an ellipsis marker, the
+// first (leftmost, "bank") segment the last thing standing, hard-clipped
+// rather than wrapped if even it doesn't fit (contract §1/edge cases).
+func TestJoinStripSegmentsTruncatesRightToLeft(t *testing.T) {
+	segs := []string{"BANK", "REGEN", "ORDERS"}
+	full := "BANK · REGEN · ORDERS"
+	if got := joinStripSegments(segs, 100); got != full {
+		t.Fatalf("full width = %q, want %q", got, full)
+	}
+	// lipgloss.Width, not len(): "·" is a multi-byte rune (still 1 display
+	// column) — byte length and display width diverge for it.
+	if got := joinStripSegments(segs, lipgloss.Width(full)-1); got != "BANK · REGEN…" {
+		t.Errorf("one column short of full should drop the rightmost (orders) segment first: %q", got)
+	}
+	if got := joinStripSegments(segs, lipgloss.Width("BANK · REGEN…")-1); got != "BANK…" {
+		t.Errorf("dropping the middle (regen) segment next, bank last standing: %q", got)
+	}
+	if got := joinStripSegments(segs, 2); got != "B…" {
+		t.Errorf("even the bank alone doesn't fit: hard-clip, never wrap: %q", got)
+	}
+	if got := joinStripSegments(segs, 0); got != "" {
+		t.Errorf("width <= 0: %q", got)
+	}
+}
+
+// TestGuardianStripViewNeverExceedsWidth is the composed sanity check over
+// joinStripSegments's real inputs (glyphs/emoji included): at every width
+// the strip stays one line and never exceeds the budget (SC-003).
+func TestGuardianStripViewNeverExceedsWidth(t *testing.T) {
+	m := testModel(t)
+	m.status = &ipc.StatusData{Clock: ipc.ClockStatus{MetatronCharges: 1, Tick: 100}}
+	m.replica.MetatronOrders = []sim.MetatronOrder{{ID: "o1", Status: "active"}, {ID: "o2", Status: "active"}}
+	for _, w := range []int{1, 2, 5, 10, 20, 40, 200} {
+		got := m.guardianStripView(w)
+		if strings.Contains(got, "\n") {
+			t.Errorf("width %d: strip must never wrap to a second row: %q", w, got)
+		}
+		if lipgloss.Width(got) > w {
+			t.Errorf("width %d: rendered strip width %d exceeds budget: %q", w, lipgloss.Width(got), got)
+		}
+	}
+}
+
+// TestMinibufferDormantFoldRelocation (US3 AS-1; layout.md ruling a step 4):
+// once the widescreen row budget folds the guardian strip, the dormant
+// minibuffer line gains the budget prefix; unfolded, it's the plain
+// placeholder untouched.
+func TestMinibufferDormantFoldRelocation(t *testing.T) {
+	m := widescreenModel(t)
+	m.status = &ipc.StatusData{Clock: ipc.ClockStatus{MetatronCharges: 2, Tick: 100}}
+	m.replica.MetatronOrders = []sim.MetatronOrder{{ID: "o1", Status: "active"}}
+
+	// Tall enough: strip stays on, dormant line is the plain placeholder.
+	m.height = 40
+	if rows := computeRows(m.height); rows.Strip == 0 {
+		t.Fatalf("fixture setup: expected the strip to fit at height %d", m.height)
+	}
+	unfolded := m.minibufferView(m.width)
+	if strings.Contains(unfolded, "👁") {
+		t.Errorf("unfolded dormant line must not carry the budget prefix: %q", unfolded)
+	}
+
+	// Short enough: strip folds, dormant line carries the relocated prefix.
+	m.height = 14
+	if rows := computeRows(m.height); rows.Strip != 0 {
+		t.Fatalf("fixture setup: expected the strip to fold at height %d", m.height)
+	}
+	folded := m.minibufferView(m.width)
+	if !strings.Contains(folded, "👁1") {
+		t.Errorf("folded dormant line must carry the relocated budget prefix (bank glyphs + order count): %q", folded)
+	}
+}
+
+// TestMinibufferFocusedBusyUnaffectedByFold (US3 AS-1): the fold-relocation
+// prefix only ever touches the dormant branch — focused and busy render
+// byte-identically whether the guardian strip is folded or not.
+func TestMinibufferFocusedBusyUnaffectedByFold(t *testing.T) {
+	base := widescreenModel(t)
+	base.status = &ipc.StatusData{Clock: ipc.ClockStatus{MetatronCharges: 2, Tick: 100}}
+	base.replica.MetatronOrders = []sim.MetatronOrder{{ID: "o1", Status: "active"}}
+
+	tall, short := base, base
+	tall.height, short.height = 40, 14
+	if computeRows(tall.height).Strip == 0 || computeRows(short.height).Strip != 0 {
+		t.Fatalf("fixture setup: expected tall unfolded, short folded")
+	}
+
+	tall.mbFocused, short.mbFocused = true, true
+	tall.mbInput, short.mbInput = "why did rowan lie about the wood", "why did rowan lie about the wood"
+	if a, b := tall.minibufferView(tall.width), short.minibufferView(short.width); a != b {
+		t.Errorf("focused minibuffer differs by fold state:\ntall:  %q\nshort: %q", a, b)
+	}
+
+	tall.mbFocused, short.mbFocused = false, false
+	tall.mbBusy, short.mbBusy = true, true
+	if a, b := tall.minibufferView(tall.width), short.minibufferView(short.width); a != b {
+		t.Errorf("busy minibuffer differs by fold state:\ntall:  %q\nshort: %q", a, b)
+	}
+}
+
+// TestMetatronViewNarrowCarriesStrip (US3 AS-2; layout.md ruling b): the
+// narrow fallback's only minibuffer (inside the guardian pane — narrow's
+// other panes have no composer at all) carries the strip above it,
+// unconditionally — narrow has no fold machinery of its own to drop it.
+func TestMetatronViewNarrowCarriesStrip(t *testing.T) {
+	m := testModel(t) // narrow: 80x30 (below widescreenBreakpoint)
+	m.status = &ipc.StatusData{Clock: ipc.ClockStatus{MetatronCharges: 1, Tick: 100}}
+	m.replica.MetatronOrders = []sim.MetatronOrder{{ID: "o1", Status: "active"}, {ID: "o2", Status: "active"}}
+
+	view := m.metatronView()
+	if !strings.Contains(view, "(1/3)") {
+		t.Errorf("narrow metatron pane missing the strip's charge bank: %q", view)
+	}
+	if !strings.Contains(view, "👁 2 standing orders") {
+		t.Errorf("narrow metatron pane missing the strip's standing-order count: %q", view)
+	}
+	stripIdx := strings.Index(view, "(1/3)")
+	mbIdx := strings.Index(view, "⏎ m — speak with the angel…")
+	if stripIdx < 0 || mbIdx < 0 || stripIdx > mbIdx {
+		t.Errorf("strip must render ABOVE the minibuffer: strip@%d minibuffer@%d\n%s", stripIdx, mbIdx, view)
+	}
+}
