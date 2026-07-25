@@ -63,6 +63,18 @@ var catalogFixture = map[string]digestFixture{
 	"agent.intent_rejected": {`{"agent":3,"goal":"forage","reason":"blocked","staleness_ticks":5}`, `Rowan's forage refused: blocked (5t stale)`},
 	"agent.build_failed":    {`{"agent":3,"goal":"build_wall_stone","reason":"site blocked too long"}`, `Rowan's build_wall_stone failed — site blocked too long`},
 	"agent.moved":           {`{"agent":0,"x":1,"y":1}`, `Ash → (1,1)`},
+	"agent.saw": {
+		`{"agent":0,"facts":[{"kind":"fire","x":4,"y":5,"seen":100,"prov":"witnessed","detail":9000},{"kind":"tree","x":6,"y":5,"seen":100,"prov":"witnessed"}]}`,
+		`Ash saw fire at (4,5) (+1 more)`,
+	},
+	"agent.map_corrected": {
+		`{"agent":1,"gone":[{"kind":"fire","x":4,"y":5,"seen":100,"prov":"witnessed","detail":9000}]}`,
+		`Birch found fire at (4,5) gone`,
+	},
+	"social.place_told": {
+		`{"from":0,"to":1,"facts":[{"kind":"fire","x":4,"y":5,"seen":100,"prov":"told","detail":9000},{"kind":"tree","x":6,"y":5,"seen":100,"prov":"told"}]}`,
+		`Ash told Birch of fire at (4,5) (+1 more)`,
+	},
 	"agent.foraged":         {`{"agent":0,"x":1,"y":1}`, `Ash foraged at (1,1)`},
 	"agent.chopped":         {`{"agent":0,"x":1,"y":1}`, `Ash chopped wood at (1,1)`},
 	"agent.hunted":          {`{"agent":0,"x":1,"y":1}`, `Ash hunted at (1,1)`},
@@ -136,6 +148,10 @@ var catalogFixture = map[string]digestFixture{
 	"chronicle.entry":             {`{"day":3,"from_tick":100,"to_tick":200,"text":"Ash lit the first fire.","thread":"cold-start","agents":[0]}`, `day 3 · cold-start: Ash lit the first fire.`},
 	"metatron.charge_regenerated": {`{}`, `a charge regenerated`},
 	"metatron.nudged":             {`{"form":"dream","targets":[0],"text":"beware the cold"}`, `Metatron dream → Ash: "beware the cold"`},
+	"metatron.place_revealed": {
+		`{"agent":0,"facts":[{"kind":"fire","x":4,"y":5,"seen":100,"prov":"revealed","detail":9000}]}`,
+		`Metatron revealed fire at (4,5) to Ash`,
+	},
 	"metatron.order_placed": {
 		`{"id":"ord-100-1","origin":"player","condition":"the woodpile drops below 5 logs","action":"nudge someone to chop wood","event_types":["sim.forage_regrown"],"agent":-1,"placed_tick":100,"expires_tick":100000,"status":"active"}`,
 		`Metatron set a watch: "the woodpile drops below 5 logs"`,

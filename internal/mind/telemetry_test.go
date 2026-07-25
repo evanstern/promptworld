@@ -356,6 +356,43 @@ func nudgeBatchEvents(seq, tick int64, form, text string, targets ...int) []stor
 	return batch
 }
 
+// unplannedAt returns up to n agent indices with NO cog.thought in the store —
+// villagers whose planner debounce window is provably open at a frozen tick
+// ≥ planDebounceTicks. The paused-nudge tests pick their targets from this set
+// instead of hardcoding high-index agents: which villagers get armed (by
+// completions/encounters) into the very first tick-300 planner batch is
+// EMERGENT world behavior, not a stable fixture premise — spec 041's
+// knowledge-gated reflex, for one, changed it (early nearby completions arm
+// high-index agents pre-freeze, closing their debounce for the whole pause,
+// which is exactly the spec-040 "debounce is the only bound" doctrine).
+func unplannedAt(t *testing.T, h *harness, n int) []int {
+	t.Helper()
+	evs, err := h.st.EventsSince(0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	planned := map[int]bool{}
+	for _, e := range evs {
+		if e.Type != "cog.thought" {
+			continue
+		}
+		var p sim.CogThoughtPayload
+		if json.Unmarshal(e.Payload, &p) == nil {
+			planned[p.Agent] = true
+		}
+	}
+	var out []int
+	for i := sim.AgentCount - 1; i >= 0 && len(out) < n; i-- {
+		if !planned[i] {
+			out = append(out, i)
+		}
+	}
+	if len(out) < n {
+		t.Skipf("only %d villagers unplanned at freeze, need %d (whole village planned in the warm-up batch)", len(out), n)
+	}
+	return out
+}
+
 // TestPausedNudgeWakesTargetOnce (spec 040 US1, FR-001/FR-002; contracts C2/C3):
 // while paused, a landed nudge arms the target for exactly one frozen-tick
 // planner round whose trigger_seq is the nudge event's Seq and whose outcome
@@ -380,7 +417,7 @@ func TestPausedNudgeWakesTargetOnce(t *testing.T) {
 	frozen := st.Tick
 	time.Sleep(1 * time.Second) // drain any in-flight pre-pause cognition
 
-	const target = 7 // nextDue 1800: never planned by a frozen tick this small
+	target := unplannedAt(t, h, 1)[0] // debounce provably open at the frozen tick
 	const nudgeSeq = int64(900001)
 	h.mind.Observe(nudgeBatchEvents(nudgeSeq, frozen, "vision", "the river is rising", target))
 
@@ -449,12 +486,17 @@ func TestPausedOmenArmsOnlyTargets(t *testing.T) {
 	frozen := st.Tick
 	time.Sleep(1 * time.Second)
 
-	// Targets 6 and 7 (nextDue ≥ 1575) have never planned → open windows; 5 is
-	// the untargeted control.
+	// Two villagers with provably open debounce windows at the freeze (never
+	// planned); any villager outside the target set is the untargeted control.
+	targets := unplannedAt(t, h, 2)
+	control := 0
+	for control == targets[0] || control == targets[1] {
+		control++
+	}
 	const omenSeq = int64(910000)
-	h.mind.Observe(nudgeBatchEvents(omenSeq, frozen, "omen", "the long night comes", 6, 7))
+	h.mind.Observe(nudgeBatchEvents(omenSeq, frozen, "omen", "the long night comes", targets[0], targets[1]))
 
-	for _, tgt := range []int{6, 7} {
+	for _, tgt := range targets {
 		got := h.waitEvents(t, 20*time.Second, func(e store.Event) bool {
 			if e.Type != "cog.thought" {
 				return false
@@ -471,9 +513,9 @@ func TestPausedOmenArmsOnlyTargets(t *testing.T) {
 			return false
 		}
 		var p sim.CogThoughtPayload
-		return json.Unmarshal(e.Payload, &p) == nil && p.Agent == 5 && p.TriggerSeq == omenSeq
+		return json.Unmarshal(e.Payload, &p) == nil && p.Agent == control && p.TriggerSeq == omenSeq
 	}); len(bystander) != 0 {
-		t.Fatalf("untargeted villager 5 was armed by the omen (%d thoughts)", len(bystander))
+		t.Fatalf("untargeted villager %d was armed by the omen (%d thoughts)", control, len(bystander))
 	}
 }
 
@@ -658,4 +700,50 @@ func TestEmitSuppressedReachesSeam(t *testing.T) {
 func TestEmitSuppressedSeamlessOrchNoOp(t *testing.T) {
 	md := &Mind{orch: &scriptedModel{}, social: nil}
 	md.emitSuppressed("planner", 0, 100, cognition.Verdict{Class: "planner"})
+}
+
+// TestMapCorrectionRearmsMatchingIntent (spec 041 US3, T021 / contracts §1):
+// an agent.map_corrected absorb re-arms the planner ONLY when a removed fact
+// matches the acting agent's current intent target (Target or Res tile) — a
+// correction touching nothing the agent acts on stays quiet, and other
+// agents are never armed by it.
+func TestMapCorrectionRearmsMatchingIntent(t *testing.T) {
+	state := sim.NewState(42, worldmap.Generate(42, 64, 64))
+	md := &Mind{replica: state}
+
+	corrected := func(agent int, x, y int, seq int64) store.Event {
+		b, _ := json.Marshal(sim.MapCorrectedPayload{Agent: agent, Gone: []sim.PlaceFact{
+			{Kind: "fire", X: x, Y: y, Seen: 100, Provenance: "witnessed"},
+		}})
+		return store.Event{Seq: seq, Tick: 500, Type: "agent.map_corrected", Payload: b}
+	}
+
+	// No intent: quiet.
+	md.absorb([]store.Event{corrected(0, 10, 10, 71)})
+	if md.pending[0] {
+		t.Fatal("correction with no intent in flight armed the planner")
+	}
+
+	// Intent elsewhere: quiet.
+	state.Agents[0].Intent = &sim.Intent{Goal: "refuel_fire", TargetX: 30, TargetY: 30}
+	md.absorb([]store.Event{corrected(0, 10, 10, 72)})
+	if md.pending[0] {
+		t.Fatal("correction not touching the intent target armed the planner")
+	}
+
+	// Removed fact at the intent target: re-armed with the correction's seq.
+	md.absorb([]store.Event{corrected(0, 30, 30, 73)})
+	if !md.pending[0] || md.pendingSeq[0] != 73 {
+		t.Fatalf("matching correction did not re-arm: pending=%v seq=%d", md.pending[0], md.pendingSeq[0])
+	}
+
+	// A work goal's Res tile matches too; other agents stay quiet throughout.
+	state.Agents[1].Intent = &sim.Intent{Goal: "chop", TargetX: 5, TargetY: 5, ResX: 6, ResY: 5}
+	md.absorb([]store.Event{corrected(1, 6, 5, 74)})
+	if !md.pending[1] || md.pendingSeq[1] != 74 {
+		t.Fatal("Res-tile correction did not re-arm")
+	}
+	if md.pending[2] {
+		t.Fatal("a correction armed an unrelated agent")
+	}
 }

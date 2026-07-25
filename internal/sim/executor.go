@@ -183,6 +183,11 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 	// deterministic race with met winning ties (research D4).
 	events = append(events, hailStep(s, nextTick)...)
 
+	// Perception sweep (spec 041, T007): each awake villager diffs ground
+	// truth within the witness radius against its mental map and emits
+	// agent.saw for the new/changed facts (perceptionEvents below).
+	events = append(events, perceptionEvents(s, m, nextTick)...)
+
 	// Per-agent execution. Uses current state s (pre-tick); all effects
 	// land as events.
 	for i := range s.Agents {
@@ -319,6 +324,272 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 	return events
 }
 
+// perceptionEvents is the spec-041 perception sweep (T007, research D2): for
+// each awake living villager on its perception beat, diff ground truth within
+// the witness radius against the agent's mental map and emit ONE agent.saw
+// carrying the new/changed facts, fully baked (Seen = this tick, provenance
+// witnessed, Detail as perceived) and sorted (Kind, X, Y). A remembered fact
+// is skipped only when it is witnessed, detail-current, AND still fresh — so
+// re-perception refreshes a fact exactly when its read-time horizon would
+// stale it, and a told/revealed fact upgrades to witnessed on first sight.
+// Pure function of (state, map, nextTick); stepEvents doctrine: reads s,
+// never mutates it.
+//
+// The perception beat is the movement cadence — the same per-agent stagger
+// slot as stepping ((tick + i*3) % moveEveryTicks == 0) — so a walker looks
+// around exactly as often as it moves and a stationary agent notices changes
+// within the same window, at a fifth of the per-tick sweep cost.
+//
+// Gated kinds (data-model.md): every structure kind as-is (fires bake their
+// FuelUntil into Detail), ground piles ("pile"), and the resource tiles —
+// standing trees, unharvested forage, unquarried rock ("tree"/"forage"/
+// "rock", overlay-aware), water shoreline ("water_edge": a water tile with a
+// statically-passable neighbor — terrain shape, so walls never churn it),
+// and dens ("den"; a den on cooldown still exists).
+func perceptionEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
+	var events []store.Event
+	// Beat eligibility first (T034 hot-path finding): the overlay sets below
+	// are worth building only when some agent actually looks around this
+	// tick — at night the whole village sleeps and the sweep must be free.
+	onBeat := false
+	for i := range s.Agents {
+		a := &s.Agents[i]
+		if !a.Dead && !a.Asleep && a.Map != nil && (nextTick+int64(i)*3)%moveEveryTicks == 0 {
+			onBeat = true
+			break
+		}
+	}
+	if !onBeat {
+		return nil
+	}
+
+	for i := range s.Agents {
+		a := &s.Agents[i]
+		if a.Dead || a.Asleep || a.Map == nil {
+			continue
+		}
+		if (nextTick+int64(i)*3)%moveEveryTicks != 0 {
+			continue // not this agent's perception beat
+		}
+		// Per-beat local membership sets (T034 hot-path finding): the whole-
+		// world overlay sets this sweep used to build EVERY tick were steady
+		// allocation churn (O(overlays) map inserts per tick, forever
+		// growing). Each beat instead scans the overlay slices once — no
+		// allocation for the misses — and keeps only the handful of points
+		// inside this agent's diamond. Lookup-only, so map iteration order
+		// never matters.
+		cleared := make(map[Point]bool)
+		for _, p := range s.Cleared {
+			if abs(p.X-a.X)+abs(p.Y-a.Y) <= witnessRadius {
+				cleared[p] = true
+			}
+		}
+		harvested := make(map[Point]bool)
+		for _, h := range s.Harvested {
+			if abs(h.X-a.X)+abs(h.Y-a.Y) <= witnessRadius {
+				harvested[Point{X: h.X, Y: h.Y}] = true
+			}
+		}
+		quarried := make(map[Point]bool)
+		for _, p := range s.Quarried {
+			if abs(p.X-a.X)+abs(p.Y-a.Y) <= witnessRadius {
+				quarried[p] = true
+			}
+		}
+		var news []PlaceFact
+		note := func(kind string, x, y int, detail int64) {
+			if rem, ok := a.Map.factAt(kind, x, y); ok &&
+				rem.Provenance == ProvenanceWitnessed && rem.Detail == detail &&
+				factFresh(rem, nextTick) {
+				return // known, current, and fresh — nothing new to record
+			}
+			news = append(news, PlaceFact{
+				Kind: kind, X: x, Y: y, Seen: nextTick,
+				Provenance: ProvenanceWitnessed, Detail: detail,
+			})
+		}
+		// Resource tiles within the Manhattan radius (row-major scan; the
+		// payload is sorted below regardless).
+		for y := a.Y - witnessRadius; y <= a.Y+witnessRadius; y++ {
+			for x := a.X - witnessRadius; x <= a.X+witnessRadius; x++ {
+				if !m.InBounds(x, y) || abs(x-a.X)+abs(y-a.Y) > witnessRadius {
+					continue
+				}
+				pt := Point{X: x, Y: y}
+				switch m.At(x, y) {
+				case worldmap.Tree:
+					if !cleared[pt] {
+						note("tree", x, y, 0)
+					}
+				case worldmap.Forage:
+					if !harvested[pt] {
+						note("forage", x, y, 0)
+					}
+				case worldmap.Rock:
+					if !quarried[pt] {
+						note("rock", x, y, 0)
+					}
+				case worldmap.Water:
+					if waterEdge(m, x, y) {
+						note("water_edge", x, y, 0)
+					}
+				}
+			}
+		}
+		for _, d := range m.Dens {
+			if abs(d.X-a.X)+abs(d.Y-a.Y) <= witnessRadius {
+				note("den", d.X, d.Y, 0)
+			}
+		}
+		for _, st := range s.Structures {
+			if abs(st.X-a.X)+abs(st.Y-a.Y) <= witnessRadius {
+				// FuelUntil is zero for every non-fire kind, so Detail stays
+				// omitted for them (data-model.md: fires bake it, piles 0).
+				note(st.Kind, st.X, st.Y, st.FuelUntil)
+			}
+		}
+		for _, p := range s.Piles {
+			if abs(p.X-a.X)+abs(p.Y-a.Y) <= witnessRadius {
+				note("pile", p.X, p.Y, 0)
+			}
+		}
+		if len(news) > 0 {
+			sortFacts(news)
+			events = append(events, store.Event{Tick: nextTick, Type: "agent.saw",
+				Payload: mustPayload(SawPayload{Agent: i, Facts: news})})
+		}
+
+		// The correction half (spec 041 US3, T019): remembered FRESH facts
+		// within the radius that are ABSENT from ground truth are perceived
+		// gone. Absence is about the PLACE, not its availability — a
+		// harvested forage spot or a cooling den still exists (only its
+		// availability lapsed, the resolvers' ground-condition class), while
+		// a chopped tree, a quarried-out outcrop, a drained pile, or a
+		// removed structure is genuinely no more (groundFactPresent). Gone
+		// facts ride verbatim (as remembered) in canonical order — Facts is
+		// already (Kind,X,Y)-sorted. Stale facts are invisible to read paths
+		// and left untouched; re-perception (agent.saw above) covers their
+		// return. Emitted after the agent's saw event, a fixed order; the two
+		// batches are disjoint by construction (a fact absent from ground
+		// truth is never in the saw diff).
+		var gone []PlaceFact
+		clearedAt := func(x, y int) bool { return cleared[Point{X: x, Y: y}] }
+		quarriedAt := func(x, y int) bool { return quarried[Point{X: x, Y: y}] }
+		for _, f := range a.Map.Facts {
+			if abs(f.X-a.X)+abs(f.Y-a.Y) > witnessRadius || !factFresh(f, nextTick) {
+				continue
+			}
+			if !groundFactPresentIn(s, m, f, clearedAt, quarriedAt) {
+				gone = append(gone, f)
+			}
+		}
+		if len(gone) > 0 {
+			events = append(events, store.Event{Tick: nextTick, Type: "agent.map_corrected",
+				Payload: mustPayload(MapCorrectedPayload{Agent: i, Gone: gone})})
+			// The situated discoveries ride the same batch as companion
+			// memory events, one per gone fact (the buildFailedEvents shape —
+			// memories accrete ONLY via agent.memory_added, TestMemoriesAccrete).
+			// Salience sits below the generation bump: re-arming on a matching
+			// intent target is the absorb trigger's job, not an interrupt.
+			for _, f := range gone {
+				events = append(events, situatedMemoryEvent(nextTick, i, salMapCorrected,
+					PlaceAt(s, a.X, a.Y), "", OriginWitness, "%s", mapCorrectedText(f)))
+			}
+		}
+	}
+	return events
+}
+
+// groundFactPresent reports whether a remembered place-fact still names a
+// real place (spec 041 US3): the correction's absence test. Kind-aware —
+// terrain spots that merely regrow/cool (forage, dens, water) are permanent
+// places and never correct; overlay-permanent removals (chopped tree,
+// quarried rock), drained piles, and removed structures are gone.
+func groundFactPresent(s *State, m *worldmap.Map, f PlaceFact) bool {
+	return groundFactPresentIn(s, m, f,
+		func(x, y int) bool {
+			for _, p := range s.Cleared {
+				if p.X == x && p.Y == y {
+					return true
+				}
+			}
+			return false
+		},
+		func(x, y int) bool {
+			for _, p := range s.Quarried {
+				if p.X == x && p.Y == y {
+					return true
+				}
+			}
+			return false
+		})
+}
+
+// groundFactPresentIn is groundFactPresent with caller-supplied cleared /
+// quarried membership tests (T034 hot-path finding): the perception sweep's
+// correction half runs this once per remembered in-radius fact per beat, and
+// the slice-scanning overlay checks (effectiveKind's shape) made it
+// O(facts × overlays); the sweep passes its per-beat local sets instead. The
+// two overlay tests must match the Cleared/Quarried semantics exactly —
+// groundFactPresent above is the reference wiring.
+func groundFactPresentIn(s *State, m *worldmap.Map, f PlaceFact, cleared, quarried func(x, y int) bool) bool {
+	if !m.InBounds(f.X, f.Y) {
+		return false
+	}
+	switch f.Kind {
+	case "tree":
+		// effectiveKind's overlay rule: a cleared tree tile reads Grass.
+		return m.At(f.X, f.Y) == worldmap.Tree && !cleared(f.X, f.Y)
+	case "rock":
+		// effectiveKind's overlay rule: a quarried outcrop reads Depleted.
+		return m.At(f.X, f.Y) == worldmap.Rock && !quarried(f.X, f.Y)
+	case "forage":
+		// Harvested spots regrow — the SPOT persists (static terrain).
+		return m.At(f.X, f.Y) == worldmap.Forage
+	case "water_edge":
+		return m.At(f.X, f.Y) == worldmap.Water && waterEdge(m, f.X, f.Y)
+	case "den":
+		for _, d := range m.Dens {
+			if d.X == f.X && d.Y == f.Y {
+				return true
+			}
+		}
+		return false
+	case "pile":
+		return s.pileAt(f.X, f.Y) != nil
+	}
+	return s.structureAt(f.Kind, f.X, f.Y)
+}
+
+// groundFactDetail is the kind-specific Detail scalar as ground truth holds it
+// right now (spec 041 data-model: fires bake their FuelUntil; every other kind
+// 0) — the metatron.place_revealed arm's stamp, mirroring what the perception
+// sweep would bake had the agent seen the place itself.
+func groundFactDetail(s *State, f PlaceFact) int64 {
+	if f.Kind != "fire" {
+		return 0
+	}
+	for i := range s.Structures {
+		if st := &s.Structures[i]; st.Kind == "fire" && st.X == f.X && st.Y == f.Y {
+			return st.FuelUntil
+		}
+	}
+	return 0
+}
+
+// waterEdge reports whether a water tile touches statically-walkable ground —
+// the shoreline a villager can draw from (and the only water worth a
+// place-fact). Static terrain only: the shoreline is terrain shape, so
+// dynamic overlays (walls) never churn the fact set.
+func waterEdge(m *worldmap.Map, x, y int) bool {
+	for _, d := range neighborOrder {
+		if m.Passable(x+d[0], y+d[1]) {
+			return true
+		}
+	}
+	return false
+}
+
 // socialEvents runs the adjacency slot: repayment, gifts to the starving,
 // or a talk (with the deterministic verbatim rumor fallback). One social
 // beat per heartbeat keeps the fabric legible.
@@ -399,6 +670,30 @@ func talkEvents(s *State, i, j int, nextTick int64) []store.Event {
 	} else if tell, ok := TellableFor(s, j, i); ok {
 		events = append(events, rumorTellEvent(nextTick, j, i, tell))
 	}
+	// Spec 041 US5 (research D5): the place-knowledge exchange rides EVERY
+	// founded talk beside the rumor slot — up to placeTellCap facts per
+	// direction the other lacks or holds staler (tellablePlaces), one
+	// social.place_told per direction with facts baked at emission, plus
+	// companion situated memories both sides (the map_corrected shape:
+	// memories accrete only via agent.memory_added). Direction order i→j
+	// then j→i is fixed for determinism.
+	for _, dir := range [2][2]int{{i, j}, {j, i}} {
+		from, to := dir[0], dir[1]
+		facts := tellablePlaces(s, from, to, nextTick)
+		if len(facts) == 0 {
+			continue
+		}
+		events = append(events,
+			store.Event{Tick: nextTick, Type: "social.place_told",
+				Payload: mustPayload(PlaceToldPayload{From: from, To: to, Facts: facts})},
+			situatedMemoryEvent(nextTick, from, salPlaceTold,
+				PlaceAt(s, s.Agents[from].X, s.Agents[from].Y), "", OriginAction,
+				"%s", placeToldText(s.Agents[to].Name, facts, true)),
+			situatedMemoryEvent(nextTick, to, salPlaceTold,
+				PlaceAt(s, s.Agents[to].X, s.Agents[to].Y), "", OriginReport,
+				"%s", placeToldText(s.Agents[from].Name, facts, false)),
+		)
+	}
 	return events
 }
 
@@ -469,7 +764,10 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 	case "sleep":
 		emit("agent.slept", AgentPayload{Agent: i})
 		return events
-	case "wander", "goto_warmth", "seek":
+	case "wander", "goto_warmth", "seek", "search":
+		// search (spec 041 US4) is wander-class: instant on arrival — the
+		// walk itself did the exploring (movement marks explored terrain and
+		// the perception beat witnesses what's there).
 		emit("agent.intent_done", AgentPayload{Agent: i})
 		return events
 	case "refuel_fire":

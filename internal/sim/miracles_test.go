@@ -771,6 +771,8 @@ func TestRebaseTaxonomyComplete(t *testing.T) {
 		"MeetingState.OpenedTick":   shift,
 		"MeetingState.GatherStart":  shift,
 		"MetatronOrder.ExpiresTick": shift, // spec 029: a standing order's future expiry deadline
+		"PlaceFact.Seen":            shift, // spec 041: mental-map freshness anchor (Belief.Reinforced shape)
+		"PeerSighting.Seen":         shift, // spec 041 T013: sighting recency anchor, same shape
 		// KEEP — history / identity / counters.
 		"Agent.Generation":                 keep,
 		"Agent.LastConsolidatedNight":      keep,
@@ -797,6 +799,7 @@ func TestRebaseTaxonomyComplete(t *testing.T) {
 		"Norm.DayAmended":                  keep,
 		"NormViolation.Tick":               keep,
 		"MetatronOrder.PlacedTick":         keep, // spec 029: when the order was placed (history)
+		"PlaceFact.Detail":                 keep, // spec 041: remembered value baked at emission, never re-derived (see rebaseTicks)
 	}
 
 	found := map[string]bool{}
@@ -890,6 +893,18 @@ func TestSnapWholeDayNoDrift(t *testing.T) {
 		s.Structures = []Structure{{Kind: "fire", X: fire.X, Y: fire.Y, FuelUntil: t0 + 50}}
 		s.Harvested = []Harvest{{X: harv.X, Y: harv.Y, Regrow: t0 + 70}}
 		s.Piles = []Pile{{X: pile.X, Y: pile.Y, Food: []FoodBatch{{Kind: "food_raw", N: 2, SpoilAt: t0 + 140}}}}
+		// Spec 041: pre-settle the living agent's mental map (one applied
+		// perception sweep at t0, identical in both copies) — agent.saw bakes
+		// absolute Seen ticks, so an unsettled map would emit inside the
+		// window and the payloads would differ by exactly the offset this
+		// test normalizes away. PlaceFact.Seen is SHIFT (rebaseTicks), and
+		// the durable horizon far exceeds the window, so the settled map
+		// stays silent in both runs.
+		for _, e := range perceptionEvents(s, m, t0) {
+			if err := s.Apply(e); err != nil {
+				t.Fatalf("pre-settle sweep: %v", err)
+			}
+		}
 		return s
 	}
 

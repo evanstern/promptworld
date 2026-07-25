@@ -263,7 +263,53 @@ const (
 	// texture, not formative (contracts/events.md: "fire burned out while
 	// agents nearby, low"). Purely personal (no gossip subject).
 	salFireOut = 3
+	// salMapCorrected (spec 041 US3): discovering a remembered place gone —
+	// formative enough to enter the working-memory window and reshape plans,
+	// well below the generation-interrupting band (the absorb trigger, not
+	// salience, does the re-arming).
+	salMapCorrected = 5
+	// salPlaceTold (spec 041 US5): giving/getting directions — the talk band
+	// (salTalk), social texture rather than a formative moment.
+	salPlaceTold = 3
 )
+
+// placeToldText renders the two sides of a place-knowledge exchange (spec 041
+// US5, data-model: "Told Birch about the fire by the rock." / "Birch told you
+// of a fire at (x,y)."). Voiced by the FIRST fact in the payload's canonical
+// order, a second fact folding into "and another place" — one memory per
+// side, never one per fact (the talk band stays quiet).
+func placeToldText(other string, facts []PlaceFact, asTeller bool) string {
+	f := facts[0]
+	what := strings.ReplaceAll(f.Kind, "_", " ")
+	more := ""
+	if len(facts) > 1 {
+		more = ", and another place"
+	}
+	if asTeller {
+		return fmt.Sprintf("Told %s about the %s at (%d,%d)%s.", other, what, f.X, f.Y, more)
+	}
+	return fmt.Sprintf("%s told you of a %s at (%d,%d)%s.", other, what, f.X, f.Y, more)
+}
+
+// mapCorrectedText renders the situated first-person discovery of a remembered
+// place found gone (spec 041 US3, data-model: "The fire … was cold and dead
+// when you looked."). Kind-specific voice for the narratively loud kinds; a
+// closed generic for the rest. Baked into the reduced Memory by the
+// agent.map_corrected arm — pure function of the remembered fact, so live and
+// replay agree.
+func mapCorrectedText(f PlaceFact) string {
+	switch f.Kind {
+	case "fire":
+		return fmt.Sprintf("The fire at (%d,%d) was cold and dead when you looked.", f.X, f.Y)
+	case "pile":
+		return fmt.Sprintf("The goods at (%d,%d) were gone when you looked.", f.X, f.Y)
+	case "tree":
+		return fmt.Sprintf("The tree at (%d,%d) had been felled when you looked.", f.X, f.Y)
+	case "rock":
+		return fmt.Sprintf("The outcrop at (%d,%d) was quarried bare when you looked.", f.X, f.Y)
+	}
+	return fmt.Sprintf("The %s at (%d,%d) was gone when you looked.", strings.ReplaceAll(f.Kind, "_", " "), f.X, f.Y)
+}
 
 // Tone constants for the spec 012 memories above (governance.go/social.go/
 // gru.go each declare their own tone band the same way).

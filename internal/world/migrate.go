@@ -6,9 +6,9 @@ package world
 // daemon must be stopped. It never replays old events under new rules — it reads
 // the source world's covering snapshot, transforms it (internal/sim), and writes
 // a fresh log whose single world.migrated event carries the full transformed
-// state, so the log alone reproduces the migrated world byte-identically. A v1
-// world chains 1→2→3 in one run; the archive name is keyed to the source format
-// (world.v1.db or world.v2.db).
+// state, so the log alone reproduces the migrated world byte-identically. An
+// older world chains every step (1→2→3→4) in one run; the archive name is
+// keyed to the source format (world.v1.db, world.v2.db, or world.v3.db).
 
 import (
 	"encoding/json"
@@ -37,7 +37,7 @@ type MigrateResult struct {
 
 // OpenForMigration loads a world directory WITHOUT the current version gate,
 // for the sole purpose of migrating it. It admits any older supported source
-// format (v1 or v2) and refuses everything else: an already-current (or future)
+// format (v1, v2, or v3) and refuses everything else: an already-current (or future)
 // world has nothing to migrate, and a corrupt manifest is refused exactly as
 // Open would. Map dimensions are defaulted identically to Open so a regenerated
 // map matches what the daemon will boot.
@@ -53,8 +53,8 @@ func OpenForMigration(dir string) (*World, error) {
 	if m.FormatVersion == FormatVersion {
 		return nil, fmt.Errorf("world %q is already format_version %d — nothing to migrate", m.Name, FormatVersion)
 	}
-	if m.FormatVersion != 1 && m.FormatVersion != 2 {
-		return nil, fmt.Errorf("world %q is format_version %d; only v1 and v2 worlds can be migrated to v%d", m.Name, m.FormatVersion, FormatVersion)
+	if m.FormatVersion < 1 || m.FormatVersion > 3 {
+		return nil, fmt.Errorf("world %q is format_version %d; only v1, v2, and v3 worlds can be migrated to v%d", m.Name, m.FormatVersion, FormatVersion)
 	}
 	if m.TickGameSeconds != 1 {
 		return nil, fmt.Errorf("tick_game_seconds %d unsupported (must be 1)", m.TickGameSeconds)
@@ -68,17 +68,22 @@ func OpenForMigration(dir string) (*World, error) {
 	return &World{Dir: dir, Manifest: m}, nil
 }
 
-// V1DBPath / V2DBPath are the archived original databases — the archive name is
-// keyed to the SOURCE format so a v1→(2→)3 run parks world.v1.db and a v2→3 run
-// parks world.v2.db. The archive's existence is the already-migrated guard for
-// that source format, and restoring is "delete world.db, rename this back, reset
-// the manifest to the source version".
+// V1DBPath / V2DBPath / V3DBPath are the archived original databases — the
+// archive name is keyed to the SOURCE format so a v1→(2→3→)4 run parks
+// world.v1.db, a v2→(3→)4 run world.v2.db, and a v3→4 run world.v3.db. The
+// archive's existence is the already-migrated guard for that source format,
+// and restoring is "delete world.db, rename this back, reset the manifest to
+// the source version".
 func (w *World) V1DBPath() string { return filepath.Join(w.Dir, "world.v1.db") }
 func (w *World) V2DBPath() string { return filepath.Join(w.Dir, "world.v2.db") }
+func (w *World) V3DBPath() string { return filepath.Join(w.Dir, "world.v3.db") }
 
 // archiveDBPath is the archive name for this world's SOURCE format version.
 func (w *World) archiveDBPath() string {
-	if w.Manifest.FormatVersion == 2 {
+	switch w.Manifest.FormatVersion {
+	case 3:
+		return w.V3DBPath()
+	case 2:
 		return w.V2DBPath()
 	}
 	return w.V1DBPath()
@@ -158,13 +163,14 @@ func Migrate(dir string) (*MigrateResult, error) {
 		}
 	}
 
-	// Transform the covering-snapshot state to the current (v3) format. A v1
-	// world chains both transforms in one run: v1→v2 re-places souls on the v2
-	// regeneration of the same seed (w.Map() uses this build's generator, so
-	// they stand on passable v2 tiles, rock outcrops included), then v2→v3
-	// carries everything verbatim and spills any over-cap carry. A v2 world runs
-	// the v2→v3 step alone (no map needed — no land reset). srcTick is the
-	// carried continuation tick in every path.
+	// Transform the covering-snapshot state to the current (v4) format,
+	// chaining every step from the source version in one run: v1→v2 re-places
+	// souls on the v2 regeneration of the same seed (w.Map() uses this build's
+	// generator, so they stand on passable v2 tiles, rock outcrops included);
+	// v2→v3 carries everything verbatim and spills any over-cap carry; v3→v4
+	// grants each villager its mental map (explored home area + witnessed
+	// facts for current structures/piles — spec 041, research D7). srcTick is
+	// the carried continuation tick in every path.
 	var finalState *sim.State
 	var srcTick int64
 	switch w.Manifest.FormatVersion {
@@ -175,9 +181,17 @@ func Migrate(dir string) (*MigrateResult, error) {
 			st.Close()
 			return nil, err
 		}
-		finalState = sim.TransformV2State(v2state)
+		finalState = sim.TransformV3State(sim.TransformV2State(v2state), w.Map())
 	case 2:
-		finalState, srcTick, err = sim.TransformV2Snapshot(snap.State)
+		var v3state *sim.State
+		v3state, srcTick, err = sim.TransformV2Snapshot(snap.State)
+		if err != nil {
+			st.Close()
+			return nil, err
+		}
+		finalState = sim.TransformV3State(v3state, w.Map())
+	case 3:
+		finalState, srcTick, err = sim.TransformV3Snapshot(snap.State, w.Map())
 		if err != nil {
 			st.Close()
 			return nil, err

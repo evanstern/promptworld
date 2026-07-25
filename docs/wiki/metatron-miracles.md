@@ -10,7 +10,7 @@ sources:
   - internal/tool/registry.go
   - internal/ipc/server.go
   - cmd/promptworld/miracle.go
-verified_against: 1e71b77f104dda982aa407b28ad2c994219e90d0
+verified_against: 3b7dd17b478ab5aa64e4c99c44b77bc565d71376
 ---
 
 # Metatron's miracles
@@ -47,7 +47,11 @@ partial application (validate-not-clamp, reject-whole):
   `FuelUntil`/`Owner`/`Store` along whole; a moved pile merges onto any pile already
   at the destination (`movePile`); a moved villager drops its intent and goes idle
   at the landing tick (cancel-and-replan) — villagers may share a tile, so no
-  destination-exclusivity check applies to a villager move.
+  destination-exclusivity check applies to a villager move. Since spec 041
+  ([[mental-maps]]), a teleported villager also gets the SAME derived
+  mental-map bookkeeping a walked step gets: its landing surroundings mark
+  explored and mutual peer sightings with anyone nearby update — a miracle
+  move is knowledge-transparent, not a blind teleport.
 - **`applyEntityRemoved`**: a villager is always rejected ("a villager can never be
   removed" — v1 doctrine). A removed chest first spills its `Store` to a ground pile
   via `spillInventory` (the same death-spill vocabulary `agent.died` uses) before
@@ -115,7 +119,13 @@ classified SHIFT or KEEP in its doc comment:
   stays at 0 so it never decays), `Gru.LastAttack`, `Meeting.OpenedTick`,
   `Meeting.GatherStart`, and (spec 029) `MetatronOrder.ExpiresTick` — shifted ONLY
   for ACTIVE orders, so a standing order's remaining lifetime survives the jump (a
-  consumed order's deadline is a spent artifact, left put).
+  consumed order's deadline is a spent artifact, left put). Spec 041
+  ([[mental-maps]]) adds `PlaceFact.Seen` and `PeerSighting.Seen`, the mental
+  map's freshness anchors (fresh iff `now − Seen < horizon`, the
+  `Belief.Reinforced` shape) — shifted unconditionally when non-zero, since a
+  snap would otherwise instantly stale every villager's spatial knowledge;
+  `applyEntityMoved`'s villager case (below) shares the same derived
+  bookkeeping a walked step gets.
 - **KEEP** — a historical timestamp or an identity/counter; rewriting it would
   rewrite history or break a reference. `Agent.Generation`, `Agent.LastGoalTick`,
   `Memory.Tick`, `Memory.Conv` (spec 019: a conversation-ref identity, the same
@@ -123,11 +133,16 @@ classified SHIFT or KEEP in its doc comment:
   `JournalEntry.Tick` (spec 019: when the entry was written, a historical
   timestamp), `Belief.Tick`, `ChronicleEntry.Tick`/`Day`/`FromTick`/`ToTick`,
   `MetatronOrder.PlacedTick` (spec 029: when the order was placed, history),
-  and every other identity/history field — see the doc comment for the full list.
+  `PlaceFact.Detail` (spec 041: a remembered value baked at emission, never
+  re-derived — for a fire it mirrors the FuelUntil last seen, so shifting it
+  would rewrite what the agent remembers rather than what is; the perception
+  sweep simply re-witnesses the shifted reality on the next look), and every
+  other identity/history field — see the doc comment for the full list.
   `TestRebaseTaxonomyComplete` caught both spec-019 additions, the spec-030
-  `Belief.Reinforced` field, and (later) spec 029's `MetatronOrder.ExpiresTick`/
-  `PlacedTick` as new tick-anchored `int64` fields requiring classification,
-  confirming the taxonomy guard holds across features outside miracles' own spec.
+  `Belief.Reinforced` field, (later) spec 029's `MetatronOrder.ExpiresTick`/
+  `PlacedTick`, and spec 041's `PlaceFact`/`PeerSighting` fields as new
+  tick-anchored `int64` fields requiring classification, confirming the
+  taxonomy guard holds across features outside miracles' own spec.
 
 `TestRebaseTaxonomyComplete` (`internal/sim/miracles_test.go`) is the taxonomy guard:
 it fails the build when a new tick-anchored `int64` field appears in the state
@@ -227,6 +242,9 @@ between the three contexts.
 [[metatron]] hosts the angel's door (`landMiracle`, the `work_miracle` tool call
 parsed into `miracleArgs`); [[metatron-orders]] shares this note's `rebaseTicks`
 taxonomy (a standing order's `ExpiresTick` is a SHIFT field);
+[[mental-maps]] shares it too (`PlaceFact.Seen`/`PeerSighting.Seen` SHIFT,
+`PlaceFact.Detail` KEEP) and is what a miracle-moved villager's derived
+explored/sighting bookkeeping updates;
 [[sim-loop]] whitelists the four event types in `injectSocialWhitelist` and
 reattaches the static map to the dry-run probe; [[sim-state-reducer]] dispatches to
 `applyMiracle` and carries the unexported `m *worldmap.Map` field the reducer arms

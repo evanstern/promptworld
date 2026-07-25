@@ -242,6 +242,28 @@ func (md *Mind) absorb(batch []store.Event) {
 					}
 				}
 			}
+		case "agent.map_corrected":
+			// Spec 041 (US3, T021 / contracts §1): a correction re-arms the
+			// planner ONLY when a removed fact matches the agent's current
+			// intent target — the plan the agent is executing just lost its
+			// premise. The replica has already applied the event (facts
+			// removed), but the intent is untouched by the arm, so the
+			// match reads the live intent. Corrections that touch nothing
+			// the agent is acting on stay quiet (the memory carries them
+			// into the next scheduled round instead).
+			var p sim.MapCorrectedPayload
+			if json.Unmarshal(e.Payload, &p) == nil &&
+				p.Agent >= 0 && p.Agent < len(md.replica.Agents) {
+				if in := md.replica.Agents[p.Agent].Intent; in != nil {
+					for _, f := range p.Gone {
+						if (f.X == in.TargetX && f.Y == in.TargetY) ||
+							(f.X == in.ResX && f.Y == in.ResY) {
+							md.arm(p.Agent, e.Seq)
+							break
+						}
+					}
+				}
+			}
 		case "agent.moved":
 			md.armEncounters(e)
 		case "agent.talked":

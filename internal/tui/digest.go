@@ -304,6 +304,50 @@ var digestRegistry = map[string]digestFunc{
 		}
 		return join([]seg{nameOf(names, p.Agent), txt(" → "), coord(p.X, p.Y)}), true
 	},
+	// agent.saw (spec 041) summarizes the perception diff by its first
+	// (canonically-ordered) fact plus a count — a full fact list would flood
+	// the feed line; the detail pane holds the payload.
+	"agent.saw": func(e store.Event, names []string) ([]seg, bool) {
+		p, ok := decode[sim.SawPayload](e)
+		if !ok || len(p.Facts) == 0 {
+			return nil, false
+		}
+		f := p.Facts[0]
+		segs := []seg{nameOf(names, p.Agent), txt(" saw "), emph(f.Kind), txt(" at "), coord(f.X, f.Y)}
+		if more := len(p.Facts) - 1; more > 0 {
+			segs = append(segs, txt(" (+"), emphN(more), txt(" more)"))
+		}
+		return join(segs), true
+	},
+	// social.place_told (spec 041 US5): directions passed on a talk — the
+	// agent.saw first-fact-plus-count shape.
+	"social.place_told": func(e store.Event, names []string) ([]seg, bool) {
+		p, ok := decode[sim.PlaceToldPayload](e)
+		if !ok || len(p.Facts) == 0 {
+			return nil, false
+		}
+		f := p.Facts[0]
+		segs := []seg{nameOf(names, p.From), txt(" told "), nameOf(names, p.To),
+			txt(" of "), emph(f.Kind), txt(" at "), coord(f.X, f.Y)}
+		if more := len(p.Facts) - 1; more > 0 {
+			segs = append(segs, txt(" (+"), emphN(more), txt(" more)"))
+		}
+		return join(segs), true
+	},
+	// agent.map_corrected (spec 041 US3): the believe-act-discover moment —
+	// same first-fact-plus-count shape as agent.saw.
+	"agent.map_corrected": func(e store.Event, names []string) ([]seg, bool) {
+		p, ok := decode[sim.MapCorrectedPayload](e)
+		if !ok || len(p.Gone) == 0 {
+			return nil, false
+		}
+		f := p.Gone[0]
+		segs := []seg{nameOf(names, p.Agent), txt(" found "), emph(f.Kind), txt(" at "), coord(f.X, f.Y), txt(" gone")}
+		if more := len(p.Gone) - 1; more > 0 {
+			segs = append(segs, txt(" (+"), emphN(more), txt(" more)"))
+		}
+		return join(segs), true
+	},
 	"agent.foraged": func(e store.Event, names []string) ([]seg, bool) {
 		p, ok := decode[sim.HarvestPayload](e)
 		if !ok {
@@ -857,6 +901,22 @@ var digestRegistry = map[string]digestFunc{
 			targets = append(targets, nameOf(names, t))
 		}
 		return join([]seg{txt("Metatron "), emph(p.Form), txt(" → ")}, targets, []seg{txt(": "), speech(p.Text)}), true
+	},
+	// metatron.place_revealed (spec 041 FR-014): a vision's divine place
+	// grant — the agent.saw first-fact-plus-count shape, Metatron as subject
+	// (the nudge convention).
+	"metatron.place_revealed": func(e store.Event, names []string) ([]seg, bool) {
+		p, ok := decode[sim.PlaceRevealedPayload](e)
+		if !ok || len(p.Facts) == 0 {
+			return nil, false
+		}
+		f := p.Facts[0]
+		segs := []seg{txt("Metatron revealed "), emph(f.Kind), txt(" at "), coord(f.X, f.Y),
+			txt(" to "), nameOf(names, p.Agent)}
+		if more := len(p.Facts) - 1; more > 0 {
+			segs = append(segs, txt(" (+"), emphN(more), txt(" more)"))
+		}
+		return join(segs), true
 	},
 	// metatron.order_placed / order_triggered / order_cancelled / order_expired
 	// (spec 029, TASK-27 wiki-sweep gap): the standing-order lifecycle

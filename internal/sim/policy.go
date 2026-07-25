@@ -29,20 +29,34 @@ func decideIntent(s *State, m *worldmap.Map, idx int, tick int64) decision {
 		return decision{directEvent: "agent.ate"}
 	}
 
-	// Hungry with nothing carried: get food (forage first, hunt as backup).
+	// Hungry with nothing carried: get food (forage first, hunt as backup),
+	// or — knowing of no available food source — go LOOKING for one (spec 041
+	// US4 T026, FR-013 parity without omniscience). The search fallback is
+	// hunger-only: the larder top-up below stays opportunistic (a fed
+	// villager doesn't mount expeditions — constant frontier treks desync the
+	// village from its forage-regrow rotation and starve marginal maps).
 	if a.Needs.Food < hungryAt {
 		if d, ok := foodIntent(s, m, a, tick); ok {
 			return decision{intent: d}
 		}
+		if p, ok := nearestFrontier(m, s, a); ok {
+			return decision{intent: &Intent{Goal: "search", TargetX: p.X, TargetY: p.Y}}
+		}
 	}
 
+	// Spec 041 (US1/T014, reflex parity): every rung below resolves targets
+	// through the SAME map predicates the goal resolvers use — no omniscient
+	// fallback (clarify Q2). Standing warmth (warmAt at the agent's own tile)
+	// stays ground truth: feeling warm where you stand is perception, not
+	// place knowledge.
+	warmKnown, _ := warmKnownPredicate(a, tick)
 	if s.Night {
 		if !warmAt(s, a.X, a.Y, tick) {
-			// Reach warmth, or make it, or get the wood to make it.
-			if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool { return warmAt(s, x, y, tick) && passable(m, s, x, y) }); ok {
+			// Reach KNOWN warmth, or make it, or get the wood to make it.
+			if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool { return warmKnown(x, y) && passable(m, s, x, y) }); ok {
 				return decision{intent: &Intent{Goal: "goto_warmth", TargetX: p.X, TargetY: p.Y}}
 			}
-			// The one reflex addition (T020, FR-012): a cold/dying fire nearby
+			// The one reflex addition (T020, FR-012): a cold/dying KNOWN fire
 			// and wood in hand — relight it (cheaper than a fresh build).
 			if in, ok := reflexRefuelIntent(s, m, a, tick); ok {
 				return decision{intent: in}
@@ -52,10 +66,8 @@ func decideIntent(s *State, m *worldmap.Map, idx int, tick int64) decision {
 					return decision{intent: &Intent{Goal: "build_fire", TargetX: p.X, TargetY: p.Y}}
 				}
 			}
-			if stand, res, ok := nearestAdjacentTo(m, s, a.X, a.Y, func(x, y int) bool {
-				return m.InBounds(x, y) && effectiveKind(m, s, x, y) == worldmap.Tree
-			}); ok {
-				return decision{intent: &Intent{Goal: "chop", TargetX: stand.X, TargetY: stand.Y, ResX: res.X, ResY: res.Y}}
+			if in, ok := chopIntent(s, m, a, tick); ok {
+				return decision{intent: in}
 			}
 		}
 		// Warm (or nothing to be done about it): sleep where you stand.
@@ -66,7 +78,7 @@ func decideIntent(s *State, m *worldmap.Map, idx int, tick int64) decision {
 	if a.Needs.Rest < tiredAt {
 		tx, ty := a.X, a.Y
 		if !warmAt(s, tx, ty, tick) {
-			if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool { return warmAt(s, x, y, tick) && passable(m, s, x, y) }); ok {
+			if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool { return warmKnown(x, y) && passable(m, s, x, y) }); ok {
 				tx, ty = p.X, p.Y
 			}
 		}
@@ -75,14 +87,16 @@ func decideIntent(s *State, m *worldmap.Map, idx int, tick int64) decision {
 
 	// Village prep: a fire before the first night, then keep it burning, then a
 	// full larder. Shelter-building is planner-only now (T020, FR-012): it costs
-	// planks, and the reflex never enters the crafting economy.
-	if !s.hasStructure("fire") {
+	// planks, and the reflex never enters the crafting economy. Spec 041: "the
+	// village has a fire" is now the agent's own belief — it builds one when it
+	// KNOWS of none, not when the world holds none.
+	if !knowsAnyFresh(a, "fire", tick) {
 		if a.Inv.Wood >= fireWoodCost {
 			if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool { return buildSite(m, s, x, y) }); ok {
 				return decision{intent: &Intent{Goal: "build_fire", TargetX: p.X, TargetY: p.Y}}
 			}
 		}
-		if d, ok := chopIntent(s, m, a); ok {
+		if d, ok := chopIntent(s, m, a, tick); ok {
 			return decision{intent: d}
 		}
 	}
@@ -118,35 +132,38 @@ func hasAnyFood(a *Agent) bool {
 }
 
 // reflexRefuelIntent is the reflex's one new rule (T020, FR-012): when carrying
-// wood, refuel the nearest fire that is cold (tick ≥ FuelUntil) or dying
-// (under refuelDyingBelow left). Returns no intent when the agent has no wood
-// or no such fire is reachable — the reflex never chops just to refuel.
+// wood, refuel the nearest KNOWN fire the agent remembers as cold or dying —
+// remembered Detail (FuelUntil as last seen) under refuelDyingBelow from now
+// (spec 041: the agent predicts burnout from its own knowledge; a fire someone
+// refueled out of view is still worth the walk — the completion no-ops at the
+// cap). Returns no intent when the agent has no wood or knows no such fire —
+// the reflex never chops just to refuel.
 func reflexRefuelIntent(s *State, m *worldmap.Map, a *Agent, tick int64) (*Intent, bool) {
 	if a.Inv.Wood < 1 {
 		return nil, false
 	}
-	if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool {
-		st, ok := fireStructAt(s, x, y)
-		return ok && st.FuelUntil-tick < refuelDyingBelow
+	if p, ok := nearestKnown(m, s, a, "fire", tick, func(x, y int) bool {
+		f, _ := knownFreshFact(a, "fire", x, y, tick)
+		return f.Detail-tick < refuelDyingBelow
 	}); ok {
 		return &Intent{Goal: "refuel_fire", TargetX: p.X, TargetY: p.Y}, true
 	}
 	return nil, false
 }
 
+// foodIntent is the reflex's shared food lookup: the nearest KNOWN forage
+// spot, else the nearest KNOWN ready den (spec 041 T014 — same predicates as
+// the forage/hunt resolvers). The US4 search fallback lives on the HUNGRY
+// call site in decideIntent, not here — the larder rung shares this lookup
+// but never searches.
 func foodIntent(s *State, m *worldmap.Map, a *Agent, tick int64) (*Intent, bool) {
-	if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool {
+	if p, ok := nearestKnown(m, s, a, "forage", tick, func(x, y int) bool {
 		return effectiveKind(m, s, x, y) == worldmap.Forage
 	}); ok {
 		return &Intent{Goal: "forage", TargetX: p.X, TargetY: p.Y}, true
 	}
-	if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool {
-		for _, d := range m.Dens {
-			if d.X == x && d.Y == y && denReadyAt(s, x, y, tick) {
-				return true
-			}
-		}
-		return false
+	if p, ok := nearestKnown(m, s, a, "den", tick, func(x, y int) bool {
+		return denReadyAt(s, x, y, tick)
 	}); ok {
 		return &Intent{Goal: "hunt", TargetX: p.X, TargetY: p.Y}, true
 	}
@@ -203,7 +220,13 @@ func buildGoalResolvers() map[string]goalResolver {
 		return nil, "", fmt.Errorf("no build site reachable")
 	}
 	// talk resolves both talk_to (the planner verb) and its internal "seek"
-	// alias — they shared one switch arm.
+	// alias — they shared one switch arm. Spec 041 (T013): the walk target is
+	// the acting agent's LAST SIGHTING of the target (its mental map's peer
+	// record), never the target's live coordinates — a stale sighting resolves
+	// honestly to where the target was last seen, and the landing/arrival
+	// guards (GuardTargetPresent) cover the miss. The Dead check stays on live
+	// state: the landing door's GuardTargetAlive gates it identically, and
+	// death-knowledge honesty is beyond this feature's place-fact scope.
 	talk := func(s *State, m *worldmap.Map, a *Agent, idx int, goal string, targetAgent int, kind string, qty int, tick int64) (*Intent, string, error) {
 		if targetAgent < 0 || targetAgent >= len(s.Agents) || targetAgent == idx {
 			return nil, "", fmt.Errorf("no such agent to seek")
@@ -212,7 +235,11 @@ func buildGoalResolvers() map[string]goalResolver {
 		if t.Dead {
 			return nil, "", fmt.Errorf("%s is dead", t.Name)
 		}
-		return &Intent{Goal: "seek", TargetX: t.X, TargetY: t.Y}, "", nil
+		sight, ok := peerSightingOf(a, targetAgent)
+		if !ok {
+			return nil, "", fmt.Errorf("you do not know where %s is", t.Name)
+		}
+		return &Intent{Goal: "seek", TargetX: sight.X, TargetY: sight.Y}, "", nil
 	}
 
 	return map[string]goalResolver{
@@ -229,7 +256,18 @@ func buildGoalResolvers() map[string]goalResolver {
 			return nil, "agent.ate", nil
 		},
 		"forage": func(s *State, m *worldmap.Map, a *Agent, idx int, goal string, targetAgent int, kind string, qty int, tick int64) (*Intent, string, error) {
-			if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool {
+			// Spec 041 (US1, research D3): knowledge-gated — the candidate set is
+			// the agent's fresh forage facts, not the world's forage tiles.
+			// AVAILABILITY at a known place (the harvested overlay) stays a
+			// ground condition on top, the den-readiness class: regrowth is not
+			// in the fact model, and without it the reflex livelocks on the
+			// nearest just-harvested spot (its fact persists until US3's
+			// correction). Knowing none is the epistemic failure (contracts §4),
+			// distinct from reaching none.
+			if !knowsAnyFresh(a, "forage", tick) {
+				return nil, "", fmt.Errorf("you know of no forage")
+			}
+			if p, ok := nearestKnown(m, s, a, "forage", tick, func(x, y int) bool {
 				return effectiveKind(m, s, x, y) == worldmap.Forage
 			}); ok {
 				return &Intent{Goal: "forage", TargetX: p.X, TargetY: p.Y}, "", nil
@@ -237,39 +275,50 @@ func buildGoalResolvers() map[string]goalResolver {
 			return nil, "", fmt.Errorf("no forage reachable")
 		},
 		"hunt": func(s *State, m *worldmap.Map, a *Agent, idx int, goal string, targetAgent int, kind string, qty int, tick int64) (*Intent, string, error) {
-			if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool {
-				for _, d := range m.Dens {
-					if d.X == x && d.Y == y && denReadyAt(s, x, y, tick) {
-						return true
-					}
-				}
-				return false
+			// Spec 041: gated on known dens; readiness stays a ground condition
+			// on top (cooldowns are not in the fact model — the same class as
+			// chest contents below).
+			if !knowsAnyFresh(a, "den", tick) {
+				return nil, "", fmt.Errorf("you know of no dens")
+			}
+			if p, ok := nearestKnown(m, s, a, "den", tick, func(x, y int) bool {
+				return denReadyAt(s, x, y, tick)
 			}); ok {
 				return &Intent{Goal: "hunt", TargetX: p.X, TargetY: p.Y}, "", nil
 			}
 			return nil, "", fmt.Errorf("no ready den reachable")
 		},
 		"chop": func(s *State, m *worldmap.Map, a *Agent, idx int, goal string, targetAgent int, kind string, qty int, tick int64) (*Intent, string, error) {
-			if in, ok := chopIntent(s, m, a); ok {
+			if !knowsAnyFresh(a, "tree", tick) {
+				return nil, "", fmt.Errorf("you know of no trees")
+			}
+			if in, ok := chopIntent(s, m, a, tick); ok {
 				return in, "", nil
 			}
 			return nil, "", fmt.Errorf("no tree reachable")
 		},
 		"quarry": func(s *State, m *worldmap.Map, a *Agent, idx int, goal string, targetAgent int, kind string, qty int, tick int64) (*Intent, string, error) {
 			// Planner-only (research R5, FR-020): never added to decideIntent's
-			// reflex ladder.
-			if stand, res, ok := nearestAdjacentTo(m, s, a.X, a.Y, func(x, y int) bool {
-				return m.InBounds(x, y) && effectiveKind(m, s, x, y) == worldmap.Rock
+			// reflex ladder. Spec 041: gated on known outcrops; depletion (the
+			// Quarried overlay) stays a ground condition — availability, not
+			// place knowledge (forage's harvested-overlay rationale).
+			if !knowsAnyFresh(a, "rock", tick) {
+				return nil, "", fmt.Errorf("you know of no rock outcrops")
+			}
+			if stand, res, ok := nearestKnownAdjacentTo(m, s, a, "rock", tick, func(x, y int) bool {
+				return effectiveKind(m, s, x, y) == worldmap.Rock
 			}); ok {
 				return &Intent{Goal: "quarry", TargetX: stand.X, TargetY: stand.Y, ResX: res.X, ResY: res.Y}, "", nil
 			}
 			return nil, "", fmt.Errorf("no rock outcrop reachable")
 		},
 		"collect_water": func(s *State, m *worldmap.Map, a *Agent, idx int, goal string, targetAgent int, kind string, qty int, tick int64) (*Intent, string, error) {
-			// Planner-only, same as quarry.
-			if stand, res, ok := nearestAdjacentTo(m, s, a.X, a.Y, func(x, y int) bool {
-				return m.InBounds(x, y) && effectiveKind(m, s, x, y) == worldmap.Water
-			}); ok {
+			// Planner-only, same as quarry. Spec 041: water_edge facts sit on the
+			// shoreline water tiles, matching the old matchRes coordinates.
+			if !knowsAnyFresh(a, "water_edge", tick) {
+				return nil, "", fmt.Errorf("you know of no water")
+			}
+			if stand, res, ok := nearestKnownAdjacentTo(m, s, a, "water_edge", tick, nil); ok {
 				return &Intent{Goal: "collect_water", TargetX: stand.X, TargetY: stand.Y, ResX: res.X, ResY: res.Y}, "", nil
 			}
 			return nil, "", fmt.Errorf("no water reachable")
@@ -341,10 +390,16 @@ func buildGoalResolvers() map[string]goalResolver {
 		"build_wall_stone": wallBuild,
 		"demolish": func(s *State, m *worldmap.Map, a *Agent, idx int, goal string, targetAgent int, kind string, qty int, tick int64) (*Intent, string, error) {
 			// Spec 032 US1 (research R5): tear down the nearest wall. Adjacent-
-			// stand (wall tiles are impassable), so nearestAdjacentTo over isWall
-			// gives the stand tile (Target) beside the wall tile (Res). No material
-			// needed to demolish.
-			if stand, res, ok := nearestAdjacentTo(m, s, a.X, a.Y, func(x, y int) bool { return wallAt(s, x, y) != nil }); ok {
+			// stand (wall tiles are impassable), so the adjacent search gives the
+			// stand tile (Target) beside the wall tile (Res). No material needed
+			// to demolish. Spec 041: gated on KNOWN walls (either kind).
+			if !knowsAnyFresh(a, "wall_plank", tick) && !knowsAnyFresh(a, "wall_stone", tick) {
+				return nil, "", fmt.Errorf("you know of no walls")
+			}
+			knownWall := func(x, y int) bool {
+				return knownFactAt(a, "wall_plank", x, y, tick) || knownFactAt(a, "wall_stone", x, y, tick)
+			}
+			if stand, res, ok := nearestAdjacentTo(m, s, a.X, a.Y, knownWall); ok {
 				return &Intent{Goal: "demolish", TargetX: stand.X, TargetY: stand.Y, ResX: res.X, ResY: res.Y}, "", nil
 			}
 			return nil, "", fmt.Errorf("no wall reachable to demolish")
@@ -352,10 +407,17 @@ func buildGoalResolvers() map[string]goalResolver {
 		"repair": func(s *State, m *worldmap.Map, a *Agent, idx int, goal string, targetAgent int, kind string, qty int, tick int64) (*Intent, string, error) {
 			// Spec 032 US1 (research R5): mend the nearest DAMAGED wall the agent
 			// can afford — HP below the derived max AND at least 1 unit of that
-			// wall's build material carried (planks for a plank wall, refined
-			// stone for a stone wall). A wall already at full health never
-			// resolves (nothing to repair). Adjacent-stand, like demolish.
+			// wall's build material carried. A wall already at full health never
+			// resolves. Adjacent-stand, like demolish. Spec 041: gated on known
+			// walls; HP/material stay ground conditions (damage is not in the
+			// fact model — a mended-behind-your-back wall no-ops at arrival).
+			if !knowsAnyFresh(a, "wall_plank", tick) && !knowsAnyFresh(a, "wall_stone", tick) {
+				return nil, "", fmt.Errorf("you know of no walls")
+			}
 			if stand, res, ok := nearestAdjacentTo(m, s, a.X, a.Y, func(x, y int) bool {
+				if !knownFactAt(a, "wall_plank", x, y, tick) && !knownFactAt(a, "wall_stone", x, y, tick) {
+					return false
+				}
 				w := wallAt(s, x, y)
 				return w != nil && w.HP < wallMaxHP(w.Kind) && invField(a.Inv, wallRepairMaterial(w.Kind)) >= 1
 			}); ok {
@@ -365,38 +427,54 @@ func buildGoalResolvers() map[string]goalResolver {
 		},
 		"refuel_fire": func(s *State, m *worldmap.Map, a *Agent, idx int, goal string, targetAgent int, kind string, qty int, tick int64) (*Intent, string, error) {
 			// T020: planner OR reflex (the one shared goal, FR-020). Target the
-			// nearest fire, lit or cold — the completion relights a cold one.
+			// nearest KNOWN fire (spec 041), lit or cold — the completion
+			// relights a cold one.
 			if a.Inv.Wood < 1 {
 				return nil, "", fmt.Errorf("%s lacks wood to refuel a fire", a.Name)
 			}
-			if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool { return s.structureAt("fire", x, y) }); ok {
+			if !knowsAnyFresh(a, "fire", tick) {
+				return nil, "", fmt.Errorf("you know of no fires")
+			}
+			if p, ok := nearestKnown(m, s, a, "fire", tick, nil); ok {
 				return &Intent{Goal: "refuel_fire", TargetX: p.X, TargetY: p.Y}, "", nil
 			}
 			return nil, "", fmt.Errorf("no fire reachable to refuel")
 		},
 		"cook": func(s *State, m *worldmap.Map, a *Agent, idx int, goal string, targetAgent int, kind string, qty int, tick int64) (*Intent, string, error) {
-			// T031: cook raw food at the nearest valid station — a lit fire or an
-			// oven, whichever is nearer (the shared `nearest` BFS helper's fixed
-			// neighbor order makes the tie-break deterministic). Station-specific
-			// duration/output (fire → food_cooked, oven → meals + 1 wood fuel) is
-			// resolved from the target at the executor (workDuration/completion).
+			// T031: cook raw food at the nearest valid station, whichever is
+			// nearer (the shared BFS's fixed neighbor order makes the tie-break
+			// deterministic). Station-specific duration/output is resolved from
+			// the target at the executor. Spec 041: the stations are the agent's
+			// KNOWN ovens and the fires it REMEMBERS as lit — remembered Detail
+			// (FuelUntil as last seen) against now, so burnout is predicted from
+			// the agent's own knowledge, never read off the world.
 			if a.Inv.FoodRaw <= 0 {
 				return nil, "", fmt.Errorf("%s has no raw food to cook", a.Name)
 			}
-			if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool {
-				return litFireAt(s, x, y, tick) || s.structureAt("oven", x, y)
-			}); ok {
+			station := func(x, y int) bool {
+				if f, ok := knownFreshFact(a, "fire", x, y, tick); ok && f.Detail > tick {
+					return true
+				}
+				return knownFactAt(a, "oven", x, y, tick)
+			}
+			if !knowsLitFire(a, tick) && !knowsAnyFresh(a, "oven", tick) {
+				return nil, "", fmt.Errorf("you know of no lit fire or oven")
+			}
+			if p, ok := nearest(m, s, a.X, a.Y, station); ok {
 				return &Intent{Goal: "cook", TargetX: p.X, TargetY: p.Y}, "", nil
 			}
 			return nil, "", fmt.Errorf("no lit fire or oven reachable to cook at")
 		},
 		"bathe": func(s *State, m *worldmap.Map, a *Agent, idx int, goal string, targetAgent int, kind string, qty int, tick int64) (*Intent, string, error) {
-			// T032: water's only v1 consumer — bathe at an oven.
+			// T032: water's only v1 consumer — bathe at a KNOWN oven (spec 041).
 			r, _ := recipeFor("bathe")
 			if !hasItems(a.Inv, r.Inputs) {
 				return nil, "", fmt.Errorf("%s lacks water/wood to bathe", a.Name)
 			}
-			if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool { return s.structureAt("oven", x, y) }); ok {
+			if !knowsAnyFresh(a, "oven", tick) {
+				return nil, "", fmt.Errorf("you know of no ovens")
+			}
+			if p, ok := nearestKnown(m, s, a, "oven", tick, nil); ok {
 				return &Intent{Goal: "bathe", TargetX: p.X, TargetY: p.Y}, "", nil
 			}
 			return nil, "", fmt.Errorf("no oven reachable to bathe at")
@@ -410,33 +488,48 @@ func buildGoalResolvers() map[string]goalResolver {
 			return &Intent{Goal: "drop", TargetX: a.X, TargetY: a.Y, Kind: kind, Qty: qty}, "", nil
 		},
 		"pick_up": func(s *State, m *worldmap.Map, a *Agent, idx int, goal string, targetAgent int, kind string, qty int, tick int64) (*Intent, string, error) {
-			// Planner/plan-only. Target the nearest pile tile — piles sit on
-			// passable ground, so the agent walks onto it; the completion
-			// re-validates a pile on/adjacent and moves goods truncated to free
-			// bulk (Kind "" sweeps every kind in canonical order).
-			if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool { return s.pileAt(x, y) != nil }); ok {
+			// Planner/plan-only. Target the nearest KNOWN pile tile (spec 041) —
+			// piles sit on passable ground, so the agent walks onto it; the
+			// completion re-validates a pile on/adjacent and moves goods
+			// truncated to free bulk (Kind "" sweeps every kind in canonical
+			// order). Pile presence stays a ground condition (a drained pile is
+			// REMOVED from state while its fact lives until US3's correction —
+			// the forage-overlay availability class).
+			if !knowsAnyFresh(a, "pile", tick) {
+				return nil, "", fmt.Errorf("you know of no piles")
+			}
+			if p, ok := nearestKnown(m, s, a, "pile", tick, func(x, y int) bool {
+				return s.pileAt(x, y) != nil
+			}); ok {
 				return &Intent{Goal: "pick_up", TargetX: p.X, TargetY: p.Y, Kind: kind, Qty: qty}, "", nil
 			}
 			return nil, "", fmt.Errorf("no pile reachable")
 		},
 		"deposit": func(s *State, m *worldmap.Map, a *Agent, idx int, goal string, targetAgent int, kind string, qty int, tick int64) (*Intent, string, error) {
-			// T024 (spec 013 US3): planner/plan-only. Target the nearest chest (any
-			// owner — the commons/ownership split is social, not mechanical; anyone
-			// may deposit). The completion re-validates the chest and truncates to its
-			// free space (chestCap − bulk(*Store)); Kind "" or nothing that fits
-			// resolves via intent_done at completion.
-			if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool { return s.chestAt(x, y) != nil }); ok {
+			// T024 (spec 013 US3): planner/plan-only. Target the nearest KNOWN
+			// chest (spec 041; any owner — the commons/ownership split is social,
+			// not mechanical). The completion re-validates the chest and
+			// truncates to its free space; Kind "" or nothing that fits resolves
+			// via intent_done at completion.
+			if !knowsAnyFresh(a, "chest", tick) {
+				return nil, "", fmt.Errorf("you know of no chests")
+			}
+			if p, ok := nearestKnown(m, s, a, "chest", tick, nil); ok {
 				return &Intent{Goal: "deposit", TargetX: p.X, TargetY: p.Y, Kind: kind, Qty: qty}, "", nil
 			}
 			return nil, "", fmt.Errorf("no chest reachable")
 		},
 		"withdraw": func(s *State, m *worldmap.Map, a *Agent, idx int, goal string, targetAgent int, kind string, qty int, tick int64) (*Intent, string, error) {
-			// T024: planner/plan-only. Target the nearest chest whose Store holds Kind
-			// (Kind "" ⇒ the nearest chest with anything in it). The completion
+			// T024: planner/plan-only. Target the nearest KNOWN chest (spec 041)
+			// whose Store holds Kind (Kind "" ⇒ anything in it) — contents stay
+			// a ground condition on top of the knowledge gate (what's inside is
+			// not in the fact model; den-readiness class). The completion
 			// truncates to the taker's free bulk and to what the chest holds; a
-			// non-owner take co-emits the theft companion batch (US4, T029) — this
-			// goal only resolves the intent here.
-			if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool {
+			// non-owner take co-emits the theft companion batch (US4, T029).
+			if !knowsAnyFresh(a, "chest", tick) {
+				return nil, "", fmt.Errorf("you know of no chests")
+			}
+			if p, ok := nearestKnown(m, s, a, "chest", tick, func(x, y int) bool {
 				ch := s.chestAt(x, y)
 				if ch == nil || ch.Store == nil {
 					return false
@@ -454,10 +547,28 @@ func buildGoalResolvers() map[string]goalResolver {
 			return &Intent{Goal: "sleep", TargetX: a.X, TargetY: a.Y}, "", nil
 		},
 		"goto_warmth": func(s *State, m *worldmap.Map, a *Agent, idx int, goal string, targetAgent int, kind string, qty int, tick int64) (*Intent, string, error) {
-			if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool { return warmAt(s, x, y, tick) && passable(m, s, x, y) }); ok {
+			// Spec 041: warmth the agent can PLAN on — near a fire it remembers
+			// as lit, or on a shelter it knows (warmKnownPredicate). Terrain
+			// passability stays ground truth (D3).
+			warm, any := warmKnownPredicate(a, tick)
+			if !any {
+				return nil, "", fmt.Errorf("you know of no warm place")
+			}
+			if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool { return warm(x, y) && passable(m, s, x, y) }); ok {
 				return &Intent{Goal: "goto_warmth", TargetX: p.X, TargetY: p.Y}, "", nil
 			}
 			return nil, "", fmt.Errorf("no warmth anywhere")
+		},
+		"search": func(s *State, m *worldmap.Map, a *Agent, idx int, goal string, targetAgent int, kind string, qty int, tick int64) (*Intent, string, error) {
+			// Spec 041 US4 (research D4): walk to the nearest frontier of the
+			// KNOWN world — explored, passable, adjacent to unexplored land.
+			// Arrival is an instant goal (wander-class); the perception sweep
+			// then grows the map and the planner re-arms with fresh knowledge.
+			// A fully-explored reachable world fails honestly (contracts §4).
+			if p, ok := nearestFrontier(m, s, a); ok {
+				return &Intent{Goal: "search", TargetX: p.X, TargetY: p.Y}, "", nil
+			}
+			return nil, "", fmt.Errorf("nothing left unexplored")
 		},
 		"wander": func(s *State, m *worldmap.Map, a *Agent, idx int, goal string, targetAgent int, kind string, qty int, tick int64) (*Intent, string, error) {
 			r := rngAt(s.Seed, "wander", tick, idx)
@@ -487,9 +598,14 @@ func resolveGoal(s *State, m *worldmap.Map, idx int, goal string, targetAgent in
 	return nil, "", fmt.Errorf("unknown goal %q", goal)
 }
 
-func chopIntent(s *State, m *worldmap.Map, a *Agent) (*Intent, bool) {
-	stand, res, ok := nearestAdjacentTo(m, s, a.X, a.Y, func(x, y int) bool {
-		return m.InBounds(x, y) && effectiveKind(m, s, x, y) == worldmap.Tree
+// chopIntent targets the nearest KNOWN standing tree (spec 041 — shared by
+// the chop resolver and the reflex's firewood rung, so parity is by
+// construction). The cleared overlay stays a ground condition (availability,
+// not place knowledge — forage's harvested-overlay rationale; a chopped
+// tree's fact would otherwise livelock the firewood rung until US3 corrects).
+func chopIntent(s *State, m *worldmap.Map, a *Agent, tick int64) (*Intent, bool) {
+	stand, res, ok := nearestKnownAdjacentTo(m, s, a, "tree", tick, func(x, y int) bool {
+		return effectiveKind(m, s, x, y) == worldmap.Tree
 	})
 	if !ok {
 		return nil, false

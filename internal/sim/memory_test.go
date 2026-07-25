@@ -202,6 +202,7 @@ func TestResolveGoalErrors(t *testing.T) {
 	const seed = 42
 	m := testMap(seed)
 	s := NewState(seed, m)
+	sightAll(s, 0) // spec 041: talk_to resolves from the actor's sightings
 
 	if _, _, err := resolveGoal(s, m, 0, "summon_gru", -1, "", 0, 0); err == nil {
 		t.Error("unknown goal should error")

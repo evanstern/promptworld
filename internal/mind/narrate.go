@@ -138,6 +138,38 @@ func (md *Mind) chronicleNote(e store.Event) {
 				}
 			}
 		}
+	case "agent.map_corrected":
+		// Spec 041 (US3, T020): the believe-act-discover beat — narrated by
+		// the FIRST corrected fact (canonical order), the agent.saw digest's
+		// first-fact convention; a multi-fact correction stays one line.
+		var p sim.MapCorrectedPayload
+		if json.Unmarshal(e.Payload, &p) == nil && len(p.Gone) > 0 {
+			f := p.Gone[0]
+			what := strings.ReplaceAll(f.Kind, "_", " ")
+			if f.Kind == "pile" {
+				what = "cache of goods"
+			}
+			line = fmt.Sprintf("%s went looking for the %s at (%d,%d) and found it gone.",
+				name(p.Agent), what, f.X, f.Y)
+		}
+	case "social.place_told":
+		// Spec 041 (US5, T030): directions change hands — voiced by the first
+		// fact (canonical order), the correction grammar's convention.
+		var p sim.PlaceToldPayload
+		if json.Unmarshal(e.Payload, &p) == nil && len(p.Facts) > 0 {
+			f := p.Facts[0]
+			line = fmt.Sprintf("%s told %s about the %s at (%d,%d).",
+				name(p.From), name(p.To), strings.ReplaceAll(f.Kind, "_", " "), f.X, f.Y)
+		}
+	case "metatron.place_revealed":
+		// Spec 041 (FR-014, T032): the divine reveal — voiced by the first
+		// fact (canonical order), the correction/telling grammar convention.
+		var p sim.PlaceRevealedPayload
+		if json.Unmarshal(e.Payload, &p) == nil && len(p.Facts) > 0 {
+			f := p.Facts[0]
+			line = fmt.Sprintf("A vision showed %s the %s at (%d,%d).",
+				name(p.Agent), strings.ReplaceAll(f.Kind, "_", " "), f.X, f.Y)
+		}
 	case "agent.thought":
 		var p sim.ThoughtPayload
 		if json.Unmarshal(e.Payload, &p) == nil && p.Source == "musing" {

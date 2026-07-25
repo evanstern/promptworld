@@ -160,6 +160,41 @@ func (s *State) applyMetatron(e store.Event) error {
 			return fmt.Errorf("apply %s: text length %d outside 1..%d", e.Type, len(p.Text), NudgeTextMax)
 		}
 		s.MetatronCharges--
+	case "metatron.place_revealed":
+		// Spec 041 (FR-014, T032): a vision's divine place grant. Validates
+		// rather than clamps (the nudged arm's contract — the InjectSocial
+		// dry-run runs this on a state copy, so an invalid reveal is rejected
+		// at the door and a recorded one always re-applies): the target must
+		// live, and every fact must name a REAL place (groundFactPresent —
+		// the god reveals what is; a false vision is not a channel). Seen,
+		// Provenance, and Detail are stamped here, normatively (the
+		// order-Status-ignored shape): Seen = the landing tick, Detail =
+		// ground truth at landing (a fire's FuelUntil), a pure function of
+		// (state, event) so live and replay agree byte-for-byte. A map-less
+		// agent skips the upsert — the reducer stays total (agent.saw shape).
+		var p PlaceRevealedPayload
+		if err := json.Unmarshal(e.Payload, &p); err != nil {
+			return fmt.Errorf("apply %s: %w", e.Type, err)
+		}
+		if p.Agent < 0 || p.Agent >= len(s.Agents) {
+			return fmt.Errorf("apply %s: unknown target %d", e.Type, p.Agent)
+		}
+		a := &s.Agents[p.Agent]
+		if a.Dead {
+			return fmt.Errorf("apply %s: target %s is dead", e.Type, a.Name)
+		}
+		if len(p.Facts) == 0 {
+			return fmt.Errorf("apply %s: no facts to reveal", e.Type)
+		}
+		for _, f := range p.Facts {
+			if s.m != nil && !groundFactPresent(s, s.m, f) {
+				return fmt.Errorf("apply %s: no %s at (%d,%d)", e.Type, f.Kind, f.X, f.Y)
+			}
+			if a.Map != nil {
+				a.Map.upsertFact(PlaceFact{Kind: f.Kind, X: f.X, Y: f.Y, Seen: e.Tick,
+					Provenance: ProvenanceRevealed, Detail: groundFactDetail(s, f)})
+			}
+		}
 	case "metatron.order_placed":
 		var o MetatronOrder
 		if err := json.Unmarshal(e.Payload, &o); err != nil {

@@ -128,6 +128,10 @@ func TestWhitelistDiffIdentical(t *testing.T) {
 		"metatron.order_placed":    true,
 		"metatron.order_cancelled": true,
 		"metatron.order_triggered": true,
+		// Spec 041 (FR-014) widens the boundary by exactly one entry — the
+		// vision's divine place grant, declared in send_vision's Events
+		// (pinned ⊆ this whitelist by ValidateToolCoverage).
+		"metatron.place_revealed": true,
 	}
 	for typ := range want {
 		if !injectSocialWhitelist[typ] {
@@ -193,6 +197,7 @@ func TestWorldToolDurationsMatchSimConstants(t *testing.T) {
 		"craft_axe": craftSpearTicks,
 		// Spec 032 US3 (path).
 		"build_path": buildPathTicks,
+		"search":     0, // spec 041 US4: instant, wander-class (arrival completes it)
 	}
 
 	seen := make(map[string]bool, len(want))

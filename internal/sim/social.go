@@ -292,6 +292,30 @@ func (s *State) applySocial(e store.Event) error {
 			}
 		}
 
+	case "social.place_told":
+		// Spec 041 (US5, T029): upsert the told facts into the RECEIVER's map,
+		// absent-or-staler only — knowledge the receiver holds at least as
+		// freshly stands (fresher never loses to secondhand; Seen is the trust
+		// model). Facts arrive fully baked (told provenance, teller's Seen,
+		// Source = the immediate teller); the companion memories ride the same
+		// batch as agent.memory_added events. A map-less receiver is a no-op —
+		// the reducer stays total (the agent.saw shape).
+		var p PlaceToldPayload
+		if err := json.Unmarshal(e.Payload, &p); err != nil {
+			return fmt.Errorf("apply %s: %w", e.Type, err)
+		}
+		if p.To < 0 || p.To >= len(s.Agents) {
+			return fmt.Errorf("apply %s: agent %d out of range", e.Type, p.To)
+		}
+		if to := &s.Agents[p.To]; to.Map != nil {
+			for _, f := range p.Facts {
+				if held, ok := to.Map.factAt(f.Kind, f.X, f.Y); ok && held.Seen >= f.Seen {
+					continue
+				}
+				to.Map.upsertFact(f)
+			}
+		}
+
 	case "social.rumor_told":
 		var p RumorToldPayload
 		if err := json.Unmarshal(e.Payload, &p); err != nil {

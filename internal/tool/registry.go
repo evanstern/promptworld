@@ -313,6 +313,13 @@ var worldToolsBase = []Tool{
 	{Name: "craft_axe", Effect: World, Gate: Resolvable, Cost: Cost{DurationTicks: 240}, PlanStep: true, PromptGloss: glossCraftAxe},
 	// Spec 032 US3 (path): a buildable tile improvement, planner-only.
 	{Name: "build_path", Effect: World, Gate: Resolvable, Cost: Cost{DurationTicks: 240}, PlanStep: true, PromptGloss: glossBuildPath},
+	// Spec 041 US4 (contracts §2): deliberate exploration of the unknown —
+	// appended after build_path so the registration-order byte anchor holds.
+	// No args in v1 (a kind hint is a documented future extension; selection
+	// is nearest-frontier regardless). Instant, wander-class; reflex-eligible
+	// (the get-food fallback rung).
+	{Name: "search", Effect: World, Gate: Resolvable, Cost: Cost{DurationTicks: 0}, PlanStep: true, ReflexEligible: true,
+		PromptGloss: `Search unexplored land: walk toward the nearest edge of what you know, looking around as you go. Use when you need something you know no place for.`},
 }
 
 // setPlanTool is the loop-only planning tool (spec 017 R11): Effect World
@@ -414,6 +421,17 @@ func monitorAndActSchema() json.RawMessage {
 	return b
 }
 
+// placeFactKinds is the mental map's closed place-fact vocabulary (spec 041,
+// sim/mentalmap.go PlaceFact): the structure kinds plus the perception-gated
+// resource kinds — the domain of send_vision's optional place_kind. Declared
+// here (not imported) because tool must not depend on sim; the reducer
+// dry-run's ground-truth presence check is the semantic authority, so a drift
+// here can only over- or under-offer, never land a false fact.
+var placeFactKinds = []string{
+	"fire", "shelter", "oven", "chest", "wall_plank", "wall_stone", "path",
+	"tree", "forage", "rock", "water_edge", "den", "pile",
+}
+
 // metatronTools are the metatron roster's tools. converse produces a
 // transcript reply and lands NO world events. It is the metatron's
 // expressive speech channel, so it is Effect Expressive with an empty Events
@@ -434,12 +452,26 @@ func monitorAndActSchema() json.RawMessage {
 var metatronTools = []Tool{
 	{Name: "converse", Effect: Expressive, Gate: None,
 		Params: []Param{{Name: "text", Kind: Text}}},
+	// send_vision's optional place grant (spec 041 FR-014): the three place_*
+	// params ride together (all or none — the handler refuses a partial
+	// triple) and, when given, the vision also lands one
+	// metatron.place_revealed granting the target knowledge of ONE real
+	// place, provenance revealed. The kind enum is the mental map's closed
+	// place-fact vocabulary (sim/mentalmap.go PlaceFact); the reducer dry-run
+	// is the authority that the place actually exists. A vision without the
+	// place params behaves exactly as before.
 	{Name: "send_vision", Effect: Expressive, Gate: Charge,
 		Params: []Param{
 			{Name: "target", Kind: AgentName, Required: true},
-			{Name: "text", Kind: Text, Required: true, MaxBytes: 400}},
+			{Name: "text", Kind: Text, Required: true, MaxBytes: 400},
+			{Name: "place_kind", Kind: Enum, Enum: placeFactKinds,
+				Description: "optional: also reveal one real place to the target — the place's kind (requires place_x and place_y)"},
+			{Name: "place_x", Kind: Number,
+				Description: "optional: x of the revealed place"},
+			{Name: "place_y", Kind: Number,
+				Description: "optional: y of the revealed place"}},
 		Cost:   Cost{Charges: 1, TextCapBytes: 400},
-		Events: []string{"metatron.nudged", "agent.memory_added"}},
+		Events: []string{"metatron.nudged", "metatron.place_revealed", "agent.memory_added"}},
 	{Name: "send_omen", Effect: Expressive, Gate: Charge,
 		Params: []Param{
 			{Name: "targets", Kind: Text, Required: true,

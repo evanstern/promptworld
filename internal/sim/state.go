@@ -120,12 +120,27 @@ func NewState(seed uint64, m *worldmap.Map) *State {
 	}
 	pos := genesisPlacement(seed, m, agentCount)
 	for i := range s.Agents {
+		// Spec 041 (research D7): villagers begin knowing their landing area
+		// and nothing else — spawn surroundings explored at the perception
+		// radius, zero facts (cold-start worlds have no structures; the first
+		// perception sweep witnesses nearby resources as events). Genesis is
+		// reconstructed from seed, never replayed, so this is replay-safe by
+		// construction.
+		mm := newMentalMap(m.W, m.H)
+		mm.MarkExplored(m.W, m.H, pos[i].X, pos[i].Y, witnessRadius)
 		s.Agents[i] = Agent{
 			Name:  AgentNames[i],
 			X:     pos[i].X,
 			Y:     pos[i].Y,
 			Needs: Needs{Health: 1000, Food: 600, Rest: 800, Warmth: 800, Morale: 600},
+			Map:   mm,
 		}
+	}
+	// Spec 041 (T013): villagers who spawn within sight of each other start
+	// knowing where their neighbors stand — nothing else (D7). Second pass so
+	// every map exists before the mutual sightings.
+	for i := range s.Agents {
+		s.notePresence(i, 0)
 	}
 	return s
 }
@@ -151,6 +166,17 @@ func genesisPlacement(seed uint64, m *worldmap.Map, count int) []Point {
 		}
 	}
 	return pos
+}
+
+// MapDims exposes the attached static map's dimensions (0,0 when no map is
+// attached — bare test states). The mind's prompt renderer sizes mental-map
+// bitmap reads with it (spec 041 US2) without the State ever serializing the
+// map itself.
+func (s *State) MapDims() (int, int) {
+	if s.m == nil {
+		return 0, 0
+	}
+	return s.m.W, s.m.H
 }
 
 // SetMap attaches the static world map to a State built outside NewState —
@@ -580,6 +606,56 @@ func (s *State) Apply(e store.Event) error {
 			return err
 		}
 		a.X, a.Y = p.X, p.Y
+		// Spec 041 (research D2): silent derived bookkeeping — a mover's
+		// surroundings become explored terrain in its mental map, and mover
+		// and bystanders record each other's positions. Pure function of
+		// (state, event); no event, no chronicle noise.
+		s.markExplored(a, p.X, p.Y)
+		s.notePresence(p.Agent, e.Tick)
+
+	case "agent.saw":
+		// Spec 041 (T007): the perception sweep's witnessed facts, fully
+		// baked at emission (Seen/Provenance/Detail absolute — no arithmetic
+		// that could drift), upserted verbatim into the agent's map. A
+		// map-less agent (dead at migration on a pre-041 world) is a no-op —
+		// the reducer stays total.
+		var p SawPayload
+		if err := json.Unmarshal(e.Payload, &p); err != nil {
+			return fmt.Errorf("apply %s: %w", e.Type, err)
+		}
+		a, err := agent(p.Agent)
+		if err != nil {
+			return err
+		}
+		if a.Map != nil {
+			for _, f := range p.Facts {
+				a.Map.upsertFact(f)
+			}
+		}
+
+	case "agent.map_corrected":
+		// Spec 041 (US3, T019): the perception sweep found remembered facts
+		// gone — remove them from the agent's map. The situated discovery
+		// memories ride the SAME batch as companion agent.memory_added events
+		// (emitted by the sweep, the spec-038 buildFailedEvents shape): the
+		// memories-accrete-via-events invariant (agents.go, TestMemoriesAccrete)
+		// forbids an arm appending Memories directly — a deviation from
+		// data-model.md's "reducer stamps a situated memory" phrasing,
+		// recorded for the planning tier. A map-less agent is a no-op
+		// (total, the agent.saw shape).
+		var p MapCorrectedPayload
+		if err := json.Unmarshal(e.Payload, &p); err != nil {
+			return fmt.Errorf("apply %s: %w", e.Type, err)
+		}
+		a, err := agent(p.Agent)
+		if err != nil {
+			return err
+		}
+		if a.Map != nil {
+			for _, f := range p.Gone {
+				a.Map.removeFact(f.Kind, f.X, f.Y)
+			}
+		}
 
 	case "agent.foraged":
 		var p HarvestPayload
@@ -1280,6 +1356,9 @@ func (s *State) Apply(e store.Event) error {
 		}
 		a.Asleep = false
 		a.IdleSince = e.Tick
+		// Spec 041 (T013): a waker looks around — sleepers record no
+		// sightings, so waking refreshes who is nearby (derived, D2 class).
+		s.notePresence(p.Agent, e.Tick)
 
 	case "agent.needs_changed":
 		var p NeedsPayload
@@ -1378,7 +1457,8 @@ func (s *State) Apply(e store.Event) error {
 
 	case "social.relation_changed", "social.gave", "social.promise_broken",
 		"social.rumor_told", "social.secret_seeded",
-		"social.conversation_turn", "social.conversation", "social.chest_taken":
+		"social.conversation_turn", "social.conversation", "social.chest_taken",
+		"social.place_told":
 		return s.applySocial(e)
 
 	case "agent.memory_promoted", "agent.memory_faded", "agent.belief_revised",
@@ -1392,6 +1472,7 @@ func (s *State) Apply(e store.Event) error {
 		return s.applyChronicle(e)
 
 	case "metatron.charge_regenerated", "metatron.nudged",
+		"metatron.place_revealed",
 		"metatron.order_placed", "metatron.order_triggered",
 		"metatron.order_cancelled", "metatron.order_expired":
 		return s.applyMetatron(e)

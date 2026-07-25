@@ -77,6 +77,65 @@ func nearest(m *worldmap.Map, s *State, fromX, fromY int, match func(x, y int) b
 	return Point{X: x, Y: y}, found
 }
 
+// nearestKnown is the knowledge-gated twin of nearest (spec 041 US1, research
+// D3): the closest reachable tile holding a FRESH fact of kind in the ACTING
+// agent's map, searched from the agent's own position. The BFS geometry —
+// deterministic neighbor order over ground-truth passability — is untouched;
+// only the match closure is gated, so "nearest known" keeps exactly nearest's
+// tie-breaking. also (nil = none) layers a verb's extra ground conditions
+// (den readiness, chest contents) on top of the knowledge gate. Candidates
+// are the agent's BELIEFS: a remembered place that has since vanished still
+// resolves — arrival re-validation is the correction moment (D3, US3).
+func nearestKnown(m *worldmap.Map, s *State, a *Agent, kind string, now int64, also func(x, y int) bool) (Point, bool) {
+	return nearest(m, s, a.X, a.Y, func(x, y int) bool {
+		return knownFactAt(a, kind, x, y, now) && (also == nil || also(x, y))
+	})
+}
+
+// nearestKnownAdjacentTo is the knowledge-gated twin of nearestAdjacentTo:
+// the closest passable stand tile beside a tile holding a fresh fact of kind
+// in the acting agent's map (chop/quarry/collect_water's adjacent-stand
+// shape). Same gating contract as nearestKnown.
+func nearestKnownAdjacentTo(m *worldmap.Map, s *State, a *Agent, kind string, now int64, also func(x, y int) bool) (stand, res Point, ok bool) {
+	return nearestAdjacentTo(m, s, a.X, a.Y, func(x, y int) bool {
+		return knownFactAt(a, kind, x, y, now) && (also == nil || also(x, y))
+	})
+}
+
+// nearestFrontier finds the agent's nearest exploration frontier (spec 041
+// US4, research D4 — Yamauchi-style): the closest reachable tile that the
+// agent's map marks EXPLORED and that 4-neighbors at least one in-bounds
+// UNEXPLORED tile. The BFS runs over ground-truth passability with the shared
+// deterministic neighbor order, so tie-breaking matches every other nearest-*
+// helper; the bitmap is decoded once and shared by the whole search. Not
+// found means the reachable world is fully explored — the search verb's
+// honest exhaustion. A map-less agent has no frontier.
+func nearestFrontier(m *worldmap.Map, s *State, a *Agent) (Point, bool) {
+	if a.Map == nil {
+		return Point{}, false
+	}
+	bits := exploredBytes(a.Map.Explored, m.W, m.H)
+	explored := func(x, y int) bool {
+		if x < 0 || y < 0 || x >= m.W || y >= m.H {
+			return false
+		}
+		i := y*m.W + x
+		return bits[i/8]&(1<<(i%8)) != 0
+	}
+	return nearest(m, s, a.X, a.Y, func(x, y int) bool {
+		if !explored(x, y) {
+			return false
+		}
+		for _, d := range neighborOrder {
+			nx, ny := x+d[0], y+d[1]
+			if m.InBounds(nx, ny) && !explored(nx, ny) {
+				return true
+			}
+		}
+		return false
+	})
+}
+
 // nearestAdjacentTo finds the closest passable tile that neighbors a tile
 // satisfying matchRes (e.g. stand beside a tree to chop it). Returns both
 // the standing tile and the resource tile.

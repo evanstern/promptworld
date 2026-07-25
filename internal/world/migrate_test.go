@@ -724,3 +724,188 @@ func assertUntouched(t *testing.T, dir string) {
 		t.Errorf("manifest should still be v1 after a refused migration, got %d", m.FormatVersion)
 	}
 }
+
+// --- v3→v4 migration (spec 041 T009) ----------------------------------------
+
+// v3StateJSON builds a representative v3 covering-snapshot state as a marshaled
+// sim.State with every Agent.Map nil (v3 is structurally a subset of v4 —
+// Agent.Map is additive and omitempty). It carries a living villager beside a
+// fire, a dead villager, and a ground pile — the entities the 3→4 knowledge
+// grant must cover.
+func v3StateJSON(t *testing.T, seed uint64, tick int64) []byte {
+	t.Helper()
+	names := []string{"Ash", "Birch", "Cedar", "Rowan", "Fern", "Hazel", "Oak", "Sage"}
+	agents := make([]sim.Agent, sim.AgentCount)
+	for i := range agents {
+		agents[i] = sim.Agent{
+			Name:  names[i],
+			X:     20 + i,
+			Y:     20 + i,
+			Needs: sim.Needs{Health: 800, Food: 500, Rest: 600, Warmth: 700, Morale: 550},
+			Inv:   sim.Inventory{Wood: 2},
+		}
+	}
+	agents[3].Dead = true
+
+	s := sim.State{
+		Tick:            tick,
+		Speed:           clock.Speed4x,
+		Seed:            seed,
+		Night:           true,
+		Agents:          agents,
+		Structures:      []sim.Structure{{Kind: "fire", X: 10, Y: 10, FuelUntil: 5000}},
+		Piles:           []sim.Pile{{X: 12, Y: 12, Wood: 4}},
+		MetatronCharges: 3,
+	}
+	return s.Marshal()
+}
+
+// writeV3World lays down a v3 world directory: a format_version-3 manifest, a
+// contiguous event log, and a covering snapshot holding a v3 sim.State.
+func writeV3World(t *testing.T, dir string, seed uint64, tick int64, nEvents int) {
+	t.Helper()
+	manifest := `{"name":"fixture3","seed":` + strconv.FormatUint(seed, 10) +
+		`,"created_at":"2026-07-21T00:00:00Z","format_version":3,"tick_game_seconds":1,"map_width":64,"map_height":64}`
+	if err := os.WriteFile(filepath.Join(dir, ManifestName), []byte(manifest), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	st, err := store.Open(filepath.Join(dir, "world.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	appendDummy(t, st, nEvents)
+	if err := st.SaveSnapshot(tick, st.LastSeq(), v3StateJSON(t, seed, tick)); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// TestMigrateV3HappyPath is spec 041 T009: a cleanly-stopped v3 world migrates
+// 3→4 — people and land verbatim, every living villager granted its mental map
+// (explored home area + witnessed facts for the fire and the pile), the dead
+// one an empty map, world.v3.db archived, and the manifest at v4.
+func TestMigrateV3HappyPath(t *testing.T) {
+	dir := t.TempDir()
+	const seed = uint64(42)
+	const tick = int64(400000)
+	writeV3World(t, dir, seed, tick, 5)
+
+	res, err := Migrate(dir)
+	if err != nil {
+		t.Fatalf("Migrate: %v", err)
+	}
+	if res.AgentsCarried != sim.AgentCount || res.Tick != tick || res.SourceEvents != 5 {
+		t.Errorf("result = %+v, want %d agents / tick %d / 5 events", res, sim.AgentCount, tick)
+	}
+	if filepath.Base(res.ArchivePath) != "world.v3.db" {
+		t.Errorf("archive = %s, want world.v3.db", res.ArchivePath)
+	}
+	if _, err := os.Stat(res.ArchivePath); err != nil {
+		t.Errorf("archive %s missing: %v", res.ArchivePath, err)
+	}
+
+	w, err := Open(dir)
+	if err != nil {
+		t.Fatalf("Open after migrate: %v", err)
+	}
+	if w.Manifest.FormatVersion != FormatVersion {
+		t.Errorf("manifest format_version = %d, want %d", w.Manifest.FormatVersion, FormatVersion)
+	}
+
+	st, err := store.Open(w.DBPath())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	snap, err := st.LatestValidSnapshot()
+	if err != nil || snap == nil {
+		t.Fatalf("no covering snapshot after migrate: %v", err)
+	}
+	var s sim.State
+	if err := json.Unmarshal(snap.State, &s); err != nil {
+		t.Fatal(err)
+	}
+
+	// Land verbatim; positions unchanged.
+	if len(s.Structures) != 1 || s.Structures[0].FuelUntil != 5000 || len(s.Piles) != 1 {
+		t.Errorf("land not carried verbatim: %+v / piles %d", s.Structures, len(s.Piles))
+	}
+	if s.Agents[0].X != 20 || s.Agents[0].Y != 20 {
+		t.Errorf("agent 0 moved: (%d,%d), want (20,20)", s.Agents[0].X, s.Agents[0].Y)
+	}
+	// The knowledge grant: living agents hold explored home areas + witnessed
+	// facts for the fire and the pile; the dead one an empty (non-nil) map.
+	m := w.Map()
+	for i := range s.Agents {
+		a := &s.Agents[i]
+		if a.Map == nil {
+			t.Fatalf("agent %d migrated without a map", i)
+		}
+		if a.Dead {
+			if len(a.Map.Facts) != 0 {
+				t.Errorf("dead agent %d granted facts: %+v", i, a.Map.Facts)
+			}
+			continue
+		}
+		if !a.Map.ExploredAt(m.W, m.H, a.X, a.Y) {
+			t.Errorf("living agent %d does not know its home tile", i)
+		}
+		if len(a.Map.Facts) != 2 {
+			t.Fatalf("agent %d facts = %+v, want fire + pile", i, a.Map.Facts)
+		}
+		fire, pile := a.Map.Facts[0], a.Map.Facts[1]
+		if fire.Kind != "fire" || fire.X != 10 || fire.Y != 10 || fire.Seen != tick ||
+			fire.Provenance != "witnessed" || fire.Detail != 5000 {
+			t.Errorf("agent %d fire fact = %+v", i, fire)
+		}
+		if pile.Kind != "pile" || pile.X != 12 || pile.Y != 12 || pile.Seen != tick ||
+			pile.Provenance != "witnessed" {
+			t.Errorf("agent %d pile fact = %+v", i, pile)
+		}
+	}
+}
+
+// TestMigrateV3ReplayDeterminism: delete every snapshot from the migrated
+// world and rebuild from genesis (world.created → world.migrated) — the log
+// alone reproduces the post-migration snapshot byte-identically, maps
+// included (genesis seeds maps; the wholesale replacement must overwrite
+// them with the grant).
+func TestMigrateV3ReplayDeterminism(t *testing.T) {
+	dir := t.TempDir()
+	const seed = uint64(7)
+	const tick = int64(400000)
+	writeV3World(t, dir, seed, tick, 3)
+
+	if _, err := Migrate(dir); err != nil {
+		t.Fatalf("Migrate: %v", err)
+	}
+	w, err := Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	st, err := store.Open(w.DBPath())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	snap, err := st.LatestValidSnapshot()
+	if err != nil || snap == nil {
+		t.Fatalf("no covering snapshot: %v", err)
+	}
+
+	replayed := sim.NewState(seed, w.Map())
+	if err := st.ReplayEvents(0, func(e store.Event) error {
+		if err := replayed.Apply(e); err != nil {
+			return err
+		}
+		if e.Tick > replayed.Tick {
+			replayed.Tick = e.Tick
+		}
+		return nil
+	}); err != nil {
+		t.Fatalf("replay: %v", err)
+	}
+	if got, want := string(replayed.Marshal()), string(snap.State); got != want {
+		t.Fatalf("from-genesis replay diverged from the migrated snapshot:\nwant %s\ngot  %s", want, got)
+	}
+}

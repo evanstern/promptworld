@@ -19,6 +19,7 @@ that note (re-pin with `/grounding-wiki:wiki-update`).
 - [[executor]] — agent bodies: needs, intents, death, terrain overlays, walls/axes/paths
 - [[gru]] — the nocturnal predator: wounds not kills, light/shelter safety, rumor fuel
 - [[reflex-policy]] — survival decision ladder + deterministic BFS pathfinding
+- [[mental-maps]] — per-agent private spatial knowledge: explored terrain + place-facts with provenance/freshness, gating target resolution, grown by a perception sweep, rendered in the prompt
 - [[event-types]] — the event taxonomy and payload shapes
 
 ## Persistence
