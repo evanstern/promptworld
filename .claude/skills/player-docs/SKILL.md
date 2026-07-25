@@ -1,6 +1,6 @@
 ---
 name: "player-docs"
-description: "Generates and refreshes docs/player/ — nine self-contained HTML pages that project the code-grounded wiki (docs/wiki/), README.md, and docs/llm-providers.md into plain-language documentation for players (non-engineers). Runs standalone; the recommended follow-on after /grounding-wiki:wiki-update re-pins wiki notes. Check freshness first: node .claude/skills/player-docs/scripts/check-freshness.mjs --check"
+description: "Generates and refreshes docs/player/ — thirteen self-contained HTML pages that project the code-grounded wiki (docs/wiki/), README.md, docs/llm-providers.md, and (for the curriculum-ladder quickstarts) the spec 046 spec/contracts into plain-language documentation for players (non-engineers). Runs standalone; the recommended follow-on after /grounding-wiki:wiki-update re-pins wiki notes. Check freshness first: node .claude/skills/player-docs/scripts/check-freshness.mjs --check"
 metadata:
   author: "promptworld"
 user-invocable: true
@@ -58,7 +58,7 @@ the check has run and named it stale or missing.
 
 ## The expected page set
 
-`index.html` (nav hub, no sources) plus eight topic pages:
+`index.html` (nav hub, no sources) plus twelve topic pages:
 
 - `getting-started.html`
 - `playing-via-metatron.html`
@@ -68,6 +68,10 @@ the check has run and named it stale or missing.
 - `llm-setup-basics.html`
 - `understanding-the-screen.html`
 - `keys-reference.html`
+- `stage-1-the-voice.html`
+- `stage-2-the-written-word.html`
+- `stage-3-the-craft.html`
+- `stage-4-the-stewardship.html`
 
 ## Page → source mapping
 
@@ -85,6 +89,10 @@ source not listed here, add it — and add the matching meta tag in the same cha
 | `llm-setup-basics.html` | `docs/llm-providers.md`, `docs/wiki/llm-orchestrator.md`, `README.md` |
 | `understanding-the-screen.html` | `docs/wiki/tui-client.md` |
 | `keys-reference.html` | `docs/design/tui/patterns/keymap.md` |
+| `stage-1-the-voice.html` | `specs/046-curriculum-ladder/spec.md`, `specs/046-curriculum-ladder/contracts/stage-gating.md`, `specs/046-curriculum-ladder/contracts/exercises.md` |
+| `stage-2-the-written-word.html` | `specs/046-curriculum-ladder/spec.md`, `specs/046-curriculum-ladder/contracts/stage-gating.md`, `specs/046-curriculum-ladder/contracts/exercises.md`, `specs/046-curriculum-ladder/contracts/unlocks-record.md` |
+| `stage-3-the-craft.html` | `specs/046-curriculum-ladder/spec.md`, `specs/046-curriculum-ladder/contracts/stage-gating.md`, `specs/046-curriculum-ladder/contracts/unlocks-record.md` |
+| `stage-4-the-stewardship.html` | `specs/046-curriculum-ladder/spec.md`, `specs/046-curriculum-ladder/contracts/stage-gating.md` |
 
 `llm-setup-basics.html` stays at "get it working" depth (the minimum `llm.json` a
 non-engineer needs) and defers registry-reference/migration depth to
@@ -99,6 +107,15 @@ they cross-link each other rather than duplicating content. `keys-reference.html
 sources a non-`docs/wiki/` design doc — its source pin is a plain-file `git log`
 pin (same mechanism as `README.md`/`docs/llm-providers.md`), not a
 `verified_against` frontmatter pin.
+
+The four `stage-N-*.html` quickstarts (spec 046, TASK-68) are a quartet addition:
+one page per curriculum-ladder stage, projecting what each stage teaches, grants,
+and requires to unlock the next — cross-linked to each other in ladder order and
+to `promptworld stages`/`new --stage` in prose. They draw on `specs/`
+files rather than `docs/wiki/` notes (the spec is the source of truth for the
+ladder's client-approved names/table), so — the `keys-reference.html` precedent
+above — their source pins are plain-file `git log` pins, not `verified_against`
+frontmatter pins.
 
 ## Provenance meta-tag format
 

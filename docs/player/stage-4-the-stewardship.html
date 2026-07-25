@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="promptworld-docs:generated-by" content="player-docs">
+<meta name="promptworld-docs:source" content="specs/046-curriculum-ladder/spec.md@ffb42074d1f337751ebea53d9737e9750388e776">
+<meta name="promptworld-docs:source" content="specs/046-curriculum-ladder/contracts/stage-gating.md@5592c89e2770bdca625882eb436a8719817e2971">
+<title>Stage 4 — The Stewardship — promptworld player docs</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #55606a;
+    --accent: #0b5fff;
+    --border: #d8dee4;
+    --code-bg: #f3f5f7;
+    --card-bg: #f8f9fb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --fg: #e6e9ec;
+      --muted: #9aa4ae;
+      --accent: #6ea8ff;
+      --border: #333a42;
+      --code-bg: #1d2024;
+      --card-bg: #1a1d21;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+      Arial, sans-serif;
+    line-height: 1.6;
+    max-width: 70ch;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 4rem;
+  }
+  h1, h2, h3 { line-height: 1.25; }
+  h1 { font-size: 1.9rem; margin-top: 0; }
+  h2 { font-size: 1.35rem; margin-top: 2.25rem; border-bottom: 1px solid var(--border);
+    padding-bottom: .3rem; }
+  h3 { font-size: 1.1rem; margin-top: 1.5rem; }
+  p, ul, ol { margin: .9rem 0; }
+  a { color: var(--accent); }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: .15em .4em; border-radius: .3em;
+    font-size: .92em; }
+  pre { background: var(--code-bg); padding: 1rem; border-radius: .5em;
+    overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  blockquote { border-left: 3px solid var(--accent); margin: 1rem 0; padding: .2rem 1rem;
+    color: var(--muted); }
+  .lede { color: var(--muted); font-size: 1.05rem; }
+  .card { background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: .6rem; padding: 1rem 1.25rem; margin: 1rem 0; }
+  .nav-grid { display: block; padding: 0; margin: 0; list-style: none; }
+  .nav-grid li { margin: .6rem 0; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+  th, td { border: 1px solid var(--border); padding: .5rem .6rem; text-align: left; }
+  footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border);
+    color: var(--muted); font-size: .85rem; }
+</style>
+</head>
+<body>
+<h1>Stage 4 — The Stewardship</h1>
+<p class="lede">A world in your care. Stage 4 is graduation — the full game, with
+nothing held back and nothing left to unlock.</p>
+
+<h2>What it is</h2>
+<p>By stage 4 you've learned to ask well (<a href="stage-1-the-voice.html">stage
+1</a>), to write durable instructions (<a href="stage-2-the-written-word.html">stage
+2</a>), and to design capabilities (<a href="stage-3-the-craft.html">stage 3</a>).
+Stage 4 is where those come together: the concept here is mastery through
+<em>indirect</em> influence at the scale of a whole world, rather than any single
+new skill. There's no fifth stage waiting behind it — the ambient world itself,
+running at whatever pace you like, is the endgame.</p>
+
+<h2>What you get</h2>
+<p>The complete tool roster, including the game's capstone capabilities (such as
+canonization — the power to formally enshrine something into a world's lasting
+law). Nothing is withheld here; every option is on the table, and it's on you to
+decide how (and how much) to use.</p>
+
+<h2>There's no scenario to pass</h2>
+<p>Unlike stages 1 through 3, stage 4 has no pass/fail exercise gating it — it's
+graduation, not another rung. Once you've earned it (by clearing stage 3's
+scenario), it's yours for every world you create afterward, exactly like every
+earlier stage.</p>
+
+<h2>Starting a stage-4 world</h2>
+<pre><code>promptworld new my-village --stage stage-4</code></pre>
+<p>Haven't earned it yet? You can still start here on day one with
+<code>--override</code> — promptworld will tell you plainly what stages (and their
+concepts) you're skipping, and record the override honestly so the run stays
+comparable as an overridden one. There's no wrong way to play; the ladder is there
+to teach, not to gatekeep.</p>
+
+<div class="card">Check what you've earned any time with
+<code>promptworld stages</code> — it lists all four stages side by side, with what
+each teaches, what it grants, and what proves it.</div>
+
+<footer><a href="index.html">&larr; Back to player docs index</a></footer>
+</body>
+</html>
