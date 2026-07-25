@@ -233,7 +233,10 @@ func New(orch Submitter, social Injector, loop LoopControl, m *worldmap.Map, see
 		return nil, err
 	}
 	if _, err := os.Stat(mt.soulPath()); os.IsNotExist(err) {
-		header := "# The soul of Metatron\n\n*The reign begins. The angel has seen nothing yet.*\n"
+		// Genesis header (spec 052 US2 AS-5): guardian-voiced DEFAULT-skin
+		// text — SetSkin lands after New, so a custom skin's first soul
+		// header still says guardian; existing files are never rewritten.
+		header := "# The soul of the Guardian\n\n*The watch begins. The guardian has seen nothing yet.*\n"
 		if err := os.WriteFile(mt.soulPath(), []byte(header), 0o644); err != nil {
 			return nil, err
 		}

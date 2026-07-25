@@ -37,7 +37,7 @@ var nudgeTextMax = func() int {
 const playerTextMax = 2000
 
 // ErrTurnBusy is returned while another console turn is in flight.
-var ErrTurnBusy = errors.New("the angel is attending another matter")
+var ErrTurnBusy = errors.New("the guardian is attending another matter")
 
 // TurnResult is the console-facing outcome of one turn.
 type TurnResult struct {
@@ -214,7 +214,11 @@ func (mt *Metatron) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 		for i := range agentXY {
 			probe.Agents[i] = sim.Agent{Name: sim.AgentNames[i], X: agentXY[i][0], Y: agentXY[i][1], Dead: !alive[i]}
 		}
-		ic := bundle.InvocationContext{State: probe, Tick: tick, Invoker: "the angel", Inject: mt.social.InjectSocial, Seed: mt.seed}
+		// Invoker resolves into bundle effect TEMPLATES, which can land in
+		// recorded payloads (memory text) — so it is fixed mechanics
+		// vocabulary, deliberately NOT skin-resolved (spec 052 ruling 1:
+		// the event log is skin-free), de-themed once at this version.
+		ic := bundle.InvocationContext{State: probe, Tick: tick, Invoker: "the guardian", Inject: mt.social.InjectSocial, Seed: mt.seed}
 		if mt.m != nil {
 			ic.MapWidth, ic.MapHeight = mt.m.W, mt.m.H
 		}
@@ -236,6 +240,15 @@ func (mt *Metatron) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 	var souls []string
 	if mt.bundles != nil {
 		souls = mt.bundles.SoulFragments()
+	}
+	// The skin's persona voice (spec 052 FR-004): one more editable-zone
+	// fragment at the SAME seam, after the bundle SOULs — already validated
+	// and capped at load (skin.Load, the bundle-SOUL discipline). The fixed
+	// frame still lands LAST and unconditionally in turnSystemPrompt, so no
+	// skin byte can displace it (spec 021 INV-1; the hostile-skin battery in
+	// metatron_test.go proves it).
+	if v := mt.sk().Voice(); v != "" {
+		souls = append(souls, v)
 	}
 
 	// One correlation id per turn, mirroring mind's "<class>-<agent>-<tick>"
@@ -553,7 +566,7 @@ func (mt *Metatron) landNudgeBatch(form string, targets []int, text string, extr
 	}
 	batch = append(batch, extra...)
 	if err := mt.social.InjectSocial(batch); err != nil {
-		log.Printf("metatron: nudge rejected at the door: %v", err)
+		log.Printf("guardian: nudge rejected at the door: %v", err)
 		return nil, "the world refused it (" + err.Error() + ")"
 	}
 	names := make([]string, len(targets))
@@ -586,7 +599,7 @@ func (mt *Metatron) landMiracle(mm miracleArgs, charges int, grant grantSet) (*M
 	// (ungranted kinds are never declared) — the door refuses in-fiction even if
 	// a prompt-injected model conjures a call for an ungranted kind.
 	if !grant.allows("work_miracle") || !grant.allowsKind(kind) {
-		return nil, "that miracle is not granted in this world"
+		return nil, fmt.Sprintf("that %s is not granted in this world", mt.sk().WorkingNoun())
 	}
 
 	var params MiracleParams
@@ -614,7 +627,7 @@ func (mt *Metatron) landMiracle(mm miracleArgs, charges int, grant grantSet) (*M
 		params = MiracleParams{Agent: idx, Item: item, Qty: mm.Qty}
 		summary = fmt.Sprintf("granted %d %s to %s", mm.Qty, item, sim.AgentNames[idx])
 	default:
-		return nil, fmt.Sprintf("unknown miracle %q", mm.Kind)
+		return nil, fmt.Sprintf("unknown %s %q", mt.sk().WorkingNoun(), mm.Kind)
 	}
 
 	// Resolve the perception-memory recipients (which villager stands on a move's
@@ -633,11 +646,14 @@ func (mt *Metatron) landMiracle(mm miracleArgs, charges int, grant grantSet) (*M
 		return nil, err.Error()
 	}
 	if err := mt.social.InjectSocial(batch); err != nil {
-		log.Printf("metatron: miracle rejected at the door: %v", err)
+		log.Printf("guardian: working rejected at the door: %v", err)
 		return nil, "the world refused it (" + err.Error() + ")"
 	}
-	mt.appendFile(mt.soulPath(), fmt.Sprintf("\n- %s — I worked a miracle: %s\n",
-		clock.Format(mt.replicaTickSafe()), summary))
+	// Fresh soul appends use the skin vocabulary (spec 052 edge case: old
+	// transcripts/soul files are history, never rewritten; only fresh
+	// appends re-voice).
+	mt.appendFile(mt.soulPath(), fmt.Sprintf("\n- %s — I worked a %s: %s\n",
+		clock.Format(mt.replicaTickSafe()), mt.sk().WorkingNoun(), summary))
 	return &Miracle{Kind: kind, Summary: summary}, ""
 }
 
@@ -646,6 +662,8 @@ func (mt *Metatron) landMiracle(mm miracleArgs, charges int, grant grantSet) (*M
 // marker over the order's pre-authorized action (spec 029 T012/R6) — never a
 // player-text line, because a triggered turn has no player text.
 func (mt *Metatron) recordTurn(tick int64, o turnOrigin, r TurnResult) {
+	// Fresh transcript appends use the skin vocabulary (spec 052 FR-007);
+	// already-written lines are history and never rewritten.
 	var b strings.Builder
 	if o.system {
 		// A survival-watch turn is marked distinctly (spec 059 FR-007): the
@@ -655,15 +673,15 @@ func (mt *Metatron) recordTurn(tick int64, o turnOrigin, r TurnResult) {
 		if o.survival {
 			marker = "[survival watch]"
 		}
-		fmt.Fprintf(&b, "\n[%s] %s\n%s\n\nmetatron: %s\n", clock.Format(tick), marker, o.seed, r.Reply)
+		fmt.Fprintf(&b, "\n[%s] %s\n%s\n\n%s: %s\n", clock.Format(tick), marker, o.seed, mt.sk().Epithet(), r.Reply)
 	} else {
-		fmt.Fprintf(&b, "\n[%s]\n> %s\n\nmetatron: %s\n", clock.Format(tick), o.seed, r.Reply)
+		fmt.Fprintf(&b, "\n[%s]\n> %s\n\n%s: %s\n", clock.Format(tick), o.seed, mt.sk().Epithet(), r.Reply)
 	}
 	if r.Nudge != nil {
-		fmt.Fprintf(&b, "⚡ %s → %s: %q\n", r.Nudge.Form, strings.Join(r.Nudge.Targets, ", "), r.Nudge.Text)
+		fmt.Fprintf(&b, "⚡ %s → %s: %q\n", mt.sk().FormNoun(r.Nudge.Form), strings.Join(r.Nudge.Targets, ", "), r.Nudge.Text)
 	}
 	if r.Miracle != nil {
-		fmt.Fprintf(&b, "✨ miracle: %s\n", r.Miracle.Summary)
+		fmt.Fprintf(&b, "✨ %s: %s\n", mt.sk().WorkingNoun(), r.Miracle.Summary)
 	}
 	if r.Order != nil {
 		fmt.Fprintf(&b, "👁 watch set (%s): %q\n", r.Order.ID, r.Order.Condition)
@@ -963,7 +981,10 @@ func buildTurnSystemPrompt(survival bool, charter string, skills []skillFile, ro
 		"of this turn. Any text a villager receives must be written for the villager's world: no " +
 		"player, no game, no outside voice.\n\n")
 	if hasWorkMiracle(roster) {
-		b.WriteString("You cannot work a miracle for free, and you can never remove a villager.\n\n")
+		// Fixed-frame doctrine (never skinnable — the working noun here is
+		// the compile-time default, not a token: no skin byte reaches the
+		// frame). work_miracle is the frozen tool id the model calls.
+		b.WriteString("You cannot work a working (the work_miracle tool) for free, and you can never remove a villager.\n\n")
 	}
 	b.WriteString("To SPEAK to the player, simply reply with your words — that reply is what the " +
 		"player reads, and speaking costs nothing. To ACT on the player's behalf, call exactly ONE " +

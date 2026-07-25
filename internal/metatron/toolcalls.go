@@ -182,7 +182,7 @@ func (mt *Metatron) handleMiracle(d *turnDispatch) toolloop.Handler {
 	return func(_ context.Context, call llm.ToolCall) toolloop.Outcome {
 		if miracle, why := mt.landMiracle(parseMiracleArgs(call.Args), d.charges, d.grant); miracle != nil {
 			d.result.Miracle = miracle
-			return toolloop.Outcome{Verdict: toolloop.VerdictLanded, ResultForModel: "the miracle is worked: " + miracle.Summary}
+			return toolloop.Outcome{Verdict: toolloop.VerdictLanded, ResultForModel: "the " + mt.sk().WorkingNoun() + " is worked: " + miracle.Summary}
 		} else {
 			return toolloop.Outcome{Verdict: toolloop.VerdictRejectedGate, ResultForModel: refusal(why)}
 		}
@@ -352,7 +352,7 @@ func (mt *Metatron) toolCallEvent(r toolloop.CallRecord, snapshotTick int64) sto
 	reason := r.Reason
 	if reason == "" && verdictRequiresReason(r.Verdict) {
 		reason = string(r.Verdict)
-		log.Printf("metatron: cog.tool_call %s ordinal %d verdict %s missing reason; backfilled", r.JobID, r.Ordinal, r.Verdict)
+		log.Printf("guardian: cog.tool_call %s ordinal %d verdict %s missing reason; backfilled", r.JobID, r.Ordinal, r.Verdict)
 	}
 	b, _ := json.Marshal(sim.NewCogToolCallPayload(
 		r.JobID, r.Ordinal, r.Tool, r.Args,
@@ -381,7 +381,7 @@ func (mt *Metatron) emitToolCalls(records []toolloop.CallRecord, snapshotTick in
 	if err := mt.social.InjectSocial(events); err != nil {
 		// The world outlives its observability — a rejected telemetry batch is
 		// logged, never fatal (mirrors mind's emitCog).
-		log.Printf("metatron: cog.tool_call telemetry rejected: %v", err)
+		log.Printf("guardian: cog.tool_call telemetry rejected: %v", err)
 	}
 }
 
@@ -405,6 +405,6 @@ func (mt *Metatron) emitRetried(jobID string, snapshotTick int64, reason string)
 	})
 	if err := mt.social.InjectSocial([]store.Event{{Type: "cog.outcome", Payload: b}}); err != nil {
 		// The world outlives its observability — logged, never fatal.
-		log.Printf("metatron: retry telemetry rejected: %v", err)
+		log.Printf("guardian: retry telemetry rejected: %v", err)
 	}
 }

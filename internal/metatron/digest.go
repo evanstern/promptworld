@@ -170,7 +170,7 @@ func (mt *Metatron) closeDigest(atTick int64) {
 	select {
 	case mt.digQ <- job:
 	default:
-		log.Printf("metatron: digest queue full, window before %s dropped", job.label)
+		log.Printf("guardian: digest queue full, window before %s dropped", job.label)
 	}
 }
 
@@ -189,7 +189,9 @@ func (mt *Metatron) runDigest(job digJob) {
 	ctx, cancel := context.WithTimeout(context.Background(), digestCallTimeout)
 	resp, err := mt.orch.Submit(ctx, llm.Request{
 		Kind: llm.KindMetatron,
-		System: "You are Metatron, keeper of the village's record. Compress the " +
+		// The keeper prompt is guardian-voiced with the skin's display name
+		// substituted as validated single-line data (spec 052 US2 AS-4).
+		System: "You are " + mt.sk().Name() + ", keeper of the village's record. Compress the " +
 			"log below into 2-4 terse note lines for your own future reference: " +
 			"facts, names, tensions worth watching. No preamble, no JSON — just the lines.",
 		Prompt:    strings.Join(job.lines, "\n"),
@@ -197,7 +199,7 @@ func (mt *Metatron) runDigest(job digJob) {
 	})
 	cancel()
 	if err != nil {
-		log.Printf("metatron: digest deferred: %v", err)
+		log.Printf("guardian: digest deferred: %v", err)
 		select {
 		case old := <-mt.digCarry:
 			merged := append(old, job.lines...)
@@ -215,5 +217,5 @@ func (mt *Metatron) runDigest(job digJob) {
 		return // unusable output: a gap, never a stall
 	}
 	mt.appendFile(mt.soulPath(), fmt.Sprintf("\n## Digest — up to %s\n\n%s\n", job.label, text))
-	log.Printf("metatron: digest landed (up to %s, $%.4f)", job.label, resp.CostUSD)
+	log.Printf("guardian: digest landed (up to %s, $%.4f)", job.label, resp.CostUSD)
 }

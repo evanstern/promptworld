@@ -104,7 +104,7 @@ func (s *State) applyMiracle(e store.Event) error {
 	case "metatron.entity_removed":
 		return s.applyEntityRemoved(e)
 	}
-	return fmt.Errorf("apply %s: unknown miracle type", e.Type)
+	return fmt.Errorf("apply %s: unknown working type", e.Type)
 }
 
 // applyTimeSnapped jumps the clock forward to ToTick with shift semantics

@@ -527,7 +527,7 @@ func (c *session) handle(req Request) {
 		c.writeResponse(Response{ID: req.ID, OK: true, Data: data})
 	case "metatron_chat":
 		if c.srv.metatron == nil {
-			c.writeResponse(Response{ID: req.ID, OK: false, Error: "metatron is not present in this world (no llm config)"})
+			c.writeResponse(Response{ID: req.ID, OK: false, Error: "the guardian is not present in this world (no llm config)"})
 			return
 		}
 		var args MetatronChatArgs
@@ -548,7 +548,7 @@ func (c *session) handle(req Request) {
 		c.writeResponse(Response{ID: req.ID, OK: true, Data: data})
 	case "metatron_status":
 		if c.srv.metatron == nil {
-			c.writeResponse(Response{ID: req.ID, OK: false, Error: "metatron is not present in this world (no llm config)"})
+			c.writeResponse(Response{ID: req.ID, OK: false, Error: "the guardian is not present in this world (no llm config)"})
 			return
 		}
 		data, err := json.Marshal(c.srv.metatron.Status())
@@ -646,7 +646,7 @@ func (c *session) handleMiracle(id int64, args MiracleArgs) {
 		params = metatron.MiracleParams{Agent: idx, Item: args.Item, Qty: args.Qty}
 		summary = fmt.Sprintf("granted %d %s to %s", args.Qty, args.Item, sim.AgentNames[idx])
 	default:
-		c.writeResponse(Response{ID: id, OK: false, Error: fmt.Sprintf("unknown miracle kind %q", args.Kind)})
+		c.writeResponse(Response{ID: id, OK: false, Error: fmt.Sprintf("unknown working kind %q", args.Kind)})
 		return
 	}
 

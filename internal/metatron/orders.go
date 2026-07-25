@@ -145,7 +145,7 @@ func (mt *Metatron) placeOrder(origin string, a orderArgs, tick int64, grant gra
 	}
 	batch := []store.Event{{Type: "metatron.order_placed", Payload: mustJSON(order)}}
 	if err := mt.social.InjectSocial(batch); err != nil {
-		log.Printf("metatron: order rejected at the door: %v", err)
+		log.Printf("guardian: order rejected at the door: %v", err)
 		return nil, orderRefusal(err)
 	}
 	mt.appendFile(mt.soulPath(), fmt.Sprintf("\n- %s — I set a watch (%s): %q → %q\n",
@@ -418,7 +418,7 @@ func (mt *Metatron) matchOrders(batch []store.Event) {
 				capped := seen && e.Tick-last < confirmRateTicks
 				mt.stateMu.Unlock()
 				if capped {
-					log.Printf("metatron: fuzzy order %s confirm rate-capped (last %d, event %d)", o.ID, last, e.Tick)
+					log.Printf("guardian: fuzzy order %s confirm rate-capped (last %d, event %d)", o.ID, last, e.Tick)
 					break // one hit per order per batch, capped or not
 				}
 			}
@@ -431,7 +431,7 @@ func (mt *Metatron) matchOrders(batch []store.Event) {
 			select {
 			case mt.triggerQ <- triggerJob{order: o, matched: e, matchedType: e.Type, matchedTick: e.Tick, confirm: o.Confirm}:
 			default:
-				log.Printf("metatron: trigger queue full, order %s dropped", o.ID)
+				log.Printf("guardian: trigger queue full, order %s dropped", o.ID)
 				mt.stateMu.Lock()
 				delete(mt.pendingTrigger, o.ID)
 				if o.Confirm {
@@ -468,13 +468,16 @@ func (mt *Metatron) triggerWorker() {
 // confirmCallTimeout bounds the single fuzzy-order watch confirm.
 const confirmCallTimeout = 30 * time.Second
 
-// confirmSystem is the fixed system prompt for the fuzzy-order watch confirm (spec
-// 029 US6/R9, contracts/routing.md): a bounded yes/no judge — no tools, no
-// preamble, one word out.
-const confirmSystem = `You are Metatron's watchful eye. A standing order watches for a condition ` +
-	`that cannot be checked mechanically; a candidate event has just occurred. Decide whether the ` +
-	`event TRULY satisfies the condition. Answer with a single word — "yes" if it does, "no" if it ` +
-	`does not. Say nothing else.`
+// confirmSystem renders the system prompt for the fuzzy-order watch confirm
+// (spec 029 US6/R9, contracts/routing.md): a bounded yes/no judge — no tools,
+// no preamble, one word out. The skin's display name substitutes as validated
+// single-line data (spec 052 US2 AS-4); the judging instruction is constant.
+func confirmSystem(name string) string {
+	return `You are ` + name + `'s watchful eye. A standing order watches for a condition ` +
+		`that cannot be checked mechanically; a candidate event has just occurred. Decide whether the ` +
+		`event TRULY satisfies the condition. Answer with a single word — "yes" if it does, "no" if it ` +
+		`does not. Say nothing else.`
+}
 
 // runConfirm runs a fuzzy order's watch confirm (spec 029 US6/R9). A yes verdict
 // proceeds to the normal trigger pipeline (runTrigger, which clears the in-flight
@@ -503,12 +506,12 @@ func (mt *Metatron) confirmOrder(job triggerJob) (bool, error) {
 	defer cancel()
 	resp, err := mt.orch.Submit(ctx, llm.Request{
 		Kind:      llm.KindMetatronWatch,
-		System:    confirmSystem,
+		System:    confirmSystem(mt.sk().Name()),
 		Prompt:    confirmPrompt(job.order, job.matched),
 		MaxTokens: 16,
 	})
 	if err != nil {
-		log.Printf("metatron: watch confirm for %s unconfirmed: %v", job.order.ID, err)
+		log.Printf("guardian: watch confirm for %s unconfirmed: %v", job.order.ID, err)
 		return false, err
 	}
 	return confirmYes(resp.Text), nil
@@ -642,7 +645,7 @@ func (mt *Metatron) runTrigger(job triggerJob) {
 	if err := mt.social.InjectSocial(trig); err != nil {
 		// Cancelled or expired before its trigger landed: the loser abandons
 		// silently (the winning terminal already surfaced its own trail).
-		log.Printf("metatron: order %s trigger abandoned at the door: %v", job.order.ID, err)
+		log.Printf("guardian: order %s trigger abandoned at the door: %v", job.order.ID, err)
 		return
 	}
 	mt.appendFile(mt.soulPath(), fmt.Sprintf("\n- %s — a watch woke me (%s): %q\n",
@@ -814,8 +817,8 @@ func (mt *Metatron) triggeredMoment(tick int64, o sim.MetatronOrder, r TurnResul
 		return fmt.Sprintf("%s — a watch came due (%q): I sent a %s to %s.",
 			clock.Format(tick), o.Condition, r.Nudge.Form, strings.Join(r.Nudge.Targets, ", "))
 	case r.Miracle != nil:
-		return fmt.Sprintf("%s — a watch came due (%q): I worked a miracle — %s.",
-			clock.Format(tick), o.Condition, r.Miracle.Summary)
+		return fmt.Sprintf("%s — a watch came due (%q): I worked a %s — %s.",
+			clock.Format(tick), o.Condition, mt.sk().WorkingNoun(), r.Miracle.Summary)
 	default:
 		return fmt.Sprintf("%s — a watch came due (%q): I attended it.", clock.Format(tick), o.Condition)
 	}

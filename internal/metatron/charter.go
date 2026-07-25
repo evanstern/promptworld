@@ -75,7 +75,9 @@ func loadCharter(worldDir string, preset ...string) (text, notice string) {
 
 // charterIsDefault reports whether the file on disk matches the authored
 // default (for status display) — preset-aware (spec 046): a world created with
-// a charter preset compares against that preset's constant.
+// a charter preset compares against that preset's constant. LEGACY-aware
+// (spec 052 SC-003): a pre-052 world's untouched angel-voiced seed is still
+// game-authored text — never reclassified player-authored on upgrade.
 func charterIsDefault(worldDir string, preset ...string) bool {
 	def := persona.DefaultCharter
 	if len(preset) > 0 {
@@ -85,7 +87,7 @@ func charterIsDefault(worldDir string, preset ...string) bool {
 	if err != nil {
 		return true
 	}
-	return string(data) == def
+	return string(data) == def || string(data) == persona.LegacyDefaultCharter
 }
 
 // Instruction-surface gating by stage (spec 046 FR-005, the ladder): stage-1
@@ -175,10 +177,15 @@ func (mt *Metatron) observeCharter(text string) {
 	if ended || fp == known {
 		return
 	}
+	// Default derivation is legacy-aware (spec 052 SC-003): a pre-052
+	// world's untouched angel-voiced seed is game-authored, and the
+	// stage-2→3 unlock gate (Custom = !default) must not count it as a
+	// player-authored revision after an upgrade.
+	def := text == presetCharter(mt.charterPreset) || text == persona.LegacyDefaultCharter
 	batch := []store.Event{{Type: "metatron.charter_observed", Payload: mustJSON(sim.CharterObservedPayload{
-		Fingerprint: fp, Default: text == presetCharter(mt.charterPreset)})}}
+		Fingerprint: fp, Default: def})}}
 	if err := mt.social.InjectSocial(batch); err != nil {
-		log.Printf("metatron: charter observation rejected at the door: %v", err)
+		log.Printf("guardian: charter observation rejected at the door: %v", err)
 		return
 	}
 	// Optimistic mirror update so a back-to-back turn cannot double-emit
@@ -475,7 +482,7 @@ func loadManifest(worldDir string, knownBundleTools ...string) (grantSet, []stri
 			}
 		}
 		if len(unknown) > 0 {
-			notices = append(notices, "capabilities.json lists unknown miracle kind(s): "+strings.Join(unknown, ", ")+" — ignored")
+			notices = append(notices, "capabilities.json lists unknown miracle_kinds entries: "+strings.Join(unknown, ", ")+" — ignored")
 		}
 		g.kinds = kinds
 		g.kindsRestricted = true

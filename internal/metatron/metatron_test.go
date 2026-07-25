@@ -1475,12 +1475,12 @@ func TestMiracleKindsMirrorTool(t *testing.T) {
 	s := sim.NewState(42, m)
 	for _, k := range tool.MiracleKinds() {
 		if _, err := BuildMiracleBatch(s, k, MiracleParams{Class: "structure"}, false); err != nil &&
-			strings.Contains(err.Error(), "unknown miracle kind") {
+			strings.Contains(err.Error(), "unknown working kind") {
 			t.Errorf("tool.MiracleKinds() lists %q but BuildMiracleBatch rejects it as unknown", k)
 		}
 	}
 	if _, err := BuildMiracleBatch(s, "bless", MiracleParams{}, false); err == nil ||
-		!strings.Contains(err.Error(), "unknown miracle kind") {
+		!strings.Contains(err.Error(), "unknown working kind") {
 		t.Error("a kind outside the vocabulary should be unknown to BuildMiracleBatch")
 	}
 	if len(tool.MiracleKinds()) != 4 {

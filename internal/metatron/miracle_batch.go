@@ -77,7 +77,7 @@ func BuildMiracleBatch(s *sim.State, kind string, p MiracleParams, gratis bool) 
 			Class: p.Class, X: p.X, Y: p.Y, Gratis: gratis})}
 		// No perception memory in v1 (no villager is directly affected).
 	default:
-		return nil, fmt.Errorf("unknown miracle kind %q", kind)
+		return nil, fmt.Errorf("unknown working kind %q", kind)
 	}
 
 	batch := []store.Event{main}
