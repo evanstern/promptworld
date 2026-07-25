@@ -31,6 +31,18 @@ node scripts/check-merge-drift.mjs claim --dir <NNN-slug> [--json]
 | never blocks | warn-only by design — the claim commit itself must be able to precede propagation; exit code unaffected (0 unless other block findings) |
 | source of truth | origin/main tree ONLY; local working-dir state is never consulted for this check |
 
+## Changed: `worktree --spec` becomes claim-aware
+
+Under claim-first doctrine the spec directory legitimately exists on origin/main
+*before* the worktree is cut — the pre-065 semantics ("block if `specs/NNN-*` exists")
+would block every properly-claimed task's own worktree.
+
+| aspect | contract |
+|---|---|
+| `--spec NNN` alone | unchanged: block if `specs/NNN-*` exists on origin/main (legacy/unclaimed flow) |
+| `--spec NNN --task TASK-<n>` | pass when the taken `specs/NNN-*` dir is attributed to `TASK-<n>` (the existing `attributeBySpecDir` Spec-marker lookup, read from the origin/main tree); block when it attributes to a different task or to none |
+| rationale | ownership, not absence, is the invariant once claims exist |
+
 ## New session-mode finding: `branch-unpushed`
 
 | aspect | contract |
