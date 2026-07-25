@@ -1,9 +1,8 @@
 # UI sweep runbook — orchestrator instructions (reorientation 2026-07-25)
 
-**Status: awaiting operator sign-off** (original had no status line; snapshot refreshed
-2026-07-25 ~17:30 by a third orchestrator session — see the refreshed snapshot and
-execution log below; flip this line to `signed-off — executing` once the operator
-approves).
+**Status: signed-off — executing** (operator sign-off 2026-07-25 ~17:35: third
+orchestrator session claims TASK-117 → TASK-127, serial; TASK-119 stays unclaimed until
+its half-authored spec 054 is attributed; snapshot refreshed below).
 
 **You (the session reading this) are the ORCHESTRATOR** for the remaining UI-sweep tasks
 from the 2026-07-25 reorientation. Your job: run each queued task through this project's
