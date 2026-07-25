@@ -142,7 +142,7 @@ func TestHailablePredicate(t *testing.T) {
 	for _, c := range cases {
 		if c.name == "self" {
 			s := base()
-			if hailable(s, 1, 1) {
+			if hailable(s, 1, 1, s.Tick) {
 				t.Error("an agent must not be able to hail itself")
 			}
 			continue
@@ -151,7 +151,7 @@ func TestHailablePredicate(t *testing.T) {
 		if c.mutate != nil {
 			c.mutate(s)
 		}
-		if got := hailable(s, 0, 1); got != c.want {
+		if got := hailable(s, 0, 1, s.Tick); got != c.want {
 			t.Errorf("hailable(%s) = %v, want %v", c.name, got, c.want)
 		}
 	}
@@ -464,6 +464,14 @@ func TestReplayDeterminismWithHails(t *testing.T) {
 		// Pair A: hailer(0) adjacent to target(1) → met next sweep.
 		s.Agents[0].X, s.Agents[0].Y = 20, 20
 		s.Agents[1].X, s.Agents[1].Y = 21, 20
+		// Spec 061 (TASK-109): the pair starts adjacent, so the AMBIENT beat would
+		// found a talk (recording the pair ledger) and the later hail-met would be
+		// cooldown-refused — the damper working. This test isolates the hail
+		// met/expired determinism, so suppress the ambient beat with a recent
+		// per-agent LastTalk (canTalk-gated) while leaving the pair ledger empty,
+		// so the hail is the clean founding event (it bypasses the ambient
+		// cooldown but respects the — here vacuous — pair cooldown).
+		s.Agents[0].LastTalk, s.Agents[1].LastTalk = 1, 1
 		// Pair B: hailer(2) dead (never arrives) → the pause runs to expiry.
 		s.Agents[2].Dead = true
 		s.Agents[3].X, s.Agents[3].Y = 60, 60

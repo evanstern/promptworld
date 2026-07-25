@@ -97,7 +97,7 @@ func planStepEvents(s *State, m *worldmap.Map, idx int, tick int64) []store.Even
 	}
 	// The hail (TASK-47): a talk_to step firing pauses a hailable target so
 	// the pair meets, exactly as a planner talk_to landing does (FR-001).
-	if st.Goal == "talk_to" && hailable(s, idx, st.Target) {
+	if st.Goal == "talk_to" && hailable(s, idx, st.Target, tick) {
 		evs = append(evs, ev("social.hailed", HailedPayload{
 			From: idx, To: st.Target, Until: tick + hailWindowTicks}))
 	}

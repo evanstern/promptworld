@@ -76,6 +76,16 @@ func (l *Loop) landIntent(in *InjectArgs, emit func(string, any)) error {
 		if reason := rungStale(in.Class, staleness); reason != "" {
 			return reject(OutcomeRejectedStale, reason)
 		}
+		// Pair cooldown (spec 061, TASK-109): a deliberate talk_to between a pair
+		// that spoke within the EncounterCooldown is refused BEFORE the hail
+		// rungs — no scene founds and the planner learns "spoke recently" instead
+		// of burning turns re-hailing (FR-002, docs/design/evidence/task-109).
+		// The hail placement path (hailable) and the founding path (hailStep)
+		// enforce the same predicate, so all three routes close through one gate
+		// (SC-002); dial=0 makes it vacuous.
+		if reason := rungPairCooldown(l.state, in.Goal, in.Agent, in.TargetAgent); reason != "" {
+			return reject(OutcomeRejectedGuard, reason)
+		}
 		decision = walkGuards(l.state, in)
 		if decision.reason != "" {
 			return reject(OutcomeRejectedGuard, decision.reason)
@@ -241,10 +251,34 @@ func rungHailRelaxed(s *State, in *InjectArgs, a *Agent, g Guard) (bool, int) {
 	if a.Hail != nil && a.Hail.By == g.Target {
 		return true, -1
 	}
-	if hailable(s, in.Agent, g.Target) {
+	if hailable(s, in.Agent, g.Target, s.Tick) {
 		return true, g.Target
 	}
 	return false, -1
+}
+
+// rungPairCooldown — the conversation loop damper's planner-facing gate (spec
+// 061, TASK-109): a talk_to whose target the actor spoke with inside the
+// EncounterCooldown is refused with an informative "spoke recently" reason, so
+// the model chooses differently instead of re-founding the same exchange over
+// and over — the proven world-01 loop (97.8% of scenes came through this
+// ungated hail founding path, docs/design/evidence/task-109). It runs BEFORE
+// the hail rungs so the refusal is explicit, not a silent decline to hail. A
+// dead target is left to the guard walk's own rejection; non-talk_to goals and
+// past-cooldown / first-contact pairs return "" (no gate). Consumes the SAME
+// spec-048 dial hailable/hailStep enforce, via s.pairCooled — one predicate,
+// three routes.
+func rungPairCooldown(s *State, goal string, actor, target int) string {
+	if goal != "talk_to" || target < 0 || target >= len(s.Agents) {
+		return ""
+	}
+	if s.Agents[target].Dead {
+		return "" // the guard walk makes the "dead target" rejection, not the damper
+	}
+	if s.pairCooled(actor, target, s.Tick) {
+		return fmt.Sprintf("%s spoke with %s recently", s.Agents[actor].Name, s.Agents[target].Name)
+	}
+	return ""
 }
 
 // rungGuardFailed — the plain guard rejection: the first failing guard that no
@@ -270,7 +304,7 @@ func rungAdapted(s *State, g Guard) bool {
 // courtesy pause is cheap (FR-001, research D2). Returns (target, true) to mark.
 func rungInRadiusHail(s *State, in *InjectArgs, g Guard) (int, bool) {
 	if g.Type == GuardTargetPresent && in.Goal == "talk_to" &&
-		hailable(s, in.Agent, g.Target) {
+		hailable(s, in.Agent, g.Target, s.Tick) {
 		return g.Target, true
 	}
 	return -1, false

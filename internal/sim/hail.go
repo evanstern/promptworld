@@ -31,10 +31,26 @@ func hailPaused(a *Agent, tick int64) bool {
 	return a.Hail != nil && tick < a.Hail.Until
 }
 
+// pairCooled reports whether the unordered pair (a,b) exchanged words within
+// the encounter cooldown ending at tick — the conversation loop damper's
+// deliberate-talk gate (spec 061, TASK-109, docs/design/evidence/task-109). It
+// consumes the SAME spec-048 EncounterCooldown() dial the mind's encounter
+// arming uses (one pair-cooldown doctrine, one dial — NO new dial). A
+// never-talked pair (PairLastTalk 0) and a dial of 0 are both vacuous (never
+// cooled) — the canTalk/LastTalk shape. This is the frequency gate the AMBIENT
+// canTalk cooldown never covered on the hail founding path that TASK-47
+// deliberately routes around it: first-contact and past-cooldown talks still
+// bypass the ambient gate exactly as before, and ONLY a within-cooldown PAIR
+// is refused.
+func (s *State) pairCooled(a, b int, tick int64) bool {
+	last := s.PairLastTalk(a, b)
+	return last != 0 && tick-last < s.EncounterCooldown()
+}
+
 // hailable is the deterministic predicate a talk_to landing consults before
 // flagging a target down (FR-003, research D6/D7). Pure function of State: no
 // model, no randomness, no wall clock.
-func hailable(s *State, hailer, target int) bool {
+func hailable(s *State, hailer, target int, tick int64) bool {
 	if target < 0 || target >= len(s.Agents) || target == hailer {
 		return false
 	}
@@ -66,6 +82,14 @@ func hailable(s *State, hailer, target int) bool {
 	if abs(s.Agents[hailer].X-t.X)+abs(s.Agents[hailer].Y-t.Y) > hailRadius {
 		return false
 	}
+	// Pair cooldown (spec 061, TASK-109): the deliberate-talk founding leak —
+	// no hail is placed for a pair that spoke within the cooldown. This gates
+	// EVERY hail-placement site (the landing door's hail rungs AND the plan-step
+	// hail) that TASK-47 routed around the ambient canTalk cooldown, so
+	// "deliberate" is no longer "unlimited" (docs/design/evidence/task-109).
+	if s.pairCooled(hailer, target, tick) {
+		return false
+	}
 	return true
 }
 
@@ -86,7 +110,15 @@ func hailStep(s *State, nextTick int64) []store.Event {
 		by := a.Hail.By
 		if by >= 0 && by < len(s.Agents) {
 			h := &s.Agents[by]
-			if !h.Dead && !h.Asleep && abs(h.X-a.X)+abs(h.Y-a.Y) <= 1 {
+			// Pair cooldown backstop (spec 061, TASK-109): the founding itself
+			// routes through the same gate as placement, so even a hail placed
+			// legitimately never founds a redundant talk if the pair spoke in
+			// between (e.g. an ambient beat raced during the walk-over). The
+			// pause then simply lifts on window expiry below. hailable already
+			// keeps most hails from being placed; this closes the founding path
+			// talkEvents itself (the leak the diagnosis pins).
+			if !h.Dead && !h.Asleep && abs(h.X-a.X)+abs(h.Y-a.Y) <= 1 &&
+				!s.pairCooled(by, i, nextTick) {
 				events = append(events, store.Event{Tick: nextTick, Type: "social.hail_met",
 					Payload: mustPayload(HailMetPayload{From: by, To: i})})
 				events = append(events, talkEvents(s, by, i, nextTick)...)
