@@ -3,10 +3,10 @@ id: TASK-89
 title: >-
   world-01 local tier runs cogito:3b — upgrade to gemma4:12b-mlx (Thornspire
   gist confabulation is model-tier, not prompt)
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-24 04:31'
-updated_date: '2026-07-25 18:40'
+updated_date: '2026-07-25 19:03'
 labels:
   - emergent-lore
   - epistemics
@@ -27,7 +27,7 @@ Found during spec 030 (TASK-79) US3 eval, 2026-07-24. The spec 030 gist-attribut
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 world-01 llm.json local.model updated to gemma4:12b-mlx and the daemon restarted against it
-- [ ] #2 A post-upgrade multi-scene gist sample from world-01 shows zero fact-flattened / asserted-unperformed-action shapes (spot-check recorded on this task)
+- [x] #2 A post-upgrade multi-scene gist sample from world-01 shows zero fact-flattened / asserted-unperformed-action shapes (spot-check recorded on this task)
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -35,3 +35,9 @@ Found during spec 030 (TASK-79) US3 eval, 2026-07-24. The spec 030 gist-attribut
 <!-- SECTION:NOTES:BEGIN -->
 MVLS sweep ops (2026-07-25): (1) verified world-01 llm.json routes already reference only gemma (gemma4:12b-mlx @ mbpro-m1.local:11434) + cloud — no route used cogito:3b any longer; removed the dangling unused cogito provider stanza (backup: llm.json.bak-task89). (2) World was format_version 3; backed up the whole dir (world-01.bak-task89) and ran promptworld migrate — v4, 8 villagers carried across at tick 538823 (day 7 11:40), v3 events archived in world.v3.db. (3) Daemon restarted clean against the migrated world: mind driver on (8 villagers), metatron on, orchestrator on. AC2 pending: multi-scene gist sample to spot-check once new conversations accumulate under gemma.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Ops-complete (MVLS sweep, 2026-07-25). world-01 llm.json verified all-gemma/cloud (cogito provider removed, backup kept); world migrated v3->v4 (271,886 events archived in world.v3.db; full dir backup world-01.bak-task89); daemon restarted clean on gemma4:12b-mlx. AC2 spot-check: 5 post-upgrade scenes (20 turns) sampled from the new v4 log — every gist verified against its actual conversation turns: ZERO fact-flattened / asserted-unperformed-action shapes (the spec 030 defect class); one benign referent interpolation noted (conv 539490 'get him out' summarized as 'a prisoner' — no participant action asserted). Sample recorded here; modest n, consistent with the spec 030 eval's 0/18 for gemma4:12b-mlx. No PR — constitution trivial/ops exemption, evidence on task.
+<!-- SECTION:FINAL_SUMMARY:END -->
