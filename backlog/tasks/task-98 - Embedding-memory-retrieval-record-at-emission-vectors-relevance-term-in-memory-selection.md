@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-24 19:45'
-updated_date: '2026-07-24 21:34'
+updated_date: '2026-07-25 02:52'
 labels:
   - memory
   - embeddings
@@ -36,14 +36,14 @@ Spec: specs/042-embedding-memory-retrieval
 - [ ] #4 Guardrail (analysis finding 2): rank-divergence instrumentation ships BEFORE relevance drives prompts — log divergence between salience×recency and the three-term score; a documented threshold decides whether relevance stays on
 - [ ] #5 Per-agent isolation: embedding storage and retrieval are strictly per-agent — no cross-agent vector reads possible by construction, covered by a test (no shared memory pool)
 - [ ] #6 Embedding model choice is pinned and documented (local small model, e.g. 384-dim MiniLM/bge class via hugot or llama.cpp sidecar); model file/version is part of replay hygiene
-- [ ] #7 codebase-to-course run tagged on this feature before the PR ships (docs/course refreshed to teach the new memory-retrieval mechanic)
+- [x] #7 codebase-to-course run tagged on this feature before the PR ships (docs/course refreshed to teach the new memory-retrieval mechanic)
 - [ ] #8 Spec rigor: full Spec Kit (specify → clarify → plan → tasks) with spec-bridge:link BEFORE implementation; wiki re-ground + player-docs freshness after merge
 - [x] #9 Spec phase: Setup
 - [x] #10 Spec phase: Foundational (blocking prerequisites for all stories)
 - [x] #11 Spec phase: User Story 1 — vectors from birth, replay never recomputes (P1) 🎯 MVP
 - [x] #12 Spec phase: User Story 2 — shadow-mode divergence instrumentation (P2)
-- [ ] #13 Spec phase: User Story 3 — relevance shapes the window (P3)
-- [ ] #14 Spec phase: Polish & cross-cutting
+- [x] #13 Spec phase: User Story 3 — relevance shapes the window (P3)
+- [x] #14 Spec phase: Polish & cross-cutting
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -58,4 +58,12 @@ Ops decision (2026-07-24): embedding model kept perma-loaded on the serving host
 spec-bridge sync: Setup: 3/3 · Foundational (blocking prerequisites for all stories): 4/4 · User Story 1 — vectors from birth, replay never recomputes (P1) 🎯 MVP: 4/4 · User Story 2 — shadow-mode divergence instrumentation (P2): 0/7 · User Story 3 — relevance shapes the window (P3): 0/4 · Polish & cross-cutting: 0/3
 
 spec-bridge sync: Setup: 3/3 · Foundational (blocking prerequisites for all stories): 4/4 · User Story 1 — vectors from birth, replay never recomputes (P1) 🎯 MVP: 4/4 · User Story 2 — shadow-mode divergence instrumentation (P2): 7/7 · User Story 3 — relevance shapes the window (P3): 0/4 · Polish & cross-cutting: 0/3
+
+spec-bridge sync: Setup: 3/3 · Foundational: 4/4 · US1 (P1 MVP): 4/4 · US2 (P2): 7/7 · US3 (P3): 4/4 · Polish: 3/3 — spec artifacts Done-eligible. Status Done DEFERRED (stays In Progress): deliverable is one merged PR (not yet opened); AC#4 divergence threshold decision, AC#7 course run before PR, AC#8 post-merge re-ground still open. Done at merge per repo precedent (TASK-91/41 pattern). SC-005 measured: one game day at max speed, embedding off 0.90-0.95s vs on 0.95-1.00s = +5.0-5.7% (budget 10%); ~300-330 embed calls; delta shrinks at paced speeds.
+
+AC#7 done pre-PR: codebase-to-course run shipped on the branch (docs/course/, commit be5dabf) — "How a Villager Remembers", 5 modules, course gate green. Branch ready for PR: 15 commits, all three stories + polish gated, full suite green except pre-existing TestCatalogSweep.
+
+PR opened: https://github.com/evanstern/promptworld/pull/70 (branch task-98-embedding-memory-retrieval, 20 commits incl. docs/course). Remaining to Done: merge, then AC#8 (wiki re-ground + player docs); AC#4 (shadow→on threshold decision) is post-merge operational.
+
+Rebase onto main (041 mental maps, PR #69) complete: both features intact, unions at all shared seams (Agent fields, whitelist, prompt sections, boot wiring); one semantic reconciliation — 041 made InjectSocial dry-runs expensive, embedder now batches/coalesces (contract-sanctioned) restoring SC-005 to +0.4-3.9% (was +60-74% naive post-rebase; note 041 itself moved the off-baseline 0.92s→1.30s via its per-beat sweep). Independent gate green incl. 041 headline tests. PR #70 MERGEABLE/CLEAN @ ec9a7a0.
 <!-- SECTION:NOTES:END -->
