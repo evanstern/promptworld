@@ -5,13 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
 <meta name="promptworld-docs:source" content="README.md@ead97e7619572a625a35b2ee3e82243ff6f9e3f4">
-<meta name="promptworld-docs:source" content="docs/wiki/cli-promptworld.md@381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9">
-<meta name="promptworld-docs:source" content="docs/wiki/daemon-lifecycle.md@dee5f4bf60093cb5d775e10c8ced41c7e5b385ec">
-<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@dee5f4bf60093cb5d775e10c8ced41c7e5b385ec">
-<meta name="promptworld-docs:source" content="docs/wiki/chronicle.md@dee5f4bf60093cb5d775e10c8ced41c7e5b385ec">
-<meta name="promptworld-docs:source" content="docs/wiki/morgue.md@dee5f4bf60093cb5d775e10c8ced41c7e5b385ec">
+<meta name="promptworld-docs:source" content="docs/wiki/cli-promptworld.md@723c464c35aac4936f2793d566a53c801516ae60">
+<meta name="promptworld-docs:source" content="docs/wiki/daemon-lifecycle.md@723c464c35aac4936f2793d566a53c801516ae60">
+<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@723c464c35aac4936f2793d566a53c801516ae60">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@723c464c35aac4936f2793d566a53c801516ae60">
+<meta name="promptworld-docs:source" content="docs/wiki/chronicle.md@723c464c35aac4936f2793d566a53c801516ae60">
+<meta name="promptworld-docs:source" content="docs/wiki/morgue.md@723c464c35aac4936f2793d566a53c801516ae60">
 <meta name="promptworld-docs:source" content="docs/wiki/gru.md@72125c85abd1a0de6c19855aaae1757d8b976f17">
+<meta name="promptworld-docs:source" content="docs/wiki/curriculum-ladder.md@723c464c35aac4936f2793d566a53c801516ae60">
 <title>Getting started — promptworld player docs</title>
 <style>
   :root {
@@ -138,6 +139,15 @@ always starts at the fastest speed its measured setup can honestly keep villager
 genuinely thinking at, rather than the ordinary default speed (you can also flip this
 on or off later with <code>promptworld teaching demo on</code> / <code>off</code>). The
 <a href="time-and-speed.html">time & speed page</a> covers what that means in practice.</p>
+<p>Every world is also created at a <strong>stage</strong> — promptworld has four
+named ones (The Voice, The Written Word, The Craft, The Stewardship), and each is an
+identity that decides what your guardian angel can do in that world and what you're
+learning by playing it. A new player starts at the first,
+<a href="stage-1-the-voice.html">The Voice</a> — that happens automatically, no flag
+needed. Run <code>promptworld stages</code> any time to see all four laid out, with
+what each one teaches and what unlocks the next. You're never fenced in: you can
+skip ahead to a later stage with an explicit override, and promptworld will tell you
+plainly what you'd be skipping before it does.</p>
 <p>Genesis also writes each villager's starting personality and Metatron's starting
 "charter" — more on both in a moment. The summary printed when the world is created
 also names the AI model it's expecting and the exact command to fetch it if you
