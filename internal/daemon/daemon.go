@@ -18,9 +18,9 @@ import (
 	"github.com/evanstern/promptworld/internal/bundle"
 	"github.com/evanstern/promptworld/internal/clock"
 	"github.com/evanstern/promptworld/internal/cognition"
+	"github.com/evanstern/promptworld/internal/guardian"
 	"github.com/evanstern/promptworld/internal/ipc"
 	"github.com/evanstern/promptworld/internal/llm"
-	"github.com/evanstern/promptworld/internal/metatron"
 	"github.com/evanstern/promptworld/internal/mind"
 	"github.com/evanstern/promptworld/internal/persona"
 	"github.com/evanstern/promptworld/internal/scribe"
@@ -55,7 +55,7 @@ func Run(dir string) error {
 
 	// Bundle tools (spec 036 T013): discover + validate the world's bundles/
 	// folder once at boot, alongside the registry validators above, and freeze it
-	// into a BundleSet the metatron turn assembly reads. Every BootReport entry —
+	// into a BundleSet the guardian turn assembly reads. Every BootReport entry —
 	// a skipped tool or a rejected bundle — is logged on the boot channel naming
 	// its file and rule (SC-005); a bad bundle never bricks boot (bundles are
 	// additive). An absent/empty bundles/ dir yields an empty set and changes
@@ -346,7 +346,7 @@ func Run(dir string) error {
 		if plannerTokWarn != "" {
 			fmt.Printf("daemon: %s\n", plannerTokWarn)
 		}
-		metatronTurnTokens, turnTokWarn := llmCfg.MetatronTurnTokens()
+		guardianTurnTokens, turnTokWarn := llmCfg.GuardianTurnTokens()
 		if turnTokWarn != "" {
 			fmt.Printf("daemon: %s\n", turnTokWarn)
 		}
@@ -405,7 +405,7 @@ func Run(dir string) error {
 		} else {
 			fmt.Printf("daemon: embedding off (no \"embedding\" route in llm.json — memories stay vectorless)\n")
 		}
-		mt, err := metatron.New(orch, loop, loop, w.Map(), w.Manifest.Seed, state.Marshal(), dir, loopRounds, metatronTurnTokens)
+		mt, err := guardian.New(orch, loop, loop, w.Map(), w.Manifest.Seed, state.Marshal(), dir, loopRounds, guardianTurnTokens)
 		if err != nil {
 			return err
 		}
@@ -417,8 +417,8 @@ func Run(dir string) error {
 		mt.SetSkin(worldSkin) // spec 052: boot-frozen display skin (loaded below srv.SetSkin's site)
 		defer mt.Close()
 		consumers = append(consumers, mt.Observe)
-		srv.SetMetatron(mt)
-		fmt.Printf("daemon: guardian on (charges %d/%d)\n", state.MetatronCharges, sim.MetatronChargeCap)
+		srv.SetGuardian(mt)
+		fmt.Printf("daemon: guardian on (charges %d/%d)\n", state.GuardianCharges, sim.GuardianChargeCap)
 	}
 
 	// Stale socket from a crashed daemon: the pidfile said no one is alive.
@@ -585,8 +585,8 @@ func seedTuning(w *world.World, st *store.Store, state *sim.State) error {
 // state and skips. The guard keys on an ACTIVE survival watch already standing,
 // so the watches (non-expiring, uncancellable) are seeded exactly once per world.
 func seedSurvivalWatches(w *world.World, st *store.Store, state *sim.State) error {
-	for i := range state.MetatronOrders {
-		if o := &state.MetatronOrders[i]; o.Survival != "" && o.Status == "active" {
+	for i := range state.GuardianOrders {
+		if o := &state.GuardianOrders[i]; o.Survival != "" && o.Status == "active" {
 			return nil // already standing — replay-safe idempotence
 		}
 	}
@@ -603,7 +603,7 @@ func seedSurvivalWatches(w *world.World, st *store.Store, state *sim.State) erro
 
 // mustJSONDaemon marshals a seed payload; a survival-watch order is literal Go
 // data, so marshaling cannot fail — panic is the honest response to the
-// impossible, matching the metatron package's mustJSON.
+// impossible, matching the guardian package's mustJSON.
 func mustJSONDaemon(v any) []byte {
 	b, err := json.Marshal(v)
 	if err != nil {

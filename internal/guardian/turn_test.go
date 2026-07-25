@@ -1,4 +1,4 @@
-package metatron
+package guardian
 
 import (
 	"strings"
@@ -20,7 +20,7 @@ import (
 // in the order passed (bundle load order at the call site), and the frame
 // still lands last regardless.
 func TestSoulFragmentsAppearAfterCharter(t *testing.T) {
-	roster := tool.LoopRosterMetatron()
+	roster := tool.LoopRosterGuardian()
 	prompt := turnSystemPrompt("CHARTER-MARKER", nil, roster, "SOUL-FRAGMENT-ONE", "SOUL-FRAGMENT-TWO")
 
 	charterAt := strings.Index(prompt, "CHARTER-MARKER")
@@ -40,7 +40,7 @@ func TestSoulFragmentsAppearAfterCharter(t *testing.T) {
 // TestSoulFragmentsBeforeSkills: souls compose between the charter and the
 // skill files, not after them — "after the charter section" per the T029 seam.
 func TestSoulFragmentsBeforeSkills(t *testing.T) {
-	roster := tool.LoopRosterMetatron()
+	roster := tool.LoopRosterGuardian()
 	skills := []skillFile{{name: "10-x.md", text: "SKILL-TEXT"}}
 	prompt := turnSystemPrompt("CHARTER-MARKER", skills, roster, "SOUL-FRAGMENT")
 
@@ -59,7 +59,7 @@ func TestSoulFragmentsBeforeSkills(t *testing.T) {
 // and adds no persona separator, the "extend, don't break" contract for this
 // seam (handoff note b).
 func TestNoSoulsUnchangedFromPre036(t *testing.T) {
-	roster := tool.LoopRosterMetatron()
+	roster := tool.LoopRosterGuardian()
 	a := turnSystemPrompt("CHARTER", nil, roster)
 	b := turnSystemPrompt("CHARTER", nil, roster)
 	if a != b {

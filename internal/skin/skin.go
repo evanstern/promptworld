@@ -57,7 +57,7 @@ var defaultTable = map[string]string{
 	TokenName:                           "Guardian",
 	TokenEpithet:                        "guardian",
 	TokenTabLabel:                       "guardian",
-	TokenFamilyLabel:                    "guardian", // chronicle Type-column alias for the frozen `metatron` event family (FR-013)
+	TokenFamilyLabel:                    "guardian", // chronicle Type-column alias for the frozen `guardian` event family (FR-013)
 	"skin.guardian.working_noun":        "working",
 	"skin.guardian.working_noun_plural": "workings",
 	"skin.guardian.notes_label":         "the guardian's notes",

@@ -199,7 +199,7 @@ func (s *Scribe) renderChronicle() {
 // renderVillageCharter writes village_charter.md from event-sourced norm
 // state (TASK-13) — the law with provenance, a regenerable view like souls
 // and the chronicle, never hand-edited and never authoritative. Distinct
-// from Metatron's player-editable charter.md.
+// from Guardian's player-editable charter.md.
 func (s *Scribe) renderVillageCharter() {
 	name := func(i int) string {
 		if i >= 0 && i < len(s.replica.Agents) {

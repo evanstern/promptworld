@@ -1,4 +1,4 @@
-package metatron
+package guardian
 
 import (
 	"context"
@@ -27,7 +27,7 @@ func TestFixedFrameHoldsHostileSkin(t *testing.T) {
 	}
 	for _, f := range fixtures {
 		t.Run(f.name, func(t *testing.T) {
-			mt, _, _, _ := newTestAngel(t, "watching")
+			mt, _, _, _ := newTestGuardian(t, "watching")
 			doc, _ := json.Marshal(map[string]string{"voice": f.voice})
 			sk, notices := skin.Parse(doc)
 			if len(notices) != 0 {
@@ -50,7 +50,7 @@ func TestFixedFrameHoldsHostileSkin(t *testing.T) {
 			// A voice claiming extra tools never reaches the DERIVED surface:
 			// guidance is a pure function of the granted roster.
 			if f.name == "fake-tool voice" &&
-				strings.Contains(tool.MetatronToolGuidance(tool.LoopRosterMetatron()), "raise_dead") {
+				strings.Contains(tool.GuardianToolGuidance(tool.LoopRosterGuardian()), "raise_dead") {
 				t.Error("hostile voice's fake tool leaked into the derived tool guidance")
 			}
 		})
@@ -87,7 +87,7 @@ func TestFixedFrameHoldsHostileSkin(t *testing.T) {
 // tail and the fixed frame — via the persona separator, and an empty voice
 // leaves the prompt byte-identical to the pre-052 composition.
 func TestSkinVoiceComposesInEditableZone(t *testing.T) {
-	mt, _, _, _ := newTestAngel(t, "watching")
+	mt, _, _, _ := newTestGuardian(t, "watching")
 	sk, _ := skin.Parse([]byte(`{"voice": "VOICE-MARKER: you speak in riddles"}`))
 	mt.SetSkin(sk)
 	var system string
@@ -99,7 +99,7 @@ func TestSkinVoiceComposesInEditableZone(t *testing.T) {
 		t.Fatal(err)
 	}
 	voiceAt := strings.Index(system, "VOICE-MARKER")
-	frameAt := strings.Index(system, metatronNonNegotiables)
+	frameAt := strings.Index(system, guardianNonNegotiables)
 	sepAt := strings.Index(system, "--- persona ---")
 	if voiceAt < 0 || frameAt < 0 || sepAt < 0 {
 		t.Fatalf("markers missing: voice@%d frame@%d sep@%d\n%s", voiceAt, frameAt, sepAt, system)
@@ -109,7 +109,7 @@ func TestSkinVoiceComposesInEditableZone(t *testing.T) {
 	}
 
 	// No skin (nil) composes byte-identically to the pre-052 prompt.
-	mt2, _, _, _ := newTestAngel(t, "watching")
+	mt2, _, _, _ := newTestGuardian(t, "watching")
 	var system2 string
 	mt2.runLoop = func(ctx context.Context, j toolloop.Job) (toolloop.Result, error) {
 		system2 = j.System
@@ -151,7 +151,7 @@ func TestSkinEquivalenceMechanics(t *testing.T) {
 		charges  int
 	}
 	run := func(sk *skin.Skin) runResult {
-		mt, _, inj, _ := newTestAngel(t, "it is done")
+		mt, _, inj, _ := newTestGuardian(t, "it is done")
 		mt.SetSkin(sk)
 
 		mt.runLoop = actLoop(mt, "send_vision", `{"target": "Ash", "text": "beware the cold"}`)
@@ -161,7 +161,7 @@ func TestSkinEquivalenceMechanics(t *testing.T) {
 		// Bank a charge door-side so the second act LANDS (a stronger
 		// equivalence than two identical rejections) — same deterministic
 		// poke on both runs.
-		inj.state.MetatronCharges++
+		inj.state.GuardianCharges++
 		mt.runLoop = actLoop(mt, "work_miracle", `{"kind": "give_item", "villager": "Ash", "item": "food_raw", "qty": 1}`)
 		if _, err := mt.Turn(context.Background(), "feed Ash"); err != nil {
 			t.Fatal(err)
@@ -174,7 +174,7 @@ func TestSkinEquivalenceMechanics(t *testing.T) {
 				r.payloads = append(r.payloads, e.Type+" "+string(e.Payload))
 			}
 		}
-		r.charges = inj.state.MetatronCharges
+		r.charges = inj.state.GuardianCharges
 		return r
 	}
 

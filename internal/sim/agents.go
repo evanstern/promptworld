@@ -907,7 +907,7 @@ func freeBulk(inv Inventory) int {
 
 // BulkCap and Bulk are bulkCap/bulk exported for internal/tui (SC-006: "how
 // full a villager's hands are" must be answerable from the TUI alone),
-// mirroring the MetatronChargeCap export pattern for the same purpose —
+// mirroring the GuardianChargeCap export pattern for the same purpose —
 // the sim package stays the single source of truth for the derived value
 // and its ceiling.
 const BulkCap = bulkCap

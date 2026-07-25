@@ -323,12 +323,12 @@ func TestSeedSurvivalWatches(t *testing.T) {
 	// State now carries exactly the three canonical survival watches, all active,
 	// all system origin, one per kind.
 	kinds := map[string]int{}
-	for i := range state.MetatronOrders {
-		o := state.MetatronOrders[i]
+	for i := range state.GuardianOrders {
+		o := state.GuardianOrders[i]
 		if o.Survival == "" {
 			continue
 		}
-		if o.Origin != sim.MetatronOriginSystem || o.Status != "active" {
+		if o.Origin != sim.GuardianOriginSystem || o.Status != "active" {
 			t.Errorf("survival watch %s not active/system: %+v", o.ID, o)
 		}
 		kinds[o.Survival]++

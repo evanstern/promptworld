@@ -135,7 +135,7 @@ func FormatTOD(sec int) string {
 
 // TickAt is the inverse of GameTime: the tick ordinal for game-calendar
 // coordinates (1-based day, hour, minute, second). The miracle snap doors use
-// it to translate an operator/angel "day N HH:MM" target into the tick the
+// it to translate an operator/guardian "day N HH:MM" target into the tick the
 // reducer snaps to (spec 016 US3). It does not judge direction — the clock is
 // monotonic and forward-only, and the reducer rejects a non-forward target.
 func TickAt(day int64, hour, min, sec int) int64 {

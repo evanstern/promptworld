@@ -14,7 +14,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/evanstern/promptworld/internal/metatron"
+	"github.com/evanstern/promptworld/internal/guardian"
 	"github.com/evanstern/promptworld/internal/sim"
 )
 
@@ -31,7 +31,7 @@ func TestConsoleOpensFromEveryMode(t *testing.T) {
 	}{
 		{"widescreen home", func(t *testing.T) Model { return widescreenModel(t) }},
 		{"widescreen solo", func(t *testing.T) Model {
-			// paneMetatron, not paneVillagers/paneChronicle: those tabs'
+			// paneGuardian, not paneVillagers/paneChronicle: those tabs'
 			// own key layers claim "G" for their own jump-to-last
 			// (villagersVisible()/inspecting() are checked ahead of
 			// handleGlobalKey regardless of solo — see
@@ -39,7 +39,7 @@ func TestConsoleOpensFromEveryMode(t *testing.T) {
 			// exercises the plain "solo, G reaches global" path.
 			m := widescreenModel(t)
 			m.solo = true
-			m.dockTab = paneMetatron
+			m.dockTab = paneGuardian
 			return m
 		}},
 		{"narrow", func(t *testing.T) Model { return testModel(t) }},
@@ -227,16 +227,16 @@ func TestConsoleMFocusesInPlaceWithoutTouchingActive(t *testing.T) {
 	}
 }
 
-// TestConsoleCountsAsMetatronVisible (spec.md US1 AS4): a reply landing
+// TestConsoleCountsAsGuardianVisible (spec.md US1 AS4): a reply landing
 // while the console is open streams in place — no second badge system.
-func TestConsoleCountsAsMetatronVisible(t *testing.T) {
+func TestConsoleCountsAsGuardianVisible(t *testing.T) {
 	m := widescreenModel(t)
-	m.dockTab = paneChronicle // NOT the metatron tab underneath
+	m.dockTab = paneChronicle // NOT the guardian tab underneath
 	var mdl tea.Model = m
 	mdl = update(mdl, "G")
-	mdl, _ = mdl.(Model).Update(consoleReplyMsg{result: &metatron.TurnResult{Reply: "hello"}})
+	mdl, _ = mdl.(Model).Update(consoleReplyMsg{result: &guardian.TurnResult{Reply: "hello"}})
 	mm := mdl.(Model)
-	if mm.metatronUnseen {
+	if mm.guardianUnseen {
 		t.Error("a reply landing while the console is open must not badge the guardian tab")
 	}
 	if mm.mbFlash != "" {
@@ -525,23 +525,23 @@ func TestConsoleHelpModeRoutesToGlobalOrSolo(t *testing.T) {
 func TestCharterReadSurfaceFixtures(t *testing.T) {
 	cases := []struct {
 		name   string
-		status *metatron.Status
+		status *guardian.Status
 		want   []string
 		absent []string
 	}{
 		{
 			name:   "default charter, pre-ladder",
-			status: &metatron.Status{CharterDefault: true},
+			status: &guardian.Status{CharterDefault: true},
 			want:   []string{"default, binds now"},
 		},
 		{
 			name:   "player-authored, pre-ladder",
-			status: &metatron.Status{CharterDefault: false, Skills: []string{"a.md", "b.md"}},
+			status: &guardian.Status{CharterDefault: false, Skills: []string{"a.md", "b.md"}},
 			want:   []string{"player-authored, binds now", "2 files, binds now"},
 		},
 		{
 			name: "stage-1 tutor preset: charter locked, skills locked",
-			status: &metatron.Status{
+			status: &guardian.Status{
 				Stage: "stage-1", CharterLocked: true, CharterPreset: "tutor", SkillsLocked: true,
 			},
 			want:   []string{"preset-locked to tutor", "unlocks instruction authoring", "skills/ — locked", "unlocks skill files"},
@@ -549,7 +549,7 @@ func TestCharterReadSurfaceFixtures(t *testing.T) {
 		},
 		{
 			name: "stage-2: charter unlocked, skills still locked",
-			status: &metatron.Status{
+			status: &guardian.Status{
 				Stage: "stage-2", CharterDefault: true, SkillsLocked: true,
 			},
 			want:   []string{"default, binds now", "skills/ — locked"},
@@ -557,7 +557,7 @@ func TestCharterReadSurfaceFixtures(t *testing.T) {
 		},
 		{
 			name: "stage-3+: everything binds",
-			status: &metatron.Status{
+			status: &guardian.Status{
 				Stage: "stage-3", CharterDefault: false, Skills: []string{"a.md"},
 			},
 			want:   []string{"player-authored, binds now", "1 file, binds now"},

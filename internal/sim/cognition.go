@@ -145,7 +145,7 @@ type CogToolCallPayload struct {
 // call's plain fields (spec 017 T018). It lives sim-side — next to the payload
 // it builds — with only plain/std-lib argument types (no toolloop or mind
 // import), so BOTH loop consumers reach it without a shared helper package or
-// dependency inversion: the mind (T018) and metatron (T020) each unpack their
+// dependency inversion: the mind (T018) and guardian (T020) each unpack their
 // own toolloop.CallRecord and call this, sharing one authority for the payload's
 // field set. verdict is the toolloop.Verdict enum stringified by the caller;
 // reason must be non-empty for every rejected_* / read_error verdict — the

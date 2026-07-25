@@ -19,7 +19,7 @@ import (
 // validate.go.
 
 // GrantDoc is a bundle's optional capabilities.json — the same shape as the
-// world-level manifest (internal/metatron manifestDoc): a persona narrows the
+// world-level manifest (internal/guardian manifestDoc): a persona narrows the
 // world grant, never widens it (Phase 6 applies the intersection).
 type GrantDoc struct {
 	Tools        []string `json:"tools"`
@@ -62,7 +62,7 @@ type BootIssue struct {
 	Message  string
 }
 
-// BundleSet is the boot-frozen aggregate the daemon holds and the metatron turn
+// BundleSet is the boot-frozen aggregate the daemon holds and the guardian turn
 // assembly reads. It is immutable after Discover returns.
 type BundleSet struct {
 	bundles []Bundle
@@ -121,7 +121,7 @@ func (bs *BundleSet) Bundles() []Bundle { return bs.bundles }
 func (bs *BundleSet) BootReport() []BootIssue { return bs.report }
 
 // Roster returns every synthesized tool.Tool in deterministic order (bundle
-// load order × within-bundle tool order) — the surface the metatron turn
+// load order × within-bundle tool order) — the surface the guardian turn
 // assembly merges alongside the granted built-in roster (Phase 3).
 func (bs *BundleSet) Roster() []tool.Tool {
 	var out []tool.Tool
@@ -135,7 +135,7 @@ func (bs *BundleSet) Roster() []tool.Tool {
 
 // SoulFragments returns each bundle's SOUL.md content, in load order, skipping
 // bundles without one (spec 036 US4, T029). Each fragment is already B2-capped
-// (≤4000 chars) at load time; the metatron turn assembly appends these verbatim
+// (≤4000 chars) at load time; the guardian turn assembly appends these verbatim
 // after the charter section of the system prompt.
 func (bs *BundleSet) SoulFragments() []string {
 	var out []string

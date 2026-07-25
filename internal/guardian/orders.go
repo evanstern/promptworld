@@ -1,4 +1,4 @@
-package metatron
+package guardian
 
 // Standing orders (spec 029 US2/US3): the event-sourced watch-and-act machinery.
 // This file holds the pure predicate matcher (orderMatches — evaluated for free
@@ -66,7 +66,7 @@ func parseOrderArgs(raw json.RawMessage) orderArgs {
 // serialized per-tick counter so a placement whose predecessor has not yet flowed
 // back through Observe still gets a fresh id. Uniqueness is ultimately enforced by
 // the reducer (it rejects a duplicate active id).
-func (mt *Metatron) nextOrderID(tick int64) string {
+func (mt *Guardian) nextOrderID(tick int64) string {
 	mt.stateMu.Lock()
 	defer mt.stateMu.Unlock()
 	seq := 0
@@ -87,7 +87,7 @@ func (mt *Metatron) nextOrderID(tick int64) string {
 	return fmt.Sprintf("ord-%d-%d", tick, seq)
 }
 
-// placeOrder compiles a monitor_and_act call into a MetatronOrder and lands it as
+// placeOrder compiles a monitor_and_act call into a GuardianOrder and lands it as
 // metatron.order_placed through the InjectSocial door (spec 029 US2, T008). The
 // door's dry-run is the authority (player cap, ttl bounds, agent range, empty
 // event_types); a rejection maps to in-fiction counsel the handler feeds back as a
@@ -97,7 +97,7 @@ func (mt *Metatron) nextOrderID(tick int64) string {
 // R5) rather than at the driver, so the system/deferral caller that bypasses the
 // driver is guarded too. Returns the placed order (id for the reply/status) or
 // (nil, refusal).
-func (mt *Metatron) placeOrder(origin string, a orderArgs, tick int64, grant grantSet) (*sim.MetatronOrder, string) {
+func (mt *Guardian) placeOrder(origin string, a orderArgs, tick int64, grant grantSet) (*sim.GuardianOrder, string) {
 	// The monitor_and_act grant gates only PLAYER placements (a console tool call).
 	// A system-origin deferral (T016) is internally initiated by an already-granted
 	// act — the daytime send_omen that spawned it — so it carries THAT tool's gate
@@ -121,8 +121,8 @@ func (mt *Metatron) placeOrder(origin string, a orderArgs, tick int64, grant gra
 	if ttl == 0 {
 		ttl = 3 // default (spec Assumption): 3 game days
 	}
-	if ttl < sim.MetatronOrderTTLMinDays || ttl > sim.MetatronOrderTTLMaxDays {
-		return nil, fmt.Sprintf("a watch may stand for %d to %d days", sim.MetatronOrderTTLMinDays, sim.MetatronOrderTTLMaxDays)
+	if ttl < sim.GuardianOrderTTLMinDays || ttl > sim.GuardianOrderTTLMaxDays {
+		return nil, fmt.Sprintf("a watch may stand for %d to %d days", sim.GuardianOrderTTLMinDays, sim.GuardianOrderTTLMaxDays)
 	}
 	keywords := make([]string, 0, len(a.Keywords))
 	for _, k := range a.Keywords {
@@ -130,7 +130,7 @@ func (mt *Metatron) placeOrder(origin string, a orderArgs, tick int64, grant gra
 			keywords = append(keywords, k)
 		}
 	}
-	order := sim.MetatronOrder{
+	order := sim.GuardianOrder{
 		ID:          mt.nextOrderID(tick),
 		Origin:      origin,
 		Condition:   a.Condition,
@@ -157,7 +157,7 @@ func (mt *Metatron) placeOrder(origin string, a orderArgs, tick int64, grant gra
 // (spec 029 US2, T008). The reducer rejects an unknown or non-active id — this is
 // where the cancel/expiry/trigger race resolves (exactly one terminal lands).
 // Returns "" on success or an in-fiction refusal the handler feeds back.
-func (mt *Metatron) cancelOrder(id string, grant grantSet) string {
+func (mt *Guardian) cancelOrder(id string, grant grantSet) string {
 	if !grant.allows("cancel_order") {
 		return "that power is not granted in this world"
 	}
@@ -174,7 +174,7 @@ func (mt *Metatron) cancelOrder(id string, grant grantSet) string {
 		case strings.Contains(msg, "not active"):
 			return fmt.Sprintf("the watch %q has already lapsed", id)
 		case strings.Contains(msg, "survival watch"):
-			// A survival watch is the angel's own nature (spec 059 FR-002), not a
+			// A survival watch is the guardian's own nature (spec 059 FR-002), not a
 			// player configuration — it cannot be released by the order surface.
 			return "that watch is my own nature — I keep it over every living soul, and I cannot set it aside"
 		default:
@@ -188,7 +188,7 @@ func (mt *Metatron) cancelOrder(id string, grant grantSet) string {
 
 // orderRefusal maps a metatron.order_placed door rejection to in-fiction counsel
 // (spec 029): the reducer's error strings are the source, translated to the
-// angel's voice so the model hears a repairable reason (rejected_gate) rather than
+// guardian's voice so the model hears a repairable reason (rejected_gate) rather than
 // a raw reducer message.
 func orderRefusal(err error) string {
 	msg := err.Error()
@@ -240,7 +240,7 @@ func survivalBand(kind string, n needMirror) (inBand, rearm bool) {
 // "watches don't queue duplicate turns for the same crisis while one is in
 // flight") and by the per-villager latch. At most one job is enqueued per watch
 // per batch (one survival turn may address any/all villagers in crisis).
-func (mt *Metatron) matchSurvival(o sim.MetatronOrder, batch []store.Event, pending bool) {
+func (mt *Guardian) matchSurvival(o sim.GuardianOrder, batch []store.Event, pending bool) {
 	for _, e := range batch {
 		if e.Type != "agent.needs_changed" {
 			continue
@@ -289,7 +289,7 @@ func (mt *Metatron) matchSurvival(o sim.MetatronOrder, batch []store.Event, pend
 // PURE function — no state, no model call — so the absorb path evaluates it for
 // free (SC-001). Only ACTIVE orders match; a fuzzy order (Confirm) still matches
 // structurally here (the confirm step that gates its trigger is Batch C / T021).
-func orderMatches(o sim.MetatronOrder, e store.Event) bool {
+func orderMatches(o sim.GuardianOrder, e store.Event) bool {
 	if o.Status != "active" {
 		return false
 	}
@@ -357,7 +357,7 @@ const systemTurnBusyWait = 90 * time.Second
 // confirm prompt, T021), the matched type + tick for the trail, and whether this is
 // a fuzzy order that must pass the watch confirm before firing (confirm).
 type triggerJob struct {
-	order       sim.MetatronOrder
+	order       sim.GuardianOrder
 	matched     store.Event
 	matchedType string
 	matchedTick int64
@@ -372,19 +372,19 @@ const confirmRateTicks = 30 * 60
 // matchOrders scans active orders against a just-applied LIVE event batch and
 // enqueues a job for each structural hit (spec 029 US3/US6/R6/R9). Called by the
 // absorb goroutine AFTER replica apply + mirror refresh, so it is live-only by
-// construction (replay never runs the angel). Orders fire in order-id order within
+// construction (replay never runs the guardian). Orders fire in order-id order within
 // a batch, at most once — pendingTrigger dedups an order already queued but not yet
 // resolved, and one job is enqueued per order per batch. A fuzzy order (Confirm) is
 // matched structurally here too, but its hit is routed as a CONFIRM job (confirm
 // true) — the worker runs one watch call before firing (T021) — and is rate-capped
 // to one confirm per confirmRateTicks per order via lastConfirmTick; a rate-capped
 // hit is logged and skipped so a storm never triggers a flood of watch calls.
-func (mt *Metatron) matchOrders(batch []store.Event) {
+func (mt *Guardian) matchOrders(batch []store.Event) {
 	if mt.social == nil {
 		return
 	}
 	mt.stateMu.Lock()
-	orders := append([]sim.MetatronOrder(nil), mt.orders...)
+	orders := append([]sim.GuardianOrder(nil), mt.orders...)
 	mt.stateMu.Unlock()
 	sort.Slice(orders, func(i, j int) bool { return orders[i].ID < orders[j].ID })
 	for i := range orders {
@@ -450,7 +450,7 @@ func (mt *Metatron) matchOrders(batch []store.Event) {
 // watch confirm (runConfirm), which fires only on a yes verdict. One worker →
 // triggered turns and confirms serialize with each other and, via the shared
 // turnBusy, with console turns (R6).
-func (mt *Metatron) triggerWorker() {
+func (mt *Guardian) triggerWorker() {
 	for {
 		select {
 		case <-mt.done:
@@ -484,7 +484,7 @@ func confirmSystem(name string) string {
 // marker); a no, garbage, or FAILED verdict leaves the order armed with NO retry
 // (the confirm is a single bare call, not a loop) — only the in-flight marker is
 // cleared here so a later hit can confirm again, subject to the rate cap.
-func (mt *Metatron) runConfirm(job triggerJob) {
+func (mt *Guardian) runConfirm(job triggerJob) {
 	confirmed, err := mt.confirmOrder(job)
 	if err != nil || !confirmed {
 		mt.stateMu.Lock()
@@ -496,16 +496,16 @@ func (mt *Metatron) runConfirm(job triggerJob) {
 }
 
 // confirmOrder issues the ONE bounded watch-confirm Submit (spec 029 US6, R9 /
-// contracts/routing.md): KindMetatronWatch, MaxTokens 16, the fixed system prompt,
+// contracts/routing.md): KindGuardianWatch, MaxTokens 16, the fixed system prompt,
 // and a user prompt of the order's condition + the matched event in the digest
 // vocabulary. Reply contract: a single leading yes/no token (case-insensitive);
 // anything else, empty, or an error is a NO (unconfirmed). Budget/tier/transport
 // failures return (false, err) — unconfirmed, never retried (no loop to retry).
-func (mt *Metatron) confirmOrder(job triggerJob) (bool, error) {
+func (mt *Guardian) confirmOrder(job triggerJob) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), confirmCallTimeout)
 	defer cancel()
 	resp, err := mt.orch.Submit(ctx, llm.Request{
-		Kind:      llm.KindMetatronWatch,
+		Kind:      llm.KindGuardianWatch,
 		System:    confirmSystem(mt.sk().Name()),
 		Prompt:    confirmPrompt(job.order, job.matched),
 		MaxTokens: 16,
@@ -531,8 +531,8 @@ func confirmYes(text string) bool {
 
 // confirmPrompt renders the watch-confirm user prompt (spec 029 R9): the order's
 // original condition plus the matched event described in the same digest vocabulary
-// the soul uses, so the watch model judges the phrasing the angel would recognize.
-func confirmPrompt(o sim.MetatronOrder, e store.Event) string {
+// the soul uses, so the watch model judges the phrasing the guardian would recognize.
+func confirmPrompt(o sim.GuardianOrder, e store.Event) string {
 	return fmt.Sprintf("The condition you watch for:\n%s\n\nWhat just happened:\n%s\n\nDoes it satisfy the condition?",
 		o.Condition, describeEvent(e))
 }
@@ -625,14 +625,14 @@ func describeEvent(e store.Event) string {
 //     fail-fast) and run the pre-authorized action as a system-authored turn.
 //  4. Queue a moment from the outcome — the act on success, or ONE model-free
 //     honest moment per failure family, never a retry (FR-011).
-func (mt *Metatron) runTrigger(job triggerJob) {
+func (mt *Guardian) runTrigger(job triggerJob) {
 	defer func() {
 		mt.stateMu.Lock()
 		delete(mt.pendingTrigger, job.order.ID)
 		mt.stateMu.Unlock()
 	}()
 
-	// A survival watch (spec 059 US2) never consumes: it is the angel's standing
+	// A survival watch (spec 059 US2) never consumes: it is the guardian's standing
 	// nature, not a one-shot order, so it lands NO order_triggered (that would
 	// deactivate it) and runs its own survival-authority turn.
 	if job.order.Survival != "" {
@@ -680,11 +680,11 @@ func (mt *Metatron) runTrigger(job triggerJob) {
 //     line + transcript + moment, all attributed to the survival duty, FR-007).
 //  2. NO empty-bank short-circuit — the turn ALWAYS runs (edge case: "the turn
 //     still happens … it must not burn the match silently — record the helpless
-//     turn"). At zero charges every acting tool refuses in-fiction and the angel
+//     turn"). At zero charges every acting tool refuses in-fiction and the guardian
 //     narrates helplessly; the transcript + a helpless moment are the record.
 //  3. The frame carries the survival-authority carve-out (turnOrigin.survival),
-//     and the seed names the endangered villager + peril so the angel can aim.
-func (mt *Metatron) runSurvivalTrigger(job triggerJob) {
+//     and the seed names the endangered villager + peril so the guardian can aim.
+func (mt *Guardian) runSurvivalTrigger(job triggerJob) {
 	agent := survivalMatchedAgent(job.matched)
 	name := "a villager"
 	if agent >= 0 && agent < len(sim.AgentNames) {
@@ -737,10 +737,10 @@ func survivalMatchedAgent(e store.Event) int {
 
 // survivalMoment renders the model-free moment describing a completed survival
 // turn (spec 059 US2/FR-007): it names the life-saving act when one landed, else
-// records that the watch woke and the angel could do nothing — the "helpless turn"
+// records that the watch woke and the guardian could do nothing — the "helpless turn"
 // the spec insists is recorded, never silent. Every branch attributes the moment
 // to the survival watch.
-func (mt *Metatron) survivalMoment(tick int64, name, peril string, r TurnResult) string {
+func (mt *Guardian) survivalMoment(tick int64, name, peril string, r TurnResult) string {
 	switch {
 	case r.Nudge != nil:
 		return fmt.Sprintf("%s — the survival watch woke (%s is %s): I sent a %s to %s.",
@@ -761,7 +761,7 @@ func (mt *Metatron) survivalMoment(tick int64, name, peril string, r TurnResult)
 // meta act, so it still runs the turn. (Batch B places no system-origin orders —
 // deferral is Batch C T016 — so this is dormant-but-correct, guarding exactly the
 // deferral orders it will meet.)
-func (mt *Metatron) knownActEmptyBank(o sim.MetatronOrder) bool {
+func (mt *Guardian) knownActEmptyBank(o sim.GuardianOrder) bool {
 	if o.Origin != "system" {
 		return false
 	}
@@ -773,9 +773,9 @@ func (mt *Metatron) knownActEmptyBank(o sim.MetatronOrder) bool {
 
 // acquireTurnBusy waits (bounded by systemTurnBusyWait) for the single-flight turn
 // slot for a SYSTEM turn (spec 029 R6). Returns false if the slot could not be
-// acquired in time (the caller degrades to an honest moment) or the angel is
+// acquired in time (the caller degrades to an honest moment) or the guardian is
 // closing. The console path never calls this — it CAS-fails fast with ErrTurnBusy.
-func (mt *Metatron) acquireTurnBusy() bool {
+func (mt *Guardian) acquireTurnBusy() bool {
 	deadline := time.Now().Add(systemTurnBusyWait)
 	tick := time.NewTicker(5 * time.Millisecond)
 	defer tick.Stop()
@@ -797,7 +797,7 @@ func (mt *Metatron) acquireTurnBusy() bool {
 // queueMoment appends a model-free moment to the soul and the player-facing queue
 // (the same discipline as observeMoment's drama moments) — how a triggered turn's
 // outcome reaches the next console reply (spec 029 US3, SC-003).
-func (mt *Metatron) queueMoment(line string) {
+func (mt *Guardian) queueMoment(line string) {
 	if line == "" {
 		return
 	}
@@ -808,10 +808,10 @@ func (mt *Metatron) queueMoment(line string) {
 }
 
 // triggeredMoment renders the model-free moment describing a COMPLETED triggered
-// turn (spec 029 US3): what the angel did while the player was away, so the next
+// turn (spec 029 US3): what the guardian did while the player was away, so the next
 // console reply leads with it. It names the landed act (omen/vision/miracle) when
 // one landed, else that the watch woke and was attended.
-func (mt *Metatron) triggeredMoment(tick int64, o sim.MetatronOrder, r TurnResult) string {
+func (mt *Guardian) triggeredMoment(tick int64, o sim.GuardianOrder, r TurnResult) string {
 	switch {
 	case r.Nudge != nil:
 		return fmt.Sprintf("%s — a watch came due (%q): I sent a %s to %s.",
@@ -828,7 +828,7 @@ func (mt *Metatron) triggeredMoment(tick int64, o sim.MetatronOrder, r TurnResul
 // failure family (spec 029 T014/R12, FR-011) — never a retry. Empty bank is caught
 // earlier (knownActEmptyBank); this covers exhausted budget, a downed/busy tier,
 // and transport failures the loop already retried once internally.
-func (mt *Metatron) degradedMoment(tick int64, err error) string {
+func (mt *Guardian) degradedMoment(tick int64, err error) string {
 	switch {
 	case errors.Is(err, llm.ErrBudgetExhausted), errors.Is(err, llm.ErrTierDown), errors.Is(err, llm.ErrTierBusy):
 		return fmt.Sprintf("%s — a watch came due, but my sight dimmed and I could not act. Nothing was spent.", clock.Format(tick))

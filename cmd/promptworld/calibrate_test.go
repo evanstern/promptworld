@@ -310,7 +310,7 @@ func TestCalibrateDeclaredProvidersThreeNamedEntries(t *testing.T) {
 			string(llm.KindConsolidation): {Chain: []string{"alpha"}},
 			string(llm.KindNarrator):      {Chain: []string{"alpha"}},
 			string(llm.KindDrama):         {Chain: []string{"alpha"}},
-			string(llm.KindMetatron):      {Chain: []string{"alpha"}},
+			string(llm.KindGuardian):      {Chain: []string{"alpha"}},
 			string(llm.KindMeeting):       {Chain: []string{"alpha"}},
 		},
 	}

@@ -56,7 +56,7 @@ Usage:
 `
 
 // dispatch resolves a subcommand name to its handler. Canonical names only in
-// the usage text above; the pre-052 fiction names (`metatron`, `miracle`)
+// the usage text above; the pre-052 fiction names (`guardian`, `miracle`)
 // stay as HIDDEN, fully functional compatibility aliases (spec 052 FR-008) —
 // old scripts and habits keep working forever, the frozen-vocabulary ruling.
 func dispatch(cmd string) (func([]string) error, bool) {
@@ -97,9 +97,9 @@ func dispatch(cmd string) (func([]string) error, bool) {
 		return cmdDivergence, true
 	case "stages":
 		return cmdStages, true
-	case "guardian", "metatron": // metatron: hidden compat alias (spec 052 FR-008)
+	case "guardian", "metatron": // "metatron" is the hidden compat alias (spec 052 FR-008)
 		return cmdGuardian, true
-	case "work", "miracle": // miracle: hidden compat alias (spec 052 FR-008)
+	case "work", "miracle": // "miracle" is the hidden compat alias (spec 052 FR-008)
 		return cmdWork, true
 	}
 	return nil, false

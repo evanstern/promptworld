@@ -128,7 +128,7 @@ func (l *Loop) landIntent(in *InjectArgs, emit func(string, any)) error {
 	} else {
 		// Roster door check (spec 014 US3, FR-008/FR-009): capability is roster
 		// membership. The goal must be a World tool on the villager roster; an
-		// out-of-roster tool (a metatron converse/nudge) or an unknown name is
+		// out-of-roster tool (a guardian converse/nudge) or an unknown name is
 		// rejected here — recorded, non-fatal, same reason/kind as an unknown goal.
 		if td, ok := tool.Lookup(in.Goal); !ok || td.Effect != tool.World || !tool.OnRoster(tool.RosterVillager, in.Goal) {
 			return reject(OutcomeRejectedGuard, fmt.Sprintf("unknown goal %q", in.Goal))

@@ -8,7 +8,7 @@ import (
 // registry is the authoritative collection of every tool, in registration
 // order. The world tools come first, in exactly today's goal-vocabulary order
 // (internal/mind/prompt.go) — that order is the byte-identity anchor for the
-// derived prompt string (SC-003, R3). The expressive tools and the metatron
+// derived prompt string (SC-003, R3). The expressive tools and the guardian
 // tools follow.
 //
 // itemKinds are the inventory keys the storage verbs (drop/pick_up/deposit/
@@ -104,17 +104,17 @@ func setPlanSchema(goals []string) json.RawMessage {
 	return b
 }
 
-// miracleKinds is the metatron turn's miracle vocabulary — the four kinds the
-// angel's work_miracle tool (spec 017 T019b) and internal/metatron's landMiracle
+// miracleKinds is the guardian turn's miracle vocabulary — the four kinds the
+// guardian's work_miracle tool (spec 017 T019b) and internal/guardian's landMiracle
 // / BuildMiracleBatch (spec 016 turn contract) accept. It is declared here as
 // work_miracle's Enum descriptor rather than imported: internal/tool is a leaf
-// (research R1) and cannot see internal/metatron or internal/sim, so the
-// canonical list is MIRRORED, and internal/metatron's TestMiracleKindsMirrorTool
+// (research R1) and cannot see internal/guardian or internal/sim, so the
+// canonical list is MIRRORED, and internal/guardian's TestMiracleKindsMirrorTool
 // pins it equal to BuildMiracleBatch's accepted set so it cannot drift.
 var miracleKinds = []string{"move", "remove", "give_item", "time_snap"}
 
 // MiracleKinds returns a copy of work_miracle's kind vocabulary, in the order
-// above. Exported for internal/metatron's drift cross-check test.
+// above. Exported for internal/guardian's drift cross-check test.
 func MiracleKinds() []string {
 	out := make([]string, len(miracleKinds))
 	copy(out, miracleKinds)
@@ -124,7 +124,7 @@ func MiracleKinds() []string {
 // miracleCosts is THE authoritative per-kind charge price for a miracle (spec
 // 021 R7 / FR-009 / SC-004): the single source from which the reducer's
 // enforcement (sim.miracleCost, derived via MiracleCostsByEvent) and every
-// model/player-facing rendering (MetatronToolGuidance) both draw, so a price
+// model/player-facing rendering (GuardianToolGuidance) both draw, so a price
 // change here propagates everywhere with no second edit. The time snap is the
 // dear one (2 charges); every other miracle costs 1. Keyed lookups only —
 // never iterated into ordered output (determinism).
@@ -179,7 +179,7 @@ func MiracleCostsByEvent() map[string]int {
 // right — the door is the semantic authority, this only rejects shapes the model
 // can fix (wrong scalar type, missing kind, unknown kind).
 //
-// There is deliberately NO `gratis` parameter: the angel can NEVER waive a
+// There is deliberately NO `gratis` parameter: the guardian can NEVER waive a
 // charge (spec 016 FR-007/SC-005). Structural absence — not sanitizing a field
 // out — is the guarantee, exactly as the retired turnReply.Miracle struct had no
 // gratis field. The scalar Param model expresses this whole surface
@@ -218,7 +218,7 @@ const ReasonCapRunes = 200
 // InjectArgs.Reason and baked into the completion memory's Why (situated
 // " — <why>" clause). Capability-only description — no cadence/format/content
 // guidance. NOT added to muse (interiority is already free-standing) or any
-// metatron tool.
+// guardian tool.
 func reasonParam() Param {
 	return Param{Name: "reason", Kind: Text, Required: false, MaxRunes: ReasonCapRunes,
 		Description: "optionally, why you're doing this",
@@ -285,7 +285,7 @@ const (
 // table (agents.go) derives from these. Context overrides (spear hunt, oven
 // cook) stay in the executor's workDuration and are not registry data (R7).
 //
-// worldTools, expressiveTools, and metatronTools (below) are declared
+// worldTools, expressiveTools, and guardianTools (below) are declared
 // separately, rather than as one registry literal, so that set_plan (spec
 // 017 R11) can be built from worldTools alone and then spliced in after it —
 // see setPlanTool and the registry assembly below.
@@ -413,13 +413,13 @@ var observableEventTypes = []string{
 // is excluded — an LLM-configured world refuses it at the set_speed door).
 // MIRRORED, not imported: internal/tool is a leaf (research R1) and cannot see
 // internal/clock. The start/adjust_speed meta tools (spec 029) declare it as
-// their `speed` Enum. internal/metatron's TestClockSpeedsMirrorLadder (T018)
+// their `speed` Enum. internal/guardian's TestClockSpeedsMirrorLadder (T018)
 // pins this equal to clock.CappedLadder() — the drift guard, the
 // TestMiracleKindsMirrorTool pattern — so this literal cannot silently diverge.
 var clockSpeeds = []string{"1x", "4x", "8x", "16x", "32x"}
 
 // ClockSpeeds returns a copy of the meta tools' clock-speed Enum, in ladder
-// order. Exported for internal/metatron's drift cross-check test (T018), which
+// order. Exported for internal/guardian's drift cross-check test (T018), which
 // pins it equal to clock.CappedLadder() stringified.
 func ClockSpeeds() []string {
 	out := make([]string, len(clockSpeeds))
@@ -470,14 +470,14 @@ var placeFactKinds = []string{
 	"tree", "forage", "rock", "water_edge", "den", "pile",
 }
 
-// metatronTools are the metatron roster's tools. converse produces a
-// transcript reply and lands NO world events. It is the metatron's
+// guardianTools are the guardian roster's tools. converse produces a
+// transcript reply and lands NO world events. It is the guardian's
 // expressive speech channel, so it is Effect Expressive with an empty Events
 // set — the one eventless expressive tool (see Validate: Events are
 // required to be ⊆ whitelist but are not required to be non-empty, so an
 // eventless expressive tool is legal).
 //
-// Spec 029 (TASK-27) retires nudge_dream / nudge_omen and adds the angel's
+// Spec 029 (TASK-27) retires nudge_dream / nudge_omen and adds the guardian's
 // agency surface: send_vision (one living villager, any hour) and send_omen (one
 // villager, a named group, or everyone — night-only, gated in the reducer)
 // replace the two nudges; monitor_and_act places an event-sourced standing order
@@ -487,7 +487,7 @@ var placeFactKinds = []string{
 // applies, nothing is injected: the clock's own clock.paused/clock.resumed remain
 // the record). The order/meta HANDLERS and the send_* landers are Batch B
 // (T005/T006/T009/T018); this task ships the declared surface + schemas.
-var metatronTools = []Tool{
+var guardianTools = []Tool{
 	{Name: "converse", Effect: Expressive, Gate: None,
 		Params: []Param{{Name: "text", Kind: Text}}},
 	// send_vision's optional place grant (spec 041 FR-014): the three place_*
@@ -533,7 +533,7 @@ var metatronTools = []Tool{
 		Params: []Param{{Name: "speed", Kind: Enum, Enum: clockSpeeds}}},
 	{Name: "adjust_speed", Effect: Expressive, Gate: None,
 		Params: []Param{{Name: "speed", Kind: Enum, Required: true, Enum: clockSpeeds}}},
-	// work_miracle is the metatron's fourth loop tool (spec 017 T019b, R13
+	// work_miracle is the guardian's fourth loop tool (spec 017 T019b, R13
 	// amendment): a direct, charge-priced world edit landed through the SAME
 	// InjectSocial door the nudges use (metatron.landMiracle → the shared
 	// BuildMiracleBatch → Loop.InjectSocial). It is Effect EXPRESSIVE, not World,
@@ -552,7 +552,7 @@ var metatronTools = []Tool{
 	// the reducer dry-run enforces the real per-kind price (2 for time_snap, 1
 	// for the rest). That per-kind price now has ONE authoritative source in this
 	// package — miracleCosts / MiracleCost / MiracleCostsByEvent (spec 021 R7) —
-	// from which sim.miracleCost (enforcement) and MetatronToolGuidance (the
+	// from which sim.miracleCost (enforcement) and GuardianToolGuidance (the
 	// model-facing prose) both derive, so a cost edit propagates everywhere with
 	// no second copy (SC-004). Cost.Charges is 1 — the gate's minimum, not the
 	// per-kind price. Its Events are the four miracle event types plus the FR-018
@@ -570,7 +570,7 @@ var metatronTools = []Tool{
 // sim.ValidateToolCoverage) and two Read tools that return journal content into
 // cognition and ground nothing — the first PRODUCTION Read tools (spec 017 lifted
 // the roster restriction and specified Read dispatch, so the loop needs no
-// change). All four join LoopRosterVillager only; the metatron never sees them
+// change). All four join LoopRosterVillager only; the guardian never sees them
 // (journals are private). Gate None: write/delete need no scene and no charge —
 // the reducer dry-run (budget / existence) is their only gate.
 var journalTools = []Tool{
@@ -595,14 +595,14 @@ var journalTools = []Tool{
 // order: worldTools (exactly today's goal-vocabulary order — the byte-
 // identity anchor for the derived prompt string, SC-003/R3), then set_plan
 // (appended immediately after the world verbs so no existing tool's position
-// shifts — spec 017 T004), then expressiveTools, then metatronTools, then the
+// shifts — spec 017 T004), then expressiveTools, then guardianTools, then the
 // journal tools (spec 019, appended last so no existing tool's position shifts).
 var registry = func() []Tool {
-	out := make([]Tool, 0, len(worldTools)+1+len(expressiveTools)+len(metatronTools)+len(journalTools))
+	out := make([]Tool, 0, len(worldTools)+1+len(expressiveTools)+len(guardianTools)+len(journalTools))
 	out = append(out, worldTools...)
 	out = append(out, setPlanTool)
 	out = append(out, expressiveTools...)
-	out = append(out, metatronTools...)
+	out = append(out, guardianTools...)
 	out = append(out, journalTools...)
 	return out
 }()

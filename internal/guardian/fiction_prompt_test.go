@@ -1,4 +1,4 @@
-package metatron
+package guardian
 
 import (
 	"regexp"
@@ -10,7 +10,7 @@ import (
 )
 
 // promptDenylistRe is the composed-prompt half of the spec 052 SC-001 sweep:
-// no angel-fiction vocabulary in any DEFAULT-skin model-facing prompt. The
+// no guardian-fiction vocabulary in any DEFAULT-skin model-facing prompt. The
 // frozen work_miracle tool id (and its "(the work_miracle tool)" gloss) is
 // the one allowed "miracle" spelling — the model must be able to call the
 // real tool (ruling 2).
@@ -31,9 +31,9 @@ func assertPromptClean(t *testing.T, surface, text string) {
 // TestDefaultPromptsAreFictionFree (spec 052 US2 AS-4, SC-001): the default
 // experience's full prompt surface — charter seeds, the assembled turn
 // system prompt (fixed frame + tool guidance included), the digest keeper,
-// and the watch confirmer — carries no angel fiction.
+// and the watch confirmer — carries no guardian fiction.
 func TestDefaultPromptsAreFictionFree(t *testing.T) {
-	roster := tool.LoopRosterMetatron()
+	roster := tool.LoopRosterGuardian()
 	assertPromptClean(t, "turn system prompt (default charter)",
 		turnSystemPrompt(persona.DefaultCharter, nil, roster))
 	assertPromptClean(t, "turn system prompt (tutor charter)",

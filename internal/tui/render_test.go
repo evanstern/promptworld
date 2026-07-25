@@ -9,9 +9,9 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/muesli/termenv"
 
+	"github.com/evanstern/promptworld/internal/guardian"
 	"github.com/evanstern/promptworld/internal/ipc"
 	"github.com/evanstern/promptworld/internal/llm"
-	"github.com/evanstern/promptworld/internal/metatron"
 	"github.com/evanstern/promptworld/internal/sim"
 	"github.com/evanstern/promptworld/internal/store"
 )
@@ -65,7 +65,7 @@ func TestWidescreenViewExactHeight(t *testing.T) {
 							sim.Memory{Text: "chopped wood at the treeline", Salience: 3, Tick: int64(i) * 60})
 					}
 				case "metatron-solo":
-					m.dockTab = paneMetatron
+					m.dockTab = paneGuardian
 					m.solo = true
 					m.transcript = []string{"you: why is Rowan hoarding wood?", transcriptGuardianPrefix + "three cold nights, and Ash let the fire die each time."}
 				case "help":
@@ -162,7 +162,7 @@ func TestFamilyTintDistinctPerFamily(t *testing.T) {
 	withColorProfile(t, termenv.TrueColor)
 	families := []eventFamily{
 		familyWorld, familyClock, familySim, familyAgent, familySocial,
-		familyGovernance, familyGru, familyChronicle, familyMetatron, familyCog,
+		familyGovernance, familyGru, familyChronicle, familyGuardian, familyCog,
 	}
 	seen := map[string]eventFamily{}
 	for _, f := range families {
@@ -436,7 +436,7 @@ func TestHorizonLinesMixedStandings(t *testing.T) {
 }
 
 // TestHorizonLinesEmpty: a world with no horizon (no-LLM) renders no block —
-// the metatron pane shows nothing extra.
+// the guardian pane shows nothing extra.
 func TestHorizonLinesEmpty(t *testing.T) {
 	if lines := horizonLines(nil, "8x"); lines != nil {
 		t.Errorf("no horizon should render no lines, got %v", lines)
@@ -464,11 +464,11 @@ func TestHorizonLinesSkippedCount(t *testing.T) {
 	}
 }
 
-// TestOrderStatusLinesFields (spec 029 T023): the metatron pane's
+// TestOrderStatusLinesFields (spec 029 T023): the guardian pane's
 // standing-orders block carries id, fuzzy marker, origin, expiry day, status,
 // and condition for every order, headed by a count line.
 func TestOrderStatusLinesFields(t *testing.T) {
-	orders := []metatron.OrderStatus{
+	orders := []guardian.OrderStatus{
 		{ID: "ord-120-1", Condition: "Rowan falls asleep", Origin: "player", ExpiresDay: 6, Status: "active"},
 		{ID: "ord-130-1", Condition: "Rowan seems heartbroken", Origin: "system", Fuzzy: true, ExpiresDay: 7, Status: "active"},
 	}
@@ -503,7 +503,7 @@ func TestOrderStatusLinesEmpty(t *testing.T) {
 
 // TestSystemsViewRendersProviderTable (spec 053 US2/D10): the systems pane
 // surfaces the per-provider table it's handed, not the old plain up/down
-// line — the exact assertion TestMetatronViewRendersProviderTable made
+// line — the exact assertion TestGuardianViewRendersProviderTable made
 // before the telemetry split, retargeted at its new home.
 func TestSystemsViewRendersProviderTable(t *testing.T) {
 	m := testModel(t)
@@ -522,7 +522,7 @@ func TestSystemsViewRendersProviderTable(t *testing.T) {
 }
 
 // TestGuardianTabHasZeroTelemetryAfterSplit (spec 053 SC-002): the guardian
-// tab (metatronView, narrow fallback) renders NONE of the relocated
+// tab (guardianView, narrow fallback) renders NONE of the relocated
 // provider/spend/horizon content once an LLM-configured world would have
 // rendered it pre-split — fiction-layer content only.
 func TestGuardianTabHasZeroTelemetryAfterSplit(t *testing.T) {
@@ -537,7 +537,7 @@ func TestGuardianTabHasZeroTelemetryAfterSplit(t *testing.T) {
 		},
 		Horizon: []ipc.HorizonClass{{Class: "conversation", Suppressed: true, Calibrated: true}},
 	}
-	view := m.metatronView()
+	view := m.guardianView()
 	for _, unwanted := range []string{"cogito", "cogito:3b", "spend $", "cognition horizon"} {
 		if strings.Contains(view, unwanted) {
 			t.Errorf("guardian tab must carry zero telemetry after the split, found %q:\n%s", unwanted, view)
@@ -583,16 +583,16 @@ func TestGuardianStripViewPresenceMatrix(t *testing.T) {
 		wantOrders string
 	}{
 		{"partial bank, N orders", 1, 2, true, "👁 2 standing orders"},
-		{"full bank omits regen", sim.MetatronChargeCap, 3, false, "👁 3 standing orders"},
+		{"full bank omits regen", sim.GuardianChargeCap, 3, false, "👁 3 standing orders"},
 		{"zero orders is a true zero", 1, 0, true, "👁 0 standing orders"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			m := testModel(t)
-			m.status = &ipc.StatusData{Clock: ipc.ClockStatus{MetatronCharges: c.charges, Tick: 100}}
-			m.replica.MetatronOrders = make([]sim.MetatronOrder, c.orders)
-			for i := range m.replica.MetatronOrders {
-				m.replica.MetatronOrders[i] = sim.MetatronOrder{ID: fmt.Sprintf("o%d", i), Status: "active"}
+			m.status = &ipc.StatusData{Clock: ipc.ClockStatus{GuardianCharges: c.charges, Tick: 100}}
+			m.replica.GuardianOrders = make([]sim.GuardianOrder, c.orders)
+			for i := range m.replica.GuardianOrders {
+				m.replica.GuardianOrders[i] = sim.GuardianOrder{ID: fmt.Sprintf("o%d", i), Status: "active"}
 			}
 			got := m.guardianStripView(200)
 			if strings.Contains(got, "faith") {
@@ -604,7 +604,7 @@ func TestGuardianStripViewPresenceMatrix(t *testing.T) {
 			if !strings.Contains(got, c.wantOrders) {
 				t.Errorf("missing standing-order segment %q: %q", c.wantOrders, got)
 			}
-			bank := fmt.Sprintf("(%d/%d)", c.charges, sim.MetatronChargeCap)
+			bank := fmt.Sprintf("(%d/%d)", c.charges, sim.GuardianChargeCap)
 			if !strings.Contains(got, bank) {
 				t.Errorf("missing numeric bank form %q: %q", bank, got)
 			}
@@ -618,14 +618,14 @@ func TestGuardianStripViewPresenceMatrix(t *testing.T) {
 // already uses, no polling required.
 func TestGuardianStripViewLiveUpdate(t *testing.T) {
 	m := testModel(t)
-	m.status = &ipc.StatusData{Clock: ipc.ClockStatus{MetatronCharges: 2, Tick: 100}}
+	m.status = &ipc.StatusData{Clock: ipc.ClockStatus{GuardianCharges: 2, Tick: 100}}
 	before := m.guardianStripView(200)
 	if !strings.Contains(before, "(2/3)") {
 		t.Fatalf("fixture setup wrong: %q", before)
 	}
 
 	// Spend a charge.
-	m.status.Clock.MetatronCharges = 1
+	m.status.Clock.GuardianCharges = 1
 	afterSpend := m.guardianStripView(200)
 	if afterSpend == before || !strings.Contains(afterSpend, "(1/3)") {
 		t.Errorf("charge spend not reflected next frame: %q", afterSpend)
@@ -634,17 +634,17 @@ func TestGuardianStripViewLiveUpdate(t *testing.T) {
 	// Place a standing order (the same client-side replica mutation
 	// applying a live metatron.order_placed event performs, tui.go
 	// applyEvent/Apply).
-	m.replica.MetatronOrders = append(m.replica.MetatronOrders, sim.MetatronOrder{ID: "ord-1", Status: "active"})
+	m.replica.GuardianOrders = append(m.replica.GuardianOrders, sim.GuardianOrder{ID: "ord-1", Status: "active"})
 	afterOrder := m.guardianStripView(200)
 	if !strings.Contains(afterOrder, "👁 1 standing orders") {
 		t.Errorf("order add not reflected next frame: %q", afterOrder)
 	}
 
 	// An order transitioning to a terminal status is still retained
-	// (pruneMetatronOrders keeps recent non-active ones alongside active
+	// (pruneGuardianOrders keeps recent non-active ones alongside active
 	// ones) — the count mirrors len(), exactly orderStatusLines' header
 	// count, so it does not drop until the retention prune eventually runs.
-	m.replica.MetatronOrders[0].Status = "expired"
+	m.replica.GuardianOrders[0].Status = "expired"
 	afterExpiry := m.guardianStripView(200)
 	if !strings.Contains(afterExpiry, "👁 1 standing orders") {
 		t.Errorf("retained-but-terminal order count should match orderStatusLines' len() semantics: %q", afterExpiry)
@@ -683,8 +683,8 @@ func TestJoinStripSegmentsTruncatesRightToLeft(t *testing.T) {
 // the strip stays one line and never exceeds the budget (SC-003).
 func TestGuardianStripViewNeverExceedsWidth(t *testing.T) {
 	m := testModel(t)
-	m.status = &ipc.StatusData{Clock: ipc.ClockStatus{MetatronCharges: 1, Tick: 100}}
-	m.replica.MetatronOrders = []sim.MetatronOrder{{ID: "o1", Status: "active"}, {ID: "o2", Status: "active"}}
+	m.status = &ipc.StatusData{Clock: ipc.ClockStatus{GuardianCharges: 1, Tick: 100}}
+	m.replica.GuardianOrders = []sim.GuardianOrder{{ID: "o1", Status: "active"}, {ID: "o2", Status: "active"}}
 	for _, w := range []int{1, 2, 5, 10, 20, 40, 200} {
 		got := m.guardianStripView(w)
 		if strings.Contains(got, "\n") {
@@ -702,8 +702,8 @@ func TestGuardianStripViewNeverExceedsWidth(t *testing.T) {
 // placeholder untouched.
 func TestMinibufferDormantFoldRelocation(t *testing.T) {
 	m := widescreenModel(t)
-	m.status = &ipc.StatusData{Clock: ipc.ClockStatus{MetatronCharges: 2, Tick: 100}}
-	m.replica.MetatronOrders = []sim.MetatronOrder{{ID: "o1", Status: "active"}}
+	m.status = &ipc.StatusData{Clock: ipc.ClockStatus{GuardianCharges: 2, Tick: 100}}
+	m.replica.GuardianOrders = []sim.GuardianOrder{{ID: "o1", Status: "active"}}
 
 	// Tall enough: strip stays on, dormant line is the plain placeholder.
 	m.height = 40
@@ -731,8 +731,8 @@ func TestMinibufferDormantFoldRelocation(t *testing.T) {
 // byte-identically whether the guardian strip is folded or not.
 func TestMinibufferFocusedBusyUnaffectedByFold(t *testing.T) {
 	base := widescreenModel(t)
-	base.status = &ipc.StatusData{Clock: ipc.ClockStatus{MetatronCharges: 2, Tick: 100}}
-	base.replica.MetatronOrders = []sim.MetatronOrder{{ID: "o1", Status: "active"}}
+	base.status = &ipc.StatusData{Clock: ipc.ClockStatus{GuardianCharges: 2, Tick: 100}}
+	base.replica.GuardianOrders = []sim.GuardianOrder{{ID: "o1", Status: "active"}}
 
 	tall, short := base, base
 	tall.height, short.height = 40, 14
@@ -753,21 +753,21 @@ func TestMinibufferFocusedBusyUnaffectedByFold(t *testing.T) {
 	}
 }
 
-// TestMetatronViewNarrowCarriesStrip (US3 AS-2; layout.md ruling b): the
+// TestGuardianViewNarrowCarriesStrip (US3 AS-2; layout.md ruling b): the
 // narrow fallback's only minibuffer (inside the guardian pane — narrow's
 // other panes have no composer at all) carries the strip above it,
 // unconditionally — narrow has no fold machinery of its own to drop it.
-func TestMetatronViewNarrowCarriesStrip(t *testing.T) {
+func TestGuardianViewNarrowCarriesStrip(t *testing.T) {
 	m := testModel(t) // narrow: 80x30 (below widescreenBreakpoint)
-	m.status = &ipc.StatusData{Clock: ipc.ClockStatus{MetatronCharges: 1, Tick: 100}}
-	m.replica.MetatronOrders = []sim.MetatronOrder{{ID: "o1", Status: "active"}, {ID: "o2", Status: "active"}}
+	m.status = &ipc.StatusData{Clock: ipc.ClockStatus{GuardianCharges: 1, Tick: 100}}
+	m.replica.GuardianOrders = []sim.GuardianOrder{{ID: "o1", Status: "active"}, {ID: "o2", Status: "active"}}
 
-	view := m.metatronView()
+	view := m.guardianView()
 	if !strings.Contains(view, "(1/3)") {
-		t.Errorf("narrow metatron pane missing the strip's charge bank: %q", view)
+		t.Errorf("narrow guardian pane missing the strip's charge bank: %q", view)
 	}
 	if !strings.Contains(view, "👁 2 standing orders") {
-		t.Errorf("narrow metatron pane missing the strip's standing-order count: %q", view)
+		t.Errorf("narrow guardian pane missing the strip's standing-order count: %q", view)
 	}
 	stripIdx := strings.Index(view, "(1/3)")
 	mbIdx := strings.Index(view, "⏎ m — speak with the guardian…")

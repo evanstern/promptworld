@@ -162,7 +162,7 @@ var catalogFixture = map[string]digestFixture{
 	"meeting.convention_established": {`{"convene_second":72000,"open_second":75600,"x":2,"y":2,"source":"config"}`, `meeting convention: 21:00 at (2,2) (config)`},
 	"norm.violated":                  {`{"norm_id":3,"violator":0,"witnesses":[1,2]}`, `Ash violated a norm (#3)`},
 
-	// --- gru / chronicle / metatron ---
+	// --- gru / chronicle / guardian ---
 	"gru.emerged":                 {`{"night":1,"x":5,"y":5}`, `the gru emerged at (5,5)`},
 	"gru.moved":                   {`{"x":6,"y":6}`, `the gru prowls to (6,6)`},
 	"gru.sighted":                 {`{"agent":0,"x":5,"y":5}`, `Ash sighted the gru`},

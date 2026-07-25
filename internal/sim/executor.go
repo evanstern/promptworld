@@ -50,24 +50,24 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 		}
 	}
 
-	// Metatron charge regeneration (TASK-12): absolute 6-game-hour
+	// Guardian charge regeneration (TASK-12): absolute 6-game-hour
 	// boundaries, pure function of (state, tick).
-	if nextTick%chargeRegenTicks == 0 && s.MetatronCharges < MetatronChargeCap {
+	if nextTick%chargeRegenTicks == 0 && s.GuardianCharges < GuardianChargeCap {
 		emit("metatron.charge_regenerated", ChargeRegeneratedPayload{})
 	}
 
-	// Metatron standing-order expiry (spec 029): a pure function of (state, tick),
+	// Guardian standing-order expiry (spec 029): a pure function of (state, tick),
 	// exactly the charge_regenerated pattern — an active order whose TTL has
 	// elapsed emits metatron.order_expired, which the reducer transitions to
 	// expired (freeing the player-cap slot). Emitted once: the same event marks
 	// the order non-active, so the next tick no longer sees it active. Replay
-	// reproduces it deterministically without the angel running — unlike a
+	// reproduces it deterministically without the guardian running — unlike a
 	// trigger, which is a live-only injection (a matched condition, never replay).
-	for i := range s.MetatronOrders {
-		// A survival watch (spec 059) never expires — it is the angel's standing
+	for i := range s.GuardianOrders {
+		// A survival watch (spec 059) never expires — it is the guardian's standing
 		// nature, not a timed order — so the expiry sweep skips it (origin-keyed
 		// TTL exemption, matching the reducer's order_placed arm).
-		if o := &s.MetatronOrders[i]; o.Status == "active" && o.Survival == "" && nextTick >= o.ExpiresTick {
+		if o := &s.GuardianOrders[i]; o.Status == "active" && o.Survival == "" && nextTick >= o.ExpiresTick {
 			emit("metatron.order_expired", OrderIDPayload{ID: o.ID})
 		}
 	}

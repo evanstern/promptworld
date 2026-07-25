@@ -236,11 +236,11 @@ func TestRestrictEnum(t *testing.T) {
 	}
 }
 
-// TestMetatronToolGuidancePromptGlossFallback (spec 036 T012): a tool absent
-// from metatronToolDesc — a bundle tool — renders its PromptGloss as the gloss
+// TestGuardianToolGuidancePromptGlossFallback (spec 036 T012): a tool absent
+// from guardianToolDesc — a bundle tool — renders its PromptGloss as the gloss
 // and its Params as the argument surface, so a bundle tool on the roster gets
 // real guidance instead of an empty description.
-func TestMetatronToolGuidancePromptGlossFallback(t *testing.T) {
+func TestGuardianToolGuidancePromptGlossFallback(t *testing.T) {
 	bundleTool := Tool{
 		Name:        "teleport",
 		Effect:      Expressive,
@@ -253,27 +253,27 @@ func TestMetatronToolGuidancePromptGlossFallback(t *testing.T) {
 		Gate: Charge,
 		Cost: Cost{Charges: 1},
 	}
-	g := MetatronToolGuidance([]Tool{bundleTool})
+	g := GuardianToolGuidance([]Tool{bundleTool})
 	want := "  • teleport(target, x, y) — Whisk a villager across the map (1 charge)\n"
 	if g != want {
 		t.Errorf("bundle-tool guidance = %q, want %q", g, want)
 	}
 }
 
-// TestMetatronToolGuidanceByteIdentity (spec 036 T012 caution): the PromptGloss
+// TestGuardianToolGuidanceByteIdentity (spec 036 T012 caution): the PromptGloss
 // fallback must not change the rendered line for ANY tool already in
-// metatronToolDesc. For every such tool this recomputes the line the pre-036
+// guardianToolDesc. For every such tool this recomputes the line the pre-036
 // code produced — desc taken straight from the map — and asserts the current
 // renderer matches it byte-for-byte, so a future fallback edit that perturbs a
 // built-in's guidance fails loudly. work_miracle (the multi-line kind renderer)
-// is exercised by TestMetatronToolGuidanceDrift and skipped here.
-func TestMetatronToolGuidanceByteIdentity(t *testing.T) {
-	for _, tl := range LoopRosterMetatron() {
-		desc, ok := metatronToolDesc[tl.Name]
+// is exercised by TestGuardianToolGuidanceDrift and skipped here.
+func TestGuardianToolGuidanceByteIdentity(t *testing.T) {
+	for _, tl := range LoopRosterGuardian() {
+		desc, ok := guardianToolDesc[tl.Name]
 		if !ok || tl.Name == "work_miracle" {
 			continue
 		}
-		got := MetatronToolGuidance([]Tool{tl})
+		got := GuardianToolGuidance([]Tool{tl})
 		want := fmt.Sprintf("  • %s(%s) — %s (%d %s)\n",
 			tl.Name, paramNameList(tl), desc, tl.Cost.Charges, chargeWord(tl.Cost.Charges))
 		if got != want {
@@ -282,13 +282,13 @@ func TestMetatronToolGuidanceByteIdentity(t *testing.T) {
 	}
 }
 
-// TestMetatronToolGuidanceDrift (spec 021 T007 / FR-008 / SC-004 / INV-3): the
+// TestGuardianToolGuidanceDrift (spec 021 T007 / FR-008 / SC-004 / INV-3): the
 // derived guidance names every roster tool, renders every cost from the single
 // authoritative table, mentions no non-roster tool or ungranted kind, and is a
 // byte-identical pure function of its input.
-func TestMetatronToolGuidanceDrift(t *testing.T) {
-	roster := LoopRosterMetatron()
-	g := MetatronToolGuidance(roster)
+func TestGuardianToolGuidanceDrift(t *testing.T) {
+	roster := LoopRosterGuardian()
+	g := GuardianToolGuidance(roster)
 
 	// Every roster tool name appears.
 	for _, tl := range roster {
@@ -316,14 +316,14 @@ func TestMetatronToolGuidanceDrift(t *testing.T) {
 		}
 	}
 	// Pure function: two calls are byte-identical.
-	if MetatronToolGuidance(LoopRosterMetatron()) != g {
-		t.Error("MetatronToolGuidance is not deterministic across calls")
+	if GuardianToolGuidance(LoopRosterGuardian()) != g {
+		t.Error("GuardianToolGuidance is not deterministic across calls")
 	}
 
 	// A restricted roster: only granted tools/kinds appear.
 	wm, _ := Lookup("work_miracle")
 	restricted := []Tool{RestrictEnum(wm, "kind", []string{"give_item"})}
-	rg := MetatronToolGuidance(restricted)
+	rg := GuardianToolGuidance(restricted)
 	if !strings.Contains(rg, `give_item" with `) {
 		t.Error("restricted guidance omits the granted give_item kind")
 	}
@@ -345,7 +345,7 @@ func TestMetatronToolGuidanceDrift(t *testing.T) {
 	}
 
 	// Empty roster (conversation-only world) → empty guidance.
-	if MetatronToolGuidance(nil) != "" {
+	if GuardianToolGuidance(nil) != "" {
 		t.Error("empty roster should render empty guidance")
 	}
 }

@@ -1,4 +1,4 @@
-package metatron
+package guardian
 
 import (
 	"testing"
@@ -12,7 +12,7 @@ import (
 // world skin overrides — so clients render skin vocabulary without reading
 // world files (FR-012).
 func TestStatusCarriesSkinFacts(t *testing.T) {
-	mt, _, _, _ := newTestAngel(t, "watching")
+	mt, _, _, _ := newTestGuardian(t, "watching")
 
 	// Never-installed skin (every pre-052 world): default facts, no maps.
 	s := mt.Status()

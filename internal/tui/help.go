@@ -128,7 +128,7 @@ type dockTabEntry struct {
 func (m Model) dockTabEntries() []dockTabEntry {
 	return []dockTabEntry{
 		{dockTabKey[paneChronicle], paneNames[paneChronicle], "the event feed — narrated story or raw log; pauses into inspect mode when the clock is paused"},
-		{dockTabKey[paneMetatron], m.paneName(paneMetatron), "the " + m.sk().Epithet() + "'s transcript and standing orders (fiction-layer content only)"},
+		{dockTabKey[paneGuardian], m.paneName(paneGuardian), "the " + m.sk().Epithet() + "'s transcript and standing orders (fiction-layer content only)"},
 		{dockTabKey[paneVillagers], paneNames[paneVillagers], "the roster — select a villager for full detail, decisions, and inventory"},
 		{dockTabKey[paneSystems], paneNames[paneSystems], "engine telemetry — LLM provider health, spend, and the cognition horizon (spec 053, never skinned)"},
 	}

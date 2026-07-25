@@ -1,7 +1,7 @@
 // Package bundle loads pluggable, world-scoped tool bundles
 // (spec 036-scriptable-agent-tools): manifest-only or Starlark-scripted tool
 // folders dropped into a world's bundles/ directory, synthesized into
-// tool.Tool entries the metatron turn assembly merges alongside the
+// tool.Tool entries the guardian turn assembly merges alongside the
 // compile-time roster.
 //
 // Invariants:

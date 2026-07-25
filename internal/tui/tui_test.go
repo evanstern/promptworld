@@ -9,8 +9,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
+	"github.com/evanstern/promptworld/internal/guardian"
 	"github.com/evanstern/promptworld/internal/ipc"
-	"github.com/evanstern/promptworld/internal/metatron"
 	"github.com/evanstern/promptworld/internal/sim"
 	"github.com/evanstern/promptworld/internal/store"
 	"github.com/evanstern/promptworld/internal/world"
@@ -606,13 +606,13 @@ func TestWrapText(t *testing.T) {
 // transcript and the busy flag clears; errors render honestly.
 func TestMinibufferReply(t *testing.T) {
 	m := testModel(t)
-	m.active = paneMetatron
-	m.dockTab = paneMetatron
+	m.active = paneGuardian
+	m.dockTab = paneGuardian
 	m.mbBusy = true
 	var mdl tea.Model = m
-	mdl, _ = mdl.(Model).Update(consoleReplyMsg{result: &metatron.TurnResult{
+	mdl, _ = mdl.(Model).Update(consoleReplyMsg{result: &guardian.TurnResult{
 		Reply:   "It is done.",
-		Nudge:   &metatron.Nudge{Form: "dream", Targets: []string{"Fern"}, Text: "a river of light"},
+		Nudge:   &guardian.Nudge{Form: "dream", Targets: []string{"Fern"}, Text: "a river of light"},
 		Moments: []string{"day 3 — Ash died"},
 		Charges: 0,
 	}})
@@ -620,14 +620,14 @@ func TestMinibufferReply(t *testing.T) {
 	if mm.mbBusy {
 		t.Fatal("busy flag not cleared")
 	}
-	view := mm.metatronView()
+	view := mm.guardianView()
 	for _, want := range []string{"It is done.", "dream", "Fern", "Ash died"} {
 		if !strings.Contains(view, want) {
 			t.Errorf("console view missing %q", want)
 		}
 	}
 	mdl, _ = mm.Update(consoleReplyMsg{err: fmt.Errorf("tier is down")})
-	if v := mdl.(Model).metatronView(); !strings.Contains(v, "unreachable") {
+	if v := mdl.(Model).guardianView(); !strings.Contains(v, "unreachable") {
 		t.Errorf("error not rendered honestly: %q", v)
 	}
 }
@@ -637,16 +637,16 @@ func TestMinibufferReply(t *testing.T) {
 // transcript alongside the reply/nudge report lines.
 func TestMinibufferReplyOrderAndClock(t *testing.T) {
 	m := testModel(t)
-	m.active = paneMetatron
-	m.dockTab = paneMetatron
+	m.active = paneGuardian
+	m.dockTab = paneGuardian
 	var mdl tea.Model = m
-	mdl, _ = mdl.(Model).Update(consoleReplyMsg{result: &metatron.TurnResult{
+	mdl, _ = mdl.(Model).Update(consoleReplyMsg{result: &guardian.TurnResult{
 		Reply:     "As you say.",
-		Order:     &metatron.OrderReport{ID: "ord-120-1", Condition: "Rowan falls asleep"},
+		Order:     &guardian.OrderReport{ID: "ord-120-1", Condition: "Rowan falls asleep"},
 		Cancelled: []string{"ord-90-2"},
 		Clock:     "the world moves again",
 	}})
-	view := mdl.(Model).metatronView()
+	view := mdl.(Model).guardianView()
 	for _, want := range []string{"watch set", "ord-120-1", "Rowan falls asleep", "watch released", "ord-90-2", "the world moves again"} {
 		if !strings.Contains(view, want) {
 			t.Errorf("console view missing %q: %s", want, view)
@@ -654,16 +654,16 @@ func TestMinibufferReplyOrderAndClock(t *testing.T) {
 	}
 }
 
-// TestMetatronBadgeWhenTabNotVisible is minibuffer.md's reply-arrival rule:
-// stream in place if the metatron tab/pane is visible, otherwise badge the
+// TestGuardianBadgeWhenTabNotVisible is minibuffer.md's reply-arrival rule:
+// stream in place if the guardian tab/pane is visible, otherwise badge the
 // dock tab and flash the minibuffer once — never steal the selected tab.
-func TestMetatronBadgeWhenTabNotVisible(t *testing.T) {
+func TestGuardianBadgeWhenTabNotVisible(t *testing.T) {
 	m := widescreenModel(t)
-	m.dockTab = paneChronicle // metatron not visible
-	mdl, _ := m.Update(consoleReplyMsg{result: &metatron.TurnResult{Reply: "the wood is dry"}})
+	m.dockTab = paneChronicle // guardian not visible
+	mdl, _ := m.Update(consoleReplyMsg{result: &guardian.TurnResult{Reply: "the wood is dry"}})
 	mm := mdl.(Model)
-	if !mm.metatronUnseen {
-		t.Error("tab should badge when metatron tab is not the visible one")
+	if !mm.guardianUnseen {
+		t.Error("tab should badge when guardian tab is not the visible one")
 	}
 	if mm.dockTab != paneChronicle {
 		t.Error("arriving reply must not steal the selected tab")
@@ -672,11 +672,11 @@ func TestMetatronBadgeWhenTabNotVisible(t *testing.T) {
 		t.Error("minibuffer should flash once when the reply lands off-tab")
 	}
 
-	// Selecting the metatron tab clears the badge and flash.
-	mdl2, _ := mm.selectTab(paneMetatron)
+	// Selecting the guardian tab clears the badge and flash.
+	mdl2, _ := mm.selectTab(paneGuardian)
 	mm2 := mdl2.(Model)
-	if mm2.metatronUnseen || mm2.mbFlash != "" {
-		t.Error("selecting the metatron tab should clear the badge/flash")
+	if mm2.guardianUnseen || mm2.mbFlash != "" {
+		t.Error("selecting the guardian tab should clear the badge/flash")
 	}
 }
 
@@ -687,18 +687,18 @@ func TestMetatronBadgeWhenTabNotVisible(t *testing.T) {
 func TestConsoleToolsSummary(t *testing.T) {
 	cases := []struct {
 		name string
-		s    metatron.Status
+		s    guardian.Status
 		want string
 	}{
-		{"default is quiet", metatron.Status{ManifestDefault: true,
+		{"default is quiet", guardian.Status{ManifestDefault: true,
 			GrantedTools: []string{"nudge_dream", "nudge_omen", "work_miracle"}}, ""},
-		{"conversation-only", metatron.Status{ManifestDefault: false, GrantedTools: nil}, "tools: none"},
-		{"subset short form", metatron.Status{ManifestDefault: false,
+		{"conversation-only", guardian.Status{ManifestDefault: false, GrantedTools: nil}, "tools: none"},
+		{"subset short form", guardian.Status{ManifestDefault: false,
 			GrantedTools: []string{"nudge_dream", "nudge_omen"}}, "tools: dream, omen"},
-		{"restricted miracle kinds", metatron.Status{ManifestDefault: false,
+		{"restricted miracle kinds", guardian.Status{ManifestDefault: false,
 			GrantedTools: []string{"nudge_dream", "work_miracle(move,give_item)"}},
 			"tools: dream, workings(move,give_item)"},
-		{"unrestricted miracles", metatron.Status{ManifestDefault: false,
+		{"unrestricted miracles", guardian.Status{ManifestDefault: false,
 			GrantedTools: []string{"work_miracle"}}, "tools: workings"},
 	}
 	for _, c := range cases {
@@ -711,18 +711,18 @@ func TestConsoleToolsSummary(t *testing.T) {
 	}
 }
 
-// TestConsoleStageSummary (spec 046 T010): the metatron pane's stage line —
+// TestConsoleStageSummary (spec 046 T010): the guardian pane's stage line —
 // absent for a pre-ladder/ungated world, the skin display name otherwise,
 // with the charter-lock provenance appended at stage-1.
 func TestConsoleStageSummary(t *testing.T) {
 	cases := []struct {
 		name string
-		s    metatron.Status
+		s    guardian.Status
 		want string
 	}{
-		{"pre-ladder world is quiet", metatron.Status{Stage: ""}, ""},
-		{"stage-2, unlocked", metatron.Status{Stage: "stage-2"}, "stage: The Written Word"},
-		{"stage-1, locked", metatron.Status{Stage: "stage-1", CharterLocked: true, CharterPreset: "tutor"},
+		{"pre-ladder world is quiet", guardian.Status{Stage: ""}, ""},
+		{"stage-2, unlocked", guardian.Status{Stage: "stage-2"}, "stage: The Written Word"},
+		{"stage-1, locked", guardian.Status{Stage: "stage-1", CharterLocked: true, CharterPreset: "tutor"},
 			"stage: The Voice (charter locked to tutor)"},
 	}
 	for _, c := range cases {
@@ -910,7 +910,7 @@ func TestHandleMouseInertDuringHelpAndMinibuffer(t *testing.T) {
 func TestTabGrammarUnchangedAfterSystemsAdded(t *testing.T) {
 	m := widescreenModel(t)
 	var mdl tea.Model = m
-	for key, want := range map[string]pane{"2": paneChronicle, "3": paneMetatron, "4": paneVillagers} {
+	for key, want := range map[string]pane{"2": paneChronicle, "3": paneGuardian, "4": paneVillagers} {
 		mdl = update(widescreenModel(t), key)
 		if got := mdl.(Model).dockTab; got != want {
 			t.Errorf("%q selected %s, want %s (2/3/4 must be unchanged)", key, paneNames[got], paneNames[want])
@@ -959,7 +959,7 @@ func TestSystemsTabReachableInNarrowFallback(t *testing.T) {
 func TestDockTabCycleIncludesSystems(t *testing.T) {
 	m := widescreenModel(t)
 	var mdl tea.Model = m
-	order := []pane{paneChronicle, paneMetatron, paneVillagers, paneSystems, paneChronicle}
+	order := []pane{paneChronicle, paneGuardian, paneVillagers, paneSystems, paneChronicle}
 	for i := 1; i < len(order); i++ {
 		mdl = update(mdl, "tab")
 		if got := mdl.(Model).dockTab; got != order[i] {
@@ -974,7 +974,7 @@ func TestDockTabCycleIncludesSystems(t *testing.T) {
 func TestSystemsTabNoUnseenBadge(t *testing.T) {
 	m := widescreenModel(t)
 	m.dockTab = paneSystems
-	m.metatronUnseen = true // unrelated to systems — must not leak onto its label
+	m.guardianUnseen = true // unrelated to systems — must not leak onto its label
 	row := m.dockTabsRow()
 	if strings.Contains(row, "systems") && strings.Contains(row, "SYSTEMS •") {
 		t.Error("the systems tab must never render the unseen-badge dot")

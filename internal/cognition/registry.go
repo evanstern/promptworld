@@ -55,7 +55,7 @@ var kindToClass = map[string]string{
 	"narrator":      "chronicle",
 	"drama":         "chronicle",
 	"metatron":      "metatron",
-	// The angel's fuzzy-order watch confirm (spec 029) shares the metatron
+	// The guardian's fuzzy-order watch confirm (spec 029) shares the guardian
 	// decision class: same actor, DegradeSkip (an unconfirmed/failed confirm
 	// leaves the order armed — nothing runs), long staleness budget (the confirm
 	// is event-triggered, never cadence-scheduled). Reusing the class keeps this

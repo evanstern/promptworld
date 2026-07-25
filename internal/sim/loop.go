@@ -37,9 +37,9 @@ type Status struct {
 	EffectiveRate  float64     `json:"effective_rate"`
 	Degraded       bool        `json:"degraded"`
 	LastSeq        int64       `json:"last_seq"`
-	// MetatronCharges surfaces the nudge bank (TASK-12) so clients can
+	// GuardianCharges surfaces the nudge bank (TASK-12) so clients can
 	// display ⚡ without a state fetch.
-	MetatronCharges int `json:"metatron_charges"` // FROZEN JSON tag (spec 052 ruling 2): state snapshots + ps --json
+	GuardianCharges int `json:"metatron_charges"` // FROZEN JSON tag (spec 052 ruling 2): state snapshots + ps --json
 	// Ended/EndedDay (spec 044 US1): the run-over posture, additive omitempty
 	// so a living world's status bytes are unchanged. EndedDay is the game
 	// day of the run end, for human rendering without a state fetch.
@@ -222,7 +222,7 @@ var injectSocialWhitelist = map[string]bool{
 	"agent.thought": true,
 	// The chronicle (TASK-11): the narrator's story entries.
 	"chronicle.entry": true,
-	// Metatron nudges (TASK-12): the spend + record; the dry-run enforces
+	// Guardian nudges (TASK-12): the spend + record; the dry-run enforces
 	// charges/form/target/text validity before anything lands.
 	"metatron.nudged": true,
 	// Spec 041 (FR-014) widens the boundary by one: a vision's divine place
@@ -230,7 +230,7 @@ var injectSocialWhitelist = map[string]bool{
 	// ValidateToolCoverage pins it ⊆ this whitelist). The dry-run enforces a
 	// living target and a real place before anything lands.
 	"metatron.place_revealed": true,
-	// Metatron miracles (spec 016): the four charge-priced world edits; the
+	// Guardian miracles (spec 016): the four charge-priced world edits; the
 	// dry-run's reducer arms enforce presence/destination/charge before
 	// anything lands, and the whitelist is the isolation boundary.
 	"metatron.time_snapped":   true,
@@ -247,7 +247,7 @@ var injectSocialWhitelist = map[string]bool{
 	// never simulation state — so it also survives the ended-world narrowing
 	// below (endedProseWhitelist).
 	"morgue.epilogue": true,
-	// Metatron standing orders (spec 029): the injected order-lifecycle events.
+	// Guardian standing orders (spec 029): the injected order-lifecycle events.
 	// order_placed (monitor_and_act) and order_cancelled (cancel_order) are the
 	// two Expressive tools' Events; order_triggered is injected by the trigger
 	// worker (Batch B). order_expired is EXECUTOR-emitted (a pure function of
@@ -423,7 +423,7 @@ func (l *Loop) status() Status {
 		EffectiveRate:   eff,
 		Degraded:        s.Degraded,
 		LastSeq:         l.st.LastSeq(),
-		MetatronCharges: s.MetatronCharges,
+		GuardianCharges: s.GuardianCharges,
 	}
 	if s.Ended {
 		st.Ended = true

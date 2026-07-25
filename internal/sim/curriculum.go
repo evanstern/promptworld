@@ -18,7 +18,7 @@ import (
 // this file ships the payload contracts and the reducer arms.
 
 const (
-	// curriculumPassRetain bounds retained pass records (the metatronOrderRetain
+	// curriculumPassRetain bounds retained pass records (the guardianOrderRetain
 	// precedent): the most recent 32 passes keep the audit trail readable without
 	// unbounded state growth. StagesUnlocked needs no cap — it latches at most
 	// one entry per ladder stage.
@@ -97,7 +97,7 @@ func validLadderStage(s string) bool {
 }
 
 // applyCurriculum is the reducer arm for curriculum.* events. It validates
-// rather than clamps (the metatron arm's contract): the executor emits these
+// rather than clamps (the guardian arm's contract): the executor emits these
 // as pure functions of recorded state, so a recorded event always re-applies
 // cleanly at the same position in replay, and a malformed fixture is rejected
 // at the door.

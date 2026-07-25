@@ -196,7 +196,7 @@ func runOnState(t *testing.T, src string, s *sim.State) ([]Effect, error) {
 func genesisState() *sim.State {
 	m := worldmap.Generate(42, 64, 64)
 	s := sim.NewState(42, m)
-	s.MetatronCharges = sim.MetatronChargeCap
+	s.GuardianCharges = sim.GuardianChargeCap
 	return s
 }
 
@@ -231,7 +231,7 @@ func assertScriptRejectsNoInject(t *testing.T, src, want string) {
 	for i := range s.Agents {
 		probe.Agents[i] = sim.Agent{Name: s.Agents[i].Name, X: s.Agents[i].X, Y: s.Agents[i].Y, Dead: s.Agents[i].Dead}
 	}
-	ic := InvocationContext{State: probe, Tick: 0, Invoker: "the angel", Inject: inject, Seed: s.Seed, MapWidth: 64, MapHeight: 64}
+	ic := InvocationContext{State: probe, Tick: 0, Invoker: "the guardian", Inject: inject, Seed: s.Seed, MapWidth: 64, MapHeight: 64}
 	out := bs.Handlers(ic)["probe"](context.Background(), llm.ToolCall{Name: "probe"})
 	if out.Verdict != toolloop.VerdictRejectedGate {
 		t.Fatalf("verdict = %q (%s), want rejected_gate", out.Verdict, out.ResultForModel)

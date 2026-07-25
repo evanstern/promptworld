@@ -31,17 +31,17 @@ var wantWorldOrder = []string{
 // muse, gist (data-model.md / T007) — captured separately below.
 var wantExpressive = []string{"say", "gist", "muse"}
 
-// wantMetatron is the metatron DOOR roster (RosterMetatron) name set (spec 029:
+// wantGuardian is the guardian DOOR roster (RosterGuardian) name set (spec 029:
 // converse plus the agency acting tools; nudge_dream/nudge_omen retired). Order-
 // insensitive — TestRostersResolve sorts before comparing.
-var wantMetatron = []string{"converse", "send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed"}
+var wantGuardian = []string{"converse", "send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed"}
 
-// wantMetatronCatalog is the metatron tools' catalog membership in REGISTRATION
+// wantGuardianCatalog is the guardian tools' catalog membership in REGISTRATION
 // order (spec 029): converse, then the two influence forms (send_vision/
 // send_omen), the standing-order tools (monitor_and_act/cancel_order), the meta
 // tools (pause/start/adjust_speed), then work_miracle last (its position unshifted
 // by the migration).
-var wantMetatronCatalog = []string{"converse", "send_vision", "send_omen", "monitor_and_act", "cancel_order", "pause", "start", "adjust_speed", "work_miracle"}
+var wantGuardianCatalog = []string{"converse", "send_vision", "send_omen", "monitor_and_act", "cancel_order", "pause", "start", "adjust_speed", "work_miracle"}
 var wantVillagerExpressiveTail = []string{"say", "muse", "gist"}
 
 // wantJournal is the four villager journal tools (spec 019, US3): two Expressive
@@ -71,7 +71,7 @@ func TestCatalogCompleteness(t *testing.T) {
 	wantAll := make(map[string]bool)
 	catalog := append(append([]string{}, wantWorldOrder...), "set_plan")
 	catalog = append(catalog, wantExpressive...)
-	catalog = append(catalog, wantMetatronCatalog...)
+	catalog = append(catalog, wantGuardianCatalog...)
 	catalog = append(catalog, wantJournal...)
 	for _, n := range catalog {
 		wantAll[n] = true
@@ -236,7 +236,7 @@ func TestValidateRealRegistry(t *testing.T) {
 // TestRostersResolve: every roster name resolves and rosters are non-empty;
 // the villager roster carries every world tool plus the three expressive tools.
 func TestRostersResolve(t *testing.T) {
-	for _, n := range append(append([]string{}, RosterVillager...), RosterMetatron...) {
+	for _, n := range append(append([]string{}, RosterVillager...), RosterGuardian...) {
 		if _, ok := Lookup(n); !ok {
 			t.Errorf("roster name %q does not resolve", n)
 		}
@@ -245,12 +245,12 @@ func TestRostersResolve(t *testing.T) {
 	if !reflect.DeepEqual(RosterVillager, wantVillager) {
 		t.Errorf("RosterVillager = %v, want %v", RosterVillager, wantVillager)
 	}
-	got := append([]string{}, RosterMetatron...)
+	got := append([]string{}, RosterGuardian...)
 	sort.Strings(got)
-	want := append([]string{}, wantMetatron...)
+	want := append([]string{}, wantGuardian...)
 	sort.Strings(want)
 	if !reflect.DeepEqual(got, want) {
-		t.Errorf("RosterMetatron = %v, want %v", RosterMetatron, wantMetatron)
+		t.Errorf("RosterGuardian = %v, want %v", RosterGuardian, wantGuardian)
 	}
 }
 

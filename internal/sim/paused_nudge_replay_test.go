@@ -8,7 +8,7 @@ import (
 )
 
 // pausedNudgeTimeline scripts the paused authoring loop (spec 040, TASK-77): the
-// world pauses, Metatron lands a vision on one villager WHILE paused (the nudge
+// world pauses, Guardian lands a vision on one villager WHILE paused (the nudge
 // spends the genesis charge and appends a dream memory), then the world resumes.
 // Applied at tick boundaries exactly as the loop's inject door and replay do.
 func pausedNudgeTimeline() map[int64][]store.Event {
@@ -16,7 +16,7 @@ func pausedNudgeTimeline() map[int64][]store.Event {
 	return map[int64][]store.Event{
 		500: {
 			{Tick: 500, Type: "clock.paused", Payload: pl(struct{}{})},
-			{Tick: 500, Type: "metatron.nudged", Payload: pl(MetatronNudgedPayload{
+			{Tick: 500, Type: "metatron.nudged", Payload: pl(GuardianNudgedPayload{
 				Form: "vision", Targets: []int{0}, Text: "the river is rising"})},
 			{Tick: 500, Type: "agent.memory_added", Payload: pl(MemoryAddedPayload{
 				Agent: 0, Text: "You saw a vision: the river is rising",
@@ -56,8 +56,8 @@ func TestPausedNudgeReplayByteIdentical(t *testing.T) {
 		t.Fatalf("timeline carried paused=%d nudged=%d resumed=%d, want 1 each", paused, nudged, resumed)
 	}
 	// The vision spent the genesis charge — proof the nudge actually reduced.
-	if live.MetatronCharges != MetatronGenesisCharges-1 {
-		t.Fatalf("charges = %d after the vision, want %d (the spend must reduce)", live.MetatronCharges, MetatronGenesisCharges-1)
+	if live.GuardianCharges != GuardianGenesisCharges-1 {
+		t.Fatalf("charges = %d after the vision, want %d (the spend must reduce)", live.GuardianCharges, GuardianGenesisCharges-1)
 	}
 
 	// Replay from genesis: reduce the logged events, align the clock, re-live the

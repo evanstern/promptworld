@@ -428,7 +428,7 @@ func TestHelpWalkthroughGlyphPageMatchesSharedTable(t *testing.T) {
 // dockTabKey) has a walkthrough row.
 func TestHelpWalkthroughCoversEveryDockTab(t *testing.T) {
 	lines := strings.Join(Model{}.helpWalkthroughLines(200), "\n")
-	for _, name := range []string{paneNames[paneChronicle], paneNames[paneMetatron], paneNames[paneVillagers], paneNames[paneSystems]} {
+	for _, name := range []string{paneNames[paneChronicle], paneNames[paneGuardian], paneNames[paneVillagers], paneNames[paneSystems]} {
 		if !strings.Contains(lines, name) {
 			t.Errorf("walkthrough missing dock tab %q", name)
 		}

@@ -75,21 +75,21 @@ type State struct {
 	// The chronicle (TASK-11) — narrated story entries, bounded ring. Riding
 	// State means every attaching client gets catch-up history in the snapshot.
 	Chronicle []ChronicleEntry `json:"chronicle,omitempty"`
-	// Metatron's charge bank (TASK-12) — event-sourced: executor regen,
+	// Guardian's charge bank (TASK-12) — event-sourced: executor regen,
 	// injected spends. Genesis 1; pre-TASK-12 snapshots (field absent) gain
 	// the default. Deliberately NOT omitempty: a spent-to-zero bank must
 	// round-trip as 0, never resurrect as the genesis value.
-	MetatronCharges int `json:"metatron_charges"`
-	// Metatron standing orders (spec 029, TASK-27) — event-sourced watch-and-act
+	GuardianCharges int `json:"metatron_charges"`
+	// Guardian standing orders (spec 029, TASK-27) — event-sourced watch-and-act
 	// instructions placed via monitor_and_act, driven by the injected order
 	// lifecycle events (placed/triggered/cancelled) and the executor's expiry
 	// emission. omitempty: pre-029 snapshots (field absent) unmarshal to nil,
 	// upgrade-free (the TASK-12 precedent), and an empty order set is genuinely
-	// zero-value — unlike MetatronCharges, whose spent-to-zero must round-trip.
+	// zero-value — unlike GuardianCharges, whose spent-to-zero must round-trip.
 	// Consumed orders are retained (pruned to the most recent 32 non-active on
 	// placement) so the status/trail can show recent history without unbounded
 	// growth.
-	MetatronOrders []MetatronOrder `json:"metatron_orders,omitempty"`
+	GuardianOrders []GuardianOrder `json:"metatron_orders,omitempty"`
 	// Norms and votes (TASK-13) — all event-sourced. Pre-TASK-13 snapshots
 	// unmarshal to zero values: no meeting place yet, no law, no meeting.
 	MeetingPlace *Point       `json:"meeting_place,omitempty"`
@@ -113,8 +113,8 @@ type State struct {
 	Ended  bool          `json:"ended,omitempty"`
 	RunEnd *RunEnd       `json:"run_end,omitempty"`
 	// Charter-revision identity (spec 044 US2, FR-008): the most recent
-	// effective-charter content hash a Metatron turn ran under, set by the
-	// metatron.charter_observed arm. Empty until the angel's first turn; the
+	// effective-charter content hash a Guardian turn ran under, set by the
+	// metatron.charter_observed arm. Empty until the guardian's first turn; the
 	// full revision timeline lives in the event log (the morgue's render scan
 	// aligns each death against it). omitempty — pre-044 snapshots stay
 	// byte-identical.
@@ -162,7 +162,7 @@ func NewState(seed uint64, m *worldmap.Map) *State {
 		EffectiveRate:   clock.DefaultSpeed.TicksPerSecond(),
 		Seed:            seed,
 		Agents:          make([]Agent, agentCount),
-		MetatronCharges: MetatronGenesisCharges,
+		GuardianCharges: GuardianGenesisCharges,
 		m:               m,
 	}
 	pos := genesisPlacement(seed, m, agentCount)
@@ -1233,7 +1233,7 @@ func (s *State) Apply(e store.Event) error {
 	case "agent.wall_destroyed":
 		// T008: the final demolish cycle (or a chip that would reach ≤ 0) removes
 		// the wall — its tile is passable again by construction — and clears the
-		// demolisher's intent. Metatron's entity_removed reaches the same end
+		// demolisher's intent. Guardian's entity_removed reaches the same end
 		// through the miracle path (contracts/events.md).
 		var p WallWorkPayload
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
@@ -1762,7 +1762,7 @@ func (s *State) Apply(e store.Event) error {
 		"metatron.order_placed", "metatron.order_triggered",
 		"metatron.order_cancelled", "metatron.order_expired",
 		"metatron.charter_observed":
-		return s.applyMetatron(e)
+		return s.applyGuardian(e)
 
 	case "morgue.epilogue":
 		return s.applyMorgueEpilogue(e)

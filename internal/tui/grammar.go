@@ -64,7 +64,7 @@ const (
 	familyGovernance
 	familyGru
 	familyChronicle
-	familyMetatron
+	familyGuardian
 	familyDaemon
 	familyCog
 )
@@ -85,14 +85,14 @@ var familyByNamespace = map[string]eventFamily{
 	"gru":       familyGru,
 	"chronicle": familyChronicle,
 	"morgue":    familyChronicle, // morgue.epilogue (spec 044): narrated prose, chronicle voice
-	"metatron":  familyMetatron,  // FROZEN namespace key (spec 052 ruling 2); display-aliased per FR-013
+	"metatron":  familyGuardian,  // FROZEN namespace key (spec 052 ruling 2); display-aliased per FR-013
 	"daemon":    familyDaemon,
 	"cog":       familyCog,
 	// curriculum (spec 046 — exercise passes/stage unlocks) rides the
-	// guardian's own family tint: the ladder is Metatron's domain (the
-	// player's angel is who watches, teaches, and reports the unlock), not a
+	// guardian's own family tint: the ladder is Guardian's domain (the
+	// player's guardian is who watches, teaches, and reports the unlock), not a
 	// distinct visual role.
-	"curriculum": familyMetatron,
+	"curriculum": familyGuardian,
 }
 
 // eventFamilyOf derives a type's family from its namespace prefix (R2). New
@@ -163,7 +163,7 @@ type chronicleLine struct {
 	Time string
 	Type string
 	// DisplayType is the Type column's rendered form (spec 052 FR-013): the
-	// frozen `metatron` family segment displays through the skin's family
+	// frozen `guardian` family segment displays through the skin's family
 	// label (default `guardian`); every other type — and every verbatim
 	// inspector surface (the detail pane, the grammar-miss raw fallback) —
 	// stays the raw Type. The dock's short form (shortType, last segment)

@@ -1,4 +1,4 @@
-package metatron
+package guardian
 
 import (
 	"context"
@@ -24,11 +24,11 @@ import (
 // charter fallbacks, digest, nudge/miracle landing, or charge decrement/
 // zero-refusal — metatron_test.go already covers those (R1 anti-duplication).
 
-// newLiveTestAngel is newTestAngel (T001) EXCEPT it does not Close() the
-// angel after New — the absorb (run()) and digest goroutines stay alive, so
+// newLiveTestAngel is newTestGuardian (T001) EXCEPT it does not Close() the
+// guardian after New — the absorb (run()) and digest goroutines stay alive, so
 // Observe-driven tests can watch the replica/mirror pipeline actually run.
 // t.Cleanup(mt.Close) still tears the goroutines down at test end.
-func newLiveTestAngel(t *testing.T, reply string) (*Metatron, *mockOrch, *stateInjector, string) {
+func newLiveTestAngel(t *testing.T, reply string) (*Guardian, *mockOrch, *stateInjector, string) {
 	t.Helper()
 	dir := t.TempDir()
 	if err := persona.Genesis(dir); err != nil {
@@ -44,7 +44,7 @@ func newLiveTestAngel(t *testing.T, reply string) (*Metatron, *mockOrch, *stateI
 	}
 	t.Cleanup(mt.Close)
 	// The mock is not a *llm.Orchestrator, so New wired no runLoop; install the
-	// default converse loop exactly like newTestAngel.
+	// default converse loop exactly like newTestGuardian.
 	mt.runLoop = converseLoop(mt)
 	return mt, orch, inj, dir
 }
@@ -77,32 +77,32 @@ func waitFor(t *testing.T, timeout time.Duration, cond func() bool) {
 // TestChargeMirrorAccrualAndCap (US1, spec AC US1-2/US1-3, FR-002): delivered
 // metatron.charge_regenerated events accrue the replica/mirror by +1 each,
 // through Observe -> run() -> replica.Apply -> mirrorState -> Status(), and
-// NEVER exceed sim.MetatronChargeCap even when more than enough events
+// NEVER exceed sim.GuardianChargeCap even when more than enough events
 // arrive; a subsequent metatron.nudged event then decrements the mirror.
 func TestChargeMirrorAccrualAndCap(t *testing.T) {
 	mt, _, _, _ := newLiveTestAngel(t, "")
 
-	// Genesis starts at MetatronGenesisCharges (1); deliver cap+2 regeneration
+	// Genesis starts at GuardianGenesisCharges (1); deliver cap+2 regeneration
 	// events one batch at a time so each is individually mirrored.
-	for i := 0; i < sim.MetatronChargeCap+2; i++ {
+	for i := 0; i < sim.GuardianChargeCap+2; i++ {
 		mt.Observe([]store.Event{{Tick: int64(i + 1), Type: "metatron.charge_regenerated"}})
 	}
 	waitFor(t, 2*time.Second, func() bool {
-		return mt.Status().Charges == sim.MetatronChargeCap
+		return mt.Status().Charges == sim.GuardianChargeCap
 	})
-	if got := mt.Status().Charges; got != sim.MetatronChargeCap {
+	if got := mt.Status().Charges; got != sim.GuardianChargeCap {
 		t.Fatalf("charges = %d after %d regen events, want the cap %d",
-			got, sim.MetatronChargeCap+2, sim.MetatronChargeCap)
+			got, sim.GuardianChargeCap+2, sim.GuardianChargeCap)
 	}
 
 	// A valid nudge decrements the mirror through the same absorb pipeline.
-	payload, err := json.Marshal(sim.MetatronNudgedPayload{Form: "dream", Targets: []int{0}, Text: "a whisper"})
+	payload, err := json.Marshal(sim.GuardianNudgedPayload{Form: "dream", Targets: []int{0}, Text: "a whisper"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	mt.Observe([]store.Event{{Tick: int64(sim.MetatronChargeCap + 3), Type: "metatron.nudged", Payload: payload}})
+	mt.Observe([]store.Event{{Tick: int64(sim.GuardianChargeCap + 3), Type: "metatron.nudged", Payload: payload}})
 	waitFor(t, 2*time.Second, func() bool {
-		return mt.Status().Charges == sim.MetatronChargeCap-1
+		return mt.Status().Charges == sim.GuardianChargeCap-1
 	})
 }
 
@@ -113,7 +113,7 @@ func TestChargeMirrorAccrualAndCap(t *testing.T) {
 // complete normally with its reply intact. Meaningful under -race — upgrades
 // the manual-flag TestTurnSingleFlight, which stays untouched.
 func TestTurnBusyConcurrent(t *testing.T) {
-	mt, _, _, _ := newTestAngel(t, "released")
+	mt, _, _, _ := newTestGuardian(t, "released")
 	entered := make(chan struct{})
 	release := make(chan struct{})
 	mt.runLoop = func(ctx context.Context, j toolloop.Job) (toolloop.Result, error) {
@@ -157,12 +157,12 @@ func TestTurnBusyConcurrent(t *testing.T) {
 }
 
 // TestObserveNeverBlocks (US1, data-model.md §1 notify backpressure): with the
-// standard closed-goroutine angel (absorb not draining, per T001), sending
+// standard closed-goroutine guardian (absorb not draining, per T001), sending
 // well over the events channel's capacity through Observe returns promptly
 // every single call — the non-blocking send drops on a full channel rather
 // than wedging the caller.
 func TestObserveNeverBlocks(t *testing.T) {
-	mt, _, _, _ := newTestAngel(t, "")
+	mt, _, _, _ := newTestGuardian(t, "")
 	done := make(chan struct{})
 	go func() {
 		for i := 0; i < 300; i++ {
@@ -281,7 +281,7 @@ func TestTailOfFile(t *testing.T) {
 // the window; a Turn's user prompt carries that windowed tail, not the full
 // soul.
 func TestSoulTailWindow(t *testing.T) {
-	mt, orch, _, dir := newTestAngel(t, "noted.")
+	mt, orch, _, dir := newTestGuardian(t, "noted.")
 	const headMarker = "HEAD-MARKER-SENTINEL"
 	const tailMarker = "TAIL-MARKER-SENTINEL"
 	filler := strings.Repeat("x", soulTailBytes*2)
@@ -319,7 +319,7 @@ func TestSoulTailWindow(t *testing.T) {
 // newest last, dropping earlier ones — within the 3000-byte read so the
 // turn-trim rule itself, not the byte truncation, is what's under test.
 func TestTranscriptTailTurns(t *testing.T) {
-	mt, _, _, _ := newTestAngel(t, "")
+	mt, _, _, _ := newTestGuardian(t, "")
 	const totalTurns = 8 // > transcriptTailTurns (6)
 	for i := 1; i <= totalTurns; i++ {
 		mt.recordTurn(int64(i), turnOrigin{jobPrefix: "turn", seed: fmt.Sprintf("question %d", i)}, TurnResult{Reply: fmt.Sprintf("answer %d", i)})

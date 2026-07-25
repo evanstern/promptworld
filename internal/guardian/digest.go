@@ -1,4 +1,4 @@
-package metatron
+package guardian
 
 import (
 	"context"
@@ -34,7 +34,7 @@ type digJob struct {
 
 // observeMoment applies the drama trigger list (absorb goroutine; replica
 // already reflects e).
-func (mt *Metatron) observeMoment(e store.Event) {
+func (mt *Guardian) observeMoment(e store.Event) {
 	name := func(i int) string {
 		if i >= 0 && i < len(mt.replica.Agents) {
 			return mt.replica.Agents[i].Name
@@ -72,9 +72,9 @@ func (mt *Metatron) observeMoment(e store.Event) {
 		var p sim.OrderIDPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
 			cond := p.ID
-			for i := range mt.replica.MetatronOrders {
-				if mt.replica.MetatronOrders[i].ID == p.ID {
-					if c := mt.replica.MetatronOrders[i].Condition; c != "" {
+			for i := range mt.replica.GuardianOrders {
+				if mt.replica.GuardianOrders[i].ID == p.ID {
+					if c := mt.replica.GuardianOrders[i].Condition; c != "" {
 						cond = c
 					}
 					break
@@ -94,7 +94,7 @@ func (mt *Metatron) observeMoment(e store.Event) {
 
 // digestNote collects notable lines and closes windows at absolute
 // 6-game-hour boundaries (absorb goroutine).
-func (mt *Metatron) digestNote(e store.Event) {
+func (mt *Guardian) digestNote(e store.Event) {
 	if window := e.Tick / digestWindowTicks; window > mt.digFrom {
 		mt.closeDigest(e.Tick)
 		mt.digFrom = window
@@ -137,7 +137,7 @@ func (mt *Metatron) digestNote(e store.Event) {
 	case "social.promise_broken":
 		line = "A promise was broken."
 	case "metatron.nudged":
-		var p sim.MetatronNudgedPayload
+		var p sim.GuardianNudgedPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
 			line = fmt.Sprintf("(my own hand) a %s went out: %q.", p.Form, p.Text)
 		}
@@ -152,7 +152,7 @@ func (mt *Metatron) digestNote(e store.Event) {
 }
 
 // closeDigest snapshots the window's lines (plus carry) into a job.
-func (mt *Metatron) closeDigest(atTick int64) {
+func (mt *Guardian) closeDigest(atTick int64) {
 	lines := mt.digLines
 	mt.digLines = nil
 	select {
@@ -183,7 +183,7 @@ func digestKeeperSystem(name string) string {
 		"facts, names, tensions worth watching. No preamble, no JSON — just the lines."
 }
 
-func (mt *Metatron) digestWorker() {
+func (mt *Guardian) digestWorker() {
 	for {
 		select {
 		case <-mt.done:
@@ -194,10 +194,10 @@ func (mt *Metatron) digestWorker() {
 	}
 }
 
-func (mt *Metatron) runDigest(job digJob) {
+func (mt *Guardian) runDigest(job digJob) {
 	ctx, cancel := context.WithTimeout(context.Background(), digestCallTimeout)
 	resp, err := mt.orch.Submit(ctx, llm.Request{
-		Kind:      llm.KindMetatron,
+		Kind:      llm.KindGuardian,
 		System:    digestKeeperSystem(mt.sk().Name()),
 		Prompt:    strings.Join(job.lines, "\n"),
 		MaxTokens: digestMaxTokens,

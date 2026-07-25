@@ -8,7 +8,7 @@
 // instead of the single-pane-at-a-time UI; below it, today's single-pane UI
 // renders unchanged (docs/design/tui/pages/solo-views.md "Narrow fallback").
 // The focus contract (docs/design/tui/patterns/focus-contract.md) replaces
-// the old "the metatron console owns the keyboard while active" rule, which
+// the old "the guardian console owns the keyboard while active" rule, which
 // silently swallowed 1-4/q/space once pane 3 was entered.
 package tui
 
@@ -26,8 +26,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/evanstern/promptworld/internal/clock"
+	"github.com/evanstern/promptworld/internal/guardian"
 	"github.com/evanstern/promptworld/internal/ipc"
-	"github.com/evanstern/promptworld/internal/metatron"
 	"github.com/evanstern/promptworld/internal/sim"
 	"github.com/evanstern/promptworld/internal/skin"
 	"github.com/evanstern/promptworld/internal/store"
@@ -39,7 +39,7 @@ import (
 // pane names both the narrow-fallback's single active pane and the
 // widescreen dock's selected tab — paneMap is narrow-only (the widescreen
 // map is always visible, never a dock tab); the dock only ever selects
-// paneChronicle/paneMetatron/paneVillagers/paneSystems. paneSystems (spec
+// paneChronicle/paneGuardian/paneVillagers/paneSystems. paneSystems (spec
 // 053, D10) is the relocated-telemetry tab: the guardian tab keeps fiction-
 // layer content only from this feature forward — the skin boundary is now
 // a file boundary (systems.md carries zero skin tokens, guardian.md all of
@@ -49,7 +49,7 @@ type pane int
 const (
 	paneMap pane = iota
 	paneChronicle
-	paneMetatron
+	paneGuardian
 	paneVillagers
 	paneSystems
 	paneCount
@@ -65,14 +65,14 @@ var paneNames = [paneCount]string{"map", "chronicle", "guardian", "villagers", "
 // non-fiction chrome and stays literal (skin-tokens.md rule 5) — the systems
 // tab deliberately so (D10: telemetry is never skinned).
 func (m Model) paneName(p pane) string {
-	if p == paneMetatron {
+	if p == paneGuardian {
 		return m.sk().TabLabel()
 	}
 	return paneNames[p]
 }
 
 // dockTabKey is the keymap.md key that selects/solos each dock tab.
-var dockTabKey = map[pane]string{paneChronicle: "2", paneMetatron: "3", paneVillagers: "4", paneSystems: "5"}
+var dockTabKey = map[pane]string{paneChronicle: "2", paneGuardian: "3", paneVillagers: "4", paneSystems: "5"}
 
 // speedSteps is the [ / ] cycling order.
 // max is deliberately absent: the watchable ladder tops out at 32x (TASK-20);
@@ -134,7 +134,7 @@ type Model struct {
 	chronSelected     int // -1 = none
 	chronDetailScroll int
 
-	// Metatron (TASK-12, re-surfaced as the minibuffer by TASK-34): the
+	// Guardian (TASK-12, re-surfaced as the minibuffer by TASK-34): the
 	// transcript is dock/pane content; mbInput/mbFocused/mbBusy are the
 	// minibuffer's own state, governed by the focus contract
 	// (patterns/focus-contract.md) everywhere it appears.
@@ -142,7 +142,7 @@ type Model struct {
 	consoleCharter string                 // "default charter" | "custom charter" | ""
 	consoleSkills  int                    // count of effective skill files (spec 021 US3)
 	consoleTools   string                 // granted-tool summary, e.g. "tools: dream, omen"; "" when quiet default
-	consoleOrders  []metatron.OrderStatus // standing orders peek (spec 029 T023, FR-016)
+	consoleOrders  []guardian.OrderStatus // standing orders peek (spec 029 T023, FR-016)
 	consoleStage   string                 // curriculum-ladder stage line (spec 046 T010); "" for a pre-ladder/ungated world
 
 	// Charter/skills read-surface provenance (spec 053 US3, FR-004, research
@@ -150,7 +150,7 @@ type Model struct {
 	// folds together, kept separately here because the read surface (the
 	// guardian console's own bordered sub-panel) needs to distinguish
 	// "preset-locked" from "player-authored" as its own line, honestly
-	// naming the unlocking stage — the same fields metatron.Status carries,
+	// naming the unlocking stage — the same fields guardian.Status carries,
 	// no new client-side file parsing.
 	consoleCharterLocked bool
 	consoleCharterPreset string
@@ -180,7 +180,7 @@ type Model struct {
 	mbDraft   string // input stashed when history-cycling away from an in-progress draft
 	mbFlash   string // one-shot dormant-state message (minibuffer.md "answer arrived — 3 to read")
 
-	metatronUnseen bool // dock tab badge: a reply landed while the tab wasn't visible
+	guardianUnseen bool // dock tab badge: a reply landed while the tab wasn't visible
 
 	// Villagers tab (TASK-56, data-model.md "New TUI model state"):
 	// villSelected is the roster cursor, clamped to [0, len(replica.Agents))
@@ -325,11 +325,11 @@ type pushMsg struct{ push ipc.Push }
 type statusMsg struct{ status *ipc.StatusData }
 
 type consoleReplyMsg struct {
-	result *metatron.TurnResult
+	result *guardian.TurnResult
 	err    error
 }
 
-type consoleStatusMsg struct{ status *metatron.Status }
+type consoleStatusMsg struct{ status *guardian.Status }
 
 // editorResultMsg reports the $EDITOR round trip's outcome (spec 053 US3,
 // research R2) after tea.ExecProcess restores the TUI: changed is the
@@ -348,7 +348,7 @@ type editorResultMsg struct {
 // carried through. Kept beside the consoleStatusMsg handler — the only TUI
 // region this feature touches (TASK-63 owns the digest/villager/transcript
 // regions).
-func consoleToolsSummary(s *metatron.Status, sk *skin.Skin) string {
+func consoleToolsSummary(s *guardian.Status, sk *skin.Skin) string {
 	if s.ManifestDefault {
 		return "" // full grant is the unremarkable default — keep the header quiet
 	}
@@ -367,7 +367,7 @@ func consoleToolsSummary(s *metatron.Status, sk *skin.Skin) string {
 // the lock provenance the ceiling/instruction-lock (US2) already computed —
 // "" for a pre-ladder/ungated world (Stage absent), keeping every existing
 // world's console header byte-identical (the consoleToolsSummary precedent).
-func consoleStageSummary(s *metatron.Status, sk *skin.Skin) string {
+func consoleStageSummary(s *guardian.Status, sk *skin.Skin) string {
 	if s.Stage == "" {
 		return ""
 	}
@@ -397,11 +397,11 @@ func shortToolName(label string, sk *skin.Skin) string {
 	}
 }
 
-// fetchConsoleStatus grabs the model-free peek when the metatron tab/pane is
+// fetchConsoleStatus grabs the model-free peek when the guardian tab/pane is
 // selected.
 func fetchConsoleStatus(c *ipc.Client) tea.Cmd {
 	return func() tea.Msg {
-		st, err := c.MetatronStatus()
+		st, err := c.GuardianStatus()
 		if err != nil {
 			return consoleStatusMsg{}
 		}
@@ -476,10 +476,10 @@ func fetchStatus(c *ipc.Client) tea.Cmd {
 	}
 }
 
-// sendConsole runs one Metatron turn off the UI goroutine.
+// sendConsole runs one Guardian turn off the UI goroutine.
 func sendConsole(c *ipc.Client, text string) tea.Cmd {
 	return func() tea.Msg {
-		r, err := c.MetatronChat(text)
+		r, err := c.GuardianChat(text)
 		return consoleReplyMsg{result: r, err: err}
 	}
 }
@@ -628,11 +628,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if len(m.transcript) > 200 {
 			m.transcript = m.transcript[len(m.transcript)-200:]
 		}
-		// Reply arrival (minibuffer.md): stream in place if the metatron
+		// Reply arrival (minibuffer.md): stream in place if the guardian
 		// tab/pane is visible; otherwise badge the tab and flash the
 		// minibuffer once.
-		if !m.metatronVisible() {
-			m.metatronUnseen = true
+		if !m.guardianVisible() {
+			m.guardianUnseen = true
 			m.mbFlash = "answer arrived — 3 to read"
 		}
 		return m, nil
@@ -691,19 +691,19 @@ func (m Model) chronicleVisible() bool {
 	return m.active == paneChronicle
 }
 
-// metatronVisible reports whether the metatron transcript is the thing
+// guardianVisible reports whether the guardian transcript is the thing
 // currently on screen — governs whether a reply streams in place or badges
 // the tab (minibuffer.md). The guardian console (spec 053 US1 AS4) renders
 // the SAME transcript as its primary content, so it counts as "visible" too
 // — the console adds no second badge system, it just shares this one.
-func (m Model) metatronVisible() bool {
+func (m Model) guardianVisible() bool {
 	if m.console {
 		return true
 	}
 	if isWidescreen(m.width) {
-		return m.dockTab == paneMetatron
+		return m.dockTab == paneGuardian
 	}
-	return m.active == paneMetatron
+	return m.active == paneGuardian
 }
 
 // villagersVisible reports whether the villagers tab is the thing currently
@@ -921,7 +921,7 @@ func (m Model) handleGlobalKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "2":
 		return m.selectTab(paneChronicle)
 	case "3":
-		return m.selectTab(paneMetatron)
+		return m.selectTab(paneGuardian)
 	case "4":
 		return m.selectTab(paneVillagers)
 	case "5":
@@ -950,10 +950,10 @@ func (m Model) handleGlobalKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case "enter":
 		// Narrow-fallback-only affordance (focus-contract.md scope): the
-		// metatron pane's dormant input line focuses on 'm' *or* Enter,
+		// guardian pane's dormant input line focuses on 'm' *or* Enter,
 		// mirroring minibuffer.md's placeholder hint since there is no
 		// separate always-visible minibuffer bar to press 'm' toward.
-		if !isWidescreen(m.width) && m.active == paneMetatron {
+		if !isWidescreen(m.width) && m.active == paneGuardian {
 			return m.focusMinibuffer()
 		}
 	case "esc":
@@ -1028,13 +1028,13 @@ func (m Model) handleGlobalKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 // nextDockTab/prevDockTab cycle the four dock tabs (tab/shift+tab aliases,
 // keymap.md "Migration notes" — not load-bearing). paneSystems (spec 053)
-// extends the cycle at the end, chronicle -> metatron -> villagers ->
+// extends the cycle at the end, chronicle -> guardian -> villagers ->
 // systems -> chronicle, same as its "5" position in the tab row.
 func nextDockTab(cur pane) pane {
 	switch cur {
 	case paneChronicle:
-		return paneMetatron
-	case paneMetatron:
+		return paneGuardian
+	case paneGuardian:
 		return paneVillagers
 	case paneVillagers:
 		return paneSystems
@@ -1047,17 +1047,17 @@ func prevDockTab(cur pane) pane {
 	switch cur {
 	case paneChronicle:
 		return paneSystems
-	case paneMetatron:
+	case paneGuardian:
 		return paneChronicle
 	case paneVillagers:
-		return paneMetatron
+		return paneGuardian
 	default: // paneSystems
 		return paneVillagers
 	}
 }
 
 // selectTab implements the solo-views.md state machine for k ∈
-// {chronicle, metatron, villagers}: same key on the already-selected tab zooms
+// {chronicle, guardian, villagers}: same key on the already-selected tab zooms
 // solo; same key again returns home. A different key while solo switches
 // which tab is solo'd rather than dropping back to home — the state
 // machine only specifies the same-key case, so this keeps solo a pure
@@ -1083,8 +1083,8 @@ func (m Model) selectTab(k pane) (tea.Model, tea.Cmd) {
 	}
 	m.active = k
 	var cmd tea.Cmd
-	if k == paneMetatron {
-		m.metatronUnseen = false
+	if k == paneGuardian {
+		m.guardianUnseen = false
 		m.mbFlash = ""
 		if m.connected && m.client != nil {
 			cmd = fetchConsoleStatus(m.client)
@@ -1095,13 +1095,13 @@ func (m Model) selectTab(k pane) (tea.Model, tea.Cmd) {
 
 // focusMinibuffer is the 'm' key (focus-contract.md rule 1: "text capture
 // begins solely on an explicit focus action"). In the narrow fallback the
-// input line only exists inside the metatron pane, so focusing also
+// input line only exists inside the guardian pane, so focusing also
 // switches to it — the focused chrome must be visible the instant it is
 // focused (rule 2).
 func (m Model) focusMinibuffer() (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	if !isWidescreen(m.width) {
-		mdl, c := m.selectTab(paneMetatron)
+		mdl, c := m.selectTab(paneGuardian)
 		m = mdl.(Model)
 		cmd = c
 	}
@@ -1109,7 +1109,7 @@ func (m Model) focusMinibuffer() (tea.Model, tea.Cmd) {
 	m.mbErr = ""
 	m.mbHistPos = len(m.mbHistory)
 	m.mbDraft = ""
-	m.metatronUnseen = false
+	m.guardianUnseen = false
 	m.mbFlash = ""
 	return m, cmd
 }
@@ -1120,14 +1120,14 @@ func (m Model) focusMinibuffer() (tea.Model, tea.Cmd) {
 // flag and, exactly like selecting the guardian dock tab, peeks the
 // model-free console status (charter/skills provenance for the read
 // surface, FR-004) and clears the unseen badge/flash — the console shows
-// the same transcript the tab does (metatronVisible), so opening it counts
+// the same transcript the tab does (guardianVisible), so opening it counts
 // as "having seen" it. dockTab/solo/active are deliberately untouched: they
 // already ARE the return target data-model.md calls consoleReturn (research
 // R1) — nothing to snapshot, nothing to restore beyond the flag.
 func (m Model) openConsole() (tea.Model, tea.Cmd) {
 	m.console = true
 	m.consoleScroll = 0
-	m.metatronUnseen = false
+	m.guardianUnseen = false
 	m.mbFlash = ""
 	var cmd tea.Cmd
 	if m.connected && m.client != nil {
@@ -1148,7 +1148,7 @@ func (m Model) closeConsole() (tea.Model, tea.Cmd) {
 
 // consoleFocusMinibuffer is the console's own 'm' — unlike the global
 // focusMinibuffer, it never calls selectTab: the console is already a
-// full-screen page, not the metatron pane, so switching m.active here would
+// full-screen page, not the guardian pane, so switching m.active here would
 // corrupt the "return to whatever was open before" restore (research R1) —
 // the console honors the focus contract by construction (patterns/focus-
 // contract.md "This feature's new permanent chrome"), reusing the same
@@ -1158,7 +1158,7 @@ func (m Model) consoleFocusMinibuffer() (tea.Model, tea.Cmd) {
 	m.mbErr = ""
 	m.mbHistPos = len(m.mbHistory)
 	m.mbDraft = ""
-	m.metatronUnseen = false
+	m.guardianUnseen = false
 	m.mbFlash = ""
 	return m, nil
 }
@@ -1722,7 +1722,7 @@ func (m *Model) applyEvent(e store.Event) {
 	if surfaced := m.lessons.ingest(e, time.Now()); surfaced != nil {
 		worlds.MarkLessonSeen(surfaced.ID, m.w.Manifest.Name)
 	}
-	if line, ok := metatronVerdictRow(e); ok {
+	if line, ok := guardianVerdictRow(e); ok {
 		m.transcript = append(m.transcript, line)
 		if len(m.transcript) > 200 {
 			m.transcript = m.transcript[len(m.transcript)-200:]

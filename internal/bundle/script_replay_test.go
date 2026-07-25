@@ -37,7 +37,7 @@ func TestScriptedReplayByteIdentity(t *testing.T) {
 	m := worldmap.Generate(seed, 64, 64)
 	genesis := func() *sim.State {
 		s := sim.NewState(seed, m)
-		s.MetatronCharges = sim.MetatronChargeCap
+		s.GuardianCharges = sim.GuardianChargeCap
 		return s
 	}
 

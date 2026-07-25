@@ -272,8 +272,8 @@ func TestOrchestratorEmbed(t *testing.T) {
 			string(KindConsolidation): {Chain: []string{"gemma"}},
 			string(KindNarrator):      {Chain: []string{"gemma"}},
 			string(KindDrama):         {Chain: []string{"gemma"}},
-			string(KindMetatron):      {Chain: []string{"gemma"}},
-			string(KindMetatronWatch): {Chain: []string{"gemma"}},
+			string(KindGuardian):      {Chain: []string{"gemma"}},
+			string(KindGuardianWatch): {Chain: []string{"gemma"}},
 			string(KindEmbedding):     {Chain: []string{"embedder"}},
 		},
 	}
@@ -336,8 +336,8 @@ func TestEmbedClearsStalePreflightCondition(t *testing.T) {
 			string(KindConsolidation): {Chain: []string{"gemma"}},
 			string(KindNarrator):      {Chain: []string{"gemma"}},
 			string(KindDrama):         {Chain: []string{"gemma"}},
-			string(KindMetatron):      {Chain: []string{"gemma"}},
-			string(KindMetatronWatch): {Chain: []string{"gemma"}},
+			string(KindGuardian):      {Chain: []string{"gemma"}},
+			string(KindGuardianWatch): {Chain: []string{"gemma"}},
 			string(KindEmbedding):     {Chain: []string{"embedder"}},
 		},
 	}
@@ -389,8 +389,8 @@ func TestEmbedNeverTouchesToolSilentCondition(t *testing.T) {
 			string(KindConsolidation): {Chain: []string{"gemma"}},
 			string(KindNarrator):      {Chain: []string{"gemma"}},
 			string(KindDrama):         {Chain: []string{"gemma"}},
-			string(KindMetatron):      {Chain: []string{"gemma"}},
-			string(KindMetatronWatch): {Chain: []string{"gemma"}},
+			string(KindGuardian):      {Chain: []string{"gemma"}},
+			string(KindGuardianWatch): {Chain: []string{"gemma"}},
 			string(KindEmbedding):     {Chain: []string{"embedder"}},
 		},
 	}

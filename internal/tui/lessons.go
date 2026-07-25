@@ -163,7 +163,7 @@ var lessonCatalog = []lessonEntry{
 			if e.Type != "metatron.order_placed" {
 				return false
 			}
-			p, ok := decode[sim.MetatronOrder](e)
+			p, ok := decode[sim.GuardianOrder](e)
 			return ok && p.Confirm
 		},
 	},

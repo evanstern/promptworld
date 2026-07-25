@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/evanstern/promptworld/internal/metatron"
+	"github.com/evanstern/promptworld/internal/guardian"
 )
 
 // ErrReplyTooLarge marks a daemon reply that exceeded the protocol's reply
@@ -195,27 +195,27 @@ func (c *Client) Pushes() <-chan Push { return c.pushes }
 
 func (c *Client) Close() error { return c.conn.Close() }
 
-// MetatronChat runs one console turn (TASK-12). The call blocks for the
-// duration of the angel's cloud round-trip.
-func (c *Client) MetatronChat(text string) (*metatron.TurnResult, error) {
-	data, err := c.Call("metatron_chat", MetatronChatArgs{Text: text})
+// GuardianChat runs one console turn (TASK-12). The call blocks for the
+// duration of the guardian's cloud round-trip.
+func (c *Client) GuardianChat(text string) (*guardian.TurnResult, error) {
+	data, err := c.Call("metatron_chat", GuardianChatArgs{Text: text})
 	if err != nil {
 		return nil, err
 	}
-	var r metatron.TurnResult
+	var r guardian.TurnResult
 	if err := json.Unmarshal(data, &r); err != nil {
 		return nil, err
 	}
 	return &r, nil
 }
 
-// MetatronStatus is the model-free peek: charges, charter provenance, notes.
-func (c *Client) MetatronStatus() (*metatron.Status, error) {
+// GuardianStatus is the model-free peek: charges, charter provenance, notes.
+func (c *Client) GuardianStatus() (*guardian.Status, error) {
 	data, err := c.Call("metatron_status", nil)
 	if err != nil {
 		return nil, err
 	}
-	var s metatron.Status
+	var s guardian.Status
 	if err := json.Unmarshal(data, &s); err != nil {
 		return nil, err
 	}

@@ -29,7 +29,7 @@ func twoProviderConfig(fastURL, slowURL string, fastParallel, slowParallel int) 
 			string(KindConsolidation): {Chain: []string{"slow"}},
 			string(KindNarrator):      {Chain: []string{"slow"}},
 			string(KindDrama):         {Chain: []string{"slow"}},
-			string(KindMetatron):      {Chain: []string{"slow"}},
+			string(KindGuardian):      {Chain: []string{"slow"}},
 		},
 	}
 }
@@ -49,7 +49,7 @@ func TestChainHeadDispatch(t *testing.T) {
 		provider string
 	}{
 		{KindPlanner, "fast"}, {KindConversation, "fast"}, {KindMeeting, "fast"},
-		{KindConsolidation, "slow"}, {KindNarrator, "slow"}, {KindDrama, "slow"}, {KindMetatron, "slow"},
+		{KindConsolidation, "slow"}, {KindNarrator, "slow"}, {KindDrama, "slow"}, {KindGuardian, "slow"},
 	}
 	for _, c := range cases {
 		resp, err := o.Submit(context.Background(), Request{Kind: c.kind, Prompt: "x"})

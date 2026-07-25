@@ -1,4 +1,4 @@
-package metatron
+package guardian
 
 import (
 	"context"
@@ -17,23 +17,23 @@ import (
 )
 
 // seedOrder installs an order into both the injector's state (the door) and the
-// angel's replica + mirror, keeping the two in sync the way a live absorb pass
-// would — the unit angel's absorb goroutine is Closed, so tests sync explicitly.
-func seedOrder(mt *Metatron, inj *stateInjector, o sim.MetatronOrder) {
-	inj.state.MetatronOrders = append(inj.state.MetatronOrders, o)
-	mt.replica.MetatronOrders = append(mt.replica.MetatronOrders, o)
+// guardian's replica + mirror, keeping the two in sync the way a live absorb pass
+// would — the unit guardian's absorb goroutine is Closed, so tests sync explicitly.
+func seedOrder(mt *Guardian, inj *stateInjector, o sim.GuardianOrder) {
+	inj.state.GuardianOrders = append(inj.state.GuardianOrders, o)
+	mt.replica.GuardianOrders = append(mt.replica.GuardianOrders, o)
 	mt.mirrorState()
 }
 
 // syncOrdersFromDoor copies the injector state's orders into the replica + mirror
 // after a door landing (the absorb goroutine's job, done by hand in unit tests).
-func syncOrdersFromDoor(mt *Metatron, inj *stateInjector) {
-	mt.replica.MetatronOrders = append(mt.replica.MetatronOrders[:0], inj.state.MetatronOrders...)
+func syncOrdersFromDoor(mt *Guardian, inj *stateInjector) {
+	mt.replica.GuardianOrders = append(mt.replica.GuardianOrders[:0], inj.state.GuardianOrders...)
 	mt.mirrorState()
 }
 
-func activePlayerOrder(id string, tick int64) sim.MetatronOrder {
-	return sim.MetatronOrder{
+func activePlayerOrder(id string, tick int64) sim.GuardianOrder {
+	return sim.GuardianOrder{
 		ID: id, Origin: "player", Condition: "watch " + id, Action: "act",
 		EventTypes: []string{"agent.slept"}, Agent: -1,
 		PlacedTick: tick, ExpiresTick: tick + 3*ticksPerGameDay, Status: "active",
@@ -58,19 +58,19 @@ func TestOrderMatches(t *testing.T) {
 
 	cases := []struct {
 		name  string
-		order sim.MetatronOrder
+		order sim.GuardianOrder
 		event store.Event
 		want  bool
 	}{
-		{"type + any-agent matches", sim.MetatronOrder{Status: "active", EventTypes: []string{"agent.slept"}, Agent: -1}, slept, true},
-		{"wrong type never matches", sim.MetatronOrder{Status: "active", EventTypes: []string{"agent.slept"}, Agent: -1}, woke, false},
-		{"agent pin matches the named villager", sim.MetatronOrder{Status: "active", EventTypes: []string{"agent.slept"}, Agent: 3}, slept, true},
-		{"agent pin rejects a different villager", sim.MetatronOrder{Status: "active", EventTypes: []string{"agent.slept"}, Agent: 3}, sleptOther, false},
-		{"multi-type membership matches either", sim.MetatronOrder{Status: "active", EventTypes: []string{"agent.slept", "agent.woke"}, Agent: -1}, woke, true},
-		{"keyword filter hits", sim.MetatronOrder{Status: "active", EventTypes: []string{"social.conversation"}, Agent: -1, Keywords: []string{"wept"}}, convo, true},
-		{"keyword filter misses", sim.MetatronOrder{Status: "active", EventTypes: []string{"social.conversation"}, Agent: -1, Keywords: []string{"harvest"}}, convo, false},
-		{"consumed order never matches", sim.MetatronOrder{Status: "triggered", EventTypes: []string{"agent.slept"}, Agent: -1}, slept, false},
-		{"cancelled order never matches", sim.MetatronOrder{Status: "cancelled", EventTypes: []string{"agent.slept"}, Agent: -1}, slept, false},
+		{"type + any-agent matches", sim.GuardianOrder{Status: "active", EventTypes: []string{"agent.slept"}, Agent: -1}, slept, true},
+		{"wrong type never matches", sim.GuardianOrder{Status: "active", EventTypes: []string{"agent.slept"}, Agent: -1}, woke, false},
+		{"agent pin matches the named villager", sim.GuardianOrder{Status: "active", EventTypes: []string{"agent.slept"}, Agent: 3}, slept, true},
+		{"agent pin rejects a different villager", sim.GuardianOrder{Status: "active", EventTypes: []string{"agent.slept"}, Agent: 3}, sleptOther, false},
+		{"multi-type membership matches either", sim.GuardianOrder{Status: "active", EventTypes: []string{"agent.slept", "agent.woke"}, Agent: -1}, woke, true},
+		{"keyword filter hits", sim.GuardianOrder{Status: "active", EventTypes: []string{"social.conversation"}, Agent: -1, Keywords: []string{"wept"}}, convo, true},
+		{"keyword filter misses", sim.GuardianOrder{Status: "active", EventTypes: []string{"social.conversation"}, Agent: -1, Keywords: []string{"harvest"}}, convo, false},
+		{"consumed order never matches", sim.GuardianOrder{Status: "triggered", EventTypes: []string{"agent.slept"}, Agent: -1}, slept, false},
+		{"cancelled order never matches", sim.GuardianOrder{Status: "cancelled", EventTypes: []string{"agent.slept"}, Agent: -1}, slept, false},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -102,7 +102,7 @@ func TestEventConcernsAgent(t *testing.T) {
 // seq suffixes even before the async mirror reflects the first, and a later tick
 // resets the counter.
 func TestNextOrderIDSequences(t *testing.T) {
-	mt, _, _, _ := newTestAngel(t, "ok")
+	mt, _, _, _ := newTestGuardian(t, "ok")
 	a := mt.nextOrderID(100)
 	b := mt.nextOrderID(100)
 	if a == b {
@@ -120,7 +120,7 @@ func TestNextOrderIDSequences(t *testing.T) {
 // call lands metatron.order_placed through the door, the TurnResult reports the
 // placed order, and the mirror/status surface then lists it.
 func TestOrderPlacementLandsAndMirrors(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "The watch is set.")
+	mt, _, inj, _ := newTestGuardian(t, "The watch is set.")
 	mt.runLoop = actLoop(mt, "monitor_and_act",
 		`{"condition":"when Rowan next falls asleep","action":"send her a comforting vision","event_types":["agent.slept"],"ttl_days":3}`)
 	r, err := mt.Turn(context.Background(), "watch over Rowan")
@@ -130,12 +130,12 @@ func TestOrderPlacementLandsAndMirrors(t *testing.T) {
 	if r.Order == nil || r.Order.Condition != "when Rowan next falls asleep" {
 		t.Fatalf("order not reported: %+v", r.Order)
 	}
-	if len(inj.state.MetatronOrders) != 1 || inj.state.MetatronOrders[0].Status != "active" {
-		t.Fatalf("order did not land active: %+v", inj.state.MetatronOrders)
+	if len(inj.state.GuardianOrders) != 1 || inj.state.GuardianOrders[0].Status != "active" {
+		t.Fatalf("order did not land active: %+v", inj.state.GuardianOrders)
 	}
 	// The placement spent no charge (monitor_and_act is free).
-	if inj.state.MetatronCharges != sim.MetatronGenesisCharges {
-		t.Errorf("placement spent a charge: %d", inj.state.MetatronCharges)
+	if inj.state.GuardianCharges != sim.GuardianGenesisCharges {
+		t.Errorf("placement spent a charge: %d", inj.state.GuardianCharges)
 	}
 	syncOrdersFromDoor(mt, inj)
 	s := mt.Status()
@@ -148,8 +148,8 @@ func TestOrderPlacementLandsAndMirrors(t *testing.T) {
 // player orders, a fourth placement is refused at the door with counsel and
 // nothing lands.
 func TestFourthPlayerOrderRefused(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "I hold too many already.")
-	for i := 0; i < sim.MetatronPlayerOrderCap; i++ {
+	mt, _, inj, _ := newTestGuardian(t, "I hold too many already.")
+	for i := 0; i < sim.GuardianPlayerOrderCap; i++ {
 		seedOrder(mt, inj, activePlayerOrder(fmt.Sprintf("ord-1-%d", i), 1))
 	}
 	mt.runLoop = actLoop(mt, "monitor_and_act",
@@ -161,8 +161,8 @@ func TestFourthPlayerOrderRefused(t *testing.T) {
 	if r.Order != nil {
 		t.Error("a fourth player order was placed past the cap")
 	}
-	if len(inj.state.MetatronOrders) != sim.MetatronPlayerOrderCap {
-		t.Errorf("order count changed: %d", len(inj.state.MetatronOrders))
+	if len(inj.state.GuardianOrders) != sim.GuardianPlayerOrderCap {
+		t.Errorf("order count changed: %d", len(inj.state.GuardianOrders))
 	}
 	tcs := cogToolCalls(inj)
 	if len(tcs) != 1 || tcs[0].Verdict != "rejected_gate" || !strings.Contains(tcs[0].Reason, "as many watches") {
@@ -173,8 +173,8 @@ func TestFourthPlayerOrderRefused(t *testing.T) {
 // TestCancelFreesSlot (US2 AC-6, spec 029 T011): cancelling an active order lands
 // order_cancelled and frees a slot, so a subsequent placement succeeds.
 func TestCancelFreesSlot(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "Released.")
-	for i := 0; i < sim.MetatronPlayerOrderCap; i++ {
+	mt, _, inj, _ := newTestGuardian(t, "Released.")
+	for i := 0; i < sim.GuardianPlayerOrderCap; i++ {
 		seedOrder(mt, inj, activePlayerOrder(fmt.Sprintf("ord-1-%d", i), 1))
 	}
 	mt.runLoop = actLoop(mt, "cancel_order", `{"id":"ord-1-0"}`)
@@ -185,8 +185,8 @@ func TestCancelFreesSlot(t *testing.T) {
 	if len(r.Cancelled) != 1 || r.Cancelled[0] != "ord-1-0" {
 		t.Fatalf("cancel not reported: %+v", r.Cancelled)
 	}
-	if inj.state.MetatronOrders[0].Status != "cancelled" {
-		t.Fatalf("order not cancelled: %+v", inj.state.MetatronOrders[0])
+	if inj.state.GuardianOrders[0].Status != "cancelled" {
+		t.Fatalf("order not cancelled: %+v", inj.state.GuardianOrders[0])
 	}
 	syncOrdersFromDoor(mt, inj)
 	// A fresh placement now fits (2 active player orders remain).
@@ -201,10 +201,10 @@ func TestCancelFreesSlot(t *testing.T) {
 	}
 }
 
-// TestCancelUnknownOrderRefused (US2, spec 029 T011): cancelling an id the angel
+// TestCancelUnknownOrderRefused (US2, spec 029 T011): cancelling an id the guardian
 // does not keep refuses with counsel; nothing changes.
 func TestCancelUnknownOrderRefused(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "I keep no such watch.")
+	mt, _, inj, _ := newTestGuardian(t, "I keep no such watch.")
 	mt.runLoop = actLoop(mt, "cancel_order", `{"id":"ord-999-9"}`)
 	r, err := mt.Turn(context.Background(), "cancel that")
 	if err != nil {
@@ -223,7 +223,7 @@ func TestCancelUnknownOrderRefused(t *testing.T) {
 // carries the active standing-orders block with id, condition, remaining days and
 // the structural/fuzzy marker.
 func TestStandingOrdersPromptBlock(t *testing.T) {
-	mt, orch, inj, _ := newTestAngel(t, "I keep the watch.")
+	mt, orch, inj, _ := newTestGuardian(t, "I keep the watch.")
 	o := activePlayerOrder("ord-1-0", 0)
 	o.Condition = "when Rowan weeps"
 	o.Confirm = true
@@ -244,10 +244,10 @@ func TestStandingOrdersPromptBlock(t *testing.T) {
 // order_expired transitions the order and queues a model-free moment naming the
 // lapsed watch — surfaced on the next reply through the existing moment queue.
 func TestOrderExpiryQueuesMoment(t *testing.T) {
-	mt, _, _, _ := newTestAngel(t, "noted")
+	mt, _, _, _ := newTestGuardian(t, "noted")
 	o := activePlayerOrder("ord-1-0", 0)
 	o.Condition = "when the gru stirs"
-	mt.replica.MetatronOrders = append(mt.replica.MetatronOrders, o)
+	mt.replica.GuardianOrders = append(mt.replica.GuardianOrders, o)
 	expired := mustEvent("metatron.order_expired", sim.OrderIDPayload{ID: "ord-1-0"})
 	expired.Tick = 5 * ticksPerGameDay
 	if err := mt.replica.Apply(expired); err != nil {
@@ -266,7 +266,7 @@ func TestOrderExpiryQueuesMoment(t *testing.T) {
 // installed ONLY when granted — structural absence at the door for a withheld
 // tool, matching the declaration and prose. Extends the sentinel firewall audit.
 func TestOrderHandlerGating(t *testing.T) {
-	mt, _, _, _ := newTestAngel(t, "ok")
+	mt, _, _, _ := newTestGuardian(t, "ok")
 	// Full grant: both order handlers present.
 	full := &turnDispatch{mt: mt, charges: 1, alive: map[int]bool{}, grant: fullGrant(), result: &TurnResult{}}
 	fh := mt.turnHandlers(full)
@@ -298,7 +298,7 @@ func TestOrderHandlerGating(t *testing.T) {
 // systemActLoop scripts a runLoop that lands one act on a SYSTEM (watch) turn and
 // converses on a console turn — distinguishing by the jobID prefix (R6). It lets a
 // trigger test drive a real handler landing through the system-turn path.
-func systemActLoop(mt *Metatron, name, args string) func(context.Context, toolloop.Job) (toolloop.Result, error) {
+func systemActLoop(mt *Guardian, name, args string) func(context.Context, toolloop.Job) (toolloop.Result, error) {
 	return func(ctx context.Context, j toolloop.Job) (toolloop.Result, error) {
 		c := toolCall(name, args)
 		out := j.Handlers[name](ctx, c)
@@ -316,7 +316,7 @@ func systemActLoop(mt *Metatron, name, args string) func(context.Context, toollo
 // runs the pre-authorized act as a system turn (one charge spent), and queues a
 // moment for the next console reply.
 func TestTriggerFiresEndToEnd(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "It is done.")
+	mt, _, inj, _ := newTestGuardian(t, "It is done.")
 	o := activePlayerOrder("ord-1-0", 1)
 	o.Condition = "when someone sleeps"
 	o.Action = "send Fern a comforting vision"
@@ -338,15 +338,15 @@ func TestTriggerFiresEndToEnd(t *testing.T) {
 
 	mt.runTrigger(job)
 
-	if inj.state.MetatronOrders[0].Status != "triggered" {
-		t.Fatalf("order not consumed one-shot: %+v", inj.state.MetatronOrders[0])
+	if inj.state.GuardianOrders[0].Status != "triggered" {
+		t.Fatalf("order not consumed one-shot: %+v", inj.state.GuardianOrders[0])
 	}
 	fern := agentIndexByName("Fern")
 	if len(inj.state.Agents[fern].Memories) != 1 {
 		t.Error("triggered vision did not land on Fern")
 	}
-	if inj.state.MetatronCharges != sim.MetatronGenesisCharges-1 {
-		t.Errorf("triggered act spent %d charges, want 1", sim.MetatronGenesisCharges-inj.state.MetatronCharges)
+	if inj.state.GuardianCharges != sim.GuardianGenesisCharges-1 {
+		t.Errorf("triggered act spent %d charges, want 1", sim.GuardianGenesisCharges-inj.state.GuardianCharges)
 	}
 	mt.stateMu.Lock()
 	moments := append([]string(nil), mt.moments...)
@@ -361,7 +361,7 @@ func TestTriggerFiresEndToEnd(t *testing.T) {
 // (the door doesn't need the slot) but its ACT waits until the console releases —
 // both leave complete trails, neither is dropped.
 func TestTriggerSerializesWithConsoleTurn(t *testing.T) {
-	// A LIVE angel (done open): the system turn's bounded turnBusy wait must be
+	// A LIVE guardian (done open): the system turn's bounded turnBusy wait must be
 	// able to block on the console, not bail on a closed done. The absorb/trigger
 	// goroutines stay idle (no Observe, runTrigger driven directly).
 	mt, _, inj, _ := newLiveTestAngel(t, "released")
@@ -394,7 +394,7 @@ func TestTriggerSerializesWithConsoleTurn(t *testing.T) {
 	orderStatus := func() string {
 		inj.mu.Lock()
 		defer inj.mu.Unlock()
-		return inj.state.MetatronOrders[0].Status
+		return inj.state.GuardianOrders[0].Status
 	}
 
 	doneA := make(chan struct{})
@@ -438,7 +438,7 @@ func TestTriggerSerializesWithConsoleTurn(t *testing.T) {
 // is no longer active), so the trigger abandons: no system turn, no act, no moment.
 // Exactly one terminal (cancelled) stands.
 func TestCancelledOrderRaceResolvesAtDoor(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "")
+	mt, _, inj, _ := newTestGuardian(t, "")
 	o := activePlayerOrder("ord-1-0", 1)
 	o.Action = "send Fern a vision"
 	seedOrder(mt, inj, o)
@@ -456,10 +456,10 @@ func TestCancelledOrderRaceResolvesAtDoor(t *testing.T) {
 	if fired {
 		t.Error("a cancelled order still ran its system turn")
 	}
-	if inj.state.MetatronOrders[0].Status != "cancelled" {
-		t.Errorf("terminal is not cancelled: %q", inj.state.MetatronOrders[0].Status)
+	if inj.state.GuardianOrders[0].Status != "cancelled" {
+		t.Errorf("terminal is not cancelled: %q", inj.state.GuardianOrders[0].Status)
 	}
-	if inj.state.MetatronCharges != sim.MetatronGenesisCharges {
+	if inj.state.GuardianCharges != sim.GuardianGenesisCharges {
 		t.Error("an abandoned trigger spent a charge")
 	}
 	mt.stateMu.Lock()
@@ -475,11 +475,11 @@ func TestCancelledOrderRaceResolvesAtDoor(t *testing.T) {
 // and queues the honest "strength was spent" moment — the order is still consumed
 // (one-shot), nothing is spent, and no model is called.
 func TestEmptyBankPrecheckSpendsNothing(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "")
-	mt.replica.MetatronCharges = 0
-	inj.state.MetatronCharges = 0
+	mt, _, inj, _ := newTestGuardian(t, "")
+	mt.replica.GuardianCharges = 0
+	inj.state.GuardianCharges = 0
 	mt.mirrorState()
-	o := sim.MetatronOrder{ID: "ord-1-0", Origin: "system", Condition: "deferred omen",
+	o := sim.GuardianOrder{ID: "ord-1-0", Origin: "system", Condition: "deferred omen",
 		Action: "deliver the omen", EventTypes: []string{"sim.night_started"}, Agent: -1,
 		PlacedTick: 1, ExpiresTick: 1 + ticksPerGameDay, Status: "active"}
 	seedOrder(mt, inj, o)
@@ -494,10 +494,10 @@ func TestEmptyBankPrecheckSpendsNothing(t *testing.T) {
 	if called {
 		t.Error("empty-bank precheck still called the model")
 	}
-	if inj.state.MetatronCharges != 0 {
-		t.Errorf("spent from an empty bank: %d", inj.state.MetatronCharges)
+	if inj.state.GuardianCharges != 0 {
+		t.Errorf("spent from an empty bank: %d", inj.state.GuardianCharges)
 	}
-	if inj.state.MetatronOrders[0].Status != "triggered" {
+	if inj.state.GuardianOrders[0].Status != "triggered" {
 		t.Error("order not consumed one-shot on the empty-bank path")
 	}
 	mt.stateMu.Lock()
@@ -512,7 +512,7 @@ func TestEmptyBankPrecheckSpendsNothing(t *testing.T) {
 // system turn that fails with ErrBudgetExhausted yields exactly ONE honest moment
 // and ZERO retries — the trigger worker never re-runs a failed turn.
 func TestTriggerBudgetExhaustedOneMomentNoRetry(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "")
+	mt, _, inj, _ := newTestGuardian(t, "")
 	o := activePlayerOrder("ord-1-0", 1) // player origin: no precheck, runs the turn
 	o.Action = "send Fern a vision"
 	seedOrder(mt, inj, o)
@@ -527,12 +527,12 @@ func TestTriggerBudgetExhaustedOneMomentNoRetry(t *testing.T) {
 	if calls != 1 {
 		t.Errorf("failed system turn was retried: %d model calls, want 1", calls)
 	}
-	if inj.state.MetatronCharges != sim.MetatronGenesisCharges {
+	if inj.state.GuardianCharges != sim.GuardianGenesisCharges {
 		t.Error("a degraded trigger spent a charge")
 	}
 	// order_triggered legitimately landed (one-shot consumption), but NO influence
 	// act did — no villager gained a memory from the failed turn.
-	if inj.state.MetatronOrders[0].Status != "triggered" {
+	if inj.state.GuardianOrders[0].Status != "triggered" {
 		t.Error("order not consumed on the degraded path")
 	}
 	for i := range inj.state.Agents {
@@ -552,13 +552,13 @@ func TestTriggerBudgetExhaustedOneMomentNoRetry(t *testing.T) {
 }
 
 // TestReplayReconstructsWithoutFiring (US3 edge case / SC-002, spec 029 T015): an
-// angel reconstructed from a snapshot whose history already triggered an order
+// guardian reconstructed from a snapshot whose history already triggered an order
 // rebuilds the consumed order from state alone — no live firing during
 // reconstruction, and a later matching event cannot re-fire a consumed order.
 func TestReplayReconstructsWithoutFiring(t *testing.T) {
 	m := worldmap.Generate(42, 64, 64)
 	state := sim.NewState(42, m)
-	o := sim.MetatronOrder{ID: "ord-1-0", Origin: "player", Condition: "when someone sleeps",
+	o := sim.GuardianOrder{ID: "ord-1-0", Origin: "player", Condition: "when someone sleeps",
 		Action: "send a vision", EventTypes: []string{"agent.slept"}, Agent: -1,
 		PlacedTick: 1, ExpiresTick: 1 + 3*ticksPerGameDay, Status: "active"}
 	if err := state.Apply(mustEvent("metatron.order_placed", o)); err != nil {
@@ -583,7 +583,7 @@ func TestReplayReconstructsWithoutFiring(t *testing.T) {
 	mt.runLoop = converseLoop(mt)
 
 	mt.stateMu.Lock()
-	orders := append([]sim.MetatronOrder(nil), mt.orders...)
+	orders := append([]sim.GuardianOrder(nil), mt.orders...)
 	mt.stateMu.Unlock()
 	if len(orders) != 1 || orders[0].Status != "triggered" {
 		t.Fatalf("reconstruction did not rebuild the consumed order: %+v", orders)
@@ -606,8 +606,8 @@ func TestReplayReconstructsWithoutFiring(t *testing.T) {
 
 // deferralOmenOrder builds the system-origin nightfall deferral order deferOmen
 // produces for a daytime everyone-omen (spec 029 T016).
-func deferralOmenOrder(id string, tick int64) sim.MetatronOrder {
-	return sim.MetatronOrder{
+func deferralOmenOrder(id string, tick int64) sim.GuardianOrder {
+	return sim.GuardianOrder{
 		ID: id, Origin: "system",
 		Condition:  "nightfall — an omen awaits everyone",
 		Action:     "Night has fallen. Send the omen you promised to everyone: look up",
@@ -621,7 +621,7 @@ func deferralOmenOrder(id string, tick int64) sim.MetatronOrder {
 // lands send_omen at night — one charge spent, the order consumed one-shot, and a
 // moment queued for the next console reply.
 func TestDeferredOmenTriggersAtNightfall(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "The omen goes out.")
+	mt, _, inj, _ := newTestGuardian(t, "The omen goes out.")
 	mt.replica.Night = true // night has come (the deferral watches sim.night_started)
 	inj.state.Night = true
 	o := deferralOmenOrder("ord-1-0", 1)
@@ -639,11 +639,11 @@ func TestDeferredOmenTriggersAtNightfall(t *testing.T) {
 	}
 	mt.runTrigger(job)
 
-	if inj.state.MetatronOrders[0].Status != "triggered" {
-		t.Fatalf("deferral not consumed one-shot: %+v", inj.state.MetatronOrders[0])
+	if inj.state.GuardianOrders[0].Status != "triggered" {
+		t.Fatalf("deferral not consumed one-shot: %+v", inj.state.GuardianOrders[0])
 	}
-	if inj.state.MetatronCharges != sim.MetatronGenesisCharges-1 {
-		t.Errorf("nightfall omen spent %d charges, want 1", sim.MetatronGenesisCharges-inj.state.MetatronCharges)
+	if inj.state.GuardianCharges != sim.GuardianGenesisCharges-1 {
+		t.Errorf("nightfall omen spent %d charges, want 1", sim.GuardianGenesisCharges-inj.state.GuardianCharges)
 	}
 	reached := 0
 	for i := range inj.state.Agents {
@@ -667,7 +667,7 @@ func TestDeferredOmenTriggersAtNightfall(t *testing.T) {
 // cancelled before nightfall never fires — the trigger abandons at the door, no
 // system turn runs, and no omen lands.
 func TestDeferredOmenCancelledNeverLands(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "")
+	mt, _, inj, _ := newTestGuardian(t, "")
 	mt.replica.Night = true
 	inj.state.Night = true
 	o := deferralOmenOrder("ord-1-0", 1)
@@ -685,10 +685,10 @@ func TestDeferredOmenCancelledNeverLands(t *testing.T) {
 	if fired {
 		t.Error("a cancelled deferral still ran its system turn")
 	}
-	if inj.state.MetatronOrders[0].Status != "cancelled" {
-		t.Errorf("terminal is not cancelled: %q", inj.state.MetatronOrders[0].Status)
+	if inj.state.GuardianOrders[0].Status != "cancelled" {
+		t.Errorf("terminal is not cancelled: %q", inj.state.GuardianOrders[0].Status)
 	}
-	if inj.state.MetatronCharges != sim.MetatronGenesisCharges {
+	if inj.state.GuardianCharges != sim.GuardianGenesisCharges {
 		t.Error("a cancelled deferral spent a charge")
 	}
 	for i := range inj.state.Agents {
@@ -701,7 +701,7 @@ func TestDeferredOmenCancelledNeverLands(t *testing.T) {
 // --- US6: fuzzy conditions confirmed cheaply (spec 029 T021/T022) ---
 
 // fuzzyOrder builds an active fuzzy (Confirm) player order watching agent.slept.
-func fuzzyOrder(id string, tick int64) sim.MetatronOrder {
+func fuzzyOrder(id string, tick int64) sim.GuardianOrder {
 	o := activePlayerOrder(id, tick)
 	o.Confirm = true
 	o.Condition = "when Rowan seems to grieve in her sleep"
@@ -723,7 +723,7 @@ func dequeued(q chan triggerJob) bool {
 // whose coarse filter does NOT match enqueues nothing — zero confirm calls without
 // a structural hit (the confirm is never even reached).
 func TestFuzzyNoConfirmWithoutHit(t *testing.T) {
-	mt, orch, inj, _ := newTestAngel(t, "yes")
+	mt, orch, inj, _ := newTestGuardian(t, "yes")
 	o := fuzzyOrder("ord-1-0", 1)
 	o.EventTypes = []string{"social.conversation"}
 	o.Keywords = []string{"harvest"}
@@ -744,7 +744,7 @@ func TestFuzzyNoConfirmWithoutHit(t *testing.T) {
 // window confirms again. (pendingTrigger is cleared between hits to isolate the rate
 // cap from the in-flight dedup.)
 func TestFuzzyRateCapSkipsExcess(t *testing.T) {
-	mt, _, inj, _ := newTestAngel(t, "no")
+	mt, _, inj, _ := newTestGuardian(t, "no")
 	o := fuzzyOrder("ord-1-0", 1)
 	seedOrder(mt, inj, o)
 
@@ -787,7 +787,7 @@ func TestFuzzyNegativeVerdictLeavesArmed(t *testing.T) {
 			name = "(empty)"
 		}
 		t.Run(name, func(t *testing.T) {
-			mt, _, inj, _ := newTestAngel(t, reply)
+			mt, _, inj, _ := newTestGuardian(t, reply)
 			o := fuzzyOrder("ord-1-0", 1)
 			seedOrder(mt, inj, o)
 			mt.runLoop = func(context.Context, toolloop.Job) (toolloop.Result, error) {
@@ -799,8 +799,8 @@ func TestFuzzyNegativeVerdictLeavesArmed(t *testing.T) {
 			mt.stateMu.Unlock()
 			mt.runConfirm(triggerJob{order: o, matched: mustEvent("agent.slept", map[string]any{"agent": 3}),
 				matchedType: "agent.slept", matchedTick: 5000, confirm: true})
-			if inj.state.MetatronOrders[0].Status != "active" {
-				t.Errorf("a negative confirm changed the order status: %q", inj.state.MetatronOrders[0].Status)
+			if inj.state.GuardianOrders[0].Status != "active" {
+				t.Errorf("a negative confirm changed the order status: %q", inj.state.GuardianOrders[0].Status)
 			}
 			if len(inj.batches) != 0 {
 				t.Errorf("a negative confirm landed a world event: %+v", inj.batches)
@@ -817,10 +817,10 @@ func TestFuzzyNegativeVerdictLeavesArmed(t *testing.T) {
 
 // TestFuzzyYesTriggers (US6, spec 029 T021/T022): a yes verdict proceeds to the
 // normal trigger pipeline — order_triggered lands, the pre-authorized act runs, and
-// the confirm was exactly ONE KindMetatronWatch call (MaxTokens 16) carrying the
+// the confirm was exactly ONE KindGuardianWatch call (MaxTokens 16) carrying the
 // condition + matched event.
 func TestFuzzyYesTriggers(t *testing.T) {
-	mt, orch, inj, _ := newTestAngel(t, "Yes.")
+	mt, orch, inj, _ := newTestGuardian(t, "Yes.")
 	o := fuzzyOrder("ord-1-0", 1)
 	seedOrder(mt, inj, o)
 	mt.runLoop = systemActLoop(mt, "send_vision", `{"target":"Fern","text":"rest easy"}`)
@@ -830,11 +830,11 @@ func TestFuzzyYesTriggers(t *testing.T) {
 	mt.runConfirm(triggerJob{order: o, matched: mustEvent("agent.slept", map[string]any{"agent": 3}),
 		matchedType: "agent.slept", matchedTick: 5000, confirm: true})
 
-	if inj.state.MetatronOrders[0].Status != "triggered" {
-		t.Fatalf("a yes confirm did not fire the order: %+v", inj.state.MetatronOrders[0])
+	if inj.state.GuardianOrders[0].Status != "triggered" {
+		t.Fatalf("a yes confirm did not fire the order: %+v", inj.state.GuardianOrders[0])
 	}
 	reqs := orch.requests()
-	if len(reqs) != 1 || reqs[0].Kind != llm.KindMetatronWatch || reqs[0].MaxTokens != 16 {
+	if len(reqs) != 1 || reqs[0].Kind != llm.KindGuardianWatch || reqs[0].MaxTokens != 16 {
 		t.Fatalf("confirm Submit shape wrong: %+v", reqs)
 	}
 	if !strings.Contains(reqs[0].Prompt, o.Condition) || !strings.Contains(reqs[0].Prompt, "fell asleep") {
@@ -848,7 +848,7 @@ func TestFuzzyYesTriggers(t *testing.T) {
 func TestFuzzyConfirmFailureNoRetry(t *testing.T) {
 	for _, ce := range []error{llm.ErrBudgetExhausted, llm.ErrTierDown, context.DeadlineExceeded} {
 		t.Run(ce.Error(), func(t *testing.T) {
-			mt, orch, inj, _ := newTestAngel(t, "")
+			mt, orch, inj, _ := newTestGuardian(t, "")
 			orch.err = ce
 			o := fuzzyOrder("ord-1-0", 1)
 			seedOrder(mt, inj, o)
@@ -866,8 +866,8 @@ func TestFuzzyConfirmFailureNoRetry(t *testing.T) {
 			if ranTurn {
 				t.Error("a failed confirm still ran the trigger turn")
 			}
-			if inj.state.MetatronOrders[0].Status != "active" {
-				t.Errorf("a failed confirm changed the order status: %q", inj.state.MetatronOrders[0].Status)
+			if inj.state.GuardianOrders[0].Status != "active" {
+				t.Errorf("a failed confirm changed the order status: %q", inj.state.GuardianOrders[0].Status)
 			}
 			if len(orch.requests()) != 1 {
 				t.Errorf("confirm retried: %d Submit calls, want 1", len(orch.requests()))

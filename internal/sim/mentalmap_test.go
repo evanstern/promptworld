@@ -877,7 +877,7 @@ func TestPlaceRevealedThroughDoor(t *testing.T) {
 
 	visionBatch := func(kind string, x, y int) []store.Event {
 		return []store.Event{
-			{Type: "metatron.nudged", Payload: mustPayload(MetatronNudgedPayload{
+			{Type: "metatron.nudged", Payload: mustPayload(GuardianNudgedPayload{
 				Form: "vision", Targets: []int{0}, Text: "Fire, beyond the ridge."})},
 			{Type: "agent.memory_added", Payload: mustPayload(MemoryAddedPayload{
 				Agent: 0, Text: "You saw a vision: Fire, beyond the ridge.",
@@ -902,8 +902,8 @@ func TestPlaceRevealedThroughDoor(t *testing.T) {
 	if err := json.Unmarshal(stateJSON, &before); err != nil {
 		t.Fatal(err)
 	}
-	if before.MetatronCharges != MetatronGenesisCharges {
-		t.Fatalf("rejected batch spent a charge: %d", before.MetatronCharges)
+	if before.GuardianCharges != GuardianGenesisCharges {
+		t.Fatalf("rejected batch spent a charge: %d", before.GuardianCharges)
 	}
 	if len(before.Agents[0].Memories) != 0 {
 		t.Fatal("rejected batch landed a memory")
@@ -928,8 +928,8 @@ func TestPlaceRevealedThroughDoor(t *testing.T) {
 	if f.Seen != after.Tick || f.Provenance != ProvenanceRevealed || f.Detail != 99999 {
 		t.Fatalf("door-landed fact not stamped at the loop tick: %+v (tick %d)", f, after.Tick)
 	}
-	if after.MetatronCharges != MetatronGenesisCharges-1 {
-		t.Errorf("charges = %d after the vision, want %d", after.MetatronCharges, MetatronGenesisCharges-1)
+	if after.GuardianCharges != GuardianGenesisCharges-1 {
+		t.Errorf("charges = %d after the vision, want %d", after.GuardianCharges, GuardianGenesisCharges-1)
 	}
 	mems := after.Agents[0].Memories
 	if len(mems) != 2 || mems[1].Text != "The vision showed you the fire at (7,7)." {

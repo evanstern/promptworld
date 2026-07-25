@@ -224,7 +224,7 @@ func verdictRequiresReason(v toolloop.Verdict) bool {
 }
 
 // toolCallEvent converts one buffered CallRecord into its cog.tool_call event
-// via the sim-side constructor (the shared payload authority — metatron converts
+// via the sim-side constructor (the shared payload authority — guardian converts
 // its own CallRecord identically at T020). snapshotTick is the cognition's world
 // tick (thoughtMeta.snapshotTick). The reason invariant is enforced here: an
 // empty reason on a verdict that requires one is backfilled with the verdict

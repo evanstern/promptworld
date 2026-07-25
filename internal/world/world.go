@@ -329,7 +329,7 @@ func (w *World) PidPath() string            { return filepath.Join(w.Dir, "daemo
 func (w *World) CharterPath() string        { return filepath.Join(w.Dir, "charter.md") }
 
 // VillageCharterPath is the village's law (TASK-13) — a scribe-rendered
-// derived view of event-sourced norms, distinct from Metatron's
+// derived view of event-sourced norms, distinct from Guardian's
 // player-editable charter.md above.
 func (w *World) VillageCharterPath() string { return filepath.Join(w.Dir, "village_charter.md") }
 
@@ -341,7 +341,7 @@ func (w *World) MorguePath() string { return filepath.Join(w.Dir, "morgue.md") }
 
 // The "metatron" directory name is FROZEN (spec 052 ruling 2) — an on-disk
 // path existing worlds carry.
-func (w *World) MetatronDir() string { return filepath.Join(w.Dir, "metatron") }
+func (w *World) GuardianDir() string { return filepath.Join(w.Dir, "metatron") }
 func (w *World) LogPath() string     { return filepath.Join(w.Dir, "daemon.log") }
 
 // BundlesDir is the root for pluggable bundle-defined tools (spec

@@ -54,7 +54,7 @@ func (s *preSeededMeter) GetMeta(key string) (string, error) { return s.m[key], 
 func (s *preSeededMeter) SetMeta(key, value string) error    { s.m[key] = value; return nil }
 
 // secPerPt reads a kind's serving-provider live estimate via the provider-
-// granular seam (spec 024 replaced SecondsPerPoint(tier)); metatron routes to
+// granular seam (spec 024 replaced SecondsPerPoint(tier)); guardian routes to
 // the cloud provider, planner to the local one, so these read exactly the
 // estimators the old tier accessor read.
 func secPerPt(orch *llm.Orchestrator, kind llm.Kind) float64 {
@@ -87,16 +87,16 @@ func TestRefusedLoopDoesNotFeedEstimatorSC004b(t *testing.T) {
 	}
 	defer orch.Close()
 
-	before := secPerPt(orch, llm.KindMetatron)
+	before := secPerPt(orch, llm.KindGuardian)
 	if math.Abs(before-cognition.BootstrapCloudSecPerPt) > 1e-9 {
 		t.Fatalf("pre-run cloud estimate = %g, want bootstrap %g", before, cognition.BootstrapCloudSecPerPt)
 	}
 
-	// A metatron cognition routes to cloud; the budget is exhausted, so the
+	// A guardian cognition routes to cloud; the budget is exhausted, so the
 	// first Submit is refused before any HTTP — the loop did zero work.
 	res, rerr := Run(context.Background(), orch, Job{
 		JobID:     "metatron-0-1",
-		Kind:      llm.KindMetatron,
+		Kind:      llm.KindGuardian,
 		System:    "s",
 		Seed:      "hi",
 		Roster:    []tool.Tool{lookup(t, "forage")},
@@ -110,7 +110,7 @@ func TestRefusedLoopDoesNotFeedEstimatorSC004b(t *testing.T) {
 		t.Fatalf("rounds = %d, want 0 (refused before any completed round)", res.Rounds)
 	}
 
-	after := secPerPt(orch, llm.KindMetatron)
+	after := secPerPt(orch, llm.KindGuardian)
 	if math.Abs(after-before) > 1e-9 {
 		t.Errorf("a refused loop (zero completed work) moved cloud sec/pt %g → %g; "+
 			"the estimator feed must be successes-only (landed/model_done/cap_exhausted)", before, after)
@@ -196,7 +196,7 @@ func TestWholeLoopFeedsEstimatorOnceSC004(t *testing.T) {
 
 // TestBudgetExhaustedMidLoopSC004 proves the monthly ceiling refuses a loop's
 // next round BEFORE any spend, and that recorded spend is exactly the sum of the
-// rounds that completed. The cloud tier (metatron's route) is billed per call;
+// rounds that completed. The cloud tier (guardian's route) is billed per call;
 // round 1's cost consumes the tiny budget, so round 2's Submit is refused at the
 // admission ladder's budget gate — no HTTP, no partial charge — and the loop
 // terminates admission_refused (SC-004; quickstart §6).
@@ -238,7 +238,7 @@ func TestBudgetExhaustedMidLoopSC004(t *testing.T) {
 
 	job := Job{
 		JobID:     "metatron-0-412800",
-		Kind:      llm.KindMetatron, // routes to the cloud tier
+		Kind:      llm.KindGuardian, // routes to the cloud tier
 		System:    "you are the gatekeeper",
 		Seed:      "assess the village",
 		Roster:    []tool.Tool{readTool},

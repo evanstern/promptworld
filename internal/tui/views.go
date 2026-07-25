@@ -7,9 +7,9 @@ import (
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/evanstern/promptworld/internal/clock"
+	"github.com/evanstern/promptworld/internal/guardian"
 	"github.com/evanstern/promptworld/internal/ipc"
 	"github.com/evanstern/promptworld/internal/llm"
-	"github.com/evanstern/promptworld/internal/metatron"
 	"github.com/evanstern/promptworld/internal/sim"
 	"github.com/evanstern/promptworld/internal/skin"
 	"github.com/evanstern/promptworld/internal/store"
@@ -57,7 +57,7 @@ var (
 	styleFamilyGovernance = lipgloss.NewStyle().Foreground(lipgloss.Color("214"))          // amber — meeting/norm proceedings
 	styleFamilyGru        = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("1")) // bold red — predator threat
 	styleFamilyChronicle  = lipgloss.NewStyle().Foreground(lipgloss.Color("13"))           // bright magenta — the narrator's voice
-	styleFamilyMetatron   = lipgloss.NewStyle().Foreground(lipgloss.Color("99"))           // violet — the guardian, otherworldly
+	styleFamilyGuardian   = lipgloss.NewStyle().Foreground(lipgloss.Color("99"))           // violet — the guardian, otherworldly
 	styleFamilyCog        = lipgloss.NewStyle().Faint(true)                                // muted — telemetry noise
 	// daemon has no distinct tint in data-model.md's token list (process
 	// bookkeeping, low salience) — familyTint falls back to styleDim.
@@ -101,7 +101,7 @@ func (m Model) narrowView() string {
 	if m.wantsLessonRow() {
 		// Lesson row narrow carry (patterns/layout.md ruling b, spec 055):
 		// carried with identical stage defaults. Unlike the guardian strip
-		// (confined to the metatron pane, the only place narrow has a
+		// (confined to the guardian pane, the only place narrow has a
 		// minibuffer to sit above), the lesson row is chrome independent of
 		// any one pane, so it renders here — visible above whichever pane
 		// is active, regardless of which one that is. No fold-under-
@@ -118,8 +118,8 @@ func (m Model) narrowView() string {
 		b.WriteString(m.mapView())
 	case m.active == paneChronicle:
 		b.WriteString(m.chronicleView())
-	case m.active == paneMetatron:
-		b.WriteString(m.metatronView())
+	case m.active == paneGuardian:
+		b.WriteString(m.guardianView())
 	case m.active == paneVillagers:
 		b.WriteString(m.villagersView())
 	case m.active == paneSystems:
@@ -494,7 +494,7 @@ func (m Model) dockTabsRow() string {
 		label string
 	}{
 		{paneChronicle, "chronicle"},
-		{paneMetatron, m.sk().TabLabel()}, // skin data (spec 052; skin-tokens.md rule 4 case-transforms below)
+		{paneGuardian, m.sk().TabLabel()}, // skin data (spec 052; skin-tokens.md rule 4 case-transforms below)
 		{paneVillagers, "villagers"},
 		{paneSystems, "systems"},
 	}
@@ -509,7 +509,7 @@ func (m Model) dockTabsRow() string {
 			label = strings.ToUpper(label)
 		}
 		rendered := style.Render(label)
-		if t.p == paneMetatron && m.metatronUnseen {
+		if t.p == paneGuardian && m.guardianUnseen {
 			rendered += " " + styleTabBadge.Render("•")
 		}
 		parts = append(parts, rendered)
@@ -530,8 +530,8 @@ func (m Model) dockTabContent(width, height int) string {
 			maxWrap = 3
 		}
 		return m.chronicleBody(width, height, maxWrap)
-	case paneMetatron:
-		return m.metatronTranscriptBody(width, height)
+	case paneGuardian:
+		return m.guardianTranscriptBody(width, height)
 	case paneVillagers:
 		return m.villagersBody(width, height)
 	case paneSystems:
@@ -1407,8 +1407,8 @@ func familyTint(f eventFamily) lipgloss.Style {
 		return styleFamilyGru
 	case familyChronicle:
 		return styleFamilyChronicle
-	case familyMetatron:
-		return styleFamilyMetatron
+	case familyGuardian:
+		return styleFamilyGuardian
 	case familyCog:
 		return styleFamilyCog
 	default: // familyDaemon, familyUnknown — no distinct tint (see token block)
@@ -1585,11 +1585,11 @@ func wrapText(text string, width int) []string {
 	return lines
 }
 
-// --- metatron (panels/dock.md "metatron", panels/minibuffer.md) ---
+// --- guardian (panels/dock.md "metatron", panels/minibuffer.md) ---
 
-// metatronTranscriptBody is the dock/solo metatron tab: history only —
+// guardianTranscriptBody is the dock/solo guardian tab: history only —
 // input lives in the minibuffer (minibuffer.md).
-func (m Model) metatronTranscriptBody(width, rows int) string {
+func (m Model) guardianTranscriptBody(width, rows int) string {
 	if rows < 3 {
 		rows = 3
 	}
@@ -1663,22 +1663,22 @@ func classifyTranscriptLine(l string, sk *skin.Skin) (label, text string, style 
 // then — once a world has an active charter/instruction surface — the
 // spec-021 provenance summary and the spec-046 stage segment. Shared
 // verbatim (spec 053 FR-002, "one shared data source") by the narrow-
-// fallback metatronView below and the guardian console (consoleView) —
+// fallback guardianView below and the guardian console (consoleView) —
 // literally the same string, not a re-derivation, so the two renderings can
 // never silently disagree.
 func (m Model) guardianHeaderLine() string {
 	charges := 0
 	if m.status != nil {
-		charges = m.status.Clock.MetatronCharges
+		charges = m.status.Clock.GuardianCharges
 	}
 	// Pane header: the skin's proper name, uppercased (skin-tokens.md rule 4:
 	// case is a rendering detail of this header, not a token fork).
 	header := fmt.Sprintf("%s · charges %s%s", strings.ToUpper(m.sk().Name()),
-		strings.Repeat("⚡", charges), strings.Repeat("·", clampInt(sim.MetatronChargeCap-charges, 0, sim.MetatronChargeCap)))
+		strings.Repeat("⚡", charges), strings.Repeat("·", clampInt(sim.GuardianChargeCap-charges, 0, sim.GuardianChargeCap)))
 	if m.consoleCharter != "" {
 		// Instruction + capability provenance (spec 021 US3): charter flavor,
 		// then the skill count when non-zero, then the granted-tool summary
-		// (quiet for a full-grant default world). Answers "what is my angel
+		// (quiet for a full-grant default world). Answers "what is my guardian
 		// running on, and what can it do" without leaving the game.
 		prov := m.consoleCharter + " (charter.md)"
 		if m.consoleSkills == 1 {
@@ -1697,21 +1697,21 @@ func (m Model) guardianHeaderLine() string {
 	return header
 }
 
-// metatronView is the narrow-fallback guardian pane: transcript + the
+// guardianView is the narrow-fallback guardian pane: transcript + the
 // focus-contract-governed input line (replaces the old always-typing
 // console pane — the exact bug at tui.go:305-309). Fiction-layer content
 // only since spec 053 (D10): the provider table, spend/wallet line, and
 // cognition horizon block moved to the systems tab (systemsView) — this
 // pane keeps the header, transcript, and standing orders (contract §3
 // "STAYS on guardian tab").
-func (m Model) metatronView() string {
+func (m Model) guardianView() string {
 	width := m.width - 6
 	if width < 30 {
 		width = 30
 	}
 	header := m.guardianHeaderLine()
 
-	body := m.metatronTranscriptBody(width, clampInt(m.height-14, 4, 200))
+	body := m.guardianTranscriptBody(width, clampInt(m.height-14, 4, 200))
 	if m.mbErr != "" {
 		body += "\n" + styleErr.Render("the "+m.sk().Epithet()+" is unreachable: "+m.mbErr)
 	}
@@ -1721,7 +1721,7 @@ func (m Model) metatronView() string {
 		content += "\n" + row
 	}
 	// Sized to the same content width as the transcript above it (not the
-	// full terminal width) — this box nests inside metatronView's own
+	// full terminal width) — this box nests inside guardianView's own
 	// bordered pane, which adds its own chrome on top.
 	//
 	// Guardian strip narrow carry (patterns/layout.md ruling b, spec 050):
@@ -1758,7 +1758,7 @@ func (m Model) systemsContentBody(width, rows int) string {
 	lines = append(lines, llmProviderLines(l)...)
 	lines = append(lines, styleDim.Render(fmt.Sprintf("spend $%.2f of $%.0f", l.Spent, l.Budget)))
 	if l.Spent >= l.Budget {
-		lines = append(lines, styleErr.Render("budget exhausted — the angel's voice is stilled"))
+		lines = append(lines, styleErr.Render("budget exhausted — the guardian's voice is stilled"))
 	}
 	lines = append(lines, horizonLines(m.status.Horizon, string(m.status.Clock.Speed))...)
 	if len(lines) > rows {
@@ -1769,7 +1769,7 @@ func (m Model) systemsContentBody(width, rows int) string {
 
 // systemsView is the narrow-fallback systems pane: the same
 // systemsContentBody the dock tab and solo view share, boxed like every
-// other narrow pane (villagersView/metatronView precedent).
+// other narrow pane (villagersView/guardianView precedent).
 func (m Model) systemsView() string {
 	width := m.width - 6
 	if width < 30 {
@@ -1779,12 +1779,12 @@ func (m Model) systemsView() string {
 	return styleBox.Render(content)
 }
 
-// orderStatusLines renders the metatron pane's standing-orders block (spec 029
+// orderStatusLines renders the guardian pane's standing-orders block (spec 029
 // T023, FR-016): a header count, then one compact row per order — id, a fuzzy
 // marker, origin, remaining game-day, and status, followed by the condition
 // text. nil when no orders stand (the pane shows nothing extra, matching the
 // Status.Orders omitempty contract).
-func orderStatusLines(orders []metatron.OrderStatus) []string {
+func orderStatusLines(orders []guardian.OrderStatus) []string {
 	if len(orders) == 0 {
 		return nil
 	}
@@ -1855,7 +1855,7 @@ func llmProviderLines(l *llm.Status) []string {
 	return lines
 }
 
-// horizonLines renders the metatron pane's live cognition-horizon block (spec
+// horizonLines renders the guardian pane's live cognition-horizon block (spec
 // 037 US1, FR-006): one row per watched class — its plain-language standing at
 // the current effective speed ("thinking at 8x" / "suppressed at 32x") and,
 // when suppressed, the remedy. The router's own verdict arithmetic rides as a
@@ -1922,19 +1922,19 @@ func (m Model) guardianStripView(width int) string {
 		return ""
 	}
 
-	charges := m.status.Clock.MetatronCharges
+	charges := m.status.Clock.GuardianCharges
 	segments := []string{
 		fmt.Sprintf("%s%s (%d/%d)",
 			strings.Repeat("⚡", charges),
-			strings.Repeat("·", clampInt(sim.MetatronChargeCap-charges, 0, sim.MetatronChargeCap)),
-			charges, sim.MetatronChargeCap),
+			strings.Repeat("·", clampInt(sim.GuardianChargeCap-charges, 0, sim.GuardianChargeCap)),
+			charges, sim.GuardianChargeCap),
 	}
-	if charges < sim.MetatronChargeCap {
+	if charges < sim.GuardianChargeCap {
 		// Regen is omitted at a full bank (research R4.1): the executor
 		// only fires metatron.charge_regenerated below cap
 		// (internal/sim/executor.go), so forecasting an arrival that isn't
 		// scheduled would be a lie.
-		cadence := int64(sim.MetatronChargeRegenTicks)
+		cadence := int64(sim.GuardianChargeRegenTicks)
 		next := m.status.Clock.Tick + (cadence - m.status.Clock.Tick%cadence)
 		segments = append(segments, fmt.Sprintf("next +1 @ %s", clock.FormatTOD(int(clock.SecondOfDay(next)))))
 	}
@@ -1948,7 +1948,7 @@ func (m Model) guardianStripView(width int) string {
 	// since they're both projections of the same event stream.
 	orders := 0
 	if m.replica != nil {
-		orders = len(m.replica.MetatronOrders)
+		orders = len(m.replica.GuardianOrders)
 	}
 	segments = append(segments, fmt.Sprintf("👁 %d standing orders", orders))
 
@@ -2017,17 +2017,17 @@ func (m Model) guardianBudgetPrefix() string {
 	if m.status == nil {
 		return ""
 	}
-	charges := m.status.Clock.MetatronCharges
+	charges := m.status.Clock.GuardianCharges
 	bank := strings.Repeat("⚡", charges) +
-		strings.Repeat("·", clampInt(sim.MetatronChargeCap-charges, 0, sim.MetatronChargeCap))
+		strings.Repeat("·", clampInt(sim.GuardianChargeCap-charges, 0, sim.GuardianChargeCap))
 	orders := 0
 	if m.replica != nil {
-		orders = len(m.replica.MetatronOrders)
+		orders = len(m.replica.GuardianOrders)
 	}
 	return fmt.Sprintf("%s · 👁%d", bank, orders)
 }
 
-// minibufferView renders the one-line Metatron input at its three states
+// minibufferView renders the one-line Guardian input at its three states
 // (minibuffer.md): dormant, focused (amber border + hint), busy.
 func (m Model) minibufferView(width int) string {
 	// Total rendered width = inner + 2 (border) — Width()'s own
@@ -2089,7 +2089,7 @@ func (m Model) minibufferView(width int) string {
 		// focused/busy cases above are untouched. isWidescreen(m.width)
 		// guards this to the widescreen composite's own fold arithmetic —
 		// the narrow fallback's only minibufferView call site (inside
-		// metatronView) always carries the strip as its own row instead
+		// guardianView) always carries the strip as its own row instead
 		// (layout.md ruling b), so this branch never fires there.
 		if isWidescreen(m.width) && computeRows(m.height, m.wantsLessonRow()).Strip == 0 {
 			if prefix := m.guardianBudgetPrefix(); prefix != "" {
@@ -2219,18 +2219,18 @@ func consoleScrollWindow(content []string, scroll, rows int) []string {
 
 // charterReadSurfaceLines renders the console's charter/skills read surface
 // (FR-004, research R5): charter.md's provenance + binding status, and the
-// skills file count + binding status — sourced entirely from the metatron
+// skills file count + binding status — sourced entirely from the guardian
 // status fields consoleStatusMsg already populates for the compact tab's
 // header (consoleCharter/consoleCharterLocked/consoleCharterPreset/
 // consoleSkills/consoleSkillsLocked); no client-side file parsing (FR-004's
 // explicit ruling). Honest lock notices name the unlocking stage via
-// skin.StageName, mirroring internal/metatron/charter.go's own
+// skin.StageName, mirroring internal/guardian/charter.go's own
 // stageCharter/stageSkills notice wording (stage-1 locks the charter until
 // stage-2; stage-1/2 lock skills until stage-3 — the ladder's current,
 // hardcoded shape, the same assumption consoleStageSummary already makes)
 // without a second round trip to ask the daemon to repeat itself. While
 // SkillsLocked, Status.Skills is the EFFECTIVE (empty) list, not a file
-// count off disk (internal/metatron/turn.go Status()) — so the locked
+// count off disk (internal/guardian/turn.go Status()) — so the locked
 // notice honestly omits a count it does not have, rather than inventing one
 // by reading the directory itself.
 func (m Model) charterReadSurfaceLines() []string {

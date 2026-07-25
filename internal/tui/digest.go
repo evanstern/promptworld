@@ -870,7 +870,7 @@ var digestRegistry = map[string]digestFunc{
 		return join([]seg{nameOf(names, p.Violator), txt(" violated a norm (#"), emphN(p.NormID), txt(")")}), true
 	},
 
-	// --- gru / chronicle / metatron ---
+	// --- gru / chronicle / guardian ---
 
 	"gru.emerged": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.GruEmergedPayload](e)
@@ -919,7 +919,7 @@ var digestRegistry = map[string]digestFunc{
 		return []seg{txt("a charge regenerated")}, true
 	},
 	"metatron.nudged": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
-		p, ok := decode[sim.MetatronNudgedPayload](e)
+		p, ok := decode[sim.GuardianNudgedPayload](e)
 		if !ok {
 			return nil, false
 		}
@@ -933,7 +933,7 @@ var digestRegistry = map[string]digestFunc{
 		return join([]seg{txt(sk.Name() + " "), emph(sk.FormNoun(p.Form)), txt(" → ")}, targets, []seg{txt(": "), speech(p.Text)}), true
 	},
 	// metatron.place_revealed (spec 041 FR-014): a vision's divine place
-	// grant — the agent.saw first-fact-plus-count shape, Metatron as subject
+	// grant — the agent.saw first-fact-plus-count shape, Guardian as subject
 	// (the nudge convention).
 	"metatron.place_revealed": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.PlaceRevealedPayload](e)
@@ -952,15 +952,15 @@ var digestRegistry = map[string]digestFunc{
 	// (spec 029, TASK-27 wiki-sweep gap): the standing-order lifecycle
 	// (internal/sim/metatron.go, [[metatron-orders]]) predates this contract
 	// (specs/018) same as the miracle types below, so voice mirrors
-	// metatron.nudged's — "Metatron" as subject regardless of Origin, since
-	// monitor_and_act/cancel_order are Metatron's own tools whether a player
-	// or the system asked for the watch (MetatronOrder.Origin distinguishes
+	// metatron.nudged's — "Guardian" as subject regardless of Origin, since
+	// monitor_and_act/cancel_order are Guardian's own tools whether a player
+	// or the system asked for the watch (GuardianOrder.Origin distinguishes
 	// who, never how it renders). order_triggered/cancelled/expired carry no
 	// condition text (internal/sim/metatron.go's OrderTriggeredPayload /
 	// OrderIDPayload), only the order's id, so they reference the watch by
 	// id rather than repeating its condition.
 	"metatron.order_placed": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
-		p, ok := decode[sim.MetatronOrder](e)
+		p, ok := decode[sim.GuardianOrder](e)
 		if !ok {
 			return nil, false
 		}
@@ -992,7 +992,7 @@ var digestRegistry = map[string]digestFunc{
 		return join([]seg{txt(sk.Name() + "'s watch lapsed ("), emph(p.ID), txt(")")}), true
 	},
 	// metatron.charter_observed (spec 044 US2): the charter-revision
-	// fingerprint stamp a turn ran under — the angel's evidence timeline the
+	// fingerprint stamp a turn ran under — the guardian's evidence timeline the
 	// morgue aligns deaths against.
 	"metatron.charter_observed": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.CharterObservedPayload](e)
@@ -1022,7 +1022,7 @@ var digestRegistry = map[string]digestFunc{
 	// metatron.time_snapped / item_granted / entity_moved / entity_removed
 	// (TASK-59, spec 016) predate this contract (specs/018) — no template
 	// row exists for them, so voice/style mirrors metatron.nudged's (natural
-	// phrase, "Metatron" as subject); gratisMark surfaces the operator force
+	// phrase, "Guardian" as subject); gratisMark surfaces the operator force
 	// SC-004 requires be enumerable, never silently indistinguishable from a
 	// charge-priced miracle.
 	"metatron.time_snapped": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
@@ -1175,7 +1175,7 @@ var digestRegistry = map[string]digestFunc{
 	},
 
 	// --- spec 046: the curriculum ladder — exercise passes + stage unlocks ---
-	// Natural-phrase voice (Metatron's own family tint, grammar.go), mirroring
+	// Natural-phrase voice (Guardian's own family tint, grammar.go), mirroring
 	// the order lifecycle rows above: the guardian is the subject regardless
 	// of what emitted the pass (TASK-119's rubric machinery in production).
 
@@ -1589,7 +1589,7 @@ var subjectRegistry = map[string]subjectFunc{
 		return placeCandidate("the gathering", p.X, p.Y), true
 	},
 
-	// --- metatron miracles: place-only, named by the payload's own Class ---
+	// --- guardian miracles: place-only, named by the payload's own Class ---
 	// entity_moved jumps to the DESTINATION (ToX,ToY) — an implementer
 	// judgment call (the payload records both endpoints; "where it ended up"
 	// reads as more useful post-jump than "where it used to be").

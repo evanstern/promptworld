@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/evanstern/promptworld/internal/metatron"
+	"github.com/evanstern/promptworld/internal/guardian"
 	"github.com/evanstern/promptworld/internal/store"
 )
 
@@ -27,7 +27,7 @@ func assertRenderClean(t *testing.T, surface, out string) {
 // the default experience's rendered surfaces — tabs, dock row, footers,
 // transcript body, minibuffer states, the help overlay's every page, the
 // standing-orders block, and the chronicle lines for every guardian-family
-// event — carry no angel-fiction vocabulary. (The raw detail pane and the
+// event — carry no guardian-fiction vocabulary. (The raw detail pane and the
 // grammar-miss fallback are inspector surfaces and deliberately exempt —
 // FR-020 audience ruling.)
 func TestDefaultSkinRendersFictionFree(t *testing.T) {
@@ -38,7 +38,7 @@ func TestDefaultSkinRendersFictionFree(t *testing.T) {
 	assertRenderClean(t, "tabsView", m.tabsView())
 	assertRenderClean(t, "dockTabsRow", m.dockTabsRow())
 	assertRenderClean(t, "soloTitle", func() string { m2 := m; m2.solo = true; return m2.soloTitle() }())
-	assertRenderClean(t, "metatronTranscriptBody", m.metatronTranscriptBody(60, 12))
+	assertRenderClean(t, "guardianTranscriptBody", m.guardianTranscriptBody(60, 12))
 	for _, w := range []int{40, 120} {
 		m2 := m
 		m2.width = w
@@ -65,10 +65,10 @@ func TestDefaultSkinRendersFictionFree(t *testing.T) {
 		}
 	}
 	// Standing orders + tool summary.
-	assertRenderClean(t, "orderStatusLines", strings.Join(orderStatusLines([]metatron.OrderStatus{
+	assertRenderClean(t, "orderStatusLines", strings.Join(orderStatusLines([]guardian.OrderStatus{
 		{ID: "ord-1-0", Condition: "the fire goes out", Origin: "player", ExpiresDay: 3, Status: "active"},
 	}), "\n"))
-	assertRenderClean(t, "consoleToolsSummary", consoleToolsSummary(&metatron.Status{
+	assertRenderClean(t, "consoleToolsSummary", consoleToolsSummary(&guardian.Status{
 		GrantedTools: []string{"send_vision", "work_miracle"},
 	}, nil))
 

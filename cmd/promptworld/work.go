@@ -116,7 +116,7 @@ func cmdWork(args []string) error {
 	if md.Gratis {
 		force = " (forced)"
 	}
-	fmt.Printf("%s%s\n[charges %s %d/%d]\n", md.Summary, force, chargeGlyphs(md.Charges), md.Charges, sim.MetatronChargeCap)
+	fmt.Printf("%s%s\n[charges %s %d/%d]\n", md.Summary, force, chargeGlyphs(md.Charges), md.Charges, sim.GuardianChargeCap)
 	return nil
 }
 

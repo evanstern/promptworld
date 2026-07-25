@@ -402,7 +402,7 @@ func marshalDecls(t *testing.T, decls []llm.ToolDecl) string {
 func TestWireDeclarationsDeterministic(t *testing.T) {
 	rosters := map[string]func() []tool.Tool{
 		"villager": tool.LoopRosterVillager,
-		"metatron": tool.LoopRosterMetatron,
+		"metatron": tool.LoopRosterGuardian,
 	}
 	for name, build := range rosters {
 		t.Run(name, func(t *testing.T) {

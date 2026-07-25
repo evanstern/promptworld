@@ -3,7 +3,7 @@ package tui
 // Decision-trace projection + glossary tests (spec 020, TASK-63): ingest
 // joins/bounds/fragments/attribution (contract §1), the verdict glossary
 // sweep (§4), decisions sub-view rendering (§2, alongside villagers_test.go's
-// key-routing tests), and the Metatron inline-verdict transcript path (§3).
+// key-routing tests), and the Guardian inline-verdict transcript path (§3).
 
 import (
 	"encoding/json"
@@ -101,15 +101,15 @@ func TestIngestSkipsConversationJobs(t *testing.T) {
 	}
 }
 
-func TestIngestMetatronToolCallAttributesToSentinel(t *testing.T) {
+func TestIngestGuardianToolCallAttributesToSentinel(t *testing.T) {
 	dt := newDecisionTraces()
 	dt.ingest(toolCallEvent(1, "turn-metatron-1000", 1, "grant_item", "landed", ""), nil, nil, nil)
-	chains := dt.chainsFor(metatronAgent)
+	chains := dt.chainsFor(guardianAgent)
 	if len(chains) != 1 {
-		t.Fatalf("expected turn-metatron- attribution to the Metatron sentinel, chains=%d", len(chains))
+		t.Fatalf("expected turn-metatron- attribution to the Guardian sentinel, chains=%d", len(chains))
 	}
 	if len(dt.chainsFor(-1)) != 0 {
-		t.Error("a metatron job must not also appear unattributed")
+		t.Error("a guardian job must not also appear unattributed")
 	}
 }
 
@@ -320,9 +320,9 @@ func TestVillagerDecisionsBodyScrollRevealsLaterContent(t *testing.T) {
 	}
 }
 
-// --- T015: US2 — Metatron inline verdict rows (contract R12-R14) ---
+// --- T015: US2 — Guardian inline verdict rows (contract R12-R14) ---
 
-func TestMetatronToolCallAppendsOneVerdictRow(t *testing.T) {
+func TestGuardianToolCallAppendsOneVerdictRow(t *testing.T) {
 	m := testModel(t)
 	m.applyEvent(toolCallEvent(1, "turn-metatron-100", 1, "grant_item", "rejected_gate", "budget exhausted"))
 	if len(m.transcript) != 1 {
@@ -337,7 +337,7 @@ func TestMetatronToolCallAppendsOneVerdictRow(t *testing.T) {
 	}
 }
 
-func TestMetatronToolCallsAppendInEmissionOrder(t *testing.T) {
+func TestGuardianToolCallsAppendInEmissionOrder(t *testing.T) {
 	m := testModel(t)
 	m.applyEvent(toolCallEvent(1, "turn-metatron-100", 1, "grant_item", "landed", ""))
 	m.applyEvent(toolCallEvent(2, "turn-metatron-100", 2, "snap_time", "rejected_gate", "no charges"))
@@ -349,7 +349,7 @@ func TestMetatronToolCallsAppendInEmissionOrder(t *testing.T) {
 	}
 }
 
-func TestVillagerToolCallDoesNotTouchMetatronTranscript(t *testing.T) {
+func TestVillagerToolCallDoesNotTouchGuardianTranscript(t *testing.T) {
 	m := testModel(t)
 	m.applyEvent(toolCallEvent(1, "reflex-0-100", 1, "gather", "landed", ""))
 	if len(m.transcript) != 0 {
@@ -357,7 +357,7 @@ func TestVillagerToolCallDoesNotTouchMetatronTranscript(t *testing.T) {
 	}
 }
 
-func TestMetatronProseOnlyTurnAddsNoVerdictRows(t *testing.T) {
+func TestGuardianProseOnlyTurnAddsNoVerdictRows(t *testing.T) {
 	m := testModel(t)
 	// A prose-only turn never emits cog.tool_call at all (no calls made) —
 	// nothing here should touch the transcript.
@@ -367,7 +367,7 @@ func TestMetatronProseOnlyTurnAddsNoVerdictRows(t *testing.T) {
 	}
 }
 
-func TestMetatronVerdictRowRespectsTranscriptCap(t *testing.T) {
+func TestGuardianVerdictRowRespectsTranscriptCap(t *testing.T) {
 	m := testModel(t)
 	for i := 0; i < 210; i++ {
 		m.applyEvent(toolCallEvent(int64(i+1), fmt.Sprintf("turn-metatron-%d", i), 1, "grant_item", "landed", ""))
@@ -438,7 +438,7 @@ func TestNoRawVerdictOrOutcomeEnumInDecisionsSubView(t *testing.T) {
 	}
 }
 
-func TestNoRawVerdictEnumInMetatronTranscript(t *testing.T) {
+func TestNoRawVerdictEnumInGuardianTranscript(t *testing.T) {
 	m := testModel(t)
 	for i, v := range allRawVerdicts {
 		m.applyEvent(toolCallEvent(int64(i+1), fmt.Sprintf("turn-metatron-%d", i), 1, "grant_item", v, "because reasons"))
@@ -446,7 +446,7 @@ func TestNoRawVerdictEnumInMetatronTranscript(t *testing.T) {
 	transcript := strings.Join(m.transcript, "\n")
 	for _, v := range allRawVerdicts {
 		if strings.Contains(transcript, v) {
-			t.Errorf("raw toolloop verdict %q leaked into the metatron transcript", v)
+			t.Errorf("raw toolloop verdict %q leaked into the guardian transcript", v)
 		}
 	}
 }

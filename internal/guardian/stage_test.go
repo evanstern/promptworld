@@ -1,4 +1,4 @@
-package metatron
+package guardian
 
 import (
 	"bytes"
@@ -28,7 +28,7 @@ import (
 // no-ceiling expectation for stage-3/-4 and pre-ladder worlds.
 func fullLoopRosterNames() []string {
 	var out []string
-	for _, t := range tool.LoopRosterMetatron() {
+	for _, t := range tool.LoopRosterGuardian() {
 		out = append(out, t.Name)
 	}
 	return out
@@ -129,7 +129,7 @@ func TestStageCeilingIntersectsManifest(t *testing.T) {
 // conjured (defense-in-depth), while the watch primitive (monitor_and_act /
 // cancel_order) — ratified into the stage-1 ceiling — lands normally.
 func TestStageDoorRefusesBeyondStage(t *testing.T) {
-	mt, _, _, dir := newTestAngel(t, "so be it")
+	mt, _, _, dir := newTestGuardian(t, "so be it")
 	mt.SetStage("stage-1", "")
 	g, _ := loadManifest(dir)
 	g = applyStageCeiling(g, "stage-1")
@@ -181,7 +181,7 @@ func TestStageThreeLayerCoherence(t *testing.T) {
 		}
 	}
 	// Prose: the derived guidance names granted tools only.
-	guidance := tool.MetatronToolGuidance(roster)
+	guidance := tool.GuardianToolGuidance(roster)
 	for _, beyond := range []string{"work_miracle", "adjust_speed"} {
 		if strings.Contains(guidance, beyond) {
 			t.Errorf("tool guidance mentions beyond-stage %s", beyond)
@@ -204,7 +204,7 @@ func TestStageThreeLayerCoherence(t *testing.T) {
 // present skill files produce the honest notices naming the unlocking stages,
 // and the composed system prompt carries the preset, not the player text.
 func TestStageOneInstructionLock(t *testing.T) {
-	mt, orch, _, dir := newTestAngel(t, "I hear you.")
+	mt, orch, _, dir := newTestGuardian(t, "I hear you.")
 	mt.SetStage("stage-1", "")
 	custom := "# MY LAW\n\nSpeak only in riddles about squirrels.\n"
 	if err := os.WriteFile(filepath.Join(dir, "charter.md"), []byte(custom), 0o644); err != nil {
@@ -275,7 +275,7 @@ func TestStageOneInstructionLock(t *testing.T) {
 // instruction authoring — charter edits bind exactly as an ungated world's —
 // while skill files still wait for stage-3.
 func TestStageTwoChartersBindSkillsDoNot(t *testing.T) {
-	mt, orch, _, dir := newTestAngel(t, "as you decree")
+	mt, orch, _, dir := newTestGuardian(t, "as you decree")
 	mt.SetStage("stage-2", "")
 	custom := "# MY LAW\n\nAlways answer in verse.\n"
 	if err := os.WriteFile(filepath.Join(dir, "charter.md"), []byte(custom), 0o644); err != nil {
@@ -359,7 +359,7 @@ func TestCrossStageDeterminism(t *testing.T) {
 		granted []string
 	}
 	drive := func(stage string) run {
-		mt, _, inj, _ := newTestAngel(t, "it is done")
+		mt, _, inj, _ := newTestGuardian(t, "it is done")
 		mt.SetStage(stage, "")
 		// Command 1: a converse-only turn (no act).
 		if _, err := mt.Turn(context.Background(), "how fares the village?"); err != nil {
@@ -425,11 +425,11 @@ func TestPresetCharterResolution(t *testing.T) {
 	}
 }
 
-// TestUngatedWorldUnchanged (T007 byte-compat): a Metatron with no stage set
+// TestUngatedWorldUnchanged (T007 byte-compat): a Guardian with no stage set
 // (every pre-046 world and caller) composes, grants, and reports exactly as
 // before — no ceiling, no locks, no new status fields.
 func TestUngatedWorldUnchanged(t *testing.T) {
-	mt, orch, _, dir := newTestAngel(t, "all is well")
+	mt, orch, _, dir := newTestGuardian(t, "all is well")
 	custom := "# MY LAW\n\nAnswer briefly.\n"
 	if err := os.WriteFile(filepath.Join(dir, "charter.md"), []byte(custom), 0o644); err != nil {
 		t.Fatal(err)
@@ -465,7 +465,7 @@ func TestUngatedWorldUnchanged(t *testing.T) {
 // exactly like the default preset's charter does. No new mechanics, no
 // special-casing: the preset name only matters at stage-1's lock (R3).
 func TestTutorPresetHotReloadsLikeAnyCharter(t *testing.T) {
-	mt, orch, _, dir := newTestAngel(t, "as you wish")
+	mt, orch, _, dir := newTestGuardian(t, "as you wish")
 	mt.SetStage("stage-2", "tutor")
 	if err := os.WriteFile(filepath.Join(dir, "charter.md"), []byte(persona.TutorCharter), 0o644); err != nil {
 		t.Fatal(err)

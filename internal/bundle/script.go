@@ -26,7 +26,7 @@ import (
 
 // scriptProgram is a tool.star compiled once at boot: its apply() function frozen
 // and cached, ready to run against fresh (args, world) on a per-invocation thread.
-// A frozen Starlark function is safe to call repeatedly (metatron turns are
+// A frozen Starlark function is safe to call repeatedly (guardian turns are
 // single-flight regardless).
 type scriptProgram struct {
 	apply *starlark.Function

@@ -16,18 +16,18 @@ import (
 // bundle tool, wrapping the SAME landing pipeline the loader validated at boot —
 // resolve arguments → expand templates (declarative mode) → compile effects →
 // declared-events subset check (all in CompileEffects) → InjectSocial. The
-// factory mirrors internal/metatron/toolcalls.go: it never mutates state itself,
+// factory mirrors internal/guardian/toolcalls.go: it never mutates state itself,
 // it lands through the injected door, and it translates every author-level
 // failure into a rejected_gate Outcome the model may repair within the loop's
 // round cap — never a toolloop.Outcome.Err (that is reserved for infrastructure
 // failures, which terminate the whole loop).
 //
-// The dependency shape (InvocationContext) is the per-turn surface the metatron
+// The dependency shape (InvocationContext) is the per-turn surface the guardian
 // turn assembly already holds: a read snapshot of sim state (for target /
 // recipient resolution, the same probe landMiracle builds), the current tick,
 // the invoker's name ({invoker} substitution), and the InjectSocial door as a
 // plain function value. Passing these as data keeps bundle importable by
-// metatron with no reverse dependency.
+// guardian with no reverse dependency.
 
 // InvocationContext is the per-turn context a bundle handler resolves against.
 // State is a read-only snapshot whose Agents carry Name/X/Y/Dead so the effect
@@ -51,7 +51,7 @@ type InvocationContext struct {
 }
 
 // Handlers builds one toolloop.Handler per bundle tool for a single invocation
-// context. The metatron turn assembly calls this once per turn (like
+// context. The guardian turn assembly calls this once per turn (like
 // mt.turnHandlers) and merges the result into its handler map; grant filtering
 // is the caller's job (the map is keyed by tool name, so an ungranted tool is
 // simply not copied over).

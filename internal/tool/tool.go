@@ -1,6 +1,6 @@
 // Package tool is the single source of truth for agent capabilities (spec
 // 014, Layer 1). Every capability an agent can request — the world verbs,
-// speaking, musing, conversation gists, the metatron's converse and nudges —
+// speaking, musing, conversation gists, the guardian's converse and nudges —
 // is one Tool entry: a name, a parameter schema, a gate class, an effect
 // class, and a cost. The prompt vocabulary the models see, the mind-side
 // validation of replies, and the sim-door validation of arriving actions are
@@ -9,7 +9,7 @@
 // This is a leaf package: it imports nothing internal (research R1), following
 // the internal/cognition precedent. Declarative data lives here; the behavior
 // that grounds a tool in time and space (resolution, execution, reduction)
-// stays in internal/sim and internal/metatron, keyed by tool name. A tool call
+// stays in internal/sim and internal/guardian, keyed by tool name. A tool call
 // is a REQUEST; an event is the FACT; the gate decides; the executor grounds
 // the work. The model never asserts an outcome.
 package tool
@@ -107,7 +107,7 @@ const (
 )
 
 // Cost is what using a tool spends: time (world-tool work duration), charges
-// (metatron nudges), or a text-size budget (utterance/gist/musing/nudge caps).
+// (guardian nudges), or a text-size budget (utterance/gist/musing/nudge caps).
 type Cost struct {
 	DurationTicks int64 // world tools: base work ticks (0 = instant on arrival)
 	Charges       int   // nudges: 1; all others 0

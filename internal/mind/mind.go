@@ -255,7 +255,7 @@ func (md *Mind) absorb(batch []store.Event) {
 			// game-time debounce is the only bound (D4), never reopening while
 			// frozen, so one nudge buys at most one round.
 			if md.replica.Paused {
-				var p sim.MetatronNudgedPayload
+				var p sim.GuardianNudgedPayload
 				if json.Unmarshal(e.Payload, &p) == nil {
 					for _, t := range p.Targets {
 						md.arm(t, e.Seq)
