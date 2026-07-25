@@ -12,7 +12,7 @@
 
 ## Phase 1: Setup
 
-- [ ] T001 Create worktree `.worktrees/task-105` (branch `task-105-context-grounding` from origin/main); confirm `go build ./...` green at fork point
+- [x] T001 Create worktree `.worktrees/task-105` (branch `task-105-context-grounding` from origin/main); confirm `go build ./...` green at fork point
 
 ---
 
@@ -20,10 +20,10 @@
 
 **Purpose**: the assembler skeleton every story renders through, and the telemetry fields every story reports through.
 
-- [ ] T002 Block assembler skeleton in `internal/mind/context.go`: `contextBlock{Name, Priority, Render}` registry, fixed contract order, per-block byte measurement, `approxTokens = bytes/4` helper, `contextBudgetTokens = 2000` const with TASK-107 tuning-manifest dial comment, whole-block drop ascending priority (contracts/context-blocks.md is normative)
-- [ ] T003 Wrap existing `userPrompt` content into blocks (`frame`, `needs`, `inventory`, `known_places`/`nearby`, `social_law`, `memories`, `memories_serendipity`) in `internal/mind/prompt.go` with byte-identical output when no new blocks render and budget is not exceeded — assert via existing `internal/mind/shadow_test.go` invariant plus a new golden-equality test in `internal/mind/context_test.go`
-- [ ] T004 Extend `CogThoughtPayload` with `PromptBytes`, `BlockBytes`, `DroppedBlocks` in `internal/sim/cognition.go`; stamp them where thoughts are emitted in `internal/mind/telemetry.go`; reducer stays no-op (`internal/sim/state.go`)
-- [ ] T005 Assembler unit tests in `internal/mind/context_test.go`: deterministic assembly (same state ⇒ same bytes), drop order under a shrunk test budget, never-dropped blocks survive extreme budgets, telemetry fields populated
+- [x] T002 Block assembler skeleton in `internal/mind/context.go`: `contextBlock{Name, Priority, Render}` registry, fixed contract order, per-block byte measurement, `approxTokens = bytes/4` helper, `contextBudgetTokens = 2000` const with TASK-107 tuning-manifest dial comment, whole-block drop ascending priority (contracts/context-blocks.md is normative)
+- [x] T003 Wrap existing `userPrompt` content into blocks (`frame`, `needs`, `inventory`, `known_places`/`nearby`, `social_law`, `memories`, `memories_serendipity`) in `internal/mind/prompt.go` with byte-identical output when no new blocks render and budget is not exceeded — assert via existing `internal/mind/shadow_test.go` invariant plus a new golden-equality test in `internal/mind/context_test.go`
+- [x] T004 Extend `CogThoughtPayload` with `PromptBytes`, `BlockBytes`, `DroppedBlocks` in `internal/sim/cognition.go`; stamp them where thoughts are emitted in `internal/mind/telemetry.go`; reducer stays no-op (`internal/sim/state.go`)
+- [x] T005 Assembler unit tests in `internal/mind/context_test.go`: deterministic assembly (same state ⇒ same bytes), drop order under a shrunk test budget, never-dropped blocks survive extreme budgets, telemetry fields populated
 
 **Checkpoint**: prompt output unchanged for existing worlds; sizes observable per thought.
 
@@ -44,11 +44,11 @@
 
 **Goal**: reducer-maintained intent ring rendered as the `self_history` block. **Independent test**: per-source context capture + thrash-window replay (SC-002, SC-004).
 
-- [ ] T008 [US1] Add `IntentRecord` type + `Agent.IntentLog` ring (cap 8) in `internal/sim/agents.go` per data-model.md
-- [ ] T009 [US1] Reducer arms in `internal/sim/state.go`: `agent.intent_set` appends {Goal, Source, Reason, Tick}; `agent.intent_done`/`agent.build_failed` stamp outcomes; `agent.intent_rejected` appends-and-closes; `agent.plan_expired` stamps/append `expired`
-- [ ] T010 [P] [US1] Ring transition tests in `internal/sim/intentlog_test.go`: all five arms, override-in-quick-succession ordering, ring wraparound at cap, rejected-never-landed shape
-- [ ] T011 [US1] `self_history` block renderer in `internal/mind/context.go` + wire into `internal/mind/prompt.go`: last ≤4 records newest-first, sources in plain words (planner→"you decided", reflex→"instinct", plan→"your plan"; unknown→"unknown", never invented), outcomes, "no prior activity" empty state (contract block 3)
-- [ ] T012 [US1] Renderer tests in `internal/mind/context_test.go`: each source wording, empty state, alternation visible across ≥3 records (SC-002)
+- [x] T008 [US1] Add `IntentRecord` type + `Agent.IntentLog` ring (cap 8) in `internal/sim/agents.go` per data-model.md
+- [x] T009 [US1] Reducer arms in `internal/sim/state.go`: `agent.intent_set` appends {Goal, Source, Reason, Tick}; `agent.intent_done`/`agent.build_failed` stamp outcomes; `agent.intent_rejected` appends-and-closes; `agent.plan_expired` stamps/append `expired`
+- [x] T010 [P] [US1] Ring transition tests in `internal/sim/intentlog_test.go`: all five arms, override-in-quick-succession ordering, ring wraparound at cap, rejected-never-landed shape
+- [x] T011 [US1] `self_history` block renderer in `internal/mind/context.go` + wire into `internal/mind/prompt.go`: last ≤4 records newest-first, sources in plain words (planner→"you decided", reflex→"instinct", plan→"your plan"; unknown→"unknown", never invented), outcomes, "no prior activity" empty state (contract block 3)
+- [x] T012 [US1] Renderer tests in `internal/mind/context_test.go`: each source wording, empty state, alternation visible across ≥3 records (SC-002)
 - [ ] T013 [US1] Thrash-window context replay per quickstart §SC-004: reconstruct Sage's episode (world-01 ticks 265,411–266,631), assert assembled context shows the instinct redirection + alternation; record result in the spec dir
 
 **Checkpoint**: MVP complete (US5+US1) — the model can see what it was just doing and operators can audit it.
