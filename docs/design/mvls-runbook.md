@@ -164,7 +164,30 @@ operator's ack. `go test ./...` green on main; wiki freshness gate 45+/45+ fresh
 player-docs freshness 13/13; `git worktree list` shows no `.worktrees/task-*` from this
 sweep; this log complete and status flipped to done.
 
+## Amendments
+
+- 2026-07-25: spec numbers materialized as **057** (TASK-108), **058**
+  (TASK-110), **059** (TASK-111), **061** (TASK-109; 060 was claimed by
+  village-lens mid-sweep). **Collision note:** `059-grounded-feedback` (another
+  session) and `059-metatron-survival-autonomy` (this sweep) were claimed
+  near-simultaneously and both pushed — directory names are unique so all
+  path-based machinery works; neither renumbered (a running implementer
+  references ours). Surfaced to operator.
+- 2026-07-25: TASK-109 diagnosis checkpoint cleared — leak proven to be the
+  planner talk_to→hail founding path (97.8% of all world-01 scenes); operator
+  chose the sim-side hail gate reusing the encounter_cooldown_ticks dial;
+  novelty gate stays a marked mind-side SHIM.
+- 2026-07-25: TASK-106 checkpoint cleared — operator accepted: detector
+  W=4h/K=8 + need clause; **TASK-133 carded** (neglect detector, High — the
+  shape that killed Oak); thrash-percept implementation deferred until after
+  103/104 + TASK-122. TASK-106 Done (research-complete, no PR by design).
+- 2026-07-25: TASK-89 grounding shift — world-01 llm.json already routed all
+  traffic to gemma/cloud (cogito unused; stanza removed); world was
+  format_version 3 → migrated v4 (backups kept); daemon restarted. AC2 (gist
+  spot-check) pending scene accumulation.
+
 ## Execution log
 
 | date | task | PR | merge | notes |
 |------|------|----|-------|-------|
+| 2026-07-25 | TASK-106 | — (research) | — | Done; artifact 7d79a0a; TASK-133 carded |
