@@ -2,7 +2,7 @@
 title: Pattern — keymap
 class: pattern
 status: shipped
-verified_against: 6edc43e785eea624a0984e8604d1cdfa98709d1a
+verified_against: 59b8f94d85b92923841ab5312ded7a6a99048956
 sources:
   - internal/tui/tui.go
   - internal/tui/help.go
@@ -109,7 +109,7 @@ console's own footer names them), unlike inspect/villagers mode's narrower
 | `m` | focus the minibuffer (the composer) — in place, never switching the narrow fallback's active pane |
 | `e` | `$EDITOR` shell-out on the world's `charter.md` (contract §4) |
 | `J` / `K` | scrollback down (toward the tail) / up (toward older turns) |
-| everything else (`space`/`q`/`[`/`]`/`2`-`5`/pan/`a`/`t`/`r`) | falls through to the global mode unchanged |
+| everything else (`space`/`q`/`[`/`]`/`2`-`5` — plus `6` on scenario worlds/pan/`a`/`t`/`r`) | falls through to the global mode unchanged |
 
 While the minibuffer is focused inside the console, `G`/`e`/`5`/`J`/`K` all
 type into the buffer instead — no silent stealing (focus-contract.md rule 4).
@@ -133,9 +133,12 @@ While the exercise tab's attach-time briefing is on screen
 is consumed** — exactly one keypress, scoped strictly to the exercise tab
 being the thing visible (never a global key-eater); `ctrl+c` still quits
 (rule 3 outranks everything), the help overlay's own keyboard outranks this
-while open, and a focused minibuffer keeps its keys (focus was explicitly
-acquired, focus-contract rule 1). Dismissal lasts for this attach only;
-re-attaching shows the briefing (and this mode) again.
+while open, a focused minibuffer keeps its keys (focus was explicitly
+acquired, focus-contract rule 1), and an open guardian console (spec 053, a
+whole-body takeover) suppresses the eater entirely — the briefing is not
+the thing on screen while the console is, so console keys reach the console
+and the briefing survives undismissed. Dismissal lasts for this attach
+only; re-attaching shows the briefing (and this mode) again.
 
 | Key | Action |
 |---|---|

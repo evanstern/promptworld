@@ -2,7 +2,7 @@
 title: Panel — exercise (scenario tab)
 class: panel
 status: shipped
-verified_against: 6edc43e785eea624a0984e8604d1cdfa98709d1a
+verified_against: 59b8f94d85b92923841ab5312ded7a6a99048956
 sources:
   - internal/tui/exercise.go
   - internal/tui/tui.go
@@ -62,10 +62,11 @@ falls through inert.
    `sim.ExerciseDefinition.Framing` + the current incident-visibility mode
    for this stage (below). Dismissed by any key (`handleKey` consumes
    exactly one press, only while this tab is visible —
-   `exerciseBriefingShowing`), then never reshown for that attach;
-   re-attaching resets it (`Model.exBriefingDismissed`, cleared on
-   `connectedMsg`) — a fresh orientation each session, not a
-   one-time-ever notice.
+   `exerciseBriefingShowing`; an open guardian console suppresses the
+   eater, being a whole-body takeover — `patterns/keymap.md` "Mode:
+   exercise briefing"), then never reshown for that attach; re-attaching
+   resets it (`Model.exBriefingDismissed`, cleared on `connectedMsg`) — a
+   fresh orientation each session, not a one-time-ever notice.
 3. **Rubric gauges** — one row per evaluated rubric term
    (`sim.EvaluateRubric` over the replica — the SAME pure derivation the
    executor's pass precondition reads, so the panel and the emitter can
