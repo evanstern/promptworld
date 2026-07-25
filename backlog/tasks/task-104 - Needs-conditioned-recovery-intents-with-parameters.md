@@ -1,10 +1,10 @@
 ---
 id: TASK-104
 title: Needs-conditioned recovery intents with parameters
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-25 02:41'
-updated_date: '2026-07-25 19:30'
+updated_date: '2026-07-25 20:09'
 labels:
   - goal-quality
   - instinct-layer
@@ -18,7 +18,9 @@ ordinal: 16000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Direction B from spike TASK-101. Recovery goals complete on the NEED, not the location: e.g. warm_up(until_warmth>=N) loiters at the fire until the condition holds, mirroring eat-to-satiety. Generalize: parameterized intent arguments (tool args carry the completion condition) rather than new one-off verbs — flexible and generalizable per Evan's note. Kills the arrive→idle→reflex-vacuum cycle that manufactures the oscillation. Non-trivial: full Spec Kit before implementation.
+Direction B from spike TASK-101. Recovery goals complete on the NEED, not the location: warm_up(until_warmth>=N) loiters at the fire until the condition holds, mirroring eat-to-satiety. Generalize: parameterized intent arguments (tool args carry the completion condition) rather than new one-off verbs — flexible and generalizable per Evan's note. Kills the arrive->idle->reflex-vacuum cycle that manufactures the oscillation (062 stopped the counter-scheduling; this makes recovery itself hold). Also carries 057 audit Gap C: sleepers wake to cold (Oak's final night). Full Spec Kit: spec 064.
+
+Spec: specs/064-needs-conditioned-recovery
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
@@ -26,6 +28,13 @@ Direction B from spike TASK-101. Recovery goals complete on the NEED, not the lo
 - [ ] #1 At least warm_up (and pattern for rest/food analogs) completes on a need condition passed as an argument
 - [ ] #2 Idle-at-recovery-site no longer triggers instinct dispatch mid-recovery
 - [ ] #3 Deterministic sim test covers recover-then-release behavior
+- [ ] #4 Spec phase: Foundational
+- [ ] #5 Spec phase: User Story 1 — warm_up (P1)
+- [ ] #6 Spec phase: User Story 3 — interruptibility (P1)
+- [ ] #7 Spec phase: User Story 2 — generic mechanism proof (P2)
+- [ ] #8 Spec phase: User Story 4 — wake to cold (P2)
+- [ ] #9 Spec phase: Integration proof
+- [ ] #10 Spec phase: Polish & Cross-Cutting
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -42,4 +51,6 @@ Root cause shared with TASK-103: internal/sim/policy.go contains ZERO reads of .
 OPERATOR DECISION (2026-07-25): sequence 104 BEFORE 103 — 103's AC#2 ('day-branch warmth gap closed') is unwritable until this task exists, because there is nothing to check in the day branch except a need the ladder cannot read. CONFLICT TO RESOLVE: TASK-103 was dispatched In Progress against spec 062 before this decision was recorded. Reconcile with the MVLS session.
 
 Also: any new threshold this task introduces must ship as a tuning.json dial (spec 048 / 057 US2 genesis pin), not a bare const.
+
+MVLS sweep dispatch (2026-07-25, lane 3 — forked after TASK-103's merge #93): implementer tier Opus 4.8 — constitution V rubric: cross-package (sim executor + tool registry + mind handler), doctrine-adjacent intent-completion semantics.
 <!-- SECTION:NOTES:END -->
