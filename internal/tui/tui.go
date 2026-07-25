@@ -25,6 +25,7 @@ import (
 	"github.com/evanstern/promptworld/internal/ipc"
 	"github.com/evanstern/promptworld/internal/metatron"
 	"github.com/evanstern/promptworld/internal/sim"
+	"github.com/evanstern/promptworld/internal/skin"
 	"github.com/evanstern/promptworld/internal/store"
 	"github.com/evanstern/promptworld/internal/world"
 	"github.com/evanstern/promptworld/internal/worldmap"
@@ -111,6 +112,7 @@ type Model struct {
 	consoleSkills  int                    // count of effective skill files (spec 021 US3)
 	consoleTools   string                 // granted-tool summary, e.g. "tools: dream, omen"; "" when quiet default
 	consoleOrders  []metatron.OrderStatus // standing orders peek (spec 029 T023, FR-016)
+	consoleStage   string                 // curriculum-ladder stage line (spec 046 T010); "" for a pre-ladder/ungated world
 
 	mbFocused bool
 	mbInput   string
@@ -218,6 +220,22 @@ func consoleToolsSummary(s *metatron.Status) string {
 		parts = append(parts, shortToolName(t))
 	}
 	return "tools: " + strings.Join(parts, ", ")
+}
+
+// consoleStageSummary renders the metatron pane's curriculum-ladder line
+// (spec 046 T010, R10): the skin's display name for the world's stage plus
+// the lock provenance the ceiling/instruction-lock (US2) already computed —
+// "" for a pre-ladder/ungated world (Stage absent), keeping every existing
+// world's console header byte-identical (the consoleToolsSummary precedent).
+func consoleStageSummary(s *metatron.Status) string {
+	if s.Stage == "" {
+		return ""
+	}
+	line := "stage: " + skin.StageName(s.Stage)
+	if s.CharterLocked {
+		line += " (charter locked to " + s.CharterPreset + ")"
+	}
+	return line
 }
 
 // shortToolName maps a granted-tool label to its console short form, preserving
@@ -415,6 +433,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.consoleSkills = 0
 			m.consoleTools = ""
 			m.consoleOrders = nil
+			m.consoleStage = ""
 		} else {
 			if msg.status.CharterDefault {
 				m.consoleCharter = "default charter"
@@ -424,6 +443,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.consoleSkills = len(msg.status.Skills)
 			m.consoleTools = consoleToolsSummary(msg.status)
 			m.consoleOrders = msg.status.Orders
+			m.consoleStage = consoleStageSummary(msg.status)
 		}
 		return m, nil
 
