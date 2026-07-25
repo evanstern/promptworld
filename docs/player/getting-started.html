@@ -9,6 +9,7 @@
 <meta name="promptworld-docs:source" content="docs/wiki/daemon-lifecycle.md@cc514f7ff456fefbcfe289471c5a1467b8e724df">
 <meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@cc514f7ff456fefbcfe289471c5a1467b8e724df">
 <meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@cc514f7ff456fefbcfe289471c5a1467b8e724df">
+<meta name="promptworld-docs:source" content="docs/wiki/chronicle.md@cc514f7ff456fefbcfe289471c5a1467b8e724df">
 <title>Getting started — promptworld player docs</title>
 <style>
   :root {
@@ -81,6 +82,15 @@ The village is <strong>ambient and always-on</strong>: once you start a world, a
 background process (the "daemon") keeps simulating it around the clock, whether or not
 you're watching. You attach and detach like tuning into a channel — the world doesn't
 pause just because you looked away.</p>
+
+<p>Set your expectations now: your first village will probably see someone freeze or
+starve. That's the story working, not a bug. promptworld doesn't soften failure — a
+villager who dies stays dead, permanently, with no reload and no undo. That's exactly
+what makes the village's <a href="reading-the-story.html">chronicle</a> worth reading:
+it narrates a death the same as anything else that happened, and the postmortem — what
+led up to it, who was there, what changed after — is the payoff, not a punishment for
+playing wrong. Losing a villager, or even a whole village, is part of what you came
+here to watch.</p>
 
 <h2>Before you start</h2>
 <p>You need <a href="https://go.dev">Go</a> installed to build the program. You do not
@@ -177,6 +187,10 @@ inventories). As your village grows, the map itself grows with it — any walls 
 paths villagers have built show up as their own distinct glyphs alongside fires,
 shelters, and stockpiles. This is the recommended way to actually play.</li>
 </ul>
+<p>See the <a href="understanding-the-screen.html">screen-orientation page</a> for a
+full tour of what's on screen — the header, every map glyph, the story feed, and the
+tabbed panel — and the <a href="keys-reference.html">keys reference card</a> for
+every key the full-screen client responds to.</p>
 <p>As a village develops, the map itself can grow busier: villagers may raise
 walls (wood-plank or stone) to mark off or block access to an area, and lay
 paths that let anyone crossing them walk noticeably faster. Both simply show

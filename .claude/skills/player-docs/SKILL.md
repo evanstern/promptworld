@@ -1,6 +1,6 @@
 ---
 name: "player-docs"
-description: "Generates and refreshes docs/player/ — seven self-contained HTML pages that project the code-grounded wiki (docs/wiki/), README.md, and docs/llm-providers.md into plain-language documentation for players (non-engineers). Runs standalone; the recommended follow-on after /grounding-wiki:wiki-update re-pins wiki notes. Check freshness first: node .claude/skills/player-docs/scripts/check-freshness.mjs --check"
+description: "Generates and refreshes docs/player/ — nine self-contained HTML pages that project the code-grounded wiki (docs/wiki/), README.md, and docs/llm-providers.md into plain-language documentation for players (non-engineers). Runs standalone; the recommended follow-on after /grounding-wiki:wiki-update re-pins wiki notes. Check freshness first: node .claude/skills/player-docs/scripts/check-freshness.mjs --check"
 metadata:
   author: "promptworld"
 user-invocable: true
@@ -58,7 +58,7 @@ the check has run and named it stale or missing.
 
 ## The expected page set
 
-`index.html` (nav hub, no sources) plus six topic pages:
+`index.html` (nav hub, no sources) plus eight topic pages:
 
 - `getting-started.html`
 - `playing-via-metatron.html`
@@ -66,6 +66,8 @@ the check has run and named it stale or missing.
 - `reading-the-story.html`
 - `the-ai-behind-the-village.html`
 - `llm-setup-basics.html`
+- `understanding-the-screen.html`
+- `keys-reference.html`
 
 ## Page → source mapping
 
@@ -81,10 +83,22 @@ source not listed here, add it — and add the matching meta tag in the same cha
 | `reading-the-story.html` | `docs/wiki/chronicle.md`, `docs/wiki/tui-client.md`, `docs/wiki/event-log.md` |
 | `the-ai-behind-the-village.html` | `docs/wiki/agent-mind.md`, `docs/wiki/cognition.md`, `docs/wiki/llm-orchestrator.md`, `docs/wiki/nightly-consolidation.md`, `docs/wiki/social-fabric.md` |
 | `llm-setup-basics.html` | `docs/llm-providers.md`, `docs/wiki/llm-orchestrator.md`, `README.md` |
+| `understanding-the-screen.html` | `docs/wiki/tui-client.md` |
+| `keys-reference.html` | `docs/design/tui/patterns/keymap.md` |
 
 `llm-setup-basics.html` stays at "get it working" depth (the minimum `llm.json` a
 non-engineer needs) and defers registry-reference/migration depth to
 `docs/llm-providers.md` by link/mention rather than duplicating it.
+
+`understanding-the-screen.html` (NetHack chapter-3-shaped: the player's question as
+the heading, organized by screen region, a complete map glyph table prefaced with
+reassurance) and `keys-reference.html` (pure controls, unmixed with lore — the
+Analog Game Studies reference-card pattern) are a paired addition (TASK-114):
+the first explains what's on screen, the second is purely which key does what:
+they cross-link each other rather than duplicating content. `keys-reference.html`
+sources a non-`docs/wiki/` design doc — its source pin is a plain-file `git log`
+pin (same mechanism as `README.md`/`docs/llm-providers.md`), not a
+`verified_against` frontmatter pin.
 
 ## Provenance meta-tag format
 
