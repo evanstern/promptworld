@@ -107,9 +107,40 @@ func cmdNew(args []string) error {
 	stageFlag := fs.String("stage", "", "curriculum-ladder stage to create at (spec 046: stage-1..stage-4); default: stage-1 for a new player, else your highest earned stage")
 	override := fs.Bool("override", false, "create at an unearned stage anyway (spec 046) — the world's config records the override honestly")
 	charterPresetFlag := fs.String("charter-preset", "", "charter preset to seed (default|tutor); stage-1 worlds seed the tutor preset unless this opts out to default")
+	scenarioFlag := fs.String("scenario", "", "create a scenario world running this seeded exercise (spec 054): stamps the exercise's stage and seed and arms its incident schedule at boot")
 	arg, err := parseDirFlags(fs, args)
 	if err != nil {
 		return err
+	}
+
+	// Scenario resolution (spec 054 US3, R5): a scenario id resolves against
+	// the compiled exercise catalog — an unknown id refuses listing it (the
+	// stage-gate refusal voice). The scenario IMPLIES its stage and pins its
+	// authored seed, so an explicit --stage/--seed may only agree; the
+	// earned-stage gate below then applies to the implied stage unchanged
+	// (a scenario never bypasses the earn gate).
+	var scenarioDef sim.ExerciseDefinition
+	if *scenarioFlag != "" {
+		def, ok := sim.ExerciseByID(*scenarioFlag)
+		if !ok {
+			ids := make([]string, 0, len(sim.ScenarioExercises))
+			for _, d := range sim.ScenarioExercises {
+				ids = append(ids, fmt.Sprintf("%s (%s — %s)", d.ID, d.Stage, d.Concept))
+			}
+			return fmt.Errorf("new: --scenario %q is not a known exercise — the catalog:\n  %s",
+				*scenarioFlag, strings.Join(ids, "\n  "))
+		}
+		scenarioDef = def
+		if *stageFlag != "" && *stageFlag != def.Stage {
+			return fmt.Errorf("new: --stage %s conflicts with --scenario %s (the exercise is played at %s; drop --stage)",
+				*stageFlag, def.ID, def.Stage)
+		}
+		*stageFlag = def.Stage
+		if *seed != 0 && *seed != def.Seed {
+			return fmt.Errorf("new: --seed %d conflicts with --scenario %s (the exercise pins seed %d; drop --seed)",
+				*seed, def.ID, def.Seed)
+		}
+		*seed = def.Seed
 	}
 
 	// Curriculum-ladder stage resolution (spec 046 US1, T009, R9): validate
@@ -218,6 +249,15 @@ func cmdNew(args []string) error {
 		return err
 	}
 	w.Manifest.Stage, w.Manifest.StageOverridden, w.Manifest.CharterPreset = stage, *override, charterPreset
+	// Scenario block from birth (spec 054 US3): set-after-create like the
+	// stage above — write-once; the daemon arms the machinery from it at
+	// every boot.
+	if scenarioDef.ID != "" {
+		if err := world.SetScenario(dir, scenarioDef.ID); err != nil {
+			return err
+		}
+		w.Manifest.Scenario = &world.ScenarioConfig{Exercise: scenarioDef.ID}
+	}
 	st, err := store.Open(w.DBPath())
 	if err != nil {
 		return err
@@ -273,6 +313,10 @@ func cmdNew(args []string) error {
 		worldName, dir, *seed, w.LLMConfigPath(), startHint, localModel, localModel)
 	if line := stageStatusLine(stage, *override); line != "" {
 		fmt.Println(line)
+	}
+	if scenarioDef.ID != "" {
+		fmt.Printf("scenario: %s — %s\n  the schedule arms at boot; attach and press 6 for the exercise panel\n",
+			scenarioDef.ID, scenarioDef.Concept)
 	}
 	return nil
 }
@@ -934,8 +978,26 @@ func renderStatusHuman(sd *ipc.StatusData) string {
 	if line := stageStatusLine(sd.World.Stage, sd.World.StageOverridden); line != "" {
 		b.WriteString(line + "\n")
 	}
+	if line := scenarioStatusLine(sd); line != "" {
+		b.WriteString(line + "\n")
+	}
 	fmt.Fprintf(&b, "log: last seq %d\n", sd.Log.LastSeq)
 	return b.String()
+}
+
+// scenarioStatusLine renders the scenario line for `promptworld status`
+// (spec 054 FR-007, D1): the exercise id and its model-free outcome. Empty
+// for ambient worlds and old daemons — the wire fields are absent, so their
+// output is unchanged (the stageStatusLine precedent).
+func scenarioStatusLine(sd *ipc.StatusData) string {
+	if sd.World.ScenarioExercise == "" {
+		return ""
+	}
+	outcome := sd.World.ScenarioOutcome
+	if outcome == "failed" {
+		outcome = "failed (run ended)"
+	}
+	return fmt.Sprintf("exercise: %s — %s", sd.World.ScenarioExercise, strings.ReplaceAll(outcome, "_", " "))
 }
 
 // stageStatusLine renders the curriculum-ladder stage line for `promptworld

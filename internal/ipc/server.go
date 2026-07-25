@@ -197,6 +197,11 @@ func (s *Server) statusData(cs sim.Status) StatusData {
 			FormatVersion:   s.w.Manifest.FormatVersion,
 			Stage:           s.w.Manifest.Stage,
 			StageOverridden: s.w.Manifest.StageOverridden,
+			// Scenario facts (spec 054 FR-007): both from the loop's snapshot
+			// so the (exercise, outcome) pair is coherent with Tick; empty on
+			// ambient worlds, omitempty keeps their bytes unchanged.
+			ScenarioExercise: cs.ScenarioExercise,
+			ScenarioOutcome:  cs.ScenarioOutcome,
 		},
 		Clock: ClockStatus{
 			Tick:            cs.Tick,
