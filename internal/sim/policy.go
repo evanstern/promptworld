@@ -21,26 +21,57 @@ type decision struct {
 	intent      *Intent
 }
 
+// decideIntent is the reflex ladder, explicitly split into two classified rung
+// groups (spec 062 FR-001, R2 — the 057 audit's rung table is the authority):
+//
+//   - SURVIVAL (survivalDecision) — instinct that keeps the body alive: eat,
+//     get food, the night warmth ladder + terminal sleep, and the daytime nap.
+//     These run first and are UNCONDITIONED by the yield window and danger
+//     bands (a life-saving reflex never defers).
+//   - PREP (prepDecision) — opportunistic village upkeep: first-fire prep,
+//     the dying-fire refuel top-up, and the larder stock-up. These are
+//     "instinct that yields to intelligence": once T004 lands they defer to a
+//     recent non-reflex intent and to any need in its danger band.
+//
+// The classification lives in this function STRUCTURE (FR-001), not in prose —
+// which rungs are survival vs prep is exactly which helper they live in. When
+// neither group decides, the agent wanders (idle filler, neither survival nor
+// prep).
 func decideIntent(s *State, m *worldmap.Map, idx int, tick int64) decision {
 	a := &s.Agents[idx]
+	if d, ok := survivalDecision(s, m, a, tick); ok {
+		return d
+	}
+	if d, ok := prepDecision(s, m, a, tick); ok {
+		return d
+	}
+	return wanderDecision(s, m, a, idx, tick)
+}
 
+// survivalDecision is the SURVIVAL rung group (spec 062 R2): the life-saving
+// instinct that runs before — and unconditioned by — the PREP gate. It reports
+// (decision, true) when a survival rung owns the agent this round, else
+// (zero, false) to fall through to prep. The night branch always decides
+// (warmth ladder, then terminal sleep); by day it decides only for hunger and
+// exhaustion. Behavior is byte-identical to the pre-062 ladder's rungs 1–4.
+func survivalDecision(s *State, m *worldmap.Map, a *Agent, tick int64) (decision, bool) {
 	// Eat from inventory the moment hunger bites (most-nutritious-first, T018).
 	if a.Needs.Food < hungryAt && hasAnyFood(a) {
-		return decision{directEvent: "agent.ate"}
+		return decision{directEvent: "agent.ate"}, true
 	}
 
 	// Hungry with nothing carried: get food (forage first, hunt as backup),
 	// or — knowing of no available food source — go LOOKING for one (spec 041
 	// US4 T026, FR-013 parity without omniscience). The search fallback is
-	// hunger-only: the larder top-up below stays opportunistic (a fed
+	// hunger-only: the larder top-up in prep stays opportunistic (a fed
 	// villager doesn't mount expeditions — constant frontier treks desync the
 	// village from its forage-regrow rotation and starve marginal maps).
 	if a.Needs.Food < hungryAt {
 		if d, ok := foodIntent(s, m, a, tick); ok {
-			return decision{intent: d}
+			return decision{intent: d}, true
 		}
 		if p, ok := nearestFrontier(m, s, a); ok {
-			return decision{intent: &Intent{Goal: "search", TargetX: p.X, TargetY: p.Y}}
+			return decision{intent: &Intent{Goal: "search", TargetX: p.X, TargetY: p.Y}}, true
 		}
 	}
 
@@ -54,24 +85,24 @@ func decideIntent(s *State, m *worldmap.Map, idx int, tick int64) decision {
 		if !warmAt(s, a.X, a.Y, tick) {
 			// Reach KNOWN warmth, or make it, or get the wood to make it.
 			if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool { return warmKnown(x, y) && passable(m, s, x, y) }); ok {
-				return decision{intent: &Intent{Goal: "goto_warmth", TargetX: p.X, TargetY: p.Y}}
+				return decision{intent: &Intent{Goal: "goto_warmth", TargetX: p.X, TargetY: p.Y}}, true
 			}
 			// The one reflex addition (T020, FR-012): a cold/dying KNOWN fire
 			// and wood in hand — relight it (cheaper than a fresh build).
 			if in, ok := reflexRefuelIntent(s, m, a, tick); ok {
-				return decision{intent: in}
+				return decision{intent: in}, true
 			}
 			if a.Inv.Wood >= fireWoodCost {
 				if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool { return buildSite(m, s, x, y) }); ok {
-					return decision{intent: &Intent{Goal: "build_fire", TargetX: p.X, TargetY: p.Y}}
+					return decision{intent: &Intent{Goal: "build_fire", TargetX: p.X, TargetY: p.Y}}, true
 				}
 			}
 			if in, ok := chopIntent(s, m, a, tick); ok {
-				return decision{intent: in}
+				return decision{intent: in}, true
 			}
 		}
 		// Warm (or nothing to be done about it): sleep where you stand.
-		return decision{intent: &Intent{Goal: "sleep", TargetX: a.X, TargetY: a.Y}}
+		return decision{intent: &Intent{Goal: "sleep", TargetX: a.X, TargetY: a.Y}}, true
 	}
 
 	// Daytime. Exhausted agents nap somewhere warm if possible.
@@ -82,35 +113,47 @@ func decideIntent(s *State, m *worldmap.Map, idx int, tick int64) decision {
 				tx, ty = p.X, p.Y
 			}
 		}
-		return decision{intent: &Intent{Goal: "sleep", TargetX: tx, TargetY: ty}}
+		return decision{intent: &Intent{Goal: "sleep", TargetX: tx, TargetY: ty}}, true
 	}
 
-	// Village prep: a fire before the first night, then keep it burning, then a
-	// full larder. Shelter-building is planner-only now (T020, FR-012): it costs
-	// planks, and the reflex never enters the crafting economy. Spec 041: "the
-	// village has a fire" is now the agent's own belief — it builds one when it
-	// KNOWS of none, not when the world holds none.
+	return decision{}, false
+}
+
+// prepDecision is the PREP rung group (spec 062 R2): opportunistic daytime
+// village upkeep — a fire before the first night, then keep it burning, then a
+// full larder. Shelter-building is planner-only (T020, FR-012): it costs planks,
+// and the reflex never enters the crafting economy. Spec 041: "the village has
+// a fire" is now the agent's own belief — it builds one when it KNOWS of none,
+// not when the world holds none. Reports (decision, true) when a prep rung
+// fires, else (zero, false). Behavior is byte-identical to the pre-062 ladder's
+// rungs 5–7 (T004 adds the yield/danger gate in front of it).
+func prepDecision(s *State, m *worldmap.Map, a *Agent, tick int64) (decision, bool) {
 	if !knowsAnyFresh(a, "fire", tick) {
 		if a.Inv.Wood >= fireWoodCost {
 			if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool { return buildSite(m, s, x, y) }); ok {
-				return decision{intent: &Intent{Goal: "build_fire", TargetX: p.X, TargetY: p.Y}}
+				return decision{intent: &Intent{Goal: "build_fire", TargetX: p.X, TargetY: p.Y}}, true
 			}
 		}
 		if d, ok := chopIntent(s, m, a, tick); ok {
-			return decision{intent: d}
+			return decision{intent: d}, true
 		}
 	}
 	// Keep the fire alive (T020): top up a dying/cold fire while carrying wood.
 	if in, ok := reflexRefuelIntent(s, m, a, tick); ok {
-		return decision{intent: in}
+		return decision{intent: in}, true
 	}
 	if a.Inv.FoodRaw < stockFoodRawTo {
 		if d, ok := foodIntent(s, m, a, tick); ok {
-			return decision{intent: d}
+			return decision{intent: d}, true
 		}
 	}
+	return decision{}, false
+}
 
-	// Nothing urgent: wander a little (seeded, tick-pure).
+// wanderDecision is the idle filler (neither survival nor prep): a little
+// seeded, tick-pure wander when no rung above owns the agent. Byte-identical to
+// the pre-062 ladder's terminal wander block.
+func wanderDecision(s *State, m *worldmap.Map, a *Agent, idx int, tick int64) decision {
 	r := rngAt(s.Seed, "wander", tick, idx)
 	for try := 0; try < 8; try++ {
 		dx := int(r.Uint64N(9)) - 4
