@@ -3,6 +3,10 @@
 **Status: signed-off — executing** (operator sign-off 2026-07-25 ~17:35: third
 orchestrator session claims TASK-117 → TASK-127, serial; TASK-119 stays unclaimed until
 its half-authored spec 054 is attributed; snapshot refreshed below).
+**Amendment 2026-07-25 ~18:25**: TASK-127 was claimed by a sibling session at ~18:18
+(linked to spec 056-takeover-surfaces, Sonnet tier + checkpoint ruling recorded,
+dispatch gated on TASK-121's merge) — session 3's claim reduces to TASK-117 only, per
+the no-duplication doctrine. Operator notified in-session.
 
 **You (the session reading this) are the ORCHESTRATOR** for the remaining UI-sweep tasks
 from the 2026-07-25 reorientation. Your job: run each queued task through this project's
@@ -65,6 +69,8 @@ design pages are decided. Plan-of-record is the board.
 | TASK-130 | — | #81 | ef696aa | 2026-07-25 | adjacent player-docs refresh (not in queue) |
 | TASK-121 | 052 | — | — | in flight | Lane 1; contract published on main |
 | TASK-125 | 053 | — | — | in flight | Lane 2; dispatched by sibling session |
+| TASK-117 | 055 | — | — | in flight | Lane 3; session 3 — spec on main (1170f46), Sonnet dispatched in .worktrees/task-117 |
+| TASK-127 | 056 | — | — | in flight | Lane 3; sibling session — dispatch gated on 121's merge |
 
 ## Execution lanes (dependency-ordered; parallelize within a lane)
 
