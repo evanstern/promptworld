@@ -332,6 +332,85 @@ func TestLandingGoalPathHailsOnce(t *testing.T) {
 	}
 }
 
+// --- spec 058 US2 (TASK-110): set_plan step-count clamp ---
+
+// TestLandingPlanClampsOversizedSteps (FR-003, SC-002): a plan over
+// PlanStepCap lands with exactly the first PlanStepCap steps — clamped, not
+// rejected — and the reducer's own outcome (OutcomeClamped) distinguishes it
+// from a clean landing (the toolloop.VerdictLandedClamped analog).
+func TestLandingPlanClampsOversizedSteps(t *testing.T) {
+	l := landingLoop(nil)
+	emit, evs := captureEmit()
+	args := meteredArgs(0, "")
+	args.Plan = []PlanStep{{Goal: "wander"}, {Goal: "forage"}, {Goal: "chop"}, {Goal: "hunt"}}
+	if err := l.landIntent(&args, emit); err != nil {
+		t.Fatalf("oversized plan rejected: %v", err)
+	}
+	if len(args.Plan) != PlanStepCap {
+		t.Fatalf("in.Plan left at %d steps, want %d (the landing guard truncates in place)", len(args.Plan), PlanStepCap)
+	}
+	sets := 0
+	var landedSteps []PlanStep
+	for _, e := range *evs {
+		if e.typ == "agent.plan_set" {
+			sets++
+			p, ok := e.payload.(PlanSetPayload)
+			if !ok {
+				t.Fatalf("agent.plan_set payload is %T, want PlanSetPayload", e.payload)
+			}
+			landedSteps = p.Steps
+		}
+	}
+	if sets != 1 {
+		t.Fatalf("agent.plan_set count = %d, want 1", sets)
+	}
+	if len(landedSteps) != PlanStepCap {
+		t.Errorf("landed plan has %d steps, want %d (cap)", len(landedSteps), PlanStepCap)
+	}
+	if landedSteps[0].Goal != "wander" || landedSteps[1].Goal != "forage" || landedSteps[2].Goal != "chop" {
+		t.Errorf("landed steps = %+v, want the FIRST %d submitted (wander, forage, chop)", landedSteps, PlanStepCap)
+	}
+	if p := lastCogOutcome(t, *evs); p.Outcome != OutcomeClamped {
+		t.Errorf("cog.outcome = %q, want %q", p.Outcome, OutcomeClamped)
+	}
+}
+
+// TestLandingPlanWithinCapStillLandsCleanly: a plan AT or under PlanStepCap is
+// unaffected by the clamp — it lands with the plain OutcomeLanded, not
+// OutcomeClamped, and every step survives.
+func TestLandingPlanWithinCapStillLandsCleanly(t *testing.T) {
+	l := landingLoop(nil)
+	emit, evs := captureEmit()
+	args := meteredArgs(0, "")
+	args.Plan = []PlanStep{{Goal: "wander"}, {Goal: "forage"}}
+	if err := l.landIntent(&args, emit); err != nil {
+		t.Fatalf("in-cap plan rejected: %v", err)
+	}
+	if p := lastCogOutcome(t, *evs); p.Outcome != OutcomeLanded {
+		t.Errorf("cog.outcome = %q, want %q (unclamped)", p.Outcome, OutcomeLanded)
+	}
+}
+
+// TestLandingPlanStillRejectsInvalidStepWithinClampedWindow (FR-003): the
+// clamp forgives length, never a bad step — an oversized plan whose FIRST
+// PlanStepCap steps include an unknown goal still rejects the whole landing,
+// exactly as an in-cap plan with the same defect would.
+func TestLandingPlanStillRejectsInvalidStepWithinClampedWindow(t *testing.T) {
+	l := landingLoop(nil)
+	emit, evs := captureEmit()
+	args := meteredArgs(0, "")
+	args.Plan = []PlanStep{{Goal: "wander"}, {Goal: "not_a_real_goal"}, {Goal: "chop"}, {Goal: "hunt"}}
+	if err := l.landIntent(&args, emit); err == nil {
+		t.Fatal("plan with an unknown goal inside the clamped window was accepted")
+	}
+	if countEmitted(*evs, "agent.plan_set") != 0 {
+		t.Error("a rejected plan must not land agent.plan_set")
+	}
+	if p := lastCogOutcome(t, *evs); p.Outcome != OutcomeRejectedGuard {
+		t.Errorf("cog.outcome = %q, want %q", p.Outcome, OutcomeRejectedGuard)
+	}
+}
+
 func TestLandingFinalOutcomeAdaptedVsLanded(t *testing.T) {
 	// Target moved since snapshot → the final cog.outcome reads adapted.
 	adapt := landingLoop(func(s *State) {

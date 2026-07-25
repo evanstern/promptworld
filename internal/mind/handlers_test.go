@@ -277,6 +277,36 @@ func TestHandlerSetPlanLands(t *testing.T) {
 	}
 }
 
+// TestHandlerSetPlanClampsOversizedSteps (spec 058 US2, SC-002): a plan over
+// sim.PlanStepCap lands clamped — the handler's own verdict is
+// landed_clamped (not landed), its ResultForModel names the clamp, and the
+// landed agent.plan_set carries only the first PlanStepCap steps (the
+// landing guard's own clamp, mirrored here end-to-end through the handler).
+func TestHandlerSetPlanClampsOversizedSteps(t *testing.T) {
+	lm := newLoopMind(t)
+	job := lm.newJob(0)
+	d := &villagerDispatch{md: lm.md, job: job, start: time.Now()}
+	h := lm.md.villagerHandlers(d)
+
+	out := h["set_plan"](context.Background(),
+		call("set_plan", `{"steps":[{"goal":"wander"},{"goal":"forage"},{"goal":"chop"},{"goal":"hunt"}]}`))
+	if out.Verdict != toolloop.VerdictLandedClamped {
+		t.Fatalf("set_plan verdict = %q, want landed_clamped (%q)", out.Verdict, out.ResultForModel)
+	}
+	if out.ResultForModel == "" || !strings.Contains(out.ResultForModel, "clamped") {
+		t.Errorf("ResultForModel = %q, want it to name the clamp", out.ResultForModel)
+	}
+	plans := lm.events(t, "agent.plan_set")
+	if len(plans) != 1 {
+		t.Fatalf("plan_set count = %d, want 1", len(plans))
+	}
+	var p sim.PlanSetPayload
+	json.Unmarshal(plans[0].Payload, &p)
+	if len(p.Steps) != sim.PlanStepCap {
+		t.Fatalf("clamped plan has %d steps, want %d", len(p.Steps), sim.PlanStepCap)
+	}
+}
+
 // TestHandlerMuseLandsThought: muse lands agent.thought + cog.outcome(landed)
 // atomically through the social door, exactly as scheduled musing did.
 func TestHandlerMuseLandsThought(t *testing.T) {

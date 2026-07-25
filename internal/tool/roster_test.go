@@ -17,21 +17,66 @@ func namesOf(tools []Tool) []string {
 	return out
 }
 
+// wantWorldOrderMinusDormant is wantWorldOrder (the FULL registered legacy
+// world-tool set) with dormantVillagerVerbs removed, order preserved — the
+// two villager-facing surfaces spec 058 US3 prunes (LoopRosterVillager, the
+// set_plan step-goal enum) both derive from wantWorldOrder minus this set;
+// wantWorldOrder ITSELF stays the registry's full legacy-tool truth (the
+// Tool entries, RosterVillager, and PlanStepGoals are unchanged — the prune
+// is model-surface-only).
+func wantWorldOrderMinusDormant() []string {
+	out := make([]string, 0, len(wantWorldOrder))
+	for _, n := range wantWorldOrder {
+		if n != "collect_water" && n != "bathe" {
+			out = append(out, n)
+		}
+	}
+	return out
+}
+
 // TestLoopRosterVillagerContents (spec 017 contracts/loop-api.md, extended by
-// spec 019): the villager loop roster is the legacy world verbs (registration
-// order), then set_plan, then muse, then the four journal tools (spec 019, US3).
-// say/gist stay scene-gated and out of the loop roster.
+// spec 019, pruned by spec 058 US3): the villager loop roster is the legacy
+// world verbs (registration order) MINUS collect_water/bathe (dormant — a
+// non-choice, roster.go), then set_plan, then muse, then the four journal
+// tools (spec 019, US3). say/gist stay scene-gated and out of the loop roster.
 func TestLoopRosterVillagerContents(t *testing.T) {
-	want := append(append([]string{}, wantWorldOrder...), "set_plan", "muse",
+	want := append(append([]string{}, wantWorldOrderMinusDormant()...), "set_plan", "muse",
 		"write_journal_entry", "delete_from_journal", "search_journal", "read_journal")
 	got := namesOf(LoopRosterVillager())
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("LoopRosterVillager() names =\n%v\nwant\n%v", got, want)
 	}
+	for _, dormant := range []string{"collect_water", "bathe"} {
+		if OnRoster(got, dormant) {
+			t.Errorf("LoopRosterVillager still declares dormant verb %q (spec 058 US3)", dormant)
+		}
+	}
 
 	for _, tl := range LoopRosterVillager() {
 		if tl.Name == "" {
 			t.Errorf("LoopRosterVillager returned a zero-value Tool")
+		}
+	}
+}
+
+// TestDormantVerbsStayOnTheDoorAndExecutorSurfaces (spec 058 US3, SC-004): the
+// prune is model-surface-only — collect_water and bathe are ABSENT from the
+// villager loop roster (TestLoopRosterVillagerContents) and set_plan's goal
+// enum (TestSetPlanSchema), but the registry Tool entries, RosterVillager (the
+// sim door's own membership set), and PlanStepGoals (the plan-step accept set)
+// all still know both verbs — so a historical world's collect_water/bathe
+// events replay exactly and the executor machinery (internal/sim) never lost
+// them.
+func TestDormantVerbsStayOnTheDoorAndExecutorSurfaces(t *testing.T) {
+	for _, dormant := range []string{"collect_water", "bathe"} {
+		if _, ok := Lookup(dormant); !ok {
+			t.Errorf("%q dropped from the registry — only the villager-facing surfaces should prune it", dormant)
+		}
+		if !OnRoster(RosterVillager, dormant) {
+			t.Errorf("%q left RosterVillager (the sim door's membership set) — it must stay (machinery kept)", dormant)
+		}
+		if !PlanStepGoals()[dormant] {
+			t.Errorf("%q left PlanStepGoals — it must stay (machinery kept)", dormant)
 		}
 	}
 }
@@ -199,7 +244,12 @@ func TestSetPlanSchema(t *testing.T) {
 	if !reflect.DeepEqual(schema.Required, []string{"steps"}) {
 		t.Errorf("top-level required = %v, want [steps]", schema.Required)
 	}
-	if schema.Properties.Steps.Type != "array" || schema.Properties.Steps.MinItems != 1 || schema.Properties.Steps.MaxItems != PlanStepCap {
+	// Spec 058 US2 (FR-003): maxItems is deliberately ABSENT — an oversized
+	// steps array is no longer a structural rejection here; it reaches the
+	// landing guard (internal/sim/landing.go), which clamps to the first
+	// PlanStepCap steps instead. minItems (a genuinely empty plan is still
+	// nonsensical, not a clamp target) stays enforced.
+	if schema.Properties.Steps.Type != "array" || schema.Properties.Steps.MinItems != 1 || schema.Properties.Steps.MaxItems != 0 {
 		t.Errorf("steps array shape wrong: %+v", schema.Properties.Steps)
 	}
 	item := schema.Properties.Steps.Items
@@ -209,8 +259,11 @@ func TestSetPlanSchema(t *testing.T) {
 	if !reflect.DeepEqual(item.Required, []string{"goal"}) {
 		t.Errorf("step item required = %v, want [goal]", item.Required)
 	}
-	if !reflect.DeepEqual(item.Properties.Goal.Enum, wantWorldOrder) {
-		t.Errorf("step goal enum =\n%v\nwant\n%v", item.Properties.Goal.Enum, wantWorldOrder)
+	// Spec 058 US3: collect_water/bathe are pruned from this enum too — a
+	// second villager-facing surface (registry.go's setPlanTool doc), not
+	// just LoopRosterVillager's per-tool listing.
+	if want := wantWorldOrderMinusDormant(); !reflect.DeepEqual(item.Properties.Goal.Enum, want) {
+		t.Errorf("step goal enum =\n%v\nwant\n%v", item.Properties.Goal.Enum, want)
 	}
 	if !reflect.DeepEqual(item.Properties.Kind.Enum, ItemKinds()) {
 		t.Errorf("step kind enum =\n%v\nwant\n%v", item.Properties.Kind.Enum, ItemKinds())

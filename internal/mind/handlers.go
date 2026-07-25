@@ -141,11 +141,20 @@ func (d *villagerDispatch) handleWorldVerb(name string) toolloop.Handler {
 // target and no timing guards — so steps land with Target -1 and the door's
 // default validity window; the ladder and per-step validation apply as for any
 // landing.
+//
+// Spec 058 US2 (FR-003): an oversized plan is CLAMPED at the landing guard
+// (sim.landIntent truncates to sim.PlanStepCap, reducer-side, so the landed
+// event is always exactly what's clamped — replay determinism). The handler
+// notices the SAME cap here, before the door call, purely to phrase the
+// model-facing notice and pick the verdict; the guard's own truncation is the
+// sole source of truth for what actually lands (a const-vs-const comparison,
+// so the two can never drift out of step).
 func (d *villagerDispatch) handleSetPlan(_ context.Context, call llm.ToolCall) toolloop.Outcome {
 	steps, reason := d.parsePlanSteps(call.Args)
 	if reason != "" {
 		return toolloop.Outcome{Verdict: toolloop.VerdictRejectedGate, ResultForModel: reason}
 	}
+	clamped := len(steps) > sim.PlanStepCap
 	err := d.md.loop.InjectIntent(sim.InjectArgs{
 		Agent: d.job.agent, TargetAgent: -1,
 		Class: d.job.meta.class.Class, JobID: d.job.meta.job,
@@ -158,22 +167,33 @@ func (d *villagerDispatch) handleSetPlan(_ context.Context, call llm.ToolCall) t
 	if err != nil {
 		return toolloop.Outcome{Verdict: toolloop.VerdictRejectedGate, ResultForModel: err.Error()}
 	}
+	if clamped {
+		return toolloop.Outcome{
+			Verdict: toolloop.VerdictLandedClamped,
+			ResultForModel: fmt.Sprintf("plan set (clamped: %d steps submitted, only the first %d landed)",
+				len(steps), sim.PlanStepCap),
+		}
+	}
 	return toolloop.Outcome{Verdict: toolloop.VerdictLanded, ResultForModel: "plan set"}
 }
 
 // handleMuse lands the musing text as an agent.thought through the social door,
 // batched atomically with its landed cog.outcome — the exact landing today's
-// scheduled musing used (mind.go muse worker), now driven by the muse tool. The
-// driver has already enforced the 200-rune cap (muse's Text param), so the
-// handler only guards the empty case; an over-cap musing never reaches here
-// (the driver records it rejected_malformed and feeds it back).
+// scheduled musing used (mind.go muse worker), now driven by the muse tool.
+// The driver already CLAMPS an over-cap musing to the 200-rune cap (muse's
+// Text param carries Clamp — spec 058 FR-001), so by the time a call reaches
+// here its text is always in-cap; the handler only guards the empty case. The
+// clamp itself, and its landed_clamped verdict, are the loop's concern
+// (internal/toolloop) — this handler's own cog.outcome stays OutcomeLanded
+// either way (a different telemetry axis: cognition completion, not clamp).
 func (d *villagerDispatch) handleMuse(_ context.Context, call llm.ToolCall) toolloop.Outcome {
 	text := strings.TrimSpace(argString(call.Args, "text"))
 	if text == "" {
 		return toolloop.Outcome{Verdict: toolloop.VerdictRejectedGate, ResultForModel: "musing text is empty"}
 	}
-	// Defensive rune cap: identical to today's parseMusing truncation, though
-	// the driver already rejects an over-cap musing before dispatch.
+	// Defensive rune cap: identical to today's parseMusing truncation. Belt-
+	// and-suspenders — the driver has already clamped an over-cap value
+	// before dispatch — so this never actually fires in practice.
 	if r := []rune(text); len(r) > museCapRunes {
 		text = string(r[:museCapRunes])
 	}
@@ -382,9 +402,10 @@ func (d *villagerDispatch) parsePlanSteps(raw json.RawMessage) ([]sim.PlanStep, 
 
 // reasonArg reads the optional per-action `reason` argument (spec 019 R12 /
 // T024), trimmed and defensively capped at tool.ReasonCapRunes. The loop's
-// validateArgs already enforces the cap for world verbs (Params-derived); the
-// truncation is belt-and-suspenders and also covers set_plan (whose structural
-// validator does not length-check the top-level reason).
+// validateArgs already CLAMPS an over-cap reason before dispatch (spec 058
+// FR-001) — both for world verbs (Params-derived, Param.Clamp) and for
+// set_plan (its authored schema's top-level `reason`, clamped by field name);
+// this is belt-and-suspenders, not the enforcement point.
 func reasonArg(raw json.RawMessage) string {
 	r := strings.TrimSpace(argString(raw, "reason"))
 	if rs := []rune(r); len(rs) > tool.ReasonCapRunes {

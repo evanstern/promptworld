@@ -1,6 +1,10 @@
 package mind
 
-import "testing"
+import (
+	"strings"
+	"testing"
+	"unicode/utf8"
+)
 
 // TestParseOutcomeLenient (TASK-42 T014): the observed unquoted-value shapes
 // (gist starting with a participant initial F/H/S; a bare retold value)
@@ -60,5 +64,40 @@ func TestParseOutcomeHappyPathUnchanged(t *testing.T) {
 	}
 	if o.Gist != "planned firewood" || len(o.Topics) != 2 || len(o.Tones) != 2 || o.Tones[1] != -1 {
 		t.Errorf("parsed: %+v", o)
+	}
+}
+
+// TestParseSayClampsRuneSafely (spec 058 edge case): say already never
+// rejected for length — this pins the fix that made its truncation rune-safe.
+// A multi-byte utterance padded past the byte cap must truncate to a WHOLE
+// rune below the cap, never emit invalid UTF-8, and never reject.
+func TestParseSayClampsRuneSafely(t *testing.T) {
+	// Multi-byte filler (é, 2 bytes/rune) so the byte cap lands mid-character
+	// unless the clamp is rune-safe; sayCapBytes is 300.
+	over := strings.Repeat("é", 200) // 400 bytes, well over the 300-byte cap
+	say, err := parseSay(`{"say":"` + over + `"}`)
+	if err != nil {
+		t.Fatalf("over-cap say rejected: %v (say has always clamped, never rejected, for length)", err)
+	}
+	if len(say) > sayCapBytes {
+		t.Errorf("clamped say = %d bytes, want <= %d", len(say), sayCapBytes)
+	}
+	if !utf8.ValidString(say) {
+		t.Error("clamped say is not valid UTF-8 (a naive byte slice split a multi-byte rune)")
+	}
+}
+
+// TestParseOutcomeGistClampsRuneSafely: the same rune-safety fix, for gist.
+func TestParseOutcomeGistClampsRuneSafely(t *testing.T) {
+	over := strings.Repeat("日", 150) // 450 bytes (3 bytes/rune), over the 200-byte cap
+	o, err := parseOutcome(`{"gist": "` + over + `", "topics": [], "tones": [0, 0], "retold": null}`)
+	if err != nil {
+		t.Fatalf("over-cap gist rejected: %v (gist has always clamped, never rejected, for length)", err)
+	}
+	if len(o.Gist) > gistCapBytes {
+		t.Errorf("clamped gist = %d bytes, want <= %d", len(o.Gist), gistCapBytes)
+	}
+	if !utf8.ValidString(o.Gist) {
+		t.Error("clamped gist is not valid UTF-8 (a naive byte slice split a multi-byte rune)")
 	}
 }

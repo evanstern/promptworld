@@ -318,11 +318,19 @@ func run(ctx context.Context, s submitter, j Job) (res Result, err error) {
 				results = append(results, resultBlock(call.ID, reason, true))
 				continue
 			}
-			if reason := validateArgs(t, call.Args); reason != "" {
+			newArgs, clampNotice, reason := validateArgs(t, call.Args)
+			if reason != "" {
 				record(call.Name, call.Args, VerdictRejectedMalformed, reason, tier)
 				results = append(results, resultBlock(call.ID, reason, true))
 				continue
 			}
+			// A Clamp-flagged field over its cap rewrites call.Args in place
+			// (spec 058 FR-001): every downstream read (the handler, the
+			// CallRecord, the eventual event payload) sees the truncated value,
+			// never the model's oversized one. clampNotice, non-empty only for
+			// an ACTING call that goes on to land, upgrades the recorded
+			// verdict below (landed_clamped) and the model-facing result.
+			call.Args = newArgs
 			h, ok := j.Handlers[call.Name]
 			if !ok {
 				reason := fmt.Sprintf("tool %q has no handler", call.Name)
@@ -365,14 +373,37 @@ func run(ctx context.Context, s submitter, j Job) (res Result, err error) {
 				res.Term = TermProviderError
 				return res, out.Err
 			}
-			if out.Verdict == VerdictLanded {
-				record(call.Name, call.Args, VerdictLanded, "", tier)
+			// Spec 058 FR-001/FR-003 (SC-005): a clean VerdictLanded whose args
+			// were clamped upstream (clampNotice != "") is UPGRADED to
+			// VerdictLandedClamped here — the loop, not the handler, saw the
+			// clamp. A handler may also originate VerdictLandedClamped directly
+			// (set_plan's own step-count clamp, handleSetPlan) when its clamp
+			// condition is domain-specific and the loop can't detect it
+			// generically; either way both verdicts share every landed
+			// control-flow consequence below.
+			verdict := out.Verdict
+			if clampNotice != "" && verdict == VerdictLanded {
+				verdict = VerdictLandedClamped
+			}
+			if verdict == VerdictLanded || verdict == VerdictLandedClamped {
+				clampReason := clampNotice
+				resultText := out.ResultForModel
+				if verdict == VerdictLandedClamped {
+					resultText = withClampNotice(resultText, clampNotice)
+					if clampReason == "" {
+						// The handler originated the clamp itself (set_plan): its
+						// ResultForModel already phrases the notice — record that
+						// as the queryable reason (AC#5-style explanation).
+						clampReason = out.ResultForModel
+					}
+				}
+				record(call.Name, call.Args, verdict, clampReason, tier)
 				c := call
 				landed = &c
 				res.Landed = &c
 				// Feed-back is built for completeness but never sent: the loop
 				// ends this round. Remaining calls fall to the cardinality arm.
-				results = append(results, resultBlock(call.ID, out.ResultForModel, false))
+				results = append(results, resultBlock(call.ID, resultText, false))
 				continue
 			}
 			// rejected_gate: the door refused; feed the reason back so the
@@ -449,63 +480,103 @@ func isActing(t tool.Tool) bool {
 // type, enum membership, number bounds, text caps). A tool with an authored
 // InputSchemaJSON override (set_plan, monitor_and_act, …) is validated against
 // that schema by the schema-lite walker (validateAuthored, spec 029 R5).
-// Returns "" when the arguments pass.
-func validateArgs(t tool.Tool, raw json.RawMessage) string {
+//
+// Returns (finalArgs, clampNotice, rejectReason) — spec 058 FR-001's clamp-
+// with-notice, layered onto the pre-existing reject contract:
+//   - rejectReason != "" means REJECT, exactly as before; finalArgs/clampNotice
+//     are meaningless.
+//   - rejectReason == "" means the call proceeds. finalArgs is raw, UNLESS a
+//     Clamp-flagged field (or set_plan's authored-schema `reason`) exceeded
+//     its cap, in which case finalArgs carries that field truncated
+//     rune-safely and clampNotice names the field and the clamp — the caller
+//     feeds it into the model-facing tool result and upgrades the recorded
+//     verdict to landed_clamped (contracts/events.md, SC-005). clampNotice ==
+//     "" means nothing was clamped.
+func validateArgs(t tool.Tool, raw json.RawMessage) (json.RawMessage, string, string) {
 	args := map[string]json.RawMessage{}
 	if len(raw) > 0 {
 		if err := json.Unmarshal(raw, &args); err != nil {
-			return "arguments must be a JSON object"
+			return raw, "", "arguments must be a JSON object"
 		}
 	}
 	if len(t.InputSchemaJSON) > 0 {
-		return validateAuthored(t.InputSchemaJSON, raw)
+		// The authored-schema path's one clampable field is the shared
+		// optional `reason` (set_plan's expressive note): present as a plain
+		// top-level string property rather than a Param, since an authored
+		// InputSchemaJSON override bypasses Params derivation entirely
+		// (tool.go's Clamp doc, InputSchema). Clamp it BEFORE the structural
+		// walk runs, so the walker only ever sees an in-cap value and never
+		// rejects this field for length; every other authored shape (set_plan's
+		// steps, monitor_and_act's arrays) is untouched structural validation.
+		newRaw, notice := clampTopLevelText(args, raw, "reason", tool.ReasonCapRunes, 0)
+		if reason := validateAuthored(t.InputSchemaJSON, newRaw); reason != "" {
+			return raw, "", reason
+		}
+		return newRaw, notice, ""
 	}
+	notice := ""
 	for _, p := range t.Params {
 		rawv, present := args[p.Name]
 		if !present {
 			if p.Required {
-				return fmt.Sprintf("missing required argument %q", p.Name)
+				return raw, "", fmt.Sprintf("missing required argument %q", p.Name)
 			}
 			continue
 		}
 		switch p.Kind {
 		case tool.AgentName:
 			if _, ok := jsonString(rawv); !ok {
-				return fmt.Sprintf("argument %q must be a string", p.Name)
+				return raw, "", fmt.Sprintf("argument %q must be a string", p.Name)
 			}
 		case tool.Text:
 			s, ok := jsonString(rawv)
 			if !ok {
-				return fmt.Sprintf("argument %q must be a string", p.Name)
+				return raw, "", fmt.Sprintf("argument %q must be a string", p.Name)
+			}
+			if p.Clamp {
+				if clamped, n := clampText(s, p.MaxRunes, p.MaxBytes); n != "" {
+					args[p.Name] = mustMarshalString(clamped)
+					notice = joinNotice(notice, fmt.Sprintf("argument %q %s", p.Name, n))
+				}
+				continue
 			}
 			if p.MaxRunes > 0 && utf8.RuneCountInString(s) > p.MaxRunes {
-				return fmt.Sprintf("argument %q exceeds its %d-rune cap", p.Name, p.MaxRunes)
+				return raw, "", fmt.Sprintf("argument %q exceeds its %d-rune cap", p.Name, p.MaxRunes)
 			}
 			if p.MaxBytes > 0 && len(s) > p.MaxBytes {
-				return fmt.Sprintf("argument %q exceeds its %d-byte cap", p.Name, p.MaxBytes)
+				return raw, "", fmt.Sprintf("argument %q exceeds its %d-byte cap", p.Name, p.MaxBytes)
 			}
 		case tool.Enum:
 			s, ok := jsonString(rawv)
 			if !ok {
-				return fmt.Sprintf("argument %q must be a string", p.Name)
+				return raw, "", fmt.Sprintf("argument %q must be a string", p.Name)
 			}
 			if !contains(p.Enum, s) {
-				return fmt.Sprintf("argument %q must be one of %v", p.Name, p.Enum)
+				return raw, "", fmt.Sprintf("argument %q must be one of %v", p.Name, p.Enum)
 			}
 		case tool.Number:
 			n, ok := jsonInt(rawv)
 			if !ok {
-				return fmt.Sprintf("argument %q must be an integer", p.Name)
+				return raw, "", fmt.Sprintf("argument %q must be an integer", p.Name)
 			}
 			if p.Min != 0 && n < int64(p.Min) {
-				return fmt.Sprintf("argument %q must be >= %d", p.Name, p.Min)
+				return raw, "", fmt.Sprintf("argument %q must be >= %d", p.Name, p.Min)
 			}
 			if p.Max != 0 && n > int64(p.Max) {
-				return fmt.Sprintf("argument %q must be <= %d", p.Name, p.Max)
+				return raw, "", fmt.Sprintf("argument %q must be <= %d", p.Name, p.Max)
 			}
 		}
 	}
-	return ""
+	if notice == "" {
+		return raw, "", ""
+	}
+	rewritten, err := json.Marshal(args)
+	if err != nil {
+		// args holds only json.RawMessage values already round-tripped through
+		// Unmarshal (or a freshly marshaled string); re-marshaling cannot fail.
+		return raw, "", ""
+	}
+	return rewritten, notice, ""
 }
 
 // validateAuthored validates raw arguments against a tool's authored

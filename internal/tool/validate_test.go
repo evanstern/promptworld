@@ -69,6 +69,11 @@ func TestValidateRejectsMalformed(t *testing.T) {
 			reg:  []Tool{{Name: "set_plan", Effect: World, InputSchemaJSON: json.RawMessage(`["array", "not object"]`)}},
 			want: "InputSchemaJSON must be a JSON object",
 		},
+		{
+			name: "Clamp on a non-Text param (spec 058)",
+			reg:  []Tool{{Name: "drop", Effect: World, Params: []Param{{Name: "qty", Kind: Number, Clamp: true}}}},
+			want: "Clamp set on a non-Text param",
+		},
 	}
 
 	for _, tc := range cases {
@@ -136,6 +141,10 @@ func TestValidateAdmitsLegalFixtures(t *testing.T) {
 		{
 			name: "well-formed InputSchemaJSON override",
 			reg:  []Tool{{Name: "set_plan", Effect: World, InputSchemaJSON: json.RawMessage(`{"type":"object"}`)}},
+		},
+		{
+			name: "Clamp on a Text param is legal (spec 058)",
+			reg:  []Tool{{Name: "muse", Effect: Expressive, Params: []Param{{Name: "text", Kind: Text, MaxRunes: 200, Clamp: true}}}},
 		},
 	}
 

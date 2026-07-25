@@ -54,13 +54,19 @@ func Validate() error {
 		}
 
 		// Well-formed params: an Enum descriptor must list its allowed values;
-		// a Number descriptor's bounds, when both set, must not be inverted.
+		// a Number descriptor's bounds, when both set, must not be inverted;
+		// Clamp (spec 058 FR-001) is expressive-text-only — it names a value
+		// the driver truncates rather than rejects, which only makes sense for
+		// a Text param.
 		for _, p := range t.Params {
 			if p.Kind == Enum && len(p.Enum) == 0 {
 				errs = append(errs, fmt.Errorf("tool %q: enum param %q has no values", t.Name, p.Name))
 			}
 			if p.Kind == Number && p.Min != 0 && p.Max != 0 && p.Min > p.Max {
 				errs = append(errs, fmt.Errorf("tool %q: number param %q has Min %d > Max %d", t.Name, p.Name, p.Min, p.Max))
+			}
+			if p.Clamp && p.Kind != Text {
+				errs = append(errs, fmt.Errorf("tool %q: Clamp set on a non-Text param %q", t.Name, p.Name))
 			}
 		}
 

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/evanstern/promptworld/internal/tool"
+	"github.com/evanstern/promptworld/internal/toolloop"
 )
 
 // The villager planner reply contract (planReply / planStepReply / the goal
@@ -97,9 +98,11 @@ func parseSay(text string) (string, error) {
 	if r.Say == "" {
 		return "", fmt.Errorf("empty utterance")
 	}
-	if len(r.Say) > sayCapBytes {
-		r.Say = r.Say[:sayCapBytes]
-	}
+	// Spec 058 (TASK-110): clamp, not reject — say already never rejected for
+	// length (this truncation predates the task), but a naive byte slice can
+	// split a multi-byte UTF-8 sequence at the cap boundary. ClampBytes is
+	// rune-safe.
+	r.Say = toolloop.ClampBytes(r.Say, sayCapBytes)
 	return r.Say, nil
 }
 
@@ -127,9 +130,9 @@ func parseOutcome(text string) (convoOutcome, error) {
 	if o.Gist == "" {
 		return convoOutcome{}, fmt.Errorf("empty gist")
 	}
-	if len(o.Gist) > gistCapBytes {
-		o.Gist = o.Gist[:gistCapBytes]
-	}
+	// Spec 058: rune-safe clamp (see parseSay's identical fix) — a naive byte
+	// slice at gistCapBytes can split a multi-byte UTF-8 sequence.
+	o.Gist = toolloop.ClampBytes(o.Gist, gistCapBytes)
 	clamp := func(v float64) int {
 		r := int(math.Round(v))
 		if r < -2 {

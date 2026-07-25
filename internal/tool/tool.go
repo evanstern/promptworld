@@ -76,6 +76,16 @@ type Param struct {
 	// property's JSON Schema "description" (derive.go). "" = no description.
 	// Used by the acting tools' optional `reason` param (spec 019 R12).
 	Description string
+	// Clamp marks an EXPRESSIVE Text param (spec 058 FR-001): an over-cap value
+	// is truncated rune-safely and the call proceeds, instead of the driver-side
+	// validator (internal/toolloop) rejecting it outright. Set on exactly the
+	// enumerated expressive fields — say's text, gist's gist, muse's text, and
+	// the shared optional reason (reasonParam) — never on a structural field;
+	// Validate() enforces Clamp only ever appearing on a Text param. set_plan's
+	// own top-level `reason` is the one clampable field that ISN'T a Param (its
+	// InputSchemaJSON override bypasses Params derivation entirely — see
+	// InputSchema); the toolloop driver clamps it by name instead.
+	Clamp bool
 }
 
 // GateClass names the precondition family checked against live state before

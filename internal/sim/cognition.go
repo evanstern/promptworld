@@ -21,6 +21,14 @@ const (
 	OutcomeUnavailable   = "rejected-unavailable"
 	OutcomeUnusable      = "unusable"
 	OutcomeSuppressed    = "suppressed"
+	// OutcomeClamped (spec 058 US2/FR-003): a set_plan landing whose step
+	// count exceeded PlanStepCap accepted anyway — the first PlanStepCap
+	// steps landed, truncated at the guard (internal/sim/landing.go) rather
+	// than the whole plan being rejected. Distinguishes a clamped acceptance
+	// from a clean OutcomeLanded (the toolloop.VerdictLandedClamped analog,
+	// one layer down — the reducer's own outcome vocabulary, not the driver's
+	// verdict enum).
+	OutcomeClamped = "clamped"
 	// OutcomeRetried is a NON-TERMINAL marker (TASK-42, conversation
 	// robustness): one scene reply failed to parse and the scene continued
 	// via one retry. It carries the failed reply's raw text; consumers that
