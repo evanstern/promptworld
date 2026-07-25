@@ -68,7 +68,7 @@ func TestArmScenarioRefusesUncataloged(t *testing.T) {
 
 // TestSeedSurvivalWatchesReplaySeqConsistency pins the boot seeder's seq
 // pre-stamping (spec 054 × spec 059): the metatron.order_placed reducer arm
-// stamps MetatronOrder.PlacedSeq from the event envelope, so the seeder must
+// stamps GuardianOrder.PlacedSeq from the event envelope, so the seeder must
 // apply with the SAME seq AppendEvents will record (the loop's stampSeqs
 // contract) — or the live boot state diverges from replay and snapshot+tail
 // splits from full replay (the e2e SC-003 failure this fixed).
@@ -92,8 +92,8 @@ func TestSeedSurvivalWatchesReplaySeqConsistency(t *testing.T) {
 	if err := st.ReplayEvents(0, func(e store.Event) error { return replayed.Apply(e) }); err != nil {
 		t.Fatal(err)
 	}
-	for i := range live.MetatronOrders {
-		lo, ro := live.MetatronOrders[i], replayed.MetatronOrders[i]
+	for i := range live.GuardianOrders {
+		lo, ro := live.GuardianOrders[i], replayed.GuardianOrders[i]
 		if lo.PlacedSeq == 0 {
 			t.Errorf("live watch %s has no PlacedSeq — the seeder applied with seq 0", lo.ID)
 		}
@@ -158,7 +158,7 @@ func TestScenarioPassEndToEndThroughLoopAndObserver(t *testing.T) {
 	// The watch, through the mind's injection door (dry-run validated) —
 	// PlacedTick 0 is before nightfall, satisfying the rubric's direction
 	// term.
-	order := sim.MetatronOrder{
+	order := sim.GuardianOrder{
 		ID: "ord-0-0", Origin: "player",
 		Condition: "if the gru comes near", Action: "wake the village",
 		EventTypes: []string{"gru.sighted"}, Agent: -1,

@@ -640,7 +640,7 @@ func seedSurvivalWatches(w *world.World, st *store.Store, state *sim.State) erro
 		ev := store.Event{Tick: state.Tick, Type: "metatron.order_placed", Payload: mustJSONDaemon(o)}
 		// Pre-assign the store seq before applying (the loop's stampSeqs
 		// contract, spec 054): the order_placed reducer arm stamps
-		// MetatronOrder.PlacedSeq from the event envelope, so applying with
+		// GuardianOrder.PlacedSeq from the event envelope, so applying with
 		// Seq 0 here would diverge the live boot state from what replay
 		// derives once AppendEvents records the real seqs. Boot is
 		// single-writer, so AppendEvents re-assigns these identical values.

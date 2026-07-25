@@ -194,7 +194,7 @@ func TestExerciseGaugesTrackReplica(t *testing.T) {
 	}
 
 	// A watch order lands (the replica fold applyEvent runs on push).
-	order := sim.MetatronOrder{
+	order := sim.GuardianOrder{
 		ID: "ord-100-0", Origin: "player",
 		Condition: "if the gru nears", Action: "wake everyone",
 		EventTypes: []string{"gru.sighted"}, Agent: -1,
