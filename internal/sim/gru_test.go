@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/evanstern/promptworld/internal/clock"
+	"github.com/evanstern/promptworld/internal/store"
 )
 
 // TestGruNocturnalOnly is AC#1's frame: the gru exists only between nightfall
@@ -142,10 +143,26 @@ func TestGruLightAndShelterProtect(t *testing.T) {
 	}
 }
 
+// TestGruWoundInvariant is the static invariant data-model.md's "Validation
+// rules" demands (spec 044 R4): gruWound must never fall below
+// nearDeathBelow, or an escalated hit against a weakened target could land
+// above 0 — a "survives at some positive value" ambiguity the design
+// explicitly forbids. gru.go's `const _ uint = gruWound - nearDeathBelow`
+// already fails to COMPILE if this breaks; this test is the redundant
+// runtime witness the same invariant, so a `go test` run states the
+// assumption as plainly as the build does.
+func TestGruWoundInvariant(t *testing.T) {
+	if gruWound < nearDeathBelow {
+		t.Fatalf("gruWound (%d) must be >= nearDeathBelow (%d): a weakened victim must always land at exactly 0",
+			gruWound, nearDeathBelow)
+	}
+}
+
 // TestGruWoundsNotExecutes is AC#2's teeth half: an unprotected agent is
 // wounded — absolute health drop, floored above zero, victim woken and
-// intent cleared — and the cooldown spaces the wounds out. The gru is never
-// a proximate cause of death.
+// intent cleared — and the cooldown spaces the wounds out. A HEALTHY victim
+// is never executed by a single attack (the floor holds); an already-
+// weakened victim (spec 044 US3) inverts this — the gru can finish them.
 func TestGruWoundsNotExecutes(t *testing.T) {
 	const seed = 7
 	m := testMap(seed)
@@ -193,12 +210,14 @@ func TestGruWoundsNotExecutes(t *testing.T) {
 		}
 	}
 
-	// The floor: a wound can bring an agent to the brink, never over it.
-	a.Needs.Health = 50
+	// The floor holds for a HEALTHY victim: a wound can bring them to the
+	// brink, never over it. Health 250 is still >= nearDeathBelow (200), so
+	// escalation does not apply here.
+	a.Needs.Health = 250
 	s.Gru.LastAttack = 0
 	for _, e := range stepEvents(s, m, tick+2) {
 		if e.Type == "agent.died" {
-			t.Fatal("gru attack killed directly")
+			t.Fatal("gru attack killed a healthy (not-yet-weakened) victim")
 		}
 		if err := s.Apply(e); err != nil {
 			t.Fatal(err)
@@ -208,7 +227,37 @@ func TestGruWoundsNotExecutes(t *testing.T) {
 		t.Errorf("floored wound: health %d, want %d", a.Needs.Health, gruWoundFloor)
 	}
 	if a.Dead {
-		t.Error("the gru must wound, not execute")
+		t.Error("the gru must wound a healthy victim, not execute")
+	}
+
+	// Escalation (spec 044 US3, R4): an already-weakened victim — pre-attack
+	// health below nearDeathBelow — can be killed outright. gruWound (250) >=
+	// nearDeathBelow (200) means the escalated hit always lands at exactly 0
+	// (TestGruWoundInvariant guards the constants that make this true).
+	a.Needs.Health = nearDeathBelow - 1
+	a.Dead = false
+	s.Gru.LastAttack = 0
+	var died *DiedPayload
+	for _, e := range stepEvents(s, m, tick+2) {
+		if e.Type == "agent.died" {
+			var p DiedPayload
+			if err := json.Unmarshal(e.Payload, &p); err != nil {
+				t.Fatal(err)
+			}
+			died = &p
+		}
+		if err := s.Apply(e); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if died == nil {
+		t.Fatal("gru attack on an already-weakened victim did not kill")
+	}
+	if died.Agent != 0 || died.Cause != "gru" {
+		t.Errorf("agent.died payload = %+v, want agent 0 cause \"gru\"", *died)
+	}
+	if !a.Dead || a.Needs.Health != 0 {
+		t.Errorf("escalated victim: dead=%v health=%d, want dead=true health=0", a.Dead, a.Needs.Health)
 	}
 }
 
@@ -282,5 +331,109 @@ func TestGruStoryFuel(t *testing.T) {
 	tell, ok := TellableFor(s, 1, 2)
 	if !ok || tell.Subject != 0 {
 		t.Fatalf("witness memory is not tellable gossip: ok=%v subject=%d", ok, tell.Subject)
+	}
+}
+
+// TestGruEscalationScenario is spec 044 US3's Independent Test end-to-end:
+// on a single seeded night, a healthy villager survives a gru attack (floor
+// intact) while an already-weakened one can die — each from its own single
+// stepEvents call, gruTestState-staged. The kill half also covers US4/R5's
+// full downstream fallout the escalated agent.died must carry unchanged:
+// cause "gru", a witness-death memory, the carried-inventory spill (spec
+// 013), and the grave (spec 044 US4, T023) — all from the SAME event, since
+// gruStep emits agent.died directly rather than relying on the executor's
+// heartbeat block (which never runs for gru attacks).
+func TestGruEscalationScenario(t *testing.T) {
+	const seed = 7
+	m := testMap(seed)
+
+	// Healthy half: floor holds, no death.
+	{
+		s, tick := gruTestState(seed)
+		x, y := findOpenArea(t, s)
+		a := &s.Agents[0]
+		a.Dead = false
+		a.X, a.Y = x, y
+		a.Needs = Needs{Health: 1000, Food: 600, Rest: 600, Warmth: 600, Morale: 600}
+		s.Gru = &Gru{X: x + 1, Y: y}
+
+		for _, e := range stepEvents(s, m, tick+1) {
+			if e.Type == "agent.died" {
+				t.Fatal("healthy villager died to a single gru attack")
+			}
+			if err := s.Apply(e); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if a.Needs.Health != 1000-gruWound {
+			t.Errorf("healthy victim health = %d, want %d", a.Needs.Health, 1000-gruWound)
+		}
+	}
+
+	// Weakened half: escalated kill, full death-path fallout.
+	{
+		s, tick := gruTestState(seed)
+		x, y := findOpenArea(t, s)
+		victim := &s.Agents[0]
+		victim.Dead = false
+		victim.X, victim.Y = x, y
+		victim.Needs = Needs{Health: nearDeathBelow - 1, Food: 600, Rest: 600, Warmth: 600, Morale: 600}
+		victim.Inv = Inventory{Wood: 4, Spears: []int{3}}
+
+		witness := &s.Agents[1]
+		witness.Dead = false
+		witness.X, witness.Y = x, y+1 // within witnessRadius
+
+		s.Gru = &Gru{X: x + 1, Y: y}
+
+		var diedEvt *store.Event
+		for i, e := range stepEvents(s, m, tick+1) {
+			if e.Type == "agent.died" {
+				ec := e
+				diedEvt = &ec
+			}
+			if err := s.Apply(e); err != nil {
+				t.Fatalf("apply event %d (%s): %v", i, e.Type, err)
+			}
+		}
+		if diedEvt == nil {
+			t.Fatal("weakened villager was not killed by the gru")
+		}
+		var p DiedPayload
+		if err := json.Unmarshal(diedEvt.Payload, &p); err != nil {
+			t.Fatal(err)
+		}
+		if p.Agent != 0 || p.Cause != "gru" {
+			t.Errorf("agent.died payload = %+v, want agent 0 cause \"gru\"", p)
+		}
+		if !victim.Dead || victim.Needs.Health != 0 {
+			t.Errorf("victim after escalation: dead=%v health=%d, want dead=true health=0", victim.Dead, victim.Needs.Health)
+		}
+
+		var witnessDeathMemory bool
+		for _, mem := range witness.Memories {
+			if mem.Subject == 0 && mem.Salience == salWitnessDeath {
+				witnessDeathMemory = true
+			}
+		}
+		if !witnessDeathMemory {
+			t.Error("witness carries no witness-death memory about the escalated kill")
+		}
+
+		// Inventory spill (spec 013, FR-015 "unchanged death path"): the
+		// victim's carried goods land in a ground pile at the death tile,
+		// and the victim's own inventory is cleared.
+		pile := s.pileAt(x, y)
+		if pile == nil || pile.Wood != 4 || len(pile.Spears) != 1 || pile.Spears[0] != 3 {
+			t.Errorf("inventory spill missing/wrong at death tile: pile=%+v", pile)
+		}
+		if bulk(victim.Inv) != 0 {
+			t.Errorf("victim inventory not cleared after death: %+v", victim.Inv)
+		}
+
+		// Grave (spec 044 US4, T023): a persistent structure at the death tile.
+		if !s.structureAt("grave", x, y) {
+			t.Error("no grave structure at the escalated death's tile")
+		}
 	}
 }

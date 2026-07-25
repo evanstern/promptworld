@@ -98,8 +98,12 @@ func (md *Mind) chronicleNote(e store.Event) {
 			line = fmt.Sprintf("%s sighted the gru.", name(p.Agent))
 		}
 	case "gru.attacked":
+		// Spec 044 US3 (R5): an escalated attack that lands at health 0 is a
+		// kill, not a wounding — the subsequent agent.died line (same batch)
+		// already carries the death, so this line must stay silent for a
+		// killing blow rather than falsely claim they were "left wounded".
 		var p sim.GruAttackedPayload
-		if json.Unmarshal(e.Payload, &p) == nil {
+		if json.Unmarshal(e.Payload, &p) == nil && p.Health > 0 {
 			line = fmt.Sprintf("The gru attacked %s and left them wounded.", name(p.Agent))
 		}
 	case "gru.withdrew":

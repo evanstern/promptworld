@@ -234,7 +234,7 @@ type Memory struct {
 // take it to ≤ 0, so hp never serializes as 0. omitempty keeps non-wall and
 // pre-032 snapshots byte-identical.
 type Structure struct {
-	Kind      string     `json:"kind"` // "fire" | "shelter" | "oven" | "chest" | "wall_plank" | "wall_stone" | "path"
+	Kind      string     `json:"kind"` // "fire" | "shelter" | "oven" | "chest" | "wall_plank" | "wall_stone" | "path" | "grave" (spec 044 US4, reducer-placed only — never player-built)
 	X         int        `json:"x"`
 	Y         int        `json:"y"`
 	FuelUntil int64      `json:"fuel_until,omitempty"` // fires only
@@ -861,7 +861,7 @@ type (
 	}
 	DiedPayload struct {
 		Agent int    `json:"agent"`
-		Cause string `json:"cause"` // "starvation" | "exposure" | "collapse"
+		Cause string `json:"cause"` // "starvation" | "exposure" | "collapse" | "gru" (spec 044 US3)
 	}
 	TalkedPayload struct {
 		A int `json:"a"`
