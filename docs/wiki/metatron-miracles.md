@@ -10,7 +10,7 @@ sources:
   - internal/tool/registry.go
   - internal/ipc/server.go
   - cmd/promptworld/miracle.go
-verified_against: 72125c85abd1a0de6c19855aaae1757d8b976f17
+verified_against: 723c464c35aac4936f2793d566a53c801516ae60
 ---
 
 # Metatron's miracles
@@ -211,7 +211,13 @@ dogfood equivalence test pins byte-identical to `BuildMiracleBatch`'s output.)
   declared schema and guidance, its handler is never installed, and `landMiracle`
   additionally refuses via the grant check ("that miracle is not granted in this
   world") — defense in depth ahead of the reducer dry-run, which remains the final
-  authority. `handleMiracle` parses the call's
+  authority. Since spec 046 ([[curriculum-ladder]]) a staged world's curriculum
+  stage caps the grant the same way, upstream of the manifest: the stage-1/-2
+  ceiling grants NO miracle kinds at all, so `work_miracle` is structurally
+  absent from the angel's roster until stage-3 opens the full grantable surface
+  ([[metatron]]'s `applyStageCeiling` — intersection-only, so a manifest can
+  narrow within the ceiling but never exceed it). The operator CLI/IPC door
+  below is stage-blind — the ceiling gates the angel, not the operator. `handleMiracle` parses the call's
   arguments into `miracleArgs` and calls `landMiracle`, which resolves
   `MiracleParams` from an `agentXY` snapshot (`mt.agentXY`, mirrored per batch by
   the absorb goroutine in `mirrorState`, so the turn worker never races the live

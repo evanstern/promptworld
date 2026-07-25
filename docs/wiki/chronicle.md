@@ -6,7 +6,7 @@ sources:
   - internal/sim/chronicle.go
   - internal/mind/narrate.go
   - internal/scribe/scribe.go
-verified_against: dee5f4bf60093cb5d775e10c8ced41c7e5b385ec
+verified_against: 723c464c35aac4936f2793d566a53c801516ae60
 ---
 
 # Chronicle
@@ -53,7 +53,11 @@ canonical order even when the batch carries more than one, and (TASK-13) the who
 from the convention since TASK-36, including the birth of an emergent
 convention), grievances raised, proposals tabled/passed/voted down with
 tallies, exiles, and witnessed norm violations — each stamped with in-world
-time. `sim.night_started` closes the day chapter, `sim.day_started` closes
+time. Since spec 046 ([[curriculum-ladder]]) a `curriculum.stage_unlocked`
+event also earns a line — "The village's watcher earned `<stage>`.", the stage
+rendered through the skin package's display name (`skin.StageName`) — one of
+the ladder's two required in-game unlock surfaces (the other is the CLI status
+line). `sim.night_started` closes the day chapter, `sim.day_started` closes
 the night chapter; a chapter with no lines spends no call. Since TASK-32,
 `closeChapter` also consults the [[cognition]] router (`routeVerdict` with the
 `chronicle` decision class, `llm.KindNarrator`) before enqueueing: the class's
@@ -112,7 +116,8 @@ routes `KindNarrator` to the cloud tier; [[tui-client]] and the scribe render
 it; [[snapshots]] carry the ring through recovery; [[mental-maps]] emits the
 three place-knowledge events the narrator voices; [[morgue]] is the spec-044
 legacy document whose epilogues the narrator worker writes and whose file the
-scribe renders.
+scribe renders; [[curriculum-ladder]] owns the spec-046 unlock event the
+narrator turns into a chapter line.
 
 ## Operational notes
 

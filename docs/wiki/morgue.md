@@ -8,7 +8,7 @@ sources:
   - internal/sim/state.go
   - internal/mind/narrate.go
   - internal/world/world.go
-verified_against: dee5f4bf60093cb5d775e10c8ced41c7e5b385ec
+verified_against: 723c464c35aac4936f2793d566a53c801516ae60
 ---
 
 # Morgue
@@ -74,7 +74,13 @@ event-sourced charter-revision timeline: the render collects every
 at or before the death tick — "charter revision `<fingerprint>` (default |
 player-authored), in force since day N", or an explicit "no charter
 observation recorded before this death" ([[metatron]] owns the emission: the
-effective charter's content hash stamped at each turn). Beside it stand the
+effective charter's content hash stamped at each turn). Since spec 046
+([[curriculum-ladder]]) the observation's `default` flag is preset-aware —
+default means the effective text equals the WORLD's charter-preset constant,
+so a tutor-preset world running its stage-1 orientation charter records
+`default: true`; the seam this fixes is exactly this evidence line — preset
+text is authored by the game, and must never render here as a player-authored
+charter. Beside it stand the
 standing orders ACTIVE at the death moment, condition → action with watch
 subjects, read from the folding state ([[metatron-orders]]). Instruction and
 outcome sit together as evidence; the reader draws the lesson.

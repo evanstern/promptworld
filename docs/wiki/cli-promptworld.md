@@ -9,7 +9,8 @@ sources:
   - cmd/promptworld/ps.go
   - cmd/promptworld/miracle.go
   - cmd/promptworld/divergence.go
-verified_against: 381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9
+  - cmd/promptworld/stages.go
+verified_against: 723c464c35aac4936f2793d566a53c801516ae60
 ---
 
 # promptworld CLI
@@ -33,7 +34,8 @@ bare names resolve through `resolveWorld` → `worlds.Resolve`
 ambiguous or unknown names exit 1). `worldArg`/`parseWorldFlags` wrap the older
 `dirArg`/`parseDirFlags` with that resolution.
 
-- `new <name> [--at DIR] [--seed] [--teaching]` / `new <path> [--name] [--seed] [--teaching]` — a bare-word
+- `new <name> [--at DIR] [--seed] [--teaching] [--stage] [--override] [--charter-preset]` /
+  `new <path> [--name] [--seed] [--teaching] [--stage] [--override] [--charter-preset]` — a bare-word
   argument is a name: the world is created at `<worlds-home>/<name>` (or exactly
   `--at DIR`, which also registers it in the known-worlds registry), manifest name =
   the argument, validated by `worlds.ValidateName`. A path-shaped argument keeps the
@@ -53,7 +55,22 @@ ambiguous or unknown names exit 1). `worldArg`/`parseWorldFlags` wrap the older
   `world.SetTeaching` — set-after-create, so `world.Create`'s own signature
   stays untouched for its other callers — telling the daemon to default this
   world's speed to the highest planner-safe rung at every boot
-  ([[daemon-lifecycle]], [[cognition]]).
+  ([[daemon-lifecycle]], [[cognition]]). Since spec 046 ([[curriculum-ladder]]),
+  `new` also resolves a curriculum **stage**: `--stage stage-1..stage-4`
+  (validated against the `world.Stage1..4` constants), defaulting to the
+  player's highest earned stage from the per-user unlocks record
+  (`worlds.LoadUnlocks`) — stage-1 for a brand-new player. An unearned stage
+  refuses with an informed error naming every skipped stage by its skin
+  display name (`skin.StageName`) unless `--override`, which proceeds and
+  records the override honestly. The resolved stage, override flag, and
+  charter preset are stamped into the manifest set-after-create via
+  `world.SetStage` (the `SetTeaching` pattern — write-once, no toggle
+  command). `--charter-preset` (`default`|`tutor`, validated by
+  `world.ValidCharterPreset`) picks the charter `persona.Genesis(dir,
+  charterPreset)` seeds; a stage-1 world defaults it to `tutor` unless the
+  player explicitly opts out with `--charter-preset default`. The printed
+  summary gains a trailing `stage: <skin name> (<stage-id>)` line
+  (`stageStatusLine`, `[overridden]` suffix when forced).
 - `migrate <world>` — the one-time upgrade of an older world (v1 or v2) to the
   current format (spec 012 US6 for v1→v2, spec 013 for v2→v3 —
   [[world-migration]]): resolves `<world>` via `resolveWorldForMigrate`, which
@@ -102,7 +119,13 @@ ambiguous or unknown names exit 1). `worldArg`/`parseWorldFlags` wrap the older
   horizon block: `teaching posture: <rung> (calibrated)` or `... (provisional
   — run `promptworld calibrate <world>`)`, read from the wire's
   `StatusData.Posture` — absent (and so the line omitted) for any non-teaching
-  or pure-sim world. Since spec 044, `clockLine` renders the run-over posture:
+  or pure-sim world. Since spec 046 ([[curriculum-ladder]]), a ladder world's
+  status appends one `stage: <skin name> (<stage-id>)` line (plus an
+  `[overridden]` marker when creation skipped ahead) via the same
+  `stageStatusLine` that `new` prints, right before the log line — read live
+  from the wire's `StatusData.World.Stage`/`StageOverridden`; empty stage
+  (every pre-046/pre-ladder world) omits the line, output unchanged. Since
+  spec 044, `clockLine` renders the run-over posture:
   when the wire's `Clock.Ended` is set, the running/paused clock line is
   replaced entirely by `tick N (...) — run ended day N, all villagers dead;
   world is an archive (read-only)` ([[morgue]]).
@@ -113,7 +136,10 @@ ambiguous or unknown names exit 1). `worldArg`/`parseWorldFlags` wrap the older
   villagers dead; world is an archive (read-only)` line before the log line,
   and `--json` gains `ended`/`ended_day` clock keys present only when ended,
   mirroring the live `ClockStatus` omitempty fields so a living world's
-  offline JSON is unchanged.
+  offline JSON is unchanged. The offline path carries the stage the same way:
+  the human output prints `stageStatusLine` from the manifest, and `--json`'s
+  `world` object gains `stage` (+`stage_overridden` when true) keys present
+  only when the manifest carries a stage.
 - `pause` / `resume` / `speed <v>` — one-shot time controls printing the resulting
   clock line; `speed` (and the `attach` REPL's `speed` command) go through
   `setSpeedLine` (spec 035 FR-002), which appends a `WARNING: <text>` line
@@ -219,6 +245,23 @@ ambiguous or unknown names exit 1). `worldArg`/`parseWorldFlags` wrap the older
   events exist yet. `--json` emits the same rows machine-readably. The printed
   table is recorded evidence only — flipping the world to non-shadow relevance
   is an operator decision made on the board task, never an automatic action.
+- `stages [--json]` (`cmd/promptworld/stages.go`, spec 046 US1 —
+  [[curriculum-ladder]]) — the ladder's front door: an informed identity
+  table over all four stages (always all four, never a difficulty menu), each
+  row pairing the active skin's display identity (`skin.Stage` — name +
+  one-line identity) with the skin-independent ladder facts (`stagesLadder`,
+  mirroring the spec's table: the concept taught, what the world grants, and
+  the evidence that unlocks the next stage — stage-4's reads "nothing — this
+  is graduation") plus the earned state from the per-user unlocks record
+  (`worlds.LoadUnlocks`): stage-1 is every player's unconditional floor
+  (`stageEarned`); any other stage is earned only by an unlocks-record entry,
+  whose proving world and exercise the earned line names; an unearned stage's
+  row points at `new --stage <id> --override`. `--json` emits the same rows
+  machine-readably (`proving_world`/`exercise` audit pointers only when
+  earned by an entry). A missing/corrupt/unresolvable unlocks record simply
+  means nothing beyond stage-1 is earned — the command never fails on record
+  state. `highestEarnedStage` over the same record is what `new`'s default
+  `--stage` selection uses.
 
 `parseDirFlags` accepts both `cmd <arg> --flag` and `cmd --flag <arg>` orderings
 (`parseWorldFlags` adds name resolution on top).
@@ -244,7 +287,11 @@ metatron-pane block also render. `status`'s `postureStatusLine` and `new`'s
 [[ipc-protocol]]'s `StatusData.Posture` (spec 039). `divergence` reads
 `cog.memory_divergence` events [[memory-retrieval]]'s shadow-mode selector
 records, offline via the same store/`tail` pattern as `tail`/`status`'s
-offline path.
+offline path. `stages` and `new`'s stage resolution read the per-user
+unlocks record (`worlds.LoadUnlocks`) and the skin identity table, and
+`status`'s stage line renders [[ipc-protocol]]'s
+`WorldStatus.Stage`/`StageOverridden` — the [[curriculum-ladder]]'s CLI
+surfaces (spec 046).
 
 ## Operational notes
 

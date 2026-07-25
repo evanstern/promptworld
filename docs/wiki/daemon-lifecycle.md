@@ -4,8 +4,9 @@ description: Process lifecycle — startup recovery (snapshot+replay), pidfile w
 kind: pipeline
 sources:
   - internal/daemon/daemon.go
+  - internal/daemon/curriculum.go
   - internal/daemon/estimator_persist.go
-verified_against: dee5f4bf60093cb5d775e10c8ced41c7e5b385ec
+verified_against: 723c464c35aac4936f2793d566a53c801516ae60
 ---
 
 # Daemon lifecycle
@@ -60,7 +61,16 @@ Startup sequence:
    because the [[morgue]] render is a pure fold over the FULL event history,
    which the boot snapshot alone cannot provide; reads are rare, per death or
    boot, and briefly serialize with the loop's appends on the store's single
-   connection), and — when an orchestrator exists — the mind driver
+   connection), the curriculum-ladder unlock observer (spec 046 US3,
+   `curriculumObserver(w)` in `internal/daemon/curriculum.go` — always-on
+   like the scribe and wired BEFORE the LLM gate, so a no-model world still
+   records its unlocks: on observing `curriculum.stage_unlocked` it upserts
+   the per-user `~/.promptworld/unlocks.json` record with the world's
+   name/path and a pointer to the same batch's `curriculum.exercise_passed`
+   event as evidence; `worlds.UpsertUnlock` warns-and-continues on any
+   failure, so this advisory record can never perturb the loop — until
+   TASK-119's rubric machinery emits the events it simply sits idle,
+   [[curriculum-ladder]]), and — when an orchestrator exists — the mind driver
    ([[agent-mind]]) and the Metatron component ([[metatron]], attached to the
    server via `SetMetatron` for the console); all consumers are non-blocking by
    contract. The LLM
@@ -125,7 +135,11 @@ Startup sequence:
    consumers: `mind.New(..., loopRounds, plannerTokens, consolidationTokens)`
    and `metatron.New(orch, loop, loop, ..., loopRounds, metatronTurnTokens)`
    (followed by `mt.SetBundles(bundleSet)` — spec 036 hands the boot-frozen
-   bundle surface to the turn assembly, [[bundle-tools]]) —
+   bundle surface to the turn assembly, [[bundle-tools]] — and
+   `mt.SetStage(w.Manifest.Stage, w.Manifest.CharterPreset)` — spec 046 US2
+   hands the immutable stage + charter preset from the opened manifest the
+   same boot-frozen way, so the stage tool ceiling and the stage-1
+   instruction lock cannot be tampered mid-run, [[curriculum-ladder]]) —
    since spec 029 (US5) the loop is passed twice: once as the `Injector` it
    was always passed as, once as the new `LoopControl` seam Metatron's
    `pause`/`start`/`adjust_speed` meta tools drive ([[metatron-orders]],
@@ -209,6 +223,8 @@ door. [[memory-retrieval]] is the spec 042 embedding driver wired here only
 when `orch.HasEmbedding()`; its failure warning shares [[sim-loop]]'s
 `InjectOperator` door and the `daemon.llm_warning` event type with
 [[llm-provider-health]] but is a separate, debounced-by-the-driver signal.
+[[curriculum-ladder]] is what the always-on unlock observer and the
+`SetStage` handoff wired here (spec 046) serve.
 
 ## Operational notes
 

@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/ipc/server.go
   - internal/ipc/socket.go
-verified_against: 381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9
+verified_against: 723c464c35aac4936f2793d566a53c801516ae60
 ---
 
 # IPC server
@@ -81,7 +81,12 @@ governor fields at their `omitempty` zero, byte-identical to pre-028
 ([[cognition]], [[daemon-lifecycle]]). Since spec 044, `statusData` also
 copies the loop's run-end posture into the clock section — `Ended`/`EndedDay`
 straight from `sim.Status` — where the same `omitempty` discipline keeps a
-living world's status bytes unchanged ([[ipc-protocol]], [[morgue]]).
+living world's status bytes unchanged ([[ipc-protocol]], [[morgue]]). Since
+spec 046, `statusData` likewise composes the world section's
+`Stage`/`StageOverridden` straight from the opened manifest
+(`s.w.Manifest.Stage`/`.StageOverridden`, [[curriculum-ladder]]) — additive
+`omitempty` again, so a pre-ladder world's bytes are unchanged
+([[ipc-protocol]]).
 
 Since spec 037 (`contracts/status-horizon.md`), `statusDataFull` additionally
 sets `StatusData.Horizon` via `horizonClasses(cs)` whenever an orchestrator is

@@ -14,7 +14,7 @@ sources:
   - internal/scribe/scribe.go
   - internal/scribe/morgue.go
   - internal/sim/memory.go
-verified_against: 72125c85abd1a0de6c19855aaae1757d8b976f17
+verified_against: 723c464c35aac4936f2793d566a53c801516ae60
 ---
 
 # Agent mind
@@ -32,7 +32,10 @@ write path exists anywhere (the structural half of the persona firewall; the
 validation half is [[nightly-consolidation]]'s validator, fed by the authored
 `persona.Anchors` and `persona.DriftMarkers`). `Load` reads them as the mind's
 stable prompt prefixes. Genesis also seeds Metatron's `charter.md` (the ONE
-player-editable prompt, never overwritten once present — [[metatron]]), and the
+player-editable prompt, never overwritten once present — [[metatron]]; since
+spec 046 `Genesis` takes an optional variadic charter-preset parameter, so a
+`"tutor"` world seeds `persona.TutorCharter` instead of the default —
+[[curriculum-ladder]]), and the
 salience table gains `SalDream` (8) for nudge memories. Since spec 019 (US3)
 `Genesis` also seeds an empty `agents/<name>/journal.md` beside `soul.md`
 (`JournalPath`, files.go) — a regenerable view of the agent's journal state the

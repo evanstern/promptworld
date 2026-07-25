@@ -14,7 +14,7 @@ sources:
   - internal/tool/registry.go
   - internal/llm/llm.go
   - internal/llm/config.go
-verified_against: 72125c85abd1a0de6c19855aaae1757d8b976f17
+verified_against: 723c464c35aac4936f2793d566a53c801516ae60
 ---
 
 # Metatron's standing orders
@@ -173,7 +173,12 @@ The player reads and cancels orders through the angel. `monitor_and_act` and
 vocabulary of genuinely-emitted types); `toolcalls.go`'s `handleMonitor`/
 `handleCancelOrder` wrap `placeOrder`/`cancelOrder`, mapping a door rejection to
 in-fiction counsel fed back
-as a `rejected_gate` the model may repair. The turn prompt carries active orders
+as a `rejected_gate` the model may repair. On a curriculum-ladder world
+(spec 046, [[curriculum-ladder]]) both tools sit INSIDE the stage-1 capability
+ceiling — a ratified amendment added `monitor_and_act`/`cancel_order` to the
+stage-1 grant because the first-night exercise teaches the watch as a stage-1
+primitive — so standing orders are available at every stage the same way
+omens and visions are ([[metatron]]'s `applyStageCeiling`). The turn prompt carries active orders
 (`writeStandingOrders` — id, condition, days-left, fuzzy/structural — FR-017) so the
 angel's counsel stays truthful to live state, and the model-free `metatron.Status`
 surface lists them (`Status.Orders`, `OrderStatus{id, condition, origin, fuzzy,

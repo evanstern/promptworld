@@ -5,7 +5,7 @@ kind: concept
 sources:
   - internal/ipc/protocol.go
   - specs/001-world-daemon/contracts/client-protocol.md
-verified_against: 381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9
+verified_against: 723c464c35aac4936f2793d566a53c801516ae60
 ---
 
 # IPC protocol
@@ -50,7 +50,12 @@ gains an optional `llm` section (tier health, queue depths,
 monthly spend vs budget) when the orchestrator is enabled.
 
 `StatusData` is the shared response shape for status/pause/resume/set_speed, with four
-sections: `world` (name, seed, format_version), `clock` (tick, game_time, paused,
+sections: `world` (name, seed, format_version — plus, since spec 046, two
+additive `omitempty` [[curriculum-ladder]] fields on `WorldStatus`: `stage`,
+the world's curriculum stage, and `stage_overridden`, true when the world was
+created at an unearned stage via `new --override`; both composed straight
+from the manifest by [[ipc-server]] and absent for every pre-046/pre-ladder
+world, so their status bytes are unchanged), `clock` (tick, game_time, paused,
 speed, effective_rate, degraded, metatron_charges — the ⚡ bank, so clients need no
 state fetch — plus, since spec 028, three additive `omitempty` adaptive-throttle
 fields: `requested_speed` (the player's ceiling from sim state, empty when
@@ -126,7 +131,8 @@ oversized reply → the substituted `reply too large` error above.
 [[ipc-server]] implements the daemon side; [[ipc-client]] the attach side;
 [[event-types]] defines what rides inside event pushes; [[cli-promptworld]] renders
 `StatusData` for humans, including its `postureStatusLine` over `Posture` (spec
-039). The [[tui-client]] consumes `state` + `subscribe` to run its
+039) and its `stageStatusLine` over `WorldStatus.Stage`/`StageOverridden`
+(spec 046, [[curriculum-ladder]]). The [[tui-client]] consumes `state` + `subscribe` to run its
 live replica. `miracle` is the CLI/IPC operator door into [[metatron-miracles]].
 
 ## Operational notes

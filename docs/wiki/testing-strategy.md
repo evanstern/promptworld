@@ -20,6 +20,7 @@ sources:
   - internal/sim/grave_test.go
   - internal/sim/gru_test.go
   - internal/sim/toolcheck_test.go
+  - internal/sim/curriculum_test.go
   - internal/sim/intentlog_test.go
   - internal/sim/needsanchor_test.go
   - internal/sim/journal_test.go
@@ -35,11 +36,16 @@ sources:
   - internal/metatron/metatron_gaps_test.go
   - internal/metatron/orders_test.go
   - internal/metatron/charter_observed_test.go
+  - internal/metatron/stage_test.go
+  - internal/daemon/curriculum_test.go
+  - internal/worlds/unlocks_test.go
+  - internal/world/world_test.go
+  - cmd/promptworld/stages_test.go
   - internal/mind/epilogue_test.go
   - internal/persona/persona_test.go
   - e2e/daemon_e2e_test.go
   - e2e/determinism_e2e_test.go
-verified_against: dee5f4bf60093cb5d775e10c8ced41c7e5b385ec
+verified_against: 723c464c35aac4936f2793d566a53c801516ae60
 ---
 
 # Testing strategy
@@ -257,7 +263,12 @@ outcome landed, self-history like `Memory.Tick`, [[decision-context]]), with
 shifts; spec 044 extends it again with three KEEP
 entries — `RunEnd.Tick` (when the run ended: history, the world never ticks
 again), `DeathRecord.Tick` (the `NormViolation.Tick` shape), and
-`MorgueEpilogue.Tick` (the `ChronicleEntry.Tick` shape)). Byte-identity replay suites
+`MorgueEpilogue.Tick` (the `ChronicleEntry.Tick` shape); spec 046 adds three
+more KEEP entries — `CurriculumPass.Tick` (when the pass was recorded,
+history like `Memory.Tick`), `EvidenceRef.Tick` (an audit pointer at a
+recorded event's tick, never a deadline), and `EvidenceRef.Seq` (the evidence
+event's store seq, an identity like `Memory.Seq` —
+[[curriculum-ladder]])). Byte-identity replay suites
 (`TestMiracleReplayByteIdentity`, `TestMiracleSnapReplayByteIdentity`,
 `TestMiracleGrantReplayByteIdentity`) prove each miracle type replays to the
 same state hash as live application.
@@ -464,6 +475,54 @@ exact tick from a COPY of a legacy world.db via the daemon package's
 `replayToTick` ([[daemon-lifecycle]]), asserting the assembled text surfaces
 the documented reflex thrash — inspection of assembled text only, no model in
 the loop.
+
+**Curriculum-ladder suites** (spec 046, TASK-68, [[curriculum-ladder]]): the
+staged-worlds surface is proven per layer. Reducer-side,
+`internal/sim/curriculum_test.go` pins the two `curriculum.*` arms — pass
+recording with evidence, door validation (empty exercise id, unknown stage),
+the pass ring's 32-cap prune, the once-per-(world,stage) unlock latch with
+duplicate and stage-1 rejection — plus the pure gate logic:
+`TestEvaluateUnlockGateConjuncts` walks all three gates (stage-1: any pass;
+stage-2: only a `custom` charter-observed evidence entry — SC-004's negative
+case pins that a default/preset-charter pass never opens it; stage-3: any
+`custom` evidence entry), `TestCharterObservedEvidence` pins the sanctioned
+constructor's `Custom = !payload.Default` derivation and its
+wrong-type/bad-payload rejections, `TestEvaluateUnlockFixtureChain` drives
+the full fixture pass→unlock chain, `TestExerciseDefinitionsParse` proves the
+two shipped exercise definitions are well-formed, and
+`TestCurriculumReplayDeterministic` proves a log carrying both types replays
+byte-identically. Metatron-side, `internal/metatron/stage_test.go` (US2,
+~500 lines) pins the gate-to-feature pathway: `TestStageCeilingRosterTable`
+(per stage, the post-intersection roster equals the contract's ceiling
+exactly — stage-1/-2 the four-tool watch set, stage-3/-4 and pre-ladder the
+full roster), manifest intersection within the ceiling, the door refusing
+beyond-stage acts, three-layer declaration/prose/door coherence, the stage-1
+instruction lock's honesty (`TestStageOneInstructionLock` — the compiled-in
+preset binds regardless of edits, the notice names the unlocking stage),
+stage-2 charter-binds-skills-don't, `TestCrossStageDeterminism` (stage gating
+never perturbs the sim, FR-006), preset resolution, an ungated pre-ladder
+world byte-unchanged, and the tutor preset hot-reloading like any charter;
+`charter_observed_test.go` gains the preset legs
+(`TestCharterObservationTutorPresetIsDefault` — a stage-1 tutor-preset
+world's observation honestly records `default: true`, so it can never
+masquerade as player authorship — and
+`TestCharterObservationEndedStageOneCoexists`). Daemon-side,
+`internal/daemon/curriculum_test.go` drives the always-on unlock observer
+with fixture events: upsert with the pass-event evidence pointer, non-
+curriculum events ignored, a missing pass in the batch tolerated, and the
+recorded path matching the world fixture. `internal/worlds/unlocks_test.go`
+pins the record doctrine — missing/corrupt file loads empty (never an
+error), atomic upsert-and-reload, same-stage overwrite, load-time healing
+that drops malformed entries but KEEPS entries whose world path no longer
+exists, and an unresolvable home warning-and-continuing. CLI-side,
+`cmd/promptworld/stages_test.go` covers `new`'s stage resolution (stage-1
+default for a new player, highest-earned otherwise, unearned refusal naming
+skipped concepts unless `--override`, the override recorded honestly,
+invalid stage/preset rejected, tutor-preset opt-out) and both `stages`
+outputs; `internal/world/world_test.go` gains the manifest legs (stage
+round-trip, absent-stage = ungated, `Open` rejecting a bad `stage` or
+`charter_preset`), and `internal/skin/skin_test.go` pins the four
+client-approved stage identities.
 
 **Persona lifecycle suite** (`internal/persona/persona_test.go`, TASK-74): on
 top of the pre-existing genesis-once/0444/missing-file-load coverage,

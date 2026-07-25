@@ -1,6 +1,6 @@
 ---
 name: metatron
-description: The gatekeeper angel (TASK-12) — console AND system-authored turns driven through the bounded tool-use loop (spec 017), omen/vision influence and standing-order agency behind a structural prompt firewall (spec 029), event-sourced charge economy, charge-free clock-control meta tools, digests + drama moments, and the staged player-editable instruction surface (charter + skills/ + capabilities.json, spec 021); spec 036 composes drop-in bundle tools and persona SOUL fragments into the same turn assembly; spec 044 stamps each turn's effective-charter fingerprint into an event-sourced revision timeline (metatron.charter_observed)
+description: The gatekeeper angel (TASK-12) — console AND system-authored turns driven through the bounded tool-use loop (spec 017), omen/vision influence and standing-order agency behind a structural prompt firewall (spec 029), event-sourced charge economy, charge-free clock-control meta tools, digests + drama moments, and the staged player-editable instruction surface (charter + skills/ + capabilities.json, spec 021); spec 036 composes drop-in bundle tools and persona SOUL fragments into the same turn assembly; spec 044 stamps each turn's effective-charter fingerprint into an event-sourced revision timeline (metatron.charter_observed); spec 046 gates the whole surface by the world's curriculum stage — a stage ceiling on the grant, a stage-1 charter lock served from a compiled-in preset, and skills binding from stage-3
 kind: component
 sources:
   - internal/metatron/metatron.go
@@ -12,7 +12,7 @@ sources:
   - internal/metatron/miracle_batch.go
   - internal/sim/metatron.go
   - internal/persona/charter.go
-verified_against: 72125c85abd1a0de6c19855aaae1757d8b976f17
+verified_against: 723c464c35aac4936f2793d566a53c801516ae60
 ---
 
 # Metatron
@@ -26,7 +26,12 @@ prompt-engineering your angel through the staged instruction surface (spec 021,
 TASK-64), shaped like real assistant configuration: `charter.md` (the
 CLAUDE.md-shaped base), `skills/*.md` (player-authored SKILL.md-shaped files),
 and `capabilities.json` (the per-world tool grant manifest) — all at the
-save-dir root, all re-read fresh every turn.
+save-dir root, all re-read fresh every turn. Since spec 046
+([[curriculum-ladder]]) that surface unlocks in stages: a world created on the
+curriculum ladder carries an immutable `Stage` (and optional `CharterPreset`)
+in its manifest, and the stage gates both what the angel's grant may contain
+and which instruction files bind — a pre-ladder world (no stage) is ungated,
+byte-identical to before.
 
 ## How it works
 
@@ -46,14 +51,27 @@ suppresses moment consumption (the player-facing queue awaits the next console o
 the trigger worker queues the system turn's own outcome moment). The console CAS-fails
 fast with `ErrTurnBusy`; a system turn WAITS bounded for the slot ([[metatron-orders]]).
 The prompt stacks the charter (re-read every turn — edits are live by construction,
-with restore/empty/truncate fallbacks and in-reply notices, `charter.go`), then —
+with restore/empty/truncate fallbacks and in-reply notices, `charter.go`; since
+spec 046 the load is the stage fork `stageCharter`: at stage-1 the effective
+charter IS the world's `CharterPreset` constant — `presetCharter` resolves
+`""`/`"default"` to `persona.DefaultCharter` and `"tutor"` to the stage-1
+orientation `persona.TutorCharter` — sourced from the compiled-in text, never
+the file, so the lock is tamper-proof rather than advisory; an edited
+`charter.md` draws an honest "does not bind at this stage" notice naming the
+stage-2 unlock, a missing one is restored to the preset noticelessly, and every
+other stage, including no stage, runs `loadCharter` — itself now preset-aware,
+so restore/empty/unreadable fallbacks serve the world's preset rather than bare
+`persona.DefaultCharter`), then —
 since spec 036 — any persona SOUL fragments from the boot-frozen bundle surface
 (`mt.bundles.SoulFragments()`, load order, each ≤4,000 chars, validated at boot
 by [[bundle-tools]]; zero fragments leaves the prompt byte-identical), then the
 skill files (spec 021: `loadSkills` composes eligible `skills/*.md` — regular `.md`
 direct children, ascending bytewise filename order, ≤8 files, ≤4,000 chars each via
 `persona.CharterMaxChars`, each under a `--- skill: <name> ---` separator, with the
-same truncate/skip notice discipline as the charter), then a fixed frame appended
+same truncate/skip notice discipline as the charter; since spec 046 behind the
+`stageSkills` fork — skill files compose only from stage-3, and at stage-1/-2 a
+present-but-unbound `skills/` dir draws one honest notice naming the stage-3
+unlock rather than being silently ignored), then a fixed frame appended
 LAST as compile-time constants on every path — no editable byte can displace or
 truncate it (adversarial battery + determinism tests in `metatron_test.go`). The
 frame pins the two `metatronNonNegotiables` invariants beneath ANY editable text
@@ -80,7 +98,19 @@ defense-in-depth `grant.allows` checks in the landers; an ungranted
 tool is structurally absent from the declared schemas, never merely prose-forbidden;
 missing manifest = full roster byte-compatibly, malformed = full roster + notice,
 `tools: []` = conversation-only — converse is never gateable), which lands through
-its existing door. Spec 036 extends the same composition with the bundle surface
+its existing door. Since spec 046 the world's curriculum stage caps the grant
+BEFORE any of that: `applyStageCeiling` (`charter.go`) intersects the stage
+ceiling into the grant immediately after `loadManifest` and before
+`grantedRoster`, using the same `intersectGrant` a persona bundle's narrowing
+uses — intersection-only, so a manifest may narrow within the ceiling but never
+exceed the stage, and a beyond-stage tool is structurally absent from
+declaration, prose, and handlers alike. The stage-1/-2 ceiling
+(`stage1CeilingTools`) is `send_omen`/`send_vision`/`monitor_and_act`/
+`cancel_order` with NO miracle kinds and no bundle tools (a ratified TASK-119
+amendment added the two standing-order tools, since the first-night exercise
+teaches the watch as a stage-1 primitive); stage-3, stage-4, and a pre-ladder
+world (`stage == ""`) impose no ceiling ([[curriculum-ladder]]). Spec 036
+extends the same composition with the bundle surface
 ([[bundle-tools]]): `runTurn` narrows the world grant by each persona bundle's
 `capabilities.json` via `narrowGrantForBundles`/`intersectGrant` (intersection —
 a persona can exclude tools or miracle kinds, never resurrect what the world
@@ -91,7 +121,11 @@ roster and handlers after the built-ins (`grantedRoster(grant)` first, then
 composition; `loadManifest` takes the known bundle-tool names so a world
 manifest naming a bundle tool no longer draws a spurious unknown-tool notice.
 The frozen `BundleSet` arrives once at boot via `mt.SetBundles`
-([[daemon-lifecycle]]), read only from the turn worker;
+([[daemon-lifecycle]]), read only from the turn worker; the stage facts arrive
+the same way — the daemon calls `mt.SetStage(stage, charterPreset)` once after
+`New` from the immutable `Manifest.Stage`/`Manifest.CharterPreset` (spec 046,
+the SetBundles discipline, boot-frozen so the ceiling cannot be tampered
+mid-run; zero values = pre-ladder, ungated, default charter);
 the driver's one-acting-call cardinality enforces "at most one mediated act per
 turn" structurally, so the pre-loop nudge-wins-over-miracle precedence dissolves —
 the model just picks its one act. The retired `turnReply`/`parseTurn` free-text
@@ -119,7 +153,16 @@ from the last recorded value, emits `metatron.charter_observed{fingerprint,
 default}` through the same `InjectSocial` door as every other turn effect —
 fingerprint-at-effect semantics. The `default` flag derives from the same
 effective text (an empty/missing `charter.md` serves and records the default),
-so the two can never disagree. The first turn of a world always emits (the
+so the two can never disagree — and since spec 046 it is PRESET-AWARE: default
+means the effective text equals the WORLD's preset constant (`presetCharter`,
+the same reference `charterIsDefault` compares against), not bare
+`persona.DefaultCharter`, so a stage-1 tutor-preset world — whose lock serves
+`persona.TutorCharter` — honestly records `default: true`. Preset text is
+authored by the game, never the player, so it must never masquerade as
+player-authored evidence: the [[morgue]]'s alignment and the stage-2→3 unlock
+gate's custom-charter evidence both derive from this flag
+([[curriculum-ladder]]). At stage-1 the observation stamps the stage-EFFECTIVE
+text the lock serves, never the raw file. The first turn of a world always emits (the
 mirror starts empty); an ENDED world skips — the door narrows to recorded
 prose after run end and a finished run's evidence timeline is closed. The
 `Metatron` struct mirrors `State.CharterFingerprint`/`State.Ended` as
@@ -260,7 +303,9 @@ player placed authorizes it (spec 029 relaxed the old "acts only when told" cont
 to admit pre-authorized triggered turns — see [[metatron-orders]]).
 
 **Files** (bound to the run, not event-sourced): `charter.md` at the save-dir root
-(seeded by `persona.Genesis`, never overwritten), plus the optional player-created
+(seeded by `persona.Genesis` — since spec 046 with an optional preset parameter,
+so a `"tutor"` world seeds `persona.TutorCharter` — never overwritten), plus the
+optional player-created
 `skills/` dir and `capabilities.json` manifest beside it (spec 021 — root =
 player-authored configuration); `metatron/soul.md` (accreting notes, starts empty)
 and `metatron/transcript.md` (console history) — restart survival comes free with
@@ -276,7 +321,15 @@ provenance (`charter_default`), and since spec 021 the effective skill filenames
 `work_miracle(move,give_item)` form when kinds are restricted),
 `manifest_default` (no `capabilities.json` present), and since spec 029 the active
 standing orders (`orders`, `OrderStatus{id, condition, origin, fuzzy, expires_day,
-status}`, FR-016 — see [[metatron-orders]]).
+status}`, FR-016 — see [[metatron-orders]]). Since spec 046 the status is the
+turn's stage twin: `Status()` applies the same `applyStageCeiling` to the
+peeked grant (so `granted_tools` can never disagree with the roster the next
+turn will run under), nils the `skills` list below stage-3 (it is the EFFECTIVE
+composition list), and carries additive omitempty curriculum provenance —
+`stage`, `charter_locked` (the stage-1 lock is in force), `charter_preset` (the
+binding preset name when locked, `"default"` | `"tutor"`), and `skills_locked`
+(stage-1/-2); `charter_default` compares against the world's preset constant
+via the preset-aware `charterIsDefault`.
 
 ## Connections
 
@@ -300,9 +353,13 @@ tools reuse. [[tool-loop]] is the turn driver (console and system-authored) sinc
 017: `runTurn` calls `toolloop.Run` with `tool.LoopRosterMetatron()` and the granted
 handler subset; [[tool-registry]] declares those tools (and deliberately excludes
 `converse`), derives the turn's tool guidance (`MetatronToolGuidance`), and holds the
-single miracle cost source ([[metatron-miracles]]). Specs: `specs/005-metatron/`,
-`specs/016-metatron-miracles/`, `specs/017-agent-tool-loop/`,
-`specs/021-metatron-instruction-surface/`, `specs/029-metatron-agency/`.
+single miracle cost source ([[metatron-miracles]]). [[curriculum-ladder]]
+(spec 046) owns the stage vocabulary, the manifest facts (`world.Manifest.Stage`/
+`CharterPreset`), the exercise/unlock event sourcing, and the earned-stage
+doctrine this note's stage ceiling and charter lock enforce. Specs:
+`specs/005-metatron/`, `specs/016-metatron-miracles/`,
+`specs/017-agent-tool-loop/`, `specs/021-metatron-instruction-surface/`,
+`specs/029-metatron-agency/`, `specs/046-curriculum-ladder/`.
 
 ## Operational notes
 

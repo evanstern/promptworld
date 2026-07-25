@@ -10,7 +10,7 @@ sources:
   - internal/tui/digest.go
   - internal/tui/decisions.go
   - internal/tui/help.go
-verified_against: 381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9
+verified_against: 723c464c35aac4936f2793d566a53c801516ae60
 ---
 
 # TUI client
@@ -144,7 +144,13 @@ see below), **metatron** (the angel transcript — replies stream here, or
 badge the tab `metatron •` when it isn't visible; the pane header shows the charge
 bank plus the spec-021 instruction/capability provenance summary — charter
 default/custom, skill-file count when non-zero, and the granted-tool summary from
-`Status.GrantedTools`, quiet for a full-grant default world — [[metatron]]; the
+`Status.GrantedTools`, quiet for a full-grant default world — [[metatron]] —
+joined, since spec 046, by a `stage: <skin name>` segment
+(`consoleStageSummary` in tui.go) that appends `(charter locked to
+<preset>)` while the stage-1 instruction lock binds, read off the polled
+`Status.Stage`/`CharterLocked`/`CharterPreset` with no client-side
+re-derivation; empty (header byte-identical) for a pre-ladder/ungated
+world — [[curriculum-ladder]]; the
 transcript itself gains a `👁 watch set`/`👁 watch released` line for a
 placed/cancelled standing order and a `⏲` line for a landed pause/start/
 adjust_speed meta tool call, alongside the existing `⚡` vision/omen line;
@@ -263,7 +269,13 @@ wants on the feed line; the full ledger stays in the payload/detail pane),
 `chronicle.entry`; agent −1 renders as "the run" — the run-end epilogue),
 and `metatron.charter_observed` ("Metatron ran under charter <fingerprint>
 (default|player-authored)" — the charter-revision stamp the morgue aligns
-deaths against). The four
+deaths against). Since spec 046, two [[curriculum-ladder]] types get registry
+entries, and `familyByNamespace` maps the new `curriculum` namespace onto the
+existing metatron family voice — the ladder is the guardian's domain, not a
+distinct visual role: `curriculum.exercise_passed` ("the <exercise> exercise
+was passed (<stage>)") and `curriculum.stage_unlocked` ("Metatron's watcher
+earned <stage name> (proven by <exercise>)", the display name resolved
+through `skin.StageName` like the CLI's stage line). The four
 [[metatron-miracles]] types render in the metatron family voice, with a
 trailing emphasized `(forced)` annotation (`gratisMark`) whenever the
 payload's gratis flag waived the charge — an operator force is never
@@ -344,7 +356,9 @@ read the polled `Status.Horizon` — [[ipc-server]]'s `horizonClasses`
 composition backed by [[cognition]]'s `LiveHorizon` and
 [[llm-orchestrator]]'s `SuppressionCounts` — with no client-side
 re-derivation, the same "polled, not projected" posture as the LLM condition
-surfaces. [[mental-maps]]'s four place-knowledge event types render through
+surfaces. The metatron pane's stage segment and the two curriculum digest
+rows are [[curriculum-ladder]]'s TUI surfaces (spec 046), reading the
+angel's `Status.Stage`/lock fields and the `curriculum.*` event payloads. [[mental-maps]]'s four place-knowledge event types render through
 the raw digest feed with no dedicated pane of their own — the map/prompt
 side of the feature lives entirely in [[agent-mind]]/[[executor]], not here.
 

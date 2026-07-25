@@ -59,6 +59,7 @@ that note (re-pin with `/grounding-wiki:wiki-update`).
 - [[metatron-miracles]] — charge-priced world edits: time snap, item grant, entity move/remove, gratis doctrine, shift-semantics re-base
 - [[metatron-orders]] — the standing-orders subsystem: event-sourced watches compiled to free structural predicates, live matching, system-authored triggered turns, fuzzy confirm, daytime-omen deferral
 - [[governance]] — norms and votes: the daily meeting under an event-sourced convention, relationship-driven law, the village charter
+- [[curriculum-ladder]] — the spec-046 four-stage teaching ladder: immutable world stage with informed override, the metatron tool ceiling + stage-1 instruction lock (default/tutor presets), curriculum.* unlock events with auditable evidence, the per-user unlocks record, seeded exercises
 
 ## Lifecycle & quality
 

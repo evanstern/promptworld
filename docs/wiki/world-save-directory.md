@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/world/world.go
   - internal/world/migrate.go
-verified_against: 381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9
+verified_against: 723c464c35aac4936f2793d566a53c801516ae60
 ---
 
 # World save directory
@@ -44,7 +44,28 @@ records rank divergence while prompts still see the legacy window; `"on"`
 lets the augmented window feed prompts (divergence still recorded). `Open`
 refuses any other value outright — a typo must never silently run as off —
 and the field is additive `omitempty`, so a pre-042 `world.json` round-trips
-byte-identically with no `FormatVersion` bump. `World.Map()` regenerates the terrain from the seed and
+byte-identically with no `FormatVersion` bump. Spec 046
+([[curriculum-ladder]]) adds three more additive `omitempty` fields on the
+same closed-vocabulary/no-bump pattern: `stage` (`Manifest.Stage`,
+`stage-1`..`stage-4` via the `Stage1`..`Stage4` constants — the world's
+curriculum-ladder stage, set once at creation and IMMUTABLE for the world's
+lifetime: no mutation command exists or will, deliberately unlike
+`SetTeaching`'s live toggle; absent (`""`) means a pre-ladder world, ungated
+with stage-4 semantics, so existing worlds lose nothing; `Open` validates via
+`ValidStage`), `stage_overridden` (`bool` — the honesty marker `promptworld
+new --stage <id> --override` stamps when a world is created at an unearned
+stage, making overridden runs comparable as overridden runs), and
+`charter_preset` (`""`/`"default"` = the authored default charter, `"tutor"`
+= the stage-1 orientation preset — the constant that seeds `charter.md` at
+genesis and, at stage-1 where instruction files are locked, IS the effective
+charter regardless of edits ([[metatron]]); `Open` validates via
+`ValidCharterPreset`). A fourth addition, the optional `scenario` block
+(`ScenarioConfig{exercise}`, naming a `sim.ExerciseDefinition.ID`), is
+RESERVED on the `meeting`-block precedent: consumed by nothing yet and never
+written by `promptworld new` — it exists so TASK-119's scenario/incident
+machinery has a schema seam to land in, and this package deliberately does
+not validate it against the exercise catalog.
+`World.Map()` regenerates the terrain from the seed and
 dimensions — deterministic, so the map is never stored ([[worldmap-generation]]).
 
 - `Create(dir, name, seed)` refuses any existing non-empty directory, creates
@@ -62,6 +83,13 @@ dimensions — deterministic, so the map is never stored ([[worldmap-generation]
   --teaching` calls it right after `Create` (keeping `Create`'s own signature
   untouched for its other callers), and `promptworld teaching <world> on|off`
   is its standalone door ([[cli-promptworld]]).
+- `SetStage(dir, stage, overridden, charterPreset)` (spec 046,
+  [[curriculum-ladder]]) is `SetTeaching`'s write-mechanics sibling with the
+  opposite lifecycle: exactly ONE caller — `promptworld new`, once,
+  immediately after `Create` — because stage is a write-once birth fact (no
+  `promptworld stage <world> …` toggle exists or ever will). It does not
+  re-validate its arguments (the `SetTeaching` contract): callers pass
+  already-`ValidStage`/`ValidCharterPreset`-checked values.
 - Path helpers centralize layout: `DBPath()` → `world.db`, `LLMConfigPath()` →
   `llm.json` (the [[llm-orchestrator]] config, written by `new`, deletable to
   disable inference), `CalibrationPath()` → `calibration.json` (the
@@ -112,7 +140,13 @@ manifest).
 [[event-log]] and [[snapshots]] live inside `world.db`; [[ipc-server]] binds the socket
 at `SockPath()`. [[cli-promptworld]]'s `new` creates worlds and `migrate` upgrades
 an older one ([[world-migration]]). [[mental-maps]] is the spec-041 subsystem the
-current format version exists to support.
+current format version exists to support. [[curriculum-ladder]] is the spec-046
+subsystem behind the `stage`/`stage_overridden`/`charter_preset` manifest
+fields — the daemon reads them at boot and hands them boot-frozen to
+[[metatron]] for the stage ceiling and the stage-1 instruction lock; the
+per-user unlocks record that gates `promptworld new`'s default stage lives
+outside the save directory (in the worlds home), advisory and never an
+authority over anything in this directory.
 
 ## Operational notes
 

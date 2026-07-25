@@ -10,7 +10,8 @@ sources:
   - internal/sim/journal.go
   - internal/sim/terrain.go
   - internal/sim/morgue.go
-verified_against: dee5f4bf60093cb5d775e10c8ced41c7e5b385ec
+  - internal/sim/curriculum.go
+verified_against: 723c464c35aac4936f2793d566a53c801516ae60
 ---
 
 # Sim state & reducer
@@ -115,7 +116,16 @@ content hash a Metatron turn ran under — the full revision timeline lives in
 the event log), and the `MorgueEpilogues []MorgueEpilogue` bounded ring
 (`morgueEpilogueCap` 32, the chronicle pattern) of narrator mourning prose —
 all `omitempty`, so every pre-044 snapshot stays byte-identical with no
-format bump (executor types in `agents.go`; memories belong to
+format bump — and, since spec 046 ([[curriculum-ladder]]), the ladder's
+world-visible facts: `CurriculumPasses []CurriculumPass` (a bounded ring,
+`curriculumPassRetain` 32 on the standing-order prune precedent, of recorded
+exercise passes each carrying `EvidenceRef{type, seq, tick, custom}` audit
+pointers back into this world's log) and `StagesUnlocked []string` (the
+once-per-(world,stage) unlock latch — no cap needed, at most one entry per
+ladder stage), both `omitempty` so a pre-046 snapshot with neither field
+round-trips byte-identically; the per-user unlocks record is a PROJECTION of
+these events, this state being the replayable authority
+(executor types in `agents.go`; memories belong to
 [[agent-mind]]). Its
 `Apply(event)` method is the **only** event-driven mutation path — the live loop and
 crash recovery run the exact same code, which is what makes replay provably equal to
@@ -281,6 +291,20 @@ aligns each death against. `morgue.epilogue` dispatches to
 `applyMorgueEpilogue` in `morgue.go` (spec 044 US2): it validates the agent
 index (`-1` = the run-end epilogue) and non-empty text, then appends the
 bounded `State.MorgueEpilogues` ring (`morgueEpilogueCap` 32).
+The `curriculum.*` pair (spec 046, [[curriculum-ladder]]) dispatches to
+`applyCurriculum` in `curriculum.go` — validate-not-clamp, the metatron arm's
+contract, since both types are the executor emission class (pure functions of
+recorded state, so a landed event always re-applies cleanly in replay while a
+malformed fixture is rejected at the door): `curriculum.exercise_passed`
+checks a non-empty exercise id and the closed stage vocabulary
+(`validLadderStage`, `stage-1`..`stage-4` — the reducer-side twin of
+`world.ValidStage`, kept local so the deterministic core never imports the
+save-directory package) then appends the bounded pass ring;
+`curriculum.stage_unlocked` additionally rejects `stage-1` (the ladder's
+unearned floor — only stages 2..4 ever unlock) and any stage already latched
+(once per world per stage), and deliberately does NOT cross-check
+`CurriculumPasses` — that ring is pruned past 32, so the gate-conjunct
+evaluation (`EvaluateUnlock`) happens at emission time, never on re-apply.
 `world.migrated` (spec 012 US6) is the one case that does not incrementally mutate
 fields: after checking the payload's `State.Seed` matches (a mismatched payload
 no-ops, keeping `Apply` total), it replaces `*s` wholesale with the embedded state —
@@ -399,6 +423,10 @@ surfaces this reducer derives — the `IntentLog` ring (types and mutators
 `IntentRecord`/`appendIntent`/`stampIntentOutcome`/`stampOrAppendExpired` in
 `agents.go`) renders as the prompt's self-history block and
 `NeedsAnchor`/`NeedsAnchorTick` as its need-trajectory arrows.
+[[curriculum-ladder]] covers the `curriculum.*` payload shapes,
+`EvaluateUnlock`'s per-stage gate conjuncts, the sanctioned
+`CharterObservedEvidence` constructor, and the per-user unlocks record the
+daemon projects from the `StagesUnlocked` latch this reducer owns.
 
 ## Operational notes
 
