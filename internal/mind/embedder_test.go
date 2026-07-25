@@ -24,6 +24,10 @@ type stubEmbedClient struct {
 	fail      bool
 	warmErr   error
 	warmCalls atomic.Int64
+	// calls counts TEXTS attempted (success or failure; the coalescing worker
+	// may merge jobs into one call) — tests sequence on it so "recover after
+	// N failures" is deterministic, never a timing bet.
+	calls atomic.Int64
 }
 
 func (c *stubEmbedClient) setFail(fail bool) {
@@ -33,6 +37,7 @@ func (c *stubEmbedClient) setFail(fail bool) {
 }
 
 func (c *stubEmbedClient) Embed(_ context.Context, texts []string) ([][]float32, string, error) {
+	defer c.calls.Add(int64(len(texts)))
 	c.mu.Lock()
 	fail := c.fail
 	c.mu.Unlock()
@@ -62,6 +67,44 @@ func (r *recordingInjector) InjectSocial(events []store.Event) error {
 	return nil
 }
 
+// eventStream flattens injected batches into an ordered event cursor: the
+// worker COALESCES queued jobs into one injection (a deliberate cost choice —
+// see embedJob), so batch boundaries are load-dependent while event ORDER is
+// the guarantee under test.
+type eventStream struct {
+	ch  chan []store.Event
+	buf []store.Event
+}
+
+func (s *eventStream) next(t *testing.T) store.Event {
+	t.Helper()
+	if len(s.buf) == 0 {
+		select {
+		case batch := <-s.ch:
+			s.buf = batch
+		case <-time.After(5 * time.Second):
+			t.Fatal("no injected event within 5s")
+		}
+	}
+	e := s.buf[0]
+	s.buf = s.buf[1:]
+	return e
+}
+
+// idle reports whether nothing is buffered or immediately pending.
+func (s *eventStream) idle() bool {
+	if len(s.buf) > 0 {
+		return false
+	}
+	select {
+	case batch := <-s.ch:
+		s.buf = batch
+		return len(s.buf) == 0
+	default:
+		return true
+	}
+}
+
 // memAdded builds one committed agent.memory_added event as the notify path
 // delivers it: real store seq, payload carrying agent + text.
 func memAdded(seq int64, agent int, text string) store.Event {
@@ -84,23 +127,34 @@ func newTestEmbedder(t *testing.T, client EmbedClient, inj SocialInjector, warn 
 	return e
 }
 
-// nextCompanion reads one injected companion batch or fails the test.
-func nextCompanion(t *testing.T, ch chan []store.Event) sim.MemoryEmbeddedPayload {
+// nextCompanion reads the next injected event off the flattened stream and
+// asserts it is a memory companion.
+func nextCompanion(t *testing.T, s *eventStream) sim.MemoryEmbeddedPayload {
 	t.Helper()
-	select {
-	case batch := <-ch:
-		if len(batch) != 1 || batch[0].Type != "agent.memory_embedded" {
-			t.Fatalf("unexpected injected batch: %+v", batch)
-		}
-		var p sim.MemoryEmbeddedPayload
-		if err := json.Unmarshal(batch[0].Payload, &p); err != nil {
-			t.Fatal(err)
-		}
-		return p
-	case <-time.After(5 * time.Second):
-		t.Fatal("no companion injected within 5s")
-		return sim.MemoryEmbeddedPayload{}
+	e := s.next(t)
+	if e.Type != "agent.memory_embedded" {
+		t.Fatalf("unexpected injected event: %s %s", e.Type, e.Payload)
 	}
+	var p sim.MemoryEmbeddedPayload
+	if err := json.Unmarshal(e.Payload, &p); err != nil {
+		t.Fatal(err)
+	}
+	return p
+}
+
+// nextSituation reads the next injected event and asserts it is a situation
+// companion.
+func nextSituation(t *testing.T, s *eventStream) sim.SituationEmbeddedPayload {
+	t.Helper()
+	e := s.next(t)
+	if e.Type != "agent.situation_embedded" {
+		t.Fatalf("unexpected injected event: %s %s", e.Type, e.Payload)
+	}
+	var p sim.SituationEmbeddedPayload
+	if err := json.Unmarshal(e.Payload, &p); err != nil {
+		t.Fatal(err)
+	}
+	return p
 }
 
 // TestEmbedderEmissionOrdered (spec 042 T010, contract §2): companions land in
@@ -110,6 +164,7 @@ func nextCompanion(t *testing.T, ch chan []store.Event) sim.MemoryEmbeddedPayloa
 func TestEmbedderEmissionOrdered(t *testing.T) {
 	client := &stubEmbedClient{}
 	inj := &recordingInjector{ch: make(chan []store.Event, 16)}
+	stream := &eventStream{ch: inj.ch}
 	e := newTestEmbedder(t, client, inj, nil)
 
 	e.Observe([]store.Event{
@@ -127,7 +182,7 @@ func TestEmbedderEmissionOrdered(t *testing.T) {
 		seq   int64
 	}{{0, 10}, {0, 11}, {1, 12}, {0, 14}}
 	for _, want := range wantSeqs {
-		p := nextCompanion(t, inj.ch)
+		p := nextCompanion(t, stream)
 		if p.Agent != want.agent || p.MemSeq != want.seq {
 			t.Fatalf("companion = agent %d seq %d, want agent %d seq %d (emission order)", p.Agent, p.MemSeq, want.agent, want.seq)
 		}
@@ -144,6 +199,7 @@ func TestEmbedderFailureDebounce(t *testing.T) {
 	client := &stubEmbedClient{}
 	client.setFail(true)
 	inj := &recordingInjector{ch: make(chan []store.Event, 16)}
+	stream := &eventStream{ch: inj.ch}
 	warns := make(chan string, 16)
 	e := newTestEmbedder(t, client, inj, func(detail string) { warns <- detail })
 
@@ -159,18 +215,27 @@ func TestEmbedderFailureDebounce(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("no warning within 5s of the first failure")
 	}
+	// Sequence, don't race: recover only after the worker has ATTEMPTED all
+	// three queued memory texts (possibly coalesced into fewer calls) —
+	// otherwise a still-queued one would legitimately succeed post-recovery
+	// and read as a forbidden retry.
+	deadline := time.Now().Add(5 * time.Second)
+	for client.calls.Load() < 3 {
+		if time.Now().After(deadline) {
+			t.Fatalf("worker attempted %d embed texts within 5s, want 3", client.calls.Load())
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
 
 	// Recover: the next memory embeds — and because the worker is FIFO, its
 	// companion arriving proves the three failed ones were already skipped.
 	client.setFail(false)
 	e.Observe([]store.Event{memAdded(13, 0, "four")})
-	if p := nextCompanion(t, inj.ch); p.MemSeq != 13 {
+	if p := nextCompanion(t, stream); p.MemSeq != 13 {
 		t.Fatalf("post-recovery companion targets seq %d, want 13 — a failed memory was retried (backfill is forbidden)", p.MemSeq)
 	}
-	select {
-	case batch := <-inj.ch:
-		t.Fatalf("extra injection after the recovery companion: %+v (skipped memories must stay vectorless forever)", batch)
-	default:
+	if !stream.idle() {
+		t.Fatal("extra companions after the recovery one — skipped memories must stay vectorless forever")
 	}
 	if len(warns) != 0 {
 		t.Errorf("%d extra warnings buffered for one failure episode, want 0", len(warns))
@@ -196,6 +261,7 @@ func TestEmbedderTextTruncationCap(t *testing.T) {
 	var gotLen atomic.Int64
 	client := &lenRecordingClient{gotLen: &gotLen}
 	inj := &recordingInjector{ch: make(chan []store.Event, 4)}
+	stream := &eventStream{ch: inj.ch}
 	e := newTestEmbedder(t, client, inj, nil)
 
 	long := make([]byte, embedTextCapBytes+512)
@@ -203,7 +269,7 @@ func TestEmbedderTextTruncationCap(t *testing.T) {
 		long[i] = 'a'
 	}
 	e.Observe([]store.Event{memAdded(10, 0, string(long))})
-	nextCompanion(t, inj.ch)
+	nextCompanion(t, stream)
 	if got := gotLen.Load(); got != embedTextCapBytes {
 		t.Errorf("embedded text length = %d bytes, want the fixed cap %d", got, embedTextCapBytes)
 	}
@@ -225,11 +291,12 @@ func (c *lenRecordingClient) WarmEmbedding(context.Context) error { return nil }
 func TestEmbedderWarmPin(t *testing.T) {
 	client := &stubEmbedClient{warmErr: fmt.Errorf("404 page not found")}
 	inj := &recordingInjector{ch: make(chan []store.Event, 4)}
+	stream := &eventStream{ch: inj.ch}
 	warns := make(chan string, 4)
 	e := newTestEmbedder(t, client, inj, func(detail string) { warns <- detail })
 
 	e.Observe([]store.Event{memAdded(10, 0, "still embeds")})
-	if p := nextCompanion(t, inj.ch); p.MemSeq != 10 {
+	if p := nextCompanion(t, stream); p.MemSeq != 10 {
 		t.Fatalf("companion seq = %d, want 10", p.MemSeq)
 	}
 	if got := client.warmCalls.Load(); got != 1 {
@@ -237,25 +304,6 @@ func TestEmbedderWarmPin(t *testing.T) {
 	}
 	if len(warns) != 0 {
 		t.Errorf("a failed warm pin fired the failure-episode warning — it must stay best-effort")
-	}
-}
-
-// nextSituation reads one injected situation companion or fails the test.
-func nextSituation(t *testing.T, ch chan []store.Event) sim.SituationEmbeddedPayload {
-	t.Helper()
-	select {
-	case batch := <-ch:
-		if len(batch) != 1 || batch[0].Type != "agent.situation_embedded" {
-			t.Fatalf("unexpected injected batch: %+v", batch)
-		}
-		var p sim.SituationEmbeddedPayload
-		if err := json.Unmarshal(batch[0].Payload, &p); err != nil {
-			t.Fatal(err)
-		}
-		return p
-	case <-time.After(5 * time.Second):
-		t.Fatal("no situation companion injected within 5s")
-		return sim.SituationEmbeddedPayload{}
 	}
 }
 
@@ -269,6 +317,7 @@ func nextSituation(t *testing.T, ch chan []store.Event) sim.SituationEmbeddedPay
 func TestEmbedderSituationCadence(t *testing.T) {
 	client := &stubEmbedClient{}
 	inj := &recordingInjector{ch: make(chan []store.Event, 64)}
+	stream := &eventStream{ch: inj.ch}
 	e := newTestEmbedder(t, client, inj, nil)
 
 	// Reference replica: absorb exactly what the driver observes, so the
@@ -289,15 +338,16 @@ func TestEmbedderSituationCadence(t *testing.T) {
 
 	e.Observe(batch)
 
-	// The batch's memory companion lands first (FIFO), then one situation per
-	// live agent in index order.
-	if p := nextCompanion(t, inj.ch); p.Agent != 1 || p.MemSeq != 4 {
+	// The batch's memory companion lands first (FIFO), then the bucket's
+	// situations, one per live agent in index order (batch boundaries are the
+	// coalescing worker's business; order and content are the contract).
+	if p := nextCompanion(t, stream); p.Agent != 1 || p.MemSeq != 4 {
 		t.Fatalf("memory companion = %+v, want agent 1 seq 4 ahead of the bucket's situations", p)
 	}
 	for i := 0; i < sim.AgentCount; i++ {
-		p := nextSituation(t, inj.ch)
+		p := nextSituation(t, stream)
 		if p.Agent != i {
-			t.Fatalf("situation companion order: got agent %d, want %d", p.Agent, i)
+			t.Fatalf("situation companion order: got agent %d at position %d", p.Agent, i)
 		}
 		if p.Tick != ref.Tick {
 			t.Errorf("agent %d situation tick = %d, want the render tick %d", i, p.Tick, ref.Tick)
@@ -314,13 +364,11 @@ func TestEmbedderSituationCadence(t *testing.T) {
 	inside, _ := json.Marshal(sim.AgentMovedPayload{Agent: 0, X: 4, Y: 4})
 	e.Observe([]store.Event{{Seq: 6, Tick: sim.PlannerCadenceTicks + 500, Type: "agent.moved", Payload: inside}})
 	e.Observe([]store.Event{memAdded(7, 2, "sync marker")})
-	if p := nextCompanion(t, inj.ch); p.MemSeq != 7 {
+	if p := nextCompanion(t, stream); p.MemSeq != 7 {
 		t.Fatalf("expected only the sync-marker companion, got %+v (same bucket must not re-fire)", p)
 	}
-	select {
-	case extra := <-inj.ch:
-		t.Fatalf("same-bucket event re-fired the situation leg: %+v", extra)
-	default:
+	if !stream.idle() {
+		t.Fatal("same-bucket event re-fired the situation leg")
 	}
 }
 

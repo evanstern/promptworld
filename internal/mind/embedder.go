@@ -58,6 +58,19 @@ const (
 	// restarted underneath the daemon. Best-effort — a failed warm never
 	// disables the driver.
 	embedWarmInterval = time.Hour
+	// embedCoalesceCap bounds how many queued jobs one worker pass merges into
+	// a single embed call + injection. 32 covers any realistic burst while
+	// keeping one batch's texts well inside a local embed server's request
+	// appetite.
+	embedCoalesceCap = 32
+	// embedCoalesceLinger is the short wait the worker adds after the first
+	// job so a burst coalesces instead of paying one injection each: every
+	// injection is a loop command whose dry-run copies the whole state, and
+	// spec 041's mental maps made that copy expensive. 200ms is invisible
+	// against the 30-game-min situation cadence and any real memory-to-vector
+	// freshness need, while at max-speed fast-forward it collapses a game
+	// day's companions into a handful of injections.
+	embedCoalesceLinger = 200 * time.Millisecond
 )
 
 // EmbedClient is the orchestrator surface the embedder needs (test seam):
@@ -68,17 +81,27 @@ type EmbedClient interface {
 	WarmEmbedding(ctx context.Context) error
 }
 
-// embedJob is one text awaiting its vector. A memory job carries the emitting
-// event's store seq (the companion's target identity) and the exact recorded
-// text; a situation job (sit=true) carries the render tick and the rendered
-// situation string instead. One tagged type on one FIFO channel keeps the
-// single-flight worker's emission-order guarantee across both legs.
+// embedJob is one unit of embed work on the FIFO queue. A memory job carries
+// the emitting event's store seq (the companion's target identity) and the
+// exact recorded text; a situation job carries one WHOLE cadence bucket's
+// renders (sits non-nil) — batched deliberately (contract §2 allows it): one
+// /embeddings call and ONE InjectSocial per bucket instead of one per agent,
+// because every injection dry-runs on a full state copy, which spec 041's
+// mental maps made expensive (measured: per-agent injections cost ~+60% wall
+// per game-day at max speed; batched, ≈+10%). One tagged type on one FIFO
+// channel keeps the single-flight worker's emission-order guarantee.
 type embedJob struct {
 	agent int
 	text  string
-	seq   int64 // memory leg: agent.memory_added store seq
-	sit   bool  // situation leg (T012)
-	tick  int64 // situation leg: the tick the text was rendered at
+	seq   int64       // memory leg: agent.memory_added store seq
+	sits  []sitRender // situation leg (T012): the bucket's renders, agent order
+	tick  int64       // situation leg: the tick the texts were rendered at
+}
+
+// sitRender is one agent's rendered situation string within a bucket batch.
+type sitRender struct {
+	agent int
+	text  string
 }
 
 type Embedder struct {
@@ -113,6 +136,17 @@ func NewEmbedder(client EmbedClient, social SocialInjector, warn func(detail str
 	replica := sim.NewState(seed, m)
 	if err := json.Unmarshal(stateJSON, replica); err != nil {
 		return nil, err
+	}
+	// Drop the mental maps (spec 041) from this DRIVER-side replica: the
+	// situation template never reads them, and the per-beat perception sweep
+	// they drive is the replica's dominant reduce cost (measured: ~+60% wall
+	// per game-day at max speed with maps, ~0 without). Every map reducer arm
+	// nil-guards by 041's own design ("a map-less agent stays map-less on
+	// replay"), so a map-free replica stays correct for everything the
+	// renderer reads — positions, needs, intents, structures, night, liveness.
+	// The mind's replica keeps its maps; its prompts need them.
+	for i := range replica.Agents {
+		replica.Agents[i].Map = nil
 	}
 	e := &Embedder{
 		client:     client,
@@ -171,11 +205,13 @@ func (e *Embedder) run() {
 			}
 			// Situation leg (T012, research D5): at each cadence bucket edge,
 			// render each live agent's situation from the replica AS OF the
-			// edge and queue it behind any memories the same batch carried.
-			// Gaps are legal — a bucket with no committed events fires late or
-			// not at all, and selection falls back to the legacy ranking.
+			// edge and queue the WHOLE bucket as one batched job behind any
+			// memories the same batch carried. Gaps are legal — a bucket with
+			// no committed events fires late or not at all, and selection
+			// falls back to the legacy ranking.
 			if bucket := e.replica.Tick / sim.PlannerCadenceTicks; bucket > e.lastBucket {
 				e.lastBucket = bucket
+				var sits []sitRender
 				for i := range e.replica.Agents {
 					// Dead agents never plan again; asleep agents don't plan
 					// until they wake (which re-renders next bucket) — neither
@@ -185,8 +221,10 @@ func (e *Embedder) run() {
 					if e.replica.Agents[i].Dead || e.replica.Agents[i].Asleep {
 						continue
 					}
-					e.enqueue(embedJob{agent: i, sit: true, tick: e.replica.Tick,
-						text: renderSituation(e.replica, i)})
+					sits = append(sits, sitRender{agent: i, text: renderSituation(e.replica, i)})
+				}
+				if len(sits) > 0 {
+					e.enqueue(embedJob{sits: sits, tick: e.replica.Tick})
 				}
 			}
 		}
@@ -201,8 +239,8 @@ func (e *Embedder) enqueue(j embedJob) {
 	select {
 	case e.jobs <- j:
 	default:
-		if j.sit {
-			log.Printf("mind: embedder queue full — situation render for agent %d dropped (next bucket retries)", j.agent)
+		if j.sits != nil {
+			log.Printf("mind: embedder queue full — situation bucket at tick %d dropped (next bucket retries)", j.tick)
 		} else {
 			log.Printf("mind: embedder queue full — memory seq %d stays vectorless", j.seq)
 		}
@@ -266,32 +304,72 @@ func renderSituation(s *sim.State, idx int) string {
 	return b.String()
 }
 
-// worker embeds one memory at a time and injects its recorded companion.
+// worker embeds jobs single-flight, COALESCING whatever has queued behind the
+// first one (bounded): a burst of memories becomes one /embeddings call and
+// one atomic injection instead of N — the injection's dry-run state copy is
+// the expensive part (see embedJob). Queue order is preserved, so the
+// per-agent emission-order guarantee holds; at real (paced) speeds bursts are
+// rare and this degrades to one job at a time.
 func (e *Embedder) worker() {
 	for {
 		select {
 		case <-e.done:
 			return
 		case j := <-e.jobs:
-			e.runJob(j)
+			e.runJobs(e.coalesce(j))
 		}
 	}
 }
 
-func (e *Embedder) runJob(j embedJob) {
+// coalesce gathers the jobs that arrive within one linger window behind the
+// first, bounded by the cap. Returns what it has on shutdown so Close never
+// hangs the worker.
+func (e *Embedder) coalesce(first embedJob) []embedJob {
+	jobs := []embedJob{first}
+	linger := time.NewTimer(embedCoalesceLinger)
+	defer linger.Stop()
+	for len(jobs) < embedCoalesceCap {
+		select {
+		case next := <-e.jobs:
+			jobs = append(jobs, next)
+		case <-linger.C:
+			return jobs
+		case <-e.done:
+			return jobs
+		}
+	}
+	return jobs
+}
+
+// runJobs embeds a coalesced run of jobs with ONE model call and lands every
+// companion in ONE atomic injection, in queue order.
+func (e *Embedder) runJobs(jobs []embedJob) {
 	// FR-011: the exact recorded text, no normalization beyond the fixed-byte
 	// truncation cap.
-	text := j.text
-	if len(text) > embedTextCapBytes {
-		text = text[:embedTextCapBytes]
+	capped := func(text string) string {
+		if len(text) > embedTextCapBytes {
+			return text[:embedTextCapBytes]
+		}
+		return text
+	}
+	var texts []string
+	for _, j := range jobs {
+		if j.sits != nil {
+			for _, sr := range j.sits {
+				texts = append(texts, capped(sr.text))
+			}
+		} else {
+			texts = append(texts, capped(j.text))
+		}
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), embedCallTimeout)
-	vecs, model, err := e.client.Embed(ctx, []string{text})
+	vecs, model, err := e.client.Embed(ctx, texts)
 	cancel()
-	if err != nil || len(vecs) != 1 || len(vecs[0]) == 0 {
-		// Loud, non-fatal, no retry into the tick path: the memory stays
-		// vectorless forever and the operator hears about the EPISODE once.
-		detail := "embedding call returned no vector"
+	if err != nil || len(vecs) != len(texts) {
+		// Loud, non-fatal, no retry into the tick path: the memories stay
+		// vectorless forever / the situations wait for the next bucket, and
+		// the operator hears about the EPISODE once.
+		detail := "embedding call returned the wrong vector count"
 		if err != nil {
 			detail = err.Error()
 		}
@@ -299,30 +377,41 @@ func (e *Embedder) runJob(j embedJob) {
 		return
 	}
 	e.noteSuccess()
-	typ := "agent.memory_embedded"
-	var payload []byte
-	var merr error
-	if j.sit {
-		// Situation leg (T012): the recorded companion carries the rendered
-		// TEXT alongside the vector — the divergence-audit surface.
-		typ = "agent.situation_embedded"
-		payload, merr = json.Marshal(sim.SituationEmbeddedPayload{
-			Agent: j.agent, Tick: j.tick, Text: j.text, Vec: vecs[0], Model: model,
+	var batch []store.Event
+	v := 0
+	for _, j := range jobs {
+		if j.sits != nil {
+			// Situation leg (T012): one recorded companion per agent. The
+			// companion carries the rendered TEXT alongside the vector — the
+			// divergence-audit surface.
+			for _, sr := range j.sits {
+				payload, merr := json.Marshal(sim.SituationEmbeddedPayload{
+					Agent: sr.agent, Tick: j.tick, Text: sr.text, Vec: vecs[v], Model: model,
+				})
+				if merr != nil {
+					log.Printf("mind: embedder payload marshal failed: %v", merr)
+					return
+				}
+				batch = append(batch, store.Event{Type: "agent.situation_embedded", Payload: payload})
+				v++
+			}
+			continue
+		}
+		payload, merr := json.Marshal(sim.MemoryEmbeddedPayload{
+			Agent: j.agent, MemSeq: j.seq, Vec: vecs[v], Model: model,
 		})
-	} else {
-		payload, merr = json.Marshal(sim.MemoryEmbeddedPayload{
-			Agent: j.agent, MemSeq: j.seq, Vec: vecs[0], Model: model,
-		})
+		if merr != nil {
+			log.Printf("mind: embedder payload marshal failed: %v", merr)
+			return
+		}
+		batch = append(batch, store.Event{Type: "agent.memory_embedded", Payload: payload})
+		v++
 	}
-	if merr != nil {
-		log.Printf("mind: embedder payload marshal failed: %v", merr)
-		return
-	}
-	if err := e.social.InjectSocial([]store.Event{{Type: typ, Payload: payload}}); err != nil {
-		// Loop stopped (shutdown window) or door refusal: the memory stays
-		// vectorless / the situation waits for the next bucket; the log line
+	if err := e.social.InjectSocial(batch); err != nil {
+		// Loop stopped (shutdown window) or door refusal: the memories stay
+		// vectorless / the situations wait for the next bucket; the log line
 		// is the record.
-		log.Printf("mind: embedder %s for agent %d rejected: %v", typ, j.agent, err)
+		log.Printf("mind: embedder companion batch rejected: %v", err)
 	}
 }
 

@@ -251,7 +251,7 @@ func TestBundlesDir(t *testing.T) {
 func TestMemoryRelevanceRoundTrip(t *testing.T) {
 	for _, mode := range []string{MemoryRelevanceShadow, MemoryRelevanceOn} {
 		dir := t.TempDir()
-		manifest := `{"name":"x","seed":1,"format_version":3,"tick_game_seconds":1,"memory_relevance":"` + mode + `"}`
+		manifest := `{"name":"x","seed":1,"format_version":4,"tick_game_seconds":1,"memory_relevance":"` + mode + `"}`
 		if err := os.WriteFile(filepath.Join(dir, ManifestName), []byte(manifest), 0o644); err != nil {
 			t.Fatal(err)
 		}
@@ -287,7 +287,7 @@ func TestMemoryRelevanceRoundTrip(t *testing.T) {
 func TestOpenRejectsBadMemoryRelevance(t *testing.T) {
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, ManifestName),
-		[]byte(`{"name":"x","seed":1,"format_version":3,"tick_game_seconds":1,"memory_relevance":"sometimes"}`), 0o644); err != nil {
+		[]byte(`{"name":"x","seed":1,"format_version":4,"tick_game_seconds":1,"memory_relevance":"sometimes"}`), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	_, err := Open(dir)
