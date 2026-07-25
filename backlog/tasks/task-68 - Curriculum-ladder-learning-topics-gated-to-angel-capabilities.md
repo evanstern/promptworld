@@ -4,7 +4,7 @@ title: 'Curriculum ladder: learning topics gated to angel capabilities'
 status: To Do
 assignee: []
 created_date: '2026-07-23 03:28'
-updated_date: '2026-07-25 04:42'
+updated_date: '2026-07-25 06:20'
 labels:
   - review-2026-07-22
   - teaching-game
@@ -38,6 +38,12 @@ Depends on TASK-64 (instruction surface + tool gating is the substrate). The hor
 - [ ] #9 Each stage ships a per-stage quickstart page via the player-docs skill
 - [ ] #10 Stage-1 orientation is delivered in-game via the tutor charter preset
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Curriculum decisions ratified (operator, 2026-07-25, spec session): (1) LADDER = 4 stages — client 3 (conversational prompting / instruction authoring / capability design) + capstone graduation stage (full roster, ambient endgame, canonization TASK-81 as signature). (2) NAMES = skin-provided display identities over neutral substrate ids (stage-1..4 + concept descriptions); default guardian-skin names drafted in spec for AC#5 client review — see TASK-121 pivot (de-themed skinnable persona). (3) UNLOCK GATES = scenario pass signals: 1→2 stage-1 scenario pass (first-night; run not ended + rubric pass, TASK-119 machinery); 2→3 stage-2 scenario pass with custom charter revision in force (spec 044 charter fingerprint proves it); 3→4 granted-tool act contributes to a stage-3 scenario pass. (4) UNLOCK HOME = per-user unlocks file, entries point at proving world+events (auditable); world creation offers earned stages + explicit informed override (you-are-skipping-X notice); self-directed-engineer audience posture. Spec next: specs/046, skin-aware per TASK-121 sequencing (68 spec does not wait for 121 implementation).
+<!-- SECTION:NOTES:END -->
 
 ## Comments
 
