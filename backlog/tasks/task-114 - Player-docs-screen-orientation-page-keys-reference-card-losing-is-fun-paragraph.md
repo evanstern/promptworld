@@ -3,9 +3,10 @@ id: TASK-114
 title: >-
   Player docs: screen-orientation page, keys reference card, losing-is-fun
   paragraph
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-25 04:26'
+updated_date: '2026-07-25 04:50'
 labels: []
 dependencies: []
 ordinal: 85000
@@ -24,3 +25,12 @@ Approved 2026-07-25 (learning-game synthesis, docs/design/learning-game-synthesi
 - [ ] #3 getting-started.html opens expectations with the losing-is-fun reassurance paragraph
 - [ ] #4 New pages pass the player-docs freshness gate (check-freshness.mjs --check)
 <!-- AC:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-07-25 04:50
+---
+Implementation started 2026-07-25. Tier: Sonnet spec-implementer (rubric: single-surface docs/content work — player-docs HTML pages via existing skill machinery, no engine code, no concurrency/doctrine surface; matches 'doc reconciliation / routine slice'). Worktree .worktrees/task-114, branch task-114-player-docs-screen-orientation. Spec rigor: content task executing pre-approved synthesis decision 6 with complete ACs on this card (trivial-track: no code, inputs and outputs fully enumerated in description).
+---
+<!-- COMMENTS:END -->

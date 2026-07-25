@@ -1,10 +1,10 @@
 ---
 id: TASK-31
 title: 'Permadeath runs, death escalation, and the morgue file: design session'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-20 19:55'
-updated_date: '2026-07-25 04:42'
+updated_date: '2026-07-25 04:54'
 labels:
   - design
   - learning-game
@@ -39,5 +39,10 @@ Drift audit 2026-07-23: verified exact — gruWound=250 gru.go:38, gruWoundFloor
 created: 2026-07-25 04:42
 ---
 Relabeled per learning-game synthesis (2026-07-25): learning-game PREREQUISITE — player-attributable failure is the honest grader. Absorbs the shareable-epitaph framing: the morgue file is the retellable artifact (Boatmurdered lesson — the celebrated DF story object is a retelling). Scenario runs (staged-session decision) will consume run.ended as their fail signal; the open 'what failure can the player cause and how is it attributed' operator question lands in this design session.
+---
+
+created: 2026-07-25 04:54
+---
+Design session opened 2026-07-25 in main session (Fable): permadeath/run-outcomes/morgue + the learning-game synthesis open question 1 (player-attributable failure state).
 ---
 <!-- COMMENTS:END -->
