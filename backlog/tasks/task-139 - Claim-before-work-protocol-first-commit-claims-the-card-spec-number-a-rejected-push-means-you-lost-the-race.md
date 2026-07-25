@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-25 20:22'
-updated_date: '2026-07-25 22:17'
+updated_date: '2026-07-25 22:19'
 labels:
   - gates
   - process
@@ -45,13 +45,13 @@ Spec: specs/065-claim-before-work
 - [x] #3 Creating a specs/NNN-* whose number is already taken on origin/main is blocked at claim time, not detected after
 - [x] #4 Task branches push on first commit so in-flight work is auditable from any clone
 - [x] #5 Two-session simulation shows the second session is stopped rather than duplicating (test or documented manual run)
-- [ ] #6 Spec phase: Setup
-- [ ] #7 Spec phase: Foundational (blocking prerequisites for the gate stories)
-- [ ] #8 Spec phase: User Story 2 — the gates stop the second session mechanically (P1) 🎯 MVP
-- [ ] #9 Spec phase: User Story 3 — in-flight work auditable from any clone (P2)
+- [x] #6 Spec phase: Setup
+- [x] #7 Spec phase: Foundational (blocking prerequisites for the gate stories)
+- [x] #8 Spec phase: User Story 2 — the gates stop the second session mechanically (P1) 🎯 MVP
+- [x] #9 Spec phase: User Story 3 — in-flight work auditable from any clone (P2)
 - [ ] #10 Spec phase: User Story 1 — doctrine: the protocol itself (P1)
-- [ ] #11 Spec phase: User Story 4 — two-session race simulation (P2)
-- [ ] #12 Spec phase: Polish & cross-cutting
+- [x] #11 Spec phase: User Story 4 — two-session race simulation (P2)
+- [x] #12 Spec phase: Polish & cross-cutting
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -60,4 +60,6 @@ Spec: specs/065-claim-before-work
 Tier decision: Opus 4.8 (rubric: doctrine-adjacent behavior change — modifies spec 051 merge-drift gate semantics + CLAUDE.md doctrine; hook enforcement layer). Spec 065 authored, planned, tasked, linked (7 phase ACs). Contract wrinkle caught at plan review: worktree --spec must become claim-aware (--spec NNN --task TASK-n passes on Spec-marker attribution) or every claimed task's own worktree would be blocked. Dispatching spec-implementer on task-139-claim-before-work worktree.
 
 Implementation complete on task-139-claim-before-work (Opus 4.8 spec-implementer): claim mode, worktree --task card check + claim-aware --spec, session branch-unpushed, pre-bash spec-dir matchers + new pre-write hook (Write|Edit), CLAUDE.md doctrine block, two-clone race simulation (10 tests; 14/14 suite green post-rebase). PR #97 open — merge held: operator permission required in this session. Implementer found+fixed git ls-tree C-quoting bug on non-ASCII card filenames. T014: no wiki notes pin the touched files — no wiki-update needed. AC #1 half-landed (CLAUDE.md in PR); runbook-template half + T011 pending in praxis repo.
+
+spec-bridge sync: Setup: 1/1 · Foundational (blocking prerequisites for the gate stories): 2/2 · User Story 2 — the gates stop the second session mechanically (P1) 🎯 MVP: 5/5 · User Story 3 — in-flight work auditable from any clone (P2): 1/1 · User Story 1 — doctrine: the protocol itself (P1): 1/2 · User Story 4 — two-session race simulation (P2): 1/1 · Polish & cross-cutting: 2/2
 <!-- SECTION:NOTES:END -->
