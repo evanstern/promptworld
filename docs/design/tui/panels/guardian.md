@@ -2,7 +2,7 @@
 title: Panel — guardian (fiction-layer tab content)
 class: panel
 status: shipped
-verified_against: c8225152a777babd90dfb4b7c17924dce6cf4600
+verified_against: c8d80800fc5d34c5c31ab54751ebfb3ba80efc5b
 sources:
   - internal/tui/views.go
   - internal/tui/tui.go

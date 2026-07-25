@@ -91,7 +91,7 @@ func charterIsDefault(worldDir string, preset ...string) bool {
 }
 
 // isLegacyDefault reports whether text is one of the retired game-authored
-// default charters (spec 052 SC-003): the long-lived pre-059 angel seed, or
+// default charters (spec 052 SC-003): the long-lived pre-059 legacy seed, or
 // the brief post-059/pre-052 variant carrying the survival paragraph. Either
 // way it is game-authored text — never reclassified player-authored.
 func isLegacyDefault(text string) bool {
