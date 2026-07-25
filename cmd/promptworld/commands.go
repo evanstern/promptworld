@@ -393,15 +393,16 @@ func formatLLMOneShot(resp llm.Response) string {
 	return b.String()
 }
 
-// cmdMetatron is the console one-shot (TASK-12): with a message, one
-// mediated turn; without, the model-free status peek.
-func cmdMetatron(args []string) error {
-	fs := flag.NewFlagSet("metatron", flag.ContinueOnError)
+// cmdGuardian is the console one-shot (TASK-12; canonical name `guardian`
+// since spec 052 FR-008, with `metatron` as a hidden compat alias): with a
+// message, one mediated turn; without, the model-free status peek.
+func cmdGuardian(args []string) error {
+	fs := flag.NewFlagSet("guardian", flag.ContinueOnError)
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
 	if fs.NArg() < 1 {
-		return fmt.Errorf("usage: promptworld metatron <world> [message...]")
+		return fmt.Errorf("usage: promptworld guardian <world> [message...]")
 	}
 	dir, err := resolveWorld(fs.Arg(0))
 	if err != nil {
