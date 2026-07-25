@@ -96,10 +96,12 @@ func sceneOutcomes(t *testing.T, all []store.Event) (terminal sim.CogOutcomePayl
 
 func startConvo(t *testing.T, h *harness, md *Mind) {
 	t.Helper()
+	// priorExchange 0: first contact — the spec-061 novelty SHIM is vacuous, so
+	// these founding-lifecycle tests found the scene exactly as before.
 	md.maybeStartConversation(store.Event{
 		Tick: 100, Type: "agent.talked",
 		Payload: mustJSON(t, sim.TalkedPayload{A: 0, B: 1}),
-	})
+	}, 0)
 }
 
 // TestConvoOutcomeRetryLandsWhole (T007a / US1 / SC-001): a malformed first summary
@@ -525,7 +527,7 @@ func TestConversationRunsAndLands(t *testing.T) {
 	md.maybeStartConversation(store.Event{
 		Tick: 100, Type: "agent.talked",
 		Payload: mustJSON(t, sim.TalkedPayload{A: 0, B: 1}),
-	})
+	}, 0)
 
 	convs := h.waitEvents(t, 10*time.Second, func(e store.Event) bool {
 		return e.Type == "social.conversation"
@@ -648,7 +650,7 @@ func TestSceneConversation(t *testing.T) {
 	md.maybeStartConversation(store.Event{
 		Tick: 100, Type: "agent.talked",
 		Payload: mustJSON(t, sim.TalkedPayload{A: 0, B: 1}),
-	})
+	}, 0)
 
 	convs := h.waitEvents(t, 10*time.Second, func(e store.Event) bool {
 		return e.Type == "social.conversation"
@@ -727,7 +729,7 @@ func TestConversationFailureInjectsNothing(t *testing.T) {
 	md.maybeStartConversation(store.Event{
 		Tick: 100, Type: "agent.talked",
 		Payload: mustJSON(t, sim.TalkedPayload{A: 0, B: 1}),
-	})
+	}, 0)
 	time.Sleep(500 * time.Millisecond)
 	all, _ := h.st.EventsSince(0, 0)
 	for _, e := range all {

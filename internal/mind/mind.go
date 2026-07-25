@@ -213,6 +213,18 @@ func (md *Mind) run() {
 // absorb applies events to the replica and arms triggers.
 func (md *Mind) absorb(batch []store.Event) {
 	for _, e := range batch {
+		// Spec 061 (TASK-109): capture the pair's PRIOR last-exchange tick before
+		// the reducer's agent.talked arm overwrites PairTalks — the novelty SHIM
+		// (maybeStartConversation) needs "salient memory since the LAST exchange",
+		// and Apply runs before it below. PairTalks stays the one source of truth;
+		// this only reads it a beat earlier.
+		var priorExchange int64
+		if e.Type == "agent.talked" {
+			var p sim.TalkedPayload
+			if json.Unmarshal(e.Payload, &p) == nil {
+				priorExchange = md.replica.PairLastTalk(p.A, p.B)
+			}
+		}
 		md.replica.Apply(e)
 		if e.Tick > md.replica.Tick {
 			md.replica.Tick = e.Tick
@@ -275,7 +287,7 @@ func (md *Mind) absorb(batch []store.Event) {
 		case "agent.moved":
 			md.armEncounters(e)
 		case "agent.talked":
-			md.maybeStartConversation(e)
+			md.maybeStartConversation(e, priorExchange)
 		case "agent.slept":
 			md.maybeConsolidate(e)
 		case "meeting.proposal_resolved":

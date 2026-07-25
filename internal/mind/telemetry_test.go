@@ -296,7 +296,7 @@ func TestPauseConversationLandsAtFrozenTick(t *testing.T) {
 	md.maybeStartConversation(store.Event{
 		Tick: frozen, Type: "agent.talked",
 		Payload: mustJSON(t, sim.TalkedPayload{A: 0, B: 1}),
-	})
+	}, 0)
 	convs := h.waitEvents(t, 15*time.Second, func(e store.Event) bool {
 		return e.Type == "social.conversation"
 	})
