@@ -49,7 +49,7 @@ Spec: specs/065-claim-before-work
 - [x] #7 Spec phase: Foundational (blocking prerequisites for the gate stories)
 - [x] #8 Spec phase: User Story 2 — the gates stop the second session mechanically (P1) 🎯 MVP
 - [x] #9 Spec phase: User Story 3 — in-flight work auditable from any clone (P2)
-- [ ] #10 Spec phase: User Story 1 — doctrine: the protocol itself (P1)
+- [x] #10 Spec phase: User Story 1 — doctrine: the protocol itself (P1)
 - [x] #11 Spec phase: User Story 4 — two-session race simulation (P2)
 - [x] #12 Spec phase: Polish & cross-cutting
 <!-- AC:END -->
@@ -64,4 +64,6 @@ Implementation complete on task-139-claim-before-work (Opus 4.8 spec-implementer
 spec-bridge sync: Setup: 1/1 · Foundational (blocking prerequisites for the gate stories): 2/2 · User Story 2 — the gates stop the second session mechanically (P1) 🎯 MVP: 5/5 · User Story 3 — in-flight work auditable from any clone (P2): 1/1 · User Story 1 — doctrine: the protocol itself (P1): 1/2 · User Story 4 — two-session race simulation (P2): 1/1 · Polish & cross-cutting: 2/2
 
 Companion landed: praxisflux TASK-47 / PR #55 merged (merge commit c9c209b) — sweep runbook template now carries the claim-before-work doctrine; sweep skill 0.2.0→0.3.0, marketplace 0.12.1→0.13.0, praxis wiki re-pinned (25/25 fresh), per-task course docs/courses/TASK-47 gate-green, 157/157 tests. AC #1 fully proven. All 14 spec tasks ticked — spec derives Done-eligible; holding In Progress until PR #97 merges (operator) so status never exceeds merged artifacts.
+
+spec-bridge sync (partial, deliberate): AC #10 ticked — US1 2/2. Done flip HELD by orchestrator: PR #97 unmerged (operator-gated merge); board Done would exceed merged artifacts (precedent: TASK-121 revert, d117576). Run sync after #97 merges to flip Done with the derived final summary.
 <!-- SECTION:NOTES:END -->
