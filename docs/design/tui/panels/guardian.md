@@ -2,7 +2,7 @@
 title: Panel — guardian (fiction-layer tab content)
 class: panel
 status: shipped
-verified_against: c8906da39be3a5b861c2272af37db0a83dcded7a
+verified_against: cb89a4c7811962243ac907e0aeed43619b4d4f2d
 sources:
   - internal/tui/views.go
   - internal/tui/tui.go
@@ -17,6 +17,18 @@ page never renders engine telemetry; that content lives on
 "metatron" tab section. Container chrome (tab row, badges, tab-switch keys)
 is [dock.md](dock.md); the *input* line is
 [minibuffer.md](minibuffer.md) — this page is history + status only.
+
+**Re-verified, spec 053/TASK-125**: before this feature, this claim held for
+the widescreen dock tab (`dockTabContent`'s `paneMetatron` case only ever
+called the transcript body — it never rendered telemetry) but not yet for
+the narrow fallback's combined pane (`metatronView` used to also render the
+provider table/spend/horizon block inline, below the standing-orders block).
+Spec 053 relocated that block out to [systems.md](systems.md)'s
+`systemsView`, so this page's "never renders engine telemetry" claim is now
+byte-true for both layouts — the pane header line itself also moved to a
+function shared verbatim with [pages/guardian-console.md](../pages/guardian-console.md)
+(`guardianHeaderLine`), so it can never drift from what the console page
+shows in its own header line.
 
 ## Mockup
 
@@ -96,7 +108,7 @@ is [dock.md](dock.md); the *input* line is
 
 | control/region | states | data source | renderer | keys+mouse | introduced-by | skin-token |
 |---|---|---|---|---|---|---|
-| pane header — name + charge bank | 0–3 charges filled | `Status.Clock.MetatronCharges`, `sim.MetatronChargeCap` | `metatronView` header | — (display-only) | TASK-12 | `skin.guardian.name` |
+| pane header — name + charge bank | 0–3 charges filled | `Status.Clock.MetatronCharges`, `sim.MetatronChargeCap` | `guardianHeaderLine` (shared verbatim with the console page, spec 053) | — (display-only) | TASK-12 | `skin.guardian.name` |
 | instruction/capability provenance segment | quiet (full grant) · skill count · tools summary · `tools: none` | `metatron.Status` (`ManifestDefault`, `GrantedTools`) | `consoleToolsSummary` | — | spec 021 | — |
 | stage segment | present (locked) · present (unlocked) · absent (pre-ladder) | `Status.Stage`/`CharterLocked`/`CharterPreset` | `consoleStageSummary` | — | spec 046 | — |
 | transcript row — you | text | player input history | `transcriptRowLines`/`classifyTranscriptLine` | — | TASK-34 | — |

@@ -243,14 +243,16 @@ func TestHelpAllOtherKeysInertWhileOpen(t *testing.T) {
 // digestRegistry (TestCatalogSweep precedent, research.md R3).
 var realModeKeys = map[helpModeKey][]string{
 	// handleGlobalKey's switch (tui.go) — one case list, string literals.
+	// "G" (spec 053) opens the guardian console; "5" selects the new
+	// systems dock tab.
 	helpModeGlobal: {
-		"q", "1", "2", "3", "4", "tab", "shift+tab", "m", "enter", "esc",
+		"q", "1", "2", "3", "4", "5", "G", "tab", "shift+tab", "m", "enter", "esc",
 		"a", "t", "r", "up", "down", "left", "right", "c", " ", "[", "]",
 	},
 	// Same handler as global — solo/narrow drives it identically; only the
 	// basic/advanced split differs (R1/data-model.md).
 	helpModeSolo: {
-		"q", "1", "2", "3", "4", "tab", "shift+tab", "m", "enter", "esc",
+		"q", "1", "2", "3", "4", "5", "G", "tab", "shift+tab", "m", "enter", "esc",
 		"a", "t", "r", "up", "down", "left", "right", "c", " ", "[", "]",
 	},
 	// handleMinibufferKey (tui.go) switches on msg.Type; represented here
@@ -260,25 +262,32 @@ var realModeKeys = map[helpModeKey][]string{
 	// handled=true) union globalKeys minus "enter" (shadowed: inspect's
 	// own "enter" case runs first, so global's narrow-only body never
 	// fires while inspecting — keymap.md "All global keys stay live").
+	// "G" is NOT added a second time here: inspect's own binding (jump to
+	// last event) already claims the literal key and shadows the global
+	// console-open binding exactly the way its "enter" shadows global's —
+	// FR-001 scopes the console key to "home, solo, and narrow" precisely
+	// because inspect/villagers modes already own "G" for their own jump.
+	// "5" (tab-select) is unclaimed here, so it falls through to global.
 	helpModeInspect: {
 		"j", "k", "g", "G", "J", "K", "enter",
-		"q", "1", "2", "3", "4", "tab", "shift+tab", "m", "esc",
+		"q", "1", "2", "3", "4", "5", "tab", "shift+tab", "m", "esc",
 		"a", "t", "r", "up", "down", "left", "right", "c", " ", "[", "]",
 	},
 	// handleVillagersKey, roster state: j/k/g/G/enter always handled=true
 	// regardless of villDetail; esc/d fall through to global when !villDetail
 	// (esc real via global's own case; "d" has no global case, so it's
-	// truly unbound in roster and excluded here).
+	// truly unbound in roster and excluded here). "G" is villJumpLast's own
+	// binding (see the inspect-mode comment above); "5" falls through.
 	helpModeVillagersRoster: {
 		"j", "k", "g", "G", "enter",
-		"q", "1", "2", "3", "4", "tab", "shift+tab", "m", "esc",
+		"q", "1", "2", "3", "4", "5", "tab", "shift+tab", "m", "esc",
 		"a", "t", "r", "up", "down", "left", "right", "c", " ", "[", "]",
 	},
 	// handleVillagersKey, detail state: esc/d also become handled=true here
 	// (shadowing global's esc), alongside the always-true j/k/g/G/enter.
 	helpModeVillagersDetail: {
 		"j", "k", "g", "G", "enter", "esc", "d",
-		"q", "1", "2", "3", "4", "tab", "shift+tab", "m",
+		"q", "1", "2", "3", "4", "5", "tab", "shift+tab", "m",
 		"a", "t", "r", "up", "down", "left", "right", "c", " ", "[", "]",
 	},
 }
@@ -419,7 +428,7 @@ func TestHelpWalkthroughGlyphPageMatchesSharedTable(t *testing.T) {
 // dockTabKey) has a walkthrough row.
 func TestHelpWalkthroughCoversEveryDockTab(t *testing.T) {
 	lines := strings.Join(helpWalkthroughLines(200), "\n")
-	for _, name := range []string{paneNames[paneChronicle], paneNames[paneMetatron], paneNames[paneVillagers]} {
+	for _, name := range []string{paneNames[paneChronicle], paneNames[paneMetatron], paneNames[paneVillagers], paneNames[paneSystems]} {
 		if !strings.Contains(lines, name) {
 			t.Errorf("walkthrough missing dock tab %q", name)
 		}

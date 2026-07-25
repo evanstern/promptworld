@@ -2,7 +2,7 @@
 title: Pattern — keymap
 class: pattern
 status: shipped
-verified_against: 693fe059da9a143a480ea7f3f2e0d46a151d4630
+verified_against: cb89a4c7811962243ac907e0aeed43619b4d4f2d
 sources:
   - internal/tui/tui.go
   - internal/tui/help.go
@@ -22,7 +22,8 @@ walkthrough or lessons section of its own).
 | Key | Action |
 |---|---|
 | `1` | home composite (from solo: return home; on home: map is already primary) |
-| `2` / `3` / `4` | select dock tab chronicle / `{{skin.guardian.tab_label}}` / villagers; **same key again** → solo zoom; again → back home |
+| `2` / `3` / `4` / `5` | select dock tab chronicle / `{{skin.guardian.tab_label}}` / villagers / systems; **same key again** → solo zoom; again → back home |
+| `G` | open the guardian console — a full-screen page for the conversation, charter/skills, and `$EDITOR` (spec 053; shadowed by inspect mode's and the villagers tab's own `G`, "Mode: console" below) |
 | `m` | focus the minibuffer |
 | `space` | pause / resume the clock |
 | `[` / `]` | speed down / up |
@@ -84,18 +85,42 @@ Unlike inspect mode, this does **not** require the clock to be paused.
 | `esc` | (falls through to global — releases solo/home) | close the decisions sub-view if open, else close detail → back to roster |
 
 `esc` follows "esc always releases" ordering
-([focus-contract.md](focus-contract.md) rule 3): minibuffer → villager detail →
-solo → home — each press of `esc` releases exactly one layer. With no world state
-loaded (or an empty roster) `j/k/g/G/⏎` are strict no-ops.
+([focus-contract.md](focus-contract.md) rule 3, spec 053 amendment): minibuffer
+→ villager detail → **console** → solo → home — each press of `esc` releases
+exactly one layer. With no world state loaded (or an empty roster)
+`j/k/g/G/⏎` are strict no-ops.
+
+## Mode: console (the guardian console page is open; spec 053, layered on global)
+
+The console ([pages/guardian-console.md](../pages/guardian-console.md)) is a
+full-screen **page**, not a dock tab or an overlay — reached by `G` from the
+global mode (home, solo, narrow), never from inside inspect mode or the
+villagers tab, both of which already bind `G` to their own jump-to-last
+(above) and keep it. While the console is open, its own key layer owns a
+handful of keys; every other global key still works underneath (the
+console's own footer names them), unlike inspect/villagers mode's narrower
+"layered, most global keys pass through unchanged" shape.
+
+| Key | Action |
+|---|---|
+| `G` | close, restoring whatever was open before (`1`/unfocused `esc` do the same) |
+| `m` | focus the minibuffer (the composer) — in place, never switching the narrow fallback's active pane |
+| `e` | `$EDITOR` shell-out on the world's `charter.md` (contract §4) |
+| `J` / `K` | scrollback down (toward the tail) / up (toward older turns) |
+| everything else (`space`/`q`/`[`/`]`/`2`-`5`/pan/`a`/`t`/`r`) | falls through to the global mode unchanged |
+
+While the minibuffer is focused inside the console, `G`/`e`/`5`/`J`/`K` all
+type into the buffer instead — no silent stealing (focus-contract.md rule 4).
 
 ## New global keys (specified, unbuilt — this feature)
 
-Three new global keys this feature's new-surface pages introduce; none
-exist in `internal/tui` yet (`unbuilt` in each page's own control table):
+Two new global keys other new-surface pages introduce; neither exists in
+`internal/tui` yet (`unbuilt` in each page's own control table). `G` (open
+the guardian console) shipped with spec 053/TASK-125 and moved to the
+"Mode: global"/"Mode: console" tables above.
 
 | Key | Action | Specified in |
 |---|---|---|
-| `G` | open the guardian console (toggle back with `G` again, or `1`/`esc`) | [pages/guardian-console.md](../pages/guardian-console.md) |
 | `x` | dismiss the active lesson row | [panels/lesson-row.md](../panels/lesson-row.md) |
 | `p` | reopen the postmortem takeover (only while the run has ended) | [overlays/postmortem.md](../overlays/postmortem.md) |
 
@@ -117,11 +142,13 @@ complete without duplicating the overlay's own reference:
 ## Footer hints per mode
 
 ```
-global            2 chronicle 3 {{skin.guardian.tab_label}} 4 villagers (again: solo) · m ask · space pause · q quit · ? help
+global            2 chronicle 3 {{skin.guardian.tab_label}} 4 villagers 5 systems (again: solo) · G console · m ask · space pause · q quit · ? help
+narrow (no dock visible)   1-5 panes · G console · space pause · q quit · ? help
 minibuffer        esc release · ⏎ send · ↑↓ history
 inspect           j/k select · J/K scroll detail · space resume · m ask · ? help
 villagers roster  j/k select · ⏎ inspect · space pause · q quit · ? help
 villagers detail  esc back · space pause · q quit · ? help
+console           G back · esc back · m ask · space pause · q quit · ? help
 ```
 
 Minibuffer's hint carries no `? help`: focused, `?` types into the buffer
@@ -150,7 +177,9 @@ Ratified doctrine, binding on this entire corpus, not just this page:
    target, landing keyboard and mouse together as the doctrine requires
    (rule 1). Every other control in `docs/design/tui/` still has a key but
    no mouse target — `internal/tui` predates this doctrine entirely for
-   everything else. Every panel/overlay page in this corpus carries a
+   everything else, including spec 053's `G` (guardian console), `5`
+   (systems tab), and `e` ($EDITOR handoff), each recorded as a parity gap
+   on its own owning page rather than silently shipped as if display-only. Every panel/overlay page in this corpus carries a
    **"Parity rollout"** note listing its keyed-but-mouseless controls rather
    than silently marking them `—` as if display-only; a control graduates
    out of that note the moment its page's control table gains a real mouse
@@ -187,5 +216,5 @@ future page's key choice is principled rather than arbitrary:
 
 - `tab`/`shift+tab` pane cycling may remain as aliases for dock-tab cycling; not
   load-bearing.
-- Today's "keys 1–4 swap the whole screen" behavior survives only in the narrow
+- Today's "keys 1–5 swap the whole screen" behavior survives only in the narrow
   fallback ([../pages/solo-views.md](../pages/solo-views.md)).

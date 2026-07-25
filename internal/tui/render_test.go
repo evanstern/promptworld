@@ -501,9 +501,11 @@ func TestOrderStatusLinesEmpty(t *testing.T) {
 	}
 }
 
-// TestMetatronViewRendersProviderTable: the console pane surfaces the
-// per-provider table it's handed, not the old plain up/down line.
-func TestMetatronViewRendersProviderTable(t *testing.T) {
+// TestSystemsViewRendersProviderTable (spec 053 US2/D10): the systems pane
+// surfaces the per-provider table it's handed, not the old plain up/down
+// line — the exact assertion TestMetatronViewRendersProviderTable made
+// before the telemetry split, retargeted at its new home.
+func TestSystemsViewRendersProviderTable(t *testing.T) {
 	m := testModel(t)
 	m.status = &ipc.StatusData{LLM: &llm.Status{
 		Providers: []llm.ProviderStatus{
@@ -511,11 +513,50 @@ func TestMetatronViewRendersProviderTable(t *testing.T) {
 		},
 		Spent: 0, Budget: 100,
 	}}
-	view := m.metatronView()
+	view := m.systemsView()
 	for _, want := range []string{"cogito", "cogito:3b", "q1", "1/4"} {
 		if !strings.Contains(view, want) {
-			t.Errorf("metatron view missing provider field %q:\n%s", want, view)
+			t.Errorf("systems view missing provider field %q:\n%s", want, view)
 		}
+	}
+}
+
+// TestGuardianTabHasZeroTelemetryAfterSplit (spec 053 SC-002): the guardian
+// tab (metatronView, narrow fallback) renders NONE of the relocated
+// provider/spend/horizon content once an LLM-configured world would have
+// rendered it pre-split — fiction-layer content only.
+func TestGuardianTabHasZeroTelemetryAfterSplit(t *testing.T) {
+	m := testModel(t)
+	m.status = &ipc.StatusData{
+		Clock: ipc.ClockStatus{Speed: "8x"},
+		LLM: &llm.Status{
+			Providers: []llm.ProviderStatus{
+				{Name: "cogito", Model: "cogito:3b", Up: true, Queue: 1, Inflight: 1, Slots: 4, SpentUSD: 1.5},
+			},
+			Spent: 1.5, Budget: 100,
+		},
+		Horizon: []ipc.HorizonClass{{Class: "conversation", Suppressed: true, Calibrated: true}},
+	}
+	view := m.metatronView()
+	for _, unwanted := range []string{"cogito", "cogito:3b", "spend $", "cognition horizon"} {
+		if strings.Contains(view, unwanted) {
+			t.Errorf("guardian tab must carry zero telemetry after the split, found %q:\n%s", unwanted, view)
+		}
+	}
+}
+
+// TestSystemsContentBodyNoLLMStatesHonestly (spec 053 US2 AS3, SC-002): a
+// no-LLM world's systems tab states its absence honestly rather than
+// rendering empty chrome.
+func TestSystemsContentBodyNoLLMStatesHonestly(t *testing.T) {
+	m := testModel(t)
+	m.status = &ipc.StatusData{}
+	body := m.systemsContentBody(80, 10)
+	if !strings.Contains(body, "no LLM configured") {
+		t.Errorf("no-LLM systems tab should state its absence honestly, got %q", body)
+	}
+	if strings.Contains(body, "cognition horizon") {
+		t.Error("no-LLM systems tab must not render the horizon block")
 	}
 }
 
