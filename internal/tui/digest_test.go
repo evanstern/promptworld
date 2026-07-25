@@ -267,37 +267,19 @@ func TestCatalogSweep(t *testing.T) {
 	}
 }
 
-// pendingCatalogEventTypes are rubric-referenced event types that are
-// contractually real (named in specs/046-curriculum-ladder/contracts/
-// exercises.md) but not yet cataloged in THIS package, because their owning
-// feature hasn't merged yet. metatron.charter_observed is spec 044 US2's
-// event (in flight on task-31 at spec 046's implementation time) — 046
-// references it by contract (sim.EvaluateUnlock, TheLawExercise.RubricTerms)
-// without depending on its payload shape. RECONCILE ON REBASE (T022): once
-// 044 merges and metatron.charter_observed gets its own digestRegistry/
-// catalogFixture/event-types.md rows, DELETE this exception — the exercise
-// rubric term should then satisfy TestExerciseRubricTermsAreCatalogedEventTypes
-// via the real catalog entry, same as every other term.
-var pendingCatalogEventTypes = map[string]bool{
-	"metatron.charter_observed": true,
-}
-
 // TestExerciseRubricTermsAreCatalogedEventTypes (spec 046 T016, FR-010): every
-// rubric term the shipped exercise definitions (internal/sim) name is either
-// a cataloged event type (a digestRegistry key — this package owns the
-// catalog TestCatalogSweep enforces) or an explicitly documented pending
-// exception (pendingCatalogEventTypes above, for a not-yet-merged sibling
-// feature's event).
+// rubric term the shipped exercise definitions (internal/sim) name is a
+// cataloged event type (a digestRegistry key — this package owns the catalog
+// TestCatalogSweep enforces). Spec 044 US2's metatron.charter_observed,
+// formerly a documented pending exception while task-31 was in flight, is now
+// cataloged for real (its own digestRegistry/catalogFixture rows) and
+// satisfies this check like every other term (T022 reconciliation).
 func TestExerciseRubricTermsAreCatalogedEventTypes(t *testing.T) {
 	for _, def := range sim.ScenarioExercises {
 		for _, term := range def.RubricTerms {
-			if _, ok := digestRegistry[term]; ok {
-				continue
+			if _, ok := digestRegistry[term]; !ok {
+				t.Errorf("%s: rubric term %q is not a cataloged event type", def.ID, term)
 			}
-			if pendingCatalogEventTypes[term] {
-				continue
-			}
-			t.Errorf("%s: rubric term %q is neither a cataloged event type nor a documented pending exception", def.ID, term)
 		}
 	}
 }

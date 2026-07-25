@@ -38,12 +38,19 @@ type EvidenceRef struct {
 	// fact, as opposed to the world's default — the single flag both gate
 	// conjuncts above stage-1 read (contracts/unlocks-record.md "Gate
 	// conjuncts"): for a stage-2 pass, Type=="metatron.charter_observed" with
-	// Custom==true means a player-authored charter revision (a fingerprint ≠
-	// default) was in force at pass time; for a stage-3 pass, any evidence
-	// entry with Custom==true names a player-granted tool's contributing act
-	// (as opposed to a tool granted by the default/stage manifest alone).
-	// Absent/false = a default-fact evidence entry, which never satisfies a
-	// gate conjunct (SC-004's negative case).
+	// Custom==true means a player-authored charter revision was in force at
+	// pass time; for a stage-3 pass, any evidence entry with Custom==true
+	// names a player-granted tool's contributing act (as opposed to a tool
+	// granted by the default/stage manifest alone). Absent/false = a
+	// default-fact evidence entry, which never satisfies a gate conjunct
+	// (SC-004's negative case).
+	//
+	// For charter evidence, Custom is NEVER asserted freehand: it is derived
+	// from the recorded event's real payload as the inverse of
+	// CharterObservedPayload.Default (spec 044 US2 — Default==true means the
+	// world's default/preset charter was in force, i.e. NOT player-authored)
+	// by CharterObservedEvidence below, the single sanctioned constructor, so
+	// the gate conjunct and the recorded payload can never disagree.
 	Custom bool `json:"custom,omitempty"`
 }
 
@@ -167,23 +174,25 @@ func nextLadderStage(stage string) (string, bool) {
 //	           nothing more than attempting it — FR-007).
 //	stage-2 -> stage-3: the pass's evidence must include a player-authored
 //	           charter revision in force at pass time — Type ==
-//	           "metatron.charter_observed" AND Custom == true (SC-004: a
-//	           default-charter pass must NOT satisfy this).
+//	           "metatron.charter_observed" AND Custom == true, where Custom
+//	           is derived (CharterObservedEvidence) as the inverse of the
+//	           recorded CharterObservedPayload.Default (spec 044 US2).
+//	           SC-004: a default/preset-charter pass must NOT satisfy this —
+//	           a stage-1 tutor-preset world's observation records
+//	           Default==true (the preset is the game's authorship, not the
+//	           player's), so it never opens this gate.
 //	stage-3 -> stage-4: the pass's evidence must include a player-granted
 //	           tool's contributing act — any evidence entry with Custom ==
 //	           true (a fixed event type isn't pinned by the contract: which
 //	           tool contributed is TASK-119's exercise design).
 //
-// RECONCILIATION NOTE (T022, for the 044 US2 rebase): 044 (task-31, in
-// flight at 046 plan time) is landing the REAL
-// metatron.charter_observed fingerprint event. This function references it
-// by the event TYPE STRING and a Custom/default flag on EvidenceRef ONLY —
-// it does not import or depend on 044's payload type — so once 044 merges,
-// the only reconciliation needed is confirming the real event's fingerprint
-// semantics map onto Custom (true iff the observed charter differs from the
-// world's default/preset) and, if 044 exposes a richer payload, optionally
-// reading it directly instead of trusting the evidence flag. No logic here
-// should need to change.
+// Reconciled with spec 044 US2 (T022): the real metatron.charter_observed
+// event (CharterObservedPayload{Fingerprint, Default} — metatron.go, spec
+// 044 contracts/events.md) landed on main while this feature was in flight.
+// The gate keeps reading EvidenceRef.Custom (the pass payload stays
+// self-contained and replay-pure — no log scan here), and honesty is pushed
+// to construction: CharterObservedEvidence is the only sanctioned way to
+// build a charter evidence entry, and it sets Custom = !payload.Default.
 //
 // Already-unlocked stages are NOT re-unlocked (StagesUnlocked is consulted)
 // — exactly once per (world, stage), matching the reducer's own duplicate
@@ -218,6 +227,27 @@ func EvaluateUnlock(s *State, pass ExercisePassedPayload) (stage string, ok bool
 		return "", false
 	}
 	return "", false
+}
+
+// CharterObservedEvidence derives the gate-facing EvidenceRef from a recorded
+// metatron.charter_observed event (spec 044 US2; reconciled here per 046
+// T022). EvidenceRef.Custom is the honest INVERSE of the payload's Default
+// flag: Default==true means the world's default/preset charter was in force
+// (authored by the game — a stage-1 tutor-preset world records this), so
+// Custom==false and the stage-2→3 gate stays shut; Default==false means a
+// player-authored revision was in force, so Custom==true. This is the ONLY
+// sanctioned constructor for a charter evidence entry — TASK-119's rubric
+// machinery is its production call site (test fixtures use it today) — so
+// EvaluateUnlock's conjunct and the recorded payload can never disagree.
+func CharterObservedEvidence(e store.Event) (EvidenceRef, error) {
+	if e.Type != "metatron.charter_observed" {
+		return EvidenceRef{}, fmt.Errorf("charter evidence: %q is not metatron.charter_observed", e.Type)
+	}
+	var p CharterObservedPayload
+	if err := json.Unmarshal(e.Payload, &p); err != nil {
+		return EvidenceRef{}, fmt.Errorf("charter evidence: %w", err)
+	}
+	return EvidenceRef{Type: e.Type, Seq: e.Seq, Tick: e.Tick, Custom: !p.Default}, nil
 }
 
 // ExerciseDefinition is a seeded scenario exercise — CONTENT, not machinery
@@ -292,7 +322,7 @@ var TheLawExercise = ExerciseDefinition{
 	Framing: "a seeded world with a norm-shaped problem (a nighttime curfew vs. fuel gathering) requiring sustained, consistent guardian behavior across several days",
 	RubricTerms: []string{
 		"meeting.proposal_resolved", // the village norm/vote resolves in the instructed direction
-		"metatron.charter_observed", // a player-authored charter revision in force across the window (spec 044; referenced by contract — see EvaluateUnlock's reconciliation note)
+		"metatron.charter_observed", // a player-authored charter revision in force across the window (spec 044 US2; Custom derived via CharterObservedEvidence)
 	},
 	PassSignal:     `curriculum.exercise_passed{exercise: "the-law", stage: "stage-2"}`,
 	ScoreNarrative: "the governance arc as narrated by the chronicle — the charter as the law behind the law",

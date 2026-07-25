@@ -211,6 +211,61 @@ func TestEvaluateUnlockGateConjuncts(t *testing.T) {
 	}
 }
 
+// TestCharterObservedEvidence (spec 046 T022 reconciliation with spec 044
+// US2): the sanctioned charter-evidence constructor derives EvidenceRef.Custom
+// as the INVERSE of the recorded CharterObservedPayload.Default flag, and the
+// derived entry drives EvaluateUnlock's stage-2 conjunct end-to-end — a
+// default/preset-charter observation (Default==true, e.g. a stage-1
+// tutor-preset world) keeps the gate shut (SC-004); a player-authored one
+// (Default==false) opens it.
+func TestCharterObservedEvidence(t *testing.T) {
+	mk := func(seq, tick int64, def bool) store.Event {
+		e := curriculumEvent(t, "metatron.charter_observed", tick,
+			CharterObservedPayload{Fingerprint: "abcdef123456", Default: def})
+		e.Seq = seq
+		return e
+	}
+
+	// Polarity: Default==true (the game's default/preset text was in force)
+	// derives Custom==false; Default==false derives Custom==true.
+	for _, c := range []struct {
+		def        bool
+		wantCustom bool
+	}{{def: true, wantCustom: false}, {def: false, wantCustom: true}} {
+		ref, err := CharterObservedEvidence(mk(5, 90, c.def))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if ref.Custom != c.wantCustom {
+			t.Errorf("Default=%v derived Custom=%v, want %v (Custom must be !Default)", c.def, ref.Custom, c.wantCustom)
+		}
+		if ref.Type != "metatron.charter_observed" || ref.Seq != 5 || ref.Tick != 90 {
+			t.Errorf("derived ref = %+v, want the event's (type, seq, tick) audit pointer", ref)
+		}
+
+		// End-to-end through the gate: only the player-authored derivation
+		// unlocks stage-3.
+		s := NewState(1, testMap(1))
+		pass := ExercisePassedPayload{Exercise: "the-law", Stage: "stage-2", Tick: 100, Evidence: []EvidenceRef{ref}}
+		stage, ok := EvaluateUnlock(s, pass)
+		if ok != c.wantCustom {
+			t.Errorf("Default=%v evidence: EvaluateUnlock ok=%v, want %v", c.def, ok, c.wantCustom)
+		}
+		if ok && stage != "stage-3" {
+			t.Errorf("unlocked %q, want stage-3", stage)
+		}
+	}
+
+	// Misuse is refused, never mis-derived: a non-charter event and a
+	// malformed payload both error.
+	if _, err := CharterObservedEvidence(curriculumEvent(t, "sim.day_started", 90, struct{}{})); err == nil {
+		t.Error("a non-charter event must not derive charter evidence")
+	}
+	if _, err := CharterObservedEvidence(store.Event{Type: "metatron.charter_observed", Payload: []byte("{")}); err == nil {
+		t.Error("a malformed payload must not derive charter evidence")
+	}
+}
+
 // TestEvaluateUnlockOnceOnly (spec 046 T012): a stage already latched in
 // StagesUnlocked is never re-unlocked, even by a pass that would otherwise
 // satisfy the gate — the pre-emission twin of the reducer's own duplicate

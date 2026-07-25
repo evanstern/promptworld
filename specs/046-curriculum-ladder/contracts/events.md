@@ -15,6 +15,15 @@ enforces all of it).
   evidence lists the satisfying events (rubric terms; for stage-2 gates, the
   charter-fingerprint observation in force).
 - **Reducer**: records the pass on state (bounded), enabling replay-derived audit.
+- **Charter evidence derivation (reconciled with spec 044, T022)**: spec 044 US2's
+  `metatron.charter_observed` (specs/044-run-outcomes-morgue/contracts/events.md on main) carries
+  `CharterObservedPayload{fingerprint, default}` where `default == true` means the
+  world's default/preset charter was in force. An `EvidenceRef` for it keeps this
+  contract's `custom` flag, but `custom` is DERIVED, never asserted freehand:
+  `sim.CharterObservedEvidence` is the single sanctioned constructor and sets
+  `custom = !payload.default` — inverted polarity, so a stage-1 tutor-preset
+  world's observation (`default: true`, the game's authorship) can never satisfy
+  the stage-2→3 gate conjunct (SC-004).
 
 ## `curriculum.stage_unlocked`
 

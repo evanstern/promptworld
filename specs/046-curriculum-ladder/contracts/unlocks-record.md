@@ -27,6 +27,10 @@
 - stage-2 entry: a `curriculum.exercise_passed` for a stage-1 exercise.
 - stage-3 entry: a pass for a stage-2 exercise **whose evidence includes a
   player-authored `metatron.charter_observed` fingerprint in force at pass time**.
+  "Player-authored" is the recorded payload's `default == false` (spec 044 US2,
+  specs/044-run-outcomes-morgue/contracts/events.md on main); the evidence entry's `custom` flag is
+  derived as its inverse by `sim.CharterObservedEvidence` (T022 reconciliation) —
+  a default/preset charter (including the stage-1 tutor preset) never qualifies.
 - stage-4 entry: a pass for a stage-3 exercise whose evidence includes a
   player-granted tool's contributing act.
 

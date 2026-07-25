@@ -158,7 +158,15 @@ func charterFingerprint(text string) string {
 // (endedProseWhitelist) and a finished run's evidence timeline is closed.
 // The `default` flag is derived from the same effective text as the
 // fingerprint (an empty/missing charter.md serves the default text, and is
-// recorded as such), so the two can never disagree.
+// recorded as such), so the two can never disagree. PRESET-AWARE (spec 046
+// reconciliation): the flag compares against the WORLD's preset constant
+// (presetCharter — the same reference charterIsDefault uses), not bare
+// persona.DefaultCharter, so a stage-1 tutor-preset world's effective text
+// (the stage lock serves persona.TutorCharter) is honestly recorded as
+// default=true — authored by the game, never the player. The morgue's
+// evidence timeline and the stage-2→3 unlock gate (sim.EvaluateUnlock, via
+// sim.CharterObservedEvidence's Custom = !default derivation) both depend on
+// this: preset text must never masquerade as a player-authored charter.
 func (mt *Metatron) observeCharter(text string) {
 	fp := charterFingerprint(text)
 	mt.stateMu.Lock()
@@ -168,7 +176,7 @@ func (mt *Metatron) observeCharter(text string) {
 		return
 	}
 	batch := []store.Event{{Type: "metatron.charter_observed", Payload: mustJSON(sim.CharterObservedPayload{
-		Fingerprint: fp, Default: text == persona.DefaultCharter})}}
+		Fingerprint: fp, Default: text == presetCharter(mt.charterPreset)})}}
 	if err := mt.social.InjectSocial(batch); err != nil {
 		log.Printf("metatron: charter observation rejected at the door: %v", err)
 		return
