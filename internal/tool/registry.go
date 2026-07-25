@@ -344,6 +344,19 @@ var worldToolsBase = []Tool{
 	// (the get-food fallback rung).
 	{Name: "search", Effect: World, Gate: Resolvable, Cost: Cost{DurationTicks: 0}, PlanStep: true, ReflexEligible: true,
 		PromptGloss: `Search unexplored land: walk toward the nearest edge of what you know, looking around as you go. Use when you need something you know no place for.`},
+	// Spec 064 US1 (warm_up): the warmth-RECOVERY verb — walk to known warmth and
+	// LOITER there until warmth actually recovers, instead of arriving and idling
+	// (goto_warmth is arrive-and-done). Appended after search so no existing
+	// tool's registration position — and no derived byte anchor — shifts. Planner-
+	// facing only (PlanStep true, NOT ReflexEligible): the reflex warmth rungs
+	// issue the equivalent goto_warmth-with-condition themselves (policy.go), so
+	// warm_up need not be reflex-eligible. Optional until_warmth (Number, no
+	// Min/Max: the driver never rejects it — the sim clamps it with notice, spec
+	// 064 R3 / 058 posture); absent ⇒ the doctrine default warmthRecoverTo.
+	{Name: "warm_up", Effect: World, Gate: Resolvable, Cost: Cost{DurationTicks: 0}, PlanStep: true,
+		Params: []Param{{Name: "until_warmth", Kind: Number, Required: false,
+			Description: "warmth level to recover to before finishing; clamped to a sane range, defaulted when omitted"}},
+		PromptGloss: `Warm up at a fire: walk to warmth you know and STAY until you have actually warmed up, then finish. Use this instead of goto_warmth when you are cold — goto_warmth only reaches the fire and finishes, so you would wander off still cold.`},
 }
 
 // setPlanTool is the loop-only planning tool (spec 017 R11): Effect World

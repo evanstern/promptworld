@@ -117,6 +117,20 @@ func (d *villagerDispatch) handleWorldVerb(name string) toolloop.Handler {
 			guards = d.md.buildTalkToGuards(d.job, target)
 		}
 		kind, qty := argKindQty(call.Args)
+		// Spec 064 R3 (warm_up): the optional until_warmth threshold rides in on
+		// the generic Qty slot (the storage verbs' per-verb-arg precedent) — the
+		// resolveGoal warm_up resolver reads it and CLAMPS it authoritatively (the
+		// sim drives). Here we only phrase the model-facing clamp notice, via the
+		// SAME sim.ClampWarmUp the resolver uses — so the notice and the landed
+		// value can never drift (the set_plan const-vs-const precedent). Absent ⇒
+		// qty 0 ⇒ the resolver applies the doctrine default; no notice.
+		warmUpNotice := ""
+		if name == "warm_up" {
+			if v, ok := argInt(call.Args, "until_warmth"); ok {
+				_, warmUpNotice = sim.ClampWarmUp(v)
+				qty = v
+			}
+		}
 		err := d.md.loop.InjectIntent(sim.InjectArgs{
 			Agent: d.job.agent, Goal: name, TargetAgent: target,
 			Kind: kind, Qty: qty, Reason: reasonArg(call.Args),
@@ -131,6 +145,9 @@ func (d *villagerDispatch) handleWorldVerb(name string) toolloop.Handler {
 		d.doorOutcome = true
 		if err != nil {
 			return toolloop.Outcome{Verdict: toolloop.VerdictRejectedGate, ResultForModel: err.Error()}
+		}
+		if warmUpNotice != "" {
+			return toolloop.Outcome{Verdict: toolloop.VerdictLandedClamped, ResultForModel: name + " landed (" + warmUpNotice + ")"}
 		}
 		return toolloop.Outcome{Verdict: toolloop.VerdictLanded, ResultForModel: name + " landed"}
 	}

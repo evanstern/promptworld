@@ -614,6 +614,18 @@ func gatheringStructure(s *State) (x, y int, ok bool) {
 			if a.Dead || a.Asleep || IsExiled(s, i) {
 				continue
 			}
+			// Spec 064: a villager pinned to a fire by a needs-conditioned recovery
+			// hold (warm_up) is DRIVEN there by survival, not electively congregating
+			// — the emergent-convention signal is villagers CHOOSING to gather
+			// (TASK-36), so a warmth-recovery loiter must not be read as an assembly.
+			// Without this exclusion the intended hold-at-fire behavior would spawn
+			// spontaneous meeting conventions from mere co-warming (minVillagersToMeet
+			// is 2) — a change "beyond what the feature fixes". Byte-inert for pre-064
+			// worlds: no intent carried a condition, so the guard never fired and the
+			// historical emergent-gathering trail replays identically.
+			if a.Intent != nil && a.Intent.UntilNeed != "" {
+				continue
+			}
 			if abs(a.X-st.X)+abs(a.Y-st.Y) <= meetingRadius {
 				c++
 			}

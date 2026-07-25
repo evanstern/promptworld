@@ -153,6 +153,10 @@ func (l *Loop) landIntent(in *InjectArgs, emit func(string, any)) error {
 				TargetX: intent.TargetX, TargetY: intent.TargetY,
 				ResX: intent.ResX, ResY: intent.ResY,
 				Kind: intent.Kind, Qty: intent.Qty,
+				// Spec 064 R3: a planner warm_up resolves to a warmth target WITH a
+				// completion condition — carry it onto the landed intent so it holds.
+				// Zero for every conditionless goal (arrive-and-done, unchanged).
+				UntilNeed: intent.UntilNeed, UntilValue: intent.UntilValue,
 				Source: "planner", Job: in.JobID,
 				// Spec 019 (R2): carry the planner's reason onto the intent so it
 				// survives to completion, where the executor bakes it into the
