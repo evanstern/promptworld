@@ -11,6 +11,7 @@ pre-feature snapshots stay byte-identical (no `format_version` bump).
 | Field | Type | Semantics |
 |---|---|---|
 | `State.Ended` | `bool, omitempty` | Latched by the `run.ended` reducer arm; never cleared by any event. Read by `Loop.Run` (idle branch), `handleCommand` (mutating-command refusal), status surfaces, TUI replica. |
+| `State.Deaths` | `[]DeathRecord, omitempty` | Reducer-appended death ledger (the `agent.died` arm appends). Ratified US1 implementation deviation: `stepEvents` is pure over pre-tick state and cannot scan the log, and per-agent tick/cause stamps would lose within-tick ordering — the ledger is the minimal mechanism that lets `RunEndedPayload.Deaths` carry the full run. Application order == event order; ≤ agentCount entries. Caveat: pre-044 worlds upgraded mid-run under-report pre-upgrade deaths in the eventual `RunEnd.Deaths` (snapshots predating the ledger). |
 | `State.RunEnd` | `*RunEnd, omitempty` | Summary facts recorded at run end (final tick, deaths with causes, final cause) — the machine-readable record FR-001/FR-005 require, carried in snapshots. |
 | `State.CharterFingerprint` | `string, omitempty` | Most recent effective-charter content hash (short hex), maintained by the `metatron.charter_observed` arm. Lets the morgue and status name "the revision in force" without scanning. |
 

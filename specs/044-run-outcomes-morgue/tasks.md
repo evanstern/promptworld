@@ -15,16 +15,16 @@ increment. All work lands on the single `task-31` branch in `.worktrees/task-31`
 
 ## Phase 1: Setup
 
-- [ ] T001 Create worktree `.worktrees/task-31` from fresh origin/main; confirm
+- [x] T001 Create worktree `.worktrees/task-31` from fresh origin/main; confirm
       `go build ./... && go test ./...` green at base
 
 ## Phase 2: Foundational (blocking prerequisites)
 
-- [ ] T002 Add `State.Ended bool` + `State.RunEnd *RunEnd` (both `omitempty`) and the
+- [x] T002 Add `State.Ended bool` + `State.RunEnd *RunEnd` (both `omitempty`) and the
       `RunEnd`/`DeathRecord` types to internal/sim/state.go; prove snapshot
       byte-compat for pre-feature worlds (marshal/unmarshal round-trip test in
       internal/sim/state_test.go or sim_test.go)
-- [ ] T003 [P] Add `livingCount(s *State) int` helper in internal/sim/state.go and use
+- [x] T003 [P] Add `livingCount(s *State) int` helper in internal/sim/state.go and use
       it to replace at least the death-adjacent ad-hoc `.Dead` loops it supersedes
 
 **Checkpoint**: state carries the ended shape; nothing emits it yet.
@@ -37,29 +37,29 @@ readable live/offline/after restart; postmortem posture in the TUI.
 **Independent Test**: seeded world, force all deaths; verify run-end declaration, time
 frozen, all reading surfaces work — including across a daemon restart (spec US1).
 
-- [ ] T004 [US1] `RunEndedPayload` struct + same-batch emission in `stepEvents` after
+- [x] T004 [US1] `RunEndedPayload` struct + same-batch emission in `stepEvents` after
       the heartbeat death loop, guarded by `!s.Ended`, ordered after all same-tick
       `agent.died`; add top-of-`stepEvents` guard emitting nothing once ended —
       internal/sim/executor.go (research R1; contracts/events.md ordering)
-- [ ] T005 [US1] `run.ended` reducer arm setting `Ended`/`RunEnd` in
+- [x] T005 [US1] `run.ended` reducer arm setting `Ended`/`RunEnd` in
       internal/sim/state.go
-- [ ] T006 [US1] Ended branch in `Loop.Run` (no timer, modeled on the paused branch at
+- [x] T006 [US1] Ended branch in `Loop.Run` (no timer, modeled on the paused branch at
       loop.go:404-417) + `handleCommand` gating per contracts/status.md (refuse
       pause/resume/set_speed/govern/inject_intent; keep status/state/subscribe;
       inject_social accepts only recorded-prose types) — internal/sim/loop.go (R2)
-- [ ] T007 [US1] Surface ended fact: `Loop.status()` → additive `omitempty`
+- [x] T007 [US1] Surface ended fact: `Loop.status()` → additive `omitempty`
       `ClockStatus.Ended`/`EndedDay` — internal/sim/loop.go,
       internal/ipc/protocol.go, internal/ipc/server.go (R3)
-- [ ] T008 [P] [US1] `promptworld status` ended posture: human line + `--json` field on
+- [x] T008 [P] [US1] `promptworld status` ended posture: human line + `--json` field on
       both live and offline-snapshot paths — cmd/promptworld/commands.go:504-549
-- [ ] T009 [US1] TUI postmortem posture, dual-source (replica `State.Ended` for
+- [x] T009 [US1] TUI postmortem posture, dual-source (replica `State.Ended` for
       snapshot-attach + pushed `run.ended`/status poll for live transition): `ENDED`
       header token replacing running/`PAUSED`, clock keys inert with footer hint —
       internal/tui/tui.go, internal/tui/views.go (R12)
-- [ ] T010 [P] [US1] `run.ended` digest row in internal/tui/digest.go + catalog row in
+- [x] T010 [P] [US1] `run.ended` digest row in internal/tui/digest.go + catalog row in
       docs/wiki/event-types.md (TestCatalogSweep enforces the pair)
-- [ ] T011 [P] [US1] `chronicleNote` line for `run.ended` in internal/mind/narrate.go
-- [ ] T012 [US1] Tests: same-tick double death → exactly one `run.ended` ordered last;
+- [x] T011 [P] [US1] `chronicleNote` line for `run.ended` in internal/mind/narrate.go
+- [x] T012 [US1] Tests: same-tick double death → exactly one `run.ended` ordered last;
       ended world emits nothing on further ticks; replay rebuilds `Ended`
       (`TestReplayRebuildsState` extension); command refusal on ended loop; TUI header
       `ENDED` test per the badge-test pattern — internal/sim/sim_test.go,

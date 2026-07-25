@@ -8,8 +8,10 @@ event-types.md gains one catalog row per type (mechanically enforced by the TUI 
 
 - **Emitter**: `stepEvents` only (pure executor emission — the `metatron.order_expired`
   precedent). Never injectable: no whitelist entries.
-- **When**: in the same batch as the run's final `agent.died`, ordered after every
-  same-tick death event, guarded by `!State.Ended` — exactly once per world, ever.
+- **When**: in the same batch as the run's final `agent.died`, emitted at the **end of
+  the batch** (after every same-tick death event and after all per-agent execution for
+  the batch, so no event ever trails it), guarded by `!State.Ended` — exactly once per
+  world, ever.
 - **Payload** `RunEndedPayload`:
   - `tick` (int64) — declaration tick
   - `deaths` ([]{`agent` int, `tick` int64, `cause` string}) — every death, event order
