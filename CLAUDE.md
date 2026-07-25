@@ -86,6 +86,13 @@ Features are specified with GitHub Spec Kit (`specify`) under `specs/NNN-<featur
 <!-- pdlc:peer:spec-kit END -->
 <!-- pdlc:grounding END -->
 
+## TUI design reference — the UI authority gate (spec 047)
+
+`docs/design/tui/` is the living page-by-page, control-by-control UI authority
+(spec 047). Before opening any PR that touches `internal/tui/`, run
+`node scripts/check-tui-design.mjs --changed` and amend `docs/design/tui/` in the
+same PR (re-verify + re-pin every affected page).
+
 ## Model-tiered workflow (constitution Principle V, v1.1.0)
 
 Three tiers, enforced by delegation (`.specify/memory/constitution.md`, Principle V):
