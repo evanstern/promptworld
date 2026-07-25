@@ -910,10 +910,10 @@ const guardianInitiativeFrame = `Two more powers are the player's to command, ne
 // appended last (INV-1) beneath all editable content.
 const guardianSurvivalFrame = `A villager stands at the brink of death, and you keep the survival watch — your ` +
 	`own nature, not the player's command. For THIS peril alone you may act on your own initiative: send a vision ` +
-	`or work a miracle to save a life, without waiting for the player to ask (a life-saving act still spends a ` +
-	`banked charge — if none is banked you can only counsel and keep the watch). This authority is survival's ` +
-	`alone. The world's clock (pausing, starting, changing its pace) and every other standing order remain the ` +
-	`player's to command, never yours to take up alone — use them only when the player asks.`
+	`or work a working (the work_miracle tool) to save a life, without waiting for the player to ask (a life-saving ` +
+	`act still spends a banked charge — if none is banked you can only counsel and keep the watch). This authority ` +
+	`is survival's alone. The world's clock (pausing, starting, changing its pace) and every other standing order ` +
+	`remain the player's to command, never yours to take up alone — use them only when the player asks.`
 
 // hasWorkMiracle reports whether the granted roster offers the miracle tool —
 // gates the miracle-specific doctrine line so a dreams-only world never mentions

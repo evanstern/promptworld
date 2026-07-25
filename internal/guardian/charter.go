@@ -87,7 +87,15 @@ func charterIsDefault(worldDir string, preset ...string) bool {
 	if err != nil {
 		return true
 	}
-	return string(data) == def || string(data) == persona.LegacyDefaultCharter
+	return string(data) == def || isLegacyDefault(string(data))
+}
+
+// isLegacyDefault reports whether text is one of the retired game-authored
+// default charters (spec 052 SC-003): the long-lived pre-059 angel seed, or
+// the brief post-059/pre-052 variant carrying the survival paragraph. Either
+// way it is game-authored text — never reclassified player-authored.
+func isLegacyDefault(text string) bool {
+	return text == persona.LegacyDefaultCharter || text == persona.LegacyDefaultCharterSurvival
 }
 
 // Instruction-surface gating by stage (spec 046 FR-005, the ladder): stage-1
@@ -193,7 +201,7 @@ func (mt *Guardian) observeCharter(text string) {
 	// world's untouched guardian-voiced seed is game-authored, and the
 	// stage-2→3 unlock gate (Custom = !default) must not count it as a
 	// player-authored revision after an upgrade.
-	def := text == presetCharter(mt.charterPreset) || text == persona.LegacyDefaultCharter
+	def := text == presetCharter(mt.charterPreset) || isLegacyDefault(text)
 	batch := []store.Event{{Type: "metatron.charter_observed", Payload: mustJSON(sim.CharterObservedPayload{
 		Fingerprint: fp, Default: def})}}
 	if err := mt.social.InjectSocial(batch); err != nil {

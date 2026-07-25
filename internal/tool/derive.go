@@ -267,8 +267,11 @@ func GuardianToolGuidance(roster []Tool) string {
 // this is only the prose pointer, kept here beside GuardianToolGuidance so the
 // miracle-guidance vocabulary has one home.
 func GuardianTargetingGuidance() string {
-	return "Aim your miracles: the village's living positions, conditions, and the " +
-		"passable tiles around each villager follow below. A miracle that names " +
+	// Prompt-side prose (spec 052 sweep): "working" is the display vocabulary
+	// for the frozen work_miracle tool family; the tool id itself is what the
+	// model calls.
+	return "Aim your workings: the village's living positions, conditions, and the " +
+		"passable tiles around each villager follow below. A working (work_miracle) that names " +
 		"coordinates (move, remove) must target a tile listed there, or the world " +
 		"will reject it."
 }

@@ -93,7 +93,16 @@ func allowedGoOccurrence(lit, word string, start, end int) bool {
 // allowlistedDecls are declaration names whose string values are exempt —
 // each is annotated history at its definition site.
 var allowlistedDecls = map[string]string{
-	"LegacyDefaultCharter": "internal/persona/charter.go — the pre-052 seed kept only for default-charter recognition (SC-003)",
+	"LegacyDefaultCharter":         "internal/persona/charter.go — the pre-052 seed kept only for default-charter recognition (SC-003)",
+	"LegacyDefaultCharterSurvival": "internal/persona/charter.go — the brief post-059/pre-052 seed variant, same recognition duty",
+}
+
+// allowlistedFuncs are function names whose string literals are exempt: each
+// builds RECORDED payload text (spec 052 ruling 1 — the event log is
+// skin-free; the operator's TASK-134 ruling freezes persisted vocabulary
+// until the format_version migration).
+var allowlistedFuncs = map[string]string{
+	"SurvivalWatchDefs": "internal/sim/guardian.go — spec 059 genesis survival watches; Condition/Action land in recorded metatron.order_placed payloads",
 }
 
 func TestFictionDenylistGoSources(t *testing.T) {
@@ -118,8 +127,11 @@ func TestFictionDenylistGoSources(t *testing.T) {
 			return nil // a broken file fails the build, not this sweep
 		}
 		var owner []string // decl-name stack for the allowlist check
+		var funcOwner string
 		ast.Inspect(f, func(n ast.Node) bool {
 			switch node := n.(type) {
+			case *ast.FuncDecl:
+				funcOwner = node.Name.Name
 			case *ast.ValueSpec:
 				var names []string
 				for _, id := range node.Names {
@@ -138,6 +150,9 @@ func TestFictionDenylistGoSources(t *testing.T) {
 					if _, ok := allowlistedDecls[name]; ok {
 						return true
 					}
+				}
+				if _, ok := allowlistedFuncs[funcOwner]; ok {
+					return true
 				}
 				for _, m := range denylistRe.FindAllStringIndex(s, -1) {
 					word := s[m[0]:m[1]]

@@ -272,7 +272,7 @@ func (mt *Guardian) matchSurvival(o sim.GuardianOrder, batch []store.Event, pend
 		select {
 		case mt.triggerQ <- triggerJob{order: o, matched: e, matchedType: e.Type, matchedTick: e.Tick}:
 		default:
-			log.Printf("metatron: trigger queue full, survival watch %s dropped", o.ID)
+			log.Printf("guardian: trigger queue full, survival watch %s dropped", o.ID)
 			mt.stateMu.Lock()
 			delete(mt.pendingTrigger, o.ID)
 			delete(mt.survivalLatch[o.ID], p.Agent)
@@ -744,10 +744,10 @@ func (mt *Guardian) survivalMoment(tick int64, name, peril string, r TurnResult)
 	switch {
 	case r.Nudge != nil:
 		return fmt.Sprintf("%s — the survival watch woke (%s is %s): I sent a %s to %s.",
-			clock.Format(tick), name, peril, r.Nudge.Form, strings.Join(r.Nudge.Targets, ", "))
+			clock.Format(tick), name, peril, mt.sk().FormNoun(r.Nudge.Form), strings.Join(r.Nudge.Targets, ", "))
 	case r.Miracle != nil:
-		return fmt.Sprintf("%s — the survival watch woke (%s is %s): I worked a miracle — %s.",
-			clock.Format(tick), name, peril, r.Miracle.Summary)
+		return fmt.Sprintf("%s — the survival watch woke (%s is %s): I worked a %s — %s.",
+			clock.Format(tick), name, peril, mt.sk().WorkingNoun(), r.Miracle.Summary)
 	default:
 		return fmt.Sprintf("%s — the survival watch woke (%s is %s), but I could do nothing to save them.",
 			clock.Format(tick), name, peril)

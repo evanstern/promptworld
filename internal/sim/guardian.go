@@ -126,6 +126,12 @@ func IsSurvivalKind(s string) bool {
 // ignored for a survival watch — set to PlacedTick as an honest placeholder).
 // Condition/Action are the in-fiction standing duty the survival turn narrates
 // under; the specific endangered villager is supplied at trigger time.
+//
+// FROZEN recorded-at-emission text (spec 052 ruling 1; operator TASK-134
+// ruling): these strings land verbatim in recorded metatron.order_placed
+// payloads — persisted vocabulary, never skinned and never reworded until
+// the format_version migration (TASK-134). The fiction-denylist sweep
+// allowlists this function by name.
 func SurvivalWatchDefs(tick int64) []GuardianOrder {
 	def := func(kind, cond, act string) GuardianOrder {
 		return GuardianOrder{

@@ -42,4 +42,9 @@ func TestDefaultPromptsAreFictionFree(t *testing.T) {
 	assertPromptClean(t, "watch confirmer", confirmSystem("Guardian"))
 	assertPromptClean(t, "conversation-only system prompt",
 		turnSystemPrompt(persona.DefaultCharter, nil, nil))
+	// The spec-059 survival-frame variant (fixed-frame carve-out) and the
+	// targeting-digest preamble are prompt surfaces too.
+	assertPromptClean(t, "survival system prompt",
+		buildTurnSystemPrompt(true, persona.DefaultCharter, nil, roster))
+	assertPromptClean(t, "targeting guidance", tool.GuardianTargetingGuidance())
 }

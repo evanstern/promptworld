@@ -193,7 +193,7 @@ func TestSurvivalTurnActsWithoutPlayer(t *testing.T) {
 	mt.stateMu.Lock()
 	moments := append([]string(nil), mt.moments...)
 	mt.stateMu.Unlock()
-	if len(moments) != 1 || !strings.Contains(moments[0], "survival watch") || !strings.Contains(moments[0], "miracle") {
+	if len(moments) != 1 || !strings.Contains(moments[0], "survival watch") || !strings.Contains(moments[0], "working") {
 		t.Fatalf("survival moment not attributed to the duty: %+v", moments)
 	}
 	// The transcript marks the turn as a survival watch (auditable authority trail).
@@ -262,7 +262,7 @@ func TestTargetingDigestPresentAndBounded(t *testing.T) {
 		t.Fatal(err)
 	}
 	prompt := orch.requests()[0].Prompt
-	if !strings.Contains(prompt, "Aim your miracles") {
+	if !strings.Contains(prompt, "Aim your workings") {
 		t.Fatalf("miracle-capable prompt missing the targeting guidance: %q", prompt)
 	}
 	// A concrete villager position line is present.
