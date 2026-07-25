@@ -6,7 +6,7 @@ sources:
   - internal/sim/tuning.go
   - internal/daemon/daemon.go
   - internal/world/world.go
-verified_against: 2bb6ab955f6f3ec9f3031f911cbce0d61ce17d50
+verified_against: 483e90cb118019cd00956a2ebfce3d77ceba8353
 ---
 
 # World tuning manifest
@@ -22,7 +22,8 @@ never a behavior change by itself.
 ## How it works
 
 **The five promoted dials** (`internal/sim/tuning.go`): `RefuelDyingBelow`
-(the reflex's fire-refuel-dying window, default 3600 ticks / 1 game-hour),
+(the reflex's fire-refuel-dying window, default 10800 ticks / 3 game-hours —
+raised from 3600 by spec 057 / TASK-108 on world-01 burnout evidence),
 `FireBurnPerWood` (fuel added per wood, default 14400 ticks / 4 game-hours),
 `GruEmergePerMille` (nightly emergence chance, default 600 per mille),
 `PlannerCadenceTicks` (the mind driver's per-agent baseline cadence, default
@@ -73,7 +74,7 @@ clamp warnings and a structural error separately:
 
 | Field | JSON key | Default | Clamp bounds |
 |---|---|---|---|
-| RefuelDyingBelow | `refuel_dying_below` | 3600 | [0, 86400] |
+| RefuelDyingBelow | `refuel_dying_below` | 10800 | [0, 86400] |
 | FireBurnPerWood | `fire_burn_per_wood` | 14400 | [600, 86400] |
 | GruEmergePerMille | `gru_emerge_per_mille` | 600 | [0, 1000] |
 | PlannerCadenceTicks | `planner_cadence_ticks` | 1800 | [60, 86400] |
@@ -114,15 +115,27 @@ values ([[daemon-lifecycle]]). Behavior:
   the event via `sim.NewTuningEvent(state.Tick, *parsed)`, applies it, and
   appends it.
 
+**The genesis pin** (spec 057 / TASK-108): `promptworld new` seeds one
+`sim.tuning_applied` event carrying the full current default set among the
+genesis events (`GenesisTuningEvent` in `tuning.go`, appended right after
+`world.created` in `cmd/promptworld/commands.go`), so a post-057 world's
+effective doctrine is fixed in its own log at birth — later changes to any
+`default*` constant never rewrite its replay. `promptworld migrate`
+deliberately does NOT back-fill the pin: pre-057 and migrated worlds follow
+compiled defaults, a documented determinism hazard
+(`control-surface-and-calibration.md` §6, the TASK-75 class). The boot seed
+compares a manifest against the pinned set exactly as before — no
+`seedTuning` change was needed.
+
 **Replay and file independence** (FR-005/FR-007): replay derives tuning
 values EXCLUSIVELY from `sim.tuning_applied` events in the log — defaults
-until the first one, never `tuning.json` itself. A world that ran under
-tuned values replays identically even if the file is later edited, deleted,
-or the whole directory copied elsewhere; a pre-048 log simply contains no
-such event, so pre-048 worlds and logs load and replay unchanged, forever on
-defaults. Editing `tuning.json` while the daemon runs has no effect until
-the next boot (no hot exposure — that is §6 step 3 and explicitly out of
-scope here).
+until the first one (which for post-057 worlds is the genesis pin), never
+`tuning.json` itself. A world that ran under tuned values replays identically
+even if the file is later edited, deleted, or the whole directory copied
+elsewhere; a pre-048 log simply contains no such event, so pre-048 worlds and
+logs load and replay unchanged on compiled defaults. Editing `tuning.json`
+while the daemon runs has no effect until the next boot (no hot exposure —
+that is §6 step 3 and explicitly out of scope here).
 
 ## Connections
 

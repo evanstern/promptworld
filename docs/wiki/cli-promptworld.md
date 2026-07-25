@@ -10,7 +10,7 @@ sources:
   - cmd/promptworld/miracle.go
   - cmd/promptworld/divergence.go
   - cmd/promptworld/stages.go
-verified_against: 824932c630a9216dc761f78baa903cd07e5b9493
+verified_against: 483e90cb118019cd00956a2ebfce3d77ceba8353
 ---
 
 # promptworld CLI
@@ -42,7 +42,9 @@ ambiguous or unknown names exit 1). `worldArg`/`parseWorldFlags` wrap the older
   legacy form byte-for-byte: create at that path, name from `--name` (validated) or
   the basename (unvalidated, backward-compatible). Both forms then run the same
   creation: `world.Create` + store + genesis `world.created`
-  event, writes the default `llm.json`, seeds the eight personas and Metatron's
+  event plus the genesis tuning pin (spec 057: one `sim.tuning_applied` with
+  the full default dial set, fixing the world's doctrine at birth —
+  [[world-tuning]]), writes the default `llm.json`, seeds the eight personas and Metatron's
   charter (`persona.Genesis`, the one-and-only persona write — [[agent-mind]],
   [[metatron]]), and
   appends the tick-0 secret events ([[social-fabric]]). Random default seed (crypto-random,
