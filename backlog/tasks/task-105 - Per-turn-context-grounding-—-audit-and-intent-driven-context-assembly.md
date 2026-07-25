@@ -4,10 +4,12 @@ title: Per-turn context grounding — audit and intent-driven context assembly
 status: To Do
 assignee: []
 created_date: '2026-07-25 02:41'
-updated_date: '2026-07-25 03:10'
+updated_date: '2026-07-25 03:28'
 labels:
   - goal-quality
 dependencies: []
+references:
+  - specs/043-context-grounding
 priority: high
 ordinal: 14000
 ---
@@ -29,4 +31,6 @@ Direction C from spike TASK-101 — Evan: '100% on this, almost more important t
 
 <!-- SECTION:NOTES:BEGIN -->
 Synergies (2026-07-24 board pass): TASK-110 prunes dead verbs from the roster — shrinks the tool surface this task's context budget pays for; do 110's roster prune before or with the context redesign. Relevant-memory retrieval leans on the embedding work: TASK-98 (in progress, spec 042) provides record-at-emission vectors + relevance term; TASK-102 (embed preflight warning bug) should land so embedding-path signal is clean.
+
+Spec drafted and committed to main (996d503): specs/043-context-grounding/spec.md — 5 user stories (P1 self-history + P1 context inventory audit, P2 need trajectories, P3 plan echo, P4 relevance retrieval under token budget), 10 FRs, 7 measurable SCs incl. flip-rate reduction vs the world-01 baseline. Requirements checklist passes; zero NEEDS CLARIFICATION (defaults in Assumptions). Next: speckit-plan → speckit-tasks → spec-bridge:link, then delegated implementation.
 <!-- SECTION:NOTES:END -->

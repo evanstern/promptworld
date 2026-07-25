@@ -1,14 +1,16 @@
 ---
 id: TASK-100
 title: Story feed cannot render daemon.llm_warning — TestCatalogSweep red on main
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-24 19:51'
-updated_date: '2026-07-25 03:10'
+updated_date: '2026-07-25 03:17'
 labels:
   - bug
   - tui
 dependencies: []
+references:
+  - 'https://github.com/evanstern/promptworld/pull/71'
 priority: high
 ordinal: 10000
 ---
@@ -28,7 +30,7 @@ Surgical fix (trivial-exemption candidate per constitution Development Workflow)
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 TestCatalogSweep passes on main (go test ./internal/tui)
-- [ ] #2 daemon.llm_warning events render a sensible story-feed line for both active=true (raise) and active=false (clear)
+- [x] #2 daemon.llm_warning events render a sensible story-feed line for both active=true (raise) and active=false (clear)
 - [ ] #3 Catalog fixture row added; no other digest behavior changes
 <!-- AC:END -->
 
@@ -36,4 +38,8 @@ Surgical fix (trivial-exemption candidate per constitution Development Workflow)
 
 <!-- SECTION:NOTES:BEGIN -->
 Dedup 2026-07-24: TASK-92 and TASK-94 were duplicate cards for this same defect (three sessions independently hit the red sweep) — both archived in favor of this card. Folded in from TASK-94: the event is an operator-facing state-no-op with no digest renderer, so a bare fixture row alone would fail the fixture→registry cross-check — the chosen resolution (this card's surgical fix: digestRegistry entry with raise/clear flavors + fixture row) should be recorded here when it lands (TASK-94 AC#2).
+
+Tier: Sonnet (spec-implementer) — routine single-package fix per rubric: surgical, diagnosis pinned to file:line on task, trivial-exemption (red main). Dispatched 2026-07-24, worktree .worktrees/task-100.
+
+Implemented (Sonnet spec-implementer): digestRegistry entry for daemon.llm_warning (raise/clear flavors from LLMWarningPayload) + catalogFixture row + TestDigestLLMWarningCleared + labeled-voice span assertion. Full package tests, gofmt, vet, build all green on branch. PR: https://github.com/evanstern/promptworld/pull/71 (commit e7989a8). AC#1 (green on main) ticks after merge.
 <!-- SECTION:NOTES:END -->

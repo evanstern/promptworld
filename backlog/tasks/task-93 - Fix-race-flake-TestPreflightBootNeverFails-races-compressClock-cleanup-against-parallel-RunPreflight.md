@@ -3,13 +3,15 @@ id: TASK-93
 title: >-
   Fix -race flake: TestPreflightBootNeverFails races compressClock cleanup
   against parallel RunPreflight
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-24 18:10'
-updated_date: '2026-07-25 03:10'
+updated_date: '2026-07-25 03:24'
 labels:
   - tests
 dependencies: []
+references:
+  - 'https://github.com/evanstern/promptworld/pull/72'
 priority: high
 ordinal: 11000
 ---
@@ -24,3 +26,11 @@ Pre-existing race found during TASK-41 (2026-07-24), reproduced on main with zer
 <!-- AC:BEGIN -->
 - [ ] #1 go test -race ./internal/llm/ passes repeatedly (≥5 consecutive runs) on main
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Tier: Sonnet (spec-implementer) — routine test-only race fix per rubric: surgical, diagnosis pinned (preflight_test.go:83 vs preflight.go:229), mirrors TASK-69 fix pattern. Dispatched 2026-07-24, worktree .worktrees/task-93.
+
+Implemented (Sonnet spec-implementer): test-only fix — startPreflight helper launches RunPreflight and registers t.Cleanup that cancels AND blocks on a done channel until the goroutine returns; LIFO cleanup ordering guarantees the goroutine finishes before compressClock restores the package clock vars. Race reproduced 5/5 pre-fix, 5/5 -race passes post-fix; production code untouched. Mirrors the TASK-69 fix family (dc3780a). PR: https://github.com/evanstern/promptworld/pull/72. AC#1 ('on main') ticks after merge. NOTE: implementer worked via Bash inside .worktrees/task-93 because the harness Edit sandbox was pinned to the dispatching session's worktree — dispatch future implementers with Agent-tool worktree isolation instead of pre-made .worktrees dirs.
+<!-- SECTION:NOTES:END -->
