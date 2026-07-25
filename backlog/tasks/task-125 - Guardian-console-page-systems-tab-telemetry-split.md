@@ -1,10 +1,10 @@
 ---
 id: TASK-125
 title: Guardian console page + systems-tab telemetry split
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-25 14:44'
-updated_date: '2026-07-25 18:46'
+updated_date: '2026-07-25 18:49'
 labels:
   - learning-game
   - tui
@@ -44,3 +44,9 @@ Model tier: Sonnet (spec-implementer default). Rubric: single-package view/rende
 
 spec-bridge sync: 14/14 tasks done — merged via PR #87 (5af30cc), clean rebase, all gates green post-rebase incl. the new check-merge-drift pr gate. AC #3 satisfied per the recorded card-seam scope ruling (seam shipped; renderer/production = TASK-127/115 per D5). Judgment calls recorded in-PR: G shadowed in inspect/villagers modes (layered bindings win, documented in keymap.md); skills-locked line carries no file count (status surface honesty).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Guardian console + systems split shipped via spec 053 + PR #87 (merge 5af30cc). Full-height console page on G (document-style turns over the shared transcript, standard-minibuffer composer, charter/skills read surface with honest lock notices, $EDITOR handoff with content-hash confirmation, empty consoleCard seam for TASK-127/115); systems dock tab on 5 holds all relocated telemetry — the guardian tab is fiction-only, making TASK-121's skin boundary a file boundary. 7 design pages amended (guardian-console.md/systems.md → shipped) + re-pinned in-PR; wiki re-verified (tui-client console/systems prose, llm-provider-health location fix, 02812b5); player-docs refresh dispatched. All gates green post-rebase incl. the new merge-drift pr gate.
+<!-- SECTION:FINAL_SUMMARY:END -->
