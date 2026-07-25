@@ -31,6 +31,14 @@ type thoughtMeta struct {
 	triggerSeq        int64
 	predictedWallMs   int64
 	predictedLandTick int64
+	// Context-grounding sizes (spec 043): the assembled prompt's total bytes,
+	// the per-block breakdown, and the budget-dropped blocks — stamped by the
+	// planner path (mind.plan) after assembly and carried onto cog.thought.
+	// Zero/nil for paths that do not assemble a situation block set (e.g.
+	// conversation scenes), keeping their cog.thought bytes unchanged.
+	promptBytes   int
+	blockBytes    map[string]int
+	droppedBlocks []string
 }
 
 // newMeta builds a job's telemetry identity from the replica's view at
@@ -141,6 +149,9 @@ func cogThoughtEvent(m thoughtMeta) store.Event {
 		SnapshotTick: m.snapshotTick, Generation: m.generation,
 		TriggerSeq: m.triggerSeq, Points: m.class.Points,
 		PredictedWallMs: m.predictedWallMs, PredictedLandTick: m.predictedLandTick,
+		// Spec 043 context-grounding sizes (omitempty: zero/nil for non-planner
+		// paths that assemble no block set, so their bytes stay unchanged).
+		PromptBytes: m.promptBytes, BlockBytes: m.blockBytes, DroppedBlocks: m.droppedBlocks,
 	})
 	return store.Event{Type: "cog.thought", Payload: b}
 }

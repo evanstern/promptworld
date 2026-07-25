@@ -329,16 +329,40 @@ const (
 	halfLifeTicks = 24 * 3600
 )
 
-// SelectMemories is the deterministic top-K window (AC#3): score = salience
-// halved per day of age; top K−2 by score, plus 2 serendipity picks from the
-// oldest half seeded per cadence bucket; presented reverse-chronologically.
-func SelectMemories(a *Agent, seed uint64, agentIdx int, tick int64, k int) []Memory {
+// SelectedMemory pairs a selected window memory with the provenance the spec
+// 043 context assembler needs to budget it: whether the entry is one of the two
+// serendipity tail picks (drop priority 2) rather than a deterministic scored
+// pick. The window ORDER (reverse-chronological) and MEMBERSHIP are exactly
+// those of SelectMemories/SelectMemoriesRelevant — the flag is purely additive,
+// so stripping it (StripSelected) reproduces those selectors byte-for-byte.
+// This is proved live by TestSelectedWindowMatchesLegacy: the assembler's
+// floor/serendipity split cannot drift the spec-042 selection out from under it.
+type SelectedMemory struct {
+	Memory
+	Serendipity bool
+}
+
+// selectWindow is the shared selector behind both public windows. It runs the
+// deterministic top-K algorithm ONCE and annotates each entry as a scored pick
+// or a serendipity tail pick; the two public functions are thin wrappers that
+// strip the flag. The ONLY difference between the legacy and relevance-blended
+// windows is the per-memory score (branched on query == nil below); everything
+// else — the n≤k reverse-chronological passthrough, the tie-break, the seeded
+// serendipity tail (same "serendipity" rng key + cadence bucket), the final
+// reverse-chronological sort and K cap — is shared, so the two windows stay
+// byte-identical to their pre-043 selves by construction (spec 042 tests +
+// TestSelectedWindowMatchesLegacy gate it). Selection mutates nothing (FR-004)
+// and reads only a.Memories (FR-005 isolation).
+func selectWindow(a *Agent, seed uint64, agentIdx int, tick int64, k int, query []float32, queryModel string) []SelectedMemory {
 	n := len(a.Memories)
 	if n == 0 || k <= 0 {
 		return nil
 	}
 	if n <= k {
-		out := append([]Memory(nil), a.Memories...)
+		out := make([]SelectedMemory, n)
+		for i := range a.Memories {
+			out[i] = SelectedMemory{Memory: a.Memories[i]}
+		}
 		sort.SliceStable(out, func(i, j int) bool { return out[i].Tick > out[j].Tick })
 		return out
 	}
@@ -354,12 +378,19 @@ func SelectMemories(a *Agent, seed uint64, agentIdx int, tick int64, k int) []Me
 		if age < 0 {
 			age = 0
 		}
-		// integer-friendly decay: halve per whole game-day of age
+		// integer-friendly decay: halve per whole game-day of age.
 		w := float64(m.Salience)
 		for d := age / halfLifeTicks; d > 0; d-- {
 			w /= 2
 		}
-		all[i] = scored{m: m, score: w, idx: i}
+		// Legacy score is the raw decayed weight (query nil); the relevance
+		// window normalizes it and adds the [0,1] relevance term (spec 042,
+		// contracts/relevance-scoring.md §1) — EXACTLY the two pre-043 formulas.
+		score := w
+		if query != nil {
+			score = w/MaxSalience + relevance01(m, query, queryModel)
+		}
+		all[i] = scored{m: m, score: score, idx: i}
 	}
 	sort.SliceStable(all, func(i, j int) bool {
 		if all[i].score != all[j].score {
@@ -370,9 +401,9 @@ func SelectMemories(a *Agent, seed uint64, agentIdx int, tick int64, k int) []Me
 
 	take := k - windowTailPick
 	picked := map[int]bool{}
-	var out []Memory
+	var out []SelectedMemory
 	for i := 0; i < take && i < n; i++ {
-		out = append(out, all[i].m)
+		out = append(out, SelectedMemory{Memory: all[i].m})
 		picked[all[i].idx] = true
 	}
 
@@ -386,7 +417,7 @@ func SelectMemories(a *Agent, seed uint64, agentIdx int, tick int64, k int) []Me
 				i := int(r.Uint64N(uint64(oldHalf)))
 				if !picked[i] {
 					picked[i] = true
-					out = append(out, a.Memories[i])
+					out = append(out, SelectedMemory{Memory: a.Memories[i], Serendipity: true})
 					break
 				}
 			}
@@ -398,6 +429,26 @@ func SelectMemories(a *Agent, seed uint64, agentIdx int, tick int64, k int) []Me
 		out = out[:k]
 	}
 	return out
+}
+
+// StripSelected drops the annotation, returning the bare window in order. Nil in
+// ⇒ nil out (matching the selectors' empty-window contract).
+func StripSelected(sel []SelectedMemory) []Memory {
+	if sel == nil {
+		return nil
+	}
+	out := make([]Memory, len(sel))
+	for i := range sel {
+		out[i] = sel[i].Memory
+	}
+	return out
+}
+
+// SelectMemories is the deterministic top-K window (AC#3): score = salience
+// halved per day of age; top K−2 by score, plus 2 serendipity picks from the
+// oldest half seeded per cadence bucket; presented reverse-chronologically.
+func SelectMemories(a *Agent, seed uint64, agentIdx int, tick int64, k int) []Memory {
+	return StripSelected(selectWindow(a, seed, agentIdx, tick, k, nil, ""))
 }
 
 // --- spec 042: query-conditioned relevance selection ---
@@ -412,83 +463,24 @@ func SelectMemories(a *Agent, seed uint64, agentIdx int, tick int64, k int) []Me
 //	        produced by queryModel; 0.5 (neutral) otherwise — vectorless and
 //	        cross-model memories are neither promoted nor punished (FR-009/FR-010)
 //
-// Everything around the score is byte-for-byte SelectMemories: nil query
-// delegates to it verbatim (no situation vector recorded yet — the legacy
-// fallback); n ≤ k returns everything reverse-chronologically; ties break
-// newer-first; the two serendipity tail picks run today's exact algorithm
-// (same "serendipity" rng stream key, same cadence bucket). Selection is a
-// pure function of recorded data — it mutates nothing (FR-004), and its only
-// memory source is a.Memories (FR-005 isolation by construction).
+// Everything around the score is byte-for-byte SelectMemories: a nil query (no
+// situation vector recorded yet — the legacy fallback) selects the raw-weight
+// window; n ≤ k returns everything reverse-chronologically; ties break
+// newer-first; the two serendipity tail picks run the shared algorithm (same
+// "serendipity" rng stream key, same cadence bucket). Selection is a pure
+// function of recorded data — it mutates nothing (FR-004), and its only memory
+// source is a.Memories (FR-005 isolation by construction).
 func SelectMemoriesRelevant(a *Agent, seed uint64, agentIdx int, tick int64, k int, query []float32, queryModel string) []Memory {
-	if query == nil {
-		return SelectMemories(a, seed, agentIdx, tick, k)
-	}
-	n := len(a.Memories)
-	if n == 0 || k <= 0 {
-		return nil
-	}
-	if n <= k {
-		out := append([]Memory(nil), a.Memories...)
-		sort.SliceStable(out, func(i, j int) bool { return out[i].Tick > out[j].Tick })
-		return out
-	}
+	return StripSelected(selectWindow(a, seed, agentIdx, tick, k, query, queryModel))
+}
 
-	type scored struct {
-		m     Memory
-		score float64
-		idx   int
-	}
-	all := make([]scored, n)
-	for i, m := range a.Memories {
-		age := tick - m.Tick
-		if age < 0 {
-			age = 0
-		}
-		// integer-friendly decay: halve per whole game-day of age (EXACTLY
-		// SelectMemories' weight), normalized by the salience ceiling.
-		w := float64(m.Salience)
-		for d := age / halfLifeTicks; d > 0; d-- {
-			w /= 2
-		}
-		all[i] = scored{m: m, score: w/MaxSalience + relevance01(m, query, queryModel), idx: i}
-	}
-	sort.SliceStable(all, func(i, j int) bool {
-		if all[i].score != all[j].score {
-			return all[i].score > all[j].score
-		}
-		return all[i].m.Tick > all[j].m.Tick // ties: newer wins
-	})
-
-	take := k - windowTailPick
-	picked := map[int]bool{}
-	var out []Memory
-	for i := 0; i < take && i < n; i++ {
-		out = append(out, all[i].m)
-		picked[all[i].idx] = true
-	}
-
-	// Serendipity: byte-for-byte today's tail — seeded picks from the oldest
-	// half, bucketed to the planner cadence so retries in one window agree.
-	oldHalf := n / 2
-	if oldHalf > 0 {
-		r := rngAt(seed, "serendipity", tick/PlannerCadenceTicks, agentIdx)
-		for t := 0; t < windowTailPick; t++ {
-			for tries := 0; tries < 8; tries++ {
-				i := int(r.Uint64N(uint64(oldHalf)))
-				if !picked[i] {
-					picked[i] = true
-					out = append(out, a.Memories[i])
-					break
-				}
-			}
-		}
-	}
-
-	sort.SliceStable(out, func(i, j int) bool { return out[i].Tick > out[j].Tick })
-	if len(out) > k {
-		out = out[:k]
-	}
-	return out
+// SelectMemoriesWindow is the annotated form of the relevance window (spec 043
+// US4): the same entries SelectMemoriesRelevant returns, each flagged as a
+// serendipity tail pick or a scored pick, for the context assembler's
+// floor/serendipity drop accounting. A nil query selects the legacy window
+// (SelectMemories) — the degraded path when no situation vector is recorded.
+func SelectMemoriesWindow(a *Agent, seed uint64, agentIdx int, tick int64, k int, query []float32, queryModel string) []SelectedMemory {
+	return selectWindow(a, seed, agentIdx, tick, k, query, queryModel)
 }
 
 // relevance01 is the relevance term in [0,1]: (cosine + 1) / 2 when the memory

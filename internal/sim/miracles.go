@@ -185,12 +185,30 @@ func (s *State) applyTimeSnapped(e store.Event) error {
 //	                      same shape as PlaceFact.Seen; ONLY non-zero (genesis
 //	                      sightings carry tick 0 and stay put, like the
 //	                      grandfathered Belief.Reinforced zero).
+//	Agent.NeedsAnchorTick trajectory-window edge anchor (spec 043 US2: elapsed =
+//	                      tick-NeedsAnchorTick gates the window roll in the
+//	                      needs_changed arm); ONLY non-zero (0 = unset/first-
+//	                      window sentinel). SHIFT preserves the window's remaining
+//	                      time across the jump — exactly the Belief.Reinforced /
+//	                      PlaceFact.Seen elapsed-anchor shape. Left unshifted, a
+//	                      snap would push tick-NeedsAnchorTick past the window and
+//	                      force an immediate anchor reset on the next needs
+//	                      change, wiping every villager's trajectory sense (the
+//	                      "when it happened" reading is superficial — the field is
+//	                      READ live against the clock, unlike the KEEP history
+//	                      timestamps below such as IntentRecord.Tick, so the
+//	                      duration-anchor rule governs). NeedsAnchor itself holds
+//	                      need LEVELS (0-1000 ints, not ticks) frozen with the
+//	                      world, so it carries no tick field and needs no entry.
 //
 // KEEP (history/identity — never rewritten): Agent.Generation,
 //
 //	MetatronOrder.PlacedTick (spec 029: when the order was placed, history),
 //	Agent.LastGoalTick, Agent.LastConsolidatedNight, Agent.ConsolidatedUpTo,
-//	Agent.LastConsolidateMark, Memory.Tick, Memory.Conv (spec 019: a
+//	Agent.LastConsolidateMark, IntentRecord.Tick / IntentRecord.OutcomeTick
+//	(spec 043: when an intent landed / when its outcome landed — a historical
+//	self-history log, like Memory.Tick; the ring records what happened, never a
+//	future deadline), Memory.Tick, Memory.Conv (spec 019: a
 //	conversation-ref identity, same founding-talk tick as ConvoRecord.Conv),
 //	Memory.Seq (spec 042: the emitting event's store seq — an identity, never
 //	a clock value), Agent.SitVecTick (spec 042: when the situation text was
@@ -231,6 +249,7 @@ func rebaseTicks(s *State, delta int64) {
 		a.IdleSince += delta // unconditional: zero is genesis-idle, not "never"
 		shift(&a.LastTalk)
 		shift(&a.LastGive)
+		shift(&a.NeedsAnchorTick) // spec 043 US2: trajectory-window edge anchor; 0 = unset, stays 0
 		for j := range a.Beliefs {
 			shift(&a.Beliefs[j].Reinforced) // spec 030: decay anchor (elapsed = tick-Reinforced); 0 = grandfather, stays 0
 		}

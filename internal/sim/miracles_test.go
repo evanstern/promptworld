@@ -654,6 +654,8 @@ func TestSnapPreservesRemainingDurations(t *testing.T) {
 	a.Known = []KnownRumor{{RumorID: 1, Text: "r", Tick: 300, From: -1}}
 	a.Plan = []PlanStep{{Job: "j", Goal: "forage", Until: 48000,
 		When: &Guard{Type: GuardAfterTick, Tick: 49000, Generation: 7}}}
+	a.NeedsAnchor = &Needs{Warmth: 500} // levels: frozen, never shifted
+	a.NeedsAnchorTick = 43500
 
 	// Sentinels: agent 1's not-started work and never-talked cooldown stay zero.
 	a2 := &s.Agents[1]
@@ -709,6 +711,11 @@ func TestSnapPreservesRemainingDurations(t *testing.T) {
 	eq("Gru.LastAttack", s.Gru.LastAttack, 56000+delta)
 	eq("Meeting.OpenedTick", s.Meeting.OpenedTick, 57000+delta)
 	eq("Meeting.GatherStart", s.Meeting.GatherStart, 58000+delta)
+	eq("Agent.NeedsAnchorTick", a.NeedsAnchorTick, 43500+delta)
+	// The anchor LEVELS ride the freeze untouched (need values, not ticks).
+	if a.NeedsAnchor == nil || a.NeedsAnchor.Warmth != 500 {
+		t.Errorf("NeedsAnchor levels changed across snap: %+v", a.NeedsAnchor)
+	}
 	// IdleSince shifts unconditionally: agent 1's genesis-zero becomes delta
 	// (elapsed-idle is preserved, not a "never" sentinel).
 	eq("Agent[1].IdleSince", s.Agents[1].IdleSince, delta)
@@ -773,12 +780,15 @@ func TestRebaseTaxonomyComplete(t *testing.T) {
 		"MetatronOrder.ExpiresTick": shift, // spec 029: a standing order's future expiry deadline
 		"PlaceFact.Seen":            shift, // spec 041: mental-map freshness anchor (Belief.Reinforced shape)
 		"PeerSighting.Seen":         shift, // spec 041 T013: sighting recency anchor, same shape
+		"Agent.NeedsAnchorTick":     shift, // spec 043 US2: trajectory-window edge anchor (Belief.Reinforced shape), 0 = unset
 		// KEEP — history / identity / counters.
 		"Agent.Generation":                 keep,
 		"Agent.LastConsolidatedNight":      keep,
 		"Agent.ConsolidatedUpTo":           keep,
 		"Agent.LastConsolidateMark":        keep,
 		"Agent.LastGoalTick":               keep,
+		"IntentRecord.Tick":                keep, // spec 043: when the intent landed (history), like Memory.Tick
+		"IntentRecord.OutcomeTick":         keep, // spec 043: when the outcome landed (history), like Memory.Tick
 		"Memory.Tick":                      keep,
 		"Memory.Conv":                      keep, // spec 019: conversation-ref identity (founding-talk tick), like ConvoRecord.Conv
 		"Memory.Seq":                       keep, // spec 042: the emitting event's store seq — an identity, never a clock value

@@ -28,6 +28,7 @@ import (
 	"github.com/evanstern/promptworld/internal/store"
 	"github.com/evanstern/promptworld/internal/tool"
 	"github.com/evanstern/promptworld/internal/world"
+	"github.com/evanstern/promptworld/internal/worldmap"
 	"github.com/evanstern/promptworld/internal/worlds"
 )
 
@@ -530,6 +531,49 @@ func recoverState(w *world.World, st *store.Store) (*sim.State, error) {
 		return nil, fmt.Errorf("replay: %w", err)
 	}
 	return state, nil
+}
+
+// replayToTick rebuilds world state as of a tick cutoff by replaying the event
+// log from genesis and applying every event at or before cutoff, in seq order —
+// the replay-to-arbitrary-tick capability recoverState does not offer (it always
+// replays to head, and snapshots may sit past an arbitrary cutoff, so genesis
+// replay is the only cutoff-correct source). Events beyond the cutoff are skipped
+// rather than stopped on, so a non-monotonic tick in the log cannot truncate the
+// reconstruction early. Pure over the log: identical db + cutoff ⇒ identical
+// state (spec 043 T013/T024 replay-determinism harness).
+//
+// It takes the seed and map rather than a *world.World so it can reconstruct a
+// historical tick from any world.db read-only — including a legacy-format save
+// whose manifest world.Open would refuse — since the reducer, not the manifest
+// gate, is what the reconstruction actually needs.
+//
+// Events the reducer rejects are skipped and tallied by type (the returned map)
+// rather than aborting the replay: a legacy save recorded under older code can
+// carry events the current reducer's tightened invariants no longer accept (e.g.
+// an omen whose night-gate was added later). A clean current-format log skips
+// nothing, so the tally is empty and the reconstruction is exact; against a
+// legacy log the caller inspects the tally to judge whether the events it cares
+// about were affected. The tick advances with the log regardless of skips.
+func replayToTick(seed uint64, m *worldmap.Map, st *store.Store, cutoff int64) (*sim.State, map[string]int, error) {
+	state := sim.NewState(seed, m)
+	skipped := map[string]int{}
+	err := st.ReplayEvents(0, func(e store.Event) error {
+		if e.Tick > cutoff {
+			return nil
+		}
+		applyErr := state.Apply(e)
+		if e.Tick > state.Tick {
+			state.Tick = e.Tick
+		}
+		if applyErr != nil {
+			skipped[e.Type]++
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, nil, fmt.Errorf("replay to tick %d: %w", cutoff, err)
+	}
+	return state, skipped, nil
 }
 
 func validateMeta(w *world.World, st *store.Store) error {

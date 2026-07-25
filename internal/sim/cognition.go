@@ -59,6 +59,16 @@ type CogThoughtPayload struct {
 	Points            int    `json:"points"`
 	PredictedWallMs   int64  `json:"predicted_wall_ms"`
 	PredictedLandTick int64  `json:"predicted_land_tick"`
+	// Context-grounding observability (spec 043, FR-009/FR-010): the assembled
+	// user-prompt size, the per-block byte breakdown (keyed by contract block
+	// name), and the blocks the size budget dropped, in drop order. Additive,
+	// LAST, omitempty — pre-043 cog.thought events and every non-planner
+	// emission (conversation thoughts carry none) marshal byte-identically, and
+	// old logs decode with these zero-valued. Reducer stays a no-op (cog.*),
+	// so replay is unaffected.
+	PromptBytes   int            `json:"prompt_bytes,omitempty"`
+	BlockBytes    map[string]int `json:"block_bytes,omitempty"`
+	DroppedBlocks []string       `json:"dropped_blocks,omitempty"`
 }
 
 // CogOutcomePayload — cog.outcome: the single terminal record of a thought.

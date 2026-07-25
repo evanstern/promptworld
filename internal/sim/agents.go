@@ -73,6 +73,83 @@ type Intent struct {
 	Reason string `json:"reason,omitempty"`
 }
 
+// intentLogCap bounds the recent-intent ring (spec 043 US1, data-model.md): 8
+// records cover several game-hours of intents — more than the alternation
+// window FR-003 needs — at fixed per-agent cost.
+const intentLogCap = 8
+
+// trajectoryWindowTicks is the span of game time (in ticks) over which a need's
+// direction is measured (spec 043 US2, FR-004): the anchor snapshot rolls
+// forward once this much game time has elapsed since it was taken, so a need's
+// "rising/falling/steady" reflects movement over roughly the last window rather
+// than instant-to-instant noise. Default 1800 (one planner cadence). Like
+// contextBudgetTokens (internal/mind/context.go) it is a package const today
+// with the design intent of a per-world tuning-manifest dial (TASK-107's
+// const-fallback pattern — the manifest supplies the value when present, this
+// const is the fallback).
+const trajectoryWindowTicks = 1800
+
+// IntentRecord is one entry in a villager's recent-intent ring (spec 043 US1,
+// data-model.md). Goal is the intent's goal name; Source is the verbatim
+// IntentSetPayload.Source ("planner" | "reflex" | "plan"); Reason is the stated
+// reason when the source recorded one (planner/plan) and empty for reflex —
+// never invented; Tick is when the intent landed. Outcome ("" while executing,
+// then "done" | "failed" | "rejected" | "expired") and OutcomeTick are stamped
+// by the closing lifecycle event. All-omitempty tail keeps records compact and
+// pre-043-comparable in canonical bytes.
+type IntentRecord struct {
+	Goal        string `json:"goal"`
+	Source      string `json:"source,omitempty"`
+	Reason      string `json:"reason,omitempty"`
+	Tick        int64  `json:"tick"`
+	Outcome     string `json:"outcome,omitempty"`
+	OutcomeTick int64  `json:"outcome_tick,omitempty"`
+}
+
+// appendIntent pushes a new record onto the ring, dropping the oldest when the
+// ring is full. It re-slices into a fresh backing array on overflow so the
+// canonical bytes reflect exactly the retained records (no aliased capacity)
+// and replay and live paths produce identical state.
+func (a *Agent) appendIntent(r IntentRecord) {
+	a.IntentLog = append(a.IntentLog, r)
+	if len(a.IntentLog) > intentLogCap {
+		a.IntentLog = append([]IntentRecord(nil), a.IntentLog[len(a.IntentLog)-intentLogCap:]...)
+	}
+}
+
+// stampIntentOutcome closes the newest still-open record (Outcome == "") with
+// the given outcome. Used by the intent_done / build_failed arms, whose events
+// clear the CURRENT intent — the newest open record. An override left an older
+// record open behind the new one; that older record stays open (the
+// open-then-superseded shape the alternation view preserves), so closing the
+// newest is correct. A no-op when no record is open.
+func (a *Agent) stampIntentOutcome(outcome string, tick int64) {
+	for i := len(a.IntentLog) - 1; i >= 0; i-- {
+		if a.IntentLog[i].Outcome == "" {
+			a.IntentLog[i].Outcome = outcome
+			a.IntentLog[i].OutcomeTick = tick
+			return
+		}
+	}
+}
+
+// stampOrAppendExpired records a plan step's expiry (spec 043, plan end visible
+// at next thought — FR-005): if an open record for that goal exists (the step
+// had fired as a "plan"-source intent), it is closed "expired"; otherwise a
+// closed record is appended (the step expired before ever firing, so it has no
+// open record). Matching by goal keeps a concurrent non-plan open intent from
+// being mis-stamped.
+func (a *Agent) stampOrAppendExpired(goal string, tick int64) {
+	for i := len(a.IntentLog) - 1; i >= 0; i-- {
+		if a.IntentLog[i].Outcome == "" && a.IntentLog[i].Goal == goal {
+			a.IntentLog[i].Outcome = "expired"
+			a.IntentLog[i].OutcomeTick = tick
+			return
+		}
+	}
+	a.appendIntent(IntentRecord{Goal: goal, Source: "plan", Tick: tick, Outcome: "expired", OutcomeTick: tick})
+}
+
 type Agent struct {
 	Name     string       `json:"name"`
 	X        int          `json:"x"`
@@ -122,6 +199,15 @@ type Agent struct {
 	// snapshots byte-stable (precedent: Generation, Plan, Hail).
 	LastGoal     string `json:"last_goal,omitempty"`
 	LastGoalTick int64  `json:"last_goal_tick,omitempty"`
+	// IntentLog (spec 043 US1) is the villager's recent-intent ring: the last
+	// few intents it pursued, each with its source and outcome, maintained
+	// entirely by the intent-lifecycle reducer arms (state.go). Unlike LastGoal
+	// (a single slot), the ring preserves ORDER and per-intent source so the
+	// decision prompt can show alternation between goals (FR-003) and name where
+	// each intent came from (FR-002). Reducer-derived ⇒ replay-safe by
+	// construction; capacity intentLogCap. omitempty keeps a never-acted agent's
+	// canonical bytes identical to a pre-043 snapshot (precedent: LastGoal).
+	IntentLog []IntentRecord `json:"intent_log,omitempty"`
 	// Journal (spec 019, US3) is the agent's self-authored notebook — durable
 	// world state mutated ONLY by the two journal.* reducer arms. A POINTER with
 	// omitempty (the Hail precedent) so an agent that never journals stays
@@ -150,6 +236,23 @@ type Agent struct {
 	SitVec      []float32 `json:"sit_vec,omitempty"`
 	SitVecModel string    `json:"sit_vec_model,omitempty"`
 	SitVecTick  int64     `json:"sit_vec_tick,omitempty"`
+	// NeedsAnchor/NeedsAnchorTick (spec 043 US2) are the trajectory window's
+	// edge snapshot: the needs levels at the last window edge and the tick that
+	// edge was taken. Direction per need at render time is sign(current − anchor)
+	// with a deadband (internal/mind/context.go), so the prompt can say "warmth
+	// 45 and falling" — the cheapest form of foresight (FR-004). Refreshed by the
+	// agent.needs_changed reducer arm once a full trajectoryWindowTicks has
+	// elapsed since the anchor was taken; NeedsAnchorTick == 0 (nil anchor) is the
+	// unset sentinel — the first window, before any anchor exists, renders steady
+	// (edge case 1). A POINTER with omitempty (the Journal/Hail/Map precedent, NOT
+	// data-model.md's value type — deviation recorded for the planning tier): a
+	// value Needs would always serialize "needs_anchor":{...} (encoding/json
+	// omitempty is a no-op on a non-pointer struct), breaking the pre-043
+	// round-trip byte-identity the codebase requires. Reducer-derived ⇒ replay-
+	// safe by construction; NeedsAnchorTick is a duration anchor, SHIFT under a
+	// time snap (see rebaseTicks doctrine, miracles.go).
+	NeedsAnchor     *Needs `json:"needs_anchor,omitempty"`
+	NeedsAnchorTick int64  `json:"needs_anchor_tick,omitempty"`
 }
 
 // AgentHail is the courtesy pause a talk_to landing lays on its target: who

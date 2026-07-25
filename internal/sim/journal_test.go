@@ -166,3 +166,113 @@ func TestJournalSearchDeterministicNewestFirst(t *testing.T) {
 		t.Error("search on a nil journal must return nil")
 	}
 }
+
+// --- spec 043 US4 (T019/T020): SelectJournalExcerpts ---
+
+// buildJournal seeds a journal directly (bypassing the budget door, which the
+// other tests exercise) so the excerpt tests control the corpus exactly.
+func buildJournal(entries ...JournalEntry) *Journal {
+	return &Journal{NextID: len(entries), Entries: append([]JournalEntry(nil), entries...)}
+}
+
+// TestSelectJournalExcerptsMatch (T020, FR-007): a term relevant to the
+// situation surfaces the matching entry; the union across terms de-duplicates by
+// id and orders newest-first; the count is capped at JournalExcerptCap.
+func TestSelectJournalExcerptsMatch(t *testing.T) {
+	j := buildJournal(
+		JournalEntry{ID: 0, Tick: 10, Text: "Foraged for food by the river."},
+		JournalEntry{ID: 1, Tick: 20, Text: "Banked the fire to hold my warmth overnight."},
+		JournalEntry{ID: 2, Tick: 30, Text: "A quiet day mending my spear."},
+		JournalEntry{ID: 3, Tick: 40, Text: "Cold again — chasing warmth and food both."},
+	)
+	// Worst needs "food" + "warmth": entries 0, 1, 3 match; capped at 2,
+	// newest-first ⇒ #3 then #1.
+	got := j.SelectJournalExcerpts([]string{"food", "warmth"})
+	if len(got) != JournalExcerptCap {
+		t.Fatalf("matched %d excerpts, want cap %d: %+v", len(got), JournalExcerptCap, got)
+	}
+	if got[0].ID != 3 || got[1].ID != 1 {
+		t.Errorf("excerpts not newest-first de-duplicated: got ids [%d %d], want [3 1]", got[0].ID, got[1].ID)
+	}
+
+	// An entry matching two terms appears once (de-dup by id).
+	only := j.SelectJournalExcerpts([]string{"warmth", "food", "warmth"})
+	seen := map[int]int{}
+	for _, e := range only {
+		seen[e.ID]++
+	}
+	for id, n := range seen {
+		if n != 1 {
+			t.Errorf("entry #%d appeared %d times, want once", id, n)
+		}
+	}
+}
+
+// TestSelectJournalExcerptsNoMatch (T020): no relevant entry ⇒ nil (the block is
+// then omitted); blank terms are skipped, not matched as empty substrings.
+func TestSelectJournalExcerptsNoMatch(t *testing.T) {
+	j := buildJournal(JournalEntry{ID: 0, Tick: 10, Text: "A calm morning."})
+	if got := j.SelectJournalExcerpts([]string{"warmth", "food"}); got != nil {
+		t.Errorf("no-match search must return nil, got %+v", got)
+	}
+	// Blank/whitespace terms must NOT match everything via the empty substring.
+	if got := j.SelectJournalExcerpts([]string{"", "   "}); got != nil {
+		t.Errorf("blank terms must match nothing, got %+v", got)
+	}
+	// Nil journal is safe.
+	if got := (*Journal)(nil).SelectJournalExcerpts([]string{"food"}); got != nil {
+		t.Errorf("nil journal must return nil, got %+v", got)
+	}
+}
+
+// TestSelectJournalExcerptsRuneCap (T020): a long entry is trimmed to
+// JournalExcerptRunes runes on a rune boundary (never mid-rune), never
+// fabricating text; a short entry is returned verbatim.
+func TestSelectJournalExcerptsRuneCap(t *testing.T) {
+	// A multi-byte rune repeated well past the cap, tagged so the term matches.
+	long := "warmth " + strings.Repeat("é", JournalExcerptRunes+50)
+	j := buildJournal(JournalEntry{ID: 0, Tick: 10, Text: long})
+	got := j.SelectJournalExcerpts([]string{"warmth"})
+	if len(got) != 1 {
+		t.Fatalf("want 1 excerpt, got %d", len(got))
+	}
+	runes := []rune(got[0].Text)
+	if len(runes) > JournalExcerptRunes {
+		t.Errorf("excerpt is %d runes, exceeds cap %d", len(runes), JournalExcerptRunes)
+	}
+	// Trimmed on a rune boundary: the byte length is a whole number of runes
+	// (no split multi-byte rune) and the excerpt is a prefix of the source.
+	if !strings.HasPrefix(long, strings.TrimSuffix(got[0].Text, "…")) {
+		t.Errorf("excerpt is not a clean prefix of the source: %q", got[0].Text)
+	}
+	if strings.ContainsRune(got[0].Text, '�') {
+		t.Errorf("excerpt split a multi-byte rune (replacement char present): %q", got[0].Text)
+	}
+
+	// A short entry (under the cap) is verbatim.
+	short := buildJournal(JournalEntry{ID: 0, Tick: 10, Text: "warmth held tonight"})
+	if got := short.SelectJournalExcerpts([]string{"warmth"}); len(got) != 1 || got[0].Text != "warmth held tonight" {
+		t.Errorf("short entry not returned verbatim: %+v", got)
+	}
+}
+
+// TestSelectJournalExcerptsDeterministic (T020, determinism doctrine): the same
+// journal + terms yields byte-identical excerpts every call.
+func TestSelectJournalExcerptsDeterministic(t *testing.T) {
+	j := buildJournal(
+		JournalEntry{ID: 0, Tick: 10, Text: "food by the river"},
+		JournalEntry{ID: 1, Tick: 20, Text: "warmth at the fire"},
+		JournalEntry{ID: 2, Tick: 30, Text: "food and warmth both scarce"},
+	)
+	terms := []string{"food", "warmth"}
+	a := j.SelectJournalExcerpts(terms)
+	b := j.SelectJournalExcerpts(terms)
+	if len(a) != len(b) {
+		t.Fatalf("non-deterministic excerpt count: %d vs %d", len(a), len(b))
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			t.Errorf("excerpt %d differs across calls: %+v vs %+v", i, a[i], b[i])
+		}
+	}
+}

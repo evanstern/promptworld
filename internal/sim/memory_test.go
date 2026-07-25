@@ -488,3 +488,70 @@ func TestSC006IsolationByConstruction(t *testing.T) {
 		t.Fatal("removing agent A's memories changed agent B's selection (SC-006 broken)")
 	}
 }
+
+// --- spec 043 US4 (T021): annotated-window seam does not drift selection ---
+
+// TestSelectedWindowMatchesLegacy (T021, contract §Determinism): the annotated
+// window (SelectMemoriesWindow) is the SAME selection as the two public
+// selectors — stripping the serendipity flag reproduces SelectMemories (nil
+// query) and SelectMemoriesRelevant (non-nil query) byte-for-byte across many
+// soul sizes, seeds, ticks, and query postures. This is the live gate that the
+// assembler's floor/serendipity split (which consumes the annotation) can never
+// silently drift the spec-042 selection out from under the shadow invariant.
+func TestSelectedWindowMatchesLegacy(t *testing.T) {
+	models := []string{"all-minilm", "other-model"}
+	for _, n := range []int{0, 1, 5, 9, 10, 11, 40, 137} {
+		a := &Agent{Name: "Ash"}
+		for i := 0; i < n; i++ {
+			var vec []float32
+			if i%3 != 0 { // mix vectored, vectorless, cross-model memories
+				vec = []float32{float32(i%7) - 3, float32(i%5) - 2}
+			}
+			a.Memories = append(a.Memories, Memory{
+				Text: fmt.Sprintf("m%d", i), Salience: 1 + i%10, Tick: int64(i) * 613,
+				Subject: -1, Seq: int64(i + 1), Vec: vec, VecModel: models[i%2],
+			})
+		}
+		for _, seed := range []uint64{0, 1, 42, 9001} {
+			for _, tick := range []int64{0, 5_000, 130_000} {
+				for _, q := range [][]float32{nil, {1, 0}, {0, 1}, {-2, 3}} {
+					legacy := SelectMemoriesRelevant(a, seed, 3, tick, WindowK, q, "all-minilm")
+					annotated := StripSelected(SelectMemoriesWindow(a, seed, 3, tick, WindowK, q, "all-minilm"))
+					if !windowsEqual(legacy, annotated) {
+						t.Fatalf("n=%d seed=%d tick=%d q=%v: annotated window drifted from selector:\nselector  %+v\nannotated %+v", n, seed, tick, q, legacy, annotated)
+					}
+				}
+			}
+		}
+	}
+}
+
+// TestSelectedWindowSerendipityFlag (T021): when the soul overflows K the window
+// carries exactly windowTailPick serendipity-flagged entries (the seeded tail),
+// and a soul at or under K carries none (no tail is drawn).
+func TestSelectedWindowSerendipityFlag(t *testing.T) {
+	a := &Agent{Name: "Ash"}
+	for i := 0; i < 40; i++ {
+		a.Memories = append(a.Memories, memAt(int64(i)*600, 1+i%10, fmt.Sprintf("m%d", i)))
+	}
+	w := SelectMemoriesWindow(a, 42, 0, 100_000, WindowK, nil, "")
+	seren := 0
+	for _, sm := range w {
+		if sm.Serendipity {
+			seren++
+		}
+	}
+	if seren != 2 {
+		t.Errorf("overflowing soul: %d serendipity picks, want 2", seren)
+	}
+
+	small := &Agent{Name: "Ash"}
+	for i := 0; i < 5; i++ {
+		small.Memories = append(small.Memories, memAt(int64(i)*600, 5, fmt.Sprintf("m%d", i)))
+	}
+	for _, sm := range SelectMemoriesWindow(small, 42, 0, 10_000, WindowK, nil, "") {
+		if sm.Serendipity {
+			t.Errorf("n≤k soul must draw no serendipity tail: %+v", sm)
+		}
+	}
+}

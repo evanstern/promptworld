@@ -588,10 +588,29 @@ func (s *State) Apply(e store.Event) error {
 		return a.Journal.deleteEntry(p.Entry)
 	case "agent.thought":
 		// Chronicle material; no state effect.
-	case "cog.thought", "cog.outcome", "cog.recalibration_recommended",
-		"agent.intent_rejected":
+	case "cog.thought", "cog.outcome", "cog.recalibration_recommended":
 		// Cognition-horizon telemetry (TASK-32): recorded observability,
 		// no state effect.
+	case "agent.intent_rejected":
+		// Cognition-horizon telemetry (TASK-32): the loop refused a landing
+		// intent. The Intent/Idle state is untouched (the refused intent never
+		// landed) — but spec 043 US1 records it in the recent-intent ring as an
+		// append-and-close "rejected" so the next thought can see that the
+		// attempt was made and refused (edge case: rejected/superseded before
+		// landing). A rejected intent never had an open record, so it is
+		// appended already closed. Deterministic ⇒ replay-safe.
+		var p IntentRejectedPayload
+		if err := json.Unmarshal(e.Payload, &p); err != nil {
+			return fmt.Errorf("apply %s: %w", e.Type, err)
+		}
+		a, err := agent(p.Agent)
+		if err != nil {
+			return err
+		}
+		a.appendIntent(IntentRecord{
+			Goal: p.Goal, Source: "planner", Reason: p.Reason,
+			Tick: e.Tick, Outcome: "rejected", OutcomeTick: e.Tick,
+		})
 	case "cog.tool_call":
 		// The tool-use loop's call trace (spec 017): recorded observability,
 		// no state effect — same as the cog.* arm above.
@@ -636,6 +655,10 @@ func (s *State) Apply(e store.Event) error {
 		// v1 semantics: a broken sequence is not resumed — the whole
 		// remaining plan clears and the reflex floor covers.
 		a.Plan = nil
+		// Spec 043 US1/US3 (FR-005): the plan's end is visible in self-history
+		// at the next thought — stamp the expired step's ring record (or append
+		// one if the step expired before ever firing).
+		a.stampOrAppendExpired(p.Step, e.Tick)
 
 	case "sim.night_started":
 		s.Night = true
@@ -668,6 +691,10 @@ func (s *State) Apply(e store.Event) error {
 		// cleared) so the villagers tab can show it while idle.
 		a.LastGoal = p.Goal
 		a.LastGoalTick = e.Tick
+		// Spec 043 US1: append to the recent-intent ring, source verbatim. The
+		// previous record, if still open, stays open — an override reads as
+		// open-then-new, order preserved (data-model.md).
+		a.appendIntent(IntentRecord{Goal: p.Goal, Source: p.Source, Reason: p.Reason, Tick: e.Tick})
 	case "agent.work_started":
 		var p WorkStartedPayload
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
@@ -691,6 +718,8 @@ func (s *State) Apply(e store.Event) error {
 		}
 		a.Intent = nil
 		a.IdleSince = e.Tick
+		// Spec 043 US1: the current intent completed — close its ring record.
+		a.stampIntentOutcome("done", e.Tick)
 
 	case "agent.build_failed":
 		// Spec 038: a build cancelled by mid-work re-validation. State effect is
@@ -708,6 +737,9 @@ func (s *State) Apply(e store.Event) error {
 		}
 		a.Intent = nil
 		a.IdleSince = e.Tick
+		// Spec 043 US1: a build cancelled mid-work — close its ring record
+		// "failed" so the next thought sees the build did not finish.
+		a.stampIntentOutcome("failed", e.Tick)
 
 	case "agent.moved":
 		var p AgentMovedPayload
@@ -1487,6 +1519,21 @@ func (s *State) Apply(e store.Event) error {
 			a.NearDeath = true
 		} else if p.Health >= nearDeathResetAt {
 			a.NearDeath = false
+		}
+		// Spec 043 US2 (T014, FR-004): roll the trajectory anchor at each window
+		// edge so the decision prompt can render each need's direction (current −
+		// anchor). The anchor is a window-edge snapshot of the current needs,
+		// refreshed once a full trajectoryWindowTicks of game time has elapsed
+		// since it was taken. NeedsAnchorTick == 0 (nil anchor) is the unset
+		// sentinel: on a fresh world the first window carries no anchor until the
+		// window's worth of time has passed, so the first thought renders steady
+		// (edge case 1) — a loaded/snapped world whose tick already exceeds the
+		// window establishes the anchor on its first needs change. Reducer-derived
+		// ⇒ replay-safe.
+		if e.Tick-a.NeedsAnchorTick >= trajectoryWindowTicks {
+			snap := a.Needs
+			a.NeedsAnchor = &snap
+			a.NeedsAnchorTick = e.Tick
 		}
 	case "agent.died":
 		var p DiedPayload
