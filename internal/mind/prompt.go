@@ -91,86 +91,15 @@ func selectWindow(s *sim.State, idx, k int, tick int64, mode string) []sim.Memor
 // userPrompt renders the situation + memory window. The window is the ONLY
 // memory content that ever reaches a prompt (AC#3); mode is the world's
 // memory_relevance flag deciding which selector fills it (spec 042 US3).
+//
+// Since spec 043 the situation is assembled from named blocks in a fixed
+// contract order under a size budget (context.go); userPrompt is the
+// no-future-line, default-budget entry point the direct callers (tests, the
+// TUI capture path) use. The planner path calls assembleContext directly so it
+// can prepend the future-dating line and stamp the per-block sizes onto the
+// thought's telemetry.
 func userPrompt(s *sim.State, idx int, k int, mode string) string {
-	a := s.Agents[idx]
-	var b strings.Builder
-
-	phase := "daytime"
-	if s.Night {
-		phase = "night"
-	}
-	fmt.Fprintf(&b, "It is %s (%s). You are at (%d, %d).\n", clock.Format(s.Tick), phase, a.X, a.Y)
-	fmt.Fprintf(&b, "Needs (0-100): health %d, food %d, rest %d, warmth %d, morale %d.\n",
-		a.Needs.Health/10, a.Needs.Food/10, a.Needs.Rest/10, a.Needs.Warmth/10, a.Needs.Morale/10)
-	// Carried inventory: the full resource/item set (spec 012, T025/T029/T035)
-	// so the planner can reason about cooking/eating AND the crafting chain
-	// (planks/refined stone/spear) and the oven's water/wood consumers.
-	fmt.Fprintf(&b, "Carrying: %d wood, %d stone, %d water, %d planks, %d refined stone, food (%d raw, %d cooked, %d meals)",
-		a.Inv.Wood, a.Inv.Stone, a.Inv.Water, a.Inv.Planks, a.Inv.RefinedStone,
-		a.Inv.FoodRaw, a.Inv.FoodCooked, a.Inv.Meals)
-	if n := len(a.Inv.Spears); n > 0 {
-		fmt.Fprintf(&b, ", %d spear(s) (%d uses left on the most-worn)", n, a.Inv.Spears[0])
-	}
-	b.WriteString(".\n")
-
-	// Spec 041 (US2, contracts §3): the world the prompt describes is the
-	// agent's OWN — known places from its mental map (the omniscient Village:
-	// line and its first-6 cap are retired), neighbors from its peer
-	// sightings. Two villagers with different histories see different worlds.
-	b.WriteString(knownPlaces(s, idx))
-
-	var nearby []string
-	if a.Map != nil {
-		// Peer sightings, agent-index order (Peers' canonical sort). The
-		// remembered position is the agent's belief: a peer who slipped away
-		// unseen still renders where they were last seen — the resolver
-		// (talk_to) walks to exactly this spot, so prompt and action agree.
-		for _, p := range a.Map.Peers {
-			if p.Agent == idx || p.Agent < 0 || p.Agent >= len(s.Agents) {
-				continue
-			}
-			o := s.Agents[p.Agent]
-			if o.Dead {
-				continue
-			}
-			d := absInt(p.X-a.X) + absInt(p.Y-a.Y)
-			if d > 10 {
-				continue
-			}
-			state := ""
-			// The asleep flavor only when the peer is verifiably where the
-			// sighting says (in view right now) — never a remote live read.
-			if o.Asleep && o.X == p.X && o.Y == p.Y {
-				state = ", asleep"
-			}
-			nearby = append(nearby, fmt.Sprintf("%s (%d tiles away%s)", o.Name, d, state))
-		}
-	}
-	if len(nearby) > 0 {
-		fmt.Fprintf(&b, "Nearby: %s.\n", strings.Join(nearby, ", "))
-	}
-
-	// Social context (TASK-8): bonds, debts, reputation, the loudest rumor.
-	if social := socialContext(s, idx); social != "" {
-		b.WriteString(social)
-	}
-
-	// Village law (TASK-13): the rules in force are standing knowledge —
-	// obeying, skirting, or defying them is an informed, in-persona choice.
-	if law := villageLaw(s, idx); law != "" {
-		b.WriteString(law)
-	}
-
-	window := selectWindow(s, idx, k, s.Tick, mode)
-	if len(window) > 0 {
-		b.WriteString("\nYou remember:\n")
-		for _, m := range window {
-			fmt.Fprintf(&b, "- %s\n", sim.FormatMemory(m))
-		}
-	}
-
-	b.WriteString("\nWhat do you do next?")
-	return b.String()
+	return assembleContext(s, idx, k, mode, "").text
 }
 
 // knownPlaces renders the spec-041 known-places section (US2, contracts §3):

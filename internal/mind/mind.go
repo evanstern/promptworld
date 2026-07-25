@@ -383,7 +383,6 @@ func (md *Mind) plan() {
 			agent:  i,
 			name:   a.Name,
 			system: systemPrompt(a.Name, md.personas[i]),
-			prompt: userPrompt(md.replica, i, md.k, md.memoryRelevance),
 			meta:   md.newMeta("planner", i, tick, md.pendingSeq[i], llm.KindPlanner),
 		}
 		job.meta.generation = a.Generation
@@ -394,9 +393,20 @@ func (md *Mind) plan() {
 		}
 		// Future-dating (FR-016): the prompt says when the decision lands,
 		// using the router's own prediction — prompt and gate never disagree.
+		// The line is part of the frame block (spec 043), so it rides into the
+		// assembler rather than being prepended after — same bytes, one owner.
+		future := ""
 		if job.meta.class.FutureDated {
-			job.prompt = futureDated(tick, job.meta.predictedLandTick) + job.prompt
+			future = futureDated(tick, job.meta.predictedLandTick)
 		}
+		// Spec 043: assemble the situation from named blocks under the context
+		// budget, recording per-block sizes + any budget drops onto the thought
+		// telemetry (cog.thought). Deterministic — same replica state, same bytes.
+		asm := assembleContext(md.replica, i, md.k, md.memoryRelevance, future)
+		job.prompt = asm.text
+		job.meta.promptBytes = asm.promptBytes
+		job.meta.blockBytes = asm.blockBytes
+		job.meta.droppedBlocks = asm.droppedBlocks
 		md.planInFlight[i].Store(true)
 		select {
 		case md.planQ <- job:
