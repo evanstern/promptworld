@@ -93,6 +93,20 @@ Features are specified with GitHub Spec Kit (`specify`) under `specs/NNN-<featur
 `node scripts/check-tui-design.mjs --changed` and amend `docs/design/tui/` in the
 same PR (re-verify + re-pin every affected page).
 
+## Merge-drift gates (spec 051)
+
+`scripts/check-merge-drift.mjs` gates the parallel worktree SDLC against merge drift
+at three choke points. No daemon, no CI, no PR comments — findings are exit codes plus
+(optionally) board notes. Run:
+
+- session start (root): `node scripts/check-merge-drift.mjs session`
+- before cutting a worktree: `node scripts/check-merge-drift.mjs worktree [--spec NNN]`
+- before opening a PR (from the worktree): `node scripts/check-merge-drift.mjs pr`
+
+Exit 0 = pass (clean or warnings-only), 1 = blocked (do not proceed), 2 = usage/env
+error. The script never rebases, merges, commits to, or resets any task branch or its
+worktree — resolution always stays with the owning session.
+
 ## Model-tiered workflow (constitution Principle V, v1.1.0)
 
 Three tiers, enforced by delegation (`.specify/memory/constitution.md`, Principle V):
