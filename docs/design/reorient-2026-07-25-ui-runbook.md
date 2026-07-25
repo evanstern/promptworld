@@ -68,7 +68,7 @@ design pages are decided. Plan-of-record is the board.
 | TASK-130 | — | #81 | ef696aa | 2026-07-25 | adjacent player-docs refresh (not in queue) |
 | TASK-121 | 052 | — | — | in flight | Lane 1; contract published on main |
 | TASK-125 | 053 | — | — | in flight | Lane 2; dispatched by sibling session |
-| TASK-117 | 055 | — | — | in flight | Lane 3; session 3 — spec on main (1170f46), Sonnet dispatched in .worktrees/task-117 |
+| TASK-117 | 055 | #88 | dfa73d7 | 2026-07-25 | Lane 3; session 3 — lesson row shipped (Sonnet), 18/18 tasks, board Done |
 | TASK-127 | 056 | — | — | in flight | Lane 3; sibling session — dispatch gated on 121's merge |
 
 ## Execution lanes (dependency-ordered; parallelize within a lane)
