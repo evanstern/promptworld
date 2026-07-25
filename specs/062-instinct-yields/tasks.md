@@ -78,5 +78,5 @@ regression corpus is the deliverable proving the layer fight is over.
 - [x] T011 Full gates in worktree: `go test ./...`, `go vet ./...`,
       `node scripts/check-tui-design.mjs --changed`; re-run after rebase
       (siblings 110/109/111 may merge first).
-- [ ] T012 Post-merge (root): wiki re-pin (reflex-policy, sim-state-reducer,
+- [x] T012 Post-merge (root): wiki re-pin (reflex-policy, sim-state-reducer,
       decision-context), player-docs freshness, spec-bridge sync.

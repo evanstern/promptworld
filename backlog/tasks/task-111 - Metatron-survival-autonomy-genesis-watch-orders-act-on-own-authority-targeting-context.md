@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-25 03:00'
-updated_date: '2026-07-25 19:47'
+updated_date: '2026-07-25 22:09'
 labels:
   - learning-game
   - guardian-survival
@@ -35,7 +35,7 @@ Spec: specs/059-metatron-survival-autonomy
 - [x] #7 Spec phase: User Story 1 — Survival watches from birth (P1)
 - [x] #8 Spec phase: User Story 2 — Survival authority carve-out (P1)
 - [x] #9 Spec phase: User Story 3 — Targeting digest (P2)
-- [ ] #10 Spec phase: Polish & Cross-Cutting
+- [x] #10 Spec phase: Polish & Cross-Cutting
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -58,6 +58,8 @@ REVIEW FINDINGS (pinned-coordinate note now historical — the work merged): thi
 Live-evidence follow-ups carded (operator request 2026-07-25): TASK-136 (AC#3 live rejection-rate measurement) and TASK-137 (AC#5 charter-delta experiment). This task's remaining ACs resolve from their evidence.
 
 Renumber executed (2026-07-25): the 059 collision is resolved — THIS task keeps specs/059-metatron-survival-autonomy; TASK-115's spec moved to specs/063-grounded-feedback (not 060 — village-lens/conversation-loop-damper/instinct-yields claimed 060/061/062 while the collision sat open). spec-bridge check green: 63 linked tasks, none exceeding artifacts.
+
+Sync deviation (2026-07-25, deliberate): the bridge derives Done from spec artifacts (all phases complete), but operator-authored ACs #3b/#5 remain open by explicit operator decision pending TASK-136/137 live evidence — status HELD at In Progress. The spec-phase AC #10 (Polish) is checked; only the live-evidence ACs gate Done.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

@@ -67,5 +67,5 @@
 
 - [x] T010 Full gates in worktree: `go test ./...`, `go vet ./...`,
       `node scripts/check-tui-design.mjs --changed`; re-run after rebase.
-- [ ] T011 Post-merge (root): wiki re-pin for notes sourcing
+- [x] T011 Post-merge (root): wiki re-pin for notes sourcing
       toolloop/registry/roster; player-docs freshness; spec-bridge sync.

@@ -1,10 +1,10 @@
 ---
 id: TASK-108
 title: 'Survival reflex layer: build-fire reflex + earlier refuel threshold'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-25 02:59'
-updated_date: '2026-07-25 19:14'
+updated_date: '2026-07-25 22:09'
 labels:
   - instinct-layer
   - mvls
@@ -33,7 +33,7 @@ Spec: specs/057-survival-reflex-gaps
 - [x] #7 Spec phase: User Story 2 — Genesis tuning pin (P1)
 - [x] #8 Spec phase: User Story 3 — Cold build-fire reflex proven (P2)
 - [x] #9 Spec phase: User Story 4 — Survival audit (P3)
-- [ ] #10 Spec phase: Polish & Cross-Cutting
+- [x] #10 Spec phase: Polish & Cross-Cutting
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -44,4 +44,12 @@ MVLS sweep dispatch (2026-07-25): implementer tier Opus 4.8 — constitution V r
 spec-bridge sync: Foundational: 1/1 · User Story 1 — Refuel arms below 3 game-hours (P1): 3/3 · User Story 2 — Genesis tuning pin (P1): 4/4 · User Story 3 — Cold build-fire reflex proven (P2): 2/2 · User Story 4 — Survival audit (P3): 1/1 · Polish & Cross-Cutting: 1/2
 
 PR #89 squash-merged as 483e90c. Matrix exposed no surgical gap; three non-surgical gaps carded in audit.md (night search + day warmth -> TASK-103; wake-to-cold -> TASK-104). T013 (player-docs refresh) batched to end of lane-1 merge train.
+
+spec-bridge sync: Foundational: 1/1 · User Story 1 — Refuel arms below 3 game-hours (P1): 3/3 · User Story 2 — Genesis tuning pin (P1): 4/4 · User Story 3 — Cold build-fire reflex proven (P2): 2/2 · User Story 4 — Survival audit (P3): 1/1 · Polish & Cross-Cutting: 2/2 — status In Progress → Done
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+All spec tasks complete (Foundational: 1/1 · User Story 1 — Refuel arms below 3 game-hours (P1): 3/3 · User Story 2 — Genesis tuning pin (P1): 4/4 · User Story 3 — Cold build-fire reflex proven (P2): 2/2 · User Story 4 — Survival audit (P3): 1/1 · Polish & Cross-Cutting: 2/2). Derived Done by spec-bridge sync.
+<!-- SECTION:FINAL_SUMMARY:END -->

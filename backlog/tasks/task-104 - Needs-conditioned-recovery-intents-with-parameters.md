@@ -1,10 +1,10 @@
 ---
 id: TASK-104
 title: Needs-conditioned recovery intents with parameters
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-25 02:41'
-updated_date: '2026-07-25 21:49'
+updated_date: '2026-07-25 22:09'
 labels:
   - goal-quality
   - instinct-layer
@@ -34,7 +34,7 @@ Spec: specs/064-needs-conditioned-recovery
 - [x] #7 Spec phase: User Story 2 — generic mechanism proof (P2)
 - [x] #8 Spec phase: User Story 4 — wake to cold (P2)
 - [x] #9 Spec phase: Integration proof
-- [ ] #10 Spec phase: Polish & Cross-Cutting
+- [x] #10 Spec phase: Polish & Cross-Cutting
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -59,4 +59,12 @@ Implementer report gated (2026-07-25, read-only — merge held for operator sign
 spec-bridge sync: Foundational: 2/2 · User Story 1 — warm_up (P1): 4/4 · User Story 3 — interruptibility (P1): 2/2 · User Story 2 — generic mechanism proof (P2): 2/2 · User Story 4 — wake to cold (P2): 2/2 · Integration proof: 1/1 · Polish & Cross-Cutting: 1/2
 
 PR #96 squash-merged as 5acb5b5 (clean rebase across the guardian rename, full gates re-run green). Human ACs proven: #1 warm_up completes on the need condition passed as an argument, rest analog proves the pattern; #2 hold-at-target kills idle-at-recovery-site dispatch (TestReflexHoldNoArriveIdleWander + TestSageWarmUpHeldToThresholdThenReleased); #3 TestRecoverThenRelease deterministic recover-then-release.
+
+spec-bridge sync: Foundational: 2/2 · User Story 1 — warm_up (P1): 4/4 · User Story 3 — interruptibility (P1): 2/2 · User Story 2 — generic mechanism proof (P2): 2/2 · User Story 4 — wake to cold (P2): 2/2 · Integration proof: 1/1 · Polish & Cross-Cutting: 2/2 — status In Progress → Done
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+All spec tasks complete (Foundational: 2/2 · User Story 1 — warm_up (P1): 4/4 · User Story 3 — interruptibility (P1): 2/2 · User Story 2 — generic mechanism proof (P2): 2/2 · User Story 4 — wake to cold (P2): 2/2 · Integration proof: 1/1 · Polish & Cross-Cutting: 2/2). Derived Done by spec-bridge sync.
+<!-- SECTION:FINAL_SUMMARY:END -->

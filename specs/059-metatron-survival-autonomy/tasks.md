@@ -69,5 +69,5 @@ event-sourced so replay determinism applies.
 
 - [x] T011 Full gates in worktree: `go test ./...`, `go vet ./...`,
       `node scripts/check-tui-design.mjs --changed`; re-run after rebase.
-- [ ] T012 Post-merge (root): wiki re-pin (metatron notes), player-docs
+- [x] T012 Post-merge (root): wiki re-pin (metatron notes), player-docs
       freshness, spec-bridge sync.

@@ -69,6 +69,6 @@ state means replay + rebase coverage is mandatory.
 - [x] T010 Full gates in worktree: `go test ./...`, `go vet ./...`,
       `node scripts/check-tui-design.mjs --changed`; re-run after rebase
       (siblings 110/108/111 merge first — expect a rebase).
-- [ ] T011 Post-merge (root): wiki re-pin (social-fabric, hail-protocol,
+- [x] T011 Post-merge (root): wiki re-pin (social-fabric, hail-protocol,
       agent-mind, sim-state-reducer notes), player-docs freshness,
       spec-bridge sync.

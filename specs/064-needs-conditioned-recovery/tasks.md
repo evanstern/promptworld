@@ -93,6 +93,6 @@ payload fields make replay/snapshot coverage mandatory.
 - [x] T014 Full gates in worktree: `go test ./...`, `go vet ./...`,
       `node scripts/check-tui-design.mjs --changed` (if warm_up surfaces in
       internal/tui goal-label tables, amend docs/design/tui/ same-PR).
-- [ ] T015 Post-merge (root): wiki re-pin (executor, reflex-policy,
+- [x] T015 Post-merge (root): wiki re-pin (executor, reflex-policy,
       tool-registry, agent-mind, event-types), player-docs freshness,
       spec-bridge sync.

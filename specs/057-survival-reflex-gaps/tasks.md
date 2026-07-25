@@ -84,5 +84,5 @@ hard invariant.
 - [x] T012 Full gates in worktree: `go test ./...`, `go vet ./...`,
       `node scripts/check-tui-design.mjs --changed` (expected no-op); re-run
       after rebase.
-- [ ] T013 Post-merge (root): wiki re-pin (`world-tuning`, `reflex-policy`,
+- [x] T013 Post-merge (root): wiki re-pin (`world-tuning`, `reflex-policy`,
       genesis-path notes), player-docs freshness check, spec-bridge sync.

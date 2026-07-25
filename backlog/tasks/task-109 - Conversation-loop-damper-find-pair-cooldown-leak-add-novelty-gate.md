@@ -1,10 +1,10 @@
 ---
 id: TASK-109
 title: 'Conversation loop damper: find pair-cooldown leak, add novelty gate'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-25 02:59'
-updated_date: '2026-07-25 19:44'
+updated_date: '2026-07-25 22:09'
 labels:
   - behavior-hygiene
   - mvls
@@ -30,7 +30,7 @@ Spec: specs/061-conversation-loop-damper
 - [x] #5 Spec phase: Foundational — pair record (US2)
 - [x] #6 Spec phase: User Story 1 — sim-side hail cooldown (P1)
 - [x] #7 Spec phase: User Story 3 — novelty SHIM (P2)
-- [ ] #8 Spec phase: Polish & Cross-Cutting
+- [x] #8 Spec phase: Polish & Cross-Cutting
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -41,4 +41,12 @@ MVLS sweep dispatch (2026-07-25): implementer tier Opus 4.8 — constitution V r
 spec-bridge sync: Foundational — pair record (US2): 2/2 · User Story 1 — sim-side hail cooldown (P1): 3/3 · User Story 3 — novelty SHIM (P2): 4/4 · Polish & Cross-Cutting: 1/2
 
 PR #91 squash-merged as 1debe18. Root cause on this task + docs/design/evidence/task-109/; shim removal note also at specs/061-conversation-loop-damper/shim-note.md.
+
+spec-bridge sync: Foundational — pair record (US2): 2/2 · User Story 1 — sim-side hail cooldown (P1): 3/3 · User Story 3 — novelty SHIM (P2): 4/4 · Polish & Cross-Cutting: 2/2 — status In Progress → Done
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+All spec tasks complete (Foundational — pair record (US2): 2/2 · User Story 1 — sim-side hail cooldown (P1): 3/3 · User Story 3 — novelty SHIM (P2): 4/4 · Polish & Cross-Cutting: 2/2). Derived Done by spec-bridge sync.
+<!-- SECTION:FINAL_SUMMARY:END -->
