@@ -89,6 +89,16 @@ the report's treatment of all five as doctrine dials.
 **Alternatives considered**: keeping `PlannerCadenceTicks` a const and special-
 casing it via daemon plumbing — rejected: two mechanisms for one feature.
 
+**Amendment (implementation finding, ratified at review)**: the call-site table
+above was incomplete — `internal/sim/memory.go:414` (serendipity) and
+`internal/sim/social.go:101` (secret-share) also reference the cadence period,
+but as an RNG bucket width, not as planner scheduling. Both are deliberately
+**pinned to `defaultPlannerCadenceTicks`** (unconverted): FR-006 scopes the
+dial to planner scheduling/stagger/embedder buckets, and a cadence tune must
+not silently reshape unrelated deterministic RNG streams. If evidence ever
+shows those windows should track the dial, that is a new promotion decision,
+not a byproduct of this one.
+
 **Note on cadence semantics**: mind's stagger/bucket math derives from cadence
 at construction (`mind.go:176`, `embedder.go:156`); since tuning applies only
 at boot and the mind is rebuilt at boot, a tuned cadence is constant for the

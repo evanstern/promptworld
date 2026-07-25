@@ -27,7 +27,7 @@ Worktree creation is TASK-107 process (constitution II), not a spec task.*
 **Purpose**: the TuningState type, defaults, clamps, and accessors that every
 story consumes.
 
-- [ ] T001 Create `internal/sim/tuning.go`: `TuningState` struct (five int fields,
+- [x] T001 Create `internal/sim/tuning.go`: `TuningState` struct (five int fields,
       JSON tags per data-model.md), `default*` constants relocated/renamed from
       their current homes (`defaultRefuelDyingBelow`, `defaultFireBurnPerWood`,
       `defaultGruEmergePerMille`, `defaultPlannerCadenceTicks`,
@@ -37,13 +37,13 @@ story consumes.
       `internal/sim/agents.go` (lines ~671, ~705, ~709) and `internal/sim/gru.go`
       (line ~46); the mind-side `encounterCooldownTicks` const in
       `internal/mind/mind.go:36` is removed in T013.
-- [ ] T002 Add `Tuning *TuningState` field to `State` in `internal/sim/state.go`
+- [x] T002 Add `Tuning *TuningState` field to `State` in `internal/sim/state.go`
       with tag `json:"tuning,omitempty"` (placed with the other omitempty
       late-additions, `state.go:92-106`), plus nil-safe accessor methods on
       `*State` in `internal/sim/tuning.go`: `RefuelDyingBelow()`,
       `FireBurnPerWood()`, `GruEmergePerMille()`, `PlannerCadence()`,
       `EncounterCooldown()` — tuned value when `Tuning != nil`, else default.
-- [ ] T003 [P] Add snapshot-compatibility test in `internal/sim/tuning_test.go`:
+- [x] T003 [P] Add snapshot-compatibility test in `internal/sim/tuning_test.go`:
       a pre-048 snapshot JSON (no `tuning` key) unmarshals to `Tuning == nil`
       with all accessors returning defaults, and a state with `Tuning == nil`
       marshals with no `tuning` key (byte-identical guarantee, no
@@ -62,23 +62,23 @@ warn; malformed/unknown fails boot.
 **Independent Test**: boot with no file → unchanged; boot with one dial set →
 that value effective; out-of-range → clamped+warned; garbage → boot refused.
 
-- [ ] T004 [US1] Implement `ParseTuning(data []byte) (*TuningState, []string, error)`
+- [x] T004 [US1] Implement `ParseTuning(data []byte) (*TuningState, []string, error)`
       in `internal/sim/tuning.go`: strict decode
       (`json.Decoder.DisallowUnknownFields`) into a sparse pointer-fields
       carrier, resolve against defaults into a full set, clamp out-of-range
       values collecting `llm/config.go`-style warning strings
       (`tuning.json <field> <raw> out of range (max <bound>) — clamped to <v>`);
       unknown key / wrong type / malformed JSON → error.
-- [ ] T005 [P] [US1] Table-driven parse/clamp tests in
+- [x] T005 [P] [US1] Table-driven parse/clamp tests in
       `internal/sim/tuning_test.go`: empty object → default set, sparse file
       resolves missing fields to defaults, each field clamps at both bounds
       with the documented warning text, unknown key errors, wrong type errors,
       malformed JSON errors (contract table in contracts/tuning.md is the
       test table).
-- [ ] T006 [P] [US1] Add `TuningPath()` helper to `internal/world/world.go`
+- [x] T006 [P] [US1] Add `TuningPath()` helper to `internal/world/world.go`
       (`filepath.Join(w.Dir, "tuning.json")`, the `CalibrationPath()` pattern
       at world.go:311).
-- [ ] T007 [US1] Daemon boot loading in `internal/daemon/daemon.go`: after
+- [x] T007 [US1] Daemon boot loading in `internal/daemon/daemon.go`: after
       `recoverState`/`seedMeetingConvention` (~line 116), read
       `w.TuningPath()`; absent → skip silently; present → `sim.ParseTuning`,
       print each warning line, fail boot on error with file path + problem.
@@ -100,14 +100,14 @@ no redundant events on restart.
 **Independent Test**: run tuned, delete tuning.json, replay log → identical
 state; restart with unchanged file → no new event.
 
-- [ ] T008 [US2] Reducer arm for `sim.tuning_applied` in
+- [x] T008 [US2] Reducer arm for `sim.tuning_applied` in
       `internal/sim/state.go` `Apply` dispatch (near the governance arm,
       ~line 1694): decode full-set payload into `s.Tuning` (idempotent), plus
       `NewTuningEvent(state, tick, set)` constructor in
       `internal/sim/tuning.go` (the `NewConventionEvent` pattern,
       governance.go:628). Payload type `TuningAppliedPayload` beside the other
       payload structs in state.go.
-- [ ] T009 [US2] `seedTuning(w, st, state, parsed)` in
+- [x] T009 [US2] `seedTuning(w, st, state, parsed)` in
       `internal/daemon/daemon.go` (the `seedMeetingConvention` shape,
       daemon.go:486): compute effective set (parsed manifest, or default set
       when file absent — but absent file seeds NOTHING; only a present file
@@ -115,17 +115,17 @@ state; restart with unchanged file → no new event.
       defaults), and when different `state.Apply` + `st.AppendEvents` one
       `sim.tuning_applied` before the loop starts and before `mind.New`
       (~daemon.go:331). Equal sets append nothing.
-- [ ] T010 [P] [US2] Reducer/seed tests in `internal/sim/tuning_test.go`:
+- [x] T010 [P] [US2] Reducer/seed tests in `internal/sim/tuning_test.go`:
       apply `sim.tuning_applied` → accessors return payload values; re-apply
       idempotent; snapshot round-trip carries `Tuning`; a log with defaults →
       tuned → (no event) restart sequence yields exactly one tuning event.
-- [ ] T011 [US2] Replay determinism test (quickstart §4, SC-003) in
+- [x] T011 [US2] Replay determinism test (quickstart §4, SC-003) in
       `internal/sim/tuning_test.go` (or `internal/daemon` if it needs the
       store): drive a state under a tuned set past fire-refuel + gru-night +
       encounter activity via events, hash final state, replay same events into
       a fresh state, assert hash equality — no file involved anywhere in the
       replay path.
-- [ ] T012 [P] [US2] Old-log compatibility test: replaying a pre-048 event
+- [x] T012 [P] [US2] Old-log compatibility test: replaying a pre-048 event
       sequence (no tuning events) leaves `Tuning == nil` and defaults in
       effect (spec FR-007); secondary consumers survive the new event kind —
       extend the chronicle/digest "unknown event tolerance" coverage if such a
@@ -144,13 +144,13 @@ state; restart with unchanged file → no new event.
 **Independent Test**: per-dial tests prove the tuned value drives behavior
 (SC-005).
 
-- [ ] T013 [US3] Convert reducer-side call sites to accessors:
+- [x] T013 [US3] Convert reducer-side call sites to accessors:
       `internal/sim/policy.go:147` (`f.Detail-tick < s.RefuelDyingBelow()`),
       `internal/sim/executor.go:832` and `internal/sim/state.go:915`
       (`FireBurnPerWood()`), `internal/sim/gru.go:235`
       (`GruEmergePerMille()`). Verify no other non-test reads of the old
       consts remain (`grep -rn "refuelDyingBelow\|fireBurnPerWood\|gruEmergePerMille" internal/ --include="*.go" | grep -v default | grep -v _test`).
-- [ ] T014 [US3] Convert mind-layer call sites to replica accessors:
+- [x] T014 [US3] Convert mind-layer call sites to replica accessors:
       `internal/mind/mind.go:176,384,432` and
       `internal/mind/embedder.go:156,212` (`replica.PlannerCadence()`),
       `internal/mind/mind.go:317` (`md.replica.EncounterCooldown()`, removing
@@ -158,7 +158,7 @@ state; restart with unchanged file → no new event.
       `sim.PlannerCadenceTicks` read in `internal/daemon/daemon.go:341`
       (boot printout) to the state accessor. Keep `sim.AgentCount` stagger
       math intact (`replica.PlannerCadence()/sim.AgentCount`).
-- [ ] T015 [P] [US3] Per-dial proof tests (SC-005, quickstart §5): in
+- [x] T015 [P] [US3] Per-dial proof tests (SC-005, quickstart §5): in
       `internal/sim/tuning_test.go` — tuned `RefuelDyingBelow` changes the
       refuel-reflex trigger window (the `food_fire_test.go:378` scenario under
       a non-default value); tuned `FireBurnPerWood` moves the `FuelUntil`
@@ -167,7 +167,7 @@ state; restart with unchanged file → no new event.
       `gru_test.go:43` roll under tuned state). In `internal/mind` — tuned
       `PlannerCadence` shifts `nextDue` stagger and embedder bucket edges;
       tuned `EncounterCooldown` gates/admits a re-encounter at the boundary.
-- [ ] T016 [US3] Fix test-suite fallout from const renames: update in-package
+- [x] T016 [US3] Fix test-suite fallout from const renames: update in-package
       test references (`internal/sim/recipes_test.go:82` names
       `fireBurnPerWood`; `internal/sim/gru_test.go:43` names
       `gruEmergePerMille`; `internal/sim/whole_feature_test.go:285-287`;
@@ -182,7 +182,7 @@ state; restart with unchanged file → no new event.
 
 ## Phase 6: User Story 4 — Design report points at the mechanism (P3)
 
-- [ ] T017 [US4] Update §6 of `docs/design/control-surface-and-calibration.md`:
+- [x] T017 [US4] Update §6 of `docs/design/control-surface-and-calibration.md`:
       promotion path steps 1–2 marked shipped via `tuning.json` +
       `sim.tuning_applied` (spec 048 / TASK-107), the five promoted dials
       listed with file/clamps pointer to
@@ -194,10 +194,10 @@ state; restart with unchanged file → no new event.
 
 ## Phase 7: Polish & Cross-Cutting
 
-- [ ] T018 Manual smoke per quickstart.md §§1–3 on a scratch world (new world,
+- [x] T018 Manual smoke per quickstart.md §§1–3 on a scratch world (new world,
       no file → silent; add file → one event, warnings on clamp; garbage →
       boot refusal). Record transcript/evidence in the PR description.
-- [ ] T019 Run `node scripts/check-tui-design.mjs --changed` (spec 047 gate) —
+- [x] T019 Run `node scripts/check-tui-design.mjs --changed` (spec 047 gate) —
       expected no-op since `internal/tui/` is untouched; if the digest/TUI was
       touched by T012, amend `docs/design/tui/` accordingly in the same PR.
 - [ ] T020 Post-merge (root, after PR lands): `/grounding-wiki:wiki-update` for
