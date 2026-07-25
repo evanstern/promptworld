@@ -138,6 +138,33 @@ linked to the board via `spec-bridge:link` BEFORE implementation starts. Trivial
 exemption only when ALL hold: surgical fix, complete file:line diagnosis pinned on the
 task, and ACs on the board task.
 
+## Claim-before-work protocol (spec 065)
+
+Git push rejection is the mutual-exclusion primitive for concurrent sessions: whoever
+pushes first wins, and the loser's non-fast-forward rejection is a **signal**, never an
+"annoying; rebase and carry on."
+
+- **The claim commit:** the FIRST commit of any task claims the work — it moves the
+  board card to In Progress AND creates the spec directory (`specs/NNN-<slug>/`; a stub
+  claims the number), before any spec authoring or code. Push it immediately. Never
+  force-push.
+- **Rejected push = stop-the-lane signal:** fetch, re-read the board and `specs/`, and
+  if another session now holds that task or that number, STOP the lane and surface the
+  collision to the operator — do not rebase and continue. If the rejection was
+  unrelated (someone pushed board notes) and the task and number are still free,
+  rebase and re-push the claim.
+- **Task branches push on first commit:** `git push -u origin task-<N>-<slug>` as soon
+  as the branch has a commit, so in-flight work is auditable from any clone. The
+  session gate reports any local task branch with commits but no remote counterpart
+  (`branch-unpushed`).
+- **Gates (hook-enforced):** before creating any new `specs/NNN-*` directory, run
+  `node scripts/check-merge-drift.mjs claim --dir NNN-slug` — it blocks (exit 1) when
+  the number is taken on origin/main under a different name, and passes when you
+  re-touch your own claimed dir. Cut worktrees with
+  `node scripts/check-merge-drift.mjs worktree --spec NNN --task TASK-<n>` — it warns
+  (`card-not-claimed`) when the task's card is not In Progress on origin/main, and with
+  `--task` it accepts a spec dir already claimed BY that task.
+
 ## Git worktrees — root stays on main, branches live in `.worktrees/`
 
 The root checkout is **pinned to `main`** — never check out a task branch there. All
