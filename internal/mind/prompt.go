@@ -112,6 +112,17 @@ func userPrompt(s *sim.State, idx int, k int, mode string) string {
 	return assembleContext(s, idx, k, mode, "").text
 }
 
+// AssembleUserPrompt is the exported, no-future-line entry point for tooling
+// that reproduces exactly what a thought was given (replay-determinism harness,
+// TUI capture) from a bare *sim.State — the same assembly the planner path runs,
+// minus the per-thought future-dating line. It is a pure function of world state
+// (spec 043 context.go): identical state ⇒ identical bytes, so a world recovered
+// from its event log yields byte-identical prompts. mode is the world's
+// memory_relevance flag (""/"shadow"/"on").
+func AssembleUserPrompt(s *sim.State, idx, k int, mode string) string {
+	return userPrompt(s, idx, k, mode)
+}
+
 // knownPlaces renders the spec-041 known-places section (US2, contracts §3):
 // what the acting agent's mental map holds, fresh facts only (the same
 // read-time horizon the resolvers use), never State.Structures.
