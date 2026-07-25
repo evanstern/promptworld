@@ -2,7 +2,7 @@
 title: Panel — chronicle (event feed)
 class: panel
 status: shipped
-verified_against: c8906da39be3a5b861c2272af37db0a83dcded7a
+verified_against: 693fe059da9a143a480ea7f3f2e0d46a151d4630
 sources:
   - internal/tui/views.go
   - internal/tui/digest.go
@@ -73,7 +73,7 @@ this page and in solo-views.md shows digest grammar, never prose.
 │   "type": "social.conversation_turn",                 │
 │   "payload": { … "speaker": 1,   // Rowan … }         │
 │ }                                                     │
-│ … (+12 more — J to scroll)        [future: actions]   │
+│ … (+12 more — J to scroll)   ⏎ jump to Rowan (11,7)   │
 └───────────────────────────────────────────────────────┘
 ```
 
@@ -94,17 +94,28 @@ this page and in solo-views.md shows digest grammar, never prose.
   are windowed the same way as any other payload — only the visible slice
   is ever processed, so an enormous embedded state can't blow the panel's
   row budget; every line is still reachable by scrolling.
-- **Extension point (reserved, `specified` for Wave 2 — reorientation D3)**:
-  the pane's bottom-right `[future: actions]` slot and the reserved `⏎` key
-  are the documented attachment surface for the jump-to-source action D3
-  rules on ("chronicle `⏎` jump-to-source gets built (fills the reserved
-  seam); click-a-line too"). `⏎` is a no-op today — deliberately, so the
-  Wave 2 feature has an honest, already-wired place to land instead of an
-  undocumented key. The code hook is
-  `detailActions(e store.Event) []detailAction` (`internal/tui/tui.go`),
-  returning `nil` until something implements it. D3 also rules the eventual
-  mouse binding: click-a-line, not just `⏎` — see the control table's
-  `jump-to-source` row and this page's parity-rollout note.
+- **Jump-to-source (spec 049, Wave 2 — reorientation D3, decision 8)**: the
+  pane's bottom-right actions bar is a real, always-on affordance/hint
+  surface, filling the seam this page used to describe as reserved. `⏎` on
+  the selected event resolves its subject (primary actor's live position,
+  else the event's own recorded position, else unlocatable —
+  `contracts/jump-to-source.md` §2) and centers the map camera there
+  (pan-equivalent: title flips to `MAP · panned (c to recenter)`, `c`
+  restores follow — same machinery manual arrow-key panning uses, no new
+  camera math). Clicking a rendered chronicle line while paused does the
+  same thing (US2, the corpus's first control with a real mouse target —
+  `patterns/keymap.md`'s input-parity doctrine, decision 8). An unlocatable
+  event (no actor, no recorded position — telemetry/world-lifecycle events,
+  `world.migrated` always among them since its embedded state is never
+  scanned) is an honest no-op: the actions bar names the absence
+  (`no location for this event`) instead of moving the camera, so `⏎` never
+  reads as broken. The code hook is `detailActions(e store.Event)
+  []detailAction` (`internal/tui/tui.go`), which — unlike before this
+  feature — never returns `nil`: exactly one action, always (jump affordance
+  or the honest hint). Subject resolution lives beside the digest catalog
+  (`resolveSubject`, `internal/tui/digest.go`); the camera writer
+  (`centerCameraOn`) and the shared wanderer-centroid helper it reuses live
+  in `internal/tui/tui.go`/`views.go`.
 - On resume: clear the selection and the detail pane's scroll, snap back to
   tail-follow, return to running mode.
 - Selection is remembered while paused even if the user switches tabs and
@@ -121,11 +132,12 @@ this page and in solo-views.md shows digest grammar, never prose.
 | inspect-mode jump | first · last | `Model.chronSelected` | `chronicleInspectBody` | `g`/`G` · — | TASK-60 | — |
 | detail pane (always-on) | shown | selected `store.Event` | `chronicleDetailPane` | — (display-only) | TASK-60 | — |
 | detail pane scroll | — | detail pane scroll offset | `chronicleDetailPane` | `J`/`K` · — | TASK-60 | — |
-| jump-to-source (reserved seam) | no-op today | selected `store.Event` | `unbuilt (wave 2)` — hook: `detailActions` | `⏎` · click line (both unbuilt) | reorient D3 | — |
+| jump-to-source | locatable · unlocatable | selected `store.Event` + live replica position (`resolveSubject`) | `chronicleDetailPane` (actions bar) · camera via `centerCameraOn` | `⏎` · click line | spec 049 (reorient D3, decision 8) | — |
 
-**Parity rollout**: every live control above (raw/narrated toggle, filters,
-inspect selection/jump, detail scroll) has a key but no mouse target today;
-tracked here per decision 8 rather than silently omitted, formal doctrine in
-`patterns/keymap.md` (T024). The jump-to-source row is additionally
-unbuilt — both its keyboard and mouse forms land together in Wave 2 (D3),
-so it carries no existing parity gap to track yet, just the reserved seam.
+**Parity rollout**: jump-to-source is the corpus's first control with a real
+mouse target (spec 049 ships keyboard and mouse together, as D3 required) —
+it graduates out of this note per `patterns/keymap.md`'s doctrine rule 3.
+Every other live control above (raw/narrated toggle, filters, inspect
+selection/jump, detail scroll) still has a key but no mouse target; tracked
+here per decision 8 rather than silently omitted, formal doctrine in
+`patterns/keymap.md` (T024).

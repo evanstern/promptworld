@@ -2,7 +2,7 @@
 title: Pattern — keymap
 class: pattern
 status: shipped
-verified_against: c8906da39be3a5b861c2272af37db0a83dcded7a
+verified_against: 693fe059da9a143a480ea7f3f2e0d46a151d4630
 sources:
   - internal/tui/tui.go
   - internal/tui/help.go
@@ -50,16 +50,18 @@ No other key does anything silently — see
 ## Mode: inspect (clock paused + chronicle visible; layered on global)
 
 **TASK-60 (spec 018-chronicle-digest)**: the detail pane is always on (no
-`⏎` needed to see it — panels/chronicle.md "Mode 2"); `⏎` is reserved for a
-future jump-off actions bar (contract §5 "Extension point") rather than
-toggling expansion, and `J`/`K` scroll the pane when its content overflows.
+`⏎` needed to see it — panels/chronicle.md "Mode 2"); `J`/`K` scroll the pane
+when its content overflows. **Spec 049**: `⏎` fills the seam this page used
+to describe as reserved — it jumps the map camera to the selected event's
+subject (`panels/chronicle.md` "Jump-to-source"; `contracts/jump-to-source.md`),
+an honest no-op with a visible hint when the event has none.
 
 | Key | Action |
 |---|---|
 | `j` / `k` | select next / previous event (also resets detail pane scroll) |
 | `g` / `G` | jump to first / last (also resets detail pane scroll) |
 | `J` / `K` | scroll the detail pane down / up |
-| `⏎` | reserved — no-op today (future jump-off actions) |
+| `⏎` | jump: center the map camera on the selected event's subject (unlocatable: no-op, actions bar names the absence) |
 | `space` | resume (exits inspect, clears selection and detail scroll) |
 
 All global keys stay live in inspect mode; `j/k/g/G/J/K` are additions, not
@@ -141,17 +143,22 @@ Ratified doctrine, binding on this entire corpus, not just this page:
    convenience, never a second, richer control scheme with keyboard-only
    gaps. This corpus's mockups and behavior sections are written keyboard-
    first for exactly this reason.
-3. **Rollout is incremental, honestly tracked.** As of this feature, **zero**
-   controls anywhere in `docs/design/tui/` have a real mouse target —
-   `internal/tui` predates this doctrine entirely. Every panel/overlay page
-   in this corpus carries a **"Parity rollout"** note listing its keyed-but-
-   mouseless controls rather than silently marking them `—` as if display-
-   only; a control graduates out of that note the moment its page's control
-   table gains a real mouse target, one control (or one page) at a time.
-   This page's own footer/mode-key tables have no mouse column of their own
-   (they're the printable card, not a control table) — the authoritative
-   per-control mouse status lives on each control's owning
-   panel/overlay page, cross-referenced from here by page link.
+3. **Rollout is incremental, honestly tracked.** This doctrine shipped in
+   this same feature (spec 049, decision 8) alongside its own first
+   compliant control: chronicle jump-to-source (`⏎` · click line —
+   `panels/chronicle.md`) is the corpus's first row with a real mouse
+   target, landing keyboard and mouse together as the doctrine requires
+   (rule 1). Every other control in `docs/design/tui/` still has a key but
+   no mouse target — `internal/tui` predates this doctrine entirely for
+   everything else. Every panel/overlay page in this corpus carries a
+   **"Parity rollout"** note listing its keyed-but-mouseless controls rather
+   than silently marking them `—` as if display-only; a control graduates
+   out of that note the moment its page's control table gains a real mouse
+   target, one control (or one page) at a time. This page's own footer/
+   mode-key tables have no mouse column of their own (they're the printable
+   card, not a control table) — the authoritative per-control mouse status
+   lives on each control's owning panel/overlay page, cross-referenced from
+   here by page link.
 
 ## Binding-selection rules
 
@@ -166,11 +173,15 @@ future page's key choice is principled rather than arbitrary:
   conventional "close/dismiss" mnemonic in terminal UIs) was chosen instead
   and is called out here rather than silently deviating from the rule.
 - **Reserved seams are wired to a documented no-op**, never left an
-  undiscovered gap: the chronicle's `⏎` (jump-to-source, Wave 2/D3) is the
-  precedent this corpus already follows — a key that does nothing today
-  still appears in this card and its owning page's control table, with the
-  future behavior named, so a player who presses it sees documented
-  "nothing yet" rather than wondering whether the app is broken.
+  undiscovered gap: before spec 049 filled it, the chronicle's `⏎`
+  (jump-to-source, Wave 2/D3) was this corpus's precedent — a key that did
+  nothing yet still appeared in this card and its owning page's control
+  table, with the future behavior named, so a player who pressed it saw
+  documented "nothing yet" rather than wondering whether the app was
+  broken. The same posture now applies one level down, inside the built
+  feature: an *unlocatable* event's `⏎` is still a no-op, but the actions
+  bar (`panels/chronicle.md`) names it live, every time, rather than the
+  static card-only promise a truly unbuilt seam relies on.
 
 ## Migration notes
 

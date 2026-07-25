@@ -9,6 +9,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/evanstern/promptworld/internal/ipc"
+	"github.com/evanstern/promptworld/internal/sim"
 	"github.com/evanstern/promptworld/internal/store"
 )
 
@@ -369,22 +370,175 @@ func TestInspectDetailPaneAlwaysVisible(t *testing.T) {
 	}
 }
 
-// TestInspectEnterIsNoOp: ⏎ is reserved for the future jump-off actions bar
-// (contract §5 "Extension point", R7) — it must not move the selection or
-// change what's rendered.
-func TestInspectEnterIsNoOp(t *testing.T) {
+// TestInspectEnterJumpsToSource: ⏎ on a locatable selected event centers the
+// map camera on its subject (spec 049, contract §1 "⏎ ... center map camera
+// on subject") without moving the chronicle selection; seedEvents' fixture
+// is agent.moved{agent:0,x:1,y:1} with no replica agents populated, so the
+// live-actor step (FR-002 step 1) misses and the payload position (1,1)
+// wins (FR-002 step 2) — panX/panY land on 1 minus the empty-replica
+// centroid (the map's own center, wandererCentroid's fallback).
+func TestInspectEnterJumpsToSource(t *testing.T) {
 	m := pausedModel(t)
 	m.chronSelected = 2
-	before := m.chronicleInspectBody(60, 20)
+	if m.panX != 0 || m.panY != 0 {
+		t.Fatalf("test setup: camera should start unpanned, got panX=%d panY=%d", m.panX, m.panY)
+	}
 	var mdl tea.Model = m
 	mdl = update(mdl, "enter")
 	mm := mdl.(Model)
 	if mm.chronSelected != 2 {
 		t.Fatalf("enter must not move the selection: chronSelected = %d", mm.chronSelected)
 	}
-	if after := mm.chronicleInspectBody(60, 20); before != after {
-		t.Errorf("enter is a reserved no-op and must not change the rendered body:\nbefore: %q\nafter:  %q", before, after)
+	cx, cy := mm.wandererCentroid()
+	wantPanX, wantPanY := 1-cx, 1-cy // the seeded event's payload position is (1,1)
+	if mm.panX != wantPanX || mm.panY != wantPanY {
+		t.Errorf("enter should center the camera on the event's subject: panX=%d panY=%d, want %d/%d",
+			mm.panX, mm.panY, wantPanX, wantPanY)
 	}
+}
+
+// TestInspectEnterUnlocatableIsNoOp: ⏎ on an event with no locatable
+// subject (contract §1 "unlocatable ... no camera change") must not move
+// the camera — clock.paused carries no agent/position field at all.
+func TestInspectEnterUnlocatableIsNoOp(t *testing.T) {
+	m := pausedModel(t)
+	m.applyEvent(store.Event{Seq: 100, Tick: 100, Type: "clock.paused", Payload: json.RawMessage(`{}`)})
+	m.chronSelected = len(m.events) - 1
+	var mdl tea.Model = m
+	mdl = update(mdl, "enter")
+	mm := mdl.(Model)
+	if mm.panX != 0 || mm.panY != 0 {
+		t.Errorf("enter on an unlocatable event must not move the camera: panX=%d panY=%d", mm.panX, mm.panY)
+	}
+	if mm.chronSelected != m.chronSelected {
+		t.Errorf("enter must not move the selection: chronSelected = %d", mm.chronSelected)
+	}
+}
+
+// narrowPausedModel is pausedModel's narrow-fallback counterpart: active
+// (not dockTab/solo) governs which single pane is visible below the
+// widescreen breakpoint.
+func narrowPausedModel(t *testing.T) Model {
+	t.Helper()
+	m := testModel(t) // 80x30 — below widescreenBreakpoint
+	m.status = &ipc.StatusData{Clock: ipc.ClockStatus{Paused: true}}
+	m.connected = true
+	m.active = paneChronicle
+	seedEvents(&m, 5)
+	// Two distinctly-placed, non-colinear-with-the-target agents so the
+	// wanderer centroid provably differs from the jump target below —
+	// overwritten wholesale AFTER seedEvents so the agent.moved reducer
+	// fold (applyEvent -> replica.Apply) can't clobber this setup.
+	m.replica.Agents = []sim.Agent{{Name: "Ash", X: 1, Y: 1}, {Name: "Birch", X: 21, Y: 21}}
+	return m
+}
+
+// TestNarrowFallbackJumpLandsOnMapPane (spec 049 T006, FR-007): a successful
+// jump in the narrow single-pane fallback switches the active pane to the
+// map — otherwise the camera move would happen invisibly behind the
+// chronicle pane, the exact "silent outcome" the spec bans — while the
+// paused clock and the chronicle selection survive the round trip back.
+func TestNarrowFallbackJumpLandsOnMapPane(t *testing.T) {
+	m := narrowPausedModel(t)
+	m.chronSelected = 2 // seedEvents' fixture (agent.moved{agent:0,x:1,y:1}) resolves via Ash's live (1,1)
+	var mdl tea.Model = m
+	mdl = update(mdl, "enter")
+	mm := mdl.(Model)
+	if mm.active != paneMap {
+		t.Fatalf("a successful jump in the narrow fallback should land on the map pane: active=%v", mm.active)
+	}
+	if !mm.status.Clock.Paused {
+		t.Error("jump must not resume the clock")
+	}
+	if mm.chronSelected != 2 {
+		t.Errorf("chronicle selection must survive the jump: got %d, want 2", mm.chronSelected)
+	}
+	if mm.panX == 0 && mm.panY == 0 {
+		t.Error("the camera should have actually moved (centroid (11,11) != target (1,1))")
+	}
+
+	// Switch back to the chronicle pane ('2'): selection is exactly where
+	// it was — detail scroll too (data-model.md round-trip).
+	mdl = update(mdl, "2")
+	mm = mdl.(Model)
+	if mm.active != paneChronicle {
+		t.Fatalf("'2' should switch back to the chronicle pane: active=%v", mm.active)
+	}
+	if mm.chronSelected != 2 {
+		t.Errorf("selection should be preserved on returning to chronicle: got %d, want 2", mm.chronSelected)
+	}
+}
+
+// TestKeyboardRegressionGuardMouseWiring (spec 049 T011, FR-005): mouse
+// enablement (tea.WithMouseCellMotion in cmd/promptworld, handleMouse/
+// chronHit here) must not change any existing key's behavior — the
+// keyboard alone still reaches 100% of the app's functionality. Update's
+// tea.KeyMsg branch and every handle*Key function this feature didn't
+// touch are unmodified by construction (only handleInspectKey's "enter"
+// case changed, intentionally, elsewhere in this suite); this sweep is the
+// concrete artifact proving it: every inspect/global key patterns/
+// keymap.md documents (except ⏎, this feature's one deliberate change)
+// still does exactly what it always did, and none of them ever move the
+// camera pan — pan only moves via arrow keys/'c' (existing) or '⏎'/a click
+// (this feature), never any other key.
+func TestKeyboardRegressionGuardMouseWiring(t *testing.T) {
+	m := pausedModel(t) // widescreen, paused, chronicle visible, 5 events seeded
+	var mdl tea.Model = m
+
+	mdl = update(mdl, "j") // select next (tail-clamped: 5 events, base=4, +1 clamps to 4)
+	if got := mdl.(Model).chronSelected; got != 4 {
+		t.Fatalf("'j' regressed: chronSelected = %d, want 4", got)
+	}
+	mdl = update(mdl, "k")
+	if got := mdl.(Model).chronSelected; got != 3 {
+		t.Fatalf("'k' regressed: chronSelected = %d, want 3", got)
+	}
+	mdl = update(mdl, "g")
+	if got := mdl.(Model).chronSelected; got != 0 {
+		t.Fatalf("'g' regressed: chronSelected = %d, want 0", got)
+	}
+	mdl = update(mdl, "G")
+	if got := mdl.(Model).chronSelected; got != 4 {
+		t.Fatalf("'G' regressed: chronSelected = %d, want 4", got)
+	}
+	mdl = update(mdl, "K") // detail scroll: clamps at 0
+	if got := mdl.(Model).chronDetailScroll; got != 0 {
+		t.Fatalf("'K' at scroll 0 regressed: got %d, want 0 (clamped)", got)
+	}
+	mdl = update(mdl, "J")
+	if got := mdl.(Model).chronDetailScroll; got != 1 {
+		t.Fatalf("'J' regressed: chronDetailScroll = %d, want 1", got)
+	}
+
+	// None of the keys pressed so far may have moved the camera — only
+	// arrow keys/'c' (global) or '⏎'/a click (this feature) may.
+	if mm := mdl.(Model); mm.panX != 0 || mm.panY != 0 {
+		t.Fatalf("a non-pan key moved the camera: panX=%d panY=%d — mouse wiring must not leak into keyboard dispatch", mm.panX, mm.panY)
+	}
+
+	// Global keys layered beneath inspect mode (keymap.md "Mode: inspect —
+	// All global keys stay live") still work unchanged.
+	mdl = update(mdl, "right")
+	if got := mdl.(Model).panX; got != 4 {
+		t.Fatalf("'right' (map pan) regressed: panX = %d, want 4", got)
+	}
+	mdl = update(mdl, "c")
+	if mm := mdl.(Model); mm.panX != 0 || mm.panY != 0 {
+		t.Fatalf("'c' (recenter) regressed: panX=%d panY=%d, want 0/0", mm.panX, mm.panY)
+	}
+	mdl = update(mdl, "r")
+	if !mdl.(Model).chronRaw {
+		t.Fatal("'r' (raw/narrated toggle) regressed")
+	}
+	// 'space' while paused+connected dispatches the resume command
+	// (selection clears asynchronously once the statusMsg round-trips —
+	// TestInspectResetsOnResume covers that half); here only the dispatch
+	// itself must still fire, unchanged.
+	next, cmd := mdl.Update(key(" "))
+	if cmd == nil {
+		t.Fatal("'space' (resume dispatch) regressed: expected a command")
+	}
+	mdl = next
 }
 
 // TestInspectResetsOnResume: resume clears the selection and the detail
@@ -500,8 +654,11 @@ func TestInspectDetailPaneBoundsOversizedPayload(t *testing.T) {
 	if !strings.Contains(body, "more — J to scroll") {
 		t.Errorf("an oversized payload should show the scroll footer: %q", body)
 	}
-	if !strings.Contains(body, "[future: actions]") {
-		t.Errorf("the footer should carry the reserved actions slot (FR-009): %q", body)
+	// world.migrated is deliberately absent from subjectRegistry (spec 049
+	// R4/FR-011: never decode the embedded state to decide locatability) —
+	// unlocatable, so the actions bar carries the honest hint (contract §3).
+	if !strings.Contains(body, "no location for this event") {
+		t.Errorf("the footer should carry the actions bar's honest hint (FR-009): %q", body)
 	}
 }
 

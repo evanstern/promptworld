@@ -242,7 +242,7 @@ var (
 	rowInspSel   = helpKeyRow{"j/k", []string{"j", "k"}, "select next / previous event (resets detail scroll)"}
 	rowInspJump  = helpKeyRow{"g/G", []string{"g", "G"}, "jump to first / last event"}
 	rowInspScrl  = helpKeyRow{"J/K", []string{"J", "K"}, "scroll the always-on detail pane"}
-	rowInspEnter = helpKeyRow{"⏎", []string{"enter"}, "reserved — no-op today (future jump-off actions)"}
+	rowInspEnter = helpKeyRow{"⏎", []string{"enter"}, "jump: center the map camera on the selected event's subject (no location: shows a hint instead)"}
 	rowResume    = helpKeyRow{"space", []string{" "}, "resume — exits inspect mode"}
 )
 

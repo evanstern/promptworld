@@ -70,6 +70,12 @@ func update(mdl tea.Model, k string) tea.Model {
 	return next
 }
 
+// mouseLeftRelease builds the one mouse event this feature binds (research
+// R2): a left-button release at screen cell (x,y).
+func mouseLeftRelease(x, y int) tea.MouseMsg {
+	return tea.MouseMsg{X: x, Y: y, Action: tea.MouseActionRelease, Button: tea.MouseButtonLeft}
+}
+
 func TestMapRendersWanderers(t *testing.T) {
 	m := testModel(t)
 	m.replica.Agents = []sim.Agent{
@@ -90,6 +96,57 @@ func TestMapRendersWanderers(t *testing.T) {
 	}
 	if !strings.Contains(view, "~") {
 		t.Error("terrain (water) missing from rendered window")
+	}
+}
+
+// TestCenterCameraOnPanEquivalence (spec 049 T003, research R1):
+// centerCameraOn is exactly a computed pan — panX/panY land the wanderer
+// centroid + pan on the target, the map title flips to "panned" (identical
+// to manual arrow-key panning), and 'c' (recenter) restores auto-follow
+// exactly as it always has.
+func TestCenterCameraOnPanEquivalence(t *testing.T) {
+	m := widescreenModel(t)
+	m.replica.Agents = []sim.Agent{{Name: "Ash", X: 10, Y: 10}}
+	cx, cy := m.wandererCentroid()
+	if cx != 10 || cy != 10 {
+		t.Fatalf("test setup: centroid = (%d,%d), want (10,10)", cx, cy)
+	}
+	m.centerCameraOn(20, 15)
+	if m.panX != 10 || m.panY != 5 {
+		t.Errorf("centerCameraOn(20,15) with centroid (10,10): panX=%d panY=%d, want 10,5", m.panX, m.panY)
+	}
+	if view := m.mapPanelView(60, 20); !strings.Contains(view, "MAP · panned (c to recenter)") {
+		t.Errorf("a nonzero pan should flip the map title to panned: %q", view)
+	}
+
+	// 'c' (recenter) resets pan to 0,0 and restores follow — unchanged
+	// existing semantics (handleGlobalKey's "c" case); centerCameraOn adds
+	// no new state for it to know about.
+	var mdl tea.Model = m
+	mdl = update(mdl, "c")
+	mm := mdl.(Model)
+	if mm.panX != 0 || mm.panY != 0 {
+		t.Errorf("c should reset pan to 0,0: panX=%d panY=%d", mm.panX, mm.panY)
+	}
+	if view := mm.mapPanelView(60, 20); !strings.Contains(view, "MAP · following centroid") {
+		t.Errorf("recenter should restore the following-centroid title: %q", view)
+	}
+}
+
+// TestCenterCameraOnClampsLikeManualPan: a jump to a target far outside the
+// map is clamped identically to manual panning — centerCameraOn adds no new
+// camera math or clamping (research R1); render-time clampInt (renderMapGrid)
+// and the resize-path clampGeometry are the only bounds, unchanged.
+func TestCenterCameraOnClampsLikeManualPan(t *testing.T) {
+	m := testModel(t)
+	m.centerCameraOn(-99999, -99999)
+	grid, _ := m.renderMapGrid(10, 10)
+	if grid == "" {
+		t.Fatal("renderMapGrid must not panic/blank out on a pathological jump target")
+	}
+	m.clampGeometry()
+	if m.panX < -m.gameMap.W || m.panX > m.gameMap.W || m.panY < -m.gameMap.H || m.panY > m.gameMap.H {
+		t.Errorf("panX/panY not bounded by the existing clamp: panX=%d panY=%d", m.panX, m.panY)
 	}
 }
 
@@ -669,5 +726,171 @@ func TestConsoleStageSummary(t *testing.T) {
 				t.Errorf("consoleStageSummary = %q, want %q", got, c.want)
 			}
 		})
+	}
+}
+
+// --- spec 049 T009/T010: chronicle-line click routing ---
+
+// TestChronicleHitOriginFormulas: the three layouts' chrome-row/column
+// offsets (research R3: stable, non-wrap-dependent geometry, safe to derive
+// directly rather than duplicating chronicleInspectBody's own windowing).
+func TestChronicleHitOriginFormulas(t *testing.T) {
+	narrow := testModel(t) // 80x30 — below widescreenBreakpoint
+	if ox, oy, w := narrow.chronicleHitOrigin(); ox != 0 || oy != 3 || w != narrow.width {
+		t.Errorf("narrow origin = (%d,%d,%d), want (0,3,%d)", ox, oy, w, narrow.width)
+	}
+
+	dock := widescreenModel(t) // 140x40, not solo
+	cols := computeColumns(dock.width)
+	if ox, oy, w := dock.chronicleHitOrigin(); ox != cols.MapCols+cols.Gutter || oy != 4 || w != cols.DockCols {
+		t.Errorf("widescreen dock origin = (%d,%d,%d), want (%d,4,%d)", ox, oy, w, cols.MapCols+cols.Gutter, cols.DockCols)
+	}
+
+	solo := widescreenModel(t)
+	solo.solo = true
+	if ox, oy, w := solo.chronicleHitOrigin(); ox != 0 || oy != 3 || w != solo.width {
+		t.Errorf("solo origin = (%d,%d,%d), want (0,3,%d)", ox, oy, w, solo.width)
+	}
+}
+
+// TestRecordChronHitRowToEventMapping (T009): chronicleInspectBody records
+// one row->event mapping entry per rendered list row, in the same order the
+// list itself shows them — the geometry handleMouse consumes next Update().
+func TestRecordChronHitRowToEventMapping(t *testing.T) {
+	m := pausedModel(t) // 5 events, indices 0..4
+	m.chronSelected = 4
+	m.chronicleInspectBody(60, 20)
+	hit := m.chronHit
+	if hit == nil || !hit.valid {
+		t.Fatal("chronHit should be valid after rendering the inspect list")
+	}
+	if len(hit.rowEvent) != 5 {
+		t.Fatalf("rowEvent has %d entries, want 5 (all seeded events fit the list budget)", len(hit.rowEvent))
+	}
+	for i, idx := range hit.rowEvent {
+		if idx != i {
+			t.Errorf("rowEvent[%d] = %d, want %d", i, idx, i)
+		}
+	}
+}
+
+// TestChronHitInvalidatedWhenChronicleNotRendered (data-model.md "State
+// transitions"): a frame that doesn't render the chronicle inspect list
+// (different tab) must invalidate any previously-recorded hit region —
+// View() defaults to invalid every call; only chronicleInspectBody
+// re-validates.
+func TestChronHitInvalidatedWhenChronicleNotRendered(t *testing.T) {
+	m := pausedModel(t)
+	m.View()
+	if !m.chronHit.valid {
+		t.Fatal("chronHit should be valid right after rendering with the chronicle dock tab visible+paused")
+	}
+	m.dockTab = paneVillagers
+	m.View()
+	if m.chronHit.valid {
+		t.Error("chronHit must invalidate once the chronicle inspect list is no longer part of the frame")
+	}
+}
+
+// TestHandleMouseSelectsAndJumps (US2 AS-1): a left-release inside a
+// recorded chronicle list row selects that row and applies the same jump
+// rules ⏎ does.
+func TestHandleMouseSelectsAndJumps(t *testing.T) {
+	m := pausedModel(t) // widescreen, paused, chronicle dock tab, 5 events
+	m.chronicleInspectBody(60, 20)
+	if !m.chronHit.valid {
+		t.Fatal("test setup: chronHit should be valid")
+	}
+	originX, originY, _ := m.chronicleHitOrigin()
+	const row = 1
+	if row >= len(m.chronHit.rowEvent) {
+		t.Fatalf("test setup: only %d list rows recorded, want at least %d", len(m.chronHit.rowEvent), row+1)
+	}
+	wantIdx := m.chronHit.rowEvent[row]
+
+	mdl, _ := m.Update(mouseLeftRelease(originX+2, originY+row))
+	mm := mdl.(Model)
+	if mm.chronSelected != wantIdx {
+		t.Fatalf("click should select event %d, got %d", wantIdx, mm.chronSelected)
+	}
+	if mm.chronDetailScroll != 0 {
+		t.Errorf("click-select should reset detail scroll like j/k: got %d", mm.chronDetailScroll)
+	}
+	// seedEvents' fixture (agent.moved{agent:0,x:1,y:1}) resolves via Ash's
+	// live position in the default 8-agent replica (sim.NewState) — always
+	// locatable, so the click's jump half should have fired too.
+	if mm.panX == 0 && mm.panY == 0 {
+		t.Error("click should also apply the jump (camera should have moved)")
+	}
+}
+
+// TestHandleMouseOutOfRegionNoOp (contract §1: "left-click outside the
+// chronicle list rows ... no-op").
+func TestHandleMouseOutOfRegionNoOp(t *testing.T) {
+	m := pausedModel(t)
+	m.chronicleInspectBody(60, 20)
+	before := m.chronSelected
+	mdl, _ := m.Update(mouseLeftRelease(0, 9999)) // far below any recorded row
+	mm := mdl.(Model)
+	if mm.chronSelected != before || mm.panX != 0 || mm.panY != 0 {
+		t.Error("a click outside the chronicle list rows must be a no-op")
+	}
+}
+
+// TestHandleMouseRunningClockNoOp (US2 AS-2, FR-004): "Given the clock is
+// running, When the player clicks a chronicle line, Then nothing happens."
+func TestHandleMouseRunningClockNoOp(t *testing.T) {
+	m := pausedModel(t)
+	m.chronicleInspectBody(60, 20) // record geometry while paused
+	originX, originY, _ := m.chronicleHitOrigin()
+	m.status.Clock.Paused = false // now running: inspecting() goes false
+	before := m.chronSelected
+
+	mdl, _ := m.Update(mouseLeftRelease(originX+2, originY))
+	mm := mdl.(Model)
+	if mm.chronSelected != before || mm.panX != 0 || mm.panY != 0 {
+		t.Error("a click while the clock runs must be a no-op, even against stale recorded geometry")
+	}
+}
+
+// TestHandleMouseWrongButtonOrActionNoOp (research R2): only a left-button
+// *release* is bound — press, motion, and other buttons are inert.
+func TestHandleMouseWrongButtonOrActionNoOp(t *testing.T) {
+	m := pausedModel(t)
+	m.chronicleInspectBody(60, 20)
+	originX, originY, _ := m.chronicleHitOrigin()
+	cases := []tea.MouseMsg{
+		{X: originX, Y: originY, Action: tea.MouseActionPress, Button: tea.MouseButtonLeft},
+		{X: originX, Y: originY, Action: tea.MouseActionRelease, Button: tea.MouseButtonRight},
+		{X: originX, Y: originY, Action: tea.MouseActionMotion, Button: tea.MouseButtonLeft},
+	}
+	for _, msg := range cases {
+		before := m.chronSelected
+		mdl, _ := m.Update(msg)
+		if mdl.(Model).chronSelected != before {
+			t.Errorf("mouse event %+v should be a no-op (only left-release is bound)", msg)
+		}
+	}
+}
+
+// TestHandleMouseInertDuringHelpAndMinibuffer: the chronicle click must not
+// fire while another surface owns the keyboard/attention (help overlay,
+// minibuffer focus) even if stale geometry from an earlier paused-chronicle
+// frame is still recorded.
+func TestHandleMouseInertDuringHelpAndMinibuffer(t *testing.T) {
+	m := pausedModel(t)
+	m.chronicleInspectBody(60, 20)
+	originX, originY, _ := m.chronicleHitOrigin()
+
+	help := m
+	help.helpOpen = true
+	if mdl, _ := help.Update(mouseLeftRelease(originX, originY)); mdl.(Model).chronSelected != help.chronSelected {
+		t.Error("a click must be inert while the help overlay is open")
+	}
+
+	mb := m
+	mb.mbFocused = true
+	if mdl, _ := mb.Update(mouseLeftRelease(originX, originY)); mdl.(Model).chronSelected != mb.chronSelected {
+		t.Error("a click must be inert while the minibuffer is focused")
 	}
 }

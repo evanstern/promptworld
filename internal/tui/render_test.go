@@ -734,3 +734,62 @@ func TestMetatronViewNarrowCarriesStrip(t *testing.T) {
 		t.Errorf("strip must render ABOVE the minibuffer: strip@%d minibuffer@%d\n%s", stripIdx, mbIdx, view)
 	}
 }
+
+// --- spec 049 T013: detail-pane actions bar render states ---
+
+// TestChronicleDetailPaneActionsBarLocatable: a locatable event's actions
+// bar names the jump binding plus the resolved subject/position (contract
+// §3), even when the payload is short enough that no scroll footer is
+// needed — the bar is a permanent bottom-right slot, not a byproduct of
+// overflow.
+func TestChronicleDetailPaneActionsBarLocatable(t *testing.T) {
+	e := store.Event{Seq: 1, Tick: 1, Type: "agent.moved", Payload: json.RawMessage(`{"agent":0,"x":5,"y":6}`)}
+	out := chronicleDetailPane(e, []string{"Ash"}, 0, 60, 8, "⏎ jump to Ash (5,6)")
+	body := strings.Join(out, "\n")
+	if !strings.Contains(body, "⏎ jump to Ash (5,6)") {
+		t.Errorf("actions bar should show the jump affordance: %q", body)
+	}
+	if len(out) != 8 {
+		t.Errorf("chronicleDetailPane must render exactly paneRows lines, got %d", len(out))
+	}
+}
+
+// TestChronicleDetailPaneActionsBarUnlocatable: an unlocatable event's
+// actions bar shows the honest absence (contract §3, US1 AS-3's hint —
+// "one surface, not two" with US3 AS-2).
+func TestChronicleDetailPaneActionsBarUnlocatable(t *testing.T) {
+	e := store.Event{Seq: 1, Tick: 1, Type: "clock.paused", Payload: json.RawMessage(`{}`)}
+	out := chronicleDetailPane(e, nil, 0, 60, 8, "no location for this event")
+	body := strings.Join(out, "\n")
+	if !strings.Contains(body, "no location for this event") {
+		t.Errorf("actions bar should show the honest no-location hint: %q", body)
+	}
+}
+
+// TestChronicleDetailPaneActionsBarNoScrollFooterNeeded: a payload that fits
+// well within the pane still shows the actions bar — it must not depend on
+// the scroll footer being present.
+func TestChronicleDetailPaneActionsBarNoScrollFooterNeeded(t *testing.T) {
+	e := store.Event{Seq: 1, Tick: 1, Type: "clock.resumed", Payload: json.RawMessage(`{}`)}
+	out := chronicleDetailPane(e, nil, 0, 60, 10, "no location for this event")
+	body := strings.Join(out, "\n")
+	if strings.Contains(body, "more — J to scroll") {
+		t.Errorf("a short payload should not need the scroll footer: %q", body)
+	}
+	if !strings.Contains(body, "no location for this event") {
+		t.Errorf("the actions bar should still render without a scroll footer: %q", body)
+	}
+}
+
+// TestChronicleDetailPaneActionsBarTruncatedWidth: a narrow pane still
+// renders to exactly paneRows lines without panicking, even when the
+// footer text and the action label together would overflow the width (the
+// gap-clamping floor).
+func TestChronicleDetailPaneActionsBarTruncatedWidth(t *testing.T) {
+	e := store.Event{Seq: 1, Tick: 1, Type: "world.migrated",
+		Payload: json.RawMessage(`{"from_format":2,"source_events":100,"source_tick":500,"state":{}}`)}
+	out := chronicleDetailPane(e, nil, 0, 20, 3, "no location for this event")
+	if len(out) != 3 {
+		t.Fatalf("chronicleDetailPane must render exactly paneRows lines even under width pressure, got %d", len(out))
+	}
+}
