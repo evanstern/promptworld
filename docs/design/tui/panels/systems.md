@@ -84,6 +84,15 @@ not duplicated here:
 looking for "the governor" finds all three surfaces in ≤2 hops regardless of
 which one they start from.
 
+## Narrow behavior
+
+No narrow-specific rendering: once built, the systems tab is reachable as a
+solo/narrow pane exactly like every other dock tab
+(`patterns/layout.md` ruling b — "systems tab: reachable as solo views, no
+new narrow-specific rendering"; [pages/solo-views.md](../pages/solo-views.md)).
+Content does not reflow differently below the 112-column breakpoint beyond
+the existing width-aware column-dropping every dock tab already does.
+
 ## Control table
 
 | control/region | states | data source | renderer | keys+mouse | introduced-by | skin-token |

@@ -37,8 +37,8 @@ Four classes, plus two top-level index files:
   stacking.
 - **`patterns/`** — cross-cutting rules that apply wherever they're relevant
   (focus, chronicle grammar, keymap, layout, skin tokens, stage defaults).
-- **`anatomy.md`** — the region index: every visible element → its owning
-  file, both directions complete.
+- **[`anatomy.md`](anatomy.md)** — the region index: every visible element →
+  its owning file, both directions complete.
 - **`INDEX.md`** (this file) — authority statement, taxonomy, gate rules.
 
 ## File map

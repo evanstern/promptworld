@@ -98,6 +98,15 @@ carries a `Manifest.Scenario` block, regardless of `Stage`. The
 incident-visibility vocabulary value IS stage-keyed: `forecast` at stages
 1–2 and pre-ladder, `fog` from stage 3.
 
+## Narrow behavior
+
+No narrow-specific rendering: the exercise tab is reachable as a solo/narrow
+pane exactly like every other dock tab (`patterns/layout.md` ruling b —
+"guardian console / systems tab / exercise panel: reachable as solo views…
+no new narrow-specific rendering"; [pages/solo-views.md](../pages/solo-views.md)).
+The attach-time briefing and rubric gauges render at narrow width using the
+same column-dropping discipline every other dock tab follows.
+
 ## Linear-stream / CLI projection (D1)
 
 The rubric's underlying events are cataloged event types on the raw log —

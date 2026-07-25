@@ -116,6 +116,14 @@ celebratory chrome differs per call site.
   `q` behaves exactly as the existing postmortem-posture footer already
   documents ("run ended (read-only)").
 
+## Narrow behavior
+
+Takes over the full screen in narrow exactly as in widescreen — takeovers
+are layout-independent (`patterns/layout.md` ruling b), the same rule
+`overlays/ceremony.md` states for its own takeover. No narrow-specific
+rendering exists or is needed; the ambient/scored content boundary above is
+unaffected by width.
+
 ## Replayability (explicit acceptance criterion, FR-013)
 
 Replayable from the **morgue**, as its own explicit AC: re-attaching a

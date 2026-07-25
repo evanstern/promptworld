@@ -95,6 +95,15 @@ Replayable from **both** pull surfaces, independently:
 Both surfaces existing is the explicit AC (spec.md US2-AS2): a player who
 missed or dismissed a ceremony is never permanently denied its content.
 
+## Narrow behavior
+
+Takes over the full screen in narrow exactly as in widescreen — takeovers
+are layout-independent (`patterns/layout.md` ruling b). No narrow-specific
+rendering exists or is needed: the mockup above applies unchanged below the
+112-column breakpoint (content reflows to the narrower width using the same
+wrapping every other body-replacement surface in this corpus uses,
+`overlays/help.md`'s `helpPanelView` precedent).
+
 ## Interrupt-policy watch item
 
 Recorded per the reorientation's own open question 5 (carried forward, not
