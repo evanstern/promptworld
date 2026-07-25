@@ -247,6 +247,70 @@ func TestEvaluateUnlockFixtureChain(t *testing.T) {
 	}
 }
 
+// TestExerciseDefinitionsParse (spec 046 T016, FR-010): the two shipped
+// exercise definitions carry every field the content contract requires,
+// non-empty, with a valid ladder stage — a self-contained parse/shape check
+// (the cataloged-event-type half of "every rubric term is a cataloged event
+// type" lives in internal/tui, which owns the digest catalog these terms
+// must appear in — see TestExerciseRubricTermsAreCatalogedEventTypes there).
+func TestExerciseDefinitionsParse(t *testing.T) {
+	if len(ScenarioExercises) < 2 {
+		t.Fatalf("FR-010 requires at least two shipped exercises, got %d", len(ScenarioExercises))
+	}
+	seen := map[string]bool{}
+	for _, def := range ScenarioExercises {
+		if def.ID == "" {
+			t.Errorf("exercise definition with empty ID: %+v", def)
+			continue
+		}
+		if seen[def.ID] {
+			t.Errorf("duplicate exercise id %q", def.ID)
+		}
+		seen[def.ID] = true
+		if !validLadderStage(def.Stage) || def.Stage == "" {
+			t.Errorf("%s: stage %q is not a valid ladder stage", def.ID, def.Stage)
+		}
+		if def.Seed == 0 {
+			t.Errorf("%s: seed must be nonzero (a deterministic tuned world)", def.ID)
+		}
+		if def.Concept == "" {
+			t.Errorf("%s: missing taught concept", def.ID)
+		}
+		if def.Framing == "" {
+			t.Errorf("%s: missing incident framing", def.ID)
+		}
+		if len(def.RubricTerms) == 0 {
+			t.Errorf("%s: rubric must name at least one event-derived term", def.ID)
+		}
+		for _, term := range def.RubricTerms {
+			if term == "" {
+				t.Errorf("%s: empty rubric term", def.ID)
+			}
+		}
+		if def.PassSignal == "" {
+			t.Errorf("%s: missing pass signal", def.ID)
+		}
+		if def.ScoreNarrative == "" {
+			t.Errorf("%s: missing score-narrative framing", def.ID)
+		}
+	}
+
+	// SC-004's content-side precondition: the-law's rubric must name the
+	// charter-fingerprint term — sim.EvaluateUnlock is what actually enforces
+	// the Custom/default distinction, but the exercise content must at least
+	// reference the right event type for that enforcement to have anything
+	// to read.
+	found := false
+	for _, term := range TheLawExercise.RubricTerms {
+		if term == "metatron.charter_observed" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("the-law's rubric must reference metatron.charter_observed (SC-004's gate conjunct)")
+	}
+}
+
 // TestCurriculumReplayDeterministic (spec 046 contracts/events.md): replaying
 // a history carrying curriculum events reproduces identical state — the
 // events are replay-deterministic like every other recorded type.

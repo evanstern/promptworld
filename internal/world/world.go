@@ -77,6 +77,22 @@ type Manifest struct {
 	// "default" = persona.DefaultCharter; "tutor" = the stage-1 orientation
 	// preset. Closed vocabulary, validated at Open.
 	CharterPreset string `json:"charter_preset,omitempty"`
+	// Scenario is a RESERVED additive block (spec 046 US4, R7 — the Meeting
+	// block precedent above): the shape TASK-119's scenario/incident-
+	// scheduling machinery will read to know which seeded exercise (if any)
+	// a world is running. Consumed by nothing yet — `promptworld new` never
+	// writes it — so its presence changes nothing about how a world boots or
+	// plays; it exists so 119 has a schema seam to land in without another
+	// Manifest-shape negotiation.
+	Scenario *ScenarioConfig `json:"scenario,omitempty"`
+}
+
+// ScenarioConfig names the exercise a world is seeded to run (spec 046 US4).
+// Exercise should name a sim.ExerciseDefinition.ID (e.g. "first-night"); this
+// package does not validate it against that catalog — TASK-119 owns
+// interpreting it. Reserved, unconsumed (see Manifest.Scenario doc comment).
+type ScenarioConfig struct {
+	Exercise string `json:"exercise,omitempty"`
 }
 
 // The four curriculum-ladder stage ids (spec 046, FR-001). An absent Stage is
