@@ -1758,7 +1758,10 @@ func (m Model) systemsContentBody(width, rows int) string {
 	lines = append(lines, llmProviderLines(l)...)
 	lines = append(lines, styleDim.Render(fmt.Sprintf("spend $%.2f of $%.0f", l.Spent, l.Budget)))
 	if l.Spent >= l.Budget {
-		lines = append(lines, styleErr.Render("budget exhausted — the guardian's voice is stilled"))
+		// Telemetry voice, deliberately fiction-free: the systems tab is never
+		// skinned (spec 052 FR-016 / D10) — the fiction-layer phrasing of this
+		// condition lives on the guardian surfaces, not here.
+		lines = append(lines, styleErr.Render("budget exhausted — LLM calls refused"))
 	}
 	lines = append(lines, horizonLines(m.status.Horizon, string(m.status.Clock.Speed))...)
 	if len(lines) > rows {
@@ -2228,7 +2231,8 @@ func consoleScrollWindow(content []string, scroll, rows int) []string {
 // stageCharter/stageSkills notice wording (stage-1 locks the charter until
 // stage-2; stage-1/2 lock skills until stage-3 — the ladder's current,
 // hardcoded shape, the same assumption consoleStageSummary already makes)
-// without a second round trip to ask the daemon to repeat itself. While
+// through the WORLD skin (m.sk().StageName, spec 052 T004) without a second
+// round trip to ask the daemon to repeat itself. While
 // SkillsLocked, Status.Skills is the EFFECTIVE (empty) list, not a file
 // count off disk (internal/guardian/turn.go Status()) — so the locked
 // notice honestly omits a count it does not have, rather than inventing one
@@ -2244,7 +2248,7 @@ func (m Model) charterReadSurfaceLines() []string {
 	switch {
 	case m.consoleCharterLocked:
 		charterLine = fmt.Sprintf("charter.md — preset-locked to %s; does not bind at this stage — %s unlocks instruction authoring",
-			m.consoleCharterPreset, skin.StageName("stage-2"))
+			m.consoleCharterPreset, m.sk().StageName("stage-2"))
 	case m.consoleCharter == "default charter":
 		charterLine = "charter.md — default, binds now  [e] edit ($EDITOR)"
 	default:
@@ -2254,7 +2258,7 @@ func (m Model) charterReadSurfaceLines() []string {
 	var skillsLine string
 	switch {
 	case m.consoleSkillsLocked:
-		skillsLine = fmt.Sprintf("skills/ — locked; does not bind at this stage — %s unlocks skill files", skin.StageName("stage-3"))
+		skillsLine = fmt.Sprintf("skills/ — locked; does not bind at this stage — %s unlocks skill files", m.sk().StageName("stage-3"))
 	case m.consoleSkills == 1:
 		skillsLine = "skills/ — 1 file, binds now"
 	default:
