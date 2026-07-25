@@ -45,7 +45,7 @@ sources:
   - internal/persona/persona_test.go
   - e2e/daemon_e2e_test.go
   - e2e/determinism_e2e_test.go
-verified_against: 4b15038fcd6fc9f6fe2f98ea558954a85dccec84
+verified_against: 3a04bf071ed3a3e994a52d26d9eed42e92e3fccd
 ---
 
 # Testing strategy
