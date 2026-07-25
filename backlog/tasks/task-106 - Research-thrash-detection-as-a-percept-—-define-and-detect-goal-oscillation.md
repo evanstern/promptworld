@@ -1,10 +1,10 @@
 ---
 id: TASK-106
 title: 'Research: thrash detection as a percept — define and detect goal oscillation'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-25 02:42'
-updated_date: '2026-07-25 18:55'
+updated_date: '2026-07-25 18:57'
 labels:
   - goal-quality
   - research
@@ -38,3 +38,9 @@ MVLS sweep dispatch (2026-07-25): research lane. Data-crunching delegated to a S
 
 Research complete (2026-07-25): docs/design/thrash-detection-research.md + evidence/task-106/ (reproducible analyze.py against world.v3.db). Detector: W=4h, K=8, need-progress clause + cap guard — 10/11 labeled-bad caught, 0 healthy-interleave FPs, 0 firings on never-thrashing agents. Key discoveries: thrash is daytime VILLAGE-WIDE (days 4-5 storms, 6 of 8 villagers); flip volume != pathology (need clause is load-bearing); Oak's death was NEGLECT not thrash — separate detector class recommended (critical need + zero intents in class for T). Recommendation: GO, split — card neglect detector (higher value, composes with 111/108/103); implement thrash percept after 103/104 + TASK-122 re-measure. Operator checkpoint pending on the go/no-go + carding.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Research complete (operator-accepted 2026-07-25). Deliverables: docs/design/thrash-detection-research.md + reproducible evidence (docs/design/evidence/task-106/). Detector chosen: W=4h sliding window, K=8 A->B->A class transitions, need-progress clause + cap guard — 10/11 labeled-bad episodes caught, 0 healthy-interleave false positives, 0 firings on never-thrashing agents, validated against world-01 v3 log. Key findings: thrash is daytime village-wide; flip volume != pathology (need clause load-bearing); Oak's death was neglect not thrash. Dispositions per operator: neglect detector carded as TASK-133 (High); thrash-percept implementation deferred until after TASK-103/104 + TASK-122 re-measure.
+<!-- SECTION:FINAL_SUMMARY:END -->
