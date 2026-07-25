@@ -4,7 +4,7 @@ title: Merge-drift gates — choke-point gates for the parallel worktree SDLC
 status: In Progress
 assignee: []
 created_date: '2026-07-25 17:26'
-updated_date: '2026-07-25 17:27'
+updated_date: '2026-07-25 17:42'
 labels: []
 dependencies: []
 ordinal: 101000
@@ -22,4 +22,6 @@ Spec: specs/051-merge-drift-gates
 
 <!-- SECTION:NOTES:BEGIN -->
 spec-bridge link: spec 051 specify phase complete (spec.md + requirements checklist, all items pass, 0 clarification markers). Design decisions settled pre-spec with Evan: gates-only (no daemon/CI), no external annotation, gates never touch live branches, findings land as board notes. No tasks.md yet — phase ACs will seed at sync after speckit-tasks.
+
+speckit-plan complete: plan.md (Constitution Check PASS x5, Sonnet tier justified — single-package script, no concurrency/doctrine logic), research.md (11 decisions incl. merge-tree --write-tree verified live on git 2.50.1, exit-code contract 0/1/2, squash-detection via empty-contribution tree equality), data-model.md, contracts/ (gate-cli, detection-rules, report-schema), quickstart.md (5 fixture-repo validation scenarios). Next: speckit-tasks.
 <!-- SECTION:NOTES:END -->
