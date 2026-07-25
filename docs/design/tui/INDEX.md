@@ -69,7 +69,7 @@ docs/design/tui/
 │   ├── lesson-row.md                [new]   first-occurrence lesson row (decision 5 — Wave 4)
 │   ├── guardian-strip.md            [new]   action-budget strip above minibuffer (decision 7 — Wave 2)
 │   ├── villager-strip.md            [new]   colonist-bar strip under header (D12 — Wave 5)
-│   └── minibuffer.md                [recon] the Metatron input line and its states
+│   └── minibuffer.md                [recon] the guardian input line and its states
 ├── overlays/
 │   ├── help.md                      [new]   extracted from patterns/keymap.md + guardian section (D9 — Wave 4)
 │   ├── ceremony.md                  [new]   unlock takeover (decision 6, FR-019 — Wave 4)

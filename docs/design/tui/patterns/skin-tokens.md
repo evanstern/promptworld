@@ -21,7 +21,8 @@ surfaces around the generic word **guardian** (`panels/guardian.md`,
 `pages/guardian-console.md`, `panels/guardian-strip.md` — never
 `metatron.md`), because the *displayed* proper name is skin data, not a fixed
 identifier. Today's shipped client hard-codes the angel-fiction skin
-(`internal/tui` prints `"Metatron"`/`"angel"` literally); the design reference
+(`internal/tui` prints the default proper name and epithet literally — see
+the token index below); the design reference
 speaks in the generic vocabulary throughout and marks every place a fiction
 string would render with a token instead, so a future skin swap is a content
 change, never a doc rewrite.

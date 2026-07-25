@@ -99,6 +99,6 @@ right-aligned. The focused state documents its own escape, every time it is draw
 - The minibuffer is chromeless-adjacent to the footer: footer hints while focused
   shrink to the minibuffer-mode keys only (see
   [../patterns/keymap.md](../patterns/keymap.md)).
-- IPC send/receive is the existing Metatron console protocol
+- IPC send/receive is the existing guardian console protocol
   (`specs/005-metatron/contracts/console-protocol.md`) — transport unchanged, only
   the surface moves.
