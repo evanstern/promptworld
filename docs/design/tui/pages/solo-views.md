@@ -40,11 +40,13 @@ so tab-switching keeps working at every width, and only the same key or
 `1`/`esc` drops back to the composite.
 
 **Extends to every dock tab with no change here**: the state machine and
-"same component, two widths" rule now cover all four dock tabs —
+"same component, two widths" rule now cover all five dock tabs —
 [panels/systems.md](../panels/systems.md) (spec 053, key `5`, built) reuses
 this exact seam, proving the "adding a future tab = no new layout" claim
-([panels/dock.md](../panels/dock.md)) a second time; a future
-[panels/exercise.md](../panels/exercise.md) (Wave 4) will reuse it a third.
+([panels/dock.md](../panels/dock.md)) a second time, and
+[panels/exercise.md](../panels/exercise.md) (spec 054, key `6`, scenario
+worlds only) proves its conditional form a third — the tab joins the
+machine exactly when the world carries a scenario.
 [pages/guardian-console.md](guardian-console.md) (spec 053, built) is
 **not** reached through this mechanism — it is a full-height page of its
 own, not a dock tab, with its own `G` key navigation, specified on its own

@@ -2,7 +2,7 @@
 title: Pattern — stage-shaped layout defaults
 class: pattern
 status: specified
-verified_against: c8d80800fc5d34c5c31ab54751ebfb3ba80efc5b
+verified_against: ed8300ffa44a0590ded7d8119fe9f2bda29dd8f9
 ---
 
 # Pattern: stage-defaults
@@ -55,6 +55,15 @@ the world's `Stage` field, because the two scenarios that ship today
 (`first-night`/stage-1, `the-law`/stage-2) already imply their stage by
 construction. The incident-visibility *vocabulary value* (`forecast`/`fog`)
 is genuinely stage-keyed (D4), independent of which scenario is running.
+
+**Re-verified for spec 054 (TASK-119)**: the two exercise rows above are
+now REAL — `internal/tui` gates the tab on the manifest block
+(`Model.exerciseID`) and `internal/sim`'s `IncidentVisibilityFor` implements
+this table's vocabulary column exactly (definition override wins; forecast
+at stages 1–2 and pre-ladder, fog from stage 3), pinned by
+`TestIncidentVisibilityVocabulary`. This page stays `specified` overall:
+the lesson-row/villager-strip rows and the ceremony/postmortem overlays
+remain unbuilt.
 
 ## Composition with the fold order
 

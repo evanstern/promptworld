@@ -2,7 +2,7 @@
 title: Anatomy — region index
 class: index
 status: shipped
-verified_against: ed93211ced3deb76e9b1f2fa4902c6f3d9dbc59d
+verified_against: ed8300ffa44a0590ded7d8119fe9f2bda29dd8f9
 ---
 
 # Anatomy: the region index
@@ -64,7 +64,7 @@ forthcoming.
 | villagers tab — roster | `panels/villagers.md` | spec 015 |
 | villagers tab — detail (identity/objective/inventory/beliefs/memories) | `panels/villagers.md` | spec 015 |
 | villagers tab — decisions sub-view | `panels/villagers.md` | spec 020 |
-| exercise tab (framing, attach briefing, rubric gauges, forecast/fog vocabulary, pass/fail) | `panels/exercise.md` **(specified)** | D11/D4; world-shaped not stage-shaped (`patterns/stage-defaults.md`) |
+| exercise tab (framing, attach briefing, rubric gauges, forecast/fog vocabulary, pass/fail) | `panels/exercise.md` | spec 054 (D11/D4), key `6`; world-shaped not stage-shaped (`patterns/stage-defaults.md`) |
 
 ## Teaching-chrome region (below the body, above the minibuffer)
 
@@ -91,7 +91,7 @@ forthcoming.
 |---|---|---|
 | widescreen composite (header+map+dock+minibuffer+footer) | `pages/home.md` | resting state; always "underneath" |
 | solo zoom (any dock tab at full width) | `pages/solo-views.md` | same component, two widths |
-| narrow fallback (single-pane, keys `1`–`4`) | `pages/solo-views.md` | never deleted; new-chrome narrow rules per `patterns/layout.md` |
+| narrow fallback (single-pane, keys `1`–`5`, plus `6` on scenario worlds) | `pages/solo-views.md` | never deleted; new-chrome narrow rules per `patterns/layout.md` |
 | guardian console (full-height guardian page) | `pages/guardian-console.md` **(specified)** | decisions 1/2, D5; not reached via solo zoom — its own `G` key |
 
 ## Overlays (takeover, body-replacement)

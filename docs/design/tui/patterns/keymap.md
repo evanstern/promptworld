@@ -23,6 +23,7 @@ walkthrough or lessons section of its own).
 |---|---|
 | `1` | home composite (from solo: return home; on home: map is already primary) |
 | `2` / `3` / `4` / `5` | select dock tab chronicle / `{{skin.guardian.tab_label}}` / villagers / systems; **same key again** → solo zoom; again → back home |
+| `6` | select the exercise tab (spec 054 — scenario worlds only; inert on ambient worlds, which have no such tab); same solo-zoom grammar as `2`–`5` |
 | `G` | open the guardian console — a full-screen page for the conversation, charter/skills, and `$EDITOR` (spec 053; shadowed by inspect mode's and the villagers tab's own `G`, "Mode: console" below) |
 | `m` | focus the minibuffer |
 | `x` | dismiss the active lesson row (spec 055, `panels/lesson-row.md`); strict no-op when nothing is active |
@@ -125,6 +126,22 @@ with spec 055/TASK-117 and moved to the "Mode: global" table above:
 |---|---|---|
 | `p` | reopen the postmortem takeover (only while the run has ended) | [overlays/postmortem.md](../overlays/postmortem.md) |
 
+## Mode: exercise briefing (scenario worlds; the exercise tab visible, briefing not yet dismissed — spec 054)
+
+While the exercise tab's attach-time briefing is on screen
+([../panels/exercise.md](../panels/exercise.md)), **any key dismisses it and
+is consumed** — exactly one keypress, scoped strictly to the exercise tab
+being the thing visible (never a global key-eater); `ctrl+c` still quits
+(rule 3 outranks everything), the help overlay's own keyboard outranks this
+while open, and a focused minibuffer keeps its keys (focus was explicitly
+acquired, focus-contract rule 1). Dismissal lasts for this attach only;
+re-attaching shows the briefing (and this mode) again.
+
+| Key | Action |
+|---|---|
+| any key | dismiss the briefing (consumed — no other effect) |
+| `ctrl+c` | quit |
+
 ## Mode: help overlay (spec 045-tui-help-overlay, TASK-116)
 
 `?` opens a context-sensitive help overlay from every mode above except
@@ -144,7 +161,9 @@ complete without duplicating the overlay's own reference:
 
 ```
 global            2 chronicle 3 {{skin.guardian.tab_label}} 4 villagers 5 systems (again: solo) · G console · m ask · space pause · q quit · ? help
+                  (scenario worlds append "6 exercise" to the tab list — spec 054)
 narrow (no dock visible)   1-5 panes · G console · space pause · q quit · ? help
+                  (scenario worlds: "1-5,6 panes" — spec 054)
 minibuffer        esc release · ⏎ send · ↑↓ history
 inspect           j/k select · J/K scroll detail · space resume · m ask · ? help
 villagers roster  j/k select · ⏎ inspect · space pause · q quit · ? help
@@ -188,7 +207,10 @@ Ratified doctrine, binding on this entire corpus, not just this page:
    mode-key tables have no mouse column of their own (they're the printable
    card, not a control table) — the authoritative per-control mouse status
    lives on each control's owning panel/overlay page, cross-referenced from
-   here by page link.
+   here by page link. Spec 054's two new bindings — the exercise tab's `6`
+   and the briefing's any-key dismiss — land keyboard-only and are tracked
+   as parity gaps on `panels/exercise.md`'s own rollout note, exactly as
+   that page promised from birth.
 
 ## Binding-selection rules
 
