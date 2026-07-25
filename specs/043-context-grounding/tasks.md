@@ -49,7 +49,7 @@
 - [x] T010 [P] [US1] Ring transition tests in `internal/sim/intentlog_test.go`: all five arms, override-in-quick-succession ordering, ring wraparound at cap, rejected-never-landed shape
 - [x] T011 [US1] `self_history` block renderer in `internal/mind/context.go` + wire into `internal/mind/prompt.go`: last ≤4 records newest-first, sources in plain words (planner→"you decided", reflex→"instinct", plan→"your plan"; unknown→"unknown", never invented), outcomes, "no prior activity" empty state (contract block 3)
 - [x] T012 [US1] Renderer tests in `internal/mind/context_test.go`: each source wording, empty state, alternation visible across ≥3 records (SC-002)
-- [ ] T013 [US1] Thrash-window context replay per quickstart §SC-004: reconstruct Sage's episode (world-01 ticks 265,411–266,631), assert assembled context shows the instinct redirection + alternation; record result in the spec dir
+- [x] T013 [US1] Thrash-window context replay per quickstart §SC-004: reconstruct Sage's episode (world-01 ticks 265,411–266,631), assert assembled context shows the instinct redirection + alternation; record result in the spec dir
 
 **Checkpoint**: MVP complete (US5+US1) — the model can see what it was just doing and operators can audit it.
 
@@ -94,8 +94,8 @@
 
 ## Phase 8: Polish & cross-cutting
 
-- [ ] T024 Replay determinism: extend `internal/daemon` replay coverage (mirror `embed_replay_test.go`) to assert IntentLog/NeedsAnchor state and assembled prompts reproduce byte-identically from the event log
-- [ ] T025 [P] `go vet ./...`, `gofmt -l` clean, full `go test ./...` green in the worktree
+- [x] T024 Replay determinism: extend `internal/daemon` replay coverage (mirror `embed_replay_test.go`) to assert IntentLog/NeedsAnchor state and assembled prompts reproduce byte-identically from the event log
+- [x] T025 [P] `go vet ./...`, `gofmt -l` clean, full `go test ./...` green in the worktree
 - [ ] T026 Update `docs/wiki/decision-context.md` final pin + re-pin touched notes via `/grounding-wiki:wiki-update` after merge (agent-mind, memory-retrieval, event-types, sim-state-reducer); then player-docs freshness check (`node .claude/skills/player-docs/scripts/check-freshness.mjs --check`)
 - [ ] T027 SC-007 baseline comparison run per quickstart (flip-rate vs world-01, spike counting method); record on TASK-105 (measured, not merge-gating)
 
