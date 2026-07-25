@@ -16,8 +16,13 @@
 //   1. `git fetch origin` (always attempted unless --no-fetch)
 //   2. Fast-forward of the ROOT checkout — session mode only, automatic,
 //      only when root is on main, behind origin/main, not diverged, clean.
-//   3. With --apply-cleanup: `git worktree remove` + `git branch -d` for
-//      worktrees THIS run verified cleanup-eligible. Nothing else.
+//   3. With --apply-cleanup: `git worktree remove` + `git branch -d`/`-D` for
+//      worktrees THIS run verified cleanup-eligible. Nothing else. `-D` is
+//      used only for the empty-contribution (squash) reason, where `-d`'s
+//      ancestor check can never succeed even though this run already
+//      cryptographically proved the branch contributes nothing new via
+//      merge-tree tree-equality (deviation from detection-rules.md §4's
+//      literal `-d`; see cleanup-eligible finding construction below).
 //   4. With --notes: `backlog task edit TASK-<N> --append-notes …` — never a
 //      direct write under backlog/.
 // It never rebases, merges, commits to, checks out, or resets any task
