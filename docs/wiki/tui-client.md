@@ -10,7 +10,8 @@ sources:
   - internal/tui/digest.go
   - internal/tui/decisions.go
   - internal/tui/help.go
-verified_against: 61a01fafb10b949a82fbfd2ea6f9d85b978a9850
+  - internal/tui/lessons.go
+verified_against: 033493973235cb8e392302b879d9dede77f44546
 ---
 
 # TUI client
@@ -93,13 +94,21 @@ glyphs + `(N/cap)`, a `next +1 @ <time>` regen forecast derived from
 `sim.MetatronChargeRegenTicks`, and the replica's standing-order count —
 `guardianStripView`, each segment degrading to absence rather than a
 misleading zero), a one-line
-**Metatron minibuffer** above the footer, and per-mode footer hints. The strip
-is the last chrome to fold (`rowBudget.Strip`, `computeRows` keeps it while
-body ≥ 10 rows); folded, its content relocates into the minibuffer's dormant
+**Metatron minibuffer** above the footer, and per-mode footer hints. Since
+spec 055 (TASK-117, reorient decision 5) a two-line borderless **lesson row**
+sits above the guardian strip whenever a first-occurrence lesson is active
+and the stage default allows it (`lessonRowDefault` in layout.go: on at
+curriculum stages 1–2; at stage 3+/pre-ladder the row never renders and a
+quiet `[lesson]` header badge points at the `?` overlay instead —
+`lessonBadgeVisible`); under height pressure the row folds to that same
+badge BEFORE the guardian strip (`rowBudget.Lesson`), which stays the last
+chrome to fold (`rowBudget.Strip`, `computeRows` keeps it while body ≥ 10
+rows); folded, the strip's content relocates into the minibuffer's dormant
 placeholder line instead of hiding. Below 112
 columns it falls back to the original single-pane UI (header + tab bar + one
 active pane), unchanged except that the guardian pane carries the same strip
-above its minibuffer. `View` output is exactly terminal-height in every mode
+above its minibuffer and the lesson row is carried above whichever pane is
+active with identical stage defaults (`narrowView`). `View` output is exactly terminal-height in every mode
 (every panel body is clipped to its row budget — `clipContent`), and resizes
 re-clamp pan/selection state (`clampGeometry`).
 
@@ -372,9 +381,26 @@ fixed a real gap: the gru's `G` was drawn but never listed in the legend
 text. The shared table gained the `✝` grave row with spec 044; it is the
 dead-agent-on-grave carve-out in `renderMapGrid` (above) that keeps the row
 honest — without it the map could never actually show the glyph it
-advertises. The lessons section is the pull-reference seam for the future
-first-occurrence lesson projection: an empty `helpLessons` table whose
-entries are content additions, no structural change. All content is
+advertises. The lessons section is the pull half of the
+**first-occurrence lessons projection** (spec 055/TASK-117; `lessons.go`):
+`populateHelpLessons` fills `helpLessons` 1:1 from `lessonCatalog` at client
+init, so the overlay lists every lesson the push half can ever show — the
+placeholder line survives only as a defensive empty-table branch. The push
+half is the lesson row above: `lessonTriggers.ingest` folds the same event
+stream `applyEvent` feeds the decision-trace projection, firing each of the
+8 static catalog entries (5 mechanics — first suppression/gru
+attack/charge-regen/order-expiry/death; 3 prompting — first rejected
+`cog.tool_call`, first custom charter, first fuzzy order) at most once per
+player: one active lesson at a time (text line + `→` pointer line ending
+`(? for more · x dismiss)`), dwelling until its done-signal event or a
+global `x` dismiss, with a bounded FIFO queue whose stale entries decay
+rather than surface late. Seen-state is per-user and cross-world
+(`internal/worlds`' `lessons-seen.json` beside `unlocks.json` — same
+load-tolerant/advisory/atomic-write discipline; marked when a lesson
+SURFACES, so a decayed queue entry can still fire later), and every catalog
+string resolves skin tokens through `lessonSkinResolve` (a bounded
+default-table fallback from spec 052's contract until the skin runtime
+merges). All content is
 model-independent — byte-identical with nil status/replica (the no-LLM floor
 beneath an absent angel). Footer hints advertise `· ? help` in every mode
 except the focused minibuffer; while the overlay is open the footer shows the
@@ -427,6 +453,11 @@ routing in both layouts, exact-height rendering invariants across sizes and dens
 content (including all help-overlay states), the help overlay itself
 (help_test.go — per-mode routing, tier/section navigation, the keymap sweep,
 no-LLM byte-identity, a zero-side-effect soak, and the lessons-seam fixture),
+the lessons projection (lessons_test.go — an exactly-once fixture sweep
+across two worlds plus a restart, queue/decay/spacing, catalog↔overlay
+equality, seen-file fault tolerance, and a no-`{{`-literal render sweep;
+`testModel` isolates `PROMPTWORLD_HOME` so the suite never touches a real
+home directory),
 and resize round-trips with live selection; an expect-driven PTY smoke test
 drives the real binary. When real systems land, dock tabs graduate from stubs without
 changing the replica machinery.
