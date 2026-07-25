@@ -1,3 +1,13 @@
+---
+title: Pattern — chronicle grammar
+class: pattern
+status: shipped
+verified_against: c8906da39be3a5b861c2272af37db0a83dcded7a
+sources:
+  - internal/tui/digest.go
+  - internal/tui/grammar.go
+---
+
 # Pattern: chronicle grammar
 
 How one event becomes one feed entry. Applies wherever the chronicle renders
@@ -44,6 +54,40 @@ build if any cataloged type has no entry, if a fixture type falls back to
 raw JSON, or if a registry key isn't in the fixture — so a new event type
 forces a deliberate digest (or fixture) change rather than silently landing
 as JSON.
+
+## Suppression/remedy rows in the raw feed (specs 028/031/033/035)
+
+The raw feed's labeled-voice families (`cog`/`clock`) carry the chronicle's
+own view into engine suppression and remedy — distinct from, but voiced in
+the same terse style as, [systems.md](../panels/systems.md)'s live horizon
+block:
+
+- `cog.outcome` — every cognition job's terminal outcome, `job=… <outcome>
+  agent=… stale=…t wall=…ms` (plus `kind=`/`reason=` when present); `<outcome>`
+  is the raw outcome word verbatim (`landed`, `suppressed`, `retried`, …).
+  TASK-32's chapter-suppression check (a narrator-tier `cog.outcome{suppressed}`
+  record dropping a chronicle chapter with no call spent) reads as one of
+  these rows.
+- `cog.recalibration_recommended` (spec 031, estimator breach-adoption) —
+  `tier=… est=<prior>→<adopted>s/pt spikes=… window=…` — the chronicle's
+  remedy signal: a live re-estimation the router adopted.
+- `clock.governor_shed` / `clock.governor_recovered` (spec 028/033) —
+  "governor shed/recovered `<from>`→`<to>` `debt=N% jobs=N`" — the debt
+  arithmetic is `debtPercent`, the same shared function behind the header's
+  governed-speed suffix ([../pages/home.md](../pages/home.md)).
+
+**Why these don't route through `verdictGlossary`**: the villagers
+decisions sub-view and the guardian tab's inline verdict rows
+([../panels/villagers.md](../panels/villagers.md),
+[../panels/guardian.md](../panels/guardian.md)) translate every verdict/
+outcome string through the sweep-tested plain-language `verdictGlossary` —
+raw enum strings never reach the screen there, because those views read as
+narrative prose. The raw chronicle feed is deliberately the opposite
+register (labeled-voice families "read as `key=value` fields, stable order" —
+see below): its outcome/verdict words appear **verbatim**, by design, because
+this is the terse operator-telemetry view, not the narrated one. Both
+disciplines serve the same "no raw enum leaks into a *narrative* line"
+invariant; they just draw the narrative/telemetry line in different places.
 
 ## Voice by family
 

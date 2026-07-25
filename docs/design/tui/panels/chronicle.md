@@ -1,3 +1,14 @@
+---
+title: Panel — chronicle (event feed)
+class: panel
+status: shipped
+verified_against: c8906da39be3a5b861c2272af37db0a83dcded7a
+sources:
+  - internal/tui/views.go
+  - internal/tui/digest.go
+  - internal/tui/tui.go
+---
+
 # Panel: chronicle
 
 The event feed. Same component everywhere it appears — dock tab, solo view,
@@ -83,14 +94,38 @@ this page and in solo-views.md shows digest grammar, never prose.
   are windowed the same way as any other payload — only the visible slice
   is ever processed, so an enormous embedded state can't blow the panel's
   row budget; every line is still reachable by scrolling.
-- **Extension point**: the pane's bottom-right `[future: actions]` slot and
-  the reserved `⏎` key are the documented attachment surface for future
-  jump-off actions (e.g. "jump to the referenced event"). `⏎` is a no-op
-  today — deliberately, so a future feature has an honest, already-wired
-  place to land instead of an undocumented key. The code hook is
+- **Extension point (reserved, `specified` for Wave 2 — reorientation D3)**:
+  the pane's bottom-right `[future: actions]` slot and the reserved `⏎` key
+  are the documented attachment surface for the jump-to-source action D3
+  rules on ("chronicle `⏎` jump-to-source gets built (fills the reserved
+  seam); click-a-line too"). `⏎` is a no-op today — deliberately, so the
+  Wave 2 feature has an honest, already-wired place to land instead of an
+  undocumented key. The code hook is
   `detailActions(e store.Event) []detailAction` (`internal/tui/tui.go`),
-  returning `nil` until something implements it.
+  returning `nil` until something implements it. D3 also rules the eventual
+  mouse binding: click-a-line, not just `⏎` — see the control table's
+  `jump-to-source` row and this page's parity-rollout note.
 - On resume: clear the selection and the detail pane's scroll, snap back to
   tail-follow, return to running mode.
 - Selection is remembered while paused even if the user switches tabs and
   returns; the detail scroll resets whenever the selection moves.
+
+## Control table
+
+| control/region | states | data source | renderer | keys+mouse | introduced-by | skin-token |
+|---|---|---|---|---|---|---|
+| feed row (running) | tail-following | replica `State.Chronicle` ring · raw feed | `chronicleNarratedBody`, `chronicleRawBody` | — (auto-follow) | TASK-34/spec 018 | — |
+| raw/narrated toggle | raw · narrated | `Model.chronRaw` | `chronicleBody` | `r` · — | TASK-60 | — |
+| agent/thread filter | unfiltered · filtered | `Model.chronAgent`/`chronThread` | `chronicleView` | `a`/`t` · — | TASK-34 | — |
+| inspect-mode row selection | selected · unselected | `Model.chronSelected` | `chronicleInspectBody` | `j`/`k` · — | TASK-60 | — |
+| inspect-mode jump | first · last | `Model.chronSelected` | `chronicleInspectBody` | `g`/`G` · — | TASK-60 | — |
+| detail pane (always-on) | shown | selected `store.Event` | `chronicleDetailPane` | — (display-only) | TASK-60 | — |
+| detail pane scroll | — | detail pane scroll offset | `chronicleDetailPane` | `J`/`K` · — | TASK-60 | — |
+| jump-to-source (reserved seam) | no-op today | selected `store.Event` | `unbuilt (wave 2)` — hook: `detailActions` | `⏎` · click line (both unbuilt) | reorient D3 | — |
+
+**Parity rollout**: every live control above (raw/narrated toggle, filters,
+inspect selection/jump, detail scroll) has a key but no mouse target today;
+tracked here per decision 8 rather than silently omitted, formal doctrine in
+`patterns/keymap.md` (T024). The jump-to-source row is additionally
+unbuilt — both its keyboard and mouse forms land together in Wave 2 (D3),
+so it carries no existing parity gap to track yet, just the reserved seam.

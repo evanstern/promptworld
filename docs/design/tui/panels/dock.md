@@ -1,134 +1,77 @@
+---
+title: Panel — dock (tab container)
+class: panel
+status: shipped
+verified_against: c8906da39be3a5b861c2272af37db0a83dcded7a
+sources:
+  - internal/tui/tui.go
+  - internal/tui/views.go
+---
+
 # Panel: dock
 
-The right-hand tab container in the widescreen composite. One tab visible at a
-time; the dock is the designated home for every future display or control panel.
+The right-hand tab **container** in the widescreen composite — chrome only.
+Since this feature (D10, the skin-boundary-as-file-boundary ruling), tab
+*content* is documented on its own per-tab page, not here:
 
-## Structure
+- [guardian.md](guardian.md) — fiction-layer tab content (transcript, standing
+  orders, instruction surface, miracle feedback)
+- [systems.md](systems.md) — engine telemetry (never skinned)
+- [villagers.md](villagers.md) — the villagers roster/detail/decisions tab
 
-```
-┌─ chronicle │ metatron │ villagers ─┐   ← tab row doubles as the panel title
-├────────────────────────────────────┤
-│                                    │
-│  active tab content                │
-│                                    │
-└────────────────────────────────────┘
-```
+This page owns only the tab row, its badges, tab-switching, and the solo-zoom
+seam — the same container regardless of which tab is active.
 
-- Tab row: active tab bright, inactive dim. A tab with unseen content shows a badge
-  dot: `metatron •`.
-- Keys `2` chronicle · `3` metatron · `4` villagers select tabs; same key again zooms
-  solo ([../pages/solo-views.md](../pages/solo-views.md)).
-- Each tab keeps its own state (scroll, filters, input history) across switches.
-- Adding a future tab = new title in the row + a content renderer; no new layout.
-
-## Tab: chronicle (default)
-
-The feed panel, specified in [chronicle.md](chronicle.md). Default tab on launch.
-
-## Tab: metatron
-
-The angel conversation transcript — history only; input happens in the minibuffer
-([minibuffer.md](minibuffer.md)).
+## Mockup
 
 ```
-┌─ chronicle │ METATRON │ villagers ┐
-├───────────────────────────────────┤
-│ you   why is Rowan hoarding     │
-│       wood?                     │
-│ angel Rowan's memory holds      │
-│       three nights of Ash       │
-│       letting the fire die.     │
-│       Trust toward Ash: −2.     │
-│ you   what does ash want        │
-│ angel ⋮ thinking…               │
-└─────────────────────────────────┘
+┌─ chronicle │ {{skin.guardian.tab_label}} │ villagers ─┐   ← tab row doubles as the panel title
+├────────────────────────────────────────────────────────┤
+│                                                        │
+│  active tab content — see the owning tab page          │
+│                                                        │
+└────────────────────────────────────────────────────────┘
 ```
 
-- Rows alternate `you` (dim label) / `angel` (accent label); text wraps to tab width.
-- While a question is in flight the transcript shows a `⋮ thinking…` row.
-- **Reply arrival:** if the metatron tab is visible, the reply streams in place. If
-  not, the tab row badges (`metatron •`) — the dock never steals the selected tab.
-- Scrollback: newest at bottom, and when the tab is selected it opens scrolled to
-  bottom.
+- Tab row: active tab bright and UPPERCASE, inactive dim. The guardian tab
+  shows an unseen-reply badge dot (`{{skin.guardian.tab_label}} •`) whenever
+  its tab isn't currently visible and a reply has arrived.
+- Keys `2` chronicle · `3` guardian · `4` villagers select tabs; the **same
+  key again**, while already selected, zooms that tab to full width — solo
+  zoom ([../pages/solo-views.md](../pages/solo-views.md)).
+- Each tab keeps its own state (scroll, filters, selection, input history)
+  across switches — one dock-content renderer dispatches by active tab
+  (`dockTabContent`), so a tab never re-mounts on selection.
+- Adding a future tab (e.g. `exercise.md`, Wave 4) = a new label in the row +
+  a content renderer; no new layout.
 
-## Tab: villagers (TASK-56)
+## Behavior
 
-A per-villager inspector: a roster with a keyboard-movable selection cursor, and a
-detail view opened per-villager. One renderer, two internal views
-(`villDetail` in the model), rendering width-aware exactly like every other dock
-tab (wrap/condense columns; drop the least important column first when narrow).
+- **Default tab on launch:** chronicle ([chronicle.md](chronicle.md)).
+- **Reply arrival while the guardian tab isn't visible:** the tab row badges
+  (`{{skin.guardian.tab_label}} •`); the dock never steals the currently
+  selected tab out from under the player (guardian.md covers the transcript
+  side of this).
+- **Solo zoom**, narrow fallback, and cross-width rendering ("one component,
+  two widths") are specified in
+  [../pages/solo-views.md](../pages/solo-views.md); this page only owns the
+  seam (same-key-twice) that reaches it.
 
-### Roster (default)
+## Control table
 
-Today's per-villager summary line plus a selection cursor glyph (`▌`) on the
-selected row. Same width breakpoint as before: wide (≥40 cols) keeps
-name/status/goal/position, the needs bars, and the full carried-inventory line;
-narrow drops to name + status + health. Rows beyond the height budget are
-dropped from the bottom (never a partial row).
+| control/region | states | data source | renderer | keys+mouse | introduced-by | skin-token |
+|---|---|---|---|---|---|---|
+| tab row | active · inactive | `Model.dockTab` | `dockTabsRow` | `2`/`3`/`4` select · — | TASK-34 | — |
+| chronicle tab label | active · inactive | `Model.dockTab` | `dockTabsRow` | `2` · — | TASK-34 | — |
+| guardian tab label | active · inactive · unseen-badge | `Model.dockTab`, `Model.metatronUnseen` | `dockTabsRow` | `3` · — | TASK-34 | `skin.guardian.tab_label` |
+| villagers tab label | active · inactive | `Model.dockTab` | `dockTabsRow` | `4` · — | spec 015 | — |
+| unseen-reply badge dot | shown · hidden | `Model.metatronUnseen` | `dockTabsRow` | — (display-only) | TASK-34 | — |
+| tab-switch → solo zoom | home,tab=k · solo(k) | `Model.solo`, `Model.dockTab` | `selectTab`, `widescreenView` | same key twice · — | TASK-34 | — |
+| solo → home / switch | solo(k) · home | `Model.solo` | `selectTab` | `1`/`esc` (home) · a different tab key (switch) · — | TASK-34 | — |
+| dock panel chrome | dormant border | — (static box) | `dockPanelView` | — | TASK-34 | — |
 
-```
-┌─ chronicle │ metatron │ VILLAGERS ┐
-├───────────────────────────────────┤
-│▌ Ash    awake · chop · (12,9)     │
-│    health █████ food ███░░ ...    │
-│    carry 2w 0st ... · spear 1(2)  │
-│  Rowan  asleep · idle · (4,3)     │
-│    health ████░ food ████░ ...    │
-│    carry 0w 0st ...               │
-└───────────────────────────────────┘
-```
-
-- `j`/`k` move the cursor, `g`/`G` jump first/last, `⏎` opens the selected
-  villager's detail view (contracts/state-and-keys.md).
-- Selection is clamped to the roster and survives tab switches, reconnects, and
-  world restarts (out-of-range clamps rather than crashing or pointing at
-  nothing).
-
-### Detail (after `⏎`)
-
-Sections render in a fixed priority order and truncate from the **bottom** when
-height runs short — memories are shed first, identity/objective/inventory are
-never pushed off-screen:
-
-1. **identity/vitals** — name, awake/asleep/dead status (dead villagers still
-   render — the morgue view), position, needs bars.
-2. **objective** — the active objective (`Intent.Goal` + target, marked
-   *current*) when one exists; otherwise the most recently pursued objective
-   (`LastGoal` + the tick it was set, marked *last*) if any intent was ever set;
-   otherwise "no objective yet". The most-recent-objective value is
-   reducer-maintained (`sim.Agent.LastGoal`/`LastGoalTick`, set on
-   `agent.intent_set`, never cleared) so it survives objective completion and a
-   freshly attached observer sees history via the snapshot, not just live events.
-3. **inventory** — every carried kind itemized with counts, spear wear included;
-   an entirely empty pack says so plainly rather than rendering nothing.
-4. **beliefs/narrative** — consolidated beliefs and self-narrative, shown only
-   when nightly consolidation has produced them; silently omitted otherwise.
-5. **memories** — episodic memories, most recent first, bounded to whatever
-   height remains after the sections above; "no memories yet" when empty.
-
-```
-┌─ chronicle │ metatron │ VILLAGERS ┐
-├───────────────────────────────────┤
-│ ASH                                │
-│                                    │
-│ Ash · awake · (12,9)               │
-│ health █████ food ███░░ rest ████░ │
-│                                    │
-│ objective: chop → (13,9) (current) │
-│                                    │
-│ inventory:                         │
-│   wood 2                           │
-│   spears 1 (uses left: 2)          │
-│                                    │
-│ memories                           │
-│ 08:41 (4★) chopped a fine oak      │
-│ 07:02 (2★) shared bread with Rowan │
-└───────────────────────────────────┘
-```
-
-- `esc` closes the detail view back to the roster, with the roster's selection
-  preserved — before the existing solo-release chain (`esc` again releases solo,
-  same "esc always releases" ordering as everywhere else,
-  [../patterns/focus-contract.md](../patterns/focus-contract.md) rule 3).
-- The detail view updates live as world events arrive — it renders straight from
-  the replica each frame, so no re-selection is ever required.
+**Parity rollout**: no control on this page has a mouse target today — the
+whole dock (`internal/tui`) predates the input-parity doctrine (decision 8).
+Every keyed row above is a parity gap tracked here honestly rather than
+silently omitted; the formal doctrine and rollout plan land in
+`patterns/keymap.md` (this feature's Phase 6, T024).
