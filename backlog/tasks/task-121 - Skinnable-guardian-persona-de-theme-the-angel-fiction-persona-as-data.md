@@ -1,10 +1,10 @@
 ---
 id: TASK-121
 title: 'Skinnable guardian persona: de-theme the angel fiction, persona as data'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-25 06:20'
-updated_date: '2026-07-25 20:19'
+updated_date: '2026-07-25 20:44'
 labels:
   - learning-game
   - design
@@ -69,4 +69,12 @@ REVIEW FINDINGS FOR THIS TASK'S SCOPE: true blast radius is 1,176 hits across 57
 TASK-134 sequencing resolved by operator checkpoint: merge proceeds as the freeze+alias interim; the persisted-name rename is TASK-134's AC #4 (migration-backed), not this task's. Display alias to be removed when 134 ships.
 
 spec-bridge sync: 23/23 tasks done — merged via PR #94 (70acb2e) after four rebase rounds reconciling seven sibling merges (#84–#93). All gates green at merge: full race suite, token-completeness, fiction denylist, hostile-skin battery, two-skin equivalence, SC-003 compat, design + merge-drift gates. Frozen-vocabulary verification: zero persisted strings changed (byte-identical diff evidence incl. PR #90's survival watch definitions). AC #6 (wiki re-pin + player docs) pending the dispatched re-ground agents.
+
+spec-bridge sync: Setup: 1/1 · Foundational — the skin substrate: 4/4 · User Story 1 — The skin-token contract exists (P1) 🎯 Lane-3 unblock: 2/2 · User Story 2 — The default experience is de-themed (P1): 6/6 · User Story 3 — A custom skin is a per-world data bundle (P2): 4/4 · User Story 4 — The internals stop lying (P3): 3/3 · Polish & Cross-Cutting Concerns: 3/3 — status In Progress → Done
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+All spec tasks complete (Setup: 1/1 · Foundational — the skin substrate: 4/4 · User Story 1 — The skin-token contract exists (P1) 🎯 Lane-3 unblock: 2/2 · User Story 2 — The default experience is de-themed (P1): 6/6 · User Story 3 — A custom skin is a per-world data bundle (P2): 4/4 · User Story 4 — The internals stop lying (P3): 3/3 · Polish & Cross-Cutting Concerns: 3/3). Derived Done by spec-bridge sync.
+<!-- SECTION:FINAL_SUMMARY:END -->
