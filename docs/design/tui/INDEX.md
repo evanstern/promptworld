@@ -79,7 +79,7 @@ docs/design/tui/
     ├── chronicle-grammar.md         [recon] event line format + JSON inspector
     ├── keymap.md                    [recon] every key, every mode; input-parity doctrine (decision 8)
     ├── layout.md                    [recon] breakpoints, row/column budget, fold order (rulings a/b)
-    ├── skin-tokens.md               [new]   doc token conventions ahead of TASK-121 (D2)
+    ├── skin-tokens.md               [new]   skin-token conventions + the spec 052 runtime contract (doc twin)
     └── stage-defaults.md            [new]   stage-resolved visibility defaults (decision 3 — Wave 4)
 
 scripts/

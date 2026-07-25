@@ -2,7 +2,7 @@
 title: Pattern — focus contract
 class: pattern
 status: shipped
-verified_against: c8906da39be3a5b861c2272af37db0a83dcded7a
+verified_against: 3bf18ba3a55ff14085e91466eee5398b828361f4
 sources:
   - internal/tui/tui.go
 ---
