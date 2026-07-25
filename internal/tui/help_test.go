@@ -542,12 +542,16 @@ func TestHelpContentReadsNoStatusOrReplica(t *testing.T) {
 
 // --- T013: the lessons seam (US4, SC-006) ---
 
-// TestHelpLessonsPlaceholderWhenEmpty: the seam ships empty with this
-// feature — the lessons section renders the documented placeholder line.
+// TestHelpLessonsPlaceholderWhenEmpty: helpLessonsLines still degrades to
+// the documented placeholder line when the table is empty. This used to be
+// the feature's shipped state (spec 045, "the seam, not the content"); spec
+// 055 (TASK-117) now populates helpLessons for real at every client boot
+// (New(), lessons.go populateHelpLessons) — this test pins the rendering
+// function's own empty-table tolerance directly, independent of that.
 func TestHelpLessonsPlaceholderWhenEmpty(t *testing.T) {
-	if len(helpLessons) != 0 {
-		t.Fatal("helpLessons must ship empty with this feature (US4's obligation is the seam, not content)")
-	}
+	orig := helpLessons
+	t.Cleanup(func() { helpLessons = orig })
+	helpLessons = nil
 	lines := strings.Join(helpLessonsLines(76), "\n")
 	if !strings.Contains(lines, "lessons appear here") {
 		t.Errorf("empty lessons table should render the placeholder line, got %q", lines)
@@ -559,23 +563,28 @@ func TestHelpLessonsPlaceholderWhenEmpty(t *testing.T) {
 // with no change to this file's navigation/rendering code — proving the
 // seam contract (contracts/help-content.md "The lessons seam") holds.
 func TestHelpLessonsFixtureEntryRendersWithZeroStructuralChange(t *testing.T) {
+	// Construct the model FIRST: New() populates helpLessons from the real
+	// catalog now (spec 055, populateHelpLessons) — the fixture below must
+	// override it AFTER construction, and every use below must reuse this
+	// same m (never a fresh widescreenModel(t)/testModel(t) call, which
+	// would re-run New() and clobber the fixture back to the real catalog).
+	m := widescreenModel(t)
 	orig := helpLessons
 	t.Cleanup(func() { helpLessons = orig })
 	helpLessons = []helpLesson{
 		{ID: "lesson-fixture-1", Title: "Fire needs fuel", Body: "A fire burns out once its fuel runs out; refuel before it goes cold."},
 	}
 
-	m := widescreenModel(t)
-	m.helpOpen = true
-	m.helpSection = helpSectionLessons
-	view := m.View()
+	direct := m
+	direct.helpOpen = true
+	direct.helpSection = helpSectionLessons
+	view := direct.View()
 	if !strings.Contains(view, "Fire needs fuel") {
 		t.Errorf("fixture lesson title not rendered: %q", view)
 	}
 
 	// Navigable: reachable via the same tab-cycling every section uses.
-	m2 := widescreenModel(t)
-	var mdl tea.Model = m2
+	var mdl tea.Model = m
 	mdl = update(mdl, "?")   // opens on keys
 	mdl = update(mdl, "tab") // -> walkthrough
 	mdl = update(mdl, "tab") // -> lessons

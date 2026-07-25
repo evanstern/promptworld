@@ -132,7 +132,7 @@ func TestWidescreenViewExactHeightDenseChronicle(t *testing.T) {
 	}
 
 	cols := computeColumns(m.width)
-	rows := computeRows(m.height)
+	rows := computeRows(m.height, false)
 	mapPanel := m.mapPanelView(cols.MapCols, rows.Body)
 	if got := len(strings.Split(mapPanel, "\n")); got != rows.Body {
 		t.Errorf("map panel = %d lines while the dock is dense+expanded, want exactly its budgeted %d — "+
@@ -707,7 +707,7 @@ func TestMinibufferDormantFoldRelocation(t *testing.T) {
 
 	// Tall enough: strip stays on, dormant line is the plain placeholder.
 	m.height = 40
-	if rows := computeRows(m.height); rows.Strip == 0 {
+	if rows := computeRows(m.height, false); rows.Strip == 0 {
 		t.Fatalf("fixture setup: expected the strip to fit at height %d", m.height)
 	}
 	unfolded := m.minibufferView(m.width)
@@ -717,7 +717,7 @@ func TestMinibufferDormantFoldRelocation(t *testing.T) {
 
 	// Short enough: strip folds, dormant line carries the relocated prefix.
 	m.height = 14
-	if rows := computeRows(m.height); rows.Strip != 0 {
+	if rows := computeRows(m.height, false); rows.Strip != 0 {
 		t.Fatalf("fixture setup: expected the strip to fold at height %d", m.height)
 	}
 	folded := m.minibufferView(m.width)
@@ -736,7 +736,7 @@ func TestMinibufferFocusedBusyUnaffectedByFold(t *testing.T) {
 
 	tall, short := base, base
 	tall.height, short.height = 40, 14
-	if computeRows(tall.height).Strip == 0 || computeRows(short.height).Strip != 0 {
+	if computeRows(tall.height, false).Strip == 0 || computeRows(short.height, false).Strip != 0 {
 		t.Fatalf("fixture setup: expected tall unfolded, short folded")
 	}
 

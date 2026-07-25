@@ -2,7 +2,7 @@
 title: Pattern — keymap
 class: pattern
 status: shipped
-verified_against: cb89a4c7811962243ac907e0aeed43619b4d4f2d
+verified_against: cb4a997453db29bbd746f3ae6cace99748cb281e
 sources:
   - internal/tui/tui.go
   - internal/tui/help.go
@@ -25,6 +25,7 @@ walkthrough or lessons section of its own).
 | `2` / `3` / `4` / `5` | select dock tab chronicle / `{{skin.guardian.tab_label}}` / villagers / systems; **same key again** → solo zoom; again → back home |
 | `G` | open the guardian console — a full-screen page for the conversation, charter/skills, and `$EDITOR` (spec 053; shadowed by inspect mode's and the villagers tab's own `G`, "Mode: console" below) |
 | `m` | focus the minibuffer |
+| `x` | dismiss the active lesson row (spec 055, `panels/lesson-row.md`); strict no-op when nothing is active |
 | `space` | pause / resume the clock |
 | `[` / `]` | speed down / up |
 | `←↑↓→` | pan the map |
@@ -114,14 +115,14 @@ type into the buffer instead — no silent stealing (focus-contract.md rule 4).
 
 ## New global keys (specified, unbuilt — this feature)
 
-Two new global keys other new-surface pages introduce; neither exists in
-`internal/tui` yet (`unbuilt` in each page's own control table). `G` (open
-the guardian console) shipped with spec 053/TASK-125 and moved to the
-"Mode: global"/"Mode: console" tables above.
+One new global key from this feature's new-surface pages remains unbuilt
+(`unbuilt` in its page's own control table). `G` (open the guardian
+console) shipped with spec 053/TASK-125 and moved to the "Mode:
+global"/"Mode: console" tables above; `x` (dismiss the lesson row) shipped
+with spec 055/TASK-117 and moved to the "Mode: global" table above:
 
 | Key | Action | Specified in |
 |---|---|---|
-| `x` | dismiss the active lesson row | [panels/lesson-row.md](../panels/lesson-row.md) |
 | `p` | reopen the postmortem takeover (only while the run has ended) | [overlays/postmortem.md](../overlays/postmortem.md) |
 
 ## Mode: help overlay (spec 045-tui-help-overlay, TASK-116)

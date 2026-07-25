@@ -33,6 +33,7 @@ import (
 	"github.com/evanstern/promptworld/internal/store"
 	"github.com/evanstern/promptworld/internal/world"
 	"github.com/evanstern/promptworld/internal/worldmap"
+	"github.com/evanstern/promptworld/internal/worlds"
 )
 
 // pane names both the narrow-fallback's single active pane and the
@@ -184,6 +185,15 @@ type Model struct {
 	// like the replica (contract R5).
 	traces decisionTraces
 
+	// lessons (spec 055, TASK-117, internal/tui/lessons.go): the first-
+	// occurrence teaching projection — loaded once at construction
+	// (per-user seen-state, internal/worlds/lessons.go) and folded on every
+	// pushed event via applyEvent, alongside traces above. Unlike traces,
+	// this does NOT reset on reconnect (contract: per-user, cross-world,
+	// cross-restart — a reconnect within the same client run must not
+	// re-show anything already surfaced this session).
+	lessons lessonTriggers
+
 	// Help overlay (spec 045, TASK-116; data-model.md "Model state"): a
 	// client-only presentation layer, head of the esc-release chain while
 	// open (help -> minibuffer -> decisions -> detail -> solo -> home).
@@ -227,10 +237,32 @@ type chronHitRegion struct {
 }
 
 func New(w *world.World) Model {
+	// Lessons pull half (spec 055 T012, SC-002): populate the help overlay's
+	// lessons section from the same catalog the row (push half) reads —
+	// one catalog, two surfaces, never two hand-maintained lists.
+	populateHelpLessons()
 	return Model{
 		w: w, gameMap: w.Map(), chronAgent: -1, dockTab: paneChronicle, chronSelected: -1,
 		traces: newDecisionTraces(), chronHit: &chronHitRegion{},
+		// Per-user seen-state (spec 055 FR-006): load-tolerant, advisory —
+		// worlds.LoadLessonsSeen() never errors, degrading to an empty
+		// record on a missing/corrupt file or an unresolvable home dir.
+		lessons: newLessonTriggers(lessonSeenIDs(worlds.LoadLessonsSeen())),
 	}
+}
+
+// lessonSeenIDs adapts the persisted per-user record (internal/worlds) to
+// the plain id-set lessonTriggers is constructed from (lessons.go) — the one
+// place this package touches worlds.LessonsSeen's shape.
+func lessonSeenIDs(seen *worlds.LessonsSeen) map[string]bool {
+	if seen == nil {
+		return nil
+	}
+	ids := make(map[string]bool, len(seen.Entries))
+	for id := range seen.Entries {
+		ids[id] = true
+	}
+	return ids
 }
 
 // FatalErr reports the unrecoverable error that made the TUI quit, if any —
@@ -569,6 +601,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.connected && m.client != nil {
 			cmds = append(cmds, fetchStatus(m.client))
 		}
+		// Lessons projection time-advance (spec 055): the queue can decay or
+		// promote its head purely from wall-clock time passing, with no new
+		// event required — the ~1s poll tick already firing regardless of
+		// connection state is the natural driver (research.md R4).
+		if surfaced := m.lessons.Advance(time.Now()); surfaced != nil {
+			worlds.MarkLessonSeen(surfaced.ID, m.w.Manifest.Name)
+		}
 		return m, tea.Batch(cmds...)
 
 	case editorResultMsg:
@@ -860,6 +899,14 @@ func (m Model) handleGlobalKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.selectTab(prevDockTab(m.dockTab))
 	case "m":
 		return m.focusMinibuffer()
+	case "x":
+		// Dismiss the active lesson (spec 055, FR-010, patterns/keymap.md):
+		// a strict no-op when nothing is active — Dismiss itself already
+		// leaves the model untouched in that case, so there is nothing
+		// further to branch on here (the documented-no-op-fallthrough
+		// doctrine, not a silent gap).
+		m.lessons.Dismiss(time.Now())
+		return m, nil
 	case "enter":
 		// Narrow-fallback-only affordance (focus-contract.md scope): the
 		// metatron pane's dormant input line focuses on 'm' *or* Enter,
@@ -1626,6 +1673,14 @@ func (m *Model) applyEvent(e store.Event) {
 	// event — the trigger event, if any, is always an earlier seq and so
 	// already in it.
 	m.traces.ingest(e, m.agentNames(), m.events)
+	// Lessons projection (spec 055, TASK-117, research.md R3): folded here,
+	// alongside the decision-trace projection above — same one-event-at-a-
+	// time seam, same "every event exactly once" guarantee. A non-nil
+	// return means a lesson just surfaced (became the active row entry);
+	// persist it immediately (mark-seen-on-surface, not on queue — FR-005).
+	if surfaced := m.lessons.ingest(e, time.Now()); surfaced != nil {
+		worlds.MarkLessonSeen(surfaced.ID, m.w.Manifest.Name)
+	}
 	if line, ok := metatronVerdictRow(e); ok {
 		m.transcript = append(m.transcript, line)
 		if len(m.transcript) > 200 {

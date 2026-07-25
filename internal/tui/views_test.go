@@ -26,7 +26,7 @@ func TestHeaderViewUngovernedUnchanged(t *testing.T) {
 		EffectiveRate: 16.0,
 	}}
 	got := m.headerView()
-	want := "test — tick 100 · Day 1, 06:00 · running · speed 16x (16.0 t/s)"
+	want := "test — tick 100 · Day 1, 06:00 · running · speed 16x (16.0 t/s) [lesson]" // spec 055: pre-ladder (Stage=="") defaults the lesson row to its header badge
 	if got != want {
 		t.Errorf("ungoverned header = %q, want %q", got, want)
 	}
@@ -48,7 +48,7 @@ func TestHeaderViewGoverned(t *testing.T) {
 		GovernorJobs:   3,
 	}}
 	got := m.headerView()
-	want := "test — tick 100 · Day 1, 06:00 · running · speed 16x (16.0 t/s) asked 32x — 3 minds in flight, debt 140%"
+	want := "test — tick 100 · Day 1, 06:00 · running · speed 16x (16.0 t/s) asked 32x — 3 minds in flight, debt 140% [lesson]" // spec 055: pre-ladder default badge
 	if got != want {
 		t.Errorf("governed header = %q, want %q", got, want)
 	}
@@ -69,7 +69,7 @@ func TestHeaderViewGovernedSingularMind(t *testing.T) {
 		GovernorJobs:   1,
 	}}
 	got := m.headerView()
-	want := "test — tick 500 · Day 2, 14:30 · running · speed 8x (8.0 t/s) asked 16x — 1 mind in flight, debt 50%"
+	want := "test — tick 500 · Day 2, 14:30 · running · speed 8x (8.0 t/s) asked 16x — 1 mind in flight, debt 50% [lesson]" // spec 055: pre-ladder default badge
 	if got != want {
 		t.Errorf("governed header (singular) = %q, want %q", got, want)
 	}
@@ -90,7 +90,7 @@ func TestHeaderViewRequestedEqualSpeedUngoverned(t *testing.T) {
 		RequestedSpeed: "16x",
 	}}
 	got := m.headerView()
-	want := "test — tick 100 · Day 1, 06:00 · running · speed 16x (16.0 t/s)"
+	want := "test — tick 100 · Day 1, 06:00 · running · speed 16x (16.0 t/s) [lesson]" // spec 055: pre-ladder default badge
 	if got != want {
 		t.Errorf("header with RequestedSpeed==Speed = %q, want %q (no suffix)", got, want)
 	}

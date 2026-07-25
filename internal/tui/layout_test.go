@@ -72,7 +72,7 @@ func TestComputeRows(t *testing.T) {
 		{3, 0, 0},   // starved: body floors at 0, never negative
 	}
 	for _, c := range cases {
-		got := computeRows(c.total)
+		got := computeRows(c.total, false)
 		if got.Header != 1 || got.Minibuffer != 3 || got.Footer != 1 {
 			t.Errorf("computeRows(%d) chrome rows wrong: %+v", c.total, got)
 		}
@@ -96,7 +96,7 @@ func TestComputeRows(t *testing.T) {
 // match the design reference at every height).
 func TestComputeRowsInvariant(t *testing.T) {
 	for total := 0; total <= 60; total++ {
-		got := computeRows(total)
+		got := computeRows(total, false)
 		sum := got.Header + got.Strip + got.Body + got.Minibuffer + got.Footer
 		if got.Body > 0 && sum != total {
 			t.Errorf("computeRows(%d) rows don't sum to total: %+v (sum %d)", total, got, sum)

@@ -22,16 +22,36 @@ const (
 	// stripRows is the guardian strip's row cost when visible (spec 050;
 	// patterns/layout.md re-derived row budget) — exactly 1, borderless.
 	stripRows = 1
+	// lessonRowRows is the lesson row's row cost when showing (spec 055,
+	// TASK-117; patterns/layout.md re-derived row budget) — exactly 2,
+	// borderless (the 2-row budget has no room for a bordered box's own
+	// top/bottom rule, panels/lesson-row.md).
+	lessonRowRows = 2
 	// bodyMin is the fold threshold (patterns/layout.md ruling a): chrome
 	// folds, one step at a time, until body >= bodyMin or the floor is
-	// reached. The guardian strip is the only foldable row this feature
-	// implements (the villager strip and lesson row are later waves), so it
-	// folds at exactly this threshold — layout.md's total fold order names
-	// it step 4, the last step, because decision 7 says the budget is
+	// reached. This feature's code implements two foldable rows — the
+	// lesson row (spec 055) and the guardian strip (spec 050) — folding in
+	// that order (ruling a: lesson row folds BEFORE the guardian strip,
+	// the relative order restricted to the foldables that exist today; the
+	// map legend is body-internal and the villager strip is a later wave).
+	// The guardian strip folds last because decision 7 says its budget is
 	// always visible; folding relocates it (minibufferView's dormant line)
 	// rather than hiding it.
 	bodyMin = 10
 )
+
+// lessonRowDefault reports whether the lesson row's STAGE DEFAULT is "on"
+// (patterns/stage-defaults.md): stages 1-2 only — stage 3+ and pre-ladder
+// (stage == "", including "no status yet") default to the `[lesson]` header
+// badge + overlay-only form instead (research.md R6). This is deliberately
+// a small, standalone function rather than shared stage-defaults machinery:
+// the spec's own assumption records that TASK-128 will later absorb every
+// per-surface stage default (including this one) into one shared table —
+// this slice reads the stage directly and applies its own default, leaving
+// that refactor to TASK-128.
+func lessonRowDefault(stage string) bool {
+	return stage == "stage-1" || stage == "stage-2"
+}
 
 // isWidescreen reports whether width is enough for the composite home page.
 func isWidescreen(width int) bool { return width >= widescreenBreakpoint }
@@ -60,6 +80,7 @@ func computeColumns(totalCols int) columnBudget {
 // rowBudget is the widescreen composite's vertical split.
 type rowBudget struct {
 	Header     int
+	Lesson     int // 0 or 2 — 0 when not wanted (stage default off / nothing active) or once folded (ruling a step 3, spec 055)
 	Strip      int // 0 or 1 — 0 once folded (patterns/layout.md ruling a step 4)
 	Body       int
 	Minibuffer int
@@ -67,24 +88,42 @@ type rowBudget struct {
 }
 
 // computeRows splits totalRows between the fixed-height chrome (header,
-// guardian strip, minibuffer, footer) and the body (map ‖ dock), which
-// takes whatever is left. The guardian strip is the last chrome to fold
-// (patterns/layout.md ruling a step 4): it stays visible as long as folding
-// it isn't needed to keep the body at or above bodyMin, and is preferred
-// over letting the body dip below that floor. Below the floor (no more
-// foldable rows in this feature's code), body may still go under bodyMin,
-// or even to 0 on a starved resize — the pre-reorientation "existing
-// behavior" layout.md's Floor layout section keeps.
-func computeRows(totalRows int) rowBudget {
+// lesson row, guardian strip, minibuffer, footer) and the body (map ‖
+// dock), which takes whatever is left. wantsLesson is the lesson row's own
+// eligibility to occupy its 2-row budget THIS frame — true iff the stage
+// default is on (lessonRowDefault) AND a lesson is actually active
+// (data-model.md "none" vs "showing": stage-eligible but nothing active is
+// still 0 rows, not a blank 2-row block). The lesson row folds BEFORE the
+// guardian strip (patterns/layout.md ruling a step 3 then step 4): it stays
+// visible as long as folding it isn't needed to keep the body at or above
+// bodyMin, the guardian strip stays visible as long as folding IT isn't
+// needed once the lesson row is already folded, and body may still dip
+// below bodyMin (or to 0 on a starved resize) once both are folded — the
+// pre-reorientation "existing behavior" layout.md's Floor layout section
+// keeps. When wantsLesson is false, this reduces exactly to the pre-055
+// two-step (strip-only) computation.
+func computeRows(totalRows int, wantsLesson bool) rowBudget {
 	fixed := headerRows + minibufferRows + footerRows
-	if bodyWithStrip := totalRows - fixed - stripRows; bodyWithStrip >= bodyMin {
-		return rowBudget{Header: headerRows, Strip: stripRows, Body: bodyWithStrip, Minibuffer: minibufferRows, Footer: footerRows}
+	lessonWant := 0
+	if wantsLesson {
+		lessonWant = lessonRowRows
 	}
+	if body := totalRows - fixed - lessonWant - stripRows; body >= bodyMin {
+		return rowBudget{Header: headerRows, Lesson: lessonWant, Strip: stripRows, Body: body, Minibuffer: minibufferRows, Footer: footerRows}
+	}
+	// Fold step 3 (ruling a): the lesson row reclaims its rows first, if it
+	// was wanted at all — a no-op step when wantsLesson is false.
+	if lessonWant > 0 {
+		if body := totalRows - fixed - stripRows; body >= bodyMin {
+			return rowBudget{Header: headerRows, Lesson: 0, Strip: stripRows, Body: body, Minibuffer: minibufferRows, Footer: footerRows}
+		}
+	}
+	// Fold step 4 (guardian strip, spec 050, unchanged): reclaim the strip too.
 	body := totalRows - fixed
 	if body < 0 {
 		body = 0
 	}
-	return rowBudget{Header: headerRows, Strip: 0, Body: body, Minibuffer: minibufferRows, Footer: footerRows}
+	return rowBudget{Header: headerRows, Lesson: 0, Strip: 0, Body: body, Minibuffer: minibufferRows, Footer: footerRows}
 }
 
 // mapViewportTiles converts a panel's (cols, rows) into terrain tiles: 2
