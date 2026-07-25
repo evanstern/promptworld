@@ -4,7 +4,7 @@ title: Needs-conditioned recovery intents with parameters
 status: In Progress
 assignee: []
 created_date: '2026-07-25 02:41'
-updated_date: '2026-07-25 21:09'
+updated_date: '2026-07-25 21:49'
 labels:
   - goal-quality
   - instinct-layer
@@ -25,15 +25,15 @@ Spec: specs/064-needs-conditioned-recovery
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 At least warm_up (and pattern for rest/food analogs) completes on a need condition passed as an argument
-- [ ] #2 Idle-at-recovery-site no longer triggers instinct dispatch mid-recovery
-- [ ] #3 Deterministic sim test covers recover-then-release behavior
-- [ ] #4 Spec phase: Foundational
-- [ ] #5 Spec phase: User Story 1 — warm_up (P1)
-- [ ] #6 Spec phase: User Story 3 — interruptibility (P1)
-- [ ] #7 Spec phase: User Story 2 — generic mechanism proof (P2)
-- [ ] #8 Spec phase: User Story 4 — wake to cold (P2)
-- [ ] #9 Spec phase: Integration proof
+- [x] #1 At least warm_up (and pattern for rest/food analogs) completes on a need condition passed as an argument
+- [x] #2 Idle-at-recovery-site no longer triggers instinct dispatch mid-recovery
+- [x] #3 Deterministic sim test covers recover-then-release behavior
+- [x] #4 Spec phase: Foundational
+- [x] #5 Spec phase: User Story 1 — warm_up (P1)
+- [x] #6 Spec phase: User Story 3 — interruptibility (P1)
+- [x] #7 Spec phase: User Story 2 — generic mechanism proof (P2)
+- [x] #8 Spec phase: User Story 4 — wake to cold (P2)
+- [x] #9 Spec phase: Integration proof
 - [ ] #10 Spec phase: Polish & Cross-Cutting
 <!-- AC:END -->
 
@@ -55,4 +55,8 @@ Also: any new threshold this task introduces must ship as a tuning.json dial (sp
 MVLS sweep dispatch (2026-07-25, lane 3 — forked after TASK-103's merge #93): implementer tier Opus 4.8 — constitution V rubric: cross-package (sim executor + tool registry + mind handler), doctrine-adjacent intent-completion semantics.
 
 Implementer report gated (2026-07-25, read-only — merge held for operator signal): T001-T014 done, 22 packages green, vet clean, TUI gate no-op. Four deviations ACCEPTED: (1) rest analog mechanism-proven in tests only (plan R6 escape hatch; sleep untouched); (2) exposureWakeBelow=150 NEW constant, not the R5-nominated 350 — faithful mirror of the hunger EMERGENCY floor (350 roused sleepers on routine dips, regressed degraded-mode); (3) survival-preemption yield on holds (US3 AS2/FR-004, keeps 8/8, less sticky); (4) governance emergent-gathering exclusion for hold-pinned villagers (Asleep/Exiled parallel, byte-inert pre-064) — flagged for operator review. Constants: warmthRecoverTo=800, recoveryStallTicks=300. Survival-neutral across 30 seeds. Branch NOT yet rebased across the guardian rename (PR #94 post-dates its fork) — rebase+gates+PR pend operator go.
+
+spec-bridge sync: Foundational: 2/2 · User Story 1 — warm_up (P1): 4/4 · User Story 3 — interruptibility (P1): 2/2 · User Story 2 — generic mechanism proof (P2): 2/2 · User Story 4 — wake to cold (P2): 2/2 · Integration proof: 1/1 · Polish & Cross-Cutting: 1/2
+
+PR #96 squash-merged as 5acb5b5 (clean rebase across the guardian rename, full gates re-run green). Human ACs proven: #1 warm_up completes on the need condition passed as an argument, rest analog proves the pattern; #2 hold-at-target kills idle-at-recovery-site dispatch (TestReflexHoldNoArriveIdleWander + TestSageWarmUpHeldToThresholdThenReleased); #3 TestRecoverThenRelease deterministic recover-then-release.
 <!-- SECTION:NOTES:END -->
