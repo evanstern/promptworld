@@ -182,6 +182,13 @@ type GuardianOrder struct {
 	ExpiresTick int64    `json:"expires_tick"`       // placed + ttl_days game days (IGNORED for a survival watch — non-expiring)
 	Status      string   `json:"status"`             // "active" | "triggered" | "cancelled" | "expired"
 	Survival    string   `json:"survival,omitempty"` // spec 059: "" = ordinary structural order; else a survival watch kind (near_death|starvation|exposure)
+	// PlacedSeq is the placement event's store seq, stamped by the reducer at
+	// apply time from the event envelope (the Memory.Seq precedent, spec 054):
+	// it lets the scenario rubric's OrderPlacedEvidence re-locate the recorded
+	// metatron.order_placed without a log scan. Ignored on the wire payload
+	// (like Status); omitempty keeps pre-054 snapshots and every injected
+	// payload byte-identical.
+	PlacedSeq int64 `json:"placed_seq,omitempty"`
 }
 
 // OrderTriggeredPayload records a matched order's one-shot consumption (spec
@@ -377,8 +384,13 @@ func (s *State) applyGuardian(e store.Event) error {
 			}
 		}
 		// The status field is IGNORED on the payload — an order always lands
-		// active (data-model §2), then the retention prune runs.
+		// active (data-model §2), then the retention prune runs. PlacedSeq is
+		// likewise reducer-stamped, never payload-trusted (spec 054): the
+		// event's own store seq, identical live and in replay (stampSeqs
+		// pre-assigns the same last+i+1 AppendEvents records; the dry-run
+		// probe applies with Seq 0 and is discarded).
 		o.Status = "active"
+		o.PlacedSeq = e.Seq
 		s.GuardianOrders = pruneGuardianOrders(append(s.GuardianOrders, o))
 	case "metatron.order_triggered":
 		var p OrderTriggeredPayload

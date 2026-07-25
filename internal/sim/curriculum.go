@@ -13,9 +13,9 @@ import (
 // unlocks record is a projection of these, never an input). Both types are the
 // EXECUTOR emission class (the metatron.order_expired precedent): pure
 // functions of (state, tick), never mind- or operator-injected, so NO
-// whitelist entries exist for them. The production emitter is TASK-119's
-// scenario rubric machinery; until it lands, only test fixtures emit them —
-// this file ships the payload contracts and the reducer arms.
+// whitelist entries exist for them. The production emitter is the spec-054
+// scenario rubric machinery (scenario.go, TASK-119): this file ships the
+// payload contracts, the reducer arms, and the exercise content it consumes.
 
 const (
 	// curriculumPassRetain bounds retained pass records (the guardianOrderRetain
@@ -236,9 +236,11 @@ func EvaluateUnlock(s *State, pass ExercisePassedPayload) (stage string, ok bool
 // (authored by the game — a stage-1 tutor-preset world records this), so
 // Custom==false and the stage-2→3 gate stays shut; Default==false means a
 // player-authored revision was in force, so Custom==true. This is the ONLY
-// sanctioned constructor for a charter evidence entry — TASK-119's rubric
-// machinery is its production call site (test fixtures use it today) — so
-// EvaluateUnlock's conjunct and the recorded payload can never disagree.
+// sanctioned constructor for a charter evidence entry — the spec-054 rubric
+// machinery (scenario.go) is its production consumer once a stage-2 exercise
+// gains a production evaluator (the first-night evaluator needs no charter
+// conjunct; test fixtures use it today) — so EvaluateUnlock's conjunct and
+// the recorded payload can never disagree.
 func CharterObservedEvidence(e store.Event) (EvidenceRef, error) {
 	if e.Type != "metatron.charter_observed" {
 		return EvidenceRef{}, fmt.Errorf("charter evidence: %q is not metatron.charter_observed", e.Type)
@@ -253,10 +255,10 @@ func CharterObservedEvidence(e store.Event) (EvidenceRef, error) {
 // ExerciseDefinition is a seeded scenario exercise — CONTENT, not machinery
 // (spec 046 US4, contracts/exercises.md): stage, seed, framing, an
 // event-derived rubric, the pass signal shape, and the chronicle framing for
-// its score narrative. TASK-119's scenario/rubric machinery is the consumer
-// (unbuilt at this feature's landing); this feature guarantees the
-// definitions parse and every RubricTerm names a cataloged event type
-// (proven in internal/tui, which owns the digest catalog — see
+// its score narrative. The spec-054 scenario/rubric machinery (scenario.go)
+// is the consumer; spec 046 guaranteed the definitions parse and every
+// RubricTerm names a cataloged event type (proven in internal/tui, which
+// owns the digest catalog — see
 // TestExerciseRubricTermsAreCatalogedEventTypes).
 type ExerciseDefinition struct {
 	// ID is the exercise's stable content id (curriculum.exercise_passed's
@@ -279,11 +281,55 @@ type ExerciseDefinition struct {
 	RubricTerms []string
 	// PassSignal documents the curriculum.exercise_passed shape this
 	// exercise's rubric drives toward — descriptive content, not executable:
-	// TASK-119's machinery is what actually emits it.
+	// the spec-054 machinery (scenarioRubricEvents) is what actually emits it.
 	PassSignal string
 	// ScoreNarrative frames how the chronicle should tell the attempt's
 	// story, win or lose (FR-011 — failure is a story, not a scold).
 	ScoreNarrative string
+	// Schedule is the exercise's authored incident schedule (spec 054 US2):
+	// deterministic pressure landed by the executor's incident source at
+	// authored game times — compiled to absolute ticks at arm time
+	// (ArmScenario), validated by TestScenarioSchedulesCompile. Content, like
+	// RubricTerms; an exercise with no schedule simply arms an empty source.
+	Schedule []IncidentScheduleEntry
+	// IncidentVisibility optionally overrides the stage-keyed default for how
+	// much of the schedule the exercise panel forecasts (spec 054 FR-009,
+	// reorientation D4): "" = the stage default; else a visibility vocabulary
+	// value (VisibilityForecast/VisibilityFog). A vocabulary, never a boolean.
+	IncidentVisibility string
+}
+
+// ExerciseByID looks def up in the shipped catalog — the single resolution
+// path the daemon's boot arming, `promptworld new --scenario`, and the
+// exercise panel all share (spec 054). The manifest-side twin of this
+// catalog's id set is world.ValidScenarioExercise (kept local there: the
+// save-directory package and the deterministic core do not import each
+// other); TestScenarioCatalogMirrorsWorldVocabulary pins the two in sync.
+func ExerciseByID(id string) (ExerciseDefinition, bool) {
+	for _, def := range ScenarioExercises {
+		if def.ID == id {
+			return def, true
+		}
+	}
+	return ExerciseDefinition{}, false
+}
+
+// OrderPlacedEvidence derives the gate-facing EvidenceRef for a watch that
+// contributed to a pass, from the standing order's state record (spec 054
+// FR-004) — the second sanctioned evidence constructor, beside
+// CharterObservedEvidence above. The (Seq, Tick) coordinates re-locating the
+// metatron.order_placed event come from the reducer's own apply-time stamp
+// (GuardianOrder.PlacedSeq/PlacedTick — the Memory.Seq precedent), so the
+// claim stays independently auditable without a log scan. Custom stays
+// false: a stage-1 watch is placed through a stage-manifest-granted tool
+// (monitor_and_act is in the ratified stage-1 ceiling), and only a
+// player-GRANTED tool's contributing act may assert Custom (the stage-3
+// gate conjunct's vocabulary above).
+func OrderPlacedEvidence(o GuardianOrder) (EvidenceRef, error) {
+	if o.PlacedSeq == 0 {
+		return EvidenceRef{}, fmt.Errorf("order evidence: %s carries no recorded placement seq", o.ID)
+	}
+	return EvidenceRef{Type: "metatron.order_placed", Seq: o.PlacedSeq, Tick: o.PlacedTick}, nil
 }
 
 // FirstNightExercise is the stage-1 shipped exercise (contracts/
@@ -306,6 +352,16 @@ var FirstNightExercise = ExerciseDefinition{
 	},
 	PassSignal:     `curriculum.exercise_passed{exercise: "first-night", stage: "stage-1"}`,
 	ScoreNarrative: "the night's chronicle chapter is the telling — the village's first night under a new watcher",
+	// The authored pressure (spec 054 US2): the gru emerges at nightfall of
+	// night one, at the northern map edge beside the seed-46101 tree belt
+	// ("near the north woods") — (44,0) is a passable, unprotected border
+	// tile on this exercise's own map (pinned by
+	// TestFirstNightSchedulePositionValid), exactly the tile class the random
+	// emergence path draws from. The schedule preempts that night's random
+	// roll (scenario.go, research R3).
+	Schedule: []IncidentScheduleEntry{
+		{Kind: IncidentGruEmerges, Day: 1, Time: "22:00", X: 44, Y: 0},
+	},
 }
 
 // TheLawExercise is the stage-2 shipped exercise (contracts/exercises.md):

@@ -72,6 +72,18 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 		}
 	}
 
+	// Scenario incidents (spec 054 US2): due authored emissions from the
+	// boot-frozen incident source (scenario.go) — the executor emission
+	// class, exactly the charge-regen idiom above: pure over (state, config,
+	// tick), reducer-valid shapes only. Emitted BEFORE gruStep so a
+	// scheduled gru.emerged precedes the predator's own turn in the batch;
+	// the roll-preemption check inside gruStep keeps the dice out of a
+	// scheduled night entirely (research R3). Ambient worlds (nil scenario)
+	// never enter this branch — byte-identical behavior (contract §1.3).
+	if s.scenario != nil {
+		events = append(events, scenarioIncidentEvents(s, m, nextTick)...)
+	}
+
 	// The gru: nightly emergence, stalking, wounds, dawn withdrawal (gru.go).
 	events = append(events, gruStep(s, m, night, nextTick)...)
 
@@ -336,6 +348,18 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 				}
 			}
 		}
+	}
+
+	// Scenario rubric (spec 054 US1): the pass boundary evaluation, pure over
+	// (pre-tick state, boot-frozen definition, next tick) plus THIS batch —
+	// the run-end detector's own idiom below: same-tick deaths are not yet
+	// folded into s, and an all-dead dawn must be a fail, not a photo-finish
+	// pass (spec edge case). Placed after every emitter and before run-end
+	// detection so deaths precede the evaluation and run.ended stays the
+	// batch's last event. Emits exercise_passed (+ same-batch stage_unlocked,
+	// pass first) exactly once, via state latches — see scenario.go.
+	if s.scenario != nil {
+		events = append(events, scenarioRubricEvents(s, nextTick, events)...)
 	}
 
 	// Run-end detection (spec 044 R1): a pure function of (pre-tick state,

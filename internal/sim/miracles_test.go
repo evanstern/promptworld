@@ -815,6 +815,7 @@ func TestRebaseTaxonomyComplete(t *testing.T) {
 		"Norm.DayAmended":                  keep,
 		"NormViolation.Tick":               keep,
 		"GuardianOrder.PlacedTick":         keep, // spec 029: when the order was placed (history)
+		"GuardianOrder.PlacedSeq":          keep, // spec 054: the placement event's store seq — an identity, like Memory.Seq
 		"PlaceFact.Detail":                 keep, // spec 041: remembered value baked at emission, never re-derived (see rebaseTicks)
 		"RunEnd.Tick":                      keep, // spec 044: when the run ended (history; the world never ticks again)
 		"DeathRecord.Tick":                 keep, // spec 044: when the death happened (history, like NormViolation.Tick)
