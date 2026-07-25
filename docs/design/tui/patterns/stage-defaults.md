@@ -2,7 +2,7 @@
 title: Pattern — stage-shaped layout defaults
 class: pattern
 status: specified
-verified_against: 6edc43e785eea624a0984e8604d1cdfa98709d1a
+verified_against: 7115e57514b16b1ebd9b2ad777c307b8568080ab
 ---
 
 # Pattern: stage-defaults

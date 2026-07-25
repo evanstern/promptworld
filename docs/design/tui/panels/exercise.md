@@ -2,7 +2,7 @@
 title: Panel — exercise (scenario tab)
 class: panel
 status: shipped
-verified_against: 59b8f94d85b92923841ab5312ded7a6a99048956
+verified_against: 151a3de888700f8c43df639dfa8b74ae0b8e4342
 sources:
   - internal/tui/exercise.go
   - internal/tui/tui.go
