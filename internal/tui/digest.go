@@ -1199,3 +1199,680 @@ var digestRegistry = map[string]digestFunc{
 		}), true
 	},
 }
+
+// --- jump-to-source subject resolution (spec 049, contract §2/FR-002) ---
+//
+// subjectCandidate is one event type's payload-level candidate, before the
+// live replica is consulted: at most one primary-actor agent index and/or
+// one explicit recorded position. Purely a function of the stored payload
+// (like digestFunc, for the same bounded-work reason: no recursive scan,
+// world.migrated simply has no entry below and so never even reaches
+// decode). resolveSubject applies the live-replica step on top of whichever
+// half(s) a type's subjectFunc fills in.
+type subjectCandidate struct {
+	actor    int // primary-actor agent index; meaningful only if hasActor
+	hasActor bool
+	x, y     int // explicit recorded position; meaningful only if hasPos
+	hasPos   bool
+	// place is the display name to use when the position is the only
+	// candidate (no actor at all) — e.g. "the meeting place". Left "" for
+	// actor-bearing types, where resolveSubject names the actor instead.
+	place string
+}
+
+// subjectFunc decodes one event type's payload into a subjectCandidate;
+// ok=false (decode failure) is treated exactly like an unlocatable
+// candidate — resolveSubject never panics on a malformed payload, it just
+// falls to the honest hint (contract §2 "unlocatable").
+type subjectFunc func(e store.Event) (subjectCandidate, bool)
+
+func actorCandidate(idx int) subjectCandidate {
+	return subjectCandidate{actor: idx, hasActor: true}
+}
+
+func actorPosCandidate(idx, x, y int) subjectCandidate {
+	return subjectCandidate{actor: idx, hasActor: true, x: x, y: y, hasPos: true}
+}
+
+func placeCandidate(label string, x, y int) subjectCandidate {
+	return subjectCandidate{place: label, x: x, y: y, hasPos: true}
+}
+
+// decodeHarvest is shared by every HarvestPayload{Agent,X,Y} event type
+// (foraged/chopped/hunted/quarried/collected_water) — same payload shape,
+// only the digest's verb differs.
+func decodeHarvest(e store.Event) (subjectCandidate, bool) {
+	p, ok := decode[sim.HarvestPayload](e)
+	if !ok {
+		return subjectCandidate{}, false
+	}
+	return actorPosCandidate(p.Agent, p.X, p.Y), true
+}
+
+// decodeWallWork is shared by the three wall work-cycle events
+// (chipped/destroyed/repaired) — WallWorkPayload{Agent,X,Y}.
+func decodeWallWork(e store.Event) (subjectCandidate, bool) {
+	p, ok := decode[sim.WallWorkPayload](e)
+	if !ok {
+		return subjectCandidate{}, false
+	}
+	return actorPosCandidate(p.Agent, p.X, p.Y), true
+}
+
+// decodeAgentOnly is shared by every plain AgentPayload{Agent} event type
+// (intent_done/slept/woke) — actor only, no recorded position.
+func decodeAgentOnly(e store.Event) (subjectCandidate, bool) {
+	p, ok := decode[sim.AgentPayload](e)
+	if !ok {
+		return subjectCandidate{}, false
+	}
+	return actorCandidate(p.Agent), true
+}
+
+// placeFactPos extracts the first PlaceFact's position, if any — the shared
+// shape behind agent.saw/social.place_told/agent.map_corrected/
+// metatron.place_revealed (all carry a []PlaceFact whose first entry is the
+// canonical one, R4).
+func placeFactPos(facts []sim.PlaceFact) (x, y int, ok bool) {
+	if len(facts) == 0 {
+		return 0, 0, false
+	}
+	return facts[0].X, facts[0].Y, true
+}
+
+// subjectRegistry catalogs, per event type, the payload-level actor/position
+// candidate (contract §2 step 2's raw material) — resolveSubject applies the
+// live-replica step (step 1) on top. A type absent here (every telemetry-only
+// type with no agent/position field the digest already reads, plus
+// world.migrated by deliberate omission — R4/FR-011) simply resolves
+// unlocatable: a registry miss is a legitimate, honest jump-or-hint outcome,
+// not a gap to fill in. Multi-agent/ambiguous-subject types (metatron.nudged's
+// several targets, chronicle.entry's agent list, meeting.proposal_resolved's
+// unnamed subject) are deliberately left out for the same reason FR-002
+// requires "one deterministic subject" — no field here is a good-enough
+// single answer, so the honest hint wins over a guess.
+var subjectRegistry = map[string]subjectFunc{
+	// --- sim: agent acts with a recorded position ---
+	"agent.moved": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.AgentMovedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorPosCandidate(p.Agent, p.X, p.Y), true
+	},
+	"agent.foraged":         decodeHarvest,
+	"agent.chopped":         decodeHarvest,
+	"agent.hunted":          decodeHarvest,
+	"agent.quarried":        decodeHarvest,
+	"agent.collected_water": decodeHarvest,
+	"agent.built": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.BuiltPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorPosCandidate(p.Agent, p.X, p.Y), true
+	},
+	"agent.wall_chipped":   decodeWallWork,
+	"agent.wall_destroyed": decodeWallWork,
+	"agent.wall_repaired":  decodeWallWork,
+	"agent.dropped": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.DroppedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorPosCandidate(p.Agent, p.X, p.Y), true
+	},
+	"agent.picked_up": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.PickedUpPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorPosCandidate(p.Agent, p.X, p.Y), true
+	},
+	"agent.deposited": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.DepositedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorPosCandidate(p.Agent, p.X, p.Y), true
+	},
+	"agent.withdrew": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.WithdrewPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorPosCandidate(p.Agent, p.X, p.Y), true
+	},
+	"agent.refueled": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.RefueledPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorPosCandidate(p.Agent, p.X, p.Y), true
+	},
+	// agent.intent_set: TargetX/TargetY is the same "target set" presence
+	// heuristic the digest already applies (nonzero => set) — the recorded
+	// position is the intent's target, the same field the feed line shows.
+	"agent.intent_set": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.IntentSetPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		if p.TargetX == 0 && p.TargetY == 0 {
+			return actorCandidate(p.Agent), true
+		}
+		return actorPosCandidate(p.Agent, p.TargetX, p.TargetY), true
+	},
+
+	// --- perception/place-knowledge: []PlaceFact, first fact is canonical ---
+	"agent.saw": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.SawPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		if x, y, has := placeFactPos(p.Facts); has {
+			return actorPosCandidate(p.Agent, x, y), true
+		}
+		return actorCandidate(p.Agent), true
+	},
+	"social.place_told": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.PlaceToldPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		if x, y, has := placeFactPos(p.Facts); has {
+			return actorPosCandidate(p.From, x, y), true
+		}
+		return actorCandidate(p.From), true
+	},
+	"agent.map_corrected": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.MapCorrectedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		if x, y, has := placeFactPos(p.Gone); has {
+			return actorPosCandidate(p.Agent, x, y), true
+		}
+		return actorCandidate(p.Agent), true
+	},
+	"metatron.place_revealed": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.PlaceRevealedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		if x, y, has := placeFactPos(p.Facts); has {
+			return actorPosCandidate(p.Agent, x, y), true
+		}
+		return actorCandidate(p.Agent), true
+	},
+
+	// --- social: the digest's grammatical subject as the jump actor ---
+	"social.chest_taken": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.ChestTakenPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorPosCandidate(p.Taker, p.X, p.Y), true
+	},
+	"social.hailed": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.HailedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.From), true
+	},
+	"social.hail_met": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.HailMetPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.From), true
+	},
+	"social.hail_expired": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.HailExpiredPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.From), true
+	},
+	"social.conversation_turn": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.ConversationTurnPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Speaker), true
+	},
+	"social.rumor_told": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.RumorToldPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.From), true
+	},
+	"social.conversation": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.ConversationPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.A), true
+	},
+	"social.relation_changed": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.RelationChangedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.A), true
+	},
+	"social.gave": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.GavePayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.From), true
+	},
+	"social.secret_seeded": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.SecretSeededPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent), true
+	},
+
+	// --- governance ---
+	"meeting.convened": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.MeetingPlacePayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return placeCandidate("the meeting place", p.X, p.Y), true
+	},
+	"meeting.place_designated": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.MeetingPlacePayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return placeCandidate("the meeting place", p.X, p.Y), true
+	},
+	"meeting.convention_established": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.MeetingConventionPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return placeCandidate("the meeting place", p.X, p.Y), true
+	},
+	"meeting.turn_taken": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.TurnTakenPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent), true
+	},
+	"meeting.proposal_tabled": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.ProposalPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Proposer), true
+	},
+	"norm.violated": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.NormViolatedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Violator), true
+	},
+
+	// --- gru ---
+	"gru.emerged": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.GruEmergedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return placeCandidate("the gru", p.X, p.Y), true
+	},
+	"gru.moved": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.GruMovedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return placeCandidate("the gru", p.X, p.Y), true
+	},
+	"gru.sighted": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.GruSightedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorPosCandidate(p.Agent, p.X, p.Y), true
+	},
+	"gru.attacked": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.GruAttackedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent), true
+	},
+
+	// --- sim: place-only environmental events ---
+	"sim.forage_regrown": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.RegrownPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return placeCandidate("the forage patch", p.X, p.Y), true
+	},
+	"sim.fire_burned_out": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.FireBurnedOutPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return placeCandidate("the fire", p.X, p.Y), true
+	},
+	"sim.food_rotted": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.FoodRottedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return placeCandidate("the spoiled food", p.X, p.Y), true
+	},
+	// sim.gathering_observed: the all-zero payload is the watch-reset
+	// sentinel (contract §3 "gathering dispersed", digestRegistry above) —
+	// not a real gathering at (0,0), so it's unlocatable exactly like the
+	// digest treats it as textless.
+	"sim.gathering_observed": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.GatheringObservedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		if p.X == 0 && p.Y == 0 && p.Start == 0 {
+			return subjectCandidate{}, false
+		}
+		return placeCandidate("the gathering", p.X, p.Y), true
+	},
+
+	// --- metatron miracles: place-only, named by the payload's own Class ---
+	// entity_moved jumps to the DESTINATION (ToX,ToY) — an implementer
+	// judgment call (the payload records both endpoints; "where it ended up"
+	// reads as more useful post-jump than "where it used to be").
+	"metatron.entity_moved": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.EntityMovedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return placeCandidate("the "+p.Class, p.ToX, p.ToY), true
+	},
+	"metatron.entity_removed": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.EntityRemovedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return placeCandidate("the "+p.Class, p.X, p.Y), true
+	},
+	"metatron.item_granted": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.ItemGrantedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent), true
+	},
+
+	// --- agent: actor-only (no recorded position anywhere in the payload) ---
+	"agent.work_started": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.WorkStartedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent), true
+	},
+	"agent.intent_done": decodeAgentOnly,
+	"agent.slept":       decodeAgentOnly,
+	"agent.woke":        decodeAgentOnly,
+	"agent.build_failed": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.BuildFailedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent), true
+	},
+	"agent.intent_rejected": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.IntentRejectedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent), true
+	},
+	"agent.crafted": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.CraftedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent), true
+	},
+	"agent.cooked": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.CookedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent), true
+	},
+	"agent.bathed": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.BathedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent), true
+	},
+	"agent.spear_broke": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.SpearBrokePayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent), true
+	},
+	"agent.axe_broke": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.AxeBrokePayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent), true
+	},
+	"agent.ate": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.AtePayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent), true
+	},
+	"agent.needs_changed": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.NeedsPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent), true
+	},
+	"agent.talked": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.TalkedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.A), true
+	},
+	// agent.memory_added: Where (spec 019) is the memory's recorded location
+	// at emission, when the emitter knew one — a real, if occasional,
+	// second candidate beyond the live position.
+	"agent.memory_added": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.MemoryAddedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		if p.Where != nil {
+			return actorPosCandidate(p.Agent, p.Where.X, p.Where.Y), true
+		}
+		return actorCandidate(p.Agent), true
+	},
+	"agent.thought": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.ThoughtPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent), true
+	},
+	"agent.memory_promoted": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.MemoryPromotedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent), true
+	},
+	"agent.memory_faded": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.MemoryFadedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent), true
+	},
+	"agent.belief_revised": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.BeliefRevisedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent), true
+	},
+	"agent.belief_reinforced": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.BeliefReinforcedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent), true
+	},
+	"agent.narrative_set": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.NarrativeSetPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent), true
+	},
+	"agent.consolidated": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.ConsolidatedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent), true
+	},
+	"agent.plan_set": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.PlanSetPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent), true
+	},
+	"agent.plan_step_started": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.PlanStepPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent), true
+	},
+	"agent.plan_expired": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.PlanStepPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent), true
+	},
+	"agent.memory_embedded": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.MemoryEmbeddedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent), true
+	},
+	"agent.situation_embedded": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.SituationEmbeddedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent), true
+	},
+
+	// --- cog: telemetry, but Agent is still a known top-level field ---
+	"cog.thought": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.CogThoughtPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent), true
+	},
+	"cog.outcome": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.CogOutcomePayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent), true
+	},
+	"cog.memory_divergence": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.MemoryDivergencePayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent), true
+	},
+
+	// morgue.epilogue: Agent -1 is the run-end epilogue sentinel (no single
+	// agent), same convention the digest already reads.
+	"morgue.epilogue": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.MorgueEpiloguePayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		if p.Agent < 0 {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent), true
+	},
+}
+
+// liveAgentPos reports idx's current (X,Y) in replica, gated on the agent
+// existing AND being alive (data-model.md: "Dead/despawned actors fall
+// through to the payload position, never to a stale coordinate").
+func liveAgentPos(replica *sim.State, idx int) (x, y int, alive bool) {
+	if replica == nil || idx < 0 || idx >= len(replica.Agents) {
+		return 0, 0, false
+	}
+	a := replica.Agents[idx]
+	if a.Dead {
+		return 0, 0, false
+	}
+	return a.X, a.Y, true
+}
+
+// resolveSubject implements contract §2/FR-002: the selected event's primary
+// actor's live position if the actor exists and is alive; else the event's
+// own recorded position, if it carried one; else unlocatable. Bounded to the
+// known top-level fields subjectRegistry catalogs per type — a registry
+// miss (including world.migrated, deliberately absent) resolves unlocatable
+// without ever decoding the payload, the same bounded-work posture
+// formatChronicleLine's fallback takes on an unknown type.
+func (m Model) resolveSubject(e store.Event) (name string, x, y int, ok bool) {
+	fn, known := subjectRegistry[e.Type]
+	if !known {
+		return "", 0, 0, false
+	}
+	cand, decOK := fn(e)
+	if !decOK {
+		return "", 0, 0, false
+	}
+	names := m.agentNames()
+	if cand.hasActor {
+		if lx, ly, alive := liveAgentPos(m.replica, cand.actor); alive {
+			return agentName(names, cand.actor), lx, ly, true
+		}
+	}
+	if cand.hasPos {
+		label := cand.place
+		if label == "" && cand.hasActor {
+			label = agentName(names, cand.actor)
+		}
+		return label, cand.x, cand.y, true
+	}
+	return "", 0, 0, false
+}

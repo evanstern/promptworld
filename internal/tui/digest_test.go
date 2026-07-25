@@ -492,3 +492,152 @@ func TestDigestAlertTypesDigestCleanly(t *testing.T) {
 		digestOf(t, typ, fx.payload) // fails the test via t.Fatalf if it falls back
 	}
 }
+
+// --- spec 049 T004/T007: resolveSubject + the jump-or-hint totality sweep ---
+
+// TestResolveSubjectActorAlivePrefersLivePosition: contract §2 step 1 — a
+// living, resolvable actor's CURRENT position wins even when the event's own
+// payload recorded a different (older) position.
+func TestResolveSubjectActorAlivePrefersLivePosition(t *testing.T) {
+	m := testModel(t)
+	m.replica.Agents = []sim.Agent{{Name: "Ash", X: 9, Y: 9}}
+	e := store.Event{Seq: 1, Tick: 1, Type: "agent.moved", Payload: json.RawMessage(`{"agent":0,"x":3,"y":4}`)}
+	name, x, y, ok := m.resolveSubject(e)
+	if !ok || name != "Ash" || x != 9 || y != 9 {
+		t.Errorf("resolveSubject = (%q,%d,%d,%v), want (\"Ash\",9,9,true) — live position must win over the payload's recorded position", name, x, y, ok)
+	}
+}
+
+// TestResolveSubjectActorDeadFallsToPayloadPosition: contract §2 step 2 /
+// spec.md edge case — a dead actor's live (frozen) position is never used;
+// the event's own recorded position (where it happened) wins instead.
+func TestResolveSubjectActorDeadFallsToPayloadPosition(t *testing.T) {
+	m := testModel(t)
+	m.replica.Agents = []sim.Agent{{Name: "Ash", X: 9, Y: 9, Dead: true}}
+	e := store.Event{Seq: 1, Tick: 1, Type: "agent.moved", Payload: json.RawMessage(`{"agent":0,"x":3,"y":4}`)}
+	name, x, y, ok := m.resolveSubject(e)
+	if !ok || name != "Ash" || x != 3 || y != 4 {
+		t.Errorf("resolveSubject = (%q,%d,%d,%v), want (\"Ash\",3,4,true) — a dead actor must fall through to the recorded position, never a stale live one", name, x, y, ok)
+	}
+}
+
+// TestResolveSubjectUnknownAgentIndexFallsToPayloadPosition: an agent index
+// that doesn't resolve in the replica at all (post-migration mismatch, a
+// world snapshot narrower than the event's own agent roster, etc.) is
+// handled identically to a dead one — fall through to the payload position
+// rather than erroring or panicking. testModel's replica seeds sim.AgentCount
+// (8) agents (sim.NewState), so nil the roster out to force a genuine miss.
+func TestResolveSubjectUnknownAgentIndexFallsToPayloadPosition(t *testing.T) {
+	m := testModel(t)
+	m.replica.Agents = nil
+	e := store.Event{Seq: 1, Tick: 1, Type: "agent.foraged", Payload: json.RawMessage(`{"agent":7,"x":3,"y":4}`)}
+	_, x, y, ok := m.resolveSubject(e)
+	if !ok || x != 3 || y != 4 {
+		t.Errorf("resolveSubject = (_,%d,%d,%v), want (3,4,true)", x, y, ok)
+	}
+}
+
+// TestResolveSubjectUnlocatable: event types with no actor field and no
+// recorded position at all (world.migrated included — R4/FR-011: never
+// decoded, see TestResolveSubjectWorldMigratedNeverDecoded) resolve
+// unlocatable, never panicking on the bare-minimum `{}` payload.
+func TestResolveSubjectUnlocatable(t *testing.T) {
+	m := testModel(t)
+	for _, typ := range []string{"clock.paused", "world.created", "world.migrated", "social.promise_broken", "gru.withdrew"} {
+		e := store.Event{Seq: 1, Tick: 1, Type: typ, Payload: json.RawMessage(`{}`)}
+		if _, _, _, ok := m.resolveSubject(e); ok {
+			t.Errorf("%s: expected unlocatable (no actor, no position field)", typ)
+		}
+	}
+}
+
+// TestResolveSubjectMultiParticipantSpeakerWins: spec.md "Edge Cases" —
+// multi-agent events target the primary actor (speaker/initiator), never
+// the other participant.
+func TestResolveSubjectMultiParticipantSpeakerWins(t *testing.T) {
+	m := testModel(t)
+	m.replica.Agents = []sim.Agent{
+		{Name: "Ash", X: 1, Y: 1},
+		{Name: "Rowan", X: 7, Y: 7},
+	}
+	e := store.Event{Seq: 1, Tick: 1, Type: "social.conversation_turn", Payload: json.RawMessage(`{"conv":1,"speaker":1,"listener":0,"text":"hi"}`)}
+	name, x, y, ok := m.resolveSubject(e)
+	if !ok || name != "Rowan" || x != 7 || y != 7 {
+		t.Errorf("resolveSubject = (%q,%d,%d,%v), want (\"Rowan\",7,7,true) — the speaker is the primary actor, not the listener", name, x, y, ok)
+	}
+}
+
+// TestResolveSubjectGatheringDispersedSentinel: mirrors
+// TestDigestGatheringDispersed — the all-zero payload is the watch-reset
+// sentinel, not a real gathering at (0,0).
+func TestResolveSubjectGatheringDispersedSentinel(t *testing.T) {
+	m := testModel(t)
+	e := store.Event{Seq: 1, Tick: 1, Type: "sim.gathering_observed", Payload: json.RawMessage(`{"x":0,"y":0,"start":0}`)}
+	if _, _, _, ok := m.resolveSubject(e); ok {
+		t.Error("the all-zero gathering payload is the watch-reset sentinel, not a real gathering at (0,0)")
+	}
+}
+
+// TestResolveSubjectPlaceOnly: an event type with no actor field at all
+// (a meeting place) resolves to a place label naming what's there.
+func TestResolveSubjectPlaceOnly(t *testing.T) {
+	m := testModel(t)
+	e := store.Event{Seq: 1, Tick: 1, Type: "meeting.convened", Payload: json.RawMessage(`{"x":2,"y":3}`)}
+	name, x, y, ok := m.resolveSubject(e)
+	if !ok || name != "the meeting place" || x != 2 || y != 3 {
+		t.Errorf("resolveSubject = (%q,%d,%d,%v), want (\"the meeting place\",2,3,true)", name, x, y, ok)
+	}
+}
+
+// TestResolveSubjectWorldMigratedNeverDecoded: R4/FR-011 — world.migrated
+// must never be decoded to decide locatability (it embeds the full
+// sim.State). Proven two ways: the registry has no entry for it at all (so
+// decode is never even reachable), and a payload too malformed to unmarshal
+// still resolves unlocatable without error or panic.
+func TestResolveSubjectWorldMigratedNeverDecoded(t *testing.T) {
+	if _, ok := subjectRegistry["world.migrated"]; ok {
+		t.Fatal("world.migrated must not be in subjectRegistry — resolveSubject must never decode its embedded sim.State")
+	}
+	m := testModel(t)
+	e := store.Event{Seq: 1, Tick: 1, Type: "world.migrated", Payload: json.RawMessage(`not even valid json`)}
+	if _, _, _, ok := m.resolveSubject(e); ok {
+		t.Error("world.migrated must resolve unlocatable")
+	}
+}
+
+// TestJumpOrHintTotality (T007, SC-002): every cataloged event type
+// (catalogFixture — the same one-fixture-per-type source TestCatalogSweep
+// uses) resolves through resolveSubject + detailActions to exactly one
+// jump-or-hint outcome — no panic, and detailActions never returns an empty
+// slice or an empty label. A replica with four living, distinctly-placed
+// agents exercises the live-position branch broadly; this sweep's job is
+// coverage/totality, not re-asserting each type's exact jump target.
+func TestJumpOrHintTotality(t *testing.T) {
+	m := testModel(t)
+	m.replica.Agents = []sim.Agent{
+		{Name: "Ash", X: 1, Y: 1},
+		{Name: "Birch", X: 2, Y: 2},
+		{Name: "Cedar", X: 3, Y: 3},
+		{Name: "Rowan", X: 4, Y: 4},
+	}
+
+	for typ, fx := range catalogFixture {
+		typ, fx := typ, fx
+		t.Run(typ, func(t *testing.T) {
+			e := store.Event{Seq: 1, Tick: 1, Type: typ, Payload: json.RawMessage(fx.payload)}
+			defer func() {
+				if r := recover(); r != nil {
+					t.Fatalf("resolveSubject/detailActions panicked: %v", r)
+				}
+			}()
+			m.resolveSubject(e) // must not panic regardless of ok
+			actions := m.detailActions(e)
+			if len(actions) != 1 {
+				t.Fatalf("detailActions returned %d actions, want exactly 1", len(actions))
+			}
+			if actions[0].Label == "" {
+				t.Error("detailActions returned an empty label")
+			}
+		})
+	}
+}
