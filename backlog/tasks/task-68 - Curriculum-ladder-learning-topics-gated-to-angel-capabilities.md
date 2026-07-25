@@ -4,7 +4,7 @@ title: 'Curriculum ladder: learning topics gated to angel capabilities'
 status: In Progress
 assignee: []
 created_date: '2026-07-23 03:28'
-updated_date: '2026-07-25 06:40'
+updated_date: '2026-07-25 06:49'
 labels:
   - review-2026-07-22
   - teaching-game
@@ -41,6 +41,14 @@ Spec: specs/046-curriculum-ladder
 - [ ] #8 Stage unlocks are artifact-gated on event-log evidence, not menu toggles
 - [ ] #9 Each stage ships a per-stage quickstart page via the player-docs skill
 - [ ] #10 Stage-1 orientation is delivered in-game via the tutor charter preset
+- [ ] #11 Spec phase: Setup
+- [ ] #12 Spec phase: Foundational (blocking prerequisites)
+- [ ] #13 Spec phase: User Story 2 — The world grants what the stage teaches (P1) 🎯 co-MVP
+- [ ] #14 Spec phase: User Story 1 — Choosing a stage is choosing an identity (P1) 🎯 co-MVP
+- [ ] #15 Spec phase: User Story 3 — Earning the next stage, told in-game (P2)
+- [ ] #16 Spec phase: User Story 4 — Two exercises exist and teach (P2)
+- [ ] #17 Spec phase: User Story 5 — The stage has a floor and a guide (P3)
+- [ ] #18 Spec phase: Polish & Cross-Cutting
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -49,6 +57,8 @@ Spec: specs/046-curriculum-ladder
 Curriculum decisions ratified (operator, 2026-07-25, spec session): (1) LADDER = 4 stages — client 3 (conversational prompting / instruction authoring / capability design) + capstone graduation stage (full roster, ambient endgame, canonization TASK-81 as signature). (2) NAMES = skin-provided display identities over neutral substrate ids (stage-1..4 + concept descriptions); default guardian-skin names drafted in spec for AC#5 client review — see TASK-121 pivot (de-themed skinnable persona). (3) UNLOCK GATES = scenario pass signals: 1→2 stage-1 scenario pass (first-night; run not ended + rubric pass, TASK-119 machinery); 2→3 stage-2 scenario pass with custom charter revision in force (spec 044 charter fingerprint proves it); 3→4 granted-tool act contributes to a stage-3 scenario pass. (4) UNLOCK HOME = per-user unlocks file, entries point at proving world+events (auditable); world creation offers earned stages + explicit informed override (you-are-skipping-X notice); self-directed-engineer audience posture. Spec next: specs/046, skin-aware per TASK-121 sequencing (68 spec does not wait for 121 implementation).
 
 AC#5 client review held 2026-07-25 (operator = client in session): ladder verified against the stated three-stage progression — stage 1 base-tools/locked-instructions, stage 2 charter authoring w/ fingerprint-evidenced gate, stage 3 skills+tool manifest, stage 4 graduation capstone (ratified addition). Draft guardian-skin stage names APPROVED as spec'd: The Voice / The Written Word / The Craft / The Stewardship. Hold released — proceeding to /speckit-plan.
+
+spec-bridge sync: Setup: 0/1 · Foundational (blocking prerequisites): 0/3 · User Story 2 — The world grants what the stage teaches (P1) 🎯 co-MVP: 0/3 · User Story 1 — Choosing a stage is choosing an identity (P1) 🎯 co-MVP: 0/4 · User Story 3 — Earning the next stage, told in-game (P2): 0/4 · User Story 4 — Two exercises exist and teach (P2): 0/1 · User Story 5 — The stage has a floor and a guide (P3): 0/3 · Polish & Cross-Cutting: 0/3
 <!-- SECTION:NOTES:END -->
 
 ## Comments
