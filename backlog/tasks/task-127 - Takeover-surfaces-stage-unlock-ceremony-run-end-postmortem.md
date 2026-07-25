@@ -4,7 +4,7 @@ title: 'Takeover surfaces: stage-unlock ceremony + run-end postmortem'
 status: In Progress
 assignee: []
 created_date: '2026-07-25 14:44'
-updated_date: '2026-07-25 18:18'
+updated_date: '2026-07-25 23:50'
 labels:
   - learning-game
   - tui
@@ -38,4 +38,6 @@ Spec: specs/056-takeover-surfaces
 
 <!-- SECTION:NOTES:BEGIN -->
 Model tier: Sonnet (spec-implementer default). Rubric: single-package overlay state machine + rendering, tests alongside — routine tier per constitution Principle V. Both parked operator questions verified RESOLVED in the authored overlay pages (ambient postmortem = morgue-only; ceremony = both voices, instrument authoritative) — runbook checkpoint condition not met, proceeding per 'the pages win'. DISPATCH GATED on TASK-121's skin-contract merge (Lane 3 ordering); spec complete and ready.
+
+Dispatched (UI-sweep orchestrator, handoff 2026-07-25b step 3): spec-implementer on Sonnet per recorded rubric; worktree .worktrees/task-127 fast-forwarded to 9386e6a before dispatch. Gate condition met (TASK-121 merged, PR #94). Parallel with TASK-115 (Opus); merge order: smaller first, serial, re-ground between. Implementer warned of pre-existing red TestCatalogSweep on main (TASK-140 hotfix in flight).
 <!-- SECTION:NOTES:END -->

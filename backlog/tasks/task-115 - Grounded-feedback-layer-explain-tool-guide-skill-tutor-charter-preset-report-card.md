@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-25 04:43'
-updated_date: '2026-07-25 19:46'
+updated_date: '2026-07-25 23:50'
 labels:
   - learning-game
   - metatron
@@ -56,4 +56,6 @@ Root cause (review finding): spec-number allocation is a read-then-write race wi
 Note also: this task's spec is already written against 'internal/guardian' (post-TASK-121 rename) while TASK-111's is written against 'internal/metatron' — the queue is spec'd against two names for one package until 121 lands.
 
 Spec renumbered 059 → 063: the MVLS session's merged spec 059-metatron-survival-autonomy (PR #90) claimed the number first on main; renumbered per collision doctrine (drift-check catch, 2026-07-25).
+
+Dispatched (UI-sweep orchestrator, handoff 2026-07-25b step 3): spec-implementer on Opus 4.8 per recorded rubric; worktree .worktrees/task-115 fast-forwarded to 9386e6a before dispatch. Gates met (TASK-121 skin contract via PR #94; console seam via PR #87). Parallel with TASK-127 (Sonnet), which ships the shared reportCardView renderer this task consumes — rebase-reconciliation round budgeted when 127 merges first. Implementer warned of pre-existing red TestCatalogSweep on main (TASK-140 hotfix in flight).
 <!-- SECTION:NOTES:END -->
