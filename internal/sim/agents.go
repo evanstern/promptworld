@@ -78,6 +78,17 @@ type Intent struct {
 // window FR-003 needs — at fixed per-agent cost.
 const intentLogCap = 8
 
+// trajectoryWindowTicks is the span of game time (in ticks) over which a need's
+// direction is measured (spec 043 US2, FR-004): the anchor snapshot rolls
+// forward once this much game time has elapsed since it was taken, so a need's
+// "rising/falling/steady" reflects movement over roughly the last window rather
+// than instant-to-instant noise. Default 1800 (one planner cadence). Like
+// contextBudgetTokens (internal/mind/context.go) it is a package const today
+// with the design intent of a per-world tuning-manifest dial (TASK-107's
+// const-fallback pattern — the manifest supplies the value when present, this
+// const is the fallback).
+const trajectoryWindowTicks = 1800
+
 // IntentRecord is one entry in a villager's recent-intent ring (spec 043 US1,
 // data-model.md). Goal is the intent's goal name; Source is the verbatim
 // IntentSetPayload.Source ("planner" | "reflex" | "plan"); Reason is the stated
@@ -225,6 +236,23 @@ type Agent struct {
 	SitVec      []float32 `json:"sit_vec,omitempty"`
 	SitVecModel string    `json:"sit_vec_model,omitempty"`
 	SitVecTick  int64     `json:"sit_vec_tick,omitempty"`
+	// NeedsAnchor/NeedsAnchorTick (spec 043 US2) are the trajectory window's
+	// edge snapshot: the needs levels at the last window edge and the tick that
+	// edge was taken. Direction per need at render time is sign(current − anchor)
+	// with a deadband (internal/mind/context.go), so the prompt can say "warmth
+	// 45 and falling" — the cheapest form of foresight (FR-004). Refreshed by the
+	// agent.needs_changed reducer arm once a full trajectoryWindowTicks has
+	// elapsed since the anchor was taken; NeedsAnchorTick == 0 (nil anchor) is the
+	// unset sentinel — the first window, before any anchor exists, renders steady
+	// (edge case 1). A POINTER with omitempty (the Journal/Hail/Map precedent, NOT
+	// data-model.md's value type — deviation recorded for the planning tier): a
+	// value Needs would always serialize "needs_anchor":{...} (encoding/json
+	// omitempty is a no-op on a non-pointer struct), breaking the pre-043
+	// round-trip byte-identity the codebase requires. Reducer-derived ⇒ replay-
+	// safe by construction; NeedsAnchorTick is a duration anchor, SHIFT under a
+	// time snap (see rebaseTicks doctrine, miracles.go).
+	NeedsAnchor     *Needs `json:"needs_anchor,omitempty"`
+	NeedsAnchorTick int64  `json:"needs_anchor_tick,omitempty"`
 }
 
 // AgentHail is the courtesy pause a talk_to landing lays on its target: who

@@ -1455,6 +1455,21 @@ func (s *State) Apply(e store.Event) error {
 		} else if p.Health >= nearDeathResetAt {
 			a.NearDeath = false
 		}
+		// Spec 043 US2 (T014, FR-004): roll the trajectory anchor at each window
+		// edge so the decision prompt can render each need's direction (current −
+		// anchor). The anchor is a window-edge snapshot of the current needs,
+		// refreshed once a full trajectoryWindowTicks of game time has elapsed
+		// since it was taken. NeedsAnchorTick == 0 (nil anchor) is the unset
+		// sentinel: on a fresh world the first window carries no anchor until the
+		// window's worth of time has passed, so the first thought renders steady
+		// (edge case 1) — a loaded/snapped world whose tick already exceeds the
+		// window establishes the anchor on its first needs change. Reducer-derived
+		// ⇒ replay-safe.
+		if e.Tick-a.NeedsAnchorTick >= trajectoryWindowTicks {
+			snap := a.Needs
+			a.NeedsAnchor = &snap
+			a.NeedsAnchorTick = e.Tick
+		}
 	case "agent.died":
 		var p DiedPayload
 		if err := json.Unmarshal(e.Payload, &p); err != nil {

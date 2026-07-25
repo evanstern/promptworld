@@ -166,12 +166,50 @@ func renderFrame(s *sim.State, idx int, futureLine string) string {
 	return futureLine + fmt.Sprintf("It is %s (%s). You are at (%d, %d).\n", clock.Format(s.Tick), phase, a.X, a.Y)
 }
 
-// renderNeeds is contract block 2: the five needs (0-100 scale). Trajectory
-// arrows (US2) attach here later; this slice renders the level line unchanged.
+// trajectoryDeadband is the movement (on the raw 0-1000 needs scale) a need must
+// clear from its window-edge anchor before it reads rising/falling; smaller
+// swings render steady (spec 043 US2, FR-004). ±10 of 1000 is one point on the
+// displayed 0-100 scale — enough to swallow game-minute decay jitter so a need
+// that has not meaningfully moved never flickers direction (SC-003).
+const trajectoryDeadband = 10
+
+// trajectory reports a need's direction from its window-edge anchor. Before an
+// anchor exists (first window, edge case 1) the direction is steady — the model
+// must not read a spurious rising/falling from a missing history window.
+func trajectory(current, anchor int, hasAnchor bool) string {
+	if !hasAnchor {
+		return "steady"
+	}
+	switch d := current - anchor; {
+	case d > trajectoryDeadband:
+		return "rising"
+	case d < -trajectoryDeadband:
+		return "falling"
+	default:
+		return "steady"
+	}
+}
+
+// renderNeeds is contract block 2: the five needs (0-100 scale), each carrying a
+// trajectory direction (spec 043 US2) derived from the reducer-maintained
+// window-edge anchor (NeedsAnchor/NeedsAnchorTick, agents.go) — "warmth 45 and
+// falling" reads differently from "warmth 45 and rising" (FR-004). Direction is
+// sign(current − anchor) with a deadband so a steady need never flickers (SC-003);
+// a nil anchor (first window) renders every need steady. Never empty, never
+// dropped.
 func renderNeeds(s *sim.State, idx int) string {
 	a := s.Agents[idx]
-	return fmt.Sprintf("Needs (0-100): health %d, food %d, rest %d, warmth %d, morale %d.\n",
-		a.Needs.Health/10, a.Needs.Food/10, a.Needs.Rest/10, a.Needs.Warmth/10, a.Needs.Morale/10)
+	has := a.NeedsAnchor != nil
+	var an sim.Needs
+	if has {
+		an = *a.NeedsAnchor
+	}
+	return fmt.Sprintf("Needs (0-100): health %d and %s, food %d and %s, rest %d and %s, warmth %d and %s, morale %d and %s.\n",
+		a.Needs.Health/10, trajectory(a.Needs.Health, an.Health, has),
+		a.Needs.Food/10, trajectory(a.Needs.Food, an.Food, has),
+		a.Needs.Rest/10, trajectory(a.Needs.Rest, an.Rest, has),
+		a.Needs.Warmth/10, trajectory(a.Needs.Warmth, an.Warmth, has),
+		a.Needs.Morale/10, trajectory(a.Needs.Morale, an.Morale, has))
 }
 
 // renderInventory is contract block 4: the full carried resource/item set.

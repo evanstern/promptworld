@@ -12,8 +12,9 @@ import (
 // legacyUserPrompt is a FROZEN byte-for-byte copy of userPrompt as it stood
 // before spec 043 wrapped its content into the block assembler (context.go).
 // The golden-equality test below asserts the refactor changed no legacy bytes:
-// the assembled prompt, with only the NEW self_history block removed, must
-// equal this reference exactly. Keeping the reference here (not deleting the
+// the assembled prompt, with the NEW self_history block removed and the US2
+// needs block normalized back to this frozen line (see TestContextGoldenIdentity),
+// must equal this reference exactly. Keeping the reference here (not deleting the
 // old code from history) is what makes "byte-identical when no new blocks
 // render" (T003) a live gate rather than a claim.
 func legacyUserPrompt(s *sim.State, idx int, k int, mode string) string {
@@ -101,32 +102,54 @@ func richContextState(t *testing.T) *sim.State {
 	return s
 }
 
+// legacyNeedsLine is the FROZEN pre-043 needs line (no trajectory clause). The
+// golden test below swaps the live needs block back to this before comparing, so
+// the byte-identity gate still bites on every OTHER legacy block while allowing
+// the one deliberate US2 change (trajectories) through.
+func legacyNeedsLine(s *sim.State, idx int) string {
+	a := s.Agents[idx]
+	return fmt.Sprintf("Needs (0-100): health %d, food %d, rest %d, warmth %d, morale %d.\n",
+		a.Needs.Health/10, a.Needs.Food/10, a.Needs.Rest/10, a.Needs.Warmth/10, a.Needs.Morale/10)
+}
+
 // TestContextGoldenIdentity (T003, FR-009): wrapping userPrompt content into the
-// block assembler changed NO legacy bytes. The production prompt, with only the
-// new self_history block removed, is byte-identical to the frozen pre-043
-// rendering — for both the first-thought (empty IntentLog) and the populated
-// cases, and across memory modes.
+// block assembler changed NO legacy bytes. The production prompt, with the new
+// self_history block removed AND the needs block normalized back to its frozen
+// pre-043 form, is byte-identical to the frozen pre-043 rendering — for both the
+// first-thought (empty IntentLog) and the populated cases, and across memory
+// modes.
+//
+// The needs block is DELIBERATELY excepted: US2 (T016) added a trajectory clause
+// ("... and rising/falling/steady") to every need, so the block's bytes now
+// differ from the frozen legacy string BY DESIGN — this is a feature, not the
+// refactor drift the golden gate guards against. Swapping renderNeeds' output for
+// legacyNeedsLine before the compare proves the trajectory suffix is the ONLY
+// change to the needs line and that no other legacy block moved.
 func TestContextGoldenIdentity(t *testing.T) {
 	for _, mode := range []string{"", "shadow", "on"} {
 		t.Run("mode="+mode, func(t *testing.T) {
 			s := richContextState(t)
 
+			// Normalize away the two 043-modified/added blocks: strip the new
+			// self_history block and swap the US2 needs block back to its frozen
+			// legacy line, then require byte-identity with the pre-043 reference.
+			normalize := func(got string) string {
+				got = strings.Replace(got, renderSelfHistory(s, 0), "", 1)
+				return strings.Replace(got, renderNeeds(s, 0), legacyNeedsLine(s, 0), 1)
+			}
+
 			// First-thought agent: self_history is the "no prior activity" line.
-			got := userPrompt(s, 0, sim.WindowK, mode)
-			sh := renderSelfHistory(s, 0)
-			if sh == "" {
+			if renderSelfHistory(s, 0) == "" {
 				t.Fatal("self_history rendered empty — it must always render (first-thought line)")
 			}
-			if stripped := strings.Replace(got, sh, "", 1); stripped != legacyUserPrompt(s, 0, sim.WindowK, mode) {
-				t.Errorf("assembled prompt (minus self_history) diverged from legacy bytes:\ngot:    %q\nlegacy: %q", stripped, legacyUserPrompt(s, 0, sim.WindowK, mode))
+			if stripped := normalize(userPrompt(s, 0, sim.WindowK, mode)); stripped != legacyUserPrompt(s, 0, sim.WindowK, mode) {
+				t.Errorf("assembled prompt (minus self_history, needs normalized) diverged from legacy bytes:\ngot:    %q\nlegacy: %q", stripped, legacyUserPrompt(s, 0, sim.WindowK, mode))
 			}
 
 			// Populated IntentLog: same invariant, self_history now a real log.
 			s.Agents[0].IntentLog = append(s.Agents[0].IntentLog, sim.IntentRecord{Goal: "forage", Source: "reflex", Tick: 90})
-			got = userPrompt(s, 0, sim.WindowK, mode)
-			sh = renderSelfHistory(s, 0)
-			if stripped := strings.Replace(got, sh, "", 1); stripped != legacyUserPrompt(s, 0, sim.WindowK, mode) {
-				t.Errorf("with populated IntentLog, prompt (minus self_history) diverged from legacy:\ngot:    %q\nlegacy: %q", stripped, legacyUserPrompt(s, 0, sim.WindowK, mode))
+			if stripped := normalize(userPrompt(s, 0, sim.WindowK, mode)); stripped != legacyUserPrompt(s, 0, sim.WindowK, mode) {
+				t.Errorf("with populated IntentLog, prompt (minus self_history, needs normalized) diverged from legacy:\ngot:    %q\nlegacy: %q", stripped, legacyUserPrompt(s, 0, sim.WindowK, mode))
 			}
 		})
 	}
@@ -218,6 +241,97 @@ func TestContextDropOrder(t *testing.T) {
 	oneDrop := assembleBudget(s, 0, sim.WindowK, "", "", fullTokens-1)
 	if len(oneDrop.droppedBlocks) == 0 || oneDrop.droppedBlocks[0] != "memories" {
 		t.Errorf("first block dropped = %v, want memories first", oneDrop.droppedBlocks)
+	}
+}
+
+// TestNeedsTrajectoryDirections (T016, SC-003, US2 AS-1/2/3): each need renders
+// its level plus a direction derived from current − anchor with the deadband —
+// rising when it climbed past the band, falling when it dropped past it, steady
+// otherwise. A rising warmth and a falling warmth at the SAME level render
+// differently (the whole point of FR-004).
+func TestNeedsTrajectoryDirections(t *testing.T) {
+	s := knownPlacesState(t)
+	a := &s.Agents[0]
+	// Current levels; anchor set so each need moved a distinct, unambiguous way.
+	a.Needs = sim.Needs{Health: 800, Food: 430, Rest: 620, Warmth: 450, Morale: 700}
+	a.NeedsAnchor = &sim.Needs{
+		Health: 800, // unchanged → steady
+		Food:   600, // fell 170 → falling
+		Rest:   400, // rose 220 → rising
+		Warmth: 600, // fell 150 → falling
+		Morale: 700, // unchanged → steady
+	}
+	a.NeedsAnchorTick = 1
+
+	got := renderNeeds(s, 0)
+	for _, want := range []string{
+		"health 80 and steady",
+		"food 43 and falling",
+		"rest 62 and rising",
+		"warmth 45 and falling",
+		"morale 70 and steady",
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("needs render missing %q:\n%s", want, got)
+		}
+	}
+
+	// Same warmth LEVEL, rising anchor: the direction flips to rising — proof the
+	// trajectory, not the level, carries the new signal.
+	a.NeedsAnchor.Warmth = 300 // rose 150 → rising
+	if got := renderNeeds(s, 0); !strings.Contains(got, "warmth 45 and rising") {
+		t.Errorf("warmth at the same level should read rising off a lower anchor:\n%s", got)
+	}
+}
+
+// TestNeedsTrajectorySteadyNoFlicker (T016, SC-003): a need that moved less than
+// the deadband — noise, not a trend — never renders rising or falling, in either
+// direction, right up to the band edge.
+func TestNeedsTrajectorySteadyNoFlicker(t *testing.T) {
+	s := knownPlacesState(t)
+	a := &s.Agents[0]
+	a.Needs = sim.Needs{Health: 500, Food: 500, Rest: 500, Warmth: 500, Morale: 500}
+	a.NeedsAnchorTick = 1
+
+	// Movements at exactly ±deadband and below stay steady; only strictly beyond
+	// the band tips the direction.
+	for _, tc := range []struct {
+		anchorWarmth int
+		wantSteady   bool
+	}{
+		{500 - trajectoryDeadband, true},      // +10, at the band → steady
+		{500 + trajectoryDeadband, true},      // -10, at the band → steady
+		{500 - trajectoryDeadband - 1, false}, // +11, past the band → rising
+		{500 + trajectoryDeadband + 1, false}, // -11, past the band → falling
+	} {
+		a.NeedsAnchor = &sim.Needs{Health: 500, Food: 500, Rest: 500, Warmth: tc.anchorWarmth, Morale: 500}
+		got := renderNeeds(s, 0)
+		steady := strings.Contains(got, "warmth 50 and steady")
+		if steady != tc.wantSteady {
+			t.Errorf("anchor warmth %d: steady=%v, want %v:\n%s", tc.anchorWarmth, steady, tc.wantSteady, got)
+		}
+	}
+}
+
+// TestNeedsTrajectoryFirstWindowSteady (T016, edge case 1): with no anchor yet
+// (nil / first window) every need renders steady — never a spurious direction
+// off a missing history window.
+func TestNeedsTrajectoryFirstWindowSteady(t *testing.T) {
+	s := knownPlacesState(t)
+	a := &s.Agents[0]
+	a.Needs = sim.Needs{Health: 900, Food: 100, Rest: 800, Warmth: 200, Morale: 600}
+	a.NeedsAnchor = nil
+	a.NeedsAnchorTick = 0
+
+	got := renderNeeds(s, 0)
+	for _, need := range []string{"health", "food", "rest", "warmth", "morale"} {
+		if strings.Contains(got, need+" ") && (strings.Contains(got, need+" 90 and rising") ||
+			strings.Contains(got, need+" 10 and falling")) {
+			t.Errorf("first window (nil anchor) rendered a direction for %s:\n%s", need, got)
+		}
+	}
+	if strings.Count(got, "and steady") != 5 {
+		t.Errorf("first window must render all five needs steady:\n%s", got)
 	}
 }
 
