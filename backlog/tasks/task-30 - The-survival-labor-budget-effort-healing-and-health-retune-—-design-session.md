@@ -4,9 +4,10 @@ title: 'The survival labor budget: effort, healing, and health retune — design
 status: To Do
 assignee: []
 created_date: '2026-07-20 19:54'
-updated_date: '2026-07-24 02:42'
+updated_date: '2026-07-25 04:42'
 labels:
   - design
+  - learning-game
 dependencies:
   - TASK-28
 ordinal: 18000
@@ -33,3 +34,12 @@ Re-grounding 2026-07-22: cited constants hold (eatFoodValue=350 agents.go:144, h
 
 Drift audit 2026-07-23: the 'once it merges' condition is NOW TRUE — spec 012 is Done/merged and re-denominated food: foodRawRestore=40 / foodCookedRestore=80 / mealRestore=100 (agents.go:514-516), forageYieldV2=2, huntYieldBare=8 / huntYieldSpear=12 (agents.go:552-554); eatFoodValue=350 no longer exists. Rewrite the description's food-side baselines against these pins during the session. Still current: healthRegen=1 agents.go:467, chopTicks=300 / chopWood=2 agents.go:475/:481.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-07-25 04:42
+---
+Relabeled per learning-game synthesis (2026-07-25): not survival tuning — a learning-game PREREQUISITE (stakes are what make the grade real; rubrics mean nothing until failure is reachable). Design constraint added: reconcile the ~8h/day break-even against scenario session lengths — a lesson cannot take a real-time week at 4x (classroom-mode coordination per TASK-66/78).
+---
+<!-- COMMENTS:END -->

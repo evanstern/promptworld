@@ -4,8 +4,9 @@ title: 'Metatron agentization: the angel as a first-class autonomous agent'
 status: To Do
 assignee: []
 created_date: '2026-07-25 03:00'
-updated_date: '2026-07-25 03:10'
-labels: []
+updated_date: '2026-07-25 04:42'
+labels:
+  - learning-game
 dependencies:
   - TASK-111
 priority: medium
@@ -24,4 +25,15 @@ Direction decision (user, 2026-07-24, firm): the angel should become a SINGULAR 
 - [ ] #2 angel runs on scheduled cognition (not only player/order triggers), gated by the cognition horizon like villager classes
 - [ ] #3 angel uses the shared agent construct: persona/context files, memory, tool loop with its god-mode roster
 - [ ] #4 all existing guardrails demonstrably intact post-redesign
+- [ ] #5 Anti-self-grading guard: charter quality measurably changes autonomous performance on a seeded world (default vs authored charter delta)
+- [ ] #6 Channel split is doctrine: the tutor voice (converse + explain tool) spends no charges, lands no world events, earns no faith, and is excluded from every rubric; world-acting is the graded artifact
 <!-- AC:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-07-25 04:42
+---
+Reframed per learning-game synthesis (2026-07-25): agentization is 'the player programs an agent' — curriculum stage 3, not background AI. Encodes the three-lane initiative frame; tutoring requires NO doctrine relaxation (explaining is speech, not an act — rides the existing converse channel + one read-only tool grant). Open question gating this spec: the deliberate-incompetence ceiling (what the angel must never do well without a good charter); if adopted, incompetence applies to world-acting only, never tutor facts.
+---
+<!-- COMMENTS:END -->

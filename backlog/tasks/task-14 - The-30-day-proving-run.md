@@ -4,7 +4,7 @@ title: The 30-day proving run
 status: To Do
 assignee: []
 created_date: '2026-07-19 01:14'
-updated_date: '2026-07-24 02:42'
+updated_date: '2026-07-25 04:42'
 labels:
   - milestone
 dependencies:
@@ -26,6 +26,7 @@ Seed 8 authored personas, run 30+ game days always-on, and answer the v1 questio
 <!-- AC:BEGIN -->
 - [ ] #1 A 30+ game-day always-on run completes with 8 agents
 - [ ] #2 Findings doc answers the v1 sentence plus the three observation questions, with evidence from the chronicle/souls/event log
+- [ ] #3 The run answers: did prompt iteration measurably change outcomes, and could the player tell why from in-game surfaces alone?
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -35,3 +36,12 @@ Re-grounding 2026-07-22: all five dependencies (TASK-9/10/11/12/13) are Done —
 
 Drift audit 2026-07-23: stale refs fixed — specs 012 (47/47) and 013 (41/41) are DONE and merged (TASK-50/51 Done), tool stack (TASK-52/53/16) Done. The remaining reason to hold: the survival labor-budget retune chain (TASK-28 -> TASK-30) has not run, and it will materially retune the world being proven. Still deliberately ordered last.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-07-25 04:42
+---
+Extended per learning-game synthesis (2026-07-25): the proving run gains the learning-game question — prompt-iteration efficacy and in-game legibility of why.
+---
+<!-- COMMENTS:END -->

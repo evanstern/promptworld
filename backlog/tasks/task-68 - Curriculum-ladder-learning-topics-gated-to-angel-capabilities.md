@@ -4,13 +4,14 @@ title: 'Curriculum ladder: learning topics gated to angel capabilities'
 status: To Do
 assignee: []
 created_date: '2026-07-23 03:28'
-updated_date: '2026-07-24 02:42'
+updated_date: '2026-07-25 04:42'
 labels:
   - review-2026-07-22
   - teaching-game
+  - learning-game
 dependencies:
   - TASK-64
-priority: medium
+priority: high
 ordinal: 15000
 ---
 
@@ -31,4 +32,18 @@ Depends on TASK-64 (instruction surface + tool gating is the substrate). The hor
 - [ ] #3 Stage gating mechanism decided and implemented (capability manifest honors the world stage)
 - [ ] #4 At least two seeded scenario exercises defined with their score-narrative framing
 - [ ] #5 Reviewed with the client against their three-stage progression before implementation
+- [ ] #6 Scenario/stage pass signals are event-derived and surface in-game (chronicle/status), not only in docs
+- [ ] #7 Stages are fiction-named identities (never easy-mode framing), presented as an informed first-startup choice
+- [ ] #8 Stage unlocks are artifact-gated on event-log evidence, not menu toggles
+- [ ] #9 Each stage ships a per-stage quickstart page via the player-docs skill
+- [ ] #10 Stage-1 orientation is delivered in-game via the tutor charter preset
 <!-- AC:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-07-25 04:42
+---
+Promoted to High per learning-game synthesis (docs/design/learning-game-synthesis.md, 2026-07-25): this task is the spine of the v1 game. Absorbed ACs from both vault analyses (Analysis-Learning-Game-Fit, Analysis-In-Game-First-Teaching): Cogmind difficulty-rebrand lesson (stages as identities), artifact-gated unlocks per repo gate doctrine, DF per-audience quickstarts. Operator decisions 1-3 (staged sessions, director-lite, hybrid scoring) are given constraints.
+---
+<!-- COMMENTS:END -->

@@ -4,9 +4,10 @@ title: 'Permadeath runs, death escalation, and the morgue file: design session'
 status: To Do
 assignee: []
 created_date: '2026-07-20 19:55'
-updated_date: '2026-07-24 02:42'
+updated_date: '2026-07-25 04:42'
 labels:
   - design
+  - learning-game
 dependencies: []
 ordinal: 19000
 ---
@@ -31,3 +32,12 @@ Re-grounding 2026-07-22: gru wound mechanics hold (gruWound=250 gru.go:38; wound
 
 Drift audit 2026-07-23: verified exact — gruWound=250 gru.go:38, gruWoundFloor=1 gru.go:39, floor applied gru.go:124; 'wounds, never kills' doctrine comment gru.go:15-16. Spec 013 (death-drop FR-006) is now Done/merged — the deferral of the physical death-drop piece to 013 has happened; remaining scope here (morgue file, graves, run.ended, escalation) untouched.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-07-25 04:42
+---
+Relabeled per learning-game synthesis (2026-07-25): learning-game PREREQUISITE — player-attributable failure is the honest grader. Absorbs the shareable-epitaph framing: the morgue file is the retellable artifact (Boatmurdered lesson — the celebrated DF story object is a retelling). Scenario runs (staged-session decision) will consume run.ended as their fail signal; the open 'what failure can the player cause and how is it attributed' operator question lands in this design session.
+---
+<!-- COMMENTS:END -->

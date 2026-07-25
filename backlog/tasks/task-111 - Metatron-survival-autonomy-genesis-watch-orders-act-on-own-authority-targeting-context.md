@@ -6,8 +6,9 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-07-25 03:00'
-updated_date: '2026-07-25 03:10'
-labels: []
+updated_date: '2026-07-25 04:42'
+labels:
+  - learning-game
 dependencies: []
 priority: high
 ordinal: 19000
@@ -25,4 +26,14 @@ World-01 evidence: charges regenerated to cap and sat unused while Ash starved (
 - [ ] #2 a survival order match can land a vision or miracle with no player in the loop, still charge-gated
 - [ ] #3 miracle guidance includes live positions/passability; invalid-target rejections drop to ~0
 - [ ] #4 guardrails intact: no villager removal, no free miracles, charge economy unchanged
+- [ ] #5 Anti-self-grading guard: charter quality measurably changes autonomous survival performance on a seeded world (default-charter vs authored-charter delta)
 <!-- AC:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-07-25 04:42
+---
+Learning-game synthesis (2026-07-25): survival autonomy is the SURVIVAL LANE of the three-lane initiative frame (tutor lane: ungraded speech + read-only explain tool, charge-free; survival lane: autonomous, charge-gated — this task; ambition lane: player-authorized, unchanged). The lane's competence ceiling is an open operator question that gates the TASK-112 spec — machinery built here must not preempt it. See docs/design/learning-game-synthesis.md.
+---
+<!-- COMMENTS:END -->

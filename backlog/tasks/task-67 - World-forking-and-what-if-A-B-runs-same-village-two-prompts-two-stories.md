@@ -4,10 +4,11 @@ title: 'World forking and what-if A/B runs (same village, two prompts, two stori
 status: To Do
 assignee: []
 created_date: '2026-07-23 03:28'
-updated_date: '2026-07-24 02:42'
+updated_date: '2026-07-25 04:42'
 labels:
   - review-2026-07-22
   - teaching-game
+  - learning-game
 dependencies: []
 priority: medium
 ordinal: 16000
@@ -31,6 +32,7 @@ Depends on nothing, but pairs naturally with the decision-trace view (TASK-63): 
 - [ ] #4 Forked world passes the determinism harness independently (replay to identical hash)
 - [ ] #5 Budget-meter semantics for forks decided and documented in the spec
 - [ ] #6 Spec Kit spec written and linked via spec-bridge before implementation (non-trivial task)
+- [ ] #7 Compare/duel output includes an event-derived rubric (deaths, needs floors, norms passed, charge efficiency, rejected-call rate) rendered plain-language per the glossary discipline (no raw enums in a grade)
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -38,3 +40,12 @@ Depends on nothing, but pairs naturally with the decision-trace view (TASK-63): 
 <!-- SECTION:NOTES:BEGIN -->
 Drift audit 2026-07-23: premises verified — save dirs self-contained/copyable (world-save-directory.md:15-16), snapshots bound recovery (snapshots.md:14-17), replay never re-calls a model (llm-orchestrator.md:20), and no fork/compare subcommand exists yet (main.go:52-88).
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-07-25 04:42
+---
+Rescoped per learning-game synthesis (2026-07-25): reframed from teaching feature to core game verb — the fork-duel is the grader and postmortem (charter A vs B on a seeded fork; 'here is what your prompt change did'). Hybrid-scoring decision applies: duels are a scored surface. Framed as the losing-is-fun postmortem artifact. Grounding: both vault analyses, recommendation 2 in each.
+---
+<!-- COMMENTS:END -->
