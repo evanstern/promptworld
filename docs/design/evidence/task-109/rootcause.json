@@ -1,0 +1,16 @@
+{
+  "leak_path": "planner talk_to (internal/tool/registry.go, mind handleWorldVerb) -> landing hail (internal/sim/landing.go rungHailRelaxed / rungInRadiusHail -> internal/sim/hail.go hailable) -> hail sweep founding (internal/sim/hail.go hailStep -> internal/sim/executor.go talkEvents, agent.talked) -> scene founding (internal/mind/convo.go maybeStartConversation)",
+  "gated_by": [
+    "internal/mind/handlers.go buildTalkToGuards — target alive + present only",
+    "internal/sim/hail.go hailable — dead/asleep/already-hailed/deadlock/meeting/radius only",
+    "internal/mind/mind.go planDebounceTicks=300 (5 game-min per-agent replan floor)",
+    "internal/mind/convo.go convoBusy — one scene at a time",
+    "router verdict (cognition budget), not a frequency gate"
+  ],
+  "bypassed_gates": [
+    "sim.canTalk / Agent.LastTalk (talkCooldownSec=7200, internal/sim/executor.go) — hailStep founds talkEvents without it, by explicit design comment; LastTalk IS written on every agent.talked but only the ambient beat reads it",
+    "mind.pairSeen / EncounterCooldown=7200 (internal/mind/mind.go armEncounters) — gates only agent.moved encounter ARMING of the planner, never talk_to landings, hail founding, or scene founding; planners are re-armed anyway via agent.intent_done after every completed hail seek"
+  ],
+  "systemic_or_pair_specific": "systemic — 1763/1790 talks (98.5%) and 1070/1094 conversations (97.8%) world-wide are hail-founded; every pair shows it (Fern-Oak 171 scenes, Rowan-Hazel 129); Birch-Sage (219 scenes, 217 hail-founded, 74 on day 2, median inter-talk gap 288 ticks) is only the extreme case",
+  "one_line_fix_surface": "add a pair-frequency gate on the deliberate-talk path — consult LastTalk/a per-pair cooldown in sim.hailable (or hailStep before talkEvents) and/or a per-pair scene cooldown in mind.maybeStartConversation"
+}
