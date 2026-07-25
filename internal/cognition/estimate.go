@@ -10,7 +10,16 @@ const (
 	EWMAAlpha   = 0.2
 	SpikeFactor = 3.0
 	WindowSize  = 20
-	BreachRate  = 0.3
+	// BreachRate 0.3 -> 0.2 (TASK-113, separate from the estimator-persistence
+	// fix in this same task, on the control-surface report's suggestion, §4 row
+	// 3): lowers the sustained-drift evidence bar from "at least 7 of the last
+	// 20 samples spike" to "at least 5 of the last 20" — faster median-adoption
+	// once a genuine step change is under way, at the cost of slightly less
+	// margin before a burst reads as systemic (see
+	// TestBreachRateLoweredAdoptsOnFewerSpikes, and
+	// TestEstimatorOneShotSpikesPreserveEWMA, which still passes unchanged at
+	// 0.2 — the one-shot-rejection regression this constant must never break).
+	BreachRate = 0.2
 	// Bootstrap defaults when no calibration profile exists — deliberately
 	// pessimistic so an uncalibrated world fails toward reflex, never toward
 	// stale action.
