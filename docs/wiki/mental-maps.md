@@ -17,7 +17,7 @@ sources:
   - internal/metatron/turn.go
   - internal/metatron/toolcalls.go
   - internal/tool/registry.go
-verified_against: cea7b8f83fa07f9fcfefe4dd861aa05a78448f1b
+verified_against: 1debe184724bffe5eab8dbb5659a047c9ff63cc4
 ---
 
 # Mental maps

@@ -9,7 +9,7 @@ sources:
   - internal/sim/terrain.go
   - internal/sim/recipes.go
   - internal/sim/memory.go
-verified_against: cea7b8f83fa07f9fcfefe4dd861aa05a78448f1b
+verified_against: 1debe184724bffe5eab8dbb5659a047c9ff63cc4
 ---
 
 # Executor
@@ -440,7 +440,10 @@ tick boundaries while below the cap — [[metatron]]) and, per tick, sweeps
 `State.MetatronOrders` for any active standing order whose `ExpiresTick` the
 new tick has reached, emitting `metatron.order_expired` (spec 029, the
 `charge_regenerated` pattern — a pure function of state + tick, so a
-lapsed watch reproduces on replay with no angel running — [[metatron-orders]]);
+lapsed watch reproduces on replay with no angel running — [[metatron-orders]];
+since spec 059 a survival watch is skipped by this sweep entirely — it is
+non-expiring by origin, not a timed order, so `ExpiresTick` is never
+consulted for it);
 its reflex fires only on agents idle past `reflexGraceTicks` (120). `stepEvents` also runs the
 [[gru]]'s whole turn (`gruStep`) each tick, and the heartbeat's near-death memory
 names "the gru" as the cause when the last wound was recent. The per-minute social beat

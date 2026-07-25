@@ -8,9 +8,10 @@ sources:
   - internal/metatron/turn.go
   - internal/metatron/toolcalls.go
   - internal/tool/registry.go
+  - internal/tool/derive.go
   - internal/ipc/server.go
   - cmd/promptworld/miracle.go
-verified_against: 723c464c35aac4936f2793d566a53c801516ae60
+verified_against: 1debe184724bffe5eab8dbb5659a047c9ff63cc4
 ---
 
 # Metatron's miracles
@@ -244,6 +245,21 @@ dogfood equivalence test pins byte-identical to `BuildMiracleBatch`'s output.)
   sets `MiracleArgs.Gratis`, the one field that reaches `gratis=true`. Replies with
   `MiracleData{kind, charges, gratis, summary}`.
 
+**Miracle targeting digest** (spec 059 US3): world-01 evidence showed 3 of 4
+miracle attempts door-rejected on invalid coordinates — the angel had
+authority to act but no aim. Since spec 059, any turn whose granted roster
+offers `work_miracle` (gated by `hasWorkMiracle`, `internal/metatron/turn.go`)
+carries a token-bounded targeting digest in its user prompt: every living
+villager's tile, health/food/warmth, and the passable tiles immediately
+adjacent, assembled by `buildTargetingDigest` from the absorb-mirrored
+`agentXY`/`agentNeeds` snapshots (never the live replica) and the static
+map's own `Passable` — the door stays the authority, this is aim guidance
+only. `tool.MetatronTargetingGuidance()` ([[tool-registry]]) supplies the
+one-line prose pointer introducing it. Prompt surface only — no new event,
+no new door, and the reducer dry-run (`applyEntityMoved`/
+`applyEntityRemoved`'s presence/placement checks, above) remains the sole
+authority on whether a digest-derived coordinate actually lands.
+
 **Replay determinism**: a miracle event carries only door-resolved, already-decided
 values (a tick, an index, a kind, a coordinate) — never a name or a day/HH:MM string
 — so `Apply` re-derives nothing at replay time; the same event applied to the same
@@ -276,6 +292,12 @@ attaches the map so a migrated state is miracle-ready like a fresh genesis.
 [[tool-loop]] is the angel's door since spec 017: `work_miracle` is a declared
 loop tool ([[tool-registry]]'s `LoopRosterMetatron`) whose handler
 (`toolcalls.go`) wraps `landMiracle` exactly as described above.
+[[metatron-orders]] documents the spec 059 survival watches whose turn frame
+permits a miracle on the angel's own initiative (charge cost unchanged) —
+this note's cost/rebase/door mechanics are identical either way, only the
+turn's authorization frame differs; [[mental-maps]] is the closed
+place-fact/passability vocabulary the targeting digest draws its adjacency
+guidance from.
 
 ## Operational notes
 

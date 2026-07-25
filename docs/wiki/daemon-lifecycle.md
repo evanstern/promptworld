@@ -6,7 +6,7 @@ sources:
   - internal/daemon/daemon.go
   - internal/daemon/curriculum.go
   - internal/daemon/estimator_persist.go
-verified_against: 824932c630a9216dc761f78baa903cd07e5b9493
+verified_against: 1debe184724bffe5eab8dbb5659a047c9ff63cc4
 ---
 
 # Daemon lifecycle
@@ -63,7 +63,15 @@ Startup sequence:
    `sim.tuning_applied` event lands only when they differ, so an unchanged
    file never grows the log on restart. This runs before the loop starts and
    before `mind.New`, so no tick and no planner schedule ever runs ahead of
-   the tuned values.
+   the tuned values. Then `seedSurvivalWatches` (spec 059, US1, the same
+   `seedMeetingConvention`/`seedTuning` build-event → `state.Apply` →
+   `st.AppendEvents` shape): if recovered state carries no ACTIVE
+   system-origin survival watch yet, the three canonical watches
+   (`sim.SurvivalWatchDefs` — near-death, starvation, exposure) land as
+   `metatron.order_placed` events at the recovered tick; a fresh world's
+   first boot seeds them, a pre-059 world's first boot after upgrade
+   back-seeds them once, and every later boot finds them already active and
+   injects nothing ([[metatron-orders]]).
 6. Notify fan-out + companions: the loop's notify goes to the IPC broadcast, the
    always-on soul scribe (which since spec 044 is constructed with the open
    store as its event source — `scribe.New(dir, seed, map, snapshot, st)` —
@@ -235,7 +243,9 @@ when `orch.HasEmbedding()`; its failure warning shares [[sim-loop]]'s
 [[curriculum-ladder]] is what the always-on unlock observer and the
 `SetStage` handoff wired here (spec 046) serve.
 [[world-tuning]] is the spec 048 manifest `seedTuning` loads, clamps, and
-seeds right after the meeting-convention seed.
+seeds right after the meeting-convention seed. [[metatron-orders]] is what
+`seedSurvivalWatches` (spec 059) seeds right after the tuning seed and before
+the loop starts.
 
 ## Operational notes
 

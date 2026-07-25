@@ -19,7 +19,7 @@ sources:
   - internal/sim/curriculum.go
   - internal/daemon/daemon.go
   - internal/daemon/curriculum.go
-verified_against: 3a04bf071ed3a3e994a52d26d9eed42e92e3fccd
+verified_against: 1debe184724bffe5eab8dbb5659a047c9ff63cc4
 ---
 
 # Event types
@@ -167,6 +167,20 @@ gate conjuncts; full shapes and reducer effects in the table below). The
 event-sourced state — `stage`, `stage_overridden`, `charter_preset`
 ([[world-save-directory]], [[metatron]]) — validated at `world.Open` against
 a closed vocabulary exactly like `memory_relevance` above.
+Spec 059 (metatron survival autonomy — [[metatron-orders]], [[metatron]]) is
+also format-stable: `MetatronOrder` gains `omitempty` `Survival` (`""` = an
+ordinary structural order, the pre-059 shape; `near_death`/`starvation`/
+`exposure` names one of the three canonical system-origin survival watches),
+so a pre-059 order round-trips byte-identically. No new event types: the
+three watches ride the EXISTING `metatron.order_placed`/`order_cancelled`/
+`order_expired` lifecycle, but origin-keyed — a survival watch is exempt from
+the player-order cap and the TTL bounds at the `order_placed` door, refused
+outright at the `order_cancelled` door (the angel's own nature, not a player
+configuration), and skipped entirely by the executor's `order_expired` sweep
+(non-expiring by origin, never a giant TTL). The daemon's
+`seedSurvivalWatches` ([[daemon-lifecycle]]) lands the three watches once via
+ordinary `order_placed` events, replay-safe like `seedMeetingConvention`/
+`seedTuning`.
 
 ## How it works
 
@@ -230,10 +244,10 @@ a closed vocabulary exactly like `memory_relevance` above.
 | `metatron.charge_regenerated` | `ChargeRegeneratedPayload{}` in `internal/sim/metatron.go` | executor, absolute 6-game-hour boundaries below cap | `MetatronCharges` +1, cap 3 ([[metatron]]) |
 | `metatron.nudged` | `MetatronNudgedPayload{form, targets, text}` | Metatron console turn (injected, TASK-12) | validates (charges > 0, form ∈ vision\|omen\|dream, living targets, text cap) then `MetatronCharges` −1; `vision` (spec 029, replaces `dream` as the live one-target form) needs exactly one living target at any hour; `omen` needs ≥1 living targets AND `State.Night`; `dream` is legacy-only (grandfathered exactly-one-target validation so historical events replay, but no tool can emit a new one); villager memories ride companion `agent.memory_added` events in the same atomic batch |
 | `metatron.place_revealed` (spec 041 FR-014) | `PlaceRevealedPayload{agent, facts}` in `internal/sim/mentalmap.go` — the emitter bakes only the place identity (kind, x, y, prov `revealed`); `seen` and `detail` are the reducer arm's NORMATIVE stamps | `send_vision`'s optional place grant (`place_kind`/`place_x`/`place_y` argument triple, all-or-none), riding the vision's atomic `InjectSocial` batch after the nudge memories | validates (living target, every fact names a REAL place — `groundFactPresent`, so the god reveals what is, never what isn't) then upserts into the target's mental map with `Seen` = landing tick, provenance `revealed`, `Detail` = ground truth at landing (a fire's `FuelUntil`); the companion Origin-omen memory ("The vision showed you the fire at (x,y).") rides the same batch as `agent.memory_added`; chronicle grammar line; absorb rides the batch's `metatron.nudged` (paused-authoring trigger) |
-| `metatron.order_placed` (spec 029, [[metatron-orders]]) | `MetatronOrder{id, origin, condition, action, event_types, agent, keywords?, confirm?, placed_tick, expires_tick, status}` | Metatron's `monitor_and_act` tool, injected via `InjectSocial` | validates (non-empty id not reused by any past order regardless of status, `origin` ∈ player\|system, non-empty `event_types`, ttl 1..7 game days, `agent` index valid or −1 for any, `condition` ≤300 chars, `action` ≤400 chars, and — player-origin only — fewer than 3 already-active player orders, `MetatronPlayerOrderCap`; system-origin deferral orders are exempt from the cap); the payload's `status` is ignored — a landed order is always `active`; `MetatronOrders` appended then pruned to every active order plus the most recent 32 non-active (`pruneMetatronOrders`) |
-| `metatron.order_triggered` | `OrderTriggeredPayload{id, matched_type, matched_tick}` | the angel's trigger worker (injected, live-only — NEVER emitted during replay, since the matching runs off live events the replica sees post-batch) | the named order transitions active → triggered (one-shot consumption); rejects an unknown id or one not currently active |
-| `metatron.order_cancelled` | `OrderIDPayload{id}` | Metatron's `cancel_order` tool, injected | the named order transitions active → cancelled; same rejection rule as triggered |
-| `metatron.order_expired` | `OrderIDPayload{id}` | executor, `stepEvents`, once per order once `nextTick >= expires_tick` for an active order (the `charge_regenerated` pattern — a pure function of state + tick, so replay reproduces it without any angel running) | the named order transitions active → expired, freeing its slot against the player cap |
+| `metatron.order_placed` (spec 029, [[metatron-orders]]) | `MetatronOrder{id, origin, condition, action, event_types, agent, keywords?, confirm?, placed_tick, expires_tick, status, survival?}` | Metatron's `monitor_and_act` tool (injected via `InjectSocial`), or — since spec 059 — the daemon's boot-time `seedSurvivalWatches` for the three canonical system survival watches | validates (non-empty id not reused by any past order regardless of status, `origin` ∈ player\|system, non-empty `event_types`, `agent` index valid or −1 for any, `condition` ≤300 chars, `action` ≤400 chars, and — player-origin only — fewer than 3 already-active player orders, `MetatronPlayerOrderCap`; system-origin deferral orders are exempt from the cap); a non-empty `survival` (spec 059: `near_death`\|`starvation`\|`exposure`) MUST be `origin: system` and is EXEMPT from the ttl 1..7 game days bound (non-expiring by nature, `expires_tick` ignored); the payload's `status` is ignored — a landed order is always `active`; `MetatronOrders` appended then pruned to every active order plus the most recent 32 non-active (`pruneMetatronOrders`) |
+| `metatron.order_triggered` | `OrderTriggeredPayload{id, matched_type, matched_tick}` | the angel's trigger worker (injected, live-only — NEVER emitted during replay, since the matching runs off live events the replica sees post-batch) | the named order transitions active → triggered (one-shot consumption); rejects an unknown id or one not currently active; a survival watch (spec 059) never lands this — it is non-consuming, so its own trigger runs no `order_triggered` at all ([[metatron-orders]]) |
+| `metatron.order_cancelled` | `OrderIDPayload{id}` | Metatron's `cancel_order` tool, injected | the named order transitions active → cancelled; same rejection rule as triggered; since spec 059 a survival watch is refused outright regardless of status — it is the angel's own nature, not a player configuration, and the player order surface cannot release it |
+| `metatron.order_expired` | `OrderIDPayload{id}` | executor, `stepEvents`, once per order once `nextTick >= expires_tick` for an active order (the `charge_regenerated` pattern — a pure function of state + tick, so replay reproduces it without any angel running) | the named order transitions active → expired, freeing its slot against the player cap; since spec 059 a survival watch is skipped by this sweep entirely (origin-keyed TTL exemption, never evaluated) |
 | `metatron.charter_observed` (spec 044 US2) | `CharterObservedPayload{fingerprint, default}` in `internal/sim/metatron.go` — `fingerprint` is a short content hash (12 hex chars) of the EFFECTIVE charter text a turn ran under; `default` marks the authored default | the Metatron turn pipeline (`observeCharter`, injected via `InjectSocial` at charter load), only when the fingerprint differs from `State.CharterFingerprint` — the first turn always emits; skipped on ended worlds | sets `State.CharterFingerprint`; the log's observation sequence is the event-sourced charter-revision timeline the morgue aligns each death against (most recent observation ≤ the death, [[metatron]]) |
 | `morgue.epilogue` (spec 044 US2) | `MorgueEpiloguePayload{agent, text}` in `internal/sim/morgue.go` — `agent` is the mourned villager, or −1 for the run-end epilogue | mind narrator worker (injected via `InjectSocial` on absorbing `agent.died`/`run.ended`; LLM-gated, so structurally absent in no-model worlds); one of the two prose types an ENDED world's door still accepts (`endedProseWhitelist`) | appends the bounded `State.MorgueEpilogues` ring (chronicle pattern) for replica/scribe rendering; the morgue's factual render never depends on it — narrator absence or failure is a gap, never a stall |
 | `metatron.time_snapped` | `TimeSnappedPayload{to_tick, gratis}` in `internal/sim/miracles.go` | angel's turn reply or the `promptworld miracle` CLI/IPC door (spec 016, [[metatron-miracles]]), injected via `InjectSocial` | rejects a target at or before the current tick (forward-only); spends 2 charges (the dearest miracle) unless `gratis`; `rebaseTicks` shifts every relative-duration field forward by the jump so remaining durations are preserved, then `State.Tick = to_tick`; the skipped regeneration boundaries mint no charges |
@@ -297,7 +311,10 @@ validation, trigger-matching, and confirm/degradation mechanics; `order_placed`/
 `order_triggered`/`order_cancelled` are whitelisted in [[sim-loop]]'s
 `InjectSocial` door exactly like the miracle types, while `order_expired`
 needs no whitelist entry (executor-emitted, the `charge_regenerated`
-precedent). [[mental-maps]] owns the `agent.saw`/`agent.map_corrected`/
+precedent). Since spec 059, [[daemon-lifecycle]]'s `seedSurvivalWatches` is a
+second `order_placed` emitter (boot-time, alongside `monitor_and_act`), and
+the `Survival` discriminator's cap/TTL/cancel exemptions reduce alongside the
+rest of `applyMetatron`. [[mental-maps]] owns the `agent.saw`/`agent.map_corrected`/
 `social.place_told`/`metatron.place_revealed` family end to end — the
 executor's perception sweep and talk sidecar emit the first three, the
 `send_vision` door the fourth, and `internal/sim/mentalmap.go` reduces all

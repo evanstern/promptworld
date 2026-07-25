@@ -9,7 +9,7 @@ sources:
   - internal/tool/derive.go
   - internal/tool/validate.go
   - internal/sim/toolcheck.go
-verified_against: 381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9
+verified_against: 1debe184724bffe5eab8dbb5659a047c9ff63cc4
 ---
 
 # Tool registry
@@ -187,7 +187,14 @@ construction (drift tests in `derive_test.go`). Since spec 036 the per-tool
 description falls back to the tool's own `PromptGloss` when `metatronToolDesc`
 has no entry — the branch bundle tools ([[bundle-tools]]) render through; it is
 byte-inert for every map-covered built-in, pinned by the before/after
-byte-identity test in `derive_test.go`.
+byte-identity test in `derive_test.go`. Since spec 059 (US3), `derive.go` also
+exports `MetatronTargetingGuidance()` — a static one-line prose pointer
+("Aim your miracles: …") that introduces the miracle targeting digest in a
+miracle-capable turn's prompt; it carries no data of its own (the tool
+package has no world state to draw positions/passability from) — the digest
+itself is assembled turn-side (`internal/metatron/turn.go`'s
+`buildTargetingDigest`, [[metatron-orders]]/[[metatron-miracles]]), this
+function is only the fixed prose that introduces it.
 
 **Derived surfaces** (`derive.go`): each consumer is one walk of the registry —
 `VocabularyLine()` (the prompt's goal list, byte-identical to the old constant,
@@ -286,7 +293,9 @@ injection doors enforce roster membership at landing; [[reflex-policy]]'s
 `resolveGoal` table and [[executor]]'s duration table are the sim-side
 derivations the coverage gate cross-checks; [[metatron]] / [[metatron-orders]]
 read the registry for the `send_vision` text cap, the granted acting-tool
-guidance, and `work_miracle` dispatch; [[daemon-lifecycle]]
+guidance, and `work_miracle` dispatch; since spec 059 [[metatron-orders]]/
+[[metatron-miracles]] also read `MetatronTargetingGuidance()` for the miracle
+targeting digest's prose pointer; [[daemon-lifecycle]]
 runs the boot gates; [[agent-journal]] is the spec-019 consumer of the four
 journal tools (`write_journal_entry`/`delete_from_journal`/`search_journal`/
 `read_journal`) declared here. [[mental-maps]] is the spec-041 consumer of

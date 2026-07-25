@@ -1,6 +1,6 @@
 ---
 name: metatron
-description: The gatekeeper angel (TASK-12) — console AND system-authored turns driven through the bounded tool-use loop (spec 017), omen/vision influence and standing-order agency behind a structural prompt firewall (spec 029), event-sourced charge economy, charge-free clock-control meta tools, digests + drama moments, and the staged player-editable instruction surface (charter + skills/ + capabilities.json, spec 021); spec 036 composes drop-in bundle tools and persona SOUL fragments into the same turn assembly; spec 044 stamps each turn's effective-charter fingerprint into an event-sourced revision timeline (metatron.charter_observed); spec 046 gates the whole surface by the world's curriculum stage — a stage ceiling on the grant, a stage-1 charter lock served from a compiled-in preset, and skills binding from stage-3
+description: The gatekeeper angel (TASK-12) — console AND system-authored turns driven through the bounded tool-use loop (spec 017), omen/vision influence and standing-order agency behind a structural prompt firewall (spec 029), event-sourced charge economy, charge-free clock-control meta tools, digests + drama moments, and the staged player-editable instruction surface (charter + skills/ + capabilities.json, spec 021); spec 036 composes drop-in bundle tools and persona SOUL fragments into the same turn assembly; spec 044 stamps each turn's effective-charter fingerprint into an event-sourced revision timeline (metatron.charter_observed); spec 046 gates the whole surface by the world's curriculum stage — a stage ceiling on the grant, a stage-1 charter lock served from a compiled-in preset, and skills binding from stage-3; spec 059 turns a system-origin survival watch's match into a SURVIVAL turn whose frame carries a one-peril carve-out (visions/miracles on the angel's own initiative to save a life, clock and other orders still player-only) plus a token-bounded miracle-targeting digest on every miracle-capable turn
 kind: component
 sources:
   - internal/metatron/metatron.go
@@ -12,7 +12,7 @@ sources:
   - internal/metatron/miracle_batch.go
   - internal/sim/metatron.go
   - internal/persona/charter.go
-verified_against: 3a04bf071ed3a3e994a52d26d9eed42e92e3fccd
+verified_against: 1debe184724bffe5eab8dbb5659a047c9ff63cc4
 ---
 
 # Metatron
@@ -78,7 +78,21 @@ frame pins the two `metatronNonNegotiables` invariants beneath ANY editable text
 (never invent unobserved events; never pass the player's words to a villager) plus,
 since spec 029, the `metatronInitiativeFrame` (T019) that binds clock control and
 standing orders to player-requested or pre-authorized action only — never the
-angel's own initiative, with the door-side grant gate backing it independently. The
+angel's own initiative, with the door-side grant gate backing it independently.
+Since spec 059 (US2) that doctrine gets exactly ONE carve-out, keyed on the
+turn's origin rather than any tool: `buildTurnSystemPrompt(survival, …)` (the
+origin-selecting composer `turnSystemPrompt` now wraps, pinning `survival=false`
+for every pre-059 call site) swaps ONLY the initiative frame —
+`metatronSurvivalFrame` in place of `metatronInitiativeFrame` when `runTurn`'s
+origin is a survival-watch trigger (`turnOrigin.survival`, [[metatron-orders]]) —
+leaving the non-negotiables, the tool guidance, and every other byte of the
+prompt untouched; a non-survival turn still composes byte-identically to the
+pre-059 prompt (FR-005). The survival frame permits a vision or miracle on the
+angel's own initiative to save a life, for that one peril alone — clock control
+and every OTHER standing order remain player-authority in a survival turn
+exactly as in any other (FR-004); `DefaultCharter`
+(`internal/persona/charter.go`) states the same carve-out in-fiction so the
+angel's own narration stays honest about what it may do unprompted. The
 frame also carries the acting-tool guidance DERIVED from the registry
 (`tool.MetatronToolGuidance` over the world's granted roster, [[tool-registry]]) —
 the old hand-written prose tool list is gone, so described ≡ declared by
@@ -241,7 +255,17 @@ immediate reply-suffix refusal, though the wording is the same in-fiction
 counsel); a landed miracle also appends a soul-file line. `landMiracle`'s
 validation/batch/soul-append logic is likewise UNCHANGED from the pre-loop path —
 only the input moved from `turnReply.Miracle` to `work_miracle`'s tool-call
-arguments.
+arguments. Since spec 059 (US3), any turn whose granted roster offers
+`work_miracle` (`hasWorkMiracle`) additionally carries a token-bounded
+targeting digest in the user prompt — living villagers' positions/conditions
+plus adjacent passable tiles, `turn.go`'s `buildTargetingDigest` fed by the
+same `agentXY` mirror plus a parallel `agentNeeds` mirror, introduced by
+`tool.MetatronTargetingGuidance()` ([[tool-registry]]) — so a coordinate-
+bearing miracle (`move`/`remove`) can aim at a tile the door will actually
+accept (world-01 evidence: 3 of 4 miracle attempts door-rejected on invalid
+coordinates). Prompt surface only; `landMiracle`'s reducer dry-run stays the
+sole authority on whether a targeted coordinate lands — see
+[[metatron-miracles]] for the digest's assembly and cost.
 
 **Standing orders** (spec 029, its own note [[metatron-orders]]): `monitor_and_act`
 places an event-sourced watch-and-act order whose condition, compiled once, is
@@ -251,7 +275,14 @@ runs the pre-authorized action as a system-authored turn through this same door.
 the door helpers `placeOrder`/`cancelOrder` (`orders.go`); the turn prompt carries
 active orders (`writeStandingOrders`, FR-017) and `Status.Orders` lists them
 model-free (FR-016). The full lifecycle, event sourcing, matching, trigger execution,
-fuzzy confirm, and daytime-omen deferral live in [[metatron-orders]].
+fuzzy confirm, and daytime-omen deferral live in [[metatron-orders]]. Since
+spec 059, three SYSTEM-origin survival watches (near-death, starvation,
+exposure) stand in every world from boot without any player action — they
+share this same event-sourced order machinery but are origin-exempt from the
+player cap, TTL, and cancellation, match live via a hysteresis-latched
+danger-band predicate rather than the structural filter, and fire a
+SURVIVAL turn (above) rather than an ordinary system turn — the full
+mechanics live in [[metatron-orders]]'s own section.
 
 **Meta tools** (spec 029 US5): `pause`/`start`/`adjust_speed` are charge-free
 registered tools (`Effect` Expressive, EMPTY `Events`) that drive the world clock
@@ -356,10 +387,16 @@ handler subset; [[tool-registry]] declares those tools (and deliberately exclude
 single miracle cost source ([[metatron-miracles]]). [[curriculum-ladder]]
 (spec 046) owns the stage vocabulary, the manifest facts (`world.Manifest.Stage`/
 `CharterPreset`), the exercise/unlock event sourcing, and the earned-stage
-doctrine this note's stage ceiling and charter lock enforce. Specs:
+doctrine this note's stage ceiling and charter lock enforce. [[metatron-orders]]
+(spec 059) also owns the three system survival watches, their origin-keyed
+exemptions, the live hysteresis matcher, and the survival-turn frame this
+note's `buildTurnSystemPrompt` composes; [[daemon-lifecycle]] seeds them at
+boot (`seedSurvivalWatches`); [[metatron-miracles]] owns the spec-059 miracle
+targeting digest this note's Miracles section describes. Specs:
 `specs/005-metatron/`, `specs/016-metatron-miracles/`,
 `specs/017-agent-tool-loop/`, `specs/021-metatron-instruction-surface/`,
-`specs/029-metatron-agency/`, `specs/046-curriculum-ladder/`.
+`specs/029-metatron-agency/`, `specs/046-curriculum-ladder/`,
+`specs/059-metatron-survival-autonomy/`.
 
 ## Operational notes
 
@@ -375,6 +412,9 @@ fixed frame. (Those reign-tests predate spec 029, when the live influence form w
 still `dream`; the vocabulary is now omen/vision, but the atomicity, exhaustion, and
 charter-edit findings carry over unchanged.) Cost: ~4 digests/game-day + player turns
 + any triggered watch turns, noise against the ceiling. Spec 029 (TASK-27) shipped
-standing orders and pre-authorized autonomous action ([[metatron-orders]]); still
-parked for post-v1: world-tools, full regency, drama-based cloud escalation of
-villager minds.
+standing orders and pre-authorized autonomous action ([[metatron-orders]]); spec 059
+(TASK-111) shipped the angel's first true own-initiative authority — survival
+watches seeded from birth, a turn-origin-conditional frame carve-out, and a
+miracle targeting digest — as a near-term slice of the broader agentization
+direction (TASK-112); still parked for post-v1: world-tools, full regency,
+drama-based cloud escalation of villager minds.

@@ -45,7 +45,7 @@ sources:
   - internal/persona/persona_test.go
   - e2e/daemon_e2e_test.go
   - e2e/determinism_e2e_test.go
-verified_against: 3a04bf071ed3a3e994a52d26d9eed42e92e3fccd
+verified_against: 1debe184724bffe5eab8dbb5659a047c9ff63cc4
 ---
 
 # Testing strategy
@@ -395,6 +395,14 @@ proves the executor emits `metatron.order_expired` as a pure function of state+t
 `TestMetatronOrdersSnapshotUpgrade` proves a pre-029 snapshot loads with empty order
 state; `TestMetatronOrdersReplayIdentically` proves from-genesis replay reconstructs
 the order set identically; `TestMetatronOrderPrune` pins the retain-32 rule.
+`TestSurvivalWatchReducer` (spec 059, FR-002) covers the origin-keyed
+exemptions door-side: a survival watch lands despite an illegal (0-day) TTL
+delta (the exemption, not a giant TTL), the cap still bites on player orders
+with the three watches standing, a player `order_cancelled` naming a survival
+watch is refused (`err` names "survival watch") and leaves it untouched, the
+executor's expiry sweep emits zero `order_expired` for standing survival
+watches even 30 days out, and an unknown `survival` kind or a player-origin
+survival watch is refused at the door.
 Metatron-side (`internal/metatron/orders_test.go`, 23 tests): the pure matcher and
 agent probe (`TestOrderMatches`, `TestEventConcernsAgent`), id sequencing, placement/
 cancel/expiry mirroring and prompt block, handler grant-gating, the end-to-end trigger

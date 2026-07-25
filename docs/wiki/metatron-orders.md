@@ -1,6 +1,6 @@
 ---
 name: metatron-orders
-description: The event-sourced standing-orders subsystem (spec 029, TASK-27) — monitor_and_act watches compiled once into free structural predicates, matched live in the absorb path, fired as system-authored turns through the single-flight door, with fuzzy confirm, budget-honest degradation, and daytime-omen deferral as a system-origin order
+description: The event-sourced standing-orders subsystem (spec 029, TASK-27) — monitor_and_act watches compiled once into free structural predicates, matched live in the absorb path, fired as system-authored turns through the single-flight door, with fuzzy confirm, budget-honest degradation, and daytime-omen deferral as a system-origin order; spec 059 adds three genesis/boot-seeded survival watches (near-death, starvation, exposure) — origin-keyed cap/TTL/cancel exemptions, live-only hysteresis matching, and a survival-turn frame permitting the angel to act on its own authority to save a life
 kind: component
 sources:
   - internal/metatron/orders.go
@@ -14,7 +14,8 @@ sources:
   - internal/tool/registry.go
   - internal/llm/llm.go
   - internal/llm/config.go
-verified_against: 3a04bf071ed3a3e994a52d26d9eed42e92e3fccd
+  - internal/daemon/daemon.go
+verified_against: 1debe184724bffe5eab8dbb5659a047c9ff63cc4
 ---
 
 # Metatron's standing orders
@@ -164,6 +165,78 @@ still living. The `monitor_and_act` grant is NOT required — a deferral carries
 gate, so a world granting `send_omen` but withholding `monitor_and_act` can still defer.
 Cancelling the deferral before nightfall wins: the omen never lands and no charge is spent.
 
+## Survival watches (spec 059)
+
+Where every order above is player-authored and player-authority, three
+**system-origin survival watches** — near-death, starvation, exposure — exist
+in EVERY world without any player action: seeded once at boot
+(`seedSurvivalWatches`, [[daemon-lifecycle]], called right after `seedTuning`
+and before the loop starts) via `sim.SurvivalWatchDefs`, the single home both
+the boot seeder and tests build from. They are the angel's nature, not a
+player configuration:
+
+- **Origin-keyed exemptions** (`internal/sim/metatron.go`'s `applyMetatron`):
+  a non-empty `MetatronOrder.Survival` (`near_death`\|`starvation`\|
+  `exposure`, `sim.IsSurvivalKind`) must carry `Origin: "system"` and is
+  refused otherwise; it is exempt from the TTL bounds entirely (`ExpiresTick`
+  is set to `PlacedTick` as an honest placeholder and never validated or
+  consulted — non-expiring by nature, not a giant TTL) and is refused
+  outright at the `order_cancelled` door regardless of status, in-fiction
+  ("that watch is my own nature… I cannot set it aside", `cancelOrder`).
+  System-origin was already cap-exempt (above) — the three watches never
+  count against `MetatronPlayerOrderCap`. The executor's `order_expired`
+  sweep (`stepEvents`) skips a survival watch outright, the same origin-keyed
+  exemption mirrored on the reducer's `order_placed` arm.
+- **Danger bands** (`internal/metatron/orders.go`'s `survivalBand`, FR-008):
+  each watch REUSES an existing sim doctrine constant rather than a new
+  dial — `near_death` the `nearDeathBelow`/`nearDeathResetAt` hysteresis
+  band, `starvation`/`exposure` the exact `Food == 0`/`Warmth == 0` predicate
+  that drains health and stamps those `agent.died` causes, with `hungryAt`/
+  `coldNightBelow` as the RE-ARM (recovery) thresholds — promoted-dial-ready
+  (named, one home) but deliberately NOT added to `tuning.json` (dials are
+  earned by evidence, not speculatively added).
+- **Live matching, hysteresis-latched** (`matchSurvival`, distinct from the
+  structural `orderMatches`): evaluated against `agent.needs_changed`
+  payloads in the live absorb batch. A per-watch, per-villager
+  `survivalLatch` (absorb-owned, guarded by `stateMu`, deliberately **NOT
+  event-sourced** — matching is live-only by construction, the same
+  guarantee `orderMatches` already gives every structural order) debounces a
+  villager staying in-band: it fires once on entry, then stays silent until
+  the villager recovers past the re-arm threshold (clearing the latch) and
+  later relapses. `pendingTrigger` still gates one in-flight survival turn
+  per watch per batch, exactly like a structural order.
+- **`runSurvivalTrigger`** (vs. `runTrigger`) differs from an ordinary
+  trigger in three ways that follow from a survival watch's nature: (1) it
+  lands NO `metatron.order_triggered` — the watch is non-expiring and
+  non-consuming, so it never transitions out of `active`, ever; (2) there is
+  NO empty-bank precheck — the turn ALWAYS runs (the edge case: "the turn
+  still happens… it must not burn the match silently"), so at zero charges
+  every acting tool refuses in-fiction and the transcript + a helpless
+  moment are the honest record of a watch that woke to find itself
+  powerless; (3) the turn runs with `turnOrigin{system: true, survival:
+  true, seed: "The survival watch has woken you: <villager> is <peril> and
+  may die. <order.Action>"}` — the seed names the endangered villager and
+  peril so the turn can aim — and its soul/transcript record is marked
+  distinctly, `[survival watch]` rather than the ordinary `[watch]`
+  (`recordTurn`), attributing the authority trail to the survival duty
+  (FR-007).
+- **The survival-turn frame** (`internal/metatron/turn.go`): `turnOrigin.survival`
+  is the ONLY thing that changes the turn's system prompt —
+  `buildTurnSystemPrompt(survival, …)` swaps ONLY the initiative frame,
+  `metatronSurvivalFrame` in place of the ordinary `metatronInitiativeFrame`
+  (byte-identical otherwise; a non-survival call site still composes the
+  pre-059 prompt verbatim, FR-005). The survival frame is the ONE carve-out:
+  for THIS peril alone the angel may send a vision or work a miracle on its
+  own initiative — no player authorization needed, charge cost unchanged —
+  while the world's clock and every OTHER standing order remain the
+  player's alone to command, exactly as before (FR-004). See [[metatron]]'s
+  Turns section for the frame-composition mechanics shared with every other
+  console/system turn.
+- **The miracle targeting digest** (`buildTargetingDigest`, spec 059 US3) is
+  a SEPARATE, independently-gated prompt addition (any turn whose granted
+  roster offers `work_miracle`, not just a survival turn) — see
+  [[metatron-miracles]] for its mechanics.
+
 ## Surfaces
 
 The player reads and cancels orders through the angel. `monitor_and_act` and
@@ -187,7 +260,12 @@ compile-time constant appended last, beneath any charter/soul/skill text — spe
 036's persona SOUL fragments stack with the editable text, never above the
 frame) binds standing-order and
 meta-tool use to player-requested or pre-authorized action only — never the angel's own
-initiative — with the door-side grant gate backing it independently.
+initiative — with the door-side grant gate backing it independently. Since
+spec 059 this has exactly ONE carve-out, keyed on turn origin rather than
+tool: a **survival-watch** turn's frame (above) permits a vision or miracle
+on the angel's own initiative to save a life; standing orders and clock
+control are NOT part of that carve-out and remain player-authority in every
+turn, survival included (FR-004).
 
 ## Connections
 
@@ -200,8 +278,13 @@ drives the system-authored turn exactly as it drives the console turn; [[llm-orc
 routes the fuzzy `KindMetatronWatch` confirm to its cheap chain; [[tool-registry]]
 declares `monitor_and_act`/`cancel_order` and the observable-event vocabulary;
 [[metatron-miracles]] shares the `rebaseTicks` taxonomy that shifts an active order's
-expiry across a time snap. Spec: `specs/029-metatron-agency/` (TASK-27) — `spec.md` US2/
-US3/US4/US6, `data-model.md`, `contracts/events.md`, `contracts/routing.md`.
+expiry across a time snap. [[daemon-lifecycle]] seeds the three survival watches
+at boot (spec 059, `seedSurvivalWatches`, right after `seedTuning`); [[metatron]]
+holds `persona/charter.go`'s `DefaultCharter`, which since spec 059 states the
+survival duty in-fiction so the angel's own narration stays honest about the
+carve-out. Spec: `specs/029-metatron-agency/` (TASK-27) — `spec.md` US2/
+US3/US4/US6, `data-model.md`, `contracts/events.md`, `contracts/routing.md`;
+`specs/059-metatron-survival-autonomy/` — `spec.md`, `plan.md`.
 
 ## Operational notes
 
