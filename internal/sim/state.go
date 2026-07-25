@@ -116,6 +116,13 @@ type State struct {
 	// the chronicle pattern so the scribe replica and attaching clients can
 	// read it from state. The morgue's FACTS never depend on these.
 	MorgueEpilogues []MorgueEpilogue `json:"morgue_epilogues,omitempty"`
+	// Curriculum ladder facts (spec 046) — event-sourced: recorded exercise
+	// passes (bounded ring, curriculum.go) and the per-world unlocked-stage
+	// latch. omitempty keeps pre-046 snapshots byte-identical; a world with no
+	// passes is genuinely zero-value. The per-user unlocks record is a
+	// PROJECTION of these events — this state is the replayable authority.
+	CurriculumPasses []CurriculumPass `json:"curriculum_passes,omitempty"`
+	StagesUnlocked   []string         `json:"stages_unlocked,omitempty"`
 
 	// m is the static generated map for this world (seed + dimensions). It is
 	// unexported and never serialized — canonical state bytes are unchanged by
@@ -1680,6 +1687,9 @@ func (s *State) Apply(e store.Event) error {
 	case "metatron.time_snapped", "metatron.item_granted",
 		"metatron.entity_moved", "metatron.entity_removed":
 		return s.applyMiracle(e)
+
+	case "curriculum.exercise_passed", "curriculum.stage_unlocked":
+		return s.applyCurriculum(e)
 
 	case "meeting.convention_established", "sim.gathering_observed",
 		"meeting.place_designated", "meeting.convened", "meeting.opened",
