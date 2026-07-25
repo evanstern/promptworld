@@ -59,9 +59,9 @@
 
 **Goal**: trajectory arrows on the needs block. **Independent test**: deterministic needs-movement scenario (SC-003).
 
-- [ ] T014 [US2] Add `Agent.NeedsAnchor`/`NeedsAnchorTick` in `internal/sim/agents.go`; refresh in the `agent.needs_changed` reducer arm in `internal/sim/state.go` when `tick - anchorTick >= trajectoryWindowTicks` (const 1800, tuning-dial comment)
-- [ ] T015 [P] [US2] Anchor tests in `internal/sim/needsanchor_test.go`: window-edge refresh, unset-anchor first window, sleep-spanning window reflects overnight fall (spec edge case)
-- [ ] T016 [US2] Trajectory rendering in the `needs` block (`internal/mind/context.go`): rising/falling/steady from `current − anchor` with deadband ±10; steady never flickers (SC-003); tests in `internal/mind/context_test.go`
+- [x] T014 [US2] Add `Agent.NeedsAnchor`/`NeedsAnchorTick` in `internal/sim/agents.go`; refresh in the `agent.needs_changed` reducer arm in `internal/sim/state.go` when `tick - anchorTick >= trajectoryWindowTicks` (const 1800, tuning-dial comment)
+- [x] T015 [P] [US2] Anchor tests in `internal/sim/needsanchor_test.go`: window-edge refresh, unset-anchor first window, sleep-spanning window reflects overnight fall (spec edge case)
+- [x] T016 [US2] Trajectory rendering in the `needs` block (`internal/mind/context.go`): rising/falling/steady from `current − anchor` with deadband ±10; steady never flickers (SC-003); tests in `internal/mind/context_test.go`
 
 **Checkpoint**: "warmth 43 and falling" distinguishable from "warmth 43 and rising".
 
@@ -71,8 +71,8 @@
 
 **Goal**: `plan_echo` block. **Independent test**: standing-plan capture, echo disappears on clear (FR-005).
 
-- [ ] T017 [US3] `plan_echo` renderer in `internal/mind/context.go` reading `Agent.Plan` (`internal/sim/plan.go` PlanStep): remaining steps in order, head marked next, guards + `Until` deadlines in plain words; omitted when no plan (contract block 5)
-- [ ] T018 [US3] Tests in `internal/mind/context_test.go`: active-plan echo content, no-stale-echo after `agent.plan_expired`/completion, plan end visible in self-history at next thought (via US1 ring)
+- [x] T017 [US3] `plan_echo` renderer in `internal/mind/context.go` reading `Agent.Plan` (`internal/sim/plan.go` PlanStep): remaining steps in order, head marked next, guards + `Until` deadlines in plain words; omitted when no plan (contract block 5)
+- [x] T018 [US3] Tests in `internal/mind/context_test.go`: active-plan echo content, no-stale-echo after `agent.plan_expired`/completion, plan end visible in self-history at next thought (via US1 ring)
 
 **Checkpoint**: plans are commitments the deciding mind can see.
 

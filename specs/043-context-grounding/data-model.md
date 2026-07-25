@@ -81,3 +81,16 @@ thought telemetry.
 - `Agent.SitVec` + `SelectMemoriesRelevant` (existing, spec 042) → the memories block.
 - `Agent.Journal` (existing) + deterministic term match → the journal block.
 - Block sizes/drops → `cog.thought` → decision-trace view (existing surface).
+
+## Implementation addenda (accepted deviations)
+
+- **NeedsAnchor is `*Needs` (pointer), not value** — `omitempty` is a no-op on value
+  structs, so a value field would break pre-043 round-trip byte-identity; nil encodes
+  the unset state (the `Journal`/`Hail`/`Map` precedent). (US2 slice, 94978fc)
+- **`NeedsAnchorTick` rebase taxonomy: SHIFT** (not KEEP): it is read live against the
+  clock to gate the trajectory window, i.e. an elapsed-duration anchor
+  (`Belief.Reinforced`/`IdleSince` shape). `IntentRecord.Tick`/`OutcomeTick` remain
+  KEEP (display-only history timestamps). Justifications live in the `rebaseTicks`
+  doctrine comment (internal/sim/miracles.go).
+- **`agent.intent_rejected` is now state-mutating** (appends-and-closes a ring record)
+  and was split out of the shared `cog.*` no-op reducer arm. (US1 slice, d2bbd7f)
