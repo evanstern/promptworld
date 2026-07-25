@@ -8,7 +8,7 @@ notes, `docs/design/control-surface-and-calibration.md` §3/§7, and the user de
 2026-07-24 recorded on each task win. Plan-of-record is the board; this file carries only
 ordering, doctrine, and the log.
 
-**Status:** draft · operator sign-off on lanes: pending
+**Status:** signed-off · operator sign-off on lanes: 2026-07-25 (lanes as authored; TASK-89 live-world touch approved "go ahead anytime")
 <!-- Only the OPERATOR flips draft → signed-off (the author never pre-fills it). An
      executing session must refuse a runbook whose status it cannot verify. -->
 
