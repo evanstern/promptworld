@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"sort"
 	"strings"
 	"time"
 
@@ -42,6 +43,13 @@ type narrJob struct {
 	toTick   int64
 	lines    []string
 	threads  []string // recent slugs, offered for reuse
+	// Morgue-epilogue jobs (spec 044 US2, research R9) ride the SAME
+	// single-flight worker and router class as chapters — no new model-call
+	// class. When epilogue is true, lines is the fact sheet for one death
+	// (agent ≥ 0) or the run's end (agent == -1) and the worker runs
+	// runEpilogue instead of a chapter narration.
+	epilogue bool
+	agent    int
 }
 
 // narrCarry is a failed chapter's log, carried into the next one.
@@ -70,6 +78,13 @@ func (md *Mind) chronicleNote(e store.Event) {
 		if json.Unmarshal(e.Payload, &p) == nil {
 			line = fmt.Sprintf("%s died of %s.", name(p.Agent), p.Cause)
 		}
+	case "run.ended":
+		// Spec 044 US1: the run-over declaration closes the story — the
+		// chronicle's factual line; the morgue (US2) carries the full record.
+		var p sim.RunEndedPayload
+		if json.Unmarshal(e.Payload, &p) == nil {
+			line = fmt.Sprintf("The last villager died of %s. The village stands empty — the run has ended.", p.FinalCause)
+		}
 	case "agent.built":
 		var p sim.BuiltPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
@@ -83,8 +98,12 @@ func (md *Mind) chronicleNote(e store.Event) {
 			line = fmt.Sprintf("%s sighted the gru.", name(p.Agent))
 		}
 	case "gru.attacked":
+		// Spec 044 US3 (R5): an escalated attack that lands at health 0 is a
+		// kill, not a wounding — the subsequent agent.died line (same batch)
+		// already carries the death, so this line must stay silent for a
+		// killing blow rather than falsely claim they were "left wounded".
 		var p sim.GruAttackedPayload
-		if json.Unmarshal(e.Payload, &p) == nil {
+		if json.Unmarshal(e.Payload, &p) == nil && p.Health > 0 {
 			line = fmt.Sprintf("The gru attacked %s and left them wounded.", name(p.Agent))
 		}
 	case "gru.withdrew":
@@ -324,7 +343,168 @@ func (md *Mind) narrateWorker() {
 	}
 }
 
+// queueEpilogue enqueues a morgue epilogue when a death or the run's end is
+// absorbed (spec 044 FR-010, T017): the existing single-flight narrator
+// worker, the chronicle's router class ("chronicle", KindNarrator — no new
+// model-call class). Failure discipline is the chronicle's: a suppressed,
+// dropped, or failed epilogue is a gap in the morgue's prose, never a stall
+// — the factual record never waits on it. Runs in the absorb goroutine (owns
+// the replica, which has already applied e).
+func (md *Mind) queueEpilogue(e store.Event) {
+	if md.social == nil {
+		return
+	}
+	agent := -1
+	var label string
+	var lines []string
+	switch e.Type {
+	case "agent.died":
+		var p sim.DiedPayload
+		if json.Unmarshal(e.Payload, &p) != nil {
+			return
+		}
+		agent = p.Agent
+		name := "someone"
+		if p.Agent >= 0 && p.Agent < len(md.replica.Agents) {
+			name = md.replica.Agents[p.Agent].Name
+		}
+		label = fmt.Sprintf("epilogue for %s", name)
+		lines = md.epilogueFacts(p.Agent, p.Cause, e.Tick)
+	case "run.ended":
+		var p sim.RunEndedPayload
+		if json.Unmarshal(e.Payload, &p) != nil {
+			return
+		}
+		label = "the run's epilogue"
+		lines = md.runEpilogueFacts(p)
+	default:
+		return
+	}
+	if len(lines) == 0 {
+		return
+	}
+	if v := md.routeVerdict("chronicle", llm.KindNarrator); !v.Allow {
+		md.emitSuppressed("chronicle", agent, e.Tick, v)
+		return
+	}
+	job := narrJob{epilogue: true, agent: agent, label: label, toTick: e.Tick, lines: lines}
+	select {
+	case md.narrQ <- job:
+	default:
+		// A wedged cloud tier: the epilogue becomes a gap, never a stall.
+		log.Printf("mind: narrator queue full, %s dropped", label)
+	}
+}
+
+// epilogueFacts builds one death's fact sheet from the replica (which has
+// already applied the death): identity and cause, standing bonds, and the
+// highest-salience retained memories. The narrator may only connect what is
+// here — same no-invention frame as the chronicle.
+func (md *Mind) epilogueFacts(agent int, cause string, tick int64) []string {
+	if agent < 0 || agent >= len(md.replica.Agents) {
+		return nil
+	}
+	a := md.replica.Agents[agent]
+	day, _, _, _ := clock.GameTime(tick)
+	lines := []string{fmt.Sprintf("%s died of %s on day %d.", a.Name, cause, day)}
+	for _, r := range md.replica.Relations {
+		if r.From != agent || (r.Trust == 0 && r.Affection == 0) {
+			continue
+		}
+		lines = append(lines, fmt.Sprintf("Bond: %s (trust %+d, affection %+d).",
+			md.replica.Agents[r.To].Name, r.Trust, r.Affection))
+	}
+	mems := append([]sim.Memory(nil), a.Memories...)
+	sort.SliceStable(mems, func(i, j int) bool {
+		if mems[i].Salience != mems[j].Salience {
+			return mems[i].Salience > mems[j].Salience
+		}
+		return mems[i].Tick < mems[j].Tick
+	})
+	for i, m := range mems {
+		if i == 8 {
+			break
+		}
+		lines = append(lines, "They remembered: "+m.Text)
+	}
+	return lines
+}
+
+// runEpilogueFacts builds the run-end fact sheet: every death of the run, in
+// order, from the run.ended payload's ledger.
+func (md *Mind) runEpilogueFacts(p sim.RunEndedPayload) []string {
+	day, _, _, _ := clock.GameTime(p.Tick)
+	lines := []string{fmt.Sprintf("The village is gone: the last villager died of %s on day %d.", p.FinalCause, day)}
+	for _, d := range p.Deaths {
+		dd, _, _, _ := clock.GameTime(d.Tick)
+		name := "someone"
+		if d.Agent >= 0 && d.Agent < len(md.replica.Agents) {
+			name = md.replica.Agents[d.Agent].Name
+		}
+		lines = append(lines, fmt.Sprintf("%s died of %s on day %d.", name, d.Cause, dd))
+	}
+	return lines
+}
+
+// runEpilogue makes one narrator call for a morgue epilogue and lands the
+// prose as a recorded morgue.epilogue event through the same injection door
+// as the chronicle (research R9) — an ended world's door stays open to it
+// (endedProseWhitelist). Chronicle failure doctrine applies: every error path
+// is a logged gap — no retry carry, no stall.
+func (md *Mind) runEpilogue(job narrJob) {
+	ctx, cancel := context.WithTimeout(context.Background(), narrateCallTimeout)
+	resp, err := md.orch.Submit(ctx, llm.Request{
+		Kind:      llm.KindNarrator,
+		System:    epilogueSystemPrompt(),
+		Prompt:    epilogueUserPrompt(job),
+		MaxTokens: narrMaxTokens,
+	})
+	cancel()
+	if err != nil {
+		log.Printf("mind: %s skipped: %v", job.label, err)
+		return
+	}
+	text := strings.TrimSpace(resp.Text)
+	if r := []rune(text); len(r) > narrMaxText {
+		text = string(r[:narrMaxText])
+	}
+	if text == "" {
+		log.Printf("mind: %s unusable (empty)", job.label)
+		return
+	}
+	b, _ := json.Marshal(sim.MorgueEpiloguePayload{Agent: job.agent, Text: text})
+	if err := md.social.InjectSocial([]store.Event{{Type: "morgue.epilogue", Payload: b}}); err != nil {
+		log.Printf("mind: %s injection rejected: %v", job.label, err)
+		return
+	}
+	log.Printf("mind: %s landed ($%.4f)", job.label, resp.CostUSD)
+}
+
+func epilogueSystemPrompt() string {
+	return fmt.Sprintf(`You are the chronicler of a small village of eight: %s.
+You write short epilogues for the village's book of the dead — vivid, compact,
+past tense, third person, elegiac but honest. You never invent events,
+injuries, deaths, or words that are not in the facts you are given; you may
+connect and interpret what is there.`,
+		strings.Join(sim.AgentNames[:], ", "))
+}
+
+func epilogueUserPrompt(job narrJob) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "Write %s. The facts:\n", job.label)
+	for _, l := range job.lines {
+		b.WriteString(l + "\n")
+	}
+	b.WriteString("\nReply with ONLY the epilogue prose: 2-4 sentences, under 500 characters. " +
+		"No headers, no JSON, no quotation marks around the whole.")
+	return b.String()
+}
+
 func (md *Mind) runNarration(job narrJob) {
+	if job.epilogue {
+		md.runEpilogue(job)
+		return
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), narrateCallTimeout)
 	resp, err := md.orch.Submit(ctx, llm.Request{
 		Kind:      llm.KindNarrator,

@@ -38,6 +38,15 @@ type glyphEntry struct {
 // always been drawn (views.go tile(), styleGru) but was never in the legend
 // text — SC-002 requires the overlay to decode 100% of what the map can
 // draw, so it's added here (and, by construction, to the compact legend too).
+//
+// The "✝" grave row (spec 044 US4, ratified follow-up): every post-044
+// death's grave shares its tile with the dead agent it belongs to, and
+// renderMapGrid's tile() priority normally lets the agent glyph win a shared
+// tile (the same rule the chest/path rows rely on) — so without a carve-out
+// this glyph would advertise something the map could never actually show.
+// The carve-out: a dead agent AT a tile that also holds a grave renders the
+// grave glyph instead of the plain dead marker (the body becomes the grave);
+// a graveless dead agent (pre-044 replay/history) is unaffected.
 var mapGlyphs = []glyphEntry{
 	{"~", "water", "water — impassable to foot travel"},
 	{"♠", "wood", "a tree — choppable for wood"},
@@ -54,6 +63,7 @@ var mapGlyphs = []glyphEntry{
 	{"▤▩", "wall", "a built wall (▤ plank, ▩ stone); dim = damaged"},
 	{"·", "path", "a paved path (tan) — distinct from plain ground's dim ·"},
 	{"G", "gru", "the gru — a predator; approach at your peril"},
+	{"✝", "grave", "a villager's grave — marks where a death occurred"},
 }
 
 // agentGlyphNote / mapControlNote are the legend's trailing free-text

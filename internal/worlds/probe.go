@@ -184,28 +184,44 @@ func statusWithBudget(sockPath string, budget time.Duration) (*ipc.StatusData, b
 // OfflineSnapshot reads a world's last-known clock straight from its store,
 // without a live daemon — extracted from cmdStatus's offline branch
 // (cmd/promptworld/commands.go) so both `status` and `ps --all` share the
-// one read instead of duplicating it (research.md D7).
-func OfflineSnapshot(w *world.World) (tick int64, paused bool, speed string, lastSeq int64, err error) {
+// one read instead of duplicating it (research.md D7). ended/endedDay (spec
+// 044 FR-004) report the run-end posture so a stopped ended world's status
+// mirrors the live surface; endedDay is 0 unless ended.
+func OfflineSnapshot(w *world.World) (tick int64, paused bool, speed string, lastSeq int64, ended bool, endedDay int64, err error) {
 	st, err := store.Open(w.DBPath())
 	if err != nil {
-		return 0, false, "", 0, err
+		return 0, false, "", 0, false, 0, err
 	}
 	defer st.Close()
 	state := sim.NewState(w.Manifest.Seed, w.Map())
+	var snapSeq int64
 	if snap, serr := st.LatestValidSnapshot(); serr == nil && snap != nil {
 		json.Unmarshal(snap.State, state)
+		snapSeq = snap.Seq
+	}
+	// The snapshot cadence (1 game hour) can trail the log — e.g. a crash
+	// right after the final death; fold the newer events in so the Ended
+	// latch (and clock) reflect the whole history, exactly as recovery
+	// replay would (spec 044 FR-004).
+	if events, eerr := st.EventsSince(snapSeq, 0); eerr == nil {
+		for _, e := range events {
+			state.Apply(e)
+		}
 	}
 	if lastTick, terr := st.LastEventTick(); terr == nil && lastTick > state.Tick {
 		state.Tick = lastTick
 	}
-	return state.Tick, state.Paused, string(state.Speed), st.LastSeq(), nil
+	if state.Ended && state.RunEnd != nil {
+		endedDay, _, _, _ = clock.GameTime(state.RunEnd.Tick)
+	}
+	return state.Tick, state.Paused, string(state.Speed), st.LastSeq(), state.Ended, endedDay, nil
 }
 
 // fillOfflineSnapshot populates a Stopped Instance's last-known fields plus
 // whether an LLM config is present (llm.json existence — the stopped-world
 // analogue of StatusData.LLM != nil).
 func fillOfflineSnapshot(inst *Instance, w *world.World) {
-	tick, paused, speed, lastSeq, err := OfflineSnapshot(w)
+	tick, paused, speed, lastSeq, _, _, err := OfflineSnapshot(w)
 	if err != nil {
 		return // best effort — leave zero values, still reported Stopped
 	}

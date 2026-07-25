@@ -22,6 +22,9 @@ var (
 	styleDim    = lipgloss.NewStyle().Faint(true)
 	styleErr    = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("1"))
 	stylePaused = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("3"))
+	// styleEnded is the postmortem header token (spec 044 R12) — bold red,
+	// the finality register PAUSED's amber deliberately doesn't carry.
+	styleEnded  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("1"))
 	styleNight  = lipgloss.NewStyle().Foreground(lipgloss.Color("4"))
 	styleAgent  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("2"))
 	styleAsleep = lipgloss.NewStyle().Foreground(lipgloss.Color("6"))
@@ -124,7 +127,12 @@ func (m Model) headerView() string {
 	}
 	c := m.status.Clock
 	state := "running"
-	if c.Paused {
+	switch {
+	case m.runEnded():
+		// Postmortem posture (spec 044 US1): ENDED replaces running/PAUSED —
+		// regardless of the clock state the run end landed under.
+		state = styleEnded.Render("ENDED")
+	case c.Paused:
 		state = stylePaused.Render("PAUSED")
 	}
 	speedSeg := fmt.Sprintf("speed %s (%.1f t/s)", c.Speed, c.EffectiveRate)
@@ -217,6 +225,14 @@ func (m Model) footerView() string {
 	if m.helpOpen {
 		return styleDim.Render(m.helpFooterHint())
 	}
+	// Postmortem posture (spec 044): the clock keys (space, [, ]) are inert
+	// on an ended world, so the footer's pause/resume hint gives way to the
+	// run-ended hint — every other affordance stands.
+	pause, resume := "space pause", "space resume"
+	if m.runEnded() {
+		pause = "run ended (read-only)"
+		resume = pause
+	}
 	switch {
 	case m.mbFocused:
 		// No "? help" here: focused, '?' types into the buffer like any
@@ -225,19 +241,19 @@ func (m Model) footerView() string {
 		// reachable, just from any other mode's overlay (n/p paging).
 		return styleDim.Render("esc release · ⏎ send · ↑↓ history")
 	case m.inspecting():
-		return styleDim.Render("j/k select · J/K scroll detail · space resume · m ask · ? help")
+		return styleDim.Render("j/k select · J/K scroll detail · " + resume + " · m ask · ? help")
 	case m.villagersVisible() && m.villDetail && m.villDecisions:
-		return styleDim.Render("j/k scroll · esc back · space pause · q quit · ? help")
+		return styleDim.Render("j/k scroll · esc back · " + pause + " · q quit · ? help")
 	case m.villagersVisible() && m.villDetail:
-		return styleDim.Render("d decisions · esc back · space pause · q quit · ? help")
+		return styleDim.Render("d decisions · esc back · " + pause + " · q quit · ? help")
 	case m.villagersVisible():
-		return styleDim.Render("j/k select · ⏎ inspect · space pause · q quit · ? help")
+		return styleDim.Render("j/k select · ⏎ inspect · " + pause + " · q quit · ? help")
 	case isWidescreen(m.width) && m.solo:
-		return styleDim.Render(fmt.Sprintf("%s back to map · space resume · q quit · ? help", dockTabKey[m.dockTab]))
+		return styleDim.Render(fmt.Sprintf("%s back to map · %s · q quit · ? help", dockTabKey[m.dockTab], resume))
 	case isWidescreen(m.width):
-		return styleDim.Render("2 chronicle 3 metatron 4 villagers (again: solo) · m ask · space pause · q quit · ? help")
+		return styleDim.Render("2 chronicle 3 metatron 4 villagers (again: solo) · m ask · " + pause + " · q quit · ? help")
 	default:
-		return styleDim.Render("1-4 panes · space pause · q quit · ? help")
+		return styleDim.Render("1-4 panes · " + pause + " · q quit · ? help")
 	}
 }
 
@@ -448,6 +464,17 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 
 	agents := map[[2]int]string{}
 	structures := map[[2]int]string{}
+	// Graves (spec 044 US4, ratified follow-up): every post-044 death places
+	// its grave at the SAME tile the dead agent's own frozen position
+	// occupies, so a dead-agent lookup in tile() would otherwise always win
+	// and the grave glyph could never actually render there — a dishonest
+	// legend/overlay entry. A dedicated set (not folded into `structures`,
+	// same reasoning as Quarried/Piles below) lets the agents loop below
+	// check "is this dead agent's own tile a grave" and render the grave
+	// glyph instead of the plain dead marker when so — the body becomes the
+	// grave. A dead agent with no grave at its tile (pre-044 replay/history,
+	// or a hand-built test replica) is unaffected: it keeps the plain "†".
+	graves := map[[2]int]bool{}
 	// Quarried (spec 012, US1): depleted rock outcrops are dynamic overlay
 	// state (never part of the static gm.At tile), so the set comes from the
 	// replica just like structures/dens below.
@@ -477,6 +504,18 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 				structures[[2]int{st.X, st.Y}] = styleOven.Render("▣")
 			case "chest":
 				structures[[2]int{st.X, st.Y}] = styleChest.Render("☐")
+			case "grave":
+				// Spec 044 US4 (FR-017): reducer-placed at a death tile, never
+				// player-built. Recorded in `structures` (so a grave whose
+				// tile no longer holds the dead agent — e.g. a future
+				// migration/edge case — still renders here) AND in the
+				// dedicated `graves` set the agents loop below consults: the
+				// common case is a grave sharing its tile with the dead
+				// agent it belongs to, and there the agent glyph branch
+				// overrides itself to the grave (ratified follow-up) rather
+				// than let the frozen "†" permanently hide it.
+				structures[[2]int{st.X, st.Y}] = styleGrave.Render("✝")
+				graves[[2]int{st.X, st.Y}] = true
 			case "path":
 				// Spec 032 US3: a path is a walkable tile improvement, so it
 				// renders at TERRAIN level (below agents/structures/piles) rather
@@ -513,6 +552,13 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 		for _, a := range m.replica.Agents {
 			g := strings.ToUpper(a.Name[:1])
 			switch {
+			case a.Dead && graves[[2]int{a.X, a.Y}]:
+				// Ratified follow-up: the body becomes the grave. Every
+				// post-044 death places its grave at the dead agent's own
+				// tile, so this is the common case; the plain "†" below is
+				// what a graveless dead agent (pre-044 replay/history, or a
+				// hand-built test replica) still shows.
+				g = styleGrave.Render("✝")
 			case a.Dead:
 				g = styleErr.Render("†")
 			case a.Asleep:
@@ -863,6 +909,11 @@ var (
 	// apart from plain grass's dim "·" without colliding with any structure glyph.
 	stylePath = lipgloss.NewStyle().Foreground(lipgloss.Color("137"))
 	styleGru  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("196"))
+	// Grave (spec 044 US4): "✝" marks a death site — a somber, persistent
+	// marker, so it renders faint gray (244) rather than any of the vivid
+	// living-structure colors (fire/shelter/oven/chest), the cold-fire (240)
+	// precedent for "spent"/inert glyphs.
+	styleGrave = lipgloss.NewStyle().Faint(true).Foreground(lipgloss.Color("244"))
 )
 
 // mapView is the narrow-fallback map pane: today's vw/vh formula,

@@ -12,12 +12,17 @@ import (
 // The gru (TASK-10): a nocturnal, sight-triggered predator. It is an entity —
 // a positioned body in event-sourced state — not a phenomenon: sight needs
 // geometry, the TUI needs something to render, and rumors need something to
-// have been seen. It wounds; it never kills — death stays with neglect
-// (starvation/exposure/collapse), which the wound merely feeds.
+// have been seen. It wounds the healthy; it can finish the already-fallen
+// (spec 044 US3): a healthy villager always survives a single attack (the
+// wound floor holds), but a villager already weakened below the near-death
+// band can be killed outright — lethality traces back to a preventable
+// spiral (no fire, no food, wounds untreated), never a fresh random roll.
 //
 // Safety is spatial and absolute: fire light (wider than fire warmth, so a
 // warm agent is always a safe agent) and shelter tiles make an agent
 // invisible to the gru, and the gru itself never steps into protected tiles.
+// These rules sit upstream of target selection and are unchanged by
+// escalation (FR-016).
 
 // Gru is the predator's event-sourced state; nil means it is not abroad.
 // Seen is a bitmask of agents who have sighted it tonight (one omen memory
@@ -36,7 +41,7 @@ const (
 	gruLightRadius    = 3   // fire light: strictly wider than fireWarmRadius
 	gruMoveEveryTicks = 4   // slightly faster than agents' 5
 	gruWound          = 250 // health torn off per attack
-	gruWoundFloor     = 1   // the gru wounds; only neglect kills
+	gruWoundFloor     = 1   // healthy targets: the gru wounds, it does not execute
 	gruAttackCooldown = 600 // ticks between wounds (10 game-minutes)
 	gruEmergePerMille = 600 // chance per night it comes out at all
 	gruSpawnTries     = 128
@@ -46,6 +51,15 @@ const (
 	salGruSighted = 6
 	toneGruAttack = -60
 )
+
+// Static invariant (spec 044 R4/data-model.md "Validation rules"): gruWound
+// must stay >= nearDeathBelow, so an escalated hit against a weakened target
+// (health < nearDeathBelow) always lands at exactly 0 — never a "survives at
+// some positive value" ambiguity that would make the kill non-obvious from
+// the constants alone. Assigning a negative difference to a uint fails to
+// compile, so a future constant edit that breaks the invariant is caught
+// here, not at runtime.
+const _ uint = gruWound - nearDeathBelow
 
 // gruNightIndex is the 1-based game night a tick belongs to (day 1 = night 1).
 func gruNightIndex(tick int64) int64 { return tick/86400 + 1 }
@@ -121,15 +135,25 @@ func gruStep(s *State, m *worldmap.Map, night bool, nextTick int64) []store.Even
 		}
 	}
 
-	// Adjacent prey, claws ready: wound (absolute post-wound health, floored
-	// — the gru does not execute). Waking with a cleared intent hands the
-	// victim to the reflex, which flees to warmth: the curfew, emergent.
+	// Adjacent prey, claws ready: wound (absolute post-wound health, floored)
+	// — UNLESS the victim was already weakened below the near-death band
+	// before this attack landed (spec 044 US3/R4): a healthy villager keeps
+	// the survival floor (gruWoundFloor), but an already-weakened one takes
+	// the floor of 0 and can die outright. The predicate is the raw pre-attack
+	// health, never the hysteresis-latched NearDeath bool (research R4) — a
+	// villager who recovered past the band is not "already weakened" just
+	// because the latch hasn't cleared. Waking with a cleared intent hands a
+	// surviving victim to the reflex, which flees to warmth: the curfew,
+	// emergent.
 	if target >= 0 && targetDist <= 1 &&
 		(g.LastAttack == 0 || nextTick-g.LastAttack >= gruAttackCooldown) {
 		a := &s.Agents[target]
-		emit("gru.attacked", GruAttackedPayload{
-			Agent: target, Health: maxInt(gruWoundFloor, a.Needs.Health-gruWound),
-		})
+		floor := gruWoundFloor
+		if a.Needs.Health < nearDeathBelow {
+			floor = 0
+		}
+		health := maxInt(floor, a.Needs.Health-gruWound)
+		emit("gru.attacked", GruAttackedPayload{Agent: target, Health: health})
 		events = append(events, situatedMemoryEvent(nextTick, target, salGruAttack,
 			PlaceAt(s, a.X, a.Y), "", OriginAction, "The gru came out of the dark and tore into me."))
 		for w := range s.Agents {
@@ -140,6 +164,24 @@ func gruStep(s *State, m *worldmap.Map, night bool, nextTick int64) []store.Even
 			if abs(wa.X-a.X)+abs(wa.Y-a.Y) <= witnessRadius {
 				events = append(events, situatedMemoryAboutEvent(nextTick, w, target, toneGruAttack, salGruWitness,
 					PlaceAt(s, wa.X, wa.Y), OriginWitness, "Saw the gru attack %s in the dark.", a.Name))
+			}
+		}
+		// Escalated kill (spec 044 R5): gru attacks land off the %60 needs
+		// heartbeat, so the executor's witness-death block (executor.go) never
+		// runs for them — this replicates that idiom inline: the standard
+		// agent.died event (cause "gru") so the entire existing death path
+		// (reducer Dead flag, inventory spill, grave, chronicle, morgue) runs
+		// unchanged (FR-015), plus the same witness-death memory loop.
+		if health == 0 {
+			emit("agent.died", DiedPayload{Agent: target, Cause: "gru"})
+			for w := range s.Agents {
+				if w == target || s.Agents[w].Dead {
+					continue
+				}
+				if abs(s.Agents[w].X-a.X)+abs(s.Agents[w].Y-a.Y) <= witnessRadius {
+					events = append(events, situatedMemoryAboutEvent(nextTick, w, target, -80, salWitnessDeath,
+						PlaceAt(s, s.Agents[w].X, s.Agents[w].Y), OriginWitness, "Watched %s die of %s.", a.Name, "the gru"))
+				}
 			}
 		}
 		return events
@@ -228,8 +270,13 @@ type (
 		Y     int `json:"y"`
 	}
 	GruAttackedPayload struct {
-		Agent  int `json:"agent"`
-		Health int `json:"health"` // absolute post-wound value, ≥ gruWoundFloor
+		Agent int `json:"agent"`
+		// Absolute post-wound value: >= gruWoundFloor when the pre-attack
+		// health was >= nearDeathBelow (healthy targets never die from one
+		// attack); may be 0 when the target was already weakened (pre-attack
+		// health < nearDeathBelow) — spec 044 US3 escalation. A 0 payload here
+		// is immediately followed, in the same batch, by agent.died{Cause:"gru"}.
+		Health int `json:"health"`
 	}
 	GruWithdrewPayload struct {
 		Day int64 `json:"day"`

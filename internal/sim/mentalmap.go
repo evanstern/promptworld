@@ -47,9 +47,10 @@ type PeerSighting struct {
 }
 
 // PlaceFact is one known dynamic entity. Kind is a closed vocabulary: the
-// structure kinds (fire/shelter/oven/chest/wall_plank/wall_stone/path) plus
-// the resource kinds (tree/forage/rock/water_edge/den/pile). Seen is the game
-// tick the fact was last perceived by the ORIGINAL observer — talk transfer
+// structure kinds (fire/shelter/oven/chest/wall_plank/wall_stone/path/grave —
+// grave added spec 044 US4) plus the resource kinds (tree/forage/rock/
+// water_edge/den/pile). Seen is the game tick the fact was last perceived by
+// the ORIGINAL observer — talk transfer
 // (US5) copies the teller's value, so secondhand is never fresher. Provenance
 // reuses the Belief vocabulary (witnessed/told, plus revealed for divine
 // grants). Source is the teller's agent index, meaningful ONLY for told facts

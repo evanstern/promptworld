@@ -532,6 +532,20 @@ func (m Model) inspecting() bool {
 	return m.status != nil && m.status.Clock.Paused && m.chronicleVisible()
 }
 
+// runEnded is the postmortem-posture predicate (spec 044 R12), dual-source by
+// necessity, not belt-and-braces: the replica's State.Ended covers clients
+// attaching after the fact (the snapshot path never replays folded events),
+// while the pushed run.ended (folded into the replica by applyEvent) and the
+// 1s status poll cover the live transition without a reconnect. It drives the
+// ENDED header token, the inert clock keys, and the footer hint; every
+// reading surface stays fully functional.
+func (m Model) runEnded() bool {
+	if m.replica != nil && m.replica.Ended {
+		return true
+	}
+	return m.status != nil && m.status.Clock.Ended
+}
+
 // handleKey is the top-level key dispatcher implementing the modes of
 // patterns/keymap.md, in priority order: ctrl+c always quits (rule 3); the
 // help overlay (spec 045), when open, owns the keyboard next — the new head
@@ -733,7 +747,10 @@ func (m Model) handleGlobalKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			}
 		}
 	case " ":
-		if m.connected && m.status != nil {
+		// Clock keys are inert once the run has ended (spec 044 FR-002; the
+		// footer hint says so) — gated client-side because the daemon's
+		// refusal error would otherwise read as a disconnect (timeControl).
+		if m.connected && m.status != nil && !m.runEnded() {
 			cmd := "pause"
 			if m.status.Clock.Paused {
 				cmd = "resume"
@@ -741,7 +758,7 @@ func (m Model) handleGlobalKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, timeControl(m.client, cmd, nil)
 		}
 	case "[", "]":
-		if m.connected && m.status != nil {
+		if m.connected && m.status != nil && !m.runEnded() {
 			cur := clock.Speed(m.status.Clock.Speed)
 			idx := 1 // default 4x position
 			for i, s := range speedSteps {

@@ -802,6 +802,9 @@ func TestRebaseTaxonomyComplete(t *testing.T) {
 		"NormViolation.Tick":               keep,
 		"MetatronOrder.PlacedTick":         keep, // spec 029: when the order was placed (history)
 		"PlaceFact.Detail":                 keep, // spec 041: remembered value baked at emission, never re-derived (see rebaseTicks)
+		"RunEnd.Tick":                      keep, // spec 044: when the run ended (history; the world never ticks again)
+		"DeathRecord.Tick":                 keep, // spec 044: when the death happened (history, like NormViolation.Tick)
+		"MorgueEpilogue.Tick":              keep, // spec 044 US2: when the epilogue landed (history, ChronicleEntry.Tick shape)
 	}
 
 	found := map[string]bool{}

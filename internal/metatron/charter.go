@@ -1,8 +1,11 @@
 package metatron
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"sort"
@@ -10,6 +13,8 @@ import (
 
 	"github.com/evanstern/promptworld/internal/bundle"
 	"github.com/evanstern/promptworld/internal/persona"
+	"github.com/evanstern/promptworld/internal/sim"
+	"github.com/evanstern/promptworld/internal/store"
 	"github.com/evanstern/promptworld/internal/tool"
 )
 
@@ -54,6 +59,51 @@ func charterIsDefault(worldDir string) bool {
 		return true
 	}
 	return string(data) == persona.DefaultCharter
+}
+
+// charterFingerprint is the effective charter's revision identity (spec 044
+// FR-008, research R8): a short content hash (12 hex chars of SHA-256) over
+// EXACTLY the text loadCharter returned — the post-fallback, post-truncation
+// bytes the model actually runs under — so the recorded revision can never
+// name a charter the angel never executed.
+func charterFingerprint(text string) string {
+	sum := sha256.Sum256([]byte(text))
+	return hex.EncodeToString(sum[:6])
+}
+
+// observeCharter lands the charter-revision observation (spec 044 US2,
+// T014): when the effective charter's fingerprint differs from the last
+// recorded one (State.CharterFingerprint, read via the absorb-side mirror),
+// the turn emits metatron.charter_observed through the same InjectSocial
+// door every other turn effect rides — fingerprint-at-effect semantics: the
+// timeline records what the angel actually ran with, at the turns it ran.
+// The first turn of a world always emits (the mirror starts empty). Ended
+// worlds skip: the door narrows to recorded prose after run end
+// (endedProseWhitelist) and a finished run's evidence timeline is closed.
+// The `default` flag is derived from the same effective text as the
+// fingerprint (an empty/missing charter.md serves the default text, and is
+// recorded as such), so the two can never disagree.
+func (mt *Metatron) observeCharter(text string) {
+	fp := charterFingerprint(text)
+	mt.stateMu.Lock()
+	known, ended := mt.charterFP, mt.ended
+	mt.stateMu.Unlock()
+	if ended || fp == known {
+		return
+	}
+	batch := []store.Event{{Type: "metatron.charter_observed", Payload: mustJSON(sim.CharterObservedPayload{
+		Fingerprint: fp, Default: text == persona.DefaultCharter})}}
+	if err := mt.social.InjectSocial(batch); err != nil {
+		log.Printf("metatron: charter observation rejected at the door: %v", err)
+		return
+	}
+	// Optimistic mirror update so a back-to-back turn cannot double-emit
+	// before the absorb goroutine reflects the landed event; mirrorState
+	// re-syncs from the replica per batch (a same-value re-emit would be
+	// harmless — the reducer arm is idempotent — this just keeps the log quiet).
+	mt.stateMu.Lock()
+	mt.charterFP = fp
+	mt.stateMu.Unlock()
 }
 
 // maxSkillFiles is the number of skill files composed into a single turn, the

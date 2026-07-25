@@ -193,6 +193,15 @@ type ClockStatus struct {
 	RequestedSpeed string  `json:"requested_speed,omitempty"`
 	GovernorDebt   float64 `json:"governor_debt,omitempty"`
 	GovernorJobs   int     `json:"governor_jobs,omitempty"`
+	// Run-end posture (spec 044 US1): additive omitempty, so pre-044 worlds
+	// and old clients are byte-compatible (the governor-trio precedent
+	// above). Ended mirrors sim State.Ended; EndedDay is the game day of the
+	// run end, for human rendering without a state fetch. Together with the
+	// durable run.ended event and StateData (State.Ended/RunEnd ride the
+	// canonical state JSON), this is the machine-readable fail signal
+	// TASK-119's scenario machinery consumes (FR-005).
+	Ended    bool  `json:"ended,omitempty"`
+	EndedDay int64 `json:"ended_day,omitempty"`
 }
 
 type DaemonStatus struct {

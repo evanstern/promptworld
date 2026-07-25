@@ -139,6 +139,13 @@ func TestWhitelistDiffIdentical(t *testing.T) {
 		"agent.memory_embedded":    true,
 		"agent.situation_embedded": true,
 		"cog.memory_divergence":    true,
+		// Spec 044 US2 (run outcomes / morgue) deliberately widens the boundary
+		// by exactly two entries: the turn pipeline's charter-revision
+		// observation (the evidence timeline the morgue aligns deaths against)
+		// and the narrator's recorded morgue epilogue (bounded prose ring; also
+		// one of the two types the ENDED world's narrowed door still accepts).
+		"metatron.charter_observed": true,
+		"morgue.epilogue":           true,
 	}
 	for typ := range want {
 		if !injectSocialWhitelist[typ] {

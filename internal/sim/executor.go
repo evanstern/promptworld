@@ -1,6 +1,8 @@
 package sim
 
 import (
+	"encoding/json"
+
 	"github.com/evanstern/promptworld/internal/clock"
 	"github.com/evanstern/promptworld/internal/store"
 	"github.com/evanstern/promptworld/internal/worldmap"
@@ -17,6 +19,13 @@ const (
 )
 
 func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
+	// Run-end guard (spec 044 FR-002): an ended world emits nothing, ever.
+	// stepEvents is the only sim emitter, so this single latch freezes
+	// simulated time while the loop keeps serving reads (contracts/events.md
+	// ordering guarantee 2).
+	if s.Ended {
+		return nil
+	}
 	var events []store.Event
 	emit := func(typ string, payload any) {
 		events = append(events, store.Event{Tick: nextTick, Type: typ, Payload: mustPayload(payload)})
@@ -318,6 +327,41 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 					events = append(events, violationEvents(s, repayNorm, d.Debtor, nextTick)...)
 				}
 			}
+		}
+	}
+
+	// Run-end detection (spec 044 R1): a pure function of (pre-tick state,
+	// this batch). When every villager still living at the tick's start died
+	// within the batch, declare the run over — as the batch's LAST event, so
+	// every same-tick agent.died (heartbeat or gru) and its witness memories
+	// precede it and no sim event trails it: the per-agent loops above still
+	// act for agents whose death is only in this batch (pre-tick state shows
+	// them alive), so emitting mid-batch would let their events follow the
+	// declaration (contracts/events.md ordering). The !s.Ended check is the
+	// exactly-once latch belt to the top-of-function guard's braces. The
+	// payload carries the whole run's deaths — the State.Deaths ledger plus
+	// this batch's — so no consumer ever scans the log for them.
+	if !s.Ended {
+		var batch []DeathRecord
+		for _, e := range events {
+			if e.Type != "agent.died" {
+				continue
+			}
+			var p DiedPayload
+			if err := json.Unmarshal(e.Payload, &p); err != nil {
+				continue // struct-built above; cannot fail
+			}
+			batch = append(batch, DeathRecord{Agent: p.Agent, Tick: e.Tick, Cause: p.Cause})
+		}
+		if len(batch) > 0 && len(batch) == livingCount(s) {
+			deaths := make([]DeathRecord, 0, len(s.Deaths)+len(batch))
+			deaths = append(deaths, s.Deaths...)
+			deaths = append(deaths, batch...)
+			emit("run.ended", RunEndedPayload{
+				Tick:       nextTick,
+				Deaths:     deaths,
+				FinalCause: deaths[len(deaths)-1].Cause,
+			})
 		}
 	}
 

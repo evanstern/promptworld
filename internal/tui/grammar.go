@@ -74,6 +74,7 @@ const (
 // chronicle treats both as one family rather than two.
 var familyByNamespace = map[string]eventFamily{
 	"world":     familyWorld,
+	"run":       familyWorld, // run.ended (spec 044): world-lifecycle voice
 	"clock":     familyClock,
 	"sim":       familySim,
 	"agent":     familyAgent,
@@ -82,6 +83,7 @@ var familyByNamespace = map[string]eventFamily{
 	"norm":      familyGovernance,
 	"gru":       familyGru,
 	"chronicle": familyChronicle,
+	"morgue":    familyChronicle, // morgue.epilogue (spec 044): narrated prose, chronicle voice
 	"metatron":  familyMetatron,
 	"daemon":    familyDaemon,
 	"cog":       familyCog,

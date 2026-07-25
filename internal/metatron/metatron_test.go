@@ -143,6 +143,12 @@ func newTestAngel(t *testing.T, reply string) (*Metatron, *mockOrch, *stateInjec
 	// default converse loop (a converse-only turn). Acting tests reassign
 	// mt.runLoop after this call.
 	mt.runLoop = converseLoop(mt)
+	// Pre-seed the charter-observation mirror (spec 044 US2): these fixtures
+	// model an angel whose current (default) charter revision is already on
+	// the record, so turn tests keep counting exactly the batches they drive.
+	// Charter-observation tests reset mt.charterFP = "" (or edit charter.md)
+	// to exercise the emission itself.
+	mt.charterFP = charterFingerprint(persona.DefaultCharter)
 	return mt, orch, inj, dir
 }
 

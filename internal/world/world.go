@@ -226,8 +226,14 @@ func (w *World) CharterPath() string        { return filepath.Join(w.Dir, "chart
 // derived view of event-sourced norms, distinct from Metatron's
 // player-editable charter.md above.
 func (w *World) VillageCharterPath() string { return filepath.Join(w.Dir, "village_charter.md") }
-func (w *World) MetatronDir() string        { return filepath.Join(w.Dir, "metatron") }
-func (w *World) LogPath() string            { return filepath.Join(w.Dir, "daemon.log") }
+
+// MorguePath is the run's accumulating legacy document (spec 044 US2): one
+// factual epitaph per death plus a run-end summary, scribe-rendered — a
+// regenerable view over the event history, never a source of truth, exactly
+// like the chronicle and village charter above.
+func (w *World) MorguePath() string  { return filepath.Join(w.Dir, "morgue.md") }
+func (w *World) MetatronDir() string { return filepath.Join(w.Dir, "metatron") }
+func (w *World) LogPath() string     { return filepath.Join(w.Dir, "daemon.log") }
 
 // BundlesDir is the root for pluggable bundle-defined tools (spec
 // 036-scriptable-agent-tools): manifest + optional Starlark script folders

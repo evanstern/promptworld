@@ -528,23 +528,35 @@ func cmdStatus(args []string) error {
 
 	// Offline: last-known state from the store, read-only (shared with
 	// `ps --all`'s stopped rows — specs/008-instance-manager D7).
-	tick, paused, speed, lastSeq, err := worlds.OfflineSnapshot(w)
+	tick, paused, speed, lastSeq, ended, endedDay, err := worlds.OfflineSnapshot(w)
 	if err != nil {
 		return err
 	}
 	if *asJSON {
+		clockMap := map[string]any{
+			"tick": tick, "game_time": clock.Format(tick),
+			"paused": paused, "speed": speed,
+		}
+		// Run-end posture (spec 044 FR-004): present only when ended, so a
+		// living world's offline JSON is unchanged — mirroring the live
+		// ClockStatus omitempty fields.
+		if ended {
+			clockMap["ended"] = true
+			clockMap["ended_day"] = endedDay
+		}
 		return printJSON(map[string]any{
 			"world":  map[string]any{"name": w.Manifest.Name, "seed": w.Manifest.Seed, "format_version": w.Manifest.FormatVersion},
 			"daemon": map[string]any{"running": false},
-			"clock": map[string]any{
-				"tick": tick, "game_time": clock.Format(tick),
-				"paused": paused, "speed": speed,
-			},
-			"log": map[string]any{"last_seq": lastSeq},
+			"clock":  clockMap,
+			"log":    map[string]any{"last_seq": lastSeq},
 		})
 	}
-	fmt.Printf("world %q (seed %d) — daemon not running\nlast known: tick %d (%s), speed %s, paused %v\nlog: last seq %d\n",
-		w.Manifest.Name, w.Manifest.Seed, tick, clock.Format(tick), speed, paused, lastSeq)
+	fmt.Printf("world %q (seed %d) — daemon not running\nlast known: tick %d (%s), speed %s, paused %v\n",
+		w.Manifest.Name, w.Manifest.Seed, tick, clock.Format(tick), speed, paused)
+	if ended {
+		fmt.Printf("run ended day %d, all villagers dead; world is an archive (read-only)\n", endedDay)
+	}
+	fmt.Printf("log: last seq %d\n", lastSeq)
 	return nil
 }
 
@@ -914,6 +926,12 @@ func llmConditionWarnings(sd *ipc.StatusData) []string {
 }
 
 func clockLine(sd *ipc.StatusData) string {
+	// Postmortem posture (spec 044, contracts/status.md): the run-over line
+	// replaces the running/paused clock line entirely.
+	if sd.Clock.Ended {
+		return fmt.Sprintf("tick %d (%s) — run ended day %d, all villagers dead; world is an archive (read-only)",
+			sd.Clock.Tick, sd.Clock.GameTime, sd.Clock.EndedDay)
+	}
 	state := "running"
 	if sd.Clock.Paused {
 		state = "paused"

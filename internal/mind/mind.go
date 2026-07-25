@@ -281,6 +281,11 @@ func (md *Mind) absorb(batch []store.Event) {
 			md.maybeConsolidate(e)
 		case "meeting.proposal_resolved":
 			md.maybePhraseProposal(e)
+		case "agent.died", "run.ended":
+			// Spec 044 US2 (T017): a death / the run's end also queues a
+			// morgue epilogue on the narrator worker; the chronicle line for
+			// the same event still lands via chronicleNote below.
+			md.queueEpilogue(e)
 		}
 		md.chronicleNote(e)
 	}
