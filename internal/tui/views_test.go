@@ -175,6 +175,92 @@ func TestHeaderViewSuppressionBadge(t *testing.T) {
 	}
 }
 
+// --- spec 044 US1: postmortem posture (ENDED header token, inert clock keys,
+// footer hint) — the badge-test pattern above ---
+
+// TestHeaderViewEndedFromStatus: the status poll / push-refreshed
+// ClockStatus.Ended source of the dual derivation (research R12) — ENDED
+// replaces the running token.
+func TestHeaderViewEndedFromStatus(t *testing.T) {
+	m := testModel(t)
+	m.connected = true
+	m.replica = nil // isolate the status source
+	m.status = &ipc.StatusData{Clock: ipc.ClockStatus{
+		Tick: 100, GameTime: "Day 1, 06:00", Speed: "16x", Ended: true, EndedDay: 1,
+	}}
+	got := m.headerView()
+	if !strings.Contains(got, "ENDED") {
+		t.Errorf("header missing ENDED token: %q", got)
+	}
+	if strings.Contains(got, "running") || strings.Contains(got, "PAUSED") {
+		t.Errorf("ENDED must replace the running/PAUSED token: %q", got)
+	}
+}
+
+// TestHeaderViewEndedFromReplica: the replica-State source — a client
+// attaching to an already-ended world sees ENDED from the state snapshot
+// alone, before any status carries the flag (the snapshot path never replays
+// folded events, research R12).
+func TestHeaderViewEndedFromReplica(t *testing.T) {
+	m := testModel(t)
+	m.connected = true
+	m.replica.Ended = true
+	m.status = &ipc.StatusData{Clock: ipc.ClockStatus{
+		Tick: 100, GameTime: "Day 1, 06:00", Speed: "16x", Paused: true, // ended outranks PAUSED
+	}}
+	got := m.headerView()
+	if !strings.Contains(got, "ENDED") {
+		t.Errorf("header missing ENDED token from the replica source: %q", got)
+	}
+	if strings.Contains(got, "PAUSED") {
+		t.Errorf("ENDED must outrank PAUSED: %q", got)
+	}
+}
+
+// TestHeaderViewNotEndedUnchanged: a living world renders no ENDED token —
+// the regression pin beside the ungoverned-header pin above.
+func TestHeaderViewNotEndedUnchanged(t *testing.T) {
+	m := testModel(t)
+	m.connected = true
+	m.status = &ipc.StatusData{Clock: ipc.ClockStatus{
+		Tick: 100, GameTime: "Day 1, 06:00", Speed: "16x", EffectiveRate: 16.0,
+	}}
+	if got := m.headerView(); strings.Contains(got, "ENDED") {
+		t.Errorf("living world's header carries an ENDED token: %q", got)
+	}
+}
+
+// TestFooterViewEndedHint: the clock keys are inert on an ended world, so
+// the footer's pause hint gives way to the run-ended hint.
+func TestFooterViewEndedHint(t *testing.T) {
+	m := testModel(t)
+	m.connected = true
+	m.replica.Ended = true
+	got := m.footerView()
+	if !strings.Contains(got, "run ended") {
+		t.Errorf("footer missing the run-ended hint: %q", got)
+	}
+	if strings.Contains(got, "space pause") {
+		t.Errorf("footer still advertises the inert pause key: %q", got)
+	}
+}
+
+// TestEndedClockKeysInert: space and the speed brackets issue no command on
+// an ended world — gated client-side so the daemon's refusal error is never
+// mistaken for a disconnect.
+func TestEndedClockKeysInert(t *testing.T) {
+	m := testModel(t)
+	m.connected = true
+	m.replica.Ended = true
+	m.status = &ipc.StatusData{Clock: ipc.ClockStatus{Speed: "4x", Ended: true, EndedDay: 1}}
+	for _, k := range []string{" ", "[", "]"} {
+		_, cmd := m.handleGlobalKey(key(k))
+		if cmd != nil {
+			t.Errorf("key %q issued a command on an ended world", k)
+		}
+	}
+}
+
 // TestHeaderViewNoSuppressionBadge: a horizon with everything thinking, and a
 // world with no horizon at all, both render no suppression badge — the FR-005
 // "MUST NOT show it otherwise" pin.

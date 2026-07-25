@@ -22,6 +22,9 @@ var (
 	styleDim    = lipgloss.NewStyle().Faint(true)
 	styleErr    = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("1"))
 	stylePaused = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("3"))
+	// styleEnded is the postmortem header token (spec 044 R12) — bold red,
+	// the finality register PAUSED's amber deliberately doesn't carry.
+	styleEnded  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("1"))
 	styleNight  = lipgloss.NewStyle().Foreground(lipgloss.Color("4"))
 	styleAgent  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("2"))
 	styleAsleep = lipgloss.NewStyle().Foreground(lipgloss.Color("6"))
@@ -124,7 +127,12 @@ func (m Model) headerView() string {
 	}
 	c := m.status.Clock
 	state := "running"
-	if c.Paused {
+	switch {
+	case m.runEnded():
+		// Postmortem posture (spec 044 US1): ENDED replaces running/PAUSED —
+		// regardless of the clock state the run end landed under.
+		state = styleEnded.Render("ENDED")
+	case c.Paused:
 		state = stylePaused.Render("PAUSED")
 	}
 	speedSeg := fmt.Sprintf("speed %s (%.1f t/s)", c.Speed, c.EffectiveRate)
@@ -217,6 +225,14 @@ func (m Model) footerView() string {
 	if m.helpOpen {
 		return styleDim.Render(m.helpFooterHint())
 	}
+	// Postmortem posture (spec 044): the clock keys (space, [, ]) are inert
+	// on an ended world, so the footer's pause/resume hint gives way to the
+	// run-ended hint — every other affordance stands.
+	pause, resume := "space pause", "space resume"
+	if m.runEnded() {
+		pause = "run ended (read-only)"
+		resume = pause
+	}
 	switch {
 	case m.mbFocused:
 		// No "? help" here: focused, '?' types into the buffer like any
@@ -225,19 +241,19 @@ func (m Model) footerView() string {
 		// reachable, just from any other mode's overlay (n/p paging).
 		return styleDim.Render("esc release · ⏎ send · ↑↓ history")
 	case m.inspecting():
-		return styleDim.Render("j/k select · J/K scroll detail · space resume · m ask · ? help")
+		return styleDim.Render("j/k select · J/K scroll detail · " + resume + " · m ask · ? help")
 	case m.villagersVisible() && m.villDetail && m.villDecisions:
-		return styleDim.Render("j/k scroll · esc back · space pause · q quit · ? help")
+		return styleDim.Render("j/k scroll · esc back · " + pause + " · q quit · ? help")
 	case m.villagersVisible() && m.villDetail:
-		return styleDim.Render("d decisions · esc back · space pause · q quit · ? help")
+		return styleDim.Render("d decisions · esc back · " + pause + " · q quit · ? help")
 	case m.villagersVisible():
-		return styleDim.Render("j/k select · ⏎ inspect · space pause · q quit · ? help")
+		return styleDim.Render("j/k select · ⏎ inspect · " + pause + " · q quit · ? help")
 	case isWidescreen(m.width) && m.solo:
-		return styleDim.Render(fmt.Sprintf("%s back to map · space resume · q quit · ? help", dockTabKey[m.dockTab]))
+		return styleDim.Render(fmt.Sprintf("%s back to map · %s · q quit · ? help", dockTabKey[m.dockTab], resume))
 	case isWidescreen(m.width):
-		return styleDim.Render("2 chronicle 3 metatron 4 villagers (again: solo) · m ask · space pause · q quit · ? help")
+		return styleDim.Render("2 chronicle 3 metatron 4 villagers (again: solo) · m ask · " + pause + " · q quit · ? help")
 	default:
-		return styleDim.Render("1-4 panes · space pause · q quit · ? help")
+		return styleDim.Render("1-4 panes · " + pause + " · q quit · ? help")
 	}
 }
 

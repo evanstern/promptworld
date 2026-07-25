@@ -48,6 +48,10 @@ var catalogFixture = map[string]digestFixture{
 		`{"provider":"local","kind":"model-missing","detail":"model not found","remedy":"ollama pull llama3","active":true}`,
 		`provider=local kind=model-missing warning detail=model not found remedy=ollama pull llama3`,
 	},
+	"run.ended": {
+		`{"tick":120000,"deaths":[{"agent":0,"tick":90000,"cause":"starvation"},{"agent":1,"tick":120000,"cause":"exposure"}],"final_cause":"exposure"}`,
+		`the run ended · 2 dead · final cause exposure`,
+	},
 
 	// --- sim ---
 	"sim.day_started":        {`{"day":3}`, `day 3 begins`},

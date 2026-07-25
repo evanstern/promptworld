@@ -214,6 +214,18 @@ var digestRegistry = map[string]digestFunc{
 		}
 		return labeled(pairs...), true
 	},
+	// run.ended (spec 044 US1): the run-over declaration — total deaths and
+	// the final death's cause, the summary a postmortem reader wants on the
+	// feed line; the full ledger lives in the payload/detail pane.
+	"run.ended": func(e store.Event, names []string) ([]seg, bool) {
+		p, ok := decode[sim.RunEndedPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{
+			txt("the run ended · "), emphN(len(p.Deaths)), txt(" dead · final cause "), emph(p.FinalCause),
+		}), true
+	},
 
 	// --- sim ---
 

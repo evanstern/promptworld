@@ -70,6 +70,13 @@ func (md *Mind) chronicleNote(e store.Event) {
 		if json.Unmarshal(e.Payload, &p) == nil {
 			line = fmt.Sprintf("%s died of %s.", name(p.Agent), p.Cause)
 		}
+	case "run.ended":
+		// Spec 044 US1: the run-over declaration closes the story — the
+		// chronicle's factual line; the morgue (US2) carries the full record.
+		var p sim.RunEndedPayload
+		if json.Unmarshal(e.Payload, &p) == nil {
+			line = fmt.Sprintf("The last villager died of %s. The village stands empty — the run has ended.", p.FinalCause)
+		}
 	case "agent.built":
 		var p sim.BuiltPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
