@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-25 04:43'
-updated_date: '2026-07-25 19:30'
+updated_date: '2026-07-25 19:39'
 labels:
   - learning-game
   - metatron
@@ -19,7 +19,7 @@ ordinal: 86000
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Learning-game synthesis Wave 1 (docs/design/learning-game-synthesis.md, 2026-07-25; operator decision 5: the angel IS the tutor). One work item merging three vault recommendations: (a) a read-only, grant-gated, registry-derived explain tool serving deterministic mechanics facts — tool rosters, charge/miracle costs, decision classes/points/budgets, map glyphs — so the angel never confabulates mechanics (the unreliable-manual hazard: the frame forbids inventing events but nothing grounds facts); (b) a default skills/guide.md + tutor-charter preset teaching the base angel to answer how-do-I-play questions through it ('ask your angel' becomes the game's whatis command and a rep of the skill being taught); (c) the post-turn report card — a cheap-chain critique attributing outcomes to charter text ('your charter never mentions coordinates; the miracle was rejected twice for them'), riding the TASK-63 trace. Contract: explain is pull, report card is push, ONE shared data source so the grader never grades on vibes (RimWorld one-corpus/two-deliveries precedent). Tutor lane doctrine: charge-free, faith-free, excluded from every rubric; no initiative-frame relaxation (explaining is speech, not an act). Grounding: Analysis-In-Game-First-Teaching rec 2, Analysis-Learning-Game-Fit rec 4.
 
-Spec: specs/059-grounded-feedback
+Spec: specs/063-grounded-feedback
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
@@ -54,4 +54,6 @@ CAUTION — the review recommended 060, but 060 IS NO LONGER FREE: specs/060-vil
 Root cause (review finding): spec-number allocation is a read-then-write race with no lock. Two sessions checking origin/main:specs/ within the same minute both see the same max and both claim next. It has now failed FOUR times in one day (commit f3b0842 'renumbered off 055/058 collisions', plus this 059 pair). The prescribed mitigation in both runbooks ('check origin/main:specs/ before claiming an NNN') CANNOT work. Fix belongs in check-merge-drift.mjs worktree mode — the takenSpecNumbers() helper (:1102-1123) already computes the right thing, it just runs too late.
 
 Note also: this task's spec is already written against 'internal/guardian' (post-TASK-121 rename) while TASK-111's is written against 'internal/metatron' — the queue is spec'd against two names for one package until 121 lands.
+
+Spec renumbered 059 → 063: the MVLS session's merged spec 059-metatron-survival-autonomy (PR #90) claimed the number first on main; renumbered per collision doctrine (drift-check catch, 2026-07-25).
 <!-- SECTION:NOTES:END -->

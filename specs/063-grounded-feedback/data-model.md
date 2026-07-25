@@ -1,4 +1,4 @@
-# Data Model: Grounded feedback layer (spec 059)
+# Data Model: Grounded feedback layer (spec 063)
 
 ## Fact sheet (explain result — derived, never stored)
 

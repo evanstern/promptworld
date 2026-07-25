@@ -1,4 +1,4 @@
-# Quickstart: validating the grounded feedback layer (spec 059)
+# Quickstart: validating the grounded feedback layer (spec 063)
 
 ## Automated validation
 

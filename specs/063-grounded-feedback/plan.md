@@ -1,8 +1,8 @@
 # Implementation Plan: Grounded feedback layer — explain tool, tutor guide, report card
 
-**Branch**: `059-grounded-feedback` | **Date**: 2026-07-25 | **Spec**: [spec.md](spec.md)
+**Branch**: `063-grounded-feedback` | **Date**: 2026-07-25 | **Spec**: [spec.md](spec.md)
 
-**Input**: Feature specification from `/specs/059-grounded-feedback/spec.md`
+**Input**: Feature specification from `/specs/063-grounded-feedback/spec.md`
 
 ## Summary
 
@@ -42,7 +42,7 @@ section (static-per-stage, model-free) and skin-token compliance throughout.
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- **I. Artifact-Grounded Action** — PASS: spec dir `specs/059-*`; TASK-115 linked pre-implementation; the two standing resolutions cite spec-046 lock doctrine and D5/127's renderer.
+- **I. Artifact-Grounded Action** — PASS: spec dir `specs/063-*`; TASK-115 linked pre-implementation; the two standing resolutions cite spec-046 lock doctrine and D5/127's renderer.
 - **II. One Task, One PR** — PASS: `.worktrees/task-115`, one branch, one PR.
 - **III. Gates Over Assertions** — PASS: ground-truth/neutrality/citation sweeps are mechanized ACs; design gate; spec-bridge gate; merge-drift pr gate.
 - **IV. Grounding Freshness** — PASS (planned): touches sources of `tool-registry.md`, `metatron.md` (renamed note), `tui-client.md`, `llm-orchestrator.md`, `event-types.md` → wiki-update + player-docs re-ground.
@@ -55,7 +55,7 @@ section (static-per-stage, model-free) and skin-token compliance throughout.
 ### Documentation (this feature)
 
 ```text
-specs/059-grounded-feedback/
+specs/063-grounded-feedback/
 ├── plan.md
 ├── research.md          # R1 explain composition; R2 tutor-lane mechanics; R3 guide seam;
 │                        #   R4 cheap chain + budget; R5 card storage/doors; R6 ? section;

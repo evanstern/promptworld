@@ -1,4 +1,4 @@
-# Research: Grounded feedback layer (spec 059)
+# Research: Grounded feedback layer (spec 063)
 
 ## R1 — Explain: composition and gating
 

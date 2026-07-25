@@ -1,6 +1,6 @@
 # Tasks: Grounded feedback layer — explain tool, tutor guide, report card
 
-**Input**: Design documents from `/specs/059-grounded-feedback/`
+**Input**: Design documents from `/specs/063-grounded-feedback/`
 **Prerequisites**: plan.md, research.md, data-model.md, contracts/feedback-layer.md, quickstart.md
 **Board**: TASK-115 · one branch (`task-115-grounded-feedback`), one PR
 

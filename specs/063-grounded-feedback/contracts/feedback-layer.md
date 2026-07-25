@@ -1,4 +1,4 @@
-# Contract: grounded feedback layer (spec 059)
+# Contract: grounded feedback layer (spec 063)
 
 ## §1 Explain (pull)
 

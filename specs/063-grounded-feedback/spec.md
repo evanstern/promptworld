@@ -1,6 +1,6 @@
 # Feature Specification: Grounded feedback layer — explain tool, tutor guide, report card
 
-**Feature Branch**: `059-grounded-feedback`
+**Feature Branch**: `063-grounded-feedback`
 
 **Created**: 2026-07-25
 
