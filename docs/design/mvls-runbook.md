@@ -191,3 +191,4 @@ sweep; this log complete and status flipped to done.
 | date | task | PR | merge | notes |
 |------|------|----|-------|-------|
 | 2026-07-25 | TASK-106 | — (research) | — | Done; artifact 7d79a0a; TASK-133 carded |
+| 2026-07-25 | TASK-89 | — (ops) | — | Done; world-01 migrated v4 + on gemma; 5-scene gist sample 0 defects |
