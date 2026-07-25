@@ -18,25 +18,45 @@ import (
 	"github.com/evanstern/promptworld/internal/worldmap"
 )
 
+// EventSource is the read-only event-log surface the morgue render needs
+// (spec 044 US2): the morgue's factual content is a pure fold over the FULL
+// recorded history (FR-011 — regenerable from the event history alone),
+// which the boot-snapshot replica cannot provide. *store.Store satisfies it;
+// tests use a slice-backed fake.
+type EventSource interface {
+	ReplayEvents(sinceSeq int64, fn func(store.Event) error) error
+}
+
 type Scribe struct {
 	worldDir string
+	seed     uint64
+	m        *worldmap.Map
 	replica  *sim.State
+	src      EventSource // nil ⇒ no morgue render (soul/chronicle files unaffected)
 	events   chan []store.Event
 	done     chan struct{}
 }
 
 // New starts the scribe from a state snapshot (canonical JSON, as produced
-// by State.Marshal at daemon startup) and renders every soul once.
-func New(worldDir string, seed uint64, m *worldmap.Map, stateJSON []byte) (*Scribe, error) {
+// by State.Marshal at daemon startup) and renders every soul once. The
+// variadic src is the event-log read surface the morgue render folds over
+// (spec 044 US2); pre-044 call sites that pass none keep compiling and
+// simply render no morgue.
+func New(worldDir string, seed uint64, m *worldmap.Map, stateJSON []byte, src ...EventSource) (*Scribe, error) {
 	replica := sim.NewState(seed, m)
 	if err := json.Unmarshal(stateJSON, replica); err != nil {
 		return nil, err
 	}
 	s := &Scribe{
 		worldDir: worldDir,
+		seed:     seed,
+		m:        m,
 		replica:  replica,
 		events:   make(chan []store.Event, 256),
 		done:     make(chan struct{}),
+	}
+	if len(src) > 0 {
+		s.src = src[0]
 	}
 	for i := range s.replica.Agents {
 		s.render(i)
@@ -44,6 +64,7 @@ func New(worldDir string, seed uint64, m *worldmap.Map, stateJSON []byte) (*Scri
 	}
 	s.renderChronicle()
 	s.renderVillageCharter()
+	s.renderMorgue()
 	go s.run()
 	return s, nil
 }
@@ -73,10 +94,19 @@ func (s *Scribe) run() {
 			jDirty := map[int]bool{}
 			chronDirty := false
 			charterDirty := false
+			morgueDirty := false
 			for _, e := range batch {
 				s.replica.Apply(e)
 				if e.Tick > s.replica.Tick {
 					s.replica.Tick = e.Tick
+				}
+				switch e.Type {
+				case "agent.died", "run.ended", "morgue.epilogue":
+					// Spec 044 US2: the morgue re-renders on every batch that
+					// grows it — a death, the run-end declaration, or a landed
+					// epilogue. (agent.died also falls through to the soul
+					// dirty-set via the memory case below.)
+					morgueDirty = true
 				}
 				switch e.Type {
 				case "journal.entry_written", "journal.entry_deleted":
@@ -125,6 +155,9 @@ func (s *Scribe) run() {
 			}
 			if charterDirty {
 				s.renderVillageCharter()
+			}
+			if morgueDirty {
+				s.renderMorgue()
 			}
 		}
 	}

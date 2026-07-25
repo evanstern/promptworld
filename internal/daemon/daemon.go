@@ -127,7 +127,12 @@ func Run(dir string) error {
 	// non-blocking by contract.
 	var consumers []func([]store.Event)
 	consumers = append(consumers, srv.Broadcast)
-	scr, err := scribe.New(dir, w.Manifest.Seed, w.Map(), state.Marshal())
+	// The store rides along as the morgue's event source (spec 044 US2): the
+	// morgue render is a pure fold over the FULL history, which the boot
+	// snapshot alone cannot provide. Reads are rare (per death / boot) and
+	// serialize briefly with the loop's appends on the store's single
+	// connection — the accepted per-render cost (plan, Performance Goals).
+	scr, err := scribe.New(dir, w.Manifest.Seed, w.Map(), state.Marshal(), st)
 	if err != nil {
 		return err
 	}
