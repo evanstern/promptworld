@@ -82,10 +82,10 @@
 
 **Goal**: relevance-fed memories + journal excerpts under the budget. **Independent test**: planted-memory selection + degraded mode (SC-006), budget fit (SC-005).
 
-- [ ] T019 [US4] Journal term-match selection per research R5: exported excerpt helper in `internal/sim/journal.go` (≤2 entries via `SearchJournal`, query terms = two worst needs + active/last goal, ≤300-rune excerpts); `journal` block renderer in `internal/mind/context.go` (contract block 10, first dropped)
-- [ ] T020 [P] [US4] Journal selection tests in `internal/sim/journal_test.go` + block tests in `internal/mind/context_test.go`: relevant-entry match, no-match omission, excerpt cap, determinism
-- [ ] T021 [US4] Memories-block floor: protect 4 entries, drop-above-floor + serendipity-tail drop wiring in `internal/mind/context.go` (contract blocks 8-9); degraded-mode passthrough test (no SitVec ⇒ legacy selection, block renders, nothing crashes)
-- [ ] T022 [US4] Planted-memory relevance test per quickstart §SC-006 in `internal/mind/context_test.go`: relevant items included ≥80% across seeds within budget
+- [x] T019 [US4] Journal term-match selection per research R5: exported excerpt helper in `internal/sim/journal.go` (≤2 entries via `SearchJournal`, query terms = two worst needs + active/last goal, ≤300-rune excerpts); `journal` block renderer in `internal/mind/context.go` (contract block 10, first dropped)
+- [x] T020 [P] [US4] Journal selection tests in `internal/sim/journal_test.go` + block tests in `internal/mind/context_test.go`: relevant-entry match, no-match omission, excerpt cap, determinism
+- [x] T021 [US4] Memories-block floor: protect 4 entries, drop-above-floor + serendipity-tail drop wiring in `internal/mind/context.go` (contract blocks 8-9); degraded-mode passthrough test (no SitVec ⇒ legacy selection, block renders, nothing crashes)
+- [x] T022 [US4] Planted-memory relevance test per quickstart §SC-006 in `internal/mind/context_test.go`: relevant items included ≥80% across seeds within budget
 - [ ] T023 [US4] Multi-day budget-fit run per quickstart §SC-005: aggregate `cog.thought` PromptBytes/DroppedBlocks from a scratch world, verify ≥99% within budget, record numbers on TASK-105
 
 **Checkpoint**: all spec stories implemented.
