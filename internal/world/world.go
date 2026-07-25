@@ -209,9 +209,18 @@ func (w *World) LLMConfigPath() string { return filepath.Join(w.Dir, "llm.json")
 // `promptworld calibrate` (specs/007-cognition-horizon); an absent file is
 // legal — pessimistic bootstrap defaults apply.
 func (w *World) CalibrationPath() string { return filepath.Join(w.Dir, "calibration.json") }
-func (w *World) SockPath() string        { return filepath.Join(w.Dir, "daemon.sock") }
-func (w *World) PidPath() string         { return filepath.Join(w.Dir, "daemon.pid") }
-func (w *World) CharterPath() string     { return filepath.Join(w.Dir, "charter.md") }
+
+// EstimatorStatePath is the persisted live per-provider seconds-per-point
+// snapshot (TASK-113): unlike calibration.json (human-authored via `promptworld
+// calibrate`, daemon-read-only), this file IS daemon-written — periodically and
+// at shutdown — so the estimator's learned drift survives a restart instead of
+// resetting to the calibration/bootstrap floor every time. An absent file is
+// legal: boot reseeds from calibration/bootstrap alone, exactly as before this
+// file existed.
+func (w *World) EstimatorStatePath() string { return filepath.Join(w.Dir, "estimator_state.json") }
+func (w *World) SockPath() string           { return filepath.Join(w.Dir, "daemon.sock") }
+func (w *World) PidPath() string            { return filepath.Join(w.Dir, "daemon.pid") }
+func (w *World) CharterPath() string        { return filepath.Join(w.Dir, "charter.md") }
 
 // VillageCharterPath is the village's law (TASK-13) — a scribe-rendered
 // derived view of event-sourced norms, distinct from Metatron's
