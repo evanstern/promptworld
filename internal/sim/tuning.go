@@ -217,6 +217,19 @@ type TuningAppliedPayload struct {
 	EncounterCooldownTicks int64  `json:"encounter_cooldown_ticks"`
 }
 
+// GenesisTuningEvent builds the sim.tuning_applied event a world pins at
+// creation (spec 057 / TASK-108 US2): the FULL current default dial set, so a
+// world's effective doctrine is fixed in its own log at birth and later changes
+// to any default* constant never reach back into its replay. `promptworld new`
+// seeds exactly one of these among its genesis events; the daemon boot seed
+// (seedTuning) then compares a tuning.json against this pinned set exactly as
+// spec 048 specifies (no event on equality, one on difference). migrate does
+// NOT back-fill this — pre-057 and migrated worlds carry no pin and follow
+// compiled defaults (a documented determinism hazard, §6).
+func GenesisTuningEvent(tick int64) store.Event {
+	return NewTuningEvent(tick, defaultTuning())
+}
+
 // NewTuningEvent builds the sim.tuning_applied event carrying the full
 // effective set, for the daemon to seed on boot when it differs from what
 // state already carries (the NewConventionEvent pattern, governance.go:632).

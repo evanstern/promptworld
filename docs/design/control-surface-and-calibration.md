@@ -386,6 +386,29 @@ must never silently no-op). Values are consumed in one place: nil-safe accessors
 (`internal/sim/tuning.go`), read reducer-side and off the mind's replica alike. Editing the file
 takes effect at the next daemon boot only (hot exposure is step 3, above).
 
+#### Genesis pin & the default-shift hazard (spec 057 / TASK-108)
+
+Changing a promoted dial's **default constant** (as spec 057 did — `refuel_dying_below` 3600 →
+10800) would silently change the replay of every un-tuned world, because such a world derives its
+effective set from the compiled default, not from any logged event. Spec 057 closes this for
+**new** worlds: `promptworld new` seeds one `sim.tuning_applied` event at genesis carrying the full
+current default set (`sim.GenesisTuningEvent`, ordered with the other tick-0 genesis events). A
+post-057 world's doctrine is therefore fixed in its own log at birth, and any future `default*`
+change never reaches back into its replay — the boot seed (`seedTuning`) still compares a
+`tuning.json` against the pinned set and appends an event only on difference, spec-048 semantics
+intact.
+
+**The residual hazard (the TASK-75 replay-determinism scope class):** worlds created *before*
+spec 057 — and worlds produced by `promptworld migrate` (v3→v4), which deliberately does **not**
+back-fill a pin (rewriting a migrated world's history head is worse than the shift) — carry no
+genesis pin. They keep loading and replaying, but the compiled-default change *does* reach them at
+their next boot. This is intended and observable: world-01, having no `tuning.json`, inherits the
+raised 10800 refuel window on its next boot — exactly the fix TASK-108 wanted. It also means a
+future `default*` change is invisible to post-057 worlds but live for pre-057/migrated ones; a
+world's doctrine is fixed at birth *only if it was born pinned*. When TASK-75's determinism-scope
+doc lands, this hazard class belongs alongside its snapshot/replay caveats; until then this note is
+its home.
+
 Candidates that have earned promotion on world-01 evidence — and are now the shipped five above:
 `refuelDyingBelow`, `fireBurnPerWood`, a conversation pair-cooldown, `gruEmergePerMille`, and the
 planner cadence. Candidates that have *not*: everything nobody has yet needed to touch (e.g.

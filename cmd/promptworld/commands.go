@@ -228,6 +228,14 @@ func cmdNew(args []string) error {
 		return err
 	}
 	genesis := []store.Event{{Tick: 0, Type: "world.created", Payload: payload}}
+	// Genesis tuning pin (spec 057 / TASK-108 US2): one sim.tuning_applied event
+	// carrying the full current default dial set, so this world's effective
+	// doctrine is fixed in its own log at birth. Future changes to any default*
+	// constant then reach only pre-057/un-pinned worlds, never rewriting a
+	// pinned world's replay. Ordered right after world.created (both tick 0; the
+	// reducer arms are order-independent — world.created is a no-op on state and
+	// the tuning arm is a pure set of s.Tuning). migrate does NOT back-fill this.
+	genesis = append(genesis, sim.GenesisTuningEvent(0))
 	secretEvents, err := persona.SecretEvents()
 	if err != nil {
 		return err
