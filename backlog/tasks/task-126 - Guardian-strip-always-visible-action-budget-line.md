@@ -1,10 +1,10 @@
 ---
 id: TASK-126
 title: 'Guardian strip: always-visible action budget line'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-25 14:44'
-updated_date: '2026-07-25 17:51'
+updated_date: '2026-07-25 17:54'
 labels:
   - learning-game
   - tui
@@ -40,3 +40,9 @@ Model tier: Sonnet (spec-implementer default). Rubric: single-package rendering 
 
 spec-bridge sync: 14/14 tasks done — merged via PR #83 (f18e9a4) after clean rebase; gates green post-rebase (race suite + check-tui-design). Deviations recorded on the design page: replica-sourced order count; ⚡⚡· (2/3) segment form; pre-status empty fold prefix; narrow carry scoped to the guardian pane (the only narrow composer).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Guardian strip shipped via spec 050 + PR #83 (merge f18e9a4). One borderless budget row above the minibuffer (charge bank ⚡+(N/cap), next-regen forecast via newly exported sim.MetatronChargeRegenTicks, replica-sourced standing-order count); honest degradation (no faith segment, regen omitted at full bank, blank pre-status row); folds last by relocating into the dormant minibuffer line; carried in narrow (guardian pane). Design pages guardian-strip.md→shipped, layout/minibuffer/anatomy re-pinned in-PR; wiki re-verified (6 notes → 4b15038); player-docs refresh dispatched. All gates green post-rebase.
+<!-- SECTION:FINAL_SUMMARY:END -->
