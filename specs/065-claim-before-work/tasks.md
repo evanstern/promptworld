@@ -64,7 +64,7 @@ commits, clears after push
 doc alone
 
 - [x] T010 [P] [US1] Add "Claim-before-work protocol (spec 065)" block to `CLAUDE.md`, adjacent to the worktrees block: first commit claims card (In Progress) + spec number (directory), pushed immediately; never force-push; rejected push = stop-the-lane signal (fetch, re-read board + specs/, surface to operator if another session holds the claim; unrelated rejection → rebase and re-push); task branches push on first commit; name the `claim`/`--task` gate invocations verbatim
-- [ ] T011 [P] [US1] Companion doctrine in praxisflux source repo `~/neumo/projects/praxis/pdlc/skills/sweep/templates/runbook.md` ("Concurrency & conflict doctrine" section): same three-rule protocol for executing sessions; follow that repo's laws (version-lockstep bump, merge-commit-only); record the companion commit hash on TASK-139 — NOT part of this repo's PR
+- [x] T011 [P] [US1] Companion doctrine in praxisflux source repo `~/neumo/projects/praxis/pdlc/skills/sweep/templates/runbook.md` ("Concurrency & conflict doctrine" section): same three-rule protocol for executing sessions; follow that repo's laws (version-lockstep bump, merge-commit-only); record the companion commit hash on TASK-139 — NOT part of this repo's PR
 
 ---
 
