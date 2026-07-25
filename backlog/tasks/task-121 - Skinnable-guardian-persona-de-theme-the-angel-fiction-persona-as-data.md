@@ -4,7 +4,7 @@ title: 'Skinnable guardian persona: de-theme the angel fiction, persona as data'
 status: In Progress
 assignee: []
 created_date: '2026-07-25 06:20'
-updated_date: '2026-07-25 19:30'
+updated_date: '2026-07-25 19:36'
 labels:
   - learning-game
   - design
@@ -65,4 +65,6 @@ OPERATOR DECISIONS (2026-07-25, team review):
 (3) TASK-111 IS BOUND TO THE SKIN-TOKEN CONTRACT, extending decision D2 (which today binds only 115 and 117). Otherwise 111's genesis watch orders seed soul.md and order text in Metatron voice that this task's T008 fiction-denylist test would then fail.
 
 REVIEW FINDINGS FOR THIS TASK'S SCOPE: true blast radius is 1,176 hits across 57 non-test Go files (not just TUI — internal/llm/config.go, internal/cognition/registry.go, internal/bundle/*, internal/mind/mind.go, internal/daemon/daemon.go, internal/toolloop/loop.go) plus 352 files across docs/specs/backlog/README. Also UNRESOLVED CONTRADICTION: spec 052 AC#2 ('no Metatron/angel/miracle imagery in prompts') vs research R4 ('tool ids are frozen') — work_miracle is a frozen tool id rendered verbatim into the composed prompt at derive.go:255. Decide alias-at-declaration vs exempt-tool-ids BEFORE T008 is written, or the test gets written to whatever shipped.
+
+TASK-134 sequencing resolved by operator checkpoint: merge proceeds as the freeze+alias interim; the persisted-name rename is TASK-134's AC #4 (migration-backed), not this task's. Display alias to be removed when 134 ships.
 <!-- SECTION:NOTES:END -->

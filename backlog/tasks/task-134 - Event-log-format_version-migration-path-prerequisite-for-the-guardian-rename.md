@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-07-25 19:29'
+updated_date: '2026-07-25 19:36'
 labels:
   - replay-doctrine
   - review-2026-07-25
@@ -37,3 +38,9 @@ Sequencing: this BLOCKS TASK-121 (skinnable guardian). 121's rename sweep cannot
 - [ ] #4 TASK-121's metatron.* -> guardian.* rename is demonstrated end-to-end through the migration on a seeded world
 - [ ] #5 Wiki re-pinned (event-log / sim-state-reducer notes) and freshness gate green
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Operator ruling (2026-07-25, via UI-sweep orchestrator checkpoint): TASK-121 merged AHEAD of this task as the freeze-everything interim — its branch changes ZERO persisted names (all frozen + annotated at definition sites; pre-052 replay byte-identity proven by its compat suite), so the replay door this task guards stays shut. The real metatron.*→guardian.* rename runs THROUGH this task's migration machinery (AC #4); 121's chronicle Type-column display alias is an interim shim to remove when this lands. Cross-ref: specs/052-skinnable-guardian ruling 2 + freeze annotations.
+<!-- SECTION:NOTES:END -->
