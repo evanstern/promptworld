@@ -4,7 +4,7 @@ title: Re-measure SC-007 flip-rate at full length after instinct work lands
 status: In Progress
 assignee: []
 created_date: '2026-07-25 13:58'
-updated_date: '2026-07-25 21:53'
+updated_date: '2026-07-25 22:17'
 labels:
   - goal-quality
   - thrash-detection
@@ -37,4 +37,6 @@ Operator checkpoint resolved (2026-07-25): run on a FRESH seeded throwaway world
 MVLS sweep: checkpoint 5 resolved — fresh seeded world, approved by operator 2026-07-25. Awaiting TASK-104 merge signal to launch.
 
 Measurement RUN LAUNCHED (2026-07-25): fresh world ~/.promptworld/measure/task-122 (path-form, off-registry), seed 4242, created on the post-104 binary (genesis tuning pin: full MVLS defaults). All routes gemma4:12b-mlx @ mbpro-m1 (Sample-B planner tier, zero cloud spend), calibrated (--tier local), daemon pid 15570, speed 4x from tick 1 — >=4 game-days ≈ 24h wall (ETA ~2026-07-26 evening). Counting script committed: docs/design/evidence/task-122/flip_count.py (SC-007 method + warm_up in the warmth class), validated against the world-01 baseline (Sage 73.94/day ≈ spike's ~72).
+
+Speed bumped 4x -> 8x at tick ~5,819 (day 1 07:36, operator decision 2026-07-25): horizon verified green at 8x for all three classes (planner/conversation/meeting thinking, none suppressed). Rationale: bias direction is conservative (staler planner reactions at higher compression push flips UP, so clearing the bar at 8x is stronger evidence); span was 1.6 game-hours old at the switch — effectively single-speed; wall ETA halves to ~11h (~2026-07-26 morning). Evidence doc will footnote the mixed span. Revert condition: any horizon suppression appears.
 <!-- SECTION:NOTES:END -->
