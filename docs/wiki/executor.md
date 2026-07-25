@@ -9,7 +9,7 @@ sources:
   - internal/sim/terrain.go
   - internal/sim/recipes.go
   - internal/sim/memory.go
-verified_against: 1debe184724bffe5eab8dbb5659a047c9ff63cc4
+verified_against: d9d74924621b8816bbb4608afe48c41cda4321d7
 ---
 
 # Executor
@@ -59,7 +59,12 @@ precedent) the `agent.needs_changed` arm rolls forward once
 rising/falling/steady need trajectories; both are maintained entirely by
 reducer arms (`appendIntent`/`stampIntentOutcome`/`stampOrAppendExpired`,
 agents.go) — replay-safe by construction, and pre-043 snapshots round-trip
-byte-identically ([[decision-context]] owns the rendering surface).
+byte-identically ([[decision-context]] owns the rendering surface). Since
+spec 062 each agent also carries `LastMindIntentDone` (`omitempty`) — the
+reflex PREP gate's yield-window anchor ([[reflex-policy]]) — armed by the
+SAME `agent.intent_done` completion arm reading `stampIntentOutcome`'s
+(now dual-valued) closed-record `Source` return; the executor itself has no
+stake in it beyond emitting the completion event the arm reads.
 `Needs{Health, Food, Rest, Warmth, Morale}` are integers 0..1000 —
 integer math keeps decay byte-deterministic across platforms. `Inventory` (v2,
 format_version 2 — [[world-save-directory]]) carries `Wood`, `Stone`, `Water`,

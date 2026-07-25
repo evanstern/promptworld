@@ -1,11 +1,11 @@
 ---
 name: reflex-policy
-description: Deterministic survival decisions for idle agents (eat → food/search → night warmth/fire-refuel → rest → prep → wander) plus BFS pathfinding with fixed neighbor order; resolveGoal resolves the full spec-012 planner goal vocabulary (quarry, water, crafting, stations, refuel, cook, bathe) plus spec-013's storage goals, spec-032's walls/axes/paths goals, and spec-041's knowledge-gated resolution (nearestKnown, search/frontier, last-known-sighting talk_to) to coordinates
+description: Deterministic survival decisions for idle agents — explicitly classified SURVIVAL rungs (eat → food/search → night warmth ladder + US3 frontier-search fallback → day warmth rung → rest) that always run, and PREP rungs (first-fire, refuel top-up, larder stock) that yield to a recent non-reflex intent or a need in its danger band before wander — plus BFS pathfinding with fixed neighbor order; resolveGoal resolves the full spec-012 planner goal vocabulary (quarry, water, crafting, stations, refuel, cook, bathe) plus spec-013's storage goals, spec-032's walls/axes/paths goals, and spec-041's knowledge-gated resolution (nearestKnown, search/frontier, last-known-sighting talk_to) to coordinates
 kind: component
 sources:
   - internal/sim/policy.go
   - internal/sim/path.go
-verified_against: cea7b8f83fa07f9fcfefe4dd861aa05a78448f1b
+verified_against: 4387d32bc066407c8dbdf9a8ca4b0d929de02d15
 ---
 
 # Reflex policy & pathfinding
@@ -54,7 +54,30 @@ sighting (the mental map's peer record), never its live coordinates.
 
 ## How it works
 
-Priority ladder (first match wins):
+Spec 062 (TASK-103, from the TASK-101 spike) restructured `decideIntent` into
+two explicitly classified rung groups plus an idle filler, each its own
+function — "instinct that yields to intelligence": the reflex ladder is a
+safety net, not a scheduler, and the classification lives in **code
+structure** (FR-001), not prose:
+
+- **`survivalDecision`** — life-saving instinct: eat, get food, the night
+  warmth ladder (+ its US3 frontier-search fallback and terminal sleep), the
+  daytime nap, and the new day warmth rung. Runs FIRST and is **unconditioned**
+  by the yield window or danger bands below — a life-saving reflex never
+  defers.
+- **`prepDecision`** — opportunistic village upkeep: first-fire prep, the
+  dying-fire refuel top-up, and the larder stock-up. Runs only when
+  `prepYields` (below) says no.
+- **`wanderDecision`** — the idle filler when neither group decides.
+
+Root cause this fixes (spike TASK-101, 057 audit): the reflex's PREP rungs
+used to fire the instant a planner intent completed (past the 120-tick grace),
+never checked warmth, and counter-scheduled the agent away from the fire the
+planner just sent it to — world-01's forage↔goto_warmth thrash (Sage: 436
+flips, 334 within ≤200 ticks). `thrash_regression_test.go` (US4) encodes both
+the old flip and the new non-loop in one deterministic test.
+
+### SURVIVAL rungs (first match wins, always run)
 
 1. **Eat** — hungry (`Food < hungryAt`, 350) and carrying any edible unit
    (`hasAnyFood`: `Inv.Meals + Inv.FoodCooked + Inv.FoodRaw > 0`) → instant
@@ -66,30 +89,92 @@ Priority ladder (first match wins):
    (US4, T026, FR-013 parity without omniscience) falls back to the nearest
    exploration frontier (`search`) — hunger-only, so a fed villager never
    mounts an expedition just to top up the larder.
-3. **Night, cold** (`!warmAt`) — reach KNOWN warmth (`goto_warmth`,
-   `warmKnownPredicate`: a remembered-lit fire or a known shelter) if
-   reachable; else `reflexRefuelIntent`, the reflex's one new rule (T020,
-   FR-012): if carrying any wood and a KNOWN fire is remembered cold or has
-   less than `s.RefuelDyingBelow()` (3600 ticks, one game-hour, default —
-   spec 048's [[world-tuning]] promotes this to a per-world dial, the
-   default living in `tuning.go` as `defaultRefuelDyingBelow`) of remembered
-   fuel left, relight or top it up (`refuel_fire`) — cheaper than a fresh
-   build; else build a fire if carrying `fireWoodCost` (2) wood; else chop
-   the nearest KNOWN standing tree (yes, chopping in the cold dark — that's
-   the day-1 drama working as designed).
+3. **Night, cold** (`!warmAt`) — the night `warmthLadder` (spec 062 R5, the
+   exact pre-062 body factored into a shared helper): `reachKnownWarmth`
+   (reach a remembered-lit fire, `goto_warmth`, via `warmKnownPredicate`; else
+   `reflexRefuelIntent`, T020/FR-012, relighting/topping up a KNOWN cold or
+   dying fire when carrying wood — cheaper than a fresh build) → build a fire
+   with `fireWoodCost` (2) wood already in hand (`buildWarmthIfWood`) → chop
+   the nearest KNOWN standing tree (yes, chopping in the cold dark — the
+   day-1 drama working as designed). **New (US3, FR-005, 057 audit Gap A)**:
+   if the ladder finds NOTHING — carrying under `fireWoodCost` wood AND no
+   KNOWN tree to chop — rather than lying down cold, the agent searches
+   toward the nearest exploration frontier (`nearestFrontier`, the
+   hungry-search shape) one rung above terminal sleep; only when no frontier
+   is reachable either does it fall through to sleep (today's floor of the
+   fallback, `reflex_matrix_test.go`'s Gap-A cells: wood=0 cells now resolve
+   to `search`, was `sleep`).
 4. **Night, warm** — sleep where you stand.
 5. **Exhausted by day** (`Rest < tiredAt`, 250) — nap, preferring a warm tile.
-6. **Prep** — knows of no fire (spec 041: `!knowsAnyFresh(a, "fire", tick)`,
-   the agent's own belief rather than `!hasStructure("fire")` — a village fire
-   someone else built and this agent has never seen still triggers this rung
-   for THIS agent) → build/chop toward one; then `reflexRefuelIntent` again,
-   unconditionally, to keep a known fire from dying down; then stock the
-   larder to `stockFoodRawTo` (8) units of raw food (`Inv.FoodRaw`).
+6. **Day warmth rung** (spec 062 US2, FR-004, 057 audit Gap B) — a
+   cold-but-not-tired villager by day (`Needs.Warmth < dangerWarmthBelow`,
+   350, and not already standing in warmth) runs `dayWarmthLadder`: the SAME
+   `reachKnownWarmth` → `buildWarmthIfWood` rungs the night ladder uses (`R5`,
+   shared helpers, no drift), BEFORE any PREP rung — so "Sage forages while
+   freezing" becomes impossible at the reflex layer. **Deliberately omits**
+   the night ladder's chop tail (a flagged plan deviation, recorded in
+   `dayWarmthLadder`'s doc comment): built as the full night ladder including
+   chop, the chop trip's ~300 ticks/trip stole a marginal villager's daytime
+   larder-stocking time and starved a sleeper on seed 101 (regressing
+   `TestDegradedModeVillageSurvives*` 8/8→7/8); since warmth passively
+   regenerates by day (never a death spiral, unlike night), trekking to chop
+   firewood for daytime warmth is unjustified subsistence-time theft —
+   `TestDayWarmthDoesNotChopTheDeviation` (`day_warmth_test.go`) pins the
+   no-chop case. The night branch keeps chop (night warmth IS a death spiral).
+
+### The PREP yield gate (spec 062 US1, FR-002/FR-003 — "instinct yields to intelligence")
+
+Before `prepDecision` runs, `prepYields(s, a, tick)` (`agents.go`) checks two
+independent clauses, either of which holds prep back:
+
+- **Yield window**: `a.LastMindIntentDone != 0 && tick-a.LastMindIntentDone <
+  prepYieldTicks` (1800 — one default planner cadence, deliberately the
+  CONSTANT and not the tuned `PlannerCadence()` dial: the window is
+  arbitration doctrine, not scheduling). `LastMindIntentDone` (`Agent`,
+  `omitempty`) is the tick the agent's most recent NON-REFLEX intent
+  completed — armed ONLY by the `agent.intent_done` reducer arm
+  ([[sim-state-reducer]]), and only when the closed `IntentRecord`'s
+  `Source` is `isMindSource` (`planner`/`plan`/`meeting`); `stampIntentOutcome`
+  now returns that source so the arm can read it. A reflex completion never
+  arms the window — instinct yielding to itself would deadlock prep in a
+  no-planner world, so the sentinel stays a permanent 0 there and degraded
+  mode never suppresses on this clause (SC-003, FR-007).
+- **Danger band**: any need below its band — `dangerFoodBelow`/
+  `dangerWarmthBelow`/`dangerRestBelow` (`agents.go`, doctrine-home constants
+  beside the existing thresholds, R3), anchored EXACTLY at the existing
+  survival-rung triggers with no padding: `dangerFoodBelow = hungryAt` (350),
+  `dangerWarmthBelow = coldNightBelow` (350), `dangerRestBelow = tiredAt`
+  (250) — "in danger" == "a survival rung would or will imminently act". The
+  warmth band is the one that bites by day: it is what suppresses prep for a
+  villager recovering AT a fire (`warmAt`, so the day-warmth rung above is
+  skipped) whose warmth is still low.
+
+Both clauses are named, dial-ready constants (FR-006) in a single doctrine
+home, deliberately NOT `tuning.json` dials (earned by evidence, not
+speculative). SURVIVAL rungs are exempt from both — they decide before this
+gate is ever consulted. `yield_state_test.go` covers the window's arm/decay,
+the danger-band override, reflex-never-arms, and the no-LLM parity drive
+(SC-003: a planner-free reflex matches pre-062 intents except where a danger
+band newly suppresses prep).
+
+### PREP rungs (only when `prepYields` says no)
+
+7. Knows of no fire (spec 041: `!knowsAnyFresh(a, "fire", tick)`, the agent's
+   own belief rather than `!hasStructure("fire")` — a village fire someone
+   else built and this agent has never seen still triggers this rung for
+   THIS agent) → build/chop toward one.
+8. `reflexRefuelIntent` again, unconditionally, to keep a known fire from
+   dying down.
+9. Stock the larder to `stockFoodRawTo` (8) units of raw food (`Inv.FoodRaw`).
    Shelter-building is gone from this ladder (T020): since spec 012 re-costed
    it in `Planks` (`shelterPlankCost`, 8) instead of raw wood, it joined the
    crafting economy and became planner-only — the reflex never enters
    `resolveGoal`'s `build_shelter`, `craft_*`, or `build_oven` cases.
-7. **Wander** — a seeded short stroll (`rngAt(seed, "wander", tick, idx)`).
+
+### Wander
+
+10. Neither group decided: a seeded short stroll
+    (`rngAt(seed, "wander", tick, idx)`).
 
 Waking (`wakeReason` in executor.go) mirrors this: day + decent rest
 (`Rest >= 600`), or a hunger emergency the agent can act on — `Food < 150` and
@@ -239,7 +324,13 @@ is the per-agent knowledge store every goal resolver now reads through —
 `nearestKnown`/`nearestKnownAdjacentTo`/`nearestFrontier`, `knowsAnyFresh`,
 `warmKnownPredicate`, and `peerSightingOf` all live in this note's files but
 are gated entirely on facts [[mental-maps]] and the executor's perception
-sweep populate.
+sweep populate. [[sim-state-reducer]] owns `Agent.LastMindIntentDone` and the
+`agent.intent_done` arm that arms it (spec 062); [[event-types]] catalogs that
+arm's effect; [[metatron-miracles]] classifies `LastMindIntentDone` SHIFT
+(only-non-zero) in the `rebaseTicks` taxonomy; [[testing-strategy]] tracks
+the spec-062 test files (`yield_state_test.go`, `day_warmth_test.go`,
+`night_search_test.go`, `thrash_regression_test.go`) alongside the updated
+`reflex_matrix_test.go`.
 
 ## Operational notes
 

@@ -11,7 +11,7 @@ sources:
   - internal/sim/terrain.go
   - internal/sim/morgue.go
   - internal/sim/curriculum.go
-verified_against: ad4871faa7988ce5b2d7f029ada59f653afaa569
+verified_against: d9d74924621b8816bbb4608afe48c41cda4321d7
 ---
 
 # Sim state & reducer
@@ -64,7 +64,13 @@ Journal/Hail precedent, deliberately deviating from the spec's value type so
 a pre-043 snapshot round-trips byte-identically) — the trajectory window's
 edge snapshot the decision prompt diffs current needs against to render
 rising/falling/steady, `NeedsAnchorTick == 0` the unset first-window
-sentinel, structures (`fire`/`shelter`/`oven`/`chest`, fires carrying a
+sentinel — plus, since spec 062 ([[reflex-policy]]), `LastMindIntentDone
+int64` (`omitempty`) — the tick the agent's most recent NON-REFLEX
+(planner/plan/meeting) intent completed, the yield-window anchor the
+reflex's PREP rungs consult to defer to a recent planner decision
+(`prepYields`, elapsed = tick−LastMindIntentDone gated against
+`prepYieldTicks`); 0 is the permanent sentinel for a never-mind-driven
+agent (every no-planner world stays there forever), structures (`fire`/`shelter`/`oven`/`chest`, fires carrying a
 `FuelUntil`; chests (spec 013 US3) carrying a permanent `Owner` — the builder's
 agent index, zero-value round-tripping unambiguously since every chest has one —
 and a `Store *Inventory` capped at `chestCap` via the same derived `bulk()` used
@@ -267,7 +273,14 @@ record left open by an override stays open, the open-then-superseded shape
 the alternation view preserves), while `agent.intent_rejected` — formerly a
 pure telemetry no-op — now appends an ALREADY-CLOSED `"rejected"` record
 (source `planner`), so the next thought can see an attempt was refused before
-ever landing;
+ever landing; since spec 062 US1 ([[reflex-policy]]) `stampIntentOutcome`
+additionally returns the closed record's `Source` and whether one was open,
+and `agent.intent_done`'s arm arms `Agent.LastMindIntentDone = e.Tick`
+whenever that source `isMindSource` (`planner`/`plan`/`meeting`) — the reflex
+PREP gate's yield-window anchor; a `agent.build_failed` closure (`"failed"`,
+never a completion) does not arm it, and neither does a reflex-sourced
+`"done"` closure (`isMindSource("reflex")` is false), so a no-planner world's
+anchor stays the permanent 0 sentinel;
 [[mental-maps]]'s two knowledge-growth arms mutate `Agent.Map` directly:
 `agent.saw` upserts the perception sweep's fully-baked facts verbatim
 (`Map.upsertFact`), `agent.map_corrected` removes facts the sweep found gone
@@ -454,7 +467,12 @@ selector records. [[decision-context]] is the consumer of the spec 043
 surfaces this reducer derives — the `IntentLog` ring (types and mutators
 `IntentRecord`/`appendIntent`/`stampIntentOutcome`/`stampOrAppendExpired` in
 `agents.go`) renders as the prompt's self-history block and
-`NeedsAnchor`/`NeedsAnchorTick` as its need-trajectory arrows.
+`NeedsAnchor`/`NeedsAnchorTick` as its need-trajectory arrows. [[reflex-policy]]
+is the consumer of `Agent.LastMindIntentDone` (spec 062) this reducer arms —
+the PREP gate's yield-window anchor, read via `prepYields`, alongside the
+danger-band constants ([[reflex-policy]]'s own doctrine-home constants in
+`agents.go`); [[metatron-miracles]] classifies the field SHIFT (only
+non-zero) in the `rebaseTicks` taxonomy.
 [[curriculum-ladder]] covers the `curriculum.*` payload shapes,
 `EvaluateUnlock`'s per-stage gate conjuncts, the sanctioned
 `CharterObservedEvidence` constructor, and the per-user unlocks record the

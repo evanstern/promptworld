@@ -11,7 +11,7 @@ sources:
   - internal/tool/derive.go
   - internal/ipc/server.go
   - cmd/promptworld/miracle.go
-verified_against: ad4871faa7988ce5b2d7f029ada59f653afaa569
+verified_against: d9d74924621b8816bbb4608afe48c41cda4321d7
 ---
 
 # Metatron's miracles
@@ -138,7 +138,13 @@ classified SHIFT or KEEP in its doc comment:
   shifted UNCONDITIONALLY: unlike most SHIFT fields here, a PRESENT
   `PairTalk` record is always a real exchange tick (absence of the record
   itself, not a zero value, means "never talked"), so there is no zero
-  sentinel to guard.
+  sentinel to guard. Spec 062 ([[reflex-policy]], [[sim-state-reducer]]) adds
+  `Agent.LastMindIntentDone`, the reflex PREP gate's yield-window anchor
+  (elapsed = tick − LastMindIntentDone gates `prepYields`; 0 = never
+  mind-driven, the permanent sentinel every no-planner world's agents carry)
+  — shifted only when non-zero, the `Belief.Reinforced`/`NeedsAnchorTick`
+  shape: a snap must preserve the window's remaining deference rather than
+  spuriously arming or clearing it.
 - **KEEP** — a historical timestamp or an identity/counter; rewriting it would
   rewrite history or break a reference. `Agent.Generation`, `Agent.LastGoalTick`,
   `Memory.Tick`, `Memory.Conv` (spec 019: a conversation-ref identity, the same
@@ -161,8 +167,9 @@ classified SHIFT or KEEP in its doc comment:
   `Belief.Reinforced` field, (later) spec 029's `MetatronOrder.ExpiresTick`/
   `PlacedTick`, spec 041's `PlaceFact`/`PeerSighting` fields, spec 042's
   `Memory.Seq`/`Agent.SitVecTick` fields, spec 043's `IntentRecord.Tick`/
-  `OutcomeTick` (KEEP) and `Agent.NeedsAnchorTick` (SHIFT), and spec 061's
-  `PairTalk.Tick` (SHIFT) as new tick-anchored
+  `OutcomeTick` (KEEP) and `Agent.NeedsAnchorTick` (SHIFT), spec 061's
+  `PairTalk.Tick` (SHIFT), and spec 062's `Agent.LastMindIntentDone` (SHIFT,
+  only-non-zero) as new tick-anchored
   `int64` fields requiring classification, confirming the taxonomy guard holds
   across features outside miracles' own spec.
 

@@ -25,6 +25,11 @@ sources:
   - internal/sim/needsanchor_test.go
   - internal/sim/journal_test.go
   - internal/sim/memory_test.go
+  - internal/sim/yield_state_test.go
+  - internal/sim/day_warmth_test.go
+  - internal/sim/night_search_test.go
+  - internal/sim/thrash_regression_test.go
+  - internal/sim/reflex_matrix_test.go
   - internal/mind/context_test.go
   - internal/daemon/context_replay_test.go
   - internal/world/migrate_test.go
@@ -45,7 +50,7 @@ sources:
   - internal/persona/persona_test.go
   - e2e/daemon_e2e_test.go
   - e2e/determinism_e2e_test.go
-verified_against: 1debe184724bffe5eab8dbb5659a047c9ff63cc4
+verified_against: d9d74924621b8816bbb4608afe48c41cda4321d7
 ---
 
 # Testing strategy
@@ -268,7 +273,9 @@ more KEEP entries — `CurriculumPass.Tick` (when the pass was recorded,
 history like `Memory.Tick`), `EvidenceRef.Tick` (an audit pointer at a
 recorded event's tick, never a deadline), and `EvidenceRef.Seq` (the evidence
 event's store seq, an identity like `Memory.Seq` —
-[[curriculum-ladder]])). Byte-identity replay suites
+[[curriculum-ladder]]); spec 062 adds one SHIFT entry, `Agent.LastMindIntentDone`
+(the reflex PREP gate's yield-window anchor, only-non-zero, the
+`Belief.Reinforced`/`NeedsAnchorTick` shape — [[reflex-policy]])). Byte-identity replay suites
 (`TestMiracleReplayByteIdentity`, `TestMiracleSnapReplayByteIdentity`,
 `TestMiracleGrantReplayByteIdentity`) prove each miracle type replays to the
 same state hash as live application.
@@ -483,6 +490,39 @@ exact tick from a COPY of a legacy world.db via the daemon package's
 `replayToTick` ([[daemon-lifecycle]]), asserting the assembled text surfaces
 the documented reflex thrash — inspection of assembled text only, no model in
 the loop.
+
+**Reflex-arbitration suites** (spec 062, TASK-103, [[reflex-policy]]): the
+"instinct yields to intelligence" restructuring is proven per rung group.
+`internal/sim/yield_state_test.go` (T001/T005) covers the PREP gate itself:
+the yield-window anchor (`Agent.LastMindIntentDone`) is event-sourced,
+snapshot-compatible (`omitempty`), and armed ONLY by a non-reflex intent
+completion; the gate matrix proves the window suppresses prep and decays,
+either danger band (food/warmth/rest) suppresses regardless of the window, a
+reflex-sourced completion never arms the window, and a no-planner drive
+matches pre-062 behavior except the enumerated danger-band suppressions
+(SC-003). `internal/sim/day_warmth_test.go` (US2, T007) covers the new day
+warmth rung: seek/relight KNOWN warmth (AS1), build with wood in hand (AS2),
+a healthy-warmth day byte-identical to pre-062 (AS3), and
+`TestDayWarmthDoesNotChopTheDeviation` — the flagged plan deviation — pinning
+that the day rung stops before the night ladder's chop tail.
+`internal/sim/night_search_test.go` (US3, T009) covers the bounded night
+frontier-search fallback: a cold, nothing-known-or-carried-or-choppable agent
+with a reachable frontier searches rather than sleeping cold
+(`TestNightSearchFallbackSearchesWhenFrontierReachable`), and an unreachable
+frontier still falls through to sleep, today's terminal floor.
+`internal/sim/thrash_regression_test.go` (US4, T010, SC-001) is the
+deliverable: the scripted world-01 Sage-shape scenario (cold, fed, a planner
+`goto_warmth` completing at a fire, larder below stock target) encodes BOTH
+proofs in one deterministic test — the OLD flip (absent the gate's inputs,
+the reflex forages the agent away from the fire it was just sent to) and the
+NEW hold-and-recover (with the gate's inputs live, zero prep intents fire
+inside the yield window and the warmth trajectory recovers) — expressed by
+nullifying the gate's INPUTS (an unarmed window, healthy warmth) rather than
+mutating the immutable `prepYieldTicks`/danger-band constants, the
+const-respecting encoding of the pre-062 world. `internal/sim/reflex_matrix_test.go`'s
+cold-night truth table is updated for Gap A: the `wood=0`/nothing-known cells
+that used to resolve `sleep` now resolve `search` (`TestColdNightReflexMatrix`),
+with the no-frontier fall-through to `sleep` still pinned separately.
 
 **Curriculum-ladder suites** (spec 046, TASK-68, [[curriculum-ladder]]): the
 staged-worlds surface is proven per layer. Reducer-side,

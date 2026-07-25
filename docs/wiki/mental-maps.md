@@ -17,7 +17,7 @@ sources:
   - internal/metatron/turn.go
   - internal/metatron/toolcalls.go
   - internal/tool/registry.go
-verified_against: ad4871faa7988ce5b2d7f029ada59f653afaa569
+verified_against: d9d74924621b8816bbb4608afe48c41cda4321d7
 ---
 
 # Mental maps
@@ -107,7 +107,13 @@ the exploring (movement marks explored terrain and the perception sweep
 witnesses what's there). The reflex ladder ([[reflex-policy]]) falls back to
 `search` on the hungry rung ONLY when the agent knows of no forage and no
 ready den — hunger-only, so a fed villager never mounts an expedition just to
-top up the larder.
+top up the larder. Spec 062 (US3, 057 audit Gap A) adds a second,
+independent reflex call site: a cold NIGHT with no known warmth, insufficient
+wood, and no known tree to chop also falls back to `search` — one rung above
+terminal sleep in [[reflex-policy]]'s bounded frontier-search fallback — so
+`nearestFrontier` now backs two separate reflex triggers (hunger, and
+cold-with-nothing-left-to-try), each still bounded by the same
+fully-explored-fails-honestly floor.
 
 **The perception sweep** (`internal/sim/executor.go`, `perceptionEvents`, T007):
 each awake living villager, on the same staggered per-agent cadence movement
