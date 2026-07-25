@@ -73,7 +73,7 @@ this page and in solo-views.md shows digest grammar, never prose.
 │   "type": "social.conversation_turn",                 │
 │   "payload": { … "speaker": 1,   // Rowan … }         │
 │ }                                                     │
-│ … (+12 more — J to scroll)     ⏎ jump to Ash (14,9)   │
+│ … (+12 more — J to scroll)   ⏎ jump to Rowan (11,7)   │
 └───────────────────────────────────────────────────────┘
 ```
 
