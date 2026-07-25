@@ -4,7 +4,7 @@ title: '? help overlay in the TUI (every world)'
 status: In Progress
 assignee: []
 created_date: '2026-07-25 04:43'
-updated_date: '2026-07-25 05:59'
+updated_date: '2026-07-25 06:23'
 labels:
   - learning-game
   - tui
@@ -26,4 +26,17 @@ Spec: specs/045-tui-help-overlay
 - [ ] #2 Screen-region walkthrough covers header anatomy, map glyph legend, and dock tabs
 - [ ] #3 Works identically in no-LLM (reflex-only) worlds
 - [ ] #4 Every pushed lesson (first-occurrence projection, when it lands) is also reachable from the overlay's pull reference
+- [ ] #5 Spec phase: Setup
+- [ ] #6 Spec phase: Foundational (blocking prerequisites)
+- [ ] #7 Spec phase: User Story 1 — `?` answers "what can I press right now" (P1) 🎯 MVP
+- [ ] #8 Spec phase: User Story 2 — the screen explained (P2)
+- [ ] #9 Spec phase: User Story 3 — the floor holds with no angel (P3)
+- [ ] #10 Spec phase: User Story 4 — pushed lessons findable again (P4)
+- [ ] #11 Spec phase: Polish & Cross-Cutting
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+spec-bridge sync: Setup: 0/1 · Foundational (blocking prerequisites): 0/2 · User Story 1 — `?` answers "what can I press right now" (P1) 🎯 MVP: 0/5 · User Story 2 — the screen explained (P2): 0/2 · User Story 3 — the floor holds with no angel (P3): 0/1 · User Story 4 — pushed lessons findable again (P4): 0/2 · Polish & Cross-Cutting: 0/3
+<!-- SECTION:NOTES:END -->
