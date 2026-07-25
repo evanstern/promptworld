@@ -115,12 +115,12 @@ reorient decision ids in `introduced-by`.
 
 **Independent test**: spec.md US2 acceptance scenarios; quickstart.md SC-004 sweep.
 
-- [ ] T013 [P] [US2] Author `docs/design/tui/pages/guardian-console.md` (decisions
+- [x] T013 [P] [US2] Author `docs/design/tui/pages/guardian-console.md` (decisions
       1/2, D5): full-height page, document-style turns, composer, charter/skills
       read surface with binding status + `$EDITOR` handoff + "charter changed —
       next turn binds it" confirmation, report-card cards at natural stopping
       points (run end / pause / exercise resolution; badges between).
-- [ ] T014 [P] [US2] Author `docs/design/tui/panels/lesson-row.md` (decision 5):
+- [x] T014 [P] [US2] Author `docs/design/tui/panels/lesson-row.md` (decision 5):
       one active lesson, ≤2 lines, dwell-until-done/dismissed, UI-pointer field,
       anti-spam (one active · spacing · opportunity decay), per-user seen state
       (D8, unlocks.json precedent), pull-path suffix on every lesson string,
@@ -128,26 +128,26 @@ reorient decision ids in `introduced-by`.
       first custom charter observed, first fuzzy order), stage defaults (on at
       1–2; badge+overlay at 3+/pre-ladder), narrow + fold behavior per research.md
       R2/R3.
-- [ ] T015 [P] [US2] Author `docs/design/tui/panels/guardian-strip.md` (decision
+- [x] T015 [P] [US2] Author `docs/design/tui/panels/guardian-strip.md` (decision
       7): budget line above minibuffer — charge bank, regen, standing-order count,
       faith (TASK-118, marked pending) — always visible, all stages; fold-last rule
       (relocates into dormant minibuffer line, research.md R2); carried in narrow.
-- [ ] T016 [P] [US2] Author `docs/design/tui/panels/villager-strip.md` (D12):
+- [x] T016 [P] [US2] Author `docs/design/tui/panels/villager-strip.md` (D12):
       one-row colonist-bar strip under the header, widescreen default-on, folds to
       header count badge (research.md R2), not carried in narrow (R3).
-- [ ] T017 [P] [US2] Author `docs/design/tui/panels/exercise.md` (D11, D4): scenario
+- [x] T017 [P] [US2] Author `docs/design/tui/panels/exercise.md` (D11, D4): scenario
       framing line, live event-derived rubric gauges (decision-trace projection),
       per-exercise incident visibility VOCABULARY (forecast at stages 1–2, fog from
       3 — a vocabulary, not a boolean), attach-time briefing, pass/fail state,
       scenario-cadence narration trigger, ceremony-trigger linkage.
-- [ ] T018 [US2] Add the guardian section to `docs/design/tui/overlays/help.md`
+- [x] T018 [US2] Add the guardian section to `docs/design/tui/overlays/help.md`
       (D9): static-per-stage, model-free — stage identity/concept, granted verbs,
       one example ask per verb, renderable from `stagesLadder` + stage ceiling with
       nil-status fallback to the pre-ladder variant (research.md R4); note the
       deliberate spec-045 content-contract amendment; badge deep-link (`?` opens
       pre-focused on the active badge's row) as a retained layer-2 row. (Depends on
       T011.)
-- [ ] T019 [P] [US2] Author `docs/design/tui/overlays/ceremony.md` (decision 6):
+- [x] T019 [P] [US2] Author `docs/design/tui/overlays/ceremony.md` (decision 6):
       takeover on `curriculum.stage_unlocked` (attached clients), dismissable,
       non-stacking with stated precedence vs postmortem, replayable from `?` and
       `stages` as an EXPLICIT acceptance criterion, unlock-attribution voice = the
@@ -155,13 +155,13 @@ reorient decision ids in `introduced-by`.
       chapter + rubric checklist with the instrument authoritative (FR-019 ruling),
       `q`-detach blessed-stopping-point shape (D13), interrupt-policy watch item
       recorded (reopening signal: ceremony fatigue / mid-crisis seizure evidence).
-- [ ] T020 [P] [US2] Author `docs/design/tui/overlays/postmortem.md` (decision 6):
+- [x] T020 [P] [US2] Author `docs/design/tui/overlays/postmortem.md` (decision 6):
       takeover on `run.ended`, dismissable, non-stacking (precedence per T019),
       replayable from the morgue as an EXPLICIT acceptance criterion, ambient
       (unscored) contents = morgue evidence only in the no-blame register — report
       card only in scored/scenario runs (FR-018 ruling), report-card rendering
       shared with guardian-console cards (D5).
-- [ ] T021 [P] [US2] Author `docs/design/tui/patterns/stage-defaults.md` (decision
+- [x] T021 [P] [US2] Author `docs/design/tui/patterns/stage-defaults.md` (decision
       3): stage-resolved visibility DEFAULTS table for every panel/strip/row
       (stages 1–4, pre-ladder = everything), the everything-reachable-always rule
       (`?` + solo views), capability locks stay angel-only (spec 046 doctrine
@@ -178,13 +178,13 @@ exist since the rulings reference them.)
 
 **Independent test**: quickstart.md SC-006 sweep.
 
-- [ ] T022 [US5] Rewrite `docs/design/tui/patterns/layout.md`: keep breakpoint (112
+- [x] T022 [US5] Rewrite `docs/design/tui/patterns/layout.md`: keep breakpoint (112
       cols) + column budget; re-derive the row budget per research.md R2 (9-row
       stage-1–2 chrome stack, per-stage variants via stage-defaults), rule the fold
       order (legend → villager strip → lesson row → guardian strip-relocation) with
       `bodyMin = 10` and the floor layout; add the narrow-fallback chrome rules
       (R3). Preserve the style-token table and composition notes; pin.
-- [ ] T023 [US5] Add the byte-identity classification to
+- [x] T023 [US5] Add the byte-identity classification to
       `docs/design/tui/overlays/help.md` per research.md R4: the section
       classification table (byte-identical / stage-keyed model-free /
       status-derived) and the restated no-LLM floor guarantee. (Depends on
