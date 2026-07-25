@@ -4,7 +4,7 @@ title: 'Permadeath runs, death escalation, and the morgue file: design session'
 status: Done
 assignee: []
 created_date: '2026-07-20 19:55'
-updated_date: '2026-07-25 07:54'
+updated_date: '2026-07-25 08:19'
 labels:
   - design
   - learning-game
@@ -56,6 +56,8 @@ US2 gated + ratified 2026-07-25 (4 deviations, see spec commit 7cd7163). US3+US4
 spec-bridge sync: Setup: 1/1 · Foundational (blocking prerequisites): 2/2 · User Story 1 — The run ends, and the story survives it (P1) 🎯 MVP: 9/9 · User Story 2 — The morgue file (P2): 7/7 · User Story 3 — The gru can finish the wounded (P3): 3/3 · User Story 4 — Graves on the map, grief in the village (P4): 4/4 · Polish & Cross-Cutting: 3/3 — status In Progress → Done
 
 PR #78 merged as e48bbaa (squash). Live-validated: natural full run to run.ended on a no-LLM world (8-death gru cascade days 76-86, WALKTHROUGH.md). Post-merge: wiki-update + player-docs in progress; TASK-119 can now consume run.ended; TASK-68 branch rebases to bind metatron.charter_observed.
+
+Post-merge obligations complete 2026-07-25: wiki re-verified (25 notes + new morgue.md note, commit dee5f4b; concurrent spec-043 session covered its own drift in 812f6f8 — corpus fully fresh) and player docs refreshed (7 pages incl. new morgue section, commit 23f744c, gate 9/9). TASK-31 lifecycle closed end-to-end.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
