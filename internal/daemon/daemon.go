@@ -532,8 +532,9 @@ func seedTuning(w *world.World, st *store.Store, state *sim.State) error {
 	}
 	parsed, warns, err := sim.ParseTuning(data)
 	if err != nil {
-		// ParseTuning errors already name "tuning.json"; add the full path.
-		return fmt.Errorf("%s: %w", w.TuningPath(), err)
+		// ParseTuning errors already self-identify as "tuning.json: ..."; add the
+		// world dir for location without repeating the filename.
+		return fmt.Errorf("%s: %w", w.Dir, err)
 	}
 	for _, warn := range warns {
 		fmt.Printf("daemon: %s\n", warn)
