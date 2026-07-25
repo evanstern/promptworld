@@ -309,3 +309,102 @@ func TestOrchestratorEmbed(t *testing.T) {
 		t.Errorf("Embed without a route err = %v, want ErrEmbeddingOff", err)
 	}
 }
+
+// TestEmbedClearsStalePreflightCondition (TASK-102): a bare model alias
+// ("all-minilm") that a preflight probe raised model-missing against
+// (because the endpoint's listing carries the tagged "all-minilm:latest")
+// but that resolves fine per-request is exactly the sticky case the bug
+// tracked — before the fix, only chat traffic reached observeSuccess, so a
+// successful embed could never clear the condition. Manually seeding the
+// condition (as a real preflight probe would) and then calling Embed proves
+// the call clears it, mirroring how a successful chat completion already
+// self-heals the same spurious diagnosis via observeSuccess.
+func TestEmbedClearsStalePreflightCondition(t *testing.T) {
+	var hits atomic.Int64
+	srv := mockEmbeddings(t, &hits)
+
+	cfg := Config{
+		MonthlyBudgetUSD: 100,
+		Providers: map[string]ProviderConfig{
+			"gemma":    {Transport: ProviderOpenAICompat, Endpoint: "http://x/v1", Model: "g"},
+			"embedder": {Transport: ProviderOpenAICompat, Endpoint: srv.URL, Model: "all-minilm"},
+		},
+		Routes: map[string]RouteConfig{
+			string(KindPlanner):       {Chain: []string{"gemma"}},
+			string(KindConversation):  {Chain: []string{"gemma"}},
+			string(KindMeeting):       {Chain: []string{"gemma"}},
+			string(KindConsolidation): {Chain: []string{"gemma"}},
+			string(KindNarrator):      {Chain: []string{"gemma"}},
+			string(KindDrama):         {Chain: []string{"gemma"}},
+			string(KindMetatron):      {Chain: []string{"gemma"}},
+			string(KindMetatronWatch): {Chain: []string{"gemma"}},
+			string(KindEmbedding):     {Chain: []string{"embedder"}},
+		},
+	}
+	o := newOrch(t, cfg, testStore(t))
+
+	// Seed the condition exactly as a real preflight probe would: the
+	// endpoint's listing carries the tagged id, the configured provider names
+	// the bare alias, so probeModels would classify probeMissing and raise
+	// model-missing against it.
+	o.setPreflightCondition(o.embedding, CondModelMissing,
+		`model "all-minilm" not served by `+srv.URL, "ollama pull all-minilm")
+	if got := o.embedding.conditionSnapshot().kind; got != CondModelMissing {
+		t.Fatalf("seeded condition = %q, want model-missing", got)
+	}
+
+	// A successful embed call — the bare alias resolves fine at the
+	// endpoint's /embeddings path — must clear the stale condition.
+	if _, _, err := o.Embed(context.Background(), []string{"a memory"}); err != nil {
+		t.Fatalf("Embed: %v", err)
+	}
+	if got := o.embedding.conditionSnapshot().kind; got != "" {
+		t.Errorf("condition after successful embed = %q, want cleared (empty) — TASK-102 regression", got)
+	}
+	if hits.Load() != 1 {
+		t.Errorf("embeddings endpoint hits = %d, want 1", hits.Load())
+	}
+}
+
+// TestEmbedNeverRaisesOrTouchesToolSilence (TASK-102): Embed only clears a
+// PREFLIGHT condition — it must never raise one on failure (that stays the
+// preflight loop's job) and must never touch an active tool-silent
+// condition (embeddings carry no tool-call signal, so a tool-silent
+// condition on a shared provider name must survive an embed call exactly
+// like observeSuccess's tool-free-but-non-tool-kind branch leaves it alone).
+func TestEmbedNeverTouchesToolSilentCondition(t *testing.T) {
+	var hits atomic.Int64
+	srv := mockEmbeddings(t, &hits)
+
+	cfg := Config{
+		MonthlyBudgetUSD: 100,
+		Providers: map[string]ProviderConfig{
+			"gemma":    {Transport: ProviderOpenAICompat, Endpoint: "http://x/v1", Model: "g"},
+			"embedder": {Transport: ProviderOpenAICompat, Endpoint: srv.URL, Model: "all-minilm"},
+		},
+		Routes: map[string]RouteConfig{
+			string(KindPlanner):       {Chain: []string{"gemma"}},
+			string(KindConversation):  {Chain: []string{"gemma"}},
+			string(KindMeeting):       {Chain: []string{"gemma"}},
+			string(KindConsolidation): {Chain: []string{"gemma"}},
+			string(KindNarrator):      {Chain: []string{"gemma"}},
+			string(KindDrama):         {Chain: []string{"gemma"}},
+			string(KindMetatron):      {Chain: []string{"gemma"}},
+			string(KindMetatronWatch): {Chain: []string{"gemma"}},
+			string(KindEmbedding):     {Chain: []string{"embedder"}},
+		},
+	}
+	o := newOrch(t, cfg, testStore(t))
+
+	o.raiseCondition(o.embedding, CondToolSilent, "8 consecutive tool-free completions on tool-carrying calls", "switch tool_mode")
+	if got := o.embedding.conditionSnapshot().kind; got != CondToolSilent {
+		t.Fatalf("seeded condition = %q, want tool-silent", got)
+	}
+
+	if _, _, err := o.Embed(context.Background(), []string{"a memory"}); err != nil {
+		t.Fatalf("Embed: %v", err)
+	}
+	if got := o.embedding.conditionSnapshot().kind; got != CondToolSilent {
+		t.Errorf("condition after embed = %q, want tool-silent untouched", got)
+	}
+}

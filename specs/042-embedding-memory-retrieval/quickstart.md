@@ -7,10 +7,12 @@ end-to-end. Details: [data-model.md](./data-model.md), [contracts/](./contracts/
 
 - Ollama running locally with the pinned embedding model:
   `ollama pull all-minilm && curl -s localhost:11434/v1/embeddings -d '{"model":"all-minilm:latest","input":"hello"}' | head -c 120`
-- **Model id in llm.json must be the fully tagged `all-minilm:latest`** (as `ollama list`
-  prints it), not bare `all-minilm` — the alias embeds fine, but the provider-health
-  preflight compares ids and raises a persistent spurious `model-missing` warning that
-  embed traffic cannot clear (tracked as a future finding).
+- **Prefer the fully tagged `all-minilm:latest`** in llm.json (as `ollama list` prints
+  it) over bare `all-minilm`: the alias embeds fine, but the provider-health preflight
+  compares ids against the endpoint's listing and raises a spurious `model-missing`
+  warning at boot. A successful embed call now clears it (TASK-102 — `Embed` reconciles
+  the condition the same way a successful chat completion does), so the warning is a
+  transient boot-time blip rather than permanent; the tagged id avoids it entirely.
 - A test world save dir; `llm.json` with the `embedding` provider + route added
   (see docs/llm-providers.md); `world.json` with `"memory_relevance": "shadow"`.
 - **Speed**: run at ≤16x on an uncalibrated rig, or `promptworld calibrate` first —
