@@ -4,9 +4,11 @@ title: Needs-conditioned recovery intents with parameters
 status: To Do
 assignee: []
 created_date: '2026-07-25 02:41'
-updated_date: '2026-07-25 03:10'
+updated_date: '2026-07-25 18:18'
 labels:
   - goal-quality
+  - instinct-layer
+  - mvls
 dependencies:
   - TASK-103
 priority: high

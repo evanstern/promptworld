@@ -6,11 +6,13 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-07-24 04:31'
-updated_date: '2026-07-25 03:10'
+updated_date: '2026-07-25 18:18'
 labels:
   - emergent-lore
   - epistemics
   - operations
+  - model-tier
+  - mvls
 dependencies: []
 priority: medium
 ordinal: 2000

@@ -4,8 +4,10 @@ title: 'World tuning manifest: tuning.json promotion path for doctrine constants
 status: Done
 assignee: []
 created_date: '2026-07-25 02:59'
-updated_date: '2026-07-25 18:09'
-labels: []
+updated_date: '2026-07-25 18:18'
+labels:
+  - tuning-foundation
+  - mvls
 dependencies: []
 priority: high
 ordinal: 12000

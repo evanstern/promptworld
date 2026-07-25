@@ -4,10 +4,12 @@ title: 'Research: thrash detection as a percept — define and detect goal oscil
 status: To Do
 assignee: []
 created_date: '2026-07-25 02:42'
-updated_date: '2026-07-25 03:10'
+updated_date: '2026-07-25 18:18'
 labels:
   - goal-quality
   - research
+  - thrash-detection
+  - mvls
 dependencies:
   - TASK-105
 priority: medium

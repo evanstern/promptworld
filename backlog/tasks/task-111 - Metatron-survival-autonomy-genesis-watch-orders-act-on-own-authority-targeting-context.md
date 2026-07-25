@@ -6,9 +6,11 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-07-25 03:00'
-updated_date: '2026-07-25 04:42'
+updated_date: '2026-07-25 18:18'
 labels:
   - learning-game
+  - guardian-survival
+  - mvls
 dependencies: []
 priority: high
 ordinal: 19000

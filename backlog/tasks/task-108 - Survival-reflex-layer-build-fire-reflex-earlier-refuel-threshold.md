@@ -4,8 +4,10 @@ title: 'Survival reflex layer: build-fire reflex + earlier refuel threshold'
 status: To Do
 assignee: []
 created_date: '2026-07-25 02:59'
-updated_date: '2026-07-25 03:10'
-labels: []
+updated_date: '2026-07-25 18:18'
+labels:
+  - instinct-layer
+  - mvls
 dependencies:
   - TASK-107
 priority: high

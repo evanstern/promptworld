@@ -4,8 +4,11 @@ title: Re-measure SC-007 flip-rate at full length after instinct work lands
 status: To Do
 assignee: []
 created_date: '2026-07-25 13:58'
+updated_date: '2026-07-25 18:18'
 labels:
   - goal-quality
+  - thrash-detection
+  - mvls
 dependencies: []
 priority: low
 ordinal: 9000
