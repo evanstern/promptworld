@@ -256,6 +256,14 @@ func (md *Mind) chronicleNote(e store.Event) {
 				line = fmt.Sprintf("%s %s: %q.", name(p.Violator), verb, n.Text)
 			}
 		}
+	case "curriculum.exercise_passed":
+		// Spec 054 (US5): the exercise's outcome enters the story in the
+		// score-narrative voice; the pass boundary also closes a chapter —
+		// see the additional trigger below the append.
+		var p sim.ExercisePassedPayload
+		if json.Unmarshal(e.Payload, &p) == nil {
+			line = fmt.Sprintf("The watcher's exercise — %s — was passed: the village made it through.", p.Exercise)
+		}
 	case "curriculum.stage_unlocked":
 		// Spec 046 (US3, FR-009, T014): the ladder moves, and the chronicle
 		// says so — one of the two required in-game surfaces (the other is
@@ -286,6 +294,25 @@ func (md *Mind) chronicleNote(e store.Event) {
 	md.narrLines = append(md.narrLines, fmt.Sprintf("[%s] %s", clock.Format(e.Tick), line))
 	if len(md.narrLines) > narrMaxLines {
 		md.narrLines = append(md.narrLines[:0], md.narrLines[len(md.narrLines)-narrMaxLines:]...)
+	}
+
+	// Scenario-cadence trigger (spec 054 US5, FR-010): one ADDITIONAL chapter
+	// closes at the exercise's pass/fail boundary, so a sub-one-game-day
+	// scenario run still yields a narrated chapter carrying the outcome.
+	// Additive to the day/night cadence, which is untouched: exercise_passed
+	// only ever lands on scenario worlds, and the run.ended half is gated on
+	// the armed scenario — ambient cadence stays byte-identical. Both cases
+	// fire AFTER the append above so the boundary's own line rides its
+	// chapter.
+	switch e.Type {
+	case "curriculum.exercise_passed":
+		day, _, _, _ := clock.GameTime(e.Tick)
+		md.closeChapter(day, fmt.Sprintf("the exercise passed — day %d", day), e.Tick)
+	case "run.ended":
+		if md.scenarioExercise != "" {
+			day, _, _, _ := clock.GameTime(e.Tick)
+			md.closeChapter(day, fmt.Sprintf("the exercise's end — day %d", day), e.Tick)
+		}
 	}
 }
 
