@@ -1,10 +1,10 @@
 ---
 id: TASK-105
 title: Per-turn context grounding — audit and intent-driven context assembly
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-25 02:41'
-updated_date: '2026-07-25 03:28'
+updated_date: '2026-07-25 03:45'
 labels:
   - goal-quality
 dependencies: []
@@ -18,6 +18,8 @@ ordinal: 14000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Direction C from spike TASK-101 — Evan: '100% on this, almost more important than A/B.' Two parts. (1) AUDIT: produce a durable, complete inventory of exactly what each villager receives in context per thought (system prompt + userPrompt blocks, internal/mind/prompt.go:73-145) and what is notably absent. Known gaps: own last/current intent + source (LastGoal is TUI-only), need TRAJECTORIES (level+direction, not just level), active-plan echo so a thought continues rather than restarts. (2) REDESIGN: assemble context efficiently and with intent — self-history block, trajectories, plan echo, plus richer grounding via relevant-memory retrieval and selective journal-entry stuffing (dovetails with the embedding-memory retrieval work, spec 042 / TASK-98). Budget note: thoughts run 4-5 loop turns max, so per-turn context stuffing is affordable on a moderately hostable model. Non-trivial: full Spec Kit before implementation.
+
+Spec: specs/043-context-grounding
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
@@ -25,7 +27,17 @@ Direction C from spike TASK-101 — Evan: '100% on this, almost more important t
 - [ ] #1 Written per-turn context inventory (present vs absent) exists as a durable artifact
 - [ ] #2 Self-history, need trajectories, and active-plan echo added to the decision prompt
 - [ ] #3 Relevant-memory/journal retrieval feeds the prompt with measured token budget
+- [ ] #4 Spec phase: Setup
+- [ ] #5 Spec phase: Foundational (blocking prerequisites)
+- [ ] #6 Spec phase: US5 — Operators can see exactly what an agent knew (P1) 🎯 co-MVP
+- [ ] #7 Spec phase: US1 — An agent knows what it was just doing (P1) 🎯 co-MVP
+- [ ] #8 Spec phase: US2 — An agent feels which way its needs are moving (P2)
+- [ ] #9 Spec phase: US3 — An agent continues its plan instead of restarting it (P3)
+- [ ] #10 Spec phase: US4 — What an agent remembers is chosen for the moment (P4)
+- [ ] #11 Spec phase: Polish & cross-cutting
 <!-- AC:END -->
+
+
 
 ## Implementation Notes
 
