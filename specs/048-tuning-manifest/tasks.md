@@ -200,7 +200,7 @@ state; restart with unchanged file → no new event.
 - [x] T019 Run `node scripts/check-tui-design.mjs --changed` (spec 047 gate) —
       expected no-op since `internal/tui/` is untouched; if the digest/TUI was
       touched by T012, amend `docs/design/tui/` accordingly in the same PR.
-- [ ] T020 Post-merge (root, after PR lands): `/grounding-wiki:wiki-update` for
+- [x] T020 Post-merge (root, after PR lands): `/grounding-wiki:wiki-update` for
       notes sourcing `internal/sim/state.go`, `agents.go`, `gru.go`, `policy.go`,
       `executor.go`, `internal/mind/mind.go`, `internal/mind/embedder.go`,
       `internal/world/world.go`, `internal/daemon/daemon.go`; then player-docs
