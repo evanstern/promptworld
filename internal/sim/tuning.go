@@ -24,7 +24,16 @@ import (
 // pinned to the default cadence — they are not the "planner cadence" dial),
 // and in-package tests reference the raw default constants.
 const (
-	defaultRefuelDyingBelow       = 3600     // reflex refuels a fire with < 1 game-hour fuel left
+	// Reflex refuels a fire with < 3 game-hours of fuel left. Raised from 3600
+	// (1 h) by spec 057 / TASK-108: world-01 built 8 fires and lost 42 to
+	// burnout over 6 days (warmth 848→82, an exposure death) because the 1-hour
+	// window left villagers racing burnout. This is a doctrine DEFAULT change,
+	// not a dial-semantics change — the clamp range, manifest override, and
+	// event discipline are unchanged, and a tuning.json value still wins. New
+	// worlds pin this default at genesis (sim.tuning_applied), so the change
+	// reaches only pre-057 worlds (intended live effect) and never rewrites the
+	// replay of a post-057 world.
+	defaultRefuelDyingBelow       = 10800    // 3 game-hours (spec 057; was 3600 = 1 h)
 	defaultFireBurnPerWood        = 4 * 3600 // 4 game-hours of fuel per wood
 	defaultGruEmergePerMille      = 600      // per-mille chance the gru emerges per night
 	defaultPlannerCadenceTicks    = 1800     // 30 game-minutes: the mind driver's per-agent baseline
@@ -206,6 +215,19 @@ type TuningAppliedPayload struct {
 	GruEmergePerMille      uint64 `json:"gru_emerge_per_mille"`
 	PlannerCadenceTicks    int64  `json:"planner_cadence_ticks"`
 	EncounterCooldownTicks int64  `json:"encounter_cooldown_ticks"`
+}
+
+// GenesisTuningEvent builds the sim.tuning_applied event a world pins at
+// creation (spec 057 / TASK-108 US2): the FULL current default dial set, so a
+// world's effective doctrine is fixed in its own log at birth and later changes
+// to any default* constant never reach back into its replay. `promptworld new`
+// seeds exactly one of these among its genesis events; the daemon boot seed
+// (seedTuning) then compares a tuning.json against this pinned set exactly as
+// spec 048 specifies (no event on equality, one on difference). migrate does
+// NOT back-fill this — pre-057 and migrated worlds carry no pin and follow
+// compiled defaults (a documented determinism hazard, §6).
+func GenesisTuningEvent(tick int64) store.Event {
+	return NewTuningEvent(tick, defaultTuning())
 }
 
 // NewTuningEvent builds the sim.tuning_applied event carrying the full

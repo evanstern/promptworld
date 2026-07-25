@@ -9,7 +9,7 @@ Operator-authored, optional, sparse JSON object. Peer of `manifest.json`,
 
 ```json
 {
-  "refuel_dying_below": 3600,
+  "refuel_dying_below": 10800,
   "fire_burn_per_wood": 14400,
   "gru_emerge_per_mille": 600,
   "planner_cadence_ticks": 1800,
@@ -25,7 +25,7 @@ per night, 0–1000).
 
 | Key | Min | Default | Max | Notes |
 |---|---|---|---|---|
-| `refuel_dying_below` | 0 | 3600 | 86400 | 0 disables the refuel reflex trigger window |
+| `refuel_dying_below` | 0 | 10800 | 86400 | 0 disables the refuel reflex trigger window (default raised 3600 → 10800 in spec 057 / TASK-108) |
 | `fire_burn_per_wood` | 600 | 14400 | 86400 | effective deadline still truncated by the unpromoted `fireFuelCap` |
 | `gru_emerge_per_mille` | 0 | 600 | 1000 | 0 = gru never emerges; 1000 = every night |
 | `planner_cadence_ticks` | 60 | 1800 | 86400 | divides stagger/bucket math; min guards degenerate schedules |
