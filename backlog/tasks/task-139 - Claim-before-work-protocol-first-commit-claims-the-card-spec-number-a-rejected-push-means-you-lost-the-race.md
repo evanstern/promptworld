@@ -3,9 +3,10 @@ id: TASK-139
 title: >-
   Claim-before-work protocol: first commit claims the card + spec number; a
   rejected push means you lost the race
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-25 20:22'
+updated_date: '2026-07-25 21:44'
 labels:
   - gates
   - process
