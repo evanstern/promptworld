@@ -249,8 +249,8 @@ func (m Model) lessonRowView(width int) string {
 	if entry == nil {
 		return ""
 	}
-	line1 := clipLine(lessonSkinResolve(entry.Text), width)
-	line2 := clipLine(lessonSkinResolve(entry.Pointer)+"  "+lessonPullSuffix, width)
+	line1 := clipLine(lessonSkinResolve(entry.Text, m.sk()), width)
+	line2 := clipLine(lessonSkinResolve(entry.Pointer, m.sk())+"  "+lessonPullSuffix, width)
 	return line1 + "\n" + line2
 }
 

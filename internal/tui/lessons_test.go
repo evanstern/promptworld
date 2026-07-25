@@ -111,7 +111,7 @@ func TestLessonCatalogMinimumTaxonomy(t *testing.T) {
 func TestLessonSkinResolveNoRawTokens(t *testing.T) {
 	for _, e := range lessonCatalog {
 		for field, s := range map[string]string{"Title": e.Title, "Body": e.Body, "Text": e.Text, "Pointer": e.Pointer} {
-			if resolved := lessonSkinResolve(s); strings.Contains(resolved, "{{") {
+			if resolved := lessonSkinResolve(s, nil); strings.Contains(resolved, "{{") {
 				t.Errorf("%s.%s resolves with a raw token literal: %q", e.ID, field, resolved)
 			}
 		}
@@ -128,7 +128,7 @@ func TestLessonSkinResolveNoRawTokens(t *testing.T) {
 func TestLessonPointerSuffixFitsNarrowWidth(t *testing.T) {
 	const narrowWidth = 80
 	for _, e := range lessonCatalog {
-		line := lessonSkinResolve(e.Pointer) + "  " + lessonPullSuffix
+		line := lessonSkinResolve(e.Pointer, nil) + "  " + lessonPullSuffix
 		if w := len([]rune(line)); w > narrowWidth {
 			t.Errorf("%s: pointer+suffix is %d runes, wider than a plausible narrow terminal (%d): %q", e.ID, w, narrowWidth, line)
 		}
@@ -409,7 +409,7 @@ func TestXKeyDismissesActiveLessonAndNoOpsOtherwise(t *testing.T) {
 func TestPopulateHelpLessonsCatalogEquality(t *testing.T) {
 	orig := helpLessons
 	t.Cleanup(func() { helpLessons = orig })
-	populateHelpLessons()
+	populateHelpLessons(nil)
 
 	if len(helpLessons) != len(lessonCatalog) {
 		t.Fatalf("helpLessons has %d entries, catalog has %d", len(helpLessons), len(lessonCatalog))

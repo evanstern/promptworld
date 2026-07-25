@@ -260,8 +260,10 @@ type chronHitRegion struct {
 func New(w *world.World) Model {
 	// Lessons pull half (spec 055 T012, SC-002): populate the help overlay's
 	// lessons section from the same catalog the row (push half) reads —
-	// one catalog, two surfaces, never two hand-maintained lists.
-	populateHelpLessons()
+	// one catalog, two surfaces, never two hand-maintained lists. Default-
+	// skin resolution here (no status yet); re-resolved with the world skin
+	// once status carries it (skinFromStatus call sites in Update).
+	populateHelpLessons(nil)
 	return Model{
 		w: w, gameMap: w.Map(), chronAgent: -1, dockTab: paneChronicle, chronSelected: -1,
 		traces: newDecisionTraces(), chronHit: &chronHitRegion{},
@@ -527,6 +529,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.lastErr = ""
 		m.status = msg.status
 		m.worldSkin = skinFromStatus(msg.status) // spec 052: skin rides status
+		// Re-resolve the help overlay's lesson bodies under the world skin
+		// (spec 055's planned per-world resolution seam): the skin is
+		// boot-frozen daemon-side, so a change can only arrive through a
+		// reconnect — exactly this handler.
+		populateHelpLessons(m.worldSkin)
 		m.replica = msg.replica
 		m.lastSeq = msg.lastSeq
 		m.clampVillSelected()          // R5: connectedMsg swaps the replica wholesale
