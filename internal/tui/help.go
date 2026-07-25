@@ -54,6 +54,7 @@ var mapGlyphs = []glyphEntry{
 	{"▤▩", "wall", "a built wall (▤ plank, ▩ stone); dim = damaged"},
 	{"·", "path", "a paved path (tan) — distinct from plain ground's dim ·"},
 	{"G", "gru", "the gru — a predator; approach at your peril"},
+	{"✝", "grave", "a villager's grave — marks where a death occurred"},
 }
 
 // agentGlyphNote / mapControlNote are the legend's trailing free-text

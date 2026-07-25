@@ -177,11 +177,11 @@ func userPrompt(s *sim.State, idx int, k int, mode string) string {
 // what the acting agent's mental map holds, fresh facts only (the same
 // read-time horizon the resolvers use), never State.Structures.
 //
-//   - Landmark structures (fire/shelter/oven/chest) individually, with
-//     provenance flavor — witnessed plain; told names the teller; revealed
-//     names the vision. No count cap. A fire the agent remembers as burned
-//     out (its remembered FuelUntil behind the clock) says so, matching the
-//     resolvers' remembered-lit reads.
+//   - Landmark structures (fire/shelter/oven/chest/grave — grave added spec
+//     044 US4) individually, with provenance flavor — witnessed plain; told
+//     names the teller; revealed names the vision. No count cap. A fire the
+//     agent remembers as burned out (its remembered FuelUntil behind the
+//     clock) says so, matching the resolvers' remembered-lit reads.
 //   - Everything place-shaped (resource kinds, plus walls and paths — which
 //     come in runs and would flood an individual listing; grouping, not
 //     dropping, is the contract's own size bound) grouped per kind with
@@ -201,7 +201,10 @@ func knownPlaces(s *sim.State, idx int) string {
 	now := s.Tick
 
 	// Landmark structures, individually, in the map's canonical fact order.
-	landmark := map[string]bool{"fire": true, "shelter": true, "oven": true, "chest": true}
+	// Grave (spec 044 US4): a death site is exactly the kind of individually-
+	// named, narratively-weighted place this set exists for — never grouped
+	// with the count+nearest resource kinds below.
+	landmark := map[string]bool{"fire": true, "shelter": true, "oven": true, "chest": true, "grave": true}
 	var places []string
 	for _, f := range a.Map.Facts {
 		if !landmark[f.Kind] || !f.Fresh(now) {

@@ -493,6 +493,15 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 				structures[[2]int{st.X, st.Y}] = styleOven.Render("▣")
 			case "chest":
 				structures[[2]int{st.X, st.Y}] = styleChest.Render("☐")
+			case "grave":
+				// Spec 044 US4 (FR-017): reducer-placed at a death tile, never
+				// player-built. Like every other structure, a dead agent's own
+				// frozen "†" glyph on the SAME tile still wins in tile()
+				// (agents map checked before structures) — the same
+				// agent-outranks-structure precedent path/chest tests already
+				// document; the grave is what a witness or later passerby sees
+				// once nothing living (or freshly dead) occupies the tile.
+				structures[[2]int{st.X, st.Y}] = styleGrave.Render("✝")
 			case "path":
 				// Spec 032 US3: a path is a walkable tile improvement, so it
 				// renders at TERRAIN level (below agents/structures/piles) rather
@@ -879,6 +888,11 @@ var (
 	// apart from plain grass's dim "·" without colliding with any structure glyph.
 	stylePath = lipgloss.NewStyle().Foreground(lipgloss.Color("137"))
 	styleGru  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("196"))
+	// Grave (spec 044 US4): "✝" marks a death site — a somber, persistent
+	// marker, so it renders faint gray (244) rather than any of the vivid
+	// living-structure colors (fire/shelter/oven/chest), the cold-fire (240)
+	// precedent for "spent"/inert glyphs.
+	styleGrave = lipgloss.NewStyle().Faint(true).Foreground(lipgloss.Color("244"))
 )
 
 // mapView is the narrow-fallback map pane: today's vw/vh formula,

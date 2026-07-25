@@ -428,7 +428,7 @@ func monitorAndActSchema() json.RawMessage {
 // dry-run's ground-truth presence check is the semantic authority, so a drift
 // here can only over- or under-offer, never land a false fact.
 var placeFactKinds = []string{
-	"fire", "shelter", "oven", "chest", "wall_plank", "wall_stone", "path",
+	"fire", "shelter", "oven", "chest", "wall_plank", "wall_stone", "path", "grave",
 	"tree", "forage", "rock", "water_edge", "den", "pile",
 }
 

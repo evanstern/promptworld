@@ -1534,6 +1534,26 @@ func (s *State) Apply(e store.Event) error {
 			}
 			a.Inv = Inventory{}
 		}
+		// Grave (spec 044 US4, FR-017, research R10): a persistent marker at
+		// the death tile, the same reducer-internal idiom as the inventory
+		// spill above. Unconditional — no dedup/coexistence check against
+		// whatever else already occupies the tile. Verified finding: the
+		// Structures slice has no per-tile uniqueness invariant outside the
+		// buildSite gate that only governs NEW player-directed builds (T023);
+		// structureAt(kind, x, y) filters by kind, so a grave sharing a tile
+		// with, say, a "path" structure is found correctly by both
+		// structureAt("grave", ...) and structureAt("path", ...) — coexisting
+		// entries at one tile are already an established pattern (piles
+		// already overlay structures; see buildSite's separate pile check).
+		// Appending the grave last also means it wins the map's per-tile
+		// glyph in renderMapGrid (views.go), whose structures lookup is a
+		// last-write-wins map keyed by position — the most recent structure at
+		// a tile is what the player sees there. A grave placed where a
+		// structure already stands still blocks future building on that tile
+		// via buildSite's blanket "any structure present" check — the
+		// deliberate, conservative default the spec's edge case defers
+		// (research R10: "grave persists and remains addressable").
+		s.Structures = append(s.Structures, Structure{Kind: "grave", X: a.X, Y: a.Y})
 
 	case "run.ended":
 		var p RunEndedPayload

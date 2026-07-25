@@ -249,6 +249,38 @@ func TestMapRendersPathGlyph(t *testing.T) {
 	}
 }
 
+// TestMapRendersGraveGlyph covers spec 044 T025 (US4, FR-017): the grave
+// glyph appears on the map and the legend documents it — rendered from the
+// shared mapGlyphs table (help.go), so this exercises the same seam
+// TestHelpWalkthroughGlyphPageMatchesSharedTable cross-checks against the
+// overlay. Placed off any agent's own tile deliberately: a dead agent's
+// frozen "†" occupies the agents map at its exact death position forever
+// (renderMapGrid never clears a dead agent's tile), and the agent lookup
+// wins over the structures lookup in tile() — the same agent-outranks-
+// structure precedent the chest/path tests above document. A grave under a
+// dead body is therefore not the tile this test can assert the glyph on;
+// the glyph is what a witness or later passerby sees at any grave tile that
+// isn't also a dead agent's own frozen position.
+func TestMapRendersGraveGlyph(t *testing.T) {
+	m := testModel(t)
+	cx, cy := m.gameMap.W/2, m.gameMap.H/2
+	m.replica.Agents = []sim.Agent{{Name: "Ash", X: cx, Y: cy}}
+	m.replica.Structures = []sim.Structure{
+		{Kind: "grave", X: cx + 1, Y: cy}, // off the agent's own tile
+	}
+	view := m.mapView()
+	lines := strings.Split(view, "\n")
+	gridOnly := strings.Join(lines[:len(lines)-1], "\n")
+	legend := lines[len(lines)-1]
+
+	if !strings.Contains(gridOnly, styleGrave.Render("✝")) {
+		t.Error("grave glyph ✝ (grave style) missing from map grid")
+	}
+	if !strings.Contains(legend, "✝grave") {
+		t.Errorf("legend key should document the grave glyph, got: %s", legend)
+	}
+}
+
 // TestDescribeChestEmptyStore covers the empty-chest and out-of-range-owner
 // edges of T026's inspection line: an empty Store reads "empty" rather than
 // a blank/zero-padded contents string, and an owner index outside the
