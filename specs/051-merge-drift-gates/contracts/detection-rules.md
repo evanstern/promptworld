@@ -58,8 +58,18 @@ Prescribed remediation (report text, applied only under `--apply-cleanup`):
 
 ```
 git worktree remove <W>
-git branch -d <B>
+git branch -d <B>     # ancestor case
+git branch -D <B>     # empty-contribution (squash) case — see below
 ```
+
+Branch deletion is conditional on which eligibility signal fired: `-d` for the
+`ancestor` case (git's own merged-check agrees), `-D` for the `empty-contribution`
+case — a squash-merged branch is never an ancestor of origin/main, so `-d` always
+refuses it even though this run has already proven via merge-tree tree-equality that
+the branch contributes nothing not on main. The tree-equality proof is the safety
+check; `-D` merely bypasses git's weaker ancestor heuristic. (Amended 2026-07-25 from
+implementation finding — the original contract prescribed `-d` unconditionally, which
+made the squash case uncompletable.)
 
 ## 5. Spec-number collision
 
