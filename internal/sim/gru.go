@@ -43,8 +43,9 @@ const (
 	gruWound          = 250 // health torn off per attack
 	gruWoundFloor     = 1   // healthy targets: the gru wounds, it does not execute
 	gruAttackCooldown = 600 // ticks between wounds (10 game-minutes)
-	gruEmergePerMille = 600 // chance per night it comes out at all
-	gruSpawnTries     = 128
+	// gru emergence chance is spec-048-promoted: the default lives in tuning.go
+	// (defaultGruEmergePerMille) and the roll reads State.GruEmergePerMille().
+	gruSpawnTries = 128
 
 	salGruAttack  = 9
 	salGruWitness = 7
@@ -232,7 +233,7 @@ func gruStep(s *State, m *worldmap.Map, night bool, nextTick int64) []store.Even
 // (seed, night).
 func gruEmergence(s *State, m *worldmap.Map, nextTick int64) (x, y int, ok bool) {
 	night := gruNightIndex(nextTick)
-	if rngAt(s.Seed, "gru-emerge", night, 0).Uint64N(1000) >= gruEmergePerMille {
+	if rngAt(s.Seed, "gru-emerge", night, 0).Uint64N(1000) >= s.GruEmergePerMille() {
 		return 0, 0, false
 	}
 	r := rngAt(s.Seed, "gru-spawn", night, 0)

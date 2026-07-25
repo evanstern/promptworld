@@ -411,7 +411,7 @@ func selectWindow(a *Agent, seed uint64, agentIdx int, tick int64, k int, query 
 	// bucketed to the planner cadence so retries in one window agree.
 	oldHalf := n / 2
 	if oldHalf > 0 {
-		r := rngAt(seed, "serendipity", tick/PlannerCadenceTicks, agentIdx)
+		r := rngAt(seed, "serendipity", tick/defaultPlannerCadenceTicks, agentIdx)
 		for t := 0; t < windowTailPick; t++ {
 			for tries := 0; tries < 8; tries++ {
 				i := int(r.Uint64N(uint64(oldHalf)))

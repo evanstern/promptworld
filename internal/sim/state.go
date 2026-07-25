@@ -124,6 +124,15 @@ type State struct {
 	CurriculumPasses []CurriculumPass `json:"curriculum_passes,omitempty"`
 	StagesUnlocked   []string         `json:"stages_unlocked,omitempty"`
 
+	// World tuning manifest (spec 048) — event-sourced: the full effective set
+	// of promoted doctrine dials, set by the sim.tuning_applied arm. nil ≡ the
+	// default set (every pre-048 snapshot and world); omitempty keeps pre-048
+	// snapshots byte-identical — no format_version bump. Reducer and mind-replica
+	// reads go through the nil-safe accessors (tuning.go), never this field
+	// directly, so "absent tuning.json == current constants" is structurally
+	// true. Replay derives tuning exclusively from the event, never the file.
+	Tuning *TuningState `json:"tuning,omitempty"`
+
 	// m is the static generated map for this world (seed + dimensions). It is
 	// unexported and never serialized — canonical state bytes are unchanged by
 	// it (spec 016: "State marshals unchanged"). It is attached at construction
@@ -914,7 +923,7 @@ func (s *State) Apply(e store.Event) error {
 		if p.Kind == "fire" {
 			// T019: a fresh fire (2 wood) burns 2×fireBurnPerWood from now; the
 			// fuel sweep burns it out and refuel pushes FuelUntil forward.
-			st.FuelUntil = e.Tick + 2*fireBurnPerWood
+			st.FuelUntil = e.Tick + 2*s.FireBurnPerWood()
 		}
 		if p.Kind == "chest" {
 			// T023 (spec 013 US3, research R8): the builder is recorded as owner
@@ -1690,6 +1699,23 @@ func (s *State) Apply(e store.Event) error {
 
 	case "curriculum.exercise_passed", "curriculum.stage_unlocked":
 		return s.applyCurriculum(e)
+
+	case "sim.tuning_applied":
+		// World tuning manifest (spec 048): the payload is the FULL effective
+		// dial set (never a delta), so this arm is a pure, idempotent set of
+		// s.Tuning — replay re-applies it and the boot-time seed never
+		// double-counts. Reads always go through the accessors (tuning.go).
+		var p TuningAppliedPayload
+		if err := json.Unmarshal(e.Payload, &p); err != nil {
+			return fmt.Errorf("apply %s: %w", e.Type, err)
+		}
+		s.Tuning = &TuningState{
+			RefuelDyingBelow:       p.RefuelDyingBelow,
+			FireBurnPerWood:        p.FireBurnPerWood,
+			GruEmergePerMille:      p.GruEmergePerMille,
+			PlannerCadenceTicks:    p.PlannerCadenceTicks,
+			EncounterCooldownTicks: p.EncounterCooldownTicks,
+		}
 
 	case "meeting.convention_established", "sim.gathering_observed",
 		"meeting.place_designated", "meeting.convened", "meeting.opened",

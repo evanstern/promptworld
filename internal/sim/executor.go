@@ -829,7 +829,7 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 		if base < nextTick {
 			base = nextTick // cold or expired: relight from now
 		}
-		deadline := base + fireBurnPerWood
+		deadline := base + s.FireBurnPerWood()
 		if capAt := nextTick + fireFuelCap; deadline > capAt {
 			deadline = capAt
 		}

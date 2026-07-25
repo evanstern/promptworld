@@ -219,8 +219,8 @@ func TestRefuelRelightsAndReArms(t *testing.T) {
 	}
 	// Cold relight: the deadline is measured from the refuel tick, not the
 	// stale FuelUntil (which was in the past).
-	if newDeadline != refuelTick+fireBurnPerWood {
-		t.Errorf("new FuelUntil = %d, want %d (refuel tick + fireBurnPerWood)", newDeadline, refuelTick+fireBurnPerWood)
+	if newDeadline != refuelTick+defaultFireBurnPerWood {
+		t.Errorf("new FuelUntil = %d, want %d (refuel tick + defaultFireBurnPerWood)", newDeadline, refuelTick+defaultFireBurnPerWood)
 	}
 	if a.Inv.Wood != 2 {
 		t.Errorf("wood after refuel = %d, want 2", a.Inv.Wood)

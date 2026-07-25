@@ -98,7 +98,7 @@ const (
 // SecretShareRoll: seeded chance gate for a secret slipping in an eligible
 // conversation — deterministic per (seed, cadence bucket, owner).
 func SecretShareRoll(seed uint64, tick int64, agent int) bool {
-	r := rngAt(seed, "secret-share", tick/PlannerCadenceTicks, agent)
+	r := rngAt(seed, "secret-share", tick/defaultPlannerCadenceTicks, agent)
 	return r.Uint64N(secretShareChance) == 0
 }
 

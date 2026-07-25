@@ -327,7 +327,7 @@ func TestEmbedderSituationCadence(t *testing.T) {
 	moved, _ := json.Marshal(sim.AgentMovedPayload{Agent: 0, X: 3, Y: 4})
 	batch := []store.Event{
 		memAdded(4, 1, "Crossed the meadow."),
-		{Seq: 5, Tick: sim.PlannerCadenceTicks + 1, Type: "agent.moved", Payload: moved},
+		{Seq: 5, Tick: ref.PlannerCadence() + 1, Type: "agent.moved", Payload: moved},
 	}
 	for _, ev := range batch {
 		ref.Apply(ev)
@@ -362,7 +362,7 @@ func TestEmbedderSituationCadence(t *testing.T) {
 
 	// A later event INSIDE the same bucket fires nothing more.
 	inside, _ := json.Marshal(sim.AgentMovedPayload{Agent: 0, X: 4, Y: 4})
-	e.Observe([]store.Event{{Seq: 6, Tick: sim.PlannerCadenceTicks + 500, Type: "agent.moved", Payload: inside}})
+	e.Observe([]store.Event{{Seq: 6, Tick: ref.PlannerCadence() + 500, Type: "agent.moved", Payload: inside}})
 	e.Observe([]store.Event{memAdded(7, 2, "sync marker")})
 	if p := nextCompanion(t, stream); p.MemSeq != 7 {
 		t.Fatalf("expected only the sync-marker companion, got %+v (same bucket must not re-fire)", p)

@@ -144,7 +144,7 @@ func reflexRefuelIntent(s *State, m *worldmap.Map, a *Agent, tick int64) (*Inten
 	}
 	if p, ok := nearestKnown(m, s, a, "fire", tick, func(x, y int) bool {
 		f, _ := knownFreshFact(a, "fire", x, y, tick)
-		return f.Detail-tick < refuelDyingBelow
+		return f.Detail-tick < s.RefuelDyingBelow()
 	}); ok {
 		return &Intent{Goal: "refuel_fire", TargetX: p.X, TargetY: p.Y}, true
 	}

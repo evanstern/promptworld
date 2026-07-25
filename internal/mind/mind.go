@@ -33,8 +33,7 @@ type Injector interface {
 }
 
 const (
-	encounterCooldownTicks = 2 * 3600 // per pair
-	encounterRadius        = 1
+	encounterRadius = 1
 	// callTimeout must exceed the local model's honest completion time or
 	// the tier's throughput is zero: live measurement (gemma 12B, day-1
 	// prompts) put planner completions just past the old 90s, so every
@@ -173,7 +172,7 @@ func New(orch Submitter, loop Injector, social SocialInjector, m *worldmap.Map, 
 		md.runLoop = runLoopOverride[0]
 	}
 	for i := range md.nextDue {
-		md.nextDue[i] = replica.Tick + int64(i+1)*(sim.PlannerCadenceTicks/sim.AgentCount)
+		md.nextDue[i] = replica.Tick + int64(i+1)*(replica.PlannerCadence()/sim.AgentCount)
 	}
 	go md.run()
 	go md.planWorker()
@@ -314,7 +313,7 @@ func (md *Mind) armEncounters(e store.Event) {
 		}
 		if absInt(md.replica.Agents[b].X-p.X)+absInt(md.replica.Agents[b].Y-p.Y) <= encounterRadius {
 			key := [2]int{minInt(a, b), maxInt(a, b)}
-			if e.Tick-md.pairSeen[key] >= encounterCooldownTicks {
+			if e.Tick-md.pairSeen[key] >= md.replica.EncounterCooldown() {
 				md.pairSeen[key] = e.Tick
 				md.arm(a, e.Seq)
 				md.arm(b, e.Seq)
@@ -381,7 +380,7 @@ func (md *Mind) plan() {
 			// Phase-preserving (TASK-44): see nextPhasePreservingDue — a
 			// speed spike that suppresses several agents in the same batch
 			// must not collapse their boot-staggered cadence phases.
-			md.nextDue[i] = nextPhasePreservingDue(md.nextDue[i], tick, sim.PlannerCadenceTicks)
+			md.nextDue[i] = nextPhasePreservingDue(md.nextDue[i], tick, md.replica.PlannerCadence())
 			continue
 		}
 		job := planJob{
@@ -429,7 +428,7 @@ func (md *Mind) plan() {
 			// backlog clearing several overdue agents in one batch) must not
 			// re-arm them all onto the identical nextDue — that permanently
 			// locks the cadence fallback into lockstep, same as the musing bug.
-			md.nextDue[i] = nextPhasePreservingDue(md.nextDue[i], tick, sim.PlannerCadenceTicks)
+			md.nextDue[i] = nextPhasePreservingDue(md.nextDue[i], tick, md.replica.PlannerCadence())
 		default:
 			md.planInFlight[i].Store(false) // queue full; retry next batch
 		}

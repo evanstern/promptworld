@@ -282,9 +282,9 @@ func TestReplayByteIdentityWholeFeature(t *testing.T) {
 	// Wood is exactly 0 (spent by build_fire/craft_spear/craft_planks/cook_
 	// oven/bathe above), so the reflex's one refuel rule can never fire — the
 	// fire runs its full natural fuel window uncontested. The deadline is
-	// deterministic (fireBuiltTick + 2*fireBurnPerWood); wait to a bit past it
-	// rather than a blind large budget, to keep the unattended window short.
-	burnoutDeadline := fireBuiltTick + 2*fireBurnPerWood
+	// deterministic (fireBuiltTick + 2*defaultFireBurnPerWood); wait to a bit
+	// past it rather than a blind large budget, to keep the window short.
+	burnoutDeadline := fireBuiltTick + 2*defaultFireBurnPerWood
 	log = append(log, stepUntil(burnoutDeadline+2000, func(e store.Event) bool {
 		if e.Type != "sim.fire_burned_out" {
 			return false
