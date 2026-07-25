@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-25 19:47'
-updated_date: '2026-07-25 20:24'
+updated_date: '2026-07-25 20:35'
 labels:
   - gates
   - review-2026-07-25
@@ -39,14 +39,24 @@ Trivial-exemption candidate per the constitution: surgical fix, complete file:li
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 check-merge-drift.mjs:521 maps sources to their .path string; report output shows real paths, not [object Object]
-- [ ] #2 Set-based dedup at :512 actually dedups (duplicate sources collapse)
-- [ ] #3 Two DIFFERENT player-docs staleness findings on one task produce two different fingerprints and both write board notes
-- [ ] #4 Regression test covers the evidence-shape -> fingerprint path so a future extractor returning objects fails loudly
+- [x] #1 check-merge-drift.mjs:521 maps sources to their .path string; report output shows real paths, not [object Object]
+- [x] #2 Set-based dedup at :512 actually dedups (duplicate sources collapse)
+- [x] #3 Two DIFFERENT player-docs staleness findings on one task produce two different fingerprints and both write board notes
+- [x] #4 Regression test covers the evidence-shape -> fingerprint path so a future extractor returning objects fails loudly
 <!-- AC:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 Claimed 2026-07-25 by the review session, using the TASK-139 protocol: card moved and pushed BEFORE any work, so a competing session sees the claim. Constitution trivial exemption applies — surgical one-line fix, complete file:line diagnosis pinned on this card, ACs present; no Spec Kit. Implementer tier: Sonnet (single-file, mechanical, complete diagnosis) per Principle V rubric. No spec number claimed (exempt task).
+
+PR #95 open (branch task-138-drift-evidence-shape), all four ACs proven in-branch; awaiting operator merge — the review session's merge attempt was blocked by the harness permission classifier, not by a gate.
+
+Fix: scripts/check-merge-drift.mjs player-docs extractor now maps sources to .path. Live session run shows 26 readable, deduped paths and zero [object Object] (was 30 undeduped objects).
+
+Adds scripts/check-merge-drift.test.mjs — the FIRST test for any scripts/*.mjs in this repo (node:test, zero deps; no prior convention existed). Run: node --test scripts/check-merge-drift.test.mjs
+
+DEVIATION, gated and accepted: to test the real extractor rather than a copy, fingerprint() and computePlayerDocsSurface() are exported and the trailing main() call is guarded. The implementer's FIRST guard used process.argv[1] === new URL(import.meta.url).pathname, which silently disabled the gate entirely — import.meta.url resolves symlinks and argv[1] does not, so invoking through a symlinked ancestor produced NO output and exit 0. This machine reaches the repo at both ~/Claude/Code/promptworld and ~/projects/promptworld, so it was live, not theoretical. Rejected and replaced with a realpath comparison that DEFAULTS TO RUNNING when it cannot tell, plus a regression test that spawns the CLI through a symlink. Lesson worth keeping: the fix for a silently-suppressing gate nearly shipped a silently-skipping one.
+
+Verification: 4/4 tests pass; reverting the fingerprint fix fails 3 with two IDENTICAL fingerprints for different findings; reverting the guard fails the symlink test on empty stdout. go build/vet clean. check-merge-drift pr = pass, no findings.
 <!-- SECTION:NOTES:END -->
