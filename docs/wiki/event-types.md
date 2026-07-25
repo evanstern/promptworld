@@ -19,7 +19,7 @@ sources:
   - internal/sim/curriculum.go
   - internal/daemon/daemon.go
   - internal/daemon/curriculum.go
-verified_against: 723c464c35aac4936f2793d566a53c801516ae60
+verified_against: 4b15038fcd6fc9f6fe2f98ea558954a85dccec84
 ---
 
 # Event types

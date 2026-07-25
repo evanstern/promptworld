@@ -10,7 +10,7 @@ sources:
   - internal/tui/digest.go
   - internal/tui/decisions.go
   - internal/tui/help.go
-verified_against: 723c464c35aac4936f2793d566a53c801516ae60
+verified_against: 4b15038fcd6fc9f6fe2f98ea558954a85dccec84
 ---
 
 # TUI client
@@ -88,9 +88,18 @@ itself covering only the tab-container chrome): at ≥112 columns the
 client renders the **widescreen composite** — the map on the left and a tabbed
 **dock** on the right in a 50/50 split (`computeColumns` in layout.go; the map's
 viewport derives from the column budget via `mapViewportTiles`), a one-line
-**Metatron minibuffer** above the footer, and per-mode footer hints. Below 112
+borderless **guardian strip** (spec 050, reorient decision 7: charge-bank
+glyphs + `(N/cap)`, a `next +1 @ <time>` regen forecast derived from
+`sim.MetatronChargeRegenTicks`, and the replica's standing-order count —
+`guardianStripView`, each segment degrading to absence rather than a
+misleading zero), a one-line
+**Metatron minibuffer** above the footer, and per-mode footer hints. The strip
+is the last chrome to fold (`rowBudget.Strip`, `computeRows` keeps it while
+body ≥ 10 rows); folded, its content relocates into the minibuffer's dormant
+placeholder line instead of hiding. Below 112
 columns it falls back to the original single-pane UI (header + tab bar + one
-active pane), unchanged. `View` output is exactly terminal-height in every mode
+active pane), unchanged except that the guardian pane carries the same strip
+above its minibuffer. `View` output is exactly terminal-height in every mode
 (every panel body is clipped to its row budget — `clipContent`), and resizes
 re-clamp pan/selection state (`clampGeometry`).
 
