@@ -4,7 +4,7 @@ title: Needs-conditioned recovery intents with parameters
 status: In Progress
 assignee: []
 created_date: '2026-07-25 02:41'
-updated_date: '2026-07-25 20:09'
+updated_date: '2026-07-25 21:09'
 labels:
   - goal-quality
   - instinct-layer
@@ -53,4 +53,6 @@ OPERATOR DECISION (2026-07-25): sequence 104 BEFORE 103 — 103's AC#2 ('day-bra
 Also: any new threshold this task introduces must ship as a tuning.json dial (spec 048 / 057 US2 genesis pin), not a bare const.
 
 MVLS sweep dispatch (2026-07-25, lane 3 — forked after TASK-103's merge #93): implementer tier Opus 4.8 — constitution V rubric: cross-package (sim executor + tool registry + mind handler), doctrine-adjacent intent-completion semantics.
+
+Implementer report gated (2026-07-25, read-only — merge held for operator signal): T001-T014 done, 22 packages green, vet clean, TUI gate no-op. Four deviations ACCEPTED: (1) rest analog mechanism-proven in tests only (plan R6 escape hatch; sleep untouched); (2) exposureWakeBelow=150 NEW constant, not the R5-nominated 350 — faithful mirror of the hunger EMERGENCY floor (350 roused sleepers on routine dips, regressed degraded-mode); (3) survival-preemption yield on holds (US3 AS2/FR-004, keeps 8/8, less sticky); (4) governance emergent-gathering exclusion for hold-pinned villagers (Asleep/Exiled parallel, byte-inert pre-064) — flagged for operator review. Constants: warmthRecoverTo=800, recoveryStallTicks=300. Survival-neutral across 30 seeds. Branch NOT yet rebased across the guardian rename (PR #94 post-dates its fork) — rebase+gates+PR pend operator go.
 <!-- SECTION:NOTES:END -->
