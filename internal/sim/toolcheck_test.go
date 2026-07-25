@@ -212,6 +212,10 @@ func TestWorldToolDurationsMatchSimConstants(t *testing.T) {
 		// Spec 032 US3 (path).
 		"build_path": buildPathTicks,
 		"search":     0, // spec 041 US4: instant, wander-class (arrival completes it)
+		// Spec 064 US1: warm_up carries no work duration — arrival triggers the
+		// needs-conditioned HOLD (executeAtTarget → recoveryHoldEvents), not a
+		// timed work cycle, so 0 like goto_warmth (its arrive-and-done sibling).
+		"warm_up": 0,
 	}
 
 	seen := make(map[string]bool, len(want))

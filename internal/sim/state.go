@@ -768,6 +768,16 @@ func (s *State) Apply(e store.Event) error {
 			return err
 		}
 		a.Intent = &Intent{Goal: p.Goal, TargetX: p.TargetX, TargetY: p.TargetY, ResX: p.ResX, ResY: p.ResY, Kind: p.Kind, Qty: p.Qty, Reason: p.Reason}
+		// Spec 064 R1: carry the optional completion condition onto the intent, but
+		// only for a valid closed-set need (the door — a malformed UntilNeed drops
+		// the condition, leaving today's arrive-and-done rather than a stuck hold on
+		// an unknown need). Machine-authored payloads (warm_up resolver, reflex
+		// warmth rungs) only ever set a valid need, so this guard is defence, not a
+		// live path. A conditionless intent_set leaves both fields zero.
+		if isRecoveryNeed(p.UntilNeed) {
+			a.Intent.UntilNeed = p.UntilNeed
+			a.Intent.UntilValue = p.UntilValue
+		}
 		// TASK-56: remember the objective past its own lifetime (never
 		// cleared) so the villagers tab can show it while idle.
 		a.LastGoal = p.Goal
@@ -787,7 +797,31 @@ func (s *State) Apply(e store.Event) error {
 		}
 		if a.Intent != nil {
 			a.Intent.WorkStart = p.Tick
+			// Spec 064 R4: a conditioned hold's work_started doubles as its hold
+			// anchor — capture the reference need level so the no-net-gain abort
+			// check has a baseline. Ref is 0 for every ordinary work goal (which
+			// never reads HoldRef), so this is inert outside a recovery hold.
+			a.Intent.HoldRef = p.Ref
 		}
+	case "agent.recovery_stalled":
+		// Spec 064 R4/FR-004: a needs-conditioned hold aborted (source dead — no
+		// net gain across a full recoveryStallTicks window). State effect mirrors
+		// agent.intent_done/build_failed — clear the intent, stamp IdleSince so the
+		// agent re-decides at the reflex cadence — but the ring outcome is the
+		// DISTINCT "stalled", and (build_failed precedent) an abort is NOT an
+		// intent completion, so it never arms the spec-062 yield window: the source
+		// is discarded, only agent.intent_done arms.
+		var p RecoveryStalledPayload
+		if err := json.Unmarshal(e.Payload, &p); err != nil {
+			return fmt.Errorf("apply %s: %w", e.Type, err)
+		}
+		a, err := agent(p.Agent)
+		if err != nil {
+			return err
+		}
+		a.Intent = nil
+		a.IdleSince = e.Tick
+		a.stampIntentOutcome("stalled", e.Tick)
 	case "agent.intent_done":
 		var p AgentPayload
 		if err := json.Unmarshal(e.Payload, &p); err != nil {

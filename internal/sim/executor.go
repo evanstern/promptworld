@@ -209,7 +209,7 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 		}
 
 		if a.Asleep {
-			if wakeReason(a, night) {
+			if wakeReason(s, m, i, night, nextTick) {
 				emit("agent.woke", AgentPayload{Agent: i})
 			}
 			continue
@@ -270,6 +270,11 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 						TargetX: d.intent.TargetX, TargetY: d.intent.TargetY,
 						ResX: d.intent.ResX, ResY: d.intent.ResY,
 						Source: "reflex",
+						// Spec 064 R3: the reflex warmth rungs (day + night) issue
+						// goto_warmth WITH a completion condition — carry it so the
+						// intent holds at the fire instead of arrive-idle-wander.
+						// Zero on every other reflex intent (arrive-and-done, unchanged).
+						UntilNeed: d.intent.UntilNeed, UntilValue: d.intent.UntilValue,
 					})
 				}
 			}
@@ -796,6 +801,75 @@ func canTalk(a *Agent, tick int64) bool {
 	return a.LastTalk == 0 || tick-a.LastTalk >= talkCooldownSec
 }
 
+// recoveryHoldEvents runs the arrival/hold/complete/abort state machine for a
+// needs-conditioned intent (spec 064 R2/R4) whose agent stands on its target.
+// It is a PURE function of pre-tick state (s.Agents[i].Needs is the batch's
+// start-of-tick value — the heartbeat only emits needs_changed, the reducer
+// applies it after this batch), so replay reproduces every branch identically.
+//
+//   - need already at/over the threshold ⇒ complete now (agent.intent_done; the
+//     already-satisfied-on-arrival edge and the mid-hold crossing are one check,
+//     never assumed). The spec-062 yield window arms iff the ring source is
+//     intelligence — automatic in the intent_done reducer — so a reflex-issued
+//     recovery completing never arms it (source discipline, unchanged).
+//   - first tick below threshold (WorkStart == 0) ⇒ anchor the hold: work_started
+//     stamps the hold-since tick and captures the reference need level (Ref).
+//   - a full recoveryStallTicks window elapsed since the anchor ⇒ judge progress:
+//     net gain re-anchors (a live source keeps the hold alive); no net gain
+//     aborts (agent.recovery_stalled) — the honest dead-source outcome.
+//   - a higher-priority survival need in its danger band ⇒ yield (intent_done)
+//     so the reflex's higher rung acts (US3 AS2 — survival preempts recovery).
+//   - otherwise ⇒ hold silently (emit nothing); the agent stands recovering.
+//
+// No new preemption immunity (R7): a holding intent is an ordinary active intent
+// — the caller's meeting pin, a planner intent_set override, staleness, the
+// survival-preemption yield, and the abort are its only exits; the yield makes it
+// LESS sticky than a moving intent, never more (no new immunity).
+func recoveryHoldEvents(s *State, i int, nextTick int64) []store.Event {
+	var events []store.Event
+	emit := func(typ string, payload any) {
+		events = append(events, store.Event{Tick: nextTick, Type: typ, Payload: mustPayload(payload)})
+	}
+	a := &s.Agents[i]
+	in := a.Intent
+	need := needValue(a.Needs, in.UntilNeed)
+
+	if need >= in.UntilValue {
+		emit("agent.intent_done", AgentPayload{Agent: i})
+		return events
+	}
+	// Survival preemption (spec 064 US3 AS2 / FR-004): a recovery for one need
+	// never holds an agent THROUGH a worse emergency in another. When a
+	// higher-priority survival need has crossed into its danger band, the hold
+	// ends (intent_done) so the agent re-decides and the reflex's higher rung —
+	// which runs BEFORE the warmth rung — owns the agent (forage/eat for hunger).
+	// The OPPOSITE of immunity: it makes a hold LESS sticky, reusing the 062
+	// danger-band doctrine (one home), so a hold is interruptible for a genuine
+	// emergency exactly as the ladder interrupts any villager. Without it a
+	// no-planner world's held villager can starve at a fire (the reflex only runs
+	// on an idle agent). A reflex-sourced completion never arms the 062 window.
+	if preemptsRecovery(a, in.UntilNeed) {
+		emit("agent.intent_done", AgentPayload{Agent: i})
+		return events
+	}
+	if in.WorkStart == 0 {
+		emit("agent.work_started", WorkStartedPayload{Agent: i, Tick: nextTick, Ref: need})
+		return events
+	}
+	if nextTick-in.WorkStart >= recoveryStallTicks {
+		if need > in.HoldRef {
+			// Progress across the window — the source is delivering; slide the
+			// anchor forward so a slow-but-steady recovery is never aborted.
+			emit("agent.work_started", WorkStartedPayload{Agent: i, Tick: nextTick, Ref: need})
+		} else {
+			// No net gain across a whole window — the source is dead. Abort with
+			// the distinct outcome; the agent re-decides (reflex or planner).
+			emit("agent.recovery_stalled", RecoveryStalledPayload{Agent: i, Goal: in.Goal, Need: in.UntilNeed})
+		}
+	}
+	return events
+}
+
 // executeAtTarget runs the arrival/work/completion state machine for the
 // agent standing on its intent target.
 func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.Event {
@@ -805,6 +879,17 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 	}
 	a := &s.Agents[i]
 	in := a.Intent
+
+	// Needs-conditioned recovery (spec 064 R2): an intent carrying a completion
+	// condition HOLDS at its target and completes on the need crossing the
+	// threshold — not the goal's default arrive-and-done. Intercepted BEFORE the
+	// per-goal switch so it is goal-agnostic: it governs the planner's warm_up AND
+	// the reflex's goto_warmth-with-condition AND any future conditioned verb, all
+	// through one check. A conditionless intent (UntilNeed == "") skips this
+	// entirely and behaves exactly as it did pre-064 (opt-in mechanism, FR-001).
+	if in.UntilNeed != "" {
+		return recoveryHoldEvents(s, i, nextTick)
+	}
 
 	// Instant goals complete on arrival.
 	switch in.Goal {
@@ -1390,16 +1475,41 @@ func decayNeeds(n Needs, asleep, night, warm, onShelter bool) Needs {
 	return n
 }
 
-// wakeReason: day breaks with decent rest, or a hunger emergency the agent
-// can actually act on (food in hand). Fully-rested agents sleep through the
-// night regardless — waking bored at 4am with nothing to do but sleep again
-// churned sleep/wake events endlessly.
-func wakeReason(a *Agent, night bool) bool {
+// wakeReason: day breaks with decent rest, a hunger emergency the agent can
+// actually act on (food in hand), or (spec 064 US4) a COLD emergency the agent
+// can act on. Fully-rested agents sleep through the night regardless — waking
+// bored at 4am with nothing to do but sleep again churned sleep/wake events
+// endlessly; the emergency arms keep that churn bound with an actionable guard.
+func wakeReason(s *State, m *worldmap.Map, i int, night bool, tick int64) bool {
+	a := &s.Agents[i]
 	if !night && a.Needs.Rest >= 600 {
 		return true
 	}
 	// Wake to a hunger emergency the agent can act on: any food in hand (T018).
-	return a.Needs.Food < 150 && hasAnyFood(a)
+	if a.Needs.Food < 150 && hasAnyFood(a) {
+		return true
+	}
+	// Wake to a cold emergency the agent can act on (spec 064 US4, audit Gap C —
+	// Oak's final night: warmth 636→0 while asleep, the wake gate blind to cold).
+	// Mirrors the hunger-emergency shape EXACTLY: an EMERGENCY-floor value
+	// (exposureWakeBelow 150 — a genuine exposure spiral, NOT the routine-dip
+	// danger band; the hunger wake likewise fires at 150, not the hungry band 350)
+	// AND an actionable remedy. The remedy guard is the warmth ladder returning an
+	// actionable intent (reach a known fire, refuel, build, or chop) — the hunger
+	// wake's "food in hand" analog. That guard is the churn bound Gap C was
+	// deferred for: a sleeper who could only sleep in place is not woken to
+	// re-sleep every beat. Night-gated because warmth is a death spiral only at
+	// night (decayNeeds loses warmth only when night; by day it passively
+	// regenerates), so a cozy fire-side sleeper — warmth rising at warmAt, never
+	// near the floor — sleeps through, and the wake keys on the emergency band,
+	// not on "night" alone (US4 AS2 control). The ladder read is pure (stepEvents
+	// doctrine) and gated behind the cheap band test, so idle sleepers cost nothing.
+	if night && a.Needs.Warmth < exposureWakeBelow {
+		if _, ok := warmthLadder(s, m, a, tick); ok {
+			return true
+		}
+	}
+	return false
 }
 
 // eatOutcome computes the most-nutritious-first eat (T018, FR-007): Meals →

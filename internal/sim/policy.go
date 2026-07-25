@@ -170,7 +170,14 @@ func survivalDecision(s *State, m *worldmap.Map, a *Agent, tick int64) (decision
 func reachKnownWarmth(s *State, m *worldmap.Map, a *Agent, tick int64) (*Intent, bool) {
 	warmKnown, _ := warmKnownPredicate(a, tick)
 	if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool { return warmKnown(x, y) && passable(m, s, x, y) }); ok {
-		return &Intent{Goal: "goto_warmth", TargetX: p.X, TargetY: p.Y}, true
+		// Spec 064 R3/FR-003: the reflex reaches the fire with a completion
+		// condition (recover warmth to the doctrine default) so it HOLDS and
+		// warms up, instead of arriving, idling, and wandering off cold — the
+		// world-01 arrive-idle-vacuum this feature kills. Same Intent form the
+		// planner's warm_up produces; source "reflex" (set at emission) keeps it
+		// out of the 062 yield window on completion. refuel/build/chop below are
+		// prep-to-make-warmth, not holds — they stay conditionless (arrive-and-done).
+		return &Intent{Goal: "goto_warmth", TargetX: p.X, TargetY: p.Y, UntilNeed: "warmth", UntilValue: warmthRecoverTo}, true
 	}
 	if in, ok := reflexRefuelIntent(s, m, a, tick); ok {
 		return in, true
@@ -712,6 +719,27 @@ func buildGoalResolvers() map[string]goalResolver {
 			}
 			if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool { return warm(x, y) && passable(m, s, x, y) }); ok {
 				return &Intent{Goal: "goto_warmth", TargetX: p.X, TargetY: p.Y}, "", nil
+			}
+			return nil, "", fmt.Errorf("no warmth anywhere")
+		},
+		"warm_up": func(s *State, m *worldmap.Map, a *Agent, idx int, goal string, targetAgent int, kind string, qty int, tick int64) (*Intent, string, error) {
+			// Spec 064 R3/FR-002: the planner's warmth-RECOVERY verb. Target
+			// resolution is goto_warmth's exactly — the nearest known-warm,
+			// passable tile (spec 041 warmKnownPredicate; terrain passability stays
+			// ground truth) — but the returned intent carries a completion
+			// condition, so it HOLDS at the fire and completes on warmth. The
+			// threshold rides in through `qty` (warm_up's per-verb use of the
+			// generic arg — the storage verbs' precedent): 0 ⇒ the doctrine default
+			// warmthRecoverTo; any other value is CLAMPED into the sane band here,
+			// authoritatively (the sim drives — clamp-with-notice, spec 058; the
+			// mind handler phrases the same clamp for the model via ClampWarmUp).
+			warm, any := warmKnownPredicate(a, tick)
+			if !any {
+				return nil, "", fmt.Errorf("you know of no warm place")
+			}
+			until, _ := clampWarmUp(qty)
+			if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool { return warm(x, y) && passable(m, s, x, y) }); ok {
+				return &Intent{Goal: "warm_up", TargetX: p.X, TargetY: p.Y, UntilNeed: "warmth", UntilValue: until}, "", nil
 			}
 			return nil, "", fmt.Errorf("no warmth anywhere")
 		},

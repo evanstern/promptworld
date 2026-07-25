@@ -24,6 +24,8 @@ var wantWorldOrder = []string{
 	"build_path",
 	// Spec 041 US4 (mental maps: frontier exploration).
 	"search",
+	// Spec 064 US1 (needs-conditioned recovery: warm_up).
+	"warm_up",
 }
 
 // wantExpressive is the expressive tools' registration order (catalog table
@@ -142,14 +144,15 @@ func TestPromptGlossBlockStructure(t *testing.T) {
 		t.Fatalf("gloss block must end in a newline")
 	}
 	lines := strings.Split(strings.TrimSuffix(block, "\n"), "\n")
-	if len(lines) != 12 {
-		t.Fatalf("gloss block has %d lines, want 12:\n%s", len(lines), block)
+	if len(lines) != 13 {
+		t.Fatalf("gloss block has %d lines, want 13:\n%s", len(lines), block)
 	}
 	// Spec 032 appends wall/demolish/repair (US1), craft_axe (US2), build_path
 	// (US3); spec 041 appends search (US4 — its gloss is the contracts §2
-	// model-facing tool description, so it reads imperatively).
+	// model-facing tool description, so it reads imperatively); spec 064 appends
+	// warm_up (US1 — the warmth-recovery verb, imperative model-facing gloss).
 	leads := []string{"quarry", "cook", "craft_planks", "build_oven", "drop", "build_chest",
-		"build_wall_plank", "demolish", "repair", "craft_axe", "build_path", "Search"}
+		"build_wall_plank", "demolish", "repair", "craft_axe", "build_path", "Search", "Warm"}
 	for i, want := range leads {
 		if !strings.HasPrefix(lines[i], want) {
 			t.Errorf("gloss line %d starts %q, want prefix %q", i, lines[i], want)

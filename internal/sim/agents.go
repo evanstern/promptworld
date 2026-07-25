@@ -4,7 +4,11 @@ package sim
 // and inventories. All values are integers on a 0..1000 scale — integer math
 // keeps decay byte-deterministic across platforms (no float rounding drift).
 
-import "github.com/evanstern/promptworld/internal/tool"
+import (
+	"fmt"
+
+	"github.com/evanstern/promptworld/internal/tool"
+)
 
 // AgentCount is exported for packages that size per-agent tables.
 const AgentCount = 8
@@ -71,6 +75,25 @@ type Intent struct {
 	// fabricated). Lives on the intent, so it dies with it (cleared on
 	// completion/abandonment). omitempty keeps reflex intents byte-stable.
 	Reason string `json:"reason,omitempty"`
+	// Needs-conditioned recovery (spec 064 R1): an OPTIONAL completion condition
+	// — a need name (UntilNeed, a member of recoveryNeeds: warmth|rest|food) and
+	// a threshold (UntilValue). When UntilNeed is set the executor HOLDS the
+	// intent at its target and completes it on the need crossing UntilValue,
+	// instead of the goal's default arrive-and-done (executeAtTarget). Absent
+	// (UntilNeed == "") ≡ every pre-064 intent, byte-for-byte: both fields are
+	// omitempty, so a conditionless intent marshals identically to before.
+	// UntilValue is a need LEVEL (0-1000 scale), NOT a tick — KEEP under the
+	// miracle rebase taxonomy (miracles.go), like NeedsAnchor's frozen levels.
+	UntilNeed  string `json:"until_need,omitempty"`
+	UntilValue int    `json:"until_value,omitempty"`
+	// HoldRef (spec 064 R4) is the need level captured at the current hold anchor
+	// (WorkStart, reused as the hold-since tick for a conditioned intent — a
+	// no-work goal never otherwise sets it). The per-tick completion check
+	// compares the live need against HoldRef over the recoveryStallTicks window:
+	// no net gain across a whole window ⇒ the source is dead ⇒ abort
+	// (agent.recovery_stalled). A need LEVEL, not a tick — KEEP on rebase.
+	// omitempty keeps a non-holding intent byte-stable (0 = no anchor captured).
+	HoldRef int `json:"hold_ref,omitempty"`
 }
 
 // intentLogCap bounds the recent-intent ring (spec 043 US1, data-model.md): 8
@@ -94,8 +117,9 @@ const trajectoryWindowTicks = 1800
 // IntentSetPayload.Source ("planner" | "reflex" | "plan"); Reason is the stated
 // reason when the source recorded one (planner/plan) and empty for reflex —
 // never invented; Tick is when the intent landed. Outcome ("" while executing,
-// then "done" | "failed" | "rejected" | "expired") and OutcomeTick are stamped
-// by the closing lifecycle event. All-omitempty tail keeps records compact and
+// then "done" | "failed" | "rejected" | "expired" | "stalled") and OutcomeTick
+// are stamped by the closing lifecycle event ("stalled" is spec 064's
+// needs-conditioned recovery abort). All-omitempty tail keeps records compact and
 // pre-043-comparable in canonical bytes.
 type IntentRecord struct {
 	Goal        string `json:"goal"`
@@ -734,6 +758,176 @@ const (
 	prepYieldTicks = 1800
 )
 
+// --- spec 064 (needs-conditioned recovery): warm_up doctrine -----------------
+//
+// The doctrine home for the recovery-completion constants (FR-007): named,
+// single place, promoted-dial-READY but NOT tuning.json dials (earned, not
+// speculative — the spec-062 posture).
+const (
+	// warmthRecoverTo (R3) is the default warmth threshold a warm_up recovery
+	// loiters to when the planner names none, and the ONLY threshold the reflex
+	// warmth rungs use. 800 on the 0-1000 needs scale: a healthy 450-point margin
+	// above dangerWarmthBelow (350), so a villager released from a warm_up does
+	// not immediately re-enter the warmth danger band, yet well under the 1000
+	// cap so a live fire (warmthGainFire +6/min) reaches it in bounded loiter
+	// time (~4500 ticks from the freezing band). Chosen against the needs scale;
+	// matches the spike's world-01 example (800). Dial-ready, not dialed.
+	warmthRecoverTo = 800
+	// warmthRecoverFloor is the clamp floor for a planner-supplied until_warmth
+	// (edge case: "above the danger band floor, at or below the need cap"). A
+	// threshold at or below the danger band would let a recovery complete while
+	// still in danger — meaningless — so an out-of-range request clamps into
+	// [warmthRecoverFloor, needMax]. Set at the warmth danger band itself (the
+	// 062 one home): a request must at least clear danger. Clamp-with-notice
+	// (spec 058 posture) — the sim clamps authoritatively (resolveGoal), never
+	// rejects (ClampWarmUp).
+	warmthRecoverFloor = dangerWarmthBelow // 350
+	// needMax is the shared upper bound of every need on the 0-1000 scale
+	// (decayNeeds clamps to 1000). Named here so the recovery clamp and the
+	// completion check read one ceiling rather than a bare literal.
+	needMax = 1000
+
+	// exposureWakeBelow (US4/FR-006) is the warmth level at which a SLEEPER wakes
+	// to a cold emergency (audit Gap C). It mirrors the hunger-emergency wake
+	// (Food < 150, executor.go wakeReason) EXACTLY in shape AND magnitude: an
+	// EMERGENCY floor well BELOW the warmth danger band (dangerWarmthBelow 350),
+	// not the danger band itself. That distinction is load-bearing — the hunger
+	// wake deliberately fires at an emergency (150), NOT at the hungry danger band
+	// (350), so a sleeper isn't roused every night merely for being "hungry"/
+	// "cold"; only a genuine emergency wakes them. A NEW named constant (FR-007
+	// permits one for the wake band): the 062/059 warmth constants — coldNightBelow/
+	// dangerWarmthBelow (350) and SurvivalFreezingAt (0) — don't fit here (350 is
+	// the routine-dip danger band, 0 is too late to act), so this reuses the
+	// hunger-emergency 150 for parity instead. At 150 a night sleeper still has
+	// ~37 game-minutes of runway before warmth hits 0 and exposure health-drain
+	// begins — ample to reach or build a fire. Waking at the 350 danger band
+	// instead roused sleepers on routine cold dips and desynced the degraded-mode
+	// forage rotation (a survival regression on the seed-101 knife-edge); this
+	// emergency floor fires only for the true exposure spiral (Oak's 636→0),
+	// leaving cozy and routine-cold sleepers undisturbed. Dial-ready, not dialed.
+	exposureWakeBelow = 150
+
+	// recoveryStallTicks (R4) is the abort window for a conditioned hold: if the
+	// need shows NO net gain across this whole span while holding at the target,
+	// the source is judged dead (fire burned out, displaced, or a threshold the
+	// source can't reach) and the intent aborts with a distinct outcome
+	// (agent.recovery_stalled). 300 ticks == 5 game-minutes == 5 needs
+	// heartbeats (the heartbeat is per-game-minute, %60): comfortably longer than
+	// one heartbeat so a hold never false-aborts on the flat ticks BETWEEN beats
+	// (R4: "must not false-abort on the first flat tick"), yet short enough that
+	// a dead night fire — warmth falling warmthLossCold(4)/min — is caught within
+	// a few minutes. At a live fire warmth climbs +30 across the window (clear net
+	// gain), so a recovering hold re-anchors and never aborts. Dial-ready.
+	recoveryStallTicks = 300
+)
+
+// recoveryNeeds is the closed set of needs a completion condition may name
+// (spec 064 R1): the door validates UntilNeed against it so a malformed
+// condition can never reach the per-tick check. warmth is the evidenced
+// consumer (warm_up); rest and food make the mechanism generic (US2) — a
+// second consumer reuses the SAME fields and check with no parallel plumbing.
+var recoveryNeeds = map[string]bool{"warmth": true, "rest": true, "food": true}
+
+// isRecoveryNeed reports whether name is a valid completion-condition need
+// (the closed-set door, R1). "" is not a need — a conditionless intent is the
+// arrive-and-done default, checked by the UntilNeed != "" gate, not here.
+func isRecoveryNeed(name string) bool { return recoveryNeeds[name] }
+
+// needValue reads one need's live level by its recovery name — the need-agnostic
+// accessor the per-tick completion check consults, so the hold/complete/abort
+// machinery is generic across needs (spec 064 R1/US2), not warmth-private. An
+// unknown name returns 0 (a closed-set door upstream makes this unreachable in
+// practice); the caller only ever passes a validated UntilNeed.
+func needValue(n Needs, name string) int {
+	switch name {
+	case "warmth":
+		return n.Warmth
+	case "rest":
+		return n.Rest
+	case "food":
+		return n.Food
+	default:
+		return 0
+	}
+}
+
+// recoveryPriority mirrors the reflex ladder's SURVIVAL ordering (policy.go
+// survivalDecision: eat/get-food first, then the warmth ladder, then the nap):
+// food is more urgent than warmth, warmth than rest. Lower = more urgent. It is
+// the one place the recovery-preemption rank lives, so a hold's yield order
+// tracks the ladder it yields to.
+func recoveryPriority(need string) int {
+	switch need {
+	case "food":
+		return 0
+	case "warmth":
+		return 1
+	case "rest":
+		return 2
+	default:
+		return 99
+	}
+}
+
+// recoveryDangerBand returns a need's 062 danger band — the one home reused
+// (dangerFoodBelow/dangerWarmthBelow/dangerRestBelow), so "in danger" means
+// exactly what the PREP gate and the survival rungs already mean by it.
+func recoveryDangerBand(need string) int {
+	switch need {
+	case "food":
+		return dangerFoodBelow
+	case "warmth":
+		return dangerWarmthBelow
+	case "rest":
+		return dangerRestBelow
+	default:
+		return 0
+	}
+}
+
+// preemptsRecovery reports whether a survival need MORE urgent than the one being
+// recovered has crossed into its danger band (spec 064 US3 AS2): the hold must
+// yield so the reflex's higher rung — which runs before the recovery's own rung —
+// owns the agent. Only a strictly-higher-priority need preempts: a warmth
+// recovery yields to hunger (food outranks warmth in the ladder), never the
+// reverse, so a villager warming up doesn't abandon it for a lower-priority need.
+func preemptsRecovery(a *Agent, recoveryNeed string) bool {
+	pr := recoveryPriority(recoveryNeed)
+	for _, n := range []string{"food", "warmth", "rest"} {
+		if recoveryPriority(n) < pr && needValue(a.Needs, n) < recoveryDangerBand(n) {
+			return true
+		}
+	}
+	return false
+}
+
+// clampWarmUp resolves a requested warm_up threshold (spec 064 R3, clamp-with-
+// notice — spec 058 posture): 0 (absent) yields the doctrine default
+// warmthRecoverTo; any other value clamps into [warmthRecoverFloor, needMax].
+// It returns the effective threshold and a human notice ("" when the request
+// was in range or defaulted). The SINGLE clamp home — resolveGoal calls it to
+// set the authoritative intent (the sim drives), and the mind handler calls the
+// exported ClampWarmUp wrapper only to phrase the model-facing notice/verdict,
+// so the two can never drift (the set_plan const-vs-const precedent).
+func clampWarmUp(requested int) (int, string) {
+	if requested == 0 {
+		return warmthRecoverTo, ""
+	}
+	if requested < warmthRecoverFloor {
+		return warmthRecoverFloor, fmt.Sprintf("until_warmth %d is below the sane floor — clamped to %d", requested, warmthRecoverFloor)
+	}
+	if requested > needMax {
+		return needMax, fmt.Sprintf("until_warmth %d is above the need cap — clamped to %d", requested, needMax)
+	}
+	return requested, ""
+}
+
+// ClampWarmUp is the exported wrapper the mind's warm_up handler consults to
+// phrase its clamp notice and pick the landed/landed-clamped verdict (spec 064
+// R3). It delegates to clampWarmUp so the authoritative resolver clamp and the
+// handler's model-facing notice share one implementation and never drift.
+func ClampWarmUp(requested int) (int, string) { return clampWarmUp(requested) }
+
 // isMindSource reports whether an intent's ring-record source counts as
 // "intelligence" for the yield window (spec 062 US1): planner, plan, and
 // meeting sources all do; a "reflex" source (or an empty/unknown one) does not
@@ -993,10 +1187,39 @@ type (
 		// events carry none. omitempty keeps pre-019 logs and reflex/executor
 		// emissions byte-identical.
 		Reason string `json:"reason,omitempty"`
+		// Needs-conditioned recovery (spec 064 R1): the optional completion
+		// condition riding onto the intent — a need name and threshold. Set at
+		// the warm_up resolver (planner) and the reflex warmth rungs
+		// (goto_warmth-with-condition); absent on every other intent_set. Both
+		// omitempty, LAST — pre-064 and conditionless intent_set payloads marshal
+		// byte-identically. The condition lives in THIS recorded event, so replay
+		// repopulates it with no new state (determinism: the per-tick check is a
+		// pure function of the resulting intent + needs).
+		UntilNeed  string `json:"until_need,omitempty"`
+		UntilValue int    `json:"until_value,omitempty"`
 	}
 	WorkStartedPayload struct {
 		Agent int   `json:"agent"`
 		Tick  int64 `json:"tick"`
+		// Ref (spec 064 R4) is the need level captured at this hold anchor, for a
+		// conditioned recovery's no-net-gain abort check. omitempty and LAST:
+		// every pre-064 work_started (forage/chop/build) emits Ref 0 and marshals
+		// byte-identically; a work goal never reads Intent.HoldRef, so the 0 it
+		// writes there is inert.
+		Ref int `json:"ref,omitempty"`
+	}
+	// RecoveryStalledPayload — agent.recovery_stalled (spec 064 R4/FR-004): a
+	// needs-conditioned hold whose need showed no net gain across a full
+	// recoveryStallTicks window (dead fire, displaced source, unreachable
+	// threshold). Its OWN distinct type — an honest abort, not a completion — so
+	// the reducer clears the intent like intent_done but stamps the ring "stalled"
+	// and NEVER arms the spec-062 yield window (the build_failed precedent: an
+	// abort is not intelligence completing). {agent, goal, need} mirrors the
+	// {agent, goal, reason} failure shape so abort consumers see a familiar frame.
+	RecoveryStalledPayload struct {
+		Agent int    `json:"agent"`
+		Goal  string `json:"goal"`
+		Need  string `json:"need"`
 	}
 	HarvestPayload struct { // foraged / chopped / hunted / built site
 		Agent int `json:"agent"`
