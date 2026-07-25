@@ -190,7 +190,10 @@ func (s *State) applyTimeSnapped(e store.Event) error {
 //
 //	MetatronOrder.PlacedTick (spec 029: when the order was placed, history),
 //	Agent.LastGoalTick, Agent.LastConsolidatedNight, Agent.ConsolidatedUpTo,
-//	Agent.LastConsolidateMark, Memory.Tick, Memory.Conv (spec 019: a
+//	Agent.LastConsolidateMark, IntentRecord.Tick / IntentRecord.OutcomeTick
+//	(spec 043: when an intent landed / when its outcome landed — a historical
+//	self-history log, like Memory.Tick; the ring records what happened, never a
+//	future deadline), Memory.Tick, Memory.Conv (spec 019: a
 //	conversation-ref identity, same founding-talk tick as ConvoRecord.Conv),
 //	Memory.Seq (spec 042: the emitting event's store seq — an identity, never
 //	a clock value), Agent.SitVecTick (spec 042: when the situation text was

@@ -779,6 +779,8 @@ func TestRebaseTaxonomyComplete(t *testing.T) {
 		"Agent.ConsolidatedUpTo":           keep,
 		"Agent.LastConsolidateMark":        keep,
 		"Agent.LastGoalTick":               keep,
+		"IntentRecord.Tick":                keep, // spec 043: when the intent landed (history), like Memory.Tick
+		"IntentRecord.OutcomeTick":         keep, // spec 043: when the outcome landed (history), like Memory.Tick
 		"Memory.Tick":                      keep,
 		"Memory.Conv":                      keep, // spec 019: conversation-ref identity (founding-talk tick), like ConvoRecord.Conv
 		"Memory.Seq":                       keep, // spec 042: the emitting event's store seq — an identity, never a clock value

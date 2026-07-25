@@ -25,8 +25,13 @@ func TestCognitionTelemetryWhitelisted(t *testing.T) {
 	}
 }
 
-// TestCognitionTelemetryIsNoOp: applying any telemetry event leaves state
-// byte-identical — recorded observability, zero state effect.
+// TestCognitionTelemetryIsNoOp: applying any pure-telemetry event leaves state
+// byte-identical — recorded observability, zero state effect. NOTE: since spec
+// 043 US1, agent.intent_rejected is NO LONGER a state no-op — it appends a
+// closed "rejected" record to the recent-intent ring so the next thought sees
+// the refused attempt (data-model.md). It is tested in the IntentLog reducer
+// suite (intentlog_test.go) and is deliberately absent here; the cog.* types
+// below remain genuine no-ops.
 func TestCognitionTelemetryIsNoOp(t *testing.T) {
 	s := NewState(42, testMap(42))
 	before := s.Marshal()
@@ -42,9 +47,6 @@ func TestCognitionTelemetryIsNoOp(t *testing.T) {
 		},
 		"cog.recalibration_recommended": RecalibrationPayload{
 			Tier: "local", EstimateSPerPt: 17.2, SpikeRate: 0.35, Window: 20,
-		},
-		"agent.intent_rejected": IntentRejectedPayload{
-			Agent: 3, Goal: "talk_to", Reason: "stale", StalenessTicks: 1646,
 		},
 		"cog.tool_call": CogToolCallPayload{
 			Job: "planner-3-412800", Ordinal: 2, Tool: "set_plan",
