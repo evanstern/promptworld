@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-25 03:00'
-updated_date: '2026-07-25 18:53'
+updated_date: '2026-07-25 19:30'
 labels:
   - learning-game
   - guardian-survival
@@ -26,15 +26,15 @@ Spec: specs/059-metatron-survival-autonomy
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 new worlds start with the three survival watch orders active; existing worlds gain them via a one-time backfill or miracle door
-- [ ] #2 a survival order match can land a vision or miracle with no player in the loop, still charge-gated
+- [x] #1 new worlds start with the three survival watch orders active; existing worlds gain them via a one-time backfill or miracle door
+- [x] #2 a survival order match can land a vision or miracle with no player in the loop, still charge-gated
 - [ ] #3 miracle guidance includes live positions/passability; invalid-target rejections drop to ~0
-- [ ] #4 guardrails intact: no villager removal, no free miracles, charge economy unchanged
+- [x] #4 guardrails intact: no villager removal, no free miracles, charge economy unchanged
 - [ ] #5 Anti-self-grading guard: charter quality measurably changes autonomous survival performance on a seeded world (default-charter vs authored-charter delta)
-- [ ] #6 Spec phase: Foundational
-- [ ] #7 Spec phase: User Story 1 — Survival watches from birth (P1)
-- [ ] #8 Spec phase: User Story 2 — Survival authority carve-out (P1)
-- [ ] #9 Spec phase: User Story 3 — Targeting digest (P2)
+- [x] #6 Spec phase: Foundational
+- [x] #7 Spec phase: User Story 1 — Survival watches from birth (P1)
+- [x] #8 Spec phase: User Story 2 — Survival authority carve-out (P1)
+- [x] #9 Spec phase: User Story 3 — Targeting digest (P2)
 - [ ] #10 Spec phase: Polish & Cross-Cutting
 <!-- AC:END -->
 
@@ -42,6 +42,12 @@ Spec: specs/059-metatron-survival-autonomy
 
 <!-- SECTION:NOTES:BEGIN -->
 MVLS sweep dispatch (2026-07-25): implementer tier Opus 4.8 — constitution V rubric: doctrine-adjacent authority change in metatron turn logic (the initiative doctrine is the safety frame); cross-file order/turn/charter semantics. Lane 1; merges last of the lane.
+
+spec-bridge sync: Foundational: 1/1 · User Story 1 — Survival watches from birth (P1): 3/3 · User Story 2 — Survival authority carve-out (P1): 4/4 · User Story 3 — Targeting digest (P2): 2/2 · Polish & Cross-Cutting: 1/2
+
+PR #90 squash-merged as 7367216. Implementer deviations gated and accepted: matchSurvival band predicate over needs_changed with live-only hysteresis latches (turn-arming state, mind-arming class — never replayed); starvation/exposure fire at the death-cause predicates (Food==0/Warmth==0) with re-arm at hungry/cold thresholds; zero-charge survival turns run and are recorded (one model call); digest passability via static worldmap.Passable (door authoritative); TutorCharter unchanged. Boot seed-if-absent covers new worlds via first boot (genesis-event variant not needed). Wiki re-pin dispatched; T012 completes with the batched player-docs refresh.
+
+Gating note (2026-07-25): human ACs 1/2/4 proven by merged tests. AC3's second clause (invalid-target rejections drop to ~0 LIVE) and AC5 (charter-delta experiment on a seeded world) require live-world evidence the merge cannot provide — task stays In Progress pending those measurements; surfaced to operator via sweep report. Mechanism halves are done: digest ships + door round-trip regression green.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
