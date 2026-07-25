@@ -15,18 +15,18 @@ the fixture-driven unlock chain are explicit obligations.
 
 ## Phase 1: Setup
 
-- [ ] T001 Create worktree `.worktrees/task-68` from fresh origin/main; confirm
+- [x] T001 Create worktree `.worktrees/task-68` from fresh origin/main; confirm
       `go build ./... && go test ./...` green at base
 
 ## Phase 2: Foundational (blocking prerequisites)
 
-- [ ] T002 Manifest fields `Stage`/`StageOverridden`/`CharterPreset` (additive
+- [x] T002 Manifest fields `Stage`/`StageOverridden`/`CharterPreset` (additive
       omitempty) + closed-vocabulary validation at `world.Open` (MemoryRelevance
       precedent); absent = ungated — internal/world/world.go + tests
-- [ ] T003 [P] `internal/skin` stub: `stageIdentity` table with the client-approved
+- [x] T003 [P] `internal/skin` stub: `stageIdentity` table with the client-approved
       guardian names (The Voice / The Written Word / The Craft / The Stewardship) +
       one-line identity descriptions — internal/skin/skin.go
-- [ ] T004 [P] `curriculum.*` event types: `exercise_passed`/`stage_unlocked` payload
+- [x] T004 [P] `curriculum.*` event types: `exercise_passed`/`stage_unlocked` payload
       structs + reducer arms (bounded state records; unknown-type-safe) —
       internal/sim/curriculum.go + state wiring, per contracts/events.md
 
@@ -40,16 +40,16 @@ the fixture-driven unlock chain are explicit obligations.
 ladder exactly; stage-1 edits get the honest notice; same-seed histories identical
 across stages.
 
-- [ ] T005 [US2] Stage ceiling table + `intersect(grant, stageCeiling)` at both
+- [x] T005 [US2] Stage ceiling table + `intersect(grant, stageCeiling)` at both
       manifest load sites (turn.go:145-152 before grantedRoster; status twin
       turn.go:679), bundle-narrowing idiom; pin exact stage-1 tool names against the
       live roster and record them in contracts/stage-gating.md —
       internal/metatron/charter.go, turn.go (R2)
-- [ ] T006 [US2] Stage-1 instruction lock: preset-sourced effective charter
+- [x] T006 [US2] Stage-1 instruction lock: preset-sourced effective charter
       (preset-aware loadCharter/charterIsDefault), skills not composed, does-not-bind
       notice via the existing notice channel; Status gains stage/lock provenance —
       internal/metatron/charter.go, turn.go (R3)
-- [ ] T007 [US2] Tests: table-driven post-intersection roster per stage == ladder;
+- [x] T007 [US2] Tests: table-driven post-intersection roster per stage == ladder;
       door refusal beyond stage; declaration/prose/door coherence; stage-1 lock +
       notice (edited charter + skill files present); **cross-stage determinism diff**
       (same seed/commands at stage-1 vs stage-4 ⇒ identical world-event history) —
