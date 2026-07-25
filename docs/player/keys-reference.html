@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/design/tui/patterns/keymap.md@9dc6c47085ea29a770a187dd6b5a1adf2a2cb9b5">
-<meta name="promptworld-docs:source" content="docs/design/tui/overlays/help.md@54964eb5917b645e1b438d74c740c98787dbf0bd">
+<meta name="promptworld-docs:source" content="docs/design/tui/patterns/keymap.md@8ac0a16032fa50664e93933ebbd3c0d1e88d62e2">
+<meta name="promptworld-docs:source" content="docs/design/tui/overlays/help.md@8ac0a16032fa50664e93933ebbd3c0d1e88d62e2">
 <title>Keys reference — promptworld player docs</title>
 <style>
   :root {
@@ -81,9 +81,11 @@ does nothing.</p>
 <table>
 <tr><th>Key</th><th>Action</th></tr>
 <tr><td><code>1</code></td><td>Return to the split view (from a solo tab)</td></tr>
-<tr><td><code>2</code> / <code>3</code> / <code>4</code></td><td>Switch to the
-chronicle / Metatron / villagers tab — the same key again fills the screen with that
-tab; press it a third time (or <code>1</code>) to go back</td></tr>
+<tr><td><code>2</code> / <code>3</code> / <code>4</code> / <code>5</code></td><td>Switch to
+the chronicle / Metatron / villagers / systems tab — the same key again fills the screen
+with that tab; press it a third time (or <code>1</code>) to go back</td></tr>
+<tr><td><code>G</code></td><td>Open the guardian console — the conversation as a
+full-screen document, with charter/skills alongside it (see below)</td></tr>
 <tr><td><code>m</code></td><td>Start typing to Metatron</td></tr>
 <tr><td><code>space</code></td><td>Pause / resume the world</td></tr>
 <tr><td><code>[</code> / <code>]</code></td><td>Speed down / up</td></tr>
@@ -108,6 +110,25 @@ sent before</td></tr>
 <tr><td><code>⏎</code></td><td>Send (an empty box just stops typing instead)</td></tr>
 <tr><td><code>esc</code></td><td>Stop typing without sending</td></tr>
 <tr><td><code>ctrl+c</code></td><td>Quit</td></tr>
+</table>
+
+<h2>The guardian console (after pressing <code>G</code>)</h2>
+<p>A full-screen page for the conversation — each turn rendered as its own labeled
+block, a charter/skills panel beside it, and a hook into your own text editor. Most
+other keys (<code>space</code>, <code>[</code> / <code>]</code>,
+<code>2</code>-<code>5</code>, pan, <code>a</code> / <code>t</code>, <code>r</code>,
+<code>q</code>) still work exactly as in the normal view underneath.</p>
+<table>
+<tr><th>Key</th><th>Action</th></tr>
+<tr><td><code>G</code> / <code>1</code> / <code>esc</code></td><td>Close, back to
+whatever was open before</td></tr>
+<tr><td><code>m</code></td><td>Start typing to Metatron (the same message box as
+everywhere else)</td></tr>
+<tr><td><code>e</code></td><td>Open <code>charter.md</code> in your own text editor
+(your <code>$EDITOR</code>); on return, the console confirms "charter changed — next
+turn binds it"</td></tr>
+<tr><td><code>J</code> / <code>K</code></td><td>Scroll toward the latest turn /
+scroll back toward older ones</td></tr>
 </table>
 
 <h2>Looking back through the feed (pause the world first)</h2>
@@ -164,8 +185,10 @@ reach directly)</td></tr>
 <h2>Quick hints (what the footer shows you)</h2>
 <table>
 <tr><th>What's on screen</th><th>Footer hint</th></tr>
-<tr><td>Normal view</td><td><code>2 chronicle 3 metatron 4 villagers (again: solo)
-· m ask · space pause · q quit · ? help</code></td></tr>
+<tr><td>Normal view</td><td><code>2 chronicle 3 metatron 4 villagers 5 systems (again:
+solo) · G console · m ask · space pause · q quit · ? help</code></td></tr>
+<tr><td>The guardian console</td><td><code>G back · esc back · m ask · space pause ·
+q quit · ? help</code></td></tr>
 <tr><td>Talking to Metatron</td><td><code>esc release · ⏎ send · ↑↓
 history</code></td></tr>
 <tr><td>Looking back (paused)</td><td><code>j/k select · J/K scroll detail · space

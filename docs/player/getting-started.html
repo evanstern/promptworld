@@ -7,8 +7,8 @@
 <meta name="promptworld-docs:source" content="README.md@ead97e7619572a625a35b2ee3e82243ff6f9e3f4">
 <meta name="promptworld-docs:source" content="docs/wiki/cli-promptworld.md@824932c630a9216dc761f78baa903cd07e5b9493">
 <meta name="promptworld-docs:source" content="docs/wiki/daemon-lifecycle.md@824932c630a9216dc761f78baa903cd07e5b9493">
-<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@824932c630a9216dc761f78baa903cd07e5b9493">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@824932c630a9216dc761f78baa903cd07e5b9493">
+<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@61a01fafb10b949a82fbfd2ea6f9d85b978a9850">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@61a01fafb10b949a82fbfd2ea6f9d85b978a9850">
 <meta name="promptworld-docs:source" content="docs/wiki/chronicle.md@723c464c35aac4936f2793d566a53c801516ae60">
 <meta name="promptworld-docs:source" content="docs/wiki/morgue.md@cea7b8f83fa07f9fcfefe4dd861aa05a78448f1b">
 <meta name="promptworld-docs:source" content="docs/wiki/gru.md@cea7b8f83fa07f9fcfefe4dd861aa05a78448f1b">
@@ -206,13 +206,16 @@ happen, plus typed commands (<code>pause</code>, <code>resume</code>, <code>spee
 village on one side, and a tabbed panel on the other for the chronicle (the narrated
 story so far), Metatron (your conversation with the village's angel — see the
 <a href="playing-via-metatron.html">next page</a> — whose pane also lists any standing
-orders you've placed with it), and the villagers themselves (their needs, goals, and
-inventories). As your village grows, the map itself grows with it — any walls or
-paths villagers have built show up as their own distinct glyphs alongside fires,
-shelters, and stockpiles. One line above the message box you type to Metatron in
-always shows your charge bank, when the next charge arrives, and how many standing
-orders are running, no matter which tab is open. This is the recommended way to
-actually play.</li>
+orders you've placed with it), the villagers themselves (their needs, goals, and
+inventories), and a systems tab holding the technical dashboards (every configured AI
+model, how busy it is, and what it's cost you). As your village grows, the map itself
+grows with it — any walls or paths villagers have built show up as their own distinct
+glyphs alongside fires, shelters, and stockpiles. One line above the message box you
+type to Metatron in always shows your charge bank, when the next charge arrives, and
+how many standing orders are running, no matter which tab is open. Press
+<code>G</code> (capital) at any moment to open the guardian console — a full-screen
+page for that same conversation, laid out as a readable document with your charter
+and skill files shown alongside it. This is the recommended way to actually play.</li>
 </ul>
 <p>Inside the full-screen client, <code>?</code> opens a built-in help overlay at any
 moment — the keys for the screen you're on plus a tour of everything visible — so you
@@ -237,7 +240,7 @@ if your AI model runs into trouble — the same condition <code>status</code> wa
 about, just visible at a glance while you're watching — and, whenever any kind of
 villager thinking is currently being suppressed for speed, a
 <code>[suppressed: ...]</code> badge naming which kinds. The full-screen client's
-Metatron pane goes further, listing each kind of thinking with its own live status
+systems tab goes further, listing each kind of thinking with its own live status
 and skipped-thought count.</p>
 
 <h2>5. When you're done for now</h2>

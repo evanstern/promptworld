@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@824932c630a9216dc761f78baa903cd07e5b9493">
+<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@61a01fafb10b949a82fbfd2ea6f9d85b978a9850">
 <title>What do all those things on screen mean? — promptworld player docs</title>
 <style>
   :root {
@@ -81,7 +81,7 @@ there's no penalty for checking.</p>
 <p>Press <code>?</code> at almost any moment in the game and a help overlay opens
 right there: the keys that work on the screen you're on, plus a walkthrough of the
 same regions this page covers — the header and every badge it can show, the full map
-glyph table, and the three tabs. Press <code>tab</code> inside it to move between
+glyph table, and the four tabs. Press <code>tab</code> inside it to move between
 sections, and <code>?</code> or <code>esc</code> to close it and land exactly where
 you were — it never pauses or changes anything in the world. It works identically in
 a village with no AI configured, so help is always there even when the angel isn't.
@@ -192,10 +192,10 @@ there's somewhere to jump. The
 <a href="keys-reference.html">keys reference card</a> has the exact keys for
 selecting and scrolling.</p>
 
-<h2>The dock: three tabs beside the map</h2>
-<p>Keys <code>2</code>/<code>3</code>/<code>4</code> switch between three tabs; the
-same key again makes that tab fill the whole screen, and again (or <code>1</code>)
-returns to the split view.</p>
+<h2>The dock: four tabs beside the map</h2>
+<p>Keys <code>2</code>/<code>3</code>/<code>4</code>/<code>5</code> switch between
+four tabs; the same key again makes that tab fill the whole screen, and again (or
+<code>1</code>) returns to the split view.</p>
 
 <h3>Chronicle tab</h3>
 <p>The story feed described above.</p>
@@ -203,14 +203,11 @@ returns to the split view.</p>
 <h3>Metatron tab</h3>
 <p>Your conversation transcript with the angel, plus at a glance: your charge bank,
 your world's stage if it's on the learning ladder (at the first stage this also
-notes that the angel's charter is locked to its built-in preset),
-any standing orders you've placed, a small table of every configured AI provider
-(model, whether it's currently up, how busy it is, and what it's cost you), and —
-when relevant — a line per kind of villager thinking telling you live whether it's
-keeping up or being skipped for speed. See
-<a href="playing-via-metatron.html">playing via Metatron</a> and
-<a href="the-ai-behind-the-village.html">the AI behind the village</a> for what all
-of that actually means.</p>
+notes that the angel's charter is locked to its built-in preset), and any standing
+orders you've placed. This tab is purely the conversation and orders now — the
+technical dashboards that used to crowd it live on their own tab, next. See
+<a href="playing-via-metatron.html">playing via Metatron</a> for what all of that
+actually means.</p>
 
 <h3>Villagers tab</h3>
 <p>A roster list — one line per villager: a selection cursor, their status, current
@@ -220,6 +217,35 @@ beliefs, memories); from there, one more key opens a look at their recent decisi
 what they were reacting to, what they tried, and how it turned out. The
 <a href="the-ai-behind-the-village.html">AI behind the village page</a> covers what's
 actually behind those decisions.</p>
+
+<h3>Systems tab</h3>
+<p>The technical dashboards, moved here out of the Metatron tab's way: a small table
+of every configured AI provider (model, whether it's currently up, how busy it is,
+and what it's cost you so far this month), followed by a "cognition horizon" block —
+one line per kind of villager thinking (planning, conversations, meetings) telling
+you live whether it's keeping up or being skipped for speed, with a running
+skipped-thought count. A world with no AI configured at all says so plainly here
+instead of showing an empty table. See
+<a href="the-ai-behind-the-village.html">the AI behind the village</a> for what all
+of this actually means.</p>
+
+<h2>The guardian console: the conversation, full screen</h2>
+<p>Press <code>G</code> (capital) from the split view, a solo tab, or the narrow
+layout to open the guardian console — a dedicated full-screen page for your
+conversation with the angel, laid out as a readable document rather than the
+Metatron tab's compact scroll: each turn, yours and the angel's alike, gets its own
+labeled block. Beside the conversation sits a charter/skills panel showing exactly
+what's binding right now — whether your charter is the default, your own writing, or
+locked to a stage preset, and whether any skill files are bound or still locked.
+Press <code>e</code> to open <code>charter.md</code> in your own text editor
+(whatever your <code>$EDITOR</code> is set to) directly from the console — there's no
+in-game text editor, just a handoff to your own — and the moment you save and return,
+the console confirms "charter changed — next turn binds it." <code>J</code> and
+<code>K</code> scroll back through earlier turns. <code>G</code>, <code>1</code>, or
+<code>esc</code> all return you to whatever view you had open before. See
+<a href="playing-via-metatron.html">playing via Metatron</a> for what the charter
+actually does, and the <a href="keys-reference.html">keys reference card</a> for
+every key the console responds to.</p>
 
 <h2>The guardian strip: charge status, always in view</h2>
 <p>Above the box where you type to Metatron sits one plain line with no border,

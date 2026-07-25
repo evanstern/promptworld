@@ -10,6 +10,7 @@
 <meta name="promptworld-docs:source" content="docs/wiki/metatron-orders.md@3a04bf071ed3a3e994a52d26d9eed42e92e3fccd">
 <meta name="promptworld-docs:source" content="docs/wiki/curriculum-ladder.md@cea7b8f83fa07f9fcfefe4dd861aa05a78448f1b">
 <meta name="promptworld-docs:source" content="docs/wiki/governance.md@381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9">
+<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@61a01fafb10b949a82fbfd2ea6f9d85b978a9850">
 <title>Playing via Metatron — promptworld player docs</title>
 <style>
   :root {
@@ -84,6 +85,13 @@ or the Metatron pane of the full-screen client — see the
 shows and the <a href="keys-reference.html">keys reference card</a> for how to focus
 it), it watches the village, and it decides what — if anything — to do about what you
 asked.</p>
+<p>For an extended back-and-forth, press <code>G</code> (capital) at any moment to
+open the <strong>guardian console</strong> — a dedicated, full-screen page for that
+same conversation, laid out as a readable document rather than the compact pane's
+scroll: your words and the angel's replies each get their own labeled block, easier
+to read back through once a conversation runs long. <code>G</code>, <code>1</code>,
+or <code>esc</code> return you to whatever view you had open before; see the
+<a href="keys-reference.html">keys reference card</a> for the console's other keys.</p>
 
 <h2>Shaping your angel: the charter</h2>
 <p>The real meta-game is prompt-engineering Metatron itself. At the root of your
@@ -101,6 +109,14 @@ standing instructions were at that moment.</p>
 to the charter, and control exactly which abilities Metatron is allowed to use — visions,
 omens, standing orders, miracles, and clock control alike — via a <code>capabilities.json</code>
 file. A world with no such file grants the full set of abilities by default.</p>
+<p>The guardian console (press <code>G</code>) puts a live charter/skills panel right
+beside the conversation, showing at a glance whether your charter is the default, your
+own writing, or locked to a stage preset, and whether any skill files are bound or still
+locked. Press <code>e</code> there to open <code>charter.md</code> directly in your own
+text editor — whatever your <code>$EDITOR</code> is set to; there's no text editor built
+into the game itself, just this handoff to your own. The moment you save and return, the
+console confirms "charter changed — next turn binds it," so you know exactly when your
+edit takes effect.</p>
 <p>One caveat if your world sits on the learning ladder (see
 <a href="getting-started.html">getting started</a>): at the first stage, The Voice,
 your angel's instruction file is fixed — a built-in preset charter guides it no
