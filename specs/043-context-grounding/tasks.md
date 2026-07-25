@@ -97,7 +97,7 @@
 - [x] T024 Replay determinism: extend `internal/daemon` replay coverage (mirror `embed_replay_test.go`) to assert IntentLog/NeedsAnchor state and assembled prompts reproduce byte-identically from the event log
 - [x] T025 [P] `go vet ./...`, `gofmt -l` clean, full `go test ./...` green in the worktree
 - [x] T026 Update `docs/wiki/decision-context.md` final pin + re-pin touched notes via `/grounding-wiki:wiki-update` after merge (agent-mind, memory-retrieval, event-types, sim-state-reducer); then player-docs freshness check (`node .claude/skills/player-docs/scripts/check-freshness.mjs --check`)
-- [ ] T027 SC-007 baseline comparison run per quickstart (flip-rate vs world-01, spike counting method); record on TASK-105 (measured, not merge-gating)
+- [x] T027 SC-007 baseline comparison run per quickstart (flip-rate vs world-01, spike counting method); record on TASK-105 (measured, not merge-gating)
 
 ---
 
