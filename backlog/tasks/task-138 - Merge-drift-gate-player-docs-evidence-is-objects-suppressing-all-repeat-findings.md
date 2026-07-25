@@ -3,10 +3,10 @@ id: TASK-138
 title: >-
   Merge-drift gate: player-docs evidence is objects, suppressing all repeat
   findings
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-25 19:47'
-updated_date: '2026-07-25 20:35'
+updated_date: '2026-07-25 20:38'
 labels:
   - gates
   - review-2026-07-25
@@ -60,3 +60,17 @@ DEVIATION, gated and accepted: to test the real extractor rather than a copy, fi
 
 Verification: 4/4 tests pass; reverting the fingerprint fix fails 3 with two IDENTICAL fingerprints for different findings; reverting the guard fails the symlink test on empty stdout. go build/vet clean. check-merge-drift pr = pass, no findings.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Shipped via PR #95, squash-merged as 940b775. Verified live on main: 4/4 tests pass, gate produces readable deduped paths through BOTH the real and the ~/projects symlinked path, zero [object Object] in output.
+
+The stated bug was cosmetic; the real one was that fingerprint() derives from the same evidence and gates board-note writes via existingText.includes(f.fingerprint) — so every player-docs staleness finding hashed identically and the first note ever written to a task permanently suppressed all later ones. A drift gate that quietly stops reporting reads as clean.
+
+Also ships scripts/check-merge-drift.test.mjs, the first test for any scripts/*.mjs in this repo (node:test, zero deps) — no prior convention existed, so this is the precedent.
+
+Lesson recorded for the gate machinery generally: the first attempt at the main() guard used process.argv[1] === new URL(import.meta.url).pathname, which silently disabled the gate through any symlinked ancestor (live on this machine, which reaches the repo at both ~/Claude/Code/promptworld and ~/projects/promptworld). Rejected in review; shipped version compares resolved real paths and DEFAULTS TO RUNNING when it cannot tell, with a regression test that spawns the CLI through a symlink. Every gate failure found in this codebase today has been a gate going quiet rather than a gate being wrong — write gates that fail loud.
+
+No wiki re-ground needed: no note lists scripts/check-merge-drift.mjs as a source. Worktree and branch cleaned up; root ff-pulled to 940b775.
+<!-- SECTION:FINAL_SUMMARY:END -->
