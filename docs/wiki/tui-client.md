@@ -9,7 +9,8 @@ sources:
   - internal/tui/grammar.go
   - internal/tui/digest.go
   - internal/tui/decisions.go
-verified_against: b6794f7e69895a0bfa45f21490373d25ba966895
+  - internal/tui/help.go
+verified_against: c9467f3cbabbd4c2259cc97a9ac0ede00e493712
 ---
 
 # TUI client
@@ -257,6 +258,35 @@ pause/resume based on last-known status; `[`/`]` step through `speedSteps`
 (1x → 4x → 8x → 16x → 32x — max is deliberately off the watchable ladder,
 TASK-20); `q` detaches — the world keeps running.
 
+**Help overlay** (spec 045/TASK-116; `help.go`): `?` from any non-text-entry
+mode opens a context-sensitive help overlay — the head of the key-dispatch and
+esc-release chain (help → minibuffer → decisions → detail → solo → home) —
+checked in `handleKey` right after ctrl+c and only when the minibuffer is
+unfocused, so a focused `?` still types into the buffer. The overlay freezes
+the mode it opened from (`helpMode`) and owns the keyboard while open: `t`
+flips the mode page's basic/advanced key tiers, `tab`/`shift+tab` cycle three
+sections (mode keys · screen walkthrough · lessons pull-reference), `n`/`p`
+page across all six mode pages (global/home, minibuffer, inspect, villagers
+roster/detail, solo/narrow — how the minibuffer page stays reachable),
+`J`/`K` scroll via the standard pager idiom, and `esc`/`?` dismiss exactly
+one layer; every other key is inert. Rendering is body replacement (the solo
+zoom slot) in both layouts — chrome stays, output remains exactly
+terminal-height. Content is static tables in `help.go`: per-mode key rows
+(basic ≈ the footer-hinted set), `headerAnatomy` rows covering every
+conditional badge, dock-tab rows, and a `mapGlyphs` table **shared with
+`renderMapGrid`'s legend line** (`legendGlyphLine`) so the overlay's glyph
+walkthrough and the map legend cannot silently diverge — extracting it also
+fixed a real gap: the gru's `G` was drawn but never listed in the legend
+text. The lessons section is the pull-reference seam for the future
+first-occurrence lesson projection: an empty `helpLessons` table whose
+entries are content additions, no structural change. All content is
+model-independent — byte-identical with nil status/replica (the no-LLM floor
+beneath an absent angel). Footer hints advertise `· ? help` in every mode
+except the focused minibuffer; while the overlay is open the footer shows the
+overlay's own hint. A keymap sweep test (`help_test.go`) mechanically ties
+every advertised binding to a real handler and every handled binding to
+exactly one tier of its mode page.
+
 ## Connections
 
 [[ipc-client]] is the transport; [[ipc-protocol]]'s `state` command exists for this
@@ -297,6 +327,9 @@ navigation, replica application, ring capping, quit behavior, the widescreen lay
 math (layout.go), the digest grammar (per-family digests + the catalog sweep in
 digest_test.go, plain/segment equivalence under wrap), focus-contract key
 routing in both layouts, exact-height rendering invariants across sizes and dense
-content, and resize round-trips with live selection; an expect-driven PTY smoke test
+content (including all help-overlay states), the help overlay itself
+(help_test.go — per-mode routing, tier/section navigation, the keymap sweep,
+no-LLM byte-identity, a zero-side-effect soak, and the lessons-seam fixture),
+and resize round-trips with live selection; an expect-driven PTY smoke test
 drives the real binary. When real systems land, dock tabs graduate from stubs without
 changing the replica machinery.
