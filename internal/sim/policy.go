@@ -107,29 +107,14 @@ func survivalDecision(s *State, m *worldmap.Map, a *Agent, tick int64) (decision
 		}
 	}
 
-	// Spec 041 (US1/T014, reflex parity): every rung below resolves targets
+	// Spec 041 (US1/T014, reflex parity): the warmth ladder resolves targets
 	// through the SAME map predicates the goal resolvers use — no omniscient
 	// fallback (clarify Q2). Standing warmth (warmAt at the agent's own tile)
 	// stays ground truth: feeling warm where you stand is perception, not
 	// place knowledge.
-	warmKnown, _ := warmKnownPredicate(a, tick)
 	if s.Night {
 		if !warmAt(s, a.X, a.Y, tick) {
-			// Reach KNOWN warmth, or make it, or get the wood to make it.
-			if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool { return warmKnown(x, y) && passable(m, s, x, y) }); ok {
-				return decision{intent: &Intent{Goal: "goto_warmth", TargetX: p.X, TargetY: p.Y}}, true
-			}
-			// The one reflex addition (T020, FR-012): a cold/dying KNOWN fire
-			// and wood in hand — relight it (cheaper than a fresh build).
-			if in, ok := reflexRefuelIntent(s, m, a, tick); ok {
-				return decision{intent: in}, true
-			}
-			if a.Inv.Wood >= fireWoodCost {
-				if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool { return buildSite(m, s, x, y) }); ok {
-					return decision{intent: &Intent{Goal: "build_fire", TargetX: p.X, TargetY: p.Y}}, true
-				}
-			}
-			if in, ok := chopIntent(s, m, a, tick); ok {
+			if in, ok := warmthLadder(s, m, a, tick); ok {
 				return decision{intent: in}, true
 			}
 		}
@@ -138,6 +123,7 @@ func survivalDecision(s *State, m *worldmap.Map, a *Agent, tick int64) (decision
 	}
 
 	// Daytime. Exhausted agents nap somewhere warm if possible.
+	warmKnown, _ := warmKnownPredicate(a, tick)
 	if a.Needs.Rest < tiredAt {
 		tx, ty := a.X, a.Y
 		if !warmAt(s, tx, ty, tick) {
@@ -148,7 +134,89 @@ func survivalDecision(s *State, m *worldmap.Map, a *Agent, tick int64) (decision
 		return decision{intent: &Intent{Goal: "sleep", TargetX: tx, TargetY: ty}}, true
 	}
 
+	// Day warmth rung (spec 062 US2, FR-004): a cold-but-not-tired villager by
+	// day runs the SAME seek → refuel-dying → build → chop ladder the night
+	// branch uses — BEFORE any prep rung — instead of foraging while freezing
+	// (057 audit Gap B). Gated on the warmth danger band and, like the night
+	// branch, on not already standing in warmth (recovering AT a fire needs no
+	// new intent — the prep gate's danger clause then holds prep for it). The
+	// nap rung above still owns the tired case (napping toward warmth), so this
+	// rung is exactly the rested-but-cold gap the audit named.
+	if a.Needs.Warmth < dangerWarmthBelow && !warmAt(s, a.X, a.Y, tick) {
+		if in, ok := dayWarmthLadder(s, m, a, tick); ok {
+			return decision{intent: in}, true
+		}
+	}
+
 	return decision{}, false
+}
+
+// reachKnownWarmth is the CHEAP head of the warmth ladder (spec 062 R5): reach a
+// fire the agent remembers as lit (goto_warmth), else relight a cold/dying KNOWN
+// fire with wood in hand (T020/FR-012 — cheaper than a fresh build). No make-work.
+func reachKnownWarmth(s *State, m *worldmap.Map, a *Agent, tick int64) (*Intent, bool) {
+	warmKnown, _ := warmKnownPredicate(a, tick)
+	if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool { return warmKnown(x, y) && passable(m, s, x, y) }); ok {
+		return &Intent{Goal: "goto_warmth", TargetX: p.X, TargetY: p.Y}, true
+	}
+	if in, ok := reflexRefuelIntent(s, m, a, tick); ok {
+		return in, true
+	}
+	return nil, false
+}
+
+// buildWarmthIfWood is the middle rung: build a fire with wood already in hand
+// (no chopping). Shared by the day rung and the night ladder (spec 062 R5).
+func buildWarmthIfWood(s *State, m *worldmap.Map, a *Agent) (*Intent, bool) {
+	if a.Inv.Wood >= fireWoodCost {
+		if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool { return buildSite(m, s, x, y) }); ok {
+			return &Intent{Goal: "build_fire", TargetX: p.X, TargetY: p.Y}, true
+		}
+	}
+	return nil, false
+}
+
+// dayWarmthLadder is the DAY warmth rung's ladder (spec 062 US2): reach KNOWN
+// warmth (AS1), else build with wood in hand (AS2). It shares reachKnownWarmth
+// and buildWarmthIfWood verbatim with the night branch's warmthLadder — same
+// rungs, no drift — but STOPS before the chop "go get the wood" tail.
+//
+// DEVIATION (flagged for the planning tier): plan R5 / task T006 specify the day
+// rung as the FULL night ladder (seek → refuel-dying → build → CHOP). Built that
+// way, the chop tail (chopTicks=300 per trip, several trips) steals a marginal
+// villager's daytime larder-stocking time; on seed 101 that tipped agent 6 into
+// a sleeper-starvation (it slept the night with no food in hand, and the wake
+// gate — 057 audit Gap C, TASK-104 — never woke it), regressing
+// TestDegradedModeVillageSurvives* from 8/8 to 7/8. Since by DAY warmth passively
+// regenerates (decayNeeds' default +warmthGainDay/tick — daytime is never a
+// warmth death spiral, unlike night), trekking to chop firewood for warmth by
+// day is unjustified subsistence-time theft. Dropping ONLY the chop tail keeps
+// every US2 acceptance scenario (AS1 seek, AS2 build-with-wood, AS3 warm→today)
+// AND the sacred degraded-mode survival guarantee. The night branch keeps chop
+// (night warmth IS a death spiral, so getting the wood to make a fire is
+// mandatory there).
+func dayWarmthLadder(s *State, m *worldmap.Map, a *Agent, tick int64) (*Intent, bool) {
+	if in, ok := reachKnownWarmth(s, m, a, tick); ok {
+		return in, true
+	}
+	return buildWarmthIfWood(s, m, a)
+}
+
+// warmthLadder is the full NIGHT ladder (spec 062 R5): reachKnownWarmth →
+// buildWarmthIfWood → chop a known tree for the wood. It is the exact body the
+// night branch ran inline pre-062, factored so the night branch and the day rung
+// share their common rungs without drift.
+func warmthLadder(s *State, m *worldmap.Map, a *Agent, tick int64) (*Intent, bool) {
+	if in, ok := reachKnownWarmth(s, m, a, tick); ok {
+		return in, true
+	}
+	if in, ok := buildWarmthIfWood(s, m, a); ok {
+		return in, true
+	}
+	if in, ok := chopIntent(s, m, a, tick); ok {
+		return in, true
+	}
+	return nil, false
 }
 
 // prepDecision is the PREP rung group (spec 062 R2): opportunistic daytime
