@@ -894,3 +894,83 @@ func TestHandleMouseInertDuringHelpAndMinibuffer(t *testing.T) {
 		t.Error("a click must be inert while the minibuffer is focused")
 	}
 }
+
+// --- systems dock tab (spec 053 US2/D10, T002) ---
+// Tab-grammar regression: existing keys 2/3/4 must keep selecting exactly
+// what they always selected once the 5/systems tab is added — and 5 must
+// behave exactly like every other dock-tab key (select / same-key solo /
+// same-key-again home, narrow reachability).
+
+func TestTabGrammarUnchangedAfterSystemsAdded(t *testing.T) {
+	m := widescreenModel(t)
+	var mdl tea.Model = m
+	for key, want := range map[string]pane{"2": paneChronicle, "3": paneMetatron, "4": paneVillagers} {
+		mdl = update(widescreenModel(t), key)
+		if got := mdl.(Model).dockTab; got != want {
+			t.Errorf("%q selected %s, want %s (2/3/4 must be unchanged)", key, paneNames[got], paneNames[want])
+		}
+	}
+}
+
+// TestSystemsTabSoloZoomStateMachine: "5" follows the exact same
+// select/solo/home state machine 2/3/4 already do (dock.md, solo-views.md).
+func TestSystemsTabSoloZoomStateMachine(t *testing.T) {
+	m := widescreenModel(t)
+	var mdl tea.Model = m
+	mdl = update(mdl, "5")
+	mm := mdl.(Model)
+	if mm.solo || mm.dockTab != paneSystems {
+		t.Fatalf("first '5' should select (not solo): solo=%v tab=%s", mm.solo, paneNames[mm.dockTab])
+	}
+	mdl = update(mdl, "5")
+	mm = mdl.(Model)
+	if !mm.solo || mm.dockTab != paneSystems {
+		t.Fatalf("second '5' should solo-zoom: solo=%v tab=%s", mm.solo, paneNames[mm.dockTab])
+	}
+	mdl = update(mdl, "5")
+	if mdl.(Model).solo {
+		t.Fatal("third '5' should return home")
+	}
+}
+
+// TestSystemsTabReachableInNarrowFallback: below the widescreen breakpoint,
+// '5' selects the systems pane exactly like 2/3/4 (panels/systems.md
+// "Narrow behavior").
+func TestSystemsTabReachableInNarrowFallback(t *testing.T) {
+	m := testModel(t) // narrow
+	var mdl tea.Model = m
+	mdl = update(mdl, "5")
+	if got := mdl.(Model).active; got != paneSystems {
+		t.Fatalf("'5' in the narrow fallback should select the systems pane, got %s", paneNames[got])
+	}
+	if v := mdl.(Model).View(); v == "" {
+		t.Error("narrow systems view rendered empty")
+	}
+}
+
+// TestDockTabCycleIncludesSystems: tab/shift+tab (dockTab cycling aliases)
+// reach the systems tab too, in its "5" position at the end of the row.
+func TestDockTabCycleIncludesSystems(t *testing.T) {
+	m := widescreenModel(t)
+	var mdl tea.Model = m
+	order := []pane{paneChronicle, paneMetatron, paneVillagers, paneSystems, paneChronicle}
+	for i := 1; i < len(order); i++ {
+		mdl = update(mdl, "tab")
+		if got := mdl.(Model).dockTab; got != order[i] {
+			t.Fatalf("tab-cycle step %d: dockTab = %s, want %s", i, paneNames[got], paneNames[order[i]])
+		}
+	}
+}
+
+// TestSystemsTabNoUnseenBadge (D10 "no second badge system"): unlike the
+// guardian tab, the systems tab never carries an unseen-reply badge — there
+// is nothing to badge (it carries no conversational content).
+func TestSystemsTabNoUnseenBadge(t *testing.T) {
+	m := widescreenModel(t)
+	m.dockTab = paneSystems
+	m.metatronUnseen = true // unrelated to systems — must not leak onto its label
+	row := m.dockTabsRow()
+	if strings.Contains(row, "systems") && strings.Contains(row, "SYSTEMS •") {
+		t.Error("the systems tab must never render the unseen-badge dot")
+	}
+}

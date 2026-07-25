@@ -123,8 +123,9 @@ type dockTabEntry struct {
 
 var dockTabs = []dockTabEntry{
 	{dockTabKey[paneChronicle], paneNames[paneChronicle], "the event feed — narrated story or raw log; pauses into inspect mode when the clock is paused"},
-	{dockTabKey[paneMetatron], paneNames[paneMetatron], "the angel's transcript, standing orders, and LLM provider status"},
+	{dockTabKey[paneMetatron], paneNames[paneMetatron], "the angel's transcript and standing orders (fiction-layer content only)"},
 	{dockTabKey[paneVillagers], paneNames[paneVillagers], "the roster — select a villager for full detail, decisions, and inventory"},
+	{dockTabKey[paneSystems], paneNames[paneSystems], "engine telemetry — LLM provider health, spend, and the cognition horizon (spec 053, never skinned)"},
 }
 
 // --- T012: the lessons pull-reference seam (US4, FR-010, SC-006) ---
@@ -206,7 +207,9 @@ var (
 	rowTab2      = helpKeyRow{"2", []string{"2"}, "select the chronicle tab; press again to solo it (or return home if already solo'd)"}
 	rowTab3      = helpKeyRow{"3", []string{"3"}, "select the metatron tab; press again to solo it (or return home if already solo'd)"}
 	rowTab4      = helpKeyRow{"4", []string{"4"}, "select the villagers tab; press again to solo it (or return home if already solo'd)"}
-	rowDockCycle = helpKeyRow{"tab/shift+tab", []string{"tab", "shift+tab"}, "cycle the dock tabs (alias for 2/3/4)"}
+	rowTab5      = helpKeyRow{"5", []string{"5"}, "select the systems tab; press again to solo it (or return home if already solo'd)"}
+	rowDockCycle = helpKeyRow{"tab/shift+tab", []string{"tab", "shift+tab"}, "cycle the dock tabs (alias for 2/3/4/5)"}
+	rowConsole   = helpKeyRow{"G", []string{"G"}, "open the guardian console — a full-screen page for the conversation, charter/skills, and $EDITOR (G/1/esc closes)"}
 	rowAsk       = helpKeyRow{"m", []string{"m"}, "focus the minibuffer — ask the angel"}
 	rowPause     = helpKeyRow{"space", []string{" "}, "pause / resume the clock"}
 	rowSpeed     = helpKeyRow{"[ ]", []string{"[", "]"}, "speed down / up"}
@@ -224,7 +227,7 @@ var (
 // help_test.go asserts helpModeGlobal and helpModeSolo each union back to
 // exactly this.
 var globalRows = []helpKeyRow{
-	rowHome, rowTab2, rowTab3, rowTab4, rowDockCycle, rowAsk, rowPause, rowSpeed,
+	rowHome, rowTab2, rowTab3, rowTab4, rowTab5, rowDockCycle, rowConsole, rowAsk, rowPause, rowSpeed,
 	rowPan, rowRecenter, rowChronA, rowChronT, rowChronR, rowExitSolo, rowQuit, rowNarrowMB,
 }
 
@@ -269,7 +272,7 @@ var (
 var helpPages = [helpModeCount]helpModePage{
 	helpModeGlobal: {
 		Title: "Global (home)",
-		Basic: []helpKeyRow{rowTab2, rowTab3, rowTab4, rowAsk, rowPause, rowQuit},
+		Basic: []helpKeyRow{rowTab2, rowTab3, rowTab4, rowTab5, rowConsole, rowAsk, rowPause, rowQuit},
 		Advanced: []helpKeyRow{
 			rowHome, rowDockCycle, rowNarrowMB, rowExitSolo,
 			rowChronA, rowChronT, rowChronR, rowPan, rowRecenter, rowSpeed,
@@ -285,7 +288,7 @@ var helpPages = [helpModeCount]helpModePage{
 		Basic: []helpKeyRow{rowInspSel, rowInspScrl, rowResume, rowAsk},
 		Advanced: []helpKeyRow{
 			rowInspJump, rowInspEnter,
-			rowHome, rowTab2, rowTab3, rowTab4, rowDockCycle, rowSpeed,
+			rowHome, rowTab2, rowTab3, rowTab4, rowTab5, rowDockCycle, rowSpeed,
 			rowPan, rowRecenter, rowChronA, rowChronT, rowChronR, rowExitSolo, rowQuit,
 		},
 	},
@@ -294,7 +297,7 @@ var helpPages = [helpModeCount]helpModePage{
 		Basic: []helpKeyRow{rowVillSel, rowVillOpen, rowPause, rowQuit},
 		Advanced: []helpKeyRow{
 			rowVillJump, rowExitSolo,
-			rowHome, rowTab2, rowTab3, rowTab4, rowDockCycle, rowAsk,
+			rowHome, rowTab2, rowTab3, rowTab4, rowTab5, rowDockCycle, rowAsk,
 			rowSpeed, rowPan, rowRecenter, rowChronA, rowChronT, rowChronR,
 		},
 	},
@@ -303,13 +306,13 @@ var helpPages = [helpModeCount]helpModePage{
 		Basic: []helpKeyRow{rowVillDetD, rowVillDetEsc, rowVillDetJK, rowPause, rowQuit},
 		Advanced: []helpKeyRow{
 			rowVillDetGG, rowVillDetEnter,
-			rowHome, rowTab2, rowTab3, rowTab4, rowDockCycle, rowAsk,
+			rowHome, rowTab2, rowTab3, rowTab4, rowTab5, rowDockCycle, rowAsk,
 			rowSpeed, rowPan, rowRecenter, rowChronA, rowChronT, rowChronR,
 		},
 	},
 	helpModeSolo: {
 		Title: "Solo zoom / narrow fallback",
-		Basic: []helpKeyRow{rowHome, rowTab2, rowTab3, rowTab4, rowPause, rowQuit},
+		Basic: []helpKeyRow{rowHome, rowTab2, rowTab3, rowTab4, rowTab5, rowConsole, rowPause, rowQuit},
 		Advanced: []helpKeyRow{
 			rowDockCycle, rowAsk, rowSpeed, rowPan, rowRecenter,
 			rowChronA, rowChronT, rowChronR, rowExitSolo, rowNarrowMB,

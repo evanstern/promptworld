@@ -11,6 +11,7 @@ import (
 	"github.com/evanstern/promptworld/internal/llm"
 	"github.com/evanstern/promptworld/internal/metatron"
 	"github.com/evanstern/promptworld/internal/sim"
+	"github.com/evanstern/promptworld/internal/skin"
 	"github.com/evanstern/promptworld/internal/store"
 	"github.com/evanstern/promptworld/internal/worldmap"
 )
@@ -76,6 +77,14 @@ func (m Model) View() string {
 		}
 		return "detached (the world keeps running)\n"
 	}
+	if m.console {
+		// The guardian console (spec 053, research R1) is a first-class
+		// page, checked ahead of the widescreen/narrow fork exactly like the
+		// fork itself is checked ahead of solo zoom — it renders full-screen
+		// from every mode (home, solo, narrow) without disturbing whichever
+		// of those was showing underneath.
+		return m.consoleView()
+	}
 	if isWidescreen(m.width) {
 		return m.widescreenView()
 	}
@@ -102,6 +111,8 @@ func (m Model) narrowView() string {
 		b.WriteString(m.metatronView())
 	case m.active == paneVillagers:
 		b.WriteString(m.villagersView())
+	case m.active == paneSystems:
+		b.WriteString(m.systemsView())
 	}
 	b.WriteString("\n" + m.footerView())
 	return b.String()
@@ -244,6 +255,13 @@ func (m Model) footerView() string {
 		// this one mode would be actively wrong. Minibuffer help is still
 		// reachable, just from any other mode's overlay (n/p paging).
 		return styleDim.Render("esc release · ⏎ send · ↑↓ history")
+	case m.console:
+		// The console's own footer (spec 053 contract §2.7) — checked ahead
+		// of inspect/villagers below for the same reason handleKey's
+		// dispatch does: dockTab/active persist unchanged underneath the
+		// console and would otherwise mis-route through those hints for a
+		// screen that isn't actually visible.
+		return styleDim.Render("G back · esc back · m ask · " + pause + " · q quit · ? help")
 	case m.inspecting():
 		return styleDim.Render("j/k select · J/K scroll detail · " + resume + " · m ask · ? help")
 	case m.villagersVisible() && m.villDetail && m.villDecisions:
@@ -255,9 +273,9 @@ func (m Model) footerView() string {
 	case isWidescreen(m.width) && m.solo:
 		return styleDim.Render(fmt.Sprintf("%s back to map · %s · q quit · ? help", dockTabKey[m.dockTab], resume))
 	case isWidescreen(m.width):
-		return styleDim.Render("2 chronicle 3 metatron 4 villagers (again: solo) · m ask · " + pause + " · q quit · ? help")
+		return styleDim.Render("2 chronicle 3 metatron 4 villagers 5 systems (again: solo) · G console · m ask · " + pause + " · q quit · ? help")
 	default:
-		return styleDim.Render("1-4 panes · " + pause + " · q quit · ? help")
+		return styleDim.Render("1-5 panes · G console · " + pause + " · q quit · ? help")
 	}
 }
 
@@ -388,6 +406,7 @@ func (m Model) dockTabsRow() string {
 		{paneChronicle, "chronicle"},
 		{paneMetatron, "metatron"},
 		{paneVillagers, "villagers"},
+		{paneSystems, "systems"},
 	}
 	var parts []string
 	for _, t := range tabs {
@@ -425,6 +444,8 @@ func (m Model) dockTabContent(width, height int) string {
 		return m.metatronTranscriptBody(width, height)
 	case paneVillagers:
 		return m.villagersBody(width, height)
+	case paneSystems:
+		return m.systemsContentBody(width, height)
 	}
 	return ""
 }
@@ -1537,14 +1558,14 @@ func classifyTranscriptLine(l string) (label, text string, style lipgloss.Style)
 	}
 }
 
-// metatronView is the narrow-fallback metatron pane: transcript + the
-// focus-contract-governed input line (replaces the old always-typing
-// console pane — the exact bug at tui.go:305-309).
-func (m Model) metatronView() string {
-	width := m.width - 6
-	if width < 30 {
-		width = 30
-	}
+// guardianHeaderLine renders the guardian pane-header line: charge bank,
+// then — once a world has an active charter/instruction surface — the
+// spec-021 provenance summary and the spec-046 stage segment. Shared
+// verbatim (spec 053 FR-002, "one shared data source") by the narrow-
+// fallback metatronView below and the guardian console (consoleView) —
+// literally the same string, not a re-derivation, so the two renderings can
+// never silently disagree.
+func (m Model) guardianHeaderLine() string {
 	charges := 0
 	if m.status != nil {
 		charges = m.status.Clock.MetatronCharges
@@ -1570,6 +1591,22 @@ func (m Model) metatronView() string {
 		}
 		header += styleDim.Render(" · " + prov)
 	}
+	return header
+}
+
+// metatronView is the narrow-fallback guardian pane: transcript + the
+// focus-contract-governed input line (replaces the old always-typing
+// console pane — the exact bug at tui.go:305-309). Fiction-layer content
+// only since spec 053 (D10): the provider table, spend/wallet line, and
+// cognition horizon block moved to the systems tab (systemsView) — this
+// pane keeps the header, transcript, and standing orders (contract §3
+// "STAYS on guardian tab").
+func (m Model) metatronView() string {
+	width := m.width - 6
+	if width < 30 {
+		width = 30
+	}
+	header := m.guardianHeaderLine()
 
 	body := m.metatronTranscriptBody(width, clampInt(m.height-14, 4, 200))
 	if m.mbErr != "" {
@@ -1579,19 +1616,6 @@ func (m Model) metatronView() string {
 	content := header + "\n\n" + body
 	for _, row := range orderStatusLines(m.consoleOrders) {
 		content += "\n" + row
-	}
-	if m.status != nil && m.status.LLM != nil {
-		l := m.status.LLM
-		for _, row := range llmProviderLines(l) {
-			content += "\n" + row
-		}
-		content += "\n" + styleDim.Render(fmt.Sprintf("spend $%.2f of $%.0f", l.Spent, l.Budget))
-		if l.Spent >= l.Budget {
-			content += "\n" + styleErr.Render("budget exhausted — the angel's voice is stilled")
-		}
-		for _, row := range horizonLines(m.status.Horizon, string(m.status.Clock.Speed)) {
-			content += "\n" + row
-		}
 	}
 	// Sized to the same content width as the transcript above it (not the
 	// full terminal width) — this box nests inside metatronView's own
@@ -1604,6 +1628,51 @@ func (m Model) metatronView() string {
 	// minibuffer, identical content" lands here, unconditionally — narrow
 	// has no rowBudget/fold machinery of its own to fold it against.
 	content += "\n\n" + m.guardianStripView(width) + "\n" + m.minibufferView(width)
+	return styleBox.Render(content)
+}
+
+// --- systems (panels/systems.md, spec 053 US2/D10) ---
+// The dock's never-skinned telemetry tab: the provider table, spend/wallet
+// line, and cognition horizon block relocated out of the guardian tab
+// (contract §3) — the exact renderers already shipped (llmProviderLines,
+// horizonLines), moved rather than rewritten.
+
+// systemsContentBody is the systems dock tab's shared body — used by both
+// dockTabContent (widescreen dock/solo) and systemsView (narrow fallback),
+// the same one-body-two-call-sites shape every other tab uses. A no-LLM
+// world (Status.LLM nil) states its absence honestly (SC-002) rather than
+// rendering empty chrome — the exact honesty rule the compact guardian tab
+// used to satisfy only by silence.
+func (m Model) systemsContentBody(width, rows int) string {
+	if rows < 3 {
+		rows = 3
+	}
+	if m.status == nil || m.status.LLM == nil {
+		return styleDim.Render("no LLM configured for this world")
+	}
+	l := m.status.LLM
+	var lines []string
+	lines = append(lines, llmProviderLines(l)...)
+	lines = append(lines, styleDim.Render(fmt.Sprintf("spend $%.2f of $%.0f", l.Spent, l.Budget)))
+	if l.Spent >= l.Budget {
+		lines = append(lines, styleErr.Render("budget exhausted — the angel's voice is stilled"))
+	}
+	lines = append(lines, horizonLines(m.status.Horizon, string(m.status.Clock.Speed))...)
+	if len(lines) > rows {
+		lines = lines[len(lines)-rows:]
+	}
+	return strings.Join(lines, "\n")
+}
+
+// systemsView is the narrow-fallback systems pane: the same
+// systemsContentBody the dock tab and solo view share, boxed like every
+// other narrow pane (villagersView/metatronView precedent).
+func (m Model) systemsView() string {
+	width := m.width - 6
+	if width < 30 {
+		width = 30
+	}
+	content := m.systemsContentBody(width, clampInt(m.height-6, 4, 200))
 	return styleBox.Render(content)
 }
 
@@ -1940,6 +2009,239 @@ func truncateTail(s string, max int) string {
 		return s
 	}
 	return string(r[len(r)-max:])
+}
+
+// --- guardian console (pages/guardian-console.md, spec 053 US1) ---
+// A first-class full-screen page (research R1), not a dock tab and not a
+// solo zoom: document-style turns over the shared transcript, the card-
+// composition seam (research R6), the charter/skills read surface (US3),
+// and the SAME minibuffer every other page uses as its composer (contract
+// §2, "byte-identical... no second input widget").
+
+// consoleCard is the card-composition seam's element interface (contracts/
+// console-and-systems.md §2.3, data-model.md "consoleCard (the seam)";
+// research R6, the scope-ruling operationalized: D5 assigns the report
+// card's CONTENT to TASK-115/127, not this feature). This feature ships
+// only the interface, the composition point (between the turn stream and
+// the read surface, consoleView below), and its tests — Model.consoleCards
+// stays empty for every world this feature ships; the design page's control
+// table keeps the card row "unbuilt (wave 3/4)" naming this exact symbol as
+// the seam TASK-127's shared report-card renderer plugs into.
+type consoleCard interface {
+	renderCard(width int) string
+}
+
+// consoleCardLines renders Model.consoleCards (always empty this feature)
+// as blank-line-separated blocks appended after the turn stream and before
+// the read surface (contract §2.3) — the same separation a turn block gets.
+func (m Model) consoleCardLines(width int) []string {
+	var out []string
+	for _, c := range m.consoleCards {
+		out = append(out, "", c.renderCard(width))
+	}
+	return out
+}
+
+// consoleTurnLines renders Model.transcript as document-style turn blocks
+// (contract §2.2, research R4): a labeled block per conversational turn,
+// blank-line separated, width-wrapped — classifyTranscriptLine (shared with
+// the compact tab's transcriptRowLines) supplies the label, so the special-
+// row vocabulary (⚡/👁/⏲/», the "note" telemetry label the compact tab
+// already uses for inline verdict rows) renders unlabeled and inline here
+// exactly as it does there: one shared vocabulary, two renderings. Model.
+// transcript carries no per-entry timestamp in this client (it is a plain
+// []string) — the mockup's "· HH:MM" suffix is representative only;
+// omitting it is the honesty rule (R4: "entries that carry no time render
+// without the timestamp suffix rather than inventing one"), not a
+// placeholder gap.
+func consoleTurnLines(transcript []string, width int) []string {
+	if width < 10 {
+		width = 10
+	}
+	var out []string
+	for i, l := range transcript {
+		label, text, style := classifyTranscriptLine(l)
+		if i > 0 {
+			out = append(out, "")
+		}
+		if label == "" {
+			out = append(out, style.Render(l))
+			continue
+		}
+		out = append(out, styleHeader.Render(label))
+		for _, w := range wrapText(text, width-2) {
+			out = append(out, "  "+style.Render(w))
+		}
+	}
+	return out
+}
+
+// consoleScrollWindow windows content to exactly rows lines, tail-anchored
+// (contract §2.2 "tail-anchored"; data-model.md "consoleScroll"): scroll=0
+// shows the most recent `rows` lines; K (handleConsoleKey) increments scroll
+// to reveal older lines above, clamped here to content length so it can
+// never scroll past the head. Short content (fewer lines than the budget)
+// pads at the bottom rather than the top — B1's "short content hugs the
+// top, blank fills below" discipline every panel in this package follows
+// (mapPanelView/dockPanelView via lipgloss Height(); this is the same rule
+// applied to a plain slice instead of a styled box).
+func consoleScrollWindow(content []string, scroll, rows int) []string {
+	if rows < 1 {
+		rows = 1
+	}
+	maxScroll := len(content) - rows
+	if maxScroll < 0 {
+		maxScroll = 0
+	}
+	if scroll > maxScroll {
+		scroll = maxScroll
+	}
+	if scroll < 0 {
+		scroll = 0
+	}
+	end := len(content) - scroll
+	if end < 0 {
+		end = 0
+	}
+	start := end - rows
+	if start < 0 {
+		start = 0
+	}
+	out := append([]string{}, content[start:end]...)
+	for len(out) < rows {
+		out = append(out, "")
+	}
+	return out
+}
+
+// charterReadSurfaceLines renders the console's charter/skills read surface
+// (FR-004, research R5): charter.md's provenance + binding status, and the
+// skills file count + binding status — sourced entirely from the metatron
+// status fields consoleStatusMsg already populates for the compact tab's
+// header (consoleCharter/consoleCharterLocked/consoleCharterPreset/
+// consoleSkills/consoleSkillsLocked); no client-side file parsing (FR-004's
+// explicit ruling). Honest lock notices name the unlocking stage via
+// skin.StageName, mirroring internal/metatron/charter.go's own
+// stageCharter/stageSkills notice wording (stage-1 locks the charter until
+// stage-2; stage-1/2 lock skills until stage-3 — the ladder's current,
+// hardcoded shape, the same assumption consoleStageSummary already makes)
+// without a second round trip to ask the daemon to repeat itself. While
+// SkillsLocked, Status.Skills is the EFFECTIVE (empty) list, not a file
+// count off disk (internal/metatron/turn.go Status()) — so the locked
+// notice honestly omits a count it does not have, rather than inventing one
+// by reading the directory itself.
+func (m Model) charterReadSurfaceLines() []string {
+	if m.consoleCharter == "" {
+		// No status peek has landed yet (not connected, or the first frame
+		// before fetchConsoleStatus resolves) — the honest absence, not an
+		// invented value.
+		return []string{styleDim.Render("charter/skills — unavailable (not connected)")}
+	}
+	var charterLine string
+	switch {
+	case m.consoleCharterLocked:
+		charterLine = fmt.Sprintf("charter.md — preset-locked to %s; does not bind at this stage — %s unlocks instruction authoring",
+			m.consoleCharterPreset, skin.StageName("stage-2"))
+	case m.consoleCharter == "default charter":
+		charterLine = "charter.md — default, binds now  [e] edit ($EDITOR)"
+	default:
+		charterLine = "charter.md — player-authored, binds now  [e] edit ($EDITOR)"
+	}
+
+	var skillsLine string
+	switch {
+	case m.consoleSkillsLocked:
+		skillsLine = fmt.Sprintf("skills/ — locked; does not bind at this stage — %s unlocks skill files", skin.StageName("stage-3"))
+	case m.consoleSkills == 1:
+		skillsLine = "skills/ — 1 file, binds now"
+	default:
+		skillsLine = fmt.Sprintf("skills/ — %d files, binds now", m.consoleSkills)
+	}
+
+	return []string{charterLine, skillsLine}
+}
+
+// charterReadSurfaceBox renders the console's charter/skills sub-panel
+// (contract §2.4): a bordered box titled "charter · skills" (the mapPanelView
+// precedent for a box whose "title" is its first content line, since this
+// package's styleBox has no native border-title support), wrapped to width.
+func (m Model) charterReadSurfaceBox(width int) string {
+	if width < 20 {
+		width = 20
+	}
+	var wrapped []string
+	for _, l := range m.charterReadSurfaceLines() {
+		wrapped = append(wrapped, wrapText(l, width-4)...)
+	}
+	content := styleHeader.Render("charter · skills") + "\n" + strings.Join(wrapped, "\n")
+	return styleBox.Width(width - 2).Render(clipContent(content, width-2))
+}
+
+// consoleFooterView note: the console's footer is rendered by the shared
+// footerView() (views.go) — it gains its own case there (contract §2.7),
+// checked ahead of inspect/villagers exactly like handleKey's dispatch, so
+// there is no separate function here; consoleView calls m.footerView()
+// directly, the same call every other top-level page makes.
+
+// consoleView is the guardian console page (pages/guardian-console.md
+// "Structure"): header line, document-style turn stream (tail-anchored,
+// scrollback via consoleScroll), the card seam, the charter/skills read
+// surface, the one-shot post-$EDITOR notice, the standard minibuffer as
+// composer, and the standard footer — in that order (contract §2). Renders
+// to exactly m.height lines (B1, the same exact-height discipline every
+// top-level page in this package holds), computing the turn-stream's row
+// budget from what everything else actually measures rather than a fixed
+// guess. The help overlay (m.helpOpen), when open over the console, replaces
+// only this body region — the same "body replacement" rule widescreenView's
+// solo/help branches use (spec.md Edge Cases: "the console is a page, not an
+// overlay — '?' over the console behaves as over any page").
+func (m Model) consoleView() string {
+	width := m.width
+	if width < 40 {
+		width = 40
+	}
+
+	header := m.guardianHeaderLine()
+	readSurface := m.charterReadSurfaceBox(width)
+	readSurfaceRows := lipgloss.Height(readSurface)
+
+	notice := ""
+	noticeRows := 0
+	if m.consoleNotice != "" {
+		notice = styleDim.Render(m.consoleNotice)
+		noticeRows = 1
+	}
+
+	// header(1) + blank(1) + read surface + notice + minibuffer(3, its
+	// natural rendered height — no explicit .Height() call, same as every
+	// other minibufferView call site) + footer(1); the turn stream takes
+	// whatever remains (research R1's "renders the transcript tail, not the
+	// whole history per frame").
+	fixed := 2 + readSurfaceRows + noticeRows + minibufferRows + footerRows
+	bodyRows := m.height - fixed
+	if bodyRows < 3 {
+		bodyRows = 3
+	}
+
+	var body string
+	if m.helpOpen {
+		body = m.helpPanelView(width, bodyRows)
+	} else {
+		lines := consoleTurnLines(m.transcript, width-2)
+		lines = append(lines, m.consoleCardLines(width-2)...)
+		body = strings.Join(consoleScrollWindow(lines, m.consoleScroll, bodyRows), "\n")
+	}
+
+	var b strings.Builder
+	b.WriteString(header + "\n\n")
+	b.WriteString(body + "\n")
+	b.WriteString(readSurface + "\n")
+	if notice != "" {
+		b.WriteString(notice + "\n")
+	}
+	b.WriteString(m.minibufferView(width) + "\n")
+	b.WriteString(m.footerView())
+	return b.String()
 }
 
 // --- villagers (panels/dock.md "Tab: villagers"; TASK-56 roster + per-

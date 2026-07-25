@@ -13,9 +13,13 @@
 package tui
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"os/exec"
 	"strings"
 	"time"
 
@@ -34,7 +38,11 @@ import (
 // pane names both the narrow-fallback's single active pane and the
 // widescreen dock's selected tab — paneMap is narrow-only (the widescreen
 // map is always visible, never a dock tab); the dock only ever selects
-// paneChronicle/paneMetatron/paneVillagers.
+// paneChronicle/paneMetatron/paneVillagers/paneSystems. paneSystems (spec
+// 053, D10) is the relocated-telemetry tab: the guardian tab keeps fiction-
+// layer content only from this feature forward — the skin boundary is now
+// a file boundary (systems.md carries zero skin tokens, guardian.md all of
+// them).
 type pane int
 
 const (
@@ -42,13 +50,14 @@ const (
 	paneChronicle
 	paneMetatron
 	paneVillagers
+	paneSystems
 	paneCount
 )
 
-var paneNames = [paneCount]string{"map", "chronicle", "metatron", "villagers"}
+var paneNames = [paneCount]string{"map", "chronicle", "metatron", "villagers", "systems"}
 
 // dockTabKey is the keymap.md key that selects/solos each dock tab.
-var dockTabKey = map[pane]string{paneChronicle: "2", paneMetatron: "3", paneVillagers: "4"}
+var dockTabKey = map[pane]string{paneChronicle: "2", paneMetatron: "3", paneVillagers: "4", paneSystems: "5"}
 
 // speedSteps is the [ / ] cycling order.
 // max is deliberately absent: the watchable ladder tops out at 32x (TASK-20);
@@ -113,6 +122,32 @@ type Model struct {
 	consoleTools   string                 // granted-tool summary, e.g. "tools: dream, omen"; "" when quiet default
 	consoleOrders  []metatron.OrderStatus // standing orders peek (spec 029 T023, FR-016)
 	consoleStage   string                 // curriculum-ladder stage line (spec 046 T010); "" for a pre-ladder/ungated world
+
+	// Charter/skills read-surface provenance (spec 053 US3, FR-004, research
+	// R5): the raw stage-lock fields consoleStage's formatted line already
+	// folds together, kept separately here because the read surface (the
+	// guardian console's own bordered sub-panel) needs to distinguish
+	// "preset-locked" from "player-authored" as its own line, honestly
+	// naming the unlocking stage — the same fields metatron.Status carries,
+	// no new client-side file parsing.
+	consoleCharterLocked bool
+	consoleCharterPreset string
+	consoleSkillsLocked  bool
+
+	// Guardian console page state (spec 053, data-model.md "Console page
+	// state"): a page-level toggle, not a dock tab or a solo zoom — dockTab/
+	// solo/active are never touched while console is true, so they already
+	// ARE the "prior view" the data model calls consoleReturn; closing the
+	// console needs nothing to restore beyond flipping the flag back.
+	// consoleScroll is tail-anchored scrollback (0 = the tail/most recent),
+	// reset on close; consoleNotice is the one-shot post-$EDITOR line
+	// (research R2), also cleared on close. consoleCards is the card-
+	// composition seam (research R6, FR-006) — always empty this feature;
+	// TASK-127/115 are the producers.
+	console       bool
+	consoleScroll int
+	consoleNotice string
+	consoleCards  []consoleCard
 
 	mbFocused bool
 	mbInput   string
@@ -227,6 +262,16 @@ type consoleReplyMsg struct {
 }
 
 type consoleStatusMsg struct{ status *metatron.Status }
+
+// editorResultMsg reports the $EDITOR round trip's outcome (spec 053 US3,
+// research R2) after tea.ExecProcess restores the TUI: changed is the
+// pre/post content-hash comparison's verdict; err carries a nonzero exit or
+// exec failure (edge case: "$EDITOR exits nonzero: treat as no-change...
+// plus an honest one-line notice").
+type editorResultMsg struct {
+	changed bool
+	err     error
+}
 
 // consoleToolsSummary renders the granted-tool part of the console header
 // (spec 021 US3, contracts/status.md): quiet (empty) for a full-grant default
@@ -464,6 +509,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.consoleTools = ""
 			m.consoleOrders = nil
 			m.consoleStage = ""
+			m.consoleCharterLocked = false
+			m.consoleCharterPreset = ""
+			m.consoleSkillsLocked = false
 		} else {
 			if msg.status.CharterDefault {
 				m.consoleCharter = "default charter"
@@ -474,6 +522,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.consoleTools = consoleToolsSummary(msg.status)
 			m.consoleOrders = msg.status.Orders
 			m.consoleStage = consoleStageSummary(msg.status)
+			m.consoleCharterLocked = msg.status.CharterLocked
+			m.consoleCharterPreset = msg.status.CharterPreset
+			m.consoleSkillsLocked = msg.status.SkillsLocked
 		}
 		return m, nil
 
@@ -519,6 +570,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, fetchStatus(m.client))
 		}
 		return m, tea.Batch(cmds...)
+
+	case editorResultMsg:
+		// $EDITOR round trip landed (spec 053 US3, contract §4): exactly one
+		// notice, never both — an exec error/nonzero exit wins over a
+		// (moot) content comparison; unchanged clears any stale notice
+		// rather than leaving a prior confirmation lingering.
+		switch {
+		case msg.err != nil:
+			m.consoleNotice = "the editor exited with an error — charter.md unchanged"
+		case msg.changed:
+			m.consoleNotice = "charter changed — next turn binds it"
+		default:
+			m.consoleNotice = ""
+		}
+		return m, nil
 	}
 	return m, nil
 }
@@ -547,8 +613,13 @@ func (m Model) chronicleVisible() bool {
 
 // metatronVisible reports whether the metatron transcript is the thing
 // currently on screen — governs whether a reply streams in place or badges
-// the tab (minibuffer.md).
+// the tab (minibuffer.md). The guardian console (spec 053 US1 AS4) renders
+// the SAME transcript as its primary content, so it counts as "visible" too
+// — the console adds no second badge system, it just shares this one.
 func (m Model) metatronVisible() bool {
+	if m.console {
+		return true
+	}
 	if isWidescreen(m.width) {
 		return m.dockTab == paneMetatron
 	}
@@ -598,13 +669,18 @@ func (m Model) runEnded() bool {
 
 // handleKey is the top-level key dispatcher implementing the modes of
 // patterns/keymap.md, in priority order: ctrl+c always quits (rule 3); the
-// help overlay (spec 045), when open, owns the keyboard next — the new head
-// of the esc-release chain (help -> minibuffer -> decisions -> detail ->
-// solo -> home; research.md R1) — and '?' opens it from every mode except
-// minibuffer focus, checked immediately after (so '?' still types into the
-// buffer there, FR-001); minibuffer-focused keys own the keyboard only when
-// focus was explicitly acquired (rule 1); inspect-mode keys layer on top
-// of, never replace, the global mode (rule 5 / keymap.md "Mode: inspect").
+// help overlay (spec 045), when open, owns the keyboard next — the head of
+// the esc-release chain (help -> minibuffer -> villager detail -> console
+// -> solo -> home; research.md R1, spec 053 amendment) — and '?' opens it
+// from every mode except minibuffer focus, checked immediately after (so
+// '?' still types into the buffer there, FR-001); minibuffer-focused keys
+// own the keyboard only when focus was explicitly acquired (rule 1); the
+// guardian console (spec 053), when open, owns the keyboard next — checked
+// ahead of inspect/villagers mode because those are keyed off dockTab/
+// active, which persist unchanged (and so would still spuriously read as
+// "visible") underneath the console's full-screen body; inspect-mode keys
+// layer on top of, never replace, the global mode (rule 5 / keymap.md "Mode:
+// inspect").
 func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if msg.String() == "ctrl+c" {
 		return m.quit()
@@ -617,6 +693,18 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 	if m.mbFocused {
 		return m.handleMinibufferKey(msg)
+	}
+	if m.console {
+		if mdl, cmd, handled := m.handleConsoleKey(msg); handled {
+			return mdl, cmd
+		}
+		// Not a console-owned key (contract §1: only G/1/esc/m/e/J/K are) —
+		// falls straight to the global mode (space/q/[/]/2-5/pan/a/t/r all
+		// still work per the console's own footer hints), deliberately
+		// skipping the inspect/villagers layers below: those are scoped to
+		// the chronicle/villagers dock tabs, neither of which is the screen
+		// actually showing right now.
+		return m.handleGlobalKey(msg)
 	}
 	if m.inspecting() {
 		if mdl, cmd, handled := m.handleInspectKey(msg); handled {
@@ -642,6 +730,17 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 // with n/p from another mode's overlay.
 func (m Model) currentHelpMode() helpModeKey {
 	switch {
+	case m.console:
+		// The console page (spec 053) has no dedicated help mode of its own
+		// (T009's scope is new rows on the existing global/solo pages, not a
+		// seventh mode) — checked first because dockTab/active persist
+		// unchanged underneath the console and would otherwise mis-route
+		// through the villagers/inspect branches below for a screen that
+		// isn't actually visible.
+		if isWidescreen(m.width) {
+			return helpModeGlobal
+		}
+		return helpModeSolo
 	case m.inspecting():
 		return helpModeInspect
 	case m.villagersVisible() && m.villDetail:
@@ -745,6 +844,16 @@ func (m Model) handleGlobalKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.selectTab(paneMetatron)
 	case "4":
 		return m.selectTab(paneVillagers)
+	case "5":
+		return m.selectTab(paneSystems)
+	case "G":
+		// The guardian console (spec 053 FR-001): reached here only when
+		// nothing higher in handleKey's chain claimed "G" first — inspect
+		// mode (chronJumpLast) and villagers mode (villJumpLast) both bind
+		// "G" already and take priority while their tab is active, exactly
+		// matching FR-001's own wording ("from home, solo, and narrow" —
+		// inspect/villagers sub-modes aren't named, and already own the key).
+		return m.openConsole()
 	case "tab":
 		return m.selectTab(nextDockTab(m.dockTab))
 	case "shift+tab":
@@ -829,15 +938,19 @@ func (m Model) handleGlobalKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// nextDockTab/prevDockTab cycle the three dock tabs (tab/shift+tab aliases,
-// keymap.md "Migration notes" — not load-bearing).
+// nextDockTab/prevDockTab cycle the four dock tabs (tab/shift+tab aliases,
+// keymap.md "Migration notes" — not load-bearing). paneSystems (spec 053)
+// extends the cycle at the end, chronicle -> metatron -> villagers ->
+// systems -> chronicle, same as its "5" position in the tab row.
 func nextDockTab(cur pane) pane {
 	switch cur {
 	case paneChronicle:
 		return paneMetatron
 	case paneMetatron:
 		return paneVillagers
-	default:
+	case paneVillagers:
+		return paneSystems
+	default: // paneSystems
 		return paneChronicle
 	}
 }
@@ -845,11 +958,13 @@ func nextDockTab(cur pane) pane {
 func prevDockTab(cur pane) pane {
 	switch cur {
 	case paneChronicle:
-		return paneVillagers
+		return paneSystems
 	case paneMetatron:
 		return paneChronicle
-	default:
+	case paneVillagers:
 		return paneMetatron
+	default: // paneSystems
+		return paneVillagers
 	}
 }
 
@@ -909,6 +1024,148 @@ func (m Model) focusMinibuffer() (tea.Model, tea.Cmd) {
 	m.metatronUnseen = false
 	m.mbFlash = ""
 	return m, cmd
+}
+
+// --- guardian console (spec 053, pages/guardian-console.md) ---
+
+// openConsole is the 'G' key from the global mode (FR-001): flips the page
+// flag and, exactly like selecting the guardian dock tab, peeks the
+// model-free console status (charter/skills provenance for the read
+// surface, FR-004) and clears the unseen badge/flash — the console shows
+// the same transcript the tab does (metatronVisible), so opening it counts
+// as "having seen" it. dockTab/solo/active are deliberately untouched: they
+// already ARE the return target data-model.md calls consoleReturn (research
+// R1) — nothing to snapshot, nothing to restore beyond the flag.
+func (m Model) openConsole() (tea.Model, tea.Cmd) {
+	m.console = true
+	m.consoleScroll = 0
+	m.metatronUnseen = false
+	m.mbFlash = ""
+	var cmd tea.Cmd
+	if m.connected && m.client != nil {
+		cmd = fetchConsoleStatus(m.client)
+	}
+	return m, cmd
+}
+
+// closeConsole is 'G' (toggle), '1', or unfocused 'esc' while the console is
+// open (contract §1; data-model.md "Transitions"): scroll and the one-shot
+// notice both reset — "reading posture, not archive" (spec.md Edge Cases).
+func (m Model) closeConsole() (tea.Model, tea.Cmd) {
+	m.console = false
+	m.consoleScroll = 0
+	m.consoleNotice = ""
+	return m, nil
+}
+
+// consoleFocusMinibuffer is the console's own 'm' — unlike the global
+// focusMinibuffer, it never calls selectTab: the console is already a
+// full-screen page, not the metatron pane, so switching m.active here would
+// corrupt the "return to whatever was open before" restore (research R1) —
+// the console honors the focus contract by construction (patterns/focus-
+// contract.md "This feature's new permanent chrome"), reusing the same
+// minibuffer state fields the compact tab's focusMinibuffer sets.
+func (m Model) consoleFocusMinibuffer() (tea.Model, tea.Cmd) {
+	m.mbFocused = true
+	m.mbErr = ""
+	m.mbHistPos = len(m.mbHistory)
+	m.mbDraft = ""
+	m.metatronUnseen = false
+	m.mbFlash = ""
+	return m, nil
+}
+
+// handleConsoleKey is the console page's own key layer (contract §1),
+// owned exclusively while m.console and the minibuffer is unfocused —
+// mirroring handleInspectKey/handleVillagersKey's "layer on top, fall
+// through when unclaimed" shape (handled=false lets handleKey's console
+// branch continue straight to handleGlobalKey, contract §1's "space pause ·
+// q quit" footer hints). J/K scrollback direction (research R4, "tail-
+// anchored... scrollback"): K moves toward older turns (increments the
+// tail offset, revealing history above), J moves back toward the present
+// (decrements toward 0, the tail) — the chat-scrollback convention, the
+// mirror image of chronicleDetailPane's head-anchored J-increments/K-
+// decrements (that pane windows from the top; this one from the bottom).
+func (m Model) handleConsoleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+	switch msg.String() {
+	case "G", "1", "esc":
+		mdl, cmd := m.closeConsole()
+		return mdl, cmd, true
+	case "m":
+		mdl, cmd := m.consoleFocusMinibuffer()
+		return mdl, cmd, true
+	case "e":
+		mdl, cmd := m.startEditorHandoff()
+		return mdl, cmd, true
+	case "J":
+		if m.consoleScroll > 0 {
+			m.consoleScroll--
+		}
+		return m, nil, true
+	case "K":
+		m.consoleScroll++ // clamped to content length at render time (consoleScrollWindow)
+		return m, nil, true
+	}
+	return m, nil, false
+}
+
+// --- $EDITOR handoff (spec 053 US3, research R2) ---
+
+// editorCommand builds the *exec.Cmd for the handoff: $EDITOR <world>/
+// charter.md (contract §4). Extracted from startEditorHandoff so tests can
+// drive the real subprocess round trip (a scripted fake editor) directly —
+// tea.ExecProcess's own suspend/exec/restore plumbing only activates inside
+// a running tea.Program (the Cmd it returns is an unexported execMsg that
+// only Program.Update intercepts), so exercising that half is bubbletea's
+// own tested responsibility, not re-tested here.
+func editorCommand(editor, path string) *exec.Cmd {
+	return exec.Command(editor, path)
+}
+
+// hashFile content-hashes path for the pre/post $EDITOR comparison (research
+// R2: "content hash, not mtime alone, avoids false confirmations from
+// editors that touch files on open"). A missing/unreadable file hashes to
+// "" both before and after unless the editor actually created content —
+// never a false "changed".
+func hashFile(path string) string {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:])
+}
+
+// editorRoundTripMsg builds the post-$EDITOR message (R2): a nonzero exit or
+// exec failure reports as an honest error notice regardless of the file's
+// content (edge case: "$EDITOR exits nonzero: treat as no-change... plus an
+// honest one-line notice" — never partially applied, the file is the file).
+func editorRoundTripMsg(beforeHash, path string, err error) tea.Msg {
+	if err != nil {
+		return editorResultMsg{err: err}
+	}
+	return editorResultMsg{changed: beforeHash != hashFile(path)}
+}
+
+// startEditorHandoff is the console's 'e' key (contract §4): $EDITOR unset
+// is refused before ever building a command — an honest notice one keypress
+// sooner than a shell "command not found" would be (FR-005's "no in-TUI
+// editor" ruling still holds: this never reads or writes charter.md's text
+// itself, only stats it for the hash). tea.ExecProcess is Bubble Tea's own
+// blessed suspend/exec/restore mechanism (research R2) — the world keeps
+// running; only the client's terminal is handed off.
+func (m Model) startEditorHandoff() (tea.Model, tea.Cmd) {
+	editor := os.Getenv("EDITOR")
+	if editor == "" {
+		m.consoleNotice = "no $EDITOR set — set the EDITOR environment variable to edit charter.md"
+		return m, nil
+	}
+	path := m.w.CharterPath()
+	before := hashFile(path)
+	cmd := editorCommand(editor, path)
+	return m, tea.ExecProcess(cmd, func(err error) tea.Msg {
+		return editorRoundTripMsg(before, path, err)
+	})
 }
 
 // handleMinibufferKey is patterns/keymap.md "Mode: minibuffer focused" —
