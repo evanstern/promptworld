@@ -16,7 +16,9 @@ sources:
   - internal/sim/terrain.go
   - internal/sim/metatron.go
   - internal/sim/morgue.go
+  - internal/sim/curriculum.go
   - internal/daemon/daemon.go
+  - internal/daemon/curriculum.go
 verified_against: dee5f4bf60093cb5d775e10c8ced41c7e5b385ec
 ---
 
@@ -125,6 +127,7 @@ convention) — full shapes and reducer effects in the table below. A world's
 `memory_relevance` manifest flag (`""`/`shadow`/`on`, validated at
 `world.Open`) gates whether the embedder and divergence recording run at all;
 it carries no event of its own.
+<<<<<<< HEAD
 Spec 043 (context grounding — [[decision-context]]) adds NO new event type at
 all: `Agent` gains `omitempty` `IntentLog []IntentRecord` (the recent-intent
 ring, cap 8) and `NeedsAnchor`/`NeedsAnchorTick` (the need-trajectory window
@@ -151,6 +154,19 @@ semantics rather than shape: `agent.died`'s cause domain gains `"gru"` (an
 escalated kill emitted by `gruStep` itself) and its reducer arm gains the
 ledger append + grave placement, and `gru.attacked`'s `health` may now be 0
 when the target was already weakened below `nearDeathBelow` ([[gru]]).
+Spec 046 (the curriculum ladder — staged worlds, earned capabilities) adds no
+format bump: `State` gains `omitempty` `CurriculumPasses []CurriculumPass`
+(ring-capped at 32) and `StagesUnlocked []string`, so a pre-046 snapshot with
+both fields absent round-trips byte-identically. TWO new event types —
+`curriculum.exercise_passed` and `curriculum.stage_unlocked` — are the
+executor emission class (no whitelist entries, the `metatron.order_expired`
+pattern): a stage's tool ceiling is a manifest-load-time intersection, never
+an event, but crossing a ladder gate is (`sim.EvaluateUnlock` decides the
+gate conjuncts; full shapes and reducer effects in the table below). The
+`world.json` Manifest itself gains three additive fields outside this
+event-sourced state — `stage`, `stage_overridden`, `charter_preset`
+([[world-save-directory]], [[metatron]]) — validated at `world.Open` against
+a closed vocabulary exactly like `memory_relevance` above.
 
 ## How it works
 
@@ -236,6 +252,8 @@ when the target was already weakened below `nearDeathBelow` ([[gru]]).
 | `agent.plan_set` | `PlanSetPayload{agent, job, steps}` in `internal/sim/plan.go` | loop, on a guarded plan landing (TASK-32 US4) | `Agent.Plan` replaced with the steps |
 | `agent.plan_step_started` / `agent.plan_expired` | `PlanStepPayload{agent, job, step, reason?}` in `internal/sim/plan.go` | executor (`planStepEvents`) on an idle agent's head step firing / window closing or resolve failing | head step popped / whole remaining plan cleared (a broken sequence is not resumed); spec 043: `plan_expired` also stamps the expired step into the `IntentLog` ring (`stampOrAppendExpired` — an open record matching the step's goal closes `"expired"`, otherwise a closed record is appended for a step that expired before ever firing) |
 | hail family (TASK-47): `social.hailed` / `social.hail_met` / `social.hail_expired` | `HailedPayload{from, to, until}` / `HailMetPayload{from, to}` / `HailExpiredPayload{from, to}` in `internal/sim/agents.go`; contract in `specs/010-hail-protocol/contracts/events.md` | loop (`inject_intent` talk_to landing) and executor (`planStepEvents` talk_to firing) emit `hailed`; the executor's per-tick `hailStep` sweep emits `met` (hailer adjacent, accompanied by the `agent.talked` talk shape bypassing the ambient cooldown) or `expired` (window closed) | `hailed` sets `Agent.Hail{By, Until}` (the movement-only pause); `met`/`expired` clear it — `agent.died` and `agent.slept` also clear it. World-emitted only, never model-injectable |
+| `curriculum.exercise_passed` (spec 046, [[metatron]]) | `ExercisePassedPayload{exercise, stage, tick, evidence?}` in `internal/sim/curriculum.go`; `EvidenceRef{type, seq, tick, custom?}` | executor emission class (the `metatron.order_expired` pattern — pure function of state + tick, no whitelist entry); production emitter is TASK-119's scenario rubric machinery, unbuilt at this feature's landing — proven here by fixture emission | appends a bounded `CurriculumPass` record (ring-capped at 32, `State.CurriculumPasses`) — the auditable proof a seeded exercise's event-derived rubric reached its pass signal |
+| `curriculum.stage_unlocked` (spec 046, [[metatron]]) | `StageUnlockedPayload{stage, exercise, tick}` in `internal/sim/curriculum.go` | same emission class as `exercise_passed`, derived from a pass whose evidence satisfies its stage's gate conjuncts (`sim.EvaluateUnlock` — stage-1: any pass; stage-2: a metatron charter-observed fingerprint's `custom` evidence entry (spec 044 US2's event, referenced by contract only — reconciled on that branch's merge, T022); stage-3: any `custom` evidence entry) | latches the stage into `State.StagesUnlocked` (once per world per stage — a duplicate is rejected); the daemon's curriculum observer (`internal/daemon/curriculum.go`, always-on, wired before the LLM gate) upserts the per-user `~/.promptworld/unlocks.json` record on observing it; the chronicle narrates it (`chronicleNote`, [[chronicle-and-mind]]) and it surfaces on status (`ipc.WorldStatus.Stage`) |
 
 Conventions: `clock.*` are applied player/scheduler commands; `sim.*`, `agent.*`,
 and (spec 044) `run.*` are world happenings (pure functions of state + seed +

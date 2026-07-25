@@ -211,6 +211,16 @@ var catalogFixture = map[string]digestFixture{
 		`{"job":"j1","ordinal":1,"tool":"inject_intent","args":{"agent":0},"verdict":"rejected_gate","reason":"stale snapshot","tier":"cheap","snapshot_tick":100}`,
 		`job=j1 ord=1 tool=inject_intent rejected_gate tier=cheap reason=stale snapshot`,
 	},
+
+	// --- curriculum (spec 046 — the curriculum ladder) ---
+	"curriculum.exercise_passed": {
+		`{"exercise":"first-night","stage":"stage-1","tick":50000}`,
+		`the first-night exercise was passed (stage-1)`,
+	},
+	"curriculum.stage_unlocked": {
+		`{"stage":"stage-2","exercise":"first-night","tick":50000}`,
+		`Metatron's watcher earned The Written Word (proven by first-night)`,
+	},
 }
 
 // TestCatalogSweep is the SC-001 gate (contract §7): every fixture type

@@ -26,6 +26,7 @@ import (
 	"github.com/evanstern/promptworld/internal/clock"
 	"github.com/evanstern/promptworld/internal/cognition"
 	"github.com/evanstern/promptworld/internal/sim"
+	"github.com/evanstern/promptworld/internal/skin"
 	"github.com/evanstern/promptworld/internal/store"
 )
 
@@ -1171,5 +1172,30 @@ var digestRegistry = map[string]digestFunc{
 			fmt.Sprintf("displaced=%d", p.Displacement),
 			fmt.Sprintf("vectorless=%d", p.Vectorless),
 		), true
+	},
+
+	// --- spec 046: the curriculum ladder — exercise passes + stage unlocks ---
+	// Natural-phrase voice (Metatron's own family tint, grammar.go), mirroring
+	// the order lifecycle rows above: the guardian is the subject regardless
+	// of what emitted the pass (TASK-119's rubric machinery in production).
+
+	"curriculum.exercise_passed": func(e store.Event, names []string) ([]seg, bool) {
+		p, ok := decode[sim.ExercisePassedPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{
+			txt("the "), emph(p.Exercise), txt(" exercise was passed ("), emph(p.Stage), txt(")"),
+		}), true
+	},
+	"curriculum.stage_unlocked": func(e store.Event, names []string) ([]seg, bool) {
+		p, ok := decode[sim.StageUnlockedPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{
+			txt("Metatron's watcher earned "), emph(skin.StageName(p.Stage)),
+			txt(" (proven by "), emph(p.Exercise), txt(")"),
+		}), true
 	},
 }

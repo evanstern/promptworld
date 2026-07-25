@@ -134,6 +134,119 @@ func TestStageUnlockedLatches(t *testing.T) {
 	}
 }
 
+// TestEvaluateUnlockGateConjuncts (spec 046 T012/T015, contracts/
+// unlocks-record.md "Gate conjuncts", SC-004): the pure gate-conjunct
+// decision — stage-1 asks nothing but the attempt; stage-2 requires a
+// player-authored charter fingerprint (Custom) in force at pass time; stage-3
+// requires any player-granted (Custom) evidence entry; stage-4 has no next
+// stage (graduation).
+func TestEvaluateUnlockGateConjuncts(t *testing.T) {
+	cases := []struct {
+		name      string
+		pass      ExercisePassedPayload
+		wantStage string
+		wantOK    bool
+	}{
+		{
+			name:      "stage-1 pass unlocks stage-2 unconditionally",
+			pass:      ExercisePassedPayload{Exercise: "first-night", Stage: "stage-1", Tick: 100},
+			wantStage: "stage-2", wantOK: true,
+		},
+		{
+			name: "stage-2 pass WITH a custom charter fingerprint unlocks stage-3",
+			pass: ExercisePassedPayload{Exercise: "the-law", Stage: "stage-2", Tick: 100,
+				Evidence: []EvidenceRef{{Type: "metatron.charter_observed", Seq: 5, Tick: 90, Custom: true}}},
+			wantStage: "stage-3", wantOK: true,
+		},
+		{
+			name: "stage-2 pass with a DEFAULT charter fingerprint does NOT unlock stage-3 (SC-004)",
+			pass: ExercisePassedPayload{Exercise: "the-law", Stage: "stage-2", Tick: 100,
+				Evidence: []EvidenceRef{{Type: "metatron.charter_observed", Seq: 5, Tick: 90, Custom: false}}},
+			wantOK: false,
+		},
+		{
+			name:   "stage-2 pass with NO charter evidence at all does NOT unlock stage-3",
+			pass:   ExercisePassedPayload{Exercise: "the-law", Stage: "stage-2", Tick: 100},
+			wantOK: false,
+		},
+		{
+			name: "stage-2 pass whose only custom evidence is the WRONG type does NOT unlock stage-3",
+			pass: ExercisePassedPayload{Exercise: "the-law", Stage: "stage-2", Tick: 100,
+				Evidence: []EvidenceRef{{Type: "sim.day_started", Seq: 5, Tick: 90, Custom: true}}},
+			wantOK: false,
+		},
+		{
+			name: "stage-3 pass with any custom evidence unlocks stage-4",
+			pass: ExercisePassedPayload{Exercise: "the-craft", Stage: "stage-3", Tick: 100,
+				Evidence: []EvidenceRef{{Type: "metatron.item_granted", Seq: 9, Tick: 90, Custom: true}}},
+			wantStage: "stage-4", wantOK: true,
+		},
+		{
+			name:   "stage-3 pass with no custom evidence does NOT unlock stage-4",
+			pass:   ExercisePassedPayload{Exercise: "the-craft", Stage: "stage-3", Tick: 100},
+			wantOK: false,
+		},
+		{
+			name:   "stage-4 pass has no next stage (graduation)",
+			pass:   ExercisePassedPayload{Exercise: "the-stewardship", Stage: "stage-4", Tick: 100},
+			wantOK: false,
+		},
+		{
+			name:   "unknown stage never unlocks",
+			pass:   ExercisePassedPayload{Exercise: "x", Stage: "stage-9", Tick: 100},
+			wantOK: false,
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			s := NewState(1, testMap(1))
+			stage, ok := EvaluateUnlock(s, c.pass)
+			if ok != c.wantOK {
+				t.Fatalf("ok = %v, want %v (stage=%q)", ok, c.wantOK, stage)
+			}
+			if ok && stage != c.wantStage {
+				t.Errorf("stage = %q, want %q", stage, c.wantStage)
+			}
+		})
+	}
+}
+
+// TestEvaluateUnlockOnceOnly (spec 046 T012): a stage already latched in
+// StagesUnlocked is never re-unlocked, even by a pass that would otherwise
+// satisfy the gate — the pre-emission twin of the reducer's own duplicate
+// rejection.
+func TestEvaluateUnlockOnceOnly(t *testing.T) {
+	s := NewState(1, testMap(1))
+	s.StagesUnlocked = []string{"stage-2"}
+	stage, ok := EvaluateUnlock(s, ExercisePassedPayload{Exercise: "first-night", Stage: "stage-1", Tick: 1})
+	if ok {
+		t.Errorf("stage-2 already unlocked; EvaluateUnlock should refuse a repeat, got (%q, true)", stage)
+	}
+}
+
+// TestEvaluateUnlockFixtureChain (spec 046 T015 — quickstart.md §4): the
+// full fixture-driven chain the quickstart documents — a pass whose evidence
+// satisfies the gate conjunct decides the SAME stage the reducer then
+// accepts when the resulting stage_unlocked event is applied.
+func TestEvaluateUnlockFixtureChain(t *testing.T) {
+	s := NewState(1, testMap(1))
+	pass := passPayload("first-night", "stage-1", 100)
+	if err := s.Apply(curriculumEvent(t, "curriculum.exercise_passed", 100, pass)); err != nil {
+		t.Fatalf("apply pass: %v", err)
+	}
+	stage, ok := EvaluateUnlock(s, pass)
+	if !ok || stage != "stage-2" {
+		t.Fatalf("EvaluateUnlock(pass) = (%q, %v), want (stage-2, true)", stage, ok)
+	}
+	unlock := StageUnlockedPayload{Stage: stage, Exercise: pass.Exercise, Tick: 100}
+	if err := s.Apply(curriculumEvent(t, "curriculum.stage_unlocked", 100, unlock)); err != nil {
+		t.Fatalf("apply unlock: %v", err)
+	}
+	if len(s.StagesUnlocked) != 1 || s.StagesUnlocked[0] != "stage-2" {
+		t.Errorf("StagesUnlocked = %v, want [stage-2]", s.StagesUnlocked)
+	}
+}
+
 // TestCurriculumReplayDeterministic (spec 046 contracts/events.md): replaying
 // a history carrying curriculum events reproduces identical state — the
 // events are replay-deterministic like every other recorded type.

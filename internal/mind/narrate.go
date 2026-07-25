@@ -12,6 +12,7 @@ import (
 	"github.com/evanstern/promptworld/internal/clock"
 	"github.com/evanstern/promptworld/internal/llm"
 	"github.com/evanstern/promptworld/internal/sim"
+	"github.com/evanstern/promptworld/internal/skin"
 	"github.com/evanstern/promptworld/internal/store"
 )
 
@@ -254,6 +255,14 @@ func (md *Mind) chronicleNote(e store.Event) {
 				}
 				line = fmt.Sprintf("%s %s: %q.", name(p.Violator), verb, n.Text)
 			}
+		}
+	case "curriculum.stage_unlocked":
+		// Spec 046 (US3, FR-009, T014): the ladder moves, and the chronicle
+		// says so — one of the two required in-game surfaces (the other is
+		// the status line, cmd/promptworld/commands.go stageStatusLine).
+		var p sim.StageUnlockedPayload
+		if json.Unmarshal(e.Payload, &p) == nil {
+			line = fmt.Sprintf("The village's watcher earned %s.", skin.StageName(p.Stage))
 		}
 	case "sim.night_started":
 		var p sim.DayPayload

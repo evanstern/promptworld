@@ -87,6 +87,11 @@ var familyByNamespace = map[string]eventFamily{
 	"metatron":  familyMetatron,
 	"daemon":    familyDaemon,
 	"cog":       familyCog,
+	// curriculum (spec 046 — exercise passes/stage unlocks) rides the
+	// guardian's own family tint: the ladder is Metatron's domain (the
+	// player's angel is who watches, teaches, and reports the unlock), not a
+	// distinct visual role.
+	"curriculum": familyMetatron,
 }
 
 // eventFamilyOf derives a type's family from its namespace prefix (R2). New
