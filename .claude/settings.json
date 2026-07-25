@@ -1,0 +1,20 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/scripts/hooks/merge-drift-hook.mjs\" pre-bash", "timeout": 90, "statusMessage": "merge-drift gate" }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup|clear",
+        "hooks": [
+          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/scripts/hooks/merge-drift-hook.mjs\" session-start", "timeout": 90, "statusMessage": "merge-drift session gate" }
+        ]
+      }
+    ]
+  }
+}
