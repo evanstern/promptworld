@@ -64,18 +64,18 @@ across stages.
 **Independent Test**: create at each stage (earned/overridden); identity presentation,
 informed override, durable stage fact, status visibility.
 
-- [ ] T008 [US1] `promptworld stages` command: identity table (skin stub names),
+- [x] T008 [US1] `promptworld stages` command: identity table (skin stub names),
       concept, grants, unlock evidence, earned state (unlocks record read) —
       cmd/promptworld/commands.go (R9)
-- [ ] T009 [US1] `promptworld new --stage <id>` (+ `--override`): earned-stage checks,
+- [x] T009 [US1] `promptworld new --stage <id>` (+ `--override`): earned-stage checks,
       informed error naming skipped concepts, manifest stamping, default stage
       selection (stage-1 for new players, else highest earned); `--charter-preset`
       opt-out — cmd/promptworld/commands.go (R9)
-- [ ] T010 [P] [US1] Status surfaces: `WorldStatus.Stage`/`StageOverridden` (additive
+- [x] T010 [P] [US1] Status surfaces: `WorldStatus.Stage`/`StageOverridden` (additive
       omitempty), CLI posture-style stage line (human + --json, live + offline), TUI
       metatron pane stage line — internal/ipc/protocol.go, internal/ipc/server.go,
       cmd/promptworld/commands.go, internal/tui/{tui.go,views.go} (R10)
-- [ ] T011 [US1] Tests: creation flows (earned/unearned/override/default), manifest
+- [x] T011 [US1] Tests: creation flows (earned/unearned/override/default), manifest
       immutability (no mutation path exists), status rendering, absent-stage worlds
       unchanged — cmd + ipc + tui tests
 
@@ -88,19 +88,19 @@ informed override, durable stage fact, status visibility.
 **Independent Test**: fixture pass event drives the full chain; negative case: default-
 charter pass unlocks nothing.
 
-- [ ] T012 [US3] Unlock derivation: gate-conjunct evaluation over a recorded pass
+- [x] T012 [US3] Unlock derivation: gate-conjunct evaluation over a recorded pass
       (stage-2 conjunct: player-authored `metatron.charter_observed` evidence — stub
       the type if 044 US2 hasn't merged; reconcile on rebase), `stage_unlocked`
       emission exactly once per (world, stage) — internal/sim/curriculum.go per
       contracts/events.md + contracts/unlocks-record.md gate conjuncts
-- [ ] T013 [US3] Per-user unlocks record: read/heal/write (`.tmp`+rename, advisory
+- [x] T013 [US3] Per-user unlocks record: read/heal/write (`.tmp`+rename, advisory
       doctrine), upsert on observing `stage_unlocked`, evidence pointers —
       internal/worlds/unlocks.go + daemon observer wiring (R4)
-- [ ] T014 [P] [US3] Announcement wiring: `chronicleNote` case for `stage_unlocked`;
+- [x] T014 [P] [US3] Announcement wiring: `chronicleNote` case for `stage_unlocked`;
       `familyByNamespace["curriculum"]`; digestRegistry + fixture + event-types.md
       rows (TestCatalogSweep) — internal/mind/narrate.go,
       internal/tui/{grammar.go,digest.go}, docs/wiki/event-types.md
-- [ ] T015 [US3] Tests: fixture chain (pass → unlock → chronicle line → record entry
+- [x] T015 [US3] Tests: fixture chain (pass → unlock → chronicle line → record entry
       → stages/new honor it); SC-004 negative (default-charter evidence ⇒ no unlock);
       corrupt/missing record tolerance; once-only unlock; catalog sweep —
       internal/sim, internal/worlds, internal/tui tests
@@ -114,7 +114,7 @@ charter pass unlocks nothing.
 **Independent Test**: definitions parse; rubric terms are cataloged event types;
 stage-2 rubric requires the charter conjunct.
 
-- [ ] T016 [US4] Exercise definition structs + the two shipped definitions + reserved
+- [x] T016 [US4] Exercise definition structs + the two shipped definitions + reserved
       additive Manifest block shape (Meeting precedent; consumed by TASK-119 later)
       per contracts/exercises.md — internal/sim/curriculum.go (or internal/world),
       with parse/validation tests proving every rubric term is a cataloged event type
@@ -128,24 +128,24 @@ stage-2 rubric requires the charter conjunct.
 **Independent Test**: tutor-preset world orients unprompted (LLM world); freshness
 gate green over 13 pages.
 
-- [ ] T017 [US5] `persona.TutorCharter` const + `Genesis` preset parameter + `new`
+- [x] T017 [US5] `persona.TutorCharter` const + `Genesis` preset parameter + `new`
       wiring (stage-1 default, opt-out) — internal/persona/{charter.go,files.go},
       cmd/promptworld/commands.go (R6)
-- [ ] T018 [P] [US5] Four per-stage quickstart pages via the player-docs skill:
+- [x] T018 [P] [US5] Four per-stage quickstart pages via the player-docs skill:
       author pages, EXPECTED_PAGES + SKILL.md mapping table + index.html nav +
       "nine pages" description string updates; freshness gate green —
       docs/player/, .claude/skills/player-docs/ (R8 of research; SC-006)
-- [ ] T019 [US5] Tests/validation: tutor preset seeds and hot-reloads like any
+- [x] T019 [US5] Tests/validation: tutor preset seeds and hot-reloads like any
       charter; no-model world retains all gating/preset/unlock function (FR-014);
       freshness script exit 0 — internal/persona tests + script run
 
 ## Phase 8: Polish & Cross-Cutting
 
-- [ ] T020 Full gate: `go test ./...`, gofmt/vet, TestCatalogSweep, determinism
+- [x] T020 Full gate: `go test ./...`, gofmt/vet, TestCatalogSweep, determinism
       harnesses unmodified
-- [ ] T021 Run quickstart.md walkthrough (§2–§6) live; record outcomes in the PR
+- [x] T021 Run quickstart.md walkthrough (§2–§6) live; record outcomes in the PR
       description; note post-merge wiki-update obligation (Principle IV)
-- [ ] T022 [P] Reconcile sequencing notes: if 044 US2 merged during this work, drop
+- [x] T022 [P] Reconcile sequencing notes: if 044 US2 merged during this work, drop
       the charter_observed stub and bind the real event; record TASK-119/121 seam
       handoffs on the board task
 
