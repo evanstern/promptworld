@@ -13,16 +13,16 @@ owning file. Start here (or `INDEX.md`) and reach any control's authoritative
 page in at most 2 hops (`anatomy.md` → page, or `INDEX.md` → `anatomy.md` →
 page).
 
-**Completeness note (transient, honest about this slice's scope)**: this
-feature lands in phases on one task branch (spec 047, TASK-123 — one PR).
-This slice authors the taxonomy, gate conventions, and the full US1
-reconciliation (rows 1–ended at "Minibuffer" below); the ten new-surface
-pages are authored in a later phase of the *same* feature. Rows below that
-name a Phase-4 file mark it `[Phase 4]` — that file does not exist on disk
-yet in this slice, so the "every file is the target of ≥1 row" completeness
-invariant (data-model.md) holds for the **shipped-reconciliation** rows now
-and for the **whole table** once Phase 4 lands, not as two separate
-promises: every row that exists today already points at a real file.
+**Completeness**: every file this feature's Project Structure names now
+exists (spec 047 landed in two slices on one task branch, TASK-123 — one
+PR); the "every `pages/`/`panels`/`overlays` file is the target of ≥1 row"
+invariant (data-model.md) holds for the whole table below, not a subset of
+it. **Existing** and **built** are different axes, though: several rows
+below name a page whose `status:` frontmatter is `specified` — the design
+doc is real and complete (mockup, control table, stage defaults, linear
+projection), but the surface itself has no `internal/tui` code yet. Those
+rows are marked **(specified)** rather than omitted or bracketed as
+forthcoming.
 
 ## Header region
 
@@ -34,7 +34,7 @@ promises: every row that exists today already points at a real file.
 | `[degraded]` badge | `pages/home.md` | pre-existing |
 | `[llm: provider kind]` badge | `pages/home.md` | spec 034 |
 | `[suppressed: classes]` badge | `pages/home.md` | spec 037 |
-| villager strip (one row under header) | `panels/villager-strip.md` **[Phase 4]** | D12; widescreen default-on all stages; narrow folds to a header count badge (`patterns/layout.md` ruling b, once authored) |
+| villager strip (one row under header) | `panels/villager-strip.md` **(specified)** | D12; widescreen default-on all stages (`patterns/stage-defaults.md`); narrow folds to a header count badge (`patterns/layout.md` ruling b) |
 
 ## Map region
 
@@ -63,20 +63,20 @@ promises: every row that exists today already points at a real file.
 | villagers tab — roster | `panels/villagers.md` | spec 015 |
 | villagers tab — detail (identity/objective/inventory/beliefs/memories) | `panels/villagers.md` | spec 015 |
 | villagers tab — decisions sub-view | `panels/villagers.md` | spec 020 |
-| exercise tab (scenario framing, rubric gauges, forecast/fog) | `panels/exercise.md` **[Phase 4]** | D11/D4; Wave 4 |
+| exercise tab (framing, attach briefing, rubric gauges, forecast/fog vocabulary, pass/fail) | `panels/exercise.md` **(specified)** | D11/D4; world-shaped not stage-shaped (`patterns/stage-defaults.md`) |
 
 ## Teaching-chrome region (below the body, above the minibuffer)
 
 | Region | Owning file | Notes |
 |---|---|---|
-| lesson row (one active lesson, ≤2 lines) | `panels/lesson-row.md` **[Phase 4]** | decision 5; on at stages 1–2, badge+overlay at 3+/pre-ladder |
-| guardian strip (charge bank · regen · order count · faith) | `panels/guardian-strip.md` **[Phase 4]** | decision 7; always-on all stages; folds LAST (relocates into the minibuffer's dormant line) |
+| lesson row (one active lesson, ≤2 lines) | `panels/lesson-row.md` **(specified)** | decision 5; on at stages 1–2, badge+overlay at 3+/pre-ladder (`patterns/stage-defaults.md`); folds 3rd (`patterns/layout.md`) |
+| guardian strip (charge bank · regen · order count · faith) | `panels/guardian-strip.md` **(specified)** | decision 7; always-on all stages; folds LAST (relocates into the minibuffer's dormant line, `patterns/layout.md`) |
 
 ## Minibuffer region
 
 | Region | Owning file | Notes |
 |---|---|---|
-| minibuffer box (dormant · focused · busy · flash) | `panels/minibuffer.md` | the only text input; focus contract governs it (`patterns/focus-contract.md`) |
+| minibuffer box (dormant · focused · busy · flash) | `panels/minibuffer.md` | the only text input; focus contract governs it (`patterns/focus-contract.md`); also the guardian console's composer (`pages/guardian-console.md`) |
 
 ## Footer region
 
@@ -90,8 +90,8 @@ promises: every row that exists today already points at a real file.
 |---|---|---|
 | widescreen composite (header+map+dock+minibuffer+footer) | `pages/home.md` | resting state; always "underneath" |
 | solo zoom (any dock tab at full width) | `pages/solo-views.md` | same component, two widths |
-| narrow fallback (single-pane, keys `1`–`4`) | `pages/solo-views.md` | never deleted; new-chrome narrow rules per `patterns/layout.md` (Phase 4) |
-| guardian console (full-height guardian page) | `pages/guardian-console.md` **[Phase 4]** | decisions 1/2, D5; not reached via solo zoom — its own navigation |
+| narrow fallback (single-pane, keys `1`–`4`) | `pages/solo-views.md` | never deleted; new-chrome narrow rules per `patterns/layout.md` |
+| guardian console (full-height guardian page) | `pages/guardian-console.md` **(specified)** | decisions 1/2, D5; not reached via solo zoom — its own `G` key |
 
 ## Overlays (takeover, body-replacement)
 
@@ -100,22 +100,25 @@ promises: every row that exists today already points at a real file.
 | help overlay — keys section (6 mode pages, 2 tiers) | `overlays/help.md` | spec 045 |
 | help overlay — the screen section (header anatomy, map glyphs, dock tabs) | `overlays/help.md` | spec 045; anti-drift shared tables |
 | help overlay — lessons pull-reference | `overlays/help.md` | seam, ships empty |
-| help overlay — the guardian section | `overlays/help.md` **[Phase 4 — T018]** | D9; placeholder heading present today |
-| unlock ceremony takeover | `overlays/ceremony.md` **[Phase 4]** | decision 6, FR-019; replayable from `?`/`stages` |
-| postmortem takeover | `overlays/postmortem.md` **[Phase 4]** | decision 6, FR-018; replayable from the morgue |
+| help overlay — the guardian section (Section 4) | `overlays/help.md` **(specified)** | D9; stage identity/concept, granted verbs, example asks |
+| unlock ceremony takeover | `overlays/ceremony.md` **(specified)** | decision 6, FR-019; replayable from `?`/`stages`; postmortem wins on conflict |
+| postmortem takeover | `overlays/postmortem.md` **(specified)** | decision 6, FR-018; replayable from the morgue; always wins over ceremony |
 
 ## Both-directions check
 
 Every file listed above is the target of at least one row (the invariant
 this page enforces); every row names exactly one owning file (no visible
 element is split across two pages — the guardian/systems split is a content
-boundary at the tab level, not a shared element). `patterns/*.md` files are
-cross-cutting rules rather than owners of a single visible region and are
-referenced from the notes column above where relevant (`patterns/layout.md`
-for fold order, `patterns/focus-contract.md` for the minibuffer's focus
-chrome, `patterns/chronicle-grammar.md` for feed-line format,
-`patterns/skin-tokens.md` for every `{{skin.…}}` placeholder above,
-`patterns/stage-defaults.md` for the Phase-4 stage-visibility table); they
-are not required to be — and are not — anatomy targets themselves
-(data-model.md scopes the completeness invariant to `pages/`/`panels/`/
-`overlays/` files).
+boundary at the tab level, not a shared element; the report-card renderer
+is one spec shared by three call sites — `overlays/postmortem.md`,
+`pages/guardian-console.md`, `overlays/ceremony.md` — authored once on
+`overlays/postmortem.md` and referenced, not duplicated, from the other
+two). `patterns/*.md` files are cross-cutting rules rather than owners of a
+single visible region and are referenced from the notes column above where
+relevant (`patterns/layout.md` for fold order, `patterns/focus-contract.md`
+for the minibuffer's focus chrome, `patterns/chronicle-grammar.md` for
+feed-line format, `patterns/skin-tokens.md` for every `{{skin.…}}`
+placeholder above, `patterns/stage-defaults.md` for the authoritative
+stage-visibility table); they are not required to be — and are not —
+anatomy targets themselves (data-model.md scopes the completeness
+invariant to `pages/`/`panels/`/`overlays/` files).

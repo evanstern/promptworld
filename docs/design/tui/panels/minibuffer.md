@@ -15,12 +15,20 @@ guardian pane. Governed by the focus contract
 ([../patterns/focus-contract.md](../patterns/focus-contract.md)); transcript and
 replies live in the dock's guardian tab ([guardian.md](guardian.md)).
 
-**Forward reference (Wave 2, decision 7)**: the guardian strip —
-[guardian-strip.md](guardian-strip.md), authored in a later phase of this
-feature — pairs an always-visible action-budget line directly above this
-panel, so the minibuffer reads as *the* verb. Nothing on this page changes
-when that strip lands; it is a new sibling chrome row, not an edit to the
-minibuffer itself.
+**Guardian strip (Wave 2, decision 7)**:
+[guardian-strip.md](guardian-strip.md) — specified, `unbuilt` today — pairs
+an always-visible action-budget line directly above this panel, so the
+minibuffer reads as *the* verb. Nothing on this page changes when that strip
+ships; it is a new sibling chrome row, not an edit to the minibuffer itself.
+It is also this page's fold-last destination: under height pressure the
+guardian strip's content relocates into this panel's **dormant-state** line
+rather than disappearing (`patterns/layout.md` ruling a, step 4) — the
+focused and busy states are unaffected.
+
+**Guardian console composer**: [pages/guardian-console.md](../pages/guardian-console.md)
+— specified, `unbuilt` today — reuses this exact component as its composer;
+it introduces no second focusable input (`patterns/focus-contract.md`'s
+"exactly one client" rule is not relaxed).
 
 ## States
 

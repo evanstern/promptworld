@@ -47,15 +47,16 @@ inspect-mode detail pane
 the running feed. This mockup is corrected to match; see "Header segments"
 below for the full, reconciled header inventory (specs 028/034/037/039/044).
 
-## Mockup (Phase 4 — teaching chrome, forward reference)
+## Mockup (teaching chrome, specified — Wave 2/4/5)
 
-Wave 4 of this reorientation adds three new permanent chrome rows around this
-same composite — a villager strip under the header, a lesson row above the
+This reorientation adds three new permanent chrome rows around this same
+composite — a villager strip under the header, a lesson row above the
 guardian strip, and the guardian strip itself above the minibuffer
-(decisions 5/7/12). **Not built yet**; the row math and fold order are ruled
-in [../patterns/layout.md](../patterns/layout.md) (this feature, US5) and the
-rows themselves are authored on their own pages in a later phase of this
-feature (`[new]` in INDEX.md's file map):
+(decisions 5/7/12). **Not built yet** (each row's own page is
+`status: specified`, `renderer: unbuilt`); the row math and fold order are
+ruled in [../patterns/layout.md](../patterns/layout.md) (this feature) and
+each row is fully specified on its own page (mockup, control table, stage
+defaults, linear projection):
 
 ```
  promptworld · attached · day 4 · 08:12 · 1×                4 villagers awake
@@ -71,17 +72,18 @@ feature (`[new]` in INDEX.md's file map):
   2 chronicle 3 guardian 4 villagers (again: solo) · m ask · space pause · q quit
 ```
 
-- [panels/villager-strip.md](../panels/villager-strip.md) — authored in
-  Phase 4 of this feature (D12).
-- [panels/lesson-row.md](../panels/lesson-row.md) — authored in Phase 4 of
-  this feature (decision 5).
-- [panels/guardian-strip.md](../panels/guardian-strip.md) — authored in
-  Phase 4 of this feature (decision 7).
+- [panels/villager-strip.md](../panels/villager-strip.md) (D12) —
+  colonist-bar glyph run, folds to a header count badge.
+- [panels/lesson-row.md](../panels/lesson-row.md) (decision 5) — one active
+  lesson, dwell/dismiss, anti-spam, per-user seen state.
+- [panels/guardian-strip.md](../panels/guardian-strip.md) (decision 7) —
+  charge bank/regen/order-count/faith, fold-last relocation into the
+  minibuffer's dormant line.
 - Stage-shaped defaults for all three, and the fold order once the terminal
   runs short: [../patterns/stage-defaults.md](../patterns/stage-defaults.md)
-  (Phase 4) and [../patterns/layout.md](../patterns/layout.md) (this
-  feature, ruling a/b — row budget re-derivation happens here regardless of
-  when the rows themselves ship, so the arithmetic is never retrofitted).
+  (the authority table) and [../patterns/layout.md](../patterns/layout.md)
+  (ruling a/b — row budget re-derivation happens here regardless of when
+  the rows themselves ship, so the arithmetic is never retrofitted).
 
 ## Composition
 

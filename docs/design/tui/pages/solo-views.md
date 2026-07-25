@@ -39,14 +39,14 @@ while solo'd switches which tab is zoomed rather than silently returning home
 so tab-switching keeps working at every width, and only the same key or
 `1`/`esc` drops back to the composite.
 
-**New tabs/pages this feature's later phases add**: the state machine and
-"same component, two widths" rule extend to any future dock tab with no
-change here — `panels/systems.md` (Wave 2–3) and `panels/exercise.md`
-(Wave 4) both reuse this exact seam once they exist as selectable tabs.
-[pages/guardian-console.md](guardian-console.md) (Wave 3, authored in Phase 4
-of this feature) is **not** reached through this mechanism — it is a
-full-height page of its own, not a dock tab, so it has its own navigation
-(specified on its own page when authored).
+**New tabs this feature specifies**: the state machine and "same component,
+two widths" rule extend to any future dock tab with no change here —
+[panels/systems.md](../panels/systems.md) (Wave 2–3) and
+[panels/exercise.md](../panels/exercise.md) (Wave 4) both reuse this exact
+seam once they exist as selectable tabs (specified, `unbuilt` today).
+[pages/guardian-console.md](guardian-console.md) (Wave 3) is **not** reached
+through this mechanism — it is a full-height page of its own, not a dock
+tab, with its own `G` key navigation, specified on its own page.
 
 ### Mockup — solo chronicle (`2` `2`)
 

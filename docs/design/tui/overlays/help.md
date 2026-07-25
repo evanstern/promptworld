@@ -114,10 +114,10 @@ binding to exactly one tier (SC-003/FR-003).
 
 `helpLesson{id, title, body}` entries render on demand; the table ships empty
 today (`helpLessons` is nil) and the section shows a placeholder line
-("lessons appear here as the village teaches them") until the future
-first-occurrence lesson projection (decision 5, Phase 4 of this feature)
-registers entries here — a content addition, no structural change to this
-overlay's navigation or rendering (SC-006).
+("lessons appear here as the village teaches them") until TASK-117's
+first-occurrence lesson projection ([panels/lesson-row.md](../panels/lesson-row.md),
+decision 5, Wave 4) registers entries here — a content addition, no
+structural change to this overlay's navigation or rendering (SC-006).
 
 ### Section 4 — the guardian (decision 9)
 
@@ -210,7 +210,7 @@ under an explicit classification instead of eroding the invariant silently.
 | header anatomy row | static | `headerAnatomy` | `helpWalkthroughLines` | — (display-only) | spec 045 | — |
 | map glyph row | static | `mapGlyphs` (shared with `legendGlyphLine`) | `helpWalkthroughLines` | — | spec 045 | — |
 | dock tab row | static | `dockTabs` | `helpWalkthroughLines` | — | spec 045 | — |
-| lessons pull-reference entry | empty (placeholder line) · populated | `helpLessons` | `helpLessonsLines` | — | spec 045 (seam); content Phase 4 | — |
+| lessons pull-reference entry | empty (placeholder line) · populated | `helpLessons` | `helpLessonsLines` | — | spec 045 (seam); content Wave 4 (TASK-117) | — |
 | the guardian section (stage identity/concept) | per-stage · pre-ladder (nil status) | `Status.Stage`, `stagesLadder` | `unbuilt (wave 4)` | — (display-only) | reorient D9 | — |
 | the guardian section (granted verbs) | per-stage ceiling | `stage1CeilingTools`/stage ceiling (shared with `consoleToolsSummary`) | `unbuilt (wave 4)` | — | reorient D9 | — |
 | the guardian section (example ask per verb) | static, per verb | `stagesLadder`-adjacent static content | `unbuilt (wave 4)` | — | reorient D9 | `skin.guardian.epithet` (in the sample phrasing's address) |
