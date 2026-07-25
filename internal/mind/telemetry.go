@@ -208,11 +208,15 @@ func truncateRaw(s string) string {
 // is the queryable explanation AC#5 promises. The driver already sets Reason
 // from the handler's ResultForModel for these; the emitter asserts the
 // invariant so a blank explanation never reaches the durable log silently.
+// VerdictLandedClamped (spec 058 SC-005) joins this set: the driver always
+// sets its Reason to the clamp notice, but a clamped acceptance carries no
+// query value at all without it (contracts/events.md would otherwise have no
+// way to tell "landed" and "landed but truncated" apart).
 func verdictRequiresReason(v toolloop.Verdict) bool {
 	switch v {
 	case toolloop.VerdictRejectedGate, toolloop.VerdictRejectedCardinality,
 		toolloop.VerdictRejectedUnknown, toolloop.VerdictRejectedMalformed,
-		toolloop.VerdictReadError:
+		toolloop.VerdictReadError, toolloop.VerdictLandedClamped:
 		return true
 	default:
 		return false

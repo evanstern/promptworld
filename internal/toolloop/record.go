@@ -18,6 +18,13 @@ const (
 	// VerdictLanded — an acting call was admitted by its door; grounding events
 	// were emitted. Consumes the cognition's one action and ends the loop.
 	VerdictLanded Verdict = "landed"
+	// VerdictLandedClamped — an acting call landed exactly like VerdictLanded
+	// (consumes the action, ends the loop), but an expressive field (or
+	// set_plan's step count) was truncated to its cap first, and the call
+	// proceeded with the clamped value rather than being rejected (spec 058
+	// FR-001/FR-003). Distinguishes a clamped acceptance from a clean one
+	// (SC-005) while carrying every landed-verdict control-flow consequence.
+	VerdictLandedClamped Verdict = "landed_clamped"
 	// VerdictRejectedGate — the door refused the acting call (stale / guard /
 	// scene / charge). Does not consume the action; the loop may continue.
 	VerdictRejectedGate Verdict = "rejected_gate"

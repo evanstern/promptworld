@@ -6,6 +6,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/evanstern/promptworld/internal/llm"
 	"github.com/evanstern/promptworld/internal/tool"
@@ -593,42 +594,54 @@ func TestMaxRoundsDefensiveClamp(t *testing.T) {
 
 // validateArgs unit table: driver-side schema/param validation covering scalar
 // kinds, caps, enum membership, number bounds, and set_plan's authored schema.
+// Spec 058 FR-001/FR-003: the two cases that used to reject purely for length
+// (muse's text, set_plan's oversized steps) now clamp instead — wantClamp
+// marks them; every genuinely structural case (bad enum, wrong type, missing
+// required, unknown goal, empty steps) still rejects exactly as before
+// (SC-003).
 func TestValidateArgs(t *testing.T) {
 	drop := lookup(t, "drop")        // kind Enum (itemKinds), qty Number Min 1
 	talk := lookup(t, "talk_to")     // target AgentName, required
-	muse := lookup(t, "muse")        // text, MaxRunes 200
+	muse := lookup(t, "muse")        // text, MaxRunes 200, Clamp
 	setPlan := lookup(t, "set_plan") // authored steps schema
 
 	cases := []struct {
-		name    string
-		tl      tool.Tool
-		args    string
-		wantErr bool
+		name      string
+		tl        tool.Tool
+		args      string
+		wantErr   bool
+		wantClamp bool
 	}{
-		{"drop ok kind+qty", drop, `{"kind":"wood","qty":3}`, false},
-		{"drop ok empty", drop, `{}`, false},
-		{"drop bad kind", drop, `{"kind":"gold"}`, true},
-		{"drop qty below min", drop, `{"qty":0}`, true},
-		{"drop qty non-integer", drop, `{"qty":1.5}`, true},
-		{"talk_to ok", talk, `{"target":"bram"}`, false},
-		{"talk_to missing required", talk, `{}`, true},
-		{"talk_to wrong type", talk, `{"target":7}`, true},
-		{"muse within cap", muse, `{"text":"a quiet thought"}`, false},
-		{"muse over rune cap", muse, `{"text":"` + strings.Repeat("x", 201) + `"}`, true},
-		{"set_plan ok", setPlan, `{"steps":[{"goal":"chop"},{"goal":"build_fire","qty":2}]}`, false},
-		{"set_plan bad goal", setPlan, `{"steps":[{"goal":"teleport"}]}`, true},
-		{"set_plan empty steps", setPlan, `{"steps":[]}`, true},
-		{"set_plan over cap", setPlan, `{"steps":[{"goal":"chop"},{"goal":"chop"},{"goal":"chop"},{"goal":"chop"}]}`, true},
-		{"set_plan missing steps", setPlan, `{}`, true},
-		{"set_plan bad qty", setPlan, `{"steps":[{"goal":"chop","qty":0}]}`, true},
-		{"set_plan bad kind", setPlan, `{"steps":[{"goal":"chop","kind":"gold"}]}`, true},
-		{"not an object", drop, `["nope"]`, true},
+		{"drop ok kind+qty", drop, `{"kind":"wood","qty":3}`, false, false},
+		{"drop ok empty", drop, `{}`, false, false},
+		{"drop bad kind", drop, `{"kind":"gold"}`, true, false},
+		{"drop qty below min", drop, `{"qty":0}`, true, false},
+		{"drop qty non-integer", drop, `{"qty":1.5}`, true, false},
+		{"talk_to ok", talk, `{"target":"bram"}`, false, false},
+		{"talk_to missing required", talk, `{}`, true, false},
+		{"talk_to wrong type", talk, `{"target":7}`, true, false},
+		{"muse within cap", muse, `{"text":"a quiet thought"}`, false, false},
+		{"muse over rune cap clamps, does not reject", muse, `{"text":"` + strings.Repeat("x", 201) + `"}`, false, true},
+		{"set_plan ok", setPlan, `{"steps":[{"goal":"chop"},{"goal":"build_fire","qty":2}]}`, false, false},
+		{"set_plan bad goal", setPlan, `{"steps":[{"goal":"teleport"}]}`, true, false},
+		{"set_plan empty steps", setPlan, `{"steps":[]}`, true, false},
+		{"set_plan over cap accepted here (clamped at the landing guard, spec 058 US2)", setPlan,
+			`{"steps":[{"goal":"chop"},{"goal":"chop"},{"goal":"chop"},{"goal":"chop"}]}`, false, false},
+		{"set_plan missing steps", setPlan, `{}`, true, false},
+		{"set_plan bad qty", setPlan, `{"steps":[{"goal":"chop","qty":0}]}`, true, false},
+		{"set_plan bad kind", setPlan, `{"steps":[{"goal":"chop","kind":"gold"}]}`, true, false},
+		{"set_plan reason over cap clamps, does not reject", setPlan,
+			`{"steps":[{"goal":"chop"}],"reason":"` + strings.Repeat("y", tool.ReasonCapRunes+50) + `"}`, false, true},
+		{"not an object", drop, `["nope"]`, true, false},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			got := validateArgs(c.tl, json.RawMessage(c.args))
-			if (got != "") != c.wantErr {
-				t.Errorf("validateArgs(%s) = %q, wantErr=%v", c.args, got, c.wantErr)
+			_, notice, reason := validateArgs(c.tl, json.RawMessage(c.args))
+			if (reason != "") != c.wantErr {
+				t.Errorf("validateArgs(%s) reason = %q, wantErr=%v", c.args, reason, c.wantErr)
+			}
+			if (notice != "") != c.wantClamp {
+				t.Errorf("validateArgs(%s) clampNotice = %q, wantClamp=%v", c.args, notice, c.wantClamp)
 			}
 		})
 	}
@@ -682,11 +695,149 @@ func TestValidateAuthoredWalker(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			got := validateArgs(tl, json.RawMessage(c.args))
-			if (got != "") != c.wantErr {
-				t.Errorf("validateArgs(%s) = %q, wantErr=%v", c.args, got, c.wantErr)
+			_, _, reason := validateArgs(tl, json.RawMessage(c.args))
+			if (reason != "") != c.wantErr {
+				t.Errorf("validateArgs(%s) = %q, wantErr=%v", c.args, reason, c.wantErr)
 			}
 		})
+	}
+}
+
+// --- spec 058 (TASK-110): clamp-with-notice ---
+
+// TestClampRunesAndBytesNeverSplitUTF8 (T002): the rune-safe truncation
+// idiom, over multi-byte boundaries — a cap that would land mid-rune must
+// instead land on the last WHOLE rune below it, for both rune and byte caps.
+func TestClampRunesAndBytesNeverSplitUTF8(t *testing.T) {
+	// "日本語" — 3 runes, 9 bytes (each kanji is a 3-byte UTF-8 sequence).
+	jp := "日本語"
+	if got := ClampRunes(jp, 2); got != "日本" {
+		t.Errorf("ClampRunes(%q, 2) = %q, want 日本", jp, got)
+	}
+	if got := ClampRunes(jp, 5); got != jp {
+		t.Errorf("ClampRunes under the rune count must be a no-op: got %q", got)
+	}
+	// A byte cap of 8 falls mid-third-rune (6..9 bytes) — must drop the whole
+	// rune, not emit a partial (invalid) sequence.
+	if got := ClampBytes(jp, 8); got != "日本" || !utf8.ValidString(got) {
+		t.Errorf("ClampBytes(%q, 8) = %q (valid=%v), want 日本 (valid)", jp, got, utf8.ValidString(got))
+	}
+	if got := ClampBytes(jp, 9); got != jp {
+		t.Errorf("ClampBytes at the exact byte length must be a no-op: got %q", got)
+	}
+	// "café" — é is a 2-byte UTF-8 sequence (c,a,f = 1 byte each, é = 2): a
+	// byte cap of 4 cannot fit é at all (3 ASCII bytes + a partial é would be
+	// invalid), so the whole rune must drop, landing on 3 bytes ("caf").
+	cafe := "café"
+	if got := ClampBytes(cafe, 4); got != "caf" || !utf8.ValidString(got) {
+		t.Errorf("ClampBytes(%q, 4) = %q (valid=%v), want caf (valid)", cafe, got, utf8.ValidString(got))
+	}
+	// capRunes/capBytes <= 0 means "no bound": untouched, even a huge string.
+	if got := ClampRunes(jp, 0); got != jp {
+		t.Errorf("ClampRunes with capRunes<=0 must be a no-op: got %q", got)
+	}
+	if got := ClampBytes(jp, 0); got != jp {
+		t.Errorf("ClampBytes with capBytes<=0 must be a no-op: got %q", got)
+	}
+}
+
+// TestClampedMuseTextLandsInsteadOfRejecting (US1, SC-001/SC-005): an
+// over-cap muse call — the shape ~93% of the world-01 rejections were — lands
+// clamped end-to-end through Run: the recorded call carries the truncated,
+// valid-UTF-8 text, the verdict is landed_clamped (not landed, not
+// rejected_malformed), and the model-facing result names the clamp.
+func TestClampedMuseTextLandsInsteadOfRejecting(t *testing.T) {
+	muse := lookup(t, "muse")
+	over := strings.Repeat("x", 250) // over the 200-rune cap
+	h := drive(t, 4, []tool.Tool{muse},
+		map[string]Handler{"muse": landHandler("musing recorded")},
+		resp("", call("c1", "muse", `{"text":"`+over+`"}`)))
+	if h.err != nil || h.res.Term != TermLanded {
+		t.Fatalf("term = %q err = %v, want landed", h.res.Term, h.err)
+	}
+	if !eqVerdicts(h.verdicts(), VerdictLandedClamped) {
+		t.Fatalf("verdicts = %v, want [landed_clamped]", h.verdicts())
+	}
+	if len(h.recs) != 1 {
+		t.Fatalf("records = %d, want 1", len(h.recs))
+	}
+	rec := h.recs[0]
+	if rec.Reason == "" {
+		t.Error("landed_clamped must carry a queryable clamp reason")
+	}
+	var args struct {
+		Text string `json:"text"`
+	}
+	if err := json.Unmarshal(rec.Args, &args); err != nil {
+		t.Fatalf("recorded args: %v", err)
+	}
+	if !utf8.ValidString(args.Text) {
+		t.Error("clamped text is not valid UTF-8")
+	}
+	if n := utf8.RuneCountInString(args.Text); n != 200 {
+		t.Errorf("recorded (event-bound) text = %d runes, want 200 (the cap)", n)
+	}
+	if h.res.Landed == nil || h.res.Landed.Name != "muse" {
+		t.Errorf("Result.Landed = %+v, want the muse call", h.res.Landed)
+	}
+}
+
+// TestClampedReasonParamLands (US1): the shared optional `reason` param, over
+// its 200-rune cap on an ordinary Params-derived world verb, clamps instead
+// of rejecting — the same mechanism as muse, driven by Param.Clamp rather
+// than a hard-coded field name.
+func TestClampedReasonParamLands(t *testing.T) {
+	wander := lookup(t, "wander")
+	over := strings.Repeat("z", 250)
+	h := drive(t, 4, []tool.Tool{wander},
+		map[string]Handler{"wander": landHandler("wander landed")},
+		resp("", call("c1", "wander", `{"reason":"`+over+`"}`)))
+	if h.err != nil || h.res.Term != TermLanded {
+		t.Fatalf("term = %q err = %v, want landed", h.res.Term, h.err)
+	}
+	if !eqVerdicts(h.verdicts(), VerdictLandedClamped) {
+		t.Fatalf("verdicts = %v, want [landed_clamped]", h.verdicts())
+	}
+	var args struct {
+		Reason string `json:"reason"`
+	}
+	json.Unmarshal(h.recs[0].Args, &args)
+	if n := utf8.RuneCountInString(args.Reason); n != tool.ReasonCapRunes {
+		t.Errorf("recorded reason = %d runes, want %d (the cap)", n, tool.ReasonCapRunes)
+	}
+}
+
+// TestCleanLandedCallStaysUnclamped: a call within every cap records the
+// plain VerdictLanded, never landed_clamped — the new verdict is additive,
+// not a blanket relabeling.
+func TestCleanLandedCallStaysUnclamped(t *testing.T) {
+	muse := lookup(t, "muse")
+	h := drive(t, 4, []tool.Tool{muse},
+		map[string]Handler{"muse": landHandler("musing recorded")},
+		resp("", call("c1", "muse", `{"text":"a quiet, in-cap thought"}`)))
+	if !eqVerdicts(h.verdicts(), VerdictLanded) {
+		t.Fatalf("verdicts = %v, want [landed]", h.verdicts())
+	}
+}
+
+// TestStructuralRejectionsUnchangedByClamp (FR-002/SC-003): the clamp feature
+// must not soften a single structural failure — unknown tool, missing
+// required arg, wrong scalar type, and an enum violation all still reject
+// exactly as before, even on a roster that also carries Clamp-flagged tools.
+func TestStructuralRejectionsUnchangedByClamp(t *testing.T) {
+	muse := lookup(t, "muse")
+	drop := lookup(t, "drop")
+	h := drive(t, 8, []tool.Tool{muse, drop},
+		map[string]Handler{"muse": landHandler("musing recorded"), "drop": landHandler("dropped")},
+		resp("", call("c1", "nonexistent_tool", `{}`)),
+		resp("", call("c2", "drop", `{"kind":"gold"}`)), // bad enum
+		resp("", call("c3", "drop", `{}`)),              // lands clean
+	)
+	if h.err != nil || h.res.Term != TermLanded {
+		t.Fatalf("term = %q err = %v, want landed", h.res.Term, h.err)
+	}
+	if !eqVerdicts(h.verdicts(), VerdictRejectedUnknown, VerdictRejectedMalformed, VerdictLanded) {
+		t.Fatalf("verdicts = %v, want [rejected_unknown rejected_malformed landed]", h.verdicts())
 	}
 }
 
