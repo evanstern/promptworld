@@ -66,6 +66,46 @@ func TestArmScenarioRefusesUncataloged(t *testing.T) {
 	}
 }
 
+// TestSeedSurvivalWatchesReplaySeqConsistency pins the boot seeder's seq
+// pre-stamping (spec 054 × spec 059): the metatron.order_placed reducer arm
+// stamps MetatronOrder.PlacedSeq from the event envelope, so the seeder must
+// apply with the SAME seq AppendEvents will record (the loop's stampSeqs
+// contract) — or the live boot state diverges from replay and snapshot+tail
+// splits from full replay (the e2e SC-003 failure this fixed).
+func TestSeedSurvivalWatchesReplaySeqConsistency(t *testing.T) {
+	dir := t.TempDir()
+	w, err := world.Create(dir, "seqworld", 5)
+	if err != nil {
+		t.Fatal(err)
+	}
+	st, err := store.Open(filepath.Join(dir, "world.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+
+	live := sim.NewState(w.Manifest.Seed, worldmap.Generate(w.Manifest.Seed, worldmap.DefaultSize, worldmap.DefaultSize))
+	if err := seedSurvivalWatches(w, st, live); err != nil {
+		t.Fatal(err)
+	}
+	replayed := sim.NewState(w.Manifest.Seed, worldmap.Generate(w.Manifest.Seed, worldmap.DefaultSize, worldmap.DefaultSize))
+	if err := st.ReplayEvents(0, func(e store.Event) error { return replayed.Apply(e) }); err != nil {
+		t.Fatal(err)
+	}
+	for i := range live.MetatronOrders {
+		lo, ro := live.MetatronOrders[i], replayed.MetatronOrders[i]
+		if lo.PlacedSeq == 0 {
+			t.Errorf("live watch %s has no PlacedSeq — the seeder applied with seq 0", lo.ID)
+		}
+		if lo.PlacedSeq != ro.PlacedSeq {
+			t.Errorf("watch %s PlacedSeq live=%d replay=%d — boot state diverges from replay", lo.ID, lo.PlacedSeq, ro.PlacedSeq)
+		}
+	}
+	if live.Hash() != replayed.Hash() {
+		t.Fatal("seeded boot state != replayed state")
+	}
+}
+
 // TestScenarioPassEndToEndThroughLoopAndObserver is SC-003's backbone (spec
 // 054 T008): an armed first-night world run through the REAL sim loop — a
 // real store, the loop's seq stamping, the watch placed through the
