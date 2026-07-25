@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-25 20:22'
-updated_date: '2026-07-25 21:54'
+updated_date: '2026-07-25 21:55'
 labels:
   - gates
   - process
@@ -53,3 +53,9 @@ Spec: specs/065-claim-before-work
 - [ ] #11 Spec phase: User Story 4 — two-session race simulation (P2)
 - [ ] #12 Spec phase: Polish & cross-cutting
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Tier decision: Opus 4.8 (rubric: doctrine-adjacent behavior change — modifies spec 051 merge-drift gate semantics + CLAUDE.md doctrine; hook enforcement layer). Spec 065 authored, planned, tasked, linked (7 phase ACs). Contract wrinkle caught at plan review: worktree --spec must become claim-aware (--spec NNN --task TASK-n passes on Spec-marker attribution) or every claimed task's own worktree would be blocked. Dispatching spec-implementer on task-139-claim-before-work worktree.
+<!-- SECTION:NOTES:END -->
