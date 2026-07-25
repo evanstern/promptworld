@@ -2,7 +2,7 @@
 title: Page — guardian console
 class: page
 status: shipped
-verified_against: cb89a4c7811962243ac907e0aeed43619b4d4f2d
+verified_against: ab212309e8fd13aa069e7c6d7c7c7c5821213835
 sources:
   - internal/tui/views.go
   - internal/tui/tui.go
@@ -73,7 +73,7 @@ classification, reused verbatim, not a second vocabulary.
    conversation, not a glance. The same special-row vocabulary as the dock
    tab carries over unchanged, via the same `classifyTranscriptLine`
    classification the compact tab uses: `⚡` omen/vision lines, `👁` watch
-   set/released, `⏲` clock lines, and inline verdict rows (miracle feedback,
+   set/released, `⏲` clock lines, and inline verdict rows (working feedback,
    labeled `note`) — one shared special-row vocabulary, two renderings
    (compact vs. document). Tail-anchored scrollback (`J`/`K`,
    `consoleScrollWindow`), reset on close.
@@ -90,7 +90,7 @@ classification, reused verbatim, not a second vocabulary.
    2's explicit ruling). On return from `$EDITOR`, if the file's content
    hash changed, the console shows a one-line confirmation:
    **"charter changed — next turn binds it"** — honest about the
-   re-read-every-turn timing (edits are live by construction, [[metatron]]),
+   re-read-every-turn timing (edits are live by construction, `[[metatron]]`),
    never implying the running turn changes retroactively.
 5. **Report-card cards** (D5) — **not built this feature**: the inline
    composition slot exists (`consoleCard` interface, `Model.consoleCards`,
@@ -154,9 +154,10 @@ introduced for this page itself.
 
 ## Linear-stream / CLI projection (D1)
 
-`promptworld metatron <dir> [message…]` ([[metatron]]) is the existing,
+`promptworld guardian <dir> [message…]` (`[[metatron]]`; the pre-052
+`metatron` spelling stays a hidden compat alias) is the existing,
 already-shipped CLI equivalent of a console turn — a non-TUI player can
-converse with the guardian, and `promptworld metatron` (no message) can
+converse with the guardian, and `promptworld guardian` (no message) can
 surface status/provenance the same way `metatron_status` does. The charter/
 skills read surface's content is literally the on-disk `charter.md`/
 `skills/*.md` files — always readable and editable directly, `$EDITOR`

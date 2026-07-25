@@ -2,7 +2,7 @@
 title: Panel — chronicle (event feed)
 class: panel
 status: shipped
-verified_against: 693fe059da9a143a480ea7f3f2e0d46a151d4630
+verified_against: ab212309e8fd13aa069e7c6d7c7c7c5821213835
 sources:
   - internal/tui/views.go
   - internal/tui/digest.go
@@ -19,7 +19,7 @@ covers the panel's modes.
 ## Mode 1 — running (clock unpaused)
 
 ```
-┌─ chronicle │ metatron │ villagers ┐
+┌─ chronicle │ {{skin.guardian.tab_label}} │ villagers ┐
 ├─────────────────────────────────┤
 │  8801 08:09  agent.foraged      │
 │    Ash foraged at (14,9)        │

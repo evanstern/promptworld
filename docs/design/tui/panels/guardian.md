@@ -2,7 +2,7 @@
 title: Panel — guardian (fiction-layer tab content)
 class: panel
 status: shipped
-verified_against: cb89a4c7811962243ac907e0aeed43619b4d4f2d
+verified_against: ab212309e8fd13aa069e7c6d7c7c7c5821213835
 sources:
   - internal/tui/views.go
   - internal/tui/tui.go
@@ -20,9 +20,9 @@ is [dock.md](dock.md); the *input* line is
 [minibuffer.md](minibuffer.md) — this page is history + status only.
 
 **Re-verified, spec 053/TASK-125**: before this feature, this claim held for
-the widescreen dock tab (`dockTabContent`'s `paneMetatron` case only ever
+the widescreen dock tab (`dockTabContent`'s `paneGuardian` case only ever
 called the transcript body — it never rendered telemetry) but not yet for
-the narrow fallback's combined pane (`metatronView` used to also render the
+the narrow fallback's combined pane (`guardianView` used to also render the
 provider table/spend/horizon block inline, below the standing-orders block).
 Spec 053 relocated that block out to [systems.md](systems.md)'s
 `systemsView`, so this page's "never renders engine telemetry" claim is now
@@ -56,7 +56,7 @@ shows in its own header line.
 ## Structure
 
 1. **Header line** — `{{skin.guardian.name}} · charges <⚡…·…>` (the charge
-   bank, filled/empty glyphs to `sim.MetatronChargeCap`), followed, once a
+   bank, filled/empty glyphs to `sim.GuardianChargeCap`), followed, once a
    world has an active charter/instruction surface, by the spec-021
    instruction/capability provenance summary: charter flavor + `(charter.md)`,
    a skill count when non-zero, the granted-tool short-form summary (quiet for
@@ -109,7 +109,7 @@ shows in its own header line.
 
 | control/region | states | data source | renderer | keys+mouse | introduced-by | skin-token |
 |---|---|---|---|---|---|---|
-| pane header — name + charge bank | 0–3 charges filled | `Status.Clock.MetatronCharges`, `sim.MetatronChargeCap` | `guardianHeaderLine` (shared verbatim with the console page, spec 053) | — (display-only) | TASK-12 | `skin.guardian.name` |
+| pane header — name + charge bank | 0–3 charges filled | `Status.Clock.GuardianCharges`, `sim.GuardianChargeCap` | `guardianHeaderLine` (shared verbatim with the console page, spec 053) | — (display-only) | TASK-12 | `skin.guardian.name` |
 | instruction/capability provenance segment | quiet (full grant) · skill count · tools summary · `tools: none` | `metatron.Status` (`ManifestDefault`, `GrantedTools`) | `consoleToolsSummary` | — | spec 021 | — |
 | stage segment | present (locked) · present (unlocked) · absent (pre-ladder) | `Status.Stage`/`CharterLocked`/`CharterPreset` | `consoleStageSummary` | — | spec 046 | — |
 | transcript row — you | text | player input history | `transcriptRowLines`/`classifyTranscriptLine` | — | TASK-34 | — |
@@ -117,8 +117,8 @@ shows in its own header line.
 | transcript row — omen/vision (`⚡`) | landed | landed `metatron.nudged` | `tui.go` transcript append | — | spec 029 | — |
 | transcript row — watch set/released (`👁`) | placed · released | `metatron.order_placed`/`order_cancelled` | `tui.go` transcript append | — | spec 029 | — |
 | transcript row — clock (`⏲`) | landed | landed `pause`/`start`/`adjust_speed` | `tui.go` transcript append | — | spec 029 | — |
-| transcript row — inline verdict (`»`) | landed · refused | `cog.tool_call` (turn-scoped) | `metatronVerdictRow`, `callLine`, `verdictGlossary` | — | spec 016/020 | — |
-| unreachable notice | shown · hidden | `Model.mbErr` | `metatronView` | — | TASK-34 | `skin.guardian.epithet` |
+| transcript row — inline verdict (`»`) | landed · refused | `cog.tool_call` (turn-scoped) | `guardianVerdictRow`, `callLine`, `verdictGlossary` | — | spec 016/020 | — |
+| unreachable notice | shown · hidden | `Model.mbErr` | `guardianView` | — | TASK-34 | `skin.guardian.epithet` |
 | standing-orders block | absent · n rows | `Status.Orders` | `orderStatusLines` | — | spec 029 | — |
 
 **Parity rollout**: no control on this page has a mouse target today (same

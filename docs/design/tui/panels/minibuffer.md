@@ -20,7 +20,7 @@ replies live in the dock's guardian tab ([guardian.md](guardian.md)).
 line directly above this panel, so the minibuffer reads as *the* verb.
 Nothing on this page's `minibufferView` structure changed for the strip
 itself; it is a sibling chrome row (`internal/tui/views.go`, composite
-insertion above the minibuffer, and inside `metatronView` for the narrow
+insertion above the minibuffer, and inside `guardianView` for the narrow
 carry). It IS this page's fold-last destination: under height pressure the
 guardian strip's content relocates into this panel's **dormant-state** line
 rather than disappearing (`patterns/layout.md` ruling a, step 4) — composed

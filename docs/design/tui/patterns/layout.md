@@ -151,7 +151,7 @@ In the narrow (< 112 cols) single-pane layout:
 - **Guardian strip**: **carried** — 1 row above the minibuffer, identical
   content (decision 7's "always visible" is width-independent). **Shipped**
   (spec 050) reconciliation: narrow's only minibuffer instance lives inside
-  `metatronView` (the guardian pane) — narrow's other panes have no
+  `guardianView` (the guardian pane) — narrow's other panes have no
   composer at all, pre-existing this feature — so the carry lands there,
   unconditionally; narrow has no `computeRows`/fold arithmetic of its own to
   drop the strip against.
