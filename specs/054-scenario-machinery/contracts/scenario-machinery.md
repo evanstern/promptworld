@@ -25,8 +25,14 @@
 - Failure: NO event — `run.ended` with no prior pass IS failed (Status and
   panel derive it; the morgue names it).
 - Time-snap interaction: an incident whose tick was snapped past fires at
-  the next evaluation (late, once); replay reproduces whatever was
-  recorded.
+  the next evaluation (late, once) **within the incident's own night** —
+  the never-twice latch is state-derived (no mutable fired-flags, per §1),
+  so the due window is `authoredTick ≤ tick < next dawn`; a snap past the
+  entire night skips the incident silently (the precondition-failed class:
+  its night no longer stands). Replay reproduces whatever was recorded.
+  *(Amended 2026-07-25 at implementation, planning-tier approved: unbounded
+  fire-late would require a mutable fired-flag the purity doctrine forbids;
+  never-twice wins over fire-anytime.)*
 
 ## §3 CLI contract
 
