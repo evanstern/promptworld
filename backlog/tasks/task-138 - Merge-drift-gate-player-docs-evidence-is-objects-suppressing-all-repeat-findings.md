@@ -3,9 +3,10 @@ id: TASK-138
 title: >-
   Merge-drift gate: player-docs evidence is objects, suppressing all repeat
   findings
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-25 19:47'
+updated_date: '2026-07-25 20:24'
 labels:
   - gates
   - review-2026-07-25
@@ -43,3 +44,9 @@ Trivial-exemption candidate per the constitution: surgical fix, complete file:li
 - [ ] #3 Two DIFFERENT player-docs staleness findings on one task produce two different fingerprints and both write board notes
 - [ ] #4 Regression test covers the evidence-shape -> fingerprint path so a future extractor returning objects fails loudly
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Claimed 2026-07-25 by the review session, using the TASK-139 protocol: card moved and pushed BEFORE any work, so a competing session sees the claim. Constitution trivial exemption applies — surgical one-line fix, complete file:line diagnosis pinned on this card, ACs present; no Spec Kit. Implementer tier: Sonnet (single-file, mechanical, complete diagnosis) per Principle V rubric. No spec number claimed (exempt task).
+<!-- SECTION:NOTES:END -->
