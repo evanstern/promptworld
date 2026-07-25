@@ -115,16 +115,16 @@ unchanged death path with cause `"gru"`.
 **Independent Test**: staged night encounter — healthy villager survives with floor
 intact; weakened villager dies, reproducibly under replay (spec US3).
 
-- [ ] T020 [US3] Conditional floor at internal/sim/gru.go:131 — pre-attack
+- [x] T020 [US3] Conditional floor at internal/sim/gru.go:131 — pre-attack
       `Needs.Health < nearDeathBelow` ⇒ floor 0, else `gruWoundFloor`; emit
       `agent.died{Cause: "gru"}` from `gruStep` after `gru.attacked` on a kill, with
       inline witness-death memory loop (executor.go:137-146 idiom, `salWitnessDeath`);
       update doctrine comment (gru.go:12-20), `GruAttackedPayload.Health` doc
       (gru.go:232), `DiedPayload` cause doc (agents.go:862-865) (R4, R5)
-- [ ] T021 [P] [US3] `chronicleNote` branch for a killing gru attack (narrate.go:85-89
+- [x] T021 [P] [US3] `chronicleNote` branch for a killing gru attack (narrate.go:85-89
       "left them wounded" must not render for a death); verify digest `agent.died`
       alert covers cause "gru" — internal/mind/narrate.go, internal/tui/digest.go
-- [ ] T022 [US3] Tests: amend `TestGruWoundsNotExecutes` (healthy half stays; the
+- [x] T022 [US3] Tests: amend `TestGruWoundsNotExecutes` (healthy half stays; the
       health-50 case inverts to a kill assertion); new `gruTestState` scenario —
       healthy + weakened victims, single `stepEvents`, assert died/survived + cause +
       witness memories + spill; static assert `gruWound >= nearDeathBelow`; replay
@@ -141,16 +141,16 @@ tellable; grief rides the shipped memory→rumor chain.
 **Independent Test**: witnessed death → grave on map, witness holds it as a known
 place, grief talk within a game-day (spec US4).
 
-- [ ] T023 [US4] Place `Structure{Kind: "grave"}` in the `agent.died` reducer arm
+- [x] T023 [US4] Place `Structure{Kind: "grave"}` in the `agent.died` reducer arm
       (spill idiom, state.go:1426-1466); extend the structure-kind vocabulary comment
       — internal/sim/state.go, internal/sim/agents.go:237 (R10)
-- [ ] T024 [P] [US4] Mirror the vocabulary: `PlaceFact.Kind` comment
+- [x] T024 [P] [US4] Mirror the vocabulary: `PlaceFact.Kind` comment
       (internal/sim/mentalmap.go:49-51), `placeFactKinds`
       (internal/tool/registry.go:430), prompt landmark set
       (internal/mind/prompt.go:204) (R10)
-- [ ] T025 [P] [US4] TUI: grave glyph case in `renderMapGrid` (views.go:418-472),
+- [x] T025 [P] [US4] TUI: grave glyph case in `renderMapGrid` (views.go:418-472),
       legend entry (views.go:616), style var — internal/tui/views.go
-- [ ] T026 [US4] Tests: grave placed at death tile, persists, replay-identical;
+- [x] T026 [US4] Tests: grave placed at death tile, persists, replay-identical;
       perception sweep grants the place-fact (witnessed provenance) within one
       movement beat; place-telling spreads it; SC-006 integration — grief
       rumor/conversation referencing the death within one game-day (existing
@@ -162,12 +162,12 @@ place, grief talk within a game-day (spec US4).
 
 ## Phase 7: Polish & Cross-Cutting
 
-- [ ] T027 Full-suite gate: `go test ./...`, `gofmt`/`go vet`; confirm
+- [x] T027 Full-suite gate: `go test ./...`, `gofmt`/`go vet`; confirm
       `TestDeterminismSameSeedSameTimeline` + `TestCatalogSweep` green with all new
       types cataloged
-- [ ] T028 Run quickstart.md live walkthrough (§2–§6) on a demo world; record outcomes
+- [x] T028 Run quickstart.md live walkthrough (§2–§6) on a demo world; record outcomes
       in the PR description
-- [ ] T029 [P] Reconcile spec-adjacent docs touched by the work (event-types rows
+- [x] T029 [P] Reconcile spec-adjacent docs touched by the work (event-types rows
       already landed per-story); note the post-merge `/grounding-wiki:wiki-update`
       obligation in the PR body (constitution Principle IV)
 
