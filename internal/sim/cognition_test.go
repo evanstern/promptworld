@@ -610,15 +610,27 @@ func TestPlanExpiryClearsWholePlan(t *testing.T) {
 
 func TestLadderValidatesPlans(t *testing.T) {
 	h := newLadderHarness(t, nil)
+	// Spec 058 US2 (FR-003): an over-cap plan CLAMPS to the first
+	// PlanStepCap steps instead of being rejected outright.
 	args := meteredArgs(0, "")
 	args.Plan = []PlanStep{
 		{Goal: "wander"}, {Goal: "forage"}, {Goal: "sleep"}, {Goal: "eat"},
 	}
-	if err := h.loop.InjectIntent(args); err == nil {
-		t.Fatal("over-cap plan accepted")
+	if err := h.loop.InjectIntent(args); err != nil {
+		t.Fatalf("over-cap plan rejected: %v (spec 058 clamps, not rejects)", err)
 	}
-	if p, _ := h.lastOutcome(t); p.Outcome != OutcomeRejectedGuard {
-		t.Errorf("outcome = %+v", p)
+	if p, _ := h.lastOutcome(t); p.Outcome != OutcomeClamped {
+		t.Errorf("outcome = %+v, want clamped", p)
+	}
+	clampedEvs, _ := h.st.EventsSince(0, 0)
+	for _, e := range clampedEvs {
+		if e.Type == "agent.plan_set" {
+			var p PlanSetPayload
+			json.Unmarshal(e.Payload, &p)
+			if len(p.Steps) != PlanStepCap {
+				t.Errorf("clamped plan_set steps = %d, want %d", len(p.Steps), PlanStepCap)
+			}
+		}
 	}
 
 	args.JobID = "planner-test-2"
@@ -635,15 +647,21 @@ func TestLadderValidatesPlans(t *testing.T) {
 	if p, _ := h.lastOutcome(t); p.Outcome != OutcomeLanded {
 		t.Errorf("outcome = %+v", p)
 	}
-	// The default window was stamped at the door.
+	// The default window was stamped at the door. Filtered to THIS job: the
+	// earlier clamped submission above also landed an agent.plan_set (3
+	// steps), so an unfiltered scan would wrongly hold this one to that.
 	evs, _ := h.st.EventsSince(0, 0)
 	for _, e := range evs {
-		if e.Type == "agent.plan_set" {
-			var p PlanSetPayload
-			json.Unmarshal(e.Payload, &p)
-			if len(p.Steps) != 2 || p.Steps[0].Until != 10000+PlanDefaultWindowTicks {
-				t.Errorf("plan_set steps: %+v", p.Steps)
-			}
+		if e.Type != "agent.plan_set" {
+			continue
+		}
+		var p PlanSetPayload
+		json.Unmarshal(e.Payload, &p)
+		if p.Job != "planner-test-3" {
+			continue
+		}
+		if len(p.Steps) != 2 || p.Steps[0].Until != 10000+PlanDefaultWindowTicks {
+			t.Errorf("plan_set steps: %+v", p.Steps)
 		}
 	}
 }

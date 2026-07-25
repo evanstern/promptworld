@@ -96,8 +96,19 @@ func (l *Loop) landIntent(in *InjectArgs, emit func(string, any)) error {
 		// A guarded conditional plan (US4): validate at the door, then record the
 		// steps — the executor evaluates guards per tick. The plan path never
 		// hails (decision.hailTarget is consumed only on the goal path below).
+		//
+		// Spec 058 US2 (FR-003): an oversized plan is CLAMPED, not rejected —
+		// the first PlanStepCap steps land instead of the whole submission
+		// being wasted. Reducer-side (here, not the toolloop driver) so the
+		// clamp is deterministic and replays identically: in.Plan is truncated
+		// BEFORE per-step validation and the landed agent.plan_set always
+		// carries exactly the steps that were accepted, never the model's
+		// oversized one. A structurally invalid step WITHIN the clamped window
+		// still rejects the whole landing exactly as before (FR-003) — the
+		// clamp only forgives length, never a bad step.
 		if len(in.Plan) > PlanStepCap {
-			return reject(OutcomeRejectedGuard, fmt.Sprintf("plan has %d steps (cap %d)", len(in.Plan), PlanStepCap))
+			in.Plan = in.Plan[:PlanStepCap]
+			decision.outcome = OutcomeClamped
 		}
 		// The plan-step accept set is DERIVED from the tool registry (spec 014,
 		// FR-006): names carrying PlanStep == true.
