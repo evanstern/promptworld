@@ -253,6 +253,43 @@ func TestGenesisSeedsCharterAndJournal(t *testing.T) {
 	})
 }
 
+// TestGenesisSeedsCharterPerPreset (spec 046 T017/T019): Genesis's variadic
+// preset argument selects which authored constant seeds charter.md —
+// "tutor" seeds TutorCharter, every other value (including omitted, "", and
+// "default") seeds DefaultCharter — exactly the loadCharter preset-arg
+// precedent, so every pre-046 call site (bare Genesis(dir)) keeps compiling
+// and behaving unchanged. This machinery is pure file/text handling with no
+// LLM dependency whatsoever (FR-014: the tutor preset is absent-safe — a
+// no-model world seeds and reads the same bytes, it simply has no voice to
+// deliver them through).
+func TestGenesisSeedsCharterPerPreset(t *testing.T) {
+	cases := []struct {
+		name   string
+		preset []string
+		want   string
+	}{
+		{"omitted preset seeds default", nil, DefaultCharter},
+		{"empty preset seeds default", []string{""}, DefaultCharter},
+		{"explicit default preset seeds default", []string{"default"}, DefaultCharter},
+		{"tutor preset seeds TutorCharter", []string{"tutor"}, TutorCharter},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			dir := t.TempDir()
+			if err := Genesis(dir, c.preset...); err != nil {
+				t.Fatal(err)
+			}
+			got, err := os.ReadFile(filepath.Join(dir, "charter.md"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if string(got) != c.want {
+				t.Errorf("charter.md seeded = %q text, want the %s", got, c.name)
+			}
+		})
+	}
+}
+
 // TestSecretEvents (US3, data-model.md §2 secret genesis): SecretEvents
 // yields exactly one event per sim.AgentNames entry, each Tick 0 and type
 // social.secret_seeded, payload Agent index-aligned with the name order,

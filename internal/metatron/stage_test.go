@@ -458,3 +458,43 @@ func TestUngatedWorldUnchanged(t *testing.T) {
 		}
 	}
 }
+
+// TestTutorPresetHotReloadsLikeAnyCharter (spec 046 T017/T019, FR-012): above
+// stage-1 the tutor preset is only the SEEDED starting text — once the
+// instruction surface is unlocked (stage-2+), editing charter.md hot-reloads
+// exactly like the default preset's charter does. No new mechanics, no
+// special-casing: the preset name only matters at stage-1's lock (R3).
+func TestTutorPresetHotReloadsLikeAnyCharter(t *testing.T) {
+	mt, orch, _, dir := newTestAngel(t, "as you wish")
+	mt.SetStage("stage-2", "tutor")
+	if err := os.WriteFile(filepath.Join(dir, "charter.md"), []byte(persona.TutorCharter), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := mt.Turn(context.Background(), "hello"); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(orch.requests()[0].System, "You are the village's guardian") {
+		t.Error("stage-2 with tutor preset should carry the seeded tutor text before any edit")
+	}
+
+	custom := "# MY LAW\n\nAlways greet warmly.\n"
+	if err := os.WriteFile(filepath.Join(dir, "charter.md"), []byte(custom), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	orch.mu.Lock()
+	orch.reqs = nil
+	orch.mu.Unlock()
+	if _, err := mt.Turn(context.Background(), "hello again"); err != nil {
+		t.Fatal(err)
+	}
+	sys := orch.requests()[0].System
+	if !strings.Contains(sys, "Always greet warmly") {
+		t.Error("stage-2 tutor-preset world must hot-reload player edits exactly like any charter")
+	}
+	if strings.Contains(sys, "You are the village's guardian") {
+		t.Error("edited charter.md should fully replace the tutor seed text once unlocked")
+	}
+	if st := mt.Status(); st.CharterLocked {
+		t.Error("stage-2 must report no charter lock even when charter_preset is tutor")
+	}
+}
