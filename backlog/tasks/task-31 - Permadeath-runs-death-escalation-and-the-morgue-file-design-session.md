@@ -4,7 +4,7 @@ title: 'Permadeath runs, death escalation, and the morgue file: design session'
 status: In Progress
 assignee: []
 created_date: '2026-07-20 19:55'
-updated_date: '2026-07-25 06:28'
+updated_date: '2026-07-25 07:05'
 labels:
   - design
   - learning-game
@@ -26,7 +26,7 @@ Spec: specs/044-run-outcomes-morgue
 - [x] #2 Spec phase: Setup
 - [x] #3 Spec phase: Foundational (blocking prerequisites)
 - [x] #4 Spec phase: User Story 1 — The run ends, and the story survives it (P1) 🎯 MVP
-- [ ] #5 Spec phase: User Story 2 — The morgue file (P2)
+- [x] #5 Spec phase: User Story 2 — The morgue file (P2)
 - [ ] #6 Spec phase: User Story 3 — The gru can finish the wounded (P3)
 - [ ] #7 Spec phase: User Story 4 — Graves on the map, grief in the village (P4)
 - [ ] #8 Spec phase: Polish & Cross-Cutting
@@ -46,6 +46,12 @@ spec-bridge sync: Setup: 0/1 · Foundational (blocking prerequisites): 0/2 · Us
 Implementation dispatched 2026-07-25: Setup+Foundational+US1 (T001-T012) to spec-implementer on Opus 4.8 — rubric: concurrency/scheduling logic (sim loop halt semantics, executor emission ordering, reducer arms) + doctrine-adjacent (run-end永久halt, command gating). US3/US4 and US2 rendering earmarked Sonnet per plan.md tier notes. Branch task-31-run-outcomes-morgue in .worktrees/task-31.
 
 spec-bridge sync: Setup: 1/1 · Foundational (blocking prerequisites): 2/2 · User Story 1 — The run ends, and the story survives it (P1) 🎯 MVP: 9/9 · User Story 2 — The morgue file (P2): 0/7 · User Story 3 — The gru can finish the wounded (P3): 0/3 · User Story 4 — Graves on the map, grief in the village (P4): 0/4 · Polish & Cross-Cutting: 0/3
+
+US2 dispatched 2026-07-25: T013-T019 to spec-implementer on Opus 4.8 — rubric: doctrine-adjacent (charter fingerprint in the metatron turn pipeline, injection whitelist extension, narrator single-flight worker) + cross-package (world/metatron/sim/mind/scribe/tui). Same branch/worktree.
+
+spec-bridge sync: Setup: 1/1 · Foundational (blocking prerequisites): 2/2 · User Story 1 — The run ends, and the story survives it (P1) 🎯 MVP: 9/9 · User Story 2 — The morgue file (P2): 7/7 · User Story 3 — The gru can finish the wounded (P3): 0/3 · User Story 4 — Graves on the map, grief in the village (P4): 0/4 · Polish & Cross-Cutting: 0/3
+
+US2 gated + ratified 2026-07-25 (4 deviations, see spec commit 7cd7163). US3+US4+Polish dispatched: T020-T029 to spec-implementer on Sonnet — rubric: routine slices (single-mechanism gru conditional + tests; grave structure kind + TUI rendering + doc reconciliation); same branch/worktree, sequential to avoid worktree collision. Deed-vocabulary duplication (narrate.go/scribe morgue.go) recorded as drift surface for a future extract.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
