@@ -16,6 +16,40 @@ package tool
 // order (say, muse, gist).
 var villagerExpressive = []string{"say", "muse", "gist"}
 
+// dormantVillagerVerbs (spec 058 US3, TASK-110): collect_water and bathe are
+// PRUNED from the villager-facing surfaces below — the tool-use loop's
+// declared roster (LoopRosterVillager) and set_plan's step-goal enum
+// (setPlanTool, registry.go) — because they are a non-choice today: water has
+// no consumer beyond bathe, collection fell to 0/day once novelty wore off,
+// and bathe fired once in 6 days of world-01. Every turn a model spends
+// considering a verb it can't meaningfully use is pure loss (task diagnosis).
+//
+// Everything ELSE about both verbs is UNCHANGED and deliberately so: the
+// registry Tool entries (worldToolsBase), the resolver/executor machinery
+// (internal/sim policy.go/executor.go/recipes.go), RosterVillager (the sim
+// door's OWN membership set), and PlanStepGoals (the plan-step accept set)
+// all still know both verbs — so a historical world's collect_water/bathe
+// events replay exactly, and bringing either back to the villager surface is
+// a roster/gloss edit, not a rebuild.
+//
+// REVISIT CONDITION: reintroduce collect_water (and, by extension, bathe) the
+// day a thirst need — or any other design reason water should matter to a
+// villager — gives water a real consumer again.
+var dormantVillagerVerbs = map[string]bool{"collect_water": true, "bathe": true}
+
+// pruneDormant returns names with every dormantVillagerVerbs entry removed,
+// order preserved — the shared filter both villager-facing surfaces
+// (LoopRosterVillager here, setPlanTool's goal enum in registry.go) apply.
+func pruneDormant(names []string) []string {
+	out := make([]string, 0, len(names))
+	for _, n := range names {
+		if !dormantVillagerVerbs[n] {
+			out = append(out, n)
+		}
+	}
+	return out
+}
+
 // RosterVillager is the villager capability set: every legacy World tool
 // (Effect World AND PlanStep true, isLegacyWorldTool in derive.go) in
 // registration order, then the villager expressive tools. set_plan is
@@ -53,17 +87,19 @@ func OnRoster(roster []string, name string) bool {
 
 // LoopRosterVillager returns the ordered declared-tool list the villager
 // tool-use loop presents to the model (spec 017 contracts/loop-api.md,
-// data-model.md §2): every legacy World tool in registration order, then
-// set_plan, then muse. Unlike RosterVillager (name-only membership, for the
-// door's roster check), this returns full Tool values — InputSchema
-// (derive.go) needs each tool's Params/InputSchemaJSON, not just its name.
+// data-model.md §2): every legacy World tool in registration order — MINUS
+// dormantVillagerVerbs (spec 058 US3: collect_water, bathe) — then set_plan,
+// then muse. Unlike RosterVillager (name-only membership, for the door's
+// roster check, unaffected by the prune), this returns full Tool values —
+// InputSchema (derive.go) needs each tool's Params/InputSchemaJSON, not just
+// its name.
 //
 // say/gist stay scene-gated and out of the loop roster this task (data-model
 // §2): scenes remain driver-run, not model-initiated via the loop.
 func LoopRosterVillager() []Tool {
 	out := make([]Tool, 0, len(registry))
 	for _, t := range registry {
-		if isLegacyWorldTool(t) {
+		if isLegacyWorldTool(t) && !dormantVillagerVerbs[t.Name] {
 			out = append(out, t)
 		}
 	}

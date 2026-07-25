@@ -1,6 +1,9 @@
 package tool
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 // registry is the authoritative collection of every tool, in registration
 // order. The world tools come first, in exactly today's goal-vocabulary order
@@ -65,15 +68,28 @@ func setPlanSchema(goals []string) json.RawMessage {
 	schema := map[string]any{
 		"type": "object",
 		"properties": map[string]any{
+			// Spec 058 US2 (FR-003): "maxItems" is deliberately ABSENT — an
+			// oversized steps array no longer fails the driver's structural
+			// walk (toolloop.validateAuthored), so it reaches the landing
+			// guard (internal/sim/landing.go), which clamps to the first
+			// PlanStepCap steps with a model-facing notice instead of
+			// rejecting the whole plan. The cap is still declared, as
+			// guidance, in the description below — a hard maxItems would
+			// resurrect the very whole-plan rejection this feature retires.
 			"steps": map[string]any{
-				"type":     "array",
-				"minItems": 1,
-				"maxItems": PlanStepCap,
-				"items":    step,
+				"type":        "array",
+				"minItems":    1,
+				"items":       step,
+				"description": fmt.Sprintf("at most %d steps; a longer plan lands with only its first %d", PlanStepCap, PlanStepCap),
 			},
 			// Optional plan-level reason (spec 019 R12 / T024): the model's why
 			// for the whole plan, threaded to InjectArgs.Reason (agent.thought
-			// narration). Capability-only description, not required.
+			// narration). Capability-only description, not required. Spec 058
+			// FR-001: an over-cap reason is CLAMPED by the toolloop driver
+			// (validateArgs's authored-schema pre-pass, keyed on the field name
+			// "reason" since this property — unlike the Params-derived world
+			// verbs' reason — carries no Param/Clamp flag of its own), not
+			// rejected; "maxLength" stays as model-facing guidance only.
 			"reason": map[string]any{"type": "string", "maxLength": ReasonCapRunes,
 				"description": "optionally, why you're doing this"},
 		},
@@ -205,7 +221,11 @@ const ReasonCapRunes = 200
 // metatron tool.
 func reasonParam() Param {
 	return Param{Name: "reason", Kind: Text, Required: false, MaxRunes: ReasonCapRunes,
-		Description: "optionally, why you're doing this"}
+		Description: "optionally, why you're doing this",
+		// Clamp (spec 058 FR-001): an over-cap reason is truncated, not
+		// rejected — reason is prose color, never structure, so a wasted whole
+		// turn over its length is pure loss.
+		Clamp: true}
 }
 
 // storageParams is the shared `kind`+`qty` descriptor for the four storage
@@ -228,10 +248,14 @@ func storageParams() []Param {
 // the block exactly (R3). Raw string literals preserve the embedded quotes and
 // em-dash verbatim.
 const (
-	glossQuarry     = `quarry gathers stone from a rock outcrop; collect_water gathers water from a water tile.`
+	// Spec 058 US3 (TASK-110): collect_water and bathe left the villager
+	// surface (dormantVillagerVerbs, roster.go) — their clauses are pruned
+	// from here too so the prose never advertises a non-choice. Both verbs'
+	// own registry entries and gloss-free registration are untouched.
+	glossQuarry     = `quarry gathers stone from a rock outcrop.`
 	glossCook       = `cook turns raw food into fire-cooked food (worth double) at a lit fire, or into meals (the best food) at an oven; refuel_fire feeds one wood to a fire to keep it burning (or relight a cold one).`
 	glossCraft      = `craft_planks turns 1 wood into 4 planks; craft_stone turns 1 stone into 1 refined stone; craft_spear needs 1 wood + 1 refined stone and makes a spear (breaks after 3 hunts) — all hand-crafted anywhere, no travel needed.`
-	glossBuildOven  = `build_oven needs 4 refined stone + 2 planks and lets you cook meals and bathe; bathe at an oven spends 1 water + 1 wood for warmth and morale.`
+	glossBuildOven  = `build_oven needs 4 refined stone + 2 planks and lets you cook meals.`
 	glossDrop       = `drop puts down goods where you stand, creating or adding to a ground pile there anyone can take from; pick_up takes from a pile on or next to you. Name what with "kind" (wood, stone, water, planks, refined_stone, food_raw, food_cooked, meals, or spears) and how much with "qty" (omit or 0 = all of that kind); pick_up with no "kind" takes everything that fits.`
 	glossBuildChest = `build_chest needs 6 planks; chests preserve food (it never rots there, unlike a ground pile) and you keep the chest permanently once built. deposit stores goods in the nearest chest — always name a "kind" or nothing moves; withdraw takes goods back out of the nearest chest that has them ("kind" omitted or empty takes everything that fits). Taking from another villager's chest is possible too, but they will remember who took it.`
 
@@ -327,31 +351,45 @@ var worldToolsBase = []Tool{
 // Resolvable, no Cost/PromptGloss — it carries no PlanStep (deliberately:
 // see legacyWorldNamesFrom's doc in derive.go) so it stays out of the legacy
 // prose surfaces and RosterVillager, appearing only in LoopRosterVillager
-// (roster.go).
+// (roster.go). Its step-goal enum is ANOTHER villager-facing prompt surface
+// pruneDormant must reach (spec 058 US3): without this, a model could still
+// offer collect_water/bathe as a set_plan STEP even after they left
+// LoopRosterVillager's per-tool listing (roster.go's prune touches only the
+// declared TOOLS, not this schema's own enum, a separate model-visible
+// surface built from the same legacy-world-tool set).
 var setPlanTool = Tool{
 	Name:            "set_plan",
 	Effect:          World,
 	Gate:            Resolvable,
-	InputSchemaJSON: setPlanSchema(legacyWorldNamesFrom(worldTools)),
+	InputSchemaJSON: setPlanSchema(pruneDormant(legacyWorldNamesFrom(worldTools))),
 }
 
 // expressiveTools are the villager roster's expressive verbs (registration
 // order = catalog table order; the villager roster's own expressive tail
 // order — say, muse, gist — is expressed separately in roster.go).
 var expressiveTools = []Tool{
+	// Clamp (spec 058 FR-001): say/gist/muse's text is clamped, not rejected,
+	// on an over-cap value. say and gist don't ride the villager tool-use loop
+	// today (they stay scene-gated, roster.go) — the toolloop driver's Text
+	// arm never sees them — but the Param carries Clamp anyway so the
+	// registry stays the single source of truth for which fields are
+	// expressive, in case that changes. Their actual clamp lives where they
+	// ARE validated today: the conversation scene parser (internal/mind/
+	// parse.go parseSay/parseOutcome), which already truncates rather than
+	// rejects — this task's fix there is making that truncation rune-safe.
 	{Name: "say", Effect: Expressive, Gate: Scene,
-		Params: []Param{{Name: "text", Kind: Text, MaxBytes: 300}},
+		Params: []Param{{Name: "text", Kind: Text, MaxBytes: 300, Clamp: true}},
 		Cost:   Cost{TextCapBytes: 300},
 		Events: []string{"social.conversation_turn"}},
 	{Name: "gist", Effect: Expressive, Gate: Scene,
 		// The gist's topics/tones sub-fields (parseOutcome) are not modeled as
 		// Params in this layer; only the bounded gist text is. The parser stays
 		// the enforcer of the full shape.
-		Params: []Param{{Name: "gist", Kind: Text, MaxBytes: 200}},
+		Params: []Param{{Name: "gist", Kind: Text, MaxBytes: 200, Clamp: true}},
 		Cost:   Cost{TextCapBytes: 200},
 		Events: []string{"social.conversation", "social.relation_changed", "social.rumor_told", "agent.memory_added"}},
 	{Name: "muse", Effect: Expressive, Gate: None,
-		Params: []Param{{Name: "text", Kind: Text, MaxRunes: 200}},
+		Params: []Param{{Name: "text", Kind: Text, MaxRunes: 200, Clamp: true}},
 		Cost:   Cost{TextCapRunes: 200},
 		Events: []string{"agent.thought"}},
 }
