@@ -4,7 +4,7 @@ title: 'Skinnable guardian persona: de-theme the angel fiction, persona as data'
 status: In Progress
 assignee: []
 created_date: '2026-07-25 06:20'
-updated_date: '2026-07-25 19:36'
+updated_date: '2026-07-25 20:19'
 labels:
   - learning-game
   - design
@@ -26,22 +26,22 @@ Spec: specs/052-skinnable-guardian
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Spec written and linked via spec-bridge covering skin bundle format, prompt composition, the default guardian skin, and the rename sweep
-- [ ] #2 No user-facing Metatron/angel imagery remains in the default experience: prompts, TUI strings, CLI output, player docs (internal identifiers swept or aliased per spec decision)
-- [ ] #3 Skin bundle = name + fiction strings + persona voice; fixed-frame invariants provably not overridable from any skin
-- [ ] #4 Default secular-mythic guardian skin ships; mechanics byte-compatible across skins (same events, costs, rules)
-- [ ] #5 A custom skin is loadable per world; one example alternate skin in-repo proves the format
+- [x] #1 Spec written and linked via spec-bridge covering skin bundle format, prompt composition, the default guardian skin, and the rename sweep
+- [x] #2 No user-facing Metatron/angel imagery remains in the default experience: prompts, TUI strings, CLI output, player docs (internal identifiers swept or aliased per spec decision)
+- [x] #3 Skin bundle = name + fiction strings + persona voice; fixed-frame invariants provably not overridable from any skin
+- [x] #4 Default secular-mythic guardian skin ships; mechanics byte-compatible across skins (same events, costs, rules)
+- [x] #5 A custom skin is loadable per world; one example alternate skin in-repo proves the format
 - [ ] #6 Post-sweep: wiki re-pinned (wiki-update) and player docs regenerated
-- [ ] #7 Skin-token contract published before 115/117 implementation; both consume it
-- [ ] #8 Sweep covers help.go, footer hints, stagesLadder, lesson strings, player-docs page names, design-doc mockups
-- [ ] #9 Skin boundary = guardian/systems tab split; systems content never skinnable
-- [ ] #10 Spec phase: Setup
-- [ ] #11 Spec phase: Foundational — the skin substrate
-- [ ] #12 Spec phase: User Story 1 — The skin-token contract exists (P1) 🎯 Lane-3 unblock
-- [ ] #13 Spec phase: User Story 2 — The default experience is de-themed (P1)
-- [ ] #14 Spec phase: User Story 3 — A custom skin is a per-world data bundle (P2)
-- [ ] #15 Spec phase: User Story 4 — The internals stop lying (P3)
-- [ ] #16 Spec phase: Polish & Cross-Cutting Concerns
+- [x] #7 Skin-token contract published before 115/117 implementation; both consume it
+- [x] #8 Sweep covers help.go, footer hints, stagesLadder, lesson strings, player-docs page names, design-doc mockups
+- [x] #9 Skin boundary = guardian/systems tab split; systems content never skinnable
+- [x] #10 Spec phase: Setup
+- [x] #11 Spec phase: Foundational — the skin substrate
+- [x] #12 Spec phase: User Story 1 — The skin-token contract exists (P1) 🎯 Lane-3 unblock
+- [x] #13 Spec phase: User Story 2 — The default experience is de-themed (P1)
+- [x] #14 Spec phase: User Story 3 — A custom skin is a per-world data bundle (P2)
+- [x] #15 Spec phase: User Story 4 — The internals stop lying (P3)
+- [x] #16 Spec phase: Polish & Cross-Cutting Concerns
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -67,4 +67,6 @@ OPERATOR DECISIONS (2026-07-25, team review):
 REVIEW FINDINGS FOR THIS TASK'S SCOPE: true blast radius is 1,176 hits across 57 non-test Go files (not just TUI — internal/llm/config.go, internal/cognition/registry.go, internal/bundle/*, internal/mind/mind.go, internal/daemon/daemon.go, internal/toolloop/loop.go) plus 352 files across docs/specs/backlog/README. Also UNRESOLVED CONTRADICTION: spec 052 AC#2 ('no Metatron/angel/miracle imagery in prompts') vs research R4 ('tool ids are frozen') — work_miracle is a frozen tool id rendered verbatim into the composed prompt at derive.go:255. Decide alias-at-declaration vs exempt-tool-ids BEFORE T008 is written, or the test gets written to whatever shipped.
 
 TASK-134 sequencing resolved by operator checkpoint: merge proceeds as the freeze+alias interim; the persisted-name rename is TASK-134's AC #4 (migration-backed), not this task's. Display alias to be removed when 134 ships.
+
+spec-bridge sync: 23/23 tasks done — merged via PR #94 (70acb2e) after four rebase rounds reconciling seven sibling merges (#84–#93). All gates green at merge: full race suite, token-completeness, fiction denylist, hostile-skin battery, two-skin equivalence, SC-003 compat, design + merge-drift gates. Frozen-vocabulary verification: zero persisted strings changed (byte-identical diff evidence incl. PR #90's survival watch definitions). AC #6 (wiki re-pin + player docs) pending the dispatched re-ground agents.
 <!-- SECTION:NOTES:END -->
