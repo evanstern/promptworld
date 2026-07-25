@@ -1,10 +1,10 @@
 ---
 id: TASK-31
 title: 'Permadeath runs, death escalation, and the morgue file: design session'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-20 19:55'
-updated_date: '2026-07-25 07:05'
+updated_date: '2026-07-25 07:54'
 labels:
   - design
   - learning-game
@@ -27,9 +27,9 @@ Spec: specs/044-run-outcomes-morgue
 - [x] #3 Spec phase: Foundational (blocking prerequisites)
 - [x] #4 Spec phase: User Story 1 — The run ends, and the story survives it (P1) 🎯 MVP
 - [x] #5 Spec phase: User Story 2 — The morgue file (P2)
-- [ ] #6 Spec phase: User Story 3 — The gru can finish the wounded (P3)
-- [ ] #7 Spec phase: User Story 4 — Graves on the map, grief in the village (P4)
-- [ ] #8 Spec phase: Polish & Cross-Cutting
+- [x] #6 Spec phase: User Story 3 — The gru can finish the wounded (P3)
+- [x] #7 Spec phase: User Story 4 — Graves on the map, grief in the village (P4)
+- [x] #8 Spec phase: Polish & Cross-Cutting
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -52,6 +52,10 @@ US2 dispatched 2026-07-25: T013-T019 to spec-implementer on Opus 4.8 — rubric:
 spec-bridge sync: Setup: 1/1 · Foundational (blocking prerequisites): 2/2 · User Story 1 — The run ends, and the story survives it (P1) 🎯 MVP: 9/9 · User Story 2 — The morgue file (P2): 7/7 · User Story 3 — The gru can finish the wounded (P3): 0/3 · User Story 4 — Graves on the map, grief in the village (P4): 0/4 · Polish & Cross-Cutting: 0/3
 
 US2 gated + ratified 2026-07-25 (4 deviations, see spec commit 7cd7163). US3+US4+Polish dispatched: T020-T029 to spec-implementer on Sonnet — rubric: routine slices (single-mechanism gru conditional + tests; grave structure kind + TUI rendering + doc reconciliation); same branch/worktree, sequential to avoid worktree collision. Deed-vocabulary duplication (narrate.go/scribe morgue.go) recorded as drift surface for a future extract.
+
+spec-bridge sync: Setup: 1/1 · Foundational (blocking prerequisites): 2/2 · User Story 1 — The run ends, and the story survives it (P1) 🎯 MVP: 9/9 · User Story 2 — The morgue file (P2): 7/7 · User Story 3 — The gru can finish the wounded (P3): 3/3 · User Story 4 — Graves on the map, grief in the village (P4): 4/4 · Polish & Cross-Cutting: 3/3 — status In Progress → Done
+
+PR #78 merged as e48bbaa (squash). Live-validated: natural full run to run.ended on a no-LLM world (8-death gru cascade days 76-86, WALKTHROUGH.md). Post-merge: wiki-update + player-docs in progress; TASK-119 can now consume run.ended; TASK-68 branch rebases to bind metatron.charter_observed.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -77,3 +81,9 @@ created: 2026-07-25 05:06
 Design session round 2 decided (operator, 2026-07-25): (5) MORGUE MECHANISM = deterministic core + narrated epilogue — reducer writes the factual event-derived record per death and at run end (days, cause, relationships, debts, deeds, charter/orders timeline alignment), works LLM-off; chronicle narrator appends a prose epilogue when available; facts never depend on the model. (6) GRAVES v1 = marker + memory/rumor hooks riding existing systems (mental-map place-facts, social fabric grief rumors); mourning morale effects and grave-visiting behaviors deferred. Orchestrator judgment calls (flagged, unobjected): single accumulating morgue.md per world (per-death epitaphs + run-end summary); format designed export-ready, Boatmurdered HTML export stays a separate Wave-3 task. Session decisions complete — spec drafting next (AC #1).
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+All spec tasks complete (Setup: 1/1 · Foundational (blocking prerequisites): 2/2 · User Story 1 — The run ends, and the story survives it (P1) 🎯 MVP: 9/9 · User Story 2 — The morgue file (P2): 7/7 · User Story 3 — The gru can finish the wounded (P3): 3/3 · User Story 4 — Graves on the map, grief in the village (P4): 4/4 · Polish & Cross-Cutting: 3/3). Derived Done by spec-bridge sync.
+<!-- SECTION:FINAL_SUMMARY:END -->
