@@ -1,10 +1,10 @@
 ---
 id: TASK-100
 title: Story feed cannot render daemon.llm_warning — TestCatalogSweep red on main
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-24 19:51'
-updated_date: '2026-07-25 03:17'
+updated_date: '2026-07-25 03:36'
 labels:
   - bug
   - tui
@@ -29,7 +29,7 @@ Surgical fix (trivial-exemption candidate per constitution Development Workflow)
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 TestCatalogSweep passes on main (go test ./internal/tui)
+- [x] #1 TestCatalogSweep passes on main (go test ./internal/tui)
 - [x] #2 daemon.llm_warning events render a sensible story-feed line for both active=true (raise) and active=false (clear)
 - [ ] #3 Catalog fixture row added; no other digest behavior changes
 <!-- AC:END -->
@@ -43,3 +43,9 @@ Tier: Sonnet (spec-implementer) — routine single-package fix per rubric: surgi
 
 Implemented (Sonnet spec-implementer): digestRegistry entry for daemon.llm_warning (raise/clear flavors from LLMWarningPayload) + catalogFixture row + TestDigestLLMWarningCleared + labeled-voice span assertion. Full package tests, gofmt, vet, build all green on branch. PR: https://github.com/evanstern/promptworld/pull/71 (commit e7989a8). AC#1 (green on main) ticks after merge.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Merged via PR #71. daemon.llm_warning renders in the story feed (raise + clear flavors from LLMWarningPayload); catalogFixture row + TestDigestLLMWarningCleared + labeled-voice span coverage added. Verified on merged main: TestCatalogSweep and full internal/tui package green (AC#1). Main is no longer red.
+<!-- SECTION:FINAL_SUMMARY:END -->
