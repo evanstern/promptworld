@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/design/tui/patterns/keymap.md@beafe69dda23d6c8cfba8b1beb497526c02ebfb7">
+<meta name="promptworld-docs:source" content="docs/design/tui/patterns/keymap.md@9dc6c47085ea29a770a187dd6b5a1adf2a2cb9b5">
 <meta name="promptworld-docs:source" content="docs/design/tui/overlays/help.md@54964eb5917b645e1b438d74c740c98787dbf0bd">
 <title>Keys reference — promptworld player docs</title>
 <style>
@@ -71,9 +71,11 @@ screen when you press it. Pure controls — for what any of this is actually sho
 you, see <a href="understanding-the-screen.html">what do all those things on screen
 mean</a> instead.</p>
 
-<p>One thing to know up front: the whole game is playable from the keyboard alone.
-There's no mouse support yet — these keys are the complete set of controls, not a
-shortcut list.</p>
+<p>One thing to know up front: the whole game is playable from the keyboard alone —
+every key below reaches everything, and that stays true no matter what. Mouse
+support is a separate, additive convenience layered on top; so far it covers exactly
+one action, the chronicle jump described below, and everywhere else a click simply
+does nothing.</p>
 
 <h2>Normal view (nothing focused — the default)</h2>
 <table>
@@ -117,9 +119,14 @@ replacements.</p>
 entry</td></tr>
 <tr><td><code>g</code> / <code>G</code></td><td>Jump to the first / last entry</td></tr>
 <tr><td><code>J</code> / <code>K</code></td><td>Scroll a long entry's detail</td></tr>
-<tr><td><code>⏎</code></td><td>Reserved for a future action — does nothing yet</td></tr>
+<tr><td><code>⏎</code>, or click the entry's line</td><td>Jump the map camera to
+where that event happened — same clamped pan <code>c</code> uses to recenter. If the
+event has no place (a conversation, say), the detail pane says "no location for this
+event" instead and nothing moves</td></tr>
 <tr><td><code>space</code></td><td>Resume (also clears your selection)</td></tr>
 </table>
+<p>Clicking an entry's line is the game's first mouse control — everywhere else, a
+click still does nothing.</p>
 
 <h2>The villagers tab</h2>
 <table>
