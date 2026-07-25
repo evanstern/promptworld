@@ -3,10 +3,10 @@ id: TASK-123
 title: >-
   TUI design reference v2: the living page-by-page, control-by-control UI
   authority
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-25 14:43'
-updated_date: '2026-07-25 16:08'
+updated_date: '2026-07-25 16:53'
 labels:
   - learning-game
   - tui
@@ -39,7 +39,7 @@ Spec: specs/047-tui-design-reference-v2
 - [x] #11 Spec phase: User Story 5 — the Wave 0 rulings recorded (P2)
 - [x] #12 Spec phase: User Story 3 — uniform control tables + parity doctrine (P2)
 - [x] #13 Spec phase: User Story 4 — freshness mechanization (P2)
-- [ ] #14 Spec phase: Polish & cross-cutting
+- [x] #14 Spec phase: Polish & cross-cutting
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -61,4 +61,12 @@ Spec Kit complete: spec 047 specified (07a11bb), planned (565addc), tasks (2c903
 spec-bridge sync: Setup: 1/1 · Foundational (blocking prerequisites): 2/2 · User Story 1 — reconcile shipped reality + taxonomy (P1): 9/9 · User Story 2 — ten new-surface pages spec-before-build (P1): 9/9 · User Story 5 — the Wave 0 rulings recorded (P2): 2/2 · User Story 3 — uniform control tables + parity doctrine (P2): 2/2 · User Story 4 — freshness mechanization (P2): 4/4 · Polish & cross-cutting: 2/3
 
 AC #1-#6 evidence (PR #80, branch task-123-tui-design-reference-v2 @ e1998af): #1/#2 reconciliation + taxonomy commits eac3c79/e34523b/9bf514f; #3 canonical tables on all 14 panel/overlay pages (script-verified); #4 scripts/check-tui-design.mjs validated vs 5 seeded violation classes, gate wired in CLAUDE.md + INDEX.md; #5 ten pages in commits 5b95cf4/e0fe663/60c8d58; #6 rulings in patterns/layout.md + overlays/help.md (research.md R2-R4). PR open, awaiting review; T032 (merge + cleanup) remains.
+
+spec-bridge sync: Setup: 1/1 · Foundational (blocking prerequisites): 2/2 · User Story 1 — reconcile shipped reality + taxonomy (P1): 9/9 · User Story 2 — ten new-surface pages spec-before-build (P1): 9/9 · User Story 5 — the Wave 0 rulings recorded (P2): 2/2 · User Story 3 — uniform control tables + parity doctrine (P2): 2/2 · User Story 4 — freshness mechanization (P2): 4/4 · Polish & cross-cutting: 3/3 — status In Progress → Done
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+All spec tasks complete (Setup: 1/1 · Foundational (blocking prerequisites): 2/2 · User Story 1 — reconcile shipped reality + taxonomy (P1): 9/9 · User Story 2 — ten new-surface pages spec-before-build (P1): 9/9 · User Story 5 — the Wave 0 rulings recorded (P2): 2/2 · User Story 3 — uniform control tables + parity doctrine (P2): 2/2 · User Story 4 — freshness mechanization (P2): 4/4 · Polish & cross-cutting: 3/3). Derived Done by spec-bridge sync.
+<!-- SECTION:FINAL_SUMMARY:END -->
