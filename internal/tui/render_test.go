@@ -28,7 +28,13 @@ func TestWidescreenViewExactHeight(t *testing.T) {
 		{112, 20}, {112, 30}, {113, 30}, {118, 30}, {140, 40}, {160, 50}, {200, 24},
 	}
 	for _, sz := range sizes {
-		for _, state := range []string{"home", "solo", "inspect", "inspect-solo", "villagers-solo", "villagers-detail-solo", "metatron-solo"} {
+		for _, state := range []string{
+			"home", "solo", "inspect", "inspect-solo", "villagers-solo", "villagers-detail-solo", "metatron-solo",
+			// spec 045 (TASK-116): the help overlay is a body-replacement
+			// panel like solo zoom (R2) — it must hold the same exact-
+			// height invariant at every size, in every section/tier.
+			"help", "help-advanced", "help-walkthrough", "help-lessons",
+		} {
 			t.Run(fmt.Sprintf("%dx%d/%s", sz.w, sz.h, state), func(t *testing.T) {
 				m := widescreenModel(t)
 				m.width, m.height = sz.w, sz.h
@@ -62,6 +68,21 @@ func TestWidescreenViewExactHeight(t *testing.T) {
 					m.dockTab = paneMetatron
 					m.solo = true
 					m.transcript = []string{"you: why is Rowan hoarding wood?", "angel: three cold nights, and Ash let the fire die each time."}
+				case "help":
+					m.helpOpen = true
+					m.helpPageMode = helpModeGlobal
+					m.helpSection = helpSectionKeys
+				case "help-advanced":
+					m.helpOpen = true
+					m.helpPageMode = helpModeGlobal
+					m.helpSection = helpSectionKeys
+					m.helpTier = true
+				case "help-walkthrough":
+					m.helpOpen = true
+					m.helpSection = helpSectionWalkthrough
+				case "help-lessons":
+					m.helpOpen = true
+					m.helpSection = helpSectionLessons
 				}
 				v := m.View()
 				lines := strings.Split(v, "\n")
