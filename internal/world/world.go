@@ -337,7 +337,10 @@ func (w *World) VillageCharterPath() string { return filepath.Join(w.Dir, "villa
 // factual epitaph per death plus a run-end summary, scribe-rendered — a
 // regenerable view over the event history, never a source of truth, exactly
 // like the chronicle and village charter above.
-func (w *World) MorguePath() string  { return filepath.Join(w.Dir, "morgue.md") }
+func (w *World) MorguePath() string { return filepath.Join(w.Dir, "morgue.md") }
+
+// The "metatron" directory name is FROZEN (spec 052 ruling 2) — an on-disk
+// path existing worlds carry.
 func (w *World) MetatronDir() string { return filepath.Join(w.Dir, "metatron") }
 func (w *World) LogPath() string     { return filepath.Join(w.Dir, "daemon.log") }
 

@@ -498,6 +498,11 @@ var metatronTools = []Tool{
 	// place-fact vocabulary (sim/mentalmap.go PlaceFact); the reducer dry-run
 	// is the authority that the place actually exists. A vision without the
 	// place params behaves exactly as before.
+	// The tool ids send_vision / send_omen / work_miracle (and work_miracle's
+	// kind enum vocabulary) are FROZEN serialized identifiers (spec 052
+	// ruling 2): recorded cog.tool_call payloads and player capabilities.json
+	// files name them, so they never rename — display vocabulary de-themes
+	// through the skin lookup instead (workings).
 	{Name: "send_vision", Effect: Expressive, Gate: Charge,
 		Params: []Param{
 			{Name: "target", Kind: AgentName, Required: true},

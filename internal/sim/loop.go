@@ -39,7 +39,7 @@ type Status struct {
 	LastSeq        int64       `json:"last_seq"`
 	// MetatronCharges surfaces the nudge bank (TASK-12) so clients can
 	// display ⚡ without a state fetch.
-	MetatronCharges int `json:"metatron_charges"`
+	MetatronCharges int `json:"metatron_charges"` // FROZEN JSON tag (spec 052 ruling 2): state snapshots + ps --json
 	// Ended/EndedDay (spec 044 US1): the run-over posture, additive omitempty
 	// so a living world's status bytes are unchanged. EndedDay is the game
 	// day of the run end, for human rendering without a state fetch.
@@ -191,6 +191,11 @@ func (l *Loop) Govern(to clock.Speed, debt float64, jobs int) (Status, error) {
 	}
 }
 
+// FROZEN serialized vocabulary (spec 052 ruling 2): every `metatron.*` and
+// `curriculum.*` event type listed below is wire/disk vocabulary — recorded
+// logs must replay forever, so these strings NEVER rename (the Go
+// identifiers around them may).
+//
 // injectSocialWhitelist is the mind's injection door: every event type a
 // model-driven driver (conversations, TASK-9 consolidation, TASK-21
 // musings) may land. The whitelist IS the isolation — everything else

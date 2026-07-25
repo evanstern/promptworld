@@ -85,7 +85,7 @@ var familyByNamespace = map[string]eventFamily{
 	"gru":       familyGru,
 	"chronicle": familyChronicle,
 	"morgue":    familyChronicle, // morgue.epilogue (spec 044): narrated prose, chronicle voice
-	"metatron":  familyMetatron,
+	"metatron":  familyMetatron,  // FROZEN namespace key (spec 052 ruling 2); display-aliased per FR-013
 	"daemon":    familyDaemon,
 	"cog":       familyCog,
 	// curriculum (spec 046 — exercise passes/stage unlocks) rides the

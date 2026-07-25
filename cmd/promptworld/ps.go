@@ -126,7 +126,7 @@ type psClock struct {
 	Speed           string  `json:"speed"`
 	EffectiveRate   float64 `json:"effective_rate,omitempty"`
 	Degraded        bool    `json:"degraded,omitempty"`
-	MetatronCharges int     `json:"metatron_charges,omitempty"`
+	MetatronCharges int     `json:"metatron_charges,omitempty"` // FROZEN JSON key (spec 052 ruling 2)
 }
 
 type psDaemon struct {

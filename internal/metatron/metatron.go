@@ -284,6 +284,10 @@ func (mt *Metatron) SetSkin(s *skin.Skin) { mt.skin = s }
 // zero-value agent (every pre-052 test) resolves the default table.
 func (mt *Metatron) sk() *skin.Skin { return mt.skin }
 
+// The on-disk directory name "metatron" (and the soul.md/transcript.md files
+// inside it) is FROZEN serialized vocabulary (spec 052 ruling 2): existing
+// worlds' files must keep loading forever. Display references use the skin's
+// notes label, never the raw path.
 func (mt *Metatron) metatronDir() string    { return filepath.Join(mt.worldDir, "metatron") }
 func (mt *Metatron) soulPath() string       { return filepath.Join(mt.metatronDir(), "soul.md") }
 func (mt *Metatron) transcriptPath() string { return filepath.Join(mt.metatronDir(), "transcript.md") }

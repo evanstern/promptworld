@@ -40,8 +40,10 @@ const (
 	KindConsolidation Kind = "consolidation"
 	KindNarrator      Kind = "narrator"
 	KindDrama         Kind = "drama"
-	// KindMetatron is the gatekeeper angel (TASK-12): console turns,
-	// nudge judgment, and digests — premium cognition, tiny volume.
+	// KindMetatron is the guardian (TASK-12): console turns, nudge
+	// judgment, and digests — premium cognition, tiny volume. The string
+	// "metatron" is a FROZEN llm.json route kind (spec 052 ruling 2):
+	// player configs must load forever, so it never renames.
 	KindMetatron Kind = "metatron"
 	// KindMeeting is governance flavor (TASK-13): rephrasing a tabled
 	// proposal in the proposer's voice. Best-effort, never outcome-bearing.
@@ -50,6 +52,7 @@ const (
 	// TASK-27): a single bare yes/no Submit that decides whether a fuzzy
 	// condition truly holds for a structural filter hit. Cheap-first by default
 	// (route chain local→cloud) and rate-capped per order — never a tool loop.
+	// "metatron_watch" is a FROZEN llm.json route kind (spec 052 ruling 2).
 	KindMetatronWatch Kind = "metatron_watch"
 	// KindEmbedding is the vector-producing kind (spec 042): the mind-side
 	// embedder driver's route to a local embedding model. Deliberately NOT in

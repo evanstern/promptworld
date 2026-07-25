@@ -43,7 +43,7 @@ var ErrTurnBusy = errors.New("the guardian is attending another matter")
 type TurnResult struct {
 	Reply     string       `json:"reply"`
 	Nudge     *Nudge       `json:"nudge,omitempty"`
-	Miracle   *Miracle     `json:"miracle,omitempty"`
+	Miracle   *Miracle     `json:"miracle,omitempty"`   // FROZEN JSON tag (spec 052 ruling 2): IPC clients decode it
 	Order     *OrderReport `json:"order,omitempty"`     // a placed standing order (spec 029 US2)
 	Cancelled []string     `json:"cancelled,omitempty"` // released order ids (cancel_order)
 	Clock     string       `json:"clock,omitempty"`     // a landed meta act's human line (spec 029 US5)
@@ -254,6 +254,9 @@ func (mt *Metatron) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 	// One correlation id per turn, mirroring mind's "<class>-<agent>-<tick>"
 	// convention (telemetry.go newMeta): the console turn's class is "turn"; a
 	// triggered system turn's is "watch" (R6). Threads every cog.tool_call.
+	// The "-metatron-" correlation infix is FROZEN (spec 052 ruling 2): it
+	// rides recorded cog.tool_call payloads and the TUI's decision-trace
+	// attribution (tui/decisions.go) matches it verbatim.
 	jobID := fmt.Sprintf("%s-metatron-%d", o.jobPrefix, tick)
 
 	// The trailing directive: the player's words (console) or the order's
@@ -554,6 +557,10 @@ func (mt *Metatron) landNudgeBatch(form string, targets []int, text string, extr
 	if len(text) > nudgeTextMax {
 		text = text[:nudgeTextMax]
 	}
+	// FROZEN recorded-at-emission text (spec 052 ruling 1 / FR-005): these
+	// memory prefixes land in agent.memory_added payloads — the event log is
+	// skin-free, so they use fixed mechanics vocabulary regardless of skin
+	// and never change.
 	prefix := "You saw a vision: "
 	if form == "omen" {
 		prefix = "You witnessed an omen: "

@@ -525,6 +525,9 @@ func (c *session) handle(req Request) {
 			return
 		}
 		c.writeResponse(Response{ID: req.ID, OK: true, Data: data})
+	// "metatron_chat" / "metatron_status" / "miracle" are FROZEN wire method
+	// names (spec 052 ruling 2): old clients must keep working forever. The
+	// canonical CLI vocabulary is guardian/work; only the wire keeps these.
 	case "metatron_chat":
 		if c.srv.metatron == nil {
 			c.writeResponse(Response{ID: req.ID, OK: false, Error: "the guardian is not present in this world (no llm config)"})
