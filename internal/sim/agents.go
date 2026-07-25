@@ -73,6 +73,72 @@ type Intent struct {
 	Reason string `json:"reason,omitempty"`
 }
 
+// intentLogCap bounds the recent-intent ring (spec 043 US1, data-model.md): 8
+// records cover several game-hours of intents — more than the alternation
+// window FR-003 needs — at fixed per-agent cost.
+const intentLogCap = 8
+
+// IntentRecord is one entry in a villager's recent-intent ring (spec 043 US1,
+// data-model.md). Goal is the intent's goal name; Source is the verbatim
+// IntentSetPayload.Source ("planner" | "reflex" | "plan"); Reason is the stated
+// reason when the source recorded one (planner/plan) and empty for reflex —
+// never invented; Tick is when the intent landed. Outcome ("" while executing,
+// then "done" | "failed" | "rejected" | "expired") and OutcomeTick are stamped
+// by the closing lifecycle event. All-omitempty tail keeps records compact and
+// pre-043-comparable in canonical bytes.
+type IntentRecord struct {
+	Goal        string `json:"goal"`
+	Source      string `json:"source,omitempty"`
+	Reason      string `json:"reason,omitempty"`
+	Tick        int64  `json:"tick"`
+	Outcome     string `json:"outcome,omitempty"`
+	OutcomeTick int64  `json:"outcome_tick,omitempty"`
+}
+
+// appendIntent pushes a new record onto the ring, dropping the oldest when the
+// ring is full. It re-slices into a fresh backing array on overflow so the
+// canonical bytes reflect exactly the retained records (no aliased capacity)
+// and replay and live paths produce identical state.
+func (a *Agent) appendIntent(r IntentRecord) {
+	a.IntentLog = append(a.IntentLog, r)
+	if len(a.IntentLog) > intentLogCap {
+		a.IntentLog = append([]IntentRecord(nil), a.IntentLog[len(a.IntentLog)-intentLogCap:]...)
+	}
+}
+
+// stampIntentOutcome closes the newest still-open record (Outcome == "") with
+// the given outcome. Used by the intent_done / build_failed arms, whose events
+// clear the CURRENT intent — the newest open record. An override left an older
+// record open behind the new one; that older record stays open (the
+// open-then-superseded shape the alternation view preserves), so closing the
+// newest is correct. A no-op when no record is open.
+func (a *Agent) stampIntentOutcome(outcome string, tick int64) {
+	for i := len(a.IntentLog) - 1; i >= 0; i-- {
+		if a.IntentLog[i].Outcome == "" {
+			a.IntentLog[i].Outcome = outcome
+			a.IntentLog[i].OutcomeTick = tick
+			return
+		}
+	}
+}
+
+// stampOrAppendExpired records a plan step's expiry (spec 043, plan end visible
+// at next thought — FR-005): if an open record for that goal exists (the step
+// had fired as a "plan"-source intent), it is closed "expired"; otherwise a
+// closed record is appended (the step expired before ever firing, so it has no
+// open record). Matching by goal keeps a concurrent non-plan open intent from
+// being mis-stamped.
+func (a *Agent) stampOrAppendExpired(goal string, tick int64) {
+	for i := len(a.IntentLog) - 1; i >= 0; i-- {
+		if a.IntentLog[i].Outcome == "" && a.IntentLog[i].Goal == goal {
+			a.IntentLog[i].Outcome = "expired"
+			a.IntentLog[i].OutcomeTick = tick
+			return
+		}
+	}
+	a.appendIntent(IntentRecord{Goal: goal, Source: "plan", Tick: tick, Outcome: "expired", OutcomeTick: tick})
+}
+
 type Agent struct {
 	Name     string       `json:"name"`
 	X        int          `json:"x"`
@@ -122,6 +188,15 @@ type Agent struct {
 	// snapshots byte-stable (precedent: Generation, Plan, Hail).
 	LastGoal     string `json:"last_goal,omitempty"`
 	LastGoalTick int64  `json:"last_goal_tick,omitempty"`
+	// IntentLog (spec 043 US1) is the villager's recent-intent ring: the last
+	// few intents it pursued, each with its source and outcome, maintained
+	// entirely by the intent-lifecycle reducer arms (state.go). Unlike LastGoal
+	// (a single slot), the ring preserves ORDER and per-intent source so the
+	// decision prompt can show alternation between goals (FR-003) and name where
+	// each intent came from (FR-002). Reducer-derived ⇒ replay-safe by
+	// construction; capacity intentLogCap. omitempty keeps a never-acted agent's
+	// canonical bytes identical to a pre-043 snapshot (precedent: LastGoal).
+	IntentLog []IntentRecord `json:"intent_log,omitempty"`
 	// Journal (spec 019, US3) is the agent's self-authored notebook — durable
 	// world state mutated ONLY by the two journal.* reducer arms. A POINTER with
 	// omitempty (the Hail precedent) so an agent that never journals stays
