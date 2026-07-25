@@ -185,9 +185,11 @@ func (s *Server) subscriberCount() int {
 func (s *Server) statusData(cs sim.Status) StatusData {
 	return StatusData{
 		World: WorldStatus{
-			Name:          s.w.Manifest.Name,
-			Seed:          s.w.Manifest.Seed,
-			FormatVersion: s.w.Manifest.FormatVersion,
+			Name:            s.w.Manifest.Name,
+			Seed:            s.w.Manifest.Seed,
+			FormatVersion:   s.w.Manifest.FormatVersion,
+			Stage:           s.w.Manifest.Stage,
+			StageOverridden: s.w.Manifest.StageOverridden,
 		},
 		Clock: ClockStatus{
 			Tick:            cs.Tick,

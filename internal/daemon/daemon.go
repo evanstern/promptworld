@@ -139,6 +139,11 @@ func Run(dir string) error {
 	}
 	defer scr.Close()
 	consumers = append(consumers, scr.Observe)
+	// Curriculum-ladder unlock observer (spec 046 US3, T013): always-on, like
+	// the scribe above — a no-model world still records its unlocks — and
+	// wired before the LLM orchestrator gate below so it is never contingent
+	// on one existing.
+	consumers = append(consumers, curriculumObserver(w))
 	notify := func(evs []store.Event) {
 		for _, c := range consumers {
 			c(evs)

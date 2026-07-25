@@ -397,22 +397,31 @@ func TestCrossStageDeterminism(t *testing.T) {
 	}
 }
 
-// TestPresetCharterResolution (T006): the preset table — ""/default resolve to
-// the authored default; tutor maps to the default until T017 ships
-// persona.TutorCharter; charterIsDefault is preset-aware.
+// TestPresetCharterResolution (T006/T017): the preset table — ""/default
+// resolve to the authored default; tutor resolves to persona.TutorCharter;
+// charterIsDefault is preset-aware.
 func TestPresetCharterResolution(t *testing.T) {
 	if presetCharter("") != persona.DefaultCharter || presetCharter("default") != persona.DefaultCharter {
 		t.Error("empty/default preset should resolve to persona.DefaultCharter")
 	}
-	if presetCharter("tutor") != persona.DefaultCharter {
-		t.Error("tutor preset maps to the default charter until T017 (TODO recorded)")
+	if presetCharter("tutor") != persona.TutorCharter {
+		t.Error("tutor preset should resolve to persona.TutorCharter")
 	}
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, "charter.md"), []byte(persona.DefaultCharter), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if !charterIsDefault(dir, "tutor") || !charterIsDefault(dir) {
+	if !charterIsDefault(dir) {
 		t.Error("charterIsDefault should be preset-aware")
+	}
+	if charterIsDefault(dir, "tutor") {
+		t.Error("a default-charter file should not read as the tutor preset's default")
+	}
+	if err := os.WriteFile(filepath.Join(dir, "charter.md"), []byte(persona.TutorCharter), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if !charterIsDefault(dir, "tutor") {
+		t.Error("a tutor-charter file should read as default under the tutor preset")
 	}
 }
 

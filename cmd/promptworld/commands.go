@@ -23,6 +23,7 @@ import (
 	"github.com/evanstern/promptworld/internal/metatron"
 	"github.com/evanstern/promptworld/internal/persona"
 	"github.com/evanstern/promptworld/internal/sim"
+	"github.com/evanstern/promptworld/internal/skin"
 	"github.com/evanstern/promptworld/internal/store"
 	"github.com/evanstern/promptworld/internal/tui"
 	"github.com/evanstern/promptworld/internal/world"
@@ -544,8 +545,15 @@ func cmdStatus(args []string) error {
 			clockMap["ended"] = true
 			clockMap["ended_day"] = endedDay
 		}
+		worldMap := map[string]any{"name": w.Manifest.Name, "seed": w.Manifest.Seed, "format_version": w.Manifest.FormatVersion}
+		if w.Manifest.Stage != "" {
+			worldMap["stage"] = w.Manifest.Stage
+			if w.Manifest.StageOverridden {
+				worldMap["stage_overridden"] = true
+			}
+		}
 		return printJSON(map[string]any{
-			"world":  map[string]any{"name": w.Manifest.Name, "seed": w.Manifest.Seed, "format_version": w.Manifest.FormatVersion},
+			"world":  worldMap,
 			"daemon": map[string]any{"running": false},
 			"clock":  clockMap,
 			"log":    map[string]any{"last_seq": lastSeq},
@@ -557,6 +565,9 @@ func cmdStatus(args []string) error {
 		fmt.Printf("run ended day %d, all villagers dead; world is an archive (read-only)\n", endedDay)
 	}
 	fmt.Printf("log: last seq %d\n", lastSeq)
+	if line := stageStatusLine(w.Manifest.Stage, w.Manifest.StageOverridden); line != "" {
+		fmt.Println(line)
+	}
 	return nil
 }
 
@@ -850,8 +861,27 @@ func renderStatusHuman(sd *ipc.StatusData) string {
 	if line := postureStatusLine(sd); line != "" {
 		b.WriteString(line + "\n")
 	}
+	if line := stageStatusLine(sd.World.Stage, sd.World.StageOverridden); line != "" {
+		b.WriteString(line + "\n")
+	}
 	fmt.Fprintf(&b, "log: last seq %d\n", sd.Log.LastSeq)
 	return b.String()
+}
+
+// stageStatusLine renders the curriculum-ladder stage line for `promptworld
+// status` (spec 046 FR-002/FR-009, R10): the active skin's display identity
+// for the world's stage, plus the override marker when creation skipped
+// ahead. Empty for a pre-046/pre-ladder world (Stage absent) — the wire field
+// is absent, so their output is unchanged.
+func stageStatusLine(stage string, overridden bool) string {
+	if stage == "" {
+		return ""
+	}
+	line := fmt.Sprintf("stage: %s (%s)", skin.StageName(stage), stage)
+	if overridden {
+		line += " [overridden]"
+	}
+	return line
 }
 
 // postureStatusLine renders the teaching-posture line for `promptworld status`

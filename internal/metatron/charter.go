@@ -38,9 +38,7 @@ func presetCharter(preset string) string {
 	case "", "default":
 		return persona.DefaultCharter
 	case "tutor":
-		// TODO(T017): persona.TutorCharter ships with US5; until then the tutor
-		// preset serves the default charter text.
-		return persona.DefaultCharter
+		return persona.TutorCharter
 	}
 	return persona.DefaultCharter
 }

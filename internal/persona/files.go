@@ -31,8 +31,11 @@ func JournalPath(worldDir, name string) string {
 
 // Genesis writes each agent's persona.md (read-only) and an empty soul.md.
 // Called exactly once, by `promptworld new` — the only write path to
-// persona.md in the entire system.
-func Genesis(worldDir string) error {
+// persona.md in the entire system. preset names the charter constant to seed
+// charter.md with (spec 046, R6): variadic so every pre-046 call site keeps
+// compiling unchanged (the loadCharter preset-arg precedent) with the default
+// charter's seeding behavior; "tutor" seeds persona.TutorCharter instead.
+func Genesis(worldDir string, preset ...string) error {
 	for _, name := range sim.AgentNames {
 		text, ok := Texts[name]
 		if !ok {
@@ -62,9 +65,13 @@ func Genesis(worldDir string) error {
 	}
 	// Metatron's charter (TASK-12): seeded once, then the file belongs to
 	// the player — genesis never overwrites an existing charter.
+	charterText := DefaultCharter
+	if len(preset) > 0 && preset[0] == "tutor" {
+		charterText = TutorCharter
+	}
 	charterPath := filepath.Join(worldDir, "charter.md")
 	if _, err := os.Stat(charterPath); os.IsNotExist(err) {
-		if err := os.WriteFile(charterPath, []byte(DefaultCharter), 0o644); err != nil {
+		if err := os.WriteFile(charterPath, []byte(charterText), 0o644); err != nil {
 			return err
 		}
 	}

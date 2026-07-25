@@ -172,6 +172,13 @@ type WorldStatus struct {
 	Name          string `json:"name"`
 	Seed          uint64 `json:"seed"`
 	FormatVersion int    `json:"format_version"`
+	// Stage is the world's curriculum-ladder stage (spec 046, FR-002): additive
+	// omitempty, composed straight from world.Manifest.Stage — absent for every
+	// pre-046 and pre-ladder world, so their status bytes are unchanged.
+	Stage string `json:"stage,omitempty"`
+	// StageOverridden mirrors world.Manifest.StageOverridden (spec 046, FR-003):
+	// true when the world was created at an unearned stage via --override.
+	StageOverridden bool `json:"stage_overridden,omitempty"`
 }
 
 type ClockStatus struct {
