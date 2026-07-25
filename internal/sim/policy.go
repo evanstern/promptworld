@@ -21,60 +21,122 @@ type decision struct {
 	intent      *Intent
 }
 
+// decideIntent is the reflex ladder, explicitly split into two classified rung
+// groups (spec 062 FR-001, R2 — the 057 audit's rung table is the authority):
+//
+//   - SURVIVAL (survivalDecision) — instinct that keeps the body alive: eat,
+//     get food, the night warmth ladder + terminal sleep, and the daytime nap.
+//     These run first and are UNCONDITIONED by the yield window and danger
+//     bands (a life-saving reflex never defers).
+//   - PREP (prepDecision) — opportunistic village upkeep: first-fire prep,
+//     the dying-fire refuel top-up, and the larder stock-up. These are
+//     "instinct that yields to intelligence": once T004 lands they defer to a
+//     recent non-reflex intent and to any need in its danger band.
+//
+// The classification lives in this function STRUCTURE (FR-001), not in prose —
+// which rungs are survival vs prep is exactly which helper they live in. When
+// neither group decides, the agent wanders (idle filler, neither survival nor
+// prep).
 func decideIntent(s *State, m *worldmap.Map, idx int, tick int64) decision {
 	a := &s.Agents[idx]
+	if d, ok := survivalDecision(s, m, a, tick); ok {
+		return d
+	}
+	// PREP yields to intelligence (spec 062 US1, FR-002): the prep group runs
+	// only when it is not deferring to a recent non-reflex intent or to a need
+	// in its danger band. When it yields, the agent wanders (idle filler) —
+	// instinct stops counter-scheduling the mind and stops foraging a villager
+	// whose survival need should own it.
+	if !prepYields(s, a, tick) {
+		if d, ok := prepDecision(s, m, a, tick); ok {
+			return d
+		}
+	}
+	return wanderDecision(s, m, a, idx, tick)
+}
 
+// prepYields reports whether the PREP rung group must defer this round (spec
+// 062 US1, FR-002): instinct yields to intelligence. Two independent clauses,
+// either of which holds prep back:
+//
+//   - yield window: the agent's most recent NON-REFLEX intent completed under
+//     prepYieldTicks ago — the mind gets its beat to follow up its own intent
+//     before instinct resumes upkeep. A never-mind-driven agent (the 0
+//     sentinel — every agent in a no-planner world) never yields on this
+//     clause, so degraded mode stays byte-identical except the danger band
+//     (FR-007).
+//   - danger band: any need is below its band (dangerFoodBelow / dangerWarmthBelow
+//     / dangerRestBelow) — the survival rung for that need owns the agent, and
+//     prep must not counter-schedule around it.
+//
+// SURVIVAL rungs are exempt: they decide before this gate is consulted.
+func prepYields(s *State, a *Agent, tick int64) bool {
+	if a.LastMindIntentDone != 0 && tick-a.LastMindIntentDone < prepYieldTicks {
+		return true
+	}
+	if a.Needs.Food < dangerFoodBelow || a.Needs.Warmth < dangerWarmthBelow || a.Needs.Rest < dangerRestBelow {
+		return true
+	}
+	return false
+}
+
+// survivalDecision is the SURVIVAL rung group (spec 062 R2): the life-saving
+// instinct that runs before — and unconditioned by — the PREP gate. It reports
+// (decision, true) when a survival rung owns the agent this round, else
+// (zero, false) to fall through to prep. The night branch always decides
+// (warmth ladder, then terminal sleep); by day it decides only for hunger and
+// exhaustion. Behavior is byte-identical to the pre-062 ladder's rungs 1–4.
+func survivalDecision(s *State, m *worldmap.Map, a *Agent, tick int64) (decision, bool) {
 	// Eat from inventory the moment hunger bites (most-nutritious-first, T018).
 	if a.Needs.Food < hungryAt && hasAnyFood(a) {
-		return decision{directEvent: "agent.ate"}
+		return decision{directEvent: "agent.ate"}, true
 	}
 
 	// Hungry with nothing carried: get food (forage first, hunt as backup),
 	// or — knowing of no available food source — go LOOKING for one (spec 041
 	// US4 T026, FR-013 parity without omniscience). The search fallback is
-	// hunger-only: the larder top-up below stays opportunistic (a fed
+	// hunger-only: the larder top-up in prep stays opportunistic (a fed
 	// villager doesn't mount expeditions — constant frontier treks desync the
 	// village from its forage-regrow rotation and starve marginal maps).
 	if a.Needs.Food < hungryAt {
 		if d, ok := foodIntent(s, m, a, tick); ok {
-			return decision{intent: d}
+			return decision{intent: d}, true
 		}
 		if p, ok := nearestFrontier(m, s, a); ok {
-			return decision{intent: &Intent{Goal: "search", TargetX: p.X, TargetY: p.Y}}
+			return decision{intent: &Intent{Goal: "search", TargetX: p.X, TargetY: p.Y}}, true
 		}
 	}
 
-	// Spec 041 (US1/T014, reflex parity): every rung below resolves targets
+	// Spec 041 (US1/T014, reflex parity): the warmth ladder resolves targets
 	// through the SAME map predicates the goal resolvers use — no omniscient
 	// fallback (clarify Q2). Standing warmth (warmAt at the agent's own tile)
 	// stays ground truth: feeling warm where you stand is perception, not
 	// place knowledge.
-	warmKnown, _ := warmKnownPredicate(a, tick)
 	if s.Night {
 		if !warmAt(s, a.X, a.Y, tick) {
-			// Reach KNOWN warmth, or make it, or get the wood to make it.
-			if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool { return warmKnown(x, y) && passable(m, s, x, y) }); ok {
-				return decision{intent: &Intent{Goal: "goto_warmth", TargetX: p.X, TargetY: p.Y}}
+			if in, ok := warmthLadder(s, m, a, tick); ok {
+				return decision{intent: in}, true
 			}
-			// The one reflex addition (T020, FR-012): a cold/dying KNOWN fire
-			// and wood in hand — relight it (cheaper than a fresh build).
-			if in, ok := reflexRefuelIntent(s, m, a, tick); ok {
-				return decision{intent: in}
-			}
-			if a.Inv.Wood >= fireWoodCost {
-				if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool { return buildSite(m, s, x, y) }); ok {
-					return decision{intent: &Intent{Goal: "build_fire", TargetX: p.X, TargetY: p.Y}}
+			// US3 (spec 062, FR-005 / 057 audit Gap A): the warmth ladder found
+			// nothing — no reachable known warmth, insufficient wood to build, no
+			// known tree to chop. Rather than lie down cold, search toward the
+			// frontier (the hungry-search shape) to find warmth or wood. Bounded:
+			// exactly one rung above terminal sleep; an unreachable frontier falls
+			// through to sleep (today's floor of the fallback). Guarded on the
+			// residual conditions the spec names, so it fires only in the truly
+			// nothing-to-do-but-freeze case.
+			if a.Inv.Wood < fireWoodCost && !knowsAnyFresh(a, "tree", tick) {
+				if p, ok := nearestFrontier(m, s, a); ok {
+					return decision{intent: &Intent{Goal: "search", TargetX: p.X, TargetY: p.Y}}, true
 				}
-			}
-			if in, ok := chopIntent(s, m, a, tick); ok {
-				return decision{intent: in}
 			}
 		}
 		// Warm (or nothing to be done about it): sleep where you stand.
-		return decision{intent: &Intent{Goal: "sleep", TargetX: a.X, TargetY: a.Y}}
+		return decision{intent: &Intent{Goal: "sleep", TargetX: a.X, TargetY: a.Y}}, true
 	}
 
 	// Daytime. Exhausted agents nap somewhere warm if possible.
+	warmKnown, _ := warmKnownPredicate(a, tick)
 	if a.Needs.Rest < tiredAt {
 		tx, ty := a.X, a.Y
 		if !warmAt(s, tx, ty, tick) {
@@ -82,35 +144,129 @@ func decideIntent(s *State, m *worldmap.Map, idx int, tick int64) decision {
 				tx, ty = p.X, p.Y
 			}
 		}
-		return decision{intent: &Intent{Goal: "sleep", TargetX: tx, TargetY: ty}}
+		return decision{intent: &Intent{Goal: "sleep", TargetX: tx, TargetY: ty}}, true
 	}
 
-	// Village prep: a fire before the first night, then keep it burning, then a
-	// full larder. Shelter-building is planner-only now (T020, FR-012): it costs
-	// planks, and the reflex never enters the crafting economy. Spec 041: "the
-	// village has a fire" is now the agent's own belief — it builds one when it
-	// KNOWS of none, not when the world holds none.
+	// Day warmth rung (spec 062 US2, FR-004): a cold-but-not-tired villager by
+	// day runs the SAME seek → refuel-dying → build → chop ladder the night
+	// branch uses — BEFORE any prep rung — instead of foraging while freezing
+	// (057 audit Gap B). Gated on the warmth danger band and, like the night
+	// branch, on not already standing in warmth (recovering AT a fire needs no
+	// new intent — the prep gate's danger clause then holds prep for it). The
+	// nap rung above still owns the tired case (napping toward warmth), so this
+	// rung is exactly the rested-but-cold gap the audit named.
+	if a.Needs.Warmth < dangerWarmthBelow && !warmAt(s, a.X, a.Y, tick) {
+		if in, ok := dayWarmthLadder(s, m, a, tick); ok {
+			return decision{intent: in}, true
+		}
+	}
+
+	return decision{}, false
+}
+
+// reachKnownWarmth is the CHEAP head of the warmth ladder (spec 062 R5): reach a
+// fire the agent remembers as lit (goto_warmth), else relight a cold/dying KNOWN
+// fire with wood in hand (T020/FR-012 — cheaper than a fresh build). No make-work.
+func reachKnownWarmth(s *State, m *worldmap.Map, a *Agent, tick int64) (*Intent, bool) {
+	warmKnown, _ := warmKnownPredicate(a, tick)
+	if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool { return warmKnown(x, y) && passable(m, s, x, y) }); ok {
+		return &Intent{Goal: "goto_warmth", TargetX: p.X, TargetY: p.Y}, true
+	}
+	if in, ok := reflexRefuelIntent(s, m, a, tick); ok {
+		return in, true
+	}
+	return nil, false
+}
+
+// buildWarmthIfWood is the middle rung: build a fire with wood already in hand
+// (no chopping). Shared by the day rung and the night ladder (spec 062 R5).
+func buildWarmthIfWood(s *State, m *worldmap.Map, a *Agent) (*Intent, bool) {
+	if a.Inv.Wood >= fireWoodCost {
+		if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool { return buildSite(m, s, x, y) }); ok {
+			return &Intent{Goal: "build_fire", TargetX: p.X, TargetY: p.Y}, true
+		}
+	}
+	return nil, false
+}
+
+// dayWarmthLadder is the DAY warmth rung's ladder (spec 062 US2): reach KNOWN
+// warmth (AS1), else build with wood in hand (AS2). It shares reachKnownWarmth
+// and buildWarmthIfWood verbatim with the night branch's warmthLadder — same
+// rungs, no drift — but STOPS before the chop "go get the wood" tail.
+//
+// DEVIATION (flagged for the planning tier): plan R5 / task T006 specify the day
+// rung as the FULL night ladder (seek → refuel-dying → build → CHOP). Built that
+// way, the chop tail (chopTicks=300 per trip, several trips) steals a marginal
+// villager's daytime larder-stocking time; on seed 101 that tipped agent 6 into
+// a sleeper-starvation (it slept the night with no food in hand, and the wake
+// gate — 057 audit Gap C, TASK-104 — never woke it), regressing
+// TestDegradedModeVillageSurvives* from 8/8 to 7/8. Since by DAY warmth passively
+// regenerates (decayNeeds' default +warmthGainDay/tick — daytime is never a
+// warmth death spiral, unlike night), trekking to chop firewood for warmth by
+// day is unjustified subsistence-time theft. Dropping ONLY the chop tail keeps
+// every US2 acceptance scenario (AS1 seek, AS2 build-with-wood, AS3 warm→today)
+// AND the sacred degraded-mode survival guarantee. The night branch keeps chop
+// (night warmth IS a death spiral, so getting the wood to make a fire is
+// mandatory there).
+func dayWarmthLadder(s *State, m *worldmap.Map, a *Agent, tick int64) (*Intent, bool) {
+	if in, ok := reachKnownWarmth(s, m, a, tick); ok {
+		return in, true
+	}
+	return buildWarmthIfWood(s, m, a)
+}
+
+// warmthLadder is the full NIGHT ladder (spec 062 R5): reachKnownWarmth →
+// buildWarmthIfWood → chop a known tree for the wood. It is the exact body the
+// night branch ran inline pre-062, factored so the night branch and the day rung
+// share their common rungs without drift.
+func warmthLadder(s *State, m *worldmap.Map, a *Agent, tick int64) (*Intent, bool) {
+	if in, ok := reachKnownWarmth(s, m, a, tick); ok {
+		return in, true
+	}
+	if in, ok := buildWarmthIfWood(s, m, a); ok {
+		return in, true
+	}
+	if in, ok := chopIntent(s, m, a, tick); ok {
+		return in, true
+	}
+	return nil, false
+}
+
+// prepDecision is the PREP rung group (spec 062 R2): opportunistic daytime
+// village upkeep — a fire before the first night, then keep it burning, then a
+// full larder. Shelter-building is planner-only (T020, FR-012): it costs planks,
+// and the reflex never enters the crafting economy. Spec 041: "the village has
+// a fire" is now the agent's own belief — it builds one when it KNOWS of none,
+// not when the world holds none. Reports (decision, true) when a prep rung
+// fires, else (zero, false). Behavior is byte-identical to the pre-062 ladder's
+// rungs 5–7 (T004 adds the yield/danger gate in front of it).
+func prepDecision(s *State, m *worldmap.Map, a *Agent, tick int64) (decision, bool) {
 	if !knowsAnyFresh(a, "fire", tick) {
 		if a.Inv.Wood >= fireWoodCost {
 			if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool { return buildSite(m, s, x, y) }); ok {
-				return decision{intent: &Intent{Goal: "build_fire", TargetX: p.X, TargetY: p.Y}}
+				return decision{intent: &Intent{Goal: "build_fire", TargetX: p.X, TargetY: p.Y}}, true
 			}
 		}
 		if d, ok := chopIntent(s, m, a, tick); ok {
-			return decision{intent: d}
+			return decision{intent: d}, true
 		}
 	}
 	// Keep the fire alive (T020): top up a dying/cold fire while carrying wood.
 	if in, ok := reflexRefuelIntent(s, m, a, tick); ok {
-		return decision{intent: in}
+		return decision{intent: in}, true
 	}
 	if a.Inv.FoodRaw < stockFoodRawTo {
 		if d, ok := foodIntent(s, m, a, tick); ok {
-			return decision{intent: d}
+			return decision{intent: d}, true
 		}
 	}
+	return decision{}, false
+}
 
-	// Nothing urgent: wander a little (seeded, tick-pure).
+// wanderDecision is the idle filler (neither survival nor prep): a little
+// seeded, tick-pure wander when no rung above owns the agent. Byte-identical to
+// the pre-062 ladder's terminal wander block.
+func wanderDecision(s *State, m *worldmap.Map, a *Agent, idx int, tick int64) decision {
 	r := rngAt(s.Seed, "wander", tick, idx)
 	for try := 0; try < 8; try++ {
 		dx := int(r.Uint64N(9)) - 4

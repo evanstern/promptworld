@@ -9,17 +9,23 @@ package sim
 //	                | warmth known-reachable | none known    | known-but-stale/dead
 //	  wood ≥ 2      | goto_warmth            | build_fire     | refuel_fire
 //	  wood = 1 +tree| goto_warmth            | chop           | refuel_fire
-//	  wood = 0      | goto_warmth            | sleep          | sleep
+//	  wood = 0      | goto_warmth            | search         | search
 //
 // Doctrine reading of each column:
 //   - known-reachable warmth: walk to the fire you remember as lit (cheapest).
 //   - none known: make warmth — build with wood in hand, else go get the wood
-//     (chop) if a tree is known; with neither, sleep is the honest floor.
+//     (chop) if a tree is known; with NEITHER, spec 062 US3 (057 audit Gap A)
+//     now SEARCHES toward the frontier for warmth/wood rather than lying down
+//     cold — sleep is the floor only when no frontier is reachable either. The
+//     reflexAgent's genesis map on seed 42 has a reachable frontier, so the
+//     wood=0/nothing-known cells resolve to search (was sleep pre-062); the
+//     no-frontier fall-through to sleep is pinned by TestNightSearchFallback.
 //   - known-but-stale (a fire you remember as cold/out): relight it with any
 //     wood you carry (refuel beats a fresh build); with no wood and no tree,
-//     sleep is again the floor. The refuel rung is what closes the "stale
-//     warmth belief" candidate gap named in US3 — the agent acts on the fire it
-//     knows rather than livelocking on a warmth it can't reach.
+//     the US3 frontier search is again the floor above sleep. The refuel rung
+//     is what closes the "stale warmth belief" candidate gap named in spec 057
+//     US3 — the agent acts on the fire it knows rather than livelocking on a
+//     warmth it can't reach.
 
 import (
 	"testing"
@@ -113,11 +119,11 @@ func TestColdNightReflexMatrix(t *testing.T) {
 
 		{warmNoneKnown, woodTwo, "build_fire"},
 		{warmNoneKnown, woodOneTree, "chop"},
-		{warmNoneKnown, woodZero, "sleep"},
+		{warmNoneKnown, woodZero, "search"}, // spec 062 US3: was "sleep"; Gap A frontier search
 
 		{warmKnownStale, woodTwo, "refuel_fire"},
 		{warmKnownStale, woodOneTree, "refuel_fire"},
-		{warmKnownStale, woodZero, "sleep"},
+		{warmKnownStale, woodZero, "search"}, // spec 062 US3: was "sleep"; Gap A frontier search
 	}
 
 	for _, c := range cases {

@@ -800,7 +800,14 @@ func (s *State) Apply(e store.Event) error {
 		a.Intent = nil
 		a.IdleSince = e.Tick
 		// Spec 043 US1: the current intent completed — close its ring record.
-		a.stampIntentOutcome("done", e.Tick)
+		// Spec 062 US1 (FR-003): if the completing intent was non-reflex-sourced
+		// (planner/plan/meeting = "intelligence"), arm the yield window so the
+		// PREP instinct defers to the mind for prepYieldTicks. A reflex
+		// completion never arms it (isMindSource is false for "reflex"/""), so a
+		// no-planner world's window stays a permanent 0 sentinel.
+		if src, ok := a.stampIntentOutcome("done", e.Tick); ok && isMindSource(src) {
+			a.LastMindIntentDone = e.Tick
+		}
 
 	case "agent.build_failed":
 		// Spec 038: a build cancelled by mid-work re-validation. State effect is
@@ -819,7 +826,9 @@ func (s *State) Apply(e store.Event) error {
 		a.Intent = nil
 		a.IdleSince = e.Tick
 		// Spec 043 US1: a build cancelled mid-work — close its ring record
-		// "failed" so the next thought sees the build did not finish.
+		// "failed" so the next thought sees the build did not finish. Spec 062:
+		// a FAILED build is not an intent completion, so it never arms the yield
+		// window (the source is discarded) — only agent.intent_done does.
 		a.stampIntentOutcome("failed", e.Tick)
 
 	case "agent.moved":

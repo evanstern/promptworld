@@ -767,6 +767,7 @@ func TestRebaseTaxonomyComplete(t *testing.T) {
 		"Agent.LastGive":            shift,
 		"PairTalk.Tick":             shift, // spec 061: pair last-exchange cooldown anchor (Agent.LastTalk shape)
 		"Agent.IdleSince":           shift,
+		"Agent.LastMindIntentDone":  shift, // spec 062 US1: yield-window anchor (Belief.Reinforced shape), 0 = never mind-driven
 		"Intent.WorkStart":          shift,
 		"AgentHail.Until":           shift,
 		"PlanStep.Until":            shift, // deviation from data-model.md — see rebaseTicks NOTE
