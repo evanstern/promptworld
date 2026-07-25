@@ -3,10 +3,10 @@ id: TASK-89
 title: >-
   world-01 local tier runs cogito:3b — upgrade to gemma4:12b-mlx (Thornspire
   gist confabulation is model-tier, not prompt)
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-24 04:31'
-updated_date: '2026-07-25 18:18'
+updated_date: '2026-07-25 18:40'
 labels:
   - emergent-lore
   - epistemics
@@ -26,6 +26,12 @@ Found during spec 030 (TASK-79) US3 eval, 2026-07-24. The spec 030 gist-attribut
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 world-01 llm.json local.model updated to gemma4:12b-mlx and the daemon restarted against it
+- [x] #1 world-01 llm.json local.model updated to gemma4:12b-mlx and the daemon restarted against it
 - [ ] #2 A post-upgrade multi-scene gist sample from world-01 shows zero fact-flattened / asserted-unperformed-action shapes (spot-check recorded on this task)
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+MVLS sweep ops (2026-07-25): (1) verified world-01 llm.json routes already reference only gemma (gemma4:12b-mlx @ mbpro-m1.local:11434) + cloud — no route used cogito:3b any longer; removed the dangling unused cogito provider stanza (backup: llm.json.bak-task89). (2) World was format_version 3; backed up the whole dir (world-01.bak-task89) and ran promptworld migrate — v4, 8 villagers carried across at tick 538823 (day 7 11:40), v3 events archived in world.v3.db. (3) Daemon restarted clean against the migrated world: mind driver on (8 villagers), metatron on, orchestrator on. AC2 pending: multi-scene gist sample to spot-check once new conversations accumulate under gemma.
+<!-- SECTION:NOTES:END -->
