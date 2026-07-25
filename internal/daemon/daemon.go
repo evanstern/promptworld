@@ -148,6 +148,11 @@ func Run(dir string) error {
 	// pure-sim teaching worlds — neither applies a default.
 	var teachingPostureSpeed clock.Speed
 
+	// estPersister (TASK-113) is non-nil only inside the orchestrator branch
+	// below; Run flushes it once, synchronously, after the sim loop stops, so a
+	// no-LLM world does neither the periodic nor the shutdown write.
+	var estPersister *estimatorPersister
+
 	// LLM orchestrator: optional (config-gated), fully outside the sim loop —
 	// an unreachable model degrades the AI layer, never the world.
 	if llmCfg, err := llm.LoadConfig(w.LLMConfigPath()); err != nil {
@@ -233,6 +238,24 @@ func Run(dir string) error {
 		} else {
 			fmt.Print(uncalibratedBootWarning(w.Manifest.Name))
 		}
+		// Re-seed from any persisted live estimate (TASK-113), taking
+		// max(calibration/bootstrap seed, persisted) per provider — a
+		// restart no longer resets 36 estimators to the optimistic floor
+		// (control-surface report §4 row 3, §7). Must run before the
+		// teaching-posture default below, which reads the final estimate.
+		// A missing file is legal (no persisted history yet); a malformed
+		// one degrades to a warning, never a boot failure.
+		if estState, eerr := cognition.LoadEstimatorState(w.EstimatorStatePath()); eerr != nil {
+			fmt.Printf("daemon: %v — ignoring persisted latency estimates\n", eerr)
+		} else if estState != nil {
+			orch.SeedPersisted(estState)
+			fmt.Printf("daemon: latency estimator reseeded from persisted state (saved %s)\n", estState.SavedAt)
+		}
+		// Daemon-owned periodic + shutdown persistence of the live estimate
+		// (TASK-113): flushes every estimatorPersistCadence and once more,
+		// synchronously, after the sim loop stops below.
+		estPersister = newEstimatorPersister(orch, w.EstimatorStatePath())
+		go estPersister.run(ctx)
 		// Teaching posture (spec 039 US1/US3): default the clock to the highest
 		// planner-safe ladder rung, derived live from the planner-serving
 		// provider's estimate — never hard-coded, so recalibration or provider
@@ -383,6 +406,17 @@ func Run(dir string) error {
 	}
 
 	runErr := loop.Run(ctx) // returns after final snapshot
+
+	// Final estimator flush (TASK-113): synchronous, after the sim loop has
+	// stopped, so the last live seconds-per-point this run learned survives
+	// the restart even if the periodic cadence never fired (a short-lived
+	// daemon). Best-effort — a write failure is logged, never promoted to the
+	// process's exit error.
+	if estPersister != nil {
+		if ferr := estPersister.Flush(); ferr != nil {
+			fmt.Printf("daemon: estimator state not persisted (%v)\n", ferr)
+		}
+	}
 
 	if err := appendDaemonEvent(st, srv, "daemon.stopped",
 		sim.DaemonStoppedPayload{Tick: state.Tick}, state.Tick); err != nil && runErr == nil {

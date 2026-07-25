@@ -662,6 +662,41 @@ func (o *Orchestrator) SeedCalibration(p *cognition.Profile) {
 	}
 }
 
+// SeedPersisted re-seeds every provider's estimator to max(current estimate,
+// persisted value) from a previously loaded EstimatorState (TASK-113, nil =
+// no-op). Callers run it AFTER SeedCalibration (or after New()'s bootstrap
+// seed, when there is no calibration.json), so the composition is exactly the
+// AC#2 contract: max(calibration/bootstrap seed, persisted estimate) — a
+// persisted live estimate can only raise the seed above the calibration or
+// bootstrap floor, never lower it below a fresher human recalibration.
+// Called once at daemon start, before traffic, same posture as
+// SeedCalibration.
+func (o *Orchestrator) SeedPersisted(state *cognition.EstimatorState) {
+	if state == nil {
+		return
+	}
+	for name, pv := range o.providers {
+		cur := pv.est.Estimate()
+		if seed := cognition.ReseedValue(cur, state, name); seed != cur {
+			pv.est = cognition.NewEstimator(seed)
+		}
+	}
+}
+
+// SnapshotEstimators returns every provider's current live seconds-per-point
+// estimate (TASK-113) — the persistence source the daemon writes to
+// estimator_state.json periodically and at shutdown, so a restart reseeds
+// from real live drift instead of resetting to the calibration/bootstrap
+// floor. A plain value snapshot, safe to call from any goroutine (Estimator
+// serializes its own reads).
+func (o *Orchestrator) SnapshotEstimators() map[string]float64 {
+	out := make(map[string]float64, len(o.providers))
+	for name, pv := range o.providers {
+		out[name] = pv.est.Estimate()
+	}
+	return out
+}
+
 // CalibratedAt returns the named provider's calibration-profile timestamp, or
 // "" when it is running on bootstrap estimates (never seeded via
 // SeedCalibration, or the profile had no usable entry for it) — the seed-
