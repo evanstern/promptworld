@@ -2,7 +2,7 @@
 title: Panel — lesson row
 class: panel
 status: shipped
-verified_against: cb4a997453db29bbd746f3ae6cace99748cb281e
+verified_against: 39e2407850ef4b4e8493846e28b12b5a445a0b39
 sources:
   - internal/tui/lessons.go
   - internal/tui/views.go
@@ -171,15 +171,16 @@ strip's narrow carry already has).
 
 Every lesson string is authored with `{{skin.guardian.*}}` token literals,
 resolved through `lessonSkinResolve` (`internal/tui/lessons.go`) at render
-time (the row) and at population time (the help overlay's pull half,
-boot-frozen). Spec 052's runtime token-resolution substrate (TASK-121) has
-not yet merged to `main` as of this feature — `lessonSkinResolve` is a
-bounded, package-local fallback table covering only the tokens the catalog
-actually uses (`skin.guardian.epithet`/`.tab_label`), populated from the
-PUBLISHED contract's §3 default-skin table
-(`specs/052-skinnable-guardian/contracts/skin-contract.md`). The swap to
-121's real resolver is a single-function change, documented at the seam;
-either path satisfies FR-008/SC-005 (no raw `{{…}}` literal ever renders).
+time (the row, through the status-carried world skin) and at population
+time (the help overlay's pull half — re-resolved on reconnect, the
+boot-frozen skin's only change path). Since spec 052 (TASK-121) merged its
+runtime substrate, `lessonSkinResolve` delegates to the REAL lookup
+(`internal/skin`: world override → default table → the token path itself)
+over the generic `{{skin.*}}` convention — the interim fallback table this
+page previously documented is gone, and the token-completeness test
+(`internal/skin/completeness_test.go`) pins every token the catalog names
+to a default-table row. FR-008/SC-005 holds structurally: `Resolve` never
+returns an empty string.
 
 ## Linear-stream / CLI projection (D1)
 
