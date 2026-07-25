@@ -4,7 +4,7 @@ title: Guardian console page + systems-tab telemetry split
 status: In Progress
 assignee: []
 created_date: '2026-07-25 14:44'
-updated_date: '2026-07-25 18:05'
+updated_date: '2026-07-25 18:46'
 labels:
   - learning-game
   - tui
@@ -26,19 +26,21 @@ Spec: specs/053-guardian-console
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Guardian page renders document-style turns; telemetry no longer shares the guardian tab
-- [ ] #2 Charter/skills readable in-console with binding status; $EDITOR handoff confirmed in-TUI
-- [ ] #3 Report card renders as a console card at run end / pause / exercise resolution; badges between
-- [ ] #4 Spec phase: Setup
-- [ ] #5 Spec phase: Foundational
-- [ ] #6 Spec phase: User Story 2 — Telemetry moves out (P1) 🎯 merge-risk first
-- [ ] #7 Spec phase: User Story 1 — The console page (P1)
-- [ ] #8 Spec phase: User Story 3 — Charter/skills read surface + $EDITOR (P2)
-- [ ] #9 Spec phase: Polish & Cross-Cutting Concerns
+- [x] #1 Guardian page renders document-style turns; telemetry no longer shares the guardian tab
+- [x] #2 Charter/skills readable in-console with binding status; $EDITOR handoff confirmed in-TUI
+- [x] #3 Report card renders as a console card at run end / pause / exercise resolution; badges between
+- [x] #4 Spec phase: Setup
+- [x] #5 Spec phase: Foundational
+- [x] #6 Spec phase: User Story 2 — Telemetry moves out (P1) 🎯 merge-risk first
+- [x] #7 Spec phase: User Story 1 — The console page (P1)
+- [x] #8 Spec phase: User Story 3 — Charter/skills read surface + $EDITOR (P2)
+- [x] #9 Spec phase: Polish & Cross-Cutting Concerns
 <!-- AC:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 Model tier: Sonnet (spec-implementer default). Rubric: single-package view/rendering slice (new page + dock tab + framework-standard ExecProcess), tests alongside — routine tier per constitution Principle V; runbook Lane 2 notes escalate-to-Opus if gates fail. Dispatched by UI-sweep orchestrator.
+
+spec-bridge sync: 14/14 tasks done — merged via PR #87 (5af30cc), clean rebase, all gates green post-rebase incl. the new check-merge-drift pr gate. AC #3 satisfied per the recorded card-seam scope ruling (seam shipped; renderer/production = TASK-127/115 per D5). Judgment calls recorded in-PR: G shadowed in inspect/villagers modes (layered bindings win, documented in keymap.md); skills-locked line carries no file count (status surface honesty).
 <!-- SECTION:NOTES:END -->
