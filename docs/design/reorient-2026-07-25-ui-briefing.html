@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>promptworld — UI reorientation briefing (2026-07-25)</title>
+<style>
+  /* tokens — phosphor terminal (dark) / field manual (light). Categorical pair validated:
+     light #0c8a74/#9a6b0a on #fff · dark #17a08c/#bd8b26 on #131a13 (dataviz validator, all checks pass) */
+  :root{
+    --bg:#f5f6f1; --card:#ffffff; --ink:#202b1e; --muted:#5d6b58;
+    --accent:#9a6b0a; --new:#0c8a74; --changed:#9a6b0a; --warn:#a8430e;
+    --line:#dce2d4; --chip:#edf0e7; --frame:#b9c4ae;
+    --callout-bg:#f0f3ea; --warn-bg:#f9ede4;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0d120d; --card:#131a13; --ink:#dce6d5; --muted:#90a18b;
+      --accent:#e2ab45; --new:#17a08c; --changed:#bd8b26; --warn:#e07a4f;
+      --line:#263024; --chip:#1a231a; --frame:#3a4837;
+      --callout-bg:#16201a; --warn-bg:#2b1c10;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0d120d; --card:#131a13; --ink:#dce6d5; --muted:#90a18b;
+    --accent:#e2ab45; --new:#17a08c; --changed:#bd8b26; --warn:#e07a4f;
+    --line:#263024; --chip:#1a231a; --frame:#3a4837;
+    --callout-bg:#16201a; --warn-bg:#2b1c10;
+  }
+  :root[data-theme="light"]{
+    --bg:#f5f6f1; --card:#ffffff; --ink:#202b1e; --muted:#5d6b58;
+    --accent:#9a6b0a; --new:#0c8a74; --changed:#9a6b0a; --warn:#a8430e;
+    --line:#dce2d4; --chip:#edf0e7; --frame:#b9c4ae;
+    --callout-bg:#f0f3ea; --warn-bg:#f9ede4;
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55;
+    -webkit-text-size-adjust:100%}
+  .wrap{max-width:880px;margin:0 auto;padding:36px 22px 90px}
+  a{color:var(--new)}
+  h1,h2,h3{text-wrap:balance}
+  h1{font-family:var(--mono);font-size:1.7rem;line-height:1.2;letter-spacing:-.01em;margin:.2em 0 .3em}
+  h2{font-family:var(--mono);font-size:1.15rem;margin:2.6em 0 .6em;letter-spacing:.01em}
+  h2::before{content:"§ ";color:var(--accent)}
+  h3{font-size:1rem;margin:1.6em 0 .4em}
+  p,li{font-size:1rem;max-width:70ch}
+  .muted{color:var(--muted)}
+  .eyebrow{font-family:var(--mono);font-size:.72rem;text-transform:uppercase;letter-spacing:.14em;
+    color:var(--muted)}
+  code,.mono{font-family:var(--mono);font-size:.88em}
+  code{background:var(--chip);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+
+  /* terminal frame */
+  .term{background:var(--card);border:1px solid var(--frame);border-radius:8px;margin:18px 0;
+    overflow:hidden}
+  .term-bar{display:flex;gap:10px;align-items:baseline;padding:8px 14px;border-bottom:1px solid var(--line);
+    font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+  .term-bar .dot{color:var(--accent)}
+  .term pre{margin:0;padding:14px 16px;overflow-x:auto;font-family:var(--mono);
+    font-size:.8rem;line-height:1.45;color:var(--ink)}
+  .term pre .n{color:var(--new);font-weight:700}
+  .term pre .c{color:var(--changed);font-weight:700}
+  .term pre .k{color:var(--muted)}
+  .term pre .dim{color:var(--muted)}
+
+  .legend{display:flex;flex-wrap:wrap;gap:14px 22px;padding:10px 16px;border-top:1px solid var(--line);
+    font-family:var(--mono);font-size:.78rem}
+  .legend span{white-space:nowrap}
+  .lg-new{color:var(--new);font-weight:700}
+  .lg-changed{color:var(--changed);font-weight:700}
+  .lg-kept{color:var(--muted);font-weight:700}
+
+  /* stat tiles */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:22px 0}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+  .stat b{display:block;font-family:var(--mono);font-size:1.5rem;font-variant-numeric:tabular-nums;
+    color:var(--accent)}
+  .stat span{font-size:.78rem;color:var(--muted)}
+
+  .callout{border-left:3px solid var(--accent);background:var(--callout-bg);
+    border-radius:0 8px 8px 0;padding:13px 17px;margin:16px 0}
+  .callout p{margin:.3em 0}
+  .callout.warn{border-left-color:var(--warn);background:var(--warn-bg)}
+
+  /* decision list */
+  ol.decisions{list-style:none;counter-reset:d;padding:0;margin:14px 0}
+  ol.decisions>li{counter-increment:d;position:relative;padding:10px 14px 10px 52px;margin:8px 0;
+    background:var(--card);border:1px solid var(--line);border-radius:8px}
+  ol.decisions>li::before{content:"D-" counter(d);position:absolute;left:12px;top:12px;
+    font-family:var(--mono);font-size:.75rem;color:var(--accent);font-weight:700}
+  ol.decisions b{display:block;margin-bottom:2px}
+  ol.decisions p{margin:0;font-size:.92rem;color:var(--muted)}
+
+  /* wave rail */
+  .waves{list-style:none;margin:14px 0;padding:0;border-left:2px solid var(--frame)}
+  .waves li{position:relative;padding:2px 0 16px 26px}
+  .waves li::before{content:attr(data-w);position:absolute;left:-13px;top:0;width:24px;height:24px;
+    border-radius:50%;background:var(--card);border:2px solid var(--accent);
+    font-family:var(--mono);font-size:.68rem;font-weight:700;color:var(--accent);
+    display:flex;align-items:center;justify-content:center}
+  .waves b{font-family:var(--mono);font-size:.9rem}
+  .waves p{margin:.2em 0 0;font-size:.92rem;color:var(--muted)}
+
+  /* tables */
+  .table-scroll{overflow-x:auto;margin:16px 0}
+  table.data{border-collapse:collapse;width:100%;font-size:.9rem}
+  table.data caption{text-align:left;color:var(--muted);font-size:.82rem;margin-bottom:6px;
+    font-family:var(--mono)}
+  table.data th,table.data td{border:1px solid var(--line);padding:7px 10px;text-align:left;
+    vertical-align:top}
+  table.data thead th{background:var(--chip);font-family:var(--mono);font-size:.78rem;
+    text-transform:uppercase;letter-spacing:.06em}
+  table.data td.id{font-family:var(--mono);white-space:nowrap;font-variant-numeric:tabular-nums}
+  .pill{display:inline-block;font-family:var(--mono);font-size:.7rem;border-radius:99px;
+    padding:1px 9px;border:1px solid var(--line);white-space:nowrap}
+  .pill.new{color:var(--new);border-color:var(--new)}
+  .pill.edit{color:var(--changed);border-color:var(--changed)}
+
+  .theme-toggle{position:fixed;top:14px;right:14px;z-index:50;font-family:var(--mono);font-size:.8rem;
+    color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:8px;
+    padding:6px 12px;cursor:pointer}
+  .theme-toggle:hover{background:var(--chip)}
+  .theme-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  footer{margin-top:56px;border-top:1px solid var(--line);padding-top:14px;font-size:.8rem;
+    color:var(--muted);font-family:var(--mono)}
+  @media print{.theme-toggle{display:none}body{background:#fff}}
+  @media (prefers-reduced-motion: no-preference){
+    .term-bar .dot{animation:blink 2.4s steps(1) infinite}
+    @keyframes blink{50%{opacity:.25}}
+  }
+</style>
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle light/dark theme">◐ theme</button>
+<div class="wrap">
+
+  <p class="eyebrow">promptworld · reorientation briefing · run promptworld-2026-07-25-13-58-18</p>
+  <h1>The Staged Cockpit<br><span class="muted">UI/UX for the teaching-game pivot</span></h1>
+  <p class="muted" style="max-width:72ch">Four corpus branches, four cross-grounded analyses, eight
+  operator decisions. The verdict in one line: <strong style="color:var(--ink)">promptworld's TUI is a
+  world-class watching instrument whose central verb — prompting the guardian — and whose curriculum
+  had almost no surface; the fix is additive, not a rewrite.</strong></p>
+
+  <div class="term" role="img" aria-label="Annotated mockup of the redesigned widescreen TUI composite: map and dock with new exercise and systems tabs, villager strip, lesson row, guardian strip, minibuffer, plus new ceremony and postmortem overlay pages">
+    <div class="term-bar"><span>promptworld ui demo — the composite after the redesign</span><span class="dot">▮</span></div>
+<pre>┌ header ── day 4 · 08:12 · 4x · <span class="c">● stage: The Voice</span> · badges ─────────────┐
+│ ┌ MAP <span class="c">●</span> ────────────────────────────┐ ┌ DOCK ─────────────────────────┐ │
+│ │  ~ ♠ " ^ ⌂ ▲ @ ✝                    │ │ chronicle <span class="c">●</span> │ guardian <span class="c">●</span>      │ │
+│ │  camera over the village            │ │ villagers ○ │ <span class="n">exercise ◆</span>      │ │
+│ │  <span class="n">◆ condition overlays</span> (needs, mind) │ │ <span class="n">systems ◆</span> (providers·horizon) │ │
+│ │  <span class="c">● ⏎/click jumps here from events</span>  │ │ <span class="c">● guardian tab: fiction only</span>  │ │
+│ └─────────────────────────────────────┘ └───────────────────────────────┘ │
+│ <span class="n">◆ villagers strip</span>  Ash☺ Rowan☹ Birch☺ Fern☺ …                            │
+│ <span class="n">◆ lesson row</span>       "the guardian refused — your charter's wording        │
+│                     decides this · press ? → lessons"                     │
+│ <span class="n">◆ guardian strip</span>   ⚡ 3/5 · regen 02:10 · 👁 2 watches · faith ▲          │
+│ ○ minibuffer       m to speak with the guardian…                          │
+└ footer ── hints ○ · ? help ○ ── <span class="n">◆ overlays: ceremony · postmortem</span> ──────┘</pre>
+    <div class="legend">
+      <span><span class="lg-new">◆ new surface</span> (7 pages/regions)</span>
+      <span><span class="lg-changed">● changed</span> (split, jump, stage-aware)</span>
+      <span><span class="lg-kept">○ kept</span> (five-region anatomy holds)</span>
+    </div>
+  </div>
+
+  <div class="stats" aria-label="Run figures">
+    <div class="stat"><b>4</b><span>corpus branches, 4 gate-verified analyses</span></div>
+    <div class="stat"><b>8</b><span>operator decisions</span></div>
+    <div class="stat"><b>13</b><span>lead defaults (D1–D13)</span></div>
+    <div class="stat"><b>12</b><span>board moves executed</span></div>
+    <div class="stat"><b>6</b><span>build waves</span></div>
+    <div class="stat"><b>0</b><span>big refactors required</span></div>
+  </div>
+
+  <h2>Verdict</h2>
+  <p>All four evaluations converged: the shipped TUI already implements the surveyed corpus's
+  <em>watching</em> craft — the digest grammar is Cogmind's log discipline fused with RimWorld's
+  severity language, the villager drill-down is the Smallville inspector chain, the <code>?</code>
+  overlay is Cogmind's tiered context help. What was missing was every <em>game</em> surface:</p>
+  <ul>
+    <li>The central verb lived in a one-line, tail-truncating minibuffer feeding a telemetry-crowded tab.</li>
+    <li>The curriculum ladder — the pivot itself — rendered as one header segment plus feed lines that scroll away at 16×; the ladder's front door was a CLI command outside the game.</li>
+    <li>The scenario run (the ratified v1 game) had <strong>no designed screen</strong>: no rubric, no briefing, no score surface — and the narrator's ~2 chapters/game-day cadence means short runs could produce <em>zero</em> chronicle entries.</li>
+    <li>The page-by-page design reference had rotted ~6 specs behind shipped reality, so "build from the design doc" was already false.</li>
+  </ul>
+  <div class="callout"><p><strong>No big refactor.</strong> Every adopted surface is additive on the
+  existing five-region anatomy and the replica machinery — the Dwarf Fortress Premium lesson
+  (redesigns that orphan the old layout's logic draw their own criticism) is the standing guardrail.</p></div>
+
+  <h2>The eight decisions</h2>
+  <ol class="decisions">
+    <li><b>Headline direction: the Staged Cockpit.</b><p>Guardian console page + systems-tab telemetry
+      split, map-legibility wins (jump-to-source, villager strip, overlays), and stage-shaped
+      progressive <em>layout defaults</em>.</p></li>
+    <li><b>Charter authoring: in-TUI read, $EDITOR write.</b><p>The console shows charter/skills with
+      binding status and honest lock notices; authoring hands off to the editor — no in-TUI text editor.</p></li>
+    <li><b>Stage shapes layout defaults only.</b><p>Everything reachable at every stage and via
+      <code>?</code>; pre-ladder worlds get everything; capability locks stay angel-only (spec 046 doctrine untouched).</p></li>
+    <li><b>docs/design/tui v2 is the living authority, gated.</b><p>Pages/panels/overlays/patterns +
+      uniform control tables; <code>verified_against</code> pins + check script enforce same-PR amendments.</p></li>
+    <li><b>Lessons get a dedicated row.</b><p>One active lesson, ≤2 lines, dwells until done, points at a
+      key/tab; default-on at stages 1–2, badge+overlay elsewhere.</p></li>
+    <li><b>Both big moments seize the screen.</b><p>Stage-unlock ceremony and run-end postmortem take
+      over immediately (operator chose salience over the never-interrupt rule); both dismissable and
+      replayable from pull surfaces.</p></li>
+    <li><b>Guardian strip above the minibuffer.</b><p>Charge, regen, watches, faith — the action budget
+      pairs with the input line so the minibuffer reads as THE verb.</p></li>
+    <li><b>Input parity ratified.</b><p>Every action keyboard AND mouse, keyboard primary; control
+      tables gain a mouse column so a parity sweep test can exist.</p></li>
+  </ol>
+  <p class="muted" style="font-size:.9rem">Plus 13 lead-adopted defaults (D1–D13) — terminal-first
+  rendering with the linear-stream accessibility floor, skin-tokens-before-literals, per-exercise
+  forecast/fog, per-user lesson state, player-authorship unlock voice, rubric-first fork duels, and
+  more — recorded in full in the synthesis.</p>
+
+  <h2>What each branch contributed</h2>
+  <div class="table-scroll">
+  <table class="data">
+    <caption>corpus → position map (analyses are gate-verified in research/&lt;branch&gt;/)</caption>
+    <thead><tr><th>Branch</th><th>Analysis</th><th>Load-bearing contribution</th></tr></thead>
+    <tbody>
+      <tr><td class="id">Game-UI-UX</td><td class="id">Analysis-Teaching-Game-TUI</td>
+        <td>The four direction options and the head-to-head vs DF/RimWorld/Cogmind/chat-console
+        evidence; the staleness audit; the build order.</td></tr>
+      <tr><td class="id">Game-Gameplay-Patterns</td><td class="id">Analysis-Play-Loop-Surfaces</td>
+        <td>Exercise panel, postmortem takeover, guardian strip, forecast-vs-fog as a per-exercise
+        dial, the takeover voice asymmetry (authorship on success, no-blame evidence on failure).</td></tr>
+      <tr><td class="id">Learning-Game-Design</td><td class="id">Analysis-Pedagogy-To-UI</td>
+        <td>Lesson-row anatomy (RimWorld ConceptDef: dwell, pointer, decay, anti-spam), the unlock
+        ceremony as stopping point, player-competence attribution.</td></tr>
+      <tr><td class="id">Game-Player-Docs</td><td class="id">Analysis-UI-Reference-And-Help-Stack</td>
+        <td>The four-layer help mapping, prompting-lesson taxonomy, skin-tokens-first sequencing,
+        and the design-doc v2 structure (control tables, pins, gate).</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2>Course of action — six waves</h2>
+  <ol class="waves">
+    <li data-w="0"><b>Design reference v2 — the deliverable (TASK-123)</b>
+      <p>Reconcile docs/design/tui with specs 013–046; v2 taxonomy + control tables + freshness gate;
+      author all ten new-surface pages spec-before-build; rule on the bottom-chrome row budget,
+      narrow fallback, and the overlay no-LLM invariant.</p></li>
+    <li data-w="1"><b>Skin-token contract (TASK-121 spec)</b>
+      <p>The token lookup ships before any new fiction literal; TASK-115/117 consume it from day one.</p></li>
+    <li data-w="2"><b>Quick wins (TASK-124, 126, part of 125)</b>
+      <p>Chronicle ⏎/click jump-to-source; guardian strip; systems-tab telemetry split.</p></li>
+    <li data-w="3"><b>Guardian console page (TASK-125)</b>
+      <p>Document-style turns, composer, charter read + $EDITOR handoff, report-card cards.</p></li>
+    <li data-w="4"><b>Teaching surfaces (TASK-117, 119, 127, 128)</b>
+      <p>Lesson row; exercise panel + scenario-cadence narration; ceremony + postmortem takeovers;
+      stage-default machinery; ? guardian section.</p></li>
+    <li data-w="5"><b>Village lens completion (TASK-129)</b>
+      <p>Villager strip; map condition overlays; look-cursor evaluation.</p></li>
+  </ol>
+
+  <h2>Board moves (executed 2026-07-25, commit b6ac1b3)</h2>
+  <div class="table-scroll">
+  <table class="data">
+    <caption>12 moves, operator-approved; every task points back at the synthesis</caption>
+    <thead><tr><th>Move</th><th>Task</th><th>Summary</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill new">NEW</span></td><td class="id">TASK-123</td><td>TUI design reference v2 — the living page-by-page, control-by-control authority (HIGH)</td></tr>
+      <tr><td><span class="pill new">NEW</span></td><td class="id">TASK-124</td><td>Chronicle jump-to-source + input-parity retrofit start</td></tr>
+      <tr><td><span class="pill new">NEW</span></td><td class="id">TASK-125</td><td>Guardian console page + systems-tab telemetry split (HIGH)</td></tr>
+      <tr><td><span class="pill new">NEW</span></td><td class="id">TASK-126</td><td>Guardian strip: always-visible action budget line</td></tr>
+      <tr><td><span class="pill new">NEW</span></td><td class="id">TASK-127</td><td>Takeover surfaces: stage-unlock ceremony + run-end postmortem</td></tr>
+      <tr><td><span class="pill new">NEW</span></td><td class="id">TASK-128</td><td>Stage-shaped TUI layout defaults</td></tr>
+      <tr><td><span class="pill new">NEW</span></td><td class="id">TASK-129</td><td>Villager strip + map condition overlays</td></tr>
+      <tr><td><span class="pill edit">EDIT</span></td><td class="id">TASK-115</td><td>Report-card surface pinned (console card at stopping points + postmortem); guardian verbs at the ? floor; skin tokens</td></tr>
+      <tr><td><span class="pill edit">EDIT</span></td><td class="id">TASK-117</td><td>Lesson-row anatomy; prompting-lesson tier; per-user seen state; tokens + pull path</td></tr>
+      <tr><td><span class="pill edit">EDIT</span></td><td class="id">TASK-119</td><td>Exercise panel + visibility vocabulary + attach briefing + scenario-cadence narration</td></tr>
+      <tr><td><span class="pill edit">EDIT</span></td><td class="id">TASK-121</td><td>Sweep sites enumerated; token contract first; skin boundary = guardian/systems split</td></tr>
+      <tr><td><span class="pill edit">EDIT</span></td><td class="id">TASK-67</td><td>Fork-duel v1 = rubric scoreboard → HTML retelling; dual TUI deferred</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2>Open questions, parked with their moment</h2>
+  <ul>
+    <li><strong>Ambient postmortem contents</strong> — report card included, or morgue evidence only? → when Wave 0 authors <code>overlays/postmortem.md</code>.</li>
+    <li><strong>Ceremony score voice</strong> — instrument (rubric) vs fiction (narrated chapter), which is authoritative? → <code>overlays/ceremony.md</code>.</li>
+    <li><strong>Live rubric gauges vs gaming-the-metric</strong> — headline-live or breakdown-at-end? → TASK-119's spec.</li>
+    <li><strong>Advanced-tier audience</strong> — raw registry values player-visible? → Wave 0's control-table exposure ruling.</li>
+    <li><strong>Interrupt watch item</strong> — decision 6 stands; reopens only on playtest evidence of ceremony fatigue or mid-crisis seizure.</li>
+  </ul>
+  <div class="callout warn"><p><strong>Carried tension:</strong> the bottom chrome now stacks ~4 fixed
+  rows at stages 1–2 (lesson row + guardian strip + minibuffer + footer) in an exact-height layout —
+  Wave 0's first ruling is the row budget and fold order.</p></div>
+
+  <footer>
+    source of truth: <code>docs/design/reorient-2026-07-25-ui.md</code> · analyses in
+    <code>research/&lt;branch&gt;/Analysis-*.md</code> (gates green) · board TASK-123…129 + 5 edits ·
+    committed b6ac1b3 · run promptworld-2026-07-25-13-58-18 · corpus: Game-UI-UX ·
+    Game-Gameplay-Patterns · Learning-Game-Design · Game-Player-Docs
+  </footer>
+</div>
+<script>
+  (function(){
+    var btn=document.getElementById("themeToggle");
+    var order=["auto","light","dark"], label={auto:"◐ auto",light:"☀ light",dark:"☾ dark"};
+    btn.dataset.mode="auto";
+    btn.addEventListener("click",function(){
+      var next=order[(order.indexOf(btn.dataset.mode)+1)%order.length];
+      btn.dataset.mode=next;
+      document.documentElement.setAttribute("data-theme",next);
+      btn.textContent=label[next];
+    });
+  })();
+</script>
+</body>
+</html>

@@ -74,6 +74,10 @@ documentation conventions (Game-Player-Docs branch).
 - [[Analysis-Teaching-Game-TUI]] — the 2026-07-25 reorientation evaluation: the current
   TUI as watching instrument vs the teaching-game lens, the Staged Cockpit direction
   under the operator's ratified decisions, and the reconciled cross-branch position.
+  Rendered (merged with the run's sibling analyses) as the briefing page
+  `docs/design/reorient-2026-07-25-ui-briefing.html` (outside the vault — the page
+  carries cross-branch synthesis content), published at
+  <https://claude.ai/code/artifact/4ae421da-7494-49e9-aafc-3f838f09c15a>.
 
 ## Open questions
 

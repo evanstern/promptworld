@@ -1,6 +1,9 @@
 # promptworld — reorientation synthesis: UI/UX for the teaching-game pivot (2026-07-25)
 
-**Status:** synthesis complete; board moves pending operator sign-off (table below).
+**Status:** synthesis complete; board moves executed with operator sign-off 2026-07-25
+(commit b6ac1b3 — TASK-123…129 created, TASK-115/117/119/121/67 rescoped).
+**Briefing page:** `reorient-2026-07-25-ui-briefing.html` (this directory) — published at
+<https://claude.ai/code/artifact/4ae421da-7494-49e9-aafc-3f838f09c15a>.
 **Run:** `promptworld-2026-07-25-13-58-18` (reorient).
 **Lens:** promptworld is pivoting into a staged prompting-skills teaching game (curriculum
 ladder TASK-68, skinnable guardian TASK-121, the eight ratified learning-game decisions of
