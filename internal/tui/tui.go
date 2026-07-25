@@ -773,9 +773,12 @@ func (m Model) exerciseVisible() bool {
 // exerciseBriefingShowing reports whether the attach-time briefing is what
 // the exercise tab is rendering right now — the gate for the one-keypress
 // any-key dismiss (contract §4: never a global key-eater; it consumes only
-// while the exercise tab is visible).
+// while the exercise tab is visible). The guardian console (spec 053) is a
+// whole-body takeover checked BELOW this gate in handleKey, so an open
+// console explicitly suppresses the eater: the briefing is not the thing
+// on screen while the console is, and its keys must reach the console.
 func (m Model) exerciseBriefingShowing() bool {
-	return m.exerciseVisible() && !m.exBriefingDismissed
+	return !m.console && m.exerciseVisible() && !m.exBriefingDismissed
 }
 
 // mapControllable reports whether arrow keys should pan the map: always in

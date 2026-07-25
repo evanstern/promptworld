@@ -151,6 +151,33 @@ func TestExerciseBriefingOncePerAttach(t *testing.T) {
 	}
 }
 
+// TestExerciseBriefingYieldsToConsole (spec 053 × spec 054 interaction): the
+// guardian console is a whole-body takeover, so while it is open the
+// briefing is NOT the thing on screen — its any-key eater must yield, keys
+// reach the console (esc closes it), and the briefing survives undismissed
+// for when the tab is actually visible again.
+func TestExerciseBriefingYieldsToConsole(t *testing.T) {
+	m := scenarioModel(t)
+	m = pressKey(t, m, "6") // exercise tab selected, briefing pending
+	mdl, _ := m.openConsole()
+	m = mdl.(Model)
+	if !m.console {
+		t.Fatal("setup: console did not open")
+	}
+	m = pressKey(t, m, "esc") // must reach the console (close), not the eater
+	if m.console {
+		t.Fatal("esc was eaten by the briefing instead of closing the console")
+	}
+	if m.exBriefingDismissed {
+		t.Fatal("the briefing must survive a console session undismissed")
+	}
+	// Back on the exercise tab, the next key dismisses as usual.
+	m = pressKey(t, m, "j")
+	if !m.exBriefingDismissed {
+		t.Fatal("briefing should dismiss normally once the console is closed")
+	}
+}
+
 // TestExerciseGaugesTrackReplica (US4 AS-2): rubric-relevant events folded
 // into the replica flip the gauges — same data, no extra IPC.
 func TestExerciseGaugesTrackReplica(t *testing.T) {
