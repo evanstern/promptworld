@@ -298,3 +298,104 @@ func TestOpenRejectsBadMemoryRelevance(t *testing.T) {
 		t.Errorf("refusal error should name the bad value, got: %v", err)
 	}
 }
+
+// TestStageRoundTrip (spec 046 T002, FR-002): every ladder stage id written to
+// the manifest survives Open, along with the override marker and preset.
+func TestStageRoundTrip(t *testing.T) {
+	for _, stage := range []string{Stage1, Stage2, Stage3, Stage4} {
+		dir := t.TempDir()
+		manifest := `{"name":"x","seed":1,"format_version":4,"tick_game_seconds":1,` +
+			`"stage":"` + stage + `","stage_overridden":true,"charter_preset":"tutor"}`
+		if err := os.WriteFile(filepath.Join(dir, ManifestName), []byte(manifest), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		w, err := Open(dir)
+		if err != nil {
+			t.Fatalf("Open(%s): %v", stage, err)
+		}
+		if w.Manifest.Stage != stage {
+			t.Errorf("Stage = %q, want %q", w.Manifest.Stage, stage)
+		}
+		if !w.Manifest.StageOverridden {
+			t.Errorf("%s: StageOverridden lost in round trip", stage)
+		}
+		if w.Manifest.CharterPreset != CharterPresetTutor {
+			t.Errorf("%s: CharterPreset = %q, want %q", stage, w.Manifest.CharterPreset, CharterPresetTutor)
+		}
+	}
+}
+
+// TestAbsentStageIsUngated (spec 046 FR edge case): a pre-ladder manifest (no
+// stage key) opens with Stage "" — the ungated, stage-4-semantics default — and
+// a fresh Create never writes the stage keys (omitempty; byte-compat precedent
+// of Teaching/MemoryRelevance).
+func TestAbsentStageIsUngated(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, ManifestName),
+		[]byte(`{"name":"x","seed":1,"format_version":4,"tick_game_seconds":1}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	w, err := Open(dir)
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	if w.Manifest.Stage != "" || w.Manifest.StageOverridden || w.Manifest.CharterPreset != "" {
+		t.Errorf("absent stage keys should load zero, got %+v", w.Manifest)
+	}
+
+	created := filepath.Join(t.TempDir(), "w")
+	if _, err := Create(created, "plain", 7); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	data, err := os.ReadFile(filepath.Join(created, ManifestName))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{"stage", "stage_overridden", "charter_preset"} {
+		if strings.Contains(string(data), key) {
+			t.Errorf("fresh manifest must not carry the %q key, got:\n%s", key, data)
+		}
+	}
+}
+
+// TestOpenRejectsBadStage (spec 046 T002): stage is a closed vocabulary — an
+// unknown value is refused at Open naming the value, never silently ungated
+// (the MemoryRelevance precedent).
+func TestOpenRejectsBadStage(t *testing.T) {
+	for _, bad := range []string{"stage-5", "stage-0", "Stage-1", "1", "graduated"} {
+		dir := t.TempDir()
+		if err := os.WriteFile(filepath.Join(dir, ManifestName),
+			[]byte(`{"name":"x","seed":1,"format_version":4,"tick_game_seconds":1,"stage":"`+bad+`"}`), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		_, err := Open(dir)
+		if err == nil {
+			t.Fatalf("Open should reject stage %q", bad)
+		}
+		if !strings.Contains(err.Error(), bad) {
+			t.Errorf("refusal error should name the bad value %q, got: %v", bad, err)
+		}
+	}
+}
+
+// TestOpenRejectsBadCharterPreset (spec 046 T002): charter_preset is a closed
+// vocabulary — "", "default", "tutor" pass; anything else is refused at Open.
+func TestOpenRejectsBadCharterPreset(t *testing.T) {
+	for _, good := range []string{"", CharterPresetDefault, CharterPresetTutor} {
+		if !ValidCharterPreset(good) {
+			t.Errorf("ValidCharterPreset(%q) = false, want true", good)
+		}
+	}
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, ManifestName),
+		[]byte(`{"name":"x","seed":1,"format_version":4,"tick_game_seconds":1,"charter_preset":"drill-sergeant"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, err := Open(dir)
+	if err == nil {
+		t.Fatal("Open should reject an unknown charter_preset")
+	}
+	if !strings.Contains(err.Error(), "drill-sergeant") {
+		t.Errorf("refusal error should name the bad value, got: %v", err)
+	}
+}
