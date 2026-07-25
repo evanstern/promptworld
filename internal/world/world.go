@@ -273,6 +273,29 @@ func SetTeaching(dir string, on bool) error {
 	return os.WriteFile(filepath.Join(dir, ManifestName), append(data, '\n'), 0o644)
 }
 
+// SetStage stamps a freshly created world's curriculum-ladder stage fact
+// (spec 046, FR-002/FR-003): read the manifest, set Stage/StageOverridden/
+// CharterPreset, rewrite world.json. Unlike SetTeaching, this has exactly
+// ONE caller — `promptworld new` — and is called exactly once, immediately
+// after Create: stage is write-once for a world's whole lifetime (R1) — no
+// `promptworld stage <world> ...` toggle command exists or ever will.
+// Callers must pass already-validated values (ValidStage/ValidCharterPreset)
+// — this function does not re-validate, matching SetTeaching's contract.
+func SetStage(dir, stage string, overridden bool, charterPreset string) error {
+	w, err := Open(dir)
+	if err != nil {
+		return err
+	}
+	w.Manifest.Stage = stage
+	w.Manifest.StageOverridden = overridden
+	w.Manifest.CharterPreset = charterPreset
+	data, err := json.MarshalIndent(w.Manifest, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(dir, ManifestName), append(data, '\n'), 0o644)
+}
+
 // Map regenerates the world's terrain from the manifest — deterministic, so
 // daemon and clients derive identical maps without any wire transfer.
 func (w *World) Map() *worldmap.Map {

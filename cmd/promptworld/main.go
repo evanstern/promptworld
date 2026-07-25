@@ -15,8 +15,15 @@ PROMPTWORLD_HOME) then the known-worlds list; a path (contains "/", or
 starts with "." or "~") is used exactly as given.
 
 Usage:
-  promptworld new <name> [--at DIR] [--seed N] [--teaching]  create a world by name in the worlds home
-  promptworld new <path> [--name NAME] [--seed N] [--teaching] create a world at an explicit path (legacy form)
+  promptworld new <name> [--at DIR] [--seed N] [--teaching]
+                 [--stage stage-1..stage-4] [--override] [--charter-preset default|tutor]
+                                                   create a world by name in the worlds home;
+                                                   --stage defaults to stage-1 for a new player,
+                                                   else your highest earned stage (spec 046,
+                                                   see the stages command below); an unearned
+                                                   stage needs --override
+  promptworld new <path> [--name NAME] [--seed N] [--teaching] [--stage ...] [--override] [--charter-preset ...]
+                                                   create a world at an explicit path (legacy form)
   promptworld migrate <world>                      migrate a stopped older world (v1/v2) to the current format
   promptworld ps [--all] [--json]                  list world daemons machine-wide
   promptworld daemon <world>                       run the daemon in the foreground
@@ -43,6 +50,9 @@ Usage:
                                                    (--tier is a deprecated alias, see --help)
   promptworld divergence <world> [--json]          summarize recorded memory-rank divergence
                                                    (shadow-mode gate evidence, per agent/day)
+  promptworld stages [--json]                      list the curriculum ladder's four stages —
+                                                   identity, concept, grants, unlock evidence,
+                                                   and your earned state
 `
 
 func main() {
@@ -87,6 +97,8 @@ func main() {
 		err = cmdCalibrate(args)
 	case "divergence":
 		err = cmdDivergence(args)
+	case "stages":
+		err = cmdStages(args)
 	case "metatron":
 		err = cmdMetatron(args)
 	case "miracle":
