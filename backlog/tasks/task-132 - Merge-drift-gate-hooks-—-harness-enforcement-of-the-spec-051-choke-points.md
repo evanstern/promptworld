@@ -1,10 +1,10 @@
 ---
 id: TASK-132
 title: Merge-drift gate hooks — harness enforcement of the spec 051 choke points
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-25 18:34'
-updated_date: '2026-07-25 18:42'
+updated_date: '2026-07-25 18:47'
 labels: []
 dependencies: []
 ordinal: 102000
@@ -36,3 +36,9 @@ Implementation tier: Sonnet (default) per Principle V rubric — single-file wra
 
 Implementation complete: PR #86 open (branch task-132-merge-drift-hooks, commit 26fc753, base 7405d23). All 7 ACs verified via synthetic hook-input JSON (block on gate exit 1/2, allow on 0, cd-prefix redirect, fail-open paths, session report, jq schema). Gated by planning tier: diff vs true base = exactly 3 intended files; pr gate dogfooded → exit 0/warnings (stale-base 4, merge clean). Post-merge note: hooks go live for NEW sessions; current sessions need /hooks or restart to load .claude/settings.json.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Merge-drift gates are now harness-enforced: PR #86 merged as 30a359c. scripts/hooks/merge-drift-hook.mjs + checked-in .claude/settings.json wire PreToolUse (blocks PR-create and worktree-add commands on gate exit 1/2, fail-open otherwise, cd-prefix-aware, jurisdiction-checked) and SessionStart (session gate report injected as context, never blocks). All 7 ACs verified with synthetic hook input. Went live immediately in the implementing session and produced its first true block within minutes. Worktree and branch cleaned via the session gate's own prescription. Known limitation (first live firing): the command matcher is naive to shell quoting — a quoted string argument containing the literal trigger phrase fires the gate (observed: a board-note text mentioning the command pattern). Fail-safe direction (blocks, never bypasses); candidate follow-up: skip matches inside quoted segments.
+<!-- SECTION:FINAL_SUMMARY:END -->
