@@ -3,10 +3,10 @@ id: TASK-96
 title: >-
   Per-agent mental maps: knowledge-gated spatial memory replaces omniscient
   nearest-target resolution
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-24 19:03'
-updated_date: '2026-07-24 23:57'
+updated_date: '2026-07-25 02:42'
 labels:
   - epistemics
   - spatial-memory
@@ -79,3 +79,9 @@ Polish complete (T032-T037, worktree 3b7dd17): metatron.place_revealed (dry-run-
 
 PR opened: https://github.com/evanstern/promptworld/pull/69 (branch task-96-agent-mental-maps, 21 commits: research vault + implementation T001-T037 + wiki re-pin + player docs). All 40 spec tasks complete; all 8 spec phases done; ACs 1-7 hold with evidence. Post-rebase sim suite green; task goes Done at merge.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Per-agent mental maps shipped: PR #69 merged as 7caf656. Villagers hold private replay-deterministic spatial knowledge (explored bitmap + provenance place-facts + peer sightings); omniscient nearest-target resolution replaced by knowledge-gated resolvers with full reflex parity; honest 'you know of no X' failures; known-places prompt (first-6 cap retired); agent.map_corrected staleness loop; frontier search verb; social.place_told talk transfer; metatron.place_revealed visions; world format v3→v4 migration. Spec 041 complete (40/40 tasks, all phases); wiki re-pinned (19 notes + mental-maps.md); player docs 7/7 fresh; suites green (baseline reds TASK-100/TASK-93 pre-existing). Follow-up candidates noted in data-model addenda: structured State clone for InjectSocial dry-run; resolver BFS relief. Worktree and branches cleaned.
+<!-- SECTION:FINAL_SUMMARY:END -->
