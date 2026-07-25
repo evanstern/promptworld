@@ -1,5 +1,10 @@
 # UI sweep runbook — orchestrator instructions (reorientation 2026-07-25)
 
+**Status: awaiting operator sign-off** (original had no status line; snapshot refreshed
+2026-07-25 ~17:30 by a third orchestrator session — see the refreshed snapshot and
+execution log below; flip this line to `signed-off — executing` once the operator
+approves).
+
 **You (the session reading this) are the ORCHESTRATOR** for the remaining UI-sweep tasks
 from the 2026-07-25 reorientation. Your job: run each queued task through this project's
 full PDLC automatically — spec → link → worktree → delegated implementation → PR → merge →
@@ -27,6 +32,40 @@ design pages are decided. Plan-of-record is the board.
   grounding, In Progress). Other orchestrators like you may also be running.
 - **Queued (this runbook's scope), in execution order below:** TASK-121, 124, 126, 125,
   119, 117, 127, 115, 128, 129; TASK-67 optional tail.
+
+## Snapshot refresh (2026-07-25 ~17:30)
+
+- **Done since authoring:** TASK-124 (spec 049, PR #84, merge c388c41), TASK-126
+  (spec 050, PR #83, merge f18e9a4), TASK-130 (player-docs keys-reference, PR #81,
+  merge ef696aa). Lane 1's two Sonnet slices are merged and re-grounded.
+- **In flight (do not duplicate):** TASK-121 (spec 052 fully authored on main incl.
+  `contracts/skin-contract.md`; worktree `.worktrees/task-121` carries US1 + T005
+  commits), TASK-125 (linked to spec 053, In Progress, Sonnet + card-seam scope ruling
+  recorded, worktree cut at 622e559). Outside this runbook: TASK-131 (spec 051
+  merge-drift gates, worktree present), TASK-107 (uncommitted wiki edits at root —
+  leave them).
+- **Ambiguous claim — TASK-119:** `specs/054-scenario-machinery/` exists with spec.md +
+  requirements checklist only (no plan/tasks/link; board still To Do). Either a stalled
+  pre-work artifact or a session mid-specify. Confirm before claiming; if claimed,
+  resume from spec 054 rather than renumbering.
+- **Unblocked and unclaimed:** TASK-117 (Lane 3 gate satisfied — 121's skin-token
+  contract is published on main via spec 052), TASK-127 (its two parked operator
+  questions are RESOLVED in the spec-047 pages, which win per this runbook: ambient
+  postmortem = morgue evidence only, `overlays/postmortem.md` FR-018 ruling; ceremony
+  interrupt policy = decision 6 stands, reopening signal named as a watch item,
+  `overlays/ceremony.md` "Interrupt-policy watch item" — verify score voice against the
+  page at dispatch). Still blocked: TASK-115 (needs 125's console surface), TASK-128
+  (Lane 4, after 125/117/119), TASK-129 (Lane 5 tail).
+
+## Execution log
+
+| Task | Spec | PR | Merge | Date | Notes |
+|---|---|---|---|---|---|
+| TASK-124 | 049 | #84 | c388c41 | 2026-07-25 | Lane 1; jump-to-source + parity retrofit |
+| TASK-126 | 050 | #83 | f18e9a4 | 2026-07-25 | Lane 1; guardian strip |
+| TASK-130 | — | #81 | ef696aa | 2026-07-25 | adjacent player-docs refresh (not in queue) |
+| TASK-121 | 052 | — | — | in flight | Lane 1; contract published on main |
+| TASK-125 | 053 | — | — | in flight | Lane 2; dispatched by sibling session |
 
 ## Execution lanes (dependency-ordered; parallelize within a lane)
 
