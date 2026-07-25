@@ -107,6 +107,12 @@ type Metatron struct {
 	agentXY [][2]int
 	moments []string // queued, surfaced oldest-first at the next turn
 	story   []string // recent chronicle entries (TASK-11), prompt grounding
+	// charterFP / ended mirror State.CharterFingerprint / State.Ended (spec
+	// 044 US2): the turn worker's charter observation (observeCharter) reads
+	// them under stateMu to decide whether a metatron.charter_observed emission
+	// is due, without racing the replica the absorb goroutine owns.
+	charterFP string
+	ended     bool
 
 	// Standing-order mirror (spec 029 US2/US3, data-model §5): the replica's
 	// MetatronOrders is the authority; the turn worker reads this copy under
@@ -259,6 +265,16 @@ func (mt *Metatron) mirrorState() {
 	mt.charges = mt.replica.MetatronCharges
 	mt.clockAt = mt.replica.Tick
 	mt.night = mt.replica.Night
+	// The charter mirror only ever moves FORWARD to a recorded value: after
+	// observeCharter's optimistic set, batches that predate the just-landed
+	// metatron.charter_observed still absorb with the replica's OLD (possibly
+	// empty) fingerprint — overwriting would re-open the emission window for
+	// an already-recorded revision. The landed event is durable by the time
+	// the optimistic set happens, so the replica always catches up.
+	if fp := mt.replica.CharterFingerprint; fp != "" {
+		mt.charterFP = fp
+	}
+	mt.ended = mt.replica.Ended
 	if len(mt.agentXY) != len(mt.replica.Agents) {
 		mt.agentXY = make([][2]int, len(mt.replica.Agents))
 	}

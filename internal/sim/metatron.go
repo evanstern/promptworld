@@ -99,6 +99,20 @@ type OrderIDPayload struct {
 	ID string `json:"id"`
 }
 
+// CharterObservedPayload — metatron.charter_observed (spec 044 US2, FR-008):
+// the charter revision a Metatron turn actually ran under, identified by a
+// short content hash of the EFFECTIVE charter text (post-fallback,
+// post-truncation — what loadCharter returned), plus whether that text is
+// the authored default. Emitted by the turn pipeline through the
+// inject_social door only when the fingerprint differs from
+// State.CharterFingerprint (the first turn always emits), giving deaths an
+// event-sourced charter-revision timeline to align against. Evidence only:
+// no scoring fields, by contract (contracts/events.md).
+type CharterObservedPayload struct {
+	Fingerprint string `json:"fingerprint"`
+	Default     bool   `json:"default"`
+}
+
 // applyMetatron is the reducer arm for metatron.* events. The nudged arm
 // validates rather than clamps: the InjectSocial dry-run runs this on a
 // state copy, so invalid spends are rejected at the door and recorded
@@ -265,6 +279,19 @@ func (s *State) applyMetatron(e store.Event) error {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
 		return s.transitionMetatronOrder(e.Type, p.ID, "expired")
+	case "metatron.charter_observed":
+		// Spec 044 US2 (FR-008): the charter-revision timeline. State keeps only
+		// the CURRENT fingerprint; the full timeline lives in the event log,
+		// where the morgue's render scan aligns each death against the most
+		// recent observation at or before it.
+		var p CharterObservedPayload
+		if err := json.Unmarshal(e.Payload, &p); err != nil {
+			return fmt.Errorf("apply %s: %w", e.Type, err)
+		}
+		if p.Fingerprint == "" {
+			return fmt.Errorf("apply %s: empty fingerprint", e.Type)
+		}
+		s.CharterFingerprint = p.Fingerprint
 	}
 	return nil
 }

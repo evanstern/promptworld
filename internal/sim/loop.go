@@ -232,6 +232,16 @@ var injectSocialWhitelist = map[string]bool{
 	"metatron.item_granted":   true,
 	"metatron.entity_moved":   true,
 	"metatron.entity_removed": true,
+	// Charter-revision observation (spec 044 US2): the turn pipeline's
+	// fingerprint-at-effect stamp — the event-sourced revision timeline the
+	// morgue aligns deaths against. The dry-run's reducer arm enforces a
+	// non-empty fingerprint before anything lands.
+	"metatron.charter_observed": true,
+	// Morgue epilogues (spec 044 US2): the narrator's recorded mourning
+	// prose, landed after a death / the run end. Bounded prose ring only —
+	// never simulation state — so it also survives the ended-world narrowing
+	// below (endedProseWhitelist).
+	"morgue.epilogue": true,
 	// Metatron standing orders (spec 029): the injected order-lifecycle events.
 	// order_placed (monitor_and_act) and order_cancelled (cancel_order) are the
 	// two Expressive tools' Events; order_triggered is injected by the trigger
@@ -283,9 +293,12 @@ var injectSocialWhitelist = map[string]bool{
 // ended run — types that mutate only bounded prose rings, never simulation
 // state (the executor guard guarantees no sim event follows run.ended).
 // Everything else on injectSocialWhitelist is refused after run end.
-// morgue.epilogue joins this set with US2.
 var endedProseWhitelist = map[string]bool{
 	"chronicle.entry": true,
+	// The run-end epilogue (spec 044 US2, FR-010) lands AFTER run.ended by
+	// construction — the narrator mourns asynchronously — so this door must
+	// stay open to it exactly where it matters most.
+	"morgue.epilogue": true,
 }
 
 // InjectableSocialEvent reports whether t is a social event type the

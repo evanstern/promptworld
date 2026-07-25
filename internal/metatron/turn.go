@@ -141,6 +141,10 @@ func (mt *Metatron) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 	// manifest. Every fallback/truncation/skip becomes a notice prefixed to the
 	// reply, one combined line, exactly like the charter's today.
 	charter, charterNotice := loadCharter(mt.worldDir)
+	// Charter-revision observation (spec 044 US2, T014): stamped at load,
+	// before anything consumes the text, so the evidence timeline records
+	// the revision this turn actually runs under.
+	mt.observeCharter(charter)
 	skills, skillNotices := loadSkills(mt.worldDir)
 	grant, manifestNotices := loadManifest(mt.worldDir, bundleToolNames(mt.bundles)...)
 	// Persona bundles narrow the world-level grant (spec 036 US4 T030): a

@@ -104,6 +104,18 @@ type State struct {
 	Deaths []DeathRecord `json:"deaths,omitempty"`
 	Ended  bool          `json:"ended,omitempty"`
 	RunEnd *RunEnd       `json:"run_end,omitempty"`
+	// Charter-revision identity (spec 044 US2, FR-008): the most recent
+	// effective-charter content hash a Metatron turn ran under, set by the
+	// metatron.charter_observed arm. Empty until the angel's first turn; the
+	// full revision timeline lives in the event log (the morgue's render scan
+	// aligns each death against it). omitempty — pre-044 snapshots stay
+	// byte-identical.
+	CharterFingerprint string `json:"charter_fingerprint,omitempty"`
+	// Morgue epilogues (spec 044 US2, FR-010): the narrator's recorded
+	// mourning prose per death (or the run end, agent -1), bounded ring on
+	// the chronicle pattern so the scribe replica and attaching clients can
+	// read it from state. The morgue's FACTS never depend on these.
+	MorgueEpilogues []MorgueEpilogue `json:"morgue_epilogues,omitempty"`
 
 	// m is the static generated map for this world (seed + dimensions). It is
 	// unexported and never serialized — canonical state bytes are unchanged by
@@ -1591,8 +1603,12 @@ func (s *State) Apply(e store.Event) error {
 	case "metatron.charge_regenerated", "metatron.nudged",
 		"metatron.place_revealed",
 		"metatron.order_placed", "metatron.order_triggered",
-		"metatron.order_cancelled", "metatron.order_expired":
+		"metatron.order_cancelled", "metatron.order_expired",
+		"metatron.charter_observed":
 		return s.applyMetatron(e)
+
+	case "morgue.epilogue":
+		return s.applyMorgueEpilogue(e)
 
 	case "metatron.time_snapped", "metatron.item_granted",
 		"metatron.entity_moved", "metatron.entity_removed":
