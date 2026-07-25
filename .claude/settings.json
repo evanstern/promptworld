@@ -6,6 +6,12 @@
         "hooks": [
           { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/scripts/hooks/merge-drift-hook.mjs\" pre-bash", "timeout": 90, "statusMessage": "merge-drift gate" }
         ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/scripts/hooks/merge-drift-hook.mjs\" pre-write", "timeout": 90, "statusMessage": "merge-drift claim gate" }
+        ]
       }
     ],
     "SessionStart": [
