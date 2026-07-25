@@ -14,7 +14,8 @@ sources:
 The dock's fiction-layer tab (D10: the skin boundary is a file boundary — this
 page never renders engine telemetry; that content lives on
 [systems.md](systems.md)). Split from the pre-v2 monolithic `dock.md`'s
-"metatron" tab section. Container chrome (tab row, badges, tab-switch keys)
+`metatron` tab section (whose shipped label is now the `{{skin.guardian.tab_label}}`
+token, spec 052). Container chrome (tab row, badges, tab-switch keys)
 is [dock.md](dock.md); the *input* line is
 [minibuffer.md](minibuffer.md) — this page is history + status only.
 
@@ -73,7 +74,7 @@ shows in its own header line.
      cancelled (spec 029).
    - **`⏲` clock line** — a landed `pause`/`start`/`adjust_speed` meta tool
      call.
-   - **`»` inline verdict row (miracle feedback, spec 016/020)** — every
+   - **`»` inline verdict row (working feedback, spec 016/020)** — every
      turn-scoped tool call the loop saw (landed or refused) appends one
      `» tool — phrase` row styled as telemetry (dim), distinct from
      `you`/`{{skin.guardian.epithet}}` rows — the SAME plain-language

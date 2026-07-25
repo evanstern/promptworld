@@ -15,7 +15,7 @@ Since this feature (D10, the skin-boundary-as-file-boundary ruling), tab
 *content* is documented on its own per-tab page, not here:
 
 - [guardian.md](guardian.md) — fiction-layer tab content (transcript, standing
-  orders, instruction surface, miracle feedback)
+  orders, instruction surface, working feedback)
 - [systems.md](systems.md) — engine telemetry (never skinned)
 - [villagers.md](villagers.md) — the villagers roster/detail/decisions tab
 

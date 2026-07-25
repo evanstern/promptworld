@@ -174,6 +174,15 @@ func (mt *Metatron) closeDigest(atTick int64) {
 	}
 }
 
+// digestKeeperSystem renders the digest keeper's system prompt: guardian-
+// voiced, the skin's display name substituted as validated single-line data
+// (spec 052 US2 AS-4); the compression instruction is constant.
+func digestKeeperSystem(name string) string {
+	return "You are " + name + ", keeper of the village's record. Compress the " +
+		"log below into 2-4 terse note lines for your own future reference: " +
+		"facts, names, tensions worth watching. No preamble, no JSON — just the lines."
+}
+
 func (mt *Metatron) digestWorker() {
 	for {
 		select {
@@ -188,12 +197,8 @@ func (mt *Metatron) digestWorker() {
 func (mt *Metatron) runDigest(job digJob) {
 	ctx, cancel := context.WithTimeout(context.Background(), digestCallTimeout)
 	resp, err := mt.orch.Submit(ctx, llm.Request{
-		Kind: llm.KindMetatron,
-		// The keeper prompt is guardian-voiced with the skin's display name
-		// substituted as validated single-line data (spec 052 US2 AS-4).
-		System: "You are " + mt.sk().Name() + ", keeper of the village's record. Compress the " +
-			"log below into 2-4 terse note lines for your own future reference: " +
-			"facts, names, tensions worth watching. No preamble, no JSON — just the lines.",
+		Kind:      llm.KindMetatron,
+		System:    digestKeeperSystem(mt.sk().Name()),
 		Prompt:    strings.Join(job.lines, "\n"),
 		MaxTokens: digestMaxTokens,
 	})

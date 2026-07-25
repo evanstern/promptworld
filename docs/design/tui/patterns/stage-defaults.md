@@ -23,7 +23,7 @@ restating its own; if a value ever needs to change, it changes here once.
    world (`Stage == ""`) is the union of every stage's default-on set, the
    same "ungated, stage-4 semantics" posture `internal/metatron`'s stage
    ceiling already carries ([[curriculum-ladder]]).
-3. **Capability locks stay angel-only** (spec 046 doctrine, untouched by
+3. **Capability locks stay guardian-only** (spec 046 doctrine, untouched by
    this feature): nothing in this table is a capability lock. The stage
    ceiling and the stage-1 charter lock govern what the *guardian* may do;
    this table only governs what the *layout* shows by default. A player at

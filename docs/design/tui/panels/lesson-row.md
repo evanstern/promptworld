@@ -117,9 +117,9 @@ machinery (`lessonCatalog`, `internal/tui/lessons.go`,
   - first rejected tool call (a `cog.tool_call` verdict other than landed,
     turn-scoped) — teaches that the guardian's grant is real and refusals
     are informative, not broken.
-  - first custom charter observed (`metatron.charter_observed{default:
-    false}`) — teaches that editing `charter.md` and returning changes the
-    guardian's voice.
+  - first custom charter observed
+    (`metatron.charter_observed{default: false}`) — teaches that editing
+    `charter.md` and returning changes the guardian's voice.
   - first fuzzy order (`metatron.order_placed` with the order's `Confirm`
     field true — the wire's `fuzzy` concept, spec.md's Assumptions: "the
     implementation binds to the actual catalog names at build time") —

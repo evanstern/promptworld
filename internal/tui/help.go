@@ -226,7 +226,7 @@ var (
 	rowChronR    = helpKeyRow{"r", []string{"r"}, "chronicle: toggle raw ↔ narrated (chronicle tab only)"}
 	rowExitSolo  = helpKeyRow{"esc", []string{"esc"}, "exit solo zoom (no effect when already home)"}
 	rowQuit      = helpKeyRow{"q", []string{"q"}, "quit"}
-	rowNarrowMB  = helpKeyRow{"enter", []string{"enter"}, "narrow fallback: focus the minibuffer from the metatron pane (no effect in the widescreen composite)"}
+	rowNarrowMB  = helpKeyRow{"enter", []string{"enter"}, "narrow fallback: focus the minibuffer from the guardian pane (no effect in the widescreen composite)"}
 )
 
 // globalRows is the complete flattened set the two rows above partition —
