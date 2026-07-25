@@ -8,6 +8,19 @@ resolved at implementation against the live roster and recorded here in-PR:
 - **stage-1 (The Voice)**: conversational reply + read/query tools + basic nudge
   (vision/whisper-class); no world-shaping miracles, no standing-order placement
   beyond the basic set the client's "basic tools" statement names; no bundles.
+
+  **Pinned (in-PR, against the live roster — `stage1CeilingTools`,
+  internal/metatron/charter.go)**: `send_omen`, `send_vision`; miracle kinds:
+  none. Conversation is the reply channel, not a roster tool (never gateable),
+  so it needs no pin. Excluded and why: `work_miracle` (world-shaping),
+  `monitor_and_act` / `cancel_order` (standing-order power tools; a daytime
+  omen's nightfall deferral survives — system-origin placement carries
+  send_omen's gate, not monitor_and_act's), `pause` / `start` / `adjust_speed`
+  (clock control — neither query nor nudge; the player keeps direct CLI/TUI
+  clock control at every stage). The live roster carries no read/query tools —
+  that clause is vacuously satisfied and recorded here so a future read tool
+  must be deliberately classified. No bundle tools (the explicit ceiling list
+  intersects them away).
 - **stage-2 (The Written Word)**: stage-1 set unchanged; the unlock is the
   *instruction surface* (charter binds), not new tools.
 - **stage-3 (The Craft)**: skill files compose; `capabilities.json` honored within the

@@ -376,6 +376,10 @@ func Run(dir string) error {
 			return err
 		}
 		mt.SetBundles(bundleSet) // spec 036 T013: hand the frozen bundle surface to the turn assembly
+		// Spec 046 US2: hand the immutable stage + charter preset from the opened
+		// manifest to the turn assembly — the stage ceiling and the stage-1
+		// instruction lock derive from these, boot-frozen like the bundle set.
+		mt.SetStage(w.Manifest.Stage, w.Manifest.CharterPreset)
 		defer mt.Close()
 		consumers = append(consumers, mt.Observe)
 		srv.SetMetatron(mt)

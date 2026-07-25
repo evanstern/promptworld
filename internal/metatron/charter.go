@@ -14,6 +14,7 @@ import (
 	"github.com/evanstern/promptworld/internal/bundle"
 	"github.com/evanstern/promptworld/internal/persona"
 	"github.com/evanstern/promptworld/internal/sim"
+	"github.com/evanstern/promptworld/internal/skin"
 	"github.com/evanstern/promptworld/internal/store"
 	"github.com/evanstern/promptworld/internal/tool"
 )
@@ -28,22 +29,45 @@ import (
 // trimmed — and each case is reported in a `notice` so the next reply can tell
 // the player, one model of "the game tells you when your file didn't load".
 
+// presetCharter resolves a world's charter_preset name (world.json, spec 046)
+// to its authored constant: ""/"default" is persona.DefaultCharter; "tutor" is
+// the stage-1 orientation preset. Unknown names (already refused at world.Open)
+// fall back to the default — the angel never runs charterless.
+func presetCharter(preset string) string {
+	switch preset {
+	case "", "default":
+		return persona.DefaultCharter
+	case "tutor":
+		// TODO(T017): persona.TutorCharter ships with US5; until then the tutor
+		// preset serves the default charter text.
+		return persona.DefaultCharter
+	}
+	return persona.DefaultCharter
+}
+
 // loadCharter returns the effective charter text and a human-readable notice
-// ("" when the player's charter loaded cleanly).
-func loadCharter(worldDir string) (text, notice string) {
+// ("" when the player's charter loaded cleanly). preset is the world's
+// charter_preset name (spec 046) — the restore/fallback text; variadic so every
+// pre-046 call site (and every direct-arg test) keeps compiling unchanged with
+// the default-preset behavior (the loadManifest knownBundleTools precedent).
+func loadCharter(worldDir string, preset ...string) (text, notice string) {
+	def := persona.DefaultCharter
+	if len(preset) > 0 {
+		def = presetCharter(preset[0])
+	}
 	path := filepath.Join(worldDir, "charter.md")
 	data, err := os.ReadFile(path)
 	if os.IsNotExist(err) {
 		// Restore the default so the player has a file to edit again.
-		os.WriteFile(path, []byte(persona.DefaultCharter), 0o644)
-		return persona.DefaultCharter, "charter.md was missing — the default charter has been restored"
+		os.WriteFile(path, []byte(def), 0o644)
+		return def, "charter.md was missing — the default charter has been restored"
 	}
 	if err != nil {
-		return persona.DefaultCharter, "charter.md could not be read — serving under the default charter"
+		return def, "charter.md could not be read — serving under the default charter"
 	}
 	t := string(data)
 	if strings.TrimSpace(t) == "" {
-		return persona.DefaultCharter, "charter.md is empty — serving under the default charter"
+		return def, "charter.md is empty — serving under the default charter"
 	}
 	if len(t) > persona.CharterMaxChars {
 		return t[:persona.CharterMaxChars], "charter.md exceeds the cap — only the first 4,000 characters are in effect"
@@ -52,13 +76,67 @@ func loadCharter(worldDir string) (text, notice string) {
 }
 
 // charterIsDefault reports whether the file on disk matches the authored
-// default (for status display).
-func charterIsDefault(worldDir string) bool {
+// default (for status display) — preset-aware (spec 046): a world created with
+// a charter preset compares against that preset's constant.
+func charterIsDefault(worldDir string, preset ...string) bool {
+	def := persona.DefaultCharter
+	if len(preset) > 0 {
+		def = presetCharter(preset[0])
+	}
 	data, err := os.ReadFile(filepath.Join(worldDir, "charter.md"))
 	if err != nil {
 		return true
 	}
-	return string(data) == persona.DefaultCharter
+	return string(data) == def
+}
+
+// Instruction-surface gating by stage (spec 046 FR-005, the ladder): stage-1
+// (The Voice) locks the charter to the world's preset constant; skill files
+// bind from stage-3 (The Craft). An absent stage ("") is a pre-ladder, ungated
+// world — everything binds, exactly as before the ladder existed.
+func stageLocksCharter(stage string) bool { return stage == "stage-1" }
+func stageBindsSkills(stage string) bool  { return stage != "stage-1" && stage != "stage-2" }
+
+// stageCharter is the stage fork over loadCharter (spec 046 R3, US2): at
+// stage-1 the effective charter IS the world's preset constant — sourced from
+// the compiled-in text, never the file, so the lock is tamper-proof rather
+// than advisory. When charter.md's bytes differ from the preset (the player
+// edited it), the honest notice names the unlocking stage (FR-005 — never
+// silent ignoring). A missing file is restored to the preset so the player has
+// a file to edit when stage-2 unlocks — no notice, since what binds never
+// changed. Every other stage behaves byte-identically to today's loadCharter.
+func stageCharter(worldDir, stage, preset string) (text, notice string) {
+	if !stageLocksCharter(stage) {
+		return loadCharter(worldDir, preset)
+	}
+	text = presetCharter(preset)
+	path := filepath.Join(worldDir, "charter.md")
+	data, err := os.ReadFile(path)
+	if os.IsNotExist(err) {
+		os.WriteFile(path, []byte(text), 0o644)
+		return text, ""
+	}
+	if err == nil && string(data) != text {
+		return text, fmt.Sprintf("charter.md does not bind at this stage — %s (stage-2) unlocks instruction authoring",
+			skin.StageName("stage-2"))
+	}
+	return text, ""
+}
+
+// stageSkills is the stage fork over loadSkills (spec 046 FR-005): skill files
+// compose only from stage-3 (The Craft) — the ladder's capability-design
+// unlock. At stage-1/-2, present skill files are never silently ignored: one
+// notice names the unlocking stage. Absent stage = pre-ladder = today's
+// behavior.
+func stageSkills(worldDir, stage string) ([]skillFile, []string) {
+	if stageBindsSkills(stage) {
+		return loadSkills(worldDir)
+	}
+	if names := skillNames(worldDir); len(names) > 0 {
+		return nil, []string{fmt.Sprintf("skill files do not bind at this stage — %s (stage-3) unlocks skill files",
+			skin.StageName("stage-3"))}
+	}
+	return nil, nil
 }
 
 // charterFingerprint is the effective charter's revision identity (spec 044
@@ -495,6 +573,54 @@ func intersectGrant(g grantSet, gd *bundle.GrantDoc) grantSet {
 			}
 		}
 		g.kinds, g.kindsRestricted = newKinds, true
+	}
+	return g
+}
+
+// The curriculum-ladder stage ceiling (spec 046 US2, contracts/stage-gating.md).
+//
+// stage1CeilingTools is the pinned stage-1 tool ceiling — the honest "base
+// conversational + basic nudge" subset of the live loop roster
+// (tool.LoopRosterMetatron), recorded in the contract in-PR. Conversation is
+// never a roster tool (it is the reply channel and never gateable); the basic
+// nudges send_vision/send_omen ARE the stage-1 grant. Everything else is
+// beyond the stage: work_miracle (world-shaping), monitor_and_act/cancel_order
+// (standing-order power tools — a daytime omen's nightfall deferral still
+// works: system-origin placement carries send_omen's gate, orders.go), and
+// pause/start/adjust_speed (clock control; neither query nor nudge). No bundle
+// tools (the empty-intersection effect of the explicit list below).
+var stage1CeilingTools = []string{"send_omen", "send_vision"}
+
+// stageCeiling returns the stage's capability ceiling as a narrowing doc —
+// the same shape a persona bundle's grant uses, so intersectGrant applies it
+// with identical semantics — or nil when the stage imposes none. The ladder:
+//
+//	stage-1  send_omen + send_vision; no miracle kinds; no bundles
+//	stage-2  identical to stage-1 — the unlock is the instruction surface
+//	         (charter binds), not new tools
+//	stage-3  no ceiling: skill files compose and the grantable manifest opens
+//	         (full spec-021/036 behavior)
+//	stage-4  no ceiling: full roster incl. capstone capabilities
+//	""       no ceiling: a pre-ladder world is ungated (stage-4 semantics)
+func stageCeiling(stage string) *bundle.GrantDoc {
+	switch stage {
+	case "stage-1", "stage-2":
+		return &bundle.GrantDoc{Tools: stage1CeilingTools, MiracleKinds: []string{}}
+	}
+	return nil
+}
+
+// applyStageCeiling intersects the stage ceiling into the world-level grant
+// (spec 046 FR-004, the narrowGrantForBundles idiom): intersection-only, so a
+// player's capabilities.json may narrow WITHIN the ceiling but never exceed
+// it, and beyond-stage capabilities are structurally absent from every layer
+// derived from the grant (declaration, prose, door). Applied at every manifest
+// load site (turn + status) immediately after loadManifest, BEFORE
+// grantedRoster — the three-layer coherence is inherited, not re-implemented.
+// A ceiling-less stage returns g unchanged (identity).
+func applyStageCeiling(g grantSet, stage string) grantSet {
+	if c := stageCeiling(stage); c != nil {
+		g = intersectGrant(g, c)
 	}
 	return g
 }
