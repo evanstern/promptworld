@@ -247,14 +247,14 @@ func TestConsoleCountsAsMetatronVisible(t *testing.T) {
 // --- T006: document-style turn rendering ---
 
 func TestConsoleTurnLinesLabelsAndWraps(t *testing.T) {
-	transcript := []string{"you: why is Rowan hoarding wood?", "angel: Rowan's memory holds three nights of Ash letting the fire die."}
-	lines := consoleTurnLines(transcript, 40)
+	transcript := []string{"you: why is Rowan hoarding wood?", transcriptGuardianPrefix + "Rowan's memory holds three nights of Ash letting the fire die."}
+	lines := consoleTurnLines(transcript, 40, nil)
 	joined := strings.Join(lines, "\n")
 	if !strings.Contains(joined, "you") {
 		t.Errorf("missing 'you' label: %q", joined)
 	}
-	if !strings.Contains(joined, "angel") {
-		t.Errorf("missing 'angel' label: %q", joined)
+	if !strings.Contains(joined, "guardian") {
+		t.Errorf("missing guardian (epithet) label: %q", joined)
 	}
 	if !strings.Contains(joined, "why is Rowan hoarding wood?") {
 		t.Errorf("missing turn text: %q", joined)
@@ -281,7 +281,7 @@ func TestConsoleTurnLinesSpecialRowsInline(t *testing.T) {
 		"👁 watch set (ord-3): \"gru sighted\"",
 		"⏲ paused",
 	}
-	lines := consoleTurnLines(transcript, 60)
+	lines := consoleTurnLines(transcript, 60, nil)
 	joined := strings.Join(lines, "\n")
 	for _, want := range []string{"⚡ vision", "👁 watch set", "⏲ paused"} {
 		if !strings.Contains(joined, want) {
@@ -291,7 +291,7 @@ func TestConsoleTurnLinesSpecialRowsInline(t *testing.T) {
 	// Special rows carry no "label\ntext" split — they render as one line,
 	// same shape classifyTranscriptLine's label=="" case always has.
 	for _, l := range lines {
-		if l == "you" || l == "angel" {
+		if l == "you" || l == "guardian" {
 			t.Errorf("a special row must never be classified as a conversational turn: %q", joined)
 		}
 	}
@@ -301,7 +301,7 @@ func TestConsoleTurnLinesSpecialRowsInline(t *testing.T) {
 // carries no per-entry timestamp in this client — the console never
 // invents one.
 func TestConsoleTurnLinesOmitTimestampHonestly(t *testing.T) {
-	lines := consoleTurnLines([]string{"you: hello"}, 40)
+	lines := consoleTurnLines([]string{"you: hello"}, 40, nil)
 	joined := strings.Join(lines, "\n")
 	if strings.Contains(joined, ":") == false {
 		// sanity: no assumption

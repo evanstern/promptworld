@@ -57,7 +57,7 @@ var (
 	styleFamilyGovernance = lipgloss.NewStyle().Foreground(lipgloss.Color("214"))          // amber — meeting/norm proceedings
 	styleFamilyGru        = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("1")) // bold red — predator threat
 	styleFamilyChronicle  = lipgloss.NewStyle().Foreground(lipgloss.Color("13"))           // bright magenta — the narrator's voice
-	styleFamilyMetatron   = lipgloss.NewStyle().Foreground(lipgloss.Color("99"))           // violet — the angel, otherworldly
+	styleFamilyMetatron   = lipgloss.NewStyle().Foreground(lipgloss.Color("99"))           // violet — the guardian, otherworldly
 	styleFamilyCog        = lipgloss.NewStyle().Faint(true)                                // muted — telemetry noise
 	// daemon has no distinct tint in data-model.md's token list (process
 	// bookkeeping, low salience) — familyTint falls back to styleDim.
@@ -304,7 +304,7 @@ func governedSpeedSuffix(requested string, debt float64, jobs int) string {
 func (m Model) tabsView() string {
 	var tabs []string
 	for i := pane(0); i < paneCount; i++ {
-		label := fmt.Sprintf("%d %s", i+1, paneNames[i])
+		label := fmt.Sprintf("%d %s", i+1, m.paneName(i))
 		if i == m.active {
 			tabs = append(tabs, styleTabOn.Render(label))
 		} else {
@@ -356,7 +356,7 @@ func (m Model) footerView() string {
 	case isWidescreen(m.width) && m.solo:
 		return styleDim.Render(fmt.Sprintf("%s back to map · %s · q quit · ? help", dockTabKey[m.dockTab], resume))
 	case isWidescreen(m.width):
-		return styleDim.Render("2 chronicle 3 metatron 4 villagers 5 systems (again: solo) · G console · m ask · " + pause + " · q quit · ? help")
+		return styleDim.Render("2 chronicle 3 " + m.sk().TabLabel() + " 4 villagers 5 systems (again: solo) · G console · m ask · " + pause + " · q quit · ? help")
 	default:
 		return styleDim.Render("1-5 panes · G console · " + pause + " · q quit · ? help")
 	}
@@ -473,7 +473,7 @@ func (m Model) soloPanelView(cols, rows int) string {
 }
 
 func (m Model) soloTitle() string {
-	name := strings.ToUpper(paneNames[m.dockTab])
+	name := strings.ToUpper(m.paneName(m.dockTab))
 	if m.dockTab == paneChronicle {
 		if m.inspecting() {
 			mode := "raw"
@@ -494,7 +494,7 @@ func (m Model) dockTabsRow() string {
 		label string
 	}{
 		{paneChronicle, "chronicle"},
-		{paneMetatron, "metatron"},
+		{paneMetatron, m.sk().TabLabel()}, // skin data (spec 052; skin-tokens.md rule 4 case-transforms below)
 		{paneVillagers, "villagers"},
 		{paneSystems, "systems"},
 	}
@@ -1219,7 +1219,7 @@ func (m Model) chronicleRawBody(width, rows, maxWrap int) string {
 	dock := maxWrap > 1
 	lines := make([]chronicleLine, len(events))
 	for i, e := range events {
-		lines[i] = formatChronicleLine(e, names)
+		lines[i] = formatChronicleLine(e, names, m.sk())
 	}
 	cols := computeChronicleColumns(lines, dock)
 	var out []string
@@ -1288,7 +1288,7 @@ func (m Model) chronicleInspectBody(width, rows int) string {
 	}
 	lines := make([]chronicleLine, 0, end-start)
 	for i := start; i < end; i++ {
-		lines = append(lines, formatChronicleLine(m.events[i], names))
+		lines = append(lines, formatChronicleLine(m.events[i], names, m.sk()))
 	}
 	cols := computeChronicleColumns(lines, false) // inspect is always tick-shown (solo-style)
 	listOut := make([]string, 0, end-start)
@@ -1595,13 +1595,13 @@ func (m Model) metatronTranscriptBody(width, rows int) string {
 	}
 	var lines []string
 	if len(m.transcript) == 0 && !m.mbBusy {
-		lines = append(lines, styleDim.Render("you   ask the angel anything — press m to focus the minibuffer"))
+		lines = append(lines, styleDim.Render("you   ask the "+m.sk().Epithet()+" anything — press m to focus the minibuffer"))
 	}
 	for _, l := range m.transcript {
-		lines = append(lines, transcriptRowLines(l, width)...)
+		lines = append(lines, transcriptRowLines(l, width, m.sk())...)
 	}
 	if m.mbBusy {
-		lines = append(lines, styleAgent.Render("angel ⋮ thinking…"))
+		lines = append(lines, styleAgent.Render(m.sk().Epithet()+" ⋮ thinking…"))
 	}
 	if len(lines) > rows {
 		lines = lines[len(lines)-rows:] // newest at bottom; opens scrolled to bottom
@@ -1609,39 +1609,50 @@ func (m Model) metatronTranscriptBody(width, rows int) string {
 	return strings.Join(lines, "\n")
 }
 
-// transcriptRowLines renders one stored transcript line as you/angel rows
-// (dock.md mockup), wrapping the text to width.
-func transcriptRowLines(l string, width int) []string {
-	label, text, style := classifyTranscriptLine(l)
+// transcriptRowLines renders one stored transcript line as you/guardian rows
+// (dock.md mockup), wrapping the text to width. The guardian row's label is
+// the skin's epithet (spec 052 FR-007); the label column sizes to the
+// longest label so a longer skin epithet still aligns its continuations.
+func transcriptRowLines(l string, width int, sk *skin.Skin) []string {
+	label, text, style := classifyTranscriptLine(l, sk)
 	if label == "" {
 		return []string{style.Render(l)}
 	}
-	wrapped := wrapText(text, width-6)
+	labelW := len([]rune(label))
+	if labelW < 5 {
+		labelW = 5
+	}
+	wrapped := wrapText(text, width-labelW-1)
 	if len(wrapped) == 0 {
 		wrapped = []string{""}
 	}
 	var out []string
 	for i, w := range wrapped {
-		prefix := "      "
+		prefix := strings.Repeat(" ", labelW+1)
 		if i == 0 {
-			prefix = fmt.Sprintf("%-5s ", label)
+			prefix = fmt.Sprintf("%-*s ", labelW, label)
 		}
 		out = append(out, styleDim.Render(prefix)+style.Render(w))
 	}
 	return out
 }
 
-func classifyTranscriptLine(l string) (label, text string, style lipgloss.Style) {
+// transcriptGuardianPrefix marks the guardian's stored transcript rows — an
+// internal storage marker (client-only ring, never persisted), displayed
+// through the skin's epithet, never verbatim.
+const transcriptGuardianPrefix = "guardian: "
+
+func classifyTranscriptLine(l string, sk *skin.Skin) (label, text string, style lipgloss.Style) {
 	switch {
 	case strings.HasPrefix(l, "you: "):
 		return "you", strings.TrimPrefix(l, "you: "), lipgloss.NewStyle()
-	case strings.HasPrefix(l, "angel: "):
-		return "angel", strings.TrimPrefix(l, "angel: "), lipgloss.NewStyle()
+	case strings.HasPrefix(l, transcriptGuardianPrefix):
+		return sk.Epithet(), strings.TrimPrefix(l, transcriptGuardianPrefix), lipgloss.NewStyle()
 	case strings.HasPrefix(l, transcriptVerdictPrefix):
-		// spec 020 (TASK-63, contract R12): Metatron's own inline tool-call
-		// verdicts — styled as telemetry (dim), distinct from you:/angel:,
-		// and labeled so it wraps like a normal row instead of relying on
-		// clipContent's truncation.
+		// spec 020 (TASK-63, contract R12): the guardian's own inline
+		// tool-call verdicts — styled as telemetry (dim), distinct from the
+		// you/guardian rows, and labeled so it wraps like a normal row
+		// instead of relying on clipContent's truncation.
 		return "note", strings.TrimPrefix(l, transcriptVerdictPrefix), styleFamilyCog
 	default:
 		return "", l, styleAgent
@@ -1660,7 +1671,9 @@ func (m Model) guardianHeaderLine() string {
 	if m.status != nil {
 		charges = m.status.Clock.MetatronCharges
 	}
-	header := fmt.Sprintf("METATRON · charges %s%s",
+	// Pane header: the skin's proper name, uppercased (skin-tokens.md rule 4:
+	// case is a rendering detail of this header, not a token fork).
+	header := fmt.Sprintf("%s · charges %s%s", strings.ToUpper(m.sk().Name()),
 		strings.Repeat("⚡", charges), strings.Repeat("·", clampInt(sim.MetatronChargeCap-charges, 0, sim.MetatronChargeCap)))
 	if m.consoleCharter != "" {
 		// Instruction + capability provenance (spec 021 US3): charter flavor,
@@ -1700,7 +1713,7 @@ func (m Model) metatronView() string {
 
 	body := m.metatronTranscriptBody(width, clampInt(m.height-14, 4, 200))
 	if m.mbErr != "" {
-		body += "\n" + styleErr.Render("the angel is unreachable: "+m.mbErr)
+		body += "\n" + styleErr.Render("the "+m.sk().Epithet()+" is unreachable: "+m.mbErr)
 	}
 
 	content := header + "\n\n" + body
@@ -2058,7 +2071,7 @@ func (m Model) minibufferView(width int) string {
 		return stylePanelFocus.Width(inner).Render(clipContent(line, inner))
 	case m.mbBusy:
 		hint := "esc to background"
-		left := "⋮ the angel is answering…"
+		left := "⋮ the " + m.sk().Epithet() + " is answering…"
 		pad := usable - lipgloss.Width(left) - lipgloss.Width(hint) - 1
 		if pad < 1 {
 			pad = 1
@@ -2068,7 +2081,7 @@ func (m Model) minibufferView(width int) string {
 	case m.mbFlash != "":
 		return styleBox.Width(inner).Render(clipContent(styleDim.Render(m.mbFlash), inner))
 	default:
-		placeholder := "⏎ m — speak with the angel…"
+		placeholder := "⏎ m — speak with the " + m.sk().Epithet() + "…"
 		// Fold-last relocation (patterns/layout.md ruling a step 4,
 		// panels/guardian-strip.md): once the widescreen composite's row
 		// budget has folded the guardian strip, its content prefixes THIS
@@ -2144,13 +2157,13 @@ func (m Model) consoleCardLines(width int) []string {
 // omitting it is the honesty rule (R4: "entries that carry no time render
 // without the timestamp suffix rather than inventing one"), not a
 // placeholder gap.
-func consoleTurnLines(transcript []string, width int) []string {
+func consoleTurnLines(transcript []string, width int, sk *skin.Skin) []string {
 	if width < 10 {
 		width = 10
 	}
 	var out []string
 	for i, l := range transcript {
-		label, text, style := classifyTranscriptLine(l)
+		label, text, style := classifyTranscriptLine(l, sk)
 		if i > 0 {
 			out = append(out, "")
 		}
@@ -2317,7 +2330,7 @@ func (m Model) consoleView() string {
 	if m.helpOpen {
 		body = m.helpPanelView(width, bodyRows)
 	} else {
-		lines := consoleTurnLines(m.transcript, width-2)
+		lines := consoleTurnLines(m.transcript, width-2, m.sk())
 		lines = append(lines, m.consoleCardLines(width-2)...)
 		body = strings.Join(consoleScrollWindow(lines, m.consoleScroll, bodyRows), "\n")
 	}

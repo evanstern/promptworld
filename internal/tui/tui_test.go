@@ -697,14 +697,14 @@ func TestConsoleToolsSummary(t *testing.T) {
 			GrantedTools: []string{"nudge_dream", "nudge_omen"}}, "tools: dream, omen"},
 		{"restricted miracle kinds", metatron.Status{ManifestDefault: false,
 			GrantedTools: []string{"nudge_dream", "work_miracle(move,give_item)"}},
-			"tools: dream, miracles(move,give_item)"},
+			"tools: dream, workings(move,give_item)"},
 		{"unrestricted miracles", metatron.Status{ManifestDefault: false,
-			GrantedTools: []string{"work_miracle"}}, "tools: miracles"},
+			GrantedTools: []string{"work_miracle"}}, "tools: workings"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			s := c.s
-			if got := consoleToolsSummary(&s); got != c.want {
+			if got := consoleToolsSummary(&s, nil); got != c.want {
 				t.Errorf("consoleToolsSummary = %q, want %q", got, c.want)
 			}
 		})
@@ -728,7 +728,7 @@ func TestConsoleStageSummary(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			s := c.s
-			if got := consoleStageSummary(&s); got != c.want {
+			if got := consoleStageSummary(&s, nil); got != c.want {
 				t.Errorf("consoleStageSummary = %q, want %q", got, c.want)
 			}
 		})

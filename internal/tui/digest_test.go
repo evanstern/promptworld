@@ -170,30 +170,30 @@ var catalogFixture = map[string]digestFixture{
 	"gru.withdrew":                {`{"day":2}`, `the gru withdrew`},
 	"chronicle.entry":             {`{"day":3,"from_tick":100,"to_tick":200,"text":"Ash lit the first fire.","thread":"cold-start","agents":[0]}`, `day 3 · cold-start: Ash lit the first fire.`},
 	"metatron.charge_regenerated": {`{}`, `a charge regenerated`},
-	"metatron.nudged":             {`{"form":"dream","targets":[0],"text":"beware the cold"}`, `Metatron dream → Ash: "beware the cold"`},
+	"metatron.nudged":             {`{"form":"dream","targets":[0],"text":"beware the cold"}`, `Guardian dream → Ash: "beware the cold"`},
 	"metatron.place_revealed": {
 		`{"agent":0,"facts":[{"kind":"fire","x":4,"y":5,"seen":100,"prov":"revealed","detail":9000}]}`,
-		`Metatron revealed fire at (4,5) to Ash`,
+		`Guardian revealed fire at (4,5) to Ash`,
 	},
 	"metatron.order_placed": {
 		`{"id":"ord-100-1","origin":"player","condition":"the woodpile drops below 5 logs","action":"nudge someone to chop wood","event_types":["sim.forage_regrown"],"agent":-1,"placed_tick":100,"expires_tick":100000,"status":"active"}`,
-		`Metatron set a watch: "the woodpile drops below 5 logs"`,
+		`Guardian set a watch: "the woodpile drops below 5 logs"`,
 	},
-	"metatron.order_triggered": {`{"id":"ord-100-1","matched_type":"sim.forage_regrown","matched_tick":150}`, `Metatron's watch came true (sim.forage_regrown @ t150)`},
-	"metatron.order_cancelled": {`{"id":"ord-100-1"}`, `Metatron released a watch (ord-100-1)`},
-	"metatron.order_expired":   {`{"id":"ord-100-1"}`, `Metatron's watch lapsed (ord-100-1)`},
+	"metatron.order_triggered": {`{"id":"ord-100-1","matched_type":"sim.forage_regrown","matched_tick":150}`, `Guardian's watch came true (sim.forage_regrown @ t150)`},
+	"metatron.order_cancelled": {`{"id":"ord-100-1"}`, `Guardian released a watch (ord-100-1)`},
+	"metatron.order_expired":   {`{"id":"ord-100-1"}`, `Guardian's watch lapsed (ord-100-1)`},
 	"metatron.charter_observed": {
 		`{"fingerprint":"ab12cd34ef56","default":false}`,
-		`Metatron ran under charter ab12cd34ef56 (player-authored)`,
+		`Guardian ran under charter ab12cd34ef56 (player-authored)`,
 	},
 	"morgue.epilogue": {
 		`{"agent":0,"text":"Ash kept the fire until the end."}`,
 		`epilogue for Ash: Ash kept the fire until the end.`,
 	},
-	"metatron.time_snapped":   {`{"to_tick":106200,"gratis":false}`, `Metatron snapped time forward to day 2 11:30`},
-	"metatron.item_granted":   {`{"agent":0,"kind":"food_raw","qty":2,"gratis":false}`, `Metatron granted Ash 2 food_raw`},
-	"metatron.entity_moved":   {`{"class":"pile","x":3,"y":4,"to_x":6,"to_y":7,"gratis":false}`, `Metatron moved the pile at (3,4) to (6,7)`},
-	"metatron.entity_removed": {`{"class":"structure","x":12,"y":8,"gratis":false}`, `Metatron removed the structure at (12,8)`},
+	"metatron.time_snapped":   {`{"to_tick":106200,"gratis":false}`, `Guardian snapped time forward to day 2 11:30`},
+	"metatron.item_granted":   {`{"agent":0,"kind":"food_raw","qty":2,"gratis":false}`, `Guardian granted Ash 2 food_raw`},
+	"metatron.entity_moved":   {`{"class":"pile","x":3,"y":4,"to_x":6,"to_y":7,"gratis":false}`, `Guardian moved the pile at (3,4) to (6,7)`},
+	"metatron.entity_removed": {`{"class":"structure","x":12,"y":8,"gratis":false}`, `Guardian removed the structure at (12,8)`},
 
 	// --- cog (labeled) ---
 	"cog.thought": {
@@ -220,7 +220,7 @@ var catalogFixture = map[string]digestFixture{
 	},
 	"curriculum.stage_unlocked": {
 		`{"stage":"stage-2","exercise":"first-night","tick":50000}`,
-		`Metatron's watcher earned The Written Word (proven by first-night)`,
+		`Guardian's watcher earned The Written Word (proven by first-night)`,
 	},
 }
 
@@ -240,7 +240,7 @@ func TestCatalogSweep(t *testing.T) {
 			continue
 		}
 		e := store.Event{Seq: 1, Tick: 1, Type: typ, Payload: json.RawMessage(fx.payload)}
-		segs, ok := fn(e, names)
+		segs, ok := fn(e, names, nil)
 		if !ok {
 			t.Errorf("%s: digest fell back (ok=false) on its own sample payload", typ)
 			continue
@@ -324,7 +324,7 @@ func digestOf(t *testing.T, typ, payload string) []seg {
 		t.Fatalf("%s: no registry entry", typ)
 	}
 	e := store.Event{Seq: 1, Tick: 1, Type: typ, Payload: json.RawMessage(payload)}
-	segs, ok := fn(e, digestTestNames)
+	segs, ok := fn(e, digestTestNames, nil)
 	if !ok {
 		t.Fatalf("%s: digest returned ok=false", typ)
 	}
@@ -416,22 +416,22 @@ func TestDigestMiracleGratisMark(t *testing.T) {
 		{
 			"metatron.time_snapped",
 			`{"to_tick":106200,"gratis":false}`, `{"to_tick":106200,"gratis":true}`,
-			`Metatron snapped time forward to day 2 11:30`,
+			`Guardian snapped time forward to day 2 11:30`,
 		},
 		{
 			"metatron.item_granted",
 			`{"agent":0,"kind":"food_raw","qty":2,"gratis":false}`, `{"agent":0,"kind":"food_raw","qty":2,"gratis":true}`,
-			`Metatron granted Ash 2 food_raw`,
+			`Guardian granted Ash 2 food_raw`,
 		},
 		{
 			"metatron.entity_moved",
 			`{"class":"pile","x":3,"y":4,"to_x":6,"to_y":7,"gratis":false}`, `{"class":"pile","x":3,"y":4,"to_x":6,"to_y":7,"gratis":true}`,
-			`Metatron moved the pile at (3,4) to (6,7)`,
+			`Guardian moved the pile at (3,4) to (6,7)`,
 		},
 		{
 			"metatron.entity_removed",
 			`{"class":"structure","x":12,"y":8,"gratis":false}`, `{"class":"structure","x":12,"y":8,"gratis":true}`,
-			`Metatron removed the structure at (12,8)`,
+			`Guardian removed the structure at (12,8)`,
 		},
 	}
 	for _, tc := range cases {
@@ -458,9 +458,9 @@ func TestDigestMiracleGratisMark(t *testing.T) {
 // deleted, so it reads "cleared" rather than "removed").
 func TestDigestEntityMovedRemovedClasses(t *testing.T) {
 	moveCases := []struct{ payload, want string }{
-		{`{"class":"villager","x":1,"y":1,"to_x":2,"to_y":2,"gratis":false}`, `Metatron moved the villager at (1,1) to (2,2)`},
-		{`{"class":"structure","x":1,"y":1,"to_x":2,"to_y":2,"gratis":false}`, `Metatron moved the structure at (1,1) to (2,2)`},
-		{`{"class":"pile","x":1,"y":1,"to_x":2,"to_y":2,"gratis":false}`, `Metatron moved the pile at (1,1) to (2,2)`},
+		{`{"class":"villager","x":1,"y":1,"to_x":2,"to_y":2,"gratis":false}`, `Guardian moved the villager at (1,1) to (2,2)`},
+		{`{"class":"structure","x":1,"y":1,"to_x":2,"to_y":2,"gratis":false}`, `Guardian moved the structure at (1,1) to (2,2)`},
+		{`{"class":"pile","x":1,"y":1,"to_x":2,"to_y":2,"gratis":false}`, `Guardian moved the pile at (1,1) to (2,2)`},
 	}
 	for _, tc := range moveCases {
 		if got := plainSegs(digestOf(t, "metatron.entity_moved", tc.payload)); got != tc.want {
@@ -469,9 +469,9 @@ func TestDigestEntityMovedRemovedClasses(t *testing.T) {
 	}
 
 	removeCases := []struct{ payload, want string }{
-		{`{"class":"structure","x":1,"y":1,"gratis":false}`, `Metatron removed the structure at (1,1)`},
-		{`{"class":"pile","x":1,"y":1,"gratis":false}`, `Metatron removed the pile at (1,1)`},
-		{`{"class":"terrain","x":1,"y":1,"gratis":false}`, `Metatron cleared the terrain at (1,1)`},
+		{`{"class":"structure","x":1,"y":1,"gratis":false}`, `Guardian removed the structure at (1,1)`},
+		{`{"class":"pile","x":1,"y":1,"gratis":false}`, `Guardian removed the pile at (1,1)`},
+		{`{"class":"terrain","x":1,"y":1,"gratis":false}`, `Guardian cleared the terrain at (1,1)`},
 	}
 	for _, tc := range removeCases {
 		if got := plainSegs(digestOf(t, "metatron.entity_removed", tc.payload)); got != tc.want {

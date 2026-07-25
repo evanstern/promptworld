@@ -45,12 +45,12 @@ func outcomeEvent(seq int64, job, class string, agent int, outcome, reason strin
 func TestIngestJoinsThoughtToolCallOutcomeByJob(t *testing.T) {
 	dt := newDecisionTraces()
 	names := []string{"Ash"}
-	dt.ingest(thoughtEvent(1, 100, "planner-0-100", "planner", 0, 0), names, nil)
+	dt.ingest(thoughtEvent(1, 100, "planner-0-100", "planner", 0, 0), names, nil, nil)
 	// Out-of-order arrival (ordinal 2 before ordinal 1) — R2: calls must
 	// still land ordinal-ordered regardless.
-	dt.ingest(toolCallEvent(3, "planner-0-100", 2, "gather", "landed", ""), names, nil)
-	dt.ingest(toolCallEvent(2, "planner-0-100", 1, "speak", "rejected_gate", "stale"), names, nil)
-	dt.ingest(outcomeEvent(4, "planner-0-100", "planner", 0, "landed", ""), names, nil)
+	dt.ingest(toolCallEvent(3, "planner-0-100", 2, "gather", "landed", ""), names, nil, nil)
+	dt.ingest(toolCallEvent(2, "planner-0-100", 1, "speak", "rejected_gate", "stale"), names, nil, nil)
+	dt.ingest(outcomeEvent(4, "planner-0-100", "planner", 0, "landed", ""), names, nil, nil)
 
 	chains := dt.chainsFor(0)
 	if len(chains) != 1 {
@@ -72,7 +72,7 @@ func TestIngestFragmentToolCallFirstAttributesViaJobIDParse(t *testing.T) {
 	dt := newDecisionTraces()
 	// No cog.thought ever arrives — folded into a pre-connect snapshot
 	// (research D2, FR-008): attribution falls back to the job-ID parse.
-	dt.ingest(toolCallEvent(1, "reflex-2-500", 1, "gather", "landed", ""), nil, nil)
+	dt.ingest(toolCallEvent(1, "reflex-2-500", 1, "gather", "landed", ""), nil, nil, nil)
 	chains := dt.chainsFor(2)
 	if len(chains) != 1 {
 		t.Fatalf("expected job-ID parse to attribute to agent 2, chains(2)=%d", len(chains))
@@ -84,7 +84,7 @@ func TestIngestFragmentToolCallFirstAttributesViaJobIDParse(t *testing.T) {
 
 func TestIngestFragmentOutcomeFirstUsesOutcomePayloadAgent(t *testing.T) {
 	dt := newDecisionTraces()
-	dt.ingest(outcomeEvent(1, "reflex-5-500", "reflex", 5, "landed", ""), nil, nil)
+	dt.ingest(outcomeEvent(1, "reflex-5-500", "reflex", 5, "landed", ""), nil, nil, nil)
 	chains := dt.chainsFor(5)
 	if len(chains) != 1 {
 		t.Fatalf("expected the outcome payload's own Agent to attribute the chain, chains(5)=%d", len(chains))
@@ -93,9 +93,9 @@ func TestIngestFragmentOutcomeFirstUsesOutcomePayloadAgent(t *testing.T) {
 
 func TestIngestSkipsConversationJobs(t *testing.T) {
 	dt := newDecisionTraces()
-	dt.ingest(thoughtEvent(1, 100, "conversation-7", "conversation", 0, 0), nil, nil)
-	dt.ingest(toolCallEvent(2, "conversation-7", 1, "speak", "landed", ""), nil, nil)
-	dt.ingest(outcomeEvent(3, "conversation-7", "conversation", 0, "landed", ""), nil, nil)
+	dt.ingest(thoughtEvent(1, 100, "conversation-7", "conversation", 0, 0), nil, nil, nil)
+	dt.ingest(toolCallEvent(2, "conversation-7", 1, "speak", "landed", ""), nil, nil, nil)
+	dt.ingest(outcomeEvent(3, "conversation-7", "conversation", 0, "landed", ""), nil, nil, nil)
 	if _, ok := dt.byJob["conversation-7"]; ok {
 		t.Error("a conversation-prefixed job must never be ingested (spec Assumptions)")
 	}
@@ -103,7 +103,7 @@ func TestIngestSkipsConversationJobs(t *testing.T) {
 
 func TestIngestMetatronToolCallAttributesToSentinel(t *testing.T) {
 	dt := newDecisionTraces()
-	dt.ingest(toolCallEvent(1, "turn-metatron-1000", 1, "grant_item", "landed", ""), nil, nil)
+	dt.ingest(toolCallEvent(1, "turn-metatron-1000", 1, "grant_item", "landed", ""), nil, nil, nil)
 	chains := dt.chainsFor(metatronAgent)
 	if len(chains) != 1 {
 		t.Fatalf("expected turn-metatron- attribution to the Metatron sentinel, chains=%d", len(chains))
@@ -115,7 +115,7 @@ func TestIngestMetatronToolCallAttributesToSentinel(t *testing.T) {
 
 func TestIngestSuppressionOutcomeOnlyNoThoughtNoCalls(t *testing.T) {
 	dt := newDecisionTraces()
-	dt.ingest(outcomeEvent(1, "meeting-0-900", "meeting", 0, sim.OutcomeSuppressed, "budget exhausted"), nil, nil)
+	dt.ingest(outcomeEvent(1, "meeting-0-900", "meeting", 0, sim.OutcomeSuppressed, "budget exhausted"), nil, nil, nil)
 	chains := dt.chainsFor(0)
 	if len(chains) != 1 || !chains[0].Suppressed {
 		t.Fatalf("expected a suppressed chain: %+v", chains)
@@ -124,8 +124,8 @@ func TestIngestSuppressionOutcomeOnlyNoThoughtNoCalls(t *testing.T) {
 
 func TestIngestOutcomeAfterCallsIsNotSuppressed(t *testing.T) {
 	dt := newDecisionTraces()
-	dt.ingest(toolCallEvent(1, "reflex-0-100", 1, "gather", "landed", ""), nil, nil)
-	dt.ingest(outcomeEvent(2, "reflex-0-100", "reflex", 0, "landed", ""), nil, nil)
+	dt.ingest(toolCallEvent(1, "reflex-0-100", 1, "gather", "landed", ""), nil, nil, nil)
+	dt.ingest(outcomeEvent(2, "reflex-0-100", "reflex", 0, "landed", ""), nil, nil, nil)
 	chains := dt.chainsFor(0)
 	if len(chains) != 1 || chains[0].Suppressed {
 		t.Fatalf("a chain with calls must never read as a router suppression: %+v", chains)
@@ -136,7 +136,7 @@ func TestIngestCapEvictsOldestPerAgentFromBothIndexes(t *testing.T) {
 	dt := newDecisionTraces()
 	for i := 0; i < decisionChainCap+1; i++ {
 		job := fmt.Sprintf("reflex-0-%d", i)
-		dt.ingest(thoughtEvent(int64(i+1), int64(i), job, "reflex", 0, 0), nil, nil)
+		dt.ingest(thoughtEvent(int64(i+1), int64(i), job, "reflex", 0, 0), nil, nil, nil)
 	}
 	chains := dt.chainsFor(0)
 	if len(chains) != decisionChainCap {
@@ -151,7 +151,7 @@ func TestIngestCapEvictsOldestPerAgentFromBothIndexes(t *testing.T) {
 }
 
 func TestResolveStimulusCadence(t *testing.T) {
-	got := resolveStimulus(0, nil, nil)
+	got := resolveStimulus(0, nil, nil, nil)
 	if !strings.Contains(got, "cadence") {
 		t.Errorf("triggerSeq 0 should read cadence-driven, got %q", got)
 	}
@@ -162,14 +162,14 @@ func TestResolveStimulusRingHit(t *testing.T) {
 	ring := []store.Event{
 		{Seq: 5, Tick: 60, Type: "agent.moved", Payload: json.RawMessage(`{"agent":0,"x":7,"y":8}`)},
 	}
-	got := resolveStimulus(5, ring, names)
+	got := resolveStimulus(5, ring, names, nil)
 	if !strings.Contains(got, "Ash") || !strings.Contains(got, "(7,8)") {
 		t.Errorf("a ring hit should render the chronicle digest line, got %q", got)
 	}
 }
 
 func TestResolveStimulusRingMiss(t *testing.T) {
-	got := resolveStimulus(999, nil, nil)
+	got := resolveStimulus(999, nil, nil, nil)
 	if !strings.Contains(got, "999") {
 		t.Errorf("a ring miss should name the seq neutrally, got %q", got)
 	}
@@ -378,7 +378,7 @@ func TestMetatronVerdictRowRespectsTranscriptCap(t *testing.T) {
 }
 
 func TestClassifyTranscriptLineVerdictRowStylesAsTelemetry(t *testing.T) {
-	label, text, style := classifyTranscriptLine(transcriptVerdictPrefix + "grant_item — went through")
+	label, text, style := classifyTranscriptLine(transcriptVerdictPrefix+"grant_item — went through", nil)
 	if label != "note" {
 		t.Errorf("verdict row should carry the note label so it wraps, got %q", label)
 	}

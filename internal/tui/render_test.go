@@ -67,7 +67,7 @@ func TestWidescreenViewExactHeight(t *testing.T) {
 				case "metatron-solo":
 					m.dockTab = paneMetatron
 					m.solo = true
-					m.transcript = []string{"you: why is Rowan hoarding wood?", "angel: three cold nights, and Ash let the fire die each time."}
+					m.transcript = []string{"you: why is Rowan hoarding wood?", transcriptGuardianPrefix + "three cold nights, and Ash let the fire die each time."}
 				case "help":
 					m.helpOpen = true
 					m.helpPageMode = helpModeGlobal
@@ -212,7 +212,7 @@ func TestPaintStyledLineRoleMapping(t *testing.T) {
 func TestRenderChronicleRowAlertWholeLine(t *testing.T) {
 	withColorProfile(t, termenv.TrueColor)
 	e := store.Event{Seq: 1, Tick: 60, Type: "agent.died", Payload: json.RawMessage(`{"agent":0,"cause":"starvation"}`)}
-	l := formatChronicleLine(e, []string{"Ash"})
+	l := formatChronicleLine(e, []string{"Ash"}, nil)
 	cols := computeChronicleColumns([]chronicleLine{l}, false)
 	got := renderChronicleRow(l, cols, 60, 1, false)
 	want := styleFeedAlert.Render(plainChronicleLine(l, cols))
@@ -226,7 +226,7 @@ func TestRenderChronicleRowAlertWholeLine(t *testing.T) {
 func TestRenderChronicleRowLabeledVoiceWholeLine(t *testing.T) {
 	withColorProfile(t, termenv.TrueColor)
 	e := store.Event{Seq: 1, Tick: 60, Type: "clock.speed_set", Payload: json.RawMessage(`{"speed":"4x"}`)}
-	l := formatChronicleLine(e, nil)
+	l := formatChronicleLine(e, nil, nil)
 	cols := computeChronicleColumns([]chronicleLine{l}, false)
 	got := renderChronicleRow(l, cols, 60, 1, false)
 	want := styleFeedClock.Render(plainChronicleLine(l, cols))
@@ -249,7 +249,7 @@ func TestRenderChronicleRowSelectionReverse(t *testing.T) {
 	}
 	for _, c := range cases {
 		e := store.Event{Seq: 1, Tick: 60, Type: c.typ, Payload: json.RawMessage(c.payload)}
-		l := formatChronicleLine(e, []string{"Ash"})
+		l := formatChronicleLine(e, []string{"Ash"}, nil)
 		cols := computeChronicleColumns([]chronicleLine{l}, false)
 		unselected := renderChronicleRow(l, cols, 60, 1, false)
 		selected := renderChronicleRow(l, cols, 60, 1, true)
@@ -267,7 +267,7 @@ func TestPureLayerEmitsNoANSI(t *testing.T) {
 	names := []string{"Ash", "Birch", "Cedar", "Rowan"}
 	for typ, fx := range catalogFixture {
 		e := store.Event{Seq: 1, Tick: 1, Type: typ, Payload: json.RawMessage(fx.payload)}
-		l := formatChronicleLine(e, names)
+		l := formatChronicleLine(e, names, nil)
 		if strings.Contains(plainSegs(l.Summary), "\x1b") {
 			t.Errorf("%s: digest summary contains an ESC byte — the pure layer must never emit ANSI", typ)
 		}
@@ -277,7 +277,7 @@ func TestPureLayerEmitsNoANSI(t *testing.T) {
 		}
 	}
 	fallback := store.Event{Seq: 1, Tick: 1, Type: "future.unknown_type", Payload: json.RawMessage(`{"agent":0}`)}
-	l := formatChronicleLine(fallback, names)
+	l := formatChronicleLine(fallback, names, nil)
 	if strings.Contains(plainSegs(l.Summary), "\x1b") {
 		t.Error("fallback summary contains an ESC byte")
 	}
@@ -770,7 +770,7 @@ func TestMetatronViewNarrowCarriesStrip(t *testing.T) {
 		t.Errorf("narrow metatron pane missing the strip's standing-order count: %q", view)
 	}
 	stripIdx := strings.Index(view, "(1/3)")
-	mbIdx := strings.Index(view, "⏎ m — speak with the angel…")
+	mbIdx := strings.Index(view, "⏎ m — speak with the guardian…")
 	if stripIdx < 0 || mbIdx < 0 || stripIdx > mbIdx {
 		t.Errorf("strip must render ABOVE the minibuffer: strip@%d minibuffer@%d\n%s", stripIdx, mbIdx, view)
 	}

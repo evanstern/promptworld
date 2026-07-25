@@ -18,6 +18,7 @@ import (
 	"strings"
 
 	"github.com/evanstern/promptworld/internal/sim"
+	"github.com/evanstern/promptworld/internal/skin"
 	"github.com/evanstern/promptworld/internal/store"
 )
 
@@ -147,10 +148,10 @@ func (dt decisionTraces) chainsFor(agent int) []*decisionChain {
 // applyEvent (tui.go) after the seq-skip guard, before the chronicle ring
 // append (research D1) — ring is that ring as it stood before this event,
 // which is what stimulus resolution (resolveStimulus) needs.
-func (dt *decisionTraces) ingest(e store.Event, names []string, ring []store.Event) {
+func (dt *decisionTraces) ingest(e store.Event, names []string, ring []store.Event, sk *skin.Skin) {
 	switch e.Type {
 	case "cog.thought":
-		dt.ingestThought(e, names, ring)
+		dt.ingestThought(e, names, ring, sk)
 	case "cog.tool_call":
 		dt.ingestToolCall(e)
 	case "cog.outcome":
@@ -158,7 +159,7 @@ func (dt *decisionTraces) ingest(e store.Event, names []string, ring []store.Eve
 	}
 }
 
-func (dt *decisionTraces) ingestThought(e store.Event, names []string, ring []store.Event) {
+func (dt *decisionTraces) ingestThought(e store.Event, names []string, ring []store.Event, sk *skin.Skin) {
 	p, ok := decode[sim.CogThoughtPayload](e)
 	if !ok || strings.HasPrefix(p.Job, conversationJobPrefix) {
 		return
@@ -168,7 +169,7 @@ func (dt *decisionTraces) ingestThought(e store.Event, names []string, ring []st
 	c.Class = p.Class
 	c.Tick = p.SnapshotTick
 	c.TriggerSeq = p.TriggerSeq
-	c.Stimulus = resolveStimulus(p.TriggerSeq, ring, names)
+	c.Stimulus = resolveStimulus(p.TriggerSeq, ring, names, sk)
 	c.HasThought = true
 	if strings.HasPrefix(p.Job, metatronJobPrefix) {
 		dt.attribute(c, metatronAgent, true)
@@ -284,12 +285,12 @@ func insertOrdinal(calls []decisionCall, c decisionCall) []decisionCall {
 // inventing a second one (FR-005); a miss (the trigger predates this
 // client's subscription, or — vanishingly rarely — was already evicted)
 // degrades to a neutral reference naming the seq.
-func resolveStimulus(triggerSeq int64, ring []store.Event, names []string) string {
+func resolveStimulus(triggerSeq int64, ring []store.Event, names []string, sk *skin.Skin) string {
 	if triggerSeq == 0 {
 		return "cadence — the villager's own rhythm, not a triggering event"
 	}
 	if e, ok := findRingEvent(ring, triggerSeq); ok {
-		return plainSegs(formatChronicleLine(e, names).Summary)
+		return plainSegs(formatChronicleLine(e, names, sk).Summary)
 	}
 	return fmt.Sprintf("stimulus #%d (before this view connected)", triggerSeq)
 }

@@ -17,6 +17,7 @@ import (
 	"unicode"
 
 	"github.com/evanstern/promptworld/internal/clock"
+	"github.com/evanstern/promptworld/internal/skin"
 	"github.com/evanstern/promptworld/internal/store"
 )
 
@@ -157,12 +158,40 @@ func resolvePayloadNames(raw json.RawMessage, names []string) string {
 // the new solo-only column (R5); Summary is the digest registry's (or the
 // fallback's) styled segments.
 type chronicleLine struct {
-	Seq     int64
-	Tick    int64
-	Time    string
-	Type    string
-	Family  eventFamily
-	Summary []seg
+	Seq  int64
+	Tick int64
+	Time string
+	Type string
+	// DisplayType is the Type column's rendered form (spec 052 FR-013): the
+	// frozen `metatron` family segment displays through the skin's family
+	// label (default `guardian`); every other type — and every verbatim
+	// inspector surface (the detail pane, the grammar-miss raw fallback) —
+	// stays the raw Type. The dock's short form (shortType, last segment)
+	// never carries the family segment, so it is unaffected by construction.
+	DisplayType string
+	Family      eventFamily
+	Summary     []seg
+}
+
+// displayType is DisplayType with a defensive raw-Type fallback for
+// hand-built lines (tests, future callers) that never went through
+// formatChronicleLine.
+func (l chronicleLine) displayType() string {
+	if l.DisplayType != "" {
+		return l.DisplayType
+	}
+	return l.Type
+}
+
+// displayEventType aliases the frozen `metatron.*` family segment to the
+// skin's family label for the Type COLUMN only (FR-013). curriculum.* and
+// every other family render raw — inspector-class visibility is deliberate
+// (spec edge cases, FR-020 audience ruling).
+func displayEventType(t string, sk *skin.Skin) string {
+	if rest, ok := strings.CutPrefix(t, "metatron."); ok {
+		return sk.FamilyLabel() + "." + rest
+	}
+	return t
 }
 
 // formatChronicleLine implements the digest-grammar contract's "Line
@@ -170,16 +199,17 @@ type chronicleLine struct {
 // a miss or an unmarshal failure (digestFunc's ok=false) falls back to the
 // pre-digest compact resolved-name JSON as one segText span — total,
 // FR-002/FR-003, never blank, never a panic.
-func formatChronicleLine(e store.Event, names []string) chronicleLine {
+func formatChronicleLine(e store.Event, names []string, sk *skin.Skin) chronicleLine {
 	l := chronicleLine{
-		Seq:    e.Seq,
-		Tick:   e.Tick,
-		Time:   clock.FormatTOD(int(clock.SecondOfDay(e.Tick))),
-		Type:   e.Type,
-		Family: eventFamilyOf(e.Type),
+		Seq:         e.Seq,
+		Tick:        e.Tick,
+		Time:        clock.FormatTOD(int(clock.SecondOfDay(e.Tick))),
+		Type:        e.Type,
+		DisplayType: displayEventType(e.Type, sk),
+		Family:      eventFamilyOf(e.Type),
 	}
 	if fn, ok := digestRegistry[e.Type]; ok {
-		if segs, ok := fn(e, names); ok {
+		if segs, ok := fn(e, names, sk); ok {
 			l.Summary = segs
 			return l
 		}
@@ -226,9 +256,11 @@ func computeChronicleColumns(lines []chronicleLine, dock bool) chronicleColumns 
 		if w := len(strconv.FormatInt(l.Tick, 10)); w > cols.TickWidth {
 			cols.TickWidth = w
 		}
-		t := l.Type
+		// Solo measures the DISPLAYED type (family-aliased, FR-013); the dock
+		// short form derives from the raw type's last segment.
+		t := l.displayType()
 		if dock {
-			t = shortType(t)
+			t = shortType(l.Type)
 		}
 		w := len([]rune(t))
 		if w > cap {
@@ -241,12 +273,15 @@ func computeChronicleColumns(lines []chronicleLine, dock bool) chronicleColumns 
 	return cols
 }
 
-// padType left-justifies a type name to the window's computed column width,
-// truncating with "…" past the family cap (R5).
-func padType(t string, cols chronicleColumns) string {
+// padType left-justifies a line's rendered type to the window's computed
+// column width, truncating with "…" past the family cap (R5). Solo shows the
+// DisplayType (skin family alias, FR-013); the dock's short form is the raw
+// type's last segment — family-segment-free by construction.
+func padType(l chronicleLine, cols chronicleColumns) string {
+	t := l.displayType()
 	cap := typeColumnCapSolo
 	if cols.Dock {
-		t = shortType(t)
+		t = shortType(l.Type)
 		cap = typeColumnCapDock
 	}
 	r := []rune(t)
@@ -268,7 +303,7 @@ func padType(t string, cols chronicleColumns) string {
 // path (styleWrapLine, R4) which needs the prefix and summary kept separate
 // so it can tag each rune's source role before wrap/truncate ever runs.
 func chronicleLinePrefix(l chronicleLine, cols chronicleColumns) string {
-	typ := padType(l.Type, cols)
+	typ := padType(l, cols)
 	if cols.Dock {
 		return fmt.Sprintf("%s %s  ", l.Time, typ)
 	}

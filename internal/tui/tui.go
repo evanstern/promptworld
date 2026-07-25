@@ -55,7 +55,21 @@ const (
 	paneCount
 )
 
-var paneNames = [paneCount]string{"map", "chronicle", "metatron", "villagers", "systems"}
+// paneNames are the DEFAULT-skin pane labels; the guardian pane's label is
+// skin data (spec 052 FR-007), so live surfaces render it via paneName —
+// this array is the static fallback the help content and tests read.
+var paneNames = [paneCount]string{"map", "chronicle", "guardian", "villagers", "systems"}
+
+// paneName resolves a pane's display label through the world skin (spec 052):
+// the guardian tab's label is the skin's tab_label token; every other pane is
+// non-fiction chrome and stays literal (skin-tokens.md rule 5) — the systems
+// tab deliberately so (D10: telemetry is never skinned).
+func (m Model) paneName(p pane) string {
+	if p == paneMetatron {
+		return m.sk().TabLabel()
+	}
+	return paneNames[p]
+}
 
 // dockTabKey is the keymap.md key that selects/solos each dock tab.
 var dockTabKey = map[pane]string{paneChronicle: "2", paneMetatron: "3", paneVillagers: "4", paneSystems: "5"}
@@ -82,6 +96,13 @@ type Model struct {
 	status  *ipc.StatusData // latest clock/daemon status (1s poll)
 	events  []store.Event   // chronicle ring, newest last
 	lastSeq int64
+
+	// worldSkin is the attached world's display skin, rebuilt from the
+	// status-carried facts (spec 052 FR-012) — never read from world files,
+	// and no global client state (edge case: two skins, one terminal). nil
+	// (old daemon, absent fields, or not yet connected) is the default
+	// Guardian skin: every skin.Skin method is nil-safe.
+	worldSkin *skin.Skin
 
 	// active is the narrow fallback's single visible pane (today's model,
 	// unchanged). dockTab/solo are the widescreen composite's dock
@@ -269,6 +290,21 @@ func lessonSeenIDs(seen *worlds.LessonsSeen) map[string]bool {
 // the ui command surfaces it as a real exit error after Run returns.
 func (m Model) FatalErr() string { return m.fatalErr }
 
+// sk is the attached world's skin (nil = default; skin.Skin is nil-safe) —
+// the ONE door every fiction string in this package renders through
+// (spec 052 FR-007).
+func (m Model) sk() *skin.Skin { return m.worldSkin }
+
+// skinFromStatus rebuilds the world skin from the status-carried display
+// facts (spec 052 contract §7). A status with no override maps — including
+// every pre-052 daemon's — is the default skin (nil).
+func skinFromStatus(st *ipc.StatusData) *skin.Skin {
+	if st == nil || (st.SkinStrings == nil && st.SkinStages == nil) {
+		return nil
+	}
+	return skin.FromFacts(st.SkinStrings, st.SkinStages)
+}
+
 func (m Model) Init() tea.Cmd {
 	return tea.Batch(connect(m.w), pollTick())
 }
@@ -308,11 +344,11 @@ type editorResultMsg struct {
 // consoleToolsSummary renders the granted-tool part of the console header
 // (spec 021 US3, contracts/status.md): quiet (empty) for a full-grant default
 // world, "tools: none" for a conversation-only world, else "tools: " + the
-// granted set in short form (dream, omen, miracles) with any kind restriction
+// granted set in short form (dream, omen, workings) with any kind restriction
 // carried through. Kept beside the consoleStatusMsg handler — the only TUI
 // region this feature touches (TASK-63 owns the digest/villager/transcript
 // regions).
-func consoleToolsSummary(s *metatron.Status) string {
+func consoleToolsSummary(s *metatron.Status, sk *skin.Skin) string {
 	if s.ManifestDefault {
 		return "" // full grant is the unremarkable default — keep the header quiet
 	}
@@ -321,21 +357,21 @@ func consoleToolsSummary(s *metatron.Status) string {
 	}
 	parts := make([]string, 0, len(s.GrantedTools))
 	for _, t := range s.GrantedTools {
-		parts = append(parts, shortToolName(t))
+		parts = append(parts, shortToolName(t, sk))
 	}
 	return "tools: " + strings.Join(parts, ", ")
 }
 
-// consoleStageSummary renders the metatron pane's curriculum-ladder line
+// consoleStageSummary renders the guardian pane's curriculum-ladder line
 // (spec 046 T010, R10): the skin's display name for the world's stage plus
 // the lock provenance the ceiling/instruction-lock (US2) already computed —
 // "" for a pre-ladder/ungated world (Stage absent), keeping every existing
 // world's console header byte-identical (the consoleToolsSummary precedent).
-func consoleStageSummary(s *metatron.Status) string {
+func consoleStageSummary(s *metatron.Status, sk *skin.Skin) string {
 	if s.Stage == "" {
 		return ""
 	}
-	line := "stage: " + skin.StageName(s.Stage)
+	line := "stage: " + sk.StageName(s.Stage)
 	if s.CharterLocked {
 		line += " (charter locked to " + s.CharterPreset + ")"
 	}
@@ -343,18 +379,19 @@ func consoleStageSummary(s *metatron.Status) string {
 }
 
 // shortToolName maps a granted-tool label to its console short form, preserving
-// any kind restriction suffix on work_miracle ("work_miracle(move,give_item)" →
-// "miracles(move,give_item)").
-func shortToolName(label string) string {
+// any kind restriction suffix on the frozen work_miracle tool id — the
+// DISPLAY vocabulary is the skin's working noun (spec 052 FR-007;
+// "work_miracle(move,give_item)" → "workings(move,give_item)").
+func shortToolName(label string, sk *skin.Skin) string {
 	switch {
 	case label == "nudge_dream":
 		return "dream"
 	case label == "nudge_omen":
-		return "omen"
+		return sk.FormNoun("omen")
 	case label == "work_miracle":
-		return "miracles"
+		return sk.WorkingNounPlural()
 	case strings.HasPrefix(label, "work_miracle("):
-		return "miracles" + strings.TrimPrefix(label, "work_miracle")
+		return sk.WorkingNounPlural() + strings.TrimPrefix(label, "work_miracle")
 	default:
 		return label
 	}
@@ -489,6 +526,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.connected = true
 		m.lastErr = ""
 		m.status = msg.status
+		m.worldSkin = skinFromStatus(msg.status) // spec 052: skin rides status
 		m.replica = msg.replica
 		m.lastSeq = msg.lastSeq
 		m.clampVillSelected()          // R5: connectedMsg swaps the replica wholesale
@@ -525,6 +563,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case statusMsg:
 		wasPaused := m.status != nil && m.status.Clock.Paused
 		m.status = msg.status
+		m.worldSkin = skinFromStatus(msg.status) // spec 052: boot-frozen, but a daemon restart re-skins
 		nowPaused := m.status != nil && m.status.Clock.Paused
 		if wasPaused && !nowPaused {
 			// Resume: collapse everything, snap back to tail-follow
@@ -551,9 +590,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.consoleCharter = "custom charter"
 			}
 			m.consoleSkills = len(msg.status.Skills)
-			m.consoleTools = consoleToolsSummary(msg.status)
+			m.consoleTools = consoleToolsSummary(msg.status, m.sk())
 			m.consoleOrders = msg.status.Orders
-			m.consoleStage = consoleStageSummary(msg.status)
+			m.consoleStage = consoleStageSummary(msg.status, m.sk())
 			m.consoleCharterLocked = msg.status.CharterLocked
 			m.consoleCharterPreset = msg.status.CharterPreset
 			m.consoleSkillsLocked = msg.status.SkillsLocked
@@ -570,10 +609,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		for _, mo := range r.Moments {
 			m.transcript = append(m.transcript, "! "+mo)
 		}
-		m.transcript = append(m.transcript, "angel: "+r.Reply)
+		m.transcript = append(m.transcript, transcriptGuardianPrefix+r.Reply)
 		if r.Nudge != nil {
+			// Form is the frozen payload value ("vision"/"omen", spec 052
+			// FR-005); the DISPLAY noun is skin vocabulary.
 			m.transcript = append(m.transcript, fmt.Sprintf("⚡ %s → %s: %q",
-				r.Nudge.Form, strings.Join(r.Nudge.Targets, ", "), r.Nudge.Text))
+				m.sk().FormNoun(r.Nudge.Form), strings.Join(r.Nudge.Targets, ", "), r.Nudge.Text))
 		}
 		if r.Order != nil {
 			m.transcript = append(m.transcript, fmt.Sprintf("👁 watch set (%s): %q", r.Order.ID, r.Order.Condition))
@@ -1672,7 +1713,7 @@ func (m *Model) applyEvent(e store.Event) {
 	// (resolveStimulus) sees the ring exactly as it stood before this
 	// event — the trigger event, if any, is always an earlier seq and so
 	// already in it.
-	m.traces.ingest(e, m.agentNames(), m.events)
+	m.traces.ingest(e, m.agentNames(), m.events, m.sk())
 	// Lessons projection (spec 055, TASK-117, research.md R3): folded here,
 	// alongside the decision-trace projection above — same one-event-at-a-
 	// time seam, same "every event exactly once" guarantee. A non-nil
