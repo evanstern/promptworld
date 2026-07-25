@@ -11,7 +11,7 @@ sources:
   - internal/daemon/daemon.go
   - cmd/promptworld/commands.go
   - internal/tui/views.go
-verified_against: 824932c630a9216dc761f78baa903cd07e5b9493
+verified_against: 61a01fafb10b949a82fbfd2ea6f9d85b978a9850
 ---
 
 # LLM provider health (preflight + tool-silence detection)
@@ -146,9 +146,11 @@ than the first-run experience.
   gains the calibration rows.
 - **TUI** ([[tui-client]]): the header gains a red `[llm: <provider> <kind>]`
   badge (`firstLLMCondition`, the `[degraded]` badge's pattern) while any
-  condition is active; the metatron pane's provider table
-  (`llmProviderLines`) appends an indented, error-styled detail+remedy line
-  beneath an affected provider's row.
+  condition is active; the provider table (`llmProviderLines` — since
+  spec 053 rendered on the dedicated **systems** dock tab, key `5`, rather
+  than the guardian/metatron pane, per the D10 telemetry split) appends an
+  indented, error-styled detail+remedy line beneath an affected provider's
+  row.
 
 ## Connections
 

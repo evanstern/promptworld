@@ -10,7 +10,7 @@ sources:
   - internal/tui/digest.go
   - internal/tui/decisions.go
   - internal/tui/help.go
-verified_against: 824932c630a9216dc761f78baa903cd07e5b9493
+verified_against: 61a01fafb10b949a82fbfd2ea6f9d85b978a9850
 ---
 
 # TUI client
@@ -167,8 +167,21 @@ contents via `summarizeInventoryContents`, capacity `sim.ChestCap`) — a
 chest's `Store` is a plain counts inventory rather than dated batches,
 because chests preserve food indefinitely (no rot deadlines to track).
 
-The **dock** hosts three tabs — keys `2`/`3`/`4` select, the same key again
-zooms the tab solo, `1`/`esc` return to the composite: **chronicle** (default;
+The **dock** hosts four tabs — keys `2`/`3`/`4`/`5` select, the same key
+again zooms the tab solo, `1`/`esc` return to the composite. Since spec 053
+the guardian conversation also has a first-class full-height page: the
+**guardian console** (`Model.console`, `consoleView`), opened with global
+`G` from home/solo/narrow (shadowed only where inspect/villagers modes
+already bind `G` to jump-to-last) and closed with `G`/`1`/`esc` — document-
+style labeled turn blocks over the shared transcript (`consoleTurnLines`,
+special ⚡/👁/⏲/» rows inline), tail-anchored `J`/`K` scrollback, an
+always-empty-for-now `consoleCard` composition seam (TASK-127/115 plug in),
+a charter/skills read surface from status fields
+(`charterReadSurfaceLines`: provenance, binding, honest lock notices), an
+`e` → `tea.ExecProcess($EDITOR, charter.md)` handoff with a content-hash
+"charter changed — next turn binds it" one-shot notice, and the standard
+minibuffer as its composer (states/focus contract unchanged). The tabs:
+**chronicle** (default;
 see below), **metatron** (the angel transcript — replies stream here, or
 badge the tab `metatron •` when it isn't visible; the pane header shows the charge
 bank plus the spec-021 instruction/capability provenance summary — charter
@@ -186,8 +199,11 @@ adjust_speed meta tool call, alongside the existing `⚡` vision/omen line;
 below the transcript, a `👁 standing orders (n)` block (spec 029,
 `orderStatusLines`, [[metatron-orders]]) renders one compact row per order
 from `Status.Orders` — id, a `~` fuzzy marker, origin, remaining game-day,
-status, and condition — present only while orders stand; the
-same pane renders the LLM provider table since spec 024 — `llmProviderLines`,
+status, and condition — present only while orders stand. Since spec 053
+(TASK-125, the D10 telemetry split) the guardian/metatron tab carries
+fiction-layer content ONLY — the telemetry below moved to a fourth
+**systems** dock tab (key `5`, `systemsView`/`systemsContentBody`, never
+skinned by design): the LLM provider table since spec 024 — `llmProviderLines`,
 one row per provider with name, model, up/down glyph, queue, inflight/slots, a
 contended marker, and spend share, plus an `(unattributed)` row for pre-024
 months, followed by a `spend $X of $Y` wallet line — [[llm-orchestrator]]; a
