@@ -3,10 +3,10 @@ id: TASK-98
 title: >-
   Embedding memory retrieval: record-at-emission vectors + relevance term in
   memory selection
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-24 19:45'
-updated_date: '2026-07-25 02:52'
+updated_date: '2026-07-25 03:25'
 labels:
   - memory
   - embeddings
@@ -17,7 +17,7 @@ references:
   - research/Agent-Memory-Retrieval/_grounding.md
   - 'https://claude.ai/code/artifact/cc1f9eb9-4357-497a-904d-acaefc1ed1e9'
 priority: medium
-ordinal: 82000
+ordinal: 500
 ---
 
 ## Description
@@ -30,14 +30,14 @@ Spec: specs/042-embedding-memory-retrieval
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Each new episodic memory's embedding vector is recorded at emission (event payload or companion event); replay is byte-identical and never re-embeds — determinism doctrine holds (record-at-emission, pure functions over recorded floats)
-- [ ] #2 Memory selection scores with a relevance term (cosine of memory vector vs recorded query/situation vector) alongside existing salience and recency; selection stays a pure function of recorded data
-- [ ] #3 Guardrail (analysis finding 1): recency continues to decay from creation time — recency-from-last-access is rejected; no state mutation on read. If access-refresh is ever wanted it must be a recorded event (documented, not implemented)
-- [ ] #4 Guardrail (analysis finding 2): rank-divergence instrumentation ships BEFORE relevance drives prompts — log divergence between salience×recency and the three-term score; a documented threshold decides whether relevance stays on
-- [ ] #5 Per-agent isolation: embedding storage and retrieval are strictly per-agent — no cross-agent vector reads possible by construction, covered by a test (no shared memory pool)
-- [ ] #6 Embedding model choice is pinned and documented (local small model, e.g. 384-dim MiniLM/bge class via hugot or llama.cpp sidecar); model file/version is part of replay hygiene
+- [x] #1 Each new episodic memory's embedding vector is recorded at emission (event payload or companion event); replay is byte-identical and never re-embeds — determinism doctrine holds (record-at-emission, pure functions over recorded floats)
+- [x] #2 Memory selection scores with a relevance term (cosine of memory vector vs recorded query/situation vector) alongside existing salience and recency; selection stays a pure function of recorded data
+- [x] #3 Guardrail (analysis finding 1): recency continues to decay from creation time — recency-from-last-access is rejected; no state mutation on read. If access-refresh is ever wanted it must be a recorded event (documented, not implemented)
+- [x] #4 Guardrail (analysis finding 2): rank-divergence instrumentation ships BEFORE relevance drives prompts — log divergence between salience×recency and the three-term score; a documented threshold decides whether relevance stays on
+- [x] #5 Per-agent isolation: embedding storage and retrieval are strictly per-agent — no cross-agent vector reads possible by construction, covered by a test (no shared memory pool)
+- [x] #6 Embedding model choice is pinned and documented (local small model, e.g. 384-dim MiniLM/bge class via hugot or llama.cpp sidecar); model file/version is part of replay hygiene
 - [x] #7 codebase-to-course run tagged on this feature before the PR ships (docs/course refreshed to teach the new memory-retrieval mechanic)
-- [ ] #8 Spec rigor: full Spec Kit (specify → clarify → plan → tasks) with spec-bridge:link BEFORE implementation; wiki re-ground + player-docs freshness after merge
+- [x] #8 Spec rigor: full Spec Kit (specify → clarify → plan → tasks) with spec-bridge:link BEFORE implementation; wiki re-ground + player-docs freshness after merge
 - [x] #9 Spec phase: Setup
 - [x] #10 Spec phase: Foundational (blocking prerequisites for all stories)
 - [x] #11 Spec phase: User Story 1 — vectors from birth, replay never recomputes (P1) 🎯 MVP
@@ -66,4 +66,14 @@ AC#7 done pre-PR: codebase-to-course run shipped on the branch (docs/course/, co
 PR opened: https://github.com/evanstern/promptworld/pull/70 (branch task-98-embedding-memory-retrieval, 20 commits incl. docs/course). Remaining to Done: merge, then AC#8 (wiki re-ground + player docs); AC#4 (shadow→on threshold decision) is post-merge operational.
 
 Rebase onto main (041 mental maps, PR #69) complete: both features intact, unions at all shared seams (Agent fields, whitelist, prompt sections, boot wiring); one semantic reconciliation — 041 made InjectSocial dry-runs expensive, embedder now batches/coalesces (contract-sanctioned) restoring SC-005 to +0.4-3.9% (was +60-74% naive post-rebase; note 041 itself moved the off-baseline 0.92s→1.30s via its per-beat sweep). Independent gate green incl. 041 headline tests. PR #70 MERGEABLE/CLEAN @ ec9a7a0.
+
+Post-merge close-out: ACs 1-3,5,6 proven by merged code+tests (record-at-emission/replay meter, three-term selection, creation-time recency, isolation test, pinned all-minilm:latest). AC#4 guardrail satisfied as specified: instrumentation shipped and relevance drives no prompts anywhere (flag off in all worlds); the shadow→on flip per world follows the documented gate procedure (docs/llm-providers.md + promptworld divergence) and gets recorded here when made. AC#8 done: wiki re-ground (26 notes + new memory-retrieval note) + player docs 7/7 fresh, commit 6a1cd67. AC#7 course shipped in PR. Worktree/branch cleaned; merge verified via gh api.
+
+spec-bridge sync: Setup: 3/3 · Foundational (blocking prerequisites for all stories): 4/4 · User Story 1 — vectors from birth, replay never recomputes (P1) 🎯 MVP: 4/4 · User Story 2 — shadow-mode divergence instrumentation (P2): 7/7 · User Story 3 — relevance shapes the window (P3): 4/4 · Polish & cross-cutting: 3/3 — status In Progress → Done
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+All spec tasks complete (Setup: 3/3 · Foundational (blocking prerequisites for all stories): 4/4 · User Story 1 — vectors from birth, replay never recomputes (P1) 🎯 MVP: 4/4 · User Story 2 — shadow-mode divergence instrumentation (P2): 7/7 · User Story 3 — relevance shapes the window (P3): 4/4 · Polish & cross-cutting: 3/3). Derived Done by spec-bridge sync.
+<!-- SECTION:FINAL_SUMMARY:END -->
