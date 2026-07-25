@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@61a01fafb10b949a82fbfd2ea6f9d85b978a9850">
+<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@033493973235cb8e392302b879d9dede77f44546">
 <title>What do all those things on screen mean? — promptworld player docs</title>
 <style>
   :root {
@@ -106,6 +106,10 @@ cooperating with the game. It clears itself the moment the problem is fixed. See
 villager thinking (planning, conversations, meetings) is currently being skipped to
 keep the game running smoothly at your chosen speed. Also covered on the
 <a href="time-and-speed.html">time & speed page</a>.</li>
+<li>A small dim <code>[lesson]</code> badge appears once your world has grown past
+the early learning stages (or isn't using the stage ladder at all). It's a quiet
+reminder that the game's lesson tips live in the <code>?</code> help overlay's
+lessons section rather than popping up on screen — see the lesson bar below.</li>
 <li>If your run has <strong>ended</strong> — the last villager has died — the usual
 running/<code>PAUSED</code> state gives way to a bold red <code>ENDED</code> marker.
 The world is now a read-only archive: the pause and speed keys do nothing (the
@@ -246,6 +250,21 @@ the console confirms "charter changed — next turn binds it." <code>J</code> an
 <a href="playing-via-metatron.html">playing via Metatron</a> for what the charter
 actually does, and the <a href="keys-reference.html">keys reference card</a> for
 every key the console responds to.</p>
+
+<h2>The lesson bar: the game teaching itself, once per lesson</h2>
+<p>In a young world (learning stages 1 and 2), the first time something new happens —
+the first time a thought is skipped for speed, the first gru attack, the first time
+one of your standing orders expires, the first death, the first time Metatron refuses
+an action — a two-line tip appears just above the guardian strip: one sentence saying
+what just happened, and an arrow line pointing at the key or tab that shows you more,
+always ending <code>(? for more · x dismiss)</code>.</p>
+<p>Three things keep it polite: only one tip shows at a time, each lesson appears
+<strong>once ever</strong> (across all your worlds — the game remembers what it has
+already taught you), and a tip stays up until you either do the thing it points at or
+press <code>x</code>. Anything you dismiss remains readable forever in the
+<code>?</code> overlay's lessons section. Past the early stages the bar stays out of
+your way entirely — just the <code>[lesson]</code> header badge above, with everything
+in the overlay.</p>
 
 <h2>The guardian strip: charge status, always in view</h2>
 <p>Above the box where you type to Metatron sits one plain line with no border,

@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/design/tui/patterns/keymap.md@8ac0a16032fa50664e93933ebbd3c0d1e88d62e2">
-<meta name="promptworld-docs:source" content="docs/design/tui/overlays/help.md@8ac0a16032fa50664e93933ebbd3c0d1e88d62e2">
+<meta name="promptworld-docs:source" content="docs/design/tui/patterns/keymap.md@245ecc0105f028c1ae621a23ac7c5263b5a58565">
+<meta name="promptworld-docs:source" content="docs/design/tui/overlays/help.md@245ecc0105f028c1ae621a23ac7c5263b5a58565">
 <title>Keys reference — promptworld player docs</title>
 <style>
   :root {
@@ -87,6 +87,9 @@ with that tab; press it a third time (or <code>1</code>) to go back</td></tr>
 <tr><td><code>G</code></td><td>Open the guardian console — the conversation as a
 full-screen document, with charter/skills alongside it (see below)</td></tr>
 <tr><td><code>m</code></td><td>Start typing to Metatron</td></tr>
+<tr><td><code>x</code></td><td>Dismiss the lesson bar — the two-line tip that appears
+the first time something new happens (with no tip showing, <code>x</code> does
+nothing)</td></tr>
 <tr><td><code>space</code></td><td>Pause / resume the world</td></tr>
 <tr><td><code>[</code> / <code>]</code></td><td>Speed down / up</td></tr>
 <tr><td><code>← ↑ ↓ →</code></td><td>Pan the map</td></tr>
@@ -166,8 +169,9 @@ roster list</td></tr>
 
 <h2>The help overlay (after pressing <code>?</code>)</h2>
 <p>The overlay shows this same information in-game — the keys for whatever screen
-you were just on, a tour of everything on screen, and (in the future) lessons the
-game has shown you. It never touches the world: opening it doesn't pause anything,
+you were just on, a tour of everything on screen, and every lesson the game can
+teach you (including ones you dismissed with <code>x</code> — nothing is ever lost).
+It never touches the world: opening it doesn't pause anything,
 and closing it puts you back exactly where you were.</p>
 <table>
 <tr><th>Key</th><th>Action</th></tr>
