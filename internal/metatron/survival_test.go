@@ -12,6 +12,7 @@ import (
 	"github.com/evanstern/promptworld/internal/sim"
 	"github.com/evanstern/promptworld/internal/store"
 	"github.com/evanstern/promptworld/internal/tool"
+	"github.com/evanstern/promptworld/internal/toolloop"
 )
 
 // seededSurvivalWatch installs the near-death survival watch into both the
@@ -108,4 +109,143 @@ func TestSurvivalWatchIsMiracleCapableRoster(t *testing.T) {
 		t.Fatal("work_miracle absent from the metatron loop roster")
 	}
 	_ = context.Background
+}
+
+// --- US2: the angel acts on survival without permission (spec 059) ---
+
+// TestSurvivalFrameCarveOut (spec 059 US2 AC-2/AC-3, SC-003): the survival frame
+// permits vision/miracle on the angel's own initiative BUT keeps the clock and
+// non-survival orders the player's in BOTH frames; the non-survival frame stays
+// today's restrictive doctrine verbatim (FR-004/FR-005).
+func TestSurvivalFrameCarveOut(t *testing.T) {
+	roster := tool.LoopRosterMetatron()
+	normal := buildTurnSystemPrompt(false, "CHARTER", nil, roster)
+	survival := buildTurnSystemPrompt(true, "CHARTER", nil, roster)
+
+	// The non-survival frame is byte-identical to the pinned initiative doctrine.
+	if !strings.Contains(normal, metatronInitiativeFrame) {
+		t.Error("non-survival frame lost the restrictive initiative doctrine (FR-005)")
+	}
+	if strings.Contains(normal, metatronSurvivalFrame) {
+		t.Error("non-survival frame leaked the survival carve-out")
+	}
+	// The survival frame carries the carve-out and drops the restrictive one.
+	if !strings.Contains(survival, metatronSurvivalFrame) {
+		t.Error("survival frame missing the survival carve-out (FR-003)")
+	}
+	if strings.Contains(survival, metatronInitiativeFrame) {
+		t.Error("survival frame still carries the full restrictive frame verbatim")
+	}
+	// Clock control stays the player's in BOTH frames (SC-003 / FR-004).
+	for _, f := range []struct {
+		name, prompt string
+	}{{"non-survival", normal}, {"survival", survival}} {
+		if !strings.Contains(f.prompt, "clock") || !strings.Contains(f.prompt, "the player") {
+			t.Errorf("%s frame does not keep the clock the player's: %q", f.name, f.prompt)
+		}
+	}
+	// The two non-negotiables ride both frames unchanged.
+	for _, p := range []string{normal, survival} {
+		if !strings.Contains(p, metatronNonNegotiables) {
+			t.Error("a frame lost the persona-firewall non-negotiables")
+		}
+	}
+}
+
+// TestSurvivalTurnActsWithoutPlayer (spec 059 US2 AC-1, SC-002): a survival-watch
+// match runs a turn that works a miracle with zero player input, still charge-
+// gated; the watch is NOT consumed (non-expiring), and the act is attributed to
+// the survival duty in the durable record (moment + transcript, FR-007).
+func TestSurvivalTurnActsWithoutPlayer(t *testing.T) {
+	mt, _, inj, dir := newTestAngel(t, "The child will not starve tonight.")
+	o := seededSurvivalWatch(mt, inj, sim.SurvivalNearDeath)
+	ash := agentIndexByName("Ash")
+	mt.runLoop = systemActLoop(mt, "work_miracle",
+		`{"kind":"give_item","villager":"Ash","item":"food_raw","qty":3}`)
+
+	before := inj.state.MetatronCharges
+	mt.runTrigger(triggerJob{order: o, matched: needsEvent(ash, 100, 0, 800, 5000),
+		matchedType: "agent.needs_changed", matchedTick: 5000})
+
+	// The miracle landed with no player in the loop.
+	if inj.state.Agents[ash].Inv.FoodRaw < 3 {
+		t.Errorf("survival miracle did not reach Ash: inv=%+v", inj.state.Agents[ash].Inv)
+	}
+	// Charge-gated: exactly one charge spent (the survival carve-out changes
+	// authority, not the economy — FR-003).
+	if inj.state.MetatronCharges != before-1 {
+		t.Errorf("survival miracle spent %d charges, want 1", before-inj.state.MetatronCharges)
+	}
+	// The watch is non-consuming: it still stands active for the next crisis.
+	if inj.state.MetatronOrders[0].Status != "active" {
+		t.Errorf("survival watch was consumed: %+v", inj.state.MetatronOrders[0])
+	}
+	// No order_triggered was ever emitted for a survival watch.
+	for _, b := range inj.batches {
+		for _, e := range b {
+			if e.Type == "metatron.order_triggered" {
+				t.Error("a survival watch landed order_triggered (it must never consume)")
+			}
+		}
+	}
+	// Attribution: the moment names the survival watch and the act.
+	mt.stateMu.Lock()
+	moments := append([]string(nil), mt.moments...)
+	mt.stateMu.Unlock()
+	if len(moments) != 1 || !strings.Contains(moments[0], "survival watch") || !strings.Contains(moments[0], "miracle") {
+		t.Fatalf("survival moment not attributed to the duty: %+v", moments)
+	}
+	// The transcript marks the turn as a survival watch (auditable authority trail).
+	tr := tailOfFile(mt.transcriptPath(), 4000)
+	if !strings.Contains(tr, "[survival watch]") {
+		t.Errorf("transcript missing the survival-watch attribution: %q", tr)
+	}
+	_ = dir
+}
+
+// TestSurvivalZeroChargeTurnRecorded (spec 059 US2 edge case / T008): a survival
+// watch firing on an empty bank still RUNS the turn (not the deferral empty-bank
+// short-circuit) — the acting tools refuse, the angel narrates, and a helpless
+// moment is recorded, never silent.
+func TestSurvivalZeroChargeTurnRecorded(t *testing.T) {
+	mt, _, inj, _ := newTestAngel(t, "I see you, and I cannot reach you.")
+	mt.replica.MetatronCharges = 0
+	inj.state.MetatronCharges = 0
+	mt.mirrorState()
+	o := seededSurvivalWatch(mt, inj, sim.SurvivalExposure)
+	oak := agentIndexByName("Oak")
+
+	// The model TRIES a miracle, but the empty bank refuses it in-fiction.
+	called := false
+	mt.runLoop = func(ctx context.Context, j toolloop.Job) (toolloop.Result, error) {
+		called = true
+		c := toolCall("work_miracle", `{"kind":"give_item","villager":"Oak","item":"wood","qty":2}`)
+		out := j.Handlers["work_miracle"](ctx, c)
+		j.Record(toolloop.CallRecord{JobID: j.JobID, Ordinal: 1, Tool: "work_miracle",
+			Args: c.Args, Verdict: out.Verdict, Reason: out.ResultForModel, Tier: "cloud"})
+		return toolloop.Result{Final: "I cannot reach you", Term: toolloop.TermCapExhausted}, nil
+	}
+
+	mt.runTrigger(triggerJob{order: o, matched: needsEvent(oak, 800, 800, 0, 6000),
+		matchedType: "agent.needs_changed", matchedTick: 6000})
+
+	if !called {
+		t.Fatal("a zero-charge survival watch skipped the turn (it must still run and record)")
+	}
+	if inj.state.MetatronCharges != 0 {
+		t.Errorf("a helpless survival turn spent from an empty bank: %d", inj.state.MetatronCharges)
+	}
+	// Nothing landed in the world, but the helpless turn is recorded.
+	if len(landedBatches(inj)) != 0 {
+		t.Error("a zero-charge survival turn still landed a world act")
+	}
+	mt.stateMu.Lock()
+	moments := append([]string(nil), mt.moments...)
+	mt.stateMu.Unlock()
+	if len(moments) != 1 || !strings.Contains(moments[0], "survival watch") {
+		t.Fatalf("helpless survival turn not recorded as a moment: %+v", moments)
+	}
+	if !strings.Contains(moments[0], "nothing") {
+		t.Errorf("helpless moment does not read as helpless: %q", moments[0])
+	}
 }

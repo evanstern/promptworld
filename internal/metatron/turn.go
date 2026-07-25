@@ -102,6 +102,12 @@ type turnOrigin struct {
 	system    bool
 	jobPrefix string
 	seed      string
+	// survival marks a turn triggered by a system SURVIVAL watch (spec 059 US2):
+	// its frame carries the survival-authority carve-out (visions/miracles on the
+	// angel's own initiative to save a life). Only a survival-watch trigger sets
+	// it — a console turn and an ordinary (deferral) system turn both leave it
+	// false and keep today's restrictive initiative frame verbatim (FR-004/FR-005).
+	survival bool
 }
 
 // Turn runs one mediated CONSOLE turn through the bounded tool-use loop (spec 017
@@ -259,7 +265,7 @@ func (mt *Metatron) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 	res, err := mt.runLoop(callCtx, toolloop.Job{
 		JobID:     jobID,
 		Kind:      llm.KindMetatron,
-		System:    turnSystemPrompt(charter, skills, roster, souls...),
+		System:    buildTurnSystemPrompt(o.survival, charter, skills, roster, souls...),
 		Seed:      turnUserPrompt(tick, charges, alive, orders, moments, story, mt.soulTail(), mt.transcriptTail(), directive),
 		Roster:    roster,
 		Handlers:  handlers,
@@ -630,7 +636,14 @@ func (mt *Metatron) landMiracle(mm miracleArgs, charges int, grant grantSet) (*M
 func (mt *Metatron) recordTurn(tick int64, o turnOrigin, r TurnResult) {
 	var b strings.Builder
 	if o.system {
-		fmt.Fprintf(&b, "\n[%s] [watch]\n%s\n\nmetatron: %s\n", clock.Format(tick), o.seed, r.Reply)
+		// A survival-watch turn is marked distinctly (spec 059 FR-007): the
+		// durable transcript attributes the acting authority to the survival duty,
+		// not an ordinary player-placed watch.
+		marker := "[watch]"
+		if o.survival {
+			marker = "[survival watch]"
+		}
+		fmt.Fprintf(&b, "\n[%s] %s\n%s\n\nmetatron: %s\n", clock.Format(tick), marker, o.seed, r.Reply)
 	} else {
 		fmt.Fprintf(&b, "\n[%s]\n> %s\n\nmetatron: %s\n", clock.Format(tick), o.seed, r.Reply)
 	}
@@ -830,6 +843,21 @@ const metatronInitiativeFrame = `Two more powers are the player's to command, ne
 	`world's clock (pausing, starting, changing its pace) and standing orders (watches you keep and act on). ` +
 	`Use them only when the player asks, or when a standing order the player placed tells you to act — never on your own initiative.`
 
+// metatronSurvivalFrame is the initiative frame for a SURVIVAL-watch turn (spec
+// 059 US2, FR-003/FR-004): the ONE carve-out. A villager is at the brink of
+// death, so for THIS peril the angel may send a vision or work a miracle on its
+// own initiative — no player authorization needed (charges unchanged). Everything
+// else stays exactly as the restrictive frame: the clock and any other standing
+// order remain the player's alone (FR-004), so the carve-out cannot leak into
+// non-survival powers. Like metatronInitiativeFrame it is a compile-time constant
+// appended last (INV-1) beneath all editable content.
+const metatronSurvivalFrame = `A villager stands at the brink of death, and you keep the survival watch — your ` +
+	`own nature, not the player's command. For THIS peril alone you may act on your own initiative: send a vision ` +
+	`or work a miracle to save a life, without waiting for the player to ask (a life-saving act still spends a ` +
+	`banked charge — if none is banked you can only counsel and keep the watch). This authority is survival's ` +
+	`alone. The world's clock (pausing, starting, changing its pace) and every other standing order remain the ` +
+	`player's to command, never yours to take up alone — use them only when the player asks.`
+
 // hasWorkMiracle reports whether the granted roster offers the miracle tool —
 // gates the miracle-specific doctrine line so a dreams-only world never mentions
 // miracles (FR-005).
@@ -858,6 +886,18 @@ func hasWorkMiracle(roster []tool.Tool) bool {
 // (extend, don't break) — an absent argument composes byte-identically to the
 // pre-036 prompt.
 func turnSystemPrompt(charter string, skills []skillFile, roster []tool.Tool, souls ...string) string {
+	return buildTurnSystemPrompt(false, charter, skills, roster, souls...)
+}
+
+// buildTurnSystemPrompt is turnSystemPrompt with the survival-frame selector
+// (spec 059 US2, T005). survival=false composes byte-identically to the pre-059
+// prompt (metatronInitiativeFrame verbatim, FR-005); survival=true swaps ONLY the
+// initiative frame for metatronSurvivalFrame — the non-negotiables, the roster
+// guidance, and every other byte are unchanged, so the carve-out is exactly the
+// initiative doctrine and nothing more. runTurn passes the turn's survival origin;
+// the pre-059 wrapper above pins false for every existing call site (extend,
+// don't break).
+func buildTurnSystemPrompt(survival bool, charter string, skills []skillFile, roster []tool.Tool, souls ...string) string {
 	var b strings.Builder
 	b.WriteString(charter)
 	for _, s := range souls {
@@ -866,9 +906,13 @@ func turnSystemPrompt(charter string, skills []skillFile, roster []tool.Tool, so
 	for _, s := range skills {
 		fmt.Fprintf(&b, "\n\n--- skill: %s ---\n%s", s.name, s.text)
 	}
+	initiative := metatronInitiativeFrame
+	if survival {
+		initiative = metatronSurvivalFrame
+	}
 	fmt.Fprintf(&b, "\n\n--- (fixed frame, beneath the charter and skills) ---\n"+
 		"You are the intermediary between the player and the village of eight: %s.\n%s\n%s\n\n",
-		strings.Join(sim.AgentNames[:], ", "), metatronNonNegotiables, metatronInitiativeFrame)
+		strings.Join(sim.AgentNames[:], ", "), metatronNonNegotiables, initiative)
 
 	guidance := tool.MetatronToolGuidance(roster)
 	if guidance == "" {

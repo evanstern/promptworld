@@ -629,6 +629,14 @@ func (mt *Metatron) runTrigger(job triggerJob) {
 		mt.stateMu.Unlock()
 	}()
 
+	// A survival watch (spec 059 US2) never consumes: it is the angel's standing
+	// nature, not a one-shot order, so it lands NO order_triggered (that would
+	// deactivate it) and runs its own survival-authority turn.
+	if job.order.Survival != "" {
+		mt.runSurvivalTrigger(job)
+		return
+	}
+
 	trig := []store.Event{{Type: "metatron.order_triggered", Payload: mustJSON(sim.OrderTriggeredPayload{
 		ID: job.order.ID, MatchedType: job.matchedType, MatchedTick: job.matchedTick})}}
 	if err := mt.social.InjectSocial(trig); err != nil {
@@ -659,6 +667,88 @@ func (mt *Metatron) runTrigger(job triggerJob) {
 		return
 	}
 	mt.queueMoment(mt.triggeredMoment(job.matchedTick, job.order, res))
+}
+
+// runSurvivalTrigger runs a survival watch's turn (spec 059 US2). It differs from
+// runTrigger in three ways that follow from a survival watch's nature:
+//
+//  1. NO order_triggered — the watch is non-expiring and non-consuming, so it
+//     stays active for the world's whole life (the authority trail is the soul
+//     line + transcript + moment, all attributed to the survival duty, FR-007).
+//  2. NO empty-bank short-circuit — the turn ALWAYS runs (edge case: "the turn
+//     still happens … it must not burn the match silently — record the helpless
+//     turn"). At zero charges every acting tool refuses in-fiction and the angel
+//     narrates helplessly; the transcript + a helpless moment are the record.
+//  3. The frame carries the survival-authority carve-out (turnOrigin.survival),
+//     and the seed names the endangered villager + peril so the angel can aim.
+func (mt *Metatron) runSurvivalTrigger(job triggerJob) {
+	agent := survivalMatchedAgent(job.matched)
+	name := "a villager"
+	if agent >= 0 && agent < len(sim.AgentNames) {
+		name = sim.AgentNames[agent]
+	}
+	peril := survivalPeril(job.order.Survival)
+	mt.appendFile(mt.soulPath(), fmt.Sprintf("\n- %s — the survival watch woke me: %s is %s\n",
+		clock.Format(job.matchedTick), name, peril))
+
+	if !mt.acquireTurnBusy() {
+		mt.queueMoment(fmt.Sprintf("%s — the survival watch woke (%s is %s), but I was too long attending another matter to act.",
+			clock.Format(job.matchedTick), name, peril))
+		return
+	}
+	seed := fmt.Sprintf("The survival watch has woken you: %s is %s and may die. %s",
+		name, peril, job.order.Action)
+	res, err := mt.runTurn(context.Background(), turnOrigin{system: true, survival: true, jobPrefix: "watch", seed: seed})
+	mt.turnBusy.Store(false)
+
+	if err != nil {
+		mt.queueMoment(mt.degradedMoment(job.matchedTick, err))
+		return
+	}
+	mt.queueMoment(mt.survivalMoment(job.matchedTick, name, peril, res))
+}
+
+// survivalPeril renders a survival watch kind as the villager's plight, for the
+// soul/moment trail (spec 059 US2 attribution).
+func survivalPeril(kind string) string {
+	switch kind {
+	case sim.SurvivalNearDeath:
+		return "near death"
+	case sim.SurvivalStarvation:
+		return "starving"
+	case sim.SurvivalExposure:
+		return "freezing"
+	}
+	return "in mortal danger"
+}
+
+// survivalMatchedAgent decodes the endangered villager index from the survival
+// watch's matched agent.needs_changed event (-1 if unreadable).
+func survivalMatchedAgent(e store.Event) int {
+	var p sim.NeedsPayload
+	if json.Unmarshal(e.Payload, &p) != nil {
+		return -1
+	}
+	return p.Agent
+}
+
+// survivalMoment renders the model-free moment describing a completed survival
+// turn (spec 059 US2/FR-007): it names the life-saving act when one landed, else
+// records that the watch woke and the angel could do nothing — the "helpless turn"
+// the spec insists is recorded, never silent. Every branch attributes the moment
+// to the survival watch.
+func (mt *Metatron) survivalMoment(tick int64, name, peril string, r TurnResult) string {
+	switch {
+	case r.Nudge != nil:
+		return fmt.Sprintf("%s — the survival watch woke (%s is %s): I sent a %s to %s.",
+			clock.Format(tick), name, peril, r.Nudge.Form, strings.Join(r.Nudge.Targets, ", "))
+	case r.Miracle != nil:
+		return fmt.Sprintf("%s — the survival watch woke (%s is %s): I worked a miracle — %s.",
+			clock.Format(tick), name, peril, r.Miracle.Summary)
+	default:
+		return fmt.Sprintf("%s — the survival watch woke (%s is %s), but I could do nothing to save them.",
+			clock.Format(tick), name, peril)
+	}
 }
 
 // knownActEmptyBank reports whether an order's action is a KNOWN charge-spending
