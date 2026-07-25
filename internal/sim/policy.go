@@ -117,6 +117,19 @@ func survivalDecision(s *State, m *worldmap.Map, a *Agent, tick int64) (decision
 			if in, ok := warmthLadder(s, m, a, tick); ok {
 				return decision{intent: in}, true
 			}
+			// US3 (spec 062, FR-005 / 057 audit Gap A): the warmth ladder found
+			// nothing — no reachable known warmth, insufficient wood to build, no
+			// known tree to chop. Rather than lie down cold, search toward the
+			// frontier (the hungry-search shape) to find warmth or wood. Bounded:
+			// exactly one rung above terminal sleep; an unreachable frontier falls
+			// through to sleep (today's floor of the fallback). Guarded on the
+			// residual conditions the spec names, so it fires only in the truly
+			// nothing-to-do-but-freeze case.
+			if a.Inv.Wood < fireWoodCost && !knowsAnyFresh(a, "tree", tick) {
+				if p, ok := nearestFrontier(m, s, a); ok {
+					return decision{intent: &Intent{Goal: "search", TargetX: p.X, TargetY: p.Y}}, true
+				}
+			}
 		}
 		// Warm (or nothing to be done about it): sleep where you stand.
 		return decision{intent: &Intent{Goal: "sleep", TargetX: a.X, TargetY: a.Y}}, true
