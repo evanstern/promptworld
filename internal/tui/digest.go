@@ -1080,4 +1080,40 @@ var digestRegistry = map[string]digestFunc{
 		}
 		return labeled(pairs...), true
 	},
+
+	// --- spec 042: embedding companions + divergence telemetry ---
+	// The vectors themselves are deliberately elided (384 floats would drown
+	// the feed — the world.migrated elided-state reasoning); the digest shows
+	// the identity fields an operator audits by.
+
+	"agent.memory_embedded": func(e store.Event, names []string) ([]seg, bool) {
+		p, ok := decode[sim.MemoryEmbeddedPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{nameOf(names, p.Agent), txt(" ")}, labeled(
+			fmt.Sprintf("memory seq=%d embedded", p.MemSeq),
+			fmt.Sprintf("dims=%d", len(p.Vec)), "model="+p.Model,
+		)), true
+	},
+	"agent.situation_embedded": func(e store.Event, names []string) ([]seg, bool) {
+		p, ok := decode[sim.SituationEmbeddedPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{nameOf(names, p.Agent), txt(" situation: "), speech(p.Text), txt(" ")},
+			labeled(fmt.Sprintf("dims=%d", len(p.Vec)), "model="+p.Model)), true
+	},
+	"cog.memory_divergence": func(e store.Event, names []string) ([]seg, bool) {
+		p, ok := decode[sim.MemoryDivergencePayload](e)
+		if !ok {
+			return nil, false
+		}
+		return labeled(
+			"agent="+agentName(names, p.Agent), "mode="+p.Mode,
+			fmt.Sprintf("overlap=%d/%d", p.Overlap, len(p.Legacy)),
+			fmt.Sprintf("displaced=%d", p.Displacement),
+			fmt.Sprintf("vectorless=%d", p.Vectorless),
+		), true
+	},
 }

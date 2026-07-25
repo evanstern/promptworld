@@ -149,6 +149,95 @@ the boot exactly as before. Legacy (v1, two-tier) configs need no attention at
 all: they resolve entirely through the same default table and pick the new kind
 up for free.
 
+### The `embedding` kind (spec 042)
+
+Every episodic memory a villager forms can gain a recorded meaning vector, and
+each villager a rolling "situation" vector — the inputs to relevance-aware memory
+recall. The vectors are produced by a dedicated `embedding` kind: a local
+embedding model served over the OpenAI-compatible `/embeddings` path (Ollama
+serves this for embedding models).
+
+```json
+  "providers": {
+    "embedder": { "transport": "openai_compat", "endpoint": "http://localhost:11434/v1",
+                  "model": "all-minilm:latest" }
+  },
+  "routes": {
+    "embedding": ["embedder"]
+  }
+```
+
+Setup: `ollama pull all-minilm` (the 384-dim reference pin), add the provider +
+route above, restart the daemon — the boot line reads
+`daemon: embedder on (all-minilm:latest via provider "embedder")`.
+
+Use the **fully tagged id** (`all-minilm:latest`, exactly as `ollama list` prints
+it), not the bare alias: Ollama resolves the alias fine for the calls themselves,
+but the provider-health preflight compares ids against the server's model listing
+and a bare `all-minilm` raises a spurious (persistent) `model-missing` warning —
+live-found during the spec-042 walkthrough.
+
+The kind is deliberately unusual in three ways:
+
+- **Absence is the off switch.** No `embedding` route means the subsystem is OFF:
+  one boot info line (`daemon: embedding off …`), a vectorless world, and **no
+  backfill** — unlike `metatron_watch`, a missing route is never spliced in,
+  because absence is the feature toggle (the "no llm.json → reflex-only" posture).
+- **It never chats.** Embedding calls bypass the chat machinery (queues, breaker,
+  budget arithmetic — embedding providers are zero-priced local by doctrine) and
+  only the chain **head** serves: model identity travels with every recorded
+  vector, so a chain fallback would silently mix incomparable vector spaces.
+- **The `anthropic` transport is refused at boot.** The Messages API serves no
+  embeddings endpoint; routing `embedding` to an anthropic provider is a config
+  error naming the offender.
+
+The provider's `model` string is the identity recorded on every vector: **treat it
+as pinned per world lineage**. Changing it later is safe but neutral — vectors
+from different models are never compared (old memories score neutral until the
+world accretes new-model vectors); nothing is re-embedded.
+
+**Warm-pin (Ollama)**: at driver start and hourly, the daemon pins the embedding
+model resident via the Ollama-native `/api/embed` `{"keep_alive": -1}` call, so
+per-memory embeds never pay a cold model load. Best-effort and Ollama-specific: a
+non-Ollama `openai_compat` server 404s the pin, which is logged once at boot and
+ignored — only cold-load latency depends on it, never correctness. The pin
+targets the embedding model only; chat-model eviction behavior is untouched.
+
+**Failure posture**: if the endpoint is down or the model missing, memories keep
+landing — vectorless forever (no retro-fill) — and the operator hears about it
+once per failure episode: a daemon-log WARNING plus a durable
+`daemon.llm_warning` event. The tick path never blocks on embedding.
+
+#### `memory_relevance` — the selection mode flag (world.json, not llm.json)
+
+Recall behavior is gated by a three-state flag in **world.json** (deliberately not
+llm.json, so deleting llm.json can never silently change memory-selection
+semantics):
+
+| value | behavior |
+|-------|----------|
+| absent / `""` | today's salience+recency selection — the default |
+| `"shadow"` | prompts still get the legacy window **bit-identically**; every selection also computes the relevance-augmented ranking and records the divergence (`cog.memory_divergence`) |
+| `"on"` | prompts consume the relevance-augmented window (query = the villager's recorded situation vector); divergence keeps recording |
+
+An unknown value refuses to boot (a typo must never silently run as off). The
+flag is read at daemon start — flipping it is an offline world.json edit.
+
+**Shadow→on gate procedure (FR-007)**: run the world in `"shadow"` for at least
+one full game day, then summarize the recorded evidence:
+
+```sh
+promptworld divergence <world>          # per-agent/per-day table
+promptworld divergence <world> --json   # machine-readable
+```
+
+The summary reports mean overlap@K, the promoted-memory share (selections where
+relevance surfaced a memory the legacy ranking excluded), mean rank displacement,
+and vectorless counts. The flip to `"on"` is an **operator decision recorded on
+the board task** — cite the numbers and the threshold call there, then edit
+world.json and restart. Both outcomes (flip or no-flip) are recorded; nothing
+auto-flips.
+
 ## Money: one wallet, per-provider attribution
 
 `monthly_budget_usd` remains a single global ceiling checked before any priced call.

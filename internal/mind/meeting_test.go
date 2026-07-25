@@ -207,7 +207,7 @@ func TestVillageLawPrompt(t *testing.T) {
 	if law := villageLaw(s, 0); law != "" {
 		t.Fatalf("lawless village rendered %q", law)
 	}
-	if strings.Contains(userPrompt(s, 0, sim.WindowK), "Village law") {
+	if strings.Contains(userPrompt(s, 0, sim.WindowK, ""), "Village law") {
 		t.Fatal("lawless prompt must not carry a law section")
 	}
 
@@ -233,7 +233,7 @@ func TestVillageLawPrompt(t *testing.T) {
 		}
 	}
 
-	prompt := userPrompt(s, 0, sim.WindowK)
+	prompt := userPrompt(s, 0, sim.WindowK, "")
 	for _, want := range []string{
 		"Village law (decided at the daily meeting, 12:00):",
 		"No one out after nightfall. (passed day 2, Birch's proposal, 3-0)",
@@ -245,17 +245,17 @@ func TestVillageLawPrompt(t *testing.T) {
 	}
 
 	// The exile reads their own judgment in second person.
-	if !strings.Contains(userPrompt(s, 3, sim.WindowK), "You are exiled from the village") {
+	if !strings.Contains(userPrompt(s, 3, sim.WindowK, ""), "You are exiled from the village") {
 		t.Error("the exile's own prompt must carry the judgment personally")
 	}
 
 	// The assembly call appears for convened villagers.
 	s.MeetingPlace = &sim.Point{X: 5, Y: 5}
 	s.Meeting.Phase = "convening"
-	if !strings.Contains(userPrompt(s, 0, sim.WindowK), "gathering at the meeting place") {
+	if !strings.Contains(userPrompt(s, 0, sim.WindowK, ""), "gathering at the meeting place") {
 		t.Error("convening prompt must announce the assembly")
 	}
-	if strings.Contains(userPrompt(s, 3, sim.WindowK), "gathering at the meeting place") {
+	if strings.Contains(userPrompt(s, 3, sim.WindowK, ""), "gathering at the meeting place") {
 		t.Error("an exile is not called to the assembly")
 	}
 }

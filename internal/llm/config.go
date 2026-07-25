@@ -607,7 +607,14 @@ func (c Config) validateV2() (map[string]ProviderConfig, map[Kind]RouteConfig, e
 	routes := make(map[Kind]RouteConfig, len(c.Routes))
 	for key, rc := range c.Routes {
 		kind := Kind(key)
-		if _, ok := acceptedKinds[kind]; !ok {
+		// The embedding kind (spec 042) is a valid route key but sits outside
+		// acceptedKinds: it never dispatches through Submit, and it is exempt
+		// from the completeness check below — an ABSENT embedding route means
+		// the subsystem is off (vectorless world), never a boot error and never
+		// a backfill (absence is the feature switch, mirroring "no llm.json →
+		// reflex-only"). When PRESENT it gets the full chain validation, plus
+		// the transport rule enforced after the shared checks.
+		if _, ok := acceptedKinds[kind]; !ok && kind != KindEmbedding {
 			return nil, nil, fmt.Errorf("route %q: unknown call kind", key)
 		}
 		if len(rc.Chain) == 0 {
@@ -625,6 +632,17 @@ func (c Config) validateV2() (map[string]ProviderConfig, map[Kind]RouteConfig, e
 				return nil, nil, fmt.Errorf("route %q: provider %q listed twice (a chain is an ordered set)", key, name)
 			}
 			seen[name] = struct{}{}
+		}
+		// The embedding kind may only route to a transport with an embeddings
+		// endpoint (spec 042, contracts/embedding-events.md §4): the anthropic
+		// Messages API serves none, so naming an anthropic provider anywhere in
+		// the chain is a boot config error, never a runtime surprise.
+		if kind == KindEmbedding {
+			for _, name := range rc.Chain {
+				if c.Providers[name].Transport == ProviderAnthropic {
+					return nil, nil, fmt.Errorf("route %q: provider %q uses the %q transport, which serves no embeddings endpoint — route the embedding kind to an %q provider", key, name, ProviderAnthropic, ProviderOpenAICompat)
+				}
+			}
 		}
 		routes[kind] = rc
 	}

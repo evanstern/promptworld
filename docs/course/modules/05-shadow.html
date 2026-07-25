@@ -1,0 +1,318 @@
+<section class="module" id="module-5" style="background: var(--color-bg-warm); --color-accent: var(--color-info); --color-accent-light: var(--color-info-light); --color-accent-muted: var(--color-info);">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">05</span>
+      <h1 class="module-title">Trust, But Verify</h1>
+      <p class="module-subtitle">The new memory score is built, tested, and fast — and not allowed to touch a single villager's mind until the evidence says it's ready.</p>
+    </header>
+
+    <div class="module-body">
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The Understudy Who Never Steps on Stage</h2>
+        <p>Every night, an understudy performs the entire play in the wings — full costume, full effort, every line delivered in step with the lead. The audience never sees her. The director watches both performances and compares notes, night after night.</p>
+        <p>promptworld's new <span class="term" data-definition="The three-term score is the memory-ranking formula from the previous module: importance, freshness, and how closely a memory matches the villager's 'right now', added together into one number.">three-term memory score</span> is built, tested, and fast. And it is not allowed to influence a single villager's thoughts — yet.</p>
+        <div class="callout callout-accent">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">That's Not Caution Theater</strong>
+            <p>That's the feature. The switch that controls this is a <span class="term" data-definition="A feature flag is a setting that turns a piece of code on or off without shipping new code — like a light switch a developer can flip after the app is already out in the world.">feature flag</span> living in one line of config, and flipping it is deliberately the very last step, not the first.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The Dial: Three Positions, Three Behaviors</h2>
+        <p>The flag lives in the world's <span class="term" data-definition="A config file is a plain-text file that controls a program's settings without touching its source code — like a thermostat dial instead of rewiring the furnace.">config file</span>, world.json, under one key: memory_relevance. It has exactly three legal values, and each one is a completely different level of trust.</p>
+
+        <div class="pattern-cards">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-text-muted)">
+            <div class="pattern-icon" style="background: var(--color-text-muted)">🔒</div>
+            <h4 class="pattern-title">"" — off</h4>
+            <p class="pattern-desc">Serve the old memory window. No new scoring runs at all. This is where every villager starts.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-accent)">
+            <div class="pattern-icon" style="background: var(--color-accent)">🎭</div>
+            <h4 class="pattern-title">"shadow"</h4>
+            <p class="pattern-desc">Serve the old window, exactly as before — but also quietly compute the new score, every single tick, and record where the two disagree.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-success)">
+            <div class="pattern-icon" style="background: var(--color-success)">✅</div>
+            <h4 class="pattern-title">"on"</h4>
+            <p class="pattern-desc">Serve the new score for real. And keep recording anyway — the understudy never actually stops taking notes.</p>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">🚧</div>
+          <div class="callout-content">
+            <strong class="callout-title">No Silent Typos Allowed</strong>
+            <p>Type <code class="badge-code">"shaddow"</code> into that field and promptworld refuses to start the world at all. Either the value is exactly right, or nothing runs — it can never silently fall back to "off" without anyone noticing.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">One Word Decides Everything</h2>
+        <p>That flag isn't just documentation — it's a literal string threaded down into the function that picks a villager's memory window every time she stops to think.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code>
+<span class="code-line"><span class="code-keyword">func</span> <span class="code-function">selectWindow</span>(s *sim.State, idx, k <span class="code-keyword">int</span>, tick <span class="code-keyword">int64</span>, mode <span class="code-keyword">string</span>) []sim.Memory {</span>
+<span class="code-line">	a := &amp;s.Agents[idx]</span>
+<span class="code-line">	<span class="code-keyword">if</span> mode == world.MemoryRelevanceOn {</span>
+<span class="code-line">		<span class="code-keyword">var</span> query []float32</span>
+<span class="code-line">		<span class="code-keyword">if</span> len(a.SitVec) &gt; 0 {</span>
+<span class="code-line">			query = a.SitVec</span>
+<span class="code-line">		}</span>
+<span class="code-line">		<span class="code-keyword">return</span> sim.<span class="code-function">SelectMemoriesRelevant</span>(a, s.Seed, idx, tick, k, query, a.SitVecModel)</span>
+<span class="code-line">	}</span>
+<span class="code-line">	<span class="code-keyword">return</span> sim.<span class="code-function">SelectMemories</span>(a, s.Seed, idx, tick, k)</span>
+<span class="code-line">}</span>
+            </code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">selectWindow decides which memory window one villager sees this tick, given the world, which villager, how many memories fit, the current tick, and the mode string.</p>
+              <p class="tl">Grab that villager's own record — nobody else's memories are in play.</p>
+              <p class="tl">If the mode is exactly "on" — the only value that's allowed to change what actually gets served...</p>
+              <p class="tl">...start building a query: the coordinates of "right now", empty until filled in.</p>
+              <p class="tl">If this villager already has a situation-vector snapshot on file...</p>
+              <p class="tl">...use it as the query.</p>
+              <p class="tl">End of that check — with or without a real snapshot, move on regardless.</p>
+              <p class="tl">Run the new three-term scorer with that query and return its top picks.</p>
+              <p class="tl">End of the "on" branch.</p>
+              <p class="tl">Any other mode — including "shadow" — falls straight back to the exact same call as always. Shadow mode never reaches the branch above.</p>
+              <p class="tl">End of selectWindow.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">🔬</div>
+          <div class="callout-content">
+            <strong class="callout-title">Proven, Not Promised</strong>
+            <p>A <span class="term" data-definition="A test is code written specifically to check that other code behaves correctly — it runs automatically and fails loudly the moment the behavior it checks stops being true.">test</span> deliberately builds a world where the old and new rankings provably differ, sets the mode to "shadow", then asserts every prompt sent to the villager's mind is <span class="term" data-definition="Byte-for-byte identical means two pieces of data match exactly, down to the very last character — not just close enough, but literally the same.">byte-for-byte identical</span> to mode "". Shadow mode can compute anything it wants; it is structurally forbidden from changing what a villager actually sees.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">What Gets Recorded</h2>
+        <p>So if shadow mode changes nothing a villager sees, where does all that comparing actually go? Every planning moment, in "shadow" or "on", emits one durable <code class="badge-code">cog.memory_divergence</code> event — <span class="term" data-definition="Telemetry is data a running system automatically records about its own behavior — not shown to end users, but read later by engineers or operators to see what actually happened.">telemetry</span> about the comparison, not a guess about it.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code>
+<span class="code-line"><span class="code-property">MemoryDivergencePayload</span> <span class="code-keyword">struct</span> {</span>
+<span class="code-line">	<span class="code-property">Agent</span>        <span class="code-keyword">int</span>     `<span class="code-string">json:"agent"</span>`</span>
+<span class="code-line">	<span class="code-property">Tick</span>         <span class="code-keyword">int64</span>   `<span class="code-string">json:"tick"</span>`</span>
+<span class="code-line">	<span class="code-property">Mode</span>         <span class="code-keyword">string</span>  `<span class="code-string">json:"mode"</span>`</span>
+<span class="code-line">	<span class="code-property">Legacy</span>       <span class="code-keyword">[]int64</span> `<span class="code-string">json:"legacy"</span>`</span>
+<span class="code-line">	<span class="code-property">Augmented</span>    <span class="code-keyword">[]int64</span> `<span class="code-string">json:"augmented"</span>`</span>
+<span class="code-line">	<span class="code-property">Overlap</span>      <span class="code-keyword">int</span>     `<span class="code-string">json:"overlap"</span>`</span>
+<span class="code-line">	<span class="code-property">Displacement</span> <span class="code-keyword">int</span>     `<span class="code-string">json:"displacement"</span>`</span>
+<span class="code-line">	<span class="code-property">Vectorless</span>   <span class="code-keyword">int</span>     `<span class="code-string">json:"vectorless"</span>`</span>
+<span class="code-line">	<span class="code-property">SitTick</span>      <span class="code-keyword">int64</span>   `<span class="code-string">json:"sit_tick"</span>`</span>
+<span class="code-line">}</span>
+            </code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">The shape of one disagreement record — what gets written to the event log every time both rankings are computed for a villager.</p>
+              <p class="tl">Agent: which villager this comparison is about, by ID.</p>
+              <p class="tl">Tick: the exact simulated moment this comparison happened.</p>
+              <p class="tl">Mode: what the flag was actually set to when this was recorded — "shadow" or "on".</p>
+              <p class="tl">Legacy: the top-10 memory IDs the OLD selector would have chosen.</p>
+              <p class="tl">Augmented: the top-10 memory IDs the NEW three-term scorer chose instead.</p>
+              <p class="tl">Overlap: how many IDs show up in both lists — where the two selectors actually agree.</p>
+              <p class="tl">Displacement: how far the memories they DO agree on moved rank between the old list and the new one.</p>
+              <p class="tl">Vectorless: how many candidate memories had no coordinates yet, so the new scorer couldn't judge their relevance at all.</p>
+              <p class="tl">SitTick: which situation-vector snapshot of "right now" this comparison used as its yardstick.</p>
+              <p class="tl">End of the payload. Ten numbers and two lists — durable, replayable evidence, not a printed guess.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Reading the Evidence</h2>
+        <p>An operator doesn't have to comb the event log by hand. One <span class="term" data-definition="A CLI (command-line interface) is a way of controlling a program by typing text commands instead of clicking buttons — the terminal window instead of a mouse.">CLI</span> command, <code class="badge-code">promptworld divergence &lt;world&gt;</code>, summarizes every villager's divergence into per-game-day averages.</p>
+
+        <div style="background: var(--color-bg-code); color: #CDD6F4; font-family: var(--font-mono); font-size: var(--text-sm); border-radius: var(--radius-md); box-shadow: var(--shadow-md); padding: var(--space-6); margin: var(--space-6) 0; overflow-x: auto; white-space: pre;">$ promptworld divergence riverdale
+villager   day   overlap@10   displacement   vectorless
+elowen     1     1.00         0.0            2
+elowen     2     1.00         0.0            1
+tobar      1     1.00         0.0            3
+tobar      2     1.00         0.0            0
+        </div>
+        <p style="text-align:center;font-size:var(--text-xs);color:var(--color-text-muted);">Overlap 1.00 everywhere — a young world, where every memory still fits inside the window whole. There's nothing yet for the two rankings to disagree about.</p>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">📊</div>
+          <div class="callout-content">
+            <strong class="callout-title">Real Numbers From This Feature's Own Validation Run</strong>
+            <p>At max simulation speed, embedding every memory added roughly 5–6% to <span class="term" data-definition="Wall-clock time is how long something actually takes on an ordinary clock on the wall — as opposed to how much of that time the computer spent doing useful work versus waiting.">wall-clock time</span>, against a 10% budget. A live shadow hour showed overlap sitting at exactly 1.00 — the villagers were still young, so the rankings couldn't disagree yet. Evidence takes time. That's the point.</p>
+          </div>
+        </div>
+
+        <p>The <span class="term" data-definition="A go/no-go decision is an explicit choice to proceed or not, made by weighing recorded evidence rather than a hunch — and written down somewhere permanent, so nobody has to remember or re-argue why later.">go/no-go decision</span> — with these exact numbers attached — gets recorded on the project board before anyone flips the dial to "on". And even once it's "on", the divergence keeps recording: the director never stops taking notes, even after opening night.</p>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Check Your Bearings</h2>
+
+        <div class="quiz-container" id="quiz-module5">
+          <div class="quiz-question-block"
+               data-correct="option-c"
+               data-explanation-right="Exactly. 'Deployed' by itself is a vibe. A shadow phase — running the new ranking alongside the old one, recording where they disagree, and writing that evidence down before flipping the switch — is what turns a risky change into a measured one."
+               data-explanation-wrong="Not quite. Think about what promptworld's memory_relevance flag adds between 'the code works' and 'the code is live for everyone': a phase where the new logic runs for real but influences nothing, plus a durable record of how much it would have changed things.">
+            <h3 class="quiz-question">You built a new ranking algorithm for your app's feed. Your AI assistant says "deployed!" What did it skip that promptworld wouldn't?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Nothing — if the code compiles and the tests pass, it's ready for everyone.</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>A faster server, since ranking algorithms are always slower than the old code.</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>A shadow phase that runs the new ranking alongside the old one, records how much they disagree, and turns that into a recorded go/no-go decision before the switch flips.</span>
+              </button>
+              <button class="quiz-option" data-value="option-d" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>A bigger database, since two ranking algorithms need twice the storage.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="option-b"
+               data-explanation-right="Right — nothing. Shadow mode's whole promise is that selectWindow only changes behavior when mode is exactly 'on'. In 'shadow', that crash happens off to the side while recording a divergence event; the prompt actually sent to that villager's mind is untouched, proven byte-for-byte identical by a test."
+               data-explanation-wrong="Not quite — remember what selectWindow does: it only branches to the new scorer when mode == 'on'. In shadow mode, every other path returns the exact same call as before, so a crash in the new scorer has nowhere to leak into what a villager actually sees.">
+            <h3 class="quiz-question">In shadow mode, a bug makes the new scorer crash while evaluating one villager. What do that villager (and everyone watching the village) actually experience?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>That villager freezes until the crash is fixed, since the crash blocks her thinking.</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Nothing — the legacy window still serves her prompt exactly as before; shadow mode is read-only observation, not a second decision-maker.</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Her memories get scrambled, since the crash corrupts her memory list.</span>
+              </button>
+              <button class="quiz-option" data-value="option-d" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The whole village pauses, since one crashed villager halts the shared clock.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="option-a"
+               data-explanation-right="Exactly — a memory has to be created before it can be embedded, it needs a vector before relevance can score it, and it needs a fresh situation-vector snapshot of 'right now' before the three-term score can compare against anything. Shadow mode only compares AFTER all of that has already happened."
+               data-explanation-wrong="Not quite — trace it from the very start of a memory's life: it can't have coordinates before it exists, relevance can't be scored before there are coordinates, and there's nothing to compare against until a situation-vector snapshot exists.">
+            <h3 class="quiz-question">Put the life of one memory in the order it actually happens.</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>An event happens → memory_added records salience and where/why → the embedder mails back its vector → a situation-vector snapshot of "right now" is taken → the three-term score runs and gets compared in shadow.</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The three-term score runs in shadow → an event happens → memory_added records salience → the embedder mails back its vector → a situation-vector snapshot is taken.</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>A situation-vector snapshot is taken → an event happens → memory_added records salience → the three-term score runs in shadow → the embedder mails back its vector.</span>
+              </button>
+              <button class="quiz-option" data-value="option-d" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The embedder mails back its vector → an event happens → memory_added records salience → a situation-vector snapshot is taken → the three-term score runs in shadow.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="option-b"
+               data-explanation-right="Exactly. Events land in the same permanent, replayable store as everything else in the village — so the divergence evidence can be re-derived, audited, and reasoned about later by anyone, the same way a memory or a message can. A printed log line vanishes into a terminal; a recorded event becomes part of history a go/no-go decision can point to."
+               data-explanation-wrong="Not quite — think about what a printed log line loses that an event doesn't: it isn't replayable, isn't stored alongside the rest of the village's permanent history, and can't be re-derived or audited later the way an event can.">
+            <h3 class="quiz-question">Why record the shadow-mode disagreement as an EVENT in the event log, instead of just printing it to a log file?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Events take up less disk space than printed log lines.</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Events live in the same durable, replayable store as everything else, so a go/no-go decision derives from evidence that can be audited and re-derived later — not a line that scrolled off a terminal.</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Log files are only for errors, and a divergence is not technically an error.</span>
+              </button>
+              <button class="quiz-option" data-value="option-d" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>It makes the embedder run faster, since it skips writing to disk.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module5')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module5')">Try Again</button>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">What You Can Now Say to an AI Assistant</h2>
+        <p>Zoom all the way out: an event happens, becomes a memory, gets coordinates, fills a window, runs in shadow, and — one day, once the evidence says so — goes live. Every step of that is recorded, and every step is replayable. The village never forgets, and it never lies about what it remembered.</p>
+
+        <div class="badge-list">
+          <div class="badge-item">
+            <code class="badge-code">event sourcing</code>
+            <span class="badge-desc">"Store every change as an event, and rebuild current state by replaying them" — instead of just overwriting a database row.</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">embeddings</code>
+            <span class="badge-desc">"Give this text a vector so I can compare it by meaning, not just matching words."</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">recency / importance / relevance</code>
+            <span class="badge-desc">"Rank memories with all three — not just whatever was said most recently."</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">shadow mode</code>
+            <span class="badge-desc">"Run the new logic alongside the old one and record how much they disagree, before switching over."</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">feature flag</code>
+            <span class="badge-desc">"Put this behind a flag so we can turn it on and off without a new deploy."</span>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">🎬</div>
+          <div class="callout-content">
+            <strong class="callout-title">Trust, But Verify</strong>
+            <p>You never have to YOLO a scoring change into production again. Ask for shadow mode with divergence metrics, and you'll have exactly what this village has: a recorded reason to believe the new thing is ready, before it ever touches a single mind.</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>

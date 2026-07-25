@@ -1,0 +1,349 @@
+<section class="module" id="module-2" style="background: var(--color-bg)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">02</span>
+      <h1 class="module-title">The Clockwork Heart</h1>
+      <p class="module-subtitle">Why replay never lies</p>
+    </header>
+
+    <div class="module-body">
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Kill it. Restart it. Nothing changes.</h2>
+        <p>Picture a player piano. The paper roll has holes punched in it, and any piano that loads that roll plays back the identical performance — same notes, same timing, forever. The pianist who punched the roll doesn't need to be in the room anymore.</p>
+        <p>You can stop the promptworld
+          <span class="term" data-definition="A background program that keeps running without a visible window, quietly doing its job until told to stop.">daemon</span>
+          mid-tick, delete every scrap of its running memory, and restart it cold. The village comes back
+          <span class="term" data-definition="Every single byte matches exactly — not just close, but a perfect, bit-for-bit copy of the stored data.">byte-for-byte identical</span>, every villager in the exact spot, every memory intact.
+        </p>
+        <p><strong>How is that possible?</strong> This module is the answer — and it's the same trick behind one of the most valuable patterns you can ask an AI coding assistant to build for you.</p>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The one law</h2>
+        <p>The sim runs on a single rule: state only ever changes by applying recorded events, in order. Three mechanisms make that rule unbreakable.</p>
+
+        <div class="pattern-cards">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-4)">
+            <div class="pattern-icon" style="background: var(--color-actor-4)">📜</div>
+            <h4 class="pattern-title">The append-only ledger</h4>
+            <p class="pattern-desc">Every world is a
+              <span class="term" data-definition="A lightweight database that lives entirely in one file on disk — no separate server required.">SQLite</span>
+              file with an
+              <span class="term" data-definition="Data can only ever be added, never removed or rewritten — like ink on paper instead of pencil.">append-only</span>
+              <span class="term" data-definition="A record of everything that has happened, in the order it happened — the single source of truth for the whole system.">event log</span>. Deleting a row is impossible by design — a
+              <span class="term" data-definition="A rule the database itself enforces automatically on every write, no matter what the application code tries to do.">database trigger</span>
+              forbids it, and every
+              <span class="term" data-definition="A counter that goes up by exactly one for each event, with no skips — so it's easy to prove nothing is missing.">sequence number</span>
+              is checked for gaps.
+            </p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-accent)">
+            <div class="pattern-icon" style="background: var(--color-accent)">⚙️</div>
+            <h4 class="pattern-title">The reducer</h4>
+            <p class="pattern-desc">One function —
+              <span class="term" data-definition="A function whose only job is: take the current state plus one event, and return the new state. It's the single gatekeeper for every change.">the reducer</span> —
+              is the ONLY way state changes. The exact same function runs live and during
+              <span class="term" data-definition="Rebuilding the exact state of the world from scratch by loading the newest saved snapshot and re-applying every event after it, in order.">replay</span>: load the newest verified
+              <span class="term" data-definition="A saved copy of the entire state at one moment in time — a fast starting point so replay doesn't have to start from zero.">snapshot</span>, then re-apply.
+            </p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-3)">
+            <div class="pattern-icon" style="background: var(--color-actor-3)">🎲</div>
+            <h4 class="pattern-title">Deterministic dice</h4>
+            <p class="pattern-desc">Even randomness is
+              <span class="term" data-definition="Given the same inputs, always producing the exact same output — no surprises, no variance.">deterministic</span>: every random draw comes from the world's
+              <span class="term" data-definition="A starting number fed into a random-number generator so its 'random' output is actually reproducible every time.">seed</span>, a purpose, and the current
+              <span class="term" data-definition="One discrete step of simulated time — the sim's version of a clock tick.">tick</span>. Replay rolls the exact same dice.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">Key insight</strong>
+            <p>This is
+              <span class="term" data-definition="An architecture where state is never edited directly — only ever produced by replaying a permanent, ordered log of events. Recognized across the industry as event sourcing.">event sourcing</span> —
+              one of the most powerful patterns you can ask an AI assistant for. If your own app's data ever gets corrupted, or you've wished you could rewind and see exactly what happened, this is the pattern to name.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Two doors, and nothing else</h2>
+        <p>The AI mind — the part that decides what a villager wants — runs entirely outside this clockwork. Its output can only enter as a recorded event, and only through two guarded doors.</p>
+
+        <div style="display:flex; flex-direction:column; align-items:center; gap: var(--space-4); margin: var(--space-8) 0;">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-1); max-width: 340px; text-align: center;">
+            <div class="pattern-icon" style="background: var(--color-actor-1); margin: 0 auto;">🧠</div>
+            <h4 class="pattern-title">The Mind — outside</h4>
+            <p class="pattern-desc">The AI reasoning about villagers. It has opinions. It has no direct wires into the clockwork.</p>
+          </div>
+          <span class="flow-arrow" aria-hidden="true">↓</span>
+          <div style="display:flex; gap: var(--space-4); flex-wrap: wrap; justify-content: center;">
+            <div class="pattern-card" style="border-top: 3px solid var(--color-accent); max-width: 220px; text-align: center;">
+              <div class="pattern-icon" style="background: var(--color-accent); margin: 0 auto;">🚪</div>
+              <h4 class="pattern-title">Intent door</h4>
+              <p class="pattern-desc">What a villager decides to do next.</p>
+            </div>
+            <div class="pattern-card" style="border-top: 3px solid var(--color-actor-4); max-width: 220px; text-align: center;">
+              <div class="pattern-icon" style="background: var(--color-actor-4); margin: 0 auto;">🚪</div>
+              <h4 class="pattern-title">Social door</h4>
+              <p class="pattern-desc">A
+                <span class="term" data-definition="An explicit list of the only things allowed through — anything not on the list is automatically rejected.">whitelisted</span> set of event types. Nothing else gets in.
+              </p>
+            </div>
+          </div>
+          <span class="flow-arrow" aria-hidden="true">↓</span>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-3); max-width: 340px; text-align: center;">
+            <div class="pattern-icon" style="background: var(--color-actor-3); margin: 0 auto;">⚙️</div>
+            <h4 class="pattern-title">The Clockwork — inside</h4>
+            <p class="pattern-desc">The deterministic sim. Nothing enters except through a door.</p>
+          </div>
+        </div>
+        <p style="text-align:center; color: var(--color-text-muted); font-size: var(--text-sm);">Arrows point only inward. There is no door that lets the Clockwork reach back out to the Mind.</p>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Watch someone try to skip the doors</h2>
+        <p>The Mind, the Clockwork, and the Event Log, mid-argument. Step through it — or play it all at once.</p>
+
+        <div class="chat-window" id="chat-module2">
+          <div class="chat-messages">
+            <div class="chat-message" data-msg="0" data-sender="mind" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-1)">🧠</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-1)">Mind (AI)</span>
+                <p>The villager should go hunt — I've decided.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="1" data-sender="clockwork" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-accent)">⚙️</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-accent)">Clockwork (sim)</span>
+                <p>Write it in the log first. Nothing is real until it's an event.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="2" data-sender="log" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-4)">🗄️</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-4)">Event Log</span>
+                <p>Recorded: agent.intent_set, seq 4,102.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="3" data-sender="clockwork" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-accent)">⚙️</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-accent)">Clockwork (sim)</span>
+                <p>NOW she hunts. And in every replay, she'll hunt at exactly this tick, forever.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="4" data-sender="mind" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-1)">🧠</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-1)">Mind (AI)</span>
+                <p>What if I just tweak her hunger directly? It's faster—</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="5" data-sender="clockwork" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-accent)">⚙️</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-accent)">Clockwork (sim)</span>
+                <p>Denied. You have two doors. Use them.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="chat-typing" id="chat-typing" style="display:none">
+            <div class="chat-avatar" id="chat-module2-typing-avatar">?</div>
+            <div class="chat-typing-dots">
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+            </div>
+          </div>
+
+          <div class="chat-controls">
+            <button class="btn chat-next-btn">Next Message</button>
+            <button class="btn chat-all-btn">Play All</button>
+            <button class="btn chat-reset-btn">Replay</button>
+            <span class="chat-progress"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Even a "thought" has to mail itself in</h2>
+        <p>Spec 042 added three new entries to the social door's whitelist. Even the AI's own understanding of a memory — its
+          <span class="term" data-definition="A list of numbers that represents the 'meaning' of a piece of text, produced by an AI model — covered fully in the next module.">embedding vector</span> —
+          has to enter as a recorded
+          <span class="term" data-definition="The actual cargo an event carries — the data attached to 'what happened,' separate from the event's type label.">payload</span>, never computed live inside the Clockwork.
+        </p>
+
+        <p style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--space-2);">internal/sim/loop.go — excerpt (three of the whitelist's entries; the real map has more)</p>
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code>
+<span class="code-line"><span class="code-keyword">var</span> injectSocialWhitelist = <span class="code-keyword">map</span>[string]bool{</span>
+<span class="code-line">	<span class="code-string">"agent.memory_embedded"</span>:    <span class="code-keyword">true</span>,</span>
+<span class="code-line">	<span class="code-string">"agent.situation_embedded"</span>: <span class="code-keyword">true</span>,</span>
+<span class="code-line">	<span class="code-string">"cog.memory_divergence"</span>:    <span class="code-keyword">true</span>,</span>
+<span class="code-line">}</span>
+            </code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">Start a list of every event type the social door will let through.</p>
+              <p class="tl">Yes: a recorded memory embedding is allowed in.</p>
+              <p class="tl">Yes: a recorded situation embedding is allowed in too.</p>
+              <p class="tl">Yes: a note that the AI's memory of something has diverged from the record is allowed in.</p>
+              <p class="tl">That's the whole list. Anything not on it gets rejected automatically.</p>
+            </div>
+          </div>
+        </div>
+
+        <p>Once that event is recorded, the reducer is what actually applies it — and it does exactly what the log says, nothing more.</p>
+
+        <p style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--space-2);">internal/sim/state.go — excerpt from the reducer's switch</p>
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code>
+<span class="code-line"><span class="code-keyword">switch</span> e.Type {</span>
+<span class="code-line">	<span class="code-keyword">case</span> <span class="code-string">"agent.memory_embedded"</span>:</span>
+<span class="code-line">		<span class="code-comment">// Spec 042: attach a recorded embedding to the {agent, mem_seq} memory,</span></span>
+<span class="code-line">		<span class="code-comment">// copy-verbatim — the reducer never computes or inspects a vector</span></span>
+<span class="code-line">		<span class="code-comment">// (model-free sim doctrine, spec 030 lineage). A missing target is a</span></span>
+<span class="code-line">		<span class="code-comment">// deliberate NO-OP, never an error: the agent may have died or the</span></span>
+<span class="code-line">		<span class="code-comment">// memory consolidated away in the async gap. Newest-first scan: the</span></span>
+<span class="code-line">		<span class="code-comment">// companion trails its memory by moments, so the target is near the end.</span></span>
+<span class="code-line">		<span class="code-keyword">var</span> p MemoryEmbeddedPayload</span>
+<span class="code-line">		<span class="code-keyword">if</span> err := <span class="code-function">json.Unmarshal</span>(e.Payload, &p); err != <span class="code-keyword">nil</span> {</span>
+<span class="code-line">			<span class="code-keyword">return</span> <span class="code-function">fmt.Errorf</span>(<span class="code-string">"apply %s: %w"</span>, e.Type, err)</span>
+<span class="code-line">		}</span>
+<span class="code-line">		a, err := <span class="code-function">agent</span>(p.Agent)</span>
+<span class="code-line">		<span class="code-keyword">if</span> err != <span class="code-keyword">nil</span> {</span>
+<span class="code-line">			<span class="code-keyword">return</span> err</span>
+<span class="code-line">		}</span>
+<span class="code-line">}</span>
+            </code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">Look at what kind of event this is, and handle it based on that.</p>
+              <p class="tl">This is the case for: a recorded memory embedding — the AI's take on a memory.</p>
+              <p class="tl">A comment laying out the plan: copy the embedding onto the matching memory exactly as recorded.</p>
+              <p class="tl">The reducer never calculates or double-checks the vector itself — it just trusts the record.</p>
+              <p class="tl">That follows the project's rule: the simulation itself never runs any AI model.</p>
+              <p class="tl">If the matching memory can't be found, that's not treated as a crash — it's a deliberate
+                <span class="term" data-definition="A situation the code deliberately does nothing about, on purpose — not a bug, not an error, just 'nothing to do here.'">NO-OP</span>, expected and fine.
+              </p>
+              <p class="tl">The villager might have died, or the memory might have already faded away, in the time it took the AI to respond.</p>
+              <p class="tl">The AI's answer arrives slightly after the memory was made, so the search starts from the newest memories first.</p>
+              <p class="tl">Unpack the event's payload into a shape the code can read.</p>
+              <p class="tl">Try to read that payload as
+                <span class="term" data-definition="A common text format for structured data — readable by both humans and machines, and used constantly to send data between programs.">JSON</span>; if it's broken, stop here.
+              </p>
+              <p class="tl">Report exactly which event failed, and why.</p>
+              <p class="tl">End of that error check.</p>
+              <p class="tl">Look up the villager this embedding belongs to.</p>
+              <p class="tl">If that villager can't be found...</p>
+              <p class="tl">...stop and report the problem.</p>
+              <p class="tl">End of that check.</p>
+              <p class="tl">End of the event-type check.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Check your understanding</h2>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">🔭</div>
+          <div class="callout-content">
+            <strong class="callout-title">Where this is headed</strong>
+            <p>So if we want AI to help with memory, the AI must live outside the Clockwork and mail its work in — through a door, as a recorded event, like everything else.</p>
+          </div>
+        </div>
+
+        <div class="quiz-container" id="quiz-module2">
+          <div class="quiz-question-block"
+               data-correct="option-a"
+               data-explanation-right="Exactly. The reducer is the ONLY legal way state can change — so a replay divergence always traces back to state that changed some other way, or an input (like the real-world clock) that wasn't part of the recorded event and seed."
+               data-explanation-wrong="Not quite. Think about the one law from this module: state can only change by applying a recorded event through the reducer. If replay ever disagrees with the original run, something broke that rule — either state changed outside the reducer, or a non-recorded input snuck in.">
+            <h3 class="quiz-question">A replayed world ends up different from the original run — same event log, same seed, but villagers end up in different spots. Based on this module, where must the bug be hiding?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Somewhere, code changed state directly instead of going through the reducer — or read something outside the event log and seed, like the real-world clock.</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The AI mind reasoned differently the second time around.</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The database file was moved to a different folder before replay.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="option-a"
+               data-explanation-right="Exactly — event sourcing. Ask for an append-only log of everything that happened plus one function that rebuilds state by replaying it, and 'undo anything' falls out for free: just replay to an earlier point."
+               data-explanation-wrong="Not quite. More backups or manual edits don't give you a rewind button — they only protect a single snapshot, or invite the exact kind of unrecorded change this module warned about. What you want is the pattern where state is rebuilt by replaying a permanent log.">
+            <h3 class="quiz-question">You want your own app to have an "undo anything" feature. Based on this module, what's the pattern to ask an AI coding assistant to build?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Event sourcing — an append-only log of what happened, plus a single function that rebuilds state by replaying it.</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>A bigger database with more frequent backups.</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Let users manually edit the saved file whenever something looks wrong.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="option-a"
+               data-explanation-right="Exactly. AI models aren't guaranteed to produce bit-identical output run after run — so if replay recomputed the embedding live, two replays of the same world could disagree. Recording it means replay never depends on the model at all."
+               data-explanation-wrong="Not quite. Speed isn't the reason, and the whitelist is about event types, not data types — it already allows structured payloads, not just plain text. The real reason is about whether re-running an AI model twice is guaranteed to give the exact same numbers.">
+            <h3 class="quiz-question">Why must the AI's embedding vectors be recorded as events instead of recomputed live during replay?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Re-running the AI model during replay might not produce the exact same numbers twice — and replay has to be byte-for-byte identical no matter what.</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Because embeddings take too long to compute.</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Because the whitelist only allows text, not numbers.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module2')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module2')">Try Again</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>

@@ -218,7 +218,7 @@ func TestKnownPlacesDivergentMaps(t *testing.T) {
 	addFact(s.Agents[0].Map, fact("fire", 12, 34, "witnessed", 0, 900000))
 	addFact(s.Agents[1].Map, fact("shelter", 8, 20, "witnessed", 0, 0))
 
-	p0, p1 := userPrompt(s, 0, 4), userPrompt(s, 1, 4)
+	p0, p1 := userPrompt(s, 0, 4, ""), userPrompt(s, 1, 4, "")
 	if p0 == p1 {
 		t.Fatal("divergent maps rendered identical prompts")
 	}
@@ -242,7 +242,7 @@ func TestKnownPlacesNoCap(t *testing.T) {
 	for i := 0; i < 9; i++ {
 		addFact(s.Agents[0].Map, fact("fire", 10+i, 20, "witnessed", 0, 900000))
 	}
-	p := userPrompt(s, 0, 4)
+	p := userPrompt(s, 0, 4, "")
 	for i := 0; i < 9; i++ {
 		if !strings.Contains(p, fmt.Sprintf("fire at (%d,20)", 10+i)) {
 			t.Fatalf("structure %d of 9 missing — a cap survives:\n%s", i+1, p)
@@ -262,7 +262,7 @@ func TestKnownPlacesProvenancePhrasing(t *testing.T) {
 	addFact(mm, sim.PlaceFact{Kind: "oven", X: 5, Y: 5, Seen: 49000, Provenance: "witnessed"})
 	addFact(mm, sim.PlaceFact{Kind: "fire", X: 6, Y: 6, Seen: 49000, Provenance: "witnessed", Detail: 49500}) // burned out by 50000
 
-	p := userPrompt(s, 0, 4)
+	p := userPrompt(s, 0, 4, "")
 	for _, want := range []string{
 		"a fire at (40,12) — Birch told you",
 		"a shelter at (9,9), shown to you in a vision",
@@ -287,7 +287,7 @@ func TestKnownPlacesGroupsAndEmptyState(t *testing.T) {
 	addFact(a.Map, fact("forage", 30, 30, "witnessed", 0, 0))
 	addFact(a.Map, fact("tree", 18, 9, "witnessed", 0, 0))
 
-	p := userPrompt(s, 0, 4)
+	p := userPrompt(s, 0, 4, "")
 	if !strings.Contains(p, "You know of no fires or shelters yet.") {
 		t.Errorf("empty landmark state must be explicit, not silent:\n%s", p)
 	}
@@ -299,7 +299,7 @@ func TestKnownPlacesGroupsAndEmptyState(t *testing.T) {
 	}
 	// A stale fact is invisible: age the forage past the durable horizon.
 	s.Tick = 1 + 5*86400
-	p = userPrompt(s, 0, 4)
+	p = userPrompt(s, 0, 4, "")
 	if strings.Contains(p, "forage spot") {
 		t.Errorf("stale facts must not render:\n%s", p)
 	}
@@ -309,14 +309,14 @@ func TestKnownPlacesGroupsAndEmptyState(t *testing.T) {
 // one-line orientation toward the unknown; a fully-explored map omits it.
 func TestKnownPlacesFrontierLine(t *testing.T) {
 	s := knownPlacesState(t)
-	p := userPrompt(s, 0, 4)
+	p := userPrompt(s, 0, 4, "")
 	if !strings.Contains(p, "is unknown to you.") {
 		t.Errorf("spawn-only exploration must orient toward the unknown:\n%s", p)
 	}
 	// Fully explored: mark everything.
 	w, h := s.MapDims()
 	s.Agents[0].Map.MarkExplored(w, h, w/2, h/2, w+h)
-	p = userPrompt(s, 0, 4)
+	p = userPrompt(s, 0, 4, "")
 	if strings.Contains(p, "unknown to you") {
 		t.Errorf("fully-explored map must omit the unknown-land line:\n%s", p)
 	}
@@ -330,7 +330,7 @@ func TestNearbyFromSightings(t *testing.T) {
 	a := &s.Agents[0]
 	// Birch stands 2 tiles away but has never been seen: absent.
 	s.Agents[1].X, s.Agents[1].Y = a.X+2, a.Y
-	p := userPrompt(s, 0, 4)
+	p := userPrompt(s, 0, 4, "")
 	if strings.Contains(p, "Nearby:") {
 		t.Errorf("unsighted neighbor leaked into Nearby (omniscient render):\n%s", p)
 	}
@@ -338,7 +338,7 @@ func TestNearbyFromSightings(t *testing.T) {
 	// Birch moves far off unseen.
 	addSighting(a.Map, 1, a.X+3, a.Y, 100)
 	s.Agents[1].X, s.Agents[1].Y = a.X+30, a.Y
-	p = userPrompt(s, 0, 4)
+	p = userPrompt(s, 0, 4, "")
 	if !strings.Contains(p, "Nearby: Birch (3 tiles away)") {
 		t.Errorf("sighting-sourced Nearby missing:\n%s", p)
 	}

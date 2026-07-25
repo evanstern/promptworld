@@ -51,6 +51,14 @@ const (
 	// condition truly holds for a structural filter hit. Cheap-first by default
 	// (route chain local→cloud) and rate-capped per order — never a tool loop.
 	KindMetatronWatch Kind = "metatron_watch"
+	// KindEmbedding is the vector-producing kind (spec 042): the mind-side
+	// embedder driver's route to a local embedding model. Deliberately NOT in
+	// acceptedKinds — it never dispatches through Submit's chat machinery or
+	// the cognition decision-class registry; New() resolves its route once
+	// into the Embed surface. An ABSENT route means the embedding subsystem is
+	// OFF (vectorless world, one boot info line) — no warn-backfill, because
+	// absence is the feature switch, mirroring "no llm.json → reflex-only".
+	KindEmbedding Kind = "embedding"
 )
 
 // Tier is the retired routing concept (decision-5): routing is now per named
@@ -104,6 +112,14 @@ var (
 	ErrQueueFull       = errors.New("tier queue full; back off and retry")
 	ErrTierBusy        = errors.New("tier busy; best-effort call dropped")
 	ErrClosed          = errors.New("orchestrator closed")
+	// ErrEmbeddingUnsupported is the typed refusal a transport without an
+	// embeddings endpoint returns from Embed (spec 042): the anthropic
+	// Messages API serves no /embeddings, so routing the embedding kind to it
+	// is already a boot config error — this sentinel is the defense in depth.
+	ErrEmbeddingUnsupported = errors.New("transport does not support embeddings")
+	// ErrEmbeddingOff is returned by Embed when llm.json routes no embedding
+	// kind — the subsystem is off and the world stays vectorless (spec 042).
+	ErrEmbeddingOff = errors.New("embedding subsystem off (no \"embedding\" route in llm.json)")
 )
 
 type Request struct {
@@ -454,6 +470,14 @@ type Orchestrator struct {
 	done      chan struct{}
 	closeOnce sync.Once
 
+	// embedding is the embedding route's head provider (spec 042), or nil when
+	// llm.json routes no embedding kind — the subsystem's off switch. It never
+	// joins the routes table: embeds bypass Submit's chat machinery (queues,
+	// breaker, estimator) and go straight to the transport's Embed — the
+	// embedder driver owns its own timeout, failure debounce, and loudness, and
+	// embedding providers are zero-priced local by doctrine (research D2).
+	embedding *provider
+
 	// pending is the accepted-but-unlanded job inventory feeding
 	// PendingCognition (spec 028 US1): the adaptive-throttle governor's debt
 	// signal. Additive and orthogonal to routing/metering/breaker machinery.
@@ -534,8 +558,15 @@ func New(cfg Config, st MeterStore) (*Orchestrator, error) {
 		}
 	}
 	// Resolve each route's provider names to the live provider instances; the
-	// config was validated so every name is present.
+	// config was validated so every name is present. The embedding kind (spec
+	// 042) is diverted to its own slot: it is not a chat route — Submit must
+	// never dispatch it — and only its head serves (model identity travels
+	// with every vector, so a chain fallback would silently mix models).
 	for kind, rc := range rcs {
+		if kind == KindEmbedding {
+			o.embedding = o.providers[rc.Chain[0]]
+			continue
+		}
 		chain := make([]*provider, 0, len(rc.Chain))
 		for _, name := range rc.Chain {
 			chain = append(chain, o.providers[name])
@@ -715,6 +746,58 @@ func (o *Orchestrator) EstimateForKind(kind Kind) (string, float64, bool) {
 	}
 	head := o.admissibleHead(rt)
 	return head.name, head.est.Estimate(), true
+}
+
+// HasEmbedding reports whether llm.json routes the embedding kind (spec 042):
+// the daemon's wiring gate for the mind-side embedder driver. False means the
+// subsystem is off and the world stays vectorless — deliberate, no backfill.
+func (o *Orchestrator) HasEmbedding() bool { return o.embedding != nil }
+
+// EmbeddingProvider names the embedding route's head provider and its pinned
+// model — the boot line and warning surfaces read it. The model string is the
+// authoritative identity recorded on every vector (contracts §4). ok is false
+// when the subsystem is off.
+func (o *Orchestrator) EmbeddingProvider() (name, model string, ok bool) {
+	if o.embedding == nil {
+		return "", "", false
+	}
+	return o.embedding.name, o.embedding.cfg.Model, true
+}
+
+// Embed computes one vector per text through the embedding route's head
+// provider (spec 042) and returns the producing model's identity — the
+// provider entry's model string, recorded verbatim on every emitted vector.
+// It calls the transport directly (no queue, breaker, or estimator: embeds
+// are zero-priced, cadence-bounded work the embedder driver paces and
+// debounces itself) and returns ErrEmbeddingOff when no embedding route
+// exists. Boot validation refuses an anthropic-routed embedding kind, so the
+// transport assertion below cannot fail in a validated registry.
+func (o *Orchestrator) Embed(ctx context.Context, texts []string) ([][]float32, string, error) {
+	if o.embedding == nil {
+		return nil, "", ErrEmbeddingOff
+	}
+	ec, ok := o.embedding.caller.(embedCaller)
+	if !ok {
+		return nil, "", fmt.Errorf("provider %q: %w", o.embedding.name, ErrEmbeddingUnsupported)
+	}
+	return ec.Embed(ctx, texts)
+}
+
+// WarmEmbedding best-effort pins the embedding model resident (spec 042 T008
+// warm-pin) through the transport's Ollama-native /api/embed keep_alive call.
+// The embedder driver invokes it at start and on a slow re-warm interval; an
+// error (non-Ollama server, endpoint down) is the caller's to log once and
+// ignore — correctness never depends on the pin. ErrEmbeddingOff when no
+// embedding route exists.
+func (o *Orchestrator) WarmEmbedding(ctx context.Context) error {
+	if o.embedding == nil {
+		return ErrEmbeddingOff
+	}
+	w, ok := o.embedding.caller.(interface{ WarmEmbed(context.Context) error })
+	if !ok {
+		return fmt.Errorf("provider %q: %w", o.embedding.name, ErrEmbeddingUnsupported)
+	}
+	return w.WarmEmbed(ctx)
 }
 
 // RecordSuppression increments the daemon-lifetime count of router

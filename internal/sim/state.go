@@ -434,9 +434,14 @@ func (s *State) Apply(e store.Event) error {
 		// (nil/""/0): a pre-019 payload produces a pre-019-shaped Memory (FR-007).
 		// Spec 030: Origin rides the same way (copied, never derived); a pre-030
 		// payload (field absent) reduces to Origin "" — secondhand by default.
+		// Spec 042: Seq is stamped from the emitting event's store seq — the
+		// memory's stable identity for embedding companion events (research D4).
+		// Replay-stable by construction: the live loop pre-stamps the batch's
+		// seqs before Apply (stampSeqs), and CheckContiguity guarantees replay
+		// sees the identical gapless values.
 		a.Memories = append(a.Memories, Memory{
 			Text: p.Text, Salience: p.Salience, Tick: e.Tick, Subject: p.Subject, Tone: p.Tone,
-			Where: p.Where, Why: p.Why, Conv: p.Conv, Origin: p.Origin,
+			Where: p.Where, Why: p.Why, Conv: p.Conv, Origin: p.Origin, Seq: e.Seq,
 		})
 		// Cognition horizon (TASK-32): a high-salience stimulus bumps the
 		// agent's generation — in-flight thoughts snapshotted under the old
@@ -446,6 +451,46 @@ func (s *State) Apply(e store.Event) error {
 		if p.Salience >= GenerationBumpSalience {
 			a.Generation++
 		}
+	case "agent.memory_embedded":
+		// Spec 042: attach a recorded embedding to the {agent, mem_seq} memory,
+		// copy-verbatim — the reducer never computes or inspects a vector
+		// (model-free sim doctrine, spec 030 lineage). A missing target is a
+		// deliberate NO-OP, never an error: the agent may have died or the
+		// memory consolidated away in the async gap. Newest-first scan: the
+		// companion trails its memory by moments, so the target is near the end.
+		var p MemoryEmbeddedPayload
+		if err := json.Unmarshal(e.Payload, &p); err != nil {
+			return fmt.Errorf("apply %s: %w", e.Type, err)
+		}
+		a, err := agent(p.Agent)
+		if err != nil {
+			return err
+		}
+		if p.MemSeq == 0 {
+			break // never match pre-042 (seq-less) memories on a zero key
+		}
+		for i := len(a.Memories) - 1; i >= 0; i-- {
+			if a.Memories[i].Seq == p.MemSeq {
+				a.Memories[i].Vec = p.Vec
+				a.Memories[i].VecModel = p.Model
+				break
+			}
+		}
+	case "agent.situation_embedded":
+		// Spec 042: store the agent's rolling situation (query) vector,
+		// copy-verbatim. Later events simply overwrite — selection reads the
+		// latest at-or-before its tick, and gaps are legal (legacy fallback).
+		var p SituationEmbeddedPayload
+		if err := json.Unmarshal(e.Payload, &p); err != nil {
+			return fmt.Errorf("apply %s: %w", e.Type, err)
+		}
+		a, err := agent(p.Agent)
+		if err != nil {
+			return err
+		}
+		a.SitVec = p.Vec
+		a.SitVecModel = p.Model
+		a.SitVecTick = p.Tick
 	case "journal.entry_written":
 		// Spec 019 (US3): the ONLY journal-growth path. The budget rule lives
 		// here in Apply — appendEntry returns an error when the write would
@@ -485,6 +530,9 @@ func (s *State) Apply(e store.Event) error {
 	case "cog.tool_call":
 		// The tool-use loop's call trace (spec 017): recorded observability,
 		// no state effect — same as the cog.* arm above.
+	case "cog.memory_divergence":
+		// Shadow-mode rank-divergence telemetry (spec 042 US2): recorded
+		// observability, no state effect — same as the cog.* arms above.
 
 	case "agent.plan_set":
 		var p PlanSetPayload

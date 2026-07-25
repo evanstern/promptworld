@@ -1,0 +1,371 @@
+<section class="module" id="module-4" style="background: var(--color-bg); --color-accent: var(--color-info); --color-accent-light: var(--color-info-light); --color-accent-muted: var(--color-info);">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">04</span>
+      <h1 class="module-title">What Matters Right Now</h1>
+      <p class="module-subtitle">A villager can hold thousands of memories, but only ten fit in her head at once. Here's how she decides which ten.</p>
+    </header>
+
+    <div class="module-body">
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Packing the Daypack</h2>
+        <p>Imagine packing a small daypack before setting out — you can't carry the whole closet. You pack what matters most, weighted by how fresh it still feels, and matched to where you're actually headed.</p>
+        <p>A villager's memory window works the same way. Every planning moment, promptworld scores her whole memory shelf and packs only the top ten.</p>
+
+        <div class="pattern-cards">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-1)">
+            <div class="pattern-icon" style="background: var(--color-actor-1)">🎯</div>
+            <h4 class="pattern-title">Weight by Importance</h4>
+            <p class="pattern-desc">Every memory carries a <span class="term" data-definition="Salience is a number a villager assigns a memory for how big a deal it felt at the time. A near-miss with a bear scores far higher than an ordinary breakfast.">salience</span> rating — how big a deal it felt at the time.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-4)">
+            <div class="pattern-icon" style="background: var(--color-actor-4)">⏳</div>
+            <h4 class="pattern-title">Fade with Age</h4>
+            <p class="pattern-desc">That importance isn't permanent. It quietly halves every game-day that passes — a forecast going stale.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-3)">
+            <div class="pattern-icon" style="background: var(--color-actor-3)">🧭</div>
+            <h4 class="pattern-title">Match the Trip</h4>
+            <p class="pattern-desc">Does this memory sit close to a fresh snapshot of right now? Rope matters at a river crossing; sunscreen doesn't.</p>
+          </div>
+        </div>
+
+        <p>Add the first two together, throw in two wildcard memories drawn at random from the oldest half of her shelf, and that's her ten-item daypack. This "importance plus relevance" recipe is the same one behind the famous <span class="term" data-definition="Generative Agents (Stanford, 2023) is a research paper that popularized giving AI characters memories retrieved by combining recency, importance, and relevance into one score — the same idea this module's formula is built from.">Generative Agents</span> paper — the go-to reference whenever someone says an AI assistant "forgets what matters."</p>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The Daypack Ranking Board</h2>
+        <p>Here's one villager's shelf at a single moment, scored against a fresh <span class="term" data-definition="A situation vector is a snapshot of right now — night or day, place, urgent needs, current intent, and who's nearby — turned into the same kind of coordinates as a memory, so the two can be compared.">situation vector</span>: dusk, at the river ford, hungry, trying to cross safely, alone.</p>
+
+        <div style="background: var(--color-bg-code); color: #ECE9E4; padding: var(--space-3) var(--space-5); border-radius: var(--radius-md); font-size: var(--text-sm); margin-bottom: var(--space-6); box-shadow: var(--shadow-sm);">
+          🎯 Right now: dusk &middot; at the river ford &middot; hungry &middot; trying to cross safely &middot; alone
+        </div>
+
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: var(--space-4);">
+
+          <div style="background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-5); box-shadow: var(--shadow-sm); border-top: 4px solid var(--color-accent);">
+            <div style="font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.05em; color: var(--color-accent);">PACKED</div>
+            <p style="font-size: var(--text-sm); margin: var(--space-2) 0;">"A stranger warned wolves prowl this ford at night."</p>
+            <div style="display:flex; justify-content:space-between; font-size: var(--text-xs); color: var(--color-text-muted);"><span>★★★☆☆ (6/10)</span><span>today</span></div>
+            <div style="margin: var(--space-3) 0 var(--space-2);">
+              <div style="font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: 2px;">relevance to right now: 90%</div>
+              <div style="height:8px; background: var(--color-border-light); border-radius: var(--radius-full); overflow:hidden;"><div style="height:100%; width:90%; background: var(--color-accent);"></div></div>
+            </div>
+            <div style="text-align:right; font-family: var(--font-mono); font-weight:700; color: var(--color-accent);">score 1.50</div>
+          </div>
+
+          <div style="background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-5); box-shadow: var(--shadow-sm); border-top: 4px solid var(--color-accent);">
+            <div style="font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.05em; color: var(--color-accent);">PACKED</div>
+            <p style="font-size: var(--text-sm); margin: var(--space-2) 0;">"The chief praised her basket weaving in the square."</p>
+            <div style="display:flex; justify-content:space-between; font-size: var(--text-xs); color: var(--color-text-muted);"><span>★★★★★ (9/10)</span><span>today</span></div>
+            <div style="margin: var(--space-3) 0 var(--space-2);">
+              <div style="font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: 2px;">relevance to right now: 30%</div>
+              <div style="height:8px; background: var(--color-border-light); border-radius: var(--radius-full); overflow:hidden;"><div style="height:100%; width:30%; background: var(--color-accent);"></div></div>
+            </div>
+            <div style="text-align:right; font-family: var(--font-mono); font-weight:700; color: var(--color-accent);">score 1.20</div>
+          </div>
+
+          <div style="background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-5); box-shadow: var(--shadow-sm); border-top: 4px solid var(--color-accent);">
+            <div style="font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.05em; color: var(--color-accent);">PACKED</div>
+            <p style="font-size: var(--text-sm); margin: var(--space-2) 0;">"Learned where the healer keeps bandages."</p>
+            <div style="display:flex; justify-content:space-between; font-size: var(--text-xs); color: var(--color-text-muted);"><span>★★★☆☆ (5/10)</span><span>2 days ago</span></div>
+            <div style="margin: var(--space-3) 0 var(--space-2);">
+              <div style="font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: 2px;">relevance to right now: 60%</div>
+              <div style="height:8px; background: var(--color-border-light); border-radius: var(--radius-full); overflow:hidden;"><div style="height:100%; width:60%; background: var(--color-accent);"></div></div>
+            </div>
+            <div style="text-align:right; font-family: var(--font-mono); font-weight:700; color: var(--color-accent);">score 1.05</div>
+          </div>
+
+          <div style="background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-5); box-shadow: var(--shadow-sm); border-top: 4px solid var(--color-accent);">
+            <div style="font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.05em; color: var(--color-accent);">PACKED</div>
+            <p style="font-size: var(--text-sm); margin: var(--space-2) 0;">"She was robbed at this very ford, three weeks ago."</p>
+            <div style="display:flex; justify-content:space-between; font-size: var(--text-xs); color: var(--color-text-muted);"><span>★★★★☆ (was 7/10, now ≈0)</span><span>21 days ago</span></div>
+            <div style="margin: var(--space-3) 0 var(--space-2);">
+              <div style="font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: 2px;">relevance to right now: 97%</div>
+              <div style="height:8px; background: var(--color-border-light); border-radius: var(--radius-full); overflow:hidden;"><div style="height:100%; width:97%; background: var(--color-accent);"></div></div>
+            </div>
+            <div style="text-align:right; font-family: var(--font-mono); font-weight:700; color: var(--color-accent);">score 0.99</div>
+          </div>
+
+          <div style="background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-5); box-shadow: var(--shadow-sm); border-top: 4px solid var(--color-border); opacity: 0.75;">
+            <div style="font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.05em; color: var(--color-text-muted);">LEFT BEHIND</div>
+            <p style="font-size: var(--text-sm); margin: var(--space-2) 0;">"Watched a beautiful sunset over the hills."</p>
+            <div style="display:flex; justify-content:space-between; font-size: var(--text-xs); color: var(--color-text-muted);"><span>★★☆☆☆ (3/10)</span><span>5 days ago</span></div>
+            <div style="margin: var(--space-3) 0 var(--space-2);">
+              <div style="font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: 2px;">relevance to right now: 40%</div>
+              <div style="height:8px; background: var(--color-border-light); border-radius: var(--radius-full); overflow:hidden;"><div style="height:100%; width:40%; background: var(--color-text-muted);"></div></div>
+            </div>
+            <div style="text-align:right; font-family: var(--font-mono); font-weight:700; color: var(--color-text-muted);">score 0.55</div>
+          </div>
+
+          <div style="background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-5); box-shadow: var(--shadow-sm); border-top: 4px dashed var(--color-actor-4);">
+            <div style="font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.05em; color: var(--color-actor-4);">🎲 PACKED — WILDCARD</div>
+            <p style="font-size: var(--text-sm); margin: var(--space-2) 0;">"Argued with a neighbor over a fence."</p>
+            <div style="display:flex; justify-content:space-between; font-size: var(--text-xs); color: var(--color-text-muted);"><span>★★☆☆☆ (was 4/10, now ≈0)</span><span>10 months ago</span></div>
+            <div style="margin: var(--space-3) 0 var(--space-2);">
+              <div style="font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: 2px;">relevance to right now: 30%</div>
+              <div style="height:8px; background: var(--color-border-light); border-radius: var(--radius-full); overflow:hidden;"><div style="height:100%; width:30%; background: var(--color-actor-4);"></div></div>
+            </div>
+            <div style="text-align:right; font-size: var(--text-xs); color: var(--color-text-muted);">score 0.31 — didn't matter, drawn by the dice</div>
+          </div>
+
+        </div>
+
+        <p style="margin-top: var(--space-6);">That "Right now: dusk · at the ford · hungry…" banner isn't decoration — it's the exact one-line description that gets <span class="term" data-definition="Embedding a piece of text means running it through a model that converts it into a list of numbers positioned so similar meanings land near each other — the same process a memory's text goes through.">embedded</span> every planning interval, so there's always a fresh situation vector to score against.</p>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The Code Behind the Score Chips</h2>
+        <p>If nobody has a fresh situation vector yet, promptworld quietly steps aside and falls back to its older, simpler pick-by-salience-alone selection — nothing ever crashes waiting on a number that isn't there. When a situation vector IS available, here's the loop that produced every score chip on the board above.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code>
+<span class="code-line">	<span class="code-keyword">for</span> i, m := <span class="code-keyword">range</span> a.Memories {</span>
+<span class="code-line">		age := tick - m.Tick</span>
+<span class="code-line">		<span class="code-keyword">if</span> age &lt; 0 {</span>
+<span class="code-line">			age = 0</span>
+<span class="code-line">		}</span>
+<span class="code-line">		<span class="code-comment">// integer-friendly decay: halve per whole game-day of age (EXACTLY</span></span>
+<span class="code-line">		<span class="code-comment">// SelectMemories' weight), normalized by the salience ceiling.</span></span>
+<span class="code-line">		w := <span class="code-function">float64</span>(m.Salience)</span>
+<span class="code-line">		<span class="code-keyword">for</span> d := age / halfLifeTicks; d &gt; 0; d-- {</span>
+<span class="code-line">			w /= 2</span>
+<span class="code-line">		}</span>
+<span class="code-line">		all[i] = <span class="code-property">scored</span>{m: m, score: w/MaxSalience + <span class="code-function">relevance01</span>(m, query, queryModel), idx: i}</span>
+<span class="code-line">	}</span>
+            </code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">Go through every one of this villager's memories, one at a time.</p>
+              <p class="tl">Figure out how many ticks old this memory is — now minus when it happened.</p>
+              <p class="tl">Just in case the math ever goes negative...</p>
+              <p class="tl">...clamp it back to zero. A memory can't be from the future.</p>
+              <p class="tl">End of that safety check.</p>
+              <p class="tl">A note to future readers: this decay math deliberately mirrors the plain memory-picker's math exactly, one halving per full game-day of age...</p>
+              <p class="tl">...just scaled down to fit between 0 and 1, so it can be added fairly to something else.</p>
+              <p class="tl">Start with the memory's raw importance rating.</p>
+              <p class="tl">For every whole game-day that has passed since this memory happened...</p>
+              <p class="tl">...cut that importance number in half.</p>
+              <p class="tl">End of the aging loop — older memories keep shrinking, forever.</p>
+              <p class="tl">The final score for this memory: the shrunk importance (scaled to a 0–1 slice) plus how relevant it is to right now — computed by relevance01, next up.</p>
+              <p class="tl">End of the loop. Every memory now has one score, ready to be sorted.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">relevance01 — The Cosine Check</h2>
+        <p>This is the whole function that turned each card's "relevance to right now" bar into a number, using the <span class="term" data-definition="Cosine similarity is a formula that compares two lists of numbers and returns a score for how closely they point in the same direction. Closer to 1 means more alike in meaning — it turns similar meaning into a number you can sort by.">cosine similarity</span> between a memory's coordinates and the situation vector's.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code>
+<span class="code-line"><span class="code-keyword">func</span> <span class="code-function">relevance01</span>(m Memory, query []float32, queryModel string) float64 {</span>
+<span class="code-line">	<span class="code-keyword">if</span> <span class="code-function">len</span>(m.Vec) == 0 || m.VecModel != queryModel || <span class="code-function">len</span>(m.Vec) != <span class="code-function">len</span>(query) {</span>
+<span class="code-line">		<span class="code-keyword">return</span> <span class="code-number">0.5</span></span>
+<span class="code-line">	}</span>
+<span class="code-line">	<span class="code-keyword">var</span> dot, mm, qq float64</span>
+<span class="code-line">	<span class="code-keyword">for</span> i := <span class="code-keyword">range</span> query {</span>
+<span class="code-line">		mv, qv := <span class="code-function">float64</span>(m.Vec[i]), <span class="code-function">float64</span>(query[i])</span>
+<span class="code-line">		dot += mv * qv</span>
+<span class="code-line">		mm += mv * mv</span>
+<span class="code-line">		qq += qv * qv</span>
+<span class="code-line">	}</span>
+<span class="code-line">	<span class="code-keyword">if</span> mm == 0 || qq == 0 {</span>
+<span class="code-line">		<span class="code-keyword">return</span> <span class="code-number">0.5</span></span>
+<span class="code-line">	}</span>
+<span class="code-line">	<span class="code-keyword">return</span> (dot/(<span class="code-function">math.Sqrt</span>(mm)*<span class="code-function">math.Sqrt</span>(qq)) + <span class="code-number">1</span>) / <span class="code-number">2</span></span>
+<span class="code-line">}</span>
+            </code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">relevance01 takes one memory, the situation vector to compare it against, and which model made that vector — and returns a single number.</p>
+              <p class="tl">First, bail out to a neutral score if any of three things are true...</p>
+              <p class="tl">...this memory never got a vector, or a different model embedded it, or the two vectors don't even have the same number of dimensions — return dead-center 0.5.</p>
+              <p class="tl">End of that safety check — no data, no comparison, no opinion.</p>
+              <p class="tl">Set up three running totals: the dot product, and each vector's own squared length.</p>
+              <p class="tl">Walk through every one of the situation vector's numbers, position by position.</p>
+              <p class="tl">Pull out this memory's number and the situation's number at that same position.</p>
+              <p class="tl">Add their product into the dot-product total — the heart of cosine similarity.</p>
+              <p class="tl">Add the memory's own number, squared, into its running length total.</p>
+              <p class="tl">Add the situation's own number, squared, into its running length total.</p>
+              <p class="tl">End of walking through every dimension.</p>
+              <p class="tl">One more safety check: if either vector somehow has zero length...</p>
+              <p class="tl">...there's nothing to divide by, so return the same neutral 0.5.</p>
+              <p class="tl">End of that check.</p>
+              <p class="tl">The real formula: divide the dot product by the product of both lengths — plain cosine similarity, from -1 to 1 — then squeeze it into 0 to 1 so it adds cleanly to importance.</p>
+              <p class="tl">End of relevance01.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">Relevance Whispers, Trauma Shouts</strong>
+            <p>That squeeze into 0–1 caps relevance's contribution at +0.5. It can lift a modest memory past rivals up to five salience points stronger — enough to save a decayed-to-nothing memory like the river robbery — but it can never outshout a genuinely fresh, high-salience event.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Three Rules That Keep the Score Honest</h2>
+
+        <div class="icon-rows">
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-3)">🗺️</div>
+            <div>
+              <strong>Neutral means no data, not "no chance"</strong>
+              <p>A memory with no vector, or one embedded by a different model, scores exactly 0.5 — never punished, never promoted. Different embedding models make different coordinate charts; comparing across them would be meaningless, so relevance01 refuses to try.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-2)">🔒</div>
+            <div>
+              <strong>Her own shelf only</strong>
+              <p>The scorer's only input is that one villager's own memories. Two villagers who lived through the exact same events cannot influence each other's window — proven by a test that checks exactly this.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-4)">🎲</div>
+            <div>
+              <strong>Even the dice are deterministic</strong>
+              <p>The two wildcard slots use <span class="term" data-definition="Seeded random means the &quot;random&quot; pick is actually computed from a starting number, the seed. Replay the same seed and you get the exact same pick every time — never a new one.">seeded random</span> draws from the oldest half of her shelf, same as every other roll in the village. Replay the same history and the same memories get drawn as wildcards, every time.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">🔐</div>
+          <div class="callout-content">
+            <strong class="callout-title">Why Recency Counts From Creation, Never From Recall</strong>
+            <p>The famous reference design decays memories from their <em>last access</em> — recalling one keeps it fresh. promptworld deliberately rejected that: a <span class="term" data-definition="A pure function always produces the same output for the same input, and never changes anything outside itself. Reading a memory must stay pure, or replaying the same event log could disagree with the original run.">pure</span> read must never change the data it reads, or <span class="term" data-definition="Replay means re-running the recorded event log from the start to rebuild the exact same state it produced the first time — used to reproduce or debug a simulation precisely.">replay</span> stops matching the original run. Age is counted strictly from when a memory was created.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Check Your Bearings</h2>
+
+        <div class="quiz-container" id="quiz-module4">
+          <div class="quiz-question-block"
+               data-correct="option-a"
+               data-explanation-right="Exactly — relevance can add up to +0.5 to a score, enough to lift a memory whose salience has decayed almost to zero back into the packed set, just like the river-robbery card on the ranking board. The wildcard dice are a second, independent way it could resurface even without that boost."
+               data-explanation-wrong="Not quite — decayed salience alone can't save a memory, but that's not the whole score. Think back to the ranking board: one card had salience faded to almost nothing yet still got packed. What was carrying it?">
+            <h3 class="quiz-question">A villager returns to the river ford where she was robbed 20 days ago. That memory's salience has halved roughly 20 times — practically zero. Can it still make her ten-item window?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Yes — if it's highly relevant to what she's doing right now, relevance can lift it back into the top scores, and it could also get drawn as one of the two random wildcard picks.</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>No — once salience decays that close to zero, nothing in the formula can bring it back.</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Only if she deliberately tries to recall it, which resets its age back to zero.</span>
+              </button>
+              <button class="quiz-option" data-value="option-d" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>No — memories that old are automatically removed from her shelf.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="option-b"
+               data-explanation-right="Right — a chatbot that keeps surfacing whatever was said most recently is over-weighting recency (the fading-importance dial) while ignoring relevance entirely (how closely something matches the current situation). Naming both dials to an AI assistant is exactly the fix: add a relevance term scored against the current context."
+               data-explanation-wrong="Not quite — re-read the symptom: it favors whatever is newest, regardless of whether it fits the current situation. That's a recency problem paired with a missing-relevance problem, not an importance problem.">
+            <h3 class="quiz-question">Your chatbot keeps bringing up whatever the user said most recently, instead of what actually matters to the current question. Which dial from this module is over-weighted, and which is missing?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Importance is over-weighted; recency is missing.</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Recency is over-weighted; relevance is missing.</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Relevance is over-weighted; importance is missing.</span>
+              </button>
+              <button class="quiz-option" data-value="option-d" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>All the dials are already balanced — the bug must be somewhere else entirely.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="option-c"
+               data-explanation-right="Exactly — relevance01 checks whether the memory's vector model matches the situation vector's model. Swap embedding models and every memory's old vectors were charted by a different model than the fresh situation vector, so every comparison hits that mismatch and falls back to neutral 0.5. That's the designed safety behavior, not a bug."
+               data-explanation-wrong="Not quite — nothing about the vectors themselves changed, and there's no evidence of a crash or data loss. The clue is that it happened to EVERY score, right after a model swap — think about what relevance01 checks before it will even attempt a comparison.">
+            <h3 class="quiz-question">After swapping the embedding model, every relevance score in the village suddenly reads exactly 0.5. Why is this the <em>designed</em> behavior, not a bug?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The reducer must be silently dropping every memory-embedded event after the swap.</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The new model is simply worse at measuring similarity than the old one.</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Old memories were embedded by a different model than the fresh situation vector — a model mismatch relevance01 refuses to compare, so it returns neutral 0.5 for all of them.</span>
+              </button>
+              <button class="quiz-option" data-value="option-d" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>All the vectors were deleted when the model changed.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="option-d"
+               data-explanation-right="Exactly — a memory's read path has to stay pure. If recalling a memory could reset its age, replaying the same event log twice could produce two different orderings depending on which memories happened to get 'read' in between — and the whole clockwork's promise of identical replay would break."
+               data-explanation-wrong="Not quite — this isn't about storage size or which memories feel important. It's about what happens if a READ operation is allowed to change stored data — trace what that would do the next time the same history gets replayed.">
+            <h3 class="quiz-question">You're designing a similar memory system from scratch. A teammate suggests refreshing a memory's age every time it's recalled, the way the famous reference design does. Why does promptworld count age strictly from creation instead?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Because tracking last-recall time would use too much storage.</span>
+              </button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Because recalled memories should actually be considered less important, not more.</span>
+              </button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Because the embedding model can't process a memory twice.</span>
+              </button>
+              <button class="quiz-option" data-value="option-d" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Because a read must never mutate state — if recalling a memory changed its age, replaying the same event log could disagree with the original run.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module4')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module4')">Try Again</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>

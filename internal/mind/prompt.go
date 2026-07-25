@@ -6,6 +6,7 @@ import (
 
 	"github.com/evanstern/promptworld/internal/clock"
 	"github.com/evanstern/promptworld/internal/sim"
+	"github.com/evanstern/promptworld/internal/world"
 )
 
 // Prompt construction: a stable per-agent system prefix (identity + persona +
@@ -68,9 +69,29 @@ func futureDated(now, landing int64) string {
 		clock.Format(now), clock.Format(landing))
 }
 
+// selectWindow picks a prompt's memory window per the world's
+// memory_relevance mode (spec 042 US3, contracts/relevance-scoring.md §3):
+// "on" consumes the query-conditioned SelectMemoriesRelevant against the
+// agent's recorded situation vector (a nil query — no situation vector yet —
+// delegates to legacy inside the selector, per contract); "" and "shadow"
+// alike are today's SelectMemories, byte-identical (the shadow invariant).
+// Divergence recording is separate (recordDivergence) and unchanged by mode.
+func selectWindow(s *sim.State, idx, k int, tick int64, mode string) []sim.Memory {
+	a := &s.Agents[idx]
+	if mode == world.MemoryRelevanceOn {
+		var query []float32
+		if len(a.SitVec) > 0 {
+			query = a.SitVec
+		}
+		return sim.SelectMemoriesRelevant(a, s.Seed, idx, tick, k, query, a.SitVecModel)
+	}
+	return sim.SelectMemories(a, s.Seed, idx, tick, k)
+}
+
 // userPrompt renders the situation + memory window. The window is the ONLY
-// memory content that ever reaches a prompt (AC#3).
-func userPrompt(s *sim.State, idx int, k int) string {
+// memory content that ever reaches a prompt (AC#3); mode is the world's
+// memory_relevance flag deciding which selector fills it (spec 042 US3).
+func userPrompt(s *sim.State, idx int, k int, mode string) string {
 	a := s.Agents[idx]
 	var b strings.Builder
 
@@ -140,7 +161,7 @@ func userPrompt(s *sim.State, idx int, k int) string {
 		b.WriteString(law)
 	}
 
-	window := sim.SelectMemories(&a, s.Seed, idx, s.Tick, k)
+	window := selectWindow(s, idx, k, s.Tick, mode)
 	if len(window) > 0 {
 		b.WriteString("\nYou remember:\n")
 		for _, m := range window {

@@ -21,6 +21,15 @@ type caller interface {
 	call(ctx context.Context, req Request) (callResult, error)
 }
 
+// embedCaller is the transport surface of the embedding kind (spec 042): one
+// vector per input text plus the producing model's identity. Both transports
+// implement it — openai_compat against its /embeddings endpoint, anthropic as
+// a typed ErrEmbeddingUnsupported refusal (the Messages API serves none, and
+// boot validation already rejects an anthropic-routed embedding kind).
+type embedCaller interface {
+	Embed(ctx context.Context, texts []string) ([][]float32, string, error)
+}
+
 // callResult is one provider call's transport-owned output. Its zero value is
 // a valid empty reply (no text, no tool calls, StopReason ""), so the
 // single-shot path never has to reason about tool fields.
@@ -466,6 +475,97 @@ func (o *openaiCompat) do(ctx context.Context, payload map[string]any) (oaiRespo
 	return out, nil
 }
 
+// Embed posts the OpenAI-compatible embeddings request (spec 042):
+// {"model", "input"} to endpoint + "/embeddings" (Ollama serves this shape for
+// embedding models), decoding data[].embedding into one float32 vector per
+// input text, index-ordered. The returned model string is the provider's
+// configured model — the authoritative identity recorded on every vector
+// (contracts/embedding-events.md §4), never the server's echo.
+func (o *openaiCompat) Embed(ctx context.Context, texts []string) ([][]float32, string, error) {
+	body, err := json.Marshal(map[string]any{"model": o.model, "input": texts})
+	if err != nil {
+		return nil, "", err
+	}
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost,
+		o.endpoint+"/embeddings", bytes.NewReader(body))
+	if err != nil {
+		return nil, "", err
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+	if o.apiKey != "" {
+		httpReq.Header.Set("Authorization", "Bearer "+o.apiKey)
+	}
+
+	resp, err := o.client.Do(httpReq)
+	if err != nil {
+		return nil, "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		snippet, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		return nil, "", fmt.Errorf("embeddings HTTP %d: %s", resp.StatusCode, snippet)
+	}
+	var out struct {
+		Data []struct {
+			Index     int       `json:"index"`
+			Embedding []float32 `json:"embedding"`
+		} `json:"data"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+		return nil, "", fmt.Errorf("embeddings response: %w", err)
+	}
+	if len(out.Data) != len(texts) {
+		return nil, "", fmt.Errorf("embeddings returned %d vectors for %d inputs", len(out.Data), len(texts))
+	}
+	// Order by the wire's index field, defensively — the shape permits
+	// out-of-order rows even though servers reply in input order.
+	vecs := make([][]float32, len(texts))
+	for _, d := range out.Data {
+		if d.Index < 0 || d.Index >= len(vecs) || vecs[d.Index] != nil {
+			return nil, "", fmt.Errorf("embeddings returned bad index %d", d.Index)
+		}
+		vecs[d.Index] = d.Embedding
+	}
+	return vecs, o.model, nil
+}
+
+// WarmEmbed pins the embedding model resident on an Ollama server (spec 042
+// T008 warm-pin): POST the Ollama-NATIVE endpoint — the provider base with the
+// OpenAI-compat "/v1" suffix stripped, path "/api/embed" — with
+// {"model", "keep_alive": -1}. Empirically verified on the target host: the
+// native pin keeps the model loaded indefinitely, and subsequent
+// /v1/embeddings traffic does NOT reset it (keep_alive inside the compat body
+// is ignored, so it is never sent there). Best-effort and Ollama-specific: a
+// non-Ollama openai_compat server 404s here, which the caller logs once and
+// ignores — correctness never depends on the pin, only cold-load latency does.
+func (o *openaiCompat) WarmEmbed(ctx context.Context) error {
+	body, err := json.Marshal(map[string]any{"model": o.model, "keep_alive": -1})
+	if err != nil {
+		return err
+	}
+	native := strings.TrimSuffix(o.endpoint, "/v1")
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost,
+		native+"/api/embed", bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+	if o.apiKey != "" {
+		httpReq.Header.Set("Authorization", "Bearer "+o.apiKey)
+	}
+	resp, err := o.client.Do(httpReq)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		snippet, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		return fmt.Errorf("warm embed HTTP %d: %s", resp.StatusCode, snippet)
+	}
+	io.Copy(io.Discard, resp.Body) // reply carries a vector we don't need
+	return nil
+}
+
 // --- Anthropic Messages API via the official SDK ---
 // The transport of any provider whose transport is "anthropic" (spec 024).
 
@@ -529,6 +629,15 @@ func newAnthropicProviderCaller(pc ProviderConfig) *anthropicCaller {
 		opts = append(opts, option.WithBaseURL(pc.Endpoint))
 	}
 	return &anthropicCaller{client: anthropic.NewClient(opts...), model: pc.Model}
+}
+
+// Embed is the anthropic transport's typed refusal (spec 042): the Messages
+// API serves no embeddings endpoint. Unreachable through a validated registry
+// — boot rejects an anthropic-routed embedding kind — but the surface exists
+// so both transports satisfy embedCaller and a direct caller gets a sentinel,
+// never a mystery HTTP error.
+func (a *anthropicCaller) Embed(context.Context, []string) ([][]float32, string, error) {
+	return nil, "", ErrEmbeddingUnsupported
 }
 
 func (a *anthropicCaller) call(ctx context.Context, req Request) (callResult, error) {
