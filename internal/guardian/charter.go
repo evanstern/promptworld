@@ -105,7 +105,11 @@ func stageBindsSkills(stage string) bool  { return stage != "stage-1" && stage !
 // silent ignoring). A missing file is restored to the preset so the player has
 // a file to edit when stage-2 unlocks — no notice, since what binds never
 // changed. Every other stage behaves byte-identically to today's loadCharter.
-func stageCharter(worldDir, stage, preset string) (text, notice string) {
+// The lock notices resolve the unlocking stage's display name through the
+// WORLD skin when one is in scope (spec 052 T004) — variadic so every
+// pre-052 call site (and every direct-arg test) keeps compiling with the
+// default-skin behavior, the loadCharter preset precedent.
+func stageCharter(worldDir, stage, preset string, sk ...*skin.Skin) (text, notice string) {
 	if !stageLocksCharter(stage) {
 		return loadCharter(worldDir, preset)
 	}
@@ -118,9 +122,17 @@ func stageCharter(worldDir, stage, preset string) (text, notice string) {
 	}
 	if err == nil && string(data) != text {
 		return text, fmt.Sprintf("charter.md does not bind at this stage — %s (stage-2) unlocks instruction authoring",
-			skin.StageName("stage-2"))
+			skinOrDefault(sk).StageName("stage-2"))
 	}
 	return text, ""
+}
+
+// skinOrDefault unwraps a variadic skin argument (nil-safe either way).
+func skinOrDefault(sk []*skin.Skin) *skin.Skin {
+	if len(sk) > 0 {
+		return sk[0]
+	}
+	return nil
 }
 
 // stageSkills is the stage fork over loadSkills (spec 046 FR-005): skill files
@@ -128,13 +140,13 @@ func stageCharter(worldDir, stage, preset string) (text, notice string) {
 // unlock. At stage-1/-2, present skill files are never silently ignored: one
 // notice names the unlocking stage. Absent stage = pre-ladder = today's
 // behavior.
-func stageSkills(worldDir, stage string) ([]skillFile, []string) {
+func stageSkills(worldDir, stage string, sk ...*skin.Skin) ([]skillFile, []string) {
 	if stageBindsSkills(stage) {
 		return loadSkills(worldDir)
 	}
 	if names := skillNames(worldDir); len(names) > 0 {
 		return nil, []string{fmt.Sprintf("skill files do not bind at this stage — %s (stage-3) unlocks skill files",
-			skin.StageName("stage-3"))}
+			skinOrDefault(sk).StageName("stage-3"))}
 	}
 	return nil, nil
 }

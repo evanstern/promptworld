@@ -151,13 +151,13 @@ func (mt *Guardian) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 	// stage-3, and present-but-unbound files get the honest lock notice. Every
 	// fallback/truncation/skip becomes a notice prefixed to the reply, one
 	// combined line, exactly like the charter's today.
-	charter, charterNotice := stageCharter(mt.worldDir, mt.stage, mt.charterPreset)
+	charter, charterNotice := stageCharter(mt.worldDir, mt.stage, mt.charterPreset, mt.sk())
 	// Charter-revision observation (spec 044 US2, T014): stamped at load,
 	// before anything consumes the text, so the evidence timeline records
 	// the revision this turn actually runs under — the stage-EFFECTIVE text
 	// (at stage-1, the preset constant the lock serves), never the raw file.
 	mt.observeCharter(charter)
-	skills, skillNotices := stageSkills(mt.worldDir, mt.stage)
+	skills, skillNotices := stageSkills(mt.worldDir, mt.stage, mt.sk())
 	grant, manifestNotices := loadManifest(mt.worldDir, bundleToolNames(mt.bundles)...)
 	// The stage ceiling (spec 046 FR-004) intersects immediately after
 	// loadManifest, BEFORE grantedRoster, so declaration/prose/door all inherit
