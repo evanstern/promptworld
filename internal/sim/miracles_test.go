@@ -815,6 +815,9 @@ func TestRebaseTaxonomyComplete(t *testing.T) {
 		"RunEnd.Tick":                      keep, // spec 044: when the run ended (history; the world never ticks again)
 		"DeathRecord.Tick":                 keep, // spec 044: when the death happened (history, like NormViolation.Tick)
 		"MorgueEpilogue.Tick":              keep, // spec 044 US2: when the epilogue landed (history, ChronicleEntry.Tick shape)
+		"CurriculumPass.Tick":              keep, // spec 046: when the pass was recorded (history), like Memory.Tick
+		"EvidenceRef.Tick":                 keep, // spec 046: audit pointer at a recorded event's tick — history, never a deadline
+		"EvidenceRef.Seq":                  keep, // spec 046: the evidence event's store seq — an identity, like Memory.Seq
 	}
 
 	found := map[string]bool{}

@@ -54,8 +54,10 @@ function resolveRepoRoot() {
   }
 }
 
-// The nine slugs from plan.md's Project Structure (plus TASK-114's pair). Adding a
-// page means adding its slug here — a one-line, reviewed change (data-model.md).
+// The nine slugs from plan.md's Project Structure (plus TASK-114's pair), plus
+// spec 046's four per-stage curriculum-ladder quickstarts (nine -> thirteen).
+// Adding a page means adding its slug here — a one-line, reviewed change
+// (data-model.md).
 const EXPECTED_PAGES = [
   'index.html',
   'getting-started.html',
@@ -66,6 +68,10 @@ const EXPECTED_PAGES = [
   'llm-setup-basics.html',
   'understanding-the-screen.html',
   'keys-reference.html',
+  'stage-1-the-voice.html',
+  'stage-2-the-written-word.html',
+  'stage-3-the-craft.html',
+  'stage-4-the-stewardship.html',
 ];
 
 const GENERATED_BY_RE =

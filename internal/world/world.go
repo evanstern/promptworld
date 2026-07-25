@@ -59,6 +59,77 @@ type Manifest struct {
 	// (FR-007). Additive omitempty string (Teaching precedent): a pre-042
 	// world.json round-trips byte-identically, no FormatVersion bump.
 	MemoryRelevance string `json:"memory_relevance,omitempty"`
+	// Stage is the world's curriculum-ladder stage (spec 046, FR-002):
+	// "stage-1".."stage-4", set once at creation and immutable for the world's
+	// lifetime — no mutation command exists or will (the SetTeaching pattern is
+	// deliberately NOT replicated). Absent ("") = a pre-ladder world = ungated
+	// (stage-4 semantics), so existing worlds lose nothing. Validated at Open
+	// (the MemoryRelevance closed-vocabulary precedent). Additive omitempty:
+	// a pre-046 world.json round-trips byte-identically, no FormatVersion bump.
+	Stage string `json:"stage,omitempty"`
+	// StageOverridden records that the world was created at an unearned stage
+	// via `promptworld new --stage <id> --override` (spec 046, FR-003) — the
+	// honesty marker that makes overridden runs comparable as overridden runs.
+	StageOverridden bool `json:"stage_overridden,omitempty"`
+	// CharterPreset names the authored charter constant that seeds charter.md
+	// at genesis and — at stage-1, where instruction files are locked — IS the
+	// effective charter regardless of player edits (spec 046, FR-005). ""/
+	// "default" = persona.DefaultCharter; "tutor" = the stage-1 orientation
+	// preset. Closed vocabulary, validated at Open.
+	CharterPreset string `json:"charter_preset,omitempty"`
+	// Scenario is a RESERVED additive block (spec 046 US4, R7 — the Meeting
+	// block precedent above): the shape TASK-119's scenario/incident-
+	// scheduling machinery will read to know which seeded exercise (if any)
+	// a world is running. Consumed by nothing yet — `promptworld new` never
+	// writes it — so its presence changes nothing about how a world boots or
+	// plays; it exists so 119 has a schema seam to land in without another
+	// Manifest-shape negotiation.
+	Scenario *ScenarioConfig `json:"scenario,omitempty"`
+}
+
+// ScenarioConfig names the exercise a world is seeded to run (spec 046 US4).
+// Exercise should name a sim.ExerciseDefinition.ID (e.g. "first-night"); this
+// package does not validate it against that catalog — TASK-119 owns
+// interpreting it. Reserved, unconsumed (see Manifest.Scenario doc comment).
+type ScenarioConfig struct {
+	Exercise string `json:"exercise,omitempty"`
+}
+
+// The four curriculum-ladder stage ids (spec 046, FR-001). An absent Stage is
+// legal (a pre-ladder, ungated world); any other value is refused at Open — a
+// typo must never silently run ungated.
+const (
+	Stage1 = "stage-1"
+	Stage2 = "stage-2"
+	Stage3 = "stage-3"
+	Stage4 = "stage-4"
+)
+
+// ValidStage reports whether s is a legal Manifest.Stage value: one of the
+// four ladder ids, or "" (absent = ungated pre-ladder world).
+func ValidStage(s string) bool {
+	switch s {
+	case "", Stage1, Stage2, Stage3, Stage4:
+		return true
+	}
+	return false
+}
+
+// The legal charter_preset names (spec 046). "" and "default" both mean the
+// authored default charter; "tutor" is the stage-1 orientation preset.
+const (
+	CharterPresetDefault = "default"
+	CharterPresetTutor   = "tutor"
+)
+
+// ValidCharterPreset reports whether s is a legal Manifest.CharterPreset
+// value: "", "default", or "tutor".
+func ValidCharterPreset(s string) bool {
+	switch s {
+	case "", CharterPresetDefault, CharterPresetTutor:
+		return true
+	}
+	return false
 }
 
 // The three legal memory_relevance states (spec 042). Any other value is
@@ -175,6 +246,12 @@ func Open(dir string) (*World, error) {
 	default:
 		return nil, fmt.Errorf("corrupt %s: memory_relevance %q unknown (want %q, %q, or the key absent)", ManifestName, m.MemoryRelevance, MemoryRelevanceShadow, MemoryRelevanceOn)
 	}
+	if !ValidStage(m.Stage) {
+		return nil, fmt.Errorf("corrupt %s: stage %q unknown (want %q..%q or the key absent)", ManifestName, m.Stage, Stage1, Stage4)
+	}
+	if !ValidCharterPreset(m.CharterPreset) {
+		return nil, fmt.Errorf("corrupt %s: charter_preset %q unknown (want %q, %q, or the key absent)", ManifestName, m.CharterPreset, CharterPresetDefault, CharterPresetTutor)
+	}
 	return &World{Dir: dir, Manifest: m}, nil
 }
 
@@ -189,6 +266,29 @@ func SetTeaching(dir string, on bool) error {
 		return err
 	}
 	w.Manifest.Teaching = on
+	data, err := json.MarshalIndent(w.Manifest, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(dir, ManifestName), append(data, '\n'), 0o644)
+}
+
+// SetStage stamps a freshly created world's curriculum-ladder stage fact
+// (spec 046, FR-002/FR-003): read the manifest, set Stage/StageOverridden/
+// CharterPreset, rewrite world.json. Unlike SetTeaching, this has exactly
+// ONE caller — `promptworld new` — and is called exactly once, immediately
+// after Create: stage is write-once for a world's whole lifetime (R1) — no
+// `promptworld stage <world> ...` toggle command exists or ever will.
+// Callers must pass already-validated values (ValidStage/ValidCharterPreset)
+// — this function does not re-validate, matching SetTeaching's contract.
+func SetStage(dir, stage string, overridden bool, charterPreset string) error {
+	w, err := Open(dir)
+	if err != nil {
+		return err
+	}
+	w.Manifest.Stage = stage
+	w.Manifest.StageOverridden = overridden
+	w.Manifest.CharterPreset = charterPreset
 	data, err := json.MarshalIndent(w.Manifest, "", "  ")
 	if err != nil {
 		return err

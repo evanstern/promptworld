@@ -111,6 +111,23 @@ func TestChronicleNoteChestTaken(t *testing.T) {
 	}
 }
 
+// TestChronicleNoteStageUnlocked (spec 046 T014/T015, FR-009): a
+// curriculum.stage_unlocked event becomes a notable chronicle line naming
+// the skin's display identity for the unlocked stage — one of the two
+// required in-game unlock surfaces (the other is the status line,
+// cmd/promptworld/commands.go stageStatusLine).
+func TestChronicleNoteStageUnlocked(t *testing.T) {
+	md, _, _ := narrMind(t)
+	md.chronicleNote(mustEvent(t, 86400, "curriculum.stage_unlocked",
+		sim.StageUnlockedPayload{Stage: "stage-2", Exercise: "first-night", Tick: 86400}))
+	if len(md.narrLines) != 1 {
+		t.Fatalf("lines = %d, want 1", len(md.narrLines))
+	}
+	if !strings.Contains(md.narrLines[0], "The village's watcher earned The Written Word.") {
+		t.Errorf("stage_unlocked line: %q", md.narrLines[0])
+	}
+}
+
 // TestRunNarrationLands: good model output becomes one atomic batch of
 // chronicle.entry events with names resolved to indices and threads slugified.
 func TestRunNarrationLands(t *testing.T) {

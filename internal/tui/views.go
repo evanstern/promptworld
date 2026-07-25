@@ -1524,6 +1524,9 @@ func (m Model) metatronView() string {
 		if m.consoleTools != "" {
 			prov += " · " + m.consoleTools
 		}
+		if m.consoleStage != "" {
+			prov += " · " + m.consoleStage
+		}
 		header += styleDim.Render(" · " + prov)
 	}
 

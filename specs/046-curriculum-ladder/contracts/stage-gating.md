@@ -1,13 +1,41 @@
 # Contract: stage gating
 
+## RATIFIED AMENDMENT (2026-07-25, applied in-branch on task-68)
+
+**Source**: TASK-119 board artifact "first-night teaches visions+orders"
+(planning-tier ratification, recorded on TASK-68 dispatch for spec 046 US1/US3/
+US4/US5 implementation). The stage-1 (and therefore stage-2, which inherits
+stage-1's tool ceiling unchanged) tool ceiling **gains `monitor_and_act` and
+`cancel_order`**: standing orders are the watch primitive the first-night
+exercise (contracts/exercises.md) teaches, alongside visions/omens — a player
+who cannot place a watch cannot demonstrate the exercise's rubric term "at
+least one player-directed act landed before nightfall" via the watch mechanic
+the fiction actually offers. This amendment supersedes the "Excluded and why"
+clause below for `monitor_and_act`/`cancel_order` only; the clock-control
+exclusion (`pause`/`start`/`adjust_speed`) and the world-shaping exclusion
+(`work_miracle`) are unchanged and remain ratified as originally written.
+Clock tools and skill files remain stage-3+ (unchanged, ratified as
+implemented in the gating slice, T005–T007).
+
 ## The ceiling table (authoritative)
 
 Pinned against the spec-021 roster (`tool.LoopRosterMetatron()`); exact tool names
 resolved at implementation against the live roster and recorded here in-PR:
 
 - **stage-1 (The Voice)**: conversational reply + read/query tools + basic nudge
-  (vision/whisper-class); no world-shaping miracles, no standing-order placement
-  beyond the basic set the client's "basic tools" statement names; no bundles.
+  (vision/whisper-class) + the standing-order watch primitive (ratified
+  amendment above); no world-shaping miracles; no bundles.
+
+  **Pinned (in-PR, against the live roster — `stage1CeilingTools`,
+  internal/metatron/charter.go)**: `send_omen`, `send_vision`,
+  `monitor_and_act`, `cancel_order`; miracle kinds: none. Conversation is the
+  reply channel, not a roster tool (never gateable), so it needs no pin.
+  Excluded and why: `work_miracle` (world-shaping), `pause` / `start` /
+  `adjust_speed` (clock control — neither query nor nudge; the player keeps
+  direct CLI/TUI clock control at every stage). The live roster carries no
+  read/query tools — that clause is vacuously satisfied and recorded here so a
+  future read tool must be deliberately classified. No bundle tools (the
+  explicit ceiling list intersects them away).
 - **stage-2 (The Written Word)**: stage-1 set unchanged; the unlock is the
   *instruction surface* (charter binds), not new tools.
 - **stage-3 (The Craft)**: skill files compose; `capabilities.json` honored within the

@@ -68,6 +68,15 @@ type Metatron struct {
 	// tools: the turn assembly behaves exactly as before.
 	bundles *bundle.BundleSet
 
+	// stage/charterPreset are the world's curriculum-ladder facts (spec 046),
+	// set once by the daemon after New via SetStage from the immutable manifest
+	// (FR-002) and read only by the turn worker and Status — the SetBundles
+	// discipline, boot-frozen so the ceiling cannot be tampered mid-run. Zero
+	// values (the default, and every pre-046 test) mean a pre-ladder, ungated
+	// world with the default charter: behavior byte-identical to before.
+	stage         string
+	charterPreset string
+
 	replica *sim.State
 	m       *worldmap.Map
 	seed    uint64 // world seed — boot-immutable; backs the script world view's world.rand (spec 036 US3)
@@ -228,6 +237,15 @@ func (mt *Metatron) Close() { close(mt.done) }
 // after New and before serving; only the turn worker reads it, so no lock is
 // needed. A nil set (never installed) leaves the angel's surface unchanged.
 func (mt *Metatron) SetBundles(bs *bundle.BundleSet) { mt.bundles = bs }
+
+// SetStage installs the world's immutable curriculum stage and charter preset
+// (spec 046 US2) from the opened manifest. The daemon calls it once after New
+// and before serving (the SetBundles discipline); only the turn worker and
+// Status read it, so no lock is needed. Zero values (never installed) leave
+// the angel ungated with the default charter — pre-ladder behavior.
+func (mt *Metatron) SetStage(stage, charterPreset string) {
+	mt.stage, mt.charterPreset = stage, charterPreset
+}
 
 func (mt *Metatron) metatronDir() string    { return filepath.Join(mt.worldDir, "metatron") }
 func (mt *Metatron) soulPath() string       { return filepath.Join(mt.metatronDir(), "soul.md") }

@@ -23,6 +23,7 @@ import (
 	"github.com/evanstern/promptworld/internal/metatron"
 	"github.com/evanstern/promptworld/internal/persona"
 	"github.com/evanstern/promptworld/internal/sim"
+	"github.com/evanstern/promptworld/internal/skin"
 	"github.com/evanstern/promptworld/internal/store"
 	"github.com/evanstern/promptworld/internal/tui"
 	"github.com/evanstern/promptworld/internal/world"
@@ -103,9 +104,54 @@ func cmdNew(args []string) error {
 	at := fs.String("at", "", "name-form only: create at this exact path instead of the default worlds home")
 	seed := fs.Uint64("seed", 0, "world seed (default: random)")
 	teaching := fs.Bool("teaching", false, "mark this a teaching world (spec 039): the daemon defaults its speed to the highest planner-safe rung")
+	stageFlag := fs.String("stage", "", "curriculum-ladder stage to create at (spec 046: stage-1..stage-4); default: stage-1 for a new player, else your highest earned stage")
+	override := fs.Bool("override", false, "create at an unearned stage anyway (spec 046) — the world's config records the override honestly")
+	charterPresetFlag := fs.String("charter-preset", "", "charter preset to seed (default|tutor); stage-1 worlds seed the tutor preset unless this opts out to default")
 	arg, err := parseDirFlags(fs, args)
 	if err != nil {
 		return err
+	}
+
+	// Curriculum-ladder stage resolution (spec 046 US1, T009, R9): validate
+	// an explicit --stage, else default to stage-1 for a new player or the
+	// player's highest earned stage otherwise; an unearned stage refuses
+	// with an informed message naming the skipped concepts (skin names)
+	// unless --override; --charter-preset defaults to tutor at stage-1
+	// (opt-out to "default") and to "default" everywhere else.
+	switch *stageFlag {
+	case "", world.Stage1, world.Stage2, world.Stage3, world.Stage4:
+	default:
+		return fmt.Errorf("new: --stage %q is not a valid stage (want %s, %s, %s, or %s)",
+			*stageFlag, world.Stage1, world.Stage2, world.Stage3, world.Stage4)
+	}
+	unlocks := worlds.LoadUnlocks()
+	stage := *stageFlag
+	if stage == "" {
+		stage = highestEarnedStage(unlocks)
+	}
+	if !stageEarned(unlocks, stage) && !*override {
+		var skipped []string
+		for _, id := range stageOrder {
+			if !stageEarned(unlocks, id) {
+				skipped = append(skipped, skin.StageName(id))
+			}
+			if id == stage {
+				break
+			}
+		}
+		return fmt.Errorf("new: %s (%s) is not yet earned — creating here would skip %s; pass --override to proceed anyway (the world's config records the override honestly)",
+			skin.StageName(stage), stage, strings.Join(skipped, ", "))
+	}
+	charterPreset := *charterPresetFlag
+	if !world.ValidCharterPreset(charterPreset) {
+		return fmt.Errorf("new: --charter-preset %q is not valid (want %q, %q, or omitted)",
+			charterPreset, world.CharterPresetDefault, world.CharterPresetTutor)
+	}
+	if charterPreset == "" && stage == world.Stage1 {
+		// R6/spec: stage-1 worlds seed the tutor preset by default; an
+		// explicit --charter-preset default (opt-out) is left untouched by
+		// this branch and stamped verbatim below.
+		charterPreset = world.CharterPresetTutor
 	}
 
 	nameForm := !worlds.IsPathArg(arg)
@@ -163,6 +209,15 @@ func cmdNew(args []string) error {
 		}
 		w.Manifest.Teaching = true
 	}
+	// Curriculum-ladder stage marker from birth (spec 046 FR-002/FR-003,
+	// T009): set-after-create, the SetTeaching pattern — write-once, no
+	// toggle command. Stage is always stamped (even "" i.e. no --stage was
+	// ever passed AND the resolved default happened to be stage-1 for a new
+	// player) so `w.Manifest` in memory matches what Open would report.
+	if err := world.SetStage(dir, stage, *override, charterPreset); err != nil {
+		return err
+	}
+	w.Manifest.Stage, w.Manifest.StageOverridden, w.Manifest.CharterPreset = stage, *override, charterPreset
 	st, err := store.Open(w.DBPath())
 	if err != nil {
 		return err
@@ -184,7 +239,7 @@ func cmdNew(args []string) error {
 	if err := llm.WriteDefault(w.LLMConfigPath()); err != nil {
 		return err
 	}
-	if err := persona.Genesis(dir); err != nil {
+	if err := persona.Genesis(dir, charterPreset); err != nil {
 		return err
 	}
 
@@ -208,6 +263,9 @@ func cmdNew(args []string) error {
 	localModel := llm.DefaultConfig().Providers["local"].Model
 	fmt.Printf("created world %q in %s (seed %d)\nllm config: %s (edit providers/routes/budget; delete the file to disable LLM traffic)\nstart it with: promptworld start %s\nlocal model: %s — pull it first if you haven't: ollama pull %s\n",
 		worldName, dir, *seed, w.LLMConfigPath(), startHint, localModel, localModel)
+	if line := stageStatusLine(stage, *override); line != "" {
+		fmt.Println(line)
+	}
 	return nil
 }
 
@@ -544,8 +602,15 @@ func cmdStatus(args []string) error {
 			clockMap["ended"] = true
 			clockMap["ended_day"] = endedDay
 		}
+		worldMap := map[string]any{"name": w.Manifest.Name, "seed": w.Manifest.Seed, "format_version": w.Manifest.FormatVersion}
+		if w.Manifest.Stage != "" {
+			worldMap["stage"] = w.Manifest.Stage
+			if w.Manifest.StageOverridden {
+				worldMap["stage_overridden"] = true
+			}
+		}
 		return printJSON(map[string]any{
-			"world":  map[string]any{"name": w.Manifest.Name, "seed": w.Manifest.Seed, "format_version": w.Manifest.FormatVersion},
+			"world":  worldMap,
 			"daemon": map[string]any{"running": false},
 			"clock":  clockMap,
 			"log":    map[string]any{"last_seq": lastSeq},
@@ -557,6 +622,9 @@ func cmdStatus(args []string) error {
 		fmt.Printf("run ended day %d, all villagers dead; world is an archive (read-only)\n", endedDay)
 	}
 	fmt.Printf("log: last seq %d\n", lastSeq)
+	if line := stageStatusLine(w.Manifest.Stage, w.Manifest.StageOverridden); line != "" {
+		fmt.Println(line)
+	}
 	return nil
 }
 
@@ -850,8 +918,27 @@ func renderStatusHuman(sd *ipc.StatusData) string {
 	if line := postureStatusLine(sd); line != "" {
 		b.WriteString(line + "\n")
 	}
+	if line := stageStatusLine(sd.World.Stage, sd.World.StageOverridden); line != "" {
+		b.WriteString(line + "\n")
+	}
 	fmt.Fprintf(&b, "log: last seq %d\n", sd.Log.LastSeq)
 	return b.String()
+}
+
+// stageStatusLine renders the curriculum-ladder stage line for `promptworld
+// status` (spec 046 FR-002/FR-009, R10): the active skin's display identity
+// for the world's stage, plus the override marker when creation skipped
+// ahead. Empty for a pre-046/pre-ladder world (Stage absent) — the wire field
+// is absent, so their output is unchanged.
+func stageStatusLine(stage string, overridden bool) string {
+	if stage == "" {
+		return ""
+	}
+	line := fmt.Sprintf("stage: %s (%s)", skin.StageName(stage), stage)
+	if overridden {
+		line += " [overridden]"
+	}
+	return line
 }
 
 // postureStatusLine renders the teaching-posture line for `promptworld status`

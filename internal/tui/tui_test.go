@@ -647,3 +647,27 @@ func TestConsoleToolsSummary(t *testing.T) {
 		})
 	}
 }
+
+// TestConsoleStageSummary (spec 046 T010): the metatron pane's stage line —
+// absent for a pre-ladder/ungated world, the skin display name otherwise,
+// with the charter-lock provenance appended at stage-1.
+func TestConsoleStageSummary(t *testing.T) {
+	cases := []struct {
+		name string
+		s    metatron.Status
+		want string
+	}{
+		{"pre-ladder world is quiet", metatron.Status{Stage: ""}, ""},
+		{"stage-2, unlocked", metatron.Status{Stage: "stage-2"}, "stage: The Written Word"},
+		{"stage-1, locked", metatron.Status{Stage: "stage-1", CharterLocked: true, CharterPreset: "tutor"},
+			"stage: The Voice (charter locked to tutor)"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			s := c.s
+			if got := consoleStageSummary(&s); got != c.want {
+				t.Errorf("consoleStageSummary = %q, want %q", got, c.want)
+			}
+		})
+	}
+}

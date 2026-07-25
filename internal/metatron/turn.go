@@ -138,15 +138,23 @@ func (mt *Metatron) Turn(ctx context.Context, playerText string) (TurnResult, er
 func (mt *Metatron) runTurn(ctx context.Context, o turnOrigin) (TurnResult, error) {
 	// The player-editable instruction surface, all read fresh this turn (FR-001):
 	// the charter, the skill files composed beneath it, and (US2) the capability
-	// manifest. Every fallback/truncation/skip becomes a notice prefixed to the
-	// reply, one combined line, exactly like the charter's today.
-	charter, charterNotice := loadCharter(mt.worldDir)
+	// manifest — each forked by the world's curriculum stage (spec 046 US2):
+	// stage-1 locks the charter to the preset constant, skill files bind from
+	// stage-3, and present-but-unbound files get the honest lock notice. Every
+	// fallback/truncation/skip becomes a notice prefixed to the reply, one
+	// combined line, exactly like the charter's today.
+	charter, charterNotice := stageCharter(mt.worldDir, mt.stage, mt.charterPreset)
 	// Charter-revision observation (spec 044 US2, T014): stamped at load,
 	// before anything consumes the text, so the evidence timeline records
-	// the revision this turn actually runs under.
+	// the revision this turn actually runs under — the stage-EFFECTIVE text
+	// (at stage-1, the preset constant the lock serves), never the raw file.
 	mt.observeCharter(charter)
-	skills, skillNotices := loadSkills(mt.worldDir)
+	skills, skillNotices := stageSkills(mt.worldDir, mt.stage)
 	grant, manifestNotices := loadManifest(mt.worldDir, bundleToolNames(mt.bundles)...)
+	// The stage ceiling (spec 046 FR-004) intersects immediately after
+	// loadManifest, BEFORE grantedRoster, so declaration/prose/door all inherit
+	// it: a manifest may narrow within the ceiling, never exceed the stage.
+	grant = applyStageCeiling(grant, mt.stage)
 	// Persona bundles narrow the world-level grant (spec 036 US4 T030): a
 	// bundle's own capabilities.json can only exclude tools/kinds the world
 	// already grants, never add ones it excludes. Applied BEFORE grantedRoster
@@ -657,6 +665,16 @@ type Status struct {
 	GrantedTools    []string      `json:"granted_tools,omitempty"` // granted roster, registry order; work_miracle(kind,…) when restricted
 	ManifestDefault bool          `json:"manifest_default"`        // true ⇒ no capabilities.json (full default grant)
 	Orders          []OrderStatus `json:"orders,omitempty"`        // standing orders (spec 029 US2, FR-016) — active + recent
+	// Curriculum-ladder provenance (spec 046 US2) — additive omitempty, the
+	// spec-021 precedent. Stage is the world's immutable stage id; absent = a
+	// pre-ladder, ungated world. CharterLocked reports the stage-1 instruction
+	// lock: the effective charter is the CharterPreset constant and charter.md
+	// does not bind. SkillsLocked reports that skill files do not compose at
+	// this stage (stage-1/-2 — they bind from stage-3).
+	Stage         string `json:"stage,omitempty"`
+	CharterLocked bool   `json:"charter_locked,omitempty"`
+	CharterPreset string `json:"charter_preset,omitempty"` // the binding preset name when locked ("default" | "tutor")
+	SkillsLocked  bool   `json:"skills_locked,omitempty"`
 }
 
 // OrderStatus is the model-free peek at one standing order (spec 029 US2/US3,
@@ -680,16 +698,36 @@ func (mt *Metatron) Status() Status {
 	c := mt.charges
 	orders := mt.orderStatuses()
 	mt.stateMu.Unlock()
+	// The status twin of the turn's load site (spec 046 US2): the stage ceiling
+	// intersects here too, so the peeked grant can never disagree with the
+	// roster the next turn will run under.
 	grant, _ := loadManifest(mt.worldDir)
-	return Status{
+	grant = applyStageCeiling(grant, mt.stage)
+	skills := skillNames(mt.worldDir)
+	if !stageBindsSkills(mt.stage) {
+		// Skills is the EFFECTIVE composition list; below stage-3 nothing
+		// composes — SkillsLocked carries the provenance instead.
+		skills = nil
+	}
+	s := Status{
 		Charges:         c,
-		CharterDefault:  charterIsDefault(mt.worldDir),
+		CharterDefault:  charterIsDefault(mt.worldDir, mt.charterPreset),
 		SoulTail:        mt.soulTail(),
-		Skills:          skillNames(mt.worldDir),
+		Skills:          skills,
 		GrantedTools:    grantedToolLabels(grant),
 		ManifestDefault: grant.manifestDefault,
 		Orders:          orders,
+		Stage:           mt.stage,
+		CharterLocked:   stageLocksCharter(mt.stage),
+		SkillsLocked:    mt.stage != "" && !stageBindsSkills(mt.stage),
 	}
+	if s.CharterLocked {
+		s.CharterPreset = mt.charterPreset
+		if s.CharterPreset == "" {
+			s.CharterPreset = "default"
+		}
+	}
+	return s
 }
 
 // orderStatuses projects the mirrored standing orders into the model-free status

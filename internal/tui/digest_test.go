@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/evanstern/promptworld/internal/sim"
 	"github.com/evanstern/promptworld/internal/store"
 )
 
@@ -211,6 +212,16 @@ var catalogFixture = map[string]digestFixture{
 		`{"job":"j1","ordinal":1,"tool":"inject_intent","args":{"agent":0},"verdict":"rejected_gate","reason":"stale snapshot","tier":"cheap","snapshot_tick":100}`,
 		`job=j1 ord=1 tool=inject_intent rejected_gate tier=cheap reason=stale snapshot`,
 	},
+
+	// --- curriculum (spec 046 — the curriculum ladder) ---
+	"curriculum.exercise_passed": {
+		`{"exercise":"first-night","stage":"stage-1","tick":50000}`,
+		`the first-night exercise was passed (stage-1)`,
+	},
+	"curriculum.stage_unlocked": {
+		`{"stage":"stage-2","exercise":"first-night","tick":50000}`,
+		`Metatron's watcher earned The Written Word (proven by first-night)`,
+	},
 }
 
 // TestCatalogSweep is the SC-001 gate (contract §7): every fixture type
@@ -252,6 +263,23 @@ func TestCatalogSweep(t *testing.T) {
 	for _, typ := range backtickedEventTypes(string(doc)) {
 		if _, ok := catalogFixture[typ]; !ok {
 			t.Errorf("docs/wiki/event-types.md backticks %q but the catalog fixture doesn't cover it", typ)
+		}
+	}
+}
+
+// TestExerciseRubricTermsAreCatalogedEventTypes (spec 046 T016, FR-010): every
+// rubric term the shipped exercise definitions (internal/sim) name is a
+// cataloged event type (a digestRegistry key — this package owns the catalog
+// TestCatalogSweep enforces). Spec 044 US2's metatron.charter_observed,
+// formerly a documented pending exception while task-31 was in flight, is now
+// cataloged for real (its own digestRegistry/catalogFixture rows) and
+// satisfies this check like every other term (T022 reconciliation).
+func TestExerciseRubricTermsAreCatalogedEventTypes(t *testing.T) {
+	for _, def := range sim.ScenarioExercises {
+		for _, term := range def.RubricTerms {
+			if _, ok := digestRegistry[term]; !ok {
+				t.Errorf("%s: rubric term %q is not a cataloged event type", def.ID, term)
+			}
 		}
 	}
 }
