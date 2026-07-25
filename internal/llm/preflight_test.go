@@ -83,6 +83,30 @@ func compressClock(t *testing.T, interval, timeout time.Duration) {
 	t.Cleanup(func() { preflightInterval, preflightTimeout = oi, ot })
 }
 
+// startPreflight launches RunPreflight in its own goroutine (as production
+// code does) and registers a cleanup that cancels ctx and BLOCKS until the
+// goroutine has actually returned. TASK-93: a bare `go o.RunPreflight(ctx)`
+// plus `defer cancel()` only asks the goroutine to stop — it does not wait
+// for it to — so the goroutine's reads of preflightInterval/preflightTimeout
+// (ticker construction, probeModels' context.WithTimeout) could still be in
+// flight when compressClock's own t.Cleanup ran and wrote those same package
+// vars back to their real-time values: a data race that only surfaced under
+// -race. Cleanups run LIFO, so registering this one AFTER compressClock's
+// call guarantees it runs FIRST: cancel, then wait for the goroutine to
+// exit, and only THEN is compressClock allowed to restore the vars.
+func startPreflight(t *testing.T, o *Orchestrator, ctx context.Context, cancel context.CancelFunc) {
+	t.Helper()
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		o.RunPreflight(ctx)
+	}()
+	t.Cleanup(func() {
+		cancel()
+		<-done
+	})
+}
+
 // capturePreflightLog redirects preflightLogf into a thread-safe buffer for the
 // duration of a test, returning a reader for the accumulated lines.
 func capturePreflightLog(t *testing.T) func() []string {
@@ -420,8 +444,7 @@ func TestPreflightReprobeClearsOnPull(t *testing.T) {
 	o.SetConditionHook(rec.hook)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	go o.RunPreflight(ctx)
+	startPreflight(t, o, ctx, cancel)
 
 	// Condition raised (model-missing) within a few cadences.
 	waitFor(t, "model-missing raised", func() bool {
@@ -487,8 +510,7 @@ func TestPreflightBootNeverFails(t *testing.T) {
 	defer o.Close()
 
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	go o.RunPreflight(ctx)
+	startPreflight(t, o, ctx, cancel)
 
 	// The orchestrator serves: a consolidation call routes to the healthy cloud
 	// provider and flows, regardless of the dead local endpoint + running probe.
