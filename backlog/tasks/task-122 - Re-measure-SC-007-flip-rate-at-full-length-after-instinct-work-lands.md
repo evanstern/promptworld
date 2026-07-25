@@ -1,10 +1,10 @@
 ---
 id: TASK-122
 title: Re-measure SC-007 flip-rate at full length after instinct work lands
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-25 13:58'
-updated_date: '2026-07-25 20:49'
+updated_date: '2026-07-25 21:53'
 labels:
   - goal-quality
   - thrash-detection
@@ -35,4 +35,6 @@ Operator checkpoint resolved (2026-07-25): run on a FRESH seeded throwaway world
 
 <!-- SECTION:NOTES:BEGIN -->
 MVLS sweep: checkpoint 5 resolved — fresh seeded world, approved by operator 2026-07-25. Awaiting TASK-104 merge signal to launch.
+
+Measurement RUN LAUNCHED (2026-07-25): fresh world ~/.promptworld/measure/task-122 (path-form, off-registry), seed 4242, created on the post-104 binary (genesis tuning pin: full MVLS defaults). All routes gemma4:12b-mlx @ mbpro-m1 (Sample-B planner tier, zero cloud spend), calibrated (--tier local), daemon pid 15570, speed 4x from tick 1 — >=4 game-days ≈ 24h wall (ETA ~2026-07-26 evening). Counting script committed: docs/design/evidence/task-122/flip_count.py (SC-007 method + warm_up in the warmth class), validated against the world-01 baseline (Sage 73.94/day ≈ spike's ~72).
 <!-- SECTION:NOTES:END -->
