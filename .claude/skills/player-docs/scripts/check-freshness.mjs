@@ -54,8 +54,8 @@ function resolveRepoRoot() {
   }
 }
 
-// The seven slugs from plan.md's Project Structure. Adding a page means
-// adding its slug here — a one-line, reviewed change (data-model.md).
+// The nine slugs from plan.md's Project Structure (plus TASK-114's pair). Adding a
+// page means adding its slug here — a one-line, reviewed change (data-model.md).
 const EXPECTED_PAGES = [
   'index.html',
   'getting-started.html',
@@ -64,6 +64,8 @@ const EXPECTED_PAGES = [
   'reading-the-story.html',
   'the-ai-behind-the-village.html',
   'llm-setup-basics.html',
+  'understanding-the-screen.html',
+  'keys-reference.html',
 ];
 
 const GENERATED_BY_RE =
