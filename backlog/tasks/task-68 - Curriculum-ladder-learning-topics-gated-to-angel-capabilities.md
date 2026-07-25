@@ -4,7 +4,7 @@ title: 'Curriculum ladder: learning topics gated to angel capabilities'
 status: Done
 assignee: []
 created_date: '2026-07-23 03:28'
-updated_date: '2026-07-25 08:44'
+updated_date: '2026-07-25 08:59'
 labels:
   - review-2026-07-22
   - teaching-game
@@ -73,6 +73,8 @@ Client review 2026-07-25: TutorCharter text APPROVED as drafted (guardian-voiced
 spec-bridge sync: Setup: 1/1 · Foundational (blocking prerequisites): 3/3 · User Story 2 — The world grants what the stage teaches (P1) 🎯 co-MVP: 3/3 · User Story 1 — Choosing a stage is choosing an identity (P1) 🎯 co-MVP: 4/4 · User Story 3 — Earning the next stage, told in-game (P2): 4/4 · User Story 4 — Two exercises exist and teach (P2): 1/1 · User Story 5 — The stage has a floor and a guide (P3): 3/3 · Polish & Cross-Cutting: 3/3 — status In Progress → Done
 
 Human ACs verified against PR #79 (merged 3fad349): #1 ladder artifact = spec 046 ladder table (4 stages, concepts, grants, pass signals); #2 new --stage creates per-stage worlds; #3 stage ceiling intersects the capability-manifest derivation (three-layer coherence proven); #4 first-night + the-law with score-narrative framing; #6 pass/unlock surface via chronicle line + stages/status (fixture-proven; production emission = TASK-119); #7 skin-provided identities at an informed first-startup choice with explicit override; #8 unlocks artifact-gated on event-log evidence with auditable pointers (advisory-never-authority record); #9 four quickstart pages, freshness 13/13; #10 TutorCharter (client-approved) seeded by default at stage-1. PR #79 merged; post-merge wiki/player-docs cycle running.
+
+Post-merge obligations complete 2026-07-25: wiki re-verified (22 notes + new curriculum-ladder.md, commit 692f266; also repaired a PR-shipped conflict marker + 2 unverified claims in event-types.md) and player docs refreshed (11 pages, commit follows; gate 13/13). TASK-68 lifecycle closed end-to-end.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
