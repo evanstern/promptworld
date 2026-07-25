@@ -171,11 +171,13 @@ Setup: `ollama pull all-minilm` (the 384-dim reference pin), add the provider +
 route above, restart the daemon — the boot line reads
 `daemon: embedder on (all-minilm:latest via provider "embedder")`.
 
-Use the **fully tagged id** (`all-minilm:latest`, exactly as `ollama list` prints
-it), not the bare alias: Ollama resolves the alias fine for the calls themselves,
+Prefer the **fully tagged id** (`all-minilm:latest`, exactly as `ollama list` prints
+it) over the bare alias: Ollama resolves the alias fine for the calls themselves,
 but the provider-health preflight compares ids against the server's model listing
-and a bare `all-minilm` raises a spurious (persistent) `model-missing` warning —
-live-found during the spec-042 walkthrough.
+and a bare `all-minilm` raises a spurious `model-missing` warning at boot —
+live-found during the spec-042 walkthrough. A successful embed call clears it
+(TASK-102), so the warning is a transient boot-time blip, not a permanent one; the
+tagged id avoids it entirely.
 
 The kind is deliberately unusual in three ways:
 

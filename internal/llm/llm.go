@@ -772,6 +772,18 @@ func (o *Orchestrator) EmbeddingProvider() (name, model string, ok bool) {
 // debounces itself) and returns ErrEmbeddingOff when no embedding route
 // exists. Boot validation refuses an anthropic-routed embedding kind, so the
 // transport assertion below cannot fail in a validated registry.
+//
+// A successful embed clears a stale PREFLIGHT condition on the embedding
+// provider (TASK-102): embed traffic bypasses the worker's observeSuccess
+// path entirely (no queue/breaker/estimator, per above), so without this a
+// preflight model-missing/endpoint-unreachable condition raised against a
+// bare model alias that resolves fine at call time (e.g. "all-minilm" vs the
+// endpoint's tagged "all-minilm:latest") could never clear — only chat
+// traffic reaches observeSuccess. This mirrors observeSuccess's tool-free
+// branch: a completed call proves the endpoint is reachable and the
+// configured model is served, which is exactly what preflight checks.
+// Tool-silence has no meaning for embeddings (they never carry tool calls),
+// so only the preflight clear applies, never the full observeSuccess.
 func (o *Orchestrator) Embed(ctx context.Context, texts []string) ([][]float32, string, error) {
 	if o.embedding == nil {
 		return nil, "", ErrEmbeddingOff
@@ -780,7 +792,11 @@ func (o *Orchestrator) Embed(ctx context.Context, texts []string) ([][]float32, 
 	if !ok {
 		return nil, "", fmt.Errorf("provider %q: %w", o.embedding.name, ErrEmbeddingUnsupported)
 	}
-	return ec.Embed(ctx, texts)
+	vecs, model, err := ec.Embed(ctx, texts)
+	if err == nil {
+		o.clearPreflightCondition(o.embedding)
+	}
+	return vecs, model, err
 }
 
 // WarmEmbedding best-effort pins the embedding model resident (spec 042 T008
