@@ -1,12 +1,12 @@
 ---
 name: chronicle
-description: The narrated story feed (TASK-11) — cloud narrator turns notable events into chapter entries injected as chronicle.entry; a snapshot-carried ring is the catch-up mechanism
+description: The narrated story feed (TASK-11) — cloud narrator turns notable events into chapter entries injected as chronicle.entry; a snapshot-carried ring is the catch-up mechanism; spec 044 rides morgue epilogues on the same single-flight worker and router class
 kind: component
 sources:
   - internal/sim/chronicle.go
   - internal/mind/narrate.go
   - internal/scribe/scribe.go
-verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
+verified_against: 381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9
 ---
 
 # Chronicle
@@ -31,8 +31,15 @@ deliver narrated history with no extra protocol — that IS the catch-up.
 
 **The narrator driver** (`internal/mind/narrate.go`, hosted by the
 [[agent-mind]] Mind): `chronicleNote` (absorb goroutine, replica already
-current) turns notable events into pre-named factual log lines — deaths,
-builds, [[gru]] emergence/sightings/attacks, conversations with gist+topics,
+current) turns notable events into pre-named factual log lines — deaths (and,
+since spec 044 US1, the run-over declaration: `run.ended` closes the story
+with "The last villager died of `<final_cause>`. The village stands empty —
+the run has ended.", the factual line; the [[morgue]] carries the full
+record), builds, [[gru]] emergence/sightings/attacks (since spec 044 US3/R5
+the `gru.attacked` line renders ONLY for a non-lethal hit — `p.Health > 0` —
+because an escalated attack landing at health 0 is a kill whose same-batch
+`agent.died` line already carries the death, so "left them wounded" must
+stay silent on a killing blow), conversations with gist+topics,
 rumors told, gifts, broken promises, chest thefts (spec 013's
 `social.chest_taken`, rendered "X took from Y's chest without asking" — the
 same narrative weight as a broken promise, a trust violation), musings, and
@@ -62,6 +69,23 @@ atomically through `InjectSocial` — `chronicle.entry` is whitelisted in
 [[sim-loop]]'s injection door, so narrator output enters the world only as
 recorded input, like all model output.
 
+**Morgue epilogues ride the same worker** (spec 044 US2, `narrate.go`): an
+absorbed `agent.died` or `run.ended` also queues a `narrJob{epilogue: true}`
+via `queueEpilogue` — the SAME single-flight narrator worker and the SAME
+router class as chapters (`routeVerdict("chronicle", llm.KindNarrator)` — no
+new model-call class). The job's lines are a replica-built fact sheet
+(`epilogueFacts`: name/cause/day, standing bonds, up to 8 highest-salience
+retained memories; `runEpilogueFacts`: every death of the run from the
+`run.ended` payload's ledger, `agent` = -1 for the run end) and the worker's
+`runEpilogue` makes one `KindNarrator` call under a fixed elegiac
+no-invention system prompt, then lands the prose as a recorded
+`morgue.epilogue` event through `InjectSocial` — one of the two prose types
+an ENDED world's door still accepts (the run-end epilogue lands AFTER
+`run.ended` by construction). Failure discipline is the chronicle's own: a
+suppressed verdict, a full queue, a transport error, or empty output is a
+logged GAP in the morgue's prose, never a stall or retry — the [[morgue]]'s
+factual record never waits on it.
+
 **Failure honesty**: a transport/tier failure carries the chapter's lines
 into the next boundary via a 1-slot retry buffer (merged oldest-first, capped
 at `narrMaxLines` = 120, oldest dropped); unusable model output is dropped —
@@ -72,15 +96,23 @@ narrated story.
 **Views**: the [[tui-client]] chronicle pane renders the replica's ring with
 agent/thread filters and a raw-feed fallback; the [[agent-mind]] scribe
 renders `chronicle.md` in the save dir — the offline catch-up artifact,
-regenerated from recovered state at every daemon start.
+regenerated from recovered state at every daemon start. Since spec 044 the
+scribe (`scribe.go`) also renders `morgue.md` ([[morgue]]): `scribe.New`
+gained a variadic `EventSource` (the event-log read surface — the daemon
+passes the `*store.Store`; call sites passing none render no morgue) and
+`renderMorgue` re-runs on every batch carrying `agent.died`, `run.ended`, or
+`morgue.epilogue`.
 
 ## Connections
 
 [[event-types]] catalogs `chronicle.entry`; [[sim-state-reducer]] holds the
-ring; [[sim-loop]] whitelists the injection; [[llm-orchestrator]] routes
-`KindNarrator` to the cloud tier; [[tui-client]] and the scribe render it;
-[[snapshots]] carry the ring through recovery; [[mental-maps]] emits the three
-place-knowledge events the narrator voices.
+ring; [[sim-loop]] whitelists the injection (and keeps `chronicle.entry` +
+`morgue.epilogue` on the narrower ended-world whitelist); [[llm-orchestrator]]
+routes `KindNarrator` to the cloud tier; [[tui-client]] and the scribe render
+it; [[snapshots]] carry the ring through recovery; [[mental-maps]] emits the
+three place-knowledge events the narrator voices; [[morgue]] is the spec-044
+legacy document whose epilogues the narrator worker writes and whose file the
+scribe renders.
 
 ## Operational notes
 

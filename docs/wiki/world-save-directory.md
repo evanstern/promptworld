@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/world/world.go
   - internal/world/migrate.go
-verified_against: 1af833a2c4dab23932357d85cbf51e01089d66fc
+verified_against: 381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9
 ---
 
 # World save directory
@@ -75,7 +75,11 @@ dimensions — deterministic, so the map is never stored ([[worldmap-generation]
   prompt), `MetatronDir()` → `metatron/` (the angel's soul and transcript —
   [[metatron]]), and `VillageCharterPath()` → `village_charter.md` (the village's
   scribe-rendered law, deliberately distinct from Metatron's charter —
-  [[governance]], TASK-13), and `BundlesDir()` → `bundles/` (spec 036: the
+  [[governance]], TASK-13), `MorguePath()` → `morgue.md` (spec 044: the run's
+  accumulating legacy document — one factual epitaph per death plus a run-end
+  summary, scribe-rendered; a regenerable view over the event history, never a
+  source of truth, exactly like the chronicle and village charter —
+  [[morgue]]), and `BundlesDir()` → `bundles/` (spec 036: the
   drop-in persona/tool bundle root, discovered and boot-frozen by
   [[bundle-tools]]; absent means no bundles, never an error).
 

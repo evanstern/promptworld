@@ -7,12 +7,13 @@ sources:
   - internal/sim/memory.go
   - internal/sim/cognition.go
   - internal/mind/prompt.go
+  - internal/mind/context.go
   - internal/mind/convo.go
   - internal/mind/telemetry.go
   - internal/llm/providers.go
   - internal/world/world.go
   - cmd/promptworld/divergence.go
-verified_against: 1af833a2c4dab23932357d85cbf51e01089d66fc
+verified_against: 72125c85abd1a0de6c19855aaae1757d8b976f17
 ---
 
 # Memory retrieval (embedding relevance)
@@ -47,8 +48,17 @@ surface for divergence review.
 **Selection.** `sim.SelectMemoriesRelevant` scores `sal01 + rel01`: `sal01` is exactly
 `SelectMemories`' salience-halved-per-game-day weight normalized by `MaxSalience`;
 `rel01` is `(cosine+1)/2` via `relevance01` — neutral `0.5` when the memory is
-vectorless, cross-model, dimension-mismatched, or zero-magnitude. A nil query delegates
-to `SelectMemories` verbatim; ties break newer-first; the two serendipity tail picks run
+vectorless, cross-model, dimension-mismatched, or zero-magnitude. Since spec 043 both
+public selectors are thin `StripSelected` wrappers over ONE shared unexported selector
+(`sim.selectWindow`, `internal/sim/memory.go`): it runs the top-K algorithm once and
+annotates each entry as a scored pick or a serendipity tail pick (`SelectedMemory{Memory,
+Serendipity}`); the ONLY branch between the legacy and relevance windows is the
+per-memory score (nil query = raw decayed weight — the legacy fallback when no situation
+vector is recorded), so the two windows stay byte-identical to their pre-043 selves by
+construction (`TestSelectedWindowMatchesLegacy` gates it). `sim.SelectMemoriesWindow` is
+the exported annotated form the spec-043 context assembler consumes for its
+floor/serendipity drop accounting ([[decision-context]]). Ties break newer-first; the two
+serendipity tail picks run
 the legacy algorithm on the same `"serendipity"` rng stream. Recency counts from
 creation only — selection mutates nothing (the reference design's last-access decay was
 deliberately rejected as hostile to pure selection and replay). Isolation is structural:
@@ -56,7 +66,10 @@ the only memory source is `a.Memories`.
 
 **Mode gate.** `world.json`'s `memory_relevance` (`""`/`"shadow"`/`"on"`, unknown values
 refused at `world.Open`) threads boot-static through `mind.New` into `selectWindow`
-(`internal/mind/prompt.go`) and the conversation snapshot (`internal/mind/convo.go`).
+(`internal/mind/prompt.go` — since spec 043 a strip of `selectWindowAnnotated`, whose
+`"on"`-with-vector path consumes the relevance window and every other mode the legacy
+window, preserving the shadow invariant; the window renders as the memory block of the
+assembled decision context) and the conversation snapshot (`internal/mind/convo.go`).
 Shadow computes both rankings, serves the legacy window bit-identically, and records
 `cog.memory_divergence` (payload authority `sim.NewMemoryDivergencePayload`: both
 windows as seqs, overlap, rank displacement, vectorless count, sit_tick); `"on"` serves
@@ -77,6 +90,10 @@ head-of-chain only, so one lineage never mixes model identities.
 
 - [[agent-mind]] — the prompt window this selector fills; the planner driver that
   triggers selection.
+- [[decision-context]] — the spec-043 context assembler (`internal/mind/context.go`)
+  that consumes the annotated window (`SelectMemoriesWindow`) as its budgeted
+  `memories`/`memories_serendipity` blocks, with a protected floor of the 4
+  most-recent scored entries.
 - [[sim-state-reducer]] — the reducer arms that attach vectors and situation state.
 - [[event-types]] — `agent.memory_embedded`, `agent.situation_embedded`,
   `cog.memory_divergence`.

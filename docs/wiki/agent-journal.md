@@ -1,6 +1,6 @@
 ---
 name: agent-journal
-description: The agent-authored journal (spec 019, US3) — a per-villager markdown notebook in durable world state, mutated only through two reducer arms under one hard rune budget, with four roster tools (write/delete/search/read) and guidance-free glosses so usage is the observed experiment
+description: The agent-authored journal (spec 019, US3) — a per-villager markdown notebook in durable world state, mutated only through two reducer arms under one hard rune budget, with four roster tools (write/delete/search/read) and guidance-free glosses so usage is the observed experiment; spec 043 adds deterministic term-matched excerpts for the decision context
 kind: component
 sources:
   - internal/sim/journal.go
@@ -11,7 +11,7 @@ sources:
   - internal/mind/handlers.go
   - internal/scribe/scribe.go
   - internal/persona/files.go
-verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
+verified_against: 381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9
 ---
 
 # Agent journal
@@ -131,6 +131,22 @@ search/read handlers run in the planner worker goroutine and must NOT touch the
 absorb-owned replica, so they read the immutable snapshot; writes and deletes
 land through the live `InjectSocial` door, not the snapshot.
 
+**Journal excerpts in the decision context** (spec 043 US4, `journal.go`):
+the context assembler ([[decision-context]]) can stuff term-matched journal
+excerpts into a villager's planner prompt so the agent need not spend its own
+reasoning turns fetching them. `SelectJournalExcerpts(terms)` is the
+deterministic, model-free retrieval behind it — each situation term runs
+through the SAME `SearchJournal` substring match the roster tool exposes (no
+embeddings; embed-at-write was deferred per research R5); the union is
+deduped by id, ordered newest-first (tick desc, id desc tiebreak), capped at
+`journalExcerptCap` (2) entries of `journalExcerptRunes` (300) runes each
+(`JournalExcerptCap`/`JournalExcerptRunes` export the numbers). Excerpting
+truncates on a rune boundary and marks the cut with an ellipsis — never
+fabricated text — and each excerpt carries its entry id so the villager can
+follow up with `read_journal`. In the assembled context this is the
+lowest-priority block: first dropped under the size budget. Constants, not
+config — same journal + terms always yields the same excerpts.
+
 **The view** (`internal/scribe/scribe.go`, `internal/persona/files.go`):
 `JournalPath(worldDir, name)` is `agents/<name>/journal.md`, a regenerable view
 (like `soul.md`). `Genesis` seeds it empty at world creation — a
@@ -142,7 +158,9 @@ unaffected). `renderJournal` writes a header with current budget usage
 (`JournalUsedRunes()` / `JournalBudgetRunes`) then each entry verbatim under a
 "## <clock> (#<id>)" section — the agent-authored markdown is the artifact under
 study, so the scribe adds no normalization, only the id/clock chrome delete and
-read address by.
+read address by. (The same scribe's other whole-file regenerable views —
+`chronicle.md`, `village_charter.md`, and since spec 044 the [[morgue]]'s
+`morgue.md` — follow the same events-are-truth doctrine.)
 
 **Replay determinism**: nothing about the journal touches a model — search is
 deterministic substring matching over the agent's own entries, the budget is a

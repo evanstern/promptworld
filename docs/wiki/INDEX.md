@@ -54,6 +54,7 @@ that note (re-pin with `/grounding-wiki:wiki-update`).
 - [[social-fabric]] — relationships, rumors, debts, secrets, conversations
 - [[nightly-consolidation]] — sleep-triggered soul digestion behind the persona firewall
 - [[chronicle]] — the narrated story feed: cloud narrator, snapshot-carried catch-up ring
+- [[morgue]] — the run's legacy document: per-death epitaphs + run-end summary from a deterministic genesis replay fold, narrated epilogues blockquoted, charter/orders evidence alignment, regenerable morgue.md
 - [[metatron]] — the gatekeeper angel: console + system-authored turns, omen/vision influence, standing-order agency, clock-control meta tools, charges, the editable charter
 - [[metatron-miracles]] — charge-priced world edits: time snap, item grant, entity move/remove, gratis doctrine, shift-semantics re-base
 - [[metatron-orders]] — the standing-orders subsystem: event-sourced watches compiled to free structural predicates, live matching, system-authored triggered turns, fuzzy confirm, daytime-omen deferral

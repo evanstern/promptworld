@@ -9,7 +9,7 @@ sources:
   - internal/sim/terrain.go
   - internal/sim/recipes.go
   - internal/sim/memory.go
-verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
+verified_against: 72125c85abd1a0de6c19855aaae1757d8b976f17
 ---
 
 # Executor
@@ -49,7 +49,18 @@ executor's salience table appends (below) carries `omitempty` `Seq`/`Vec`/
 `VecModel` — the embedding-retrieval identity and vector [[memory-retrieval]]
 owns end to end; the executor has no stake in either, it neither computes nor
 reads a vector, only emits the `agent.memory_added` events the reducer later
-stamps a `Seq` onto. `Needs{Health, Food, Rest, Warmth, Morale}` are integers 0..1000 —
+stamps a `Seq` onto. Since spec 043 each agent further carries an `IntentLog`
+ring (`omitempty`, cap `intentLogCap` = 8) of `IntentRecord{Goal, Source,
+Reason, Tick, Outcome, OutcomeTick}` — the recent-intent history the decision
+prompt's self-history block renders — and a `NeedsAnchor`/`NeedsAnchorTick`
+window-edge needs snapshot (a POINTER with `omitempty`, the Journal/Hail/Map
+precedent) the `agent.needs_changed` arm rolls forward once
+`trajectoryWindowTicks` (1800) of game time has elapsed, backing the prompt's
+rising/falling/steady need trajectories; both are maintained entirely by
+reducer arms (`appendIntent`/`stampIntentOutcome`/`stampOrAppendExpired`,
+agents.go) — replay-safe by construction, and pre-043 snapshots round-trip
+byte-identically ([[decision-context]] owns the rendering surface).
+`Needs{Health, Food, Rest, Warmth, Morale}` are integers 0..1000 —
 integer math keeps decay byte-deterministic across platforms. `Inventory` (v2,
 format_version 2 — [[world-save-directory]]) carries `Wood`, `Stone`, `Water`,
 `Planks`, `RefinedStone`, `FoodRaw`, `FoodCooked`, `Meals` (all `omitempty` ints),
@@ -82,7 +93,11 @@ plank economy's payoff for building one); warmth falls at night outdoors, recove
 near a **lit** fire or in shelter, drifts up by day. A fire is lit iff
 `tick < Structure.FuelUntil` — `warmAt` takes the tick and checks it, so a burned-out
 fire grants no warmth. Zero food or zero warmth drains health; health at 0 emits
-`agent.died` with cause `starvation` / `exposure` / `collapse`. The new values land
+`agent.died` with cause `starvation` / `exposure` / `collapse`. (A fourth cause,
+`gru`, exists since spec 044 US3 but is never the heartbeat's: it is emitted by
+`gruStep` itself when an escalated attack kills an already-weakened villager,
+with its own inline witness-death memory loop, since gru attacks land off the
+%60 heartbeat where the executor's witness-death block runs — [[gru]].) The new values land
 as one absolute `agent.needs_changed` event per agent per minute (absolute values =
 replay-safe).
 
@@ -333,7 +348,11 @@ failing on a lingering occupant), no longer during mid-work re-validation.
 `pathAt(s, x,
 y)` reports a `path` structure underfoot — the movement dual-phase cadence's
 per-step predicate (above); a path has no `HP` and never blocks (`isWall` is
-false for it).
+false for it). Spec 044 (US4) adds an eighth structure kind, `grave` — placed
+by the reducer at a death tile, never built by any goal (no recipe, no build
+verb); it never blocks movement but, like every structure, blocks `buildSite`
+on its tile, and the perception sweep witnesses it like any other structure
+([[sim-state-reducer]], [[mental-maps]]).
 
 **Hails** (TASK-47, `hail.go`): a `talk_to` landing flags its target down —
 `social.hailed` pauses the target for `hailWindowTicks` (480, 8 game-minutes) so
@@ -430,6 +449,20 @@ the meeting place until close, and stale pins clear when the meeting ends.
 `stepEvents` stays a pure function of (pre-tick state, map, next tick);
 every effect is an event through [[sim-state-reducer]] — the determinism and replay guarantees of
 the substrate hold unchanged over the whole layer.
+
+**Run end** (spec 044 US1): `stepEvents` opens with a terminal guard — an
+ended world (`State.Ended`) returns nil, ever after; since `stepEvents` is the
+sim's only emitter, this single latch freezes simulated time while [[sim-loop]]
+keeps serving reads. At the end of the batch sits the matching detector: when
+every villager still living at the tick's start (`livingCount`, `state.go`)
+died within this batch, the run is declared over with a `run.ended` event
+(`RunEndedPayload{tick, deaths, final_cause}`) emitted as the batch's LAST
+event — after every same-tick `agent.died` (heartbeat or [[gru]]) and its
+witness memories, so no sim event ever trails the declaration. The payload
+carries the whole run's death history — the `State.Deaths` ledger plus this
+batch's deaths, `final_cause` being the last death's cause — so no consumer
+(status, the [[morgue]]) ever scans the log for them. A `!s.Ended` check belts
+the top-of-function guard: exactly once per world, ever.
 
 ## Connections
 

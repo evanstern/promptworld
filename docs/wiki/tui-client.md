@@ -10,7 +10,7 @@ sources:
   - internal/tui/digest.go
   - internal/tui/decisions.go
   - internal/tui/help.go
-verified_against: c9467f3cbabbd4c2259cc97a9ac0ede00e493712
+verified_against: 381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9
 ---
 
 # TUI client
@@ -32,6 +32,20 @@ Connection (`connect`): dial → `FetchState` (state JSON + the `last_seq` it re
 replica starts gapless by construction. `listen` delivers one push per invocation and
 `Update` re-arms it. `applyEvent` skips seqs already folded into the snapshot, applies
 the rest to the replica, bumps its tick, and appends to the chronicle ring.
+
+**Postmortem posture** (spec 044): once the run is over, the header's clock
+state renders a bold-red `ENDED` token (`styleEnded` — a finality register
+`PAUSED`'s amber deliberately doesn't carry) that outranks `PAUSED`
+regardless of the clock state the run end landed under. The predicate is
+`Model.runEnded()` (tui.go), dual-source by necessity: the replica's
+`State.Ended` covers clients attaching after the fact (the snapshot path
+never replays folded events), while the pushed `run.ended` event (folded by
+`applyEvent`) and the 1-second status poll (`StatusData.Clock.Ended`) cover
+the live transition without a reconnect. The same predicate makes the clock
+keys (space, `[`, `]`) inert client-side — the daemon's refusal error would
+otherwise read as a disconnect — and swaps the footer's pause/resume hint
+for `run ended (read-only)` in every mode; all reading surfaces stay fully
+functional ([[morgue]]).
 
 **Governed speed** (`headerView` in `views.go`, spec 028 US4): the header's
 speed segment renders the EFFECTIVE speed as the world's speed, and — only
@@ -95,8 +109,17 @@ the same faded-glyph treatment as a burnt-out fire, so a wall under
 demolition reads at a glance; a path structure renders at TERRAIN level
 (below agents/structures/piles, its own `paths` set rather than the
 structures map) as a warm-tan `·` distinct from plain grass's dim `·`, so an
-agent or a dropped pile standing on a path tile still shows through. The
-camera follows the living agents' centroid, arrow keys pan, `c` recenters.
+agent or a dropped pile standing on a path tile still shows through. Since
+spec 044 (US4), a `grave` structure renders as `✝` in faint gray
+(`styleGrave`, the cold-fire precedent for spent/inert glyphs), recorded
+both in the structures map and in a dedicated `graves` set that the agents
+loop consults for one deliberate priority carve-out: a dead agent standing
+on a tile that also holds a grave renders the grave glyph instead of the
+plain dead marker — the body becomes the grave — because every post-044
+death places its grave at the dead agent's own frozen tile, so the usual
+agent-over-structure priority would otherwise permanently hide the glyph. A
+graveless dead agent (pre-044 replay/history) still renders the plain `†`.
+The camera follows the living agents' centroid, arrow keys pan, `c` recenters.
 
 Inspection (spec 013 T021/T026, SC-006): the map legend — its one designated
 inspection surface, content grows the line rather than adding a second row —
@@ -230,7 +253,17 @@ vector deliberately elided (384 floats would drown the feed): `agent.memory_embe
 agent plus its rendered situation text as speech, then "dims=N model=…"),
 and `cog.memory_divergence` (agent, mode, "overlap=N/N", "displaced=N",
 "vectorless=N" — the recorded rank-divergence telemetry the US2→US3 gate
-decision reads). The four
+decision reads). Since spec 044, three run-outcome/[[morgue]] types get
+registry entries, and `familyByNamespace` (grammar.go) maps their two new
+namespaces onto existing family voices — `run` speaks in the world-lifecycle
+voice, `morgue` in the chronicle's narrated-prose voice: `run.ended` ("the
+run ended · N dead · final cause <cause>" — the summary a postmortem reader
+wants on the feed line; the full ledger stays in the payload/detail pane),
+`morgue.epilogue` ("epilogue for <name>: <text>", 80-rune truncation like
+`chronicle.entry`; agent −1 renders as "the run" — the run-end epilogue),
+and `metatron.charter_observed` ("Metatron ran under charter <fingerprint>
+(default|player-authored)" — the charter-revision stamp the morgue aligns
+deaths against). The four
 [[metatron-miracles]] types render in the metatron family voice, with a
 trailing emphasized `(forced)` annotation (`gratisMark`) whenever the
 payload's gratis flag waived the charge — an operator force is never
@@ -256,7 +289,9 @@ silent no-op — the old rule where the metatron pane owned every key while
 active is gone. Time controls (minibuffer unfocused): space toggles
 pause/resume based on last-known status; `[`/`]` step through `speedSteps`
 (1x → 4x → 8x → 16x → 32x — max is deliberately off the watchable ladder,
-TASK-20); `q` detaches — the world keeps running.
+TASK-20); `q` detaches — the world keeps running. On an ended world (spec
+044) all three clock keys are no-ops and the footer says so — see the
+postmortem posture above.
 
 **Help overlay** (spec 045/TASK-116; `help.go`): `?` from any non-text-entry
 mode opens a context-sensitive help overlay — the head of the key-dispatch and
@@ -277,7 +312,10 @@ conditional badge, dock-tab rows, and a `mapGlyphs` table **shared with
 `renderMapGrid`'s legend line** (`legendGlyphLine`) so the overlay's glyph
 walkthrough and the map legend cannot silently diverge — extracting it also
 fixed a real gap: the gru's `G` was drawn but never listed in the legend
-text. The lessons section is the pull-reference seam for the future
+text. The shared table gained the `✝` grave row with spec 044; it is the
+dead-agent-on-grave carve-out in `renderMapGrid` (above) that keeps the row
+honest — without it the map could never actually show the glyph it
+advertises. The lessons section is the pull-reference seam for the future
 first-occurrence lesson projection: an empty `helpLessons` table whose
 entries are content additions, no structural change. All content is
 model-independent — byte-identical with nil status/replica (the no-LLM floor

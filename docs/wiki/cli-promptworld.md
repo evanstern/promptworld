@@ -9,7 +9,7 @@ sources:
   - cmd/promptworld/ps.go
   - cmd/promptworld/miracle.go
   - cmd/promptworld/divergence.go
-verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
+verified_against: 381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9
 ---
 
 # promptworld CLI
@@ -102,9 +102,18 @@ ambiguous or unknown names exit 1). `worldArg`/`parseWorldFlags` wrap the older
   horizon block: `teaching posture: <rung> (calibrated)` or `... (provisional
   — run `promptworld calibrate <world>`)`, read from the wire's
   `StatusData.Posture` — absent (and so the line omitted) for any non-teaching
-  or pure-sim world.
-  Offline: last-known state reconstructed read-only from the store (latest
-  snapshot + `LastEventTick`), clearly labeled "daemon not running".
+  or pure-sim world. Since spec 044, `clockLine` renders the run-over posture:
+  when the wire's `Clock.Ended` is set, the running/paused clock line is
+  replaced entirely by `tick N (...) — run ended day N, all villagers dead;
+  world is an archive (read-only)` ([[morgue]]).
+  Offline: last-known state reconstructed read-only from the store (via
+  `worlds.OfflineSnapshot` — latest snapshot plus a fold of any newer events,
+  [[instance-manager]]), clearly labeled "daemon not running"; an ended
+  world's offline output carries the same posture — a `run ended day N, all
+  villagers dead; world is an archive (read-only)` line before the log line,
+  and `--json` gains `ended`/`ended_day` clock keys present only when ended,
+  mirroring the live `ClockStatus` omitempty fields so a living world's
+  offline JSON is unchanged.
 - `pause` / `resume` / `speed <v>` — one-shot time controls printing the resulting
   clock line; `speed` (and the `attach` REPL's `speed` command) go through
   `setSpeedLine` (spec 035 FR-002), which appends a `WARNING: <text>` line

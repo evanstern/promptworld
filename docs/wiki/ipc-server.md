@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/ipc/server.go
   - internal/ipc/socket.go
-verified_against: 1e71b77f104dda982aa407b28ad2c994219e90d0
+verified_against: 381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9
 ---
 
 # IPC server
@@ -78,7 +78,10 @@ reading through a local `Governor` interface (`GovernorStatus() (debt float64,
 jobs int)`, `SetGovernor`, kept narrow like `Angel` so `ipc` never imports
 `internal/daemon`); a nil governor (no-LLM world) leaves the clock section's
 governor fields at their `omitempty` zero, byte-identical to pre-028
-([[cognition]], [[daemon-lifecycle]]).
+([[cognition]], [[daemon-lifecycle]]). Since spec 044, `statusData` also
+copies the loop's run-end posture into the clock section — `Ended`/`EndedDay`
+straight from `sim.Status` — where the same `omitempty` discipline keeps a
+living world's status bytes unchanged ([[ipc-protocol]], [[morgue]]).
 
 Since spec 037 (`contracts/status-horizon.md`), `statusDataFull` additionally
 sets `StatusData.Horizon` via `horizonClasses(cs)` whenever an orchestrator is

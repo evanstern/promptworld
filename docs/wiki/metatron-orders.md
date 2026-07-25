@@ -14,7 +14,7 @@ sources:
   - internal/tool/registry.go
   - internal/llm/llm.go
   - internal/llm/config.go
-verified_against: 1af833a2c4dab23932357d85cbf51e01089d66fc
+verified_against: 72125c85abd1a0de6c19855aaae1757d8b976f17
 ---
 
 # Metatron's standing orders
@@ -206,6 +206,8 @@ them (bounded cascade — an order fires at most once). A confirmed trigger that
 own TTL expiry resolves at the door: exactly one of triggered/expired lands, never both.
 A full game-day of unattended watching with ≤3 active orders adds at most the placement
 call plus rate-capped confirms (≤48 cheap calls/order/day worst case) — no unbounded
-per-event model cost shape exists (SC-008).
-</content>
-</invoke>
+per-event model cost shape exists (SC-008). On an ENDED world (spec 044,
+[[morgue]]) the whole subsystem goes quiet by construction: `stepEvents` emits
+nothing (so no order can match or expire) and the `InjectSocial` door narrows
+to recorded prose about the finished run, refusing the three injected order
+events.

@@ -15,6 +15,11 @@ sources:
   - internal/sim/wall_test.go
   - internal/sim/axe_test.go
   - internal/sim/path_speed_test.go
+  - internal/sim/run_end_test.go
+  - internal/sim/morgue_test.go
+  - internal/sim/grave_test.go
+  - internal/sim/gru_test.go
+  - internal/sim/toolcheck_test.go
   - internal/world/migrate_test.go
   - internal/ipc/ipc_test.go
   - internal/mind/replay_test.go
@@ -23,10 +28,12 @@ sources:
   - internal/metatron/metatron_test.go
   - internal/metatron/metatron_gaps_test.go
   - internal/metatron/orders_test.go
+  - internal/metatron/charter_observed_test.go
+  - internal/mind/epilogue_test.go
   - internal/persona/persona_test.go
   - e2e/daemon_e2e_test.go
   - e2e/determinism_e2e_test.go
-verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
+verified_against: 381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9
 ---
 
 # Testing strategy
@@ -235,7 +242,10 @@ silently drift from the state struct (spec 030 extended this to
 [[mental-maps]]/[[metatron-miracles]]; spec 042 extends it once more to
 `Memory.Seq` (KEEP — the emitting event's store seq, an identity rather than a
 clock value) and `Agent.SitVecTick` (KEEP — when the situation text was
-rendered, [[memory-retrieval]])). Byte-identity replay suites
+rendered, [[memory-retrieval]]); spec 044 extends it again with three KEEP
+entries — `RunEnd.Tick` (when the run ended: history, the world never ticks
+again), `DeathRecord.Tick` (the `NormViolation.Tick` shape), and
+`MorgueEpilogue.Tick` (the `ChronicleEntry.Tick` shape)). Byte-identity replay suites
 (`TestMiracleReplayByteIdentity`, `TestMiracleSnapReplayByteIdentity`,
 `TestMiracleGrantReplayByteIdentity`) prove each miracle type replays to the
 same state hash as live application.
@@ -377,6 +387,38 @@ fuzzy-confirm matrix — no-hit silence, rate-cap skipping, negative/failed verd
 armed with no retry, and a yes verdict triggers (`TestFuzzyNoConfirmWithoutHit`,
 `TestFuzzyRateCapSkipsExcess`, `TestFuzzyNegativeVerdictLeavesArmed`,
 `TestFuzzyConfirmFailureNoRetry`, `TestFuzzyYesTriggers`). Channel-gated throughout.
+
+**Run-outcome suites** (spec 044, TASK-31, [[morgue]]): the run-end/morgue/
+escalation/grave surface is proven per layer. `internal/sim/run_end_test.go`:
+`TestRunEndedOnceOrderedLast` (a same-tick multi-death batch declares the run
+over exactly once, ordered after every death and its witness memories),
+`TestEndedWorldEmitsNothing` (further ticks emit nothing — the `stepEvents`
+top guard), `TestReplayRebuildsEnded` (from-genesis replay lands back in the
+ended posture), `TestRunEndOmitemptyStable` (the three `State` additions are
+`omitempty`, pre-044 snapshots byte-stable), and `TestEndedCommandGating`
+(mutating commands refused, reads served, `inject_social` narrowed).
+`internal/sim/morgue_test.go` covers the two injected arms
+(`TestCharterObservedArm`, `TestMorgueEpilogueArm` — ring append in event
+order, cap, agent −1 for the run-end epilogue) and
+`TestEndedDoorAcceptsMorgueEpilogue` for the narrowed door's surviving type.
+`internal/sim/grave_test.go`: grave placement at the death tile persisting
+through replay, `buildSite` refusing a grave tile (research R10's deliberate
+tension), the perception sweep granting the grave as a `PlaceFact`, place-tell
+spreading it, and the witnessed-death grief rumor (SC-006).
+`internal/sim/gru_test.go` gains `TestGruWoundInvariant` (the compile-pinned
+`gruWound >= nearDeathBelow` escalation arithmetic) and
+`TestGruEscalationScenario` (a weakened victim dies of cause `"gru"` with the
+full death fallout; a healthy one keeps the survival floor — [[gru]]).
+`internal/sim/toolcheck_test.go`'s `TestWhitelistDiffIdentical` — the
+injection-whitelist tripwire — accepts exactly the two declared boundary
+widenings (`metatron.charter_observed`, `morgue.epilogue`). On the mind side,
+`internal/metatron/charter_observed_test.go` proves the first turn emits the
+charter observation, an unchanged fingerprint stays silent, and an ended
+world skips it (the shared fixtures pre-seed `charterFP` so turn tests keep
+counting exactly the batches they drive); `internal/mind/epilogue_test.go`
+proves absorbing a death or `run.ended` queues an epilogue, good prose lands
+as ONE `morgue.epilogue`, and a narrator failure is a gap, never a stall
+(FR-010).
 
 **Persona lifecycle suite** (`internal/persona/persona_test.go`, TASK-74): on
 top of the pre-existing genesis-once/0444/missing-file-load coverage,

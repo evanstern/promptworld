@@ -9,7 +9,8 @@ sources:
   - internal/sim/miracles.go
   - internal/sim/journal.go
   - internal/sim/terrain.go
-verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
+  - internal/sim/morgue.go
+verified_against: 381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9
 ---
 
 # Sim state & reducer
@@ -51,14 +52,27 @@ the type and its two knowledge-event Apply arms below), plus, since spec 042,
 a rolling situation (query) vector `SitVec`/`SitVecModel`/`SitVecTick`
 (`omitempty`) the reducer sets verbatim from an `agent.situation_embedded`
 companion — absent (nil `SitVec`) leaves selection on the legacy ranking
-([[memory-retrieval]]), structures (`fire`/`shelter`/`oven`/`chest`, fires carrying a
+([[memory-retrieval]]) — plus, since spec 043 ([[decision-context]]), two
+reducer-DERIVED self-knowledge surfaces maintained by existing arms with no
+new event type: `IntentLog []IntentRecord` (US1, `omitempty`) — the
+recent-intent ring, capacity `intentLogCap` (8), each record
+`{Goal, Source, Reason, Tick, Outcome, OutcomeTick}` with `Outcome` empty
+while executing then `done`/`failed`/`rejected`/`expired` — and
+`NeedsAnchor *Needs`/`NeedsAnchorTick` (US2, `omitempty`; a POINTER on the
+Journal/Hail precedent, deliberately deviating from the spec's value type so
+a pre-043 snapshot round-trips byte-identically) — the trajectory window's
+edge snapshot the decision prompt diffs current needs against to render
+rising/falling/steady, `NeedsAnchorTick == 0` the unset first-window
+sentinel, structures (`fire`/`shelter`/`oven`/`chest`, fires carrying a
 `FuelUntil`; chests (spec 013 US3) carrying a permanent `Owner` — the builder's
 agent index, zero-value round-tripping unambiguously since every chest has one —
 and a `Store *Inventory` capped at `chestCap` via the same derived `bulk()` used
 for agents; spec 032 US1 adds two wall kinds, `wall_plank`/`wall_stone`,
 carrying `HP` — current health, 1..`wallMaxHP(kind)`, derived from kind and
 never stored as a separate max, the fire lit-ness doctrine — plus a non-wall
-`path` kind carrying no `HP` and never blocking passage), cleared trees,
+`path` kind carrying no `HP` and never blocking passage; spec 044 US4 adds a
+`grave` kind, reducer-placed only — never player-built — marking a death
+tile), cleared trees,
 harvested forage, den cooldowns, `Quarried` depleted
 rock outcrops (spec 012, permanent, `omitempty`), `Piles []Pile` — the per-tile
 ground commons of dropped/spilled goods (spec 013 US2): event-sourced overlay
@@ -89,7 +103,19 @@ lifecycle (including the TASK-36 emergent-gathering watch fields
 source establishes it — pre-TASK-36 snapshots load nil, a village with no
 standing agreement to meet), and the `Norms` list with monotonic
 `NextNormID`/`NextProposalID`, all zero-valued in pre-TASK-13 snapshots (a
-lawless village) (executor types in `agents.go`; memories belong to
+lawless village) — and, since spec 044 ([[morgue]]), the run's outcome: the
+`Deaths []DeathRecord` ledger (`{agent, tick, cause}`, appended by the
+`agent.died` arm in application = event order, bounded by the agent count —
+it exists so the run-end emission stays a pure function of (state, batch)
+rather than a log scan), the `Ended bool` terminal latch and `RunEnd *RunEnd`
+summary (`{tick, deaths, final_cause}`, set once by the `run.ended` arm and
+never cleared by any event, so snapshot+replay restores the ended posture on
+restart for free), `CharterFingerprint` (the most recent effective-charter
+content hash a Metatron turn ran under — the full revision timeline lives in
+the event log), and the `MorgueEpilogues []MorgueEpilogue` bounded ring
+(`morgueEpilogueCap` 32, the chronicle pattern) of narrator mourning prose —
+all `omitempty`, so every pre-044 snapshot stays byte-identical with no
+format bump (executor types in `agents.go`; memories belong to
 [[agent-mind]]). Its
 `Apply(event)` method is the **only** event-driven mutation path — the live loop and
 crash recovery run the exact same code, which is what makes replay provably equal to
@@ -143,11 +169,21 @@ planner-loop landing set it, and since spec 019 the payload's LAST field,
 `Reason` (`omitempty`), the planner's free-text reason — copied onto
 `Intent.Reason` so it survives to completion, where the executor bakes it into
 the memory's `Why`; reflex/executor-authored intents carry neither `omitempty`
-tail, so those emissions marshal byte-identically to before), movement, work
+tail, so those emissions marshal byte-identically to before; since spec 043
+US1 the arm also appends an `IntentRecord` to the agent's ring via
+`appendIntent` — source verbatim, oldest dropped past `intentLogCap` into a
+fresh backing array so canonical bytes never alias dead capacity; a previous
+record still open stays open, so an override reads as open-then-new),
+movement, work
 products (inventory + overlays + structures), eating (`agent.ate`'s `AtePayload`
 sets the absolute post-eat food need and decrements each carried food form by its
 consumed count — no reducer-side arithmetic), sleep, talk, needs (absolute
-values), and death; the v2 resource/crafting events (`agent.quarried`/
+values; since spec 043 US2 the `agent.needs_changed` arm also rolls the
+trajectory anchor — once `tick − NeedsAnchorTick ≥ trajectoryWindowTicks`
+(1800, one planner cadence) it snapshots the current needs into
+`NeedsAnchor`/`NeedsAnchorTick`, so direction is measured over roughly the
+last window rather than instant-to-instant noise; on a fresh world the first
+window carries no anchor and renders steady), and death; the v2 resource/crafting events (`agent.quarried`/
 `collected_water`/`crafted`/`cooked`/`bathed`/`refueled`/`spear_broke`,
 `sim.fire_burned_out`) apply inventory deltas and structure/overlay changes,
 several by re-deriving the recipe from `recipes.go` (the single source for
@@ -196,7 +232,15 @@ type, whenever a `build_*` goal's mid-work re-validation genuinely fails (site
 gone, or a wall's reserved-tile occupant outlasting the grace period); the
 reducer itself carries no build-specific logic, it only clears the intent the
 same way completion does, so no material is spent and no structure stands
-([[executor]], [[event-types]]);
+([[executor]], [[event-types]]); since spec 043 US1 both completion arms also
+close the ring: `agent.intent_done` stamps the newest still-open
+`IntentRecord` `"done"` and `agent.build_failed` stamps it `"failed"` (via
+`stampIntentOutcome` — the newest open record IS the current intent; an older
+record left open by an override stays open, the open-then-superseded shape
+the alternation view preserves), while `agent.intent_rejected` — formerly a
+pure telemetry no-op — now appends an ALREADY-CLOSED `"rejected"` record
+(source `planner`), so the next thought can see an attempt was refused before
+ever landing;
 [[mental-maps]]'s two knowledge-growth arms mutate `Agent.Map` directly:
 `agent.saw` upserts the perception sweep's fully-baked facts verbatim
 (`Map.upsertFact`), `agent.map_corrected` removes facts the sweep found gone
@@ -228,7 +272,15 @@ active cap) then prunes to the active set plus the most recent 32 non-active;
 `metatron.order_triggered`/`metatron.order_cancelled`/`metatron.order_expired`
 each transition one order from active to a terminal status via the shared
 `transitionMetatronOrder`, rejecting an unknown id or one not currently active
-([[metatron-orders]]).
+([[metatron-orders]]); since spec 044 (US2) `applyMetatron` also carries
+`metatron.charter_observed`, which validates a non-empty fingerprint (so the
+`InjectSocial` dry-run refuses a blank one at the door) then sets
+`State.CharterFingerprint` — state keeps only the CURRENT fingerprint, the
+full revision timeline being the log's observation sequence the [[morgue]]
+aligns each death against. `morgue.epilogue` dispatches to
+`applyMorgueEpilogue` in `morgue.go` (spec 044 US2): it validates the agent
+index (`-1` = the run-end epilogue) and non-empty text, then appends the
+bounded `State.MorgueEpilogues` ring (`morgueEpilogueCap` 32).
 `world.migrated` (spec 012 US6) is the one case that does not incrementally mutate
 fields: after checking the payload's `State.Seed` matches (a mismatched payload
 no-ops, keeping `Apply` total), it replaces `*s` wholesale with the embedded state —
@@ -265,19 +317,43 @@ not config, so a replay can never reject an event that landed live. The plan
 family maintains `Agent.Plan`: `agent.plan_set`
 replaces the steps, `agent.plan_step_started` pops the head, and
 `agent.plan_expired` clears the whole remaining plan (a broken sequence is
-not resumed). The hail family (TASK-47) maintains `Agent.Hail *AgentHail`
+not resumed) — and, since spec 043 (FR-005), also stamps the expired step
+into the intent ring via `stampOrAppendExpired`: an open record matching the
+step's goal closes `"expired"` (goal-matched so a concurrent non-plan intent
+is never mis-stamped), otherwise a closed record is appended (the step
+expired before ever firing). The hail family (TASK-47) maintains `Agent.Hail *AgentHail`
 (`{By, Until}`, `omitempty` so pre-TASK-47 snapshots and un-hailed agents stay
 byte-stable): `social.hailed` sets it, `social.hail_met`/`social.hail_expired`
 clear it, and `agent.died`/`agent.slept` also clear it (the dead and the
 sleeping shed hails). `agent.died` also spills the dying agent's entire carried
 `Inv` onto a pile at its own tile (create-or-merge, food batches stamped
 `tick + rotWindowTicks`), emptying `Inv` — reducer-internal, no new event (spec
-013 US2, FR-006, research R7's debt-opening precedent). The cognition telemetry types — `cog.thought`, `cog.outcome`,
-`cog.recalibration_recommended`, `agent.intent_rejected`, (since spec 017)
+013 US2, FR-006, research R7's debt-opening precedent) — and, since spec 044,
+two more reducer-internal effects in the same arm: the death is appended to the
+`State.Deaths` ledger (`{agent, tick, cause}` — cause now includes `"gru"`, the
+[[gru]]'s escalated kill), and a `Structure{Kind: "grave"}` is placed at the
+death tile (US4, FR-017, research R10). The grave placement is deliberately
+unconditional — no dedup against whatever already occupies the tile: the
+`Structures` slice has no per-tile uniqueness invariant outside the `buildSite`
+gate governing NEW player-directed builds, and `structureAt` filters by kind,
+so coexisting entries are an established pattern; appended last, the grave
+also wins the TUI's last-write-wins per-tile glyph, and it blocks future
+`buildSite` on the tile via the blanket any-structure check. The `run.ended`
+arm (spec 044 US1) is the terminal latch: it sets `State.Ended` — which no
+event ever clears, so replay/restart lands back in the ended posture and
+migration tooling cannot resurrect a finished run without rewriting history —
+and copies the payload verbatim onto `State.RunEnd` ([[sim-loop]] holds the
+matching ended posture; the [[executor]] emits the event). The cognition telemetry types — `cog.thought`, `cog.outcome`,
+`cog.recalibration_recommended`, (since spec 017)
 `cog.tool_call` (the tool-use loop's call trace, [[tool-loop]]), and (since
 spec 042 US2) `cog.memory_divergence` (the shadow-mode selector's rank-
 divergence record, [[memory-retrieval]]) — are explicit
 reducer no-ops: recorded observability with zero state effect.
+`agent.intent_rejected`, formerly in that no-op list, is since spec 043 US1
+split into its own STATE-MUTATING arm: the refused intent never landed, so
+`Intent`/`IdleSince` stay untouched, but the ring gains the appended-closed
+`"rejected"` record described above — deterministic from the event alone, so
+replay-safe.
 Unknown types — including `daemon.*` and `world.created` — are recorded
 history but state no-ops, so new event types never break old replay.
 
@@ -297,12 +373,19 @@ verification and the determinism tests. Wall-clock time never appears in state.
 [[event-types]] lists every payload struct (the cognition-horizon payloads
 live in sibling files `cognition.go`, `guard.go`, and `plan.go`; the `Journal`
 type, its rune budget, and the two `journal.*` payloads live in `journal.go`;
-the wall predicates `isWall`/`wallMaxHP`/`wallAt` live in `terrain.go`);
+the wall predicates `isWall`/`wallMaxHP`/`wallAt` live in `terrain.go`; the
+spec 044 run-outcome types — `RunEnd`, `DeathRecord`, `RunEndedPayload` — and
+`livingCount` (moved here from `governance.go`) live in `state.go`, while the
+`MorgueEpilogue` ring types and `applyMorgueEpilogue` live in `morgue.go` —
+[[morgue]]);
 [[world-migration]]
 is the sole producer of `world.migrated`; [[metatron-miracles]] covers the
 miracle payload shapes, cost table, and the `rebaseTicks` shift-semantics
 taxonomy `applyTimeSnapped` uses (which, since spec 029, also shifts an active
-standing order's `ExpiresTick` — never its `PlacedTick` — across a time snap);
+standing order's `ExpiresTick` — never its `PlacedTick` — across a time snap;
+since spec 043 it likewise SHIFTs `Agent.NeedsAnchorTick` — a live-read
+duration anchor, 0 staying 0 — while `IntentRecord.Tick`/`OutcomeTick` are
+KEEP, history never rewritten);
 [[metatron-orders]] covers the standing-order lifecycle, placement validation,
 and the angel-side trigger/confirm mechanics built on top of this reducer arm.
 [[mental-maps]] covers `Agent.Map`'s type, its four knowledge events'
@@ -311,7 +394,11 @@ movement-family arms now perform. [[memory-retrieval]] covers
 `Memory.Seq`/`Vec`/`VecModel` and `Agent.SitVec*`'s producer (the mind-side
 embedder), the `agent.memory_embedded`/`agent.situation_embedded` arms this
 reducer owns, and the `cog.memory_divergence` telemetry the shadow-mode
-selector records.
+selector records. [[decision-context]] is the consumer of the spec 043
+surfaces this reducer derives — the `IntentLog` ring (types and mutators
+`IntentRecord`/`appendIntent`/`stampIntentOutcome`/`stampOrAppendExpired` in
+`agents.go`) renders as the prompt's self-history block and
+`NeedsAnchor`/`NeedsAnchorTick` as its need-trajectory arrows.
 
 ## Operational notes
 

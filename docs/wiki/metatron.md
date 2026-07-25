@@ -1,6 +1,6 @@
 ---
 name: metatron
-description: The gatekeeper angel (TASK-12) — console AND system-authored turns driven through the bounded tool-use loop (spec 017), omen/vision influence and standing-order agency behind a structural prompt firewall (spec 029), event-sourced charge economy, charge-free clock-control meta tools, digests + drama moments, and the staged player-editable instruction surface (charter + skills/ + capabilities.json, spec 021); spec 036 composes drop-in bundle tools and persona SOUL fragments into the same turn assembly
+description: The gatekeeper angel (TASK-12) — console AND system-authored turns driven through the bounded tool-use loop (spec 017), omen/vision influence and standing-order agency behind a structural prompt firewall (spec 029), event-sourced charge economy, charge-free clock-control meta tools, digests + drama moments, and the staged player-editable instruction surface (charter + skills/ + capabilities.json, spec 021); spec 036 composes drop-in bundle tools and persona SOUL fragments into the same turn assembly; spec 044 stamps each turn's effective-charter fingerprint into an event-sourced revision timeline (metatron.charter_observed)
 kind: component
 sources:
   - internal/metatron/metatron.go
@@ -12,7 +12,7 @@ sources:
   - internal/metatron/miracle_batch.go
   - internal/sim/metatron.go
   - internal/persona/charter.go
-verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
+verified_against: 72125c85abd1a0de6c19855aaae1757d8b976f17
 ---
 
 # Metatron
@@ -107,6 +107,32 @@ the budget grew to keep a full charter-voiced reply from crowding out a
 same-round act). When the loop ends with no text and no landed
 act (model_done with nothing, cap exhaustion, or a soft error), the same
 scattered-thoughts apology as before covers it.
+
+**Charter observation — the revision timeline** (spec 044 US2, FR-008): every
+`runTurn` stamps the charter revision it actually runs under. Immediately
+after `loadCharter` returns — before anything consumes the text —
+`observeCharter` (`charter.go`) fingerprints the EFFECTIVE charter
+(`charterFingerprint`: the first 12 hex chars of SHA-256 over exactly the
+post-fallback, post-truncation bytes the model executes, so the recorded
+revision can never name a charter the angel never ran) and, when it differs
+from the last recorded value, emits `metatron.charter_observed{fingerprint,
+default}` through the same `InjectSocial` door as every other turn effect —
+fingerprint-at-effect semantics. The `default` flag derives from the same
+effective text (an empty/missing `charter.md` serves and records the default),
+so the two can never disagree. The first turn of a world always emits (the
+mirror starts empty); an ENDED world skips — the door narrows to recorded
+prose after run end and a finished run's evidence timeline is closed. The
+`Metatron` struct mirrors `State.CharterFingerprint`/`State.Ended` as
+`charterFP`/`ended` under `stateMu`; `observeCharter` sets the mirror
+optimistically after a landed emission (so a back-to-back turn cannot
+double-emit before absorb catches up), and `mirrorState` moves it FORWARD
+only — a batch predating the landed observation absorbs with the replica's
+old fingerprint, and overwriting would re-open the emission window. The
+reducer arm (`internal/sim/metatron.go`, `CharterObservedPayload`) keeps only
+the CURRENT fingerprint on state (rejecting an empty one at the dry-run); the
+full revision timeline lives in the event log, where the [[morgue]]'s render
+scan aligns each death against the most recent observation at or before it.
+Evidence only — the payload carries no scoring fields, by contract.
 
 **Influence: omens and visions** (spec 029, TASK-27): the two mediated forms that
 replaced the retired `dream`/`omen` nudges. A **vision** (`send_vision`, `landVision`)
@@ -255,7 +281,9 @@ status}`, FR-016 — see [[metatron-orders]]).
 ## Connections
 
 [[sim-loop]] whitelists `metatron.nudged`, `metatron.place_revealed` (spec 041, a
-vision's optional place grant), the four `metatron.*` miracle types, and
+vision's optional place grant), `metatron.charter_observed` (spec 044, the
+revision timeline the [[morgue]] aligns deaths against), the four `metatron.*`
+miracle types, and
 the three injected order events (`order_placed`/`order_cancelled`/`order_triggered`);
 [[mental-maps]] owns the place-fact vocabulary `send_vision`'s place grant draws
 on and the reducer arm that validates and upserts it;

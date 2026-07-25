@@ -5,7 +5,7 @@ kind: pipeline
 sources:
   - internal/daemon/daemon.go
   - internal/daemon/estimator_persist.go
-verified_against: 1af833a2c4dab23932357d85cbf51e01089d66fc
+verified_against: 381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9
 ---
 
 # Daemon lifecycle
@@ -55,7 +55,12 @@ Startup sequence:
    genesis, so replay re-applies it and the seed never fires twice
    ([[governance]]).
 6. Notify fan-out + companions: the loop's notify goes to the IPC broadcast, the
-   always-on soul scribe, and — when an orchestrator exists — the mind driver
+   always-on soul scribe (which since spec 044 is constructed with the open
+   store as its event source — `scribe.New(dir, seed, map, snapshot, st)` —
+   because the [[morgue]] render is a pure fold over the FULL event history,
+   which the boot snapshot alone cannot provide; reads are rare, per death or
+   boot, and briefly serialize with the loop's appends on the store's single
+   connection), and — when an orchestrator exists — the mind driver
    ([[agent-mind]]) and the Metatron component ([[metatron]], attached to the
    server via `SetMetatron` for the console); all consumers are non-blocking by
    contract. The LLM

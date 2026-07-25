@@ -9,7 +9,7 @@ sources:
   - internal/tool/derive.go
   - internal/tool/validate.go
   - internal/sim/toolcheck.go
-verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
+verified_against: 381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9
 ---
 
 # Tool registry
@@ -135,8 +135,10 @@ living villager at any hour — required `target` AgentName + required `text`,
 `metatron.nudged`/`agent.memory_added` — since spec 041 FR-014 also carrying
 an OPTIONAL place-grant triple, `place_kind`/`place_x`/`place_y`, all riding
 together (the handler refuses a partial triple); `place_kind` is an `Enum`
-over `placeFactKinds` — [[mental-maps]]'s closed `PlaceFact` vocabulary,
-hand-mirrored here since `tool` must not import `sim`, so a drift here can
+over `placeFactKinds` — [[mental-maps]]'s closed `PlaceFact` vocabulary
+(spec 044 US4 added `grave`, the structure kind the `agent.died` reducer arm
+places at a death tile), hand-mirrored here since `tool` must not import
+`sim`, so a drift here can
 only over- or under-offer the model, never land a false fact (the reducer
 dry-run is the semantic authority) — and `Events` gains
 `metatron.place_revealed` between the nudge and the memory), `send_omen` (required `targets` Text —

@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/loop.go
   - internal/sim/landing.go
-verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
+verified_against: 381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9
 ---
 
 # Sim loop
@@ -19,8 +19,12 @@ as an event. That makes the [[event-log]] the complete input record of a run.
 
 ## How it works
 
-`Loop.Run(ctx)` is a state machine over three modes:
+`Loop.Run(ctx)` is a state machine over four modes:
 
+- **Ended** (spec 044, checked first): once `State.Ended` latches, the terminal
+  paused-mode posture — no timer, ever again; block on commands or ctx (ctx
+  cancellation still takes the final snapshot). Unlike Paused there is no
+  pacing to restart, because no command can resume an ended world (below).
 - **Paused**: no timer; block on commands or ctx. Resume restarts pacing fresh.
 - **Timed** (interval > 0): a timer fires per `Speed.Interval()`; each firing runs one
   tick and advances the schedule by exactly one interval. If the loop falls more than
@@ -54,6 +58,21 @@ Replies carry a coherent `Status` snapshot (tick, game time, flags, last seq).
 Emitted events now land regardless of the command's error — a rejected
 `inject_intent` is the only command that pairs an error with events (its rejection
 telemetry, so no failure is silent); every other error path emits nothing.
+
+`handleCommand` also opens with the **ended gate** (spec 044 FR-002/FR-003): a
+finished world (`State.Ended`) refuses every clock/world-mutating command —
+`pause`, `resume`, `set_speed`, `govern`, `inject_intent` — with an explicit
+"run has ended" error; reads (`status`/`state`) serve unchanged, and
+`inject_social` narrows to `endedProseWhitelist` — recorded prose ABOUT the
+ended run, exactly two types: `chronicle.entry` and `morgue.epilogue` (the
+run-end epilogue lands AFTER `run.ended` by construction, the narrator
+mourning asynchronously — [[morgue]]); any other social type in the batch
+refuses the whole batch. `inject_operator` stays open (its whitelisted types
+are reducer no-ops — daemon lifecycle, never world state — the same reason
+shutdown is unaffected). The protocol `Status` gains additive `omitempty`
+`Ended`/`EndedDay` fields (the run-over posture and its game day, for
+rendering without a state fetch), and an ended world reports an effective
+rate of 0 like a paused one.
 
 Auto-slow (`observeWindow`): every `degradeWindow = 5s` the loop compares achieved
 ticks/sec against the requested rate; sustained shortfall below 90% emits
@@ -185,7 +204,14 @@ door ordering guarantees a memory's embedding companion never precedes the
 memory itself, since the embedder only observes an `agent.memory_added` AFTER
 it is committed and notified; and `cog.memory_divergence`, the shadow-mode
 selector's rank-divergence record, riding the same reducer-no-op `cog.*`
-isolation class as the telemetry types below):
+isolation class as the telemetry types below), and (since spec 044 US2) two
+more: `metatron.charter_observed` — the Metatron turn pipeline's
+fingerprint-at-effect stamp, the event-sourced charter-revision timeline the
+[[morgue]] aligns deaths against, whose reducer arm (and so the dry-run)
+enforces a non-empty fingerprint — and `morgue.epilogue`, the narrator's
+recorded mourning prose after a death or the run's end, appending only the
+bounded `State.MorgueEpilogues` ring (never simulation state, which is why it
+also survives the ended-world narrowing above)):
 an atomic, whitelisted batch of conversation, consolidation, musing, chronicle,
 nudge, miracle, phrasing, or telemetry effects, dry-run on a state copy before
 applying — the dry-run probe is reconstructed from bytes and so carries no
@@ -232,6 +258,9 @@ replay-stable ([[sim-state-reducer]]).
 spec 017 — its handlers wrap `InjectIntent` (world verbs, `set_plan`) and
 `InjectSocial` (`muse`, and Metatron's nudges/`work_miracle`), and its buffered
 `CallRecord`s land as the `cog.tool_call` batch through the same social door.
+The [[executor]]'s `run.ended` declaration is what flips the loop into the
+ended posture; the [[morgue]] is the consumer of the two spec 044 whitelist
+types and of the narrowed ended-world door.
 
 ## Operational notes
 

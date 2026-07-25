@@ -9,7 +9,7 @@ sources:
   - internal/worlds/discover.go
   - internal/worlds/probe.go
   - cmd/promptworld/ps.go
-verified_against: b5e315a18134cd33b8bcf1b7853923335d44c432
+verified_against: 381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9
 ---
 
 # Instance manager
@@ -59,7 +59,15 @@ world is `running`/`paused` solely when its daemon answers a `status` round trip
 budget; a live pid that doesn't answer is `unresponsive`, never running. Dead-pid
 candidates become `stopped` (last-known clock via `OfflineSnapshot`, the extracted
 offline read `status` also uses), `unreadable` (corrupt manifest), or `missing`
-(registry path gone). `cmd/promptworld/ps.go` renders the table
+(registry path gone). `OfflineSnapshot` reconstructs the last-known state from
+the newest valid snapshot and — since spec 044 (FR-004) — folds any events
+newer than that snapshot into it (the snapshot cadence can trail the log,
+e.g. a crash right after a final death), exactly as recovery replay would; its
+signature grew two trailing run-outcome returns, `ended` and `endedDay` (the
+game day of the run end via the state's `RunEnd`, 0 unless ended), so a
+stopped ended world's `status` mirrors the live surface ([[morgue]]). `ps`'s
+own `fillOfflineSnapshot` discards the two new returns — stopped rows render
+as before. `cmd/promptworld/ps.go` renders the table
 (`NAME STATE PID TICK GAME TIME SPEED LLM PATH`) and the `--json` array reusing the
 `status --json` vocabulary; default shows live-pid states, `--all` adds the rest;
 inference on/off comes from `StatusData.LLM != nil` live, `llm.json` presence stopped.

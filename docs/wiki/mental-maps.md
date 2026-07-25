@@ -1,6 +1,6 @@
 ---
 name: mental-maps
-description: Per-agent private spatial knowledge (spec 041) — an explored-terrain bitmap plus known place-facts with provenance and freshness horizons, gating target resolution (nearestKnown, search/frontier, last-known-sighting talk_to), rendered into the prompt's known-places section, grown by a perception sweep and corrected when facts go stale, and carried across a v3→v4 migration
+description: Per-agent private spatial knowledge (spec 041) — an explored-terrain bitmap plus known place-facts with provenance and freshness horizons, gating target resolution (nearestKnown, search/frontier, last-known-sighting talk_to), rendered into the prompt's known-places section, grown by a perception sweep and corrected when facts go stale, and carried across a v3→v4 migration; spec 044 adds the grave kind, placed by the agent.died reducer arm
 kind: component
 sources:
   - internal/sim/mentalmap.go
@@ -12,11 +12,12 @@ sources:
   - internal/sim/miracles.go
   - internal/sim/migrate.go
   - internal/mind/prompt.go
+  - internal/mind/context.go
   - internal/mind/mind.go
   - internal/metatron/turn.go
   - internal/metatron/toolcalls.go
   - internal/tool/registry.go
-verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
+verified_against: 381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9
 ---
 
 # Mental maps
@@ -45,7 +46,8 @@ snapshot, round-trips byte-identically). `MentalMap{Explored, Facts, Peers}`:
   (`factLess`/`sortFacts`/binary-search `upsertFact`/`removeFact`) so canonical
   JSON bytes never depend on discovery order — at most one fact per
   `(Kind, X, Y)`. `Kind` is a closed vocabulary: the structure kinds
-  (`fire`/`shelter`/`oven`/`chest`/`wall_plank`/`wall_stone`/`path`) plus the
+  (`fire`/`shelter`/`oven`/`chest`/`wall_plank`/`wall_stone`/`path`, plus —
+  since spec 044 US4 — `grave`) and the
   perception-gated resource kinds (`tree`/`forage`/`rock`/`water_edge`/`den`/
   `pile`). `Provenance` reuses the Belief vocabulary — `witnessed`/`told`, plus
   `ProvenanceRevealed` ("revealed") for a divine grant. `Source` is the
@@ -129,6 +131,20 @@ re-arms the planner only when a removed fact matches the agent's OWN current
 intent target or resolved coordinates, so a correction elsewhere in the map
 stays quiet, carried into the next scheduled round as a memory instead.
 
+**Graves** (spec 044 US4, [[morgue]]): a death leaves a persistent marker —
+the `agent.died` reducer arm ([[sim-state-reducer]]) appends
+`Structure{Kind: "grave"}` at the death tile, the same reducer-internal idiom
+as the inventory spill, unconditionally (the `Structures` slice has no
+per-tile uniqueness invariant outside the `buildSite` gate on NEW builds, so
+a grave coexists with whatever already stands there; appended last, it wins
+the map view's per-tile glyph, and it blocks future building via `buildSite`'s
+blanket any-structure check). No new knowledge machinery: `grave` is simply a
+new entry in the closed vocabulary above (`placeFactKinds` in
+`internal/tool/registry.go` mirrors it for `send_vision`'s `place_kind` Enum),
+so the ordinary perception sweep witnesses a grave, talk can pass it on, a
+vision can reveal it, and the prompt's landmark set (below) names it
+individually.
+
 **Derived bookkeeping** (research D2): position-changing reducer arms silently
 grow the mover's explored bitmap and update peer sightings — no event, a pure
 function of (state, event): `agent.moved`, `agent.woke`, and a `villager`-class
@@ -170,11 +186,20 @@ landing tick) and `Detail` (ground truth at landing, `groundFactDetail`)
 NORMATIVELY — the model-side emitter cannot know either, so it bakes only the
 place identity.
 
-**Rendering the known world** (US2, contracts §3, [[agent-mind]]): `internal/mind/prompt.go`'s
-`userPrompt` retires the old blanket "Village: `<first six structures>`" line
-and the bare-distance nearby-agent scan in favor of `knownPlaces` — the
+**Rendering the known world** (US2, contracts §3, [[agent-mind]]): the
+decision prompt retires the old blanket "Village: `<first six structures>`"
+line and the bare-distance nearby-agent scan in favor of `knownPlaces`
+(`internal/mind/prompt.go`). Since spec 043 that section is one named block
+of the assembled decision context ([[decision-context]]):
+`internal/mind/context.go`'s `renderKnownPlaces` — the `known_places`
+contract block — wraps `knownPlaces` plus the peer-sighting "Nearby" line,
+and is droppable (priority 5) under context-budget pressure, unlike the
+survival blocks. The content is the
 acting agent's OWN mental map, never `State.Structures`: landmark structures
-(fire/shelter/oven/chest) individually with provenance flavor (witnessed
+(fire/shelter/oven/chest, and since spec 044 `grave` — a death site is
+exactly the individually-named, narratively-weighted place the landmark set
+exists for, never grouped with the count+nearest resource kinds)
+individually with provenance flavor (witnessed
 plain, told naming the teller, revealed naming the vision; a fire the agent
 remembers as burned out says so), everything place-shaped grouped per kind
 with count + nearest (walls/paths/resources — grouping bounds the size a
@@ -224,8 +249,9 @@ the reflex ladder read through `nearestKnown`/`knowsAnyFresh`/
 its files. [[executor]] hosts the perception sweep (`perceptionEvents`) and
 the talk sidecar (`tellablePlaces`) that grow and correct the map, plus the
 derived explored/sighting bookkeeping on movement events. [[agent-mind]]
-renders `knownPlaces` from it in the prompt and re-arms the planner on a
-targeted `agent.map_corrected`. [[sim-state-reducer]] carries `Agent.Map` and
+renders `knownPlaces` from it in the prompt — since spec 043 as
+[[decision-context]]'s `known_places` block (`internal/mind/context.go`) —
+and re-arms the planner on a targeted `agent.map_corrected`. [[sim-state-reducer]] carries `Agent.Map` and
 the four knowledge-event Apply arms. [[event-types]] catalogs
 `agent.saw`/`agent.map_corrected`/`social.place_told`/`metatron.place_revealed`.
 [[social-fabric]] is where the place-telling sidecar rides, beside rumors and

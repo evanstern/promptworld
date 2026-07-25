@@ -10,7 +10,7 @@ sources:
   - internal/tool/registry.go
   - internal/ipc/server.go
   - cmd/promptworld/miracle.go
-verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
+verified_against: 72125c85abd1a0de6c19855aaae1757d8b976f17
 ---
 
 # Metatron's miracles
@@ -125,7 +125,13 @@ classified SHIFT or KEEP in its doc comment:
   `Belief.Reinforced` shape) — shifted unconditionally when non-zero, since a
   snap would otherwise instantly stale every villager's spatial knowledge;
   `applyEntityMoved`'s villager case (below) shares the same derived
-  bookkeeping a walked step gets.
+  bookkeeping a walked step gets. Spec 043 adds `Agent.NeedsAnchorTick`, the
+  need-trajectory window's edge anchor (elapsed = tick − NeedsAnchorTick gates
+  the anchor roll in the `agent.needs_changed` arm; 0 = unset sentinel, stays
+  0) — shifted so a snap preserves the window's remaining time instead of
+  forcing an immediate anchor reset that would wipe every villager's
+  trajectory sense; `NeedsAnchor` itself holds need levels, not ticks, so it
+  needs no entry.
 - **KEEP** — a historical timestamp or an identity/counter; rewriting it would
   rewrite history or break a reference. `Agent.Generation`, `Agent.LastGoalTick`,
   `Memory.Tick`, `Memory.Conv` (spec 019: a conversation-ref identity, the same
@@ -136,6 +142,9 @@ classified SHIFT or KEEP in its doc comment:
   (spec 019: when the entry was written, a historical
   timestamp), `Belief.Tick`, `ChronicleEntry.Tick`/`Day`/`FromTick`/`ToTick`,
   `MetatronOrder.PlacedTick` (spec 029: when the order was placed, history),
+  `IntentRecord.Tick`/`IntentRecord.OutcomeTick` (spec 043: when an intent
+  landed / when its outcome landed — the recent-intent ring is a historical
+  self-history log, the `Memory.Tick` shape, never a future deadline),
   `PlaceFact.Detail` (spec 041: a remembered value baked at emission, never
   re-derived — for a fire it mirrors the FuelUntil last seen, so shifting it
   would rewrite what the agent remembers rather than what is; the perception
@@ -143,10 +152,11 @@ classified SHIFT or KEEP in its doc comment:
   other identity/history field — see the doc comment for the full list.
   `TestRebaseTaxonomyComplete` caught both spec-019 additions, the spec-030
   `Belief.Reinforced` field, (later) spec 029's `MetatronOrder.ExpiresTick`/
-  `PlacedTick`, spec 041's `PlaceFact`/`PeerSighting` fields, and spec 042's
-  `Memory.Seq`/`Agent.SitVecTick` fields as new tick-anchored `int64` fields
-  requiring classification, confirming the taxonomy guard holds across
-  features outside miracles' own spec.
+  `PlacedTick`, spec 041's `PlaceFact`/`PeerSighting` fields, spec 042's
+  `Memory.Seq`/`Agent.SitVecTick` fields, and spec 043's `IntentRecord.Tick`/
+  `OutcomeTick` (KEEP) and `Agent.NeedsAnchorTick` (SHIFT) as new tick-anchored
+  `int64` fields requiring classification, confirming the taxonomy guard holds
+  across features outside miracles' own spec.
 
 `TestRebaseTaxonomyComplete` (`internal/sim/miracles_test.go`) is the taxonomy guard:
 it fails the build when a new tick-anchored `int64` field appears in the state
@@ -264,7 +274,10 @@ loop tool ([[tool-registry]]'s `LoopRosterMetatron`) whose handler
 ## Operational notes
 
 A miracle never mints a new persistent entity — it edits fields already in
-`sim.State`. A villager is the one class that can never be removed by any door
+`sim.State`. On an ENDED world (spec 044, [[morgue]]) no miracle can land
+through either door: `InjectSocial` narrows to recorded prose about the
+finished run, so all four miracle event types are refused at the command
+gate in [[sim-loop]]. A villager is the one class that can never be removed by any door
 (v1 doctrine); this is enforced in the reducer, not just at the doors, so it holds
 even against a forged event. The gratis flag's only reachable path is the CLI/IPC
 `--force` flag — if a future surface needs to grant it, that is a deliberate design

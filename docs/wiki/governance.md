@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/governance.go
   - internal/mind/meeting.go
-verified_against: 2bc94f55c57880e07f0e52e5de20c9cd527ab340
+verified_against: 381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9
 ---
 
 # Governance (norms and votes)
@@ -41,7 +41,9 @@ structure, convene = the observed half-hour, open = a half-hour later.
 **The meeting** (`sim/governance.go`, beats emitted from the [[executor]]'s
 `stepEvents`, all gated on a non-nil convention): at `ConveneSecond`, once per
 day (`Meeting.LastMeetingDay` vs `DayIndex`, the consolidation-marker
-pattern), `meeting.convened` fires and awake, non-exiled villagers are pinned
+pattern) and only while at least `minVillagersToMeet` (2) villagers still live
+(`livingCount`, the shared `state.go` helper — a lone survivor never
+convenes), `meeting.convened` fires and awake, non-exiled villagers are pinned
 to an `attend_meeting` intent toward the meeting place (`State.MeetingPlace`
 normally rides the convention event; the legacy `meeting.place_designated`
 derivation — first fire's tile, else first shelter, else map center — remains

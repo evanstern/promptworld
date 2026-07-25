@@ -5,7 +5,7 @@ kind: concept
 sources:
   - internal/ipc/protocol.go
   - specs/001-world-daemon/contracts/client-protocol.md
-verified_against: 1e71b77f104dda982aa407b28ad2c994219e90d0
+verified_against: 381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9
 ---
 
 # IPC protocol
@@ -57,7 +57,13 @@ fields: `requested_speed` (the player's ceiling from sim state, empty when
 ungoverned), `governor_debt`/`governor_jobs` (the daemon governor sampler's latest
 staleness-debt reading, folded in exactly like the `llm` section — [[cognition]],
 [[daemon-lifecycle]]); all three are zero/absent for a no-LLM world or an inert
-governor, so pre-028 status bytes are unchanged), `daemon` (pid, uptime_seconds,
+governor, so pre-028 status bytes are unchanged; and, since spec 044, two more
+additive `omitempty` run-outcome fields on the governor-trio precedent:
+`ended` (mirrors sim `State.Ended` — the run-over latch) and `ended_day` (the
+game day of the run end, for human rendering without a state fetch) — zero
+values omit away on living worlds, keeping their status bytes byte-compatible,
+and together with the durable `run.ended` event they are the machine-readable
+fail signal downstream scenario machinery consumes — [[morgue]]), `daemon` (pid, uptime_seconds,
 subscribers), `log`
 (last_seq), and — since spec 035, widened by spec 039 — a top-level `Warning`
 string (`json:"warning,omitempty"`) set ONLY on the `set_speed` reply (FR-002,

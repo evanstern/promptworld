@@ -1,18 +1,20 @@
 ---
 name: agent-mind
-description: The thinking layer — immutable personas + accreting souls, event-sourced situated memories with a deterministic top-K window, and the mind driver running each villager cognition through the bounded tool-use loop (spec 017), including the journal tools (spec 019)
+description: The thinking layer — immutable personas + accreting souls, event-sourced situated memories with a deterministic top-K window, and the mind driver running each villager cognition through the bounded tool-use loop (spec 017), including the journal tools (spec 019); since spec 043 the planner prompt is assembled from named blocks under a size budget with per-block telemetry
 kind: component
 sources:
   - internal/mind/mind.go
   - internal/mind/prompt.go
+  - internal/mind/context.go
   - internal/mind/parse.go
   - internal/mind/handlers.go
   - internal/mind/telemetry.go
   - internal/persona/personas.go
   - internal/persona/files.go
   - internal/scribe/scribe.go
+  - internal/scribe/morgue.go
   - internal/sim/memory.go
-verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
+verified_against: 72125c85abd1a0de6c19855aaae1757d8b976f17
 ---
 
 # Agent mind
@@ -83,10 +85,15 @@ Since spec 042, which SELECTOR fills that window is gated by the world's
 `memory_relevance` flag (`world.json`, validated at `world.Open`, threaded
 boot-static into `mind.New` as `memoryRelevance` and reused by `convo.go`'s
 scene snapshot): `selectWindow` (prompt.go) sends `""` and `"shadow"` through
-the same `SelectMemories` call, byte-identical to today's window, while `"on"`
-sends `sim.SelectMemoriesRelevant` conditioned on the agent's recorded
+the legacy window, byte-identical to today's, while `"on"` selects the
+relevance-blended window conditioned on the agent's recorded
 situation vector (`Agent.SitVec`, nil until the async embedder has rendered
-one — which delegates straight back to `SelectMemories` inside the selector).
+one — a nil query is the legacy window inside the selector). Since spec 043
+both routes run through one shared annotated selector
+(`sim.SelectMemoriesWindow` via `selectWindowAnnotated`, each entry flagged
+scored-pick vs serendipity-tail for the context assembler's drop accounting;
+`StripSelected` of it reproduces `SelectMemories`/`SelectMemoriesRelevant`
+byte-for-byte — [[memory-retrieval]]).
 In shadow/on mode, `plan()` also records one `cog.memory_divergence` per
 enqueued plan job (`recordDivergence`, telemetry.go) — both rankings computed,
 only the legacy one served, the evidence a shadow→on gate decision reads.
@@ -133,7 +140,10 @@ on governance events ([[governance]]); and since spec 019 (US3) it also renders
 each agent's `journal.md` (`renderJournal`, on `journal.entry_written`/
 `journal.entry_deleted` — a `jDirty` set kept separate from the soul `dirty`
 set, since a journal mutation touches only that one file, souls unaffected;
-[[agent-journal]]). The files are regenerable views — the event
+[[agent-journal]]); and since spec 044 (US2) `morgue.md` (`renderMorgue` — a
+whole-file re-render on `agent.died`/`run.ended`/`morgue.epilogue`, folding
+the FULL event log through a fresh reducer state via the variadic
+`EventSource` `scribe.New` now takes; [[morgue]]). The files are regenerable views — the event
 log remains the only truth, so souls survive restarts and travel with the save dir.
 
 Spec 019 (T024) kept soul.md's memory lines byte-identical for the common case:
@@ -223,7 +233,19 @@ not at the set-speed projection) plus a snapshot of every agent's position
 (`agentSnap`) — the assumptions guards are built from. Because the planner
 class is `FutureDated`, the prompt opens with `futureDated` (prompt.go): "your
 decision will take effect around <landing clock> — plan for then" — a no-op
-while paused, since landing ≤ now, so prompt, gate, and record agree. Each job now
+while paused, since landing ≤ now, so prompt, gate, and record agree; since
+spec 043 the line rides INTO the assembler as part of the frame block (same
+bytes, one owner) rather than being prepended after. The situation itself is
+now assembled from named blocks in a fixed contract order under a size
+budget (`assembleContext`, context.go — [[decision-context]] owns the block
+inventory, sources, and drop priority): `plan()` calls the assembler
+directly and stamps the result's `promptBytes`/`blockBytes`/`droppedBlocks`
+onto the thought's telemetry (`thoughtMeta`, landing additively and
+`omitempty` on `cog.thought` — non-planner paths like conversation scenes
+assemble no block set and marshal byte-identically); `userPrompt` and the
+exported `AssembleUserPrompt` (prompt.go) remain the no-future-line entry
+points — a pure function of world state, so replay tooling and the TUI
+capture path reproduce a thought's exact bytes. Each job now
 drives a bounded **tool-use loop** (spec 017, `toolloop.Run`, [[tool-loop]])
 rather than one bare planner call: `runPlan` builds a `villagerDispatch` (the
 job, a wall-clock start, a buffered `CallRecord` sink, and the `doorOutcome`
@@ -418,7 +440,9 @@ souls pane shows each agent's newest memory. [[nightly-consolidation]] digests e
 day's memories into the soul at sleep; TASK-8 turned the talk primitive into real
 conversations. The mind also hosts the [[chronicle]] narrator (TASK-11): absorb
 collects notable events as named log lines and day/night boundaries hand chapters
-to a single-flight cloud worker — and the [[governance]] phrasing driver (TASK-13,
+to a single-flight cloud worker — since spec 044 an absorbed
+`agent.died`/`run.ended` also queues a [[morgue]] epilogue job on that same
+worker (`queueEpilogue`, mind.go/narrate.go) — and the [[governance]] phrasing driver (TASK-13,
 `meeting.go`): enacted proposals get one best-effort `llm.KindMeeting` call
 rephrasing the template text in the proposer's voice, injected as
 `meeting.proposal_rephrased`; every failure leaves the template standing.
