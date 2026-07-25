@@ -146,6 +146,23 @@ type Model struct {
 	// ring's 500-event eviction (SC-003) but resets wholesale on reconnect
 	// like the replica (contract R5).
 	traces decisionTraces
+
+	// Help overlay (spec 045, TASK-116; data-model.md "Model state"): a
+	// client-only presentation layer, head of the esc-release chain while
+	// open (help -> minibuffer -> decisions -> detail -> solo -> home).
+	// helpMode freezes which mode '?' was pressed from (spec edge case:
+	// "the context...cannot drift while it is open" — R1); helpPageMode is
+	// the mode page actually being shown, starting equal to helpMode but
+	// separately paged with n/p so every mode's page (including
+	// minibuffer's, otherwise unreachable — FR-001) stays reachable. All
+	// five fields reset on dismissal; nothing else ever changes while the
+	// overlay is open, so dismissal has nothing else to restore (FR-006).
+	helpOpen     bool
+	helpMode     helpModeKey
+	helpPageMode helpModeKey
+	helpTier     bool // false = basic, true = advanced
+	helpSection  helpSection
+	helpScroll   int
 }
 
 func New(w *world.World) Model {
@@ -515,14 +532,24 @@ func (m Model) inspecting() bool {
 	return m.status != nil && m.status.Clock.Paused && m.chronicleVisible()
 }
 
-// handleKey is the top-level key dispatcher implementing the three modes of
-// patterns/keymap.md, in priority order: ctrl+c always quits (rule 3);
-// minibuffer-focused keys own the keyboard only when focus was explicitly
-// acquired (rule 1); inspect-mode keys layer on top of, never replace, the
-// global mode (rule 5 / keymap.md "Mode: inspect").
+// handleKey is the top-level key dispatcher implementing the modes of
+// patterns/keymap.md, in priority order: ctrl+c always quits (rule 3); the
+// help overlay (spec 045), when open, owns the keyboard next — the new head
+// of the esc-release chain (help -> minibuffer -> decisions -> detail ->
+// solo -> home; research.md R1) — and '?' opens it from every mode except
+// minibuffer focus, checked immediately after (so '?' still types into the
+// buffer there, FR-001); minibuffer-focused keys own the keyboard only when
+// focus was explicitly acquired (rule 1); inspect-mode keys layer on top
+// of, never replace, the global mode (rule 5 / keymap.md "Mode: inspect").
 func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if msg.String() == "ctrl+c" {
 		return m.quit()
+	}
+	if m.helpOpen {
+		return m.handleHelpKey(msg)
+	}
+	if !m.mbFocused && msg.String() == "?" {
+		return m.openHelp()
 	}
 	if m.mbFocused {
 		return m.handleMinibufferKey(msg)
@@ -538,6 +565,105 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 	}
 	return m.handleGlobalKey(msg)
+}
+
+// --- help overlay (spec 045, TASK-116; contracts/help-content.md "Layering") ---
+
+// currentHelpMode identifies which of the six help pages (help.go,
+// data-model.md) the client is in right now — the same predicate order
+// footerView uses, so the frozen mode always matches the hint the footer
+// was just showing when '?' was pressed. Never returns helpModeMinibuffer
+// (unreachable as an *opened-from* mode — FR-001, R1: '?' types there
+// instead of opening the overlay); that page is only reachable by paging
+// with n/p from another mode's overlay.
+func (m Model) currentHelpMode() helpModeKey {
+	switch {
+	case m.inspecting():
+		return helpModeInspect
+	case m.villagersVisible() && m.villDetail:
+		return helpModeVillagersDetail
+	case m.villagersVisible():
+		return helpModeVillagersRoster
+	case isWidescreen(m.width):
+		if m.solo {
+			return helpModeSolo
+		}
+		return helpModeGlobal
+	default:
+		return helpModeSolo // narrow fallback shares the solo/narrow page (data-model.md)
+	}
+}
+
+// openHelp is the '?' open-trigger (R1, FR-001): freezes the mode help was
+// opened from (helpMode) so the page it shows can't drift while the
+// overlay owns the keyboard (spec.md "Edge Cases" — esc-release ordering
+// and the frozen context), and always starts on that mode's basic-tier
+// keys page.
+func (m Model) openHelp() (tea.Model, tea.Cmd) {
+	mode := m.currentHelpMode()
+	m.helpOpen = true
+	m.helpMode = mode
+	m.helpPageMode = mode
+	m.helpTier = false
+	m.helpSection = helpSectionKeys
+	m.helpScroll = 0
+	return m, nil
+}
+
+// closeHelp dismisses the overlay (esc or '?', toggle — FR-007) and resets
+// every help field; nothing else is touched because nothing else ever
+// changed while it was open (FR-006 is satisfied by construction).
+func (m Model) closeHelp() (tea.Model, tea.Cmd) {
+	m.helpOpen = false
+	m.helpMode = 0
+	m.helpPageMode = 0
+	m.helpTier = false
+	m.helpSection = 0
+	m.helpScroll = 0
+	return m, nil
+}
+
+// handleHelpKey is the overlay's own keyboard, owned exclusively while
+// m.helpOpen (contracts/help-content.md "Layering" #2): esc/'?' dismiss
+// (toggle, #3); tab/shift+tab cycle sections; within the keys section, 't'
+// advances the tier and 'n'/'p' page through every mode's key table (the
+// FR-001 seam that makes the minibuffer's page reachable); J/K scroll the
+// current page's pager (chronicleDetailPane idiom, R4, help.go
+// paginateHelpContent). Every other key is swallowed here — handled,
+// never falling through to the mode beneath (FR-012).
+func (m Model) handleHelpKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "esc", "?":
+		return m.closeHelp()
+	case "tab":
+		m.helpSection = (m.helpSection + 1) % helpSectionCount
+		m.helpScroll = 0
+	case "shift+tab":
+		m.helpSection = (m.helpSection - 1 + helpSectionCount) % helpSectionCount
+		m.helpScroll = 0
+	case "t":
+		if m.helpSection == helpSectionKeys {
+			m.helpTier = !m.helpTier
+			m.helpScroll = 0
+		}
+	case "n":
+		if m.helpSection == helpSectionKeys {
+			m.helpPageMode = nextHelpMode(m.helpPageMode)
+			m.helpScroll = 0
+		}
+	case "p":
+		if m.helpSection == helpSectionKeys {
+			m.helpPageMode = prevHelpMode(m.helpPageMode)
+			m.helpScroll = 0
+		}
+	case "J":
+		m.helpScroll++ // clamped to content length at render time (R4)
+	case "K":
+		if m.helpScroll > 0 {
+			m.helpScroll--
+		}
+	}
+	return m, nil
 }
 
 // handleGlobalKey is patterns/keymap.md "Mode: global".

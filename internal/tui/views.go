@@ -82,18 +82,32 @@ func (m Model) narrowView() string {
 	var b strings.Builder
 	b.WriteString(m.headerView() + "\n")
 	b.WriteString(m.tabsView() + "\n\n")
-	switch m.active {
-	case paneMap:
+	switch {
+	case m.helpOpen:
+		// Body replacement (R2), same precedent as the pane switch below —
+		// the active pane's body swaps out, chrome stays (FR-006).
+		b.WriteString(m.helpNarrowView())
+	case m.active == paneMap:
 		b.WriteString(m.mapView())
-	case paneChronicle:
+	case m.active == paneChronicle:
 		b.WriteString(m.chronicleView())
-	case paneMetatron:
+	case m.active == paneMetatron:
 		b.WriteString(m.metatronView())
-	case paneVillagers:
+	case m.active == paneVillagers:
 		b.WriteString(m.villagersView())
 	}
 	b.WriteString("\n" + m.footerView())
 	return b.String()
+}
+
+// helpNarrowView is the narrow-fallback overlay body — same content the
+// widescreen composite shows (helpPanelView), sized to what's left of the
+// terminal after narrowView's own header/tabs/footer chrome (3 lines) and
+// its blank separator (1 line).
+func (m Model) helpNarrowView() string {
+	cols := clampInt(m.width, 30, 500)
+	rows := clampInt(m.height-4, 6, 500)
+	return m.helpPanelView(cols, rows)
 }
 
 func (m Model) headerView() string {
@@ -194,24 +208,36 @@ func (m Model) tabsView() string {
 	return strings.Join(tabs, " ")
 }
 
+// footerView is the per-mode hint line; every branch advertises "? help"
+// (FR-011, R5) so the overlay is discoverable from anywhere — except while
+// the overlay itself owns the keyboard, when the overlay's own hint
+// (helpFooterHint, help.go) replaces it entirely (FR-012: no reference to
+// the mode beneath while help is open).
 func (m Model) footerView() string {
+	if m.helpOpen {
+		return styleDim.Render(m.helpFooterHint())
+	}
 	switch {
 	case m.mbFocused:
+		// No "? help" here: focused, '?' types into the buffer like any
+		// other character (FR-001) — advertising it as a help trigger in
+		// this one mode would be actively wrong. Minibuffer help is still
+		// reachable, just from any other mode's overlay (n/p paging).
 		return styleDim.Render("esc release · ⏎ send · ↑↓ history")
 	case m.inspecting():
-		return styleDim.Render("j/k select · J/K scroll detail · space resume · m ask")
+		return styleDim.Render("j/k select · J/K scroll detail · space resume · m ask · ? help")
 	case m.villagersVisible() && m.villDetail && m.villDecisions:
-		return styleDim.Render("j/k scroll · esc back · space pause · q quit")
+		return styleDim.Render("j/k scroll · esc back · space pause · q quit · ? help")
 	case m.villagersVisible() && m.villDetail:
-		return styleDim.Render("d decisions · esc back · space pause · q quit")
+		return styleDim.Render("d decisions · esc back · space pause · q quit · ? help")
 	case m.villagersVisible():
-		return styleDim.Render("j/k select · ⏎ inspect · space pause · q quit")
+		return styleDim.Render("j/k select · ⏎ inspect · space pause · q quit · ? help")
 	case isWidescreen(m.width) && m.solo:
-		return styleDim.Render(fmt.Sprintf("%s back to map · space resume · q quit", dockTabKey[m.dockTab]))
+		return styleDim.Render(fmt.Sprintf("%s back to map · space resume · q quit · ? help", dockTabKey[m.dockTab]))
 	case isWidescreen(m.width):
-		return styleDim.Render("2 chronicle 3 metatron 4 villagers (again: solo) · m ask · space pause · q quit")
+		return styleDim.Render("2 chronicle 3 metatron 4 villagers (again: solo) · m ask · space pause · q quit · ? help")
 	default:
-		return styleDim.Render("1-4 panes · space pause · q quit")
+		return styleDim.Render("1-4 panes · space pause · q quit · ? help")
 	}
 }
 
@@ -222,9 +248,15 @@ func (m Model) widescreenView() string {
 	rows := computeRows(m.height)
 
 	var body string
-	if m.solo {
+	switch {
+	case m.helpOpen:
+		// Body replacement (R2), same slot solo zoom uses below — no
+		// z-compositing exists in this client, so help renders *instead of*
+		// the map/dock body, chrome (header/minibuffer/footer) unchanged.
+		body = m.helpPanelView(cols.MapCols+cols.Gutter+cols.DockCols, rows.Body)
+	case m.solo:
 		body = m.soloPanelView(cols.MapCols+cols.Gutter+cols.DockCols, rows.Body)
-	} else {
+	default:
 		mapPanel := m.mapPanelView(cols.MapCols, rows.Body)
 		dockPanel := m.dockPanelView(cols.DockCols, rows.Body)
 		body = lipgloss.JoinHorizontal(lipgloss.Top, mapPanel, strings.Repeat(" ", cols.Gutter), dockPanel)
@@ -612,9 +644,12 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 			chestsInfo = " · " + strings.Join(bits, " · ")
 		}
 	}
+	// Glyph key + agent/control notes render from the shared table (T002,
+	// help.go) — one source, so the overlay's glyph walkthrough (FR-005)
+	// and this compact legend line can never silently diverge.
 	legend = styleDim.Render(fmt.Sprintf(
-		"%s · [%d,%d–%d,%d of %d×%d] · ~water ♠wood \"forage ^rock ,quarried ᴥden ▲fire △cold ⌂shelter ▣oven %%pile ☐chest ▤▩wall ·path · agents by initial (lowercase asleep, †dead) · arrows pan, c center%s%s",
-		phase, x0, y0, x0+vw-1, y0+vh-1, gm.W, gm.H, pilesInfo, chestsInfo))
+		"%s · [%d,%d–%d,%d of %d×%d] · %s · %s · %s%s%s",
+		phase, x0, y0, x0+vw-1, y0+vh-1, gm.W, gm.H, legendGlyphLine(), agentGlyphNote, mapControlNote, pilesInfo, chestsInfo))
 	return grid, legend
 }
 
