@@ -2,7 +2,7 @@
 title: Anatomy — region index
 class: index
 status: shipped
-verified_against: c8906da39be3a5b861c2272af37db0a83dcded7a
+verified_against: ed93211ced3deb76e9b1f2fa4902c6f3d9dbc59d
 ---
 
 # Anatomy: the region index
@@ -71,7 +71,7 @@ forthcoming.
 | Region | Owning file | Notes |
 |---|---|---|
 | lesson row (one active lesson, ≤2 lines) | `panels/lesson-row.md` **(specified)** | decision 5; on at stages 1–2, badge+overlay at 3+/pre-ladder (`patterns/stage-defaults.md`); folds 3rd (`patterns/layout.md`) |
-| guardian strip (charge bank · regen · order count · faith) | `panels/guardian-strip.md` **(specified)** | decision 7; always-on all stages; folds LAST (relocates into the minibuffer's dormant line, `patterns/layout.md`) |
+| guardian strip (charge bank · regen · order count) | `panels/guardian-strip.md` | decision 7; spec 050 shipped (faith reserved, unbuilt pending TASK-118); always-on all stages; folds LAST (relocates into the minibuffer's dormant line, `patterns/layout.md`) |
 
 ## Minibuffer region
 
