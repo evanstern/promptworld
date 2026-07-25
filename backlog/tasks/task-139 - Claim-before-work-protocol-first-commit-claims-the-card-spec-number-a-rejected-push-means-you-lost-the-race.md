@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-25 20:22'
-updated_date: '2026-07-25 21:44'
+updated_date: '2026-07-25 21:54'
 labels:
   - gates
   - process
@@ -34,6 +34,8 @@ WHAT IT FIXES, AND WHAT IT DOES NOT — do not oversell:
 - In-flight CODE invisible from other clones: NO. Card moves already propagate today (seven tasks read In Progress in every clone while their branches existed on one machine only). That needs the separate push-on-first-commit rule for task branches — pair the two, do not conflate them.
 
 Enforcement home: scripts/check-merge-drift.mjs (session + worktree modes) plus the existing PreToolUse hook. Cutting a worktree for a task whose card is not already In Progress on origin/main should warn; creating a spec directory whose number is already taken on origin/main should block. The takenSpecNumbers() helper already computes the right thing — it just runs too late to prevent anything.
+
+Spec: specs/065-claim-before-work
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
@@ -43,4 +45,11 @@ Enforcement home: scripts/check-merge-drift.mjs (session + worktree modes) plus 
 - [ ] #3 Creating a specs/NNN-* whose number is already taken on origin/main is blocked at claim time, not detected after
 - [ ] #4 Task branches push on first commit so in-flight work is auditable from any clone
 - [ ] #5 Two-session simulation shows the second session is stopped rather than duplicating (test or documented manual run)
+- [ ] #6 Spec phase: Setup
+- [ ] #7 Spec phase: Foundational (blocking prerequisites for the gate stories)
+- [ ] #8 Spec phase: User Story 2 — the gates stop the second session mechanically (P1) 🎯 MVP
+- [ ] #9 Spec phase: User Story 3 — in-flight work auditable from any clone (P2)
+- [ ] #10 Spec phase: User Story 1 — doctrine: the protocol itself (P1)
+- [ ] #11 Spec phase: User Story 4 — two-session race simulation (P2)
+- [ ] #12 Spec phase: Polish & cross-cutting
 <!-- AC:END -->
