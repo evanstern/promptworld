@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-25 03:00'
-updated_date: '2026-07-25 18:50'
+updated_date: '2026-07-25 19:44'
 labels:
   - behavior-hygiene
   - mvls
@@ -25,15 +25,15 @@ Spec: specs/058-tool-surface-hygiene
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 expressive text overruns truncate and land, with a truncation notice in the verdict
-- [ ] #2 set_plan step overflow clamps to first 3 instead of rejecting
-- [ ] #3 structural malformations still reject strictly
-- [ ] #4 collect_water and bathe removed from the villager loop roster
+- [x] #1 expressive text overruns truncate and land, with a truncation notice in the verdict
+- [x] #2 set_plan step overflow clamps to first 3 instead of rejecting
+- [x] #3 structural malformations still reject strictly
+- [x] #4 collect_water and bathe removed from the villager loop roster
 - [ ] #5 malformed rate measured before/after on world-01 (expect ~11% -> ~1%)
-- [ ] #6 Spec phase: Foundational
-- [ ] #7 Spec phase: User Story 1 — Expressive clamping (P1)
-- [ ] #8 Spec phase: User Story 2 — set_plan step clamp (P1)
-- [ ] #9 Spec phase: User Story 3 — Roster prune (P2)
+- [x] #6 Spec phase: Foundational
+- [x] #7 Spec phase: User Story 1 — Expressive clamping (P1)
+- [x] #8 Spec phase: User Story 2 — set_plan step clamp (P1)
+- [x] #9 Spec phase: User Story 3 — Roster prune (P2)
 - [ ] #10 Spec phase: Polish & Cross-Cutting
 <!-- AC:END -->
 
@@ -41,4 +41,8 @@ Spec: specs/058-tool-surface-hygiene
 
 <!-- SECTION:NOTES:BEGIN -->
 MVLS sweep dispatch (2026-07-25): implementer tier Sonnet — constitution V rubric: routine/mechanical single-mechanism changes, complete file:line diagnosis on the task; no concurrency or doctrine arbitration. Lane 1; merges FIRST.
+
+spec-bridge sync: Foundational: 2/2 · User Story 1 — Expressive clamping (P1): 3/3 · User Story 2 — set_plan step clamp (P1): 2/2 · User Story 3 — Roster prune (P2): 2/2 · Polish & Cross-Cutting: 1/2
+
+PR #92 squash-merged as 7e76246. Gated deviations accepted: say/gist clamp in the scene parser (already clamping; rune-safety bug fixed there), set_plan schema maxItems removed so the landing clamp is reachable, name-keyed reason clamp for set_plan. AC#5 before-rate measured (world-01 v3: 807 rejections, ~93% text-cap); after-rate pends world-01 runtime on the post-058 binary — revisit before sweep close.
 <!-- SECTION:NOTES:END -->

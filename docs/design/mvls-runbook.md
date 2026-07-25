@@ -198,4 +198,6 @@ sweep; this log complete and status flipped to done.
 | 2026-07-25 | TASK-106 | — (research) | — | Done; artifact 7d79a0a; TASK-133 carded |
 | 2026-07-25 | TASK-89 | — (ops) | — | Done; world-01 migrated v4 + on gemma; 5-scene gist sample 0 defects |
 | 2026-07-25 | TASK-108 | #89 | 483e90c | wiki re-pinned; player-docs refresh batched to lane end; audit carded 3 gaps → 103/104 |
-| 2026-07-25 | TASK-111 | #90 | 7367216 | wiki re-pin dispatched; human ACs 3b/5 pend live evidence (operator surfaced) |
+| 2026-07-25 | TASK-111 | #90 | 7367216 | wiki re-pinned; human ACs 3b/5 → TASK-136/137 (operator-requested cards) |
+| 2026-07-25 | TASK-109 | #91 | 1debe18 | all human ACs proven; shim-note.md added |
+| 2026-07-25 | TASK-110 | #92 | 7e76246 | lane 1 code complete; AC5 after-rate pends world-01 runtime on new binary |
