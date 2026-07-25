@@ -5,7 +5,7 @@ kind: pipeline
 sources:
   - internal/daemon/daemon.go
   - internal/daemon/estimator_persist.go
-verified_against: 381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9
+verified_against: dee5f4bf60093cb5d775e10c8ced41c7e5b385ec
 ---
 
 # Daemon lifecycle
@@ -179,6 +179,17 @@ that is the crash path recovery is tested against.
 
 `IsRunning(dir)` (used by CLI `start`/`stop`) reads the pidfile and probes liveness
 without touching the world.
+
+`replayToTick(seed, m, st, cutoff)` (spec 043) sits beside `recoverState` as a
+read-only reconstruction primitive the boot path never calls: it rebuilds
+state as of an arbitrary tick by replaying the event log from genesis (a
+snapshot may postdate the cutoff, so genesis replay is the only cutoff-correct
+source), skipping — not stopping on — events past the cutoff, and tallying by
+type, rather than aborting on, events the current reducer rejects, so a
+legacy-format save whose manifest `world.Open` would refuse can still be
+reconstructed from just its seed + map. Its consumer is the spec-043
+replay-determinism harness (`internal/daemon/context_replay_test.go`,
+[[decision-context]] / [[testing-strategy]]).
 
 ## Connections
 

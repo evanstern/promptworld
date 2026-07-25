@@ -12,7 +12,7 @@ sources:
   - internal/cognition/horizon.go
   - internal/cognition/governor.go
   - internal/sim/cognition.go
-verified_against: 1af833a2c4dab23932357d85cbf51e01089d66fc
+verified_against: 72125c85abd1a0de6c19855aaae1757d8b976f17
 ---
 
 # Cognition horizon
@@ -266,7 +266,12 @@ payload audits and the shadow/on posture that gates its emission.
 
 The [[agent-mind]] consults `Route` before every enqueue (`routeVerdict` in
 `internal/mind/telemetry.go`) and records suppressions and thought outcomes as
-`cog.thought` / `cog.outcome` events ([[event-types]]); while the mind's
+`cog.thought` / `cog.outcome` events ([[event-types]]) — since spec 043 a
+planner `cog.thought` additionally carries the assembled decision context's
+sizes, `CogThoughtPayload`'s additive-last, `omitempty`
+`PromptBytes`/`BlockBytes`/`DroppedBlocks` fields (zero-valued on every
+non-planner emission and every pre-043 log; [[decision-context]] owns the
+block inventory they measure); while the mind's
 replica is paused, `routeVerdict` short-circuits to `RoutePaused` — before the
 uncapped branch, so paused wins even at max (spec 040) — and the suppression floors
 are the [[reflex-policy]] and pre-authored templates. The [[llm-orchestrator]]

@@ -17,7 +17,7 @@ sources:
   - internal/sim/metatron.go
   - internal/sim/morgue.go
   - internal/daemon/daemon.go
-verified_against: 381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9
+verified_against: dee5f4bf60093cb5d775e10c8ced41c7e5b385ec
 ---
 
 # Event types

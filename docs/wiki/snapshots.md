@@ -6,7 +6,7 @@ sources:
   - internal/store/store.go
   - internal/sim/loop.go
   - internal/daemon/daemon.go
-verified_against: 381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9
+verified_against: dee5f4bf60093cb5d775e10c8ced41c7e5b385ec
 ---
 
 # Snapshots
@@ -36,6 +36,17 @@ state (`sim.NewState(seed, map)`).
 Recovery in `daemon.recoverState`: unmarshal the chosen snapshot into the state, then
 replay events with `seq > snapshot.seq` through the same `Apply` reducer the live loop
 uses, bumping `state.Tick` to the highest event tick seen.
+
+`daemon.replayToTick(seed, m, store, cutoff)` (spec 043's replay-determinism
+harness) is the sibling that deliberately does NOT use snapshots: it rebuilds
+state as of an arbitrary tick cutoff by replaying the whole log from genesis
+(a snapshot may sit past the cutoff, so genesis replay is the only
+cutoff-correct source — the "optimization, never authority" doctrine made
+operational). It takes seed + map rather than a `world.World` so it can read
+a legacy-format save's log the manifest gate would refuse, skips events past
+the cutoff rather than stopping on them, and tallies (by type) rather than
+aborting on events the current reducer rejects — a clean current-format log
+skips nothing.
 
 ## Connections
 

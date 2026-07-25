@@ -20,6 +20,12 @@ sources:
   - internal/sim/grave_test.go
   - internal/sim/gru_test.go
   - internal/sim/toolcheck_test.go
+  - internal/sim/intentlog_test.go
+  - internal/sim/needsanchor_test.go
+  - internal/sim/journal_test.go
+  - internal/sim/memory_test.go
+  - internal/mind/context_test.go
+  - internal/daemon/context_replay_test.go
   - internal/world/migrate_test.go
   - internal/ipc/ipc_test.go
   - internal/mind/replay_test.go
@@ -33,7 +39,7 @@ sources:
   - internal/persona/persona_test.go
   - e2e/daemon_e2e_test.go
   - e2e/determinism_e2e_test.go
-verified_against: 381ebfc44a55ad2eaa5ddfc00f5a0c095ee41ba9
+verified_against: dee5f4bf60093cb5d775e10c8ced41c7e5b385ec
 ---
 
 # Testing strategy
@@ -242,7 +248,13 @@ silently drift from the state struct (spec 030 extended this to
 [[mental-maps]]/[[metatron-miracles]]; spec 042 extends it once more to
 `Memory.Seq` (KEEP — the emitting event's store seq, an identity rather than a
 clock value) and `Agent.SitVecTick` (KEEP — when the situation text was
-rendered, [[memory-retrieval]]); spec 044 extends it again with three KEEP
+rendered, [[memory-retrieval]]); spec 043 adds `Agent.NeedsAnchorTick` (SHIFT
+— the trajectory-window edge anchor, elapsed-anchor shape, 0 = unset) and
+`IntentRecord.Tick`/`IntentRecord.OutcomeTick` (KEEP — when an intent and its
+outcome landed, self-history like `Memory.Tick`, [[decision-context]]), with
+`TestSnapPreservesRemainingDurations` also proving the anchor's LEVELS
+(`NeedsAnchor`, need values not ticks) ride a snap untouched while its tick
+shifts; spec 044 extends it again with three KEEP
 entries — `RunEnd.Tick` (when the run ended: history, the world never ticks
 again), `DeathRecord.Tick` (the `NormViolation.Tick` shape), and
 `MorgueEpilogue.Tick` (the `ChronicleEntry.Tick` shape)). Byte-identity replay suites
@@ -419,6 +431,39 @@ counting exactly the batches they drive); `internal/mind/epilogue_test.go`
 proves absorbing a death or `run.ended` queues an epilogue, good prose lands
 as ONE `morgue.epilogue`, and a narrator failure is a gap, never a stall
 (FR-010).
+
+**Decision-context suites** (spec 043, TASK-105, [[decision-context]]): the
+context-grounding surface is proven per layer. Reducer-side,
+`internal/sim/intentlog_test.go` pins the recent-intent ring —
+`agent.intent_set` appends, done/failed stamp the newest open record, a
+rejected intent appends already closed, an expired plan step stamps its open
+record (or appends an unfired one), quick-succession overrides preserve
+order, wraparound at the cap, and byte-stable replay — and
+`internal/sim/needsanchor_test.go` the trajectory anchor's window-edge roll
+(unset first window renders steady, refresh at the edge, a sleep spanning the
+window). `internal/sim/journal_test.go` gains the `SelectJournalExcerpts`
+matrix (term match, no-match ⇒ nil, rune cap, determinism) and
+`internal/sim/memory_test.go` the annotated-selector twins:
+`TestSelectedWindowMatchesLegacy` proves `StripSelected` of the annotated
+window equals the legacy selector byte-for-byte, and the serendipity-tail
+flag is pinned for the assembler's drop accounting. Mind-side,
+`internal/mind/context_test.go` proves the block assembler: a golden-identity
+prompt, determinism, per-block telemetry sizes, the full drop-priority ladder
+under a shrunken budget, the protected memory floor and the byte-identical
+memories/serendipity accounting split, plan-echo content/guard
+phrasing/clearing, the journal block, a planted-memory relevance check, and
+an aggregate budget-fit sweep. Daemon-side,
+`internal/daemon/context_replay_test.go` is the replay-determinism harness
+(T013/T024, SC-004): `TestContextReplayByteIdentical` runs a real unpaused
+loop, then proves both recovery paths (snapshot recovery and genesis replay)
+rebuild the state byte-identically and `mind.AssembleUserPrompt` reproduces
+the assembled decision prompt byte-for-byte from the recovered world;
+`TestSageThrashWindowContextReplay` (env-guarded via
+`PROMPTWORLD_WORLD01_DB`) reconstructs a historical agent's context at an
+exact tick from a COPY of a legacy world.db via the daemon package's
+`replayToTick` ([[daemon-lifecycle]]), asserting the assembled text surfaces
+the documented reflex thrash — inspection of assembled text only, no model in
+the loop.
 
 **Persona lifecycle suite** (`internal/persona/persona_test.go`, TASK-74): on
 top of the pre-existing genesis-once/0444/missing-file-load coverage,

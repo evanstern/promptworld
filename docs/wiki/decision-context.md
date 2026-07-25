@@ -14,7 +14,7 @@ sources:
   - internal/sim/memory.go
   - internal/sim/plan.go
   - internal/sim/guard.go
-verified_against: 41b0502fbe31150640ddcfb00cfa0ac0e3e0a6da
+verified_against: 72125c85abd1a0de6c19855aaae1757d8b976f17
 ---
 
 # Decision context (per-turn context grounding)
@@ -29,7 +29,11 @@ the actual assembler (`internal/mind/context.go`); the two must move together.
 
 **Scope**: this inventory covers the **planner** decision prompt only —
 `assembleContext`/`assembleBudget`, called once per enqueued planner job
-(`internal/mind/mind.go`'s `plan()`). Conversation-scene and meeting prompts are a
+(`internal/mind/mind.go`'s `plan()`); `AssembleUserPrompt`
+(`internal/mind/prompt.go`) exports the same assembly minus the per-thought
+future-dating line, the pure-function entry point replay tooling and the TUI
+capture path use to reproduce a thought's exact bytes from a bare `*sim.State`.
+Conversation-scene and meeting prompts are a
 different, unbudgeted surface and are out of scope here. `cog.thought`'s
 `PromptBytes`/`BlockBytes`/`DroppedBlocks` are stamped ONLY for `Class == "planner"`
 thoughts — every other class's `cog.thought` carries them zero-valued
@@ -48,7 +52,7 @@ pressure: **higher number = dropped later**; `neverDrop` blocks are never shed.
 | 3 | `self_history` | last ≤4 `IntentRecord`s, newest first: goal, source in plain words, stated reason (only when one was recorded), outcome | `renderSelfHistory`/`selfHistoryLine`; `Agent.IntentLog` (ring, cap 8) | first thought (empty ring) → explicit "no prior activity yet — this is your first decision" line, never silence | show ≤4 of ring cap 8 | never |
 | 4 | `inventory` | carried resources/items (wood/stone/water/planks/refined stone/food/meals, spears) | `renderInventory`; `Agent.Inv` | never empty (zero-state renders as zero counts) | — | never |
 | 5 | `plan_echo` | active plan's remaining steps in order, head marked "next" the rest "then", each with its guard and validity deadline in plain words | `renderPlanEcho`/`guardPhrase`; `Agent.Plan []PlanStep` | no active plan → omitted entirely (no stale echo); plan end (completed/expired/guard-failed/superseded) surfaces instead via `self_history` at the next thought | `PlanStepCap` = 3 steps | 6 |
-| 6 | `known_places` / `nearby` | spec-041 known-places section (landmarks with provenance, place-shaped groups, orientation) + a peer-sighting "Nearby" line | `renderKnownPlaces`/`knownPlaces`; `Agent.Map` | as today (unchanged content) | peer scan radius 10 tiles | 5 |
+| 6 | `known_places` / `nearby` | spec-041 known-places section (landmarks with provenance — since spec 044 US4 including graves — place-shaped groups, orientation) + a peer-sighting "Nearby" line | `renderKnownPlaces`/`knownPlaces`; `Agent.Map` | as today (unchanged content) | peer scan radius 10 tiles | 5 |
 | 7 | `social_law` | bonds/debts/reputation/rumor + village-law context (active norms, exile judgments) | `renderSocialLaw` = `socialContext` + `villageLaw` | as today (unchanged content) | — | 4 |
 | 8 | `memories` | working-memory window: relevance-blended when `memory_relevance` is `"on"` with a recorded situation vector, legacy salience/recency otherwise; a protected floor of the most-recent 4 non-serendipity entries | `buildMemLines`/`renderMemLines`; `Agent.Memories`, `Agent.SitVec`, `sim.SelectMemories`/`SelectMemoriesRelevant` | no memories → no header at all (not an empty list) | window `WindowK` (10) minus 2 serendipity; floor 4 (`memoryFloor`) | 3 above the floor; the floor itself never drops |
 | 9 | `memories_serendipity` | the 2 serendipity tail picks from the oldest half of memory, seeded per planner cadence | same window (`buildMemLines`), tagged `serendipity` | absent when the window has ≤ K−2 scored entries (no tail to pick) | 2 entries | 2 |
@@ -187,6 +191,6 @@ The prompt does NOT include, by design:
   `specs/043-context-grounding/evidence/sc-001-capture.md` for the captured
   `BlockBytes`/`DroppedBlocks`/`PromptBytes` and the block-for-block check against
   this table.
-- This note is pinned to the commit above; the polish task (T026) re-pins it after
-  merge alongside the other touched notes ([[agent-mind]], [[memory-retrieval]],
+- This note is pinned to the commit above, re-pinned post-merge (T026) alongside
+  the other touched notes ([[agent-mind]], [[memory-retrieval]],
   [[event-types]], [[sim-state-reducer]]).
