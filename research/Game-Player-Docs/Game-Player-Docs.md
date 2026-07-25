@@ -55,6 +55,11 @@ The corpus shows three distinct documentation layers, each with its own conventi
 - [[Analysis-In-Game-First-Teaching]] — resolves the deferred in-game vs out-of-game
   question under the learning-game lens (verdict: in-game primary, out-of-game reference;
   operator-ratified 2026-07-25), with reconciled recommendations and proposed backlog moves
+- [[Analysis-UI-Reference-And-Help-Stack]] — the UI/UX projection under the reorientation
+  lens of 2026-07-25 (Staged Cockpit + eight binding UI decisions): four-layer help-stack
+  layering onto the decided surfaces, sibling reconciliation, and the full
+  `docs/design/tui/` v2 taxonomy/control-table/freshness-gate structure that seeds the
+  design-doc deliverable
 
 ## Open questions
 

@@ -58,7 +58,10 @@ Constraints and assumptions: [[Brief-and-Assumptions]].
 
 ## Analyses
 
-_Opinionated evaluations built on this branch (added by the analyze phase). Empty until then._
+- [[Analysis-Pedagogy-To-UI]] — how this corpus's teaching-through-play evidence projects
+  onto promptworld's TUI under the 2026-07-25 reorientation lens; operator decisions
+  (lesson row, takeover ceremony/postmortem, exercise panel, guardian help section) as
+  fixed constraints, sibling-branch reconciliation, ranked recommendations (2026-07-25)
 
 ## Open questions
 

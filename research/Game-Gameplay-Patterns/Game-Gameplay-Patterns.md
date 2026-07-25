@@ -61,6 +61,7 @@ promptworld (analysis phase). Constraints: [[Brief-and-Assumptions]].
 ## Analyses
 
 - [[Analysis-Learning-Game-Fit]] — do these patterns serve promptworld as a prompting/agents learning game, under the operator's 2026-07-25 staged/director-lite/hybrid-scoring/faith-mana decisions; supersedes the brief's ambient-sim lens
+- [[Analysis-Play-Loop-Surfaces]] — the UI/UX projection of the patterns onto concrete TUI surfaces (exercise panel, postmortem/unlock takeovers, guardian strip, fork-duel scoreboard), under the 2026-07-25 reorientation decisions and reconciled with the sibling reorientation branches
 
 ## Open questions
 

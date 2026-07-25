@@ -4,6 +4,7 @@ title: First-occurrence lessons projection (RimWorld-style learning helper)
 status: To Do
 assignee: []
 created_date: '2026-07-25 04:43'
+updated_date: '2026-07-25 14:45'
 labels:
   - learning-game
   - tui
@@ -22,4 +23,13 @@ Learning-game synthesis Wave 2 (operator decision 8). RimWorld trigger model ove
 - [ ] #1 First-occurrence events trigger one-line lessons in the feed; each lesson fires at most once (auto-retire, persisted seen-state)
 - [ ] #2 Lesson trigger taxonomy covers at minimum: suppression, gru attack, charge regen, order expiry, first death
 - [ ] #3 All pushed lessons are also reachable from the ? overlay
+- [ ] #4 Dedicated lesson row with dwell + UI pointer + one-active/spacing/decay; stage-defaulted per decision 5
+- [ ] #5 Prompting-lesson tier included in the minimum taxonomy
+- [ ] #6 Lesson strings skin-tokened, each naming its pull path; seen-state per-user
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Reorient 2026-07-25 rescope (decision 5, D2/D8): lessons render in a dedicated lesson row above the minibuffer — one active lesson, <=2 lines, dwells until done/dismissed, points at a key/tab (highlight field), anti-spam (one active, spaced, opportunity-decay). Default-on stages 1-2; badge+overlay-only default stage 3+/pre-ladder (stage-defaults machinery, TASK-128). Trigger taxonomy gains a PROMPTING tier: first rejected tool call, first custom charter observed, first fuzzy order. Every lesson string skin-tokened and carries its pull path ('press ? -> lessons'). Seen-state decided: per-user file (D8, unlocks.json precedent). Row page authored in TASK-123 before build.
+<!-- SECTION:NOTES:END -->

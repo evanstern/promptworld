@@ -4,7 +4,7 @@ title: 'Skinnable guardian persona: de-theme the angel fiction, persona as data'
 status: To Do
 assignee: []
 created_date: '2026-07-25 06:20'
-updated_date: '2026-07-25 06:20'
+updated_date: '2026-07-25 14:45'
 labels:
   - learning-game
   - design
@@ -28,4 +28,13 @@ Operator pivot (2026-07-25, raised during the TASK-68 spec session): keep the ag
 - [ ] #4 Default secular-mythic guardian skin ships; mechanics byte-compatible across skins (same events, costs, rules)
 - [ ] #5 A custom skin is loadable per world; one example alternate skin in-repo proves the format
 - [ ] #6 Post-sweep: wiki re-pinned (wiki-update) and player docs regenerated
+- [ ] #7 Skin-token contract published before 115/117 implementation; both consume it
+- [ ] #8 Sweep covers help.go, footer hints, stagesLadder, lesson strings, player-docs page names, design-doc mockups
+- [ ] #9 Skin boundary = guardian/systems tab split; systems content never skinnable
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Reorient 2026-07-25 rescope (D2/D10): the skin-token CONTRACT ships before TASK-115/117 write any new fiction literal — those tasks consume the lookup from day one (sequencing inversion fix). Enumerated sweep sites beyond the original framing: internal/tui/help.go static tables (5 Metatron literals), footer hints, cmd/promptworld/stages.go stagesLadder identities, TASK-117 lesson strings, docs/player/ page names, and docs/design/tui mockups/labels (the design doc renders all fiction strings as skin tokens — TASK-123). The guardian/systems tab split (D10, TASK-125) makes the skin boundary a file boundary: skins may touch the guardian tab, never the systems tab.
+<!-- SECTION:NOTES:END -->

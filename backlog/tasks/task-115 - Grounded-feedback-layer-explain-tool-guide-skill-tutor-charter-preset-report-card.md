@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-07-25 04:43'
+updated_date: '2026-07-25 14:45'
 labels:
   - learning-game
   - metatron
@@ -25,4 +26,13 @@ Learning-game synthesis Wave 1 (docs/design/learning-game-synthesis.md, 2026-07-
 - [ ] #2 Default guide skill + tutor-charter preset make a fresh world's angel a competent orientation tutor
 - [ ] #3 Report card attributes outcomes to charter text citing event-log evidence, on a cheap chain, sharing the explain tool's data source
 - [ ] #4 Tutor-lane exclusions hold: no charges spent, no world events, no faith earned, absent from all rubrics
+- [ ] #5 Report card surface: guardian-console card at stopping points + postmortem; badge between; never mid-run
+- [ ] #6 Guardian verbs + example asks reachable from the deterministic ? floor (D9)
+- [ ] #7 All new strings skin-token-resolved (D2)
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Reorient 2026-07-25 rescope (docs/design/reorient-2026-07-25-ui.md, D5/D9/D2): report card renders as a guardian-console card at natural stopping points (run end / pause / exercise resolution; badges between) and inside the postmortem takeover (TASK-127) — never a mid-run interruption. The stage's grantable verbs + one example ask per verb must also be reachable from the deterministic ? floor (D9 guardian section), not only via the tutor. All new fiction strings are skin-token-resolved (D2 — token contract from TASK-121 ships first). Render surface page authored in TASK-123 before build.
+<!-- SECTION:NOTES:END -->

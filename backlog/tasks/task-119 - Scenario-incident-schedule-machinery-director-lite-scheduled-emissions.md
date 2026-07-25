@@ -4,6 +4,7 @@ title: Scenario incident-schedule machinery (director-lite scheduled emissions)
 status: To Do
 assignee: []
 created_date: '2026-07-25 04:43'
+updated_date: '2026-07-25 14:45'
 labels:
   - learning-game
   - design-session
@@ -23,4 +24,13 @@ Learning-game synthesis Wave 2 (operator decision 2: director-lite first). The o
 - [ ] #2 Scenario definitions carry authored incident schedules + event-derived rubrics + a pass/fail signal in world config
 - [ ] #3 At least one runnable scenario (e.g. first-night) demonstrates schedule -> incidents -> rubric -> morgue epitaph end to end
 - [ ] #4 Design leaves a documented seam for the post-v1 live director
+- [ ] #5 Exercise panel: framing + live rubric gauges + pass/fail in scenario worlds
+- [ ] #6 Per-exercise visibility vocabulary (not boolean); attach-time briefing
+- [ ] #7 Scenario-cadence narration renders score-narrative chapters during short runs
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Reorient 2026-07-25 rescope (D11/D4): scenario worlds get an exercise dock tab (framing line, LIVE event-derived rubric gauges via the decision-trace projection pattern, pass/fail state) plus an attach-time briefing; incident-schedule visibility is a per-exercise VOCABULARY field, not a boolean (forecast at stages 1-2, fog from stage 3 as defaults); a scenario-cadence narration trigger closes chronicle chapters on rubric beats so the score narrative renders during short runs (the narrator's ~2 chapters/game-day would otherwise produce zero entries). curriculum.* pass emissions double as the ceremony trigger (TASK-127). Panel page authored in TASK-123 before build. Open (parked in synthesis): headline-live gauges vs full-breakdown-at-postmortem.
+<!-- SECTION:NOTES:END -->

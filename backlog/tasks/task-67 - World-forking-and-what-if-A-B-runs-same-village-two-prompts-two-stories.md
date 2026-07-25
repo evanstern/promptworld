@@ -4,7 +4,7 @@ title: 'World forking and what-if A/B runs (same village, two prompts, two stori
 status: To Do
 assignee: []
 created_date: '2026-07-23 03:28'
-updated_date: '2026-07-25 04:42'
+updated_date: '2026-07-25 14:45'
 labels:
   - review-2026-07-22
   - teaching-game
@@ -39,6 +39,8 @@ Depends on nothing, but pairs naturally with the decision-trace view (TASK-63): 
 
 <!-- SECTION:NOTES:BEGIN -->
 Drift audit 2026-07-23: premises verified — save dirs self-contained/copyable (world-save-directory.md:15-16), snapshots bound recovery (snapshots.md:14-17), replay never re-calls a model (llm-orchestrator.md:20), and no fork/compare subcommand exists yet (main.go:52-88).
+
+Reorient 2026-07-25 rescope (D7): v1 compare surface is the rubric-first scoreboard — plain-language rubric card with drill-down into interleaved chronicles at divergence points — sharing the postmortem's rubric renderer and the verdict-glossary discipline (a lost duel IS a postmortem, TASK-127). The shareable HTML retelling (two chronicles as one artifact — the Boatmurdered move) follows; dual side-by-side live TUI is deferred post-v1.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
