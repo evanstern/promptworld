@@ -4,7 +4,8 @@
 
 **Created**: 2026-07-25
 
-**Status**: Draft — pending client review (TASK-68 AC #5) before implementation
+**Status**: Client-reviewed 2026-07-25 (TASK-68 AC #5 — progression alignment verified,
+guardian-skin stage names approved); ready for planning
 
 **Input**: TASK-68 (the learning game's spine) under the client's stated three-step
 progression, the eight ratified synthesis decisions
@@ -47,13 +48,12 @@ one-mechanic-at-a-time convergence —
 `research/Learning-Game-Design/Teaching-Through-Play.md`). Injection awareness is not a
 stage: the fiction teaches it natively throughout (TASK-68 description).
 
-### Default guardian-skin display identities (DRAFT — for client review at AC #5)
+### Default guardian-skin display identities (client-approved 2026-07-25, AC #5)
 
 Skin data, not substrate: **stage-1 "The Voice"** (you speak, it acts) · **stage-2
 "The Written Word"** (your law outlives the conversation) · **stage-3 "The Craft"**
 (you shape what it can do) · **stage-4 "The Stewardship"** (a world in your care).
-Each carries a one-line identity description at world creation; alternates welcome —
-this table is the review surface.
+Each carries a one-line identity description at world creation.
 
 ## User Scenarios & Testing *(mandatory)*
 

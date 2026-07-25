@@ -35,7 +35,6 @@
   per-user unlocks + informed override, skin-provided names) were ratified by the
   operator in the 2026-07-25 session and recorded on TASK-68/TASK-121 before drafting —
   zero NEEDS CLARIFICATION markers remain by construction.
-- **Deliberate hold**: TASK-68 AC #5 requires client review against the three-stage
-  progression BEFORE implementation. The draft guardian-skin stage names table in the
-  spec is the primary review surface. Do not proceed to /speckit-plan until that
-  review is recorded on the board task.
+- ~~Deliberate hold~~ **Released 2026-07-25**: the AC #5 client review was held in
+  session — progression alignment verified, guardian-skin stage names approved —
+  and recorded on TASK-68. Planning may proceed.
