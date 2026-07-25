@@ -26,38 +26,36 @@ design pages are decided. Plan-of-record is the board.
 4. The board task you're executing (`backlog task view TASK-<n> --plain`) — its rescope
    notes carry the decision references.
 
-## State when this runbook was written (2026-07-25 ~15:00)
+## State — QUERY IT, DO NOT READ IT HERE
 
-- **Done:** TASK-123 (spec 047, PR #80, merge 948c162) — the design reference v2 exists;
-  all ten new-surface pages are authored at `status: specified`.
-- **In flight elsewhere (do not duplicate, expect their merges):** TASK-130 (player-docs
-  keys-reference, PR #81 open), spec 048 / TASK-107 (tuning manifest), TASK-105 (context
-  grounding, In Progress). Other orchestrators like you may also be running.
-- **Queued (this runbook's scope), in execution order below:** TASK-121, 124, 126, 125,
-  119, 117, 127, 115, 128, 129; TASK-67 optional tail.
+*(Two hand-maintained snapshots lived here — "State when this runbook was written ~15:00" and
+"Snapshot refresh ~17:30". Both were deleted 2026-07-25 after the team review found them
+false: they listed TASK-121 and TASK-125 as in flight after 125 merged (PR #87), called
+TASK-117 "unblocked and unclaimed" after it was Done (PR #88), and cited worktree paths that
+do not exist on every machine. The execution log below and the board are the real record.)*
 
-## Snapshot refresh (2026-07-25 ~17:30)
+Run these at every dispatch — seconds, and they cannot be stale:
 
-- **Done since authoring:** TASK-124 (spec 049, PR #84, merge c388c41), TASK-126
-  (spec 050, PR #83, merge f18e9a4), TASK-130 (player-docs keys-reference, PR #81,
-  merge ef696aa). Lane 1's two Sonnet slices are merged and re-grounded.
-- **In flight (do not duplicate):** TASK-121 (spec 052 fully authored on main incl.
-  `contracts/skin-contract.md`; worktree `.worktrees/task-121` carries US1 + T005
-  commits), TASK-125 (linked to spec 053, In Progress, Sonnet + card-seam scope ruling
-  recorded, worktree cut at 622e559). Outside this runbook: TASK-131 (spec 051
-  merge-drift gates, worktree present), TASK-107 (uncommitted wiki edits at root —
-  leave them).
-- **TASK-119 attributed (operator confirmation, ~18:30):** `specs/054-scenario-machinery/`
-  is the sibling orchestrator session's in-progress specify — 119, 121, 125 (and 127,
-  spec 056) are all that session's claims. Session 3 does not touch them.
-- **Unblocked and unclaimed:** TASK-117 (Lane 3 gate satisfied — 121's skin-token
-  contract is published on main via spec 052), TASK-127 (its two parked operator
-  questions are RESOLVED in the spec-047 pages, which win per this runbook: ambient
-  postmortem = morgue evidence only, `overlays/postmortem.md` FR-018 ruling; ceremony
-  interrupt policy = decision 6 stands, reopening signal named as a watch item,
-  `overlays/ceremony.md` "Interrupt-policy watch item" — verify score voice against the
-  page at dispatch). Still blocked: TASK-115 (needs 125's console surface), TASK-128
-  (Lane 4, after 125/117/119), TASK-129 (Lane 5 tail).
+```sh
+backlog task list --plain                     # live board state
+git fetch origin && git branch -r             # what actually has a branch
+ls -d specs/*/ | sed 's|specs/0*||;s|-.*||' | sort -n | tail -1   # highest spec number
+```
+
+- **Queued (this runbook's scope), execution order:** TASK-121, 124, 126, 125, 119, 117,
+  127, 115, 128, 129; TASK-67 optional tail. Consult the execution log below for what has
+  actually landed — do not infer it from prose in this file.
+- **Standing rulings that are NOT state and remain valid:** TASK-127's two parked operator
+  questions are RESOLVED in the spec-047 pages, which win per this runbook (ambient
+  postmortem = morgue evidence only, `overlays/postmortem.md` FR-018; ceremony interrupt
+  policy = decision 6 stands, with the reopening signal named as a watch item in
+  `overlays/ceremony.md`) — verify score voice against the page at dispatch.
+- **Amendment 2026-07-25 (operator, team review):** the decided merge order TASK-121 → TASK-111
+  was overtaken — TASK-111 merged first (PR #90). TASK-121's sweep must now rebase through
+  111's survival-turn code in `internal/metatron/{turn,orders}.go` and add any Metatron-voice
+  order text / soul header it landed to the sweep inventory, rather than assuming the
+  skin-token binding held. TASK-115's spec renumbered off the 059 collision to
+  `specs/063-grounded-feedback`.
 
 ## Execution log
 

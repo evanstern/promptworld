@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-25 03:00'
-updated_date: '2026-07-25 19:37'
+updated_date: '2026-07-25 19:47'
 labels:
   - learning-game
   - guardian-survival
@@ -56,6 +56,8 @@ OPERATOR DECISIONS (2026-07-25, team review):
 REVIEW FINDINGS (pinned-coordinate note now historical — the work merged): this task's three board coordinates had all drifted before dispatch — turn.go:749 was orderStatuses' loop body (the initiative frame is 817-831); turn.go:510 was landNudgeBatch's doc comment (guidance composes at :873); derive.go:235 was MetatronToolGuidance's func line. Kept as evidence for the standing rule: re-pin file:line diagnoses at dispatch, since the constitution's trivial-exemption and both runbooks lean on them. Also: internal/metatron is a THREE-program hotspot (052, 059-metatron, 115) that no runbook lists — specs 052 T012/T014, 059-metatron T005/T007 and 059-grounded-feedback T005 hold three incompatible expectations of the single constant metatronInitiativeFrame. That collision is now live in merged code.
 
 Live-evidence follow-ups carded (operator request 2026-07-25): TASK-136 (AC#3 live rejection-rate measurement) and TASK-137 (AC#5 charter-delta experiment). This task's remaining ACs resolve from their evidence.
+
+Renumber executed (2026-07-25): the 059 collision is resolved — THIS task keeps specs/059-metatron-survival-autonomy; TASK-115's spec moved to specs/063-grounded-feedback (not 060 — village-lens/conversation-loop-damper/instinct-yields claimed 060/061/062 while the collision sat open). spec-bridge check green: 63 linked tasks, none exceeding artifacts.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

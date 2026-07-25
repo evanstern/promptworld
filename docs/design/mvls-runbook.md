@@ -24,19 +24,35 @@ ordering, doctrine, and the log.
 4. `backlog task list --plain` — live state; other sessions move it while you work.
 5. The task you're about to execute (`backlog task view TASK-<n> --plain`).
 
-## State when this runbook was written (2026-07-25 ~18:30)
+## State — QUERY IT, DO NOT READ IT HERE
 
-- **Done already:** TASK-107 (tuning manifest, PR #82 → 0cbf37b) — the keystone; wiki
-  re-grounded (world-tuning note), player docs fresh.
-- **In flight in other sessions (do not duplicate; expect their merges):** TASK-119,
-  TASK-121, TASK-125, TASK-131. Specs 049–053 are claimed; next free spec number is 054 —
-  re-verify against `origin/main:specs/` at each claim.
-- **Queued (this runbook's scope, execution order):** TASK-108, TASK-110, TASK-109,
-  TASK-111, TASK-89 (ops), TASK-106 (research) → TASK-103 → TASK-104 → TASK-122 (tail).
-- **Operator instruction (2026-07-25):** other sweeps may claim one of these tasks. At
-  each dispatch, re-check the task's status; if it is already In Progress or Done under
-  another session, STOP that lane and surface it to the operator — do not re-implement
-  or fight over it.
+*(The hand-maintained snapshot that used to live here was deleted 2026-07-25 after the team
+review found it false twice in one day — it claimed TASK-125/131 were in flight after they
+were Done, and advertised "next free spec number is 054" when 062 was taken. A snapshot in a
+file that other sessions move under you is a liability, not a briefing. `mvls-runbook.md:8`
+already says the board is the plan of record; this section now honors that.)*
+
+Run these at every dispatch — they take seconds and they cannot be stale:
+
+```sh
+backlog task list --plain                     # live board state
+git fetch origin && git branch -r             # what actually has a branch
+ls -d specs/*/ | sed 's|specs/0*||;s|-.*||' | sort -n | tail -1   # highest spec number
+```
+
+- **This runbook's scope, execution order:** TASK-108, TASK-110, TASK-109, TASK-111,
+  TASK-89 (ops), TASK-106 (research) → TASK-104 → TASK-103 → TASK-122 (tail).
+  **Ordering amended 2026-07-25 (operator, team review): 104 BEFORE 103** — `internal/sim/policy.go`
+  contains zero reads of `.Warmth`, so 103's day-branch warmth AC is unwritable until 104
+  makes warmth a need the ladder can see. TASK-103 was dispatched before this landed;
+  reconcile rather than assuming the old order.
+- **Spec numbers are a read-then-write RACE, not a convention.** Checking `origin/main:specs/`
+  before claiming cannot work — two sessions checking in the same minute both see the same max.
+  It has failed four times in one day. Until a mechanical allocator exists, claim by *creating
+  and committing the directory immediately*, then re-verify.
+- **Operator instruction (2026-07-25):** other sweeps may claim one of these tasks. At each
+  dispatch, re-check the task's status; if it is already In Progress or Done under another
+  session, STOP that lane and surface it to the operator — do not re-implement or fight over it.
 
 ## Execution lanes (dependency-ordered; parallelize within a lane)
 
@@ -173,6 +189,13 @@ sweep; this log complete and status flipped to done.
   near-simultaneously and both pushed — directory names are unique so all
   path-based machinery works; neither renumbered (a running implementer
   references ours). Surfaced to operator.
+  **RESOLVED 2026-07-25 (operator decision, team review):** this sweep's
+  `059-metatron-survival-autonomy` KEEPS 059; the other session's spec renumbered to
+  `specs/063-grounded-feedback` (TASK-115 re-linked via spec-bridge; bridge gate green).
+  Note 060/061/062 were all claimed while the collision sat open, so 063 — not 060 — was
+  the next free number by the time it was executed. That delay is the cost of treating a
+  number collision as cosmetic: it is not, because every "spec 059" reference in a runbook,
+  board note or agent prompt is ambiguous until it is fixed.
 - 2026-07-25: TASK-109 diagnosis checkpoint cleared — leak proven to be the
   planner talk_to→hail founding path (97.8% of all world-01 scenes); operator
   chose the sim-side hail gate reusing the encounter_cooldown_ticks dial;
