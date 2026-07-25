@@ -181,6 +181,11 @@ sweep; this log complete and status flipped to done.
   W=4h/K=8 + need clause; **TASK-133 carded** (neglect detector, High — the
   shape that killed Oak); thrash-percept implementation deferred until after
   103/104 + TASK-122. TASK-106 Done (research-complete, no PR by design).
+- 2026-07-25: **merge order within lane 1 amended** — original 110→108→109→111
+  assumed simultaneous readiness; footprints are disjoint, so ready-first
+  merges instead (108 merged first). Serial-merge + rebase-between discipline
+  unchanged. Player-docs refresh batched to the end of the lane's merge train
+  (wiki re-pins per merge as required; the player projection regenerates once).
 - 2026-07-25: TASK-89 grounding shift — world-01 llm.json already routed all
   traffic to gemma/cloud (cogito unused; stanza removed); world was
   format_version 3 → migrated v4 (backups kept); daemon restarted. AC2 (gist
@@ -192,3 +197,4 @@ sweep; this log complete and status flipped to done.
 |------|------|----|-------|-------|
 | 2026-07-25 | TASK-106 | — (research) | — | Done; artifact 7d79a0a; TASK-133 carded |
 | 2026-07-25 | TASK-89 | — (ops) | — | Done; world-01 migrated v4 + on gemma; 5-scene gist sample 0 defects |
+| 2026-07-25 | TASK-108 | #89 | 483e90c | wiki re-pinned; player-docs refresh batched to lane end; audit carded 3 gaps → 103/104 |

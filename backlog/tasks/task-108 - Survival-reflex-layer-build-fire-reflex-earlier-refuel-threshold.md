@@ -4,7 +4,7 @@ title: 'Survival reflex layer: build-fire reflex + earlier refuel threshold'
 status: In Progress
 assignee: []
 created_date: '2026-07-25 02:59'
-updated_date: '2026-07-25 18:46'
+updated_date: '2026-07-25 19:14'
 labels:
   - instinct-layer
   - mvls
@@ -24,15 +24,15 @@ Spec: specs/057-survival-reflex-gaps
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 cold villager with wood and no reachable warmth builds a fire via reflex, no model call
-- [ ] #2 refuel reflex arms below ~3h fuel instead of 1h
-- [ ] #3 reflex-layer audit: note any other survival gap found (eat/sleep/warmth parity)
-- [ ] #4 thresholds sourced from tuning manifest when TASK-107 lands (const fallback until then)
-- [ ] #5 Spec phase: Foundational
-- [ ] #6 Spec phase: User Story 1 — Refuel arms below 3 game-hours (P1)
-- [ ] #7 Spec phase: User Story 2 — Genesis tuning pin (P1)
-- [ ] #8 Spec phase: User Story 3 — Cold build-fire reflex proven (P2)
-- [ ] #9 Spec phase: User Story 4 — Survival audit (P3)
+- [x] #1 cold villager with wood and no reachable warmth builds a fire via reflex, no model call
+- [x] #2 refuel reflex arms below ~3h fuel instead of 1h
+- [x] #3 reflex-layer audit: note any other survival gap found (eat/sleep/warmth parity)
+- [x] #4 thresholds sourced from tuning manifest when TASK-107 lands (const fallback until then)
+- [x] #5 Spec phase: Foundational
+- [x] #6 Spec phase: User Story 1 — Refuel arms below 3 game-hours (P1)
+- [x] #7 Spec phase: User Story 2 — Genesis tuning pin (P1)
+- [x] #8 Spec phase: User Story 3 — Cold build-fire reflex proven (P2)
+- [x] #9 Spec phase: User Story 4 — Survival audit (P3)
 - [ ] #10 Spec phase: Polish & Cross-Cutting
 <!-- AC:END -->
 
@@ -40,4 +40,8 @@ Spec: specs/057-survival-reflex-gaps
 
 <!-- SECTION:NOTES:BEGIN -->
 MVLS sweep dispatch (2026-07-25): implementer tier Opus 4.8 — constitution V rubric: doctrine-adjacent survival behavior in the sim reducer, replay-affecting genesis change. Lane 1; merges after TASK-110.
+
+spec-bridge sync: Foundational: 1/1 · User Story 1 — Refuel arms below 3 game-hours (P1): 3/3 · User Story 2 — Genesis tuning pin (P1): 4/4 · User Story 3 — Cold build-fire reflex proven (P2): 2/2 · User Story 4 — Survival audit (P3): 1/1 · Polish & Cross-Cutting: 1/2
+
+PR #89 squash-merged as 483e90c. Matrix exposed no surgical gap; three non-surgical gaps carded in audit.md (night search + day warmth -> TASK-103; wake-to-cold -> TASK-104). T013 (player-docs refresh) batched to end of lane-1 merge train.
 <!-- SECTION:NOTES:END -->
