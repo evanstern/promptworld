@@ -10,7 +10,7 @@ sources:
   - internal/llm/providers.go
   - internal/llm/lease.go
   - internal/llm/pending.go
-verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
+verified_against: b6794f7e69895a0bfa45f21490373d25ba966895
 ---
 
 # LLM orchestrator
@@ -63,7 +63,9 @@ and never adds it to the routes table Submit walks. `HasEmbedding`/
 `EmbeddingProvider` are the daemon's wiring gate and boot-line source;
 `Embed(ctx, texts)` calls the head provider's transport directly — no queue,
 breaker, or estimator, since the embedder driver paces and debounces itself —
-returning `ErrEmbeddingOff` when the subsystem is off; `WarmEmbedding` best-
+returning `ErrEmbeddingOff` when the subsystem is off; on success it clears
+any stale preflight condition on the embedding provider (TASK-102, see
+[[llm-provider-health]]); `WarmEmbedding` best-
 effort pins the model resident. Both transports implement the `embedCaller`
 surface: `openaiCompat.Embed` POSTs `{"model","input"}` to
 `endpoint+"/embeddings"`, decoding `data[].embedding` into one index-ordered

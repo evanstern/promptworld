@@ -11,7 +11,7 @@ sources:
   - internal/daemon/daemon.go
   - cmd/promptworld/commands.go
   - internal/tui/views.go
-verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
+verified_against: b6794f7e69895a0bfa45f21490373d25ba966895
 ---
 
 # LLM provider health (preflight + tool-silence detection)
@@ -86,21 +86,27 @@ per FR-005. `toolSilentRemedy` keys the remedy text to the RESOLVED
 Transport failures never reach `observeSuccess` (the worker replies before
 the success path) — they neither count nor reset; the breaker owns those.
 
-**Embedding traffic is exempt** (spec 042, [[memory-retrieval]], known gap
-tracked by TASK-102): `Orchestrator.Embed` calls the embedding route's head
-provider's transport directly, bypassing the worker entirely — so a
-successful embed call never reaches `observeSuccess` and can neither clear
-nor prevent a stale preflight condition (`model-missing`/
-`endpoint-unreachable`) on that provider; a bare model alias that resolves
-fine at the endpoint still preflights against `data[].id` and can stick with
-a spurious warning that embed traffic proves wrong every call. The embedding
+**Embedding traffic clears preflight, skips tool-silence** (spec 042,
+[[memory-retrieval]], TASK-102): `Orchestrator.Embed` calls the embedding
+route's head provider's transport directly, bypassing the worker — so embeds
+never reach `observeSuccess` and never feed the tool-silence detector
+(embeddings carry no tool calls, so tool-silence has no meaning for them).
+But a successful embed DOES clear a stale preflight condition
+(`model-missing`/`endpoint-unreachable`) on the embedding provider via
+`clearPreflightCondition`, mirroring `observeSuccess`'s tool-free branch: a
+completed call proves the endpoint reachable and the model served. Before
+TASK-102 a bare model alias that resolves fine at the endpoint (e.g.
+`all-minilm` vs the listing's `all-minilm:latest`) preflighted against
+`data[].id` and stuck with a spurious permanent warning; now that warning is
+a transient boot-time blip that self-heals on the first successful embed
+(regression-tested in `internal/llm/embed_test.go`). The embedding
 subsystem's OWN failure signal is a separate mechanism riding the same wire
 shape: `mind.NewEmbedder`'s debounced-per-episode failure callback (wired in
 [[daemon-lifecycle]]) prints a daemon-log WARNING and lands a
 `daemon.llm_warning` event (`kind: "embedding-unavailable"`) through the same
 `Loop.InjectOperator` door this feature uses — the event type and door are
-shared, but this feature's own detectors (preflight, tool-silence) never
-observe an embed call either way.
+shared, and while this feature's detectors never RAISE from an embed call,
+a successful embed does CLEAR its preflight conditions (above).
 
 **Fresh-world defaults** (US3) close the loop from the other end — see
 [[llm-orchestrator]]'s `DefaultConfig` for the `cogito:3b` + `tool_mode:
@@ -162,9 +168,10 @@ uncalibrated warning, and `providerCalibrationLine`) are a separate,
 independent signal riding alongside this one on the same `renderStatusHuman`
 output and the same `ProviderStatus` struct — a dead/tool-silent condition
 and an uncalibrated provider are orthogonal facts that can both be true.
-[[memory-retrieval]]'s embedding traffic bypasses this feature's detectors
-entirely (TASK-102) and raises its own, differently-sourced
-`daemon.llm_warning` through the same door.
+[[memory-retrieval]]'s embedding traffic never raises this feature's
+conditions (successful embeds clear stale preflight ones, TASK-102) and
+raises its own, differently-sourced `daemon.llm_warning` through the same
+door.
 
 ## Operational notes
 

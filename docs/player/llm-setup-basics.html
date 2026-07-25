@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/llm-providers.md@466bb83d55a14332690ddbd852790a1a64da5469">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-orchestrator.md@cc514f7ff456fefbcfe289471c5a1467b8e724df">
+<meta name="promptworld-docs:source" content="docs/llm-providers.md@598098640fecce348792f0a78689b7af48d4f842">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-orchestrator.md@b6794f7e69895a0bfa45f21490373d25ba966895">
 <meta name="promptworld-docs:source" content="README.md@ead97e7619572a625a35b2ee3e82243ff6f9e3f4">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@cc514f7ff456fefbcfe289471c5a1467b8e724df">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@b6794f7e69895a0bfa45f21490373d25ba966895">
 <title>AI setup basics — promptworld player docs</title>
 <style>
   :root {
@@ -134,9 +134,11 @@ route:</p>
 "routes": {
   "embedding": ["embedder"]
 }</code></pre>
-<p>Use the full <code>all-minilm:latest</code> name exactly as shown, not a
-shortened version — a shortened name still works for the model itself but
-trips a spurious warning elsewhere. This only adds the fingerprinting; the
+<p>Prefer the full <code>all-minilm:latest</code> name exactly as shown over a
+shortened version — a shortened name still works for the model itself, but it
+briefly trips a spurious warning at startup (the warning clears by itself the
+first time a memory is fingerprinted; the full name avoids even that blip).
+This only adds the fingerprinting; the
 separate switch that actually changes which memory a villager recalls stays
 off until that feature clears its own evidence review. Full detail (and the
 evidence-review switch itself) lives in <strong>docs/llm-providers.md</strong>.</p>
