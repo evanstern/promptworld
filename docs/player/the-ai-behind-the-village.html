@@ -4,13 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/wiki/agent-mind.md@3b7dd17b478ab5aa64e4c99c44b77bc565d71376">
-<meta name="promptworld-docs:source" content="docs/wiki/cognition.md@8e0c7a09ce3ffaf14b2951e7f1304e23cfb552c9">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-orchestrator.md@d23fbbfe471ec62c9b94ce79404870632a6eb60e">
+<meta name="promptworld-docs:source" content="docs/wiki/agent-mind.md@cc514f7ff456fefbcfe289471c5a1467b8e724df">
+<meta name="promptworld-docs:source" content="docs/wiki/cognition.md@cc514f7ff456fefbcfe289471c5a1467b8e724df">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-orchestrator.md@cc514f7ff456fefbcfe289471c5a1467b8e724df">
 <meta name="promptworld-docs:source" content="docs/wiki/nightly-consolidation.md@2bc94f55c57880e07f0e52e5de20c9cd527ab340">
-<meta name="promptworld-docs:source" content="docs/wiki/social-fabric.md@3b7dd17b478ab5aa64e4c99c44b77bc565d71376">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@3b7dd17b478ab5aa64e4c99c44b77bc565d71376">
-<meta name="promptworld-docs:source" content="docs/wiki/mental-maps.md@3b7dd17b478ab5aa64e4c99c44b77bc565d71376">
+<meta name="promptworld-docs:source" content="docs/wiki/social-fabric.md@cc514f7ff456fefbcfe289471c5a1467b8e724df">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@cc514f7ff456fefbcfe289471c5a1467b8e724df">
+<meta name="promptworld-docs:source" content="docs/wiki/mental-maps.md@cc514f7ff456fefbcfe289471c5a1467b8e724df">
+<meta name="promptworld-docs:source" content="docs/wiki/memory-retrieval.md@cc514f7ff456fefbcfe289471c5a1467b8e724df">
 <title>The AI behind the village — promptworld player docs</title>
 <style>
   :root {
@@ -145,6 +146,26 @@ better one shipped. The new wording produces noticeably fewer garbled decisions,
 villagers spend about half as much time lost in thought and more time actually doing
 things. (A version that also included a worked example was tested too — and rejected,
 because villagers started copying the example instead of thinking for themselves.)</p>
+
+<h2>Picking which memory matters right now (still being tested)</h2>
+<p>Today, the handful of memories a villager is shown before they think are
+chosen mostly by how important the memory was and how recent it is — the same
+"most striking and freshest" rule every time, for everyone. A newer feature,
+not yet turned on, would instead let the game favor whichever remembered
+moment actually matches the villager's <em>current</em> situation — so a
+villager standing at a cold fire would be more likely to be reminded of where
+a warm one is, even if that's not the single most dramatic thing that ever
+happened to them. Getting ready for this, every memory and every villager's
+sense of "what's going on right now" quietly gets a comparable fingerprint
+behind the scenes already, whether or not the smarter picking is switched on.</p>
+<p>It ships off. Before it's ever turned on for real, the plan is to run it
+quietly alongside the existing behavior first — computing what the smarter
+pick WOULD have chosen, without changing what a villager actually experiences
+— and only flip it on once that evidence has been reviewed. So don't expect
+villagers' recall to feel any different for now; that's the intended,
+cautious rollout, not something missing or broken. See the
+<a href="llm-setup-basics.html">setup basics page</a> for the (entirely
+optional) piece an operator can turn on to start building that evidence.</p>
 
 <h2>Local model vs. cloud model</h2>
 <p>promptworld can split AI work across two kinds of models: a fast, typically free

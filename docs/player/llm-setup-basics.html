@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/llm-providers.md@8fcc79cee5fc24f2b1e7e6fd67189cf58828bfc2">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-orchestrator.md@d23fbbfe471ec62c9b94ce79404870632a6eb60e">
+<meta name="promptworld-docs:source" content="docs/llm-providers.md@466bb83d55a14332690ddbd852790a1a64da5469">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-orchestrator.md@cc514f7ff456fefbcfe289471c5a1467b8e724df">
 <meta name="promptworld-docs:source" content="README.md@ead97e7619572a625a35b2ee3e82243ff6f9e3f4">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@3b7dd17b478ab5aa64e4c99c44b77bc565d71376">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@cc514f7ff456fefbcfe289471c5a1467b8e724df">
 <title>AI setup basics — promptworld player docs</title>
 <style>
   :root {
@@ -115,6 +115,31 @@ local model first and falls back to cloud, and needs no setup beyond what's alre
 above. If you're carrying forward an older world's <code>llm.json</code> from before
 this existed, promptworld fills in that default for you automatically the next time
 the world starts, with one line in the startup log noting it did so.</p>
+
+<h2>Optional: memory embeddings</h2>
+<p>There's one more optional, off-by-default piece: a small local model that
+gives every villager memory a "meaning fingerprint," the groundwork for a
+smarter memory-recall feature that's still being evaluated (see
+<a href="the-ai-behind-the-village.html">the AI behind the village</a> for
+what that feature actually does for players). Leave it out and nothing about
+your village changes. To turn it on, pull the model:</p>
+<pre><code>ollama pull all-minilm</code></pre>
+<p>then add it to <code>llm.json</code> as its own provider on the <code>embedding</code>
+route:</p>
+<pre><code>"providers": {
+  "embedder": { "transport": "openai_compat",
+                "endpoint": "http://localhost:11434/v1",
+                "model": "all-minilm:latest" }
+},
+"routes": {
+  "embedding": ["embedder"]
+}</code></pre>
+<p>Use the full <code>all-minilm:latest</code> name exactly as shown, not a
+shortened version — a shortened name still works for the model itself but
+trips a spurious warning elsewhere. This only adds the fingerprinting; the
+separate switch that actually changes which memory a villager recalls stays
+off until that feature clears its own evidence review. Full detail (and the
+evidence-review switch itself) lives in <strong>docs/llm-providers.md</strong>.</p>
 
 <h2>Checking it's actually working</h2>
 <ul>

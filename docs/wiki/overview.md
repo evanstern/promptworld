@@ -6,7 +6,7 @@ sources:
   - README.md
   - cmd/promptworld/main.go
   - go.mod
-verified_against: 1e71b77f104dda982aa407b28ad2c994219e90d0
+verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
 ---
 
 # Overview
@@ -65,11 +65,12 @@ a default worlds home (`~/.promptworld/worlds`, where `new <name>` creates) and 
 advisory known-worlds pointer cache — both strictly optional: every command still
 takes a plain path, and a world runs and copies with no manager state present.
 `promptworld ps` enumerates every running world machine-wide from live evidence.
-The save format has broken twice so far: spec 012 (resources/food/crafting) bumped
-`format_version` to 2, and spec 013 (inventory & storage) bumped it again to 3;
-`promptworld migrate <world>` ([[world-migration]]) is the door a stopped older
-(v1 or v2) world walks through to keep running under a newer binary, chaining
-both steps in one run for a v1 source.
+The save format has broken three times so far: spec 012 (resources/food/crafting)
+bumped `format_version` to 2, spec 013 (inventory & storage) bumped it to 3, and
+spec 041 (mental maps) bumped it to 4; `promptworld migrate <world>`
+([[world-migration]]) is the door a stopped older (v1, v2, or v3) world walks
+through to keep running under a newer binary, chaining every step it needs in
+one run for an older source (e.g. 1→2→3→4).
 
 ## Connections
 

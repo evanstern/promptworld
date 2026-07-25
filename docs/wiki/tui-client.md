@@ -9,7 +9,7 @@ sources:
   - internal/tui/grammar.go
   - internal/tui/digest.go
   - internal/tui/decisions.go
-verified_against: 3b7dd17b478ab5aa64e4c99c44b77bc565d71376
+verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
 ---
 
 # TUI client
@@ -222,7 +222,14 @@ line; the detail pane holds the payload verbatim): `agent.saw` ("Ash saw fire
 at (x,y) (+N more)"), `social.place_told` ("Ash told Birch of fire at (x,y)
 (+N more)"), `agent.map_corrected` ("Ash found fire at (x,y) gone (+N
 more)"), and `metatron.place_revealed` ("Metatron revealed fire at (x,y) to
-Ash (+N more)", Metatron as subject, the nudge convention). The four
+Ash (+N more)", Metatron as subject, the nudge convention). Since spec 042,
+three [[memory-retrieval]] event types get registry entries with the raw
+vector deliberately elided (384 floats would drown the feed): `agent.memory_embedded`
+("memory seq=N embedded dims=N model=…"), `agent.situation_embedded` (the
+agent plus its rendered situation text as speech, then "dims=N model=…"),
+and `cog.memory_divergence` (agent, mode, "overlap=N/N", "displaced=N",
+"vectorless=N" — the recorded rank-divergence telemetry the US2→US3 gate
+decision reads). The four
 [[metatron-miracles]] types render in the metatron family voice, with a
 trailing emphasized `(forced)` annotation (`gratisMark`) whenever the
 payload's gratis flag waived the charge — an operator force is never

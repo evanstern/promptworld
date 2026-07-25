@@ -12,7 +12,7 @@ sources:
   - internal/persona/files.go
   - internal/scribe/scribe.go
   - internal/sim/memory.go
-verified_against: 3b7dd17b478ab5aa64e4c99c44b77bc565d71376
+verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
 ---
 
 # Agent mind
@@ -78,6 +78,20 @@ signal [[nightly-consolidation]]'s belief validator reads to gate a model's
 window: salience halved per game-day of age, top K−2, plus 2 seeded serendipity
 picks from the oldest half (bucketed to the planner cadence), presented
 reverse-chronologically. K = `WindowK` (10). Prompts never see the whole soul.
+
+Since spec 042, which SELECTOR fills that window is gated by the world's
+`memory_relevance` flag (`world.json`, validated at `world.Open`, threaded
+boot-static into `mind.New` as `memoryRelevance` and reused by `convo.go`'s
+scene snapshot): `selectWindow` (prompt.go) sends `""` and `"shadow"` through
+the same `SelectMemories` call, byte-identical to today's window, while `"on"`
+sends `sim.SelectMemoriesRelevant` conditioned on the agent's recorded
+situation vector (`Agent.SitVec`, nil until the async embedder has rendered
+one — which delegates straight back to `SelectMemories` inside the selector).
+In shadow/on mode, `plan()` also records one `cog.memory_divergence` per
+enqueued plan job (`recordDivergence`, telemetry.go) — both rankings computed,
+only the legacy one served, the evidence a shadow→on gate decision reads.
+[[memory-retrieval]] owns the embedding pipeline, the situation vector, and the
+relevance-scoring math behind this gate.
 
 Spec 019 (US1) made every sim-emitted episodic memory **situated**: the three
 bare constructors are gone — `memoryEvent`/`memoryAboutEvent`/`memoryEventToned`
@@ -379,6 +393,9 @@ is still exactly what a plain-text reply needs.
 
 [[mental-maps]] is the spec 041 per-agent knowledge subsystem the prompt's
 known-places section renders from and whose corrections re-arm the planner;
+[[memory-retrieval]] is the spec 042 subsystem behind the `memory_relevance`
+mode gate `selectWindow` reads and the `cog.memory_divergence` telemetry
+`plan()` records;
 [[executor]] emits memories and runs the intents; [[reflex-policy]] shares
 `resolveGoal` and provides the fallback; [[cognition]] owns the decision-class
 registry, the router the mind gates on, and the latency estimate behind

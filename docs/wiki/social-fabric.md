@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/social.go
   - internal/mind/convo.go
-verified_against: 3b7dd17b478ab5aa64e4c99c44b77bc565d71376
+verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
 ---
 
 # Social fabric
@@ -81,7 +81,12 @@ companion batch (FR-011).
 **Conversations** (`mind/convo.go`, scenes in TASK-22): on the executor's
 `agent.talked` beat, the driver (slot = 1, immutable snapshot, 10-min deadline —
 sized for a full scene at honest local pace)
-forms a **scene**. Since TASK-32 the beat first passes the [[cognition]]
+forms a **scene**. Since spec 042, each participant's k=5 memory snapshot is
+gated by the same `memoryRelevance` mode as the planner window ([[agent-mind]],
+`selectWindow`): legacy/shadow modes keep today's `SelectMemories` window
+byte-identical, `"on"` serves the relevance-scored window, and shadow/on modes
+each record one `cog.memory_divergence` per participant at founding
+([[memory-retrieval]] owns the selector and the divergence payload). Since TASK-32 the beat first passes the [[cognition]]
 router gate: a scene is the costliest conversation-class thought (13 points), and if
 it can't land inside its staleness budget at the current speed the encounter
 stays a primitive talk with a `cog.outcome{suppressed}` record. An admitted scene also pins its PROVIDER at founding (spec 024 US3,
@@ -167,7 +172,8 @@ renders the Bonds section into soul.md. [[governance]] (TASK-13) votes over thes
 edges and writes violation consequences back into them; TASK-11's chronicle
 narrates the conversation events. [[mental-maps]] is the knowledge store the
 place-telling sidecar reads from and writes into, riding the same talk beat
-as rumors and gifts.
+as rumors and gifts. [[memory-retrieval]] is the spec 042 mode gate and
+divergence telemetry behind the scene's per-participant memory snapshot.
 
 ## Operational notes
 

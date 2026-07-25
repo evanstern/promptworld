@@ -9,7 +9,7 @@ sources:
   - internal/sim/terrain.go
   - internal/sim/recipes.go
   - internal/sim/memory.go
-verified_against: 3b7dd17b478ab5aa64e4c99c44b77bc565d71376
+verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
 ---
 
 # Executor
@@ -43,7 +43,13 @@ personas ([[agent-mind]]). Since spec 041 each agent also carries `Map
 *MentalMap` (`omitempty`, the Journal/Hail pointer precedent — a pre-041
 snapshot round-trips byte-identically) — the private spatial-knowledge store
 [[mental-maps]] owns end to end; the executor's only stake in it is emitting
-the events that grow and correct it (below). `Needs{Health, Food, Rest, Warmth, Morale}` are integers 0..1000 —
+the events that grow and correct it (below). Since spec 042 each agent also
+carries `omitempty` `SitVec`/`SitVecModel`/`SitVecTick`, and each `Memory` the
+executor's salience table appends (below) carries `omitempty` `Seq`/`Vec`/
+`VecModel` — the embedding-retrieval identity and vector [[memory-retrieval]]
+owns end to end; the executor has no stake in either, it neither computes nor
+reads a vector, only emits the `agent.memory_added` events the reducer later
+stamps a `Seq` onto. `Needs{Health, Food, Rest, Warmth, Morale}` are integers 0..1000 —
 integer math keeps decay byte-deterministic across platforms. `Inventory` (v2,
 format_version 2 — [[world-save-directory]]) carries `Wood`, `Stone`, `Water`,
 `Planks`, `RefinedStone`, `FoodRaw`, `FoodCooked`, `Meals` (all `omitempty` ints),

@@ -9,7 +9,7 @@ sources:
   - internal/sim/miracles.go
   - internal/sim/journal.go
   - internal/sim/terrain.go
-verified_against: 3b7dd17b478ab5aa64e4c99c44b77bc565d71376
+verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
 ---
 
 # Sim state & reducer
@@ -33,11 +33,25 @@ Apply arms; an `omitempty` pointer on the Hail precedent, so a never-journaling
 agent stays byte-identical to a pre-019 snapshot; each `Memory` also now carries
 `omitempty` situated context `Where`/`Why`/`Conv`/`Origin` (spec 030's
 closed-vocabulary provenance class — the ONLY signal `DirectPerception`,
-`memory.go`, reads to classify direct perception), byte-stable when absent;
+`memory.go`, reads to classify direct perception), byte-stable when absent,
+and — since spec 042 — `omitempty` `Seq`/`Vec`/`VecModel`: `Seq` is the
+emitting `agent.memory_added` event's store seq, copied onto the appended
+`Memory` at Apply time as its stable identity (unique where `(agent, tick)`
+is not) — live, [[sim-loop]]'s `stampSeqs` pre-assigns each batch's
+contiguous seqs before `Apply` runs, since `AppendEvents` otherwise only
+assigns them inside its own append transaction; on replay the events already
+carry their seqs from the log, so both paths land the identical value;
+`Vec`/`VecModel` are a recorded embedding attached verbatim by the new
+`agent.memory_embedded` arm below, nil `Vec` meaning vectorless
+([[memory-retrieval]]);
 plus, since spec 041, a private spatial-knowledge store, `Map *MentalMap`
 (`omitempty`, the Journal/Hail pointer precedent — a never-mapped agent, i.e.
 every pre-041 snapshot, round-trips byte-identically; [[mental-maps]] owns
-the type and its two knowledge-event Apply arms below), structures (`fire`/`shelter`/`oven`/`chest`, fires carrying a
+the type and its two knowledge-event Apply arms below), plus, since spec 042,
+a rolling situation (query) vector `SitVec`/`SitVecModel`/`SitVecTick`
+(`omitempty`) the reducer sets verbatim from an `agent.situation_embedded`
+companion — absent (nil `SitVec`) leaves selection on the legacy ranking
+([[memory-retrieval]]), structures (`fire`/`shelter`/`oven`/`chest`, fires carrying a
 `FuelUntil`; chests (spec 013 US3) carrying a permanent `Owner` — the builder's
 agent index, zero-value round-tripping unambiguously since every chest has one —
 and a `Store *Inventory` capped at `chestCap` via the same derived `bulk()` used
@@ -228,7 +242,16 @@ conservative default), and
 additionally bumps `Agent.Generation` when the memory's
 salience is at or above `GenerationBumpSalience` (9) — in-flight thoughts
 snapshotted under the old generation are superseded at landing ([[cognition]],
-[[sim-loop]]). The journal family (spec 019 US3) is the agent notebook's only
+[[sim-loop]]). Two spec 042 arms mutate state from the embedder driver's
+companions ([[memory-retrieval]]): `agent.memory_embedded`
+(`MemoryEmbeddedPayload{Agent, MemSeq, Vec, Model}`) scans the agent's
+memories newest-first for the one whose `Seq` equals `MemSeq` and copies
+`Vec`/`Model` onto it verbatim — a zero `MemSeq` never matches (so a pre-042,
+seq-less memory can never be mistargeted) and a target that has died or
+consolidated away is a deliberate no-op, never an error; `agent.situation_embedded`
+(`SituationEmbeddedPayload{Agent, Tick, Text, Vec, Model}`) unconditionally
+overwrites the agent's `SitVec`/`SitVecModel`/`SitVecTick` — later events
+simply replace earlier ones, no history kept. The journal family (spec 019 US3) is the agent notebook's only
 mutation path and, unlike the cognition telemetry types below, does mutate state:
 `journal.entry_written` appends a reducer-id'd `JournalEntry` via `appendEntry`,
 which enforces the per-agent `journalBudgetRunes` (4000) rune budget INSIDE
@@ -250,8 +273,10 @@ sleeping shed hails). `agent.died` also spills the dying agent's entire carried
 `Inv` onto a pile at its own tile (create-or-merge, food batches stamped
 `tick + rotWindowTicks`), emptying `Inv` — reducer-internal, no new event (spec
 013 US2, FR-006, research R7's debt-opening precedent). The cognition telemetry types — `cog.thought`, `cog.outcome`,
-`cog.recalibration_recommended`, `agent.intent_rejected`, and (since spec 017)
-`cog.tool_call` (the tool-use loop's call trace, [[tool-loop]]) — are explicit
+`cog.recalibration_recommended`, `agent.intent_rejected`, (since spec 017)
+`cog.tool_call` (the tool-use loop's call trace, [[tool-loop]]), and (since
+spec 042 US2) `cog.memory_divergence` (the shadow-mode selector's rank-
+divergence record, [[memory-retrieval]]) — are explicit
 reducer no-ops: recorded observability with zero state effect.
 Unknown types — including `daemon.*` and `world.created` — are recorded
 history but state no-ops, so new event types never break old replay.
@@ -282,7 +307,11 @@ standing order's `ExpiresTick` — never its `PlacedTick` — across a time snap
 and the angel-side trigger/confirm mechanics built on top of this reducer arm.
 [[mental-maps]] covers `Agent.Map`'s type, its four knowledge events'
 reducer arms, and the derived explored/sighting bookkeeping several
-movement-family arms now perform.
+movement-family arms now perform. [[memory-retrieval]] covers
+`Memory.Seq`/`Vec`/`VecModel` and `Agent.SitVec*`'s producer (the mind-side
+embedder), the `agent.memory_embedded`/`agent.situation_embedded` arms this
+reducer owns, and the `cog.memory_divergence` telemetry the shadow-mode
+selector records.
 
 ## Operational notes
 

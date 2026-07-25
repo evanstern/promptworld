@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/loop.go
   - internal/sim/landing.go
-verified_against: 3b7dd17b478ab5aa64e4c99c44b77bc565d71376
+verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
 ---
 
 # Sim loop
@@ -29,10 +29,23 @@ as an event. That makes the [[event-log]] the complete input record of a run.
 - **Max speed** (interval 0): spin ticks back-to-back with a non-blocking command
   check and a `runtime.Gosched()` every 1024 ticks.
 
-`runTick`: compute `stepEvents(state, map, nextTick)` (pure), advance `state.Tick`, apply
+`runTick`: compute `stepEvents(state, map, nextTick)` (pure), advance `state.Tick`,
+pre-assign the batch's store seqs (`stampSeqs`, spec 042 — below), apply
 each event through the reducer, `AppendEvents` in one transaction, then `notify`
 (the [[ipc-server]] broadcast — must never block). Every `SnapshotEveryTicks = 3600`
 ticks it snapshots and prunes.
+
+`Loop.stampSeqs(events)` (spec 042) pre-computes each event's eventual store
+seq as `LastSeq() + i + 1` and stamps it onto the batch BEFORE the reducer
+applies it: `AppendEvents` otherwise only assigns seqs inside its own append
+transaction, which runs AFTER `Apply` in `runTick`, `handleCommand`, and
+`observeWindow` (all three call it on their event batch right before the
+apply loop) — too late for the `agent.memory_added` arm's `Memory.Seq` stamp
+([[sim-state-reducer]], [[memory-retrieval]]) to see a real value live. Since
+the loop is the log's single writer while running, `AppendEvents` then
+re-assigns the identical `last+i+1` values, so live state and a replayed
+state (which reads each event's seq straight off the log) always agree — the
+invariant `CheckContiguity` guards.
 
 `handleCommand` implements idempotent semantics: pausing a paused world emits nothing;
 `set_speed` to the current speed emits nothing; otherwise the `clock.*` event is
@@ -164,7 +177,15 @@ the two mind-injectable journal mutations, whose reducer dry-run enforces the
 rune budget (written) and entry existence (deleted) before either lands, and
 (since spec 030 US2, FR-008) `agent.belief_reinforced` — the
 grounded-observation seam that re-anchors a held belief's decay clock; spec 030
-ships the whitelist entry and reducer arm only, no in-tree emitter yet):
+ships the whitelist entry and reducer arm only, no in-tree emitter yet), and
+(since spec 042 US1/US2) three more: `agent.memory_embedded`/
+`agent.situation_embedded` — the mind-side embedder's two vector companions
+([[memory-retrieval]]), state-mutating unlike the `cog.*` telemetry (below) —
+door ordering guarantees a memory's embedding companion never precedes the
+memory itself, since the embedder only observes an `agent.memory_added` AFTER
+it is committed and notified; and `cog.memory_divergence`, the shadow-mode
+selector's rank-divergence record, riding the same reducer-no-op `cog.*`
+isolation class as the telemetry types below):
 an atomic, whitelisted batch of conversation, consolidation, musing, chronicle,
 nudge, miracle, phrasing, or telemetry effects, dry-run on a state copy before
 applying — the dry-run probe is reconstructed from bytes and so carries no
@@ -202,7 +223,11 @@ budgets and classes come from [[cognition]] (`cognition.ClassFor`), whose router
 and estimators produce the snapshot/landing metadata the ladder judges.
 [[metatron-miracles]]'s four event types ride `InjectSocial`'s whitelist, as do
 [[metatron-orders]]'s three injected order-lifecycle types and [[mental-maps]]'s
-`metatron.place_revealed`.
+`metatron.place_revealed`. [[memory-retrieval]]'s embedder driver injects
+`agent.memory_embedded`/`agent.situation_embedded` through the same door and
+records `cog.memory_divergence` alongside the other `cog.*` telemetry;
+`stampSeqs` exists specifically so its `Memory.Seq` targeting stays
+replay-stable ([[sim-state-reducer]]).
 [[tool-loop]] is the caller behind both doors' villager/metatron traffic since
 spec 017 — its handlers wrap `InjectIntent` (world verbs, `set_plan`) and
 `InjectSocial` (`muse`, and Metatron's nudges/`work_miracle`), and its buffered

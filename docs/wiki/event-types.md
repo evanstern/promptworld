@@ -15,7 +15,7 @@ sources:
   - internal/sim/consolidate.go
   - internal/sim/terrain.go
   - internal/daemon/daemon.go
-verified_against: 3b7dd17b478ab5aa64e4c99c44b77bc565d71376
+verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
 ---
 
 # Event types
@@ -111,6 +111,18 @@ byte-identically), and FOUR new whitelisted/reducer event types drive it —
 place found gone), `social.place_told` (directions exchanged in talk), and
 `metatron.place_revealed` (a vision's optional place grant) — full shapes and
 reducer effects in the table below.
+Spec 042 ([[memory-retrieval]] — embedding-augmented memory retrieval) is also
+format-stable: `Memory` gains `omitempty` `Seq`/`Vec`/`VecModel` (`Seq` the
+emitting `agent.memory_added` event's store seq — a pre-042 memory's field is
+absent/0) and `Agent` gains `omitempty` `SitVec`/`SitVecModel`/`SitVecTick`,
+so every pre-042 snapshot round-trips byte-identically. THREE new whitelisted
+event types drive it: `agent.memory_embedded` and `agent.situation_embedded`
+(the mind-side embedder's two state-mutating vector companions) and
+`cog.memory_divergence` (a reducer-no-op telemetry record, the `cog.*`
+convention) — full shapes and reducer effects in the table below. A world's
+`memory_relevance` manifest flag (`""`/`shadow`/`on`, validated at
+`world.Open`) gates whether the embedder and divergence recording run at all;
+it carries no event of its own.
 
 ## How it works
 
@@ -157,6 +169,8 @@ reducer effects in the table below.
 | `agent.died` | `DiedPayload{agent, cause}` | heartbeat at 0 health | `Dead`, intent cleared; spec 013 (US2, FR-006, research R7): the agent's entire carried inventory spills into a pile at the death tile (created/merged, food batches stamped `tick + rotWindowTicks`), emptying `Inv` — reducer-internal, no new event |
 | `agent.talked` | `TalkedPayload{a, b}` | executor, adjacent pair (chat-while-working) | +morale both, talk cooldown; both remember |
 | `agent.memory_added` | `MemoryAddedPayload{agent, text, salience, subject, tone, where?, why?, conv?, origin?}` | executor/social/governance/gru heuristics (situated by the acting-or-witnessing agent's tile, and — since spec 030 — stamped with the closed-vocabulary `Origin` class at that same emission site, a required constructor parameter so no new site can compile unstamped); convo gists (injected, `origin: gist`) | append to `Memories`; subject/tone mark gossip seeds; spec 019 (US1) copies the situated context verbatim onto the reduced `Memory` — `where` (`*MemoryPlace{x,y,desc}`, the tile plus a `describePlace`-baked terrain/feature phrase, nil = unsituated), `why` (the driving intent's `Reason`, verbatim; witness memories carry none), `conv` (a conversation ref = founding-talk tick, set by convo gists) — all `omitempty`, so a pre-019 payload reduces to a pre-019-shaped memory (baked at emission, never re-derived, [[agent-mind]], [[social-fabric]]); spec 030 copies `origin` the same way (`omitempty`, absent = `""` = secondhand) — the ONLY signal `DirectPerception` (`internal/sim/memory.go`), and so the belief validator, reads to classify a memory as direct perception (`action`/`witness`/`omen`) vs secondhand (`report`/`gist`/`digest`/absent) |
+| `agent.memory_embedded` (spec 042 US1) | `MemoryEmbeddedPayload{agent, mem_seq, vec, model}` in `internal/sim/agents.go` | the mind-side embedder driver, injected via `InjectSocial` after observing the target's `agent.memory_added` commit ([[memory-retrieval]]) | scans the agent's memories newest-first for the one whose `Seq` equals `mem_seq` and copies `vec`/`model` onto it verbatim (the reducer never computes or inspects a vector); a `mem_seq` of 0 never matches (a pre-042, seq-less memory has no target identity); a vanished target (agent died, memory consolidated away) is a deliberate no-op, never an error |
+| `agent.situation_embedded` (spec 042 US1) | `SituationEmbeddedPayload{agent, tick, text, vec, model}` in `internal/sim/agents.go` | the mind-side embedder driver, injected via `InjectSocial` at planner cadence ([[memory-retrieval]]) | overwrites `Agent.SitVec`/`SitVecModel`/`SitVecTick` with `vec`/`model`/`tick` — later events simply replace earlier ones, no history kept; `text` (the rendered situation template) rides the payload as an audit surface only, stored nowhere in state |
 | `agent.thought` | `ThoughtPayload{agent, text, source}` | `inject_intent` command (planner); `inject_social` (musing) | none (chronicle material) |
 | `journal.entry_written` | `JournalWrittenPayload{agent, text}` (`journal.go`) | mind journal tool (`write_journal_entry`, injected via `InjectSocial` — spec 019 US3) | the ONLY journal-growth path: appends a reducer-id'd `JournalEntry{id, tick, text}` to the agent's `Journal` via `appendEntry`, which enforces the per-agent `journalBudgetRunes` (4000) rune budget INSIDE `Apply` — the `InjectSocial` dry-run turns an over-budget append into a door rejection, so no over-budget event lands (SC-005, [[agent-mind]]) |
 | `journal.entry_deleted` | `JournalDeletedPayload{agent, entry}` (`journal.go`) | mind journal tool (`delete_from_journal`, injected) | removes the entry with that id from the agent's `Journal` (survivor order preserved, ids never reused or renumbered so freed runes are immediately reclaimable); a missing id errors at the door |
@@ -187,6 +201,7 @@ reducer effects in the table below.
 | `agent.intent_rejected` | `IntentRejectedPayload{agent, goal, reason, staleness_ticks}` in `internal/sim/cognition.go` | loop, when the landing ladder refuses a metered intent (alongside its `cog.outcome`) | none — its own type so the villagers tab/chronicle can notice refused intentions without parsing `cog.*` |
 | `cog.recalibration_recommended` | `RecalibrationPayload{tier, estimate_s_per_pt, spike_rate, window}` in `internal/sim/cognition.go` | mind driver (injected) when a tier's live estimator breaches the spike-rate drift threshold (once per breach episode) | none (telemetry) |
 | `cog.tool_call` (spec 017, FR-007) | `CogToolCallPayload{job, ordinal, tool, args?, verdict, reason?, tier, snapshot_tick}` in `internal/sim/cognition.go` | mind/metatron (injected), one per tool call a cognition's [[tool-loop]] saw — landed, rejected, read, or unlanded; `{job, ordinal}` is the correlation key (1-based, dense per job, model-emission order) | none — recorded observability, reducer no-op, whitelisted alongside the other `cog.*` types |
+| `cog.memory_divergence` (spec 042 US2) | `MemoryDivergencePayload{agent, tick, mode, legacy, augmented, overlap, displacement, vectorless, sit_tick}` in `internal/sim/cognition.go` | mind driver (injected via `InjectSocial`), one per memory selection while the world's `memory_relevance` flag is `shadow` or `on` — `legacy`/`augmented` are both windows' memory `Seq`s in window order ([[memory-retrieval]]) | none — recorded observability, reducer no-op, whitelisted alongside the other `cog.*` types |
 | `agent.plan_set` | `PlanSetPayload{agent, job, steps}` in `internal/sim/plan.go` | loop, on a guarded plan landing (TASK-32 US4) | `Agent.Plan` replaced with the steps |
 | `agent.plan_step_started` / `agent.plan_expired` | `PlanStepPayload{agent, job, step, reason?}` in `internal/sim/plan.go` | executor (`planStepEvents`) on an idle agent's head step firing / window closing or resolve failing | head step popped / whole remaining plan cleared (a broken sequence is not resumed) |
 | hail family (TASK-47): `social.hailed` / `social.hail_met` / `social.hail_expired` | `HailedPayload{from, to, until}` / `HailMetPayload{from, to}` / `HailExpiredPayload{from, to}` in `internal/sim/agents.go`; contract in `specs/010-hail-protocol/contracts/events.md` | loop (`inject_intent` talk_to landing) and executor (`planStepEvents` talk_to firing) emit `hailed`; the executor's per-tick `hailStep` sweep emits `met` (hailer adjacent, accompanied by the `agent.talked` talk shape bypassing the ambient cooldown) or `expired` (window closed) | `hailed` sets `Agent.Hail{By, Until}` (the movement-only pause); `met`/`expired` clear it — `agent.died` and `agent.slept` also clear it. World-emitted only, never model-injectable |
@@ -232,7 +247,11 @@ precedent). [[mental-maps]] owns the `agent.saw`/`agent.map_corrected`/
 `social.place_told`/`metatron.place_revealed` family end to end — the
 executor's perception sweep and talk sidecar emit the first three, the
 `send_vision` door the fourth, and `internal/sim/mentalmap.go` reduces all
-four.
+four. [[memory-retrieval]] owns `agent.memory_embedded`/
+`agent.situation_embedded`/`cog.memory_divergence` end to end — the mind-side
+embedder driver emits all three through [[sim-loop]]'s `InjectSocial` door,
+and [[sim-state-reducer]] reduces the first two (the third is a `cog.*`
+no-op).
 
 ## Operational notes
 

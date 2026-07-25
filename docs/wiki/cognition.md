@@ -11,7 +11,7 @@ sources:
   - internal/cognition/horizon.go
   - internal/cognition/governor.go
   - internal/sim/cognition.go
-verified_against: 8e0c7a09ce3ffaf14b2951e7f1304e23cfb552c9
+verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
 ---
 
 # Cognition horizon
@@ -233,6 +233,22 @@ loop consumers ([[agent-mind]]'s mind, [[metatron]]) unpack their own
 `toolloop.CallRecord` and call this one shared constructor rather than each
 inventing its own payload shape.
 
+**Memory-relevance divergence telemetry** (`internal/sim/cognition.go`, spec
+042 US2): `MemoryDivergencePayload` (`Agent`, `Tick`, `Mode`, `Legacy`/
+`Augmented` — both memory `Seq` lists in window order, `Overlap`,
+`Displacement`, `Vectorless`, `SitTick`) is one record per selection the mind
+makes while a world's `memory_relevance` flag is `"shadow"` or `"on"`,
+recording how the relevance-augmented window (`sim.SelectMemoriesRelevant`)
+ranks against the legacy window (`sim.SelectMemories`) it is shadowing —
+the evidence the shadow-mode US2→US3 promotion decision is made from. It
+rides the same reducer-no-op `cog.*` doctrine as `CogToolCallPayload` above
+([[event-types]]). `NewMemoryDivergencePayload` computes `Overlap` (memories
+present, by `Seq`, in both windows) and `Displacement` (the summed absolute
+rank distance of each shared member) purely over the two selected `[]Memory`
+slices — a pre-042, seq-less memory (`Seq` 0) never counts as shared, since
+it carries no durable identity. [[memory-retrieval]] owns the selector this
+payload audits and the shadow/on posture that gates its emission.
+
 ## Connections
 
 The [[agent-mind]] consults `Route` before every enqueue (`routeVerdict` in
@@ -294,7 +310,9 @@ events with the arithmetic string as the reason; estimator drift surfaces as
 `adopted_s_per_pt` fields carry the re-seed arithmetic, `estimate_s_per_pt`
 remaining "current estimate at emission", i.e. the adopted value);
 `Estimator.Stats` exposes estimate, rolling spike rate, and lifetime
-sample/spike counts. `OutcomeRetried` (`"retried"`, TASK-42) is the one
+sample/spike counts. Since spec 042, `cog.memory_divergence` records one
+shadow/on-mode selection's rank divergence per emission, purely observational
+— it gates nothing itself ([[memory-retrieval]]). `OutcomeRetried` (`"retried"`, TASK-42) is the one
 NON-terminal outcome value — a scene reply failed to parse and the scene
 continued via one retry; consumers summing job completions must filter it, and
 the payload's optional `Raw`/`Retried` fields (omitempty) carry the failed

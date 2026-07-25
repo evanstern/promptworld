@@ -8,7 +8,8 @@ sources:
   - cmd/promptworld/calibrate.go
   - cmd/promptworld/ps.go
   - cmd/promptworld/miracle.go
-verified_against: 1e71b77f104dda982aa407b28ad2c994219e90d0
+  - cmd/promptworld/divergence.go
+verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
 ---
 
 # promptworld CLI
@@ -198,6 +199,17 @@ ambiguous or unknown names exit 1). `worldArg`/`parseWorldFlags` wrap the older
   at run time instead. Uses an in-memory meter so it never contends
   with a running daemon's store; a provider whose every sample fails is not
   written.
+- `divergence <world> [--json]` (`cmd/promptworld/divergence.go`, spec 042 US2) —
+  offline gate evidence for the embedding-memory shadow→on flip: reads
+  `cog.memory_divergence` events straight from the store (the `tail` pattern, no
+  daemon required) and aggregates per-agent/per-game-day rows plus a whole-run
+  total — mean overlap@K against the legacy ranking, the promoted-memory share
+  (selections where relevance pulled in at least one memory legacy excluded),
+  mean displacement, and mean vectorless-fallback count. Refuses with a one-line
+  remedy ("set world.json memory_relevance to \"shadow\"") when no divergence
+  events exist yet. `--json` emits the same rows machine-readably. The printed
+  table is recorded evidence only — flipping the world to non-shadow relevance
+  is an operator decision made on the board task, never an automatic action.
 
 `parseDirFlags` accepts both `cmd <arg> --flag` and `cmd --flag <arg>` orderings
 (`parseWorldFlags` adds name resolution on top).
@@ -220,7 +232,10 @@ reads the [[ipc-server]]-composed `StatusData.Warning` ([[ipc-protocol]]).
 metatron-pane block also render. `status`'s `postureStatusLine` and `new`'s
 `--teaching` flag / the `teaching` subcommand read and write
 [[world-save-directory]]'s `Manifest.Teaching`/`SetTeaching` and
-[[ipc-protocol]]'s `StatusData.Posture` (spec 039).
+[[ipc-protocol]]'s `StatusData.Posture` (spec 039). `divergence` reads
+`cog.memory_divergence` events [[memory-retrieval]]'s shadow-mode selector
+records, offline via the same store/`tail` pattern as `tail`/`status`'s
+offline path.
 
 ## Operational notes
 

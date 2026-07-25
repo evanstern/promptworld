@@ -4,7 +4,7 @@ description: Process lifecycle — startup recovery (snapshot+replay), pidfile w
 kind: pipeline
 sources:
   - internal/daemon/daemon.go
-verified_against: 1e71b77f104dda982aa407b28ad2c994219e90d0
+verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
 ---
 
 # Daemon lifecycle
@@ -79,6 +79,23 @@ Startup sequence:
    boot-time + periodic model-existence probe in its own goroutine, fired and
    forgotten under the shutdown ctx exactly like the governor sampler — boot
    never blocks or fails on its results (see [[llm-provider-health]]).
+   Also in this branch, spec 042's embedding driver ([[memory-retrieval]]):
+   `mind.New` now also takes `w.Manifest.MemoryRelevance` (the world's
+   `memory_relevance` mode flag), and, ONLY when `orch.HasEmbedding()` reports
+   `llm.json` routes the `embedding` kind, boot builds
+   `mind.NewEmbedder(orch, loop, warnFn, w.Map(), w.Manifest.Seed,
+   state.Marshal())` — a peer of the mind driver that watches committed
+   `agent.memory_added` events — appends its `Observe` to the notify fan-out's
+   consumers, and prints one boot line naming the embedding model and
+   provider. An absent embedding route prints the off-switch line instead
+   (`daemon: embedding off (no "embedding" route in llm.json — memories stay
+   vectorless)`) and builds nothing — the same absence-is-the-feature-switch
+   doctrine as a world with no `llm.json` at all. `warnFn`'s shape mirrors the
+   provider-health hook just above (a daemon-log WARNING plus a durable
+   `daemon.llm_warning`, `kind: "embedding-unavailable"`, through the same
+   `loop.InjectOperator` door) but is debounced by the embedder driver itself,
+   not by [[llm-provider-health]]'s detectors — which never observe embed
+   traffic at all (a known gap, TASK-102).
    On a teaching world (spec 039 US1/US3, `w.Manifest.Teaching` —
    [[world-save-directory]]), boot also derives and prints the teaching-posture
    default: `orch.EstimateForKind(llm.Kind("planner"))`'s live seconds-per-point
@@ -162,7 +179,10 @@ through the loop's `set_speed` door;
 [[metatron-orders]] is what the `LoopControl` seam wired here (spec 029) drives.
 [[llm-provider-health]] is what the condition hook and preflight goroutine wired
 here (spec 034) drive; its durable event rides [[sim-loop]]'s `InjectOperator`
-door.
+door. [[memory-retrieval]] is the spec 042 embedding driver wired here only
+when `orch.HasEmbedding()`; its failure warning shares [[sim-loop]]'s
+`InjectOperator` door and the `daemon.llm_warning` event type with
+[[llm-provider-health]] but is a separate, debounced-by-the-driver signal.
 
 ## Operational notes
 

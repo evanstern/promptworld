@@ -26,7 +26,7 @@ sources:
   - internal/persona/persona_test.go
   - e2e/daemon_e2e_test.go
   - e2e/determinism_e2e_test.go
-verified_against: 3b7dd17b478ab5aa64e4c99c44b77bc565d71376
+verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
 ---
 
 # Testing strategy
@@ -232,7 +232,10 @@ without a SHIFT/KEEP classification in `rebaseTicks`, so the taxonomy can never
 silently drift from the state struct (spec 030 extended this to
 `Belief.Reinforced`, the decay-curve anchor; spec 041 extends it again to
 `PlaceFact.Seen`/`PeerSighting.Seen` (SHIFT) and `PlaceFact.Detail` (KEEP),
-[[mental-maps]]/[[metatron-miracles]]). Byte-identity replay suites
+[[mental-maps]]/[[metatron-miracles]]; spec 042 extends it once more to
+`Memory.Seq` (KEEP — the emitting event's store seq, an identity rather than a
+clock value) and `Agent.SitVecTick` (KEEP — when the situation text was
+rendered, [[memory-retrieval]])). Byte-identity replay suites
 (`TestMiracleReplayByteIdentity`, `TestMiracleSnapReplayByteIdentity`,
 `TestMiracleGrantReplayByteIdentity`) prove each miracle type replays to the
 same state hash as live application.

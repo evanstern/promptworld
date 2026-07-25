@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/world/world.go
   - internal/world/migrate.go
-verified_against: 3b7dd17b478ab5aa64e4c99c44b77bc565d71376
+verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
 ---
 
 # World save directory
@@ -36,7 +36,15 @@ non-teaching (a non-teaching `world.json` round-trips byte-identically, no
 `FormatVersion` bump — an additive defaulting bool old readers ignore); when
 true, the daemon defaults the world's speed to the highest planner-safe
 ladder rung at every boot and surfaces the horizon arithmetic on override
-([[daemon-lifecycle]], [[cognition]]). `World.Map()` regenerates the terrain from the seed and
+([[daemon-lifecycle]], [[cognition]]). It also carries an optional
+`memory_relevance` string (`Manifest.MemoryRelevance`, `omitempty`, spec 042,
+[[memory-retrieval]]): absent (`""`) keeps today's salience+recency memory
+window; `"shadow"` additionally computes the relevance-augmented window and
+records rank divergence while prompts still see the legacy window; `"on"`
+lets the augmented window feed prompts (divergence still recorded). `Open`
+refuses any other value outright — a typo must never silently run as off —
+and the field is additive `omitempty`, so a pre-042 `world.json` round-trips
+byte-identically with no `FormatVersion` bump. `World.Map()` regenerates the terrain from the seed and
 dimensions — deterministic, so the map is never stored ([[worldmap-generation]]).
 
 - `Create(dir, name, seed)` refuses any existing non-empty directory, creates

@@ -10,7 +10,7 @@ sources:
   - internal/tool/registry.go
   - internal/ipc/server.go
   - cmd/promptworld/miracle.go
-verified_against: 3b7dd17b478ab5aa64e4c99c44b77bc565d71376
+verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
 ---
 
 # Metatron's miracles
@@ -130,7 +130,10 @@ classified SHIFT or KEEP in its doc comment:
   rewrite history or break a reference. `Agent.Generation`, `Agent.LastGoalTick`,
   `Memory.Tick`, `Memory.Conv` (spec 019: a conversation-ref identity, the same
   founding-talk tick as `ConvoRecord.Conv` — an identity, not a duration anchor),
-  `JournalEntry.Tick` (spec 019: when the entry was written, a historical
+  `Memory.Seq` (spec 042: the emitting event's store seq — an identity, never a
+  clock value), `Agent.SitVecTick` (spec 042: when the agent's situation text
+  was rendered — history/audit, the `Memory.Tick` shape), `JournalEntry.Tick`
+  (spec 019: when the entry was written, a historical
   timestamp), `Belief.Tick`, `ChronicleEntry.Tick`/`Day`/`FromTick`/`ToTick`,
   `MetatronOrder.PlacedTick` (spec 029: when the order was placed, history),
   `PlaceFact.Detail` (spec 041: a remembered value baked at emission, never
@@ -140,9 +143,10 @@ classified SHIFT or KEEP in its doc comment:
   other identity/history field — see the doc comment for the full list.
   `TestRebaseTaxonomyComplete` caught both spec-019 additions, the spec-030
   `Belief.Reinforced` field, (later) spec 029's `MetatronOrder.ExpiresTick`/
-  `PlacedTick`, and spec 041's `PlaceFact`/`PeerSighting` fields as new
-  tick-anchored `int64` fields requiring classification, confirming the
-  taxonomy guard holds across features outside miracles' own spec.
+  `PlacedTick`, spec 041's `PlaceFact`/`PeerSighting` fields, and spec 042's
+  `Memory.Seq`/`Agent.SitVecTick` fields as new tick-anchored `int64` fields
+  requiring classification, confirming the taxonomy guard holds across
+  features outside miracles' own spec.
 
 `TestRebaseTaxonomyComplete` (`internal/sim/miracles_test.go`) is the taxonomy guard:
 it fails the build when a new tick-anchored `int64` field appears in the state

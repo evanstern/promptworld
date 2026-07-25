@@ -10,7 +10,7 @@ sources:
   - internal/llm/providers.go
   - internal/llm/lease.go
   - internal/llm/pending.go
-verified_against: d23fbbfe471ec62c9b94ce79404870632a6eb60e
+verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
 ---
 
 # LLM orchestrator
@@ -45,6 +45,34 @@ yes/no `Submit` (never a tool loop, [[metatron-orders]]); it is the one kind
 whose `defaultRoutes()` chain is MULTI-ENTRY (`["local","cloud"]` — cheap-first
 local for the yes/no, cloud fallback), and it maps to [[cognition]]'s existing
 `metatron` decision class.
+
+**The embedding kind** (`llm.go`/`config.go`/`providers.go`, spec 042,
+[[memory-retrieval]]): `KindEmbedding` (`"embedding"`) is a valid route key
+that sits OUTSIDE `acceptedKinds` — it never dispatches through `Submit`'s
+chat machinery or the cognition decision-class registry (`Submit` returns
+`ErrUnknownKind` for it), and `validateV2` exempts it from the
+route-completeness check: an ABSENT `embedding` route means the subsystem is
+off (a vectorless world), never a boot error and never a warn-backfill — the
+same "no llm.json → reflex-only" absence-is-the-switch doctrine. A PRESENT
+route gets full chain validation plus one transport rule: naming an
+`anthropic` provider anywhere in its chain is a boot config error, since the
+Messages API serves no embeddings endpoint. `New` diverts the resolved route
+into its own `embedding *provider` slot — HEAD ONLY, never a chain (a vector's
+model identity travels with it, so silent chain fallback would mix models) —
+and never adds it to the routes table Submit walks. `HasEmbedding`/
+`EmbeddingProvider` are the daemon's wiring gate and boot-line source;
+`Embed(ctx, texts)` calls the head provider's transport directly — no queue,
+breaker, or estimator, since the embedder driver paces and debounces itself —
+returning `ErrEmbeddingOff` when the subsystem is off; `WarmEmbedding` best-
+effort pins the model resident. Both transports implement the `embedCaller`
+surface: `openaiCompat.Embed` POSTs `{"model","input"}` to
+`endpoint+"/embeddings"`, decoding `data[].embedding` into one index-ordered
+vector per input text (defensively re-ordered by the wire's `index` field),
+and `openaiCompat.WarmEmbed` hits the Ollama-NATIVE `/api/embed` with
+`{"model","keep_alive":-1}` (the compat endpoint's own `keep_alive` is
+ignored, so the native call is the only way to pin it); `anthropicCaller.Embed`
+returns the typed `ErrEmbeddingUnsupported` sentinel — unreachable through a
+validated registry, but present so both transports satisfy `embedCaller`.
 
 **Chain-walk admission** (`Submit`, spec 024 US3): submission walks the kind's chain
 in order and dispatches to the first admissible candidate; a candidate is skipped only
@@ -309,7 +337,10 @@ and `CalibratedAt` together (gating on bootstrap-seeded providers only), and
 `suppressionCounting` seam, and [[ipc-server]]'s `horizonClasses` reads
 `SuppressionCounts` alongside `EstimateForKind`/`CalibratedAt` to compose the
 status wire's per-class horizon ([[cognition]]'s `LiveHorizon` supplies the
-verdicts).
+verdicts). [[memory-retrieval]]'s mind-side embedder driver is the sole
+caller of the embedding-kind surface (`HasEmbedding`/`EmbeddingProvider`/
+`Embed`/`WarmEmbedding`); [[daemon-lifecycle]] wires it at boot only when
+`llm.json` routes the kind.
 
 ## Operational notes
 
