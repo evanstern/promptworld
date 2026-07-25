@@ -1,113 +1,111 @@
-# Implementation Plan: [FEATURE]
+# Implementation Plan: Scenario incident-schedule machinery (director-lite)
 
-**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
+**Branch**: `054-scenario-machinery` | **Date**: 2026-07-25 | **Spec**: [spec.md](spec.md)
 
-**Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
-
-**Note**: This template is filled in by the `/speckit-plan` command. See `.specify/templates/plan-template.md` for the execution workflow.
+**Input**: Feature specification from `/specs/054-scenario-machinery/spec.md`
 
 ## Summary
 
-[Extract from feature spec: primary requirement + technical approach from research]
+Arm the spec-046 curriculum substrate with its awaited production machinery,
+all in the executor emission class (pure over state + boot-frozen config +
+tick): (1) an incident scheduler compiled from the exercise definition's
+authored schedule (v1 vocabulary: `gru_emerges`, preempting that night's
+random roll), behind a one-method incident-source seam the post-v1 live
+director can implement later; (2) a rubric evaluator that emits
+`curriculum.exercise_passed` + same-batch `curriculum.stage_unlocked`
+(existing unlock gate + evidence constructors); (3) `promptworld new
+--scenario <id>` stamping the reserved `Manifest.Scenario` block + the
+exercise's stage/seed/preset; (4) status carrying scenario facts additively;
+(5) a scenario-worlds-only **exercise** dock tab (key `6`) implementing
+`panels/exercise.md` as authored (attach-once briefing, live gauges,
+forecast/fog vocabulary, pass/fail banner); (6) one extra narrator chapter
+trigger at the pass/fail boundary + the failed-run exercise line in the
+morgue's run summary.
 
 ## Technical Context
 
-<!--
-  ACTION REQUIRED: Replace the content in this section with the technical details
-  for the project. The structure here is presented in advisory capacity to guide
-  the iteration process.
--->
+**Language/Version**: Go 1.24 (repo toolchain; no new deps)
 
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]
+**Primary Dependencies**: existing packages — `internal/sim` (executor + curriculum), `internal/world` (manifest), `internal/daemon` (boot wiring), `internal/mind` (narrator trigger), `internal/scribe` (morgue line), `internal/ipc` (status fields), `internal/tui` (exercise tab), `cmd/promptworld` (--scenario)
 
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]
+**Storage**: no new files; consumes the reserved `Manifest.Scenario` block (world.go:87-96); events are the persistence
 
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
+**Testing**: `go test -race ./...`; determinism twins (two genesis runs byte-identical; replay equivalence — the sim-loop test idioms); rubric-evaluator table tests; ambient-regression (zero fixture changes); TUI render/briefing tests; e2e first-night compressed-clock pass
 
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]
+**Target Platform**: daemon + terminal client
 
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
+**Project Type**: single Go module, cross-package (sim core + daemon + client)
 
-**Project Type**: [e.g., library/cli/web-service/mobile-app/compiler/desktop-app or NEEDS CLARIFICATION]
+**Performance Goals**: per-tick evaluation is O(schedule remaining + rubric terms) over already-in-memory state; no LLM calls added (the narrator trigger reuses the existing queue)
 
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]
+**Constraints**: executor purity (stepEvents must not mutate state; no new RNG streams — authored schedules are deterministic by construction); reducer remains the semantic authority (incidents propose, dry-run disposes); ambient worlds byte-identical; same-batch pass+unlock (daemon observer contract, internal/daemon/curriculum.go:44-57); same-PR design-doc amendments
 
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]
-
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+**Scale/Scope**: est. 900–1,500 LOC delta incl. tests; 4+ design pages touched
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- **I. Artifact-Grounded Action** — PASS: spec dir `specs/054-*`; TASK-119 linked pre-implementation; standing resolutions cite the authored exercise page + spec-046 seam comments.
+- **II. One Task, One PR** — PASS: `.worktrees/task-119`, one branch, one PR.
+- **III. Gates Over Assertions** — PASS: determinism twins + replay tests + design gate + spec-bridge gate.
+- **IV. Grounding Freshness** — PASS (planned): touches sources of `executor.md`, `curriculum-ladder.md`, `sim-loop.md`, `tui-client.md`, `cli-promptworld.md`, `morgue.md`, `chronicle.md` → wiki-update + player-docs in re-ground.
+- **V. Model-Tiered Workflow** — PASS: planned on Fable 5; implementation on **Opus 4.8** — rubric: sim-loop/executor emission class + determinism doctrine (cross-package, doctrine-adjacent) per the runbook Lane 2 assignment and constitution Principle V senior-tier profile.
+
+**Post-Phase-1 re-check**: PASS — one new interface (incident source, deliberately one-method), no new packages; the manifest block was pre-reserved. No Complexity Tracking entries.
 
 ## Project Structure
 
 ### Documentation (this feature)
 
 ```text
-specs/[###-feature]/
-├── plan.md              # This file (/speckit-plan command output)
-├── research.md          # Phase 0 output (/speckit-plan command)
-├── data-model.md        # Phase 1 output (/speckit-plan command)
-├── quickstart.md        # Phase 1 output (/speckit-plan command)
-├── contracts/           # Phase 1 output (/speckit-plan command)
-└── tasks.md             # Phase 2 output (/speckit-tasks command - NOT created by /speckit-plan)
+specs/054-scenario-machinery/
+├── plan.md
+├── research.md          # R1–R7: scheduler shape, rubric evaluation, preemption,
+│                        #   boot wiring, status/tab, narrator/morgue hooks
+├── data-model.md        # schedule entry, incident source seam, rubric eval, status fields
+├── quickstart.md
+├── contracts/
+│   └── scenario-machinery.md  # determinism contract, event contracts, panel grammar
+└── tasks.md
 ```
 
 ### Source Code (repository root)
-<!--
-  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
-  for this feature. Delete unused options and expand the chosen structure with
-  real paths (e.g., apps/admin, packages/something). The delivered plan must
-  not include Option labels.
--->
 
 ```text
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
-src/
-├── models/
-├── services/
-├── cli/
-└── lib/
+internal/sim/
+├── scenario.go          # NEW: incident source seam + authored-schedule impl
+│                        #   (compile game-times → ticks at boot); rubric evaluator
+│                        #   (pure per-tick over state + definition); pass emission
+├── scenario_test.go     # determinism twins, preemption, rubric tables
+├── executor.go          # stepEvents consults the armed scenario (charge-regen idiom);
+│                        #   gru emergence roll preempted on scheduled nights
+├── curriculum.go        # (read-mostly) evidence constructors + EvaluateUnlock consumed
+└── gru.go               # emergence-roll preemption hook (smallest honest seam)
 
-tests/
-├── contract/
-├── integration/
-└── unit/
+internal/world/world.go  # Scenario block: validation at Open (exercise id ∈ catalog)
+internal/daemon/         # boot arming from Manifest.Scenario (SetStage discipline)
+internal/ipc/            # Status: exercise id + outcome (additive omitempty)
+internal/mind/narrate.go # chapter trigger at pass/fail boundary (new switch cases)
+internal/scribe/morgue.go# run-summary exercise-outcome line (failed scenarios)
+cmd/promptworld/         # new --scenario flag (commands.go new FlagSet); catalog refusal
+internal/tui/            # exercise tab (key 6, scenario worlds only): briefing,
+│                        #   gauges, forecast/fog, banner; dock enum extension
+└── (tests beside each)
 
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
-backend/
-├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
-└── tests/
-
-frontend/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
-
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
-
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
+docs/design/tui/
+├── panels/exercise.md       # specified → shipped, real symbols, tab key 6
+├── panels/dock.md           # conditional 5th tab row
+├── patterns/keymap.md       # key 6 + briefing dismiss + parity notes
+├── patterns/stage-defaults.md # visibility vocabulary now real; re-verify
+└── re-pins on all touched pages
 ```
 
-**Structure Decision**: [Document the selected structure and reference the real
-directories captured above]
+**Structure Decision**: the machinery concentrates in one new `internal/sim/
+scenario.go` beside the substrate it consumes; every other package gets the
+smallest honest hook. The incident-source seam is an interface so the live
+director lands post-v1 without touching the executor again.
 
 ## Complexity Tracking
 
-> **Fill ONLY if Constitution Check has violations that must be justified**
-
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+No constitution violations — table intentionally empty.
