@@ -7,6 +7,7 @@ import (
 
 	"github.com/evanstern/promptworld/internal/clock"
 	"github.com/evanstern/promptworld/internal/sim"
+	"github.com/evanstern/promptworld/internal/store"
 )
 
 // legacyUserPrompt is a FROZEN byte-for-byte copy of userPrompt as it stood
@@ -439,5 +440,140 @@ func TestSelfHistoryOutcomes(t *testing.T) {
 		if !strings.Contains(line, c.want) {
 			t.Errorf("outcome %q rendered %q, want it to contain %q", c.outcome, line, c.want)
 		}
+	}
+}
+
+// TestPlanEchoContent (T018, US3 AS-1, FR-005): an active multi-step plan echoes
+// its remaining steps in order — the head marked "next", the rest "then" — with
+// each step's guard and validity deadline in plain words (never the raw guard
+// predicate name), and reaches the assembled prompt.
+func TestPlanEchoContent(t *testing.T) {
+	s := knownPlacesState(t)
+	a := &s.Agents[0]
+	until := clock.TickAt(2, 8, 30, 0)
+	a.Plan = []sim.PlanStep{
+		{Job: "warm-up", Goal: "goto_warmth", Until: until,
+			When: &sim.Guard{Type: sim.GuardTargetPresent, Target: 1}},
+		{Job: "warm-up", Goal: "rest"},
+	}
+
+	got := renderPlanEcho(s, 0)
+	if !strings.Contains(got, "- next: goto_warmth") {
+		t.Errorf("head step not marked next:\n%s", got)
+	}
+	if !strings.Contains(got, "- then: rest") {
+		t.Errorf("second step not marked then:\n%s", got)
+	}
+	// Guard rendered in plain words, naming the target villager (agent 1 = Birch),
+	// not the raw "target_present" predicate.
+	if !strings.Contains(got, "while "+s.Agents[1].Name+" is still nearby") {
+		t.Errorf("guard not rendered in plain words:\n%s", got)
+	}
+	if strings.Contains(got, sim.GuardTargetPresent) {
+		t.Errorf("raw guard predicate leaked into the echo:\n%s", got)
+	}
+	// Validity deadline on the game clock.
+	if !strings.Contains(got, "valid until "+clock.Format(until)) {
+		t.Errorf("until deadline missing:\n%s", got)
+	}
+	// And it reaches the prompt.
+	if !strings.Contains(userPrompt(s, 0, sim.WindowK, ""), "Your plan (remaining steps") {
+		t.Error("plan echo missing from the assembled prompt")
+	}
+}
+
+// TestPlanEchoAllGuardsPlainWords (T018): every guard in the closed vocabulary
+// renders human-readably — no raw predicate name ever reaches the prompt.
+func TestPlanEchoAllGuardsPlainWords(t *testing.T) {
+	s := knownPlacesState(t)
+	for _, g := range []struct {
+		typ, want string
+	}{
+		{sim.GuardTargetAlive, "is alive"},
+		{sim.GuardTargetPresent, "is still nearby"},
+		{sim.GuardNotSuperseded, "unless something more urgent"},
+		{sim.GuardAfterTick, "not before"},
+		{sim.GuardBeforeTick, "only before"},
+	} {
+		s.Agents[0].Plan = []sim.PlanStep{{Goal: "chop", When: &sim.Guard{Type: g.typ, Target: 1, Tick: 500}}}
+		got := renderPlanEcho(s, 0)
+		if !strings.Contains(got, g.want) {
+			t.Errorf("guard %q rendered %q, want it to contain %q", g.typ, got, g.want)
+		}
+		if strings.Contains(got, g.typ) {
+			t.Errorf("raw guard predicate %q leaked into the echo:\n%s", g.typ, got)
+		}
+	}
+}
+
+// TestPlanEchoOmittedNoPlan (T018, FR-005 "no stale echo"): a villager with no
+// active plan renders no plan_echo block — omitted entirely, not an empty header.
+func TestPlanEchoOmittedNoPlan(t *testing.T) {
+	s := knownPlacesState(t)
+	if got := renderPlanEcho(s, 0); got != "" {
+		t.Errorf("no-plan villager rendered a plan echo: %q", got)
+	}
+	if strings.Contains(userPrompt(s, 0, sim.WindowK, ""), "Your plan") {
+		t.Error("plan echo present in the prompt of a planless villager")
+	}
+}
+
+// TestPlanEchoClearedAfterExpiry (T018, US3 AS-2, FR-005): once the plan is
+// cleared by the agent.plan_expired reducer arm the echo disappears (no stale
+// plan), AND the plan's end is visible in self_history at the next thought — the
+// US1 ring stamped the expired step. Driven through the real reducer.
+func TestPlanEchoClearedAfterExpiry(t *testing.T) {
+	s := knownPlacesState(t)
+
+	// A plan is set and its head step fires (source "plan"), then the step
+	// expires — exactly the lifecycle the reducer maintains.
+	apply := func(tick int64, typ string, p any) {
+		t.Helper()
+		if err := s.Apply(store.Event{Tick: tick, Type: typ, Payload: mustJSON(t, p)}); err != nil {
+			t.Fatalf("apply %s: %v", typ, err)
+		}
+	}
+	apply(1000, "agent.plan_set", sim.PlanSetPayload{Agent: 0, Job: "warm-up",
+		Steps: []sim.PlanStep{{Job: "warm-up", Goal: "goto_warmth", Until: 2000}}})
+	apply(1000, "agent.intent_set", sim.IntentSetPayload{Agent: 0, Goal: "goto_warmth", Source: "plan"})
+
+	// While the plan stands the echo is present.
+	if got := renderPlanEcho(s, 0); !strings.Contains(got, "next: goto_warmth") {
+		t.Fatalf("active plan not echoed before expiry:\n%s", got)
+	}
+
+	apply(2000, "agent.plan_expired", sim.PlanStepPayload{Agent: 0, Job: "warm-up", Step: "goto_warmth", Reason: "window closed"})
+
+	// No stale echo after the plan cleared.
+	if got := renderPlanEcho(s, 0); got != "" {
+		t.Errorf("stale plan echo after expiry: %q", got)
+	}
+	// The plan's end is visible in self_history at the next thought (US1 ring).
+	sh := renderSelfHistory(s, 0)
+	if !strings.Contains(sh, "goto_warmth") || !strings.Contains(sh, "the plan expired") {
+		t.Errorf("plan end not visible in self_history:\n%s", sh)
+	}
+}
+
+// TestPlanEchoClearedAfterCompletion (T018, FR-005): a plan whose last step has
+// been consumed (agent.plan_step_started popped it) is empty, so no stale echo
+// remains after the plan runs to completion.
+func TestPlanEchoClearedAfterCompletion(t *testing.T) {
+	s := knownPlacesState(t)
+	apply := func(tick int64, typ string, p any) {
+		t.Helper()
+		if err := s.Apply(store.Event{Tick: tick, Type: typ, Payload: mustJSON(t, p)}); err != nil {
+			t.Fatalf("apply %s: %v", typ, err)
+		}
+	}
+	apply(1000, "agent.plan_set", sim.PlanSetPayload{Agent: 0, Job: "j",
+		Steps: []sim.PlanStep{{Job: "j", Goal: "forage"}}})
+	if renderPlanEcho(s, 0) == "" {
+		t.Fatal("one-step plan not echoed before it ran")
+	}
+	// The single step starts and is popped — the plan is now complete/empty.
+	apply(1010, "agent.plan_step_started", sim.PlanStepPayload{Agent: 0, Job: "j", Step: "forage"})
+	if got := renderPlanEcho(s, 0); got != "" {
+		t.Errorf("stale plan echo after the plan completed: %q", got)
 	}
 }

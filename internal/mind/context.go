@@ -65,15 +65,16 @@ type assembled struct {
 
 // contextBlocks builds the registry for one agent in fixed contract order
 // (contracts/context-blocks.md). Blocks not yet implemented by a landed slice
-// (plan_echo, memories_serendipity, journal) are simply absent from the
-// registry; they insert at their contract position when their story lands. The
-// futureLine is the FR-016 future-dating line, part of the frame block.
+// (memories_serendipity, journal) are simply absent from the registry; they
+// insert at their contract position when their story lands. The futureLine is
+// the FR-016 future-dating line, part of the frame block.
 func contextBlocks(s *sim.State, idx, k int, mode, futureLine string) []contextBlock {
 	return []contextBlock{
 		{Name: "frame", Priority: neverDrop, Render: func() string { return renderFrame(s, idx, futureLine) }},
 		{Name: "needs", Priority: neverDrop, Render: func() string { return renderNeeds(s, idx) }},
 		{Name: "self_history", Priority: neverDrop, Render: func() string { return renderSelfHistory(s, idx) }},
 		{Name: "inventory", Priority: neverDrop, Render: func() string { return renderInventory(s, idx) }},
+		{Name: "plan_echo", Priority: 6, Render: func() string { return renderPlanEcho(s, idx) }},
 		{Name: "known_places", Priority: 5, Render: func() string { return renderKnownPlaces(s, idx) }},
 		{Name: "social_law", Priority: 4, Render: func() string { return renderSocialLaw(s, idx) }},
 		{Name: "memories", Priority: 3, Render: func() string { return renderMemories(s, idx, k, mode) }},
@@ -224,6 +225,65 @@ func renderInventory(s *sim.State, idx int) string {
 	}
 	b.WriteString(".\n")
 	return b.String()
+}
+
+// renderPlanEcho is contract block 5 (spec 043 US3, FR-005): the villager's
+// active plan echoed back so a thought taken mid-plan can knowingly continue,
+// revise, or abandon it instead of being unaware a plan exists. It lists the
+// remaining guarded steps in execution order — the head marked "next", the rest
+// "then" — each with its guard (When) and validity deadline (Until) rendered in
+// plain words. With no active plan the block is omitted entirely (returns "",
+// no stale echo — the end of a plan is instead surfaced by self_history via the
+// US1 ring). Drop priority 6 (shed before known_places under budget pressure).
+func renderPlanEcho(s *sim.State, idx int) string {
+	a := s.Agents[idx]
+	if len(a.Plan) == 0 {
+		return ""
+	}
+	var b strings.Builder
+	b.WriteString("Your plan (remaining steps, in order):\n")
+	for i, st := range a.Plan {
+		lead := "then"
+		if i == 0 {
+			lead = "next"
+		}
+		fmt.Fprintf(&b, "- %s: %s", lead, st.Goal)
+		if st.When != nil {
+			fmt.Fprintf(&b, " (%s)", guardPhrase(s, *st.When))
+		}
+		if st.Until > 0 {
+			fmt.Fprintf(&b, ", valid until %s", clock.Format(st.Until))
+		}
+		b.WriteString("\n")
+	}
+	return b.String()
+}
+
+// guardPhrase renders one plan-step guard (the closed vocabulary, guard.go) in
+// plain second-person words — never the raw predicate name. Target guards name
+// the villager when the index is in range; timed guards render the boundary on
+// the game clock.
+func guardPhrase(s *sim.State, g sim.Guard) string {
+	target := func() string {
+		if g.Target >= 0 && g.Target < len(s.Agents) {
+			return s.Agents[g.Target].Name
+		}
+		return "the target"
+	}
+	switch g.Type {
+	case sim.GuardTargetAlive:
+		return "while " + target() + " is alive"
+	case sim.GuardTargetPresent:
+		return "while " + target() + " is still nearby"
+	case sim.GuardNotSuperseded:
+		return "unless something more urgent interrupts"
+	case sim.GuardAfterTick:
+		return "not before " + clock.Format(g.Tick)
+	case sim.GuardBeforeTick:
+		return "only before " + clock.Format(g.Tick)
+	default:
+		return "when its condition holds"
+	}
 }
 
 // renderKnownPlaces is contract block 6: the spec-041 known-places section plus
