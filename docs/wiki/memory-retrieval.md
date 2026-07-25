@@ -13,7 +13,7 @@ sources:
   - internal/llm/providers.go
   - internal/world/world.go
   - cmd/promptworld/divergence.go
-verified_against: 723c464c35aac4936f2793d566a53c801516ae60
+verified_against: cea7b8f83fa07f9fcfefe4dd861aa05a78448f1b
 ---
 
 # Memory retrieval (embedding relevance)
@@ -38,7 +38,10 @@ assigns sequence numbers. `Observe` never blocks the absorb path (drop-on-overfl
 worker is FIFO single-flight with batching/coalescing, and per-agent companion order is
 emission order.
 
-**Situation vectors.** At each `PlannerCadenceTicks` bucket edge the driver renders a
+**Situation vectors.** At each `replica.PlannerCadence()` bucket edge — spec 048
+promoted the driver's fixed 1800-tick cadence to a per-world [[world-tuning]]
+dial; the embedder reads the tuned value off its replica, same as the mind
+driver's own stagger/schedule — the driver renders a
 deterministic situation string per live agent — `renderSituation`: day/night, position +
 `sim.PlaceAt` description, worst needs, active intent, nearby agents (Dead and Asleep
 agents are skipped) — embeds it, and injects `agent.situation_embedded`, which the
@@ -59,7 +62,11 @@ construction (`TestSelectedWindowMatchesLegacy` gates it). `sim.SelectMemoriesWi
 the exported annotated form the spec-043 context assembler consumes for its
 floor/serendipity drop accounting ([[decision-context]]). Ties break newer-first; the two
 serendipity tail picks run
-the legacy algorithm on the same `"serendipity"` rng stream. Recency counts from
+the legacy algorithm on the same `"serendipity"` rng stream, bucketed by
+`tick/defaultPlannerCadenceTicks` — deliberately the tuning default constant,
+not the [[world-tuning]]-tunable `State.PlannerCadence()` dial the driver's
+own scheduling reads, so a tuned world's serendipity bucketing stays fixed
+even while its cadence dial moves. Recency counts from
 creation only — selection mutates nothing (the reference design's last-access decay was
 deliberately rejected as hostile to pure selection and replay). Isolation is structural:
 the only memory source is `a.Memories`.

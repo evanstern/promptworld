@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/social.go
   - internal/mind/convo.go
-verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
+verified_against: cea7b8f83fa07f9fcfefe4dd861aa05a78448f1b
 ---
 
 # Social fabric

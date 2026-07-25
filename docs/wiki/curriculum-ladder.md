@@ -10,7 +10,7 @@ sources:
   - internal/world/world.go
   - internal/metatron/charter.go
   - cmd/promptworld/stages.go
-verified_against: 723c464c35aac4936f2793d566a53c801516ae60
+verified_against: cea7b8f83fa07f9fcfefe4dd861aa05a78448f1b
 ---
 
 # Curriculum ladder

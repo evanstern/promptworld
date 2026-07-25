@@ -6,7 +6,7 @@ sources:
   - internal/daemon/daemon.go
   - internal/daemon/curriculum.go
   - internal/daemon/estimator_persist.go
-verified_against: 723c464c35aac4936f2793d566a53c801516ae60
+verified_against: 824932c630a9216dc761f78baa903cd07e5b9493
 ---
 
 # Daemon lifecycle
@@ -54,7 +54,16 @@ Startup sequence:
    convention yet, a `meeting.convention_established` event (source `config`)
    is applied and appended at the recovered tick — landing in the log like
    genesis, so replay re-applies it and the seed never fires twice
-   ([[governance]]).
+   ([[governance]]). Then `seedTuning` (spec 048, [[world-tuning]]), the same
+   build-event → `state.Apply` → `st.AppendEvents` shape: an absent
+   `tuning.json` seeds nothing; a present one is parsed and clamped
+   (`sim.ParseTuning`, one operator-visible warning per out-of-range field),
+   failing boot on malformed JSON, wrong types, or unknown field names; the
+   resolved effective set is compared against `state.EffectiveTuning()` and a
+   `sim.tuning_applied` event lands only when they differ, so an unchanged
+   file never grows the log on restart. This runs before the loop starts and
+   before `mind.New`, so no tick and no planner schedule ever runs ahead of
+   the tuned values.
 6. Notify fan-out + companions: the loop's notify goes to the IPC broadcast, the
    always-on soul scribe (which since spec 044 is constructed with the open
    store as its event source — `scribe.New(dir, seed, map, snapshot, st)` —
@@ -225,6 +234,8 @@ when `orch.HasEmbedding()`; its failure warning shares [[sim-loop]]'s
 [[llm-provider-health]] but is a separate, debounced-by-the-driver signal.
 [[curriculum-ladder]] is what the always-on unlock observer and the
 `SetStage` handoff wired here (spec 046) serve.
+[[world-tuning]] is the spec 048 manifest `seedTuning` loads, clamps, and
+seeds right after the meeting-convention seed.
 
 ## Operational notes
 

@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/world/world.go
   - internal/world/migrate.go
-verified_against: 723c464c35aac4936f2793d566a53c801516ae60
+verified_against: 824932c630a9216dc761f78baa903cd07e5b9493
 ---
 
 # World save directory
@@ -109,7 +109,12 @@ dimensions — deterministic, so the map is never stored ([[worldmap-generation]
   source of truth, exactly like the chronicle and village charter —
   [[morgue]]), and `BundlesDir()` → `bundles/` (spec 036: the
   drop-in persona/tool bundle root, discovered and boot-frozen by
-  [[bundle-tools]]; absent means no bundles, never an error).
+  [[bundle-tools]]; absent means no bundles, never an error), and
+  `TuningPath()` → `tuning.json` (spec 048: the optional, operator-
+  authored, sparse per-world tuning manifest promoting doctrine constants
+  to per-world dials — absent means every dial keeps its doctrine-constant
+  default, exactly today's behavior; never written by `promptworld new`;
+  [[world-tuning]] has the full mechanism).
 
 Runtime files (`daemon.sock`, `daemon.pid`) exist only while a daemon runs and are
 swept by [[daemon-lifecycle]] when stale. The full layout is documented in
@@ -146,7 +151,9 @@ fields — the daemon reads them at boot and hands them boot-frozen to
 [[metatron]] for the stage ceiling and the stage-1 instruction lock; the
 per-user unlocks record that gates `promptworld new`'s default stage lives
 outside the save directory (in the worlds home), advisory and never an
-authority over anything in this directory.
+authority over anything in this directory. [[world-tuning]] is the spec-048
+subsystem `TuningPath()` fronts — a peer of `llm.json`/`calibration.json`,
+consumed by the daemon's boot seed, never validated by this package.
 
 ## Operational notes
 

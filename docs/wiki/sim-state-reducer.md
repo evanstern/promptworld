@@ -11,7 +11,7 @@ sources:
   - internal/sim/terrain.go
   - internal/sim/morgue.go
   - internal/sim/curriculum.go
-verified_against: 723c464c35aac4936f2793d566a53c801516ae60
+verified_against: cea7b8f83fa07f9fcfefe4dd861aa05a78448f1b
 ---
 
 # Sim state & reducer
@@ -124,7 +124,11 @@ pointers back into this world's log) and `StagesUnlocked []string` (the
 once-per-(world,stage) unlock latch — no cap needed, at most one entry per
 ladder stage), both `omitempty` so a pre-046 snapshot with neither field
 round-trips byte-identically; the per-user unlocks record is a PROJECTION of
-these events, this state being the replayable authority
+these events, this state being the replayable authority — and, since spec 048
+([[world-tuning]]), the effective world-tuning dial set: `Tuning *TuningState`
+(`omitempty`, the Journal/Hail/Map pointer precedent — nil means the five
+promoted doctrine defaults, set only by the `sim.tuning_applied` arm below, no
+`format_version` bump)
 (executor types in `agents.go`; memories belong to
 [[agent-mind]]). Its
 `Apply(event)` method is the **only** event-driven mutation path — the live loop and
@@ -305,6 +309,18 @@ unearned floor — only stages 2..4 ever unlock) and any stage already latched
 (once per world per stage), and deliberately does NOT cross-check
 `CurriculumPasses` — that ring is pruned past 32, so the gate-conjunct
 evaluation (`EvaluateUnlock`) happens at emission time, never on re-apply.
+`sim.tuning_applied` (spec 048, [[world-tuning]]) is a third arm in this
+validate-not-clamp family: the payload is always the FULL effective five-dial
+set (never a delta, never re-clamped here — clamping is `ParseTuning`'s job
+on the daemon side), so the arm is a pure, idempotent `s.Tuning = &TuningState{...}`
+assignment — replay re-applies it identically and the daemon boot seed never
+double-counts. `State.Tuning *TuningState` (`omitempty`, no `format_version`
+bump) is nil until the first such event; nil reads as the default dial set
+through the nil-safe accessors (`RefuelDyingBelow()`, `FireBurnPerWood()`,
+`GruEmergePerMille()`, `PlannerCadence()`, `EncounterCooldown()`) every other
+promoted call site (`agents.go`'s fire-fuel arm above, [[reflex-policy]],
+[[gru]], [[agent-mind]]'s cadence/encounter scheduling) reads through instead
+of the retired raw constants.
 `world.migrated` (spec 012 US6) is the one case that does not incrementally mutate
 fields: after checking the payload's `State.Seed` matches (a mismatched payload
 no-ops, keeping `Apply` total), it replaces `*s` wholesale with the embedded state —
@@ -427,6 +443,9 @@ surfaces this reducer derives — the `IntentLog` ring (types and mutators
 `EvaluateUnlock`'s per-stage gate conjuncts, the sanctioned
 `CharterObservedEvidence` constructor, and the per-user unlocks record the
 daemon projects from the `StagesUnlocked` latch this reducer owns.
+[[world-tuning]] covers the manifest file, the five promoted dials' defaults
+and clamp bounds, and the daemon boot seed that emits `sim.tuning_applied`;
+this reducer owns only the `State.Tuning` field and the one idempotent arm.
 
 ## Operational notes
 

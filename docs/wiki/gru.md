@@ -4,7 +4,7 @@ description: The nocturnal sight-triggered predator — an event-sourced entity 
 kind: component
 sources:
   - internal/sim/gru.go
-verified_against: 72125c85abd1a0de6c19855aaae1757d8b976f17
+verified_against: cea7b8f83fa07f9fcfefe4dd861aa05a78448f1b
 ---
 
 # The gru
@@ -23,11 +23,14 @@ heartbeat's; a gru kill is the one death emitted from `gruStep` itself.
 
 ## How it works
 
-**Lifecycle**: at 22:00 a seeded per-night roll (`rngAt("gru-emerge")`,
-`gruEmergePerMille = 600`) decides whether it comes out; if so it slips in from a
-seeded passable, unlit border tile (`gru.emerged{night, x, y}`). At 06:00 it is
-gone (`gru.withdrew{day}`, state nil). Every decision is a pure function of
-(seed, night/tick) — [[deterministic-rng]] — so the whole predator replays.
+**Lifecycle**: at 22:00 a seeded per-night roll (`rngAt("gru-emerge")` against
+`s.GruEmergePerMille()`, default 600 per mille — spec 048 promotes this to a
+per-world [[world-tuning]] dial, the default living in `tuning.go` as
+`defaultGruEmergePerMille`) decides whether it comes out; if so it slips in
+from a seeded passable, unlit border tile (`gru.emerged{night, x, y}`). At
+06:00 it is gone (`gru.withdrew{day}`, state nil). Every decision is a pure
+function of (seed, night/tick) — [[deterministic-rng]] — so the whole
+predator replays.
 
 **Sight**: it sees live agents within Manhattan `gruSightRadius` (8) — **unless
 they are protected**. Protection is fire light (`gruLightRadius = 3`, strictly

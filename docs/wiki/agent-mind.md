@@ -14,7 +14,7 @@ sources:
   - internal/scribe/scribe.go
   - internal/scribe/morgue.go
   - internal/sim/memory.go
-verified_against: 723c464c35aac4936f2793d566a53c801516ae60
+verified_against: cea7b8f83fa07f9fcfefe4dd861aa05a78448f1b
 ---
 
 # Agent mind
@@ -81,8 +81,11 @@ signal [[nightly-consolidation]]'s belief validator reads to gate a model's
 "witnessed" provenance claim — no text inspection, no heuristics.
 `SelectMemories` is the deterministic working
 window: salience halved per game-day of age, top K−2, plus 2 seeded serendipity
-picks from the oldest half (bucketed to the planner cadence), presented
-reverse-chronologically. K = `WindowK` (10). Prompts never see the whole soul.
+picks from the oldest half (bucketed to `defaultPlannerCadenceTicks` — the
+tuning-manifest default constant, deliberately NOT [[world-tuning]]'s tunable
+`State.PlannerCadence()` dial, [[memory-retrieval]] covers the distinction),
+presented reverse-chronologically. K = `WindowK` (10). Prompts never see the
+whole soul.
 
 Since spec 042, which SELECTOR fills that window is gated by the world's
 `memory_relevance` flag (`world.json`, validated at `world.Open`, threaded
@@ -160,11 +163,16 @@ format (FR-006/FR-014/SC-007); the structured `Where`/`Why` fields stay on the
 `Memory` for programmatic consumers, only the redundant render is dropped.
 
 **The mind driver** (`internal/mind`): a replica fed by the loop's notify fan-out;
-per-agent cadence (1800 ticks, staggered by index; since TASK-44 the stagger is
+per-agent cadence (`replica.PlannerCadence()`, 1800 ticks by default — spec 048
+promotes the cadence to a per-world [[world-tuning]] dial, the default living
+in `internal/sim/tuning.go` as `defaultPlannerCadenceTicks` — staggered by
+index; since TASK-44 the stagger is
 phase-preserving — every re-arm steps in whole cadence multiples from the agent's
 own due via `nextPhasePreservingDue`, never from the current tick, so a shared
 stall cannot collapse agents into lockstep) plus triggers — wake, completion
-idle, nightfall, first-adjacency encounters (2-game-hour pair cooldown), a
+idle, nightfall, first-adjacency encounters (`md.replica.EncounterCooldown()`,
+2-game-hour pair cooldown by default — the same spec-048 dial family,
+`defaultEncounterCooldownTicks`), a
 mental-map correction that invalidates the agent's own current intent target
 (spec 041 US3: `absorb`'s `agent.map_corrected` case arms the agent only when
 one of the payload's gone facts matches the live intent's target or resolved

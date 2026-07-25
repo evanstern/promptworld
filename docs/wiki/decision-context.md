@@ -14,7 +14,7 @@ sources:
   - internal/sim/memory.go
   - internal/sim/plan.go
   - internal/sim/guard.go
-verified_against: 723c464c35aac4936f2793d566a53c801516ae60
+verified_against: cea7b8f83fa07f9fcfefe4dd861aa05a78448f1b
 ---
 
 # Decision context (per-turn context grounding)
@@ -55,7 +55,7 @@ pressure: **higher number = dropped later**; `neverDrop` blocks are never shed.
 | 6 | `known_places` / `nearby` | spec-041 known-places section (landmarks with provenance — since spec 044 US4 including graves — place-shaped groups, orientation) + a peer-sighting "Nearby" line | `renderKnownPlaces`/`knownPlaces`; `Agent.Map` | as today (unchanged content) | peer scan radius 10 tiles | 5 |
 | 7 | `social_law` | bonds/debts/reputation/rumor + village-law context (active norms, exile judgments) | `renderSocialLaw` = `socialContext` + `villageLaw` | as today (unchanged content) | — | 4 |
 | 8 | `memories` | working-memory window: relevance-blended when `memory_relevance` is `"on"` with a recorded situation vector, legacy salience/recency otherwise; a protected floor of the most-recent 4 non-serendipity entries | `buildMemLines`/`renderMemLines`; `Agent.Memories`, `Agent.SitVec`, `sim.SelectMemories`/`SelectMemoriesRelevant` | no memories → no header at all (not an empty list) | window `WindowK` (10) minus 2 serendipity; floor 4 (`memoryFloor`) | 3 above the floor; the floor itself never drops |
-| 9 | `memories_serendipity` | the 2 serendipity tail picks from the oldest half of memory, seeded per planner cadence | same window (`buildMemLines`), tagged `serendipity` | absent when the window has ≤ K−2 scored entries (no tail to pick) | 2 entries | 2 |
+| 9 | `memories_serendipity` | the 2 serendipity tail picks from the oldest half of memory, seeded per `defaultPlannerCadenceTicks` bucket (the tuning-manifest default constant, deliberately not the [[world-tuning]]-tunable cadence dial) | same window (`buildMemLines`), tagged `serendipity` | absent when the window has ≤ K−2 scored entries (no tail to pick) | 2 entries | 2 |
 | 10 | `journal` | ≤2 term-matched excerpts from the villager's own journal, each ≤300 runes, with entry ids | `renderJournal`; `Agent.Journal.SelectJournalExcerpts(situationTerms)` | no term match → omitted entirely | `JournalExcerptCap` = 2, `JournalExcerptRunes` = 300 | 1 (first dropped) |
 
 A fixed, unmeasured closer (`"\nWhat do you do next?"`) always follows the last

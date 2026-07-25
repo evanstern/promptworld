@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/policy.go
   - internal/sim/path.go
-verified_against: cc514f7ff456fefbcfe289471c5a1467b8e724df
+verified_against: cea7b8f83fa07f9fcfefe4dd861aa05a78448f1b
 ---
 
 # Reflex policy & pathfinding
@@ -70,7 +70,9 @@ Priority ladder (first match wins):
    `warmKnownPredicate`: a remembered-lit fire or a known shelter) if
    reachable; else `reflexRefuelIntent`, the reflex's one new rule (T020,
    FR-012): if carrying any wood and a KNOWN fire is remembered cold or has
-   less than `refuelDyingBelow` (3600 ticks, one game-hour) of remembered
+   less than `s.RefuelDyingBelow()` (3600 ticks, one game-hour, default —
+   spec 048's [[world-tuning]] promotes this to a per-world dial, the
+   default living in `tuning.go` as `defaultRefuelDyingBelow`) of remembered
    fuel left, relight or top it up (`refuel_fire`) — cheaper than a fresh
    build; else build a fire if carrying `fireWoodCost` (2) wood; else chop
    the nearest KNOWN standing tree (yes, chopping in the cold dark — that's
@@ -130,8 +132,9 @@ reflex uses:
   planner can choose (FR-020): it targets the nearest KNOWN fire (spec 041,
   `nearestKnown`) regardless of remembered lit state — a cold fire is relit
   on arrival, a dying one topped up. See
-  [[executor]] for the fuel window (`fireBurnPerWood`, `fireFuelCap`) the
-  completion applies.
+  [[executor]] for the fuel window (`s.FireBurnPerWood()`, `fireFuelCap`) the
+  completion applies — the burn-per-wood side is also a spec-048
+  [[world-tuning]] dial, `fireFuelCap` is not.
 - **`cook`** targets the nearest station the agent KNOWS is valid (spec
   041): an oven fact, or a fire fact remembered lit — its remembered `Detail`
   (`FuelUntil` as last seen) still ahead of now, predicting burnout from the

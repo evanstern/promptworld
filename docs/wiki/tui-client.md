@@ -10,7 +10,7 @@ sources:
   - internal/tui/digest.go
   - internal/tui/decisions.go
   - internal/tui/help.go
-verified_against: 3a04bf071ed3a3e994a52d26d9eed42e92e3fccd
+verified_against: 824932c630a9216dc761f78baa903cd07e5b9493
 ---
 
 # TUI client
@@ -133,6 +133,22 @@ death places its grave at the dead agent's own frozen tile, so the usual
 agent-over-structure priority would otherwise permanently hide the glyph. A
 graveless dead agent (pre-044 replay/history) still renders the plain `†`.
 The camera follows the living agents' centroid, arrow keys pan, `c` recenters.
+Since spec 049 (TASK-124, reorient D3) the camera gains one computed writer:
+**jump-to-source** — in inspect mode, `⏎` (or a mouse click on a chronicle
+list line; `tea.WithMouseCellMotion` is enabled in `cmdUI` and `handleMouse`
+binds ONLY this control, everything else falling through inert) resolves the
+selected event's subject (`resolveSubject` + a per-type `subjectRegistry` in
+digest.go: primary actor's live replica position if alive, else explicit
+payload coordinates, else unlocatable; `world.migrated` is never decoded) and
+sets the pan via `centerCameraOn` (`pan = target − wandererCentroid()`), so a
+jump IS a pan — same clamps, same `c` recovery. The detail pane's bottom row
+is now a permanent actions bar (`detailActions`, exactly one action per
+event): the jump affordance `⏎ jump to <name> (x,y)` or the honest
+`no location for this event`; a catalog sweep asserts jump-or-hint totality.
+In the narrow fallback a successful jump lands on the map pane with the
+paused selection preserved. Click hit-testing reads a per-frame
+`chronHitRegion` the inspect-list renderer records — running-clock,
+out-of-region, help-open, and minibuffer-focused clicks are all no-ops.
 
 Inspection (spec 013 T021/T026, SC-006): the map legend — its one designated
 inspection surface, content grows the line rather than adding a second row —

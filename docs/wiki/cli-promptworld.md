@@ -10,7 +10,7 @@ sources:
   - cmd/promptworld/miracle.go
   - cmd/promptworld/divergence.go
   - cmd/promptworld/stages.go
-verified_against: 723c464c35aac4936f2793d566a53c801516ae60
+verified_against: 824932c630a9216dc761f78baa903cd07e5b9493
 ---
 
 # promptworld CLI

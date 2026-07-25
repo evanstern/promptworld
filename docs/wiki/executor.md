@@ -9,7 +9,7 @@ sources:
   - internal/sim/terrain.go
   - internal/sim/recipes.go
   - internal/sim/memory.go
-verified_against: 72125c85abd1a0de6c19855aaae1757d8b976f17
+verified_against: cea7b8f83fa07f9fcfefe4dd861aa05a78448f1b
 ---
 
 # Executor
@@ -69,10 +69,15 @@ always spends the most-worn one first. `Axes []int` (spec 032) mirrors `Spears`
 exactly: remaining harvest uses per carried axe, sorted ascending, spent
 most-worn-first on chop/quarry. The legacy `Food int` field is gone; a v1
 world must run `promptworld migrate` ([[world-migration]]) before it can boot under
-this build. All tuning constants (decay rates, action durations, yields, costs,
+this build. Most tuning constants (decay rates, action durations, yields, costs,
 thresholds) sit at the top of `agents.go`; the v2 economy's constants (food
-restores, fire fuel, spear durability, gather/craft/build/station magnitudes) are
-grouped under their own "spec 012" block there, and a separate "spec 032" block
+restores, spear durability, gather/craft/build/station magnitudes) are
+grouped under their own "spec 012" block there — except the two fire-fuel
+dials (`refuelDyingBelow`, `fireBurnPerWood`), which spec 048 promoted to
+per-world dials and relocated to `internal/sim/tuning.go` as
+`defaultRefuelDyingBelow`/`defaultFireBurnPerWood` behind the nil-safe
+`State.RefuelDyingBelow()`/`State.FireBurnPerWood()` accessors ([[world-tuning]])
+— and a separate "spec 032" block
 holds the walls/axes/paths tuning surface (`wallPlankHP` 200, `wallStoneHP` 600 —
 at least 2x the plank wall per FR-003 — `axeDurability` 10 harvest uses,
 `chopYieldBare`/`chopYieldAxe` 1/3, `quarryYieldBare`/`quarryYieldAxe` 1/3,
@@ -102,10 +107,15 @@ as one absolute `agent.needs_changed` event per agent per minute (absolute value
 replay-safe).
 
 **Fire fuel** (T019/T020): `build_fire` (still 2 wood) lights a fire for
-`2×fireBurnPerWood` (4 game-hours per wood, so 8 hours) from the build tick.
+`2×s.FireBurnPerWood()` (4 game-hours per wood by default, so 8 hours).
 `refuel_fire` (instant on arrival, 1 wood) pushes `FuelUntil` forward by
-`fireBurnPerWood`, capped at `now + fireFuelCap` (12 hours); relighting a cold fire
-starts the window from now. Every tick, `stepEvents` sweeps `Structures` for a fire
+`s.FireBurnPerWood()`, capped at `now + fireFuelCap` (12 hours); relighting a
+cold fire starts the window from now. `fireBurnPerWood` is a spec-048
+[[world-tuning]] per-world dial now — the default (still 4 game-hours) lives
+in `internal/sim/tuning.go` as `defaultFireBurnPerWood`, and every call site
+reads the tuned value through `State.FireBurnPerWood()`; `fireFuelCap` itself
+is NOT promoted (research R6) and still truncates the effective deadline.
+Every tick, `stepEvents` sweeps `Structures` for a fire
 whose `FuelUntil` falls in the tick's window (`tick-1 < FuelUntil <= tick`) and emits
 `sim.fire_burned_out` exactly once on that transition (no state effect — lit-ness
 stays derived), plus a low-salience witness memory ("Watched the fire burn out.")
