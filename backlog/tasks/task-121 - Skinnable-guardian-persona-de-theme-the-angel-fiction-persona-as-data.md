@@ -4,7 +4,7 @@ title: 'Skinnable guardian persona: de-theme the angel fiction, persona as data'
 status: In Progress
 assignee: []
 created_date: '2026-07-25 06:20'
-updated_date: '2026-07-25 17:40'
+updated_date: '2026-07-25 18:22'
 labels:
   - learning-game
   - design
@@ -49,4 +49,12 @@ Spec: specs/052-skinnable-guardian
 Reorient 2026-07-25 rescope (D2/D10): the skin-token CONTRACT ships before TASK-115/117 write any new fiction literal — those tasks consume the lookup from day one (sequencing inversion fix). Enumerated sweep sites beyond the original framing: internal/tui/help.go static tables (5 Metatron literals), footer hints, cmd/promptworld/stages.go stagesLadder identities, TASK-117 lesson strings, docs/player/ page names, and docs/design/tui mockups/labels (the design doc renders all fiction strings as skin tokens — TASK-123). The guardian/systems tab split (D10, TASK-125) makes the skin boundary a file boundary: skins may touch the guardian tab, never the systems tab.
 
 Model tier: Opus 4.8 (spec-implementer, model=opus). Rubric: cross-package architectural slice; prompt composition beneath the spec-021 injection-soundness doctrine (fixed-frame adjacency = doctrine-adjacent behavior change); repo-wide rename with serialization-freeze hazards — senior tier per constitution Principle V and the runbook Lane 1 assignment. Dispatched by UI-sweep orchestrator.
+
+[merge-drift session] warn: task-121-skinnable-guardian and task-125-guardian-console will conflict on internal/tui/views.go whichever merges first
+evidence: internal/tui/views.go, task-121-skinnable-guardian, task-125-guardian-console
+fingerprint: 09b11c42cbe5
+
+[merge-drift session] warn: task-121-skinnable-guardian would conflict with origin/main on internal/tui/views.go
+evidence: internal/tui/views.go, task-121-skinnable-guardian
+fingerprint: ed57267d74bb
 <!-- SECTION:NOTES:END -->

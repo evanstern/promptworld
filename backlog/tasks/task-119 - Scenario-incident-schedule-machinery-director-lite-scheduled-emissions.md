@@ -4,7 +4,7 @@ title: Scenario incident-schedule machinery (director-lite scheduled emissions)
 status: In Progress
 assignee: []
 created_date: '2026-07-25 04:43'
-updated_date: '2026-07-25 18:12'
+updated_date: '2026-07-25 18:22'
 labels:
   - learning-game
   - design-session
@@ -44,4 +44,12 @@ Spec: specs/054-scenario-machinery
 Reorient 2026-07-25 rescope (D11/D4): scenario worlds get an exercise dock tab (framing line, LIVE event-derived rubric gauges via the decision-trace projection pattern, pass/fail state) plus an attach-time briefing; incident-schedule visibility is a per-exercise VOCABULARY field, not a boolean (forecast at stages 1-2, fog from stage 3 as defaults); a scenario-cadence narration trigger closes chronicle chapters on rubric beats so the score narrative renders during short runs (the narrator's ~2 chapters/game-day would otherwise produce zero entries). curriculum.* pass emissions double as the ceremony trigger (TASK-127). Panel page authored in TASK-123 before build. Open (parked in synthesis): headline-live gauges vs full-breakdown-at-postmortem.
 
 Model tier: Opus 4.8 (spec-implementer, model=opus). Rubric: sim-loop/executor emission class + determinism doctrine, cross-package (sim/daemon/world/ipc/mind/scribe/tui) — senior tier per constitution Principle V and the runbook Lane 2 assignment. Standing resolution: live rubric gauges per authored panels/exercise.md (parked question resolved by the page). Dispatched by UI-sweep orchestrator.
+
+[merge-drift session] warn: task-119-scenario-machinery is cleanup-eligible (ancestor): git worktree remove /Users/evanstern/evan/promptworld/.worktrees/task-119 && git branch -d task-119-scenario-machinery
+evidence: /Users/evanstern/evan/promptworld/.worktrees/task-119, task-119-scenario-machinery
+fingerprint: 0c8de6eeb45c
+
+[merge-drift session] warn: task-119-scenario-machinery and task-121-skinnable-guardian will conflict on internal/tui/views.go whichever merges first
+evidence: internal/tui/views.go, task-119-scenario-machinery, task-121-skinnable-guardian
+fingerprint: 67484f01df7f
 <!-- SECTION:NOTES:END -->
