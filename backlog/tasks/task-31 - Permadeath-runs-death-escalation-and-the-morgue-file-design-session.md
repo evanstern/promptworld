@@ -4,7 +4,7 @@ title: 'Permadeath runs, death escalation, and the morgue file: design session'
 status: In Progress
 assignee: []
 created_date: '2026-07-20 19:55'
-updated_date: '2026-07-25 05:55'
+updated_date: '2026-07-25 06:28'
 labels:
   - design
   - learning-game
@@ -23,9 +23,9 @@ Spec: specs/044-run-outcomes-morgue
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 A grounding/design session produces a spec directory for run outcomes, death escalation, and the morgue file, linked on the board via spec-bridge
-- [ ] #2 Spec phase: Setup
-- [ ] #3 Spec phase: Foundational (blocking prerequisites)
-- [ ] #4 Spec phase: User Story 1 — The run ends, and the story survives it (P1) 🎯 MVP
+- [x] #2 Spec phase: Setup
+- [x] #3 Spec phase: Foundational (blocking prerequisites)
+- [x] #4 Spec phase: User Story 1 — The run ends, and the story survives it (P1) 🎯 MVP
 - [ ] #5 Spec phase: User Story 2 — The morgue file (P2)
 - [ ] #6 Spec phase: User Story 3 — The gru can finish the wounded (P3)
 - [ ] #7 Spec phase: User Story 4 — Graves on the map, grief in the village (P4)
@@ -42,6 +42,10 @@ Re-grounding 2026-07-22: gru wound mechanics hold (gruWound=250 gru.go:38; wound
 Drift audit 2026-07-23: verified exact — gruWound=250 gru.go:38, gruWoundFloor=1 gru.go:39, floor applied gru.go:124; 'wounds, never kills' doctrine comment gru.go:15-16. Spec 013 (death-drop FR-006) is now Done/merged — the deferral of the physical death-drop piece to 013 has happened; remaining scope here (morgue file, graves, run.ended, escalation) untouched.
 
 spec-bridge sync: Setup: 0/1 · Foundational (blocking prerequisites): 0/2 · User Story 1 — The run ends, and the story survives it (P1) 🎯 MVP: 0/9 · User Story 2 — The morgue file (P2): 0/7 · User Story 3 — The gru can finish the wounded (P3): 0/3 · User Story 4 — Graves on the map, grief in the village (P4): 0/4 · Polish & Cross-Cutting: 0/3
+
+Implementation dispatched 2026-07-25: Setup+Foundational+US1 (T001-T012) to spec-implementer on Opus 4.8 — rubric: concurrency/scheduling logic (sim loop halt semantics, executor emission ordering, reducer arms) + doctrine-adjacent (run-end永久halt, command gating). US3/US4 and US2 rendering earmarked Sonnet per plan.md tier notes. Branch task-31-run-outcomes-morgue in .worktrees/task-31.
+
+spec-bridge sync: Setup: 1/1 · Foundational (blocking prerequisites): 2/2 · User Story 1 — The run ends, and the story survives it (P1) 🎯 MVP: 9/9 · User Story 2 — The morgue file (P2): 0/7 · User Story 3 — The gru can finish the wounded (P3): 0/3 · User Story 4 — Graves on the map, grief in the village (P4): 0/4 · Polish & Cross-Cutting: 0/3
 <!-- SECTION:NOTES:END -->
 
 ## Comments
