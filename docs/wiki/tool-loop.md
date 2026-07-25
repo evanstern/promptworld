@@ -5,7 +5,8 @@ kind: component
 sources:
   - internal/toolloop/loop.go
   - internal/toolloop/record.go
-verified_against: be38288fa137064174eedbfb3b8a94cc5b1fb0b9
+  - internal/toolloop/clamp.go
+verified_against: ad4871faa7988ce5b2d7f029ada59f653afaa569
 ---
 
 # Tool-use loop
@@ -118,8 +119,32 @@ by a general schema-lite walker — `validateAuthored`/`walkSchema`, spec 029 R5
 owns `landed`, `rejected_gate` (the door refused — stale, guard, scene,
 charge), `read_ok`, and `read_error`. `unlanded` covers a call the loop
 terminated before dispatching (cap reached, or a trailing call after an
-infrastructure failure in the same batch). Every model tool call ends with
-exactly one of these.
+infrastructure failure in the same batch). Since spec 058 (FR-001/FR-003,
+TASK-110, `clamp.go`) a landed call has a second shape: `VerdictLandedClamped`
+carries every `landed` control-flow consequence (consumes the action, ends the
+loop) but marks that a Clamp-flagged expressive field — or set_plan's own step
+count — was truncated to its cap rather than the whole call being rejected;
+`validateArgs` returns `(finalArgs, clampNotice, rejectReason)` instead of a
+bare reject string — `rejectReason != ""` still means reject exactly as
+before, but a non-empty `clampNotice` on an otherwise-passing call means
+`finalArgs` carries a Clamp-flagged `Text` param (or the authored-schema path's
+top-level `reason`, clamped by field name via `clampTopLevelText` since an
+`InputSchemaJSON` override bypasses `Param` derivation) truncated rune-safely
+by `clamp.go`'s `ClampRunes`/`ClampBytes` (never splitting a UTF-8 sequence,
+the `NormTextMax` idiom factored out for every byte-cap caller); `run` rewrites
+`call.Args` to the clamped value in place BEFORE dispatch, so the handler, the
+`CallRecord`, and the eventual event payload all see only the truncated text.
+A clean `VerdictLanded` whose args were clamped upstream is upgraded to
+`VerdictLandedClamped` by `run` itself once the handler returns; a handler may
+also originate `VerdictLandedClamped` directly when its clamp condition is
+domain-specific and the loop can't detect it generically (`set_plan`'s own
+step-count clamp, [[agent-mind]]'s `handleSetPlan`) — either way the
+model-facing result gains a `withClampNotice` suffix naming the field and the
+clamp (FR-001's "the model can adapt"), and the recorded `Reason` carries that
+same notice (or, when the handler originated the clamp itself, its own
+`ResultForModel` phrasing) so a clamped acceptance is queryable exactly like a
+rejection, never silent. Every model tool call ends with exactly one of these
+verdicts.
 
 **`CallRecord`/`Record` sink** (`record.go`): `CallRecord{JobID, Ordinal,
 Tool, Args, Verdict, Reason, Tier}` is the first-class artifact for one model
@@ -134,7 +159,10 @@ kind, every read outcome, every `unlanded` — so a consumer's telemetry (both
 [[agent-mind]]'s mind and [[metatron]] land these as `cog.tool_call` events
 via the shared `sim.NewCogToolCallPayload`, [[event-types]], [[cognition]])
 can reconstruct the complete call trace even for a cognition where nothing
-ever landed.
+ever landed. Since spec 058, `verdictRequiresReason` ([[agent-mind]]'s
+telemetry emitter) adds `VerdictLandedClamped` to the verdicts whose
+`cog.tool_call` MUST carry a non-empty `Reason` — a clamped acceptance has no
+query value at all without the notice naming what was truncated.
 
 **Termination taxonomy** (`Termination`, data-model.md §4): `TermLanded` /
 `TermModelDone` (the model produced no tool call — Run reports this honestly;

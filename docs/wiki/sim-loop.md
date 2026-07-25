@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/loop.go
   - internal/sim/landing.go
-verified_against: dee5f4bf60093cb5d775e10c8ced41c7e5b385ec
+verified_against: ad4871faa7988ce5b2d7f029ada59f653afaa569
 ---
 
 # Sim loop
@@ -116,8 +116,9 @@ world as it is now (`staleness = state.Tick − SnapshotTick`, floored at 0).
 Since TASK-70 the ladder lives in `internal/sim/landing.go` as
 `Loop.landIntent` — the `inject_intent` case in `handleCommand` is a one-line
 dispatch to it — with each doctrine rung a named function (`rungUnavailable`,
-`rungSuperseded`, `rungStale`, `rungHailRelaxed`, `rungGuardFailed`,
-`rungAdapted`, `rungInRadiusHail`) and the guard walk (`walkGuards`) producing
+`rungSuperseded`, `rungStale`, `rungPairCooldown`, `rungHailRelaxed`,
+`rungGuardFailed`, `rungAdapted`, `rungInRadiusHail`) and the guard walk
+(`walkGuards`) producing
 one explicit `landingDecision` (outcome, reason, hail target) instead of the
 former cross-loop flags. The extraction is behavior-identical; the rungs:
 
@@ -125,25 +126,46 @@ former cross-loop flags. The extraction is behavior-identical; the rungs:
 2. `Generation` mismatch with `Agent.Generation` → `superseded`;
 3. staleness over the class's `BudgetTicks` (looked up via
    `cognition.ClassFor`) → `rejected-stale`;
-4. any `Guard.Eval` failure → `rejected-guard` — EXCEPT the hail rung
+4. since spec 061 (TASK-109, [[social-fabric]]): `rungPairCooldown` — a
+   `talk_to` landing whose living target the actor spoke with inside
+   `EncounterCooldown()` (the [[world-tuning]] spec-048 dial, [[sim-state-reducer]]'s
+   `State.PairLastTalk`/`pairCooled`) is refused `rejected-guard` with an
+   informative "spoke recently" reason BEFORE the hail rungs — the planner
+   founds no scene and learns why instead of burning turns re-hailing
+   (FR-002). Non-`talk_to` goals, a dead target (left to the guard walk's own
+   rejection), a never-talked pair, and a past-cooldown pair are all vacuous
+   (`""`, no gate); the SAME predicate also backstops hail PLACEMENT
+   (`hailable`, now `tick`-parameterized) and hail FOUNDING (`hailStep`'s
+   sweep) so all three deliberate-talk routes close through one gate (SC-002)
+   — `hailable`'s existing exemptions (dead/asleep/already-hailed/deadlock/
+   meeting-pinned/radius) are unchanged, this is an ADDITIONAL check;
+5. any `Guard.Eval` failure → `rejected-guard` — EXCEPT the hail rung
    (TASK-47): a failed `target_present` on a `talk_to` landing whose living
    target is `hailable` (or is the actor's own hailer — mutual convergence)
    proceeds as **adapted** instead of rejecting; a `target_present` guard that
    holds but whose target moved likewise marks the landing **adapted** (the
    repair is `resolveGoal`'s re-resolution);
-5. success: the goal must first be a World tool on the [[tool-registry]]'s
+6. success: the goal must first be a World tool on the [[tool-registry]]'s
    villager roster (spec 014 US3 — an out-of-roster or unknown name rejects
    with the same `unknown goal` reason as before; real planner traffic is
    unaffected), then `resolveGoal` resolves coordinates deterministically,
    recorded as `agent.intent_set (source: planner, job: InjectArgs.JobID)` +
    `agent.thought` (since spec 017 the tool-use loop's job id threads onto the
    landed event's `Job` field at this single emission site), or — for a
-   `Plan` — validated against `PlanStepCap` and `tool.PlanStepGoals()`,
+   `Plan` — each step validated against `tool.PlanStepGoals()`,
    the registry-derived plan-step set (spec 014 FR-006; deriving it cured the
    TASK-55 drift where the old hand-maintained `planGoals` map silently
    rejected the nine spec-012 verbs — FR-012, the migration's sole behavioral
-   delta; missing `Until` defaults to `state.Tick + PlanDefaultWindowTicks`)
-   and recorded as `agent.plan_set`; a `resolveGoal` failure is itself
+   delta; missing `Until` defaults to `state.Tick + PlanDefaultWindowTicks`).
+   Since spec 058 (US2, FR-003), a `Plan` longer than `PlanStepCap` is no
+   longer rejected whole: it is truncated to the first `PlanStepCap` steps
+   IN PLACE, reducer-side, before per-step validation, and the decision's
+   outcome becomes `OutcomeClamped` — so the landed `agent.plan_set` always
+   carries exactly the steps that were accepted (deterministic, replay-safe)
+   and the model-facing/telemetry trail can tell a clamped plan from a clean
+   one; a structurally invalid step WITHIN the clamped window still rejects
+   the whole landing exactly as before — the clamp only forgives length. Both
+   shapes are recorded as `agent.plan_set`; a `resolveGoal` failure is itself
    `rejected-guard`. Since spec 019 (R2), a non-empty `InjectArgs.Reason` also
    rides onto the landed `agent.intent_set` event's `Reason` field (reflex-
    and executor-authored intent_set events carry none), so the planner's
@@ -260,7 +282,13 @@ spec 017 — its handlers wrap `InjectIntent` (world verbs, `set_plan`) and
 `CallRecord`s land as the `cog.tool_call` batch through the same social door.
 The [[executor]]'s `run.ended` declaration is what flips the loop into the
 ended posture; the [[morgue]] is the consumer of the two spec 044 whitelist
-types and of the narrowed ended-world door.
+types and of the narrowed ended-world door. Since spec 061, `rungPairCooldown`
+is this note's half of the conversation loop damper — [[social-fabric]] owns
+the mind-side novelty SHIM one layer above it, and [[sim-state-reducer]] owns
+the `PairTalks` ledger both read. Since spec 058, the plan rung's
+`OutcomeClamped` path is this note's half of the clamp-with-notice feature —
+[[tool-loop]] owns the matching `VerdictLandedClamped` for expressive text,
+and [[tool-registry]] owns `set_plan`'s schema no longer declaring `maxItems`.
 
 ## Operational notes
 

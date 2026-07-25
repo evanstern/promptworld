@@ -1,6 +1,6 @@
 ---
 name: tool-registry
-description: The single source of truth for agent capabilities (spec 014, extended specs 017/019/021/029/041) — every tool as name + params + gate + effect + cost in one registry; prompt vocabulary, parse validation, sim-door validation, durations, and rosters all derived; the tool-use loop's declared rosters and InputSchema derivation; the authoritative miracle cost table, RestrictEnum, and the derived Metatron tool guidance (spec 021); the spec-029 Metatron agency surface (send_vision/send_omen/monitor_and_act/cancel_order + pause/start/adjust_speed) with authored array schemas and the clock-speed ladder mirror; the spec-041 search verb and send_vision's optional place grant; boot-time coverage gate
+description: The single source of truth for agent capabilities (spec 014, extended specs 017/019/021/029/041/058) — every tool as name + params + gate + effect + cost in one registry; prompt vocabulary, parse validation, sim-door validation, durations, and rosters all derived; the tool-use loop's declared rosters and InputSchema derivation; the authoritative miracle cost table, RestrictEnum, and the derived Metatron tool guidance (spec 021); the spec-029 Metatron agency surface (send_vision/send_omen/monitor_and_act/cancel_order + pause/start/adjust_speed) with authored array schemas and the clock-speed ladder mirror; the spec-041 search verb and send_vision's optional place grant; the spec-058 expressive-text Clamp flag and the dormant-verb (collect_water/bathe) roster prune; boot-time coverage gate
 kind: component
 sources:
   - internal/tool/tool.go
@@ -9,7 +9,7 @@ sources:
   - internal/tool/derive.go
   - internal/tool/validate.go
   - internal/sim/toolcheck.go
-verified_against: 1debe184724bffe5eab8dbb5659a047c9ff63cc4
+verified_against: ad4871faa7988ce5b2d7f029ada59f653afaa569
 ---
 
 # Tool registry
@@ -65,7 +65,11 @@ ships the first production Read entries, `search_journal`/`read_journal`),
 the spec-014 debt that left the storage verbs' `qty` unmodeled: bounded by
 optional `Min`/`Max`, 0/0 meaning unbounded; every `Param` also carries an
 optional `Description`, spec 019 T024, emitted verbatim as the derived JSON
-Schema property's `"description"` — `""` means no description), a `GateClass`,
+Schema property's `"description"` — `""` means no description; since spec 058
+FR-001, `Clamp bool` marks an EXPRESSIVE `Text` param whose over-cap value the
+[[tool-loop]] driver truncates rune-safely and lets the call proceed, instead
+of rejecting it — `Validate()` enforces `Clamp` only ever appearing on a `Text`
+param), a `GateClass`,
 and a `Cost` (work `DurationTicks` for world verbs, `TextCapBytes`/
 `TextCapRunes` for expressive text, nudge/miracle charges). World verbs keep
 their prompt gloss prose (`PromptGloss`) byte-exact from the old hand-written
@@ -104,8 +108,13 @@ separate exclusion list anywhere.
 
 **`set_plan` and `work_miracle`'s schemas** (`registry.go`): `set_plan` needs an
 authored `InputSchemaJSON` override — the registry's scalar `Param` model has no
-`ParamKind` for a `steps` array — built by `setPlanSchema(legacyWorldNamesFrom(worldTools))`:
-a `steps` array (1..`PlanStepCap` (3) items) of `{goal, kind, qty}` objects, `goal`'s
+`ParamKind` for a `steps` array — built by
+`setPlanSchema(pruneDormant(legacyWorldNamesFrom(worldTools)))` (the
+`pruneDormant` wrap is spec 058 US3, above):
+a `steps` array of `{goal, kind, qty}` objects — no longer capped by a
+declared `maxItems` (spec 058 FR-003: an oversized array now clamps at the
+landing guard instead of failing the driver's structural walk; `PlanStepCap`
+(3) survives only as `description` guidance) — `goal`'s
 enum drawn from the SAME legacy-World-tool filter `VocabularyLine`/`WorldGoals` use,
 so the plan vocabulary can never drift from the free-text one even though the two
 can't share one function call (an initialization-cycle constraint). `work_miracle`
@@ -126,6 +135,31 @@ and — decisively — `Validate` forbids a World tool from declaring `Events`, 
 `work_miracle` must (so the sim-side coverage check can pin its event set ⊆ the
 whitelist). There is deliberately no `gratis` parameter: the angel can never waive
 a charge (spec 016 FR-007/SC-005) — structural absence, not a sanitized field.
+
+**Clamp-with-notice (spec 058 FR-001, TASK-110)**: the four EXPRESSIVE text
+surfaces — `reasonParam()`'s shared `reason` (every acting villager world tool
+and `set_plan`), and `expressiveTools`' `say.text`/`gist.gist`/`muse.text` —
+carry `Clamp: true`, so an over-cap value truncates rune-safely at the
+[[tool-loop]] driver instead of the whole call being rejected (world-01
+diagnosis: ~93% of 807 rejections were exactly this shape). `say`/`gist` don't
+ride the villager tool-use loop today (scene-gated, `roster.go`) so the
+driver's `Text` arm never actually sees their `Clamp` flag — their real
+enforcement is the conversation scene parser (`internal/mind/parse.go`
+`parseSay`/`parseOutcome`), which already truncated rather than rejected and
+this task made rune-safe (`toolloop.ClampBytes`, fixing a latent multi-byte
+UTF-8 split at the byte-cap boundary); the registry `Param` still carries
+`Clamp` regardless, keeping it the single source of truth for which fields are
+expressive. `set_plan`'s schema drops `maxItems` from its `steps` array
+(`setPlanSchema`) — an oversized plan no longer fails the driver's structural
+walk at all, reaching the landing guard ([[sim-loop]]) instead, which clamps
+to the first `PlanStepCap` steps with a notice; the cap survives only as
+prose guidance in the schema's `description`. `set_plan`'s top-level `reason`
+(the one clampable field that ISN'T a `Param` — its authored
+`InputSchemaJSON` override bypasses `Params` derivation) is clamped by the
+[[tool-loop]] driver keyed on the field name, not a `Clamp` flag. Prose
+glosses that advertised the pruned verbs below move in the same change:
+`glossQuarry` drops its `collect_water` clause and `glossBuildOven` drops its
+`bathe` clause.
 
 **The spec-029 metatron agency surface** (`registry.go`, TASK-27,
 [[metatron-orders]]): `nudge_dream`/`nudge_omen` are RETIRED; `metatronTools`
@@ -228,11 +262,24 @@ keep that gate honest. `OnRoster()` is the door predicate: [[sim-loop]]'s intent
 door requires a World tool on the villager roster.
 Two new roster exports serve [[tool-loop]] specifically, returning full `Tool`
 values (not just names, since `InputSchema` needs `Params`/`InputSchemaJSON`):
-`LoopRosterVillager()` = every legacy World tool, then `set_plan`, then `muse`
+`LoopRosterVillager()` = every legacy World tool — MINUS `dormantVillagerVerbs`
+(spec 058 US3, TASK-110: `collect_water`, `bathe` — a non-choice today, water
+has no consumer and both verbs' world-01 usage collapsed to near-zero; a
+revisit-condition comment at the prune site names the trigger: a designed
+thirst need) — then `set_plan`, then `muse`
 (`say`/`gist` stay scene-gated and out of the loop roster this task — scenes
 remain driver-run, not model-initiated), then the four spec-019 journal tools
 (`write_journal_entry`, `delete_from_journal`, `search_journal`, `read_journal`
-— appended last so no existing declared tool's position shifts);
+— appended last so no existing declared tool's position shifts). `setPlanTool`'s
+own step-goal enum (`registry.go`) is a SEPARATE villager-facing prompt
+surface built from the same legacy-World-tool set, so it applies the shared
+`pruneDormant()` filter too — without it a model could still offer
+`collect_water`/`bathe` as a plan STEP even after they left the declared
+roster. `RosterVillager` (the door's name-only membership check) and
+`PlanStepGoals()` (the plan-step accept set) are deliberately UNTOUCHED — the
+sim executor still honors both verbs so a historical world's `collect_water`/
+`bathe` events replay exactly, and reintroduction to the model-facing surfaces
+is a roster/gloss edit, not a rebuild;
 `LoopRosterMetatron()` = `send_omen`, `send_vision`, `monitor_and_act`,
 `cancel_order`, `work_miracle`, then the meta tools `pause`, `start`,
 `adjust_speed` (spec 029 order) —
@@ -254,7 +301,8 @@ derived prompt surfaces depend on.
 checks the registry's internal consistency (unique non-empty names, known effect
 classes, Events ⇒ Expressive, PlanStep/ReflexEligible only on World tools, Number
 params' Min/Max not inverted, a set `InputSchemaJSON` is valid-JSON object shape,
-roster names resolve) and returns ALL violations. Spec 017 lifts the spec-014
+roster names resolve, and — since spec 058 FR-001 — `Clamp` set only on a `Text`
+param) and returns ALL violations. Spec 017 lifts the spec-014
 restriction barring Read tools from a roster (`tool-loop` is now the Read
 consumer; spec 017 itself shipped zero production Read entries, but a roster
 naming one was no longer a `Validate` error — spec 019 ships the first two,
@@ -300,7 +348,12 @@ runs the boot gates; [[agent-journal]] is the spec-019 consumer of the four
 journal tools (`write_journal_entry`/`delete_from_journal`/`search_journal`/
 `read_journal`) declared here. [[mental-maps]] is the spec-041 consumer of
 `search` and `send_vision`'s place grant, and the source of the
-`placeFactKinds` vocabulary hand-mirrored onto `place_kind`'s Enum. The registry formalizes the doors — it does not
+`placeFactKinds` vocabulary hand-mirrored onto `place_kind`'s Enum. [[tool-loop]]
+owns the spec-058 `Clamp` enforcement (`validateArgs`'s clamp-with-notice,
+`VerdictLandedClamped`); [[sim-loop]]'s landing guard owns the matching
+`set_plan` step-count clamp (`OutcomeClamped`); [[agent-mind]]'s scene parser
+(`parse.go`) is where `say`/`gist`'s own `Clamp`-flagged fields actually
+enforce, since both stay outside the villager tool-use loop. The registry formalizes the doors — it does not
 relax them: the landing ladder, whitelist, and charge economy are unchanged
 enforcers. Spec: `specs/014-tool-registry/` (contracts/registry-api.md,
 contracts/tool-catalog.md); the tool-use loop additions are spec 017

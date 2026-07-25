@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/social.go
   - internal/mind/convo.go
-verified_against: cea7b8f83fa07f9fcfefe4dd861aa05a78448f1b
+verified_against: ad4871faa7988ce5b2d7f029ada59f653afaa569
 ---
 
 # Social fabric
@@ -86,7 +86,31 @@ gated by the same `memoryRelevance` mode as the planner window ([[agent-mind]],
 `selectWindow`): legacy/shadow modes keep today's `SelectMemories` window
 byte-identical, `"on"` serves the relevance-scored window, and shadow/on modes
 each record one `cog.memory_divergence` per participant at founding
-([[memory-retrieval]] owns the selector and the divergence payload). Since TASK-32 the beat first passes the [[cognition]]
+([[memory-retrieval]] owns the selector and the divergence payload). Before
+even that gate, since spec 061 US3 (TASK-109) `maybeStartConversation` runs
+the novelty SHIM: `hasNoveltySince(p.A, p.B, priorExchange)` — `priorExchange`
+the pair's [[sim-state-reducer]] `PairTalks` tick from BEFORE this founding
+talk, captured in `absorb` ahead of the reducer overwriting it (spec 061 R4,
+one source of truth via `State.PairLastTalk`) — requires at least one
+participant to have formed a memory at or above `noveltySalienceFloor` (5,
+promoted-dial-ready per FR-005 but deliberately not in tuning.json) strictly
+after that prior tick; a never-talked pair (`priorExchange` 0) is vacuously
+novel, so first contact always founds. Failing the gate records a suppressed
+`cog.outcome` (`emitNothingNew`, reason `"nothing new since last exchange"`)
+and the primitive talk that triggered the beat stands alone — no scene. This
+is an explicitly-marked, removable SHIM (operator decision 2026-07-24)
+compensating for weak model-side conversational variety (Birch's "I need to
+tell Sage everything" fixation, 248 hails in the TASK-109 evidence): every
+site carries a greppable `SHIM(TASK-109)` marker and the removal condition —
+delete once the conversation tier reliably varies its own dialogue — the
+FIRST place to look if conversations later feel too sparse. When a scene DOES
+found on a callback pair, the prompt's last-conversation line is reframed as
+"already covered" ("You two recently talked about this: `<gist>`\nSay
+something new — don't just repeat it.", riding the same `LastConversationBetween`
+gist below) so the model varies the exchange instead of relooping — removable
+together with the gate. (The sim-side pair cooldown gating the hail founding
+path itself — the layer beneath this one — is [[sim-loop]] territory.) Since
+TASK-32 the beat then passes the [[cognition]]
 router gate: a scene is the costliest conversation-class thought (13 points), and if
 it can't land inside its staleness budget at the current speed the encounter
 stays a primitive talk with a `cog.outcome{suppressed}` record. An admitted scene also pins its PROVIDER at founding (spec 024 US3,
@@ -174,6 +198,10 @@ narrates the conversation events. [[mental-maps]] is the knowledge store the
 place-telling sidecar reads from and writes into, riding the same talk beat
 as rumors and gifts. [[memory-retrieval]] is the spec 042 mode gate and
 divergence telemetry behind the scene's per-participant memory snapshot.
+[[sim-loop]] owns the sim-side pair cooldown (spec 061, TASK-109) that gates
+the hail founding path a layer beneath this note's novelty SHIM — two
+independent, layered founding gates over the same `PairTalks` ledger
+([[sim-state-reducer]]).
 
 ## Operational notes
 

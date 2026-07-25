@@ -11,7 +11,7 @@ sources:
   - internal/tool/derive.go
   - internal/ipc/server.go
   - cmd/promptworld/miracle.go
-verified_against: 1debe184724bffe5eab8dbb5659a047c9ff63cc4
+verified_against: ad4871faa7988ce5b2d7f029ada59f653afaa569
 ---
 
 # Metatron's miracles
@@ -132,7 +132,13 @@ classified SHIFT or KEEP in its doc comment:
   0) — shifted so a snap preserves the window's remaining time instead of
   forcing an immediate anchor reset that would wipe every villager's
   trajectory sense; `NeedsAnchor` itself holds need levels, not ticks, so it
-  needs no entry.
+  needs no entry. Spec 061 ([[social-fabric]], [[sim-state-reducer]]) adds
+  `PairTalk.Tick`, the conversation loop damper's per-pair last-exchange
+  anchor (cooldown elapsed = tick − Tick, the `Agent.LastTalk` shape) —
+  shifted UNCONDITIONALLY: unlike most SHIFT fields here, a PRESENT
+  `PairTalk` record is always a real exchange tick (absence of the record
+  itself, not a zero value, means "never talked"), so there is no zero
+  sentinel to guard.
 - **KEEP** — a historical timestamp or an identity/counter; rewriting it would
   rewrite history or break a reference. `Agent.Generation`, `Agent.LastGoalTick`,
   `Memory.Tick`, `Memory.Conv` (spec 019: a conversation-ref identity, the same
@@ -154,8 +160,9 @@ classified SHIFT or KEEP in its doc comment:
   `TestRebaseTaxonomyComplete` caught both spec-019 additions, the spec-030
   `Belief.Reinforced` field, (later) spec 029's `MetatronOrder.ExpiresTick`/
   `PlacedTick`, spec 041's `PlaceFact`/`PeerSighting` fields, spec 042's
-  `Memory.Seq`/`Agent.SitVecTick` fields, and spec 043's `IntentRecord.Tick`/
-  `OutcomeTick` (KEEP) and `Agent.NeedsAnchorTick` (SHIFT) as new tick-anchored
+  `Memory.Seq`/`Agent.SitVecTick` fields, spec 043's `IntentRecord.Tick`/
+  `OutcomeTick` (KEEP) and `Agent.NeedsAnchorTick` (SHIFT), and spec 061's
+  `PairTalk.Tick` (SHIFT) as new tick-anchored
   `int64` fields requiring classification, confirming the taxonomy guard holds
   across features outside miracles' own spec.
 
@@ -280,7 +287,9 @@ parsed into `miracleArgs`); [[metatron-orders]] shares this note's `rebaseTicks`
 taxonomy (a standing order's `ExpiresTick` is a SHIFT field);
 [[mental-maps]] shares it too (`PlaceFact.Seen`/`PeerSighting.Seen` SHIFT,
 `PlaceFact.Detail` KEEP) and is what a miracle-moved villager's derived
-explored/sighting bookkeeping updates;
+explored/sighting bookkeeping updates; [[social-fabric]]/[[sim-state-reducer]]
+share it since spec 061 (`PairTalk.Tick` SHIFT, the conversation loop
+damper's per-pair ledger);
 [[sim-loop]] whitelists the four event types in `injectSocialWhitelist` and
 reattaches the static map to the dry-run probe; [[sim-state-reducer]] dispatches to
 `applyMiracle` and carries the unexported `m *worldmap.Map` field the reducer arms

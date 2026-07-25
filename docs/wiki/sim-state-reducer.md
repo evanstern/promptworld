@@ -11,7 +11,7 @@ sources:
   - internal/sim/terrain.go
   - internal/sim/morgue.go
   - internal/sim/curriculum.go
-verified_against: cea7b8f83fa07f9fcfefe4dd861aa05a78448f1b
+verified_against: ad4871faa7988ce5b2d7f029ada59f653afaa569
 ---
 
 # Sim state & reducer
@@ -89,7 +89,15 @@ never decays; [[nightly-consolidation]] covers the decay curve), self-narrative,
 and the
 once-per-night consolidation ledger ([[nightly-consolidation]]) — the
 [[gru]] (`Gru *Gru`, nil while not abroad; `omitempty` keeps pre-TASK-10
-snapshots valid) — and the narrated story: the bounded `State.Chronicle`
+snapshots valid) — and, since spec 061 ([[social-fabric]]), the conversation
+loop damper's world truth: `PairTalks []PairTalk` (`omitempty`, the
+Journal/Hail/Map pointer-precedent's slice sibling) — an unordered per-pair
+last-exchange tick, `{A,B,Tick}` with a stored `A<B` invariant and the slice
+kept sorted by `(A,B)` so canonical bytes never depend on talk arrival order
+(a map would marshal non-deterministically); updated by the `agent.talked`
+arm alongside `LastTalk`, absent record ≡ never talked, so every pre-061
+snapshot round-trips byte-identically — and the narrated story: the bounded
+`State.Chronicle`
 ring ([[chronicle]], TASK-11), which rides snapshots so attaching clients
 get catch-up history for free — Metatron's charge bank
 (`MetatronCharges`, genesis 1, deliberately not `omitempty` so a
@@ -191,7 +199,12 @@ record still open stays open, so an override reads as open-then-new),
 movement, work
 products (inventory + overlays + structures), eating (`agent.ate`'s `AtePayload`
 sets the absolute post-eat food need and decrements each carried food form by its
-consumed count — no reducer-side arithmetic), sleep, talk, needs (absolute
+consumed count — no reducer-side arithmetic), sleep, talk (since spec 061
+the `agent.talked` arm also upserts the unordered `PairTalks` ledger via
+`recordPairTalk` — the pair-scoped companion to the per-agent `LastTalk`
+write, both hail-founded and ambient talks updating the one record; the
+conversation loop damper's hail founding gate reads it back via
+`PairLastTalk`, [[social-fabric]]), needs (absolute
 values; since spec 043 US2 the `agent.needs_changed` arm also rolls the
 trajectory anchor — once `tick − NeedsAnchorTick ≥ trajectoryWindowTicks`
 (1800, one planner cadence) it snapshots the current needs into
@@ -425,7 +438,10 @@ taxonomy `applyTimeSnapped` uses (which, since spec 029, also shifts an active
 standing order's `ExpiresTick` — never its `PlacedTick` — across a time snap;
 since spec 043 it likewise SHIFTs `Agent.NeedsAnchorTick` — a live-read
 duration anchor, 0 staying 0 — while `IntentRecord.Tick`/`OutcomeTick` are
-KEEP, history never rewritten);
+KEEP, history never rewritten; since spec 061 it also SHIFTs every
+`PairTalks[].Tick` unconditionally — a present record is always a real
+exchange anchor, never a "never talked" sentinel, so unlike `NeedsAnchorTick`
+it needs no zero-guard);
 [[metatron-orders]] covers the standing-order lifecycle, placement validation,
 and the angel-side trigger/confirm mechanics built on top of this reducer arm.
 [[mental-maps]] covers `Agent.Map`'s type, its four knowledge events'

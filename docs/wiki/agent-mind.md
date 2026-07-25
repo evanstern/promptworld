@@ -14,7 +14,7 @@ sources:
   - internal/scribe/scribe.go
   - internal/scribe/morgue.go
   - internal/sim/memory.go
-verified_against: cea7b8f83fa07f9fcfefe4dd861aa05a78448f1b
+verified_against: ad4871faa7988ce5b2d7f029ada59f653afaa569
 ---
 
 # Agent mind
@@ -313,11 +313,26 @@ era carries via `muse` instead of a per-action field); `talk_to` keeps its
 mind-side `buildTalkToGuards` (target alive + present in the job's snapshot
 worldview). `handleSetPlan` parses the tool call's `steps` argument into
 `[]sim.PlanStep` (`parsePlanSteps`) and lands them via `InjectIntent`'s `Plan`
-path, mirroring the retired `injectPlan`. `handleMuse` lands the musing text as
+path, mirroring the retired `injectPlan`; since spec 058 (US2, FR-003) it also
+notices when the submitted step count exceeds `sim.PlanStepCap` BEFORE the
+door call (purely to phrase the model-facing notice and pick the verdict —
+the landing guard's own truncation, `internal/sim/landing.go`, is the sole
+source of truth for what actually lands, a const-vs-const comparison that can
+never drift), returning `VerdictLandedClamped` with a "plan set (clamped: N
+steps submitted, only the first cap landed)" result instead of the plain
+`VerdictLanded`. `handleMuse` lands the musing text as
 an `agent.thought{source: "musing"}` through `Loop.InjectSocial`, batched
 atomically with its `cog.outcome{landed}` — the exact landing the old
 scheduled-musing worker used, now driven by the model choosing the `muse` tool
-instead of a cadence firing it. Every handler that touches a door sets
+instead of a cadence firing it. Since spec 058 (FR-001) the driver already
+CLAMPS an over-cap musing to `muse`'s 200-rune cap before dispatch (`muse.text`
+carries `Clamp: true`, [[tool-registry]]), so `handleMuse`'s own defensive
+rune-cap truncation — identical to the pre-058 `parseMusing` shape — is now
+belt-and-suspenders and never actually fires; the clamp itself and its
+`landed_clamped` verdict are the loop's concern
+([[tool-loop]]), not this handler's, whose own `cog.outcome` stays
+`OutcomeLanded` either way (a different telemetry axis: cognition completion,
+not clamp). Every handler that touches a door sets
 `doorOutcome = true` on the dispatch (the door already recorded its own
 `cog.outcome`, atomically with the landing/rejection); a handler that refuses
 BEFORE touching a door (unknown `talk_to` target, unparseable plan steps)
@@ -331,7 +346,11 @@ optional `reason` argument (trimmed, defensively capped at `tool.ReasonCapRunes`
 = 200) and both `handleWorldVerb` and `handleSetPlan` pass it as
 `InjectArgs.Reason` — the intent carries it to completion, where the executor
 bakes it into the completion memory's `Why`; the `Loop.InjectIntent` ladder
-narrates it as the `agent.thought`. The two journal WRITE handlers
+narrates it as the `agent.thought`. Since spec 058 (FR-001) the loop's
+`validateArgs` already CLAMPS an over-cap `reason` before dispatch — for world
+verbs via `Param.Clamp` (`reasonParam()`), and for `set_plan`'s own top-level
+`reason` (which rides its authored schema, not a `Param`) by field name — so
+`reasonArg`'s own rune-cap is belt-and-suspenders, not the enforcement point. The two journal WRITE handlers
 (`handleWriteJournal`/`handleDeleteJournal`) mirror `handleMuse` exactly: they
 marshal a `journal.entry_written`/`journal.entry_deleted` event and land it
 through `Loop.InjectSocial` batched atomically with a `cog.outcome{landed}`. The
@@ -364,7 +383,10 @@ from the log (AC#5). Events are sorted by `Ordinal` before emission (the driver
 already buffers them ordinal-dense; sorting here makes the mind's emission
 order-independent of buffer order) and ride ONE dedicated `InjectSocial` batch,
 separate from the terminal `cog.outcome`. A verdict requiring a non-empty
-reason (every `rejected_*` and `read_error`) gets one backfilled from the
+reason (every `rejected_*`, `read_error`, and — since spec 058 SC-005 —
+`landed_clamped`, whose Reason is the queryable clamp notice: without it a
+clamped acceptance would have no query value distinguishing it from a clean
+`landed`) gets one backfilled from the
 verdict name if a handler somehow left it blank, logged as the contract
 violation it would be (`verdictRequiresReason`). Since spec 025 (TASK-72)
 `runPlan` also surfaces the loop's one in-loop transport retry: when

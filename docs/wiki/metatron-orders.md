@@ -15,7 +15,7 @@ sources:
   - internal/llm/llm.go
   - internal/llm/config.go
   - internal/daemon/daemon.go
-verified_against: 1debe184724bffe5eab8dbb5659a047c9ff63cc4
+verified_against: ad4871faa7988ce5b2d7f029ada59f653afaa569
 ---
 
 # Metatron's standing orders

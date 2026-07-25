@@ -13,7 +13,7 @@ sources:
   - internal/llm/providers.go
   - internal/world/world.go
   - cmd/promptworld/divergence.go
-verified_against: cea7b8f83fa07f9fcfefe4dd861aa05a78448f1b
+verified_against: ad4871faa7988ce5b2d7f029ada59f653afaa569
 ---
 
 # Memory retrieval (embedding relevance)
@@ -76,7 +76,11 @@ refused at `world.Open`) threads boot-static through `mind.New` into `selectWind
 (`internal/mind/prompt.go` — since spec 043 a strip of `selectWindowAnnotated`, whose
 `"on"`-with-vector path consumes the relevance window and every other mode the legacy
 window, preserving the shadow invariant; the window renders as the memory block of the
-assembled decision context) and the conversation snapshot (`internal/mind/convo.go`).
+assembled decision context) and the conversation snapshot (`internal/mind/convo.go`
+— unrelated to this gate, `convo.go` also since spec 061 scans the same
+`Agent.Memories` for a simple salience-floor check, `hasNoveltySince`, behind
+the conversation loop damper's novelty SHIM; that check reads raw `Memories`
+directly, never the relevance-scored window this note owns, [[social-fabric]]).
 Shadow computes both rankings, serves the legacy window bit-identically, and records
 `cog.memory_divergence` (payload authority `sim.NewMemoryDivergencePayload`: both
 windows as seqs, overlap, rank displacement, vectorless count, sit_tick); `"on"` serves
@@ -107,6 +111,8 @@ head-of-chain only, so one lineage never mixes model identities.
 - [[llm-orchestrator]] — the `embedding` kind, `Embed`/`WarmEmbed` transport surface.
 - [[world-save-directory]] — the `memory_relevance` manifest flag.
 - [[executor]] — where memories are emitted (situated constructors, salience table).
+- [[social-fabric]] — `convo.go`'s other consumer of `Agent.Memories`: the spec-061
+  novelty SHIM's salience-floor check, unrelated to this note's relevance scoring.
 - [[cli-promptworld]] — the `divergence` subcommand.
 - Upstream design record: `specs/042-embedding-memory-retrieval/` and the research vault
   branch `research/Agent-Memory-Retrieval/`.

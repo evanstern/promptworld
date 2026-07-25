@@ -12,7 +12,7 @@ sources:
   - internal/cognition/horizon.go
   - internal/cognition/governor.go
   - internal/sim/cognition.go
-verified_against: 72125c85abd1a0de6c19855aaae1757d8b976f17
+verified_against: ad4871faa7988ce5b2d7f029ada59f653afaa569
 ---
 
 # Cognition horizon
@@ -237,7 +237,8 @@ config-tunable at runtime.
 `CogToolCallPayload` (`Job`, `Ordinal`, `Tool`, `Args` capped to 2 KiB,
 `Verdict` — the stringified `toolloop.Verdict` enum — `Reason`, `Tier`,
 `SnapshotTick`) is one record per tool call a cognition's loop saw: landed,
-rejected, read, or unlanded. `{Job, Ordinal}` is the correlation key
+landed_clamped (spec 058 FR-001/FR-003, `toolloop.VerdictLandedClamped` —
+[[tool-loop]]), rejected, read, or unlanded. `{Job, Ordinal}` is the correlation key
 (1-based, dense per job, model-emission order). It rides the same reducer-no-op
 `cog.*` doctrine as every other cognition event ([[event-types]]).
 `NewCogToolCallPayload` assembles the payload sim-side — deliberately with
@@ -334,5 +335,12 @@ shadow/on-mode selection's rank divergence per emission, purely observational
 NON-terminal outcome value — a scene reply failed to parse and the scene
 continued via one retry; consumers summing job completions must filter it, and
 the payload's optional `Raw`/`Retried` fields (omitempty) carry the failed
-reply's bounded verbatim text and the consumed-a-retry flag on terminals. Budgets are never widened automatically — persistent
+reply's bounded verbatim text and the consumed-a-retry flag on terminals.
+`OutcomeClamped` (`"clamped"`, spec 058 US2/FR-003) is a TERMINAL sibling of
+`OutcomeLanded` on the [[sim-loop]] landing decision: a `set_plan` submission
+longer than `PlanStepCap` still lands, truncated to the first `PlanStepCap`
+steps, and this outcome distinguishes that clamped acceptance from a clean one
+in the `cog.outcome` trail — the reducer-side (`sim`) outcome-vocabulary
+analog of `toolloop.VerdictLandedClamped` one layer down, not the same value.
+Budgets are never widened automatically — persistent
 suppression or rejection on one class is a human retune signal.

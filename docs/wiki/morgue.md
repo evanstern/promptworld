@@ -8,7 +8,7 @@ sources:
   - internal/sim/state.go
   - internal/mind/narrate.go
   - internal/world/world.go
-verified_against: cea7b8f83fa07f9fcfefe4dd861aa05a78448f1b
+verified_against: ad4871faa7988ce5b2d7f029ada59f653afaa569
 ---
 
 # Morgue
