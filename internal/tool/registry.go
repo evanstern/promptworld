@@ -420,6 +420,16 @@ var observableEventTypes = []string{
 	"agent.intent_set", "social.conversation", "social.promise_broken",
 	"social.rumor_told", "gru.attacked", "norm.violated",
 	"sim.night_started", "sim.day_started",
+	// The directive lifecycle (spec 084 FR-010, AC #7): all four directive.*
+	// types are genuinely emitted (issued/cancelled injected, fulfilled/
+	// expired executor-emitted), so standing orders can watch the whole
+	// lifecycle — e.g. a re-issue loop on directive.expired, the operator
+	// ruling's named in-game workaround. Enum-only growth (12 → 16): the
+	// monitor_and_act schema shape and matchOrders are untouched, which is
+	// the zero-new-trigger-code guarantee. Designation events stay out in v1
+	// (watch directive.* instead — contracts/events.md §2).
+	"directive.issued", "directive.fulfilled",
+	"directive.cancelled", "directive.expired",
 }
 
 // clockSpeeds mirrors internal/clock's watchable speed ladder (1x…32x; SpeedMax
@@ -481,6 +491,43 @@ func monitorAndActSchema() json.RawMessage {
 var placeFactKinds = []string{
 	"fire", "shelter", "oven", "chest", "wall_plank", "wall_stone", "path", "grave",
 	"tree", "forage", "rock", "water_edge", "den", "pile",
+}
+
+// designationKinds is the designation vocabulary (spec 084, data-model §1):
+// place_designation's `kind` Enum. Each kind binds one locus form of the
+// spec-082 grammar (settlement_zone→rect, structure_site→point,
+// wall_line→line) — the form matrix is enforced guardian-side and re-validated
+// by the reducer arm. FROZEN serialized identifiers (spec 052 ruling 2): they
+// land in recorded designation.placed payloads.
+var designationKinds = []string{"settlement_zone", "structure_site", "wall_line"}
+
+// DesignationKinds returns a copy of place_designation's kind vocabulary, in
+// the order above. Exported for internal/guardian's drift cross-check test
+// (the MiracleKinds pattern).
+func DesignationKinds() []string {
+	out := make([]string, len(designationKinds))
+	copy(out, designationKinds)
+	return out
+}
+
+// buildableStructureKinds mirrors sim's buildable-structure vocabulary — the
+// recipes table's build_* rows, in recipe order (sim.BuildableStructureKinds).
+// MIRRORED, not imported: internal/tool is a leaf (research R1) and cannot see
+// internal/sim. It is place_designation's `structure_kind` Enum descriptor;
+// internal/guardian's drift test pins it equal to sim's derived list (the
+// clockSpeeds/miracleKinds pattern), and the reducer dry-run's own
+// recipeFor probe stays the semantic authority — a drift here can only over-
+// or under-offer, never land an unbuildable kind.
+var buildableStructureKinds = []string{
+	"fire", "shelter", "oven", "chest", "wall_plank", "wall_stone", "path",
+}
+
+// BuildableStructureKinds returns a copy of the structure-kind Enum, in recipe
+// order. Exported for internal/guardian's drift cross-check test.
+func BuildableStructureKinds() []string {
+	out := make([]string, len(buildableStructureKinds))
+	copy(out, buildableStructureKinds)
+	return out
 }
 
 // guardianTools are the guardian roster's tools. converse produces a
@@ -590,6 +637,63 @@ var guardianTools = []Tool{
 		Params: []Param{{Name: "topic", Kind: Text, Required: false, MaxRunes: 60,
 			Description: "what to explain: roster, costs, charges, workings, decisions, glyphs, or a tool's name; omit for the topic catalog"}},
 		PromptGloss: `explain returns the game's own exact mechanics facts — tool roster, prices, the charge economy, working kinds, decision verdicts, map glyphs. Free to call, any number of times, and it never counts as your act. Use it instead of guessing a number or a rule.`},
+	// The guardian's plan layer (spec 084, data-model §9): designations —
+	// durable, checkable, villager-visible claims on the world — and the
+	// directives that bind villagers to them. All four acting plan tools are
+	// Effect Expressive (they land whitelisted events through InjectSocial,
+	// the monitor_and_act shape) with Gate None — the plan layer is
+	// CHARGE-FREE (recorded decision, research R3): charges price world
+	// EDITS, while designations and directives edit nothing physical
+	// (villagers still do all the work by their own logic), and pricing
+	// re-issue would fight the operator's in-game-workaround-first ruling.
+	// Appended after explain so no existing tool's registration position
+	// shifts. The tool ids and the designation-kind enum are FROZEN
+	// serialized identifiers (spec 052 ruling 2).
+	{Name: "place_designation", Effect: Expressive, Gate: None,
+		Params: []Param{
+			{Name: "kind", Kind: Enum, Required: true, Enum: designationKinds},
+			{Name: "target", Kind: Text, Required: true,
+				Description: `the locus: a tile "X,Y" (structure_site), a rect "X1,Y1..X2,Y2" (settlement_zone), or an axis-aligned line "X1,Y1->X2,Y2" (wall_line)`},
+			{Name: "structure_kind", Kind: Enum, Enum: buildableStructureKinds,
+				Description: "what should stand there: required for structure_site; optional wall-kind narrowing for wall_line"},
+			{Name: "min_structures", Kind: Number, Min: 1, Max: 12,
+				Description: "settlement_zone only: structures required before the zone counts as settled (default 3)"},
+			{Name: "label", Kind: Text, MaxRunes: 80,
+				Description: "optionally, your name for this designation"}},
+		Events: []string{"designation.placed"}},
+	{Name: "cancel_designation", Effect: Expressive, Gate: None,
+		Params: []Param{{Name: "id", Kind: Text, Required: true}},
+		Events: []string{"designation.cancelled"}},
+	// issue_directive rides atomically with one companion agent.memory_added
+	// per target (the vision-memory shape) — the prompt firewall holds
+	// exactly as for visions: guardian prose enters the sim only as recorded
+	// event data (spec 084 FR-009).
+	{Name: "issue_directive", Effect: Expressive, Gate: None,
+		Params: []Param{
+			{Name: "designation_id", Kind: Text, Required: true},
+			{Name: "targets", Kind: Text, Required: true,
+				Description: `comma-separated living villager names, or "everyone"`},
+			{Name: "text", Kind: Text, Required: true, MaxRunes: 400},
+			{Name: "ttl_days", Kind: Number, Min: 1, Max: 7,
+				Description: "game days before the directive lapses (default 3)"}},
+		Events: []string{"directive.issued", "agent.memory_added"}},
+	{Name: "cancel_directive", Effect: Expressive, Gate: None,
+		Params: []Param{{Name: "id", Kind: Text, Required: true}},
+		Events: []string{"directive.cancelled"}},
+	// survey_site (spec 084 FR-001): the guardian's free site fact sheet —
+	// Effect READ, the explain precedent: it returns a deterministic sheet
+	// into cognition (assembled turn-side, internal/guardian/survey.go),
+	// grounds nothing, never consumes the turn's one mediated act, and is
+	// charge-free ("surveying is looking, not an act"). Out-of-bounds input
+	// returns a repairable in-fiction miss, never a hard error, so the
+	// coordinate params stay unbounded here.
+	{Name: "survey_site", Effect: Read, Gate: None,
+		Params: []Param{
+			{Name: "x", Kind: Number, Required: true},
+			{Name: "y", Kind: Number, Required: true},
+			{Name: "radius", Kind: Number,
+				Description: "tiles around the center to survey (default 4, clamped 1..8)"}},
+		PromptGloss: `survey_site returns a deterministic fact sheet for a site: the terrain mix within the radius, nearest water/tree/rock, structures present, and passability. Free, unlimited, never your act — survey before you plan.`},
 }
 
 // journalTools are the villager-only journal capabilities (spec 019, US3): two

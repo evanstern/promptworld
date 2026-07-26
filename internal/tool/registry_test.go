@@ -36,7 +36,8 @@ var wantExpressive = []string{"say", "gist", "muse"}
 // wantGuardian is the guardian DOOR roster (RosterGuardian) name set (spec 029:
 // converse plus the agency acting tools; nudge_dream/nudge_omen retired). Order-
 // insensitive — TestRostersResolve sorts before comparing.
-var wantGuardian = []string{"converse", "send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed", "explain"}
+var wantGuardian = []string{"converse", "send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed", "explain",
+	"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site"}
 
 // wantGuardianCatalog is the guardian tools' catalog membership in REGISTRATION
 // order (spec 029): converse, then the two influence forms (send_vision/
@@ -44,7 +45,10 @@ var wantGuardian = []string{"converse", "send_omen", "send_vision", "monitor_and
 // tools (pause/start/adjust_speed), then work_miracle last (its position unshifted
 // by the migration).
 // explain (spec 063) is appended last so no pre-063 tool's position shifts.
-var wantGuardianCatalog = []string{"converse", "send_vision", "send_omen", "monitor_and_act", "cancel_order", "pause", "start", "adjust_speed", "work_miracle", "explain"}
+// The plan layer (spec 084) appends after explain in the same discipline:
+// the four charge-free acting plan verbs, then the survey read tool.
+var wantGuardianCatalog = []string{"converse", "send_vision", "send_omen", "monitor_and_act", "cancel_order", "pause", "start", "adjust_speed", "work_miracle", "explain",
+	"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site"}
 var wantVillagerExpressiveTail = []string{"say", "muse", "gist"}
 
 // wantJournal is the four villager journal tools (spec 019, US3): two Expressive

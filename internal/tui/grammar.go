@@ -101,6 +101,11 @@ var familyByNamespace = map[string]eventFamily{
 	// metatron.* family above is untouched): the feedback layer's own
 	// namespace, guardian voice like curriculum.
 	"guardian": familyGuardian,
+	// The plan layer (spec 084 — designations and directives): the guardian's
+	// own plan-making verbs and their world-answered terminals, guardian
+	// family voice like the standing orders they clone.
+	"designation": familyGuardian,
+	"directive":   familyGuardian,
 }
 
 // eventFamilyOf derives a type's family from its namespace prefix (R2). New

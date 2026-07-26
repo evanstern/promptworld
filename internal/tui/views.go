@@ -1361,6 +1361,37 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 		dens[[2]int{d.X, d.Y}] = true
 	}
 
+	// Guardian designations (spec 084 US2/FR-007): ACTIVE plan marks only —
+	// fulfilled/cancelled designations stop rendering (state-derived, the
+	// registry's render-or-don't rule). Sites mark their tile, wall lines
+	// every enumerated tile (sim.DesignationTiles — the same enumeration the
+	// fulfillment predicate checks), zones their PERIMETER only. Later
+	// designations win an overlapping tile (last-write, deterministic slice
+	// order); every real entity above this tier wins over the mark.
+	designationMarks := map[[2]int]string{}
+	if m.replica != nil {
+		for i := range m.replica.Designations {
+			d := &m.replica.Designations[i]
+			if d.Status != "active" {
+				continue
+			}
+			switch d.Kind {
+			case sim.DesignationStructureSite:
+				designationMarks[[2]int{d.X, d.Y}] = tileKey("designation_site").render("")
+			case sim.DesignationWallLine:
+				for _, tl := range sim.DesignationTiles(d) {
+					designationMarks[[2]int{tl.X, tl.Y}] = tileKey("designation_line").render("")
+				}
+			case sim.DesignationSettlementZone:
+				for _, tl := range sim.DesignationTiles(d) {
+					if tl.X == d.X || tl.X == d.X2 || tl.Y == d.Y || tl.Y == d.Y2 {
+						designationMarks[[2]int{tl.X, tl.Y}] = tileKey("designation_zone").render("")
+					}
+				}
+			}
+		}
+	}
+
 	gruX, gruY := -1, -1
 	if m.replica != nil && m.replica.Gru != nil {
 		gruX, gruY = m.replica.Gru.X, m.replica.Gru.Y
@@ -1397,6 +1428,12 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 		}
 		if dens[[2]int{x, y}] {
 			return tileKey("den").render("")
+		}
+		// Designation marks (spec 084): beneath every real entity above —
+		// a structure/villager/pile on the tile wins — and above the
+		// path/terrain tier.
+		if g, ok := designationMarks[[2]int{x, y}]; ok {
+			return g
 		}
 		var ref tileRef
 		switch {

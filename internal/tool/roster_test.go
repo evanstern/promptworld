@@ -88,7 +88,7 @@ func TestDormantVerbsStayOnTheDoorAndExecutorSurfaces(t *testing.T) {
 // excluded (it is the final-answer text channel, not a callable tool).
 func TestLoopRosterGuardianContents(t *testing.T) {
 	// explain (spec 063) is the read-only facts tool, appended last.
-	want := []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed", "explain"}
+	want := []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed", "explain", "place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site"}
 	got := namesOf(LoopRosterGuardian())
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("LoopRosterGuardian() names = %v, want %v", got, want)

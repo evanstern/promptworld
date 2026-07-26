@@ -112,6 +112,14 @@ var (
 	// tokGround: plain grass's dim "·" — no foreground (the terminal's own
 	// default, themeable by definition), faint.
 	tokGround = newToken("ground", classSemantic16, "", false, true, false)
+	// tokDesignation (spec 084 FR-007): the guardian's plan marks — MEANING,
+	// not material (a designation is a divine claim, not a world substance),
+	// so semantic-16 per the tile-vocabulary classing rule. ANSI 6 (cyan),
+	// plain weight: visible against terrain without stealing any alarm or
+	// entity color. One token, three rows (site / wall-line segment / zone
+	// perimeter) — active/consumed is "render or don't", derived from the
+	// designation's Status in state, never a style variant.
+	tokDesignation = newToken("designation", classSemantic16, "6", false, false, false)
 	// Marsh 65 (muted wet green) and sand 180 (pale warm tan) — spec 068 R3:
 	// material colors, distinct from tree's ANSI 2 / forage's ANSI 3 and
 	// from path 137 / pile 178 / chest 136 respectively under the
@@ -231,6 +239,20 @@ var mapGlyphs = []tileEntry{
 	// so the pinned legend/overlay prefix stays byte-identical (FR-009).
 	{Glyph: "S", Name: "stranger", Meaning: "a stranger — a night trickster after unattended stores",
 		Token: tokStranger, Keys: []string{"stranger"}},
+	// Guardian designations (spec 084 US2/FR-007): the plan layer's three
+	// marks — a structure site, a wall-line segment, and a settlement zone's
+	// PERIMETER (interior tiles unmarked — extent, never wallpaper, the DF
+	// designation-overlay idiom). Rendered beneath every real world entity
+	// (an agent/structure/pile on the tile wins) and only while the
+	// designation is ACTIVE (state-derived; fulfilled/cancelled marks stop
+	// rendering). Appended after the shipped vocabulary so the pinned
+	// legend/overlay prefix stays byte-identical (FR-009).
+	{Glyph: "◇", Name: "site", Meaning: "a guardian-marked structure site — a designation awaiting its building",
+		Token: tokDesignation, Keys: []string{"designation_site"}},
+	{Glyph: "┄", Name: "wallplan", Meaning: "a guardian-marked wall line — a designation awaiting its wall",
+		Token: tokDesignation, Keys: []string{"designation_line"}},
+	{Glyph: "◦", Name: "zone", Meaning: "the edge of a guardian-marked settlement zone",
+		Token: tokDesignation, Keys: []string{"designation_zone"}},
 }
 
 // groundTile is plain open ground — the terrain fallback for any kind

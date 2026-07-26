@@ -1160,14 +1160,15 @@ func TestCharterFallbacks(t *testing.T) {
 	// CharterMaxChars + the fixed frame) and what a full oversized charter would
 	// produce, so it still proves truncation happened. The fixed-frame headroom
 	// is CharterMaxChars+3500 (the frame documents four miracle families plus the
-	// spec-029 agency surface — meta tools + the initiative sentence; ~2.7 KB),
+	// spec-029 agency surface — meta tools + the initiative sentence; spec 084
+	// adds the five plan-layer tools' guidance bullets + read lines; ~3.6 KB),
 	// leaving comfortable margin over the capped total and well under the untruncated.
 	os.WriteFile(charterPath, []byte(strings.Repeat("x", persona.CharterMaxChars*2)), 0o644)
 	r, _ = mt.Turn(context.Background(), "verbose?")
 	if !strings.Contains(r.Reply, "cap") {
 		t.Errorf("oversize notice absent: %q", r.Reply)
 	}
-	if reqs := orch.requests(); len(reqs[len(reqs)-1].System) > persona.CharterMaxChars+3500 {
+	if reqs := orch.requests(); len(reqs[len(reqs)-1].System) > persona.CharterMaxChars+4600 {
 		t.Error("oversized charter not truncated in prompt")
 	}
 }
@@ -2043,7 +2044,8 @@ func TestStatusProvenance(t *testing.T) {
 	if !s.ManifestDefault {
 		t.Error("no manifest ⇒ ManifestDefault true")
 	}
-	if !reflect.DeepEqual(s.GrantedTools, []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed", "explain"}) {
+	if !reflect.DeepEqual(s.GrantedTools, []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed", "explain",
+		"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site"}) {
 		t.Errorf("default granted tools = %v", s.GrantedTools)
 	}
 
