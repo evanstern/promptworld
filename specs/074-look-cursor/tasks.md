@@ -235,7 +235,7 @@ drills — landing keyboard+mouse together (decision 8 rule 1).
 **Purpose**: AC #6 + constitution IV/spec 069 — these ride the task branch; the
 merge-drift pr gate blocks without them (no bypass flag).
 
-- [ ] T024 Amend `docs/design/tui/` per data-model.md's delta table, re-verifying +
+- [X] T024 Amend `docs/design/tui/` per data-model.md's delta table, re-verifying +
       re-pinning every touched page: `panels/map.md` (the "Look-cursor: evaluated
       and deferred" resolution note re-opened, naming the operator signal and this
       spec; new control-table rows with real mouse targets; parity note updated),
@@ -245,19 +245,19 @@ merge-drift pr gate blocks without them (no bypass flag).
       page says so"), `anatomy.md` (TILE view + look-cursor rows),
       `overlays/help.md` (badge deep-link row flipped from `unbuilt (wave 4,
       layer-2)` to its renderer; look-mode keys page row).
-- [ ] T025 Run `node scripts/check-tui-design.mjs --changed` from the worktree and
+- [X] T025 Run `node scripts/check-tui-design.mjs --changed` from the worktree and
       fix every finding (AC #6's gate half; SC-005).
-- [ ] T026 In-branch wiki re-pins (`/grounding-wiki:wiki-update` scoped to this
+- [X] T026 In-branch wiki re-pins (`/grounding-wiki:wiki-update` scoped to this
       branch's diff): `docs/wiki/tui-map-view.md`, `tui-dock-tabs.md`,
       `tui-input-help.md`, `tile-registry.md` (only if `tiles.go` actually changed),
       plus any sim note sourcing `internal/sim/terrain.go`/`gru.go` (the
       `warmAt`/`litAt` core extraction). Pins must be branch commits reachable from
       the branch tip (spec 069 `wiki-repin-missing`).
-- [ ] T027 Regenerate `docs/player/` in-branch (player-docs skill) since T026
+- [X] T027 Regenerate `docs/player/` in-branch (player-docs skill) since T026
       touches `docs/wiki/`; verify with
       `node .claude/skills/player-docs/scripts/check-freshness.mjs --check`
       (spec 069 `player-docs-stale`).
-- [ ] T028 Full verification: `go build ./... && go vet ./... && go test ./...`
+- [X] T028 Full verification: `go build ./... && go vet ./... && go test ./...`
       green (SC-007 — all pre-existing goldens/byte pins pass unchanged); run
       `node scripts/check-merge-drift.mjs pr` from the worktree before opening the
       PR; record evidence on TASK-142 board notes. Merge with
