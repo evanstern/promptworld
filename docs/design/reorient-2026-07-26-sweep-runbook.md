@@ -154,3 +154,4 @@ file's execution log complete and status flipped to done. TASK-111/136/137 untou
 
 | date | task | PR | merge | notes |
 |------|------|----|-------|-------|
+| 2026-07-26 | TASK-154 | #112 | 86b776d | Lane B first merge; mutation check proven; player-docs pin gap found+fixed in-branch (freshness probe must run directly, not just via pr gate) |

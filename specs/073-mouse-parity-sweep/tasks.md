@@ -79,7 +79,7 @@ corpus + the SC-001 mutation check failing loudly.
 
 ## Phase 5: Post-merge bookkeeping (root, derived state only)
 
-- [ ] T010 From repo root after merge: spec-bridge sync (TASK-154 → Done as
+- [x] T010 From repo root after merge: spec-bridge sync (TASK-154 → Done as
   artifacts prove), tick this tasks.md, runbook execution-log row
   (`docs/design/reorient-2026-07-26-sweep-runbook.md`), worktree + branch
   cleanup (spec 065 / constitution IV boundary — no grounding content in
