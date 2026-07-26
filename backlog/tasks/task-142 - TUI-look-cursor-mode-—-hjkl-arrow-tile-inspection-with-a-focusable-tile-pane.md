@@ -4,6 +4,7 @@ title: TUI look-cursor mode — hjkl/arrow tile inspection with a focusable tile
 status: To Do
 assignee: []
 created_date: '2026-07-26 04:28'
+updated_date: '2026-07-26 13:55'
 labels: []
 dependencies: []
 references:
@@ -43,4 +44,12 @@ Add a look-cursor mode to the map: the player highlights a tile, moves it with h
 - [ ] #4 No new focusable text input; focus contract's 'exactly one client' claim remains true and its page says so
 - [ ] #5 Mouse parity ships with keyboard: click-tile moves/enters the cursor, click-row selects/drills (decision 8 rule 1)
 - [ ] #6 docs/design/tui re-verified and amended in the same PR (map.md deferral re-opened, keymap.md, dock.md, focus-contract.md, anatomy.md); check-tui-design.mjs --changed passes
+- [ ] #7 Every tile's inspector header lists warmth and light levels (meter + plain-language note: fire radius, shelter cover, open water; daylight, canopy, indoors, firelight); light may need a small sim-side derivation to expose
+- [ ] #8 Map and dock panel geometry is fixed (layout.md column budget) — entering the mode, focusing the pane, and drilling in swap content only, never panel size
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Design revision 2026-07-26 (operator review of the mock): (1) dropped the dashed real-client camera-window ghost from the mock — camera-follow rule stays in prose; (2) fixed-geometry rule made explicit: mode changes never resize the map/dock panels; (3) added per-tile warmth + light levels to the TILE inspector header. Mock republished (same URL, version 'fixed-geometry-env-levels').
+<!-- SECTION:NOTES:END -->
