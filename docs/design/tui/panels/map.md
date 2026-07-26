@@ -2,7 +2,7 @@
 title: Panel — map (terrain camera viewport)
 class: panel
 status: shipped
-verified_against: 348a100c22f650d27e6fba517ea7f1f1aed1af73
+verified_against: 2d7a54940f8512340143e8ca5a8ba53e6e196aa2
 sources:
   - internal/tui/views.go
   - internal/tui/tiles.go
@@ -43,8 +43,10 @@ everything shipped since TASK-34.
 ## Glyph inventory (reconciled against shipped reality)
 
 Every glyph `renderMapGrid` can draw, and the priority a tile resolves in
-(`tile()`, top wins): gru (`G`) > agents > structures > piles > dens >
-terrain. Two dynamic-overlay carve-outs exist within that order:
+(`tile()`, top wins): gru (`G`) > stranger (`S`, spec 077 — the second
+nocturnal entity shares the gru's precedence tier; the gru wins a legal but
+rare shared tile, being the greater threat) > agents > structures > piles >
+dens > terrain. Two dynamic-overlay carve-outs exist within that order:
 
 - **Dead-agent-on-grave** (spec 044 US4): a dead agent standing on a tile
   that also holds a grave renders the grave glyph (`✝`, `styleGrave`)
@@ -73,6 +75,7 @@ terrain. Two dynamic-overlay carve-outs exist within that order:
 | `·` (tan) | a paved path — terrain-level, distinct from plain ground's dim `·` | spec 032 US3 |
 | `✝` | a grave (dead-agent-on-grave carve-out above) | spec 044 US4 |
 | `G` | the gru — highest render priority | TASK-34 |
+| `S` | the stranger — a night trickster after unattended stores (`State.Stranger`, entity like the gru); appended registry row, violet 135 bold | spec 077 |
 | `░` | marsh — walkable wet ground near water (new-terrain worlds, `terrain_gen: 2`) | spec 068 |
 | `▒` | sand — walkable shoreline flat (new-terrain worlds, `terrain_gen: 2`) | spec 068 |
 | `A`/`a`/`†` | agent by initial — uppercase awake, lowercase asleep, `†` dead; a living agent's STYLE (not case) additionally carries a condition overlay (below) | TASK-34, overlays spec 060 |
@@ -89,7 +92,9 @@ plain-language overlay meaning, style token, style-only state variants
 (fire `dying`, wall `damaged`), and the world binding it renders. `tile()`
 (`renderMapGrid`, `internal/tui/views.go`) keeps ONLY the priority logic —
 gru > agents > structures > piles > dens > path > quarried > base terrain —
-and resolves every leaf through the registry's binding indexes; the compact
+and resolves every leaf through the registry's binding indexes (the
+stranger row appended per spec 068 FR-009 — the pinned legend/overlay
+prefix stays byte-identical, marsh/sand's own precedent); the compact
 legend line and the `?` overlay walkthrough render from the same rows, so a
 tile added to the table reaches all three surfaces with no renderer edit.
 
@@ -97,7 +102,8 @@ Style tokens are classed per the tile-vocabulary analysis's palette rule:
 **semantic-16** (themeable ANSI 0–15: water 4, tree 2, forage 3, den 5, the
 agent family) or **material-256** (fixed palette: rock 245, spent 240, fire
 208/202, shelter 130, oven 166, pile 178, chest 136, wall 250, path 137,
-gru 196, grave 244, suppressed 135, marsh 65, sand 180). No per-tile style
+gru 196, grave 244, suppressed 135, marsh 65, sand 180, stranger 135
+bold — spec 077). No per-tile style
 literal exists outside `tiles.go` (sweep-tested); byte identity for the
 pre-068 vocabulary is pinned by `TestTilesIdentityPin`'s committed goldens
 (`internal/tui/testdata/tiles_identity_*.golden` — never regenerate to

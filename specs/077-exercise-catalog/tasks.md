@@ -154,13 +154,13 @@ as reducer-valid, ambient-indistinguishable, replay-safe events.
 
 ## Phase 7: Design authority — pages amended, gate green
 
-- [ ] T023 Amend `docs/design/tui/patterns/chronicle-grammar.md` (seven new digest rows +
+- [X] T023 Amend `docs/design/tui/patterns/chronicle-grammar.md` (seven new digest rows +
   `stranger.took` alert-tier addition), `overlays/help.md` ("(8 catalog entries)" → 12),
   `panels/lesson-row.md` (tranche 2), `panels/exercise.md` (nine-exercise catalog +
   incident vocabulary/params table), `panels/map.md` (stranger glyph, gru precedent;
   follow spec 068's single-source rule if the registry conventions apply) (spec FR-022,
   plan D8)
-- [ ] T024 `node scripts/check-tui-design.mjs --changed` from the worktree: re-verify +
+- [X] T024 `node scripts/check-tui-design.mjs --changed` from the worktree: re-verify +
   re-pin every flagged page; gate passes (spec SC-005)
 
 ## Phase 8: Grounding — wiki-in-PR obligations (in-branch, pr-gate enforced)

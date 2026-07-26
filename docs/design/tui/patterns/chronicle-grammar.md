@@ -2,7 +2,7 @@
 title: Pattern — chronicle grammar
 class: pattern
 status: shipped
-verified_against: c8d80800fc5d34c5c31ab54751ebfb3ba80efc5b
+verified_against: 2d7a54940f8512340143e8ca5a8ba53e6e196aa2
 sources:
   - internal/tui/digest.go
   - internal/tui/grammar.go
@@ -93,11 +93,13 @@ invariant; they just draw the narrative/telemetry line in different places.
 
 Family = the event type's namespace prefix (`world`, `clock`, `sim`,
 `agent`, `social`, `meeting`/`norm` → merged into one `governance` family,
-`gru`, `chronicle`, `metatron`, `daemon`, `cog`).
+`gru` — joined by `stranger` (spec 077: the night trickster rides the gru's
+own threat-family voice, a second nocturnal entity rather than a new visual
+role), `chronicle`, `metatron`, `daemon`, `cog`).
 
 | Family | Voice |
 |---|---|
-| agent, social, sim, world, governance, gru, `metatron`, chronicle | natural phrase — e.g. `Ash foraged at (14,9)`, `Ash→Rowan "the fire's low again"` |
+| agent, social, sim, world, governance, gru (+ stranger), `metatron`, chronicle | natural phrase — e.g. `Ash foraged at (14,9)`, `Ash→Rowan "the fire's low again"` |
 | cog, clock, daemon | labeled fields, space-separated, stable order — e.g. `job=j1 landed agent=Ash stale=10t wall=220ms` |
 
 Emphasis roles inside a phrase-voice summary: **name** (every resolved agent
@@ -105,8 +107,16 @@ name), **speech** (a quoted utterance — the speech privilege
 `social.conversation_turn`/`rumor_told` and a few governance/mind types
 carry), **emphasis** (amounts, item kinds, causes, outcomes, coordinates).
 High-salience types (`agent.died`, `gru.attacked`, `social.chest_taken`,
-`norm.violated`) render the **whole line** in the alert role regardless of
-family.
+`norm.violated`, and — spec 077's ONLY addition to this tier —
+`stranger.took`, beside `social.chest_taken` because theft is theft) render
+the **whole line** in the alert role regardless of family. No new tier and
+no new channel exists: the spec-077 event vocabulary (`sim.cold_snap`,
+`sim.forage_blighted`, `stranger.arrived/moved/took/departed`,
+`metatron.skills_observed`) enters entirely through existing family voices
+— `sim.*` rows in the sim voice (the blight uses the agent.saw
+first-fact-plus-count shape for its tile list), `stranger.*` in the
+gru/threat voice, `metatron.skills_observed` mirroring the charter
+observation's line.
 
 Several digest rows render slightly differently than a naive reading of
 their contract row would suggest, because the real payload struct doesn't
@@ -165,7 +175,7 @@ token block — roles, never raw colors, at every call site):
 | `name` | `styleFeedName` | resolved agent names, bold green — unchanged |
 | `speech` | `styleFeedSpeech` | quoted utterances, bold — unchanged |
 | `emphasis` | `styleFeedEmphasis` | amounts/kinds/causes/coords — underline |
-| `alert` | `styleFeedAlert` | whole-line, bold red — `agent.died`/`gru.attacked`/`social.chest_taken`/`norm.violated` |
+| `alert` | `styleFeedAlert` | whole-line, bold red — `agent.died`/`gru.attacked`/`social.chest_taken`/`norm.violated`/`stranger.took` (spec 077) |
 | `selection` | `styleFeedSelect` | inspect-mode row background (reverse) — unchanged |
 
 For labeled-voice families (cog/clock/daemon) the family tint applies to
