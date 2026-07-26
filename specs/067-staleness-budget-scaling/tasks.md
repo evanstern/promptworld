@@ -45,12 +45,12 @@
 **Independent Test**: reason-grammar assertions (T005) + doc review against spec FR-006.
 
 - [x] T008 [US3] Verify the decision-trace/digest surfaces render the scaled reason without change (they map outcome codes, never parse reasons — confirm no test in `internal/tui/` asserts the old string; update any that does) in `internal/tui/decisions.go` / `internal/tui/digest.go` test files only
-- [ ] T009 [US3] Document the scheduling-vs-delivery gate split and the residual structural-death regime (wall latency > BudgetTicks seconds dies at every speed while the horizon reports healthy) in the cognition-horizon wiki note(s) via `/grounding-wiki:wiki-update` re-pin — runs at repo root after the PR merges (spec FR-006/SC-005, plan D5)
+- [x] T009 [US3] Document the scheduling-vs-delivery gate split and the residual structural-death regime (wall latency > BudgetTicks seconds dies at every speed while the horizon reports healthy) in the cognition-horizon wiki note(s) via `/grounding-wiki:wiki-update` re-pin — runs at repo root after the PR merges (spec FR-006/SC-005, plan D5)
 
 ## Phase 6: Polish & Cross-Cutting
 
 - [x] T010 Full verification from the worktree: `gofmt -l` clean on touched files and `go test ./...` green (SC-002/SC-003); run `node scripts/check-merge-drift.mjs pr` before opening the PR
-- [ ] T011 Measured-run evidence (SC-001 measured arm, optional if impractical): rerun the TASK-122 measure-world profile at 8x, count `set_plan` landings vs planner `rejected-stale`, expect <10% rejected share (was ~91%); record numbers as a TASK-141 board note (quickstart §measured-run)
+- [x] T011 Measured-run evidence (SC-001 measured arm, optional if impractical): rerun the TASK-122 measure-world profile at 8x, count `set_plan` landings vs planner `rejected-stale`, expect <10% rejected share (was ~91%); record numbers as a TASK-141 board note (quickstart §measured-run)
 
 ## Dependencies & Execution Order
 
