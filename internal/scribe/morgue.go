@@ -178,7 +178,7 @@ func (s *Scribe) renderMorgue() {
 		writeEpilogues(&b, epilogues, ep.agent)
 	}
 	if runEnd != nil {
-		writeRunSummary(&b, st, runEnd, deeds)
+		writeRunSummary(&b, st, runEnd, deeds, s.scenarioExercise)
 		writeEpilogues(&b, epilogues, -1)
 	}
 	os.WriteFile(filepath.Join(s.worldDir, "morgue.md"), []byte(b.String()), 0o644)
@@ -365,11 +365,22 @@ func writeEpitaph(b *strings.Builder, ep morgueEpitaph, deeds []morgueDeed) {
 
 // writeRunSummary renders the closing village-level section (FR-009): run
 // length, the day-stamped population decline, every death with cause, and the
-// run's notable events (the same curated vocabulary the epitaphs use).
-func writeRunSummary(b *strings.Builder, st *sim.State, re *sim.RunEnd, deeds []morgueDeed) {
+// run's notable events (the same curated vocabulary the epitaphs use). On a
+// scenario world (spec 054 US5, FR-010) it also names the exercise and its
+// outcome — the no-blame evidence register: failure is a story, not a scold,
+// so the line states what the rubric asked and what the run gave, and stops.
+func writeRunSummary(b *strings.Builder, st *sim.State, re *sim.RunEnd, deeds []morgueDeed, scenarioExercise string) {
 	day, _, _, _ := clock.GameTime(re.Tick)
 	fmt.Fprintf(b, "\n## The run — ended day %d\n\n", day)
 	fmt.Fprintf(b, "- **Run length**: %d days\n", day)
+	if scenarioExercise != "" {
+		outcome := "failed — the run ended before its rubric was met"
+		if sim.ExerciseOutcome(st, scenarioExercise) == sim.OutcomePassed {
+			outcome = "passed — the run's end came after the pass was earned"
+		}
+		fmt.Fprintf(b, "- **The exercise**: %s — %s. _Stated as evidence; the reader draws the lesson._\n",
+			scenarioExercise, outcome)
+	}
 
 	pop := len(st.Agents)
 	curve := fmt.Sprintf("%d", pop)

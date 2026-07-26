@@ -39,11 +39,13 @@ import (
 // pane names both the narrow-fallback's single active pane and the
 // widescreen dock's selected tab — paneMap is narrow-only (the widescreen
 // map is always visible, never a dock tab); the dock only ever selects
-// paneChronicle/paneGuardian/paneVillagers/paneSystems. paneSystems (spec
-// 053, D10) is the relocated-telemetry tab: the guardian tab keeps fiction-
-// layer content only from this feature forward — the skin boundary is now
-// a file boundary (systems.md carries zero skin tokens, guardian.md all of
-// them).
+// paneChronicle/paneGuardian/paneVillagers/paneSystems — plus paneExercise
+// on scenario worlds (spec 054 — panels/exercise.md: presence is
+// world-shaped, not stage-shaped; ambient worlds have no exercise tab at
+// all). paneSystems (spec 053, D10) is the relocated-telemetry tab: the
+// guardian tab keeps fiction-layer content only from this feature forward —
+// the skin boundary is now a file boundary (systems.md carries zero skin
+// tokens, guardian.md all of them).
 type pane int
 
 const (
@@ -52,18 +54,20 @@ const (
 	paneGuardian
 	paneVillagers
 	paneSystems
+	paneExercise
 	paneCount
 )
 
 // paneNames are the DEFAULT-skin pane labels; the guardian pane's label is
 // skin data (spec 052 FR-007), so live surfaces render it via paneName —
 // this array is the static fallback the help content and tests read.
-var paneNames = [paneCount]string{"map", "chronicle", "guardian", "villagers", "systems"}
+var paneNames = [paneCount]string{"map", "chronicle", "guardian", "villagers", "systems", "exercise"}
 
 // paneName resolves a pane's display label through the world skin (spec 052):
 // the guardian tab's label is the skin's tab_label token; every other pane is
 // non-fiction chrome and stays literal (skin-tokens.md rule 5) — the systems
-// tab deliberately so (D10: telemetry is never skinned).
+// tab deliberately so (D10: telemetry is never skinned), the exercise tab
+// likewise (spec 054: substrate vocabulary, not fiction).
 func (m Model) paneName(p pane) string {
 	if p == paneGuardian {
 		return m.sk().TabLabel()
@@ -71,8 +75,14 @@ func (m Model) paneName(p pane) string {
 	return paneNames[p]
 }
 
-// dockTabKey is the keymap.md key that selects/solos each dock tab.
-var dockTabKey = map[pane]string{paneChronicle: "2", paneGuardian: "3", paneVillagers: "4", paneSystems: "5"}
+// dockTabKey is the keymap.md key that selects/solos each dock tab. The
+// exercise tab takes 6 beside the systems tab's 5 (spec 054: dock digits
+// continue past TASK-125's systems tab).
+var dockTabKey = map[pane]string{paneChronicle: "2", paneGuardian: "3", paneVillagers: "4", paneSystems: "5", paneExercise: "6"}
+
+// paneKey is the narrow tab row's key label per pane — 1–5 plus the
+// exercise tab's 6 (the narrow fallback shares keymap.md's global digits).
+var paneKey = [paneCount]string{"1", "2", "3", "4", "5", "6"}
 
 // speedSteps is the [ / ] cycling order.
 // max is deliberately absent: the watchable ladder tops out at 32x (TASK-20);
@@ -231,6 +241,14 @@ type Model struct {
 	helpTier     bool // false = basic, true = advanced
 	helpSection  helpSection
 	helpScroll   int
+
+	// exBriefingDismissed (spec 054 US4, panels/exercise.md): the exercise
+	// tab's attach-time briefing has been dismissed for THIS attach — any
+	// key while the briefing is visible consumes that one keypress and sets
+	// it (contract §4); reset on reconnect (connectedMsg), so re-attaching
+	// shows the briefing again. Meaningless on ambient worlds (no exercise
+	// tab exists).
+	exBriefingDismissed bool
 
 	// chronHit (spec 049, data-model.md "chronHitRegion"; T009) is the
 	// chronicle inspect-mode list's last-rendered click geometry — a
@@ -540,6 +558,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.chronDetailScroll = 0        // data-model.md: detail pane scroll resets on reconnect
 		m.villDecisionsScroll = 0      // data-model.md: decisions scroll resets on reconnect
 		m.traces = newDecisionTraces() // spec 020 contract R5: projection resets wholesale, like the replica
+		m.exBriefingDismissed = false  // spec 054: the briefing shows once per attach — a fresh orientation each session
 		return m, listen(m.client)
 
 	case disconnectedMsg:
@@ -724,6 +743,47 @@ func (m Model) villagersVisible() bool {
 	return m.active == paneVillagers
 }
 
+// exerciseID returns the attached world's scenario exercise id, "" for an
+// ambient world — the exercise tab's presence gate (spec 054 FR-008;
+// panels/exercise.md and patterns/stage-defaults.md: presence is
+// world-shaped — the manifest's Scenario block, which world.Open validated
+// against the catalog; the extra ExerciseByID check keeps a stale binary
+// honest rather than rendering an empty definition).
+func (m Model) exerciseID() string {
+	if m.w == nil {
+		return "" // zero-value Model (render tests, pre-connect) — ambient
+	}
+	if sc := m.w.Manifest.Scenario; sc != nil {
+		if _, ok := sim.ExerciseByID(sc.Exercise); ok {
+			return sc.Exercise
+		}
+	}
+	return ""
+}
+
+// exerciseVisible reports whether the exercise tab is the thing currently on
+// screen, in whichever layout is active — the villagersVisible shape.
+func (m Model) exerciseVisible() bool {
+	if m.exerciseID() == "" {
+		return false
+	}
+	if isWidescreen(m.width) {
+		return m.dockTab == paneExercise
+	}
+	return m.active == paneExercise
+}
+
+// exerciseBriefingShowing reports whether the attach-time briefing is what
+// the exercise tab is rendering right now — the gate for the one-keypress
+// any-key dismiss (contract §4: never a global key-eater; it consumes only
+// while the exercise tab is visible). The guardian console (spec 053) is a
+// whole-body takeover checked BELOW this gate in handleKey, so an open
+// console explicitly suppresses the eater: the briefing is not the thing
+// on screen while the console is, and its keys must reach the console.
+func (m Model) exerciseBriefingShowing() bool {
+	return !m.console && m.exerciseVisible() && !m.exBriefingDismissed
+}
+
 // mapControllable reports whether arrow keys should pan the map: always in
 // widescreen (pages/home.md: "regardless of which dock tab is selected"),
 // only while the map pane is active in the narrow fallback (unchanged).
@@ -774,6 +834,15 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 	if m.helpOpen {
 		return m.handleHelpKey(msg)
+	}
+	// Exercise briefing dismiss (spec 054 US4, contract §4): while the
+	// briefing is the thing on the exercise tab, ANY key dismisses it for
+	// this attach and is consumed — exactly one keypress, only while that
+	// tab is visible (never a global key-eater), and never while the
+	// minibuffer owns the keyboard (rule 1: focus was explicitly acquired).
+	if !m.mbFocused && m.exerciseBriefingShowing() {
+		m.exBriefingDismissed = true
+		return m, nil
 	}
 	if !m.mbFocused && msg.String() == "?" {
 		return m.openHelp()
@@ -933,6 +1002,12 @@ func (m Model) handleGlobalKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.selectTab(paneVillagers)
 	case "5":
 		return m.selectTab(paneSystems)
+	case "6":
+		// Spec 054 (FR-008): the exercise tab exists only on scenario worlds;
+		// on an ambient world 6 falls through inert (contract §4).
+		if m.exerciseID() != "" {
+			return m.selectTab(paneExercise)
+		}
 	case "G":
 		// The guardian console (spec 053 FR-001): reached here only when
 		// nothing higher in handleKey's chain claimed "G" first — inspect
@@ -942,9 +1017,9 @@ func (m Model) handleGlobalKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		// inspect/villagers sub-modes aren't named, and already own the key).
 		return m.openConsole()
 	case "tab":
-		return m.selectTab(nextDockTab(m.dockTab))
+		return m.selectTab(m.nextDockTab(m.dockTab))
 	case "shift+tab":
-		return m.selectTab(prevDockTab(m.dockTab))
+		return m.selectTab(m.prevDockTab(m.dockTab))
 	case "m":
 		return m.focusMinibuffer()
 	case "x":
@@ -1033,11 +1108,13 @@ func (m Model) handleGlobalKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// nextDockTab/prevDockTab cycle the four dock tabs (tab/shift+tab aliases,
+// nextDockTab/prevDockTab cycle the dock tabs (tab/shift+tab aliases,
 // keymap.md "Migration notes" — not load-bearing). paneSystems (spec 053)
-// extends the cycle at the end, chronicle -> guardian -> villagers ->
-// systems -> chronicle, same as its "5" position in the tab row.
-func nextDockTab(cur pane) pane {
+// extends the cycle after villagers (chronicle -> guardian -> villagers ->
+// systems), same as its "5" position in the tab row; Model methods since
+// spec 054 — the cycle continues into the exercise tab exactly when the
+// world carries one, same as its "6" position.
+func (m Model) nextDockTab(cur pane) pane {
 	switch cur {
 	case paneChronicle:
 		return paneGuardian
@@ -1045,19 +1122,29 @@ func nextDockTab(cur pane) pane {
 		return paneVillagers
 	case paneVillagers:
 		return paneSystems
-	default: // paneSystems
+	case paneSystems:
+		if m.exerciseID() != "" {
+			return paneExercise
+		}
+		return paneChronicle
+	default: // paneExercise
 		return paneChronicle
 	}
 }
 
-func prevDockTab(cur pane) pane {
+func (m Model) prevDockTab(cur pane) pane {
 	switch cur {
 	case paneChronicle:
+		if m.exerciseID() != "" {
+			return paneExercise
+		}
 		return paneSystems
 	case paneGuardian:
 		return paneChronicle
 	case paneVillagers:
 		return paneGuardian
+	case paneExercise:
+		return paneSystems
 	default: // paneSystems
 		return paneVillagers
 	}

@@ -2,7 +2,7 @@
 title: Panel — dock (tab container)
 class: panel
 status: shipped
-verified_against: c8d80800fc5d34c5c31ab54751ebfb3ba80efc5b
+verified_against: 9905c70f326d027a34425081442270bdb80648f7
 sources:
   - internal/tui/tui.go
   - internal/tui/views.go
@@ -18,6 +18,10 @@ Since this feature (D10, the skin-boundary-as-file-boundary ruling), tab
   orders, instruction surface, working feedback)
 - [systems.md](systems.md) — engine telemetry (never skinned)
 - [villagers.md](villagers.md) — the villagers roster/detail/decisions tab
+- [exercise.md](exercise.md) — scenario exercise progress (spec 054):
+  **conditional** — the row gains this tab only when the attached world
+  carries a `Manifest.Scenario` block; ambient worlds keep the 4-tab row
+  (chronicle · guardian · villagers · systems) byte-identically
 
 This page owns only the tab row, its badges, tab-switching, and the solo-zoom
 seam — the same container regardless of which tab is active.
@@ -38,15 +42,19 @@ seam — the same container regardless of which tab is active.
   its tab isn't currently visible and a reply has arrived — the systems tab
   never carries this badge (D10: "no second badge system"; it carries no
   conversational content to badge).
-- Keys `2` chronicle · `3` guardian · `4` villagers · `5` systems select
-  tabs; the **same key again**, while already selected, zooms that tab to
-  full width — solo zoom ([../pages/solo-views.md](../pages/solo-views.md)).
+- Keys `2` chronicle · `3` guardian · `4` villagers · `5` systems · `6`
+  exercise (scenario worlds only — spec 054) select tabs; the **same key
+  again**, while already selected, zooms that tab to full width — solo zoom
+  ([../pages/solo-views.md](../pages/solo-views.md)).
 - Each tab keeps its own state (scroll, filters, selection, input history)
   across switches — one dock-content renderer dispatches by active tab
   (`dockTabContent`), so a tab never re-mounts on selection.
-- Adding a future tab (e.g. `exercise.md`, Wave 4) = a new label in the row +
-  a content renderer; no new layout — spec 053's systems tab (key `5`) is
-  this pattern's second proof point after the original three.
+- Adding a future tab = a new label in the row + a content renderer; no new
+  layout — spec 053's systems tab (key `5`) proved the pattern, and spec
+  054's exercise tab proved its conditional form: an entry in `dockTabsRow`
+  present only when the world carries a scenario + `exerciseBody`, with
+  `tab`/`shift+tab` cycling (`nextDockTab`/`prevDockTab`, now Model methods)
+  including it exactly when present.
 
 ## Behavior
 
@@ -64,11 +72,12 @@ seam — the same container regardless of which tab is active.
 
 | control/region | states | data source | renderer | keys+mouse | introduced-by | skin-token |
 |---|---|---|---|---|---|---|
-| tab row | active · inactive | `Model.dockTab` | `dockTabsRow` | `2`/`3`/`4`/`5` select · — | TASK-34 | — |
+| tab row | active · inactive | `Model.dockTab` | `dockTabsRow` | `2`/`3`/`4`/`5` (+`6` on scenario worlds) select · — | TASK-34 | — |
 | chronicle tab label | active · inactive | `Model.dockTab` | `dockTabsRow` | `2` · — | TASK-34 | — |
 | guardian tab label | active · inactive · unseen-badge | `Model.dockTab`, `Model.guardianUnseen` | `dockTabsRow` | `3` · — | TASK-34 | `skin.guardian.tab_label` |
 | villagers tab label | active · inactive | `Model.dockTab` | `dockTabsRow` | `4` · — | spec 015 | — |
 | systems tab label | active · inactive | `Model.dockTab` | `dockTabsRow` | `5` · — | spec 053 | — |
+| exercise tab label (scenario worlds only) | absent · active · inactive | `Model.dockTab`, `Model.exerciseID` | `dockTabsRow` | `6` (inert on ambient worlds) · — | spec 054 | — |
 | unseen-reply badge dot | shown · hidden | `Model.guardianUnseen` | `dockTabsRow` | — (display-only) | TASK-34 | — |
 | tab-switch → solo zoom | home,tab=k · solo(k) | `Model.solo`, `Model.dockTab` | `selectTab`, `widescreenView` | same key twice · — | TASK-34 | — |
 | solo → home / switch | solo(k) · home | `Model.solo` | `selectTab` | `1`/`esc` (home) · a different tab key (switch) · — | TASK-34 | — |

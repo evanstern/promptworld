@@ -193,6 +193,14 @@ type WorldStatus struct {
 	// StageOverridden mirrors world.Manifest.StageOverridden (spec 046, FR-003):
 	// true when the world was created at an unearned stage via --override.
 	StageOverridden bool `json:"stage_overridden,omitempty"`
+	// ScenarioExercise/ScenarioOutcome (spec 054 FR-007, D1): the armed
+	// scenario exercise id and its model-free outcome
+	// (in_progress|passed|failed), folded from the loop's coherent status
+	// snapshot (sim.Status) — a linear client reads the exercise's state with
+	// no model and no state fetch. Additive omitempty: absent on ambient
+	// worlds and old daemons, and clients treat absence as no-exercise.
+	ScenarioExercise string `json:"scenario_exercise,omitempty"`
+	ScenarioOutcome  string `json:"scenario_outcome,omitempty"`
 }
 
 type ClockStatus struct {

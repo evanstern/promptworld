@@ -35,6 +35,11 @@ type Scribe struct {
 	src      EventSource // nil ⇒ no morgue render (soul/chronicle files unaffected)
 	events   chan []store.Event
 	done     chan struct{}
+	// scenarioExercise is the manifest's scenario exercise id (spec 054 US5),
+	// "" for ambient worlds — the morgue's run summary names the exercise
+	// outcome when set. Boot-frozen: written only by SetScenario, before any
+	// events flow (see its doc comment).
+	scenarioExercise string
 }
 
 // New starts the scribe from a state snapshot (canonical JSON, as produced
@@ -67,6 +72,18 @@ func New(worldDir string, seed uint64, m *worldmap.Map, stateJSON []byte, src ..
 	s.renderMorgue()
 	go s.run()
 	return s, nil
+}
+
+// SetScenario installs the manifest's scenario exercise id (spec 054 US5)
+// and re-renders the morgue so an already-ended scenario world's run summary
+// carries the exercise line from the very first boot render. The metatron
+// SetStage discipline: called exactly once, by the daemon, immediately after
+// New and BEFORE the sim loop starts — no event batch can be in flight yet,
+// so the run goroutine's later reads are ordered after this write by the
+// events channel itself.
+func (s *Scribe) SetScenario(exercise string) {
+	s.scenarioExercise = exercise
+	s.renderMorgue()
 }
 
 // Observe is the loop's notify callback path: never blocks. On overflow,

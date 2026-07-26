@@ -124,6 +124,8 @@ func (m Model) narrowView() string {
 		b.WriteString(m.villagersView())
 	case m.active == paneSystems:
 		b.WriteString(m.systemsView())
+	case m.active == paneExercise:
+		b.WriteString(m.exerciseView())
 	}
 	b.WriteString("\n" + m.footerView())
 	return b.String()
@@ -304,7 +306,10 @@ func governedSpeedSuffix(requested string, debt float64, jobs int) string {
 func (m Model) tabsView() string {
 	var tabs []string
 	for i := pane(0); i < paneCount; i++ {
-		label := fmt.Sprintf("%d %s", i+1, m.paneName(i))
+		if i == paneExercise && m.exerciseID() == "" {
+			continue // spec 054: no exercise tab exists on ambient worlds
+		}
+		label := fmt.Sprintf("%s %s", paneKey[i], m.paneName(i))
 		if i == m.active {
 			tabs = append(tabs, styleTabOn.Render(label))
 		} else {
@@ -356,9 +361,19 @@ func (m Model) footerView() string {
 	case isWidescreen(m.width) && m.solo:
 		return styleDim.Render(fmt.Sprintf("%s back to map · %s · q quit · ? help", dockTabKey[m.dockTab], resume))
 	case isWidescreen(m.width):
-		return styleDim.Render("2 chronicle 3 " + m.sk().TabLabel() + " 4 villagers 5 systems (again: solo) · G console · m ask · " + pause + " · q quit · ? help")
+		// Spec 054: scenario worlds advertise the exercise tab's key; ambient
+		// worlds keep the pre-054 hint byte-identical (no tab exists).
+		tabsHint := "2 chronicle 3 " + m.sk().TabLabel() + " 4 villagers 5 systems"
+		if m.exerciseID() != "" {
+			tabsHint += " 6 exercise"
+		}
+		return styleDim.Render(tabsHint + " (again: solo) · G console · m ask · " + pause + " · q quit · ? help")
 	default:
-		return styleDim.Render("1-5 panes · G console · " + pause + " · q quit · ? help")
+		panesHint := "1-5 panes"
+		if m.exerciseID() != "" {
+			panesHint = "1-5,6 panes"
+		}
+		return styleDim.Render(panesHint + " · G console · " + pause + " · q quit · ? help")
 	}
 }
 
@@ -498,6 +513,14 @@ func (m Model) dockTabsRow() string {
 		{paneVillagers, "villagers"},
 		{paneSystems, "systems"},
 	}
+	// Spec 054 (FR-008): the exercise tab joins the row only on scenario
+	// worlds — a new label + content renderer, no new layout (dock.md).
+	if m.exerciseID() != "" {
+		tabs = append(tabs, struct {
+			p     pane
+			label string
+		}{paneExercise, "exercise"})
+	}
 	var parts []string
 	for _, t := range tabs {
 		style := styleTabInactive
@@ -536,6 +559,8 @@ func (m Model) dockTabContent(width, height int) string {
 		return m.villagersBody(width, height)
 	case paneSystems:
 		return m.systemsContentBody(width, height)
+	case paneExercise:
+		return m.exerciseBody(width, height)
 	}
 	return ""
 }

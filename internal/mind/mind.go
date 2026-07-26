@@ -102,6 +102,14 @@ type Mind struct {
 	// token budgets, never mutated after goroutines start.
 	memoryRelevance string
 
+	// scenarioExercise is the world's scenario exercise id (spec 054 US5),
+	// "" for ambient worlds. It gates the narrator's ADDITIONAL chapter
+	// trigger at the exercise's pass/fail boundary (chronicleNote) so the
+	// ambient day/night cadence stays byte-identical when no scenario is
+	// armed. Boot-static — set once by SetScenario immediately after New,
+	// before any events flow (the metatron SetStage discipline).
+	scenarioExercise string
+
 	// Nightly consolidation (TASK-9): FIFO queue + per-agent in-flight guard.
 	consolQ        chan consolJob
 	consolInFlight [sim.AgentCount]atomic.Bool
@@ -184,6 +192,12 @@ func New(orch Submitter, loop Injector, social SocialInjector, m *worldmap.Map, 
 
 // Observe is the loop-notify path: never blocks (drop on overflow — the
 // next batch still carries the tick forward and cadence self-heals).
+// SetScenario installs the world's scenario exercise id (spec 054 US5) —
+// called exactly once, by the daemon, immediately after New and BEFORE the
+// sim loop starts, so the absorb goroutine's reads are ordered after this
+// write by the events channel itself (no batch can precede it).
+func (md *Mind) SetScenario(exercise string) { md.scenarioExercise = exercise }
+
 func (md *Mind) Observe(events []store.Event) {
 	select {
 	case md.events <- events:

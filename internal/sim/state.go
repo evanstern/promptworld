@@ -150,6 +150,16 @@ type State struct {
 	// in the dry-run, and in replay — the reducer stays the single, map-aware
 	// validator for the map-dependent miracle checks (spec 016 R1/R4).
 	m *worldmap.Map
+
+	// scenario is the boot-frozen armed scenario runtime (spec 054): the
+	// exercise definition + compiled incident source stepEvents consults
+	// (scenario.go). Unexported and never serialized, exactly like m —
+	// canonical state bytes are unchanged by arming, replay derives
+	// everything from the recorded events, and a world with no scenario
+	// block (nil here) is byte-identical to pre-054 on every path. Attached
+	// once at daemon boot via ArmScenario (the SetStage discipline) and
+	// carried across a world.migrated replacement like m.
+	scenario *armedScenario
 }
 
 // NewState is genesis: day 1 06:00, default speed, named agents placed
@@ -1596,9 +1606,11 @@ func (s *State) Apply(e store.Event) error {
 		// The payload's State was unmarshalled from the event and carries no
 		// map (unexported, unserialized); preserve the map already attached to
 		// the live/replay State across the wholesale replacement (spec 016).
-		m := s.m
+		// The armed scenario (spec 054) rides across the same way — boot-frozen
+		// config, never event-carried.
+		m, sc := s.m, s.scenario
 		*s = p.State
-		s.m = m
+		s.m, s.scenario = m, sc
 
 	case "agent.slept":
 		var p AgentPayload

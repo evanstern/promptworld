@@ -215,25 +215,28 @@ var (
 	rowTab4      = helpKeyRow{"4", []string{"4"}, "select the villagers tab; press again to solo it (or return home if already solo'd)"}
 	rowTab5      = helpKeyRow{"5", []string{"5"}, "select the systems tab; press again to solo it (or return home if already solo'd)"}
 	rowDockCycle = helpKeyRow{"tab/shift+tab", []string{"tab", "shift+tab"}, "cycle the dock tabs (alias for 2/3/4/5)"}
-	rowConsole   = helpKeyRow{"G", []string{"G"}, "open the guardian console — a full-screen page for the conversation, charter/skills, and $EDITOR (G/1/esc closes)"}
-	rowAsk       = helpKeyRow{"m", []string{"m"}, "focus the minibuffer — ask the guardian"}
-	rowPause     = helpKeyRow{"space", []string{" "}, "pause / resume the clock"}
-	rowSpeed     = helpKeyRow{"[ ]", []string{"[", "]"}, "speed down / up"}
-	rowPan       = helpKeyRow{"←↑↓→", []string{"up", "down", "left", "right"}, "pan the map"}
-	rowRecenter  = helpKeyRow{"c", []string{"c"}, "recenter the camera on the wanderers"}
-	rowChronA    = helpKeyRow{"a", []string{"a"}, "chronicle: filter by agent (chronicle tab only)"}
-	rowChronT    = helpKeyRow{"t", []string{"t"}, "chronicle: filter by thread (chronicle tab only)"}
-	rowChronR    = helpKeyRow{"r", []string{"r"}, "chronicle: toggle raw ↔ narrated (chronicle tab only)"}
-	rowExitSolo  = helpKeyRow{"esc", []string{"esc"}, "exit solo zoom (no effect when already home)"}
-	rowQuit      = helpKeyRow{"q", []string{"q"}, "quit"}
-	rowNarrowMB  = helpKeyRow{"enter", []string{"enter"}, "narrow fallback: focus the minibuffer from the guardian pane (no effect in the widescreen composite)"}
+	// Spec 054: the exercise tab exists only on scenario worlds — on ambient
+	// worlds 6 is inert (the key stays documented; the tab is world-shaped).
+	rowTab6     = helpKeyRow{"6", []string{"6"}, "select the exercise tab (scenario worlds only; inert elsewhere); press again to solo it"}
+	rowConsole  = helpKeyRow{"G", []string{"G"}, "open the guardian console — a full-screen page for the conversation, charter/skills, and $EDITOR (G/1/esc closes)"}
+	rowAsk      = helpKeyRow{"m", []string{"m"}, "focus the minibuffer — ask the guardian"}
+	rowPause    = helpKeyRow{"space", []string{" "}, "pause / resume the clock"}
+	rowSpeed    = helpKeyRow{"[ ]", []string{"[", "]"}, "speed down / up"}
+	rowPan      = helpKeyRow{"←↑↓→", []string{"up", "down", "left", "right"}, "pan the map"}
+	rowRecenter = helpKeyRow{"c", []string{"c"}, "recenter the camera on the wanderers"}
+	rowChronA   = helpKeyRow{"a", []string{"a"}, "chronicle: filter by agent (chronicle tab only)"}
+	rowChronT   = helpKeyRow{"t", []string{"t"}, "chronicle: filter by thread (chronicle tab only)"}
+	rowChronR   = helpKeyRow{"r", []string{"r"}, "chronicle: toggle raw ↔ narrated (chronicle tab only)"}
+	rowExitSolo = helpKeyRow{"esc", []string{"esc"}, "exit solo zoom (no effect when already home)"}
+	rowQuit     = helpKeyRow{"q", []string{"q"}, "quit"}
+	rowNarrowMB = helpKeyRow{"enter", []string{"enter"}, "narrow fallback: focus the minibuffer from the guardian pane (no effect in the widescreen composite)"}
 )
 
 // globalRows is the complete flattened set the two rows above partition —
 // help_test.go asserts helpModeGlobal and helpModeSolo each union back to
 // exactly this.
 var globalRows = []helpKeyRow{
-	rowHome, rowTab2, rowTab3, rowTab4, rowTab5, rowDockCycle, rowConsole, rowAsk, rowPause, rowSpeed,
+	rowHome, rowTab2, rowTab3, rowTab4, rowTab5, rowTab6, rowDockCycle, rowConsole, rowAsk, rowPause, rowSpeed,
 	rowPan, rowRecenter, rowChronA, rowChronT, rowChronR, rowExitSolo, rowQuit, rowNarrowMB,
 }
 
@@ -280,7 +283,7 @@ var helpPages = [helpModeCount]helpModePage{
 		Title: "Global (home)",
 		Basic: []helpKeyRow{rowTab2, rowTab3, rowTab4, rowTab5, rowConsole, rowAsk, rowPause, rowQuit},
 		Advanced: []helpKeyRow{
-			rowHome, rowDockCycle, rowNarrowMB, rowExitSolo,
+			rowTab6, rowHome, rowDockCycle, rowNarrowMB, rowExitSolo,
 			rowChronA, rowChronT, rowChronR, rowPan, rowRecenter, rowSpeed,
 		},
 	},
@@ -294,7 +297,7 @@ var helpPages = [helpModeCount]helpModePage{
 		Basic: []helpKeyRow{rowInspSel, rowInspScrl, rowResume, rowAsk},
 		Advanced: []helpKeyRow{
 			rowInspJump, rowInspEnter,
-			rowHome, rowTab2, rowTab3, rowTab4, rowTab5, rowDockCycle, rowSpeed,
+			rowHome, rowTab2, rowTab3, rowTab4, rowTab5, rowTab6, rowDockCycle, rowSpeed,
 			rowPan, rowRecenter, rowChronA, rowChronT, rowChronR, rowExitSolo, rowQuit,
 		},
 	},
@@ -303,7 +306,7 @@ var helpPages = [helpModeCount]helpModePage{
 		Basic: []helpKeyRow{rowVillSel, rowVillOpen, rowPause, rowQuit},
 		Advanced: []helpKeyRow{
 			rowVillJump, rowExitSolo,
-			rowHome, rowTab2, rowTab3, rowTab4, rowTab5, rowDockCycle, rowAsk,
+			rowHome, rowTab2, rowTab3, rowTab4, rowTab5, rowTab6, rowDockCycle, rowAsk,
 			rowSpeed, rowPan, rowRecenter, rowChronA, rowChronT, rowChronR,
 		},
 	},
@@ -312,7 +315,7 @@ var helpPages = [helpModeCount]helpModePage{
 		Basic: []helpKeyRow{rowVillDetD, rowVillDetEsc, rowVillDetJK, rowPause, rowQuit},
 		Advanced: []helpKeyRow{
 			rowVillDetGG, rowVillDetEnter,
-			rowHome, rowTab2, rowTab3, rowTab4, rowTab5, rowDockCycle, rowAsk,
+			rowHome, rowTab2, rowTab3, rowTab4, rowTab5, rowTab6, rowDockCycle, rowAsk,
 			rowSpeed, rowPan, rowRecenter, rowChronA, rowChronT, rowChronR,
 		},
 	},
@@ -320,7 +323,7 @@ var helpPages = [helpModeCount]helpModePage{
 		Title: "Solo zoom / narrow fallback",
 		Basic: []helpKeyRow{rowHome, rowTab2, rowTab3, rowTab4, rowTab5, rowConsole, rowPause, rowQuit},
 		Advanced: []helpKeyRow{
-			rowDockCycle, rowAsk, rowSpeed, rowPan, rowRecenter,
+			rowTab6, rowDockCycle, rowAsk, rowSpeed, rowPan, rowRecenter,
 			rowChronA, rowChronT, rowChronR, rowExitSolo, rowNarrowMB,
 		},
 	},

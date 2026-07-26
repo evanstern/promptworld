@@ -93,6 +93,15 @@ func gruStep(s *State, m *worldmap.Map, night bool, nextTick int64) []store.Even
 	}
 
 	if clock.SecondOfDay(nextTick) == nightStartSecond && s.Gru == nil {
+		// Scenario preemption (spec 054, research R3): on a night with a
+		// scheduled gru_emerges incident the schedule wins and the random
+		// roll is skipped entirely — never two spawn mechanisms in one night.
+		// Skipping consumes no RNG draw (rngAt is coordinate-seeded, no
+		// stream), so ambient nights and unscheduled scenario nights roll
+		// exactly as before.
+		if gruScheduledTonight(s, nextTick) {
+			return events
+		}
 		if x, y, ok := gruEmergence(s, m, nextTick); ok {
 			emit("gru.emerged", GruEmergedPayload{Night: gruNightIndex(nextTick), X: x, Y: y})
 		}

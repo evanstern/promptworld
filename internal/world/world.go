@@ -77,22 +77,37 @@ type Manifest struct {
 	// "default" = persona.DefaultCharter; "tutor" = the stage-1 orientation
 	// preset. Closed vocabulary, validated at Open.
 	CharterPreset string `json:"charter_preset,omitempty"`
-	// Scenario is a RESERVED additive block (spec 046 US4, R7 — the Meeting
-	// block precedent above): the shape TASK-119's scenario/incident-
-	// scheduling machinery will read to know which seeded exercise (if any)
-	// a world is running. Consumed by nothing yet — `promptworld new` never
-	// writes it — so its presence changes nothing about how a world boots or
-	// plays; it exists so 119 has a schema seam to land in without another
-	// Manifest-shape negotiation.
+	// Scenario names the seeded exercise this world runs (spec 046 US4
+	// reserved the block; spec 054 consumes it): written once by
+	// `promptworld new --scenario` (SetScenario below, the SetStage
+	// pattern), validated at Open, and boot-frozen into the sim loop by the
+	// daemon (sim.State.ArmScenario) — the incident schedule, rubric
+	// evaluator, status facts, and exercise tab all key off it. Absent =
+	// an ambient world: every scenario code path stays dormant and the
+	// world is byte-identical to pre-054.
 	Scenario *ScenarioConfig `json:"scenario,omitempty"`
 }
 
-// ScenarioConfig names the exercise a world is seeded to run (spec 046 US4).
-// Exercise should name a sim.ExerciseDefinition.ID (e.g. "first-night"); this
-// package does not validate it against that catalog — TASK-119 owns
-// interpreting it. Reserved, unconsumed (see Manifest.Scenario doc comment).
+// ScenarioConfig names the exercise a world is seeded to run (spec 046 US4,
+// consumed by spec 054). Exercise names a sim.ExerciseDefinition.ID
+// (e.g. "first-night"), validated at Open via ValidScenarioExercise.
 type ScenarioConfig struct {
 	Exercise string `json:"exercise,omitempty"`
+}
+
+// ValidScenarioExercise reports whether s names a shipped scenario exercise
+// (spec 054 FR-006). Deliberately a LOCAL mirror of sim.ScenarioExercises'
+// id set — the validLadderStage twin-list precedent, in reverse: the
+// deterministic core does not import this save-directory package and this
+// package does not import the core, so each side keeps its own closed
+// vocabulary. TestScenarioVocabularyMirrorsSimCatalog (world_test, which may
+// import sim) pins the two in sync.
+func ValidScenarioExercise(s string) bool {
+	switch s {
+	case "first-night", "the-law":
+		return true
+	}
+	return false
 }
 
 // The four curriculum-ladder stage ids (spec 046, FR-001). An absent Stage is
@@ -252,6 +267,11 @@ func Open(dir string) (*World, error) {
 	if !ValidCharterPreset(m.CharterPreset) {
 		return nil, fmt.Errorf("corrupt %s: charter_preset %q unknown (want %q, %q, or the key absent)", ManifestName, m.CharterPreset, CharterPresetDefault, CharterPresetTutor)
 	}
+	// Scenario block (spec 054 FR-006, the ValidStage idiom): a present block
+	// must name a shipped exercise — a typo must never silently boot ambient.
+	if m.Scenario != nil && !ValidScenarioExercise(m.Scenario.Exercise) {
+		return nil, fmt.Errorf("corrupt %s: scenario exercise %q unknown (want a shipped exercise id, or the block absent)", ManifestName, m.Scenario.Exercise)
+	}
 	return &World{Dir: dir, Manifest: m}, nil
 }
 
@@ -266,6 +286,27 @@ func SetTeaching(dir string, on bool) error {
 		return err
 	}
 	w.Manifest.Teaching = on
+	data, err := json.MarshalIndent(w.Manifest, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(dir, ManifestName), append(data, '\n'), 0o644)
+}
+
+// SetScenario stamps a freshly created world's scenario block (spec 054
+// US3): read the manifest, set Scenario{Exercise}, rewrite world.json.
+// Exactly the SetStage contract below: ONE caller (`promptworld new
+// --scenario`), called once immediately after Create — the scenario is
+// write-once for the world's lifetime, no toggle command exists or ever
+// will (the machinery is boot-frozen; a mutable scenario would desync the
+// armed schedule from the manifest). Callers pass an already-validated id
+// (ValidScenarioExercise) — this function does not re-validate.
+func SetScenario(dir, exercise string) error {
+	w, err := Open(dir)
+	if err != nil {
+		return err
+	}
+	w.Manifest.Scenario = &ScenarioConfig{Exercise: exercise}
 	data, err := json.MarshalIndent(w.Manifest, "", "  ")
 	if err != nil {
 		return err

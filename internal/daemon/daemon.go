@@ -134,6 +134,17 @@ func Run(dir string) error {
 	if err := seedSurvivalWatches(w, st, state); err != nil {
 		return err
 	}
+	// Scenario machinery (spec 054 FR-006): arm the boot-frozen scenario from
+	// the manifest — the SetStage discipline (immutable for the daemon's
+	// lifetime), before the loop exists so no tick ever runs unarmed on a
+	// scenario world.
+	scenarioExercise, err := armScenario(w, state)
+	if err != nil {
+		return err
+	}
+	if scenarioExercise != "" {
+		fmt.Printf("daemon: scenario armed (%s)\n", scenarioExercise)
+	}
 	recoveryMs := time.Since(startWall).Milliseconds()
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
@@ -167,6 +178,12 @@ func Run(dir string) error {
 		return err
 	}
 	defer scr.Close()
+	if scenarioExercise != "" {
+		// Spec 054 US5: the morgue's run summary names the exercise outcome —
+		// installed before the loop starts (no events in flight yet), and the
+		// re-render inside covers an already-ended scenario world's reboot.
+		scr.SetScenario(scenarioExercise)
+	}
 	consumers = append(consumers, scr.Observe)
 	// Curriculum-ladder unlock observer (spec 046 US3, T013): always-on, like
 	// the scribe above — a no-model world still records its unlocks — and
@@ -362,6 +379,12 @@ func Run(dir string) error {
 			return err
 		}
 		defer md.Close()
+		if scenarioExercise != "" {
+			// Spec 054 US5: arms the narrator's additional chapter trigger at
+			// the exercise's pass/fail boundary — before the loop starts, so no
+			// event can precede it (the SetStage discipline).
+			md.SetScenario(scenarioExercise)
+		}
 		consumers = append(consumers, md.Observe)
 		// Drift signal: a tier's estimator breaching its spike-rate
 		// threshold lands as cog.recalibration_recommended telemetry.
@@ -513,6 +536,28 @@ func teachingPostureBootLine(worldName string, speed clock.Speed, secPerPt float
 // at the recovered tick. It lands in the log like genesis, so replay
 // re-applies it and this boot-time seed never fires twice (the reducer is
 // one-shot, and the guard skips re-injection once state carries a convention).
+// armScenario arms the loop state's boot-frozen scenario from the manifest's
+// Scenario block (spec 054 FR-006) and returns the armed exercise id — "" for
+// an ambient world, which arms nothing and stays byte-identical to pre-054
+// (contract §1.3). world.Open already validated the id against the
+// manifest-side vocabulary (its local mirror of the sim catalog), so a
+// catalog miss here is a real corruption, not a typo — refused loudly, never
+// silently booted ambient.
+func armScenario(w *world.World, state *sim.State) (string, error) {
+	sc := w.Manifest.Scenario
+	if sc == nil {
+		return "", nil
+	}
+	def, ok := sim.ExerciseByID(sc.Exercise)
+	if !ok {
+		return "", fmt.Errorf("scenario exercise %q is not in the shipped catalog", sc.Exercise)
+	}
+	if err := state.ArmScenario(def); err != nil {
+		return "", err
+	}
+	return def.ID, nil
+}
+
 func seedMeetingConvention(w *world.World, st *store.Store, state *sim.State) error {
 	mc := w.Manifest.Meeting
 	if mc == nil || state.MeetingConvention != nil {
@@ -591,8 +636,15 @@ func seedSurvivalWatches(w *world.World, st *store.Store, state *sim.State) erro
 		}
 	}
 	var events []store.Event
-	for _, o := range sim.SurvivalWatchDefs(state.Tick) {
+	for i, o := range sim.SurvivalWatchDefs(state.Tick) {
 		ev := store.Event{Tick: state.Tick, Type: "metatron.order_placed", Payload: mustJSONDaemon(o)}
+		// Pre-assign the store seq before applying (the loop's stampSeqs
+		// contract, spec 054): the order_placed reducer arm stamps
+		// GuardianOrder.PlacedSeq from the event envelope, so applying with
+		// Seq 0 here would diverge the live boot state from what replay
+		// derives once AppendEvents records the real seqs. Boot is
+		// single-writer, so AppendEvents re-assigns these identical values.
+		ev.Seq = st.LastSeq() + int64(i) + 1
 		if err := state.Apply(ev); err != nil {
 			return fmt.Errorf("seed survival watch %s: %w", o.ID, err)
 		}

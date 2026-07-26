@@ -45,6 +45,14 @@ type Status struct {
 	// day of the run end, for human rendering without a state fetch.
 	Ended    bool  `json:"ended,omitempty"`
 	EndedDay int64 `json:"ended_day,omitempty"`
+	// ScenarioExercise/ScenarioOutcome (spec 054 FR-007): the armed scenario
+	// exercise id and its model-free outcome (in_progress|passed|failed),
+	// derived from replica facts (CurriculumPasses vs Ended) inside the loop
+	// goroutine so the pair is always coherent with Tick. Additive omitempty:
+	// ambient worlds (no scenario armed) carry neither and their status
+	// bytes are unchanged.
+	ScenarioExercise string `json:"scenario_exercise,omitempty"`
+	ScenarioOutcome  string `json:"scenario_outcome,omitempty"`
 }
 
 // InjectArgs carries a planner decision into deterministic space.
@@ -431,6 +439,12 @@ func (l *Loop) status() Status {
 			day, _, _, _ := clock.GameTime(s.RunEnd.Tick)
 			st.EndedDay = day
 		}
+	}
+	// Scenario facts (spec 054 FR-007): only when a scenario is armed, so an
+	// ambient world's status bytes stay byte-identical.
+	if id := s.ScenarioExerciseID(); id != "" {
+		st.ScenarioExercise = id
+		st.ScenarioOutcome = ExerciseOutcome(s, id)
 	}
 	return st
 }
