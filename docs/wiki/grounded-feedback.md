@@ -28,7 +28,7 @@ sources:
   - internal/tui/grammar.go
   - internal/world/world.go
   - cmd/promptworld/stages.go
-verified_against: bb6f083e00d8ea4aeb2c5fde6cdfaea0f5dcff84
+verified_against: 7876f78455922710b8dc8522502c215eb992cb91
 ---
 
 # Grounded feedback layer (explain, tutor guide, report card)
