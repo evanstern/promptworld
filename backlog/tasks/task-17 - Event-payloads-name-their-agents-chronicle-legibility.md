@@ -4,7 +4,7 @@ title: Event payloads name their agents (chronicle legibility)
 status: To Do
 assignee: []
 created_date: '2026-07-19 15:56'
-updated_date: '2026-07-24 02:42'
+updated_date: '2026-07-26 17:58'
 labels:
   - events
   - tui
@@ -30,4 +30,6 @@ Out-of-sim consumers of the event log (webhook sinks TASK-18, exported logs, ext
 
 <!-- SECTION:NOTES:BEGIN -->
 Drift audit 2026-07-23: still real. Payloads carry indices only (internal/sim/agents.go:668-725, e.g. TalkedPayload uses A/B ints); no AgentRef type exists anywhere; TUI post-hoc lookup intact (tui.go:1076-1085 agentNames, views.go:910-914 formatChronicleLine, grammar.go:166).
+
+Reorient 2026-07-26 (board move 10): reframed upward — agent-named payloads raise chronicle jump-to-source's locatable-event hit rate (resolveSubject), making this village-lens completion, not just chronicle hygiene.
 <!-- SECTION:NOTES:END -->

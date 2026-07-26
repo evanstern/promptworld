@@ -4,6 +4,7 @@ title: Faith-driven charge regeneration (endogenous mana) — spec-first
 status: To Do
 assignee: []
 created_date: '2026-07-25 04:43'
+updated_date: '2026-07-26 17:58'
 labels:
   - learning-game
   - metatron
@@ -25,3 +26,9 @@ Learning-game synthesis Wave 3 (operator decision 4, ratified 2026-07-25). Metat
 - [ ] #3 Regen is a pure reducer function of faith; replay determinism demonstrated
 - [ ] #4 Failure-spiral posture decided explicitly (scenario vs ambient floor)
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Reorient 2026-07-26 decision 9: lane order — after TASK-67 (duel first: completes the learn-iterate loop), before TASK-112 (agentization changes what earns faith; TASK-112 AC5/AC6 already legislate the tutor-lane exclusion). Strip integration pre-specified at panels/guardian-strip.md §4 (dashed faith segment contract). Corpus riders: failure-spiral AC grounded in the Hades God-Mode reasoning (Meta-Progression-and-Failure); overjustification caution — faith stays an in-fiction resource, never a badge/streak surface.
+<!-- SECTION:NOTES:END -->

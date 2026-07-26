@@ -4,7 +4,7 @@ title: 'Seasons and ambient temperature: design session'
 status: To Do
 assignee: []
 created_date: '2026-07-20 19:54'
-updated_date: '2026-07-24 02:42'
+updated_date: '2026-07-26 17:58'
 labels:
   - design
 dependencies: []
@@ -30,4 +30,6 @@ Pre-session decisions (user, 2026-07-20): (1) Two seasons only — hot and cold,
 Re-grounding 2026-07-22: numeric premises hold (warmthLossCold=4 / warmthGainDay=2 at agents.go:138/140; night 22:00-06:00 per clock tests). Stale ref: 'TASK-26 storage' is Done and became spec 013 (TASK-51, In Progress) — point storage coupling there. Absorbed from TASK-29 (archived, core superseded by spec 012): storm/rain dousing of fires and fire-duty rosters are now open questions for THIS design session; spec 012 pinned the base fuel mechanic (2 wood -> 8 game-hours, +4h per refuel, cap 12h, cold fire refuses cooking, reflex refuels).
 
 Drift audit 2026-07-23: stale ref fixed — spec 013 (TASK-51) is now Done/merged, storage coupling can cite its pinned FRs directly. Warmth constants verified, pins moved: warmthLossCold=4 agents.go:463, warmthGainDay=2 agents.go:465 (was :138/:140); night 22:00-06:00 holds (game-clock.md:63).
+
+Reorient 2026-07-26 (board move 11): reframed dual-duty — seasons are ambient-endgame drama supply AND authorable scenario incident vocabulary (a seeded cold snap is both a season mechanic and an IncidentScheduleEntry kind; see TASK-151).
 <!-- SECTION:NOTES:END -->

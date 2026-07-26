@@ -1,0 +1,28 @@
+---
+id: TASK-151
+title: 'Exercise catalog wave: 2-3 exercises per stage + incident vocabulary growth'
+status: To Do
+assignee: []
+created_date: '2026-07-26 17:57'
+labels:
+  - gameplay
+  - content
+dependencies:
+  - TASK-149
+references:
+  - docs/design/reorient-2026-07-26-ui.md
+ordinal: 121000
+---
+
+## Description
+
+<!-- SECTION:DESCRIPTION:BEGIN -->
+Reorient 2026-07-26 decision 5. Ladder v1 = 2-3 hand-authored exercises per stage (today: two exercises, one production rubric). Grow the incident vocabulary beyond gru_emerges to ~3 kinds (cold snap, forage blight, stranger/trickster arrival) — each a reducer-valid event shape indistinguishable from an ambient cause (the gru.emerged precedent), entering through the shipped severity grammar (no new channels). Lesson catalog tranche 2 (first explain answer, first report card, first skill file, first faith event post-TASK-118) plus the first wrong-thing detector lesson (repeated same-cause tool rejections) ride this wave as content. Depends on TASK-149 for rubric truth.
+<!-- SECTION:DESCRIPTION:END -->
+
+## Acceptance Criteria
+<!-- AC:BEGIN -->
+- [ ] #1 Each stage has 2-3 exercises with production evaluators
+- [ ] #2 At least 3 incident kinds, replay-safe and ambient-indistinguishable, entering via shipped severity channels
+- [ ] #3 Lesson tranche 2 + one wrong-thing-detector lesson land as catalog content
+<!-- AC:END -->

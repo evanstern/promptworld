@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-07-25 18:57'
+updated_date: '2026-07-26 17:58'
 labels:
   - mvls
   - thrash-detection
@@ -26,3 +27,9 @@ Follow-on carded from TASK-106 research (docs/design/thrash-detection-research.m
 - [ ] #2 Deterministic percept event + high-salience observation memory injection, replay-visible
 - [ ] #3 Composition with survival watches (TASK-111) considered in the spec
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Reorient 2026-07-26 (board move 13): relabeled a learning-game prerequisite — neglect is the observed ambient failure shape (Oak's warmth slide), and postmortem attribution can't teach unless the sim can name neglect when it happens. Its alert enters through the shipped severity grammar (chronicle whole-line alert + map overlay, patterns/chronicle-grammar.md), never a new channel.
+<!-- SECTION:NOTES:END -->

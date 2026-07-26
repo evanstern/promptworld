@@ -4,13 +4,14 @@ title: 'World forking and what-if A/B runs (same village, two prompts, two stori
 status: To Do
 assignee: []
 created_date: '2026-07-23 03:28'
-updated_date: '2026-07-25 14:45'
+updated_date: '2026-07-26 17:58'
 labels:
   - review-2026-07-22
   - teaching-game
   - learning-game
-dependencies: []
-priority: medium
+dependencies:
+  - TASK-149
+priority: high
 ordinal: 16000
 ---
 
@@ -41,6 +42,8 @@ Depends on nothing, but pairs naturally with the decision-trace view (TASK-63): 
 Drift audit 2026-07-23: premises verified — save dirs self-contained/copyable (world-save-directory.md:15-16), snapshots bound recovery (snapshots.md:14-17), replay never re-calls a model (llm-orchestrator.md:20), and no fork/compare subcommand exists yet (main.go:52-88).
 
 Reorient 2026-07-25 rescope (D7): v1 compare surface is the rubric-first scoreboard — plain-language rubric card with drill-down into interleaved chronicles at divergence points — sharing the postmortem's rubric renderer and the verdict-glossary discipline (a lost duel IS a postmortem, TASK-127). The shareable HTML retelling (two chronicles as one artifact — the Boatmurdered move) follows; dual side-by-side live TUI is deferred post-v1.
+
+Reorient 2026-07-26 decision 3 (docs/design/reorient-2026-07-26-ui.md): promoted to HIGH and reframed as the loop's iteration rung — all D7 prerequisites shipped (spec 054 rubric evaluator, spec 056/063 report-card renderer, glossary discipline, postmortem register), so v1 is dramatically cheaper than when scoped. v1 = rubric-first scoreboard sharing reportCardView + sim.EvaluateRubric (AC #7's rubric should be EvaluateRubric terms, not a bespoke list); phase 2 = the Boatmurdered-style shareable HTML retelling (one renderer family); dual side-by-side TUI stays deferred. Depends on TASK-149 — the duel must not compare false checkmarks.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
