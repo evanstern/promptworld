@@ -3,10 +3,10 @@ id: TASK-141
 title: >-
   Plan staleness budget doesn't scale with clock speed — planning silently dies
   above ~4x on local tiers
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-26 02:33'
-updated_date: '2026-07-26 02:34'
+updated_date: '2026-07-26 14:33'
 labels:
   - mvls
   - behavior-hygiene
@@ -32,4 +32,6 @@ Found during the TASK-122 measurement run (2026-07-25, world ~/.promptworld/meas
 
 <!-- SECTION:NOTES:BEGIN -->
 Diagnosis pin (AC#1 progress): the rejection fires at internal/sim/landing.go rungStale ('staleness %d > budget %d', dc.BudgetTicks) via OutcomeRejectedStale (internal/sim/cognition.go). The per-class BudgetTicks value (set_plan class = 1200) is the constant that doesn't scale with clock speed — full consumption-site map is the spec's first task.
+
+Claiming per spec 065: spec dir specs/067-staleness-budget-scaling/ stubbed; full Spec Kit flow (specify → plan → tasks → implement) to follow.
 <!-- SECTION:NOTES:END -->
