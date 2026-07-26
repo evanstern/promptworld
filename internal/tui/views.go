@@ -1076,6 +1076,66 @@ func (m Model) wandererCentroid() (cx, cy int) {
 	return cx, cy
 }
 
+// cameraOrigin computes the camera's world-space top-left tile for a vw x vh
+// viewport — wanderer centroid + pan, clamped to the map (spec 074 research
+// R3, the spec-049 wandererCentroid extraction precedent): renderMapGrid,
+// the look-cursor camera-push/`c`-snap math, and mouse hit-testing all read
+// the exact same numbers through this one function, so a camera writer can
+// never compute a slightly different "center" than the renderer draws. A nil
+// gameMap degrades to (0,0) — the same "no terrain" case renderMapGrid
+// already short-circuits before ever needing an origin.
+func (m Model) cameraOrigin(vw, vh int) (x0, y0 int) {
+	gm := m.gameMap
+	if gm == nil {
+		return 0, 0
+	}
+	if vw > gm.W {
+		vw = gm.W
+	}
+	if vh > gm.H {
+		vh = gm.H
+	}
+	if vw < 1 {
+		vw = 1
+	}
+	if vh < 1 {
+		vh = 1
+	}
+	cx, cy := m.wandererCentroid()
+	cx += m.panX
+	cy += m.panY
+	return clampInt(cx-vw/2, 0, gm.W-vw), clampInt(cy-vh/2, 0, gm.H-vh)
+}
+
+// mapViewportDims recomputes the map panel's current viewport size in tiles
+// — the widescreen column-budget formula (mapPanelView) or the narrow
+// vw/vh formula (mapView), whichever layout is live right now — so the
+// look-cursor key handler and mouse hit-testing read the exact viewport the
+// renderer is about to draw, with no cached geometry to go stale (spec 074
+// research R3). A tiny wrapper, not the renderer itself: mapPanelView/mapView
+// keep computing their OWN vw/vh from whatever (cols, rows) they were
+// actually handed (B1's exact-size contract — some callers, notably tests,
+// hand them sizes other than what this function would recompute from
+// m.width/m.height), so this is deliberately a second, independent read of
+// the same formulas rather than a shared call site.
+func (m Model) mapViewportDims() (vw, vh int) {
+	if isWidescreen(m.width) {
+		cols := computeColumns(m.width)
+		rows := computeRows(m.height, m.wantsLessonRow())
+		return mapViewportTiles(cols.MapCols, rows.Body-1) // -1: title row (mapPanelView)
+	}
+	vw, vh = 32, 18
+	if m.width > 8 {
+		if w := (m.width - 6) / 2; w < vw || m.width >= 80 {
+			vw = w
+		}
+	}
+	if m.height > 12 {
+		vh = m.height - 10
+	}
+	return vw, vh
+}
+
 // renderMapGrid draws the terrain+agents grid at exactly vw x vh tiles,
 // returning the grid block and legend line separately — the shared core
 // behind both the narrow mapView (today's vw/vh formula) and the
@@ -1100,13 +1160,10 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 	}
 
 	// Camera center: wanderer centroid + pan offset, clamped to the map.
-	// wandererCentroid is shared with centerCameraOn (spec 049 research R1)
-	// so the jump math and this default camera center can never drift apart.
-	cx, cy := m.wandererCentroid()
-	cx += m.panX
-	cy += m.panY
-	x0 := clampInt(cx-vw/2, 0, gm.W-vw)
-	y0 := clampInt(cy-vh/2, 0, gm.H-vh)
+	// cameraOrigin is shared with the look-cursor camera-push/snap math and
+	// mouse hit-testing (spec 074 research R3) so none of them can drift
+	// apart from what this function actually draws.
+	x0, y0 := m.cameraOrigin(vw, vh)
 
 	agents := map[[2]int]string{}
 	structures := map[[2]int]string{}
