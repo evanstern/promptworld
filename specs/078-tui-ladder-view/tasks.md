@@ -34,25 +34,27 @@ parity); Phase 4 → AC #2 (help.md byte-identity row + design gate).
 
 ## Phase 3: User Story 1 — the ladder block (P1, board AC #1) 🎯 MVP
 
-- [ ] T004 [US1] Model plumbing in `internal/tui/tui.go`:
+- [X] T004 [US1] Model plumbing in `internal/tui/tui.go`:
   `unlocks *worlds.Unlocks` field, loaded once in `New()` (boot precedent
   `populateHelpLessons`); render-time earned predicate = record ∨
   `replica.StagesUnlocked` membership (plan D2, spec FR-006)
-- [ ] T005 [US1] `helpLadderLines` in `internal/tui/help.go`, appended by
+- [X] T005 [US1] `helpLadderLines` in `internal/tui/help.go`, appended by
   `helpGuardianLines`: iterate `world.StageOrder`; per stage render skin
   identity + `(id)`, `teaches:` concept, `unlocked by:` evidence
   (graduation wording when empty), earned/next/not-yet state with the
   audit pointer for record-earned stages, you-are-here marker with the
   `StageOverridden` annotation; `wrapText`/`clipLine` throughout (plan D3,
   spec FR-001/002/004/007/009)
-- [ ] T006 [US1] Parity test in `internal/tui/help_test.go`: fixture
+- [X] T006 [US1] Parity test in `internal/tui/help_test.go`: fixture
   unlocks record under `setHome(t)` (one record-earned stage with
   world+exercise); expected rows computed at runtime from the SAME
   substrate `stages --json` marshals (`StageOrder` × `StagesLadder` ×
   `StageEarned` × `skin.Stage`); assert every field surfaces in the
   rendered guardian section; zero hardcoded stage ids/counts/prose — the
-  TASK-151 armor (plan D4, spec FR-005/SC-001)
-- [ ] T007 [US1] Byte-identity + degradation tests: extend
+  TASK-151 armor (plan D4, spec FR-005/SC-001). Landed in
+  `internal/tui/help_guardian_test.go` (`TestHelpLadderMatchesStagesJSONSubstrate`)
+  rather than help_test.go — the existing guardian-section test file.
+- [X] T007 [US1] Byte-identity + degradation tests: extend
   `TestHelpGuardianByteIdenticalPerStatus` to the ladder inputs (fixed
   stage/override/unlocks/replica ⇒ constant bytes); nil status + nil
   replica + no unlocks file ⇒ floor ladder, non-empty, no panic
@@ -60,7 +62,12 @@ parity); Phase 4 → AC #2 (help.md byte-identity row + design gate).
   mid-session unlock shows earned without audit pointer; overridden world
   annotated but not earned-laundered; 80×24 scroll reachability (the
   `TestHelpWalkthroughScrollsAt80x24` precedent) (plan D5, spec
-  FR-008/010, edge cases)
+  FR-008/010, edge cases). Landed as sibling test functions in
+  `help_guardian_test.go` (`TestHelpLadderByteIdenticalForFixedInputs`,
+  `TestHelpLadderNilInputsRenderFloor`,
+  `TestHelpLadderMidSessionUnlockShowsEarnedWithoutAuditPointer`,
+  `TestHelpLadderOverrideAnnotatesWithoutLaunderingEarned`,
+  `TestHelpLadderScrollsAt80x24`).
 
 ## Phase 4: User Story 2 — design authority, same PR (P2, board AC #2)
 
