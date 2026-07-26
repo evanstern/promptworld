@@ -91,7 +91,7 @@ func (mt *Guardian) observeCardActivity(e store.Event) {
 		}
 	case "metatron.order_placed", "metatron.order_triggered", "metatron.order_cancelled",
 		"metatron.time_snapped", "metatron.item_granted", "metatron.entity_moved",
-		"metatron.entity_removed", "metatron.charter_observed":
+		"metatron.entity_removed", "metatron.charter_observed", "metatron.skills_observed":
 		line = strings.TrimPrefix(e.Type, "metatron.")
 	}
 	if line == "" {

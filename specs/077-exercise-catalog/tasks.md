@@ -15,7 +15,7 @@ design-authority, grounding, and close-out gates.
 
 ## Phase 1: Setup
 
-- [ ] T001 Cut the task worktree from fresh origin/main and baseline:
+- [X] T001 Cut the task worktree from fresh origin/main and baseline:
   `node scripts/check-merge-drift.mjs worktree --spec 077 --task TASK-151`, then
   `git worktree add .worktrees/task-151 -b task-151-exercise-catalog origin/main`;
   `go test ./internal/sim/ ./internal/tui/` green before changes (worktree
@@ -23,27 +23,27 @@ design-authority, grounding, and close-out gates.
 
 ## Phase 2: Foundational — state, reducer arms, evidence coordinates (blocks all later phases)
 
-- [ ] T002 New state fields per data-model §3 (`ColdSnapUntil`, `Stranger`,
+- [X] T002 New state fields per data-model §3 (`ColdSnapUntil`, `Stranger`,
   `StrangerTakes`, `CharterObservedSeq/Tick`, `SkillsFingerprint/SkillsObservedSeq/Tick`)
   with zero-value doc comments, in `internal/sim/state.go`; snapshot byte-identity test
   (pre-077 fixture round-trips unchanged), in `internal/sim/state_test.go` (plan D2,
   spec FR-005/006/010/012, edge "pre-077 world")
-- [ ] T003 Reducer arms: `sim.cold_snap` (latch `ColdSnapUntil`), `sim.forage_blighted`
+- [X] T003 Reducer arms: `sim.cold_snap` (latch `ColdSnapUntil`), `sim.forage_blighted`
   (append `Harvest` overlays, idempotent re-apply, validate-at-door), and the
   `metatron.charter_observed` arm's `CharterObservedSeq/Tick` stamp (envelope, the
   `PlacedSeq` precedent), dispatched from `internal/sim/state.go` into
   `internal/sim/{executor-adjacent files per house layout}`; per-arm apply + genesis
   replay round-trip tests (plan D2, spec FR-010/011/005)
-- [ ] T004 `metatron.skills_observed`: payload struct + `applyGuardian` arm persisting
+- [X] T004 `metatron.skills_observed`: payload struct + `applyGuardian` arm persisting
   fingerprint + Seq/Tick, in `internal/sim/guardian.go`; turn-time observation emission
   mirroring `charter_observed` (fingerprint the bound skill set post-`stageSkills`; emit
   on change; empty set never emits — stages 1–2 structurally silent), in
   `internal/guardian/`; tests both sides (plan D6, spec FR-006)
-- [ ] T005 Evidence constructors: `CharterEvidenceFromState` (omit when Seq==0 — pre-077
+- [X] T005 Evidence constructors: `CharterEvidenceFromState` (omit when Seq==0 — pre-077
   honesty) and `SkillsObservedEvidence` (`Custom: true` by construction), with
   doc-comment honesty contracts beside `CharterObservedEvidence`/`OrderPlacedEvidence`,
   in `internal/sim/curriculum.go`; constructor tests (plan D3, spec FR-004, research R7/R8)
-- [ ] T006 Rebase taxonomy: classify every new tick-anchored field (data-model §3 —
+- [X] T006 Rebase taxonomy: classify every new tick-anchored field (data-model §3 —
   `ColdSnapUntil`/`Stranger.LastMove/LastTake` SHIFT; take/observation ticks KEEP) in
   `rebaseTicks`, with tests beside the existing taxonomy suite, in
   `internal/sim/miracles.go` + `internal/sim/miracles_test.go` (plan D5, spec FR-015,
@@ -57,21 +57,21 @@ as reducer-valid, ambient-indistinguishable, replay-safe events.
 **Independent Test**: per-kind scheduled-fixture emission + precondition + window-lapse
 + replay byte-identity suites.
 
-- [ ] T007 [US2] Kind constants + `compileIncident` arms with param validation
+- [X] T007 [US2] Kind constants + `compileIncident` arms with param validation
   (`Hours` [1,24], `Radius` [1,8]) + `IncidentScheduleEntry.Radius/Hours` fields, in
   `internal/sim/scenario.go`; compile-error table tests in
   `internal/sim/scenario_test.go` (plan D1, spec FR-009, data-model §1)
-- [ ] T008 [US2] Named precondition predicates (`coldSnapActive`, `blightableTiles` with
+- [X] T008 [US2] Named precondition predicates (`coldSnapActive`, `blightableTiles` with
   deterministic row-major tile walk, `strangerEntryValid`) + `scenarioIncidentEvents`
   emission arms per data-model §2, with the TASK-28 ambient/preemption seam documented
   beside `gruScheduledTonight`, in `internal/sim/scenario.go` (plan D1, spec
   FR-009/013/014, research R1)
-- [ ] T009 [US2] Cold-snap severity mechanics: harsher outdoor night warmth loss while
+- [X] T009 [US2] Cold-snap severity mechanics: harsher outdoor night warmth loss while
   `tick < ColdSnapUntil` through the existing `warmthLossCold` arithmetic path (rate
   constant beside it), in `internal/sim/agents.go`; heartbeat test proving snap-window
   vs ambient-night rates and read-time expiry, in `internal/sim/day_warmth_test.go` or
   sibling (plan D2, spec FR-010, research R2)
-- [ ] T010 [US2] The stranger entity: `internal/sim/stranger.go` — `strangerStep` from
+- [X] T010 [US2] The stranger entity: `internal/sim/stranger.go` — `strangerStep` from
   `stepEvents` (order pinned by test: after `gruStep`, before the social beat),
   greedy store-seeking movement on `rngAt("stranger-prowl"/"stranger-take")`, bounded
   takes mutating pile/chest stock via the agent-withdrawal state shapes +
@@ -79,13 +79,13 @@ as reducer-valid, ambient-indistinguishable, replay-safe events.
   gru (extracted, not duplicated), dawn departure, witness/victim-adjacent situated
   memories (rumor fuel); `applyStranger` dispatch in `internal/sim/state.go` (plan D2,
   spec FR-012, research R4)
-- [ ] T011 [US2] Per-kind behavior suites: emission at authored tick, precondition-failed
+- [X] T011 [US2] Per-kind behavior suites: emission at authored tick, precondition-failed
   silent skip (blight on exhausted patch; stranger with one abroad; snap during snap),
   window lapse after time-snap, once-only via state latch, stranger+gru same-night
   independence, and genesis-replay byte-identity per kind, in
   `internal/sim/scenario_test.go` + `internal/sim/stranger_test.go` (spec US2 scenarios,
   edges; SC-002)
-- [ ] T012 [US2] Ambient-world regression proof: a no-scenario world's event stream under
+- [X] T012 [US2] Ambient-world regression proof: a no-scenario world's event stream under
   the new binary is byte-identical to pre-077 (determinism harness), in
   `internal/sim/sim_test.go` or sibling (spec FR-017, SC-002)
 - [ ] T013 [US2] Digest grammar: `familyByNamespace["stranger"]` (gru/threat voice),

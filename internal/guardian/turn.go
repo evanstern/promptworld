@@ -159,6 +159,11 @@ func (mt *Guardian) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 	// (at stage-1, the preset constant the lock serves), never the raw file.
 	mt.observeCharter(charter)
 	skills, skillNotices := stageSkills(mt.worldDir, mt.stage, mt.sk())
+	// Skills observation (spec 077 FR-006): stamped at bind, before anything
+	// consumes the set — the observeCharter twin, recording the stage-
+	// EFFECTIVE bound set (empty at stages 1–2 by stageSkills' construction,
+	// which never emits: absence is not an observation).
+	mt.observeSkills(skills)
 	grant, manifestNotices := loadManifest(mt.worldDir, bundleToolNames(mt.bundles)...)
 	// The stage ceiling (spec 046 FR-004) intersects immediately after
 	// loadManifest, BEFORE grantedRoster, so declaration/prose/door all inherit

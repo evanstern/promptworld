@@ -252,6 +252,44 @@ func CharterObservedEvidence(e store.Event) (EvidenceRef, error) {
 	return EvidenceRef{Type: e.Type, Seq: e.Seq, Tick: e.Tick, Custom: !p.Default}, nil
 }
 
+// CharterEvidenceFromState is the STATE-SOURCED charter evidence constructor
+// (spec 077 FR-004/FR-005, research R7) — the third sanctioned EvidenceRef
+// constructor, beside CharterObservedEvidence (event-sourced; fixtures) and
+// OrderPlacedEvidence. It reads the coordinates the metatron.charter_observed
+// reducer arm persists (CharterObservedSeq/Tick — the PlacedSeq apply-time
+// stamp precedent) plus the same-arm authorship flag, so the honesty
+// derivation stays in sanctioned-constructor land: Custom is CharterCustom
+// (already the inverse of the recorded payload's Default — spec 072), never
+// asserted freehand. ok=false when no observation's coordinates are on state
+// (Seq 0 — a pre-077 snapshot whose charter arm predates the stamp): the
+// evidence entry is honestly ABSENT and the caller's pass waits for the next
+// charter observation to stamp them — self-healing degradation, never a
+// fabricated coordinate (spec edge "pre-077 the-law world").
+func CharterEvidenceFromState(s *State) (EvidenceRef, bool) {
+	if s.CharterObservedSeq == 0 {
+		return EvidenceRef{}, false
+	}
+	return EvidenceRef{Type: "metatron.charter_observed", Seq: s.CharterObservedSeq,
+		Tick: s.CharterObservedTick, Custom: s.CharterCustom}, true
+}
+
+// SkillsObservedEvidence is the fourth sanctioned EvidenceRef constructor
+// (spec 077 FR-006, research R8): the stage-3 gate's long-deferred
+// "player-granted tool's contributing act" evidence. It reads the
+// coordinates the metatron.skills_observed reducer arm persists. Custom is
+// true BY CONSTRUCTION — the honest twin of the charter's derived-inverse
+// rule: no game-shipped skill files exist and stages 1–2 lock binding out
+// entirely (stageSkills), so a bound, observed skill set is player-authored
+// by structural necessity, not by assertion. ok=false when no observation is
+// on state (Seq 0) — the evidence entry is honestly absent.
+func SkillsObservedEvidence(s *State) (EvidenceRef, bool) {
+	if s.SkillsObservedSeq == 0 {
+		return EvidenceRef{}, false
+	}
+	return EvidenceRef{Type: "metatron.skills_observed", Seq: s.SkillsObservedSeq,
+		Tick: s.SkillsObservedTick, Custom: true}, true
+}
+
 // ExerciseDefinition is a seeded scenario exercise — CONTENT, not machinery
 // (spec 046 US4, contracts/exercises.md): stage, seed, framing, an
 // event-derived rubric, the pass signal shape, and the chronicle framing for

@@ -250,6 +250,11 @@ var injectSocialWhitelist = map[string]bool{
 	// morgue aligns deaths against. The dry-run's reducer arm enforces a
 	// non-empty fingerprint before anything lands.
 	"metatron.charter_observed": true,
+	// Skills observation (spec 077 FR-006): the charter observation's twin —
+	// the bound skill-file set a turn ran under, emitted on fingerprint
+	// change by the same pipeline. The dry-run's reducer arm enforces a
+	// non-empty fingerprint and a non-empty name list before anything lands.
+	"metatron.skills_observed": true,
 	// Morgue epilogues (spec 044 US2): the narrator's recorded mourning
 	// prose, landed after a death / the run end. Bounded prose ring only —
 	// never simulation state — so it also survives the ended-world narrowing

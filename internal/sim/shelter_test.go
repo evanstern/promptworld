@@ -49,8 +49,8 @@ func TestShelterPlankCost(t *testing.T) {
 // restRegenSleep (4/min) sleeping rough — and shelters are communal (no
 // ownership check).
 func TestShelterRestBonus(t *testing.T) {
-	rough := decayNeeds(Needs{Health: 1000, Food: 500, Rest: 500, Warmth: 500, Morale: 500}, true, false, false, false)
-	sheltered := decayNeeds(Needs{Health: 1000, Food: 500, Rest: 500, Warmth: 500, Morale: 500}, true, false, false, true)
+	rough := decayNeeds(Needs{Health: 1000, Food: 500, Rest: 500, Warmth: 500, Morale: 500}, true, false, false, false, false)
+	sheltered := decayNeeds(Needs{Health: 1000, Food: 500, Rest: 500, Warmth: 500, Morale: 500}, true, false, false, true, false)
 	if rough.Rest-500 != restRegenSleep {
 		t.Errorf("rough-sleep rest gain = %d, want %d", rough.Rest-500, restRegenSleep)
 	}

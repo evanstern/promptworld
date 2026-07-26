@@ -1,6 +1,7 @@
 package sim
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/evanstern/promptworld/internal/clock"
@@ -19,15 +20,30 @@ import (
 // because nothing lives in memory that isn't derivable from (manifest,
 // recorded events, tick).
 
-// Incident kinds — the closed v1 vocabulary (FR-002). Growing it means a new
-// constant here, a compile arm in compileIncident, and an emission arm in
-// scenarioIncidentEvents; nothing outside this file may assume "schedule"
-// specifically (contract §6).
+// Incident kinds — the closed vocabulary (spec 054 FR-002, grown by spec 077
+// FR-009). Growing it means a new constant here, a compile arm in
+// compileIncident, and an emission arm in scenarioIncidentEvents; nothing
+// outside this file may assume "schedule" specifically (contract §6).
 const (
 	// IncidentGruEmerges lands gru.emerged at an authored night-time tick and
 	// position, preempting that night's random emergence roll (research R3 —
 	// never two spawn mechanisms in one night).
 	IncidentGruEmerges = "gru_emerges"
+	// IncidentColdSnap lands sim.cold_snap: a bounded window of harsher night
+	// cold (Hours long, from the authored tick), read by the needs heartbeat
+	// through the same warmth arithmetic ambient night cold uses (spec 077
+	// FR-010). One event, one latch (State.ColdSnapUntil), read-time expiry.
+	IncidentColdSnap = "cold_snap"
+	// IncidentForageBlight lands sim.forage_blighted: a patch of forage
+	// stricken barren until a far regrow deadline, riding the EXISTING
+	// harvested-regrow overlay (spec 077 FR-011) — a blighted tile IS a
+	// harvested tile with a long regrow, so perception, mental-map
+	// correction, and regrowth all work unchanged.
+	IncidentForageBlight = "forage_blight"
+	// IncidentStrangerArrives lands stranger.arrived: a trickster entity that
+	// slips in at night, takes from unattended stores, and is gone by dawn
+	// (spec 077 FR-012, stranger.go — the gru's entity precedent).
+	IncidentStrangerArrives = "stranger_arrives"
 )
 
 // Incident-visibility vocabulary (reorientation D4): how much of the incident
@@ -59,19 +75,29 @@ func IncidentVisibilityFor(def ExerciseDefinition, stage string) string {
 // compiled-in CONTENT, like RubricTerms, never player data (data-model.md).
 // Day/Time are game time ("HH:MM"), compiled to an absolute tick at arm time
 // via the existing clock arithmetic; X/Y are kind-specific parameters (the
-// authored position for gru_emerges).
+// authored position for gru_emerges / stranger_arrives, the patch center for
+// forage_blight). Radius/Hours (spec 077, data-model §1) are additive
+// kind-specific parameters: the blight patch's Manhattan radius and the cold
+// snap's duration in game hours — zero on every other kind.
 type IncidentScheduleEntry struct {
-	Kind string
-	Day  int64
-	Time string
-	X, Y int
+	Kind   string
+	Day    int64
+	Time   string
+	X, Y   int
+	Radius int // forage_blight only: patch radius (Manhattan), [1,8]
+	Hours  int // cold_snap only: duration in game hours, [1,24]
 }
 
 // incident is one due emission an incident source proposes for a tick.
+// Radius/Hours ride along from the compiled entry so the emission arm can
+// derive the payload from the AUTHORED coordinates (a cold snap's until_tick
+// is authored-tick + Hours, snap-invariant).
 type incident struct {
-	Kind string
-	Tick int64 // the authored absolute tick (may be < nextTick after a snap)
-	X, Y int
+	Kind   string
+	Tick   int64 // the authored absolute tick (may be < nextTick after a snap)
+	X, Y   int
+	Radius int
+	Hours  int
 }
 
 // incidentSource is THE director seam (spec 054 FR-002, contract §6): the
@@ -126,6 +152,25 @@ func (src *scheduleSource) incidentsDue(s *State, nextTick int64) []incident {
 			if s.Gru != nil {
 				continue
 			}
+		case IncidentColdSnap:
+			// State latch (spec 077): an active snap means this entry already
+			// fired (its windowEnd IS the snap's own until_tick) or the night
+			// is otherwise frigid — either way, not due. The recorded
+			// sim.cold_snap is the latch, observed through ColdSnapUntil.
+			if coldSnapActive(s, nextTick) {
+				continue
+			}
+		case IncidentStrangerArrives:
+			// State latch: a stranger already abroad holds the night until
+			// the dawn that closes this window — the gru latch's exact shape.
+			if s.Stranger != nil {
+				continue
+			}
+			// IncidentForageBlight carries no state latch of its own: the
+			// firing appends Harvest overlays over every blightable tile, so
+			// blightableTiles goes empty the moment it fires — the emission
+			// arm's precondition (US2 AS-2) is the latch, observed through
+			// the same overlay villagers experience.
 		}
 		due = append(due, c.incident)
 	}
@@ -173,10 +218,12 @@ func (s *State) ScenarioExerciseID() string {
 
 // compileIncident turns one authored entry into absolute-tick coordinates
 // via the existing clock arithmetic (data-model.md "compiled to absolute
-// ticks at boot").
+// ticks at boot"), with per-kind parameter validation (spec 077 FR-009,
+// data-model §1) — a compile error is a content bug,
+// TestScenarioSchedulesCompile pins the whole catalog.
 func compileIncident(e IncidentScheduleEntry) (compiledIncident, error) {
 	switch e.Kind {
-	case IncidentGruEmerges:
+	case IncidentGruEmerges, IncidentColdSnap, IncidentForageBlight, IncidentStrangerArrives:
 	default:
 		return compiledIncident{}, fmt.Errorf("unknown incident kind %q", e.Kind)
 	}
@@ -191,9 +238,24 @@ func compileIncident(e IncidentScheduleEntry) (compiledIncident, error) {
 	if tick < 0 {
 		return compiledIncident{}, fmt.Errorf("time %q on day %d precedes genesis", e.Time, e.Day)
 	}
+	// Per-kind window (data-model §1): a night-shaped incident lapses at the
+	// dawn closing its authored night; a cold snap's window IS the snap — it
+	// ends at its own until_tick, so a late firing still expires on schedule.
+	windowEnd := nextDawnTick(tick)
+	switch e.Kind {
+	case IncidentColdSnap:
+		if e.Hours < 1 || e.Hours > 24 {
+			return compiledIncident{}, fmt.Errorf("cold_snap hours %d outside [1,24]", e.Hours)
+		}
+		windowEnd = tick + int64(e.Hours)*3600
+	case IncidentForageBlight:
+		if e.Radius < 1 || e.Radius > 8 {
+			return compiledIncident{}, fmt.Errorf("forage_blight radius %d outside [1,8]", e.Radius)
+		}
+	}
 	return compiledIncident{
-		incident:  incident{Kind: e.Kind, Tick: tick, X: e.X, Y: e.Y},
-		windowEnd: nextDawnTick(tick),
+		incident:  incident{Kind: e.Kind, Tick: tick, X: e.X, Y: e.Y, Radius: e.Radius, Hours: e.Hours},
+		windowEnd: windowEnd,
 	}, nil
 }
 
@@ -213,6 +275,21 @@ func nextDawnTick(t int64) int64 {
 // the dice, so exactly one spawn mechanism exists per night. Skipping the
 // roll consumes no RNG draw (rngAt is coordinate-seeded, no stream), so the
 // preemption is deterministic by construction: the schedule is config.
+// THE TASK-28 AMBIENT/PREEMPTION SEAM (spec 077 FR-014, recorded here so the
+// seam is a decision, not a drift): gru_emerges is today the only incident
+// kind with an ambient dice path, and gruScheduledTonight below is its
+// preemption twin — on a scheduled night the schedule wins and the roll is
+// skipped, so exactly one spawn mechanism exists per night. The three
+// spec-077 kinds (cold_snap / forage_blight / stranger_arrives) deliberately
+// ship with NO ambient dice path and therefore NO preemption twin yet: their
+// emission-time preconditions are the named predicates beside their arms
+// (coldSnapActive, blightableTiles, strangerEntryValid), written to be called
+// VERBATIM by a future ambient emitter. TASK-28 (reorient move #11,
+// "dual-duty drama supply") adds the per-kind rolls AND their
+// gruScheduledTonight-style twins as one move — until then, an authored
+// schedule is these kinds' only producer, and their recorded payloads carry
+// no authored/ambient marker (spec 077 FR-013), so nothing about the
+// artifacts changes when the dice arrive.
 func gruScheduledTonight(s *State, nightfallTick int64) bool {
 	if s.scenario == nil {
 		return false
@@ -252,9 +329,156 @@ func scenarioIncidentEvents(s *State, m *worldmap.Map, nextTick int64) []store.E
 			}
 			events = append(events, store.Event{Tick: nextTick, Type: "gru.emerged",
 				Payload: mustPayload(GruEmergedPayload{Night: gruNightIndex(nextTick), X: inc.X, Y: inc.Y})})
+		case IncidentColdSnap:
+			// Precondition (spec 077 FR-010): no snap already active — the
+			// named predicate a future ambient emitter calls verbatim
+			// (TASK-28 seam). until_tick derives from the AUTHORED
+			// coordinates (tick + hours), so a late firing still ends on
+			// the authored schedule and the payload carries no marker of who
+			// proposed it.
+			if coldSnapActive(s, nextTick) {
+				continue
+			}
+			events = append(events, store.Event{Tick: nextTick, Type: "sim.cold_snap",
+				Payload: mustPayload(ColdSnapPayload{Night: gruNightIndex(nextTick),
+					UntilTick: inc.Tick + int64(inc.Hours)*3600})})
+		case IncidentForageBlight:
+			// Precondition (spec 077 FR-011): at least one unharvested forage
+			// tile in the patch — an exhausted patch skips silently, never
+			// retried (US2 AS-2; the schedule proposes, the reducer-valid
+			// world disposes). One merged event per firing (the
+			// sim.food_rotted one-event-per-sweep precedent), tiles in
+			// blightableTiles' deterministic row-major walk order.
+			tiles := blightableTiles(m, s, inc.X, inc.Y, inc.Radius)
+			if len(tiles) == 0 {
+				continue
+			}
+			events = append(events, store.Event{Tick: nextTick, Type: "sim.forage_blighted",
+				Payload: mustPayload(ForageBlightedPayload{X: inc.X, Y: inc.Y, Radius: inc.Radius,
+					Tiles: tiles, RegrowTick: nextTick + blightRegrowTicks})})
+		case IncidentStrangerArrives:
+			// Preconditions (spec 077 FR-012): no stranger abroad (the
+			// source's latch — belt here, the gru shape) and a valid entry
+			// tile (passable, unprotected — strangerEntryValid, shared with
+			// the gru's own spawn class).
+			if s.Stranger != nil || !strangerEntryValid(s, m, inc.X, inc.Y) {
+				continue
+			}
+			events = append(events, store.Event{Tick: nextTick, Type: "stranger.arrived",
+				Payload: mustPayload(StrangerArrivedPayload{Night: gruNightIndex(nextTick), X: inc.X, Y: inc.Y})})
 		}
 	}
 	return events
+}
+
+// --- spec 077 incident preconditions — named, TASK-28-reusable predicates ---
+
+// coldSnapActive reports whether a cold snap holds at tick — the read-time
+// expiry (research R2): no end event exists, ColdSnapUntil is the whole truth.
+// The needs heartbeat (executor.go) and the cold_snap emission precondition
+// both read this one predicate.
+func coldSnapActive(s *State, tick int64) bool {
+	return tick < s.ColdSnapUntil
+}
+
+// blightRegrowTicks is the blight's far regrow deadline — CONTENT, like the
+// rubric thresholds: four game days after the firing, well past every
+// blight-shaped exercise boundary, against ~2 game hours for ordinary picking
+// (forageRegrowSec). The stricken tiles ride the existing Harvest overlay, so
+// sim.forage_regrown eventually restores them exactly like heavy picking.
+const blightRegrowTicks = 4 * 24 * 3600
+
+// blightableTiles enumerates the unharvested forage tiles within Manhattan
+// radius r of (x,y), in deterministic row-major order (y outer, x inner — the
+// fixed-neighbor-order house style). Non-empty is the forage_blight emission
+// precondition; the firing itself appends a Harvest overlay per tile, so the
+// predicate goes empty the moment it fires (the incident's own latch).
+func blightableTiles(m *worldmap.Map, s *State, x, y, r int) []Point {
+	var tiles []Point
+	for ty := y - r; ty <= y+r; ty++ {
+		for tx := x - r; tx <= x+r; tx++ {
+			if abs(tx-x)+abs(ty-y) > r || !m.InBounds(tx, ty) {
+				continue
+			}
+			// Unharvested forage only: effectiveKind already folds the
+			// Harvest overlay (a harvested tile reads Grass).
+			if effectiveKind(m, s, tx, ty) == worldmap.Forage {
+				tiles = append(tiles, Point{X: tx, Y: ty})
+			}
+		}
+	}
+	return tiles
+}
+
+// strangerEntryValid reports whether (x,y) can admit a stranger: passable and
+// unprotected — the same tile class the gru's spawn path draws from
+// (gruProtected shared, not duplicated), so an authored entry is
+// indistinguishable in kind from any future ambient one.
+func strangerEntryValid(s *State, m *worldmap.Map, x, y int) bool {
+	return passable(m, s, x, y) && !gruProtected(s, x, y)
+}
+
+// --- spec 077 incident payloads + reducer arms (sim.* kinds) ---
+
+type (
+	// ColdSnapPayload — sim.cold_snap: a bounded window of harsher night
+	// cold. until_tick is absolute (authored tick + hours), the reducer's
+	// whole latch; no end event exists (read-time expiry, research R2). NO
+	// authored/scenario marker, by contract (spec 077 FR-013).
+	ColdSnapPayload struct {
+		Night     int64 `json:"night"`
+		UntilTick int64 `json:"until_tick"`
+	}
+	// ForageBlightedPayload — sim.forage_blighted: one merged event per
+	// firing; Tiles is the stricken list in deterministic row-major patch
+	// order, RegrowTick the far deadline every tile's Harvest overlay gets.
+	ForageBlightedPayload struct {
+		X          int     `json:"x"`
+		Y          int     `json:"y"`
+		Radius     int     `json:"radius"`
+		Tiles      []Point `json:"tiles"`
+		RegrowTick int64   `json:"regrow_tick"`
+	}
+)
+
+// applyIncident is the reducer arm for the spec-077 sim.* incident kinds.
+// Reducer-total and idempotent on replay: a blight re-apply skips tiles
+// already carrying a Harvest overlay, so folding a recorded log over a
+// snapshot that already contains the effect cannot double-mark.
+func (s *State) applyIncident(e store.Event) error {
+	switch e.Type {
+	case "sim.cold_snap":
+		var p ColdSnapPayload
+		if err := json.Unmarshal(e.Payload, &p); err != nil {
+			return fmt.Errorf("apply %s: %w", e.Type, err)
+		}
+		if p.UntilTick <= 0 {
+			return fmt.Errorf("apply %s: until_tick %d not positive", e.Type, p.UntilTick)
+		}
+		s.ColdSnapUntil = p.UntilTick
+	case "sim.forage_blighted":
+		var p ForageBlightedPayload
+		if err := json.Unmarshal(e.Payload, &p); err != nil {
+			return fmt.Errorf("apply %s: %w", e.Type, err)
+		}
+		if len(p.Tiles) == 0 {
+			return fmt.Errorf("apply %s: no tiles", e.Type)
+		}
+		for _, t := range p.Tiles {
+			already := false
+			for _, h := range s.Harvested {
+				if h.X == t.X && h.Y == t.Y {
+					already = true
+					break
+				}
+			}
+			if already {
+				continue // idempotent re-apply: the overlay is already there
+			}
+			s.Harvested = append(s.Harvested, Harvest{X: t.X, Y: t.Y, Regrow: p.RegrowTick})
+		}
+	}
+	return nil
 }
 
 // RubricTerm is one evaluated rubric row: the plain-language term, the

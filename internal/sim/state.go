@@ -62,6 +62,21 @@ type State struct {
 	// The gru (TASK-10) — nil while it is not abroad; omitempty keeps
 	// pre-TASK-10 snapshots valid.
 	Gru *Gru `json:"gru,omitempty"`
+	// Cold snap (spec 077 US2): the tick a scheduled cold snap holds until,
+	// latched by the sim.cold_snap reducer arm. Expiry is a read-time
+	// comparison (tick < ColdSnapUntil — the EffectiveConfidence read-time-
+	// decay precedent); no end event exists. Zero = no snap ever landed;
+	// omitempty keeps every pre-077 snapshot byte-identical.
+	ColdSnapUntil int64 `json:"cold_snap_until,omitempty"`
+	// The stranger (spec 077 US2) — a trickster entity abroad at night, the
+	// gru's entity-not-phenomenon precedent (stranger.go). nil while not
+	// abroad; omitempty keeps pre-077 snapshots byte-identical.
+	Stranger *Stranger `json:"stranger,omitempty"`
+	// StrangerTakes is the bounded take ledger (retain 32, the
+	// guardianOrderRetain precedent): one record per stranger.took, appended
+	// in event order — the durable trace zero-wanted rubric terms ("nothing
+	// is taken") count. omitempty — pre-077 snapshots stay byte-identical.
+	StrangerTakes []StrangerTake `json:"stranger_takes,omitempty"`
 	// Conversation records (TASK-22) — bounded ring, event-sourced.
 	Conversations []ConvoRecord `json:"conversations,omitempty"`
 	// Pair last-exchange ledger (spec 061, TASK-109) — the event-sourced,
@@ -128,6 +143,27 @@ type State struct {
 	// the next charter revision is observed — honest degradation, never a
 	// false ✓. omitempty — existing snapshots stay byte-identical.
 	CharterCustom bool `json:"charter_custom,omitempty"`
+	// Charter-observation coordinates (spec 077 FR-005): the (seq, tick) of
+	// the most recent metatron.charter_observed event, stamped by the same
+	// reducer arm from the event envelope (the GuardianOrder.PlacedSeq
+	// precedent) — the state-derivable re-location the-law's pass evidence
+	// needs (CharterEvidenceFromState, curriculum.go), removing the spec-072
+	// FR-009 blocker. Zero = no observation recorded under this binary yet
+	// (a pre-077 snapshot's honest degradation: the evidence entry is
+	// omitted and the pass waits for the next observation to stamp them).
+	// omitempty — pre-077 snapshots stay byte-identical.
+	CharterObservedSeq  int64 `json:"charter_observed_seq,omitempty"`
+	CharterObservedTick int64 `json:"charter_observed_tick,omitempty"`
+	// Skills observation (spec 077 FR-006): the bound skill-file set the
+	// guardian's most recent turn ran under — fingerprint plus the same
+	// envelope coordinates the charter observation persists, set ONLY by the
+	// metatron.skills_observed arm. Skill files bind only from stage-3 and
+	// only players author them, so SkillsObservedEvidence derives
+	// Custom: true by construction — the stage-3→4 gate's evidence design.
+	// Zero values = never observed; omitempty keeps snapshots byte-identical.
+	SkillsFingerprint  string `json:"skills_fingerprint,omitempty"`
+	SkillsObservedSeq  int64  `json:"skills_observed_seq,omitempty"`
+	SkillsObservedTick int64  `json:"skills_observed_tick,omitempty"`
 	// Morgue epilogues (spec 044 US2, FR-010): the narrator's recorded
 	// mourning prose per death (or the run end, agent -1), bounded ring on
 	// the chronicle pattern so the scribe replica and attaching clients can
@@ -1815,6 +1851,12 @@ func (s *State) Apply(e store.Event) error {
 	case "gru.emerged", "gru.moved", "gru.sighted", "gru.attacked", "gru.withdrew":
 		return s.applyGru(e)
 
+	case "sim.cold_snap", "sim.forage_blighted":
+		return s.applyIncident(e)
+
+	case "stranger.arrived", "stranger.moved", "stranger.took", "stranger.departed":
+		return s.applyStranger(e)
+
 	case "chronicle.entry":
 		return s.applyChronicle(e)
 
@@ -1822,7 +1864,7 @@ func (s *State) Apply(e store.Event) error {
 		"metatron.place_revealed",
 		"metatron.order_placed", "metatron.order_triggered",
 		"metatron.order_cancelled", "metatron.order_expired",
-		"metatron.charter_observed":
+		"metatron.charter_observed", "metatron.skills_observed":
 		return s.applyGuardian(e)
 
 	case "morgue.epilogue":

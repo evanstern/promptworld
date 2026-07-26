@@ -134,7 +134,10 @@ type Guardian struct {
 	// 044 US2): the turn worker's charter observation (observeCharter) reads
 	// them under stateMu to decide whether a metatron.charter_observed emission
 	// is due, without racing the replica the absorb goroutine owns.
+	// skillsFP is the same mirror for State.SkillsFingerprint (spec 077 —
+	// observeSkills, the charter observation's twin).
 	charterFP string
+	skillsFP  string
 	ended     bool
 
 	// Standing-order mirror (spec 029 US2/US3, data-model §5): the replica's
@@ -376,6 +379,11 @@ func (mt *Guardian) mirrorState() {
 	// the optimistic set happens, so the replica always catches up.
 	if fp := mt.replica.CharterFingerprint; fp != "" {
 		mt.charterFP = fp
+	}
+	// The skills mirror moves forward the same way (spec 077): a recorded
+	// observation is the only thing that can advance it.
+	if fp := mt.replica.SkillsFingerprint; fp != "" {
+		mt.skillsFP = fp
 	}
 	mt.ended = mt.replica.Ended
 	if len(mt.agentXY) != len(mt.replica.Agents) {

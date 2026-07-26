@@ -217,6 +217,62 @@ func (mt *Guardian) observeCharter(text string) {
 	mt.stateMu.Unlock()
 }
 
+// skillsFingerprint is the bound skill set's revision identity (spec 077
+// FR-006, the charterFingerprint shape): a short content hash (12 hex chars
+// of SHA-256) over EXACTLY the composed set — names and post-cap texts in
+// composition order — so the recorded observation can never name a skill set
+// the guardian never ran under. Name and text are NUL-delimited so no
+// rename/edit pair can collide with a different set.
+func skillsFingerprint(skills []skillFile) string {
+	h := sha256.New()
+	for _, sf := range skills {
+		h.Write([]byte(sf.name))
+		h.Write([]byte{0})
+		h.Write([]byte(sf.text))
+		h.Write([]byte{0})
+	}
+	return hex.EncodeToString(h.Sum(nil)[:6])
+}
+
+// observeSkills lands the skills observation (spec 077 FR-006) — the
+// observeCharter twin, stamped at the same point of every turn: when the
+// BOUND skill set's fingerprint differs from the last recorded one
+// (State.SkillsFingerprint, via the absorb-side mirror), the turn emits
+// metatron.skills_observed through the same InjectSocial door. An EMPTY
+// bound set never emits — absence is not an observation, and stages 1–2
+// (stageSkills refuses to bind there) are structurally silent, which is what
+// makes SkillsObservedEvidence's Custom-by-construction claim honest: a
+// recorded observation always names a player-authored, stage-3+ set. Ended
+// worlds skip, exactly like the charter observation.
+func (mt *Guardian) observeSkills(skills []skillFile) {
+	if len(skills) == 0 {
+		return
+	}
+	fp := skillsFingerprint(skills)
+	mt.stateMu.Lock()
+	known, ended := mt.skillsFP, mt.ended
+	mt.stateMu.Unlock()
+	if ended || fp == known {
+		return
+	}
+	names := make([]string, len(skills))
+	for i, sf := range skills {
+		names[i] = sf.name
+	}
+	batch := []store.Event{{Type: "metatron.skills_observed", Payload: mustJSON(sim.SkillsObservedPayload{
+		Fingerprint: fp, Names: names})}}
+	if err := mt.social.InjectSocial(batch); err != nil {
+		log.Printf("guardian: skills observation rejected at the door: %v", err)
+		return
+	}
+	// Optimistic mirror update — the observeCharter idiom: a back-to-back
+	// turn cannot double-emit before the absorb goroutine reflects the
+	// landed event; mirrorState only ever moves the mirror forward.
+	mt.stateMu.Lock()
+	mt.skillsFP = fp
+	mt.stateMu.Unlock()
+}
+
 // maxSkillFiles is the number of skill files composed into a single turn, the
 // file-count cap half of the skills surface (per-file size reuses the charter's
 // 4,000-char cap, persona.CharterMaxChars). Surplus files (in sort order) are
