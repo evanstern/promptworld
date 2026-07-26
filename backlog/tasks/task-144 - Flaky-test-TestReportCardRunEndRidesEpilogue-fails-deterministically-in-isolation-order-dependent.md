@@ -18,6 +18,8 @@ ordinal: 114000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 CORRECTED DIAGNOSIS (2026-07-26, planning-tier investigation; supersedes the original framing): NOT order-dependent shared state — no test seeds state for another. Root cause is a goroutine-shutdown race in the test fixture: guardian.New (internal/guardian/guardian.go:262) spawns reportCardWorker; newTestGuardian (guardian_test.go:141) calls Close() which is just close(mt.done) with NO JOIN (guardian.go:274). If the worker hasn't parked in its select (reportcard.go:166-175) before the test enqueues into cardQ, its first select sees BOTH cases ready and Go picks uniformly at random — ~50% chance it steals the job, leaving drainCard empty → 'no card job queued'. Probabilistic (~5%/run), NOT deterministic: -count=1 passes 10/10; -count=5 fails ~iteration 3; -count=3 full-package fails SIBLING tests (TestReportCardProducerStoresValidatedNote, TestReportCardRejectsUnrecordedCitation). Smoking gun: produceCard log lines emitted after the test's t.Fatal — only the worker consumes cardQ besides the test. digestWorker (digest.go:186) and triggerWorker (orders.go:453) share the identical select shape and latent exposure. Fix shape: make Close a join — sync.WaitGroup around the four goroutines started in New, Close = close(done) then wg.Wait(). Test-hygiene class, not a live production bug (production never Closes then drives queues), but the fix lands in production shutdown code. Caveat: a job enqueued BEFORE Close may still be randomly processed during shutdown — pre-existing, out of scope.
+
+Spec: specs/070-guardian-test-order
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
