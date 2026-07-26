@@ -8,37 +8,34 @@ sources:
   - internal/sim/miracles.go
   - internal/sim/morgue.go
   - internal/sim/curriculum.go
-verified_against: 8495b34ffb9ee5dc02e224025f0a23313bbab900
+verified_against: 510a3c3133e120d84cd50525dbc4ee0d3ec01cdc
 ---
 
 # Sim state: world & governance dispatch arms
 
 Split from [[sim-state-reducer]] (summary-style, corpus-spec v2): `State`'s
-unexported, never-serialized map/scenario attachment fields, and the family
-of `Apply` arms that dispatch into sibling files or apply world-scale,
-validate-not-clamp events — mental-map knowledge growth, the gru/
-governance/miracle/guardian-order dispatchers, the curriculum ladder's
-unlock events, `sim.tuning_applied`, and `world.migrated`'s wholesale state
+unexported, never-serialized map/scenario fields, plus the `Apply` arms
+that dispatch into sibling files or apply world-scale, validate-not-clamp
+events — mental-map knowledge growth through `world.migrated`'s wholesale
 replace.
 
 `State` also carries an unexported `m *worldmap.Map` (spec 016): the static
-generated map, attached at construction and never serialized (canonical state
-bytes are unchanged by it). `SetMap` attaches it to a `State` built outside
-`NewState` — the loop's dry-run probe and any replica reconstructed by
-unmarshalling into a bare `State` have none until called — so miracle reducer
-arms can consult the terrain vocabulary (`passable`/`buildSite`/`effectiveKind`)
-identically live, in the dry-run, and in replay. Since spec 054, `State` also
-carries a second field of the same class: an unexported, never-serialized
-`scenario *armedScenario` (the exercise definition + compiled incident
+generated map, attached at construction, never serialized (canonical state
+bytes unchanged). `SetMap` attaches it to a `State` built outside
+`NewState` — the loop's dry-run probe and any replica unmarshalled into a
+bare `State` have none until called — so miracle reducer
+arms consult the terrain vocabulary (`passable`/`buildSite`/`effectiveKind`)
+identically live, in dry-run, and in replay. Spec 054 added a second such
+field: an unexported, never-serialized
+`scenario *armedScenario` (exercise definition + compiled incident
 source), attached once at daemon boot via `ArmScenario` — a world with no
 scenario block (nil here) is byte-identical to pre-054 on every path
 ([[scenario-machinery]]). `world.migrated`'s wholesale
-`*s = p.State` replacement preserves the receiver's existing map AND armed
-scenario across the
-swap (the unmarshalled payload state carries neither of its own). `State.MapDims()`
+`*s = p.State` replacement preserves the receiver's map AND armed
+scenario (the unmarshalled payload state carries neither). `State.MapDims()`
 (spec 041) exposes the attached map's `(W, H)` — 0,0 when unattached — so the
 mind's prompt renderer ([[agent-mind]]) can size a mental-map bitmap read
-without the `State` ever serializing the map itself.
+without `State` ever serializing the map.
 
 [[mental-maps]]'s two knowledge-growth arms mutate `Agent.Map` directly:
 `agent.saw` upserts the perception sweep's fully-baked facts verbatim
@@ -46,9 +43,9 @@ without the `State` ever serializing the map itself.
 (`Map.removeFact`) — both no-op on a map-less agent (a pre-041 world mid-
 migration), keeping the reducer total; `social.place_told` (the talk
 sidecar's directions exchange) and `metatron.place_revealed` (a vision's
-optional place grant) route through the existing `applySocial`/`applyGuardian`
+optional place grant) route through the `applySocial`/`applyGuardian`
 dispatchers below, upserting into the RECEIVER's map only where the fact is
-absent or the agent's own knowledge is staler. Beside these, several
+absent or its own knowledge staler. Several
 EXISTING arms gained silent DERIVED bookkeeping with no new event: `agent.moved`,
 `agent.woke`, and a `villager`-class `metatron.entity_moved` each call
 `markExplored`/`notePresence` — a mover's surroundings become explored
@@ -74,51 +71,51 @@ uniqueness, origin, non-empty `event_types`, a 1..7-game-day ttl, valid agent
 index, condition/action length caps, and — player-origin only — the 3-order
 active cap) then prunes to the active set plus the most recent 32 non-active;
 `metatron.order_triggered`/`metatron.order_cancelled`/`metatron.order_expired`
-each transition one order from active to a terminal status via the shared
-`transitionGuardianOrder`, rejecting an unknown id or one not currently active
+each transition one order from active to a terminal status via shared
+`transitionGuardianOrder`, rejecting an unknown id or one not active
 ([[guardian-orders]]); since spec 044 (US2) `applyGuardian` also carries
-`metatron.charter_observed`, which validates a non-empty fingerprint (so the
+`metatron.charter_observed`, validating a non-empty fingerprint (so the
 `InjectSocial` dry-run refuses a blank one at the door) then sets
 `State.CharterFingerprint` — state keeps only the CURRENT fingerprint, the
 full revision timeline being the log's observation sequence the [[morgue]]
 aligns each death against. `morgue.epilogue` dispatches to
-`applyMorgueEpilogue` in `morgue.go` (spec 044 US2): it validates the agent
-index (`-1` = the run-end epilogue) and non-empty text, then appends the
+`applyMorgueEpilogue` in `morgue.go` (spec 044 US2): validate the agent
+index (`-1` = run-end epilogue) and non-empty text, then append the
 bounded `State.MorgueEpilogues` ring (`morgueEpilogueCap` 32).
 `guardian.report_card` (spec 063, [[grounded-feedback]]) dispatches to
-`applyReportCard` in `reportcard.go`: validate-not-clamp like the arms
-above — non-empty fingerprint, non-empty note capped at 1200 runes, and
+`applyReportCard` in `reportcard.go`: validate-not-clamp —
+non-empty fingerprint, non-empty note capped at 1200 runes, and
 every cited seq strictly less than the event's own seq (a card can never
 cite the future) — then keeps only the LATEST card on
 `State.GuardianReportCard`; the log alone carries every prior card.
 The `curriculum.*` pair (spec 046, [[curriculum-ladder]]) dispatches to
 `applyCurriculum` in `curriculum.go` — validate-not-clamp, the guardian arm's
-contract, since both types are the executor emission class (pure functions of
-recorded state, so a landed event always re-applies cleanly in replay while a
+contract, both types being the executor emission class (pure functions of
+recorded state: a landed event always re-applies cleanly in replay, a
 malformed fixture is rejected at the door): `curriculum.exercise_passed`
 checks a non-empty exercise id and the closed stage vocabulary
 (`validLadderStage`, `stage-1`..`stage-4` — the reducer-side twin of
 `world.ValidStage`, kept local so the deterministic core never imports the
 save-directory package) then appends the bounded pass ring;
-`curriculum.stage_unlocked` additionally rejects `stage-1` (the ladder's
+`curriculum.stage_unlocked` also rejects `stage-1` (the ladder's
 unearned floor — only stages 2..4 ever unlock) and any stage already latched
-(once per world per stage), and deliberately does NOT cross-check
+(once per world per stage), and does NOT cross-check
 `CurriculumPasses` — that ring is pruned past 32, so the gate-conjunct
 evaluation (`EvaluateUnlock`) happens at emission time, never on re-apply.
-`sim.tuning_applied` (spec 048, [[world-tuning]]) is a third arm in this
+`sim.tuning_applied` (spec 048, [[world-tuning]]) joins this
 validate-not-clamp family: the payload is always the FULL effective five-dial
 set (never a delta, never re-clamped here — clamping is `ParseTuning`'s job
-on the daemon side), so the arm is a pure, idempotent `s.Tuning = &TuningState{...}`
+daemon-side), so the arm is a pure, idempotent `s.Tuning = &TuningState{...}`
 assignment — replay re-applies it identically and the daemon boot seed never
 double-counts. `State.Tuning *TuningState` (`omitempty`, no `format_version`
 bump) is nil until the first such event; nil reads as the default dial set
 through the nil-safe accessors (`RefuelDyingBelow()`, `FireBurnPerWood()`,
 `GruEmergePerMille()`, `PlannerCadence()`, `EncounterCooldown()`) every other
-promoted call site (`agents.go`'s fire-fuel arm (see [[sim-state-apply-agents]]), [[reflex-policy]],
+promoted call site (`agents.go`'s fire-fuel arm ([[sim-state-apply-agents]]), [[reflex-policy]],
 [[gru]], [[agent-mind]]'s cadence/encounter scheduling) reads through instead
 of the retired raw constants.
-`world.migrated` (spec 012 US6) is the one case that does not incrementally mutate
-fields: after checking the payload's `State.Seed` matches (a mismatched payload
+`world.migrated` (spec 012 US6) is the one arm not mutating fields
+incrementally: after checking the payload's `State.Seed` matches (mismatch
 no-ops, keeping `Apply` total), it replaces `*s` wholesale with the embedded state —
 [[world-migration]] is the only producer. `world.forked` (spec 076,
 [[world-forking]]): an explicit no-op arm — provenance stays off `State`.
@@ -128,7 +125,7 @@ no-ops, keeping `Apply` total), it replaces `*s` wholesale with the embedded sta
 Back to [[sim-state-reducer]] and its other five split-off notes.
 [[mental-maps]] owns `Agent.Map`'s type and the perception sweep;
 [[gru]], [[governance]], [[guardian-miracles]], [[guardian-orders]], and
-[[grounded-feedback]] each own the deep mechanics their dispatch targets
+[[grounded-feedback]] own the deep mechanics their dispatch targets
 implement; [[morgue]] owns `applyMorgueEpilogue`; [[curriculum-ladder]]
 owns `EvaluateUnlock` and the unlock evidence constructor; [[world-tuning]]
 owns the manifest and dial defaults; [[scenario-machinery]] owns the

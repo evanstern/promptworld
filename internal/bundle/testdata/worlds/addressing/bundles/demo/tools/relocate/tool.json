@@ -1,0 +1,15 @@
+{
+  "name": "relocate",
+  "description": "Slide the structure on a tile to a new site",
+  "params": [
+    {"name": "x", "kind": "number", "required": true, "description": "source column"},
+    {"name": "y", "kind": "number", "required": true, "description": "source row"},
+    {"name": "to_x", "kind": "number", "required": true, "description": "destination column"},
+    {"name": "to_y", "kind": "number", "required": true, "description": "destination row"}
+  ],
+  "events": ["metatron.entity_moved"],
+  "charges": 1,
+  "effects": [
+    {"kind": "move_entity", "target": "structure@{args.x},{args.y}", "to_x": "{args.to_x}", "to_y": "{args.to_y}"}
+  ]
+}

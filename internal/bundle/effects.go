@@ -9,6 +9,7 @@ import (
 
 	"github.com/evanstern/promptworld/internal/sim"
 	"github.com/evanstern/promptworld/internal/store"
+	"github.com/evanstern/promptworld/internal/target"
 )
 
 // The effect vocabulary and its compiler (research.md R4, data-model.md). A
@@ -42,9 +43,11 @@ var effectEventType = map[string]string{
 
 // Effect is one resolved effect — script mode returns these directly; declarative
 // mode reaches them via template expansion. Only the fields its Kind uses are
-// meaningful. Target addresses a living villager by name (v1): move/remove/grant
-// resolve it to the villager's index and current tile, mirroring the villager
-// path in BuildMiracleBatch.
+// meaningful. Target is a spec-082 address (internal/target — the normative
+// grammar): a living villager by bare name or "villager:<name>" (v1 compat),
+// or "<class>@X,Y" for the classes each kind admits (the data-model.md §4 form
+// matrix); compileOne resolves it against CompileInput.State, mirroring the
+// class+tile path in BuildMiracleBatch.
 type Effect struct {
 	Kind       string
 	Target     string
@@ -368,25 +371,32 @@ func CompileEffects(effects []Effect, in CompileInput) ([]store.Event, error) {
 	return batch, nil
 }
 
-// compileOne compiles a single effect into its event(s).
+// compileOne compiles a single effect into its event(s). Target-bearing kinds
+// dispatch through the spec-082 grammar (target.Parse) and the data-model.md
+// §4 form matrix; every resolution reads CompileInput.State only (roster walk,
+// VillagerAt, the one-per-tile HasStructureAt/HasPileAt probes, MapDims), so
+// the compiled batch is a pure function of (effects, state). Compile-time
+// resolution exists for ERROR QUALITY — the InjectSocial dry run over the
+// unchanged reducer arms stays the semantic authority for presence, placement,
+// passability, charge, and the villager-removal doctrine.
 func compileOne(idx int, e Effect, in CompileInput) ([]store.Event, error) {
 	switch e.Kind {
 	case "move_entity":
-		_, x, y, err := villager(idx, e.Target, in)
+		a, err := moveTarget(idx, e.Target, in)
 		if err != nil {
 			return nil, err
 		}
 		return []store.Event{event("metatron.entity_moved", sim.EntityMovedPayload{
-			Class: "villager", X: x, Y: y, ToX: e.ToX, ToY: e.ToY, Gratis: false})}, nil
+			Class: string(a.Class), X: a.X, Y: a.Y, ToX: e.ToX, ToY: e.ToY, Gratis: false})}, nil
 	case "remove_entity":
-		_, x, y, err := villager(idx, e.Target, in)
+		a, err := removeTarget(idx, e.Target, in)
 		if err != nil {
 			return nil, err
 		}
 		return []store.Event{event("metatron.entity_removed", sim.EntityRemovedPayload{
-			Class: "villager", X: x, Y: y, Gratis: false})}, nil
+			Class: string(a.Class), X: a.X, Y: a.Y, Gratis: false})}, nil
 	case "grant_item":
-		i, _, _, err := villager(idx, e.Target, in)
+		i, err := grantTarget(idx, e.Target, in)
 		if err != nil {
 			return nil, err
 		}
@@ -433,6 +443,140 @@ func resolveAudience(idx int, spec recipientSpec, in CompileInput) ([]int, error
 		out = append(out, i)
 	}
 	return out, nil
+}
+
+// parseTarget parses one (already-substituted) target string through the
+// shared spec-082 grammar and applies the rules every effect kind shares:
+// parse failures (syntax/class/form — e.g. a malformed reserved-prefix string
+// or a diagonal line) and the bundle-wide reservation of rect/line forms for
+// designation consumers (TASK-157) become T5 ruleErrs naming the effect index,
+// the field, and the offending address. Substitution ran first (ExpandTemplates),
+// so a template that resolved to a malformed address errors on the substituted
+// text the author can see.
+func parseTarget(idx int, s string) (target.Address, error) {
+	a, err := target.Parse(s)
+	if err != nil {
+		return target.Address{}, ruleErr("T5", "effect %d field \"target\": %v", idx, err)
+	}
+	if a.Form == target.FormRect || a.Form == target.FormLine {
+		return target.Address{}, ruleErr("T5", "effect %d field \"target\": %q is a %s address — rect and line forms are reserved for designation consumers (TASK-157), not bundle effects", idx, s, a.Form)
+	}
+	return a, nil
+}
+
+// tileInBounds rejects a point address outside the state's map (the bounds
+// taxonomy class). The parser admits non-negative coordinates only, so the
+// upper edge is the whole check.
+func tileInBounds(idx int, s string, a target.Address, in CompileInput) error {
+	w, h := in.State.MapDims()
+	if a.X >= w || a.Y >= h {
+		return ruleErr("T5", "effect %d field \"target\": %q: (%d,%d) is outside the %d×%d world", idx, s, a.X, a.Y, w, h)
+	}
+	return nil
+}
+
+// villagerTile resolves a villager-designating address (bare name,
+// villager:<name>, or villager@X,Y) to the villager's index and source tile.
+// The tile form binds via sim.State.VillagerAt — first living by agent index,
+// the miracle door's own documented choice — so a tile-addressed bundle move
+// and a tile-addressed miracle move can never name different villagers.
+func villagerTile(idx int, s string, a target.Address, in CompileInput) (i, x, y int, err error) {
+	if a.Form == target.FormName {
+		return villager(idx, a.Name, in)
+	}
+	if err := tileInBounds(idx, s, a, in); err != nil {
+		return 0, 0, 0, err
+	}
+	i = in.State.VillagerAt(a.X, a.Y)
+	if i < 0 {
+		return 0, 0, 0, ruleErr("T5", "effect %d field \"target\": %q: no living villager at (%d,%d)", idx, s, a.X, a.Y)
+	}
+	return i, a.X, a.Y, nil
+}
+
+// moveTarget resolves a move_entity target per the form matrix: villager
+// (name or tile), structure@X,Y, pile@X,Y. Terrain is not movable (the
+// reducer has no arm for it) and rect/line are bundle-reserved (parseTarget).
+// The returned address carries the payload class and resolved source tile.
+func moveTarget(idx int, s string, in CompileInput) (target.Address, error) {
+	a, err := parseTarget(idx, s)
+	if err != nil {
+		return target.Address{}, err
+	}
+	switch a.Class {
+	case target.ClassVillager:
+		_, x, y, err := villagerTile(idx, s, a, in)
+		if err != nil {
+			return target.Address{}, err
+		}
+		a.X, a.Y = x, y
+		return a, nil
+	case target.ClassStructure:
+		if err := tileInBounds(idx, s, a, in); err != nil {
+			return target.Address{}, err
+		}
+		if !in.State.HasStructureAt(a.X, a.Y) {
+			return target.Address{}, ruleErr("T5", "effect %d field \"target\": %q: no structure at (%d,%d)", idx, s, a.X, a.Y)
+		}
+		return a, nil
+	case target.ClassPile:
+		if err := tileInBounds(idx, s, a, in); err != nil {
+			return target.Address{}, err
+		}
+		if !in.State.HasPileAt(a.X, a.Y) {
+			return target.Address{}, ruleErr("T5", "effect %d field \"target\": %q: no pile at (%d,%d)", idx, s, a.X, a.Y)
+		}
+		return a, nil
+	default: // terrain
+		return target.Address{}, ruleErr("T5", "effect %d (move_entity): target %q names terrain — terrain cannot be moved", idx, s)
+	}
+}
+
+// removeTarget resolves a remove_entity target per the form matrix:
+// structure@X,Y, pile@X,Y, terrain@X,Y. Every villager-designating form is
+// rejected here for message quality — mirroring, never replacing, the reducer
+// doctrine (applyEntityRemoved's villager arm stays unchanged and
+// authoritative). Terrain is bounds-checked only: removability (base kind,
+// not-already-overlaid) stays reducer-side, enforced by the dry run.
+func removeTarget(idx int, s string, in CompileInput) (target.Address, error) {
+	a, err := parseTarget(idx, s)
+	if err != nil {
+		return target.Address{}, err
+	}
+	if a.Class == target.ClassVillager {
+		return target.Address{}, ruleErr("T5", "effect %d (remove_entity): target %q names a villager — a villager can never be removed", idx, s)
+	}
+	if err := tileInBounds(idx, s, a, in); err != nil {
+		return target.Address{}, err
+	}
+	switch a.Class {
+	case target.ClassStructure:
+		if !in.State.HasStructureAt(a.X, a.Y) {
+			return target.Address{}, ruleErr("T5", "effect %d field \"target\": %q: no structure at (%d,%d)", idx, s, a.X, a.Y)
+		}
+	case target.ClassPile:
+		if !in.State.HasPileAt(a.X, a.Y) {
+			return target.Address{}, ruleErr("T5", "effect %d field \"target\": %q: no pile at (%d,%d)", idx, s, a.X, a.Y)
+		}
+	}
+	return a, nil
+}
+
+// grantTarget resolves a grant_item target: villager-designating forms only
+// (bare name, villager:<name>, villager@X,Y), to the villager's index.
+func grantTarget(idx int, s string, in CompileInput) (int, error) {
+	a, err := parseTarget(idx, s)
+	if err != nil {
+		return 0, err
+	}
+	if a.Class != target.ClassVillager {
+		return 0, ruleErr("T5", "effect %d (grant_item): target %q names a %s — grant_item can only target a villager", idx, s, a.Class)
+	}
+	i, _, _, err := villagerTile(idx, s, a, in)
+	if err != nil {
+		return 0, err
+	}
+	return i, nil
 }
 
 // villager resolves a target name to a living villager's index and current tile.

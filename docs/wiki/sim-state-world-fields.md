@@ -1,25 +1,24 @@
 ---
 name: sim-state-world-fields
-description: Per-world field catalog on sim.State — structures/piles, the social fabric, Guardian charges/orders, governance, morgue/run-outcome, curriculum ladder, world-tuning, and the Guardian report card
+description: Per-world field catalog on sim.State — structures/piles, the social fabric, the gru/stranger incident state, PairTalks, the chronicle ring, Guardian charges/orders, and governance. The run-outcome and progression fields (Deaths/RunEnd, charter/skills observation, morgue epilogues, curriculum, tuning, report card) are split to [[sim-state-outcome-fields]].
 kind: component
 sources:
   - internal/sim/state.go
   - internal/sim/agents.go
-  - internal/sim/morgue.go
-  - internal/sim/curriculum.go
-verified_against: 8495b34ffb9ee5dc02e224025f0a23313bbab900
+  - internal/sim/stranger.go
+verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
 ---
 
 # Sim state: world & social fields
 
 Split from [[sim-state-reducer]] (summary-style, corpus-spec v2): everything
 `sim.State` carries about the shared world rather than any one agent —
-structures/piles, the social fabric, the Guardian's charge bank and standing
-orders, village governance, the run's morgue/outcome ledger, the curriculum
-ladder's world-visible facts, the world-tuning dial set, and the Guardian's
-latest report card.
+structures/piles, the social fabric, the gru/stranger incident state, the
+chronicle ring, the Guardian's charge bank and standing orders, and village
+governance. The run-outcome and progression fields are split to
+[[sim-state-outcome-fields]].
 
-agent (every no-planner world stays there forever), structures (`fire`/`shelter`/`oven`/`chest`, fires carrying a
+The catalog: **structures** (`fire`/`shelter`/`oven`/`chest`, fires carrying a
 `FuelUntil`; chests (spec 013 US3) carrying a permanent `Owner` — the builder's
 agent index, zero-value round-tripping unambiguously since every chest has one —
 and a `Store *Inventory` capped at `chestCap` via the same derived `bulk()` used
@@ -76,51 +75,11 @@ lifecycle (including the TASK-36 emergent-gathering watch fields
 source establishes it — pre-TASK-36 snapshots load nil, a village with no
 standing agreement to meet), and the `Norms` list with monotonic
 `NextNormID`/`NextProposalID`, all zero-valued in pre-TASK-13 snapshots (a
-lawless village) — and, since spec 044 ([[morgue]]), the run's outcome: the
-`Deaths []DeathRecord` ledger (`{agent, tick, cause}`, appended by the
-`agent.died` arm in application = event order, bounded by the agent count —
-it exists so the run-end emission stays a pure function of (state, batch)
-rather than a log scan), the `Ended bool` terminal latch and `RunEnd *RunEnd`
-summary (`{tick, deaths, final_cause}`, set once by the `run.ended` arm and
-never cleared by any event, so snapshot+replay restores the ended posture on
-restart for free), `CharterFingerprint` (the most recent effective-charter
-content hash a Guardian turn ran under — the full revision timeline lives in
-the event log) with, since spec 072, its authorship twin `CharterCustom bool`
-(`charter_custom` — whether that most recent observation was player-authored,
-`!CharterObservedPayload.Default`, set only by the same
-`metatron.charter_observed` arm; the conservative false zero value means a
-pre-072 snapshot with a custom charter in force reads "not known
-player-authored" until the next revision is observed — the-law's rubric
-charter conjunct reads it, [[scenario-machinery]]) and, since spec 077,
-the observation COORDINATES `CharterObservedSeq/CharterObservedTick`
-(stamped by the same arm from the event envelope — what
-`CharterEvidenceFromState` re-locates pass evidence with; zero = a pre-077
-snapshot, the evidence honestly absent until the next observation stamps
-them) plus the skills-observation triple
-`SkillsFingerprint`/`SkillsObservedSeq`/`SkillsObservedTick` (set only by
-the `metatron.skills_observed` arm — the stage-3 evidence substrate,
-[[curriculum-ladder-progression]]), and the
-`MorgueEpilogues []MorgueEpilogue` bounded ring
-(`morgueEpilogueCap` 32, the chronicle pattern) of narrator mourning prose —
-all `omitempty`, so every pre-044 snapshot stays byte-identical with no
-format bump — and, since spec 046 ([[curriculum-ladder]]), the ladder's
-world-visible facts: `CurriculumPasses []CurriculumPass` (a bounded ring,
-`curriculumPassRetain` 32 on the standing-order prune precedent, of recorded
-exercise passes each carrying `EvidenceRef{type, seq, tick, custom}` audit
-pointers back into this world's log) and `StagesUnlocked []string` (the
-once-per-(world,stage) unlock latch — no cap needed, at most one entry per
-ladder stage), both `omitempty` so a pre-046 snapshot with neither field
-round-trips byte-identically; the per-user unlocks record is a PROJECTION of
-these events, this state being the replayable authority — and, since spec 048
-([[world-tuning]]), the effective world-tuning dial set: `Tuning *TuningState`
-(`omitempty`, the Journal/Hail/Map pointer precedent — nil means the five
-promoted doctrine defaults, set only by the `sim.tuning_applied` arm (see [[sim-state-apply-world]]), no
-`format_version` bump) — and, since spec 063 ([[grounded-feedback]]), the
-guardian's latest attribution note: `GuardianReportCard *GuardianReportCard`
-(`omitempty`; `{Tick, Seq, Fingerprint, Note, Citations}` — the reducer keeps
-only the most recent card, the `Tuning`/`Journal` pointer-precedent's
-single-value sibling, since re-opening the console card seam re-reads the
-stored note rather than re-grading; nil until the first card lands)
+lawless village) — and the run-outcome & progression fields (the
+`Deaths`/`RunEnd` ledger and `Ended` latch, the charter/skills observation
+fingerprints and coordinates, `MorgueEpilogues`, `CurriculumPasses`/
+`StagesUnlocked`, `Tuning`, `GuardianReportCard`), all `omitempty` and all
+split to [[sim-state-outcome-fields]]
 (executor types in `agents.go`; memories belong to
 [[agent-mind]]). Its
 `Apply(event)` method is the **only** event-driven mutation path — the live loop and
@@ -135,10 +94,10 @@ in one run and landing as a single wholesale-replace event rather than increment
 ## Connections
 
 Back to [[sim-state-reducer]] for the whole `State`/`Apply` picture and the
-other five split-off notes. [[social-fabric]] owns the relation/debt/rumor
-types; [[guardian]] and [[guardian-orders]] own the charge bank and
-standing-order lifecycle; [[governance]] owns `Meeting`/`Norms`; [[morgue]]
-owns `Deaths`/`RunEnd`/`MorgueEpilogues`; [[curriculum-ladder]] owns
-`CurriculumPasses`/`StagesUnlocked`; [[world-tuning]] owns `Tuning`;
-[[grounded-feedback]] owns `GuardianReportCard`. The Apply arms that mutate
-most of these fields live in [[sim-state-apply-world]].
+other split-off notes. [[sim-state-outcome-fields]] carries this note's
+run-outcome & progression half. [[social-fabric]] owns the
+relation/debt/rumor types; [[guardian]] and [[guardian-orders]] own the
+charge bank and standing-order lifecycle; [[governance]] owns
+`Meeting`/`Norms`; [[event-types-scenario-incidents]] owns the
+gru/stranger incident vocabulary. The Apply arms that mutate most of these
+fields live in [[sim-state-apply-world]].

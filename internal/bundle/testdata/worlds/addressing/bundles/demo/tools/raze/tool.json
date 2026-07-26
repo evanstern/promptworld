@@ -1,0 +1,11 @@
+{
+  "name": "raze",
+  "description": "Scripted removal of the pile on a tile",
+  "params": [
+    {"name": "x", "kind": "number", "required": true, "description": "pile column"},
+    {"name": "y", "kind": "number", "required": true, "description": "pile row"}
+  ],
+  "events": ["metatron.entity_removed"],
+  "charges": 1,
+  "script": "tool.star"
+}

@@ -1,6 +1,6 @@
 ---
 name: bundle-tools
-description: Drop-in persona/tool bundles (spec 036, TASK-85) — manifest or Starlark tools compiled to whitelisted effect batches, boot-frozen from <world>/bundles/, sandboxed and replay-deterministic
+description: Drop-in persona/tool bundles (spec 036, TASK-85) — manifest or Starlark tools compiled to whitelisted effect batches, boot-frozen from <world>/bundles/, sandboxed and replay-deterministic; effect targets address villagers, structures, piles, and terrain through the spec-082 grammar
 kind: component
 sources:
   - internal/bundle/manifest.go
@@ -10,7 +10,8 @@ sources:
   - internal/bundle/handlers.go
   - internal/bundle/script.go
   - internal/bundle/worldview.go
-verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
+  - internal/target/target.go
+verified_against: 510a3c3133e120d84cd50525dbc4ee0d3ec01cdc
 ---
 
 # Bundle tools
@@ -59,6 +60,34 @@ run, so batches land all-or-nothing and a failed invocation spends no charge.
 Failures come back as `rejected_gate` outcomes the model can retry within
 [[tool-loop]]'s round cap, never infrastructure errors.
 
+**Target addressing** (spec 082, TASK-97): effect `target` strings parse
+through `internal/target` — the stdlib-only leaf package that is the ONE
+authority on the address grammar (normative:
+`specs/082-target-addressing/data-model.md`; manifest surface:
+`specs/036-scriptable-agent-tools/contracts/bundle-manifest.md`). Forms: bare
+villager name (v1 compat, byte-identical), `villager:<name>`, and
+`<class>@X,Y` for villager/structure/pile/terrain; the reserved-prefix rule
+(`^(villager|structure|pile|terrain)[@:]`) makes a malformed structured
+address a compile error, never a name fallback. The per-kind matrix:
+`move_entity` takes villagers (name or tile via `sim.State.VillagerAt` —
+first-living-by-index, the miracle door's own choice), structures, and piles;
+`remove_entity` takes structures, piles, and terrain and rejects every
+villager form compiler-side (mirroring the reducer's never-remove-a-villager
+doctrine, which stays authoritative); `grant_item` takes villagers only.
+Resolution reads only `CompileInput.State` — roster walk, `VillagerAt`, the
+one-per-tile `HasStructureAt`/`HasPileAt` probes, `MapDims` bounds — and
+compiled payloads are byte-identical to `BuildMiracleBatch`'s for the same
+class+tiles. Every target failure (syntax/class/form/bounds/unresolved) is a
+descriptive whole-invocation rejection naming the effect index, field, and
+offending address. Rect (`class@X1,Y1..X2,Y2`) and axis-aligned line
+(`class@X1,Y1->X2,Y2`) forms parse in the shared package — with normalized
+corners, preserved endpoint order, and deterministic `Tiles()` enumeration —
+but bundles reject them as reserved for the TASK-157 designation consumers
+(settlement zone, structure site, wall line), which will import the same leaf
+from `internal/tool`. Live turns resolve against the guardian's probe, which
+mirrors structure/pile tiles per absorb batch (the `agentXY` discipline) and
+carries the static map.
+
 **Sandbox** (`script.go`): programs compile once at boot and run per-invocation
 on a fresh step-capped `starlark.Thread` (manifest `limits.max_steps`, default
 100k, hard ceiling 1M) — no `load()`, no clock, no I/O, recursion off, `print`
@@ -80,9 +109,12 @@ never resurrect what the world owner excluded).
 
 **Determinism**: replay never re-executes tool logic — landed events are
 self-contained data, proven by the replay byte-identity tests (including
-deleting the bundle dir before replay). Same (args, state, seed, tick) ⇒
-byte-identical batches; the dogfood bundle (`examples/bundles/dogfood-move`)
-pins its output byte-identical to `BuildMiracleBatch`'s `move` kind.
+deleting the bundle dir before replay — the spec-082 addressing fixture
+repeats the proof for structure/pile/terrain edits). Same (args, state, seed,
+tick) ⇒ byte-identical batches; the dogfood bundle
+(`examples/bundles/dogfood-move`) pins its output byte-identical to
+`BuildMiracleBatch`'s `move` kind, and `TestAddressingMiracleByteIdentity`
+extends that pin to every class+tile form.
 
 ## Connections
 
@@ -97,10 +129,12 @@ backs `world.rand`; [[world-save-directory]] owns the `bundles/` layout;
 
 ## Operational notes
 
-Authoring guide: `docs/bundles.md` (manifest/script reference, validation
-errors, examples). Spec: `specs/036-scriptable-agent-tools/` (contracts are
-normative). v1 limitation on the board as TASK-97: `move_entity`/`grant_item`
-address living villagers by name only — structure/pile/terrain addressing has
-no grammar yet, so `remove_entity` is structurally present but inert (the
-reducer refuses villager removal by doctrine). Boot cost is negligible:
-32 bundles / 256 tools discover+validate in ~50 ms.
+Authoring guide: `docs/bundles.md` (manifest/script reference, target
+addresses, validation errors, examples). Specs:
+`specs/036-scriptable-agent-tools/` (manifest contract, normative) and
+`specs/082-target-addressing/` (address grammar, normative). The former v1
+limitation (TASK-97) is resolved: structure/pile/terrain addressing landed
+with spec 082, so `remove_entity` is real — a bundle tool moves and removes
+structures and piles and clears terrain tiles with miracle-door-identical
+payloads. Boot cost is negligible: 32 bundles / 256 tools discover+validate
+in ~50 ms.
