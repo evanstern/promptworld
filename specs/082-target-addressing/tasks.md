@@ -95,7 +95,7 @@ two-consumer grammar). Planning/gating stays on Fable 5.
 
 ## Phase 6: Grounding + gates (in-branch, wiki-in-PR lifecycle)
 
-- [ ] T015 Wiki re-pin ON THIS BRANCH: update `docs/wiki/bundle-tools.md`
+- [X] T015 Wiki re-pin ON THIS BRANCH: update `docs/wiki/bundle-tools.md`
   (grammar paragraph replaces the TASK-97-limitation operational note;
   sources gain `internal/target/target.go`), re-verify + re-pin to a
   branch commit; re-pin every other note the pr gate names (candidates:
@@ -104,11 +104,11 @@ two-consumer grammar). Planning/gating stays on Fable 5.
   `tool-registry-guardian-tools.md` only if `internal/tool` sources were
   touched — expected NOT). The gate is the authority — produce what it
   names (constitution IV; plan D7)
-- [ ] T016 Player docs: `docs/wiki/` changed ⇒ regenerate `docs/player/`
+- [X] T016 Player docs: `docs/wiki/` changed ⇒ regenerate `docs/player/`
   via the player-docs project skill, then run the probe DIRECTLY:
   `node .claude/skills/player-docs/scripts/check-freshness.mjs --check`
   → exit 0 (spec 069; no bypass)
-- [ ] T017 Conditional catalog gate: NO new event type is expected
+- [X] T017 Conditional catalog gate: NO new event type is expected
   (FR-009); IF implementation introduced one anyway, add its
   `digestRegistry` entry + `catalogFixture` row + `docs/wiki/event-types.md`
   row so `TestCatalogSweep` (`internal/tui/digest_test.go`) passes — never
