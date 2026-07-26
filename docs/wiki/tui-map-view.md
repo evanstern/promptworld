@@ -1,13 +1,14 @@
 ---
 name: tui-map-view
-description: The map camera region: terrain/agent/structure glyph rendering (water, woods, marsh/sand, walls, graves, piles) resolved through the tile registry, condition overlays, camera pan and jump-to-source, and the legend's stockpile-zone/chest inspection additions. Split from [[tui-client]]; read when touching views.go's renderMapGrid, tiles.go, or digest.go's subjectRegistry.
+description: The map camera region: terrain/agent/structure glyph rendering (water, woods, marsh/sand, walls, graves, piles) resolved through the tile registry, condition overlays, camera pan and jump-to-source, the look-cursor tile-inspection mode, and the legend's stockpile-zone/chest inspection additions. Split from [[tui-client]]; read when touching views.go's renderMapGrid, tiles.go, look.go, or digest.go's subjectRegistry.
 kind: component
 sources:
   - internal/tui/views.go
   - internal/tui/tiles.go
   - internal/tui/digest.go
   - internal/tui/tui.go
-verified_against: b3f4da3c29e3cbbd933e366abe76a5d6ef0f2be9
+  - internal/tui/look.go
+verified_against: 66e36e9a7a627161d4b2ec95dcc18aa0f4f91d20
 ---
 
 # TUI map view
@@ -82,6 +83,48 @@ In the narrow fallback a successful jump lands on the map pane with the
 paused selection preserved. Click hit-testing reads a per-frame
 `chronHitRegion` the inspect-list renderer records — running-clock,
 out-of-region, help-open, and minibuffer-focused clicks are all no-ops.
+
+## Look-cursor mode (spec 074-look-cursor, TASK-142)
+
+`v` toggles a second, independent camera writer over the same
+`wandererCentroid`+pan substrate jump-to-source uses: a **look-cursor**
+tile, entered at the camera-center tile (or, via a map-tile click, at the
+clicked tile — the map's first real mouse target, decision 8 rule 1). Two
+extracted helpers keep every consumer honest against the same numbers
+`renderMapGrid` draws: `cameraOrigin(vw, vh)` (the world-space top-left tile
+for a viewport, wanderer centroid + pan, clamped to the map — literally
+`renderMapGrid`'s own inline math, pulled out) and `mapViewportDims()` (a
+second, independent read of whichever viewport formula the live layout
+uses — widescreen's column-budget math or narrow's `vw/vh` formula — so the
+key handler and mouse hit-testing need no cached geometry).
+
+`hjkl`/arrows move the cursor one tile, `H`/`J`/`K`/`L` jump 8 (clamped to
+`[0,W)×[0,H)`, never wrapping); moving pushes the camera (`panX`/`panY`) by
+whatever overshoot keeps the cursor at least 2 tiles inside the current
+viewport, degrading at the world edge (the camera stops, the cursor may
+reach the viewport border) — `c` snaps the camera onto the cursor
+(`centerCameraOn`, the identical jump-to-source formula, one more caller).
+Exiting (`esc`/`v` again, or a dock-tab digit) resets `panX`/`panY` to 0 —
+"resume centroid-following" is literally the pre-existing following state.
+
+**Rendering**: the cursor tile gets a background-highlight style transform
+(`styleLookCursor`, `lipgloss.Reverse(true)`) over whatever glyph `tile()`
+resolves — the `styleFeedSelect` precedent, never a new glyph (spec-068
+FR-003 discipline extended); mode-off rendering never reaches this branch,
+so `TestTilesIdentityPin`'s goldens are untouched. The map panel's title
+gains a third state, `MAP · cursor (x,y) · c center · esc exit`, replacing
+the following/panned title while active.
+
+**Borrowing the dock**: while active, the mode's own key layer
+(`handleLookKey`, layered between the console and inspect checks in
+`handleKey` — [[tui-input-help]]) claims the whole contested key set and the
+dock body is borrowed by a transient TILE view — [[tui-dock-tabs]] owns
+that half. `mapHitRegion` (a `chronHitRegion`-shaped per-frame pointer,
+recorded by `mapPanelView`/`mapView` each render, invalidated by default)
+is the click-geometry half of mouse parity: a release inside it maps
+`(x0 + (col)/2, y0 + row)` back to a world tile (2 screen columns per tile,
+the existing glyph+space stride) and either enters the mode there or moves
+an already-active cursor.
 
 ## Inspection: legend additions
 

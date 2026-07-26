@@ -1,13 +1,14 @@
 ---
 name: tui-input-help
-description: The focus contract and time controls (space/[/]/q), and the full-screen help overlay: per-mode key tables, the shared map-glyph legend, the first-occurrence lessons pull-reference, and the ceremonies/guardian sections. Split from [[tui-client]]; read when touching help.go or lessons.go.
+description: The focus contract and time controls (space/[/]/q), and the full-screen help overlay: per-mode key tables (including the look-cursor mode's own page), the badge deep-link, the shared map-glyph legend, the first-occurrence lessons pull-reference, and the ceremonies/guardian sections. Split from [[tui-client]]; read when touching help.go, lessons.go, or look.go's key layer.
 kind: component
 sources:
   - internal/tui/tui.go
   - internal/tui/help.go
   - internal/tui/lessons.go
   - internal/tui/tiles.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+  - internal/tui/look.go
+verified_against: 2136b30fb2c170d4e23ef2186ba0bbdb26c365c1
 ---
 
 # TUI input, focus, and help overlay
@@ -29,6 +30,21 @@ TASK-20); `q` detaches — the world keeps running. On an ended world (spec
 044) all three clock keys are no-ops and the footer says so — see the
 postmortem posture above.
 
+**The look-cursor mode's pane focus** (spec 074-look-cursor, TASK-142,
+[[tui-dock-tabs]] owns the mode's TILE view itself) is the contract's newest
+scope note: `⏎`/`tab` moving keyboard focus into the TILE pane draws the
+SAME amber-border rule the minibuffer/console sub-panels do, but it is a
+**drawn selection scope, not a text client** — no printable key ever
+buffers there, in any of the mode's three focus layers (cursor/pane/drill).
+The "exactly one text-capture client" claim (the minibuffer, reused
+verbatim by the guardian console) stays true; `internal/tui/focus_test.go`'s
+`TestLookModeNeverCapturesText` is the mechanical proof. `handleLookKey`
+(`look.go`) itself sits in `handleKey`'s chain between the console check and
+the inspect check — layered exactly like `handleInspectKey`/
+`handleVillagersKey`, claiming the whole contested key set so those two
+dormant layers (their own tab-visibility predicates read false during the
+borrow) never spuriously fire.
+
 ## Help overlay
 
 **Help overlay** (spec 045/TASK-116; `help.go`): `?` from any non-text-entry
@@ -40,10 +56,26 @@ the mode it opened from (`helpMode`) and owns the keyboard while open: `t`
 flips the mode page's basic/advanced key tiers, `tab`/`shift+tab` cycle the
 overlay's sections — mode keys · screen walkthrough · lessons pull-reference
 · (spec 056) ceremonies replay · (spec 063) the guardian, five in all — `n`/`p`
-page across all six mode pages (global/home, minibuffer, inspect, villagers
-roster/detail, solo/narrow — how the minibuffer page stays reachable),
-`J`/`K` scroll via the standard pager idiom, and `esc`/`?` dismiss exactly
-one layer; every other key is inert. Rendering is body replacement (the solo
+page across all seven mode pages (global/home, minibuffer, inspect, villagers
+roster/detail, solo/narrow, and — spec 074-look-cursor — look-cursor tile
+inspection; how the minibuffer page stays reachable), `J`/`K` scroll via the
+standard pager idiom, and `esc`/`?` dismiss exactly one layer; every other
+key is inert. `currentHelpMode` checks the look-cursor mode right after the
+console branch (before inspect/villagers), for the same reason the console
+check itself sits first: `Model.dockTab`/`active` persist unchanged
+underneath the borrow and would otherwise mis-route.
+
+**Badge deep-link (spec 074-look-cursor, FR-011)**: `openHelp` gains a
+pre-focus step — with at least one conditional header badge active
+(`[degraded]`, `[llm: …]`, `[suppressed: …]`, checked in that header order),
+the overlay opens directly on the screen-walkthrough section, scrolled so
+that badge's `headerAnatomy` row is visible (`firstActiveBadgeRow`, an index
+resolved from the SAME shared table `helpWalkthroughLines` renders, so the
+scroll target can never drift from what's actually on the page). No active
+badge keeps the open byte-identical to before this feature (keys section,
+scroll 0) — it applies corpus-wide, not only from the guardian tab.
+
+Rendering is body replacement (the solo
 zoom slot) in both layouts — chrome stays, output remains exactly
 terminal-height. Content is static tables in `help.go`: per-mode key rows
 (basic ≈ the footer-hinted set), `headerAnatomy` rows covering every

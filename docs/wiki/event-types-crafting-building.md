@@ -6,7 +6,7 @@ sources:
   - internal/sim/executor.go
   - internal/sim/recipes.go
   - internal/sim/terrain.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+verified_against: 2136b30fb2c170d4e23ef2186ba0bbdb26c365c1
 ---
 
 # Event types — crafting, building & goods-movement events
