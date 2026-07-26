@@ -5,14 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
 <meta name="promptworld-docs:source" content="README.md@8602191b92cb8027f0fef3f54fe20d0867678fde">
-<meta name="promptworld-docs:source" content="docs/wiki/cli-promptworld.md@6318cf8b53e407765f0c9793f5355a7af4777ed7">
+<meta name="promptworld-docs:source" content="docs/wiki/cli-promptworld.md@31c893e0406653197e467a89b2fdb96f0bcf2ee0">
 <meta name="promptworld-docs:source" content="docs/wiki/daemon-lifecycle.md@6318cf8b53e407765f0c9793f5355a7af4777ed7">
-<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@6318cf8b53e407765f0c9793f5355a7af4777ed7">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@6318cf8b53e407765f0c9793f5355a7af4777ed7">
+<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@31c893e0406653197e467a89b2fdb96f0bcf2ee0">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@31c893e0406653197e467a89b2fdb96f0bcf2ee0">
 <meta name="promptworld-docs:source" content="docs/wiki/chronicle.md@6318cf8b53e407765f0c9793f5355a7af4777ed7">
-<meta name="promptworld-docs:source" content="docs/wiki/morgue.md@6318cf8b53e407765f0c9793f5355a7af4777ed7">
+<meta name="promptworld-docs:source" content="docs/wiki/morgue.md@31c893e0406653197e467a89b2fdb96f0bcf2ee0">
 <meta name="promptworld-docs:source" content="docs/wiki/gru.md@6318cf8b53e407765f0c9793f5355a7af4777ed7">
-<meta name="promptworld-docs:source" content="docs/wiki/curriculum-ladder.md@6318cf8b53e407765f0c9793f5355a7af4777ed7">
+<meta name="promptworld-docs:source" content="docs/wiki/curriculum-ladder.md@31c893e0406653197e467a89b2fdb96f0bcf2ee0">
+<meta name="promptworld-docs:source" content="docs/wiki/takeover-surfaces.md@31c893e0406653197e467a89b2fdb96f0bcf2ee0">
+<meta name="promptworld-docs:source" content="docs/wiki/grounded-feedback.md@31c893e0406653197e467a89b2fdb96f0bcf2ee0">
 <title>Getting started — promptworld player docs</title>
 <style>
   :root {
@@ -99,7 +101,9 @@ postmortem — what led up to it, who was there, what changed after — is the p
 not a punishment for playing wrong. Losing a villager, or even a whole village, is
 part of what you came here to watch.</p>
 <p>And that goes all the way up: when your <em>last</em> villager dies, the run
-itself is over. The world stops — but it never disappears. It stays on disk as a
+itself is over. If you're watching in the full-screen client, a summary of the
+whole run takes over the screen right then — how it ended, and (on a scenario
+world) whether you passed. The world stops — but it never disappears. It stays on disk as a
 readable archive: the narrated story, the raw event feed, and the
 <strong>morgue</strong>, a file holding a factual epitaph for everyone who died
 (the <a href="reading-the-story.html">reading the story page</a> covers all three).
@@ -153,7 +157,11 @@ skip ahead to a later stage with an explicit override, and promptworld will tell
 plainly what you'd be skipping before it does. Some stages ship a seeded practice
 exercise you can run directly with <code>--scenario &lt;exercise&gt;</code> — a world
 built to test one specific thing, with its own tab on screen tracking how you're
-doing (see the <a href="stage-1-the-voice.html">stage pages</a>).</p>
+doing (see the <a href="stage-1-the-voice.html">stage pages</a>). At the first
+stage the guardian also has a built-in tutor's habit: it explains the game as
+you go and always pulls its exact numbers (prices, costs, the charge economy)
+from the game's own facts rather than guessing — ask it anything, including
+"what does that cost?"</p>
 <p>Genesis also writes each villager's starting personality and the guardian's starting
 "charter" — more on both in a moment. The summary printed when the world is created
 also names the AI model it's expecting and the exact command to fetch it if you

@@ -4,7 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@6318cf8b53e407765f0c9793f5355a7af4777ed7">
+<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@31c893e0406653197e467a89b2fdb96f0bcf2ee0">
+<meta name="promptworld-docs:source" content="docs/wiki/takeover-surfaces.md@31c893e0406653197e467a89b2fdb96f0bcf2ee0">
+<meta name="promptworld-docs:source" content="docs/wiki/grounded-feedback.md@31c893e0406653197e467a89b2fdb96f0bcf2ee0">
 <title>What do all those things on screen mean? — promptworld player docs</title>
 <style>
   :root {
@@ -79,9 +81,12 @@ there's no penalty for checking.</p>
 
 <h2>Or just press <code>?</code> — this tour is built in</h2>
 <p>Press <code>?</code> at almost any moment in the game and a help overlay opens
-right there: the keys that work on the screen you're on, plus a walkthrough of the
+right there: the keys that work on the screen you're on, a walkthrough of the
 same regions this page covers — the header and every badge it can show, the full map
-glyph table, and the four tabs. Press <code>tab</code> inside it to move between
+glyph table, and the tabs — every stage-unlock ceremony you've ever earned in this
+world (in case you missed or dismissed one), and a page on the guardian itself:
+your stage, what it teaches, every verb it grants, and one example ask per verb.
+Press <code>tab</code> inside it to move between
 sections, and <code>?</code> or <code>esc</code> to close it and land exactly where
 you were — it never pauses or changes anything in the world. It works identically in
 a village with no AI configured, so help is always there even when the guardian
@@ -258,10 +263,25 @@ Press <code>e</code> to open <code>charter.md</code> in your own text editor
 in-game text editor, just a handoff to your own — and the moment you save and return,
 the console confirms "charter changed — next turn binds it." <code>J</code> and
 <code>K</code> scroll back through earlier turns. <code>G</code>, <code>1</code>, or
-<code>esc</code> all return you to whatever view you had open before. See
+<code>esc</code> all return you to whatever view you had open before. On a
+scenario world, or once your guardian has written itself a report card (see
+<a href="playing-via-metatron.html">playing via the guardian</a>), the console
+also shows a card near the top: a rubric checklist first, if one exists, then
+the guardian's own attribution note beneath it. See
 <a href="playing-via-metatron.html">playing via the guardian</a> for what the charter
 actually does, and the <a href="keys-reference.html">keys reference card</a> for
 every key the console responds to.</p>
+
+<h2>When a run ends, or a stage unlocks</h2>
+<p>Two moments take over the whole screen, keyboard and all, until you dismiss
+them: earning a new stage opens a short <strong>ceremony</strong> — the
+narrated moment plus the report card that earned it — and your last villager
+dying opens a full-screen <strong>postmortem</strong> — how the run ended, the
+report card if the world was scored, and the morgue's evidence rows for every
+death. Press <code>esc</code> to dismiss either one, or <code>q</code> to
+quit/detach. Missed or dismissed a ceremony? The <code>?</code> help overlay
+keeps a permanent replay of every one you've ever earned in that world. See
+the <a href="keys-reference.html">keys reference card</a> for the exact keys.</p>
 
 <h2>The lesson bar: the game teaching itself, once per lesson</h2>
 <p>In a young world (learning stages 1 and 2), the first time something new happens —

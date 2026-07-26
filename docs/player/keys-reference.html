@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
 <meta name="promptworld-docs:source" content="docs/design/tui/patterns/keymap.md@b54041ef1aef37cb9d739ef362bd5b63d72573a2">
-<meta name="promptworld-docs:source" content="docs/design/tui/overlays/help.md@b54041ef1aef37cb9d739ef362bd5b63d72573a2">
+<meta name="promptworld-docs:source" content="docs/design/tui/overlays/help.md@36383e4fa497eeaaee5ffa53438544451ad6fa41">
 <title>Keys reference — promptworld player docs</title>
 <style>
   :root {
@@ -203,14 +203,16 @@ ever unlocked in that world.</p>
 <p>The overlay shows this same information in-game — the keys for whatever screen
 you were just on, a tour of everything on screen, every lesson the game can
 teach you (including ones you dismissed with <code>x</code> — nothing is ever lost),
-and a permanent replay of every stage-unlock ceremony you've earned in this world.
-It never touches the world: opening it doesn't pause anything,
+a permanent replay of every stage-unlock ceremony you've earned in this world,
+and a page on the guardian itself: your current stage, what it teaches, every
+verb it grants you, and one example ask per verb. It never touches the world:
+opening it doesn't pause anything,
 and closing it puts you back exactly where you were.</p>
 <table>
 <tr><th>Key</th><th>Action</th></tr>
 <tr><td><code>?</code> or <code>esc</code></td><td>Close the overlay</td></tr>
-<tr><td><code>tab</code> / <code>shift+tab</code></td><td>Cycle its four sections:
-keys → the screen → lessons → ceremonies</td></tr>
+<tr><td><code>tab</code> / <code>shift+tab</code></td><td>Cycle its five sections:
+keys → the screen → lessons → ceremonies → the guardian</td></tr>
 <tr><td><code>t</code></td><td>Keys section: switch between the basic and advanced
 key lists</td></tr>
 <tr><td><code>n</code> / <code>p</code></td><td>Keys section: page through every
@@ -218,6 +220,9 @@ mode's key list (including the guardian-typing keys, which <code>?</code> can't
 reach directly)</td></tr>
 <tr><td><code>J</code> / <code>K</code></td><td>Scroll a long page</td></tr>
 </table>
+<p>The guardian section always shows something useful, even on a brand-new
+world or with no AI configured at all — it reads only your world's stage,
+never anything the guardian says.</p>
 
 <h2>Quick hints (what the footer shows you)</h2>
 <table>
