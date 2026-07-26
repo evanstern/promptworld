@@ -2,12 +2,13 @@
 title: Overlay — help (`?`)
 class: overlay
 status: shipped
-verified_against: 66e36e9a7a627161d4b2ec95dcc18aa0f4f91d20
+verified_against: 1210c057aabdfeb3012dceaa0a574e5f63513de5
 sources:
   - internal/tui/help.go
   - internal/tui/tiles.go
   - internal/tui/tui.go
   - internal/tui/look.go
+  - internal/worlds/unlocks.go
 ---
 
 # Overlay: help
@@ -24,9 +25,10 @@ with spec 045/055; **Section 4 (ceremony replay) shipped with spec 056
 (TASK-127)**, **Section 5 (the guardian, D9) shipped with spec 063
 (TASK-115)**, and **the badge deep-link row — previously retagged
 `unbuilt (pending TASK-142, layer-2)` by spec 075's semantic-cells lint
-pass — shipped with spec 074-look-cursor (TASK-142)** — every row's
-control-table entry below now names a real renderer symbol; nothing on
-this page remains `unbuilt`.
+pass — shipped with spec 074-look-cursor (TASK-142)**, and **the guardian
+section's forward-ladder block — shipped with spec 078-tui-ladder-view
+(TASK-152)** — every row's control-table entry below now names a real
+renderer symbol; nothing on this page remains `unbuilt`.
 
 ## Mockup
 
@@ -188,6 +190,46 @@ guardian tab's live transcript, this section reads only the static
 `world.StagesLadder` table plus the one polled `Status.Stage` value that
 selects a row from it.
 
+**The ladder — shipped (reorient decision 6, spec 078/TASK-152)**:
+`helpLadderLines` (`internal/tui/help.go`) appends a forward-looking block
+below the current-stage teaching content above — the WorldBox
+discoverability gap this closes: a TUI-only player previously had no
+in-game way to see what's next or how to earn it. It iterates
+`world.StageOrder` (never a hardcoded stage list/count) and renders, per
+stage, the same fields `promptworld stages` prints — the skin-resolved
+identity, the concept it teaches, the unlock evidence (graduation wording
+at the stage whose `UnlockEvidence` is empty), and its earned/next state.
+`next` marks exactly the first stage the earned rule hasn't cleared yet — a
+pure derivation, not a new field `stages --json` carries.
+
+The earned rule is single-sourced (spec 063 T014's one-source-two-surfaces
+precedent, extended from catalog content to earned state):
+`worlds.(*Unlocks).StageEarned` — stage-1's unconditional floor, or a
+per-user unlocks-record entry — RELOCATED from `cmd/promptworld/stages.go`'s
+former package-main `stageEarned` so `cmdStages` and this block render from
+one substrate. A record-earned stage additionally carries the audit pointer
+(proving world + exercise) exactly when `stages --json` would populate
+`proving_world`/`exercise`; a stage latched in the live
+`replica.StagesUnlocked` (a mid-session unlock, before or regardless of
+whether the record write lands) shows earned immediately with no audit
+pointer yet — the record is the only place that pointer exists.
+
+The attached world's current stage gets a you-are-here marker
+(`◀ this world`); a `stage_overridden` world states the override honestly
+on that marker (`by override — not earned`) without ever laundering it
+into an earned claim — the row's earned state stays record-derived
+regardless (the `stages` command's own honesty posture).
+
+Unlike the stage-keyed block above (byte-identical per `Status.Stage`
+scalar), the ladder is **per-user forward content, not per-connection**: it
+renders identically with nil status (no you-are-here marker, ladder still
+shown) and updates live the moment a stage unlocks mid-session, with zero
+per-frame disk reads — the unlocks record loads once at client boot
+(`Model.unlocks`, the `populateHelpLessons`/`LoadLessonsSeen` precedent) and
+is unioned with `replica.StagesUnlocked` only at render time. No LLM call,
+no IPC command, no event emission — see "Byte-identity classification"
+below for its own row.
+
 **The deliberate spec-045 amendment (D9)**: spec 045 originally forbade any
 status-derived content in the help overlay ("never derived from live
 status"). This section is the deliberate, named exception the reorientation
@@ -220,6 +262,7 @@ this overlay, classified:
 | keys (tiered) | **byte-identical** with nil status (generated from the static keymap; the existing `help_test.go` sweep guarantee) |
 | screen walkthrough | **byte-identical** with nil status |
 | the guardian (D9, above) | **stage-keyed, model-free**: content is a pure function of the stage value; for a given stage the bytes are constant; nil status renders the pre-ladder variant (all verbs). Never LLM-derived. |
+| forward ladder (guardian section, above) | **unlocks-record-derived, model-free**: catalog text (identity/concept/evidence) is static per stage; earned/next columns come from the per-user unlocks record union'd with the live `replica.StagesUnlocked`; you-are-here comes from the stage/override scalars. Never LLM-derived; an absent/corrupt/unresolvable record renders the stage-1-floor-only ladder, never an error — **shipped** (reorient D6/spec 078, TASK-152) |
 | lessons registry | **status-derived** (active/seen state per user); the registry's catalog text is static, its state columns are live |
 | badge deep-link focus | **status-derived** (which row is pre-focused depends on active badges); content unchanged — **shipped** (spec 074-look-cursor/TASK-142) |
 | ceremony replay entries | **status-derived** (which ceremonies exist depends on run history — `replica.StagesUnlocked`; replayed content is stored, not regenerated) — **shipped** (spec 056/TASK-127) |
@@ -250,6 +293,7 @@ under an explicit classification instead of eroding the invariant silently.
 | the guardian section (stage identity/concept) | per-stage · pre-ladder (nil status) | `Status.Stage`, `world.StagesLadder`, `skin.Stage` | `helpGuardianLines` | — (display-only) | reorient D9 / spec 063 | `skin.stage.stage-N.name`/`.line` |
 | the guardian section (granted verbs) | per-stage ceiling | `guardian.StageCeilingVerbs` (the turn grant's own `applyStageCeiling` intersection) | `helpGuardianLines` | — | reorient D9 / spec 063 | — |
 | the guardian section (example ask per verb) | static, per verb | the per-verb example-ask token family (skin-tokens.md) | `helpGuardianLines` | — | reorient D9 / spec 063 | `skin.guardian.example_ask.send_vision` (one per verb, keyed by tool id) |
+| the guardian section (forward ladder) | per-stage identity/concept/evidence (static) · earned/next/audit-pointer (per-user record ∪ live `StagesUnlocked`) · you-are-here (stage/override scalars) | `world.StageOrder`/`StagesLadder`, `Model.unlocks` (`worlds.Unlocks.StageEarned`), `replica.StagesUnlocked`, `skin.Stage` | `helpLadderLines` | — (display-only) | reorient D6 / spec 078 | `skin.stage.stage-N.name`/`.line` |
 | badge deep-link focus (layer-2) | unfocused · pre-focused on active badge | active header badge at open | `openHelp`/`firstActiveBadgeRow` (`internal/tui/tui.go`) | — (display-only; the badge itself has no click target) | spec 074-look-cursor (retained per D9 discussion, shipped here) | — |
 | look-cursor keys page | basic · advanced | `handleLookKey` dispatch (`look.go`) | `helpKeysLines` (page 7) | `n`/`p` to reach (`?` mid-mode freezes on it) · — | spec 074 | — |
 | ceremony replay entries | none · N replayable | `replica.StagesUnlocked`/`CurriculumPasses` | `ceremonyReplayLines` (`internal/tui/help.go`), shared rendering with `overlays/ceremony.md` | `tab`/`shift+tab` to reach · — | reorient FR-013 | — |

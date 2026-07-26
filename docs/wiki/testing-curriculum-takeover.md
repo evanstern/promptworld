@@ -12,7 +12,7 @@ sources:
   - internal/tui/takeover_test.go
   - internal/tui/render_test.go
   - internal/tui/console_test.go
-verified_against: 0fd2104c59c54be8e8071d319fa4ce192083faf3
+verified_against: a8d2b7f17989321471cff43c4e760e83f58bbd55
 ---
 
 # Curriculum-ladder & takeover suites
@@ -55,7 +55,10 @@ recorded path matching the world fixture. `internal/worlds/unlocks_test.go`
 pins the record doctrine — missing/corrupt file loads empty (never an
 error), atomic upsert-and-reload, same-stage overwrite, load-time healing
 that drops malformed entries but KEEPS entries whose world path no longer
-exists, and an unresolvable home warning-and-continuing. CLI-side,
+exists, an unresolvable home warning-and-continuing, and — since spec 078
+— `TestStageEarnedFloorAndRecord` pinning `(*Unlocks).StageEarned`'s three
+cases (a nil receiver and an empty record both floor-earn stage-1 only; a
+record entry earns its own stage and no other). CLI-side,
 `cmd/promptworld/stages_test.go` covers `new`'s stage resolution (stage-1
 default for a new player, highest-earned otherwise, unearned refusal naming
 skipped concepts unless `--override`, the override recorded honestly,

@@ -161,10 +161,10 @@ func cmdNew(args []string) error {
 	if stage == "" {
 		stage = highestEarnedStage(unlocks)
 	}
-	if !stageEarned(unlocks, stage) && !*override {
+	if !unlocks.StageEarned(stage) && !*override {
 		var skipped []string
 		for _, id := range stageOrder {
-			if !stageEarned(unlocks, id) {
+			if !unlocks.StageEarned(id) {
 				skipped = append(skipped, skin.StageName(id))
 			}
 			if id == stage {

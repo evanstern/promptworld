@@ -1,6 +1,6 @@
 ---
 name: explain-tutor-guide
-description: Spec-063's grounded orientation surfaces — the guardian's read-only explain tool (deterministic fact sheets over registry/doctrine ground truth), the compiled-in tutor guide, the stage-1 taught-verb grant, the D9 help-overlay guardian section, and the stagesLadder relocation to internal/world. Split from [[grounded-feedback]]; load for the explain/orient half of the feedback layer.
+description: Spec-063's grounded orientation surfaces — the guardian's read-only explain tool (deterministic fact sheets over registry/doctrine ground truth), the compiled-in tutor guide, the stage-1 taught-verb grant, the D9 help-overlay guardian section (plus, since spec 078, its forward-ladder block), and the stagesLadder/StageEarned relocations to internal/world(s). Split from [[grounded-feedback]]; load for the explain/orient half of the feedback layer.
 kind: component
 sources:
   - internal/tool/explain.go
@@ -13,8 +13,9 @@ sources:
   - internal/tui/tiles.go
   - internal/tui/tui.go
   - internal/world/world.go
+  - internal/worlds/unlocks.go
   - cmd/promptworld/stages.go
-verified_against: 8ec9aefc624396325c0083d2be207d5fcb057420
+verified_against: a8d2b7f17989321471cff43c4e760e83f58bbd55
 ---
 
 # Explain tool and tutor guide
@@ -40,30 +41,26 @@ every sheet TOOL-SIDE from the same registry entries and doctrine constants
 the mechanics run on ("described ≡ declared", `derive.go`'s own property
 extended to the answer path) — the six fixed topics are:
 
-- `roster` — what THIS world grants (from `ExplainScope.Granted`), then what
-  exists in the catalog but isn't granted here (the grant distinction: a
-  sheet never pretends a tool doesn't exist).
-- `costs` — every granted tool's price, `work_miracle` broken out per kind,
-  from the registry's own `Cost`/`MiracleCost` — the same source
-  `GuardianToolGuidance` renders, so a described price can never drift from
-  the enforced one.
+- `roster` — what THIS world grants (`ExplainScope.Granted`), then what
+  exists in the catalog but isn't granted here (a sheet never pretends a
+  tool doesn't exist).
+- `costs` — every granted tool's price, `work_miracle` per kind, from the
+  registry's own `Cost`/`MiracleCost` — same source `GuardianToolGuidance`
+  renders, so price can never drift from enforced.
 - `charges` — the charge-economy doctrine (cap 3, genesis 1, +1/6 game
   hours) — MIRRORED from `internal/sim`'s `GuardianChargeCap`/
-  `GuardianGenesisCharges`/`GuardianChargeRegenTicks` (the leaf-package
-  discipline: `sim`'s `TestExplainChargeDoctrineMirrorsSim` pins the copy).
+  `GuardianGenesisCharges`/`GuardianChargeRegenTicks`
+  (`TestExplainChargeDoctrineMirrorsSim` pins the copy).
 - `workings` — the `work_miracle` kind vocabulary, per-kind arguments and
   price, ungranted kinds named honestly.
 - `decisions` — the recorded verdict vocabulary (`landed`, `landed_clamped`,
   `rejected_gate`, …) with a player-facing meaning per class — MIRRORED from
-  `internal/toolloop`'s `Verdict` constants (`toolloop`'s
-  `TestExplainDecisionClassesMirrorVerdicts` pins the name set equal).
+  `internal/toolloop`'s `Verdict` constants
+  (`TestExplainDecisionClassesMirrorVerdicts` pins the set equal).
 - `glyphs` — the map legend — MIRRORED from `internal/tui`'s `mapGlyphs`
-  table — since spec 068 the [[tile-registry]] living in `tiles.go`, grown
-  with each row's style token and world binding rather than the bare
-  glyph/name/meaning triple, but still the same table `tui`'s
-  `TestExplainGlyphsMirrorLegend` pins `explain.go`'s copy equal to,
-  glyph-for-glyph (the spec-068 marsh `░`/sand `▒` rows included) — so the
-  explained legend can never drift from the drawn one.
+  table (since spec 068 the [[tile-registry]] in `tiles.go`) —
+  `TestExplainGlyphsMirrorLegend` pins `explain.go`'s copy glyph-for-glyph,
+  so the explained legend can never drift from the drawn one.
 
 Any cataloged tool's own name is also a topic (`<tool-id>` detail: what it
 does, its argument surface, its price, and whether THIS world grants it).
@@ -81,21 +78,19 @@ registry-side mechanics.
 **The read-tool prompt paragraph** (`GuardianReadGuidance`, `derive.go`): a
 read tool like `explain` is NOT an acting tool — it costs nothing and never
 consumes the turn's one act, so listing it under `GuardianToolGuidance`'s
-"call exactly ONE of these" acting doctrine would be a lie. `derive.go`
-gains a sibling function that walks the roster for `Effect == Read` tools
-and renders a "You may also READ freely…" paragraph instead; `turn.go`
-composes it BEFORE the acting block so the acting doctrine's own closing
-sentence stays the prompt's last byte (the adversarial battery's
-`fixedFrameLast` pin: the frame staying last is the invariant, not just the
-wording). Empty roster (no read tool granted) renders nothing — byte-inert
-for every pre-063 world, which never carried one.
+"call exactly ONE of these" acting doctrine would be a lie. A sibling
+function walks the roster for `Effect == Read` tools and renders a "You may
+also READ freely…" paragraph instead; `turn.go` composes it BEFORE the
+acting block so the acting doctrine's closing sentence stays the prompt's
+last byte (the `fixedFrameLast` pin). Empty roster renders nothing —
+byte-inert for every pre-063 world.
 
 ## The tutor guide
 
 **The tutor guide** (`persona.TutorGuide`, `internal/persona/charter.go`,
-US3, standing resolution 2): compiled-in game-authored prompt substrate —
-the `TutorCharter` sibling, never a player skill, never bound through
-`skills/`, untouched by the stage-3 skill lock. Composed by
+US3, standing resolution 2): compiled-in game-authored prompt substrate,
+never a player skill, never bound through `skills/`, untouched by the
+stage-3 skill lock. Composed by
 `buildTurnSystemPrompt` ONLY on tutor-preset worlds (`mt.charterPreset ==
 "tutor"`, keyed on the charter preset, not the stage — a tutor world keeps
 its guide as it climbs the ladder), in the editable zone AFTER the
@@ -132,6 +127,12 @@ table `promptworld stages` renders from), the verbs the stage ceiling grants
 family). The section's title resolves through the skin's epithet
 (`helpSectionLabel`); every other section stays static chrome.
 
+**The forward ladder (spec 078, TASK-152)**: `helpLadderLines` appends a
+per-user forward-looking block below — every `world.StageOrder` stage's
+identity/concept/evidence/earned-next state, from a boot-loaded
+`Model.unlocks` unioned with live `replica.StagesUnlocked` (full render
+contract: [[tui-input-help]]; shared `StageEarned` rule: [[curriculum-ladder]]).
+
 ## The stagesLadder relocation
 
 **`stagesLadder` relocated** (`cmd/promptworld/stages.go` → `internal/world/
@@ -141,8 +142,10 @@ world.go`, T014): the ladder's skin-independent content
 `internal/tui` cannot import) to `internal/world` so the D9 help section
 and `promptworld stages` read the exact same table — the old file keeps its
 own `stageOrder`/`stagesLadder` names as plain aliases so its rendering code
-is unchanged. [[world-save-directory]] and [[cli-promptworld]] cover the
-before/after.
+is unchanged. [[world-save-directory]]/[[cli-promptworld]] cover the
+before/after. Spec 078 repeats the move for earned state:
+`worlds.(*Unlocks).StageEarned` replaces the former `stageEarned`
+([[curriculum-ladder]]).
 
 ## Connections
 

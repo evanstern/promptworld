@@ -8,7 +8,8 @@ sources:
   - internal/tui/lessons.go
   - internal/tui/tiles.go
   - internal/tui/look.go
-verified_against: 03987d380ff92948495abe8b9b34e196d050154d
+  - internal/worlds/unlocks.go
+verified_against: ad2a6543a9caf51d1cd28af863291f3daa3bd4eb
 ---
 
 # TUI input, focus, and help overlay
@@ -118,9 +119,10 @@ default-table fallback from spec 052's contract until the skin runtime
 merges). The ceremonies section (spec 056) and the guardian section (spec
 063, D9) are the overlay's other two status-derived additions — see
 [[takeover-surfaces]] for the former (a stored-content replay of every
-stage this world has ever unlocked, sharing the live ceremony's own
-rendering helpers) and [[grounded-feedback]] for the latter (the stage-keyed,
-model-free "what asking looks like" page, `Status.Stage`-selected). All content is
+unlocked stage, sharing the live ceremony's own rendering helpers) and
+[[grounded-feedback]] for the latter (the stage-keyed,
+model-free "what asking looks like" page, also covering spec 078's
+forward-ladder block below it). All content is
 model-independent — byte-identical with nil status/replica (the no-LLM floor
 beneath an absent angel). Footer hints advertise `· ? help` in every mode
 except the focused minibuffer; while the overlay is open the footer shows the
