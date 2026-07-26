@@ -117,6 +117,20 @@ parity); Phase 4 → AC #2 (help.md byte-identity row + design gate).
   expected pre-final-commit). PR/merge is the orchestrator's step, not
   this session's.
 
+  **Post-T011 merge reconciliation** (origin/main moved twice more while
+  finishing gates): merged TASK-67 (world-fork-duel, PR #116 — real
+  content conflicts in 6 wiki notes + player docs, resolved keeping
+  whichever side actually changed the claim; cli-world-lifecycle.md
+  needed re-trimming under the 8,000-char budget after picking up its
+  fork/compare content) and TASK-155 (paused-label-lanes, PR #117 — no
+  file overlap, clean auto-merge). Re-ran the full gate sequence after
+  each merge: `go build`/`go test ./...` green, `gofmt -l` clean,
+  `check-tui-design.mjs --changed` passes, `check-freshness.mjs --check`
+  13/13 fresh, `gates/cli.mjs freshness` clean except the four
+  pre-existing over-budget notes TASK-156 already tracks. Final
+  `check-merge-drift.mjs pr`: baseLag=0, exit 0, only the informational
+  tui-surface note.
+
 ## Phase 7: Post-merge bookkeeping (root, derived state only)
 
 - [ ] T012 From repo root after merge: spec-bridge sync (TASK-152 → Done as
