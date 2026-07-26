@@ -68,8 +68,16 @@ archived world is still historical proof), atomic `.tmp`+rename writes, and
 advisory-never-authority — an unresolvable home directory WARNS and degrades
 (the endpoint-lease precedent), because the record is pure convenience
 projected from world event histories, which remain the authority. No world
-behavior ever reads it; its only consumers are `promptworld stages` and
-`new`'s earned-stage check.
+BEHAVIOR ever reads it; its consumers are `promptworld stages`, `new`'s
+earned-stage check, and — since spec 078 (TASK-152) — the TUI's own `?`
+guardian-section forward-ladder block, which loads it once at client boot
+(`Model.unlocks`, the `populateHelpLessons`/`LoadLessonsSeen` precedent) and
+unions it with the live `replica.StagesUnlocked` at render time rather than
+re-reading disk every frame ([[grounded-feedback]]). The earned predicate
+itself — stage-1's unconditional floor, or an entry in this record —
+is `(*Unlocks).StageEarned`, single-sourced here so `promptworld stages`
+and the TUI ladder can never disagree on what counts as earned (relocated
+from `cmd/promptworld/stages.go`'s former package-main `stageEarned`).
 
 **The exercises** (`sim.ExerciseDefinition`) are CONTENT, not machinery —
 stage, deterministic seed, framing, an event-derived rubric whose every term

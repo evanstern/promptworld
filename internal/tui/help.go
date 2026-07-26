@@ -16,10 +16,12 @@ package tui
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/evanstern/promptworld/internal/guardian"
 	"github.com/evanstern/promptworld/internal/world"
+	"github.com/evanstern/promptworld/internal/worlds"
 )
 
 // --- T002: the shared map-glyph table (FR-005 anti-drift substrate) ---
@@ -481,6 +483,15 @@ func (m Model) helpWalkthroughLines(width int) []string {
 // for a given stage the bytes are constant — byte-identical per identical
 // status (SC-005), never LLM-derived. Nil status renders the pre-ladder
 // variant (all verbs, no lock) — never a blank or an error.
+//
+// spec 078 (reorient decision 6) appends the forward-ladder block
+// (helpLadderLines) below the current-stage teaching content above: the
+// current-stage block answers "where am I"; the ladder answers "what's
+// next and how do I earn it" — the WorldBox discoverability gap a TUI-only
+// player otherwise has no in-game way to close. The ladder is per-user
+// forward content (unlocks record ∪ live replica.StagesUnlocked), not
+// per-connection, so unlike the block above it renders the same regardless
+// of status/stage (see helpLadderLines' own doc comment).
 func (m Model) helpGuardianLines(width int) []string {
 	stage := m.currentStage()
 	sk := m.sk()
@@ -501,6 +512,96 @@ func (m Model) helpGuardianLines(width int) []string {
 	}
 	lines = append(lines, "",
 		styleDim.Render("ask in your own words (m) — these are only examples; \"what does X cost?\" is always free"))
+	lines = append(lines, m.helpLadderLines(width)...)
+	return lines
+}
+
+// helpLadderLines is the forward-ladder block (reorient decision 6 / spec
+// 078 FR-001/002/004/007/009): the guardian section's current-stage teaching
+// content (above) shows only the ONE polled stage; this block appends EVERY
+// stage `world.StageOrder` names — the same informed identity table
+// `promptworld stages` prints, never a difficulty menu (spec 046 FR-003
+// posture) — so a TUI-only player can see what's next and how to earn it.
+//
+// Iteration is over world.StageOrder (never a hardcoded stage list/count —
+// the TASK-151 armor, FR-001) and each row's identity/concept/evidence come
+// from the SAME substrate `cmdStages` marshals (skin.Stage, world.StagesLadder,
+// worlds.Unlocks.StageEarned) — one source, two surfaces, proven by
+// help_test.go's runtime-derived parity test.
+//
+// Earned state (FR-006): the boot-loaded m.unlocks record UNIONED with the
+// live replica.StagesUnlocked (same key vocabulary, internal/sim/
+// curriculum.go) — a mid-session unlock shows earned immediately, no client
+// restart, no per-frame disk read. The audit pointer (proving world +
+// exercise) renders only when the RECORD itself carries the entry — exactly
+// when `stages --json` would populate proving_world/exercise (FR-002); a
+// replica-only mid-session unlock shows earned with no pointer yet (edge
+// case: the record write may still be in flight).
+//
+// "Next" (FR-004) marks exactly the first unearned stage in StageOrder — a
+// pure derivation of the earned flags, not a new field `stages --json`
+// carries.
+//
+// You-are-here (FR-007): the attached world's current stage (m.currentStage())
+// gets a "◀ this world" marker; StageOverridden annotates the marker with
+// "by override — not earned" but never changes the row's own earned state —
+// an override is never laundered into an earned claim (the `stages`
+// command's honesty posture). Nil status / pre-ladder stage ⇒ no marker,
+// the ladder still renders (FR-008: per-user forward content, not per-
+// connection).
+func (m Model) helpLadderLines(width int) []string {
+	lines := []string{"", styleHeader.Render("The ladder")}
+	sk := m.sk()
+	current := m.currentStage()
+	overridden := current != "" && m.status != nil && m.status.World.StageOverridden
+	nextMarked := false
+	for i, id := range world.StageOrder {
+		if i > 0 {
+			lines = append(lines, "")
+		}
+		si, _ := sk.Stage(id)
+		info := world.StagesLadder[id]
+		lines = append(lines, clipLine(si.Name+" ("+id+") — "+si.Line, width))
+		lines = append(lines, wrapText("teaches: "+info.Concept, width)...)
+		if info.UnlockEvidence != "" {
+			lines = append(lines, wrapText("unlocked by: "+info.UnlockEvidence, width)...)
+		} else {
+			lines = append(lines, wrapText("unlocked by: nothing — this is graduation", width)...)
+		}
+
+		var entry worlds.UnlockEntry
+		var hasEntry bool
+		if m.unlocks != nil {
+			entry, hasEntry = m.unlocks.Entries[id]
+		}
+		earned := m.unlocks.StageEarned(id) ||
+			(m.replica != nil && slices.Contains(m.replica.StagesUnlocked, id))
+
+		switch {
+		case id == world.Stage1:
+			lines = append(lines, clipLine("earned: yes (every player's floor)", width))
+		case hasEntry:
+			lines = append(lines, wrapText(
+				fmt.Sprintf("earned: yes (proven in %q via the %s exercise)", entry.World, entry.Exercise), width)...)
+		case earned:
+			// Mid-session unlock (replica.StagesUnlocked) with no record
+			// entry yet — earned honestly, no audit pointer to show yet.
+			lines = append(lines, clipLine("earned: yes (just unlocked this session)", width))
+		case !nextMarked:
+			lines = append(lines, clipLine("earned: next — earn it above", width))
+			nextMarked = true
+		default:
+			lines = append(lines, clipLine("earned: not yet", width))
+		}
+
+		if id == current {
+			marker := "◀ this world"
+			if overridden {
+				marker += " (by override — not earned)"
+			}
+			lines = append(lines, styleDim.Render(marker))
+		}
+	}
 	return lines
 }
 

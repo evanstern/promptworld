@@ -28,22 +28,16 @@ var (
 	stagesLadder = world.StagesLadder
 )
 
-// stageEarned reports whether stage is offered WITHOUT an override: stage-1
-// is every player's floor (asked of no one — R9's "default stage-1 for new
-// players" made unconditional rather than conditioned on an empty record),
-// every other stage needs an unlocks-record entry.
-func stageEarned(u *worlds.Unlocks, stage string) bool {
-	return stage == world.Stage1 || u.Earned(stage)
-}
-
 // highestEarnedStage returns the highest-earned stage in stageOrder for
 // `promptworld new`'s default --stage selection (R9): stage-1 for a brand
 // new player (nothing else earned), else the highest stage the unlocks
-// record proves.
+// record proves. The earned rule itself is worlds.Unlocks.StageEarned (spec
+// 078 FR-003, relocated from this file's own former stageEarned so the TUI's
+// forward-ladder section can share it — one source, two surfaces).
 func highestEarnedStage(u *worlds.Unlocks) string {
 	highest := world.Stage1
 	for _, id := range stageOrder {
-		if stageEarned(u, id) {
+		if u.StageEarned(id) {
 			highest = id
 		}
 	}
@@ -83,7 +77,7 @@ func cmdStages(args []string) error {
 			row := stageJSON{
 				ID: id, Name: si.Name, Line: si.Line,
 				Concept: info.Concept, Grants: info.Grants, UnlockEvidence: info.UnlockEvidence,
-				Earned: stageEarned(unlocks, id),
+				Earned: unlocks.StageEarned(id),
 			}
 			if e, ok := unlocks.Entries[id]; ok {
 				row.ProvingWorld, row.Exercise = e.World, e.Exercise

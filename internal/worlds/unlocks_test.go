@@ -132,6 +132,38 @@ func TestUpsertUnlocksUnresolvableHomeWarnsAndContinues(t *testing.T) {
 	}
 }
 
+// TestStageEarnedFloorAndRecord (spec 078 D1/T003): stage-1 is every
+// player's unconditional floor regardless of the record (even a nil
+// receiver); every other stage needs a record entry — the relocated rule
+// `cmdStages`/the TUI ladder both now consume.
+func TestStageEarnedFloorAndRecord(t *testing.T) {
+	var nilUnlocks *Unlocks
+	if !nilUnlocks.StageEarned("stage-1") {
+		t.Error("stage-1 must be earned even with a nil Unlocks receiver")
+	}
+	if nilUnlocks.StageEarned("stage-2") {
+		t.Error("a nil Unlocks receiver must not report stage-2 earned")
+	}
+
+	empty := &Unlocks{Entries: map[string]UnlockEntry{}}
+	if !empty.StageEarned("stage-1") {
+		t.Error("stage-1 must be earned with an empty record")
+	}
+	if empty.StageEarned("stage-2") {
+		t.Error("stage-2 must not be earned with an empty record")
+	}
+
+	earned := &Unlocks{Entries: map[string]UnlockEntry{
+		"stage-2": {World: "demo", Path: "/worlds/demo", Exercise: "first-night", EarnedAt: "2026-07-25T18:00:00Z"},
+	}}
+	if !earned.StageEarned("stage-2") {
+		t.Error("stage-2 must be earned once the record holds an entry for it")
+	}
+	if earned.StageEarned("stage-3") {
+		t.Error("stage-3 must not be earned without its own record entry")
+	}
+}
+
 // rootDirOf returns the directory portion of an unlocks.json path — a tiny
 // helper so tests can pre-create the home dir before writing directly.
 func rootDirOf(t *testing.T, path string) string {

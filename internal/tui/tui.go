@@ -127,6 +127,15 @@ type Model struct {
 	// Guardian skin: every skin.Skin method is nil-safe.
 	worldSkin *skin.Skin
 
+	// unlocks is the per-user curriculum-ladder unlocks record, loaded ONCE
+	// at boot (New(), the populateHelpLessons/LoadLessonsSeen precedent —
+	// spec 078 FR-006): the help overlay's forward-ladder section unions
+	// this boot-loaded snapshot with the live replica.StagesUnlocked at
+	// render time rather than re-reading disk every frame. worlds.LoadUnlocks
+	// is load-tolerant/nil-safe (missing/corrupt/unresolvable home ⇒ nothing
+	// beyond the stage-1 floor earned), so this field is never nil.
+	unlocks *worlds.Unlocks
+
 	// active is the narrow fallback's single visible pane (today's model,
 	// unchanged). dockTab/solo are the widescreen composite's dock
 	// selection and zoom state (pages/solo-views.md). Both are kept in
@@ -352,6 +361,9 @@ func New(w *world.World) Model {
 		// worlds.LoadLessonsSeen() never errors, degrading to an empty
 		// record on a missing/corrupt file or an unresolvable home dir.
 		lessons: newLessonTriggers(lessonSeenIDs(worlds.LoadLessonsSeen())),
+		// Per-user unlocks record (spec 078 FR-006): loaded once here, same
+		// load-tolerant doctrine as the lessons-seen record above.
+		unlocks: worlds.LoadUnlocks(),
 	}
 }
 

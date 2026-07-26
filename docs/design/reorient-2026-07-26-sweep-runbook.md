@@ -156,6 +156,7 @@ file's execution log complete and status flipped to done. TASK-111/136/137 untou
 
 | date | task | PR | merge | notes |
 |------|------|----|-------|-------|
+| 2026-07-26 | TASK-152 | #118 | fb8c865 | Ladder view live; StageEarned substrate relocated (parity by construction); reconciled in-branch with #116/#117 |
 | 2026-07-26 | TASK-67 | #116 | 4daf75c | Lane C complete; fork+compare shipped; wallet-inheritance decision ratified in-spec (R4); surfaced pre-existing wiki budget debt from PR #115 (carded) |
 | 2026-07-26 | TASK-142 | #115 | 011ce4e | Lane B complete; look-cursor + TILE pane + mouse parity + badge deep-link; merged with 5-commit docs-only base lag (zero overlap, drift gate green) to preserve 26 in-branch pins |
 | 2026-07-26 | TASK-150 | #114 | 495d8cb | Lane A complete; red-run proved 8 cells (7 postmortem + 1 help.md); help.md badge cell retagged pending TASK-142 |

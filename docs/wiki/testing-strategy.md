@@ -93,7 +93,15 @@ addition. [[grounded-feedback]]'s spec-063 suite spans
 `explain_test.go`/`tutor_guide_test.go`/`reportcard_test.go`/
 `skin_battery_test.go`, `internal/sim/reportcard_test.go`/
 `rubric_hygiene_test.go`, and `internal/tui/reportcard_test.go`/
-`help_guardian_test.go`. Manual
+`help_guardian_test.go`. Since spec 078 (TASK-152), `help_guardian_test.go`
+also carries the forward-ladder suite: a runtime-derived parity test
+(`TestHelpLadderMatchesStagesJSONSubstrate` — expected rows computed from
+the same substrate `stages --json` marshals, zero hardcoded stage
+ids/counts/prose so an upstream catalog change flows through untouched),
+byte-identity for fixed inputs, the nil-status/nil-replica/no-unlocks-file
+floor, a replica-only mid-session unlock (earned, no audit pointer yet),
+the override-without-laundering edge case, and 80x24 pager reachability.
+Manual
 validation results live in `specs/001-world-daemon/quickstart-results.md`.
 
 ## Operational notes
