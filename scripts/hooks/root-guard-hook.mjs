@@ -36,8 +36,11 @@
 //       `rev-parse --show-toplevel` realpath-equals $CLAUDE_PROJECT_DIR —
 //       worktrees under .worktrees/ have their own toplevel and pass as
 //       NOT root):
-//         commit          UNLESS one of two allow paths holds (checked in
-//                         order):
+//         commit          `--amend` is denied OUTRIGHT — checked BEFORE both
+//                         allow paths (it rewrites the previous root commit,
+//                         and --amend with MERGE_HEAD present is not a merge
+//                         conclusion). Otherwise UNLESS one of two allow
+//                         paths holds (checked in order):
 //                         (1) concluding a merge — MERGE_HEAD resolves
 //                             (checked FIRST, so a conflicted-merge
 //                             conclusion is never forced through rule 2);
@@ -393,9 +396,17 @@ function runPreBash() {
     if (realTop !== realProjectDir) continue; // a worktree (own toplevel): not root
 
     if (sub === 'commit') {
-      // Allow path 1 (checked FIRST — a conflicted-merge conclusion must
-      // never be forced through the backlog-only rule): concluding a merge
-      // (MERGE_HEAD present).
+      // `--amend` at root is denied OUTRIGHT, before either allow path: it
+      // rewrites the previous root commit — possibly a merge landing or
+      // another session's board push — and an --amend with MERGE_HEAD
+      // present is not a merge conclusion. A board fix-up is simply a
+      // second board-sync commit.
+      if (args.includes('--amend')) {
+        block(sub, '`git commit --amend` at the root checkout rewrites the previous root commit (possibly a merge landing or another session\'s board push); main history is append-by-merge only — a board fix-up is a second board-sync commit');
+      }
+      // Allow path 1 (checked FIRST of the two allow paths — a
+      // conflicted-merge conclusion must never be forced through the
+      // backlog-only rule): concluding a merge (MERGE_HEAD present).
       const mergeHead = tryExec('git', ['-C', effDir, 'rev-parse', '-q', '--verify', 'MERGE_HEAD']);
       if (mergeHead.status !== 0) {
         // Allow path 2: the board-sync exception (TASK-161) — a commit

@@ -236,8 +236,8 @@ freshen it, branch into main to land it.
 - **The ONE exception — board sync (TASK-161):** `backlog/` is the plan of
   record and the concurrent-session mutex, so it lives current on MAIN. Edit it
   at root via the `backlog` CLI only, commit at root scoped to `backlog/` paths
-  alone (`git add <specific task files> && git commit` — never `-a`, never mixed
-  paths), and push immediately. Task branches never commit `backlog/` — the
+  alone (`git add <specific task files> && git commit` — never `-a`, never
+  `--amend`, never mixed paths), and push immediately. Task branches never commit `backlog/` — the
   board has a single home. The root-guard hook allows exactly this shape of
   commit and no other. Non-board bookkeeping (tasks.md ticks, runbook execution
   logs, spec-bridge mirrors under `specs/`) is NOT excepted: it rides a branch
