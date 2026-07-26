@@ -4,7 +4,7 @@ title: 'Canonization miracle: Metatron tool to make consensus lore real'
 status: To Do
 assignee: []
 created_date: '2026-07-23 17:50'
-updated_date: '2026-07-24 02:42'
+updated_date: '2026-07-26 20:26'
 labels:
   - emergent-lore
   - metatron
@@ -39,3 +39,9 @@ Sequencing per plan of record: after TASK-79; runs in parallel with TASK-80, and
 - [ ] #4 Villagers perceive the canonization in-world (arrival discovery and/or omen); demonstrated live on world-01's Thornspire as the acceptance scenario
 - [ ] #5 Metatron can brief the player on dominant village myths as canonization candidates
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Realigned 2026-07-26 (guardian-directives ideation): sibling of the designation family — canonization is another guardian-authored durable world artifact. Order AFTER TASK-157 (guardian directives/designations) and reuse its entity machinery (event-sourced guardian artifacts with deterministic IDs, one-way status, prune discipline) rather than minting a parallel scheme. Priority stays medium; not on the directives critical path.
+<!-- SECTION:NOTES:END -->

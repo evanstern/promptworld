@@ -4,7 +4,7 @@ title: 'Interaction system v2: design session'
 status: To Do
 assignee: []
 created_date: '2026-07-19 22:27'
-updated_date: '2026-07-26 17:58'
+updated_date: '2026-07-26 20:26'
 labels:
   - design
 dependencies: []
@@ -28,4 +28,6 @@ The full agent<=>agent interaction system needs a ground-up design (user, 2026-0
 Re-grounding 2026-07-22: reframed onto the tool substrate — new interaction primitives (argue/trade/teach/comfort/conspire) should be authored as tool-registry entries (TASK-53) with per-agent rosters, invoked through the TASK-52 loop, not as a bespoke parallel system. The design session should start from the registry's tool classes (world/expressive/read). Ordered after Metatron v2 (TASK-27), which exercises the same substrate first.
 
 Reorient 2026-07-26 (board move 12): reframed as the DF-pole drama generator — social incidents are the ambient endgame's retention content (Thornspire cascade proved the substrate); chronicle requirements should include rubric-legibility for future social exercises.
+
+Reordered 2026-07-26 (guardian-directives ideation, operator: 'ok on 23'): the TASK-27 ordering note is obsolete (Metatron v2 is Done). New ordering: AFTER TASK-157 (guardian directives/designations) — the guardian→villager directive channel (durable checkable goals, decision-context block, DIRECTIVE reflex rung) will inform the villager↔villager interaction primitives this design session covers; teach/order-shaped interactions should reuse the directive substrate's completion-predicate vocabulary where applicable.
 <!-- SECTION:NOTES:END -->
