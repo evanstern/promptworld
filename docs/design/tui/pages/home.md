@@ -2,7 +2,7 @@
 title: Page — home (widescreen composite)
 class: page
 status: shipped
-verified_against: 1b3fe329e64431b66f9995a1f8c8e5fc979dafb7
+verified_against: 7e3c2b5f5f23eb8e5fcb37d0f867dbc6f46a289b
 sources:
   - internal/tui/views.go
   - internal/tui/layout.go
