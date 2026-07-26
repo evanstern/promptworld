@@ -4,8 +4,12 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"os"
+	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"syscall"
 	"testing"
 
 	"github.com/evanstern/promptworld/internal/guardian"
@@ -406,6 +410,129 @@ func TestCmdStopUnknownNameFailsClearly(t *testing.T) {
 	var nf *worlds.ErrNotFound
 	if !errors.As(err, &nf) {
 		t.Errorf("expected worlds.ErrNotFound, got %v (%T)", err, err)
+	}
+}
+
+// --- TASK-147: daemon-lifecycle commands must not deadlock across
+// FormatVersion bumps. writeWrongVersionWorld lays down a path-form world
+// directory (bypassing name resolution) whose manifest carries a
+// format_version this build cannot Open — the live incident: PR #105 bumped
+// FormatVersion 4->5, and a v4 world's running daemon could not be stopped
+// by the new binary because cmdStop/cmdStatus gated on world.Open before
+// ever touching the daemon.
+func writeWrongVersionWorld(t *testing.T) string {
+	t.Helper()
+	dir := t.TempDir()
+	manifest := `{"name":"x","seed":1,"format_version":4,"tick_game_seconds":1}`
+	if err := os.WriteFile(filepath.Join(dir, world.ManifestName), []byte(manifest), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return dir
+}
+
+func TestCmdStopWrongFormatVersionNoDaemonReportsNotRunning(t *testing.T) {
+	// (a): no pidfile at all — stop must reach the "daemon not running"
+	// idempotent path instead of erroring at Open with the migrate hint.
+	dir := writeWrongVersionWorld(t)
+	out := captureStdout(t, func() {
+		if err := cmdStop([]string{dir}); err != nil {
+			t.Fatalf("stop on a wrong-format-version, non-running world must be idempotent, got: %v", err)
+		}
+	})
+	if !strings.Contains(out, "daemon not running") {
+		t.Errorf("expected \"daemon not running\", got %q", out)
+	}
+}
+
+// TestCmdStopWrongFormatVersionStopsRunningDaemon is the actual deadlock
+// regression (AC #1): a live process holds the wrong-version world's
+// pidfile with no socket listening (the same "socket dead, pid alive"
+// shape cmdStop already falls back to SIGTERM for) — stop must detect it
+// as running and terminate it. Before the fix, daemon.IsRunning itself
+// called world.Open(dir) and silently reported "not running" for ANY
+// unopenable world, so stop would print "daemon not running" and return
+// nil while the process stayed alive — the deadlock was worse than an
+// error, it was a false-positive success.
+func TestCmdStopWrongFormatVersionStopsRunningDaemon(t *testing.T) {
+	dir := writeWrongVersionWorld(t)
+
+	cmd := exec.Command("sleep", "60")
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("spawn stand-in daemon process: %v", err)
+	}
+	pid := cmd.Process.Pid
+	// This test process is the stand-in's parent, so it must reap it as
+	// soon as it exits — otherwise it lingers as a zombie, and pidAlive's
+	// kill(pid, 0) probe (both real daemons and this test rely on it) keeps
+	// reporting a zombie's pid as alive until something calls Wait on it.
+	// A real daemon has no such wrinkle: it's re-parented (Setsid) away
+	// from the CLI process that started it.
+	waitErrCh := make(chan error, 1)
+	go func() {
+		waitErrCh <- cmd.Wait()
+		close(waitErrCh)
+	}()
+	defer func() {
+		_ = cmd.Process.Kill()
+		<-waitErrCh
+	}()
+
+	if err := os.WriteFile(filepath.Join(dir, "daemon.pid"), []byte(strconv.Itoa(pid)+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	out := captureStdout(t, func() {
+		if err := cmdStop([]string{dir}); err != nil {
+			t.Fatalf("stop on a wrong-format-version world with a live pid must stop it, got: %v", err)
+		}
+	})
+	if !strings.Contains(out, "daemon stopped") {
+		t.Errorf("expected \"daemon stopped\", got %q", out)
+	}
+	if err := syscall.Kill(pid, 0); err == nil {
+		t.Fatalf("pid %d still alive after cmdStop reported \"daemon stopped\"", pid)
+	}
+}
+
+func TestCmdStatusWrongFormatVersionReachesNotRunningPath(t *testing.T) {
+	// (b): no live daemon — status must reach the daemon-not-running path
+	// instead of erroring at Open with the migrate hint.
+	dir := writeWrongVersionWorld(t)
+	var err error
+	out := captureStdout(t, func() {
+		err = cmdStatus([]string{dir})
+	})
+	if err != nil {
+		t.Fatalf("status on a wrong-format-version, non-running world must not error at Open, got: %v", err)
+	}
+	if !strings.Contains(out, "daemon not running") {
+		t.Errorf("expected \"daemon not running\", got %q", out)
+	}
+}
+
+func TestCmdStopNonexistentPathFailsClearly(t *testing.T) {
+	// (c): a path-form argument that was never a world directory at all
+	// (as opposed to a bare name unknown to the registry, already covered
+	// by TestCmdStopUnknownNameFailsClearly) must still fail clearly —
+	// requireWorldDir's job, distinct from the version gate it bypasses.
+	dir := filepath.Join(t.TempDir(), "never-created")
+	err := cmdStop([]string{dir})
+	if err == nil {
+		t.Fatal("expected an error for a nonexistent world directory")
+	}
+	if !strings.Contains(err.Error(), "not a world directory") {
+		t.Errorf("expected a \"not a world directory\" error, got %v", err)
+	}
+}
+
+func TestCmdStatusNonexistentPathFailsClearly(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "never-created")
+	err := cmdStatus([]string{dir})
+	if err == nil {
+		t.Fatal("expected an error for a nonexistent world directory")
+	}
+	if !strings.Contains(err.Error(), "not a world directory") {
+		t.Errorf("expected a \"not a world directory\" error, got %v", err)
 	}
 }
 
