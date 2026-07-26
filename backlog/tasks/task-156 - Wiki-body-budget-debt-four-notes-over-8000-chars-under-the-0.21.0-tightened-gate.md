@@ -3,10 +3,10 @@ id: TASK-156
 title: >-
   Wiki body-budget debt: four notes over 8000 chars under the 0.21.0-tightened
   gate
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-26 20:13'
-updated_date: '2026-07-26 21:09'
+updated_date: '2026-07-26 21:36'
 labels:
   - wiki
   - tooling
@@ -24,4 +24,6 @@ Surfaced by TASK-67's lane (spec 076 close-out): executor-world-state.md (+414),
 
 <!-- SECTION:NOTES:BEGIN -->
 Operator directive 2026-07-26: this work moves into a worktree on a task branch — wiki note splits/trims are grounding content and ride a PR per spec 069 (never root commits); root stays clean on main. The in-root WIP observed during the reorient sweep should be migrated to .worktrees/task-156 before continuing.
+
+2026-07-26: orphaned in-root WIP (12 modified notes + 4 new child notes: scenario-rubric, sim-state-outcome-fields, tui-dock-tile-view, tui-look-cursor) migrated off root onto this branch per the operator directive on this card and the TASK-160 root-read-only rule. Originating session lost; salvaged via git stash from root. Doneness not yet verified — body-budget gate + INDEX consistency + player-docs regen still to be checked before PR.
 <!-- SECTION:NOTES:END -->
