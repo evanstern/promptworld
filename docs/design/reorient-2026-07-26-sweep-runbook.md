@@ -154,4 +154,5 @@ file's execution log complete and status flipped to done. TASK-111/136/137 untou
 
 | date | task | PR | merge | notes |
 |------|------|----|-------|-------|
+| 2026-07-26 | TASK-149 | #113 | f78358a | Lane A anchor merged; unblocks 150/67/151. Doctrine tension logged: implementer merged origin/main into the branch (not rebase) to preserve 43 in-branch pin hashes — pr gate green; operator may want to ratify merge-over-rebase for pin-carrying branches |
 | 2026-07-26 | TASK-154 | #112 | 86b776d | Lane B first merge; mutation check proven; player-docs pin gap found+fixed in-branch (freshness probe must run directly, not just via pr gate) |

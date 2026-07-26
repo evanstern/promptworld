@@ -55,8 +55,8 @@ close-out.
 
 ## Phase 7: Polish & close-out
 
-- [ ] T017 Full proof: `gofmt -l` clean; `go test ./...` green (existing snapshots load byte-identical — FR-008/SC-004); `node scripts/check-merge-drift.mjs pr` from the worktree exits 0; PR opens carrying code + design + wiki + player docs together; merge via `gh pr merge --merge` only
-- [ ] T018 Post-merge (root): spec-bridge sync, board AC ticks, tasks.md ticks, runbook execution-log row — derived state only, no grounding content on main
+- [x] T017 Full proof: `gofmt -l` clean; `go test ./...` green (existing snapshots load byte-identical — FR-008/SC-004); `node scripts/check-merge-drift.mjs pr` from the worktree exits 0; PR opens carrying code + design + wiki + player docs together; merge via `gh pr merge --merge` only
+- [x] T018 Post-merge (root): spec-bridge sync, board AC ticks, tasks.md ticks, runbook execution-log row — derived state only, no grounding content on main
 
 ## Dependencies & Execution Order
 
