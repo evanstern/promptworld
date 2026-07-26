@@ -1,10 +1,10 @@
 ---
 id: TASK-122
 title: Re-measure SC-007 flip-rate at full length after instinct work lands
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-25 13:58'
-updated_date: '2026-07-25 22:17'
+updated_date: '2026-07-26 13:43'
 labels:
   - goal-quality
   - thrash-detection
@@ -22,7 +22,7 @@ Follow-on from TASK-105/spec 043 evidence (specs/043-context-grounding/evidence/
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 ≥4 game-day run on the compound build, spike counting method, results recorded
+- [x] #1 ≥4 game-day run on the compound build, spike counting method, results recorded
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -40,3 +40,9 @@ Measurement RUN LAUNCHED (2026-07-25): fresh world ~/.promptworld/measure/task-1
 
 Speed bumped 4x -> 8x at tick ~5,819 (day 1 07:36, operator decision 2026-07-25): horizon verified green at 8x for all three classes (planner/conversation/meeting thinking, none suppressed). Rationale: bias direction is conservative (staler planner reactions at higher compression push flips UP, so clearing the bar at 8x is stronger evidence); span was 1.6 game-hours old at the switch — effectively single-speed; wall ETA halves to ~11h (~2026-07-26 morning). Evidence doc will footnote the mixed span. Revert condition: any horizon suppression appears.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Full-length re-measure complete (2026-07-26): 5.204 game-days on the compound MVLS build (043+057+058+059+061+062+064), gemma4:12b-mlx all routes @ 8x, seed 4242. Worst agent 6.73 flips/game-day — clears the <=36 bar by 81%, 90.7% below the world-01 baseline (~72). Fast flips: 20 total across 8 agents (baseline Sage alone: 334+). Zero deaths; all villagers at full health+warmth at span end; survival watches never triggered; conversation volume down ~15x. Evidence: docs/design/evidence/task-122/results.md (+ flip_count.py, baseline-validated). Regime caveats recorded (8x plan-staleness — carded TASK-141). Measurement world retained at ~/.promptworld/measure/task-122; daemon stopped.
+<!-- SECTION:FINAL_SUMMARY:END -->
