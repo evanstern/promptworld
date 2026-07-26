@@ -1,9 +1,10 @@
 ---
 id: TASK-151
 title: 'Exercise catalog wave: 2-3 exercises per stage + incident vocabulary growth'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-26 17:57'
+updated_date: '2026-07-26 18:52'
 labels:
   - gameplay
   - content
@@ -26,3 +27,9 @@ Reorient 2026-07-26 decision 5. Ladder v1 = 2-3 hand-authored exercises per stag
 - [ ] #2 At least 3 incident kinds, replay-safe and ambient-indistinguishable, entering via shipped severity channels
 - [ ] #3 Lesson tranche 2 + one wrong-thing-detector lesson land as catalog content
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Sweep claim (runbook docs/design/reorient-2026-07-26-sweep-runbook.md): spec 077-exercise-catalog. Tier: Opus 4.8 — new reducer-valid event kinds across sim reducer + chronicle digest (TestCatalogSweep) + scenario evaluators; replay-safety doctrine-adjacent. Dependency satisfied: TASK-149 merged (rubric truth + the-law evaluator live).
+<!-- SECTION:NOTES:END -->
