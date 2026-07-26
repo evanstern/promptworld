@@ -1,34 +1,44 @@
 ---
 title: Overlay — unlock ceremony
 class: overlay
-status: specified
-verified_against: c8906da39be3a5b861c2272af37db0a83dcded7a
+status: shipped
+verified_against: 0de6736be90629cf98727cbdc76c8e24e19c9ce6
+sources:
+  - internal/tui/tui.go
+  - internal/tui/views.go
+  - internal/skin/skin.go
 ---
 
 # Overlay: unlock ceremony
 
-The stage-unlock takeover (reorientation decision 6): when
-`curriculum.stage_unlocked` fires on an attached client, the ceremony seizes
-the screen immediately — the operator's chosen maximum-salience interrupt
-policy, celebrating a milestone the player earned. **Not built** — specified
-spec-before-build for Wave 4.
+The stage-unlock takeover (reorientation decision 6, spec 056/TASK-127):
+when `curriculum.stage_unlocked` fires on an attached client, the ceremony
+seizes the screen immediately — the operator's chosen maximum-salience
+interrupt policy, celebrating a milestone the player earned.
 
-## Mockup
+## Mockup (real symbols — `ceremonyView`, stage-3 unlocked by `the-law`)
 
 ```
-┌ THE WRITTEN WORD — unlocked ──────────────────────────────────────────┐
+┌ THE CRAFT — unlocked ──────────────────────────────────────────────────┐
 │                                                                        │
-│  Your charter proved The Written Word: a law that outlives the        │
-│  conversation, written once and honored by every turn since.          │
+│  Your play proved The Craft: what the guardian can do now bears your  │
+│  own hand in its shaping.                                             │
 │                                                                        │
 │  ┌─ report card · the-law ──────────────────────────────────────┐    │
-│  │ ✓ norm adopted under a player-authored charter revision       │    │
-│  │ ✓ charter_observed{custom: true} recorded before the vote      │    │
+│  │ ✓ meeting proposal resolved (meeting.proposal_resolved: 1)     │    │
+│  │ ✓ metatron charter observed (metatron.charter_observed: 1)     │    │
 │  └────────────────────────────────────────────────────────────────┘   │
 │                                                                        │
 │                              esc dismiss · q — the world keeps running│
 └────────────────────────────────────────────────────────────────────────┘
 ```
+
+The title and chapter are always the STAGE BEING UNLOCKED's identity
+(`replica.StagesUnlocked`'s last entry, `skin.StageName`/`skin.
+CeremonyChapter`) — not the stage the proving exercise was played at. A
+`first-night` (stage-1) pass unlocking stage-2 renders "THE WRITTEN WORD —
+unlocked"; a `the-law` (stage-2) pass unlocking stage-3 (shown above)
+renders "THE CRAFT — unlocked".
 
 ## Layering & trigger
 
@@ -52,21 +62,39 @@ spec-before-build for Wave 4.
 
 ## Content: two voices, instrument authoritative (FR-019)
 
-- **Narrated chapter** — a short, skin-resolved paragraph in the **player's
-  own authorship voice** (D6): "your charter proved `<stage name>`," never a
-  third-person system notice. Fiction strings render as skin tokens
-  (`patterns/skin-tokens.md`).
-- **Rubric checklist (the instrument, authoritative)** — the SAME report-
-  card artifact `overlays/postmortem.md` and `pages/guardian-console.md`
-  render (D5's one shared renderer, three sites): the exercise's rubric
-  terms that earned the unlock, rendered as a plain checklist. When the
-  narrated chapter and the checklist could ever be read as disagreeing, the
-  checklist is the source of truth — the narration is presentation, never
-  a second scoring computation.
+- **Narrated chapter** (`skin.CeremonyChapter(stage)`, tokens
+  `skin.stage.<id>.ceremony_chapter`) — a short, skin-resolved paragraph in
+  the **player's own authorship voice** (D6): "your play proved `<stage
+  name>`," never a third-person system notice. A deliberately generic
+  "your play" framing (not "your charter") is used across all three
+  unlockable stages: the gate a pass satisfies varies (any pass at stage-1;
+  a charter revision at stage-2; a player-granted tool at stage-3), so one
+  authored line per stage stays true regardless of which specific evidence
+  earned it. Fiction strings render as skin tokens (`patterns/skin-tokens.md`).
+- **Rubric checklist (the instrument, authoritative)** — the SAME
+  `reportCardView` renderer `overlays/postmortem.md` and
+  `pages/guardian-console.md` compose (D5's one shared renderer, three
+  sites): the proving exercise's rubric terms, rendered as a plain
+  checklist. Content comes from the recorded `CurriculumPass`'s own
+  `Evidence` when the pass is still retained (`provingPass`,
+  `internal/tui/views.go`) — the authoritative source FR-019 calls "the
+  instrument" — falling back to a generic events-ring scan only if the pass
+  has aged out of the bounded 32-entry retention.
 
 Both always render together; this is not a toggle — FR-019 rules "both,
 instrument authoritative," not "narration by default, instrument on
 request."
+
+**Known simplification** (not resolved by this feature): the checklist's
+per-term marker is a generic event-presence evaluation (met = the term's
+cataloged event type appears at least once in the evidence/ring) — it does
+not encode a term's actual pass semantics (some rubric terms want ZERO
+occurrences, e.g. `agent.died` on `first-night`; some combine several terms
+with OR). `internal/sim/curriculum.go`'s own doc comments name TASK-119's
+scenario rubric machinery as the eventual owner of curated per-term
+semantics; this renderer is built to stay correct regardless of how that
+content evolves (`reportCardFactsFromEvidence`/`reportCardFactsFromEvents`,
+`internal/tui/views.go`).
 
 ## Dismissal and the blessed stopping point (D13)
 
@@ -85,12 +113,12 @@ Replayable from **both** pull surfaces, independently:
    proving world, and the evidence pointer ([[curriculum-ladder]]) —
    enough facts to identify which ceremony to revisit, model-free, from the
    CLI.
-2. **`?` overlay** — `overlays/help.md` gains a ceremony-replay entry point
-   (research.md R4 classifies this section `status-derived`: which
-   ceremonies exist depends on run history; replayed content is stored, not
-   regenerated) — **not built** in this slice; recorded here as the pull
-   surface this page's replayability AC depends on, with its own
-   `unbuilt (wave 4)` row in the control table below.
+2. **`?` overlay** — `overlays/help.md`'s ceremony-replay section
+   (`helpSectionCeremonies`, `internal/tui/help.go`; research.md R4
+   classifies it `status-derived`: which ceremonies exist depends on run
+   history) lists every stage `replica.StagesUnlocked` names, each
+   re-rendering the SAME chapter + report card the live ceremony showed
+   (`ceremonyReplayLines`) — stored, never regenerated.
 
 Both surfaces existing is the explicit AC (spec.md US2-AS2): a player who
 missed or dismissed a ceremony is never permanently denied its content.
@@ -127,13 +155,13 @@ to a non-visual observer.
 
 | control/region | states | data source | renderer | keys+mouse | introduced-by | skin-token |
 |---|---|---|---|---|---|---|
-| ceremony takeover | closed · open | `curriculum.stage_unlocked` | `unbuilt (wave 4)` | (opens automatically) · — | reorient decision 6 | — |
-| narrated chapter | — | skin-resolved unlock text (D6 voice) | `unbuilt (wave 4)` | — (display-only) | reorient D6/FR-019 | `skin.guardian.name` (stage-name resolution reuses `skin.StageName`, not a new token) |
-| rubric checklist (instrument) | — | exercise rubric evidence (shared with report card, D5) | `unbuilt (wave 4)`, shared with `overlays/postmortem.md` | — | reorient FR-019/D5 | — |
-| dismiss | open → closed | player action | `unbuilt (wave 4)` | `esc` · — | reorient decision 6 | — |
-| q-detach (blessed stopping point) | open → detached | player action | `unbuilt (wave 4)` | `q` · — | reorient D13 | — |
-| replay via `stages` | — | per-user unlocks record | `unbuilt (wave 4)` (CLI already exposes the facts today) | — (CLI, no TUI keys) | reorient FR-013 | — |
-| replay via `?` overlay | — | run-history-derived ceremony list | `unbuilt (wave 4)` | — | reorient FR-013 / research.md R4 | — |
+| ceremony takeover | closed · open | `curriculum.stage_unlocked` (`Model.takeover`, `applyEvent`) | `takeoverView`/`ceremonyView` (`internal/tui/views.go`) | (opens automatically) · — | reorient decision 6 | — |
+| narrated chapter | — | `replica.StagesUnlocked`'s last entry + skin lookup | `ceremonyView`, `skin.CeremonyChapter` | — (display-only) | reorient D6/FR-019 | `skin.stage.<id>.ceremony_chapter` |
+| rubric checklist (instrument) | — | recorded pass Evidence (`provingPass`) or ring scan (fallback) | `reportCardView`, shared with `overlays/postmortem.md`/`pages/guardian-console.md` | — | reorient FR-019/D5 | — |
+| dismiss | open → closed | player action | `handleTakeoverKey` (`internal/tui/tui.go`) | `esc` · — | reorient decision 6 | — |
+| q-detach (blessed stopping point) | open → detached | player action | `handleTakeoverKey` → `quit()` (framing from `View()`'s `runEnded()` check) | `q` · — | reorient D13 | — |
+| replay via `stages` | — | per-user unlocks record | `cmd/promptworld/stages.go` (unchanged, pre-existing) | — (CLI, no TUI keys) | reorient FR-013 | — |
+| replay via `?` overlay | — | `replica.StagesUnlocked`/`CurriculumPasses` | `ceremonyReplayLines` (`internal/tui/help.go`, `helpSectionCeremonies`) | `tab`/`shift+tab` to reach · — | reorient FR-013 / research.md R4 | — |
 
 **Parity rollout**: `esc`/`q` have no mouse target — recorded from birth as
 a parity gap (decision 8, formal doctrine in `patterns/keymap.md`, T024).

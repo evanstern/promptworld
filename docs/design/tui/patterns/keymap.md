@@ -2,10 +2,11 @@
 title: Pattern — keymap
 class: pattern
 status: shipped
-verified_against: d2206458f7a520379a7e882c4fe19e6b448e281c
+verified_against: 0de6736be90629cf98727cbdc76c8e24e19c9ce6
 sources:
   - internal/tui/tui.go
   - internal/tui/help.go
+  - internal/tui/views.go
 ---
 
 # Pattern: keymap
@@ -34,6 +35,7 @@ walkthrough or lessons section of its own).
 | `r` | chronicle: toggle raw ↔ narrated |
 | `a` / `t` | chronicle: filter by agent / thread |
 | `q` | quit |
+| `p` | reopen the postmortem takeover (only while the run has ended; spec 056) — reachable from every mode below `?`/minibuffer focus in `handleKey`'s chain (global, console, inspect, villagers), not shown again per-mode |
 | `ctrl+c` | quit (from **any** mode) |
 
 ## Mode: minibuffer focused (after `m`)
@@ -114,17 +116,30 @@ console's own footer names them), unlike inspect/villagers mode's narrower
 While the minibuffer is focused inside the console, `G`/`e`/`5`/`J`/`K` all
 type into the buffer instead — no silent stealing (focus-contract.md rule 4).
 
+## Mode: takeover (the ceremony or postmortem is open; spec 056, layered
+above every other mode)
+
+The takeover family ([overlays/ceremony.md](../overlays/ceremony.md),
+[overlays/postmortem.md](../overlays/postmortem.md)) owns the keyboard
+before EVERYTHING else — `handleKey`'s first check after `ctrl+c`, ahead
+of help, minibuffer focus, the console, inspect, and villagers mode alike.
+Unlike "Mode: console"'s "most global keys pass through unchanged" shape,
+a takeover swallows every key it doesn't name below — the takeover IS the
+event, not a mode layered alongside the others.
+
+| Key | Ceremony | Postmortem |
+|---|---|---|
+| `esc` | dismiss (returns to whatever was beneath — help/console state is untouched, not force-closed) | dismiss + latches `postmortemDismissed` (suppresses the next connect's auto-reopen this session; `p` overrides) |
+| `q` | quit/detach — the D13 "world keeps running" framing (the run hasn't ended) | quit/detach — the plain, honest ended-world quit (`View()`'s `runEnded()` check drops the "keeps running" claim) |
+| `?` | swallowed — the takeover keeps the body slot, help does not open | swallowed |
+| everything else | swallowed | swallowed |
+
 ## New global keys (specified, unbuilt — this feature)
 
-One new global key from this feature's new-surface pages remains unbuilt
-(`unbuilt` in its page's own control table). `G` (open the guardian
-console) shipped with spec 053/TASK-125 and moved to the "Mode:
-global"/"Mode: console" tables above; `x` (dismiss the lesson row) shipped
-with spec 055/TASK-117 and moved to the "Mode: global" table above:
-
-| Key | Action | Specified in |
-|---|---|---|
-| `p` | reopen the postmortem takeover (only while the run has ended) | [overlays/postmortem.md](../overlays/postmortem.md) |
+Nothing remains unbuilt from this table as of spec 056/TASK-127: `G` (open
+the guardian console) shipped with spec 053/TASK-125; `x` (dismiss the
+lesson row) shipped with spec 055/TASK-117; `p` (reopen the postmortem)
+shipped with spec 056/TASK-127 — all three now live in the tables above.
 
 ## Mode: exercise briefing (scenario worlds; the exercise tab visible, briefing not yet dismissed — spec 054)
 
@@ -172,6 +187,8 @@ inspect           j/k select · J/K scroll detail · space resume · m ask · ? 
 villagers roster  j/k select · ⏎ inspect · space pause · q quit · ? help
 villagers detail  esc back · space pause · q quit · ? help
 console           G back · esc back · m ask · space pause · q quit · ? help
+ceremony          esc dismiss · q — the world keeps running
+postmortem        esc dismiss · q quit
 ```
 
 Minibuffer's hint carries no `? help`: focused, `?` types into the buffer

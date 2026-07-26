@@ -84,6 +84,19 @@ var dockTabKey = map[pane]string{paneChronicle: "2", paneGuardian: "3", paneVill
 // exercise tab's 6 (the narrow fallback shares keymap.md's global digits).
 var paneKey = [paneCount]string{"1", "2", "3", "4", "5", "6"}
 
+// takeoverKind is the body-slot owner among the takeover family (spec 056,
+// data-model.md "Takeover owner"; contracts/takeovers.md §1): none, the
+// stage-unlock ceremony, or the run-end postmortem. Precedence is total —
+// postmortem always wins, replacing an open ceremony; takeovers never
+// stack (same-kind arrivals replace, never queue).
+type takeoverKind int
+
+const (
+	takeoverNone takeoverKind = iota
+	takeoverCeremony
+	takeoverPostmortem
+)
+
 // speedSteps is the [ / ] cycling order.
 // max is deliberately absent: the watchable ladder tops out at 32x (TASK-20);
 // uncapped ticking is for headless pure-sim runs only.
@@ -259,6 +272,22 @@ type Model struct {
 	// by chronicleInspectBody each View(), consumed by handleMouse the
 	// next Update() (contract §1, US2).
 	chronHit *chronHitRegion
+
+	// Takeover state (spec 056, data-model.md "Takeover owner"; contracts/
+	// takeovers.md §1): which overlay owns the body slot, above every other
+	// mode/page in this client (help, console, solo, narrow panes alike) —
+	// applyEvent flips it on run.ended/curriculum.stage_unlocked, esc/q
+	// (handleTakeoverKey) release it, connectedMsg auto-opens the postmortem
+	// on attach to an already-ended world. ceremonyDeferred records that an
+	// unlock arrived while the postmortem owned the slot (postmortem always
+	// wins — the ceremony never interrupts it, only replay surfaces carry
+	// the deferred content forward). postmortemDismissed is per-client-
+	// session (not per reconnect — a transient resync should not re-annoy a
+	// player who already dismissed it): esc sets it, `p` clears it, New()
+	// starts false.
+	takeover            takeoverKind
+	ceremonyDeferred    bool
+	postmortemDismissed bool
 }
 
 // chronHitRegion is the chronicle inspect-list's rendered geometry: which
@@ -559,6 +588,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.villDecisionsScroll = 0      // data-model.md: decisions scroll resets on reconnect
 		m.traces = newDecisionTraces() // spec 020 contract R5: projection resets wholesale, like the replica
 		m.exBriefingDismissed = false  // spec 054: the briefing shows once per attach — a fresh orientation each session
+		// Postmortem auto-open (spec 056 FR-001, contracts/takeovers.md §1):
+		// the dual-source runEnded() posture — a fresh attach to an
+		// already-ended world (State.Ended in the snapshot, no live
+		// run.ended replay needed) opens the takeover on connect exactly
+		// like the live transition does, unless this client session already
+		// dismissed it (postmortemDismissed is per-session, not per
+		// reconnect — a transient resync must not re-annoy). Postmortem
+		// always wins even here, replacing any stale ceremony left open
+		// across a reconnect.
+		if m.runEnded() && !m.postmortemDismissed {
+			m.takeover = takeoverPostmortem
+		}
 		return m, listen(m.client)
 
 	case disconnectedMsg:
@@ -815,22 +856,31 @@ func (m Model) runEnded() bool {
 }
 
 // handleKey is the top-level key dispatcher implementing the modes of
-// patterns/keymap.md, in priority order: ctrl+c always quits (rule 3); the
-// help overlay (spec 045), when open, owns the keyboard next — the head of
-// the esc-release chain (help -> minibuffer -> villager detail -> console
-// -> solo -> home; research.md R1, spec 053 amendment) — and '?' opens it
-// from every mode except minibuffer focus, checked immediately after (so
-// '?' still types into the buffer there, FR-001); minibuffer-focused keys
-// own the keyboard only when focus was explicitly acquired (rule 1); the
-// guardian console (spec 053), when open, owns the keyboard next — checked
-// ahead of inspect/villagers mode because those are keyed off dockTab/
-// active, which persist unchanged (and so would still spuriously read as
-// "visible") underneath the console's full-screen body; inspect-mode keys
-// layer on top of, never replace, the global mode (rule 5 / keymap.md "Mode:
-// inspect").
+// patterns/keymap.md, in priority order: ctrl+c always quits (rule 3); a
+// takeover (spec 056, contracts/takeovers.md §1), when open, owns the
+// keyboard before EVERYTHING else — help, minibuffer, console, inspect,
+// villagers, global alike — the family's own maximum-salience framing
+// ("the takeover IS the event," not a mode alongside the others); the help
+// overlay (spec 045), when open, owns the keyboard next — the head of the
+// esc-release chain (help -> minibuffer -> villager detail -> console ->
+// solo -> home; research.md R1, spec 053 amendment) — and '?' opens it from
+// every mode except minibuffer focus, checked immediately after (so '?'
+// still types into the buffer there, FR-001); minibuffer-focused keys own
+// the keyboard only when focus was explicitly acquired (rule 1); `p` (spec
+// 056, ended-only global reopen) is checked next, after minibuffer/help so
+// it neither types into the buffer nor breaks help's swallow-everything
+// rule (FR-012); the guardian console (spec 053), when open, owns the
+// keyboard next — checked ahead of inspect/villagers mode because those are
+// keyed off dockTab/active, which persist unchanged (and so would still
+// spuriously read as "visible") underneath the console's full-screen body;
+// inspect-mode keys layer on top of, never replace, the global mode (rule 5
+// / keymap.md "Mode: inspect").
 func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if msg.String() == "ctrl+c" {
 		return m.quit()
+	}
+	if m.takeover != takeoverNone {
+		return m.handleTakeoverKey(msg)
 	}
 	if m.helpOpen {
 		return m.handleHelpKey(msg)
@@ -849,6 +899,17 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 	if m.mbFocused {
 		return m.handleMinibufferKey(msg)
+	}
+	if msg.String() == "p" && m.runEnded() {
+		// Global postmortem reopen (spec 056, contracts/takeovers.md §1):
+		// reachable from every mode reached this far down the chain (console,
+		// inspect, villagers, global alike) — inert on a live world.
+		// Clearing postmortemDismissed means a later resync/reconnect won't
+		// immediately re-suppress a takeover the player just asked to see
+		// again.
+		m.takeover = takeoverPostmortem
+		m.postmortemDismissed = false
+		return m, nil
 	}
 	if m.console {
 		if mdl, cmd, handled := m.handleConsoleKey(msg); handled {
@@ -981,6 +1042,34 @@ func (m Model) handleHelpKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if m.helpScroll > 0 {
 			m.helpScroll--
 		}
+	}
+	return m, nil
+}
+
+// handleTakeoverKey is the takeover family's own keyboard (spec 056,
+// contracts/takeovers.md §1), owned exclusively while a takeover is open:
+// esc dismisses one layer everywhere (FR-004) — on the postmortem it also
+// latches postmortemDismissed (suppresses the next connect's auto-reopen
+// this session; `p` overrides); a deferred ceremony is NOT re-opened by
+// dismissing the postmortem — it stays reachable only via the replay
+// surfaces (overlays/ceremony.md's replayability AC). `q` quits/detaches
+// exactly like every other quit path (m.quit()) — the D13 "world keeps
+// running" framing and the postmortem's plain quit are both the SAME
+// unconditional message already, differentiated only by whether the world
+// has actually ended (View()'s quitting branch, runEnded()); no special
+// case is needed here for which kind is open. Every other key (including
+// '?' — contracts/takeovers.md §1 "? | takeover open") is swallowed: the
+// takeover keeps the body slot.
+func (m Model) handleTakeoverKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "esc":
+		if m.takeover == takeoverPostmortem {
+			m.postmortemDismissed = true
+		}
+		m.takeover = takeoverNone
+		return m, nil
+	case "q":
+		return m.quit()
 	}
 	return m, nil
 }
@@ -1820,6 +1909,36 @@ func (m *Model) applyEvent(e store.Event) {
 		m.transcript = append(m.transcript, line)
 		if len(m.transcript) > 200 {
 			m.transcript = m.transcript[len(m.transcript)-200:]
+		}
+	}
+	// Takeover-family transitions (spec 056, contracts/takeovers.md §1):
+	// folded here, after m.replica.Apply above already latched
+	// State.Ended/RunEnd or appended StagesUnlocked, so the render-time
+	// derivation (postmortemView/ceremonyView, views.go) always finds the
+	// replica already reflecting whichever event just landed. No content is
+	// captured into a second Model field here — the ceremony's identity is
+	// always replica.StagesUnlocked's last entry while takeover ==
+	// takeoverCeremony (this event is exactly what appended it).
+	switch e.Type {
+	case "run.ended":
+		// Postmortem always wins — replaces an open ceremony unconditionally
+		// (never deferred, the ceremony side of this rule). A fresh
+		// run.ended always (re)opens regardless of an earlier dismissal
+		// this session: postmortemDismissed guards against re-annoying a
+		// player across a mere reconnect, never against the run genuinely
+		// ending while they were looking at something else.
+		m.takeover = takeoverPostmortem
+		m.postmortemDismissed = false
+	case "curriculum.stage_unlocked":
+		if m.takeover == takeoverPostmortem {
+			// Deferred, never interrupting — the content stays reachable via
+			// replay (overlays/ceremony.md's pull surfaces; help.go's
+			// ceremony section), derived from replica facts, not stored here.
+			m.ceremonyDeferred = true
+		} else {
+			// Opens immediately, replacing any already-open ceremony
+			// (same-kind, non-stacking — the newest milestone wins).
+			m.takeover = takeoverCeremony
 		}
 	}
 	m.lastSeq = e.Seq

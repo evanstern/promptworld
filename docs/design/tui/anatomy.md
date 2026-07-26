@@ -101,9 +101,10 @@ forthcoming.
 | help overlay — keys section (6 mode pages, 2 tiers) | `overlays/help.md` | spec 045 |
 | help overlay — the screen section (header anatomy, map glyphs, dock tabs) | `overlays/help.md` | spec 045; anti-drift shared tables |
 | help overlay — lessons pull-reference | `overlays/help.md` | seam, ships empty |
-| help overlay — the guardian section (Section 4) | `overlays/help.md` **(specified)** | D9; stage identity/concept, granted verbs, example asks |
-| unlock ceremony takeover | `overlays/ceremony.md` **(specified)** | decision 6, FR-019; replayable from `?`/`stages`; postmortem wins on conflict |
-| postmortem takeover | `overlays/postmortem.md` **(specified)** | decision 6, FR-018; replayable from the morgue; always wins over ceremony |
+| help overlay — ceremony replay section (Section 4) | `overlays/help.md` | spec 056/TASK-127; stored, never regenerated |
+| help overlay — the guardian section (Section 5) | `overlays/help.md` **(specified)** | D9; stage identity/concept, granted verbs, example asks |
+| unlock ceremony takeover | `overlays/ceremony.md` | decision 6, FR-019; replayable from `?`/`stages`; postmortem wins on conflict |
+| postmortem takeover | `overlays/postmortem.md` | decision 6, FR-018; replayable from the morgue; always wins over ceremony |
 
 ## Both-directions check
 

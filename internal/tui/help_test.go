@@ -596,3 +596,52 @@ func TestHelpLessonsFixtureEntryRendersWithZeroStructuralChange(t *testing.T) {
 		t.Errorf("lessons section reached via navigation missing the fixture entry: %q", v)
 	}
 }
+
+// --- spec 056: the ceremony-replay section (overlays/help.md "ceremony
+// replay entries"; overlays/ceremony.md "Replayability", FR-013/SC-004) ---
+
+// TestHelpCeremonyReplaySectionPlaceholderWhenEmpty: the section degrades to
+// an honest placeholder before any stage has unlocked.
+func TestHelpCeremonyReplaySectionPlaceholderWhenEmpty(t *testing.T) {
+	m := testModel(t)
+	lines := strings.Join(m.ceremonyReplayLines(76), "\n")
+	if !strings.Contains(lines, "no stage has unlocked") {
+		t.Errorf("empty ceremony-replay section should render the placeholder line, got %q", lines)
+	}
+}
+
+// TestHelpCeremonyReplaySectionReachableAndStored (SC-004): a dismissed
+// ceremony's content is retrievable via the `?` overlay with zero model
+// calls — reachable by the same tab-cycling every section uses, and
+// rendering the SAME chapter/report-card content the live ceremony showed.
+func TestHelpCeremonyReplaySectionReachableAndStored(t *testing.T) {
+	m := widescreenModel(t)
+	m.replica.CurriculumPasses = []sim.CurriculumPass{
+		{Exercise: "first-night", Stage: "stage-1", Evidence: []sim.EvidenceRef{{Type: "sim.day_started"}}},
+	}
+	m.applyEvent(stageUnlockedEvent(1, 100, "stage-2", "first-night"))
+	// Dismiss the live ceremony — the replay section must still carry it.
+	var mdl tea.Model = m
+	mdl = update(mdl, "esc")
+	mm := mdl.(Model)
+	if mm.takeover != takeoverNone {
+		t.Fatalf("precondition: ceremony should be dismissed, takeover = %v", mm.takeover)
+	}
+
+	mdl2 := tea.Model(mm)
+	mdl2 = update(mdl2, "?")   // opens on keys
+	mdl2 = update(mdl2, "tab") // -> walkthrough
+	mdl2 = update(mdl2, "tab") // -> lessons
+	mdl2 = update(mdl2, "tab") // -> ceremonies
+	mm2 := mdl2.(Model)
+	if mm2.helpSection != helpSectionCeremonies {
+		t.Fatalf("tab cycling did not reach the ceremonies section: %v", mm2.helpSection)
+	}
+	view := mm2.View()
+	if !strings.Contains(strings.ToUpper(view), "THE WRITTEN WORD") {
+		t.Errorf("ceremony-replay section missing the unlocked stage's identity: %q", view)
+	}
+	if !strings.Contains(view, "report card · first-night") {
+		t.Errorf("ceremony-replay section missing the SAME report card the live ceremony showed: %q", view)
+	}
+}

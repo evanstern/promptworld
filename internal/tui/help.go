@@ -331,14 +331,17 @@ var helpPages = [helpModeCount]helpModePage{
 
 // --- T005/T006: overlay sections + rendering ---
 
-// helpSection is which of the overlay's three sections is on screen
-// (contracts/help-content.md "Sections & tiers").
+// helpSection is which of the overlay's sections is on screen (contracts/
+// help-content.md "Sections & tiers"; spec 056 adds helpSectionCeremonies —
+// overlays/help.md's "ceremony replay entries" row, classified
+// status-derived like the lessons registry).
 type helpSection int
 
 const (
 	helpSectionKeys helpSection = iota
 	helpSectionWalkthrough
 	helpSectionLessons
+	helpSectionCeremonies
 	helpSectionCount
 )
 
@@ -346,6 +349,7 @@ var helpSectionTitle = [helpSectionCount]string{
 	helpSectionKeys:        "keys",
 	helpSectionWalkthrough: "the screen",
 	helpSectionLessons:     "lessons",
+	helpSectionCeremonies:  "ceremonies",
 }
 
 // helpPanelView is the overlay's body-replacement panel (R2): the solo-zoom
@@ -384,6 +388,8 @@ func (m Model) helpContentLines(width, maxLines int) []string {
 		raw = m.helpWalkthroughLines(width)
 	case helpSectionLessons:
 		raw = helpLessonsLines(width)
+	case helpSectionCeremonies:
+		raw = m.ceremonyReplayLines(width)
 	default:
 		raw = m.helpKeysLines(width)
 	}
@@ -449,6 +455,38 @@ func helpLessonsLines(width int) []string {
 		}
 		lines = append(lines, styleHeader.Render(l.Title))
 		lines = append(lines, wrapText(l.Body, width)...)
+	}
+	return lines
+}
+
+// --- spec 056: the ceremony-replay section (overlays/ceremony.md
+// "Replayability"; overlays/help.md "ceremony replay entries", classified
+// status-derived) ---
+
+// ceremonyReplayLines renders the `?` overlay's ceremony-replay section
+// (spec 056 FR-004/FR-013): every stage this world has ever unlocked
+// (replica.StagesUnlocked — the durable per-world facts, never a second
+// event scan), each re-rendering the SAME narrated chapter + report card
+// the live ceremony showed (research R5: "stored, never regenerated";
+// SC-004: retrievable with zero model calls) — sharing ceremonyView's own
+// helpers (CeremonyChapter, ceremonyReportCardFor) so the two can never
+// show different content for the same stage. Degrades to an honest
+// placeholder with nil/empty replica (TestHelpContentReadsNoStatusOrReplica
+// requires non-empty content even then).
+func (m Model) ceremonyReplayLines(width int) []string {
+	if m.replica == nil || len(m.replica.StagesUnlocked) == 0 {
+		return []string{styleDim.Render("no stage has unlocked yet in this world")}
+	}
+	var lines []string
+	for i, stage := range m.replica.StagesUnlocked {
+		if i > 0 {
+			lines = append(lines, "")
+		}
+		lines = append(lines, styleHeader.Render(strings.ToUpper(m.sk().StageName(stage))+" — unlocked"))
+		lines = append(lines, wrapText(m.sk().CeremonyChapter(stage), width)...)
+		if card := m.ceremonyReportCardFor(stage, width); card != "" {
+			lines = append(lines, "", card)
+		}
 	}
 	return lines
 }

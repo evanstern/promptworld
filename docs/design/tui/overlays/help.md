@@ -2,7 +2,7 @@
 title: Overlay — help (`?`)
 class: overlay
 status: shipped
-verified_against: cb4a997453db29bbd746f3ae6cace99748cb281e
+verified_against: 0de6736be90629cf98727cbdc76c8e24e19c9ce6
 sources:
   - internal/tui/help.go
   - internal/tui/tui.go
@@ -17,15 +17,15 @@ live here, reconciled against `internal/tui/help.go` and
 `specs/045-tui-help-overlay/contracts/help-content.md`. `patterns/keymap.md`
 stays the one printable reference card and only points here.
 
-**Hybrid status, stated plainly**: `status: shipped` because Sections 1–3
-and their overlay mechanics are real and shipped; **Section 4 (the
-guardian, D9)** and the ceremony-replay/badge-deep-link rows in the
-classification below are `specified`/`unbuilt (wave 4)` additions — marked
-individually in the control table below rather than forcing the whole
-page's frontmatter to `specified`, the same hybrid posture
-`panels/systems.md` uses for the same reason (real, shipped content and a
-spec-before-build addition sharing one file, per the reorientation's D10/D9
-sequencing).
+**Hybrid status, stated plainly**: `status: shipped` because Sections 1–4
+(spec 056/TASK-127 adds Section 4, ceremony replay) and their overlay
+mechanics are real and shipped; **Section 5 (the guardian, D9)** and the
+badge-deep-link row in the classification below are `specified`/`unbuilt
+(wave 4)` additions — marked individually in the control table below rather
+than forcing the whole page's frontmatter to `specified`, the same hybrid
+posture `panels/systems.md` uses for the same reason (real, shipped content
+and a spec-before-build addition sharing one file, per the reorientation's
+D10/D9 sequencing).
 
 ## Mockup
 
@@ -124,7 +124,20 @@ teaches them") now renders only in the degenerate case of an empty table
 past this feature). Exactly the content addition this seam was built for —
 no structural change to this overlay's navigation or rendering (SC-006).
 
-### Section 4 — the guardian (decision 9)
+### Section 4 — ceremonies (pull reference, spec 056/TASK-127)
+
+`ceremonyReplayLines` (`internal/tui/help.go`) — **shipped**. One entry per
+stage `replica.StagesUnlocked` names (the durable per-world facts, never a
+second event scan), each re-rendering the SAME title, D6 authorship chapter
+(`skin.CeremonyChapter`), and report card (`ceremonyReportCardFor`) the live
+`overlays/ceremony.md` takeover showed when the unlock actually happened —
+stored, never regenerated (research R5). Degrades to an honest placeholder
+line ("no stage has unlocked yet in this world") before any stage has
+unlocked. This is the explicit AC `overlays/ceremony.md`'s replayability
+section depends on (spec.md US2-AS2/FR-013): a player who missed or
+dismissed a ceremony is never permanently denied its content.
+
+### Section 5 — the guardian (decision 9)
 
 **Not built** — specified spec-before-build for a later reorientation wave.
 A fourth overlay section (alongside keys/screen/lessons, `tab`/`shift+tab`
@@ -191,7 +204,7 @@ this overlay, classified:
 | the guardian (D9, above) | **stage-keyed, model-free**: content is a pure function of the stage value; for a given stage the bytes are constant; nil status renders the pre-ladder variant (all verbs). Never LLM-derived. |
 | lessons registry | **status-derived** (active/seen state per user); the registry's catalog text is static, its state columns are live |
 | badge deep-link focus | **status-derived** (which row is pre-focused depends on active badges); content unchanged |
-| ceremony replay entries | **status-derived** (which ceremonies exist depends on run history; replayed content is stored, not regenerated) — **not built** in this slice; recorded here so the classification table is total against every section this feature ultimately adds, per `overlays/ceremony.md`'s replayability AC |
+| ceremony replay entries | **status-derived** (which ceremonies exist depends on run history — `replica.StagesUnlocked`; replayed content is stored, not regenerated) — **shipped** (spec 056/TASK-127) |
 
 **The no-LLM floor guarantee, restated**: with nil status AND no LLM
 configured, the overlay renders the keys, walkthrough, and pre-ladder
@@ -220,7 +233,7 @@ under an explicit classification instead of eroding the invariant silently.
 | the guardian section (granted verbs) | per-stage ceiling | `stage1CeilingTools`/stage ceiling (shared with `consoleToolsSummary`) | `unbuilt (wave 4)` | — | reorient D9 | — |
 | the guardian section (example ask per verb) | static, per verb | `stagesLadder`-adjacent static content | `unbuilt (wave 4)` | — | reorient D9 | `skin.guardian.epithet` (in the sample phrasing's address) |
 | badge deep-link focus (layer-2) | unfocused · pre-focused on active badge | active header badge at open | `unbuilt (wave 4, layer-2)` | — | reorient (retained per D9 discussion) | — |
-| ceremony replay entries | none · N replayable | per-user unlock/run history | `unbuilt (wave 4)`, shared trigger with `overlays/ceremony.md` | — | reorient FR-013 | — |
+| ceremony replay entries | none · N replayable | `replica.StagesUnlocked`/`CurriculumPasses` | `ceremonyReplayLines` (`internal/tui/help.go`), shared rendering with `overlays/ceremony.md` | `tab`/`shift+tab` to reach · — | reorient FR-013 | — |
 
 **Parity rollout**: every control above has a key but no mouse target today;
 tracked here rather than omitted (decision 8, formal doctrine in
