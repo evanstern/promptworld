@@ -4,7 +4,7 @@ description: internal/world's path-helper catalog — every well-known file a sa
 kind: component
 sources:
   - internal/world/world.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+verified_against: 801db7c1b15fb567732bc5c6063464e918353a4d
 ---
 
 # World save directory: path helpers
@@ -21,7 +21,12 @@ as one set of path helpers so no caller hand-builds a filename.
   `EstimatorStatePath()` → `estimator_state.json` (the daemon-written snapshot
   of live latency estimates, TASK-113 — absent is legal, boot then seeds from
   calibration/bootstrap alone; never event-sourced, never read during replay),
-  `SockPath()` → `daemon.sock`, `PidPath()` → `daemon.pid`,
+  `SockPath()` → `daemon.sock`, `PidPath()` → `daemon.pid` (since TASK-147, thin
+  `*World` wrappers around the package-level `SockPathIn(dir)`/`PidPathIn(dir)` —
+  pure path joins, not a validating `Open` — so daemon-lifecycle callers that must
+  reach a world this build cannot necessarily `Open` (`daemon.IsRunning`, `stop`,
+  `status`'s live-dial, [[daemon-lifecycle]]) can get the socket/pid path without
+  one; world-content commands keep going through `Open` and the `*World` methods),
   `LogPath()` → `daemon.log`, `CharterPath()` → `charter.md` (the player-editable
   prompt), `GuardianDir()` → `metatron/` (dir name frozen, spec 052 ruling 2 — the Guardian's soul and transcript —
   [[guardian]]), and `VillageCharterPath()` → `village_charter.md` (the village's

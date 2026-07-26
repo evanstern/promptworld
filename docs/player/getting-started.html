@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
 <meta name="promptworld-docs:source" content="README.md@8602191b92cb8027f0fef3f54fe20d0867678fde">
-<meta name="promptworld-docs:source" content="docs/wiki/cli-promptworld.md@d304e8adb64fdf40e24bfeca3ca3420e8a840a35">
-<meta name="promptworld-docs:source" content="docs/wiki/daemon-lifecycle.md@6318cf8b53e407765f0c9793f5355a7af4777ed7">
+<meta name="promptworld-docs:source" content="docs/wiki/cli-promptworld.md@801db7c1b15fb567732bc5c6063464e918353a4d">
+<meta name="promptworld-docs:source" content="docs/wiki/daemon-lifecycle.md@801db7c1b15fb567732bc5c6063464e918353a4d">
 <meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@d304e8adb64fdf40e24bfeca3ca3420e8a840a35">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@d304e8adb64fdf40e24bfeca3ca3420e8a840a35">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@aedcf52f680ed68910e185c3ccde44bd320517b6">
 <meta name="promptworld-docs:source" content="docs/wiki/chronicle.md@6318cf8b53e407765f0c9793f5355a7af4777ed7">
-<meta name="promptworld-docs:source" content="docs/wiki/morgue.md@d304e8adb64fdf40e24bfeca3ca3420e8a840a35">
+<meta name="promptworld-docs:source" content="docs/wiki/morgue.md@aedcf52f680ed68910e185c3ccde44bd320517b6">
 <meta name="promptworld-docs:source" content="docs/wiki/gru.md@6318cf8b53e407765f0c9793f5355a7af4777ed7">
-<meta name="promptworld-docs:source" content="docs/wiki/curriculum-ladder.md@d304e8adb64fdf40e24bfeca3ca3420e8a840a35">
+<meta name="promptworld-docs:source" content="docs/wiki/curriculum-ladder.md@aedcf52f680ed68910e185c3ccde44bd320517b6">
 <meta name="promptworld-docs:source" content="docs/wiki/takeover-surfaces.md@d304e8adb64fdf40e24bfeca3ca3420e8a840a35">
 <meta name="promptworld-docs:source" content="docs/wiki/grounded-feedback.md@bb6f083e00d8ea4aeb2c5fde6cdfaea0f5dcff84">
 <meta name="promptworld-docs:source" content="docs/wiki/village-lens.md@d304e8adb64fdf40e24bfeca3ca3420e8a840a35">
@@ -270,7 +270,9 @@ you're shutting down your machine), stop the daemon itself:</p>
 <pre><code>promptworld stop demo</code></pre>
 <p>This is a graceful stop — it finishes its current bookkeeping before exiting. The
 world resumes exactly where it left off next time you <code>start</code> it, even if
-it was killed abruptly instead.</p>
+it was killed abruptly instead. <code>stop</code> and <code>status</code> both work even
+on a world made by an older version of promptworld that you haven't upgraded yet — you
+don't need to run <code>migrate</code> first just to check on it or shut it down.</p>
 
 <div class="card">
 <p><strong>Quick reference</strong></p>

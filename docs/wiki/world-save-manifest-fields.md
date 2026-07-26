@@ -4,7 +4,7 @@ description: world.json's field-by-field catalog — format_version history, tic
 kind: component
 sources:
   - internal/world/world.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+verified_against: 801db7c1b15fb567732bc5c6063464e918353a4d
 ---
 
 # World save manifest: field catalog

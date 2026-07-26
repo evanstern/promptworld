@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -587,22 +588,41 @@ func cmdStart(args []string) error {
 	return fmt.Errorf("daemon did not answer within 5s — check %s", w.LogPath())
 }
 
+// requireWorldDir confirms dir at least looks like a world directory (a
+// world.json manifest is present) without validating its content — the
+// version-agnostic half of world.Open's own check. Daemon-lifecycle
+// commands (stop/status, TASK-147) must reach a running daemon regardless
+// of format_version, but a directory that was never a world at all (a typo,
+// a stray path) still needs to fail clearly rather than silently reporting
+// "daemon not running".
+func requireWorldDir(dir string) error {
+	if _, err := os.Stat(filepath.Join(dir, world.ManifestName)); err != nil {
+		return fmt.Errorf("not a world directory (missing %s): %w", world.ManifestName, err)
+	}
+	return nil
+}
+
 func cmdStop(args []string) error {
 	fs := flag.NewFlagSet("stop", flag.ContinueOnError)
 	dir, err := worldArg(fs, args)
 	if err != nil {
 		return err
 	}
-	w, err := world.Open(dir)
-	if err != nil {
+	if err := requireWorldDir(dir); err != nil {
 		return err
 	}
+	// Deliberately no world.Open here (TASK-147): stop's job is reaching the
+	// daemon PROCESS, which must work even for a format_version this build
+	// can no longer Open — otherwise a running old-version daemon can never
+	// be stopped by a newer binary, and migrate (which refuses a running
+	// world) can't help either. daemon.IsRunning and the socket/pid paths
+	// below are all pure-path / pidfile checks, not validating opens.
 	running, pid := daemon.IsRunning(dir)
 	if !running {
 		fmt.Println("daemon not running")
 		return nil // idempotent
 	}
-	if c, err := ipc.Dial(w.SockPath()); err == nil {
+	if c, err := ipc.Dial(world.SockPathIn(dir)); err == nil {
 		c.Call("shutdown", nil)
 		c.Close()
 	} else {
@@ -627,12 +647,14 @@ func cmdStatus(args []string) error {
 	if err != nil {
 		return err
 	}
-	w, err := world.Open(dir)
-	if err != nil {
+	if err := requireWorldDir(dir); err != nil {
 		return err
 	}
 
-	if c, err := ipc.Dial(w.SockPath()); err == nil {
+	// Reaching a live daemon (TASK-147) is version-agnostic, same reasoning
+	// as cmdStop: the socket path is a pure join, and a running daemon
+	// answers regardless of what format_version it booted with.
+	if c, err := ipc.Dial(world.SockPathIn(dir)); err == nil {
 		defer c.Close()
 		sd, err := c.Status("status", nil)
 		if err != nil {
@@ -643,6 +665,30 @@ func cmdStatus(args []string) error {
 		}
 		fmt.Print(renderStatusHuman(sd))
 		return nil
+	}
+
+	// No live daemon answered. The rest of this — manifest fields, the
+	// offline store snapshot — is genuine world content, so it keeps the
+	// version gate (TASK-147's carve-out: only the lifecycle check above
+	// bypasses it).
+	w, err := world.Open(dir)
+	if err != nil {
+		var vmErr *world.ErrFormatVersionMismatch
+		if errors.As(err, &vmErr) {
+			// requireWorldDir above already confirmed a manifest is present,
+			// so this is specifically "this build can't read that
+			// format_version" rather than a bogus path or corrupt content.
+			// Daemon liveness is still checkable version-agnostically (the
+			// dial above already ruled out a live daemon) — report that
+			// instead of the migrate-hint error, which would misleadingly
+			// read as "this world is broken" (TASK-147).
+			if *asJSON {
+				return printJSON(map[string]any{"daemon": map[string]any{"running": false}})
+			}
+			fmt.Println("daemon not running")
+			return nil
+		}
+		return err
 	}
 
 	// Offline: last-known state from the store, read-only (shared with

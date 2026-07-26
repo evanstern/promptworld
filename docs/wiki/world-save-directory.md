@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/world/world.go
   - internal/world/migrate.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+verified_against: 801db7c1b15fb567732bc5c6063464e918353a4d
 ---
 
 # World save directory
@@ -52,7 +52,15 @@ is never stored ([[worldmap-generation]]).
   `tick_game_seconds` other than 1, a malformed `meeting` block (bad "HH:MM",
   or convene not strictly before open), or (spec 068) a `terrain_gen` outside
   `{absent/0, worldmap.GenMarshSand}` is a hard error, so an old binary can
-  never half-load a newer world.
+  never half-load a newer world. Since TASK-147, the `format_version` mismatch
+  case alone is a distinguishable typed error, `*world.ErrFormatVersionMismatch{Got,
+  Want}` (every other `Open` failure — corrupt JSON, a bad `meeting` block, a
+  directory that was never a world — stays a plain wrapped error): the manifest
+  parsed fine, it's just a version this build doesn't support, so the world itself
+  may be perfectly healthy. Callers that only need daemon reachability (not content —
+  [[daemon-lifecycle]], [[cli-runtime-control]]'s `stop`/`status`) match it with
+  `errors.As` to tell "can't read this world's content" apart from a genuine open
+  failure.
 - `SetTeaching(dir, on)` (spec 039) is the offline read-modify-write for the
   `Teaching` marker: `Open`s the manifest, flips the field, rewrites
   `world.json`. A running daemon reads `Teaching` only at boot, so this is a
