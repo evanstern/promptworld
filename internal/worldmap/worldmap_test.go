@@ -141,3 +141,27 @@ func TestZeroDimsDefault(t *testing.T) {
 		t.Errorf("zero dims should default to %d, got %dx%d", DefaultSize, m.W, m.H)
 	}
 }
+
+// TestLegacyGenerationHashPin (spec 068 T002, C7 — feeds C11/SC-006): the
+// exact terrain fingerprints legacy generation produces today, pinned as
+// constants computed against the pre-068 generator. The gen-parameter
+// refactor (terrain_gen) and the v4→v5 migration must keep reproducing these
+// bytes for the legacy path — if a change to Generate breaks this pin, the
+// change is wrong, not the pin.
+func TestLegacyGenerationHashPin(t *testing.T) {
+	pins := []struct {
+		seed uint64
+		w, h int
+		want string
+	}{
+		{42, 64, 64, "59dceb27b3527701fc648b7b8c7f4883c2cc6bd4efdcc56d2ca47fd8cb75f563"},
+		{7, 32, 32, "423df317ae5393792a5c7fb3e2b992d6d56539b778543c36d474610e9b0052a4"},
+		{12345, 64, 64, "2931ae79602d3e9647f922e6c5fd3789cad713dc8884497b270dcd5d0d5102b1"},
+	}
+	for _, p := range pins {
+		if got := Generate(p.seed, p.w, p.h).Hash(); got != p.want {
+			t.Errorf("legacy generation drifted: Generate(%d, %d, %d).Hash() = %s, pinned %s",
+				p.seed, p.w, p.h, got, p.want)
+		}
+	}
+}
