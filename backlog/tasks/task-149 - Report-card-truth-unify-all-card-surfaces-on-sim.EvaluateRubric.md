@@ -1,9 +1,10 @@
 ---
 id: TASK-149
 title: 'Report-card truth: unify all card surfaces on sim.EvaluateRubric'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-26 17:57'
+updated_date: '2026-07-26 18:05'
 labels:
   - game-ui
   - pedagogy
@@ -26,3 +27,9 @@ Reorient 2026-07-26 decision 1 (docs/design/reorient-2026-07-26-ui.md). The repo
 - [ ] #2 the-law has a production evaluator: charter Default flag persisted into state; live gauges stop rendering permanently pending
 - [ ] #3 Design pages' 'known simplification' notes (overlays/postmortem.md, panels/exercise.md) amended same-PR; check-tui-design.mjs --changed passes
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Sweep claim (runbook docs/design/reorient-2026-07-26-sweep-runbook.md): spec 072-report-card-truth. Tier: Opus 4.8 — cross-package sim state/reducer + all TUI card surfaces; doctrine-adjacent (grading truth at the teaching moment); persists charter Default into state.
+<!-- SECTION:NOTES:END -->
