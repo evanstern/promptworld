@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-26 21:02'
-updated_date: '2026-07-26 21:11'
+updated_date: '2026-07-26 21:18'
 labels: []
 dependencies: []
 priority: high
@@ -34,4 +34,16 @@ Spec: specs/081-first-person-harvest-memory
 - [ ] #3 agent.map_corrected no longer fires for the actor or for agents who were within witnessRadius of the act when it happened; it still fires for agents who return later
 - [ ] #4 Replay determinism holds: a fresh replay of an existing event log reproduces identical state (reducer contract respected)
 - [ ] #5 Live verification on a fresh world: share of 'gone when you looked' memories drops to genuine return-discoveries only
+- [ ] #6 Spec phase: Setup
+- [ ] #7 Spec phase: Foundational (blocking prerequisites)
+- [ ] #8 Spec phase: User Story 1 — My own harvest is mine, in the first person (P1) 🎯 MVP
+- [ ] #9 Spec phase: User Story 2 — Watching a neighbor harvest is not a later mystery (P2)
+- [ ] #10 Spec phase: User Story 3 — Genuine return-discovery still works (P3, regression guard)
+- [ ] #11 Spec phase: Polish & Cross-Cutting
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Spec'd + planned 2026-07-26: specs/081-first-person-harvest-memory (spec, plan, research, data-model, contracts/events.md, quickstart, tasks.md — 21 tasks). Implementation tier: Opus 4.8 per constitution V rubric — doctrine-adjacent behavior change (memory-formation/perception doctrine) + reducer/replay-contract surface spanning internal/sim executor+reducer and internal/mind absorb (research.md D7). Worktree .worktrees/task-159, branch task-159-first-person-harvest-memory (pushed).
+<!-- SECTION:NOTES:END -->

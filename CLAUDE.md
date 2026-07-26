@@ -142,11 +142,14 @@ PR; the pr gate enforces it, and step 7 is bookkeeping only.
 - **Merge-commit-only:** merge PRs with `gh pr merge --merge`. In-branch re-pins are
   branch commit hashes; a squash merge rewrites them out of main's history and stales
   every pin the PR carried (observed on this repo — the squash-rewrites-pins hazard).
-- **Step 7 is derived state only:** after the merge, the ONLY sanctioned main commits
+- **Step 7 is derived state only:** after the merge, the ONLY sanctioned main changes
   are bookkeeping DERIVED from the merged artifacts — board card moves, spec-bridge
   sync, tasks.md ticks, runbook execution logs — per spec 065's claim protocol and
-  the pdlc:sweep re-ground step. Grounding content (wiki notes, player docs, design
-  references) always rides the PR, never a post-merge commit.
+  the pdlc:sweep re-ground step. Since TASK-160 those bookkeeping commits are
+  themselves authored on a branch in a worktree and land on main via merge (a manual
+  `git merge --no-ff` at root is fine) — never committed directly at root. Grounding
+  content (wiki notes, player docs, design references) always rides the PR, never a
+  post-merge commit.
 
 ## Model-tiered workflow (constitution Principle V, v1.2.0)
 
@@ -180,15 +183,17 @@ Git push rejection is the mutual-exclusion primitive for concurrent sessions: wh
 pushes first wins, and the loser's non-fast-forward rejection is a **signal**, never an
 "annoying; rebase and carry on."
 
-- **The claim commit:** the FIRST commit of any task claims the work — it moves the
-  board card to In Progress AND creates the spec directory (`specs/NNN-<slug>/`; a stub
-  claims the number), before any spec authoring or code. Push it immediately. Never
-  force-push.
+- **The claim commit:** the FIRST commit of any task claims the work — it is the first
+  commit on the task branch, authored in its worktree, and it moves the board card to
+  In Progress AND creates the spec directory stub (`specs/NNN-<slug>/`; the stub claims
+  the number), before any spec authoring or code. Push the branch, then immediately
+  land the claim on main via a manual `git merge --no-ff` at root and push main — that
+  main push is the mutual-exclusion event. Never force-push.
 - **Rejected push = stop-the-lane signal:** fetch, re-read the board and `specs/`, and
   if another session now holds that task or that number, STOP the lane and surface the
   collision to the operator — do not rebase and continue. If the rejection was
   unrelated (someone pushed board notes) and the task and number are still free,
-  rebase and re-push the claim.
+  fetch and `git pull --no-rebase` (merge, never rebase) at root, then push again.
 - **Task branches push on first commit:** `git push -u origin task-<N>-<slug>` as soon
   as the branch has a commit, so in-flight work is auditable from any clone. The
   session gate reports any local task branch with commits but no remote counterpart
@@ -201,22 +206,42 @@ pushes first wins, and the loser's non-fast-forward rejection is a **signal**, n
   (`card-not-claimed`) when the task's card is not In Progress on origin/main, and with
   `--task` it accepts a spec dir already claimed BY that task.
 
-## Git worktrees — root stays on main, branches live in `.worktrees/`
+## Root checkout is READ-ONLY — worktree + merge only, no rebases (iron-clad)
 
-The root checkout is **pinned to `main`** — never check out a task branch there. All
-branch work happens in worktrees under the repo-local, gitignored `.worktrees/` folder.
+NOTHING is modified in the root checkout directly — no file edits, no direct
+commits to main, no exceptions: code, docs, wiki, player docs, specs, and
+board/bookkeeping moves all included. Every change is authored on a branch in a
+worktree under the repo-local, gitignored `.worktrees/` folder and reaches main
+ONLY by merging that branch back: a PR (`gh pr merge --merge`) or a manual
+`git merge --no-ff <branch>` run at root. **Rebases are forbidden everywhere in
+this repo.** The only history operations are merges — main into a branch to
+freshen it, branch into main to land it.
 
-- **Create:** when starting a TASK branch, make a worktree instead of switching:
-  `git worktree add .worktrees/task-<N> -b task-<N>-<slug> origin/main`
-  (dir named `task-<N>`, matching the task id). Do the work, commit, and open the PR
-  from inside `.worktrees/task-<N>`.
-- **Root freshness:** keep the root current with `git fetch origin && git pull --ff-only`
-  — at session start and always before cutting a new worktree, so branches fork from
-  fresh `origin/main`.
-- **Cleanup:** after a TASK's PR merges, `git worktree remove .worktrees/task-<N>`,
-  delete the branch (`git branch -d …`), and ff-pull the root.
-- One TASK, one worktree — this is the same "one task, one branch, one PR" rule; the
-  worktree is just where that branch lives.
+- **Create:** `git worktree add .worktrees/task-<N> -b task-<N>-<slug> origin/main`
+  (dir named `task-<N>`, matching the task id); work, commit, and open PRs from
+  inside the worktree.
+- **Land:** PR merge, or — when the operator has ratified the change — a manual
+  `git merge --no-ff` at root, then push. Never squash, never rebase.
+- **Freshen a stale branch** by merging main INTO it; never rebase it (rebases
+  and squash merges stale in-branch wiki pins — observed hazards on this repo).
+- **Sanctioned git ops at root:** `fetch`, `pull --ff-only`, `merge` (plus the
+  `git commit` that concludes a CONFLICTED merge, MERGE_HEAD present), `push`,
+  `worktree add`/`remove`, `branch -d`, and reads (`status`/`log`/`diff`/…).
+  Everything else that writes files or history at root is out — including
+  bookkeeping: board card moves, spec-bridge sync, and tasks.md ticks are
+  authored on a branch (the task's own, or a short-lived bookkeeping branch)
+  and merged back. This supersedes the older "derived state commits directly
+  to main" practice everywhere it appears.
+- **Root freshness:** `git fetch origin && git pull --ff-only` at session start
+  and before cutting any worktree.
+- **Cleanup:** after a branch lands, `git worktree remove .worktrees/task-<N>`,
+  `git branch -d task-<N>-<slug>`, ff-pull the root.
+- **Hook-enforced (TASK-160):** `scripts/hooks/root-guard-hook.mjs` (PreToolUse,
+  wired in `.claude/settings.json`) blocks direct commits, cherry-picks,
+  reverts, `git am`, squash merges, and branch creation at root; `git rebase`
+  anywhere in the repo; force-pushes; and Write/Edit of non-gitignored files in
+  the root checkout. No bypass flag — emergencies go through the operator
+  editing hook config, visibly and deliberately.
 
 ## educate — Socratic learning layer (planted by educate:start, adapted for PDLC)
 
