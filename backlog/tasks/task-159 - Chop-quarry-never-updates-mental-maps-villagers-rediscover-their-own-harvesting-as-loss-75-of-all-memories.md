@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-26 21:02'
-updated_date: '2026-07-26 21:03'
+updated_date: '2026-07-26 21:11'
 labels: []
 dependencies: []
 priority: high
@@ -23,6 +23,8 @@ Root cause: the agent.chopped reducer (internal/sim/state.go:1057) appends the t
 Fix direction (operator call, 2026-07-26): at chop/quarry time, remove the fact from the mental map of the actor and of every agent within witnessRadius (they watched it happen — no discovery pending); the actor's memory of the act is FIRST-PERSON ("Felled the tree at (x,y)."). What is stored as memory may be re-evaluated later. agent.map_corrected remains for its intended narrative: an agent who was elsewhere returns later and genuinely finds the place changed.
 
 Corrections-pass reducer is fine (fact removed after correction, no repeats in the data). Touches the reducer contract and replay — needs a spec.
+
+Spec: specs/081-first-person-harvest-memory
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
