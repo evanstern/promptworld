@@ -758,6 +758,16 @@ const (
 	prepYieldTicks = 1800
 )
 
+// DangerRestBelow exports dangerRestBelow (the 062 danger band above) for
+// internal/tui's map condition overlays (spec 060 US2, needs-critical):
+// Health and Food/Warmth already have an exported equivalent for this
+// purpose (guardian.go's SurvivalNearDeathBelow / SurvivalStarvingRearm /
+// SurvivalFreezingRearm — rest has no survival-watch kind of its own to ride
+// along with, so this is the one new export the feature needs; it aliases
+// the same existing constant rather than naming a new number, keeping sim
+// the single source of the threshold.
+const DangerRestBelow = dangerRestBelow
+
 // --- spec 064 (needs-conditioned recovery): warm_up doctrine -----------------
 //
 // The doctrine home for the recovery-completion constants (FR-007): named,

@@ -208,7 +208,28 @@ func (m Model) headerView() string {
 	if m.lessonBadgeVisible() {
 		line += " " + styleDim.Render("[lesson]")
 	}
+	if badge := m.villagerCountBadge(); badge != "" {
+		line += " " + badge
+	}
 	return styleHeader.Render(line)
+}
+
+// villagerCountBadge is the villager strip's fold-relocation form
+// (panels/villager-strip.md, patterns/layout.md ruling a step 2): `[N
+// villagers]` appended to the header row whenever the strip itself isn't
+// rendering this frame — narrow (never carried, ruling b) or a widescreen
+// fold under height pressure (computeRows.VillagerStrip == 0). Absent with
+// no roster yet (nothing to count), so a pre-connect/empty-world header
+// stays byte-identical to before this feature.
+func (m Model) villagerCountBadge() string {
+	n := m.villCount()
+	if n == 0 {
+		return ""
+	}
+	if isWidescreen(m.width) && computeRows(m.height, m.wantsLessonRow()).VillagerStrip > 0 {
+		return "" // the strip itself is showing this frame — no badge needed
+	}
+	return styleDim.Render(fmt.Sprintf("[%d villagers]", n))
 }
 
 // currentStage reads the world's curriculum-ladder stage id directly off
@@ -429,6 +450,14 @@ func (m Model) widescreenView() string {
 
 	var b strings.Builder
 	b.WriteString(m.headerView() + "\n")
+	if rows.VillagerStrip > 0 {
+		// Villager strip (panels/villager-strip.md, spec 060 US1): one
+		// borderless row directly under the header, above the map ‖ dock
+		// body — rows.Body already accounts for whether this row is
+		// visible, so the composite's total height stays exact whether
+		// folded or not (B1's exact-height invariant).
+		b.WriteString(m.villagerStripView(m.width) + "\n")
+	}
 	b.WriteString(body + "\n")
 	if rows.Lesson > 0 {
 		// Lesson row (panels/lesson-row.md, spec 055): two borderless lines
@@ -1018,6 +1047,34 @@ func (m Model) dockTabContent(width, height int) string {
 	return ""
 }
 
+// --- map condition overlays (panels/map.md "Wave 5", spec 060 US2) ---
+
+// needsCritical reports whether a living villager has any need at its
+// existing danger-band threshold — the SAME thresholds the reflex's own
+// PREP-gate/survival rungs already treat as "in danger" (internal/sim
+// agents.go/guardian.go), reused rather than re-derived so this overlay can
+// never drift from the sim's own vocabulary (D1: presentation only, no new
+// tuning constants). Morale has no such band in sim today (only
+// health/food/warmth/rest ever gate a survival or PREP-yield rung), so it is
+// deliberately not part of this check — there is nothing to reuse for it.
+func needsCritical(n sim.Needs) bool {
+	return n.Health < sim.SurvivalNearDeathBelow ||
+		n.Food < sim.SurvivalStarvingRearm ||
+		n.Warmth < sim.SurvivalFreezingRearm ||
+		n.Rest < sim.DangerRestBelow
+}
+
+// agentSuppressedMind reports whether agent i's latest decision-trace chain
+// is a router suppression (spec 037's "a skipped thought is visible" — this
+// is its map form, spec 060 US2 AS2): chainsFor is most-recent-first, so
+// index 0 is always this frame's latest chain, and it clears the moment a
+// later, non-suppressed outcome lands. No agent index ever has chains before
+// its first cognition, so an agent with none is simply never marked.
+func (m Model) agentSuppressedMind(i int) bool {
+	chains := m.traces.chainsFor(i)
+	return len(chains) > 0 && chains[0].Suppressed
+}
+
 // --- map (panels/map.md: "Rendering is unchanged") ---
 
 // wandererCentroid is the live (non-dead) agent centroid the camera follows
@@ -1112,9 +1169,18 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 				// Lit vs cold (spec 012 T019/T024): lit iff current tick <
 				// FuelUntil. A cold fire shows a hollow, faint glyph so the
 				// player can tell a dead fire from a burning one (SC-006).
-				if m.replica.Tick < st.FuelUntil {
+				// Dying (spec 060 US2 AS3): a THIRD, still-lit state — inside
+				// the sim's own dying-fuel window (State.RefuelDyingBelow,
+				// spec 057 — the exact remaining-fuel threshold the reflex's
+				// own refuel-before-cold rule already keys on, so this never
+				// invents a second window) — rendered in the warn style
+				// before FuelUntil actually passes and it goes cold.
+				switch {
+				case m.replica.Tick < st.FuelUntil && st.FuelUntil-m.replica.Tick < m.replica.RefuelDyingBelow():
+					structures[[2]int{st.X, st.Y}] = styleFireDying.Render("▲")
+				case m.replica.Tick < st.FuelUntil:
 					structures[[2]int{st.X, st.Y}] = styleFire.Render("▲")
-				} else {
+				default:
 					structures[[2]int{st.X, st.Y}] = styleFireCold.Render("△")
 				}
 			case "shelter":
@@ -1168,7 +1234,7 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 		for _, p := range m.replica.Piles {
 			piles[[2]int{p.X, p.Y}] = true
 		}
-		for _, a := range m.replica.Agents {
+		for i, a := range m.replica.Agents {
 			g := strings.ToUpper(a.Name[:1])
 			switch {
 			case a.Dead && graves[[2]int{a.X, a.Y}]:
@@ -1180,10 +1246,27 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 				g = styleGrave.Render("✝")
 			case a.Dead:
 				g = styleErr.Render("†")
-			case a.Asleep:
-				g = styleAsleep.Render(strings.ToLower(g))
 			default:
-				g = styleAgent.Render(g)
+				// Living: awake/asleep still decides the glyph's CASE, exactly
+				// as before this feature; the map condition overlays (spec 060
+				// US2) then decide which STYLE paints it — needs-critical >
+				// suppressed-mind > the plain awake/asleep styles (priority:
+				// physical danger over cognitive telemetry, FR-003/AS4). With
+				// neither condition present this is byte-identical to the
+				// pre-060 rendering.
+				ch := g
+				style := styleAgent
+				if a.Asleep {
+					ch = strings.ToLower(g)
+					style = styleAsleep
+				}
+				switch {
+				case needsCritical(a.Needs):
+					style = styleAgentCritical
+				case m.agentSuppressedMind(i):
+					style = styleAgentSuppressed
+				}
+				g = style.Render(ch)
 			}
 			agents[[2]int{a.X, a.Y}] = g
 		}
@@ -1313,8 +1396,8 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 	// help.go) — one source, so the overlay's glyph walkthrough (FR-005)
 	// and this compact legend line can never silently diverge.
 	legend = styleDim.Render(fmt.Sprintf(
-		"%s · [%d,%d–%d,%d of %d×%d] · %s · %s · %s%s%s",
-		phase, x0, y0, x0+vw-1, y0+vh-1, gm.W, gm.H, legendGlyphLine(), agentGlyphNote, mapControlNote, pilesInfo, chestsInfo))
+		"%s · [%d,%d–%d,%d of %d×%d] · %s · %s · %s · %s%s%s",
+		phase, x0, y0, x0+vw-1, y0+vh-1, gm.W, gm.H, legendGlyphLine(), agentGlyphNote, mapControlNote, conditionOverlayNote, pilesInfo, chestsInfo))
 	return grid, legend
 }
 
@@ -1533,6 +1616,31 @@ var (
 	// living-structure colors (fire/shelter/oven/chest), the cold-fire (240)
 	// precedent for "spent"/inert glyphs.
 	styleGrave = lipgloss.NewStyle().Faint(true).Foreground(lipgloss.Color("244"))
+
+	// Map condition overlays (spec 060 US2): style variants layered over an
+	// already-legended glyph (an agent's own initial, or fire's "▲"), not
+	// new glyphs — panels/map.md's priority is needs-critical > suppressed-
+	// mind > plain awake/asleep. Steady styles only (standing resolution 3:
+	// "pulse" is a style, never terminal blink).
+	//
+	// styleAgentCritical: a living villager with a need in its danger band
+	// (needsCritical below) — bold + underlined red, distinct from both the
+	// dead marker's plain bold red (styleErr) and the gru's bold red (196,
+	// a different glyph entirely) under every color profile the family-tint
+	// discipline covers (TestFamilyTintDistinctPerFamily precedent).
+	styleAgentCritical = lipgloss.NewStyle().Bold(true).Underline(true).Foreground(lipgloss.Color("1"))
+	// styleAgentSuppressed: the map form of spec 037's "a skipped thought is
+	// visible" — faint, a cooler hue than the critical red so the priority
+	// rule (needs-critical wins) reads correctly at a glance even before a
+	// player has learned the vocabulary.
+	styleAgentSuppressed = lipgloss.NewStyle().Faint(true).Foreground(lipgloss.Color("135"))
+	// styleFireDying: a fire inside its dying-fuel window (State.
+	// RefuelDyingBelow, spec 057) — still lit ("▲" — it only goes cold once
+	// FuelUntil actually passes), but a warmer/redder warn tone than lit
+	// fire's plain orange (208) and nothing like cold fire's faint gray
+	// (240), so "about to go out" reads distinctly from both "burning fine"
+	// and "already out."
+	styleFireDying = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("202"))
 )
 
 // mapView is the narrow-fallback map pane: today's vw/vh formula,
@@ -2386,6 +2494,93 @@ func horizonRemedy(calibrated bool) string {
 		return "slow down"
 	}
 	return "calibrate or slow down"
+}
+
+// villagerStripGlyph renders one agent's villager-strip glyph — the SAME
+// priority/style rules renderMapGrid's own agent glyphs use (dead > asleep >
+// awake), so a player who already reads the map's vocabulary reads this
+// strip for free (panels/villager-strip.md "Structure"). Deliberately plain
+// "†" for the dead, never the map's dead-agent-on-grave carve-out: the strip
+// has no tile/grave concept at all (edge case "Dead villagers: strip shows
+// faint † in place — roster parity").
+func villagerStripGlyph(a sim.Agent) string {
+	g := strings.ToUpper(a.Name[:1])
+	switch {
+	case a.Dead:
+		return styleErr.Render("†")
+	case a.Asleep:
+		return styleAsleep.Render(strings.ToLower(g))
+	default:
+		return styleAgent.Render(g)
+	}
+}
+
+// villagerStripView renders the D12 colonist-bar row (panels/villager-
+// strip.md, spec 060 US1): "N villagers" (living + dead, matching the
+// villagers-tab roster) plus one name-initial glyph per villager in stable
+// roster order. Display-only (standing resolution 1: no cursor, no keys, no
+// mouse target) — this is purely a glanceability layer over facts the
+// villagers tab already shows in full (FR-006/D1).
+//
+// Width overflow sheds glyphs from the END with a trailing "…N" overflow
+// count — never a mid-glyph truncation (the corpus-wide "shed, never
+// silently truncate" discipline, mirrored from joinStripSegments above).
+// Every glyph in the run is a single display column, so the exact-fit
+// search below is a simple backward scan rather than joinStripSegments's
+// incremental one: try showing everyone first, and only if that overflows
+// width, search for the widest prefix that still leaves room for the
+// overflow marker.
+func (m Model) villagerStripView(width int) string {
+	if width < 1 {
+		width = 1
+	}
+	n := m.villCount()
+	count := fmt.Sprintf("%d villagers", n)
+	if n == 0 {
+		return clipLine(count, width)
+	}
+	glyphs := make([]string, n)
+	for i, a := range m.replica.Agents {
+		glyphs[i] = villagerStripGlyph(a)
+	}
+	avail := width - lipgloss.Width(count)
+	runWidth := func(k int) int {
+		w := 0
+		for i := 0; i < k; i++ {
+			w += lipgloss.Width(glyphs[i])
+		}
+		if k > 0 {
+			w += k - 1 // one separator space between each glyph
+		}
+		return w
+	}
+	if avail >= 1+runWidth(n) {
+		return count + " " + strings.Join(glyphs, " ")
+	}
+	for k := n - 1; k >= 0; k-- {
+		suffix := styleDim.Render(fmt.Sprintf("…%d", n-k))
+		// need is everything after "count": a leading separator, the
+		// (possibly empty) glyph run, another separator before the
+		// suffix (only when a run is actually present), and the suffix.
+		need := 1 + lipgloss.Width(suffix)
+		if k > 0 {
+			need += runWidth(k) + 1
+		}
+		if need <= avail {
+			var b strings.Builder
+			b.WriteString(count)
+			if k > 0 {
+				b.WriteString(" ")
+				b.WriteString(strings.Join(glyphs[:k], " "))
+			}
+			b.WriteString(" ")
+			b.WriteString(suffix)
+			return b.String()
+		}
+	}
+	// Pathologically narrow: not even the count + a bare overflow marker
+	// fits — hard-clip defensively rather than ever overflow the row.
+	return clipLine(count+" "+styleDim.Render(fmt.Sprintf("…%d", n)), width)
 }
 
 // guardianStripView renders the always-visible action-budget row

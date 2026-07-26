@@ -175,7 +175,7 @@ type preLadderGoldenFrame struct {
 var preLadderGoldenFrames = []preLadderGoldenFrame{
 	{
 		name: "widescreen-home",
-		want: "1d41c932be2da6fa54657e66e3c9fa4fa1bb2c492c02093ec6d9f8408d8bd31c",
+		want: "b7cea08afc485d6d94ca5812408fca2e997004b7208e98ed77ec01b215350f81",
 		build: func(t *testing.T) Model {
 			m := widescreenModel(t)
 			seedEvents(&m, 20)
@@ -184,7 +184,7 @@ var preLadderGoldenFrames = []preLadderGoldenFrame{
 	},
 	{
 		name: "narrow-home",
-		want: "b71a43e06e95b5e08db8a0c5dd15d48e0c5edc5fcc56c086bc7703ff06cd5a10",
+		want: "657dda0b92aa912ed8afda9f0845f627dbf6f27cee54490d69d6ca99fb733a27",
 		build: func(t *testing.T) Model {
 			m := testModel(t)
 			seedEvents(&m, 20)
@@ -193,7 +193,7 @@ var preLadderGoldenFrames = []preLadderGoldenFrame{
 	},
 	{
 		name: "widescreen-villagers-solo",
-		want: "5f3b1fa9e3f6a0c4f4c675a2563c6186efdd33719bd7aca11b1a80999d9338ac",
+		want: "0e8d1b93efef4760ea36a8ecab97138122c3ef22433fe00247c83649833bb8c0",
 		build: func(t *testing.T) Model {
 			m := widescreenModel(t)
 			m.dockTab = paneVillagers
@@ -203,7 +203,7 @@ var preLadderGoldenFrames = []preLadderGoldenFrame{
 	},
 	{
 		name: "widescreen-guardian-strip-charges",
-		want: "8580ecce33d99929151d06828370dc6dbde5e3f6e47eb5f234f7a64a97e5a932",
+		want: "400ecf6e8d12e540519ae434ed0ead07d9be777266f37d37d0a48306ac6d7225",
 		build: func(t *testing.T) Model {
 			m := widescreenModel(t)
 			m.connected = true
@@ -213,7 +213,7 @@ var preLadderGoldenFrames = []preLadderGoldenFrame{
 	},
 	{
 		name: "widescreen-active-lesson-badge-only",
-		want: "a9cc010785ed33a1d108d6d5ed6798e436029a99d35b358a6d1e7aa1f5f051e6",
+		want: "bd06cadcefe647cf8488fad0c105063626f905693110fe8d532bdde550208dd2",
 		build: func(t *testing.T) Model {
 			// Pre-ladder's lesson-row default is badge+overlay-only (the
 			// table's own Pre-ladder column, matching the pre-055 "off"
@@ -226,7 +226,7 @@ var preLadderGoldenFrames = []preLadderGoldenFrame{
 	},
 	{
 		name: "widescreen-scenario-exercise-tab",
-		want: "4a8d473541ad98196ab25186e8d173c3eef18ba66ca8b2a282ed1eb1841c023e",
+		want: "4655390c7dfc8f4c4667616abe7ec38bfffc2427d42c230220ef9488213c89a8",
 		build: func(t *testing.T) Model {
 			m := scenarioModel(t)
 			m.w.Manifest.Stage = "" // this corpus is pre-ladder even though scenarioModel defaults to stage-1
@@ -236,7 +236,7 @@ var preLadderGoldenFrames = []preLadderGoldenFrame{
 	},
 	{
 		name: "help-overlay-open",
-		want: "0426d66dc3676cd130c97b50f0605469a27870916500e56022361dbc8f8911b1",
+		want: "7e234c6e33ba9d43dbb2fe999496459ae4f88b9ef6a1714f7c53c5893f3c79a2",
 		build: func(t *testing.T) Model {
 			m := widescreenModel(t)
 			m.helpOpen = true
@@ -248,9 +248,22 @@ var preLadderGoldenFrames = []preLadderGoldenFrame{
 }
 
 // TestPreLadderGoldenFrames is the T002/SC-002 baseline: every entry's
-// rendered frame must byte-hash exactly as it did before this feature's
-// wiring landed. If this ever needs a new "want" value, the wiring
-// regressed pre-ladder rendering — the fix is in the wiring, never here.
+// rendered frame must byte-hash exactly as it did before spec 066's
+// stage-defaults RESOLUTION wiring landed — that refactor (resolve() +
+// its call sites) must not move a single byte of pre-ladder rendering. If
+// THIS refactor ever needs a new "want" value, the fix is in the wiring,
+// never here.
+//
+// Re-pinned for spec 060 (TASK-129): the villager strip is a genuinely new
+// chrome row (village lens completion, not a stage-defaults refactor), so
+// every widescreen frame below legitimately gained a row (or, for the
+// narrow/solo/help-overlay frames, the strip's absence still changed the
+// header via the new `[N villagers]` badge). That is the intended, spec-
+// sanctioned visual change this feature shipped — verified directly by
+// villagerStripView's own tests (village_lens_test.go) — not a regression
+// this baseline exists to catch. The hashes below are the new baseline;
+// the "never re-pin for a resolution-only refactor" rule above still holds
+// for spec 066's own wiring.
 func TestPreLadderGoldenFrames(t *testing.T) {
 	for _, fx := range preLadderGoldenFrames {
 		t.Run(fx.name, func(t *testing.T) {
@@ -535,7 +548,7 @@ func TestStageDefaultsComposeWithFoldOrder(t *testing.T) {
 				if rows.Body < 0 {
 					t.Fatalf("height %d: Body went negative: %+v", h, rows)
 				}
-				sum := rows.Header + rows.Lesson + rows.Strip + rows.Body + rows.Minibuffer + rows.Footer
+				sum := rows.Header + rows.VillagerStrip + rows.Lesson + rows.Strip + rows.Body + rows.Minibuffer + rows.Footer
 				if rows.Body > 0 && sum != h {
 					t.Errorf("height %d: rows don't sum to total: %+v (sum %d)", h, rows, sum)
 				}

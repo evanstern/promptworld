@@ -1,16 +1,21 @@
 ---
 title: Panel — villager strip
 class: panel
-status: specified
-verified_against: c8906da39be3a5b861c2272af37db0a83dcded7a
+status: shipped
+verified_against: 1b3fe329e64431b66f9995a1f8c8e5fc979dafb7
+sources:
+  - internal/tui/views.go
+  - internal/tui/layout.go
 ---
 
 # Panel: villager strip
 
 The village-lens glanceability win (reorientation D12): a one-row,
 colonist-bar-style strip under the header giving an at-a-glance read of the
-whole roster without opening the villagers tab. **Not built** — specified
-spec-before-build for Wave 5.
+whole roster without opening the villagers tab. **Shipped** (spec 060,
+TASK-129) — `villagerStripView`/`villagerStripGlyph` (`internal/tui/views.go`),
+wired into the row budget by `computeRows`'s `VillagerStrip` field
+(`internal/tui/layout.go`).
 
 ## Mockup
 
@@ -34,8 +39,9 @@ budget), directly under the header and above the map∥dock body.
   Order is the roster's stable order (matching `panels/villagers.md`'s
   roster, so a position here corresponds to a roster row).
 - Width overflow (more villagers than columns allow): drop from the end
-  with a trailing `…` count, the same "shed, never silently truncate a
-  glyph mid-render" discipline every other panel in this corpus follows.
+  with a trailing `…N` count (`styleDim`, e.g. `…8`), the same "shed, never
+  silently truncate a glyph mid-render" discipline every other panel in
+  this corpus follows — never a partial/mid-glyph cut.
 
 ## Behavior
 
@@ -66,9 +72,9 @@ layer over facts already surfaced elsewhere.
 
 | control/region | states | data source | renderer | keys+mouse | introduced-by | skin-token |
 |---|---|---|---|---|---|---|
-| villager count | N | `replica.Agents` (length) | `unbuilt (wave 5)` | — (display-only) | reorient D12 | — |
-| villager glyph run | awake · asleep · dead, per agent | `replica.Agents` | `unbuilt (wave 5)` | — | reorient D12 | — |
-| fold to header count badge | shown · folded | fold pressure (`patterns/layout.md`) / narrow (never carried) | `unbuilt (wave 5)`, `patterns/layout.md` | — | reorient D12 | — |
+| villager count | N | `replica.Agents` (length, `Model.villCount`) | `villagerStripView` | — (display-only) | reorient D12, spec 060 | — |
+| villager glyph run | awake · asleep · dead, per agent | `replica.Agents` | `villagerStripGlyph` | — | reorient D12, spec 060 | — |
+| fold to header count badge | shown · folded | fold pressure (`patterns/layout.md`) / narrow (never carried) | `Model.villagerCountBadge`, `computeRows.VillagerStrip` (`patterns/layout.md`) | — | reorient D12, spec 060 | — |
 
 **Parity rollout**: this page is display-only end to end — no actionable
 control exists on it, so no parity gap to track.

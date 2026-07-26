@@ -291,7 +291,11 @@ func TestMapRendersWallGlyphs(t *testing.T) {
 func TestMapRendersPathGlyph(t *testing.T) {
 	m := testModel(t)
 	cx, cy := m.gameMap.W/2, m.gameMap.H/2
-	m.replica.Agents = []sim.Agent{{Name: "Ash", X: cx, Y: cy}}
+	// Needs-critical is a zero-value trap since spec 060 (a bare
+	// sim.Agent{} has every need at 0, which is critical territory) — give
+	// Ash healthy needs so this fixture keeps testing what it always tested
+	// (path-vs-agent glyph priority), not the new needs-critical overlay.
+	m.replica.Agents = []sim.Agent{{Name: "Ash", X: cx, Y: cy, Needs: sim.Needs{Health: 1000, Food: 1000, Rest: 1000, Warmth: 1000, Morale: 1000}}}
 	m.replica.Structures = []sim.Structure{
 		{Kind: "path", X: cx + 1, Y: cy}, // off the agent's tile
 		{Kind: "path", X: cx, Y: cy},     // under the agent — agent glyph must win

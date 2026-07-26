@@ -2,7 +2,7 @@
 title: Pattern — stage-shaped layout defaults
 class: pattern
 status: shipped
-verified_against: 24ae43444d886b2bd62a30fc4101b71bb2706e4b
+verified_against: 1b3fe329e64431b66f9995a1f8c8e5fc979dafb7
 sources:
   - internal/tui/stagedefaults.go
   - internal/tui/layout.go
@@ -90,8 +90,17 @@ function every governed row above reduces to:
   starting-visible-set view (`SC-001` frame assertions), while the real
   render call sites keep calling those functions directly (the latter
   alone carries a per-definition override this table doesn't express).
-- **Villager strip**: resolved (`VillagerStripOn`) but inert — the surface
-  itself doesn't exist yet (TASK-129); absence is tolerated, not an error.
+- **Villager strip**: resolved (`VillagerStripOn`) — real as of spec 060
+  (TASK-129, `panels/villager-strip.md`: shipped): `villagerStripView`
+  renders it and `computeRows`/`Model.villagerCountBadge` implement its
+  fold-to-badge behavior. `resolveStageDefaults`'s `VillagerStripOn` is
+  unconditionally true (the table's own "on" at every stage), matching
+  `computeRows`'s own no-toggle treatment (`internal/tui/layout.go`'s
+  comment on the villager strip's fold accounting) — nothing in
+  `internal/tui` actually branches on `VillagerStripOn` yet since there's no
+  stage variance to gate; it exists here for completeness and the parity
+  sweep, the same posture as the guardian-strip/systems-tab/guardian-console
+  bullet above.
 - **Unlock ceremony, postmortem**: fire rules, layout-independent by
   design (FR-008) — carried in the table for parity only; TASK-127's
   overlays are a separate, not-yet-merged feature.
