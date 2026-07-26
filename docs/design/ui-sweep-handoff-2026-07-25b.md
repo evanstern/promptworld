@@ -1,5 +1,11 @@
 # UI sweep — session handoff (2026-07-25, evening)
 
+> **EXECUTED — SWEEP COMPLETE (2026-07-25, late evening).** All resume-order steps ran to
+> completion: 119/127/115/128/129 merged (PRs #101/#99/#100/#102/#103), TASK-121 AC #6 and
+> TASK-135 closed on evidence, hotfix TASK-140 (PR #98) fixed the main-red TestCatalogSweep,
+> three wiki+player-docs re-ground cycles landed. The runbook's execution log is the record.
+> Do not re-execute this handoff.
+
 **You (the session reading this) are the ORCHESTRATOR continuing the UI sweep.**
 The original instructions are `docs/design/reorient-2026-07-25-ui-runbook.md` — its
 per-task SDLC loop, lanes, and conflict doctrine still govern; **this handoff
