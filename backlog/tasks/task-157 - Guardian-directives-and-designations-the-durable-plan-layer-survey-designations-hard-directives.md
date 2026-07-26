@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-26 20:25'
-updated_date: '2026-07-26 22:15'
+updated_date: '2026-07-26 22:33'
 labels:
   - learning-game
 dependencies:
@@ -23,6 +23,8 @@ The guardian gains the DF/RimWorld player's plan-making verbs as a durable, chec
 DIRECTIVE HARDNESS (operator decision, 2026-07-26, firm): directives are HARD — a DIRECTIVE rung in decideIntent between SURVIVAL and PREP. Villagers first make sure they are not dying, then execute active directives, then free time (prep/wander/fun). HOWEVER conversations, hails, and dynamic world stimuli CAN and SHOULD interrupt directed work — interruption is life and must not be discouraged. If interruptions cause issues (thrash, stalled directives), work around them IN-GAME first (guardian re-issue, TTLs, standing-order watches); code fixes only when no in-game workaround exists.
 
 Grounding: docs/wiki/guardian-orders.md (entity/lifecycle template), docs/wiki/reflex-prep-arbitration.md (the arbitration ladder the new rung joins), docs/wiki/mental-map-propagation.md (knowledge announcement), research/Game-Gameplay-Patterns/Indirect-Control-and-Divine-Intervention.md (world-level verbs doctrine). Feature ideation session 2026-07-26. Directive lifecycle events join observableEventTypes so existing standing orders compose with zero new trigger code. TASK-97's targeting grammar is the designation addressing input (dependency). Follow-up: guardian missions task (accept/decompose/pursue/report, gated on TASK-112).
+
+Spec: specs/084-guardian-directives
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
@@ -34,7 +36,17 @@ Grounding: docs/wiki/guardian-orders.md (entity/lifecycle template), docs/wiki/r
 - [ ] #5 DIRECTIVE reflex rung sits between SURVIVAL and PREP: survival always preempts; directives preempt prep/wander
 - [ ] #6 conversations/hails/dynamic stimuli interrupt directed work and the directive resumes afterward without code intervention (in-game-workaround-first doctrine proven)
 - [ ] #7 directive lifecycle events join observableEventTypes so standing orders can watch them
+- [ ] #8 Spec phase: Setup
+- [ ] #9 Spec phase: Foundational — grammar entry point, entities, doors, sweeps (blocks all user stories)
+- [ ] #10 Spec phase: US2 — designations placed, announced, rendered, fulfilled (P1) 🎯 MVP
+- [ ] #11 Spec phase: US3 — directives through the injection door; observable lifecycle (P1)
+- [ ] #12 Spec phase: US4 — the villager side: block + DIRECTIVE rung + interruption proof (P1)
+- [ ] #13 Spec phase: US1 — survey_site (P2)
+- [ ] #14 Spec phase: Cross-cutting surfaces
+- [ ] #15 Spec phase: Grounding + gates (the wiki-in-PR lifecycle, spec 069)
 <!-- AC:END -->
+
+
 
 ## Implementation Notes
 
