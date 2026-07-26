@@ -4,7 +4,7 @@ aliases: [TUI Game Interfaces, Game Interface Design Research]
 tags: [game-ui, tui, ux, moc]
 type: moc
 created: 2026-07-25
-updated: 2026-07-25
+updated: 2026-07-26
 related: []
 ---
 
@@ -71,6 +71,13 @@ documentation conventions (Game-Player-Docs branch).
 
 ## Analyses
 
+- [[Analysis-Tile-Vocabulary-Expansion]] — 2026-07-26: what the corpus supports for
+  expanding the tile/glyph vocabulary — new tile types from the roguelike/CP437 convention
+  dictionary, a semantic (severity-first, token-externalized) color grammar, letter avatars
+  with emoji confined to the inspector layer, and fonts/tilesets as swappable skins over one
+  grid. Names the corpus gaps (no concrete font candidates, no tested colorblind palette).
+  Rendered as `tile-vocabulary-expansion-briefing.html`, published at
+  <https://claude.ai/code/artifact/05415ad3-3efd-4693-9330-c626f4435731>.
 - [[Analysis-Teaching-Game-TUI]] — the 2026-07-25 reorientation evaluation: the current
   TUI as watching instrument vs the teaching-game lens, the Staged Cockpit direction
   under the operator's ratified decisions, and the reconciled cross-branch position.
