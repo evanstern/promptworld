@@ -5,7 +5,7 @@ kind: component
 sources:
   - cmd/promptworld/main.go
   - cmd/promptworld/commands.go
-verified_against: 0fd2104c59c54be8e8071d319fa4ce192083faf3
+verified_against: a8d2b7f17989321471cff43c4e760e83f58bbd55
 ---
 
 # promptworld CLI

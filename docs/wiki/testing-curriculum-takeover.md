@@ -12,7 +12,7 @@ sources:
   - internal/tui/takeover_test.go
   - internal/tui/render_test.go
   - internal/tui/console_test.go
-verified_against: PENDING_MERGE_COMMIT
+verified_against: a8d2b7f17989321471cff43c4e760e83f58bbd55
 ---
 
 # Curriculum-ladder & takeover suites

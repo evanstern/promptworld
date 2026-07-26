@@ -9,7 +9,7 @@ sources:
   - internal/worlds/unlocks.go
   - cmd/promptworld/fork.go
   - cmd/promptworld/compare.go
-verified_against: PENDING_MERGE_COMMIT
+verified_against: a8d2b7f17989321471cff43c4e760e83f58bbd55
 ---
 
 # CLI: world lifecycle commands
@@ -102,28 +102,21 @@ Split from [[cli-promptworld]]: `new`, `migrate`, `fork`, `compare`, `ps`,
 - `stages [--json]` (`cmd/promptworld/stages.go`, spec 046 US1 —
   [[curriculum-ladder]]) — the ladder's front door: an informed identity
   table over all four stages (always all four, never a difficulty menu), each
-  row pairing the active skin's display identity (`skin.Stage` — name +
-  one-line identity) with the skin-independent ladder facts (`stagesLadder` —
-  since spec 063 a plain alias onto `internal/world.StagesLadder`, relocated
-  there so the TUI help overlay's D9 guardian section can read the same
-  table without `internal/tui` importing package `main`, [[grounded-feedback]] —
-  mirroring the spec's table: the concept taught, what the world grants, and
-  the evidence that unlocks the next stage — stage-4's reads "nothing — this
-  is graduation") plus the earned state from the per-user unlocks record
+  row pairing the active skin's display identity (`skin.Stage`) with the
+  skin-independent ladder facts (`stagesLadder`, a plain alias onto
+  `internal/world.StagesLadder` since spec 063 — [[grounded-feedback]]:
+  concept, grants, unlock evidence; "nothing — this is graduation" at
+  stage-4) plus the earned state from the per-user unlocks record
   (`worlds.LoadUnlocks`): stage-1 is every player's unconditional floor;
-  any other stage is earned only by an unlocks-record entry, whose proving
-  world and exercise the earned line names; an unearned stage's
-  row points at `new --stage <id> --override`. `--json` emits the same rows
-  machine-readably (`proving_world`/`exercise` audit pointers only when
-  earned by an entry). A missing/corrupt/unresolvable unlocks record simply
-  means nothing beyond stage-1 is earned — the command never fails on record
-  state. `highestEarnedStage` over the same record is what `new`'s default
-  `--stage` selection uses. The earned rule itself is single-sourced as
-  `worlds.(*Unlocks).StageEarned` (spec 078, relocated from this file's own
-  former package-main `stageEarned`): `cmdStages`, `highestEarnedStage`, and
-  `cmdNew`'s `--override` gate all call the same method, and so does the
-  TUI's own forward-ladder view ([[grounded-feedback]]) — one earned rule,
-  every surface that shows it.
+  any other stage needs an unlocks-record entry, whose proving world and
+  exercise the earned line names; unearned points at `new --stage <id>
+  --override`. `--json` emits the same rows (`proving_world`/`exercise`
+  audit pointers only when earned). A missing/corrupt/unresolvable record
+  simply means nothing beyond stage-1 is earned. `highestEarnedStage` over
+  the same record is `new`'s default `--stage`. The earned rule is now
+  single-sourced as `worlds.(*Unlocks).StageEarned` (spec 078): `cmdStages`,
+  `highestEarnedStage`, and `cmdNew`'s `--override` gate all call it, and so
+  does the TUI's own forward-ladder view ([[grounded-feedback]]).
 
 ## Connections
 
