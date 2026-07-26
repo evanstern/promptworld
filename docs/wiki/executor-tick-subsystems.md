@@ -1,10 +1,10 @@
 ---
 name: executor-tick-subsystems
-description: The ancillary subsystems stepEvents drives each tick beyond agent bodies and goals — Guardian charge regen and order expiry, scenario incidents/rubric, the gru's turn, the social adjacency beat, and the governance/meeting/curfew layer. Load to see what else runs inside one tick besides needs and intents.
+description: The ancillary subsystems stepEvents drives each tick beyond agent bodies and goals — Guardian charge regen and order expiry, scenario incidents/rubric, the gru's turn, the stranger's turn (spec 077), the social adjacency beat, and the governance/meeting/curfew layer. Load to see what else runs inside one tick besides needs and intents.
 kind: component
 sources:
   - internal/sim/executor.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+verified_against: 4c66d240b2715706964f02cfd2396256c9957d8e
 ---
 
 # Executor — tick subsystems
@@ -32,9 +32,18 @@ never two spawn mechanisms in one night — and its rubric evaluator
 detection, emitting `curriculum.exercise_passed` (+ same-batch
 `curriculum.stage_unlocked`) at the exercise's pass boundary; an ambient
 world (no scenario armed) enters neither branch, byte-identical to pre-054
-— [[scenario-machinery]] owns the whole subsystem. `stepEvents` also runs the
+— [[scenario-machinery]] owns the whole subsystem (grown to four incident
+kinds by spec 077, with the rubric emitter generalized to per-exercise dawn
+boundaries). `stepEvents` also runs the
 [[gru]]'s whole turn (`gruStep`) each tick, and the heartbeat's near-death memory
-names "the gru" as the cause when the last wound was recent. The per-minute social beat
+names "the gru" as the cause when the last wound was recent. Immediately
+AFTER `gruStep` and before the governance/social beats, spec 077 adds the
+stranger's turn (`strangerStep`, `internal/sim/stranger.go` — order pinned
+by test): nil-check first, so an ambient world where no `stranger.arrived`
+ever landed pays one comparison and emits nothing; while abroad it seeks
+the nearest unattended store (greedy, `gruProtected`-avoiding), takes
+bounded goods on a cooldown, and departs at dawn —
+[[event-types-scenario-incidents]] catalogs the family. The per-minute social beat
 (`socialEvents`, [[social-fabric]]) runs the adjacency ladder — repay an open
 debt, give to a starving neighbor, or talk (chat-while-working, cooldown-bounded)
 with a verbatim rumor fallback — and the hourly due-check breaks overdue debts

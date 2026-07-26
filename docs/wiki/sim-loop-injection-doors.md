@@ -4,7 +4,7 @@ description: Loop.InjectSocial (the mind's whitelisted conversation/consolidatio
 kind: component
 sources:
   - internal/sim/loop.go
-verified_against: 30912a9cd5d2334f76425ac8ca5b74a7a7c90876
+verified_against: 4c66d240b2715706964f02cfd2396256c9957d8e
 ---
 
 # Sim loop — injection doors
@@ -63,7 +63,12 @@ fingerprint-at-effect stamp, the event-sourced charter-revision timeline the
 enforces a non-empty fingerprint — and `morgue.epilogue`, the narrator's
 recorded mourning prose after a death or the run's end, appending only the
 bounded `State.MorgueEpilogues` ring (never simulation state, which is why it
-also survives the ended-world narrowing above)), and (since spec 063,
+also survives the ended-world narrowing above)), and (since spec 077 FR-006) `metatron.skills_observed` — the
+skills-observation twin of `charter_observed`: the bound skill-file set a
+turn ran under, emitted on fingerprint change by the same pipeline
+(`observeSkills`), whose reducer arm (and so the dry-run) enforces a
+non-empty fingerprint AND a non-empty name list (an empty bound set is
+never an observation), and (since spec 063,
 [[grounded-feedback]]) `guardian.report_card` — the guardian's report-card
 producer's stored attribution note, recorded prose only, never simulation
 state; a run-ending card rides `morgue.epilogue` instead, so this type

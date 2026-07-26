@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/world/world.go
   - internal/world/migrate.go
-verified_against: 801db7c1b15fb567732bc5c6063464e918353a4d
+verified_against: 4c66d240b2715706964f02cfd2396256c9957d8e
 ---
 
 # World save directory

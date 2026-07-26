@@ -7,7 +7,7 @@ sources:
   - internal/tui/tiles.go
   - internal/tui/digest.go
   - internal/tui/tui.go
-verified_against: b3f4da3c29e3cbbd933e366abe76a5d6ef0f2be9
+verified_against: 4c66d240b2715706964f02cfd2396256c9957d8e
 ---
 
 # TUI map view
@@ -38,7 +38,9 @@ current tick is before the structure's `FuelUntil` — since spec 060 a THIRD,
 still-lit "dying" style applies inside `State.RefuelDyingBelow()`'s window
 before that, distinct from both plain lit and cold — and fall back to a faint,
 hollow cold glyph △ once fuel runs out, shelters ⌂, ovens ▣, chests ☐ (spec
-013 US3), and the [[gru]] as a red G while it is abroad; ground piles (spec
+013 US3), the [[gru]] as a red G while it is abroad, and — spec 077 — the
+stranger as a violet `S` while abroad (`State.Stranger`, one priority rung
+below the gru; [[event-types-scenario-incidents]]); ground piles (spec
 013 US2, `Model.replica.Piles`) render as a dedicated overlay `%`, layered
 like structures rather than folded into them so a coincidental tile overlap
 loses neither glyph's priority silently. Since spec 032, a wall structure

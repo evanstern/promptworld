@@ -8,7 +8,7 @@ sources:
   - internal/guardian/toolcalls.go
   - cmd/promptworld/work.go
   - internal/ipc/server.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+verified_against: 4c66d240b2715706964f02cfd2396256c9957d8e
 ---
 
 # Guardian's miracle doors

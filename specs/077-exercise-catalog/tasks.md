@@ -165,7 +165,7 @@ as reducer-valid, ambient-indistinguishable, replay-safe events.
 
 ## Phase 8: Grounding — wiki-in-PR obligations (in-branch, pr-gate enforced)
 
-- [ ] T025 `/grounding-wiki:wiki-update` reconciliation over the branch diff;
+- [X] T025 `/grounding-wiki:wiki-update` reconciliation over the branch diff;
   body-amendment re-pins expected on `docs/wiki/scenario-machinery.md` (kind vocabulary,
   emitter generalization, 9-exercise operational notes),
   `scenario-machinery-surfacing.md`, `curriculum-ladder-progression.md` (the-law

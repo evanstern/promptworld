@@ -6,7 +6,7 @@ sources:
   - internal/tui/grammar.go
   - internal/tui/digest.go
   - internal/tui/tui.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+verified_against: 4c66d240b2715706964f02cfd2396256c9957d8e
 ---
 
 # TUI chronicle feed and digest grammar
@@ -40,8 +40,10 @@ the example skin); `curriculum.*` and every other family render raw by design
 surface this note's `[[skin]]` link touches, everywhere else in the raw feed
 and inspector stays honest, unskinned wire vocabulary.
 Families carry color-role tints, key tokens (names, speech, amounts, causes)
-carry emphasis, and four high-salience types (`agent.died`, `gru.attacked`,
-`social.chest_taken`, `norm.violated`) render whole-line alert. Since spec 038,
+carry emphasis, and five high-salience types (`agent.died`, `gru.attacked`,
+`social.chest_taken`, `norm.violated`, and — spec 077's only addition to
+the tier — `stranger.took`, beside `chest_taken` because theft is theft)
+render whole-line alert. Since spec 038,
 `agent.build_failed` ([[executor]], [[event-types]]) gets its own registry
 entry — builder, emphasized goal, and emphasized reason ("Ash's build_wall_stone
 failed — site no longer buildable") — reading as a failure at a glance without
@@ -112,3 +114,18 @@ Connections section lists [[chronicle]] and [[event-types]] as this feed's
 underlying data sources, alongside [[mental-maps]], [[memory-retrieval]],
 [[morgue]], [[curriculum-ladder]], and [[grounded-feedback]] for the
 per-family digest entries added since their respective specs.
+
+Since spec 077 ([[event-types-scenario-incidents]]), seven more types get
+registry entries with NO new family, tier, or channel: `sim.cold_snap` ("a
+cold snap grips night N (until tT)") and `sim.forage_blighted` ("blight
+struck the forage at (x,y) (+N more tiles)" — the first-fact-plus-count
+shape) in the sim voice; the `stranger.*` namespace mapped onto the
+gru/threat family voice (`familyByNamespace["stranger"]` → the gru family —
+a second nocturnal entity, not a new visual role): `stranger.arrived` ("a
+stranger slipped in at (x,y)"), `stranger.moved` ("the stranger creeps to
+(x,y)"), `stranger.took` (the alert-tier theft line, "the stranger took N
+<kind> from the stores at (x,y)"), `stranger.departed` ("the stranger was
+gone by dawn of day N"); and `metatron.skills_observed` ("Guardian ran
+under N skill file(s) <fingerprint>" — the charter observation's twin,
+guardian family/skin-name subject).
+

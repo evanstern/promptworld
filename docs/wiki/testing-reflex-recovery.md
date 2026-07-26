@@ -10,7 +10,7 @@ sources:
   - internal/sim/thrash_regression_test.go
   - internal/sim/reflex_matrix_test.go
   - internal/sim/needs_recovery_test.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+verified_against: 4c66d240b2715706964f02cfd2396256c9957d8e
 ---
 
 # Reflex-arbitration & recovery suites

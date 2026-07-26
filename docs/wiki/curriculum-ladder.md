@@ -7,7 +7,7 @@ sources:
   - internal/world/world.go
   - internal/guardian/charter.go
   - cmd/promptworld/stages.go
-verified_against: aedcf52f680ed68910e185c3ccde44bd320517b6
+verified_against: 4c66d240b2715706964f02cfd2396256c9957d8e
 ---
 
 # Curriculum ladder
@@ -106,9 +106,11 @@ per-transition gate conjuncts (stage-2→3 and stage-3→4 require
 `Custom`-derived charter/tool evidence, never freehand-asserted); a per-user
 `~/.promptworld/unlocks.json` convenience record mirrors earned stages
 without ever being read by world behavior; and `sim.ExerciseDefinition`
-content (`first-night`, `the-law`) supplies the seeded rubric the spec-054
-scenario machinery evaluates. See the child for the event/evidence/exercise
-detail.
+content — nine exercises since spec 077, 3/2/2/2 by stage — supplies the
+seeded rubrics the scenario machinery evaluates and EMITS for; the stage-3
+gate's `Custom` tool evidence is spec 077's `metatron.skills_observed`
+observation (skill files are player-authored and stage-3+ by construction).
+See the child for the event/evidence/exercise detail.
 
 ## Connections
 

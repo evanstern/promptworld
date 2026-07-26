@@ -4,7 +4,7 @@ description: The single-goroutine fixed-timestep loop — tick execution, pacing
 kind: component
 sources:
   - internal/sim/loop.go
-verified_against: 30912a9cd5d2334f76425ac8ca5b74a7a7c90876
+verified_against: 4c66d240b2715706964f02cfd2396256c9957d8e
 ---
 
 # Sim loop

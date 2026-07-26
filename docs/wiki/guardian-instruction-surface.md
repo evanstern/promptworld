@@ -7,7 +7,7 @@ sources:
   - internal/guardian/charter.go
   - internal/persona/charter.go
   - internal/skin/skin.go
-verified_against: 1bdc50c647a87b2ac221fe073f404df3e3ccd38f
+verified_against: 4c66d240b2715706964f02cfd2396256c9957d8e
 ---
 
 # Guardian's instruction surface
@@ -60,7 +60,15 @@ direct children, ascending bytewise filename order, ≤8 files, ≤4,000 chars e
 same truncate/skip notice discipline as the charter; since spec 046 behind the
 `stageSkills` fork — skill files compose only from stage-3, and at stage-1/-2 a
 present-but-unbound `skills/` dir draws one honest notice naming the stage-3
-unlock rather than being silently ignored), then a fixed frame appended
+unlock rather than being silently ignored; since spec 077 FR-006 the bound
+set is also OBSERVED: `observeSkills` — the `observeCharter` twin, stamped
+at bind in `runTurn` — emits `metatron.skills_observed{fingerprint, names}`
+through the same `InjectSocial` door when the composed set's fingerprint
+(`skillsFingerprint`: 12 hex chars over names+texts in composition order)
+differs from the absorb-mirrored `State.SkillsFingerprint`; an empty bound
+set never emits, so stages 1–2 are structurally silent — which is what
+makes the recorded observation's `Custom: true` evidence derivation honest,
+[[curriculum-ladder-progression]]), then a fixed frame appended
 LAST as compile-time constants on every path — no editable byte can displace or
 truncate it (adversarial battery + determinism tests in `guardian_test.go`). The
 frame pins the two `guardianNonNegotiables` invariants beneath ANY editable text

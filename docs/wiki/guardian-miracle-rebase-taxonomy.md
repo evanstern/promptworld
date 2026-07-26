@@ -4,7 +4,7 @@ description: The SHIFT/KEEP taxonomy (rebaseTicks) every tick-anchored int64 sta
 kind: component
 sources:
   - internal/sim/miracles.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+verified_against: 4c66d240b2715706964f02cfd2396256c9957d8e
 ---
 
 # Guardian's miracle rebase taxonomy
@@ -53,7 +53,12 @@ classified SHIFT or KEEP in its doc comment:
   mind-driven, the permanent sentinel every no-planner world's agents carry)
   — shifted only when non-zero, the `Belief.Reinforced`/`NeedsAnchorTick`
   shape: a snap must preserve the window's remaining deference rather than
-  spuriously arming or clearing it.
+  spuriously arming or clearing it. Spec 077
+  ([[event-types-scenario-incidents]]) adds `State.ColdSnapUntil` (the cold
+  snap's read-time expiry — the `Structure.FuelUntil` shape, only-non-zero)
+  and `Stranger.LastMove`/`Stranger.LastTake` (the entity's cadence anchors,
+  the `Gru.LastAttack` shape) — all SHIFT, so a snap preserves a live
+  snap's remaining window and the stranger's cooldowns.
 - **KEEP** — a historical timestamp or an identity/counter; rewriting it would
   rewrite history or break a reference. `Agent.Generation`, `Agent.LastGoalTick`,
   `Memory.Tick`, `Memory.Conv` (spec 019: a conversation-ref identity, the same
@@ -73,8 +78,14 @@ classified SHIFT or KEEP in its doc comment:
   sweep simply re-witnesses the shifted reality on the next look),
   `GuardianReportCard.Tick`/`Seq`/`Citations` (spec 063,
   [[grounded-feedback]]: when the card landed, the card event's own identity,
-  and the cited event seqs — history and identities, never deadlines), and
-  every
+  and the cited event seqs — history and identities, never deadlines),
+  spec 077's `Stranger.Night` (the 1-based arrival night — identity),
+  `StrangerTake.Tick` (when the take happened — ledger history, the
+  `DeathRecord.Tick` shape), and `State.CharterObservedSeq/Tick` +
+  `State.SkillsObservedSeq/Tick` (log coordinates re-locating recorded
+  observation events — identities, the `Memory.Seq`/`EvidenceRef.Tick`
+  shape: rewriting them would point pass evidence at ticks where nothing
+  was recorded), and every
   other identity/history field — see the doc comment for the full list.
   `TestRebaseTaxonomyComplete` caught both spec-019 additions, the spec-030
   `Belief.Reinforced` field, (later) spec 029's `GuardianOrder.ExpiresTick`/

@@ -8,7 +8,7 @@ sources:
   - internal/sim/miracles.go
   - internal/sim/morgue.go
   - internal/sim/curriculum.go
-verified_against: b3f4da3c29e3cbbd933e366abe76a5d6ef0f2be9
+verified_against: 4c66d240b2715706964f02cfd2396256c9957d8e
 ---
 
 # Sim state: world & governance dispatch arms
@@ -56,7 +56,12 @@ terrain and mover-and-bystanders record each other's positions — a pure
 function of (state, event) with no chronicle noise, so a mind-map-populating
 step never needs its own event type (research D2);
 the `gru.*` family dispatches to
-`applyGru` in `gru.go` ([[gru]]);
+`applyGru` in `gru.go` ([[gru]]); the spec-077 incident kinds dispatch
+likewise — `sim.cold_snap`/`sim.forage_blighted` to `applyIncident` in
+`scenario.go` (latch `ColdSnapUntil`; append `Harvest` overlays,
+idempotent on re-apply) and the `stranger.*` family to `applyStranger` in
+`stranger.go` (entity lifecycle + the clamped, reducer-total take arm —
+[[event-types-scenario-incidents]]);
 the `meeting.*`/`norm.*` families — plus `meeting.convention_established` and
 the `sim.gathering_observed` watch event (TASK-36) — dispatch to
 `applyGovernance` in `governance.go` ([[governance]]); the four miracle types

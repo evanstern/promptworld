@@ -7,7 +7,7 @@ sources:
   - internal/tui/views.go
   - internal/tui/help.go
   - internal/skin/skin.go
-verified_against: b3f4da3c29e3cbbd933e366abe76a5d6ef0f2be9
+verified_against: 4c66d240b2715706964f02cfd2396256c9957d8e
 ---
 
 # Takeover surfaces (ceremony + postmortem)

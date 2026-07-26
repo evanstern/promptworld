@@ -1,12 +1,12 @@
 ---
 name: curriculum-ladder-progression
-description: How the curriculum ladder is actually earned — the two curriculum.* events and their EvaluateUnlock gate conjuncts (per stage transition), the per-user ~/.promptworld/unlocks.json convenience record, and ExerciseDefinition content (first-night/the-law) whose rubric the spec-054 scenario machinery evaluates.
+description: How the curriculum ladder is actually earned — the two curriculum.* events and their EvaluateUnlock gate conjuncts (per stage transition), the per-user ~/.promptworld/unlocks.json convenience record, and the nine-exercise ExerciseDefinition catalog (spec 077) whose rubrics the scenario machinery evaluates and EMITS for at every stage.
 kind: component
 sources:
   - internal/sim/curriculum.go
   - internal/daemon/curriculum.go
   - internal/worlds/unlocks.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+verified_against: 4c66d240b2715706964f02cfd2396256c9957d8e
 ---
 
 # Curriculum ladder — progression (unlocks, record, exercises)
@@ -25,11 +25,11 @@ tick, evidence?}`, each `EvidenceRef{type, seq, tick, custom?}` a re-locatable
 pointer into this world's log) and `curriculum.stage_unlocked`
 (`StageUnlockedPayload{stage, exercise, tick}`), are the executor emission
 class — pure functions of (state, tick), no whitelist entries, the
-`metatron.order_expired` pattern; the spec-054 scenario rubric machinery
-(`scenario.go`'s `scenarioRubricEvents`, TASK-119) is the production emitter
-— see [[scenario-machinery]] — and test fixtures remain the only in-tree
-emitter for exercises without pass emission (`the-law` since spec 072 has a
-production EVALUATOR but still no emitter — FR-009 content work).
+`metatron.order_expired` pattern; the scenario rubric machinery
+(`scenario.go`'s `scenarioRubricEvents`, generalized by spec 077 to
+per-exercise dawn boundaries) is the production emitter for EVERY cataloged
+exercise — see [[scenario-machinery]]; spec 072's the-law emission deferral
+(FR-009) is complete.
 The reducer appends passes to the bounded `State.CurriculumPasses` ring
 (`curriculumPassRetain` 32) and latches unlocks into `State.StagesUnlocked`
 once per (world, stage), rejecting duplicates and `stage-1` (the unearned
@@ -40,9 +40,19 @@ where `Custom` is NEVER asserted freehand but derived by
 `sim.CharterObservedEvidence`, the single sanctioned constructor, as the
 inverse of the recorded `CharterObservedPayload.Default` (spec 044 US2), so a
 default/preset charter structurally cannot satisfy the gate (SC-004) —
-stage-3→4, any `Custom` evidence entry (a player-granted tool's contributing
-act; which tool is TASK-119's exercise design). Stage-4 is graduation:
-nothing unlocks past it.
+stage-3→4, any `Custom` evidence entry — since spec 077 this is
+`SkillsObservedEvidence`, `Custom: true` BY CONSTRUCTION (the long-open
+"which tool" design slot, filled): `metatron.skills_observed` records the
+bound skill-file set a guardian turn ran under, and skill files bind only
+from stage-3 and only players author them, so a recorded observation is a
+player-granted capability by structural necessity. Two further sanctioned
+constructors joined `CharterObservedEvidence`/`OrderPlacedEvidence`:
+`CharterEvidenceFromState` (reads the `State.CharterObservedSeq/Tick`
+coordinates the charter arm persists since spec 077, `Custom` from the
+persisted `CharterCustom`) and `SkillsObservedEvidence` (reads
+`SkillsObservedSeq/Tick`) — both omit honestly when no coordinates are on
+state (a pre-077 snapshot; the pass waits, self-healing on the next
+observation). Stage-4 is graduation: nothing unlocks past it.
 
 **The per-user unlocks record** (`internal/worlds/unlocks.go`):
 `~/.promptworld/unlocks.json` (`<worlds.Root()>/unlocks.json`), a
@@ -66,18 +76,20 @@ stage, deterministic seed, framing, an event-derived rubric whose every term
 must be a cataloged event type, the pass-signal shape, a chronicle
 score-narrative framing (failure is a story, not a scold), and — since spec
 054 — an optional authored `Schedule` of incidents plus an
-`IncidentVisibility` override ([[scenario-machinery]]). Two ship
-(`ScenarioExercises`): **first-night** (stage-1, seed 46101 — keep the
-village alive through night one by directing the guardian: visions, omens,
-and the watch; a production rubric evaluator AND pass emission, plus an
-authored night-one `gru_emerges` incident) and **the-law** (stage-2, seed
-46102 — get a norm adopted while a player-authored charter revision is in
-force, the SC-004 conjunct; since spec 072 it has a production rubric
-evaluator too — `theLawRubric` over `State.Norms` and the persisted
-`State.CharterCustom` authorship flag, [[scenario-machinery]] — though pass
-emission remains content work). The spec-054 scenario/rubric machinery consumes the
-catalog end to end ([[scenario-machinery]]); `Manifest.Scenario` is its
-consumed schema seam, no longer reserved ([[world-save-directory]]).
+`IncidentVisibility` override ([[scenario-machinery]]), and — since spec
+077 — a `BoundaryDay` declaration (dawn of day N, or 0 = rolling from day
+2). NINE ship (`ScenarioExercises`, spec 077 FR-001 — 3/2/2/2 by stage,
+seeds 46101–46109): stage-1 **first-night**, **cold-dawn**,
+**stranger-at-the-gate**; stage-2 **the-law** (rolling; emission real —
+its pass carries `CharterEvidenceFromState` evidence and unlocks stage-3
+without `--override`) and **blighted-larder**; stage-3 **toolsmith** (the
+skills-evidence exercise — its pass first opens the stage-3→4 gate in
+production) and **fog-watch**; stage-4 **long-winter** and
+**stewards-charge** (graduation — passes record, nothing unlocks). Every
+exercise has a production evaluator arm and real pass emission
+([[scenario-machinery]] for the full table). The scenario/rubric machinery
+consumes the catalog end to end; `Manifest.Scenario` is its consumed
+schema seam, no longer reserved ([[world-save-directory]]).
 Surfacing: `ipc.WorldStatus.Stage`/`StageOverridden` ride status, `promptworld
 status` renders a skin-named stage line (plus, on a scenario world, an
 `exercise: <id> — <outcome>` line, [[scenario-machinery]]), and the TUI
@@ -102,9 +114,9 @@ daemon observer, unlocks record).
 
 Deleting `~/.promptworld/unlocks.json` forgets earned convenience, not
 truth — any proving world's log still carries its `curriculum.stage_unlocked`
-events. Since spec 054 (TASK-119), the `first-night` exercise's production
-rubric evaluator lands `curriculum.exercise_passed`/`stage_unlocked` on a
-real scenario world (`promptworld new --scenario first-night`) — see
-[[scenario-machinery]]; `the-law` evaluates for real since spec 072 (live
-gauges and card surfaces), but its pass EMISSION remains unbuilt content
-work, so a stage-3 unlock still needs `--override` until it lands.
+events. Since spec 077 every cataloged exercise both evaluates AND emits
+for real (`promptworld new --scenario <id>` for any of the nine ids) — the
+stage-2→3 unlock no longer needs `--override` (the-law's pass carries the
+charter evidence), and the stage-3→4 gate grants for the first time from
+production machinery (toolsmith/fog-watch's `Custom: true` skills
+evidence) — see [[scenario-machinery]].
