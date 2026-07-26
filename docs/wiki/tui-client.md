@@ -12,7 +12,8 @@ sources:
   - internal/tui/help.go
   - internal/tui/lessons.go
   - internal/tui/reportcard.go
-verified_against: 7e3c2b5f5f23eb8e5fcb37d0f867dbc6f46a289b
+  - internal/tui/tiles.go
+verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
 ---
 
 # TUI client
@@ -129,8 +130,10 @@ re-clamp pan/selection state (`clampGeometry`).
 
 Regions: the **map** is a camera window over the generated terrain from
 `Model.gameMap` (regenerated locally via `world.Map()`,
-[[worldmap-generation]]): water ~, wood ♠, forage ", rock outcrops ^, and dens
-ᴥ glyphs, plus dynamic overlay state read off the replica (never part of the
+[[worldmap-generation]]): water ~, wood ♠, forage ", rock outcrops ^, dens
+ᴥ, and — since spec 068, on a world generated with the marsh/sand pass — marsh
+░ and sand ▒ glyphs, plus dynamic overlay state read off the replica (never
+part of the
 static tile) — a quarried-out rock outcrop renders as a faint `,` ahead of the
 static terrain check — with the replica's agents on top (by initial,
 lowercase asleep, † dead — since spec 060, [[village-lens]], a living
@@ -164,6 +167,13 @@ plain dead marker — the body becomes the grave — because every post-044
 death places its grave at the dead agent's own frozen tile, so the usual
 agent-over-structure priority would otherwise permanently hide the glyph. A
 graveless dead agent (pre-044 replay/history) still renders the plain `†`.
+Since spec 068 ([[tile-registry]]), every glyph and style named in this
+paragraph — including `styleWallDamaged`/`styleGrave` above — resolves
+through the tile registry's classed style tokens (`internal/tui/tiles.go`)
+rather than a per-tile literal: `views.go`'s old style-literal block is gone,
+`tile()` now calls `tileKey(...).render(state)`, and the named styles are
+token-derived aliases kept for direct call sites — the glyphs, colors, and
+priority described here are unchanged bytes, only their home moved.
 The camera follows the living agents' centroid, arrow keys pan, `c` recenters.
 Since spec 049 (TASK-124, reorient D3) the camera gains one computed writer:
 **jump-to-source** — in inspect mode, `⏎` (or a mouse click on a chronicle
@@ -452,10 +462,17 @@ conditional badge, dock-tab rows, and a `mapGlyphs` table **shared with
 `renderMapGrid`'s legend line** (`legendGlyphLine`) so the overlay's glyph
 walkthrough and the map legend cannot silently diverge — extracting it also
 fixed a real gap: the gru's `G` was drawn but never listed in the legend
-text. Since spec 060, both surfaces also carry a `conditionOverlayNote`
+text. Since spec 068 ([[tile-registry]]), `mapGlyphs` is the tile registry
+itself — grown from the spec-045 glyph-key triple into full rows carrying a
+style token, state variants, and a world binding, relocated to
+`internal/tui/tiles.go`; `help.go` keeps only `legendGlyphLine` and the
+walkthrough renderer that read it, so the two surfaces still cannot silently
+diverge, and the registry's OWN row order is frozen (append-only) so this
+history stays accurate. Since spec 060, both surfaces also carry a `conditionOverlayNote`
 prose line naming the three map condition overlays ([[village-lens]]) — a
 note rather than a `mapGlyphs` row, since every overlay is a style variant
-of an already-legended glyph, never a new one. The shared table gained the `✝` grave row with spec 044; it is the
+of an already-legended glyph, never a new one. The shared table gained the `✝` grave row with spec 044 and, since spec 068, the `░` marsh / `▒` sand
+rows ([[tile-registry]], [[worldmap-generation]]); the grave row is the
 dead-agent-on-grave carve-out in `renderMapGrid` (above) that keeps the row
 honest — without it the map could never actually show the glyph it
 advertises. The lessons section is the pull half of the
@@ -494,7 +511,9 @@ exactly one tier of its mode page.
 
 [[ipc-client]] is the transport; [[ipc-protocol]]'s `state` command exists for this
 replica pattern; [[sim-state-reducer]] supplies the shared `Apply`; [[chronicle]]
-fills the story pane and [[event-types]] the raw feed; [[cli-promptworld]] mounts
+fills the story pane and [[event-types]] the raw feed; [[tile-registry]] (spec 068)
+owns every map tile's glyph/style/binding this note's map region and help-overlay
+glyph walkthrough render from; [[cli-promptworld]] mounts
 it as the `ui` subcommand. The header's governed-speed suffix and the two
 governor digest lines read [[cognition]]'s `ShedThreshold` and the
 `clock.governor_shed`/`clock.governor_recovered` payload the [[daemon-lifecycle]]

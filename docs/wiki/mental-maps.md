@@ -17,7 +17,7 @@ sources:
   - internal/guardian/turn.go
   - internal/guardian/toolcalls.go
   - internal/tool/registry.go
-verified_against: 30912a9cd5d2334f76425ac8ca5b74a7a7c90876
+verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
 ---
 
 # Mental maps
@@ -49,7 +49,11 @@ snapshot, round-trips byte-identically). `MentalMap{Explored, Facts, Peers}`:
   (`fire`/`shelter`/`oven`/`chest`/`wall_plank`/`wall_stone`/`path`, plus —
   since spec 044 US4 — `grave`) and the
   perception-gated resource kinds (`tree`/`forage`/`rock`/`water_edge`/`den`/
-  `pile`). `Provenance` reuses the Belief vocabulary — `witnessed`/`told`, plus
+  `pile`). Spec 068's marsh/sand ground covers ([[worldmap-generation]])
+  deliberately do NOT join this vocabulary — they carry no resource
+  affordance, so `perceptionEvents` has no fact kind to record for them; a
+  villager's map has nothing to say about marsh or sand beyond what it can
+  already see on the drawn map, the same as plain grass. `Provenance` reuses the Belief vocabulary — `witnessed`/`told`, plus
   `ProvenanceRevealed` ("revealed") for a divine grant. `Source` is the
   teller's agent index, meaningful only under `told` provenance. `Detail` is a
   kind-specific scalar baked at emission and never re-derived — a fire's
