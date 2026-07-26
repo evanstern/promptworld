@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"strings"
 	"time"
 
@@ -405,11 +406,23 @@ func (md *Mind) runConversation(cc convoCtx) {
 	}
 	// Landing enforcement for scenes (FR-010): a completed scene that
 	// overran its staleness budget — the router admitted it, the tier was
-	// slower than predicted — must not act. All-or-nothing, recorded.
-	if st := md.tick.Load() - cc.conv; cc.meta.class.BudgetTicks > 0 && st > cc.meta.class.BudgetTicks {
+	// slower than predicted — must not act. All-or-nothing, recorded. The
+	// budget is the class's 1x wall-clock patience scaled by the
+	// event-sourced effective speed, through the same EffectiveBudgetTicks
+	// predicate as the reducer landing rung (spec 067 FR-001, research
+	// R2 #4) — a pre-check that disagrees with the gate it fronts would
+	// re-create the class of bug that spec kills. The reason carries the
+	// contract's budget clause (FR-004), terse at uncapped speed.
+	tps := math.Float64frombits(md.tickRate.Load())
+	st := md.tick.Load() - cc.conv
+	if eb := cc.meta.class.EffectiveBudgetTicks(tps); eb > 0 && st > eb {
 		log.Printf("mind: conversation %d stale at landing (%d ticks)", cc.conv, st)
-		md.emitCog(md.cogSceneOutcome(cc.meta, sim.OutcomeRejectedStale,
-			fmt.Sprintf("scene staleness %d > budget %d", st, cc.meta.class.BudgetTicks),
+		reason := fmt.Sprintf("scene staleness %d > budget %d", st, eb)
+		if tps > 0 {
+			reason = fmt.Sprintf("scene staleness %d > budget %d (%d at 1x × %gx)",
+				st, eb, cc.meta.class.BudgetTicks, tps)
+		}
+		md.emitCog(md.cogSceneOutcome(cc.meta, sim.OutcomeRejectedStale, reason,
 			time.Since(sceneStart).Milliseconds(), "", retried))
 		return
 	}

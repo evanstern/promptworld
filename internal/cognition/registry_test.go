@@ -41,6 +41,45 @@ func TestRegistryContractValues(t *testing.T) {
 	}
 }
 
+// TestEffectiveBudgetTicks (spec 067 FR-001): the effective budget is the 1x
+// budget times the tick rate for every registry class at every capped rung —
+// identity at 1x, exact products up the ladder — and the unscaled base at
+// uncapped speed (tps <= 0), where the gate must not multiply by zero.
+func TestEffectiveBudgetTicks(t *testing.T) {
+	rates := []float64{1, 4, 8, 16, 32}
+	for name, dc := range registry {
+		for _, tps := range rates {
+			if got, want := dc.EffectiveBudgetTicks(tps), dc.BudgetTicks*int64(tps); got != want {
+				t.Errorf("%s at %gx = %d, want %d", name, tps, got, want)
+			}
+		}
+		for _, tps := range []float64{0, -1} {
+			if got := dc.EffectiveBudgetTicks(tps); got != dc.BudgetTicks {
+				t.Errorf("%s at uncapped tps %g = %d, want unscaled base %d", name, tps, got, dc.BudgetTicks)
+			}
+		}
+	}
+	// Pin the spec-067 contract's reference table verbatim
+	// (contracts/landing-gate.md) — a drift here is a doctrine change and
+	// must be made there first.
+	table := map[string][5]int64{
+		"planner":      {1200, 4800, 9600, 19200, 38400},
+		"conversation": {7200, 28800, 57600, 115200, 230400},
+		"meeting":      {3600, 14400, 28800, 57600, 115200},
+	}
+	for name, want := range table {
+		dc, ok := ClassFor(name)
+		if !ok {
+			t.Fatalf("class %q missing", name)
+		}
+		for i, tps := range rates {
+			if got := dc.EffectiveBudgetTicks(tps); got != want[i] {
+				t.Errorf("%s at %gx = %d, contract table says %d", name, tps, got, want[i])
+			}
+		}
+	}
+}
+
 func TestClassForKind(t *testing.T) {
 	for kind, class := range map[string]string{
 		"planner": "planner", "conversation": "conversation",

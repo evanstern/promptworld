@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/evanstern/promptworld/internal/clock"
 	"github.com/evanstern/promptworld/internal/store"
 )
 
@@ -279,9 +280,12 @@ func meteredArgs(agent int, goal string) InjectArgs {
 }
 
 func TestLadderRejectsStale(t *testing.T) {
-	h := newLadderHarness(t, nil)
+	// Pinned to 1x: the pre-067 arithmetic must hold there unchanged
+	// (spec 067 FR-007/SC-003) — the harness world's default 4x would now
+	// legitimately forgive this staleness (budget 1200 × 4).
+	h := newLadderHarness(t, func(s *State) { s.Speed = clock.Speed1x })
 	args := meteredArgs(0, "wander")
-	args.SnapshotTick = 8000 // staleness 2000 > planner budget 1200
+	args.SnapshotTick = 8000 // staleness 2000 > planner budget 1200 × 1
 	if err := h.loop.InjectIntent(args); err == nil {
 		t.Fatal("stale intent executed")
 	}
@@ -295,7 +299,9 @@ func TestLadderRejectsStale(t *testing.T) {
 }
 
 func TestLadderClassifiesPredictionMiss(t *testing.T) {
-	h := newLadderHarness(t, nil)
+	// 1x for the same reason as TestLadderRejectsStale: the rejection whose
+	// kind this classifies must still happen (spec 067 FR-007).
+	h := newLadderHarness(t, func(s *State) { s.Speed = clock.Speed1x })
 	args := meteredArgs(0, "wander")
 	args.SnapshotTick = 8000
 	args.ActualWallMs = 4 * args.PredictedWallMs // spiked call
@@ -303,6 +309,58 @@ func TestLadderClassifiesPredictionMiss(t *testing.T) {
 	p, _ := h.lastOutcome(t)
 	if p.Kind != RejectKindPredictionMiss {
 		t.Errorf("kind = %q, want prediction-miss", p.Kind)
+	}
+}
+
+// TestLadderStaleBudgetScalesWithSpeed (spec 067 US1): the landing gate reads
+// the event-sourced effective speed at the landing tick, so the measured 8x
+// regime (250s plan thoughts ≈ 2000 ticks, TASK-122) lands inside the scaled
+// budget (1200 × 8 = 9600) instead of dying rejected-stale, while a thought
+// past the wall patience still rejects — with the effective budget and its
+// derivation in the recorded reason (FR-004/SC-004).
+func TestLadderStaleBudgetScalesWithSpeed(t *testing.T) {
+	h := newLadderHarness(t, func(s *State) { s.Speed = clock.Speed8x })
+
+	args := meteredArgs(0, "wander")
+	args.SnapshotTick = 8000 // staleness 2000 ≤ 9600: the measured regime lands
+	if err := h.loop.InjectIntent(args); err != nil {
+		t.Fatalf("measured 8x regime rejected: %v", err)
+	}
+	p, ok := h.lastOutcome(t)
+	if !ok || p.Outcome != OutcomeLanded {
+		t.Fatalf("outcome = %+v, want landed", p)
+	}
+
+	args = meteredArgs(0, "wander")
+	args.SnapshotTick = 300 // staleness 9700 > 9600: past the wall patience
+	if err := h.loop.InjectIntent(args); err == nil {
+		t.Fatal("wall-patience overrun executed")
+	}
+	p, _ = h.lastOutcome(t)
+	if p.Outcome != OutcomeRejectedStale {
+		t.Fatalf("outcome = %+v, want rejected-stale", p)
+	}
+	if want := "staleness 9700 > budget 9600 (1200 at 1x × 8x)"; p.Reason != want {
+		t.Errorf("reason = %q, want %q", p.Reason, want)
+	}
+}
+
+// TestLadderStaleUncappedKeepsBaseBudget (spec 067 edge case): at uncapped max
+// (TicksPerSecond 0) the gate must not multiply by zero — the base budget
+// applies unscaled, with the terse pre-067 reason form.
+func TestLadderStaleUncappedKeepsBaseBudget(t *testing.T) {
+	h := newLadderHarness(t, func(s *State) { s.Speed = clock.SpeedMax })
+	args := meteredArgs(0, "wander")
+	args.SnapshotTick = 8000 // staleness 2000 > unscaled 1200
+	if err := h.loop.InjectIntent(args); err == nil {
+		t.Fatal("stale intent executed at uncapped speed")
+	}
+	p, _ := h.lastOutcome(t)
+	if p.Outcome != OutcomeRejectedStale {
+		t.Fatalf("outcome = %+v, want rejected-stale", p)
+	}
+	if want := "staleness 2000 > budget 1200"; p.Reason != want {
+		t.Errorf("reason = %q, want %q", p.Reason, want)
 	}
 }
 

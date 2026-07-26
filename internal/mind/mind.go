@@ -10,6 +10,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"math"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -73,6 +74,12 @@ type Mind struct {
 	// itself is absorb-owned). Telemetry landing ticks read this; the loop's
 	// envelope re-stamp remains the authoritative landing tick.
 	tick atomic.Int64
+	// tickRate mirrors the replica's effective tick rate
+	// (Speed.TicksPerSecond, stored as float bits) for worker goroutines,
+	// exactly as tick mirrors the replica's tick: the scene-staleness
+	// pre-abort scales its budget by the event-sourced speed (spec 067
+	// FR-001) without reading the absorb-owned replica.
+	tickRate atomic.Uint64
 
 	// Planner calls run on their own single-flight worker (TASK-9 fix): a
 	// model call must never block the absorb loop, or the events channel
@@ -179,6 +186,10 @@ func New(orch Submitter, loop Injector, social SocialInjector, m *worldmap.Map, 
 	if len(runLoopOverride) > 0 && runLoopOverride[0] != nil {
 		md.runLoop = runLoopOverride[0]
 	}
+	// Seed the worker-facing rate mirror from the freshly unmarshaled replica
+	// so a scene founded before the first absorb batch still sees the
+	// event-sourced speed (spec 067); absorb keeps it current thereafter.
+	md.tickRate.Store(math.Float64bits(replica.Speed.TicksPerSecond()))
 	for i := range md.nextDue {
 		md.nextDue[i] = replica.Tick + int64(i+1)*(replica.PlannerCadence()/sim.AgentCount)
 	}
@@ -315,6 +326,7 @@ func (md *Mind) absorb(batch []store.Event) {
 		md.chronicleNote(e)
 	}
 	md.tick.Store(md.replica.Tick)
+	md.tickRate.Store(math.Float64bits(md.replica.Speed.TicksPerSecond()))
 }
 
 // arm marks an agent due for a planner thought; seq is the arming stimulus

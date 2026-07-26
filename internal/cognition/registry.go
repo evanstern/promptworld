@@ -17,15 +17,35 @@ const (
 
 // DecisionClass is one registered category of model-reaching decision: its
 // thought cost in Fibonacci points (a property of the prompt shape,
-// host-independent) and its staleness budget in game ticks (a property of
-// the fiction). Values are doctrine (decision-4): changing one is a reviewed
-// code change, never runtime tuning.
+// host-independent) and its staleness budget in game ticks. BudgetTicks is
+// the budget AT 1x — wall-clock patience (spec 067 FR-005): the scheduling
+// gates (Route/RoutePaused, governor debt, every horizon surface) hold it
+// fixed against the fiction, while the delivery gates (the reducer landing
+// rung, the mind's scene pre-abort) enforce it scaled by the event-sourced
+// clock speed via EffectiveBudgetTicks, so a constant-wall-time thought is
+// judged the same at every capped speed. Values are doctrine (decision-4):
+// changing one is a reviewed code change, never runtime tuning.
 type DecisionClass struct {
 	Class       string
 	Points      int
 	BudgetTicks int64
 	Degrade     Degrade
 	FutureDated bool
+}
+
+// EffectiveBudgetTicks is the class's staleness budget at a given tick rate
+// (spec 067 FR-001): BudgetTicks is the 1x budget, so the effective budget is
+// BudgetTicks × ticksPerSecond — the same wall-clock patience at every capped
+// speed. ticksPerSecond <= 0 (uncapped max) returns the base budget unscaled,
+// mirroring Route's posture (theoretical branch: Route suppresses every class
+// at uncapped speed, so no admitted thought should reach a delivery gate
+// there). Ladder rates are small exact floats, so the product is exact for
+// every registry budget — deterministic across platforms, replay-safe.
+func (dc DecisionClass) EffectiveBudgetTicks(ticksPerSecond float64) int64 {
+	if ticksPerSecond <= 0 {
+		return dc.BudgetTicks
+	}
+	return int64(float64(dc.BudgetTicks) * ticksPerSecond)
 }
 
 // fibonacci is the closed set of legal point values.
