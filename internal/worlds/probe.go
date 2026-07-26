@@ -181,16 +181,19 @@ func statusWithBudget(sockPath string, budget time.Duration) (*ipc.StatusData, b
 	}
 }
 
-// OfflineSnapshot reads a world's last-known clock straight from its store,
-// without a live daemon — extracted from cmdStatus's offline branch
-// (cmd/promptworld/commands.go) so both `status` and `ps --all` share the
-// one read instead of duplicating it (research.md D7). ended/endedDay (spec
-// 044 FR-004) report the run-end posture so a stopped ended world's status
-// mirrors the live surface; endedDay is 0 unless ended.
-func OfflineSnapshot(w *world.World) (tick int64, paused bool, speed string, lastSeq int64, ended bool, endedDay int64, err error) {
+// OfflineState reconstructs a world's last-committed sim state straight
+// from its store, without a live daemon: the newest valid snapshot
+// unmarshaled into a fresh state, trailing events folded through the
+// reducer, the clock advanced to the last event tick — exactly what
+// recovery replay would produce. Extracted from OfflineSnapshot (spec 076
+// FR-015) so `status`/`ps` and `compare` share ONE offline read; under WAL
+// it is safe against a running daemon's db too (readers never block the
+// single writer — the read reflects the last committed batch). Also
+// returns the log's last seq.
+func OfflineState(w *world.World) (*sim.State, int64, error) {
 	st, err := store.Open(w.DBPath())
 	if err != nil {
-		return 0, false, "", 0, false, 0, err
+		return nil, 0, err
 	}
 	defer st.Close()
 	state := sim.NewState(w.Manifest.Seed, w.Map())
@@ -211,10 +214,26 @@ func OfflineSnapshot(w *world.World) (tick int64, paused bool, speed string, las
 	if lastTick, terr := st.LastEventTick(); terr == nil && lastTick > state.Tick {
 		state.Tick = lastTick
 	}
+	return state, st.LastSeq(), nil
+}
+
+// OfflineSnapshot reads a world's last-known clock straight from its store,
+// without a live daemon — extracted from cmdStatus's offline branch
+// (cmd/promptworld/commands.go) so both `status` and `ps --all` share the
+// one read instead of duplicating it (research.md D7); the state
+// reconstruction itself now lives in OfflineState (spec 076), which this
+// wraps. ended/endedDay (spec 044 FR-004) report the run-end posture so a
+// stopped ended world's status mirrors the live surface; endedDay is 0
+// unless ended.
+func OfflineSnapshot(w *world.World) (tick int64, paused bool, speed string, lastSeq int64, ended bool, endedDay int64, err error) {
+	state, lastSeq, err := OfflineState(w)
+	if err != nil {
+		return 0, false, "", 0, false, 0, err
+	}
 	if state.Ended && state.RunEnd != nil {
 		endedDay, _, _, _ = clock.GameTime(state.RunEnd.Tick)
 	}
-	return state.Tick, state.Paused, string(state.Speed), st.LastSeq(), state.Ended, endedDay, nil
+	return state.Tick, state.Paused, string(state.Speed), lastSeq, state.Ended, endedDay, nil
 }
 
 // fillOfflineSnapshot populates a Stopped Instance's last-known fields plus

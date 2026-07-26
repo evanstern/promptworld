@@ -5,16 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
 <meta name="promptworld-docs:source" content="README.md@8602191b92cb8027f0fef3f54fe20d0867678fde">
-<meta name="promptworld-docs:source" content="docs/wiki/cli-promptworld.md@801db7c1b15fb567732bc5c6063464e918353a4d">
+<meta name="promptworld-docs:source" content="docs/wiki/cli-promptworld.md@0fd2104c59c54be8e8071d319fa4ce192083faf3">
 <meta name="promptworld-docs:source" content="docs/wiki/daemon-lifecycle.md@801db7c1b15fb567732bc5c6063464e918353a4d">
-<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@03987d380ff92948495abe8b9b34e196d050154d">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@03987d380ff92948495abe8b9b34e196d050154d">
+<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@8ec9aefc624396325c0083d2be207d5fcb057420">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@8ec9aefc624396325c0083d2be207d5fcb057420">
 <meta name="promptworld-docs:source" content="docs/wiki/chronicle.md@6318cf8b53e407765f0c9793f5355a7af4777ed7">
-<meta name="promptworld-docs:source" content="docs/wiki/morgue.md@b3f4da3c29e3cbbd933e366abe76a5d6ef0f2be9">
+<meta name="promptworld-docs:source" content="docs/wiki/morgue.md@0fd2104c59c54be8e8071d319fa4ce192083faf3">
 <meta name="promptworld-docs:source" content="docs/wiki/gru.md@03987d380ff92948495abe8b9b34e196d050154d">
-<meta name="promptworld-docs:source" content="docs/wiki/curriculum-ladder.md@aedcf52f680ed68910e185c3ccde44bd320517b6">
+<meta name="promptworld-docs:source" content="docs/wiki/curriculum-ladder.md@0fd2104c59c54be8e8071d319fa4ce192083faf3">
 <meta name="promptworld-docs:source" content="docs/wiki/takeover-surfaces.md@03987d380ff92948495abe8b9b34e196d050154d">
-<meta name="promptworld-docs:source" content="docs/wiki/grounded-feedback.md@b3f4da3c29e3cbbd933e366abe76a5d6ef0f2be9">
+<meta name="promptworld-docs:source" content="docs/wiki/grounded-feedback.md@0fd2104c59c54be8e8071d319fa4ce192083faf3">
 <meta name="promptworld-docs:source" content="docs/wiki/village-lens.md@03987d380ff92948495abe8b9b34e196d050154d">
 <title>Getting started — promptworld player docs</title>
 <style>
@@ -274,6 +274,18 @@ it was killed abruptly instead. <code>stop</code> and <code>status</code> both w
 on a world made by an older version of promptworld that you haven't upgraded yet — you
 don't need to run <code>migrate</code> first just to check on it or shut it down.</p>
 
+<h2>6. Try a change on a copy (fork &amp; compare)</h2>
+<p>Once a world has run for a while, you can copy it and experiment on the copy.
+<code>promptworld fork demo demo-b</code> makes a new world, <code>demo-b</code>,
+that is the same village with the same history up to its latest save point —
+same people, same map, same story so far — under its own name. Edit the copy's
+guardian instructions, start <em>both</em> worlds (they run side by side), and
+later run <code>promptworld compare demo demo-b</code> to see, plainly, what
+your change did: a scorecard for each world and the point where the two
+stories started to differ. Forking only works while the source world is
+stopped, and the two worlds stay separate forever — there is no way to merge
+them back together.</p>
+
 <div class="card">
 <p><strong>Quick reference</strong></p>
 <pre><code>go build ./cmd/promptworld
@@ -285,6 +297,8 @@ promptworld status demo            # tick, game time, speed for one world
 promptworld attach demo            # watch live, line-mode; quit just detaches
 promptworld ui demo                # full-screen map + chronicle + guardian + villagers
 promptworld stop demo              # graceful stop; resumes cleanly next start
+promptworld fork demo demo-b       # copy a stopped world to experiment on
+promptworld compare demo demo-b    # scorecards + where the two stories split
 promptworld help                   # the full command list</code></pre>
 </div>
 

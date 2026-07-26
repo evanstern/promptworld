@@ -117,40 +117,85 @@ func reportCardFactsFromPass(terms []sim.RubricTerm, evidence []sim.EvidenceRef)
 	return facts
 }
 
-// resolveReportCardFacts is the ONE precedence switch behind every card
-// surface (spec 072 FR-001/FR-002): a recorded pass wins (concluded,
-// all-met, evidence-backed); otherwise sim.EvaluateRubric over the replica
-// grades — concluded once the run ended, live (… pending) while it runs.
-// Labels always come from the evaluator's terms. A nil replica yields
-// nothing: a card invented from the events ring alone is exactly the
-// mechanism spec 072 deleted.
-func (m Model) resolveReportCardFacts(def sim.ExerciseDefinition, pass *sim.CurriculumPass) ([]reportCardFact, reportCardMode) {
-	if m.replica == nil {
-		return nil, reportCardLive
+// Exported surface (spec 076 FR-018/data-model §5): the same one resolver,
+// replica-parametric, so consumers outside the TUI Model — the CLI duel is
+// the fourth card surface (postmortem, ceremony, console card, duel) —
+// derive facts through the identical switch. Type aliases keep every
+// existing call site and test untouched.
+
+// ReportCardFact is one already-resolved rubric row (views.go's
+// reportCardFact, exported): the plain-language term, whether it's met, and
+// the backing event reference.
+type ReportCardFact = reportCardFact
+
+// ReportCardMode selects the marker vocabulary: concluded (✓/✗) or live
+// (✓/…).
+type ReportCardMode = reportCardMode
+
+// The exported mode constants (views.go's values, aliased types).
+const (
+	ReportCardConcluded ReportCardMode = reportCardConcluded
+	ReportCardLive      ReportCardMode = reportCardLive
+)
+
+// ResolveRubricFacts is the ONE precedence switch behind every card
+// surface (spec 072 FR-001/FR-002; exported replica-parametric by spec 076
+// FR-018): a recorded pass wins (concluded, all-met, evidence-backed);
+// otherwise sim.EvaluateRubric over the state grades — concluded once the
+// run ended (s.Ended), live (… pending) while it runs. Labels always come
+// from the evaluator's terms. A nil state yields nothing: a card invented
+// without state is exactly the mechanism spec 072 deleted. Implementing a
+// second precedence switch anywhere is a spec violation — one resolver was
+// the entire point of spec 072.
+func ResolveRubricFacts(s *sim.State, def sim.ExerciseDefinition, pass *sim.CurriculumPass) ([]ReportCardFact, ReportCardMode) {
+	if s == nil {
+		return nil, ReportCardLive
 	}
-	terms := sim.EvaluateRubric(m.replica, def, m.replica.Tick)
+	terms := sim.EvaluateRubric(s, def, s.Tick)
 	switch {
 	case pass != nil:
-		return reportCardFactsFromPass(terms, pass.Evidence), reportCardConcluded
-	case m.runEnded():
-		return reportCardFactsFromRubric(terms), reportCardConcluded
+		return reportCardFactsFromPass(terms, pass.Evidence), ReportCardConcluded
+	case s.Ended:
+		return reportCardFactsFromRubric(terms), ReportCardConcluded
 	}
-	return reportCardFactsFromRubric(terms), reportCardLive
+	return reportCardFactsFromRubric(terms), ReportCardLive
 }
 
-// recordedPassFor finds the retained CurriculumPass for the exercise, or
-// nil — the resolver's instrument lookup, shared by the console card and
-// the postmortem.
-func (m Model) recordedPassFor(exercise string) *sim.CurriculumPass {
-	if m.replica == nil {
+// RecordedPassFor finds the exercise's retained CurriculumPass on state, or
+// nil — the resolver's instrument lookup, shared by the console card, the
+// postmortem, and the CLI duel.
+func RecordedPassFor(s *sim.State, exercise string) *sim.CurriculumPass {
+	if s == nil {
 		return nil
 	}
-	for i := range m.replica.CurriculumPasses {
-		if m.replica.CurriculumPasses[i].Exercise == exercise {
-			return &m.replica.CurriculumPasses[i]
+	for i := range s.CurriculumPasses {
+		if s.CurriculumPasses[i].Exercise == exercise {
+			return &s.CurriculumPasses[i]
 		}
 	}
 	return nil
+}
+
+// RenderReportCard is the exported face of reportCardView (views.go) — the
+// bordered ✓/✗/… card every surface (and the duel) renders through, so the
+// duel card and the postmortem card are the same artifact by construction.
+func RenderReportCard(title string, facts []ReportCardFact, mode ReportCardMode, width int) string {
+	return reportCardView(title, facts, mode, width)
+}
+
+// resolveReportCardFacts is the Model-side thin wrapper over
+// ResolveRubricFacts (spec 076 D5): m.replica drives the switch, and the
+// old m.runEnded() conjunct folds into the state-driven s.Ended read — the
+// replica IS where runEnded() learns the run is over (the status half of
+// its dual-source posture only bridges the moments before a replica
+// exists, when this resolver renders nothing anyway).
+func (m Model) resolveReportCardFacts(def sim.ExerciseDefinition, pass *sim.CurriculumPass) ([]reportCardFact, reportCardMode) {
+	return ResolveRubricFacts(m.replica, def, pass)
+}
+
+// recordedPassFor is the Model-side thin wrapper over RecordedPassFor.
+func (m Model) recordedPassFor(exercise string) *sim.CurriculumPass {
+	return RecordedPassFor(m.replica, exercise)
 }
 
 // buildChecklistCard resolves the rubric-checklist half of the card (spec

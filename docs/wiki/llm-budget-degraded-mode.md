@@ -6,7 +6,7 @@ sources:
   - internal/llm/meter.go
   - internal/llm/health.go
   - internal/llm/llm.go
-verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
+verified_against: 0fd2104c59c54be8e8071d319fa4ce192083faf3
 ---
 
 # LLM orchestrator — budget, degraded mode & estimation
@@ -23,7 +23,19 @@ under one lock — restarts never forget money, per-provider rows sum to the tot
 pre-024 months surface their remainder as unattributed. Zero-priced providers are
 never budget-refused (pricing class, not tier identity — the one deliberate
 behavioral edge vs pre-024: a hypothetical zero-priced cloud router now serves past
-the ceiling).
+the ceiling). The ceiling is per-WORLD by architecture: the meter persists in
+the world's own meta table and the budget number comes from the world's own
+`llm.json` — "one wallet / single global ceiling" means one wallet across
+PROVIDERS within a world, never machine-global state ([[design-grounding]]'s
+"never global; runs cleanly separable"). Spec 076 ([[world-forking]]) leans
+on exactly that: a fork **inherits the parent's wallet as of fork time** —
+`llm.json` copies verbatim (same ceiling) and every `llm_spend_*` meta key
+(totals + per-provider attribution) copies into the fork's fresh store, so
+the fork's meter opens at the parent's month/spend/ceiling and forking never
+mints fresh budget. Thereafter each world meters independently — recorded
+limitation: a duel's combined forward spend can exceed one ceiling by up to
+the unspent remainder at fork time; attribution stays per-world and
+per-provider, unchanged.
 
 **Degraded mode** (`health.go`, per-provider): a circuit breaker — 3 consecutive
 failures open it (15 s backoff doubling to 5 min), an open circuit refuses instantly

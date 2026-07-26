@@ -5,15 +5,16 @@ kind: component
 sources:
   - cmd/promptworld/main.go
   - cmd/promptworld/commands.go
-verified_against: 801db7c1b15fb567732bc5c6063464e918353a4d
+verified_against: 0fd2104c59c54be8e8071d319fa4ce192083faf3
 ---
 
 # promptworld CLI
 
 One binary serves every role: daemon, client tools, world management. `main.go` is a
 plain dispatch table; behavior lives in `commands.go`, except `calibrate` in its own
-`calibrate.go`, `ps` in `ps.go` ([[instance-manager]]), and the guardian's operator
-door in `work.go`. The prose contract is
+`calibrate.go`, `ps` in `ps.go` ([[instance-manager]]), the guardian's operator
+door in `work.go`, and (spec 076) `fork`/`compare` in `fork.go`/`compare.go`
+([[world-forking]]). The prose contract is
 `specs/001-world-daemon/contracts/cli.md` (extended by
 `specs/008-instance-manager/contracts/cli.md` for names/`ps`/`new`, and
 `specs/007-cognition-horizon/contracts/cli.md` for `calibrate`).
@@ -46,9 +47,11 @@ resolution; the subcommands themselves split into three family notes by
 substance (summary-style split — each retains its own full detail and links
 back here):
 
-- [[cli-world-lifecycle]] — `new`, `migrate`, `ps`, `stages`: creating a world
-  (with its tuning/teaching/stage/scenario stamping), upgrading an older one
-  through the v1→v5 chain, and enumerating what's on the machine.
+- [[cli-world-lifecycle]] — `new`, `migrate`, `fork`, `compare`, `ps`,
+  `stages`: creating a world (with its tuning/teaching/stage/scenario
+  stamping), upgrading an older one through the v1→v5 chain, forking a
+  stopped world at its latest snapshot and comparing two runs (the spec 076
+  duel — [[world-forking]]), and enumerating what's on the machine.
 - [[cli-runtime-control]] — `daemon`, `start`, `stop`, `status`, `pause`/`resume`/
   `speed`, `teaching`, `ui`, `attach`, `tail`: starting/stopping a daemon, reading
   and steering its live status (WARNING/horizon/posture/stage/exercise lines,

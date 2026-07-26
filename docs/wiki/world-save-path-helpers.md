@@ -4,7 +4,7 @@ description: internal/world's path-helper catalog — every well-known file a sa
 kind: component
 sources:
   - internal/world/world.go
-verified_against: 801db7c1b15fb567732bc5c6063464e918353a4d
+verified_against: 0fd2104c59c54be8e8071d319fa4ce192083faf3
 ---
 
 # World save directory: path helpers
@@ -47,6 +47,13 @@ as one set of path helpers so no caller hand-builds a filename.
 Runtime files (`daemon.sock`, `daemon.pid`) exist only while a daemon runs and are
 swept by [[daemon-lifecycle]] when stale. The full layout is documented in
 `specs/001-world-daemon/contracts/storage.md`.
+
+The spec-076 fork ceremony ([[world-forking]]) consumes this catalog as its
+copy/skip table: player input and per-world profiles copy into a fork
+(`llm.json`, `calibration.json`, `estimator_state.json`, `charter.md`,
+`tuning.json`, `metatron/`, `bundles/`, `agents/`); runtime files, migration
+archives, and the scribe's regenerable views (`chronicle.md`, `morgue.md`,
+`village_charter.md`) stay behind.
 
 ## Connections
 

@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/store/store.go
   - internal/store/schema.go
-verified_against: 8be4440aae8d108884080cb6476782d2f11ad165
+verified_against: 0fd2104c59c54be8e8071d319fa4ce192083faf3
 ---
 
 # Event log
@@ -37,12 +37,21 @@ in-schema, not by convention.
 - `Event.Payload` is canonical JSON (struct-marshaled, fixed field order) so histories
   are byte-comparable; `wall_time` is observability metadata, excluded from determinism
   comparisons.
+- `MetaByPrefix(prefix)` (spec 076) returns every meta row whose key starts
+  with the prefix — filtered in Go rather than SQL `LIKE` (the callers'
+  prefixes carry underscores, which `LIKE` treats as wildcards, and the meta
+  table is tiny). Its one consumer is the fork ceremony's wallet
+  inheritance: every `llm_spend_*` key copies verbatim into a fork's fresh
+  store ([[world-forking]], [[llm-budget-degraded-mode]]).
 
 ## Connections
 
 [[sim-loop]] is the only writer; [[sim-state-reducer]] consumes events in replay;
 [[snapshots]] bound how much of the log recovery must re-read; [[ipc-server]] reads it
 for subscribe-replay and gap-fill; [[event-types]] catalogs what lands in it.
+[[world-forking]]'s ceremony is why the in-schema triggers matter beyond
+convention: a fork can never truncate a copied db, so it streams the parent's
+event prefix into a fresh log instead.
 
 ## Operational notes
 
