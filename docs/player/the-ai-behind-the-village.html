@@ -4,15 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/wiki/agent-mind.md@6318cf8b53e407765f0c9793f5355a7af4777ed7">
-<meta name="promptworld-docs:source" content="docs/wiki/cognition.md@31c893e0406653197e467a89b2fdb96f0bcf2ee0">
+<meta name="promptworld-docs:source" content="docs/wiki/agent-mind.md@30912a9cd5d2334f76425ac8ca5b74a7a7c90876">
+<meta name="promptworld-docs:source" content="docs/wiki/cognition.md@30912a9cd5d2334f76425ac8ca5b74a7a7c90876">
 <meta name="promptworld-docs:source" content="docs/wiki/llm-orchestrator.md@31c893e0406653197e467a89b2fdb96f0bcf2ee0">
 <meta name="promptworld-docs:source" content="docs/wiki/nightly-consolidation.md@2bc94f55c57880e07f0e52e5de20c9cd527ab340">
-<meta name="promptworld-docs:source" content="docs/wiki/social-fabric.md@ad4871faa7988ce5b2d7f029ada59f653afaa569">
+<meta name="promptworld-docs:source" content="docs/wiki/social-fabric.md@30912a9cd5d2334f76425ac8ca5b74a7a7c90876">
 <meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@7e3c2b5f5f23eb8e5fcb37d0f867dbc6f46a289b">
-<meta name="promptworld-docs:source" content="docs/wiki/mental-maps.md@31c893e0406653197e467a89b2fdb96f0bcf2ee0">
-<meta name="promptworld-docs:source" content="docs/wiki/memory-retrieval.md@31c893e0406653197e467a89b2fdb96f0bcf2ee0">
-<meta name="promptworld-docs:source" content="docs/wiki/decision-context.md@7e3c2b5f5f23eb8e5fcb37d0f867dbc6f46a289b">
+<meta name="promptworld-docs:source" content="docs/wiki/mental-maps.md@30912a9cd5d2334f76425ac8ca5b74a7a7c90876">
+<meta name="promptworld-docs:source" content="docs/wiki/memory-retrieval.md@30912a9cd5d2334f76425ac8ca5b74a7a7c90876">
+<meta name="promptworld-docs:source" content="docs/wiki/decision-context.md@30912a9cd5d2334f76425ac8ca5b74a7a7c90876">
 <title>The AI behind the village — promptworld player docs</title>
 <style>
   :root {
@@ -224,6 +224,13 @@ anyway, the game simply falls back to the simple built-in behavior for that mome
 instead. You may notice villagers acting a bit more routine-driven at the fastest
 speeds — that's this trade-off in action, not a bug; dial the speed back down and
 full AI-driven decisions resume.</p>
+<p>A thought that <em>was</em> sent to the AI and simply ran long gets a fairer deal
+than it used to: the game now judges "did this answer come back in time" by the same
+amount of real waiting at every speed, instead of by game-time — which used to mean
+that speeding the world up quietly shrank the window and threw away more and more
+finished answers. Turning the speed up no longer makes the game more likely to
+discard a slow-but-finished thought; what you'll see at high speed is the up-front
+autopilot fallback described above, not answers silently vanishing after the fact.</p>
 <p>You don't have to just infer this is happening from the vibe of your village:
 <code>promptworld status</code>, and the full-screen client's header badge and
 systems tab, show it live — for each kind of thinking (planning, conversations,
