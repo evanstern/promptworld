@@ -43,14 +43,14 @@ const (
 // lessonRowDefault reports whether the lesson row's STAGE DEFAULT is "on"
 // (patterns/stage-defaults.md): stages 1-2 only — stage 3+ and pre-ladder
 // (stage == "", including "no status yet") default to the `[lesson]` header
-// badge + overlay-only form instead (research.md R6). This is deliberately
-// a small, standalone function rather than shared stage-defaults machinery:
-// the spec's own assumption records that TASK-128 will later absorb every
-// per-surface stage default (including this one) into one shared table —
-// this slice reads the stage directly and applies its own default, leaving
-// that refactor to TASK-128.
+// badge + overlay-only form instead. Absorbed into the shared stage-defaults
+// table (spec 066, TASK-128 — the refactor research.md R6 flagged as this
+// function's own future): the table's Lesson row entry (stagedefaults.go)
+// is now the single source, resolved the same way every other governed
+// surface is (resolveStageDefaults). Behavior is unchanged — this is a
+// pure delegation, not a new default.
 func lessonRowDefault(stage string) bool {
-	return stage == "stage-1" || stage == "stage-2"
+	return resolveStageDefaults(stage, false).LessonRowOn
 }
 
 // isWidescreen reports whether width is enough for the composite home page.
