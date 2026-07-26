@@ -141,3 +141,96 @@ func TestZeroDimsDefault(t *testing.T) {
 		t.Errorf("zero dims should default to %d, got %dx%d", DefaultSize, m.W, m.H)
 	}
 }
+
+// TestLegacyGenerationHashPin (spec 068 T002, C7 — feeds C11/SC-006): the
+// exact terrain fingerprints legacy generation produces today, pinned as
+// constants computed against the pre-068 generator. The gen-parameter
+// refactor (terrain_gen) and the v4→v5 migration must keep reproducing these
+// bytes for the legacy path — if a change to Generate breaks this pin, the
+// change is wrong, not the pin.
+func TestLegacyGenerationHashPin(t *testing.T) {
+	pins := []struct {
+		seed uint64
+		w, h int
+		want string
+	}{
+		{42, 64, 64, "59dceb27b3527701fc648b7b8c7f4883c2cc6bd4efdcc56d2ca47fd8cb75f563"},
+		{7, 32, 32, "423df317ae5393792a5c7fb3e2b992d6d56539b778543c36d474610e9b0052a4"},
+		{12345, 64, 64, "2931ae79602d3e9647f922e6c5fd3789cad713dc8884497b270dcd5d0d5102b1"},
+	}
+	for _, p := range pins {
+		if got := Generate(p.seed, p.w, p.h).Hash(); got != p.want {
+			t.Errorf("legacy generation drifted: Generate(%d, %d, %d).Hash() = %s, pinned %s",
+				p.seed, p.w, p.h, got, p.want)
+		}
+	}
+}
+
+// --- spec 068: marsh + sand generation (GenMarshSand) ---
+
+// TestMarshSandPresence (C8, SC-003): every GenMarshSand map in the seed
+// sample carries both new kinds at nonzero counts — a water body always
+// exists (TestVillageHasAllResources), so a shoreline always exists.
+func TestMarshSandPresence(t *testing.T) {
+	for _, seed := range []uint64{1, 7, 42, 99, 12345, 987654321} {
+		m := GenerateV(seed, 64, 64, GenMarshSand)
+		if n := m.CountKind(Marsh); n == 0 {
+			t.Errorf("seed %d: no marsh (C8)", seed)
+		}
+		if n := m.CountKind(Sand); n == 0 {
+			t.Errorf("seed %d: no sand (C8)", seed)
+		}
+	}
+	// The smaller-map floor the sim tests use.
+	for _, seed := range []uint64{7, 11, 42} {
+		m := GenerateV(seed, 32, 32, GenMarshSand)
+		if m.CountKind(Marsh) == 0 || m.CountKind(Sand) == 0 {
+			t.Errorf("seed %d (32x32): marsh %d, sand %d — both must be nonzero", seed, m.CountKind(Marsh), m.CountKind(Sand))
+		}
+	}
+}
+
+// TestMarshSandDeterminism (C7): same (seed, w, h, gen) → identical Map,
+// repeated.
+func TestMarshSandDeterminism(t *testing.T) {
+	a := GenerateV(42, 64, 64, GenMarshSand)
+	b := GenerateV(42, 64, 64, GenMarshSand)
+	if a.Hash() != b.Hash() {
+		t.Fatal("GenMarshSand generation is not deterministic (C7)")
+	}
+	if a.Hash() == Generate(42, 64, 64).Hash() {
+		t.Fatal("GenMarshSand produced the legacy map — the shoreline pass did nothing")
+	}
+}
+
+// TestMarshSandSemantics (C9): the new kinds are passable, never buildable,
+// and never appear in legacy maps; only open grass converted (the legacy
+// water/tree/rock/forage placement is untouched tile-for-tile).
+func TestMarshSandSemantics(t *testing.T) {
+	legacy := Generate(42, 64, 64)
+	if legacy.CountKind(Marsh) != 0 || legacy.CountKind(Sand) != 0 {
+		t.Fatal("legacy generation must never place marsh or sand (C9)")
+	}
+	m := GenerateV(42, 64, 64, GenMarshSand)
+	for y := 0; y < m.H; y++ {
+		for x := 0; x < m.W; x++ {
+			switch m.At(x, y) {
+			case Marsh, Sand:
+				if !m.Passable(x, y) {
+					t.Fatalf("(%d,%d) %v must be passable", x, y, m.At(x, y))
+				}
+				if m.Buildable(x, y) {
+					t.Fatalf("(%d,%d) %v must not be buildable", x, y, m.At(x, y))
+				}
+				if legacy.At(x, y) != Grass {
+					t.Fatalf("(%d,%d) converted a legacy %d tile — only open grass may become marsh/sand", x, y, legacy.At(x, y))
+				}
+			default:
+				if m.At(x, y) != legacy.At(x, y) {
+					t.Fatalf("(%d,%d) legacy kind %d became %d — the shoreline pass may only claim grass",
+						x, y, legacy.At(x, y), m.At(x, y))
+				}
+			}
+		}
+	}
+}

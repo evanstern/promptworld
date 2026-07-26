@@ -26,11 +26,11 @@ var (
 	stylePaused = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("3"))
 	// styleEnded is the postmortem header token (spec 044 R12) — bold red,
 	// the finality register PAUSED's amber deliberately doesn't carry.
-	styleEnded  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("1"))
-	styleNight  = lipgloss.NewStyle().Foreground(lipgloss.Color("4"))
-	styleAgent  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("2"))
-	styleAsleep = lipgloss.NewStyle().Foreground(lipgloss.Color("6"))
-	styleBox    = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Padding(0, 1)
+	styleEnded = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("1"))
+	styleNight = lipgloss.NewStyle().Foreground(lipgloss.Color("4"))
+	// styleAgent / styleAsleep (and every other per-tile style) live in
+	// tiles.go, resolved from the tile registry's token table (spec 068).
+	styleBox = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Padding(0, 1)
 
 	// Style tokens (patterns/layout.md "Style tokens") — one named style per
 	// role, panels refer to the role never a raw color.
@@ -1177,18 +1177,14 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 				// before FuelUntil actually passes and it goes cold.
 				switch {
 				case m.replica.Tick < st.FuelUntil && st.FuelUntil-m.replica.Tick < m.replica.RefuelDyingBelow():
-					structures[[2]int{st.X, st.Y}] = styleFireDying.Render("▲")
+					structures[[2]int{st.X, st.Y}] = tileKey("fire").render("dying")
 				case m.replica.Tick < st.FuelUntil:
-					structures[[2]int{st.X, st.Y}] = styleFire.Render("▲")
+					structures[[2]int{st.X, st.Y}] = tileKey("fire").render("")
 				default:
-					structures[[2]int{st.X, st.Y}] = styleFireCold.Render("△")
+					structures[[2]int{st.X, st.Y}] = tileKey("fire_cold").render("")
 				}
-			case "shelter":
-				structures[[2]int{st.X, st.Y}] = styleShelter.Render("⌂")
-			case "oven":
-				structures[[2]int{st.X, st.Y}] = styleOven.Render("▣")
-			case "chest":
-				structures[[2]int{st.X, st.Y}] = styleChest.Render("☐")
+			case "shelter", "oven", "chest":
+				structures[[2]int{st.X, st.Y}] = tileKey(st.Kind).render("")
 			case "grave":
 				// Spec 044 US4 (FR-017): reducer-placed at a death tile, never
 				// player-built. Recorded in `structures` (so a grave whose
@@ -1199,7 +1195,7 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 				// agent it belongs to, and there the agent glyph branch
 				// overrides itself to the grave (ratified follow-up) rather
 				// than let the frozen "†" permanently hide it.
-				structures[[2]int{st.X, st.Y}] = styleGrave.Render("✝")
+				structures[[2]int{st.X, st.Y}] = tileKey("grave").render("")
 				graves[[2]int{st.X, st.Y}] = true
 			case "path":
 				// Spec 032 US3: a path is a walkable tile improvement, so it
@@ -1211,16 +1207,20 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 			case "wall_plank", "wall_stone":
 				// Spec 032 US1: walls block movement (structures win over terrain
 				// in tile()), so they always show. A damaged wall (HP below the
-				// derived max) renders dim, the cold-fire precedent, so the player
-				// can spot a wall under demolition at a glance.
-				glyph := "▤"
-				if st.Kind == "wall_stone" {
-					glyph = "▩"
-				}
+				// derived max) renders in the wall row's "damaged" style variant
+				// (same glyph, spent style — the cold-fire precedent), so the
+				// player can spot a wall under demolition at a glance.
+				state := ""
 				if st.HP < sim.WallMaxHP(st.Kind) {
-					structures[[2]int{st.X, st.Y}] = styleWallDamaged.Render(glyph)
-				} else {
-					structures[[2]int{st.X, st.Y}] = styleWall.Render(glyph)
+					state = "damaged"
+				}
+				structures[[2]int{st.X, st.Y}] = tileKey(st.Kind).render(state)
+			default:
+				// Any other structure kind renders through its registry row when
+				// one binds it (SC-002: a registered tile reaches the map with no
+				// edit here); an unbound kind stays invisible, exactly as before.
+				if g, ok := renderTileKey(st.Kind, ""); ok {
+					structures[[2]int{st.X, st.Y}] = g
 				}
 			}
 		}
@@ -1243,9 +1243,9 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 				// tile, so this is the common case; the plain "†" below is
 				// what a graveless dead agent (pre-044 replay/history, or a
 				// hand-built test replica) still shows.
-				g = styleGrave.Render("✝")
+				g = tileKey("grave").render("")
 			case a.Dead:
-				g = styleErr.Render("†")
+				g = styleAgentDead.Render("†")
 			default:
 				// Living: awake/asleep still decides the glyph's CASE, exactly
 				// as before this feature; the map condition overlays (spec 060
@@ -1283,8 +1283,13 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 
 	night := m.replica != nil && m.replica.Night
 	tile := func(x, y int) string {
+		// Priority order is this function's own logic (gru > agents >
+		// structures > piles > dens > path > depleted > base terrain);
+		// WHAT each branch draws — glyph and style — resolves through the
+		// tile registry (tiles.go, spec 068 C1). Never the reverse: the
+		// registry supplies leaves, this switch supplies precedence.
 		if x == gruX && y == gruY {
-			return styleGru.Render("G")
+			return tileKey("gru").render("")
 		}
 		if g, ok := agents[[2]int{x, y}]; ok {
 			return g
@@ -1293,39 +1298,36 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 			return g
 		}
 		if piles[[2]int{x, y}] {
-			return stylePile.Render("%")
+			return tileKey("pile").render("")
 		}
 		if dens[[2]int{x, y}] {
-			return styleDen.Render("ᴥ")
+			return tileKey("den").render("")
 		}
-		var s string
-		var st lipgloss.Style
+		var ref tileRef
 		switch {
 		case paths[[2]int{x, y}]:
 			// Spec 032 US3: a paved path — "·" in a warm tan, distinct from
 			// plain grass's dim "·" so a laid path reads at a glance. Terrain
 			// level: agents/structures/piles above already won by here.
-			s, st = "·", stylePath
+			ref = tileKey("path")
 		case quarried[[2]int{x, y}]:
 			// Depleted outcrop (effective-kind path, worldmap.Depleted):
 			// passable dug-out ground, distinct from both intact rock and
 			// plain grass (research R8).
-			s, st = ",", styleDepleted
-		case gm.At(x, y) == worldmap.Water:
-			s, st = "~", styleWater
-		case gm.At(x, y) == worldmap.Tree:
-			s, st = "♠", styleTree
-		case gm.At(x, y) == worldmap.Forage:
-			s, st = "\"", styleForage
-		case gm.At(x, y) == worldmap.Rock:
-			s, st = "^", styleRock
+			ref = terrainTile(worldmap.Depleted)
 		default:
-			s, st = "·", styleDim
+			// Base terrain — any kind without a registry row of its own
+			// (grass, since genesis) is plain ground.
+			ref = terrainTile(gm.At(x, y))
 		}
+		st := ref.style("")
 		if night {
+			// Night dims the palette rather than hiding the world: a style
+			// TRANSFORM over the token-resolved style (FR-003/C5), exactly
+			// the pre-registry behavior — terrain level only.
 			st = st.Faint(true)
 		}
-		return st.Render(s)
+		return st.Render(ref.glyph)
 	}
 
 	var rows []string
@@ -1578,70 +1580,10 @@ func summarizePileContents(piles []sim.Pile) string {
 	return strings.Join(parts, " ")
 }
 
-// Terrain glyphs. Night dims the palette rather than hiding the world.
-var (
-	styleWater    = lipgloss.NewStyle().Foreground(lipgloss.Color("4"))
-	styleTree     = lipgloss.NewStyle().Foreground(lipgloss.Color("2"))
-	styleForage   = lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
-	styleRock     = lipgloss.NewStyle().Foreground(lipgloss.Color("245"))
-	styleDepleted = lipgloss.NewStyle().Faint(true).Foreground(lipgloss.Color("240"))
-	styleDen      = lipgloss.NewStyle().Foreground(lipgloss.Color("5"))
-	styleFire     = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("208"))
-	styleFireCold = lipgloss.NewStyle().Faint(true).Foreground(lipgloss.Color("240"))
-	styleShelter  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("130"))
-	styleOven     = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("166"))
-	// Pile (spec 013 US2): "%" is the roguelike convention for a ground
-	// item/goods stash, distinct from every existing glyph; tan/gold (178)
-	// reads as "cache" without colliding with fire's orange (208), oven's
-	// burnt orange (166), or shelter's brown (130).
-	stylePile = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("178"))
-	// Chest (spec 013 US3): "☐" (empty box) reads as a container distinct
-	// from every existing glyph — unlike a pile's loose "%", a chest is a
-	// built structure with a lid. Dark goldenrod (136) sits between pile's
-	// tan (178) and shelter's brown (130) without matching either, so a
-	// chest never gets mistaken for a stockpile or a house at a glance.
-	styleChest = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("136"))
-	// Wall (spec 032 US1): "▤" (plank) / "▩" (stone) read as solid barriers
-	// distinct from every existing glyph; slate gray (250) sets them apart from
-	// intact rock's "^" (245) and the burnt-orange structures. A damaged wall
-	// (HP < max) renders faint (240), the cold-fire dim precedent.
-	styleWall        = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("250"))
-	styleWallDamaged = lipgloss.NewStyle().Faint(true).Foreground(lipgloss.Color("240"))
-	// Path (spec 032 US3): "·" in warm tan (137) — the paved-route glyph, set
-	// apart from plain grass's dim "·" without colliding with any structure glyph.
-	stylePath = lipgloss.NewStyle().Foreground(lipgloss.Color("137"))
-	styleGru  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("196"))
-	// Grave (spec 044 US4): "✝" marks a death site — a somber, persistent
-	// marker, so it renders faint gray (244) rather than any of the vivid
-	// living-structure colors (fire/shelter/oven/chest), the cold-fire (240)
-	// precedent for "spent"/inert glyphs.
-	styleGrave = lipgloss.NewStyle().Faint(true).Foreground(lipgloss.Color("244"))
-
-	// Map condition overlays (spec 060 US2): style variants layered over an
-	// already-legended glyph (an agent's own initial, or fire's "▲"), not
-	// new glyphs — panels/map.md's priority is needs-critical > suppressed-
-	// mind > plain awake/asleep. Steady styles only (standing resolution 3:
-	// "pulse" is a style, never terminal blink).
-	//
-	// styleAgentCritical: a living villager with a need in its danger band
-	// (needsCritical below) — bold + underlined red, distinct from both the
-	// dead marker's plain bold red (styleErr) and the gru's bold red (196,
-	// a different glyph entirely) under every color profile the family-tint
-	// discipline covers (TestFamilyTintDistinctPerFamily precedent).
-	styleAgentCritical = lipgloss.NewStyle().Bold(true).Underline(true).Foreground(lipgloss.Color("1"))
-	// styleAgentSuppressed: the map form of spec 037's "a skipped thought is
-	// visible" — faint, a cooler hue than the critical red so the priority
-	// rule (needs-critical wins) reads correctly at a glance even before a
-	// player has learned the vocabulary.
-	styleAgentSuppressed = lipgloss.NewStyle().Faint(true).Foreground(lipgloss.Color("135"))
-	// styleFireDying: a fire inside its dying-fuel window (State.
-	// RefuelDyingBelow, spec 057) — still lit ("▲" — it only goes cold once
-	// FuelUntil actually passes), but a warmer/redder warn tone than lit
-	// fire's plain orange (208) and nothing like cold fire's faint gray
-	// (240), so "about to go out" reads distinctly from both "burning fine"
-	// and "already out."
-	styleFireDying = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("202"))
-)
+// Per-tile styles (terrain, structures, markers, agent conditions) live in
+// tiles.go, resolved from the tile registry's classed token table (spec 068
+// FR-001/FR-002). Night still dims the palette rather than hiding the world
+// — a Faint(true) transform tile() applies over the token-resolved style.
 
 // mapView is the narrow-fallback map pane: today's vw/vh formula,
 // unchanged (pages/solo-views.md "Narrow fallback" — "today's single-pane

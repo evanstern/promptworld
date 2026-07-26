@@ -509,6 +509,10 @@ func perceptionEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 					if waterEdge(m, x, y) {
 						note("water_edge", x, y, 0)
 					}
+					// Marsh and Sand (spec 068, C13) fall through deliberately:
+					// they carry no resource affordances, so there is no
+					// mental-map fact kind to record for them — like grass,
+					// they are open ground, not a resource.
 				}
 			}
 		}

@@ -175,7 +175,7 @@ type preLadderGoldenFrame struct {
 var preLadderGoldenFrames = []preLadderGoldenFrame{
 	{
 		name: "widescreen-home",
-		want: "b7cea08afc485d6d94ca5812408fca2e997004b7208e98ed77ec01b215350f81",
+		want: "f0327b1a9b7b633a5026c1ffb9bf6d761634d616564160f4725f50bcf1e0a9be",
 		build: func(t *testing.T) Model {
 			m := widescreenModel(t)
 			seedEvents(&m, 20)
@@ -184,7 +184,7 @@ var preLadderGoldenFrames = []preLadderGoldenFrame{
 	},
 	{
 		name: "narrow-home",
-		want: "657dda0b92aa912ed8afda9f0845f627dbf6f27cee54490d69d6ca99fb733a27",
+		want: "19ac79e890bcf1355bed5e88cc9dcef1377da6e923619e40626dc168a676eb8a",
 		build: func(t *testing.T) Model {
 			m := testModel(t)
 			seedEvents(&m, 20)
@@ -203,7 +203,7 @@ var preLadderGoldenFrames = []preLadderGoldenFrame{
 	},
 	{
 		name: "widescreen-guardian-strip-charges",
-		want: "400ecf6e8d12e540519ae434ed0ead07d9be777266f37d37d0a48306ac6d7225",
+		want: "9eb5939e2bd54c496bac8bf1f02cab1fda38ff793a849592e3a47c71e98b220b",
 		build: func(t *testing.T) Model {
 			m := widescreenModel(t)
 			m.connected = true
@@ -213,7 +213,7 @@ var preLadderGoldenFrames = []preLadderGoldenFrame{
 	},
 	{
 		name: "widescreen-active-lesson-badge-only",
-		want: "bd06cadcefe647cf8488fad0c105063626f905693110fe8d532bdde550208dd2",
+		want: "72fd8b525fb0e71b743167644a314e0871407e747c42f94cf49b843d6564517f",
 		build: func(t *testing.T) Model {
 			// Pre-ladder's lesson-row default is badge+overlay-only (the
 			// table's own Pre-ladder column, matching the pre-055 "off"
@@ -226,7 +226,7 @@ var preLadderGoldenFrames = []preLadderGoldenFrame{
 	},
 	{
 		name: "widescreen-scenario-exercise-tab",
-		want: "4655390c7dfc8f4c4667616abe7ec38bfffc2427d42c230220ef9488213c89a8",
+		want: "3731790b637cdbfc51f9f5b023f1cddad96c5f51776b14620a7741b4bcc6e926",
 		build: func(t *testing.T) Model {
 			m := scenarioModel(t)
 			m.w.Manifest.Stage = "" // this corpus is pre-ladder even though scenarioModel defaults to stage-1
@@ -264,6 +264,14 @@ var preLadderGoldenFrames = []preLadderGoldenFrame{
 // this baseline exists to catch. The hashes below are the new baseline;
 // the "never re-pin for a resolution-only refactor" rule above still holds
 // for spec 066's own wiring.
+//
+// Re-pinned again for spec 068 (TASK-143), five map-bearing frames only:
+// these fixtures create NEW worlds (world.Create now stamps terrain_gen 2),
+// whose maps legitimately carry the marsh ░ / sand ▒ vocabulary, and the
+// map legend grew the two matching tokens (FR-009); the scenario frame's fixed-seed map likewise. Pre-existing-vocabulary
+// byte identity is separately guaranteed by spec 068's own pin
+// (TestTilesIdentityPin, a LEGACY-generation fixture) — this corpus's four
+// new hashes reflect the sanctioned new-world visual change, nothing else.
 func TestPreLadderGoldenFrames(t *testing.T) {
 	for _, fx := range preLadderGoldenFrames {
 		t.Run(fx.name, func(t *testing.T) {

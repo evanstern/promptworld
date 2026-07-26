@@ -2,9 +2,10 @@
 title: Overlay — help (`?`)
 class: overlay
 status: shipped
-verified_against: bdb0686ad869bc4a0b2521d5e9b4d75dd7fa2ba4
+verified_against: ad7559c6db61b43e427a84eb58088d91f6108370
 sources:
   - internal/tui/help.go
+  - internal/tui/tiles.go
   - internal/tui/tui.go
 ---
 
@@ -104,7 +105,12 @@ binding to exactly one tier (SC-003/FR-003).
   overlay's glyph walkthrough and the in-game legend cannot silently diverge
   — see [../panels/map.md](../panels/map.md) for the reconciled glyph
   inventory (this feature added the wall/path/quarried/pile/grave rows to
-  both the map page and, by construction, this shared table).
+  both the map page and, by construction, this shared table). Spec 068 grew
+  the table into the tile REGISTRY (`internal/tui/tiles.go` — glyph, name,
+  meaning, classed style token, world binding; see map.md's "tile registry"
+  section) and appended the marsh `░` / sand `▒` rows: the walkthrough and
+  the compact legend picked both up from the shared table with no edit to
+  this overlay's rendering, exactly the claim this seam exists to keep.
 - **Dock tabs** (`dockTabs`) — key/name/purpose for each dock tab, read off
   `dockTabKey`/`paneNames` (never a second, hand-maintained list) — now four:
   chronicle/`{{skin.guardian.tab_label}}`/villagers/systems (spec 053 added

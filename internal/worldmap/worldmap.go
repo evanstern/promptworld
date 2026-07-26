@@ -1,6 +1,7 @@
 // Package worldmap generates and represents the village terrain: a pure
-// function of (seed, width, height), so the map is never persisted — every
-// process that knows the manifest regenerates it identically. Terrain is a
+// function of (seed, width, height, generation version), so the map is
+// never persisted — every process that knows the manifest regenerates it
+// identically. Terrain is a
 // flat tile slice (index y*W+x), the representation that scales to DF-style
 // sizes later; only dynamic things (buildings, when they exist) will be
 // event-sourced on top.
@@ -29,6 +30,14 @@ const (
 	// is passable but NOT buildable and NOT quarryable again (distinct from
 	// Grass, which both Cleared trees and Harvested forage revert to).
 	Depleted
+	// Marsh and Sand (spec 068): walkable ground covers generated only for
+	// GenMarshSand worlds — marsh is the moist shoreline ground, sand the
+	// drier shoreline ring. Cosmetic-plus-naming only: passable like grass,
+	// never buildable, no resource affordances, no overlays. APPENDED after
+	// Depleted so every pre-existing kind's byte value (and with it every
+	// legacy Map.Hash() stream) stays frozen.
+	Marsh
+	Sand
 )
 
 // DefaultSize is the v1 village area; the representation itself is
@@ -56,14 +65,15 @@ func (m *Map) InBounds(x, y int) bool {
 	return x >= 0 && x < m.W && y >= 0 && y < m.H
 }
 
-// Passable is walkable terrain: grass and forage. Water, standing trees, and
-// rock outcrops block movement.
+// Passable is walkable terrain: grass, forage, and the spec 068 ground
+// covers (marsh, sand). Water, standing trees, and rock outcrops block
+// movement.
 func (m *Map) Passable(x, y int) bool {
 	if !m.InBounds(x, y) {
 		return false
 	}
 	k := m.At(x, y)
-	return k == Grass || k == Forage
+	return k == Grass || k == Forage || k == Marsh || k == Sand
 }
 
 // Buildable sites are plain grass: flat, dry, unforested (AC#2 — worlds
@@ -102,13 +112,43 @@ const (
 	treeFraction   = 0.24 // moistest dry land forests
 	rockFraction   = 0.06 // highest-elevation remaining dry grass, after trees (spec 012 research R1)
 	foragePerMille = 45   // ~4.5% of open grass carries forage
+	// marshFraction (spec 068 R4, GenMarshSand only): the moistest fraction
+	// of shoreline grass — open grass 4-adjacent to water, after every
+	// existing pass — becomes marsh; the remaining shoreline grass becomes
+	// sand. Only open grass converts, so the water/tree/rock/forage
+	// fractions are untouched by the new kinds.
+	marshFraction  = 0.4
 	denCount       = 4
 	denMinDistance = 12
 )
 
-// Generate is deterministic: same (seed, w, h) → identical Map, on every
-// platform (integer/hash noise only, no float randomness sources).
+// Terrain generation versions (spec 068 FR-006/FR-007): the manifest's
+// terrain_gen field selects the algorithm, so a world's terrain is a pure
+// function of (seed, w, h, gen) forever. GenLegacy (0, the absent-field
+// default) is the pre-068 algorithm, bit-identical — TestLegacyGenerationHashPin
+// is its gate. GenMarshSand (2, what `promptworld new` writes) adds the
+// marsh/sand shoreline pass. There is deliberately no value 1: the field
+// went straight to 2 so absent/0 reads unambiguously as "legacy".
+const (
+	GenLegacy    = 0
+	GenMarshSand = 2
+)
+
+// Generate is the legacy generation path, deterministic: same (seed, w, h)
+// → identical Map, on every platform (integer/hash noise only, no float
+// randomness sources). Kept as the no-version signature so every legacy
+// caller keeps exactly today's output; version-aware callers (world.Map)
+// use GenerateV.
 func Generate(seed uint64, w, h int) *Map {
+	return GenerateV(seed, w, h, GenLegacy)
+}
+
+// GenerateV generates terrain under a manifest-selected generation version
+// (spec 068 R5). gen == GenMarshSand adds the marsh/sand shoreline pass;
+// any other value — including future versions a newer manifest might carry,
+// which world.Open refuses before terrain is ever generated — takes the
+// legacy path.
+func GenerateV(seed uint64, w, h int, gen int) *Map {
 	if w <= 0 {
 		w = DefaultSize
 	}
@@ -182,6 +222,50 @@ func Generate(seed uint64, w, h int) *Map {
 			i := y*w + x
 			if m.Tiles[i] == Grass && hash2(seed, "forage", x, y)%1000 < foragePerMille {
 				m.Tiles[i] = Forage
+			}
+		}
+	}
+
+	// Marsh + sand (spec 068 R4, GenMarshSand only): the shoreline pass runs
+	// AFTER every legacy pass — it claims only open grass 4-adjacent to
+	// water, so trees, rocks, and forage keep their exact legacy placement —
+	// and BEFORE dens, so a den never sits on the new ground covers. The
+	// moistest marshFraction of the shoreline candidates (the same moisture
+	// field the tree pass thresholds) becomes marsh — low-lying wet ground —
+	// and the drier remainder becomes sand, the shoreline ring. Marsh wins
+	// where both apply (it takes the top of the percentile split).
+	if gen == GenMarshSand {
+		waterAdjacent := func(x, y int) bool {
+			for _, d := range [4][2]int{{0, -1}, {1, 0}, {0, 1}, {-1, 0}} {
+				nx, ny := x+d[0], y+d[1]
+				if nx >= 0 && nx < w && ny >= 0 && ny < h && m.Tiles[ny*w+nx] == Water {
+					return true
+				}
+			}
+			return false
+		}
+		var shoreMoist []float64
+		for y := 0; y < h; y++ {
+			for x := 0; x < w; x++ {
+				if m.Tiles[y*w+x] == Grass && waterAdjacent(x, y) {
+					shoreMoist = append(shoreMoist, moist[y*w+x])
+				}
+			}
+		}
+		if len(shoreMoist) > 0 {
+			marshLine := percentileTop(shoreMoist, marshFraction)
+			for y := 0; y < h; y++ {
+				for x := 0; x < w; x++ {
+					i := y*w + x
+					if m.Tiles[i] != Grass || !waterAdjacent(x, y) {
+						continue
+					}
+					if moist[i] >= marshLine {
+						m.Tiles[i] = Marsh
+					} else {
+						m.Tiles[i] = Sand
+					}
+				}
 			}
 		}
 	}

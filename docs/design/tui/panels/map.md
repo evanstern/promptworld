@@ -2,9 +2,10 @@
 title: Panel — map (terrain camera viewport)
 class: panel
 status: shipped
-verified_against: 7e3c2b5f5f23eb8e5fcb37d0f867dbc6f46a289b
+verified_against: ad7559c6db61b43e427a84eb58088d91f6108370
 sources:
   - internal/tui/views.go
+  - internal/tui/tiles.go
 ---
 
 # Panel: map
@@ -72,10 +73,37 @@ terrain. Two dynamic-overlay carve-outs exist within that order:
 | `·` (tan) | a paved path — terrain-level, distinct from plain ground's dim `·` | spec 032 US3 |
 | `✝` | a grave (dead-agent-on-grave carve-out above) | spec 044 US4 |
 | `G` | the gru — highest render priority | TASK-34 |
+| `░` | marsh — walkable wet ground near water (new-terrain worlds, `terrain_gen: 2`) | spec 068 |
+| `▒` | sand — walkable shoreline flat (new-terrain worlds, `terrain_gen: 2`) | spec 068 |
 | `A`/`a`/`†` | agent by initial — uppercase awake, lowercase asleep, `†` dead; a living agent's STYLE (not case) additionally carries a condition overlay (below) | TASK-34, overlays spec 060 |
 
 Night dimming (`m.replica.Night`): every terrain-level style gains `.Faint(true)`
 — glyph identity never changes, only its brightness.
+
+## The tile registry (spec 068)
+
+Presentation is data, not code: every glyph above resolves through the tile
+registry (`internal/tui/tiles.go`) — one table (`mapGlyphs`, grown from spec
+045's shared glyph-key) carrying each tile's glyph, compact legend name,
+plain-language overlay meaning, style token, style-only state variants
+(fire `dying`, wall `damaged`), and the world binding it renders. `tile()`
+(`renderMapGrid`, `internal/tui/views.go`) keeps ONLY the priority logic —
+gru > agents > structures > piles > dens > path > quarried > base terrain —
+and resolves every leaf through the registry's binding indexes; the compact
+legend line and the `?` overlay walkthrough render from the same rows, so a
+tile added to the table reaches all three surfaces with no renderer edit.
+
+Style tokens are classed per the tile-vocabulary analysis's palette rule:
+**semantic-16** (themeable ANSI 0–15: water 4, tree 2, forage 3, den 5, the
+agent family) or **material-256** (fixed palette: rock 245, spent 240, fire
+208/202, shelter 130, oven 166, pile 178, chest 136, wall 250, path 137,
+gru 196, grave 244, suppressed 135, marsh 65, sand 180). No per-tile style
+literal exists outside `tiles.go` (sweep-tested); byte identity for the
+pre-068 vocabulary is pinned by `TestTilesIdentityPin`'s committed goldens
+(`internal/tui/testdata/tiles_identity_*.golden` — never regenerate to
+"fix" a failure). Marsh/sand appear only on worlds whose manifest carries
+`terrain_gen: 2` (new worlds); migrated legacy worlds regenerate their
+exact pre-068 terrain and can never draw them.
 
 ## Inspection (map legend, spec 013 T021/T026)
 
@@ -152,7 +180,7 @@ touch the legend).
 
 | control/region | states | data source | renderer | keys+mouse | introduced-by | skin-token |
 |---|---|---|---|---|---|---|
-| terrain tile | water · wood · forage · rock · quarried · path · plain | `world.Map()` + dynamic overlays | `renderMapGrid`/`tile` | — (display-only) | TASK-34 | — |
+| terrain tile | water · wood · forage · rock · quarried · path · marsh · sand · plain | `world.Map()` + dynamic overlays | `renderMapGrid`/`tile` (tile registry, `tiles.go`) | — (display-only) | TASK-34, marsh/sand spec 068 | — |
 | agent glyph | awake · asleep · dead · dead-on-grave | `replica.Agents` | `renderMapGrid` | — | TASK-34/spec 044 | — |
 | structure glyph | fire lit/cold · shelter · oven · chest · wall ok/damaged · grave | `replica.Structures` | `renderMapGrid` | — | specs 012/013/032/044 | — |
 | pile overlay | present | `replica.Piles` | `renderMapGrid` | — | spec 013 US2 | — |
