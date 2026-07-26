@@ -10,7 +10,7 @@ sources:
   - internal/llm/providers.go
   - internal/llm/lease.go
   - internal/llm/pending.go
-verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
+verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
 ---
 
 # LLM orchestrator
@@ -45,7 +45,14 @@ guardian's fuzzy standing-order confirm, a single bare
 yes/no `Submit` (never a tool loop, [[guardian-orders]]); it is the one kind
 whose `defaultRoutes()` chain is MULTI-ENTRY (`["local","cloud"]` — cheap-first
 local for the yes/no, cloud fallback), and it maps to [[cognition]]'s existing
-`metatron` decision class (the class-name string is likewise frozen).
+`metatron` decision class (the class-name string is likewise frozen). Spec
+063 ([[grounded-feedback]]) adds `KindReportCard` (`"report_card"`, frozen
+from birth) on the identical shape — cheap-first `local→cloud`, mapped to
+the same `metatron` decision class — for the guardian's report-card
+critique: one bounded call per stopping point, never a tool loop. Both new
+kinds are in `defaultBackfillKinds`, so a pre-063/pre-029 `llm.json`
+backfills the route from `defaultRoutes()` with a boot log line rather than
+failing to load.
 
 **The embedding kind** (`llm.go`/`config.go`/`providers.go`, spec 042,
 [[memory-retrieval]]): `KindEmbedding` (`"embedding"`) is a valid route key
@@ -309,7 +316,7 @@ chain, `no_fallback` with chain length > 1, missing transport/model, `openai_com
 without endpoint, or both config shapes at once; tuning knobs clamp with warnings,
 never errors. One narrow exception to the completeness check (spec 029, research
 R8): kinds in `defaultBackfillKinds` — those introduced AFTER the v2 format shipped,
-currently just `KindGuardianWatch` — are BACKFILLED from `defaultRoutes()` with a
+`KindGuardianWatch` and, since spec 063, `KindReportCard` — are BACKFILLED from `defaultRoutes()` with a
 boot log line (`configWarnf`, warn-not-error) rather than failing boot, so a v2
 `llm.json` written before the kind existed keeps booting on upgrade. This runs
 before the completeness loop; a missing route for any OTHER kind is still fatal, and
@@ -349,7 +356,9 @@ status wire's per-class horizon ([[cognition]]'s `LiveHorizon` supplies the
 verdicts). [[memory-retrieval]]'s mind-side embedder driver is the sole
 caller of the embedding-kind surface (`HasEmbedding`/`EmbeddingProvider`/
 `Embed`/`WarmEmbedding`); [[daemon-lifecycle]] wires it at boot only when
-`llm.json` routes the kind.
+`llm.json` routes the kind. [[grounded-feedback]] (spec 063) is
+`KindReportCard`'s sole caller — the guardian's report-card producer, one
+bounded `Submit` per stopping point.
 
 ## Operational notes
 

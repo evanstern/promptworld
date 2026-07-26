@@ -9,7 +9,7 @@ sources:
   - internal/tool/derive.go
   - internal/tool/validate.go
   - internal/sim/toolcheck.go
-verified_against: 28b19f9d14c60c505e62fda0c4fb940cb8134159
+verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
 ---
 
 # Tool registry
@@ -55,7 +55,11 @@ param), `set_plan`, `expressiveTools` (`say`/`gist`/`muse`), `guardianTools`
 (spec 029's agency surface, [[guardian-orders]]: `converse`/`send_vision`/
 `send_omen`/`monitor_and_act`/`cancel_order`/`pause`/`start`/`adjust_speed`/
 `work_miracle` — the retired `nudge_dream`/`nudge_omen` replaced by
-`send_vision`/`send_omen`), `journalTools`
+`send_vision`/`send_omen` — plus, since spec 063, `explain` appended last
+([[grounded-feedback]]'s read-only mechanics-facts tool: `Effect: Read,
+Gate: None`, a free-text `topic` param deliberately NOT an `Enum` so an
+unknown topic can return the explainable-topic catalog as a repairable
+miss rather than a schema rejection)), `journalTools`
 (`write_journal_entry`/`delete_from_journal`/`search_journal`/`read_journal`,
 appended last so no existing tool's position shifts). The tool groups are
 declared as separate literals (`worldTools`, `expressiveTools`, `guardianTools`,
@@ -230,7 +234,14 @@ construction (drift tests in `derive_test.go`). Since spec 036 the per-tool
 description falls back to the tool's own `PromptGloss` when `guardianToolDesc`
 has no entry — the branch bundle tools ([[bundle-tools]]) render through; it is
 byte-inert for every map-covered built-in, pinned by the before/after
-byte-identity test in `derive_test.go`. Since spec 059 (US3), `derive.go` also
+byte-identity test in `derive_test.go`. Since spec 063 ([[grounded-feedback]]),
+`GuardianToolGuidance` also SKIPS every `Effect: Read` tool in the roster
+(`explain` today) — a read tool costs nothing and never consumes the turn's
+one act, so listing it under the "call exactly ONE of these" acting doctrine
+would misrepresent it; a sibling `GuardianReadGuidance(roster)` renders those
+tools' own "you may also READ freely" paragraph instead (empty when the
+roster grants none, byte-inert for every pre-063 roster, which never carried
+a Read tool). Since spec 059 (US3), `derive.go` also
 exports `GuardianTargetingGuidance()` — a static one-line prose pointer
 ("Aim your workings: …" — spec 052's display re-theming of the frozen
 `work_miracle` tool family; the tool id itself never renames) that introduces
@@ -264,7 +275,8 @@ property-name keys, which `encoding/json` sorts lexicographically.
 registration order — `set_plan` excluded) + `say`/`muse`/`gist`; `RosterGuardian`
 = `converse` plus every acting tool the guardian may use (spec 029:
 `send_omen`/`send_vision`/`monitor_and_act`/`cancel_order`/`work_miracle`/
-`pause`/`start`/`adjust_speed`) — it mirrors `LoopRosterGuardian`'s names plus
+`pause`/`start`/`adjust_speed` — plus, since spec 063, `explain`
+([[grounded-feedback]]) appended last) — it mirrors `LoopRosterGuardian`'s names plus
 `converse`, so `work_miracle` IS now on this set (it wasn't pre-029). Since spec
 029 the guardian's nudge/send form is validated against the reducer's explicit
 form set, not this roster ([[guardian-orders]]), so `RosterGuardian`'s only live
@@ -293,7 +305,8 @@ sim executor still honors both verbs so a historical world's `collect_water`/
 is a roster/gloss edit, not a rebuild;
 `LoopRosterGuardian()` = `send_omen`, `send_vision`, `monitor_and_act`,
 `cancel_order`, `work_miracle`, then the meta tools `pause`, `start`,
-`adjust_speed` (spec 029 order) —
+`adjust_speed` (spec 029 order), then — since spec 063 — `explain`
+appended last (the read-only mechanics-facts tool, [[grounded-feedback]]) —
 deliberately NOT `RosterGuardian`, because `converse` is excluded: it is the
 guardian's final-answer channel (the loop's `Result.Final`), not a callable tool,
 and declaring it would trap a `converse` call as `rejected_unknown` (the guardian
@@ -370,7 +383,10 @@ owns the spec-058 `Clamp` enforcement (`validateArgs`'s clamp-with-notice,
 (`parse.go`) is where `say`/`gist`'s own `Clamp`-flagged fields actually
 enforce, since both stay outside the villager tool-use loop. The registry formalizes the doors — it does not
 relax them: the landing ladder, whitelist, and charge economy are unchanged
-enforcers. Spec: `specs/014-tool-registry/` (contracts/registry-api.md,
+enforcers. [[grounded-feedback]] is the spec-063 consumer of `explain` (this
+note's registry entry, `GuardianReadGuidance`) and of `MiracleCost`/
+`miracleKindArgs` (its `costs`/`workings` fact sheets read the exact source
+[[guardian-miracles]] documents). Spec: `specs/014-tool-registry/` (contracts/registry-api.md,
 contracts/tool-catalog.md); the tool-use loop additions are spec 017
 (`data-model.md` §1-2, R11-R13); the journal tools and reason param are spec 019
 (R12, T024).

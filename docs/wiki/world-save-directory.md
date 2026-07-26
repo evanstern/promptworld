@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/world/world.go
   - internal/world/migrate.go
-verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
+verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
 ---
 
 # World save directory
@@ -77,6 +77,15 @@ arms the boot-frozen scenario runtime from this block at every boot
 (`sim.State.ArmScenario`, [[daemon-lifecycle]]) — the incident schedule,
 rubric evaluator, status facts, and exercise tab all key off it; a world
 with no `scenario` block stays byte-identical to pre-054 on every path.
+
+Since spec 063 ([[grounded-feedback]], T014), `world.go` also hosts the
+curriculum ladder's SKIN-INDEPENDENT content — `StageLadderInfo{Concept,
+Grants, UnlockEvidence}`, `StageOrder`, and `StagesLadder` — relocated here
+from `cmd/promptworld/stages.go` (package `main`, which `internal/tui`
+cannot import) so the TUI help overlay's D9 guardian section and
+`promptworld stages` read the exact same table; `stages.go` keeps its own
+`stageOrder`/`stagesLadder` names as plain aliases so its rendering code is
+unchanged. This is data only, unrelated to the manifest fields above.
 `World.Map()` regenerates the terrain from the seed and
 dimensions — deterministic, so the map is never stored ([[worldmap-generation]]).
 
@@ -166,7 +175,10 @@ outside the save directory (in the worlds home), advisory and never an
 authority over anything in this directory. [[scenario-machinery]] is the
 spec-054 subsystem that validates and consumes the `scenario` block this
 note covers — the daemon reads it at boot the same boot-frozen way as
-`stage`. [[world-tuning]] is the spec-048
+`stage`. [[grounded-feedback]] (spec 063) relocated the `StagesLadder`
+content table here and reads it from the TUI help overlay's D9 guardian
+section; [[cli-promptworld]]'s `stages` command is the other reader.
+[[world-tuning]] is the spec-048
 subsystem `TuningPath()` fronts — a peer of `llm.json`/`calibration.json`,
 consumed by the daemon's boot seed, never validated by this package.
 

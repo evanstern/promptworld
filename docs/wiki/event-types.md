@@ -19,7 +19,7 @@ sources:
   - internal/sim/curriculum.go
   - internal/daemon/daemon.go
   - internal/daemon/curriculum.go
-verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
+verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
 ---
 
 # Event types
@@ -255,6 +255,16 @@ second emission path — an authored incident preempting that night's random
 roll — with no payload change (the emitted shape is identical either way).
 `ExerciseDefinition` (content, not event-sourced state) gains `Schedule`/
 `IncidentVisibility`, carrying no event of their own.
+Spec 063 (the grounded feedback layer — [[grounded-feedback]], TASK-115) is
+also format-stable: `State` gains `omitempty` `GuardianReportCard
+*GuardianReportCard` (the reducer keeps only the LATEST stored card; the
+log keeps history, so a pre-063 snapshot round-trips byte-identically). ONE
+new whitelisted type, `guardian.report_card`
+(`GuardianReportCardPayload{fingerprint, note, citations?}`), rides
+[[sim-loop]]'s `InjectSocial` door — a run-ending card instead rides the
+EXISTING `morgue.epilogue` channel (agent `-1`), so this new type
+deliberately does NOT join `endedProseWhitelist`. No new tool-registry
+event vocabulary: `explain` is `Effect: Read` and lands no event of its own.
 
 ## How it works
 
@@ -324,7 +334,8 @@ roll — with no payload change (the emitted shape is identical either way).
 | `metatron.order_cancelled` | `OrderIDPayload{id}` | the guardian's `cancel_order` tool, injected | the named order transitions active → cancelled; same rejection rule as triggered; since spec 059 a survival watch is refused outright regardless of status — it is the guardian's own nature, not a player configuration, and the player order surface cannot release it |
 | `metatron.order_expired` | `OrderIDPayload{id}` | executor, `stepEvents`, once per order once `nextTick >= expires_tick` for an active order (the `charge_regenerated` pattern — a pure function of state + tick, so replay reproduces it without any angel running) | the named order transitions active → expired, freeing its slot against the player cap; since spec 059 a survival watch is skipped by this sweep entirely (origin-keyed TTL exemption, never evaluated) |
 | `metatron.charter_observed` (spec 044 US2) | `CharterObservedPayload{fingerprint, default}` in `internal/sim/guardian.go` — `fingerprint` is a short content hash (12 hex chars) of the EFFECTIVE charter text a turn ran under; `default` marks the authored default | the guardian turn pipeline (`observeCharter`, injected via `InjectSocial` at charter load), only when the fingerprint differs from `State.CharterFingerprint` — the first turn always emits; skipped on ended worlds | sets `State.CharterFingerprint`; the log's observation sequence is the event-sourced charter-revision timeline the morgue aligns each death against (most recent observation ≤ the death, [[guardian]]) |
-| `morgue.epilogue` (spec 044 US2) | `MorgueEpiloguePayload{agent, text}` in `internal/sim/morgue.go` — `agent` is the mourned villager, or −1 for the run-end epilogue | mind narrator worker (injected via `InjectSocial` on absorbing `agent.died`/`run.ended`; LLM-gated, so structurally absent in no-model worlds); one of the two prose types an ENDED world's door still accepts (`endedProseWhitelist`) | appends the bounded `State.MorgueEpilogues` ring (chronicle pattern) for replica/scribe rendering; the morgue's factual render never depends on it — narrator absence or failure is a gap, never a stall |
+| `morgue.epilogue` (spec 044 US2) | `MorgueEpiloguePayload{agent, text}` in `internal/sim/morgue.go` — `agent` is the mourned villager, or −1 for the run-end epilogue | mind narrator worker (injected via `InjectSocial` on absorbing `agent.died`/`run.ended`; LLM-gated, so structurally absent in no-model worlds); since spec 063 also the guardian's report-card producer at run end (agent −1, prefixed "Report card (under charter `<fingerprint>`): …" — [[grounded-feedback]], since the ended door already narrows to recorded prose and no new door entry is needed); one of the two prose types an ENDED world's door still accepts (`endedProseWhitelist`) | appends the bounded `State.MorgueEpilogues` ring (chronicle pattern) for replica/scribe rendering; the morgue's factual render never depends on it — narrator absence or failure is a gap, never a stall |
+| `guardian.report_card` (spec 063 US4, [[grounded-feedback]]) | `GuardianReportCardPayload{fingerprint, note, citations?}` in `internal/sim/reportcard.go` | the guardian's report-card producer (injected via `InjectSocial`) at a non-run-ending stopping point (an exercise pass, or a debounced pause episode) — never on an ended world, where the run-end card rides `morgue.epilogue` instead | validates (non-empty fingerprint/note, note ≤1200 runes, every cited seq strictly precedes this event's own seq — a card can never cite the future) then keeps only the LATEST card on `State.GuardianReportCard` (`omitempty`); the log keeps every prior card as history |
 | `metatron.time_snapped` | `TimeSnappedPayload{to_tick, gratis}` in `internal/sim/miracles.go` | angel's turn reply or the `promptworld miracle` CLI/IPC door (spec 016, [[guardian-miracles]]), injected via `InjectSocial` | rejects a target at or before the current tick (forward-only); spends 2 charges (the dearest miracle) unless `gratis`; `rebaseTicks` shifts every relative-duration field forward by the jump so remaining durations are preserved, then `State.Tick = to_tick`; the skipped regeneration boundaries mint no charges |
 | `metatron.item_granted` | `ItemGrantedPayload{agent, kind, qty, gratis}` | angel's turn reply or the CLI/IPC door, injected | validates a living villager, a known item kind, positive qty, and the bulk cap (reject-whole, never clamp); spends 1 charge unless `gratis`; adds `qty` units (a spear grant appends `qty` fresh `spearDurability` entries, kept sorted) |
 | `metatron.entity_moved` | `EntityMovedPayload{class, x, y, to_x, to_y, gratis}` (`class` ∈ villager\|structure\|pile) | angel's turn reply or the CLI/IPC door, injected | validates presence at the source and the destination's placement rule (villager/pile → passable, structure → buildSite); spends 1 charge unless `gratis`; relocates the entity (a moved villager drops its intent and goes idle at the landing tick; a moved structure carries its `FuelUntil`/`Owner`/`Store`; a moved pile merges onto any pile already at the destination) |
@@ -425,7 +436,13 @@ clamp decision (spec 061/058); [[social-fabric]] owns the mind-side novelty
 SHIM and its `cog.outcome{suppressed}` reason. [[tool-loop]] owns
 `VerdictLandedClamped` end to end (spec 058); [[tool-registry]] owns the
 `Clamp`-flagged `Param`s and the dormant-verb roster prune the feature's tool
-surface reflects.
+surface reflects. [[grounded-feedback]] owns `guardian.report_card` end to
+end (spec 063) — the payload and reducer arm in `internal/sim/reportcard.go`,
+the report-card producer in `internal/guardian` that injects it, and the
+`State.GuardianReportCard` field this reducer keeps; [[morgue]] is where a
+run-ending card's note lands instead (the existing `morgue.epilogue`
+channel); [[takeover-surfaces]] is the spec-056 consumer that composes the
+report card's rubric checklist into the postmortem and ceremony takeovers.
 
 ## Operational notes
 

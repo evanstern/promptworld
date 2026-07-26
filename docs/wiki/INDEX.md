@@ -63,6 +63,8 @@ that note (re-pin with `/grounding-wiki:wiki-update`).
 - [[governance]] — norms and votes: the daily meeting under an event-sourced convention, relationship-driven law, the village charter
 - [[curriculum-ladder]] — the spec-046 four-stage teaching ladder: immutable world stage with informed override, the guardian's tool ceiling + stage-1 instruction lock (default/tutor presets), curriculum.* unlock events with auditable evidence, the per-user unlocks record, seeded exercises
 - [[scenario-machinery]] — the spec-054 director-lite incident scheduler + rubric evaluator: the production emitter for curriculum.* events, boot-frozen ArmScenario runtime, gru-emergence preemption, and the TUI exercise tab
+- [[takeover-surfaces]] — the spec-056 takeover family: the stage-unlock ceremony and run-end postmortem full-screen pages, and the shared report-card renderer (D5) they compose
+- [[grounded-feedback]] — the spec-063 grounded feedback layer: the guardian's read-only explain tool, the compiled-in tutor guide, the report-card producer (cheap-chain attribution note over recorded events), and the help overlay's D9 guardian section
 
 ## Lifecycle & quality
 

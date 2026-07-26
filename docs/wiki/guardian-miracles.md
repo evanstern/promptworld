@@ -11,7 +11,7 @@ sources:
   - internal/tool/derive.go
   - internal/ipc/server.go
   - cmd/promptworld/work.go
-verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
+verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
 ---
 
 
@@ -174,15 +174,20 @@ classified SHIFT or KEEP in its doc comment:
   `PlaceFact.Detail` (spec 041: a remembered value baked at emission, never
   re-derived — for a fire it mirrors the FuelUntil last seen, so shifting it
   would rewrite what the agent remembers rather than what is; the perception
-  sweep simply re-witnesses the shifted reality on the next look), and every
+  sweep simply re-witnesses the shifted reality on the next look),
+  `GuardianReportCard.Tick`/`Seq`/`Citations` (spec 063,
+  [[grounded-feedback]]: when the card landed, the card event's own identity,
+  and the cited event seqs — history and identities, never deadlines), and
+  every
   other identity/history field — see the doc comment for the full list.
   `TestRebaseTaxonomyComplete` caught both spec-019 additions, the spec-030
   `Belief.Reinforced` field, (later) spec 029's `GuardianOrder.ExpiresTick`/
   `PlacedTick`, spec 041's `PlaceFact`/`PeerSighting` fields, spec 042's
   `Memory.Seq`/`Agent.SitVecTick` fields, spec 043's `IntentRecord.Tick`/
   `OutcomeTick` (KEEP) and `Agent.NeedsAnchorTick` (SHIFT), spec 061's
-  `PairTalk.Tick` (SHIFT), and spec 062's `Agent.LastMindIntentDone` (SHIFT,
-  only-non-zero) as new tick-anchored
+  `PairTalk.Tick` (SHIFT), spec 062's `Agent.LastMindIntentDone` (SHIFT,
+  only-non-zero), and spec 063's `GuardianReportCard.Tick`/`Seq`/`Citations`
+  (KEEP) as new tick-anchored
   `int64` fields requiring classification, confirming the taxonomy guard holds
   across features outside miracles' own spec.
 
@@ -329,7 +334,12 @@ permits a miracle on the guardian's own initiative (charge cost unchanged) —
 this note's cost/rebase/door mechanics are identical either way, only the
 turn's authorization frame differs; [[mental-maps]] is the closed
 place-fact/passability vocabulary the targeting digest draws its adjacency
-guidance from.
+guidance from. [[grounded-feedback]] (spec 063) shares this note's
+`GuardianReportCard.Tick`/`Seq`/`Citations` rebaseTicks classification, and
+its `explain` tool's `costs`/`workings` fact sheets read the SAME
+`tool.MiracleCost`/`miracleKindArgs` source this note's cost table and
+guardian prompt do — a described price can never disagree across all three
+surfaces.
 
 ## Operational notes
 

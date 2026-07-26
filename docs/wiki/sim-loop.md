@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/loop.go
   - internal/sim/landing.go
-verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
+verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
 ---
 
 # Sim loop
@@ -241,7 +241,11 @@ fingerprint-at-effect stamp, the event-sourced charter-revision timeline the
 enforces a non-empty fingerprint — and `morgue.epilogue`, the narrator's
 recorded mourning prose after a death or the run's end, appending only the
 bounded `State.MorgueEpilogues` ring (never simulation state, which is why it
-also survives the ended-world narrowing above)):
+also survives the ended-world narrowing above)), and (since spec 063,
+[[grounded-feedback]]) `guardian.report_card` — the guardian's report-card
+producer's stored attribution note, recorded prose only, never simulation
+state; a run-ending card rides `morgue.epilogue` instead, so this type
+deliberately does NOT join the ended-world narrowing above:
 an atomic, whitelisted batch of conversation, consolidation, musing, chronicle,
 nudge, miracle, phrasing, or telemetry effects, dry-run on a state copy before
 applying — the dry-run probe is reconstructed from bytes and so carries no
@@ -293,7 +297,9 @@ The [[executor]]'s `run.ended` declaration is what flips the loop into the
 ended posture; the [[morgue]] is the consumer of the two spec 044 whitelist
 types and of the narrowed ended-world door. [[scenario-machinery]]'s
 `sim.ExerciseOutcome` is what `status()` reads for the spec-054
-`ScenarioExercise`/`ScenarioOutcome` status fields. Since spec 061, `rungPairCooldown`
+`ScenarioExercise`/`ScenarioOutcome` status fields. [[grounded-feedback]]
+(spec 063) is `guardian.report_card`'s injector, whitelisted here.
+Since spec 061, `rungPairCooldown`
 is this note's half of the conversation loop damper — [[social-fabric]] owns
 the mind-side novelty SHIM one layer above it, and [[sim-state-reducer]] owns
 the `PairTalks` ledger both read. Since spec 058, the plan rung's

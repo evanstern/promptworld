@@ -8,7 +8,7 @@ sources:
   - internal/sim/state.go
   - internal/mind/narrate.go
   - internal/world/world.go
-verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
+verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
 ---
 
 # Morgue
@@ -117,7 +117,13 @@ construction. The render blockquotes each epilogue after its section's facts
 (facts before prose: removing every epilogue leaves a complete document),
 and epilogues are collected in the same fold but EXCLUDED from the
 byte-identity requirement — a suppressed, dropped, or failed epilogue is a
-gap in the prose, never a stall of the factual record (FR-010).
+gap in the prose, never a stall of the factual record (FR-010). Since spec
+063 ([[grounded-feedback]]), a run-ending guardian report card ALSO lands on
+this same `morgue.epilogue` channel — `agent -1`, beside the narrator's own
+run-end epilogue, prefixed "Report card (under charter `<fingerprint>`):
+…" — since the ended door already narrows to recorded prose and no new
+door entry is needed; a non-run-ending card instead rides its own
+`guardian.report_card` type ([[event-types]]).
 
 **The run-end summary** (`writeRunSummary`, FR-009): rendered from
 `State.RunEnd` (set verbatim by the `run.ended` arm from the payload's
@@ -155,7 +161,10 @@ carries the `grave` place-fact kind a death leaves in the world;
 [[agent-mind]] hosts the scribe that renders the file and the absorb hook
 that queues epilogues; [[world-save-directory]] is where `morgue.md` lives;
 [[scenario-machinery]] is the spec-054 subsystem behind the run summary's
-exercise-outcome line. Spec: `specs/044-run-outcomes-morgue/`.
+exercise-outcome line; [[grounded-feedback]] (spec 063) is what lands a
+run-ending report card on this note's `morgue.epilogue` channel; the same
+prose is what [[takeover-surfaces]]' postmortem page renders in its own
+report-card section. Spec: `specs/044-run-outcomes-morgue/`.
 
 ## Operational notes
 

@@ -6,7 +6,7 @@ sources:
   - internal/skin/skin.go
   - internal/skin/load.go
   - examples/skins/raven.json
-verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
+verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
 ---
 
 # Skin
@@ -51,7 +51,17 @@ default stage identities are the client-approved names carried over the
 de-theme unchanged (spec 052 ruling 3) — **The Voice** ("you speak, it
 acts"), **The Written Word** ("your law outlives the conversation"), **The
 Craft** ("you shape what it can do"), **The Stewardship** ("a world in your
-care") — read by [[curriculum-ladder]].
+care") — read by [[curriculum-ladder]]. Since spec 056 ([[takeover-surfaces]]),
+`defaultCeremonyChapters` appends one `skin.stage.<id>.ceremony_chapter` row per
+UNLOCKABLE stage (stage-2..stage-4 — stage-1 is the ladder's floor and is never
+unlocked, so it carries no entry) alongside the stage-identity rows, the D6
+authorship-voice "your play proved `<identity>`" narrated chapter a ceremony
+takeover renders. Since spec 063 ([[grounded-feedback]]), the table also
+gains `report_card_label`/`attribution_label` (the report card's box title
+and the attribution note's own block header) and a per-verb `example_ask`
+family, one `skin.guardian.example_ask.<tool-id>` row per shipped guardian
+loop tool (e.g. `.send_vision` → `"show Ash a vision of the fire dying"`) —
+the help overlay's D9 guardian section teaches asking from these.
 
 **`Skin` and its typed accessors**: a `*Skin` holds string-token overrides
 (`strings`, identity fields included — they ARE tokens), stage-identity
@@ -67,7 +77,15 @@ any call site. Typed accessors are thin `Resolve` wrappers:
 including a pre-ladder world — return the zero identity and `false`, a safe
 fallback for message text). `FormNoun(form)` maps a recorded nudge form value
 (`"vision"`/`"omen"`, the frozen payload vocabulary) to its display noun;
-an unrecognized form value renders verbatim rather than empty.
+an unrecognized form value renders verbatim rather than empty. Since spec
+056, `CeremonyChapter(stage)` resolves a stage's D6 narrated chapter (a
+plain token lookup, so a stage-1 lookup — never actually rendered — is
+visibly wrong rather than a crash). Since spec 063, `ReportCardLabel()`/
+`AttributionLabel()` resolve the report card's two display labels, and
+`ExampleAsk(toolID)` resolves the per-verb example-ask family — assembled
+from split literals deliberately, since the token-completeness sweep
+matches whole dotted token paths and this family's membership is enumerated
+by the table itself.
 
 **Loading** (`load.go`, `Load(worldDir)`): reads `<worldDir>/skin.json`
 following the `capabilities.json` fallback discipline (spec 052 FR-003,
@@ -131,7 +149,11 @@ the console pane's tab/labels through the polled status facts.
 [[cli-promptworld]] renders the same facts offline/online without reading
 `skin.json` directly. [[bundle-tools]]' persona-SOUL-fragment composition is
 the precedent `Voice`'s placement in the prompt stack follows (after bundle
-SOULs, still beneath the guardian's fixed frame).
+SOULs, still beneath the guardian's fixed frame). [[takeover-surfaces]]
+(spec 056) reads `CeremonyChapter` for the ceremony takeover's narrated
+chapter; [[grounded-feedback]] (spec 063) reads `ReportCardLabel`/
+`AttributionLabel` for the report-card console card and `ExampleAsk` for
+the help overlay's D9 guardian section.
 
 ## Operational notes
 

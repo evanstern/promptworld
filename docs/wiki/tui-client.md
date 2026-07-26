@@ -11,7 +11,8 @@ sources:
   - internal/tui/decisions.go
   - internal/tui/help.go
   - internal/tui/lessons.go
-verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
+  - internal/tui/reportcard.go
+verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
 ---
 
 # TUI client
@@ -46,7 +47,10 @@ the live transition without a reconnect. The same predicate makes the clock
 keys (space, `[`, `]`) inert client-side — the daemon's refusal error would
 otherwise read as a disconnect — and swaps the footer's pause/resume hint
 for `run ended (read-only)` in every mode; all reading surfaces stay fully
-functional ([[morgue]]).
+functional ([[morgue]]). Since spec 056, `runEnded()` also gates a full-screen
+**postmortem takeover** distinct from this header posture — see
+[[takeover-surfaces]] for the takeover family (ceremony + postmortem), which
+owns the keyboard above every mode this note describes.
 
 **Governed speed** (`headerView` in `views.go`, spec 028 US4): the header's
 speed segment renders the EFFECTIVE speed as the world's speed, and — only
@@ -193,7 +197,10 @@ the guardian conversation also has a first-class full-height page: the
 already bind `G` to jump-to-last) and closed with `G`/`1`/`esc` — document-
 style labeled turn blocks over the shared transcript (`consoleTurnLines`,
 special ⚡/👁/⏲/» rows inline), tail-anchored `J`/`K` scrollback, an
-always-empty-for-now `consoleCard` composition seam (TASK-127/115 plug in),
+a `consoleCard` composition seam (spec 053's empty seam, populated by spec
+056's shared rubric-checklist renderer and spec 063's report-card producer —
+[[takeover-surfaces]], [[grounded-feedback]]; `Model.consoleCards`,
+`rebuildConsoleCards`),
 a charter/skills read surface from status fields
 (`charterReadSurfaceLines`: provenance, binding, honest lock notices), an
 `e` → `tea.ExecProcess($EDITOR, charter.md)` handoff with a content-hash
@@ -370,7 +377,13 @@ existing guardian family voice — the ladder is the guardian's domain, not a
 distinct visual role: `curriculum.exercise_passed` ("the <exercise> exercise
 was passed (<stage>)") and `curriculum.stage_unlocked` ("The guardian's watcher
 earned <stage name> (proven by <exercise>)", the display name resolved
-through `skin.StageName` like the CLI's stage line). The four
+through `skin.StageName` like the CLI's stage line). Since spec 063,
+`guardian.report_card` ([[grounded-feedback]]) gets its own entry too — a
+new `guardian` namespace joins `familyByNamespace`, mapped onto the SAME
+guardian family voice the FROZEN `metatron.*` namespace uses (the digest
+line renders the skin's report-card label, the charter fingerprint, and the
+note's own text truncated to 80 runes, the `morgue.epilogue` truncation
+manner). The four
 [[guardian-miracles]] types render in the guardian family voice, with a
 trailing emphasized `(forced)` annotation (`gratisMark`) whenever the
 payload's gratis flag waived the charge — an operator force is never
@@ -406,8 +419,9 @@ esc-release chain (help → minibuffer → decisions → detail → solo → hom
 checked in `handleKey` right after ctrl+c and only when the minibuffer is
 unfocused, so a focused `?` still types into the buffer. The overlay freezes
 the mode it opened from (`helpMode`) and owns the keyboard while open: `t`
-flips the mode page's basic/advanced key tiers, `tab`/`shift+tab` cycle three
-sections (mode keys · screen walkthrough · lessons pull-reference), `n`/`p`
+flips the mode page's basic/advanced key tiers, `tab`/`shift+tab` cycle the
+overlay's sections — mode keys · screen walkthrough · lessons pull-reference
+· (spec 056) ceremonies replay · (spec 063) the guardian, five in all — `n`/`p`
 page across all six mode pages (global/home, minibuffer, inspect, villagers
 roster/detail, solo/narrow — how the minibuffer page stays reachable),
 `J`/`K` scroll via the standard pager idiom, and `esc`/`?` dismiss exactly
@@ -441,7 +455,12 @@ load-tolerant/advisory/atomic-write discipline; marked when a lesson
 SURFACES, so a decayed queue entry can still fire later), and every catalog
 string resolves skin tokens through `lessonSkinResolve` (a bounded
 default-table fallback from spec 052's contract until the skin runtime
-merges). All content is
+merges). The ceremonies section (spec 056) and the guardian section (spec
+063, D9) are the overlay's other two status-derived additions — see
+[[takeover-surfaces]] for the former (a stored-content replay of every
+stage this world has ever unlocked, sharing the live ceremony's own
+rendering helpers) and [[grounded-feedback]] for the latter (the stage-keyed,
+model-free "what asking looks like" page, `Status.Stage`-selected). All content is
 model-independent — byte-identical with nil status/replica (the no-LLM floor
 beneath an absent angel). Footer hints advertise `· ? help` in every mode
 except the focused minibuffer; while the overlay is open the footer shows the
@@ -476,6 +495,13 @@ reading `sim.EvaluateRubric`/`sim.ExerciseOutcome` over the replica and the
 manifest's `Scenario` block. [[mental-maps]]'s four place-knowledge event types render through
 the raw digest feed with no dedicated pane of their own — the map/prompt
 side of the feature lives entirely in [[agent-mind]]/[[executor]], not here.
+[[takeover-surfaces]] (spec 056) owns the ceremony/postmortem takeover
+family that dispatches ahead of every mode this note describes, the shared
+report-card renderer, and the help overlay's ceremonies section;
+[[grounded-feedback]] (spec 063) owns the `explain` tool's guardian-side
+integration, the report-card producer whose stored note this note's
+`consoleCard`/digest surfaces render, and the help overlay's D9 guardian
+section.
 
 ## Operational notes
 

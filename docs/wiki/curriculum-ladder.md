@@ -10,7 +10,7 @@ sources:
   - internal/world/world.go
   - internal/guardian/charter.go
   - cmd/promptworld/stages.go
-verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
+verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
 ---
 
 # Curriculum ladder
@@ -35,7 +35,12 @@ Written Word** ("your law outlives the conversation"), **The Craft** ("you
 shape what it can do"), **The Stewardship** ("a world in your care") —
 via `skin.Stage(id)`/`StageName(id)`, an alternate skin free to re-voice all
 four names while the ids and unlock semantics stay put.
-`cmd/promptworld/stages.go`'s `stagesLadder` carries the skin-INDEPENDENT
+`internal/world/world.go`'s `StagesLadder` (relocated here from
+`cmd/promptworld/stages.go` by spec 063 T014 — [[grounded-feedback]]'s TUI
+help overlay reads the same table, and `internal/tui` cannot import package
+`main`; `stages.go` keeps `stageOrder`/`stagesLadder` as plain aliases onto
+`world.StageOrder`/`world.StagesLadder` so its own rendering code is
+unchanged) carries the skin-INDEPENDENT
 ladder content beside those identities: per stage, the concept taught
 (conversational prompting → instruction authoring → capability design →
 mastery), what the world grants, and what evidence unlocks the next. Absent
@@ -65,8 +70,14 @@ door all inherit it rather than re-implementing it ([[guardian]]). Stage-1 and
 stage-2 pin the roster to `stage1CeilingTools` — `send_omen`, `send_vision`,
 `monitor_and_act`, `cancel_order` (the ratified TASK-119 amendment put
 standing orders in the stage-1 grant because the first-night exercise teaches
-the watch), with no miracle kinds and the empty-intersection effect shutting
-out bundle tools; stage-3, stage-4, and pre-ladder worlds have no ceiling. A
+the watch), plus, since spec 063, `explain` (read-only, zero-cost, the
+tutor guide's own grounding tool — [[grounded-feedback]]), with no miracle
+kinds and the empty-intersection effect shutting
+out bundle tools; stage-3, stage-4, and pre-ladder worlds have no ceiling.
+`guardian.StageCeilingVerbs(stage)` exports a stage's granted loop-tool
+names in registry order — the SAME intersection applied here — for the TUI
+help overlay's D9 guardian section to teach from without a second
+hand-maintained list. A
 player's `capabilities.json` may narrow WITHIN the ceiling, never exceed it.
 The daemon hands the manifest's stage + preset to the guardian boot-frozen via
 `mt.SetStage` (the `SetBundles` discipline), so the ceiling cannot be
@@ -167,7 +178,10 @@ observer and the boot-frozen `SetStage` handoff; [[cli-promptworld]] fronts
 `promptworld stages` and `new --stage`/`new --scenario`; [[skin]] supplies the four stages'
 player-visible identities (`Stage`/`StageName`) this note's ladder facts
 pair with; [[scenario-machinery]] is the spec-054 production emitter for this
-note's two event types; [[testing-strategy]] catalogs the
+note's two event types; [[grounded-feedback]] (spec 063) relocated
+`StagesLadder`/`StageOrder` here from `cmd/promptworld`, added `explain` to
+`stage1CeilingTools`, and reads the stage ceiling via `StageCeilingVerbs` for
+the TUI help overlay's D9 guardian section; [[testing-strategy]] catalogs the
 per-layer suites (reducer, guardian stage gating, daemon observer, unlocks
 record, CLI).
 

@@ -58,7 +58,22 @@ sources:
   - internal/tui/exercise_test.go
   - internal/world/scenario_test.go
   - cmd/promptworld/scenario_test.go
-verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
+  - internal/tui/takeover_test.go
+  - internal/tui/render_test.go
+  - internal/tui/console_test.go
+  - internal/tool/explain_test.go
+  - internal/sim/explain_pin_test.go
+  - internal/toolloop/explain_pin_test.go
+  - internal/tui/explain_pin_test.go
+  - internal/guardian/explain_test.go
+  - internal/guardian/tutor_guide_test.go
+  - internal/guardian/reportcard_test.go
+  - internal/guardian/skin_battery_test.go
+  - internal/sim/reportcard_test.go
+  - internal/sim/rubric_hygiene_test.go
+  - internal/tui/reportcard_test.go
+  - internal/tui/help_guardian_test.go
+verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
 ---
 
 # Testing strategy
@@ -285,7 +300,12 @@ event's store seq, an identity like `Memory.Seq` —
 (the reflex PREP gate's yield-window anchor, only-non-zero, the
 `Belief.Reinforced`/`NeedsAnchorTick` shape — [[reflex-policy]]); spec 054
 adds one KEEP entry, `GuardianOrder.PlacedSeq` (the placement event's store
-seq — an identity, like `Memory.Seq`, [[scenario-machinery]])). Byte-identity replay suites
+seq — an identity, like `Memory.Seq`, [[scenario-machinery]]); spec 063
+adds three more KEEP entries — `GuardianReportCard.Tick` (when the card
+landed, the `MorgueEpilogue.Tick` shape), `GuardianReportCard.Seq` (the card
+event's own seq, an identity like `Memory.Seq`), and
+`GuardianReportCard.Citations` (cited event seqs, identities into recorded
+history like `EvidenceRef.Seq` — [[grounded-feedback]])). Byte-identity replay suites
 (`TestMiracleReplayByteIdentity`, `TestMiracleSnapReplayByteIdentity`,
 `TestMiracleGrantReplayByteIdentity`) prove each miracle type replays to the
 same state hash as live application.
@@ -633,6 +653,51 @@ round-trip, absent-stage = ungated, `Open` rejecting a bad `stage` or
 `charter_preset`), and `internal/skin/skin_test.go` pins the four
 client-approved stage identities.
 
+**Takeover suites** (spec 056, TASK-127, [[takeover-surfaces]]):
+`internal/tui/takeover_test.go` covers the dispatch/precedence/dismiss
+matrix — `run.ended` always wins over an open ceremony, a deferred ceremony
+never interrupts the postmortem, `esc`/`q`/`p` behave per mode, and the
+per-session `postmortemDismissed` flag survives a mere reconnect but never a
+genuine new `run.ended`. `internal/tui/render_test.go` proves the takeover
+renders layout-independently (widescreen and narrow alike) and that
+`fitTakeoverLines` sheds an overflowing death ledger's tail with an honest
+count rather than growing past the panel budget. `internal/tui/console_test.go`
+proves the `reportCard` wrapper composes into `Model.consoleCards`
+unmodified — the D5 shared-renderer seam. `internal/tui/help_test.go`
+extends the keymap/section sweep to the new ceremonies section.
+
+**Grounded-feedback suites** (spec 063, TASK-115, [[grounded-feedback]]):
+mirror-drift pins guard every leaf-package doctrine copy `explain` carries —
+`internal/sim/explain_pin_test.go` (`TestExplainChargeDoctrineMirrorsSim`,
+the charge-economy constants), `internal/toolloop/explain_pin_test.go`
+(`TestExplainDecisionClassesMirrorVerdicts`, the verdict-name set), and
+`internal/tui/explain_pin_test.go` (`TestExplainGlyphsMirrorLegend`, the map
+legend) — each fails the build the moment its source of truth drifts from
+`tool/explain.go`'s mirrored copy. `internal/tool/explain_test.go` covers
+`ExplainSheet`'s six fixed topics plus per-tool detail, the grant
+distinction (granted vs. cataloged-but-ungranted), and the unknown-topic
+repairable-miss path. `internal/guardian/explain_test.go` proves the
+`explain` handler always returns `VerdictReadOK` and never consumes the
+turn's one act; `tutor_guide_test.go` proves `persona.TutorGuide` composes
+only on a tutor-preset world and is otherwise byte-inert;
+`internal/guardian/reportcard_test.go` and `internal/sim/reportcard_test.go`
+cover the producer's activity-gated stopping-point triggers, citation
+validation (an out-of-trail `seq N` drops the whole note), the run-end
+card's `morgue.epilogue` routing vs. the non-run-ending
+`guardian.report_card` event, and the reducer's latest-card-only retention;
+`internal/sim/rubric_hygiene_test.go` and `internal/sim/toolcheck_test.go`'s
+extended `TestWhitelistDiffIdentical` pin `guardian.report_card` as
+exactly the spec-063 boundary widening (the run-end card's
+`morgue.epilogue` routing leaves the ended-door narrowing untouched);
+`internal/guardian/skin_battery_test.go` extends the adversarial skin
+battery to the new `ExampleAsk`/`CeremonyChapter`-adjacent tokens.
+`internal/tui/reportcard_test.go` and `help_guardian_test.go` cover the
+console card seam's composition order (checklist first, note beneath) and
+the D9 guardian section's stage-keyed, model-free byte-identity.
+`internal/guardian/stage_test.go` and `guardian_test.go` extend their
+existing roster-table/status assertions to include `explain` in the
+stage-1/-2 ceiling and the default granted-tools list.
+
 **Persona lifecycle suite** (`internal/persona/persona_test.go`, TASK-74): on
 top of the pre-existing genesis-once/0444/missing-file-load coverage,
 `TestPersonaMapsSweepAligned` proves the four index-aligned maps (`Texts`,
@@ -672,7 +737,16 @@ scenario_narrate_test.go` and `internal/scribe/scenario_morgue_test.go` (the
 chronicle/morgue surfaces), and `internal/tui/exercise_test.go` (the
 exercise dock tab) — plus `internal/world/scenario_test.go` and
 `cmd/promptworld/scenario_test.go` for the manifest validation and `new
---scenario` CLI paths. Manual
+--scenario` CLI paths. [[takeover-surfaces]]'s spec-056 suite
+(`internal/tui/takeover_test.go`, `render_test.go`, `console_test.go`,
+`help_test.go`'s ceremonies extension) is this note's other TUI-family
+addition. [[grounded-feedback]]'s spec-063 suite spans
+`internal/tool/explain_test.go` plus three cross-package mirror-drift pins
+(`internal/sim`, `internal/toolloop`, `internal/tui`), `internal/guardian`'s
+`explain_test.go`/`tutor_guide_test.go`/`reportcard_test.go`/
+`skin_battery_test.go`, `internal/sim/reportcard_test.go`/
+`rubric_hygiene_test.go`, and `internal/tui/reportcard_test.go`/
+`help_guardian_test.go`. Manual
 validation results live in `specs/001-world-daemon/quickstart-results.md`.
 
 ## Operational notes

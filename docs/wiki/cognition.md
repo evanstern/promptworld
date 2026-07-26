@@ -12,7 +12,7 @@ sources:
   - internal/cognition/horizon.go
   - internal/cognition/governor.go
   - internal/sim/cognition.go
-verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
+verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
 ---
 
 # Cognition horizon
@@ -46,7 +46,12 @@ horizon gate rather than carrying its own 1pt/3600t budget ([[agent-mind]],
 kind (`metatron_watch`, [[guardian-orders]]) maps to the EXISTING `metatron`
 class (5pt/86400t) — same actor, event-triggered not cadence-scheduled, a
 one-line `kindToClass` entry on the narrator/drama→`chronicle` precedent, so the
-spec-007 registry doctrine contract is untouched. `kindToClass` maps every LLM
+spec-007 registry doctrine contract is untouched. Spec 063 ([[grounded-feedback]])
+adds the guardian's report-card critique kind (`report_card`) on the
+identical one-line-entry shape, into the SAME `metatron` class — same actor,
+`DegradeSkip` (an unavailable chain means the deterministic card parts
+stand alone), event-triggered at stopping points, never cadence-scheduled.
+`kindToClass` maps every LLM
 call kind (as a string, keeping the package leaf) to a class; `ValidateKinds` enforces FR-002 at daemon start
 — an unmapped kind, a non-Fibonacci point value, or a non-positive budget is
 a fatal startup error. `Degrade` names the suppression floor: `skip`

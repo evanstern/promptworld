@@ -11,7 +11,7 @@ sources:
   - internal/sim/terrain.go
   - internal/sim/morgue.go
   - internal/sim/curriculum.go
-verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
+verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
 ---
 
 # Sim state & reducer
@@ -145,7 +145,12 @@ these events, this state being the replayable authority — and, since spec 048
 ([[world-tuning]]), the effective world-tuning dial set: `Tuning *TuningState`
 (`omitempty`, the Journal/Hail/Map pointer precedent — nil means the five
 promoted doctrine defaults, set only by the `sim.tuning_applied` arm below, no
-`format_version` bump)
+`format_version` bump) — and, since spec 063 ([[grounded-feedback]]), the
+guardian's latest attribution note: `GuardianReportCard *GuardianReportCard`
+(`omitempty`; `{Tick, Seq, Fingerprint, Note, Citations}` — the reducer keeps
+only the most recent card, the `Tuning`/`Journal` pointer-precedent's
+single-value sibling, since re-opening the console card seam re-reads the
+stored note rather than re-grading; nil until the first card lands)
 (executor types in `agents.go`; memories belong to
 [[agent-mind]]). Its
 `Apply(event)` method is the **only** event-driven mutation path — the live loop and
@@ -347,6 +352,12 @@ aligns each death against. `morgue.epilogue` dispatches to
 `applyMorgueEpilogue` in `morgue.go` (spec 044 US2): it validates the agent
 index (`-1` = the run-end epilogue) and non-empty text, then appends the
 bounded `State.MorgueEpilogues` ring (`morgueEpilogueCap` 32).
+`guardian.report_card` (spec 063, [[grounded-feedback]]) dispatches to
+`applyReportCard` in `reportcard.go`: validate-not-clamp like the arms
+above — non-empty fingerprint, non-empty note capped at 1200 runes, and
+every cited seq strictly less than the event's own seq (a card can never
+cite the future) — then keeps only the LATEST card on
+`State.GuardianReportCard`; the log alone carries every prior card.
 The `curriculum.*` pair (spec 046, [[curriculum-ladder]]) dispatches to
 `applyCurriculum` in `curriculum.go` — validate-not-clamp, the guardian arm's
 contract, since both types are the executor emission class (pure functions of
@@ -509,7 +520,10 @@ this reducer owns only the `State.Tuning` field and the one idempotent arm.
 [[scenario-machinery]] owns the unexported `State.scenario` field's type and
 lifecycle (`ArmScenario`), sharing the `State.m` unserialized-boot-frozen
 precedent this reducer documents, plus the `GuardianOrder.PlacedSeq` field
-this reducer's `applyGuardian` arm stamps.
+this reducer's `applyGuardian` arm stamps. [[grounded-feedback]] owns
+`State.GuardianReportCard`'s producer (`internal/guardian`'s report-card
+worker) and consumer (the console card seam); this reducer owns only the
+field and the one validate-not-clamp `applyReportCard` arm.
 
 ## Operational notes
 

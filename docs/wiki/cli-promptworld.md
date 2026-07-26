@@ -10,7 +10,7 @@ sources:
   - cmd/promptworld/work.go
   - cmd/promptworld/divergence.go
   - cmd/promptworld/stages.go
-verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
+verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
 ---
 
 # promptworld CLI
@@ -281,7 +281,10 @@ ambiguous or unknown names exit 1). `worldArg`/`parseWorldFlags` wrap the older
   [[curriculum-ladder]]) — the ladder's front door: an informed identity
   table over all four stages (always all four, never a difficulty menu), each
   row pairing the active skin's display identity (`skin.Stage` — name +
-  one-line identity) with the skin-independent ladder facts (`stagesLadder`,
+  one-line identity) with the skin-independent ladder facts (`stagesLadder` —
+  since spec 063 a plain alias onto `internal/world.StagesLadder`, relocated
+  there so the TUI help overlay's D9 guardian section can read the same
+  table without `internal/tui` importing package `main`, [[grounded-feedback]] —
   mirroring the spec's table: the concept taught, what the world grants, and
   the evidence that unlocks the next stage — stage-4's reads "nothing — this
   is graduation") plus the earned state from the per-user unlocks record

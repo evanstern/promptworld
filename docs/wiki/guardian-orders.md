@@ -15,7 +15,7 @@ sources:
   - internal/llm/llm.go
   - internal/llm/config.go
   - internal/daemon/daemon.go
-verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
+verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
 ---
 
 # Guardian's standing orders

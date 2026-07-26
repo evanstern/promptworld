@@ -13,7 +13,7 @@ sources:
   - internal/sim/guardian.go
   - internal/persona/charter.go
   - internal/skin/skin.go
-verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
+verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
 ---
 
 # Guardian
@@ -65,7 +65,11 @@ so restore/empty/unreadable fallbacks serve the world's preset rather than bare
 `persona.DefaultCharter`), then —
 since spec 036 — any persona SOUL fragments from the boot-frozen bundle surface
 (`mt.bundles.SoulFragments()`, load order, each ≤4,000 chars, validated at boot
-by [[bundle-tools]]; zero fragments leaves the prompt byte-identical), then the
+by [[bundle-tools]]; zero fragments leaves the prompt byte-identical), then —
+since spec 063 ([[grounded-feedback]]) — the compiled-in tutor guide
+(`persona.TutorGuide`) on a tutor-preset world ONLY (keyed on the charter
+preset, not the stage, so a tutor world keeps its guide as it climbs the
+ladder; `""` and byte-inert everywhere else, FR-004), then the
 skill files (spec 021: `loadSkills` composes eligible `skills/*.md` — regular `.md`
 direct children, ascending bytewise filename order, ≤8 files, ≤4,000 chars each via
 `persona.CharterMaxChars`, each under a `--- skill: <name> ---` separator, with the
@@ -97,14 +101,21 @@ guardian's own narration stays honest about what it may do unprompted. The
 frame also carries the acting-tool guidance DERIVED from the registry
 (`tool.GuardianToolGuidance` over the world's granted roster, [[tool-registry]]) —
 the old hand-written prose tool list is gone, so described ≡ declared by
-construction. The turn also stacks live status (clock, ⚡ bank, roster),
+construction. Since spec 063 ([[grounded-feedback]]) a sibling
+`tool.GuardianReadGuidance` renders any granted READ tool's own paragraph
+(today, `explain`) — composed BEFORE the acting block so the acting
+doctrine's own closing sentence stays the prompt's LAST byte (the frame
+invariant the adversarial battery pins); empty and byte-inert when the
+roster grants no read tool. The turn also stacks live status (clock, ⚡ bank, roster),
 queued moments, the [[chronicle]] tail (the guardian reads its village's story — this
 grounds fresh reigns and upgraded worlds), its soul tail, and recent transcript. The
 model may reply with words (**converse** — the transcript-only final-answer channel,
 `toolloop.Result.Final`; `converse` is deliberately NOT a declared loop tool, so it
 can never be rejected as unknown) or call exactly one acting tool. Since spec 029
 the declared loop roster is `send_vision`/`send_omen`/`monitor_and_act`/
-`cancel_order`/`work_miracle`/`pause`/`start`/`adjust_speed`
+`cancel_order`/`work_miracle`/`pause`/`start`/`adjust_speed` — plus, since
+spec 063, `explain` appended last ([[grounded-feedback]]'s read-only
+mechanics-facts tool, `Effect: Read`, never the turn's mediated act) —
 (`tool.LoopRosterGuardian`, in that order) — the retired `nudge_dream`/`nudge_omen`
 forms are gone from the registry — or fewer: since spec 021 the world's
 `capabilities.json` gates the roster per-read through three independent layers, one
@@ -123,8 +134,15 @@ declaration, prose, and handlers alike. The stage-1/-2 ceiling
 (`stage1CeilingTools`) is `send_omen`/`send_vision`/`monitor_and_act`/
 `cancel_order` with NO miracle kinds and no bundle tools (a ratified TASK-119
 amendment added the two standing-order tools, since the first-night exercise
-teaches the watch as a stage-1 primitive); stage-3, stage-4, and a pre-ladder
-world (`stage == ""`) impose no ceiling ([[curriculum-ladder]]). Spec 036
+teaches the watch as a stage-1 primitive) — plus, since spec 063, `explain`
+(read-only, zero-cost, tutor-lane by construction: it is the tutor guide's
+own grounding tool and stage-1 IS the orientation stage, so it widens no
+acting capability, [[grounded-feedback]]); stage-3, stage-4, and a pre-ladder
+world (`stage == ""`) impose no ceiling ([[curriculum-ladder]]). `guardian.
+StageCeilingVerbs(stage)` exports the ceiling's granted loop-tool names in
+registry order — the SAME intersection this applies — for the TUI help
+overlay's D9 guardian section to teach from without a second hand-maintained
+list ([[grounded-feedback]], [[tui-client]]). Spec 036
 extends the same composition with the bundle surface
 ([[bundle-tools]]): `runTurn` narrows the world grant by each persona bundle's
 `capabilities.json` via `narrowGrantForBundles`/`intersectGrant` (intersection —
@@ -334,6 +352,13 @@ construct an act; the guardian acts only when the player asks OR a standing orde
 player placed authorizes it (spec 029 relaxed the old "acts only when told" contract
 to admit pre-authorized triggered turns — see [[guardian-orders]]).
 
+**Report cards** (spec 063 US4, `reportcard.go`): a sibling stopping-point
+consumer on the SAME digest-worker notify pattern — see
+[[grounded-feedback]] for the full producer (activity trail, stopping-point
+triggers, the cheap-chain critique, citation validation) and
+[[takeover-surfaces]] for the shared rubric-checklist renderer the console
+card seam and the postmortem/ceremony takeovers compose it beside.
+
 **Files** (bound to the run, not event-sourced): `charter.md` at the save-dir root
 (seeded by `persona.Genesis` — since spec 046 with an optional preset parameter,
 so a `"tutor"` world seeds `persona.TutorCharter` — never overwritten), plus the
@@ -399,11 +424,16 @@ doctrine this note's stage ceiling and charter lock enforce. [[guardian-orders]]
 exemptions, the live hysteresis matcher, and the survival-turn frame this
 note's `buildTurnSystemPrompt` composes; [[daemon-lifecycle]] seeds them at
 boot (`seedSurvivalWatches`); [[guardian-miracles]] owns the spec-059 miracle
-targeting digest this note's Miracles section describes. Specs:
+targeting digest this note's Miracles section describes. [[grounded-feedback]]
+(spec 063) owns the `explain` tool and its `GuardianReadGuidance` prompt
+paragraph, the compiled-in tutor guide this note's turn assembly composes,
+and the report-card producer sharing this component's digest-worker
+pattern; [[takeover-surfaces]] (spec 056) is the TUI-side consumer of the
+report card's rubric checklist. Specs:
 `specs/005-metatron/`, `specs/016-metatron-miracles/`,
 `specs/017-agent-tool-loop/`, `specs/021-metatron-instruction-surface/`,
 `specs/029-metatron-agency/`, `specs/046-curriculum-ladder/`,
-`specs/059-metatron-survival-autonomy/`.
+`specs/059-metatron-survival-autonomy/`, `specs/063-grounded-feedback/`.
 
 ## Operational notes
 
