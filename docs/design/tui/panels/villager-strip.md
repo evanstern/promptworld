@@ -2,7 +2,7 @@
 title: Panel — villager strip
 class: panel
 status: shipped
-verified_against: 2f1044b326023d26fda33a3c70de61f6e6563b0c
+verified_against: 1b3fe329e64431b66f9995a1f8c8e5fc979dafb7
 sources:
   - internal/tui/views.go
   - internal/tui/layout.go
