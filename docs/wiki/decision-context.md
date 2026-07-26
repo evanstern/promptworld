@@ -14,7 +14,7 @@ sources:
   - internal/sim/memory.go
   - internal/sim/plan.go
   - internal/sim/guard.go
-verified_against: 7e3c2b5f5f23eb8e5fcb37d0f867dbc6f46a289b
+verified_against: 30912a9cd5d2334f76425ac8ca5b74a7a7c90876
 ---
 
 # Decision context (per-turn context grounding)

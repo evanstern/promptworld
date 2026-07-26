@@ -22,7 +22,7 @@ sources:
   - cmd/promptworld/commands.go
   - internal/ipc/protocol.go
   - internal/ipc/server.go
-verified_against: 7e3c2b5f5f23eb8e5fcb37d0f867dbc6f46a289b
+verified_against: 30912a9cd5d2334f76425ac8ca5b74a7a7c90876
 ---
 
 # Scenario machinery (incident schedule + rubric)

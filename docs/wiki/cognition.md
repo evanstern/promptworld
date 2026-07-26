@@ -1,6 +1,6 @@
 ---
 name: cognition
-description: The cognition horizon substrate — decision-class registry (Fibonacci points, game-tick staleness budgets), seconds-per-point estimation with spike rejection, deterministic LLM-vs-reflex routing, the calibration profile, and the adaptive-throttle debt/governor feedback controller
+description: The cognition horizon substrate — decision-class registry (Fibonacci points, 1x staleness budgets scaled by clock speed at the delivery gates via EffectiveBudgetTicks, spec 067), seconds-per-point estimation with spike rejection, deterministic LLM-vs-reflex routing, the calibration profile, and the adaptive-throttle debt/governor feedback controller
 kind: component
 sources:
   - internal/cognition/doc.go
@@ -12,7 +12,7 @@ sources:
   - internal/cognition/horizon.go
   - internal/cognition/governor.go
   - internal/sim/cognition.go
-verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
+verified_against: 30912a9cd5d2334f76425ac8ca5b74a7a7c90876
 ---
 
 # Cognition horizon
@@ -33,7 +33,15 @@ never the reverse.
 `DecisionClass{Class, Points, BudgetTicks, Degrade, FutureDated}`. `Points` is
 the thought cost in Fibonacci points (the closed set 1/2/3/5/8/13 — ordinal,
 host-independent, a property of the prompt shape); `BudgetTicks` is the
-staleness budget in game ticks (a property of the fiction). Six classes are
+staleness budget in game ticks AT 1x — wall-clock patience (spec 067,
+TASK-141). The scheduling gates (`Route`/`RoutePaused`, governor debt, every
+horizon surface) hold it fixed against the fiction, while the delivery gates
+(the [[sim-loop]] landing rung, [[social-fabric]]'s scene pre-abort) enforce
+it scaled by the event-sourced clock speed through
+`EffectiveBudgetTicks(ticksPerSecond)` — `BudgetTicks × ticksPerSecond`, the
+base budget unscaled at uncapped speed — so a constant-wall-time thought is
+judged the same at every capped speed instead of dying rejected-stale above
+~4x on local tiers. Six classes are
 registered (`planner` 3pt/1200t degrading to reflex, `conversation`
 13pt/7200t, `meeting` 2pt/3600t degrading to a template, `consolidation`
 5pt/28800t, `chronicle` 5pt/86400t, `metatron` 5pt/86400t); values are
@@ -294,9 +302,17 @@ termination (landed / model_done / cap_exhausted); the failure family
 mirroring the single-shot worker's own successes-only doctrine so a governor
 observation is always a completed cognition's true cost, never a fragment of
 one or a fast failure. The [[sim-loop]] enforces the budget at landing:
-an intent whose measured staleness exceeds its class's `BudgetTicks` is
-rejected (`OutcomeRejectedStale`) at the injection door in
-`internal/sim/loop.go`. The daemon ([[daemon-lifecycle]]) runs `ValidateKinds`
+an intent whose measured staleness exceeds its class's
+`EffectiveBudgetTicks` at the reducer's own event-sourced effective speed
+(spec 067 — pure, replay-safe) is rejected (`OutcomeRejectedStale`) at the
+injection door, with the reason naming the scaled budget and its derivation
+(`staleness 9800 > budget 9600 (1200 at 1x × 8x)`). The split is doctrine:
+scheduling gates pace cognition against the fiction, delivery gates forgive
+queue-inflated latency against the wall. The residual gap is documented, not
+closed (spec 067 FR-006): a thought whose WALL latency exceeds `BudgetTicks`
+seconds still dies rejected-stale at every capped speed while the horizon —
+which predicts from calibrated per-call latency, excluding endpoint queue
+wait — keeps reporting the class healthy. The daemon ([[daemon-lifecycle]]) runs `ValidateKinds`
 before any model is reachable and seeds the estimators from the profile;
 [[cli-promptworld]]'s `calibrate` subcommand benchmarks the host+model and
 writes the profile, delegating its own horizon printout to `HorizonSummary`.
@@ -347,5 +363,6 @@ longer than `PlanStepCap` still lands, truncated to the first `PlanStepCap`
 steps, and this outcome distinguishes that clamped acceptance from a clean one
 in the `cog.outcome` trail — the reducer-side (`sim`) outcome-vocabulary
 analog of `toolloop.VerdictLandedClamped` one layer down, not the same value.
-Budgets are never widened automatically — persistent
-suppression or rejection on one class is a human retune signal.
+Base budgets are never widened automatically — the spec 067 speed scaling is
+fixed arithmetic over the event-sourced clock rate, not an adaptive widening;
+persistent suppression or rejection on one class is a human retune signal.
