@@ -1,13 +1,12 @@
 ---
 name: scenario-machinery
-description: The spec-054 scenario incident-schedule + rubric core, grown by spec 077 — ArmScenario compiling an authored Schedule, the director-lite incident source landing four incident kinds (gru_emerges, cold_snap, forage_blight, stranger_arrives), and the generalized rubric emitter (per-exercise dawn boundaries, sanctioned-constructor evidence) for curriculum.exercise_passed/stage_unlocked across the nine-exercise catalog. Surfacing/wiring split to [[scenario-machinery-surfacing]].
+description: The spec-054 scenario incident-schedule core, grown by spec 077 — ArmScenario compiling an authored Schedule into the boot-frozen unserialized runtime, and the director-lite incident source (scheduleSource) landing four incident kinds (gru_emerges, cold_snap, forage_blight, stranger_arrives) as reducer-valid unmarked events. The rubric emitter/evidence/exercise-catalog half is split to [[scenario-rubric]]; surfacing/wiring to [[scenario-machinery-surfacing]].
 kind: component
 sources:
   - internal/sim/scenario.go
   - internal/sim/curriculum.go
   - internal/sim/executor.go
   - internal/sim/gru.go
-  - internal/sim/guardian.go
   - internal/sim/state.go
 verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
 ---
@@ -24,6 +23,8 @@ pass boundary. Both are the EXECUTOR EMISSION CLASS (the
 `metatron.order_expired`/`charge_regenerated` precedent): pure functions of
 (state, boot-frozen scenario config, tick), no LLM, no injection door — the
 recorded events are the only latches, so a restart or replay resumes exactly.
+This note covers the incident half; the rubric emitter, its evidence
+assembly, and the nine-exercise catalog are split to [[scenario-rubric]].
 Downstream surfacing (status/CLI, manifest, boot wiring, narration, TUI):
 [[scenario-machinery-surfacing]].
 
@@ -96,59 +97,15 @@ per tile (idempotent on re-apply — already-harvested tiles skip), so a
 blighted tile IS a harvested tile with a long regrow: perception,
 mental-map correction, and `sim.forage_regrown` all work unchanged.
 
-**Emission — the rubric** (`scenarioRubricEvents`, called from
-`stepEvents` immediately AFTER every emitter and BEFORE run-end detection,
-only when `s.scenario != nil`; GENERALIZED by spec 077 FR-003 — the
-spec-072 first-night-only guard is retired): at the exercise's boundary
-dawn (`boundaryDue(def, nextTick)` over `ExerciseDefinition.BoundaryDay` —
-N > 0 evaluates at dawn of day N only, a miss emits nothing forever; 0 is
-rolling, every dawn from day 2 until a pass lands; always the same
-`sim.day_started` arithmetic), with no rubric-violating `agent.died` in
-THIS batch (a same-tick death is not yet folded into `s`, so an all-dead
-dawn is a fail, never a photo-finish pass — the guard applies to EVERY
-exercise) and every `EvaluateRubric` term satisfied, emits
-`curriculum.exercise_passed` plus, same batch, `curriculum.stage_unlocked`
-when `sim.EvaluateUnlock` grants ([[curriculum-ladder]]) — pass first,
-once-only via the state latch `hasCurriculumPass` (belt) ahead of the
-reducer's own `StagesUnlocked` duplicate rejection (suspenders). Failure
-emits NOTHING: `run.ended` is the sole fail signal (`sim.ExerciseOutcome`
-below), never an event of its own.
-`EvaluateRubric(s, def, tick) []RubricTerm{Label, Event, Met, Count}` is the
-shared derivation this emitter's pass precondition, the exercise panel's
-live gauges, AND every report-card surface (spec 072's shared resolver,
-[[report-card-renderer]]) read. EVERY cataloged exercise carries a
-production arm (spec 077 FR-002, sweep-tested — no cataloged id reaches the
-default pending arm): `firstNightRubric`, `theLawRubric` (law term over the
-adopted-ever `State.Norms` ledger; charter term = the shared
-`charterInForce` helper over `CharterFingerprint`/`CharterCustom`), and
-seven spec-077 arms (`coldDawnRubric` … `stewardsChargeRubric`) built from
-shared pure helpers — `surviveToDawn`, `noDeaths`, `deathsByCause` (the
-spec-044 `DeathRecord.Cause` vocabulary), `charterInForce`, `skillsInForce`
-(over the `metatron.skills_observed`-persisted `SkillsFingerprint`),
-`nothingTaken` (the zero-wanted `StrangerTakes`-ledger term — Met at
-genesis, an empty ledger IS the claim), `storedFoodTotal` (chest stores +
-pile batches), and `playerOrderSince` (earliest player order at/after a
-tick — toolsmith's acted-under-it conjunct). An exercise without an arm
-still renders its `RubricTerms` as unevaluated pending rows (the honest
-default, kept for future non-evaluator content).
-**Evidence** (spec 077 FR-004) assembles through the sanctioned
-constructors ONLY, keyed by satisfied term type (`rubricEvidence`):
-`metatron.order_placed` → `OrderPlacedEvidence` over the exercise's
-qualifying order (`evidenceOrder`: `firstNightWatch` for the watch-shaped
-exercises, `playerOrderSince(SkillsObservedTick)` for toolsmith);
-`metatron.charter_observed` → `CharterEvidenceFromState` (reads the
-`CharterObservedSeq/Tick` coordinates the charter arm now persists, plus
-`Custom: CharterCustom` — spec 072 FR-009's blocker removed);
-`metatron.skills_observed` → `SkillsObservedEvidence` (`Custom: true` by
-construction — skill files bind only from stage-3 and only players author
-them; the stage-3→4 gate's long-deferred evidence design). When a
-satisfied charter/skills term's coordinates are not yet on state (a
-pre-077 snapshot), the pass WAITS — honest degradation, self-healing on
-the next observation; order evidence keeps the shipped skip-not-block
-posture. Failure is never emitted: `ExerciseOutcome(s, exercise)` derives
-`in_progress` / `passed` / `failed` purely from replica facts
-(`hasCurriculumPass` vs `s.Ended`) — shared by the loop's status composer
-and the exercise panel's banner, so every surface reports the same word.
+**Emission — the rubric** ([[scenario-rubric]], the split-off second half):
+`scenarioRubricEvents`, called from `stepEvents` immediately AFTER every
+emitter and BEFORE run-end detection, watches the same replica for the
+exercise's boundary dawn and emits `curriculum.exercise_passed` (plus
+`curriculum.stage_unlocked` when `sim.EvaluateUnlock` grants) once every
+`EvaluateRubric` term is satisfied — pass-only emission, sanctioned-
+constructor evidence, `ExerciseOutcome` as the shared outcome word. The
+rubric arms, evidence rules, and the nine-exercise catalog live in the
+child note.
 
 **Incident visibility** (reorientation D4): `IncidentVisibilityFor(def,
 stage)` resolves the forecast/fog vocabulary — detail in
@@ -162,33 +119,18 @@ fifth TUI dock tab present only on a scenario world.
 ## Connections
 
 [[curriculum-ladder]] owns the `ExerciseDefinition` content consumed here
-(`ScenarioExercises`, `Schedule`, `IncidentVisibility`) and the
-`EvaluateUnlock` gate `scenarioRubricEvents` calls; [[executor]] hosts both
-emission call sites inside `stepEvents`; [[gru]] shares the night-emergence
-preemption (`gruScheduledTonight`); [[event-types]] catalogs
-`curriculum.exercise_passed`/`stage_unlocked` and `GuardianOrder.PlacedSeq`;
-[[guardian-orders]] owns `PlacedSeq`'s stamping (`stampSeqs`) that
-`OrderPlacedEvidence` re-locates; [[sim-state-reducer]] owns the unexported
-`State.scenario` field, sharing the `State.m` precedent;
-[[scenario-machinery-surfacing]] is the split-off child covering every
-downstream surface.
+(`ScenarioExercises`, `Schedule`, `IncidentVisibility`); [[scenario-rubric]]
+is the split-off rubric half (arms, evidence, catalog); [[executor]] hosts
+both emission call sites inside `stepEvents`; [[gru]] shares the
+night-emergence preemption (`gruScheduledTonight`); [[event-types]] catalogs
+the `curriculum.*` and `sim.*` incident event shapes;
+[[sim-state-reducer]] owns the unexported `State.scenario` field, sharing
+the `State.m` precedent; [[scenario-machinery-surfacing]] is the split-off
+child covering every downstream surface.
 
 ## Operational notes
 
-Nine exercises ship (`sim.ScenarioExercises`, spec 077 FR-001 — 3/2/2/2 by
-stage, seeds 46101–46109 unique): stage-1 `first-night` (46101, day-2
-boundary, gru_emerges), `cold-dawn` (46103, day-2, cold_snap 8h),
-`stranger-at-the-gate` (46104, day-2, stranger_arrives); stage-2 `the-law`
-(46102, ROLLING — its pass emission is real since spec 077: evidence via
-`CharterEvidenceFromState`, unlocking stage-3 without `--override`) and
-`blighted-larder` (46105, day-4, forage_blight r4 — banked-food floor
-`blightedLarderFoodFloor` pinned beside the definition); stage-3
-`toolsmith` (46106, rolling — the skills-evidence exercise whose pass first
-opens the stage-3→4 gate in production) and `fog-watch` (46107, day-3,
-cold_snap + gru under fog visibility); stage-4 `long-winter` (46108, day-4,
-all four kinds across three nights) and `stewards-charge` (46109, rolling —
-law + charter + skill file + zero deaths; stage-4 passes graduate, no
-unlock). `TestScenarioSchedulesCompile` pins every cataloged schedule
-compiles at boot (a compile error here is a content bug, never a runtime
-one); `TestSchedulePositionsValidPerSeed` pins every authored position
-valid on its own seed's map.
+The nine-exercise catalog (seeds 46101–46109), including each exercise's
+schedule and boundary, lives in [[scenario-rubric]]'s operational notes,
+alongside the schedule-compile and per-seed position-validity tests
+(`TestScenarioSchedulesCompile`, `TestSchedulePositionsValidPerSeed`).

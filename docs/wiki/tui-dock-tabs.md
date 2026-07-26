@@ -1,6 +1,6 @@
 ---
 name: tui-dock-tabs
-description: The dock's tab bar, the guardian tab's skin-resolved label, the guardian console full-height page, the chronicle/guardian/systems tab contents (LLM provider table, cognition horizon block, standing-orders block), and the look-cursor mode's transient TILE-view borrow of the dock body. Split from [[tui-client]]; the villagers tab is its own sibling note, [[tui-villagers-tab]]. Read when touching tui.go's dock dispatch, the console/tab rendering in views.go, or look.go's TILE view.
+description: The dock's tab bar, the guardian tab's skin-resolved label, the guardian console full-height page, the chronicle/guardian/systems tab contents (LLM provider table, cognition horizon block, standing-orders block), and the scenario-only exercise tab. Split from [[tui-client]]; the villagers tab is [[tui-villagers-tab]] and the look-cursor TILE-view borrow is [[tui-dock-tile-view]]. Read when touching tui.go's dock dispatch or the console/tab rendering in views.go.
 kind: component
 sources:
   - internal/tui/tui.go
@@ -104,55 +104,20 @@ every report-card surface read ([[report-card-renderer]]), so the panel,
 the emitter, and the cards can never disagree; both cataloged exercises
 evaluate for real), an incident-schedule line under forecast
 visibility (omitted, never blanked, under fog), and a pass/fail banner once
-`sim.ExerciseOutcome` resolves ([[scenario-machinery]] owns the whole
-subsystem). `paneKey`/`dockTabKey` extend to `6`; `nextDockTab`/`prevDockTab`
+`sim.ExerciseOutcome` resolves ([[scenario-machinery]] owns the incident
+machinery, [[scenario-rubric]] the rubric derivation). `paneKey`/`dockTabKey` extend to `6`; `nextDockTab`/`prevDockTab`
 became `Model` methods so the dock-cycle order can consult `exerciseID()`
 and include or skip the tab.
 
-## Look-cursor's TILE view (spec 074-look-cursor, TASK-142)
+## Look-cursor's TILE view — split to [[tui-dock-tile-view]]
 
 While the look-cursor mode ([[tui-map-view]]'s own section owns entry/
 movement/camera) is active, the dock body is **borrowed** by a transient
-TILE view — [[tui-input-help]]'s keymap-doctrine parent covers the mode's
-key layer; this note covers the borrow itself, since it lands on the dock
-this note owns. It is deliberately NOT a sixth tab: no `pane` enum value, no
-key digit, no membership in `nextDockTab`/`prevDockTab`'s cycle. `dockTabsRow`
-renders every real tab label dim-inactive and appends a highlighted
-`TILE (x,y)` pseudo-label in place of the usual active highlight;
+TILE view (spec 074, TASK-142) — deliberately not a sixth tab:
 `dockTabContent` short-circuits to `tileBody` (`look.go`) before ever
-reading `Model.dockTab` — so a tab's own state (chronicle selection/scroll,
-villager selection, whatever the previously-active tab was showing)
-survives the borrow **by construction**, never merely by careful
-bookkeeping: nothing about it changed while borrowed.
-
-The TILE body itself: a header (`TILE (x,y) · <tile registry meaning>` plus
-warmth/light meter lines derived from `sim.EnvAt` — [[gru]]/
-[[executor-world-state]] own the sim-side derivation) followed by rows in
-Discworld's fixed hierarchy — agents (needs bars + current intent; the
-[[gru]] joins this band non-drillably when abroad on the tile) → piles/
-chests (reusing `summarizePileContents`/`describeChest`, [[tui-map-view]]'s
-own inspection-line renderers) → structures (registry names, fire lit/
-dying/cold, wall damaged+HP, grave) → terrain (one row, the same effective-
-kind resolution `tile()` uses) → recent recorded-position events
-(`tileEvents`, filtered through the SAME `subjectRegistry` jump-to-source
-uses, but keeping the event's own recorded payload coordinates rather than
-preferring a live actor position — an event belongs to where it happened,
-not wherever its actor has since wandered). `⏎`/`tab` from the map cursor
-moves keyboard focus into this pane (amber border,
-[[tui-input-help]]'s focus-contract parent, rule 2 — drawn focus, never a
-text-capture client); `j`/`k` select a row, `⏎` drills into an agent
-(reusing the villager-detail renderer family), an event (reusing
-`formatInspector`/`chronicleDetailPane`'s raw-JSON family — the FR-020
-"plain language by default, raw behind an explicit drill" boundary), or a
-chest/pile's contents. A `tileHitRegion` (the `chronHitRegion` pattern)
-records the rendered row-list geometry each frame for the click half of
-mouse parity: a row click selects it (acquiring pane focus), a second click
-on the already-selected row drills in.
-
-Opening the guardian console (`G`) or a solo zoom (the mode's own digit
-exit-and-select) ends the borrow first — it never survives underneath a
-body-replacing surface; the help overlay and a takeover layer ABOVE it
-instead, restoring it unchanged on dismissal.
+reading `Model.dockTab`, so every real tab's state survives the borrow by
+construction. The pseudo-label, tile row hierarchy, drill-ins, mouse hit
+regions, and end conditions live in [[tui-dock-tile-view]].
 
 ## Back to parent
 
