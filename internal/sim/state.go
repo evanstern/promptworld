@@ -870,6 +870,13 @@ func (s *State) Apply(e store.Event) error {
 		// previous record, if still open, stays open — an override reads as
 		// open-then-new, order preserved (data-model.md).
 		a.appendIntent(IntentRecord{Goal: p.Goal, Source: p.Source, Reason: p.Reason, Tick: e.Tick})
+		// Spec 083 (FR-001): a class intent proves the mind engaged for that
+		// need, whatever the outcome — stamp the need's zero-intent clock.
+		// Source-agnostic on purpose (reflex, planner, plan, meeting all
+		// count: any scheduled class intent is engagement).
+		if need := needClassOf(p.Goal); need != "" {
+			a.neglect().setClassIntent(need, e.Tick)
+		}
 	case "agent.work_started":
 		var p WorkStartedPayload
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
@@ -1744,6 +1751,40 @@ func (s *State) Apply(e store.Event) error {
 			snap := a.Needs
 			a.NeedsAnchor = &snap
 			a.NeedsAnchorTick = e.Tick
+		}
+		// Spec 083 (FR-001): maintain the neglect band-entry anchors from the
+		// folded absolute values — set on the downward crossing, cleared with
+		// the episode's fired latch on recovery to/above the band. Same band
+		// constants as the sweep and the PREP gate (one home). Allocation is
+		// lazy: an agent whose needs never dip keeps a nil Neglect (pre-083
+		// snapshot byte-identity).
+		for _, need := range neglectNeedOrder {
+			switch {
+			case needValue(a.Needs, need) < recoveryDangerBand(need):
+				if a.Neglect.Since(need) == 0 {
+					a.neglect().setSince(need, e.Tick)
+				}
+			case a.Neglect != nil:
+				a.Neglect.setSince(need, 0)
+				a.Neglect.setFired(need, false)
+			}
+		}
+	case "sim.neglect_detected":
+		// Spec 083 (FR-001): the detector's own event latches the episode —
+		// one injection per (agent, need) episode; the latch clears only when
+		// the needs arm above sees the need recover to/above its band. Nothing
+		// else folds here: the companion memory rides its own
+		// agent.memory_added, and Level/Since are for consumers, not state.
+		var p NeglectDetectedPayload
+		if err := json.Unmarshal(e.Payload, &p); err != nil {
+			return fmt.Errorf("apply %s: %w", e.Type, err)
+		}
+		a, err := agent(p.Agent)
+		if err != nil {
+			return err
+		}
+		if isRecoveryNeed(p.Need) {
+			a.neglect().setFired(p.Need, true)
 		}
 	case "agent.died":
 		var p DiedPayload

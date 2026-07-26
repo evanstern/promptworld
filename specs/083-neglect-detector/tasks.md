@@ -17,17 +17,17 @@ wiki-in-PR obligations and close-out.
 
 ## Phase 1: Setup
 
-- [ ] T001 Worktree ready (claim already landed per TASK-160 flow): from
+- [X] T001 Worktree ready (claim already landed per TASK-160 flow): from
       `.worktrees/task-133`, merge fresh `origin/main` INTO the branch if stale (never
       rebase), then baseline `go test ./internal/sim/ ./internal/tui/` green before
       changes
 
 ## Phase 2: Foundational — derived state, class dictionary, reducer arms (blocks all)
 
-- [ ] T002 `NeglectState` struct + `Neglect *NeglectState` omitempty pointer on `Agent`
+- [X] T002 `NeglectState` struct + `Neglect *NeglectState` omitempty pointer on `Agent`
       + need-keyed accessors + `neglectWindowTicks = 7200` doctrine const block, in
       `internal/sim/agents.go` (plan D1, data-model §1/§5, spec FR-001/005)
-- [ ] T003 `needClassGoals` map + `needClassOf` beside the goal-resolver registry, in
+- [X] T003 `needClassGoals` map + `needClassOf` beside the goal-resolver registry, in
       `internal/sim/policy.go`; `TestNeedClassGoalsResolve` pins every member resolves
       (anti-rot), in `internal/sim/policy_test.go` (plan D1, data-model §6, spec FR-003)
 - [ ] T004 Extend the `agent.needs_changed` arm (band anchors set/clear + latch clear
@@ -35,7 +35,7 @@ wiki-in-PR obligations and close-out.
       add the `sim.neglect_detected` arm (Fired latch), in `internal/sim/state.go`
       (~1718 / ~845); arm unit tests in `internal/sim/neglect_test.go` (plan D1,
       data-model §2, spec FR-001)
-- [ ] T005 `rebaseTicks` shifts the six `*Since`/`*Intent` anchors (non-zero only) +
+- [X] T005 `rebaseTicks` shifts the six `*Since`/`*Intent` anchors (non-zero only) +
       taxonomy doc-comment rows, in `internal/sim/miracles.go`; extend the rebase test
       (plan D1, data-model §7, spec FR-009)
 
@@ -47,14 +47,14 @@ replay-visible, reducer-only writes.
 **Independent Test**: scripted-history fold → sweep fires once, memory added,
 generation bumps; genesis replay hash-identical.
 
-- [ ] T006 [US1] `NeglectDetectedPayload` beside `NeedsPayload`/`DiedPayload` in
+- [X] T006 [US1] `NeglectDetectedPayload` beside `NeedsPayload`/`DiedPayload` in
       `internal/sim/agents.go` (~1262) (plan D2, data-model §3, spec FR-004)
-- [ ] T007 [US1] Factored pure predicate `NeglectDue(a *Agent, need string, tick int64)
+- [X] T007 [US1] Factored pure predicate `NeglectDue(a *Agent, need string, tick int64)
       bool` (pre-tick state only, exported for the D5 probe) + the heartbeat sweep in
       the `%60` block beside the near-death latch — awake-only, fixed need order, event
       then companion memory in-batch — in `internal/sim/executor.go` (plan D2, spec
       FR-004/008)
-- [ ] T008 [US1] `salNeglect = 9` in the salience table (interrupt-band rationale
+- [X] T008 [US1] `salNeglect = 9` in the salience table (interrupt-band rationale
       comment — research R6) + the three fixed per-need voice-of-evidence texts
       (`OriginWitness`, `Why` empty), in `internal/sim/memory.go` (plan D2, data-model
       §4, spec FR-006)

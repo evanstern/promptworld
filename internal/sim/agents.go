@@ -298,6 +298,16 @@ type Agent struct {
 	// time snap (see rebaseTicks doctrine, miracles.go).
 	NeedsAnchor     *Needs `json:"needs_anchor,omitempty"`
 	NeedsAnchorTick int64  `json:"needs_anchor_tick,omitempty"`
+	// Neglect (spec 083) is the death-by-neglect detector's derived substrate:
+	// per survival need, when it entered its critical band, when a class
+	// intent last landed, and whether this episode already fired. Written
+	// ONLY by the needs_changed / intent_set / sim.neglect_detected reducer
+	// arms; lazily allocated on first non-zero write (replay-identical — the
+	// arms are deterministic). A POINTER with omitempty (the Journal/Hail/Map
+	// precedent) so a pre-083 snapshot (field absent) round-trips
+	// byte-identically. Its tick anchors are SHIFT under rebaseTicks
+	// (miracles.go taxonomy).
+	Neglect *NeglectState `json:"neglect,omitempty"`
 }
 
 // AgentHail is the courtesy pause a talk_to landing lays on its target: who
@@ -957,6 +967,179 @@ func isMindSource(source string) bool {
 	}
 }
 
+// --- spec 083 (neglect detector): death-by-neglect doctrine -----------------
+//
+// The doctrine home for the neglect-detector constant (FR-005): named, single
+// place, promoted-dial-READY but NOT a tuning.json dial (earned, not
+// speculative — the spec-062/064 posture). The critical bands the detector
+// reads are the existing spec-062 danger bands above (dangerFoodBelow/
+// dangerWarmthBelow/dangerRestBelow) — reused, never re-declared.
+const (
+	// neglectWindowTicks (spec 083 R3): the neglect window T — a need below its
+	// danger band this long, with zero class intents over the same span, fires
+	// the detector. 7200 ticks = 2 game-hours: dozens of reflex/planner beats
+	// (reflex grace 120, planner cadence 1800), so a firing proves the whole
+	// mind stack failed to engage, never a beat artifact; and on Oak's real
+	// trajectory (warmth 636→0 at warmthLossCold 4/min, then healthLoss 3/min)
+	// the percept lands with ≈5 game-hours of health runway before the death
+	// the same slide produces. Dial-ready, not dialed.
+	neglectWindowTicks = 7200
+)
+
+// neglectNeedOrder is the detector's fixed need iteration order (spec 083
+// FR-004) — the recoveryNeeds closed set in the reflex ladder's survival
+// priority (recoveryPriority), so sweep emission order is deterministic.
+var neglectNeedOrder = [...]string{"food", "warmth", "rest"}
+
+// NeglectState (spec 083) is the death-by-neglect detector's derived
+// substrate: per survival need, when it entered its critical band, when a
+// class intent last landed, and whether this episode already fired. Fields
+// are flat per-need (no maps — fixed canonical JSON, the Needs-struct shape).
+// Written ONLY by the needs_changed / intent_set / sim.neglect_detected
+// reducer arms (state.go); lazily allocated on first non-zero write
+// (replay-identical — the arms are deterministic). All *Since / *Intent ticks
+// are duration anchors, non-zero only ⇒ SHIFT under rebaseTicks (miracles.go
+// taxonomy); the Fired latches are episode state, not clock values.
+type NeglectState struct {
+	// Band-entry anchors: the tick the need crossed BELOW its danger band
+	// (dangerFoodBelow/dangerWarmthBelow/dangerRestBelow); 0 = not in band.
+	FoodSince   int64 `json:"food_since,omitempty"`
+	WarmthSince int64 `json:"warmth_since,omitempty"`
+	RestSince   int64 `json:"rest_since,omitempty"`
+	// Class-intent stamps: the tick an intent in the need's class last landed
+	// (agent.intent_set, goal ∈ needClassGoals — policy.go); 0 = never.
+	FoodIntent   int64 `json:"food_intent,omitempty"`
+	WarmthIntent int64 `json:"warmth_intent,omitempty"`
+	RestIntent   int64 `json:"rest_intent,omitempty"`
+	// One-per-episode latches: set by the sim.neglect_detected arm, cleared
+	// with the matching *Since anchor on recovery to/above the band.
+	FoodFired   bool `json:"food_fired,omitempty"`
+	WarmthFired bool `json:"warmth_fired,omitempty"`
+	RestFired   bool `json:"rest_fired,omitempty"`
+}
+
+// Since returns the tick need entered its danger band (0 = not in band).
+// Nil-safe on a nil receiver — a pre-083 agent (nil Neglect) reads as never
+// in band — so the sweep, the arms, and the probe predicate share one
+// need-agnostic surface (the needValue switch shape).
+func (n *NeglectState) Since(need string) int64 {
+	if n == nil {
+		return 0
+	}
+	switch need {
+	case "food":
+		return n.FoodSince
+	case "warmth":
+		return n.WarmthSince
+	case "rest":
+		return n.RestSince
+	}
+	return 0
+}
+
+// ClassIntent returns the tick a class intent last landed for need (0 = never).
+// Nil-safe (see Since).
+func (n *NeglectState) ClassIntent(need string) int64 {
+	if n == nil {
+		return 0
+	}
+	switch need {
+	case "food":
+		return n.FoodIntent
+	case "warmth":
+		return n.WarmthIntent
+	case "rest":
+		return n.RestIntent
+	}
+	return 0
+}
+
+// Fired reports whether this episode already fired for need. Nil-safe (see Since).
+func (n *NeglectState) Fired(need string) bool {
+	if n == nil {
+		return false
+	}
+	switch need {
+	case "food":
+		return n.FoodFired
+	case "warmth":
+		return n.WarmthFired
+	case "rest":
+		return n.RestFired
+	}
+	return false
+}
+
+func (n *NeglectState) setSince(need string, tick int64) {
+	switch need {
+	case "food":
+		n.FoodSince = tick
+	case "warmth":
+		n.WarmthSince = tick
+	case "rest":
+		n.RestSince = tick
+	}
+}
+
+func (n *NeglectState) setClassIntent(need string, tick int64) {
+	switch need {
+	case "food":
+		n.FoodIntent = tick
+	case "warmth":
+		n.WarmthIntent = tick
+	case "rest":
+		n.RestIntent = tick
+	}
+}
+
+func (n *NeglectState) setFired(need string, v bool) {
+	switch need {
+	case "food":
+		n.FoodFired = v
+	case "warmth":
+		n.WarmthFired = v
+	case "rest":
+		n.RestFired = v
+	}
+}
+
+// neglect returns the agent's NeglectState, allocating it on first use — the
+// reducer arms call this only when they have a non-zero write to make, so a
+// pre-083 agent that never dips below a band and never sets a class intent
+// keeps a nil pointer (snapshot byte-identity, data-model §1).
+func (a *Agent) neglect() *NeglectState {
+	if a.Neglect == nil {
+		a.Neglect = &NeglectState{}
+	}
+	return a.Neglect
+}
+
+// NeglectDue (spec 083 FR-004) is the detector predicate: (agent, need) owes
+// a firing at tick exactly when the agent is living and awake, the need's
+// PRE-TICK value sits below its spec-062 danger band, the band-entry anchor
+// has a full neglectWindowTicks behind it, no class intent landed inside the
+// same window (0 = never — the purest neglect), and this episode's latch is
+// clear. A pure function of (pre-tick state, tick) — the recoveryHoldEvents
+// purity precedent — factored out of the sweep and EXPORTED so the
+// env-guarded world-01 probe (internal/daemon, FR-008) can evaluate it over
+// replayed state.
+func NeglectDue(a *Agent, need string, tick int64) bool {
+	if a.Dead || a.Asleep {
+		return false
+	}
+	if needValue(a.Needs, need) >= recoveryDangerBand(need) {
+		return false
+	}
+	since := a.Neglect.Since(need)
+	if since == 0 || tick-since < neglectWindowTicks {
+		return false
+	}
+	if last := a.Neglect.ClassIntent(need); last != 0 && tick-last < neglectWindowTicks {
+		return false
+	}
+	return !a.Neglect.Fired(need)
+}
+
 // --- spec 012 resources/food/crafting v2 tuning ---
 //
 // The single scalar tuning surface for the v2 economy, mirrored in
@@ -1270,6 +1453,20 @@ type (
 	DiedPayload struct {
 		Agent int    `json:"agent"`
 		Cause string `json:"cause"` // "starvation" | "exposure" | "collapse" | "gru" (spec 044 US3)
+	}
+	// NeglectDetectedPayload — sim.neglect_detected (spec 083): a survival
+	// need has sat below its danger band for neglectWindowTicks with zero
+	// intents in its class over the same window — the shape that killed Oak
+	// (world-01 day 7). Executor-emitted on the needs heartbeat (a pure
+	// function of pre-tick state + tick, the charge_regenerated emission
+	// class), so it needs NO injection-door whitelist entry (loop.go). Level
+	// and Since are for consumers (chronicle, postmortem); the reducer arm
+	// only sets the need's fired latch.
+	NeglectDetectedPayload struct {
+		Agent int    `json:"agent"` // agent index (chronicle name resolution)
+		Need  string `json:"need"`  // "food" | "warmth" | "rest"
+		Level int    `json:"level"` // pre-tick need value at firing
+		Since int64  `json:"since"` // tick the need entered the band
 	}
 	TalkedPayload struct {
 		A int `json:"a"`
