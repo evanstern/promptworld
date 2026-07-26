@@ -1,10 +1,10 @@
 ---
 id: TASK-142
 title: TUI look-cursor mode — hjkl/arrow tile inspection with a focusable tile pane
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-26 04:28'
-updated_date: '2026-07-26 17:58'
+updated_date: '2026-07-26 18:07'
 labels: []
 dependencies: []
 references:
@@ -56,4 +56,6 @@ Add a look-cursor mode to the map: the player highlights a tile, moves it with h
 Design revision 2026-07-26 (operator review of the mock): (1) dropped the dashed real-client camera-window ghost from the mock — camera-follow rule stays in prose; (2) fixed-geometry rule made explicit: mode changes never resize the map/dock panels; (3) added per-tile warmth + light levels to the TILE inspector header. Mock republished (same URL, version 'fixed-geometry-env-levels').
 
 Reorient 2026-07-26 decision 4: runs in the next UI lane. Cross-grounding amendments: DF fixed tile-content hierarchy AC + tile-registry meaning rows as whatis content (Game-UI-UX + Game-Player-Docs joint framing). Badge deep-link (overlays/help.md's remaining unbuilt layer-2 row) folds into this lane. Reverse jump (strip glyph/roster row → camera center) is the delta's one net-new unscheduled rec — home decided at spec time (rider here vs TASK-154 vs own card).
+
+Sweep claim (runbook docs/design/reorient-2026-07-26-sweep-runbook.md): spec 074-look-cursor. Tier: Sonnet — view/rendering feature in internal/tui; AC7 light-level derivation is a read-only sim helper, inside the routine tier; escalation to Opus only via the rubric as an operator checkpoint. Runbook defaults at spec time: reverse-jump stays UNSCHEDULED (open question 4); pull-surface budget tension recorded in spec, no navigation ruling (open question 3).
 <!-- SECTION:NOTES:END -->
