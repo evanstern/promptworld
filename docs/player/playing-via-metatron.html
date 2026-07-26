@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/wiki/guardian.md@b6a20eaa4da1073a69959a5aff69591d931103a9">
-<meta name="promptworld-docs:source" content="docs/wiki/bundle-tools.md@e137b82bb699eb323eb26c6a69c3dc83ca474b27">
-<meta name="promptworld-docs:source" content="docs/wiki/guardian-miracles.md@b6a20eaa4da1073a69959a5aff69591d931103a9">
-<meta name="promptworld-docs:source" content="docs/wiki/guardian-orders.md@b6a20eaa4da1073a69959a5aff69591d931103a9">
+<meta name="promptworld-docs:source" content="docs/wiki/guardian.md@510a3c3133e120d84cd50525dbc4ee0d3ec01cdc">
+<meta name="promptworld-docs:source" content="docs/wiki/bundle-tools.md@510a3c3133e120d84cd50525dbc4ee0d3ec01cdc">
+<meta name="promptworld-docs:source" content="docs/wiki/guardian-miracles.md@510a3c3133e120d84cd50525dbc4ee0d3ec01cdc">
+<meta name="promptworld-docs:source" content="docs/wiki/guardian-orders.md@510a3c3133e120d84cd50525dbc4ee0d3ec01cdc">
 <meta name="promptworld-docs:source" content="docs/wiki/curriculum-ladder.md@b6a20eaa4da1073a69959a5aff69591d931103a9">
 <meta name="promptworld-docs:source" content="docs/wiki/governance.md@e718294e2a9db4053323a4a9e42746ca53fb149c">
 <meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@b6a20eaa4da1073a69959a5aff69591d931103a9">
-<meta name="promptworld-docs:source" content="docs/wiki/grounded-feedback.md@b6a20eaa4da1073a69959a5aff69591d931103a9">
+<meta name="promptworld-docs:source" content="docs/wiki/grounded-feedback.md@510a3c3133e120d84cd50525dbc4ee0d3ec01cdc">
 <meta name="promptworld-docs:source" content="docs/wiki/takeover-surfaces.md@b6a20eaa4da1073a69959a5aff69591d931103a9">
 <title>Playing via Metatron — promptworld player docs</title>
 <style>
@@ -159,7 +159,13 @@ explains it, and says what it does in the world (move someone, hand over an item
 whisper a memory), optionally with a short script for tools whose behavior should
 depend on the world — say, a light-conjuring tool that acts differently at night.
 Restart the world and the new tools simply appear in the guardian's repertoire,
-priced in the same charge economy as everything else.</p>
+priced in the same charge economy as everything else. A tool's target can be a
+villager by name, or a thing on a map tile — the villager, building, supply
+pile, or patch of terrain standing at particular coordinates — so bundle tools
+can slide a hut, erase a pile, or clear a tree exactly the way the guardian's
+own built-in workings can; a mistyped or empty address is refused with a plain
+message and nothing happens (and no tool, bundled or not, can ever remove a
+villager).</p>
 <p>A bundle can also carry a whole <em>persona</em>: a <code>SOUL.md</code> file whose
 text joins the charter in shaping who your guardian is, and its own
 <code>capabilities.json</code> that can narrow (never expand) what the world already

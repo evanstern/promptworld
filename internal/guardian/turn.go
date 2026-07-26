@@ -198,6 +198,8 @@ func (mt *Guardian) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 	}
 	agentXY := make([][2]int, len(mt.agentXY))
 	copy(agentXY, mt.agentXY)
+	structXY := append([][2]int(nil), mt.structXY...)
+	pileXY := append([][2]int(nil), mt.pileXY...)
 	agentNeeds := append([]needMirror(nil), mt.agentNeeds...)
 	moments := append([]string(nil), mt.moments...)
 	story := append([]string(nil), mt.story...)
@@ -219,6 +221,22 @@ func (mt *Guardian) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 		probe := &sim.State{Agents: make([]sim.Agent, len(agentXY))}
 		for i := range agentXY {
 			probe.Agents[i] = sim.Agent{Name: sim.AgentNames[i], X: agentXY[i][0], Y: agentXY[i][1], Dead: !alive[i]}
+		}
+		// Spec 082: class+tile effect targets (structure@X,Y / pile@X,Y /
+		// terrain@X,Y) resolve against this probe too — structure/pile tile
+		// mirrors feed the compiler's one-per-tile presence probes and the
+		// static map feeds its bounds check. Position-only; the reducer's dry
+		// run stays the semantic authority for everything else.
+		probe.Structures = make([]sim.Structure, len(structXY))
+		for i, xy := range structXY {
+			probe.Structures[i] = sim.Structure{X: xy[0], Y: xy[1]}
+		}
+		probe.Piles = make([]sim.Pile, len(pileXY))
+		for i, xy := range pileXY {
+			probe.Piles[i] = sim.Pile{X: xy[0], Y: xy[1]}
+		}
+		if mt.m != nil {
+			probe.SetMap(mt.m)
 		}
 		// Invoker resolves into bundle effect TEMPLATES, which can land in
 		// recorded payloads (memory text) — so it is fixed mechanics

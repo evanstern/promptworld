@@ -1,0 +1,12 @@
+{
+  "name": "smite",
+  "description": "Erase whatever the address names — a structure, a pile, or a terrain tile",
+  "params": [
+    {"name": "target", "kind": "text", "required": true, "description": "a class@X,Y address (structure, pile, or terrain)"}
+  ],
+  "events": ["metatron.entity_removed"],
+  "charges": 1,
+  "effects": [
+    {"kind": "remove_entity", "target": "{args.target}"}
+  ]
+}
