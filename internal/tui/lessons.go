@@ -11,6 +11,7 @@ package tui
 
 import (
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/evanstern/promptworld/internal/sim"
@@ -35,15 +36,71 @@ const (
 // (tui.go) — Done is nil for every entry without an unambiguous clearing
 // event (research.md R4: "v1 ships them only where an unambiguous event
 // exists"), meaning `x` is that entry's only dismissal path.
+//
+// FoldTrigger (spec 077 FR-019, research R10) is the ONE stateful trigger
+// seam: a predicate over (the projection's bounded fold, the event) for
+// lessons that are inherently cross-event ("the third same-reason refusal").
+// An entry carries EITHER Trigger or FoldTrigger, never both — per-event
+// predicates stay pure; the fold itself is maintained by lessonTriggers.ingest
+// (lessonFold below), not by the entry.
 type lessonEntry struct {
-	ID      string
-	Title   string
-	Body    string
-	Text    string
-	Pointer string
-	Tier    string
-	Trigger func(store.Event) bool
-	Done    func(store.Event) bool
+	ID          string
+	Title       string
+	Body        string
+	Text        string
+	Pointer     string
+	Tier        string
+	Trigger     func(store.Event) bool
+	FoldTrigger func(*lessonFold, store.Event) bool
+	Done        func(store.Event) bool
+}
+
+// lessonFold is the projection's bounded cross-event state (spec 077 FR-019)
+// — one small fold, session-local (never persisted; the per-user seen record
+// stays the only durable lesson state), reset by nothing. rejections counts
+// cog.tool_call rejections per identical non-empty Reason; the cap bounds
+// the map against pathological reason cardinality (the rejection vocabulary
+// is naturally small — belt, not behavior).
+type lessonFold struct {
+	rejections map[string]int
+}
+
+// lessonFoldReasonCap bounds the distinct reasons tracked (cap 32,
+// data-model §6): a reason arriving past the cap is not counted — dropping
+// data is honest here because the detector only ever needs the hot reasons.
+const lessonFoldReasonCap = 32
+
+// sameRefusalThreshold is the wrong-thing detector's strike count (research
+// R10): three-strikes-ever is the simplest honest v1.
+const sameRefusalThreshold = 3
+
+// rejectionReason extracts the fold key from a rejected tool call: the
+// non-empty Reason of a cog.tool_call with a rejected_* verdict; ok=false
+// for everything else (landed/read/unlanded calls, empty reasons).
+func rejectionReason(e store.Event) (string, bool) {
+	if e.Type != "cog.tool_call" {
+		return "", false
+	}
+	p, ok := decode[sim.CogToolCallPayload](e)
+	if !ok || p.Reason == "" || !strings.HasPrefix(p.Verdict, "rejected_") {
+		return "", false
+	}
+	return p.Reason, true
+}
+
+// note folds one event into the rejection counter (nil-map tolerant, capped).
+func (f *lessonFold) note(e store.Event) {
+	reason, ok := rejectionReason(e)
+	if !ok {
+		return
+	}
+	if f.rejections == nil {
+		f.rejections = map[string]int{}
+	}
+	if _, tracked := f.rejections[reason]; !tracked && len(f.rejections) >= lessonFoldReasonCap {
+		return
+	}
+	f.rejections[reason]++
 }
 
 // lessonPullSuffix is the pull-path suffix every lesson string carries
@@ -52,11 +109,12 @@ type lessonEntry struct {
 // source for it.
 const lessonPullSuffix = "(? for more · x dismiss)"
 
-// lessonCatalog is the minimum taxonomy (contracts/lessons-catalog.md, 8
-// entries: 5 mechanics + 3 prompting) — the single source both the row
-// (push) and the help overlay's lessons section (pull, helpLessons) read
-// from. Append-only at runtime; every string is authored with skin tokens
-// (lessonSkinResolve) for every guardian reference (FR-008).
+// lessonCatalog is the taxonomy (contracts/lessons-catalog.md's 8-entry
+// minimum, grown to 12 by spec 077 US3's tranche 2: 5 mechanics + 7
+// prompting) — the single source both the row (push) and the help overlay's
+// lessons section (pull, helpLessons) read from. Append-only at runtime;
+// every string is authored with skin tokens (lessonSkinResolve) for every
+// guardian reference (FR-008).
 var lessonCatalog = []lessonEntry{
 	{
 		ID:    "first-suppression",
@@ -127,12 +185,17 @@ var lessonCatalog = []lessonEntry{
 		Text:    "The {{skin.guardian.epithet}}'s own attempt to act was just refused — its grant is real.",
 		Pointer: "→ press 4, then d for the decision trace",
 		Tier:    lessonTierPrompting,
+		// Refusals only (spec 077 reconciliation): the original `!= landed`
+		// predates spec 063's read verdicts — a successful explain lands as
+		// read_ok, which is an ANSWER, not a refusal, and must not surface
+		// "Refusals are informative" (rejectionReason shares the honest
+		// rejected_* reading with the same-refusal fold below).
 		Trigger: func(e store.Event) bool {
 			if e.Type != "cog.tool_call" {
 				return false
 			}
 			p, ok := decode[sim.CogToolCallPayload](e)
-			return ok && p.Verdict != "landed"
+			return ok && strings.HasPrefix(p.Verdict, "rejected_")
 		},
 	},
 	{
@@ -166,6 +229,64 @@ var lessonCatalog = []lessonEntry{
 			}
 			p, ok := decode[sim.GuardianOrder](e)
 			return ok && p.Confirm
+		},
+	},
+	// --- lesson tranche 2 (spec 077 US3, FR-018): the spec-063 feedback
+	// surfaces, the stage-3 skill-file concept, and the first wrong-thing
+	// detector. `first-faith-event` is deliberately ABSENT (FR-020): TASK-118
+	// has not run and no faith event type exists — the entry rides TASK-118
+	// as a content rider, never a stub here.
+	{
+		ID:    "first-explain-answer",
+		Title: "Grounded answers",
+		Body: "The {{skin.guardian.epithet}} can explain its own workings — an explain " +
+			"answer is read from the world's recorded facts and rules, never improvised, " +
+			"so what it tells you about itself is checkable.",
+		Text:    "The {{skin.guardian.epithet}} just answered from its own recorded facts — grounded, not guessed.",
+		Pointer: "→ press ? for the {{skin.guardian.tab_label}} section",
+		Tier:    lessonTierPrompting,
+		Trigger: func(e store.Event) bool {
+			if e.Type != "cog.tool_call" {
+				return false
+			}
+			p, ok := decode[sim.CogToolCallPayload](e)
+			return ok && p.Tool == "explain" && p.Verdict == "read_ok"
+		},
+	},
+	{
+		ID:    "first-report-card",
+		Title: "The report card",
+		Body: "The {{skin.guardian.epithet}} grades its own recent conduct against your " +
+			"charter — the note cites recorded events by number, so every claim in it " +
+			"can be checked against the chronicle.",
+		Text:    "The first report card is in — the {{skin.guardian.epithet}}'s conduct, graded against your charter.",
+		Pointer: "→ press 3 for the {{skin.guardian.tab_label}} tab",
+		Tier:    lessonTierPrompting,
+		Trigger: func(e store.Event) bool { return e.Type == "guardian.report_card" },
+	},
+	{
+		ID:    "first-skill-file",
+		Title: "Your craft, bound",
+		Body: "A skill file you authored is now composed into every turn — you are no " +
+			"longer only instructing the {{skin.guardian.epithet}}, you are shaping what " +
+			"it can do.",
+		Text:    "A skill file you authored is now in force — it shapes the {{skin.guardian.epithet}}'s every turn.",
+		Pointer: "→ press 3 — your skill file now shapes the {{skin.guardian.epithet}}",
+		Tier:    lessonTierPrompting,
+		Trigger: func(e store.Event) bool { return e.Type == "metatron.skills_observed" },
+	},
+	{
+		ID:    "same-refusal-pattern",
+		Title: "Same refusal, three times",
+		Body: "The {{skin.guardian.epithet}}'s tool calls have been refused three times " +
+			"for the same stated reason. A repeating refusal is a pattern, not bad luck — " +
+			"the fix usually lives in your charter or the shape of the ask, not in retrying.",
+		Text:    "Three refusals for the same reason — the charter may need the rule, not the retry.",
+		Pointer: "→ press 4, then d for the decision trace",
+		Tier:    lessonTierPrompting,
+		FoldTrigger: func(f *lessonFold, e store.Event) bool {
+			reason, ok := rejectionReason(e)
+			return ok && f.rejections[reason] >= sameRefusalThreshold
 		},
 	},
 }
@@ -252,6 +373,11 @@ type lessonTriggers struct {
 	active    *activeLesson
 	queue     []queuedLesson
 	clearedAt time.Time // zero value: no lesson has ever cleared — spacing never blocks the very first one
+	// fold is the bounded cross-event state (spec 077 FR-019) FoldTrigger
+	// entries consult — maintained unconditionally by ingest (every event
+	// folds, whatever else the event does), so a fold-shaped lesson counts
+	// honestly even when a per-event lesson claims the same event.
+	fold lessonFold
 }
 
 // newLessonTriggers builds the projection from the previously-seen id set —
@@ -357,6 +483,10 @@ func (lt *lessonTriggers) enqueue(entry *lessonEntry, now time.Time) {
 // worlds.MarkLessonSeen.
 func (lt *lessonTriggers) ingest(e store.Event, now time.Time) *lessonEntry {
 	lt.ensureSeen()
+	// The fold sees EVERY event first (spec 077 FR-019) — unconditionally,
+	// so a rejection that also surfaces a per-event lesson still counts
+	// toward the cross-event detector's threshold.
+	lt.fold.note(e)
 	if lt.active != nil && lt.active.entry.Done != nil && lt.active.entry.Done(e) {
 		lt.active = nil
 		lt.clearedAt = now
@@ -366,7 +496,11 @@ func (lt *lessonTriggers) ingest(e store.Event, now time.Time) *lessonEntry {
 		if lt.seen[entry.ID] || lt.isPendingOrActive(entry.ID) {
 			continue
 		}
-		if !entry.Trigger(e) {
+		if entry.FoldTrigger != nil {
+			if !entry.FoldTrigger(&lt.fold, e) {
+				continue
+			}
+		} else if !entry.Trigger(e) {
 			continue
 		}
 		if surfaced := lt.tryPromote(entry, now); surfaced != nil {

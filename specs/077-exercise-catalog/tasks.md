@@ -142,10 +142,10 @@ as reducer-valid, ambient-indistinguishable, replay-safe events.
 
 ## Phase 6: User Story 3 — lesson tranche 2 + wrong-thing detector (P2, board AC #3)
 
-- [ ] T021 [US3] The `lessonFold` seam (bounded per-reason rejection counter, cap 32) +
+- [X] T021 [US3] The `lessonFold` seam (bounded per-reason rejection counter, cap 32) +
   optional `FoldTrigger` on `lessonEntry`, per-event `Trigger` predicates untouched, in
   `internal/tui/lessons.go` (plan D7, spec FR-019, research R10)
-- [ ] T022 [US3] Four catalog entries per data-model §6 (`first-explain-answer`,
+- [X] T022 [US3] Four catalog entries per data-model §6 (`first-explain-answer`,
   `first-report-card`, `first-skill-file`, `same-refusal-pattern`), skin-tokened,
   prompting tier, in `internal/tui/lessons.go`; projection tests: each surfaces once,
   never again; fold triggers on 3 same-reason rejections, never on mixed; catalog↔help
