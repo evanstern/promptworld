@@ -4,7 +4,7 @@ description: Process lifecycle overview — daemon.Run's validate/recover/wire/t
 kind: pipeline
 sources:
   - internal/daemon/daemon.go
-verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
+verified_against: 801db7c1b15fb567732bc5c6063464e918353a4d
 ---
 
 # Daemon lifecycle
