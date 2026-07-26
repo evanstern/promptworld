@@ -327,6 +327,19 @@ var digestRegistry = map[string]digestFunc{
 			txt(" ("), emphI64(p.StalenessTicks), txt("t stale)"),
 		}), true
 	},
+	"agent.recovery_stalled": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		// Spec 064 R4: a needs-conditioned recovery hold that showed no net gain
+		// across the full stall window — an honest abort, not a completion, so
+		// it renders distinctly from "finished" (the agent.build_failed
+		// precedent, digest.go:308 above).
+		p, ok := decode[sim.RecoveryStalledPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{
+			nameOf(names, p.Agent), txt("'s "), emph(p.Goal), txt(" stalled — "), emph(p.Need), txt(" not recovering"),
+		}), true
+	},
 	"agent.moved": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.AgentMovedPayload](e)
 		if !ok {
@@ -1628,6 +1641,13 @@ var subjectRegistry = map[string]subjectFunc{
 	"agent.woke":        decodeAgentOnly,
 	"agent.build_failed": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.BuildFailedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent), true
+	},
+	"agent.recovery_stalled": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.RecoveryStalledPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
