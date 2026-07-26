@@ -177,6 +177,18 @@ type Guardian struct {
 	digQ     chan digJob
 	digCarry chan []string
 
+	// Report-card producer (spec 063 US4, reportcard.go). cardTrail is the
+	// bounded activity ring the grader cites (absorb-appended, stateMu-
+	// guarded); cardDoneSeq is the graded high-water mark (the activity
+	// gate); cardPauseSpent debounces one card per pause episode. cardQ
+	// feeds the dedicated worker (the digQ shape). None of it is
+	// event-sourced — a skipped or dropped card is an economy decision,
+	// never world history; the STORED note is the recorded fact.
+	cardTrail      []cardEvidence
+	cardDoneSeq    int64
+	cardPauseSpent bool
+	cardQ          chan cardJob
+
 	events chan []store.Event
 	done   chan struct{}
 }
@@ -209,6 +221,7 @@ func New(orch Submitter, social Injector, loop LoopControl, m *worldmap.Map, see
 		alive:           map[int]bool{},
 		digQ:            make(chan digJob, 4),
 		digCarry:        make(chan []string, 1),
+		cardQ:           make(chan cardJob, 4),
 		events:          make(chan []store.Event, 256),
 		triggerQ:        make(chan triggerJob, 64),
 		pendingTrigger:  map[string]bool{},
@@ -246,6 +259,7 @@ func New(orch Submitter, social Injector, loop LoopControl, m *worldmap.Map, see
 	go mt.run()
 	go mt.digestWorker()
 	go mt.triggerWorker()
+	go mt.reportCardWorker()
 	return mt, nil
 }
 
@@ -305,6 +319,7 @@ func (mt *Guardian) run() {
 				}
 				mt.observeMoment(e)
 				mt.digestNote(e)
+				mt.observeCardActivity(e)
 			}
 			mt.mirrorState()
 			// Standing-order matching runs HERE — after the replica applies the
@@ -312,6 +327,14 @@ func (mt *Guardian) run() {
 			// US3/R6). Replay reconstructs state via json.Unmarshal + Apply with no
 			// guardian running, so a predicate can never match during reconstruction.
 			mt.matchOrders(batch)
+			// Report-card stopping points fire AFTER the mirror refreshes (spec
+			// 063 US4): live-only by the same construction as matchOrders —
+			// replay runs no guardian, so a card can never trigger during
+			// reconstruction. Trigger scan runs after the trail collection above
+			// so a stopping point in the same batch sees its own batch's acts.
+			for _, e := range batch {
+				mt.observeCardTrigger(e)
+			}
 		}
 	}
 }
