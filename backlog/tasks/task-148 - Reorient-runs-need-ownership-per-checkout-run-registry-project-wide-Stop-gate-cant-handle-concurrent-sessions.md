@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-07-26 16:30'
+updated_date: '2026-07-26 16:32'
 labels:
   - design
   - tooling
@@ -25,3 +26,9 @@ Observed live 2026-07-26: two reorient runs begun the same day (15:58, 16:25) wh
 - [ ] #1 A design decision (recorded artifact) on run ownership: gate scoping, claim/liveness mechanism, and target-path uniqueness for concurrent reorient runs
 - [ ] #2 Plugin change implemented in the praxis repo per its laws, and promptworld's plugin version bumped to pick it up
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Carded in praxisflux as praxis TASK-52 (the implementation home). Interim doctrine until fixed: begin reorient runs from inside a worktree — .handoff/ is gitignored/checkout-local, so the run registry and its Stop gate stay lane-local.
+<!-- SECTION:NOTES:END -->
