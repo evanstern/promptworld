@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-26 02:33'
-updated_date: '2026-07-26 14:43'
+updated_date: '2026-07-26 15:16'
 labels:
   - mvls
   - behavior-hygiene
@@ -28,10 +28,10 @@ Spec: specs/067-staleness-budget-scaling
 - [x] #1 Diagnosis pinned: the exact constant + consumption site named (file:symbol) with the latency math
 - [ ] #2 Chosen mechanism keeps planning viable at 8x on a calibrated local tier (proven by test or measured run) without breaking replay determinism
 - [ ] #3 Horizon/status surfaces stop reporting 'planner thinking' as healthy when plan landing is structurally dead (or the gap is explicitly documented)
-- [ ] #4 Spec phase: Setup
-- [ ] #5 Spec phase: Foundational (blocking prerequisites)
-- [ ] #6 Spec phase: User Story 1 — Planning survives 8x on a calibrated local tier (P1)
-- [ ] #7 Spec phase: User Story 2 — Replay determinism across speed changes (P1)
+- [x] #4 Spec phase: Setup
+- [x] #5 Spec phase: Foundational (blocking prerequisites)
+- [x] #6 Spec phase: User Story 1 — Planning survives 8x on a calibrated local tier (P1)
+- [x] #7 Spec phase: User Story 2 — Replay determinism across speed changes (P1)
 - [ ] #8 Spec phase: User Story 3 — Status surfaces stop calling structural death "thinking" (P2)
 - [ ] #9 Spec phase: Polish & Cross-Cutting
 <!-- AC:END -->
@@ -44,4 +44,6 @@ Diagnosis pin (AC#1 progress): the rejection fires at internal/sim/landing.go ru
 Claiming per spec 065: spec dir specs/067-staleness-budget-scaling/ stubbed; full Spec Kit flow (specify → plan → tasks → implement) to follow.
 
 Spec 067 authored (spec/plan/research/data-model/contracts/quickstart/tasks). Diagnosis pinned in spec.md with consumption-site map in research.md R2 (AC#1 ✓). Mechanism decided: landing-side speed scaling — BudgetTicks reinterpreted as 1x budget, effective = base × TicksPerSecond(state.Speed) at the landing tick; Route/horizon/governor untouched. Implementer tier: Opus 4.8 per constitution V rubric — cross-package (cognition+sim+mind), scheduling/cognition doctrine-adjacent behavior change.
+
+spec-bridge sync: Setup: 1/1 · Foundational (blocking prerequisites): 2/2 · User Story 1 — Planning survives 8x on a calibrated local tier (P1): 3/3 · User Story 2 — Replay determinism across speed changes (P1): 1/1 · User Story 3 — Status surfaces stop calling structural death "thinking" (P2): 1/2 · Polish & Cross-Cutting: 1/2
 <!-- SECTION:NOTES:END -->
