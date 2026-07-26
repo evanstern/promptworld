@@ -106,23 +106,23 @@ getting-started's step, executable without `--scenario`.
 
 ## Phase 5: Gates & polish
 
-- [ ] T012 Run the player-docs freshness probe directly:
+- [X] T012 Run the player-docs freshness probe directly:
       `node .claude/skills/player-docs/scripts/check-freshness.mjs --check`
       → MUST exit 0: 13 fresh, 0 stale, 0 missing, 0 broken-ref (SC-003). If
       it names getting-started broken-ref, the T007 tag is malformed or
       mis-pinned — fix the tag, never the probe.
-- [ ] T013 Assert scope byte-identity: `git diff --stat origin/main` lists
+- [X] T013 Assert scope byte-identity: `git diff --stat origin/main` lists
       exactly the five pages + SKILL.md; `index.html` and the other 8 topic
       pages unchanged (FR-008, SC-003).
-- [ ] T014 Doctrine run: `go test ./...` green (SC-004 — no Go changes; a
+- [X] T014 Doctrine run: `go test ./...` green (SC-004 — no Go changes; a
       failure here is pre-existing drift to surface, not to fix in this
       branch).
-- [ ] T015 Wiki re-pin check — expected NO-OP: this branch touches no file
+- [X] T015 Wiki re-pin check — expected NO-OP: this branch touches no file
       any wiki note lists as a source (research.md R7), so no
       `/grounding-wiki:wiki-update` run belongs here. If the pr gate
       disagrees (`wiki-repin-missing`), produce the re-pin on this branch —
       the gate is the authority.
-- [ ] T016 From the worktree, run the pr gate:
+- [X] T016 From the worktree, run the pr gate:
       `node scripts/check-merge-drift.mjs pr` → exit 0 (SC-005;
       `player-docs-stale` probe = T012's command). `check-tui-design.mjs` is
       NOT applicable (no `docs/design/tui/` or `internal/tui/` changes).
