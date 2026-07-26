@@ -95,7 +95,7 @@ spec-072 resolver — plain language, truthful glyphs, postmortem register on a 
 **Independent Test**: decided-duel fixture renders winner all-✓ (from pass), loser ✗ with
 `agent.died: N`; no raw enum in the output; duel rows == postmortem rows.
 
-- [ ] T013 [US2] Export the spec-072 resolver replica-parametric (data-model §5):
+- [X] T013 [US2] Export the spec-072 resolver replica-parametric (data-model §5):
       `ResolveRubricFacts(state, def, pass)`, `RecordedPassFor(state, exercise)`,
       `ReportCardFact`/`ReportCardMode` aliases + exported mode consts,
       `RenderReportCard` over `reportCardView`; `Model.resolveReportCardFacts`/
@@ -103,10 +103,10 @@ spec-072 resolver — plain language, truthful glyphs, postmortem register on a 
       (+ shim in `internal/tui/views.go` if the renderer wrapper lives there); existing
       spec-072 TUI tests pass unchanged — the no-behavior-change proof (plan D5, spec
       FR-018/019)
-- [ ] T014 [US2] `worlds.OfflineState(w) (*sim.State, int64, error)` extracted from
+- [X] T014 [US2] `worlds.OfflineState(w) (*sim.State, int64, error)` extracted from
       `OfflineSnapshot` (which now calls it); existing probe/ps tests pass unchanged, in
       `internal/worlds/probe.go` (plan D6, spec FR-015)
-- [ ] T015 [US2] CLI `compare` scoreboard: new `cmd/promptworld/compare.go` + dispatch/
+- [X] T015 [US2] CLI `compare` scoreboard: new `cmd/promptworld/compare.go` + dispatch/
       usage in `cmd/promptworld/main.go` — `duelReport`/`duelSide` (data-model §6),
       per-side OfflineState + manifest-scenario exercise lookup + `RecordedPassFor` +
       `ResolveRubricFacts` + plain-language outcome map (data-model §7; raw enums never
@@ -114,7 +114,7 @@ spec-072 resolver — plain language, truthful glyphs, postmortem register on a 
       line + running-world as-of note + different-exercises note, `RenderReportCard` per
       side, ambient-world honest no-scorecard note (plan D6, spec FR-015/016/018/019/020,
       US2 scenarios 1–5)
-- [ ] T016 [US2] Scoreboard tests in new `cmd/promptworld/compare_test.go`: SC-004 — the
+- [X] T016 [US2] Scoreboard tests in new `cmd/promptworld/compare_test.go`: SC-004 — the
       decided-duel fixture (winner recorded pass → all-✓ evidence-backed; loser
       run-ended → ✗ `agent.died: N`), raw-enum sweep over rendered output
       (`in_progress` never appears), cross-surface identity (duel rows byte-equal to the
@@ -129,14 +129,14 @@ each other; zero divergence rendered honestly.
 **Independent Test**: shared-prefix fixture logs — marker at first differing STORY event;
 machinery-only difference → no divergence; interleave labeled and tick-ordered.
 
-- [ ] T017 [US3] Divergence scan + chronicle interleave in `cmd/promptworld/compare.go`:
+- [X] T017 [US3] Divergence scan + chronicle interleave in `cmd/promptworld/compare.go`:
       post-window story-event streams (exclude `daemon.*`/`clock.*`/`cog.*`/`llm.*`;
       compare tick/type/payload, never wall_time/seq — research R7) → first mismatch as
       `divergence` rendered with game day/time; nil → the identical-since-fork line;
       `chronicle.entry` events `from_tick >= since` merged stable by FromTick with world
       labels and the divergence marker in timeline position (plan D6, spec FR-017,
       US3 scenarios 1–4)
-- [ ] T018 [US3] Divergence tests in `cmd/promptworld/compare_test.go`: SC-005 — marker
+- [X] T018 [US3] Divergence tests in `cmd/promptworld/compare_test.go`: SC-005 — marker
       placement on a diverging fixture pair; a pair differing ONLY in machinery events
       renders NO divergence; the zero-divergence line pinned; interleave ordering +
       labels; `--since` override window (spec SC-005)
