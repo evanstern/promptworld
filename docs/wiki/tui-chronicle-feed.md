@@ -6,7 +6,7 @@ sources:
   - internal/tui/grammar.go
   - internal/tui/digest.go
   - internal/tui/tui.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+verified_against: f3869df03de326d646d68ea716690da81e4840ca
 ---
 
 # TUI chronicle feed and digest grammar
@@ -96,7 +96,10 @@ future types fall back to the compact resolved-name JSON of the old grammar
 covering `agent`, `a`, `b`, `from`, `to`, `speaker`, `listener`, `subject`,
 `owner`, `taker` — still drives that fallback and the inspector). A sweep
 test (`digest_test.go`) fails if any type cataloged in [[event-types]] lacks
-a digest. Pausing puts the visible chronicle into **inspect mode**:
+a digest. Pausing puts the visible chronicle into **inspect mode** — dormant
+whenever the look-cursor mode (spec 074-look-cursor, [[tui-map-view]]) has
+borrowed the dock, since `chronicleVisible()` reads false for the duration
+of that borrow, the same as if a different tab were selected:
 `j`/`k`/`g`/`G` select, and the selected event's full detail shows
 automatically in an always-on **detail pane** at the panel bottom — seq,
 tick, type, the stored payload verbatim, pretty-printed with `// name`
