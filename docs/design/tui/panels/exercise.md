@@ -2,7 +2,7 @@
 title: Panel — exercise (scenario tab)
 class: panel
 status: shipped
-verified_against: d2206458f7a520379a7e882c4fe19e6b448e281c
+verified_against: 348a100c22f650d27e6fba517ea7f1f1aed1af73
 sources:
   - internal/tui/exercise.go
   - internal/tui/tui.go
@@ -69,11 +69,18 @@ falls through inert.
    fresh orientation each session, not a one-time-ever notice.
 3. **Rubric gauges** — one row per evaluated rubric term
    (`sim.EvaluateRubric` over the replica — the SAME pure derivation the
-   executor's pass precondition reads, so the panel and the emitter can
-   never disagree). Each gauge shows the term in plain language, a
-   met/pending marker (`✓`/`…`), and the backing event type + count
-   (engineer-facing detail, FR-020 — the plain-language callout is the term
-   itself; the raw event reference sits alongside it, not instead of it).
+   executor's pass precondition AND every report-card surface read (spec
+   072), so the panel, the emitter, and the cards can never disagree). Each
+   gauge shows the term in plain language, a met/pending marker (`✓`/`…`),
+   and the backing event type + count (engineer-facing detail, FR-020 — the
+   plain-language callout is the term itself; the raw event reference sits
+   alongside it, not instead of it). Both cataloged exercises carry
+   production evaluator arms — `first-night` (spec 054 FR-004) and
+   `the-law` (spec 072: the law term over the adopted-norm ledger, the
+   charter term over the persisted `State.CharterCustom` authorship flag) —
+   so no shipped exercise renders permanently pending; a future exercise
+   without an evaluator arm gets its terms rendered pending, the honest
+   default.
 4. **Incident-visibility vocabulary** (D4) — a **vocabulary, not a
    boolean**, per `patterns/stage-defaults.md` (the authority) and
    `sim.IncidentVisibilityFor` (definition override wins, else the
@@ -106,8 +113,9 @@ falls through inert.
   followed by `curriculum.stage_unlocked` is exactly `overlays/ceremony.md`'s
   takeover trigger — this panel and the ceremony overlay read the same two
   event types; the exercise tab is the *ambient* progress view, the
-  ceremony is the *celebratory* takeover the same evidence earns
-  (TASK-127, unbuilt — no coupling here).
+  ceremony is the *celebratory* takeover the same evidence earns (shipped —
+  spec 056/TASK-127; no coupling here, and since spec 072 both surfaces
+  also share the same `sim.EvaluateRubric` verdict source).
 
 ## Stage defaults
 

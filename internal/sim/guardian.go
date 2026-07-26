@@ -421,7 +421,8 @@ func (s *State) applyGuardian(e store.Event) error {
 		return s.transitionGuardianOrder(e.Type, p.ID, "expired")
 	case "metatron.charter_observed":
 		// Spec 044 US2 (FR-008): the charter-revision timeline. State keeps only
-		// the CURRENT fingerprint; the full timeline lives in the event log,
+		// the CURRENT fingerprint and its authorship (spec 072 FR-006 — the-law's
+		// rubric charter conjunct); the full timeline lives in the event log,
 		// where the morgue's render scan aligns each death against the most
 		// recent observation at or before it.
 		var p CharterObservedPayload
@@ -432,6 +433,7 @@ func (s *State) applyGuardian(e store.Event) error {
 			return fmt.Errorf("apply %s: empty fingerprint", e.Type)
 		}
 		s.CharterFingerprint = p.Fingerprint
+		s.CharterCustom = !p.Default
 	}
 	return nil
 }

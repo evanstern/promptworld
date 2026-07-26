@@ -16,7 +16,7 @@ sources:
   - internal/tui/tui.go
   - internal/tui/digest.go
   - internal/tui/grammar.go
-verified_against: bb6f083e00d8ea4aeb2c5fde6cdfaea0f5dcff84
+verified_against: b3f4da3c29e3cbbd933e366abe76a5d6ef0f2be9
 ---
 
 # Guardian report card
@@ -97,8 +97,12 @@ seam; this feature is the production wiring. `rebuildConsoleCards` composes,
 in order: the rubric checklist (`buildChecklistCard`, TASK-127's
 `reportCard` wrapper — nil until a stopping point is visible in durable
 state: a stored note, a recorded pass for the seeded exercise, or the ended
-run; live `met/pending` marker vocabulary until the exercise concludes or
-the run ends, then `met/missed`) FIRST — always authoritative — then the
+run; facts and marker vocabulary from the spec-072 shared resolver
+`resolveReportCardFacts` ([[report-card-renderer]]): the recorded pass
+re-read all-met when one exists, else `sim.EvaluateRubric` over the replica
+— live `met/pending` until the exercise concludes or the run ends, then
+`met/missed` with honest ✗ on failed terms) FIRST — always authoritative —
+then the
 attribution note (`buildNoteCard`, `noteCard`) — additive prose beneath it,
 clearly its own block, never a second scoring computation. Either half
 absent degrades to the other alone. Recomposed on connect (a late attach

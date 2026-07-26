@@ -655,14 +655,19 @@ func (m Model) scenarioExercise() (sim.ExerciseDefinition, bool) {
 
 // postmortemReportCard renders the scored-run report card (concluded
 // markers), or "" on an ambient world / an unrecognized exercise id (FR-001,
-// FR-018 — the ambient/scored boundary; SC-002).
+// FR-018 — the ambient/scored boundary; SC-002) or a not-yet-attached
+// replica. Verdicts come from the shared resolver (spec 072 FR-001): the
+// recorded pass when one exists (a pass followed by a later run end still
+// renders all-met — the exercise outcome and the run outcome are distinct
+// facts), else sim.EvaluateRubric over the replica — so a failed term
+// renders ✗ with its honest backing count, never a presence-derived ✓.
 func (m Model) postmortemReportCard(width int) string {
 	def, ok := m.scenarioExercise()
-	if !ok {
+	if !ok || m.replica == nil {
 		return ""
 	}
-	facts := reportCardFactsFromEvents(def, m.events)
-	return reportCardView(def.ID, facts, reportCardConcluded, width)
+	facts, mode := m.resolveReportCardFacts(def, m.recordedPassFor(def.ID))
+	return reportCardView(def.ID, facts, mode, width)
 }
 
 // ceremonyView is overlays/ceremony.md's takeover: the D6 authorship-voice
@@ -704,21 +709,15 @@ func (m Model) ceremonyView(cols, rows int) string {
 // section (help.go) call this, so they can never show different evidence
 // for the same stage. Honest-false when the qualifying pass has aged out of
 // the bounded 32-entry CurriculumPasses retention (data-model.md "unknown
-// honestly" — the ceremony/replay callers fall back to a generic
-// events-ring derivation, reportCardFactsFromEvents).
+// honestly" — the ceremony/replay callers fall back to the shared
+// resolver's nil-pass path: sim.EvaluateRubric over the current replica,
+// concluded markers — spec 072's aged-out edge case).
 func provingPass(replica *sim.State, stage string) (sim.CurriculumPass, bool) {
 	if replica == nil {
 		return sim.CurriculumPass{}, false
 	}
-	var from string
-	switch stage {
-	case "stage-2":
-		from = "stage-1"
-	case "stage-3":
-		from = "stage-2"
-	case "stage-4":
-		from = "stage-3"
-	default:
+	from := provingStageFor(stage)
+	if from == "" {
 		return sim.CurriculumPass{}, false
 	}
 	for _, p := range replica.CurriculumPasses {
@@ -745,21 +744,43 @@ func provingPass(replica *sim.State, stage string) (sim.CurriculumPass, bool) {
 	return sim.CurriculumPass{}, false
 }
 
+// provingStageFor maps an unlocked stage to the stage whose exercise proved
+// it — provingPass's gate mapping, shared with the ceremony's aged-out
+// fallback (which must still identify the proving exercise when the pass
+// record itself is gone). "" for the base stage / unknown vocabulary.
+func provingStageFor(stage string) string {
+	switch stage {
+	case "stage-2":
+		return "stage-1"
+	case "stage-3":
+		return "stage-2"
+	case "stage-4":
+		return "stage-3"
+	}
+	return ""
+}
+
 // ceremonyReportCardFor renders the (concluded — the exercise already
-// passed) report card for the exercise that earned `stage`, preferring the
-// recorded pass's own Evidence (authoritative — FR-019's "instrument"
-// framing) and falling back to a generic events-ring derivation only when
-// the qualifying pass has aged out of retention. "" when the proving
-// exercise can't be identified at all (an uncataloged exercise id — an
-// honest, defensive absence; production emission, TASK-119's, always names
-// a cataloged id).
+// passed) report card for the exercise that earned `stage`, through the
+// shared resolver (spec 072 FR-001/FR-002): the recorded pass is the
+// instrument — all terms met, backed by the pass's own Evidence (FR-019's
+// "instrument" framing) — and only when the qualifying pass has aged out of
+// retention does the nil-pass fallback grade sim.EvaluateRubric over the
+// current replica (current-state truth, concluded markers — the surface's
+// occasion is a concluded exercise, so the vocabulary is forced concluded
+// regardless of the run's own posture). "" when the proving exercise can't
+// be identified at all (an uncataloged exercise id — an honest, defensive
+// absence; production emission, TASK-119's, always names a cataloged id).
 func (m Model) ceremonyReportCardFor(stage string, width int) string {
 	pass, found := provingPass(m.replica, stage)
+	// Identify the proving exercise: by the pass's own record when retained,
+	// else (the aged-out fallback) by the stage the ceremony celebrates —
+	// the first cataloged exercise of the proving stage.
 	exerciseID := pass.Exercise
 	var def sim.ExerciseDefinition
 	var ok bool
 	for _, d := range sim.ScenarioExercises {
-		if d.ID == exerciseID {
+		if (found && d.ID == exerciseID) || (!found && d.Stage == provingStageFor(stage)) {
 			def, ok = d, true
 			break
 		}
@@ -767,11 +788,13 @@ func (m Model) ceremonyReportCardFor(stage string, width int) string {
 	if !ok {
 		return ""
 	}
-	var facts []reportCardFact
+	var passPtr *sim.CurriculumPass
 	if found {
-		facts = reportCardFactsFromEvidence(def, pass.Evidence)
-	} else {
-		facts = reportCardFactsFromEvents(def, m.events)
+		passPtr = &pass
+	}
+	facts, _ := m.resolveReportCardFacts(def, passPtr)
+	if facts == nil {
+		return ""
 	}
 	return reportCardView(def.ID, facts, reportCardConcluded, width)
 }
@@ -796,9 +819,10 @@ const (
 // reportCardFact is one already-resolved rubric row: the plain-language
 // term, whether it's met, and the backing event reference shown alongside
 // it (postmortem.md "Report card": "the backing event reference"). Facts
-// are computed once at open time by the small helpers below — the renderer
-// itself does no event derivation, so its output is identical at every call
-// site by construction (D5/SC-005).
+// are computed once at open time by the shared resolver
+// (resolveReportCardFacts, reportcard.go — spec 072) — the renderer itself
+// does no derivation, so its output is identical at every call site by
+// construction (D5/SC-005).
 type reportCardFact struct {
 	Term    string
 	Met     bool
@@ -828,60 +852,6 @@ func reportCardView(title string, facts []reportCardFact, mode reportCardMode, w
 	}
 	content := styleHeader.Render("report card · "+title) + "\n" + strings.Join(lines, "\n")
 	return styleBox.Width(width - 2).Render(clipContent(content, width-2))
-}
-
-// humanizeEventType is a mechanical plain-language gloss of a cataloged
-// event type ("agent.died" -> "agent died") — a deliberately generic
-// placeholder, not hand-authored per-term copy (the mockups' "village
-// survives to dawn" phrasing is illustrative content this feature does not
-// have an authoritative source for; sim.ExerciseDefinition carries no
-// parallel plain-language term table). TASK-119's scenario rubric machinery
-// is the eventual owner of curated per-term copy and combining semantics
-// (some terms want zero occurrences, some want an OR of several —
-// curriculum.go's own doc comments); this renderer stays correct and stable
-// regardless of how that content evolves.
-func humanizeEventType(t string) string {
-	t = strings.ReplaceAll(t, ".", " ")
-	t = strings.ReplaceAll(t, "_", " ")
-	return t
-}
-
-// reportCardFactsFromCounts builds one fact per definition rubric term from
-// an already-tallied event-type count map — Met is true the first time the
-// term's event type is present at all (a deliberately generic
-// presence-based placeholder; see humanizeEventType's doc comment for the
-// scope note this shares).
-func reportCardFactsFromCounts(def sim.ExerciseDefinition, counts map[string]int) []reportCardFact {
-	facts := make([]reportCardFact, len(def.RubricTerms))
-	for i, term := range def.RubricTerms {
-		n := counts[term]
-		facts[i] = reportCardFact{Term: humanizeEventType(term), Met: n > 0, Backing: fmt.Sprintf("%s: %d", term, n)}
-	}
-	return facts
-}
-
-// reportCardFactsFromEvents derives facts from the client's own chronicle
-// ring (the postmortem's fallback source, and the ceremony's when the
-// proving pass has aged out of retention) — bounded by chronicleCap, honest
-// about what it can see, never a file read (FR-006).
-func reportCardFactsFromEvents(def sim.ExerciseDefinition, events []store.Event) []reportCardFact {
-	counts := make(map[string]int, len(def.RubricTerms))
-	for _, e := range events {
-		counts[e.Type]++
-	}
-	return reportCardFactsFromCounts(def, counts)
-}
-
-// reportCardFactsFromEvidence derives facts from a recorded pass's own
-// Evidence list — the ceremony's preferred, authoritative source (FR-019's
-// "instrument"): exactly the satisfying events the unlock derivation itself
-// read (sim.EvidenceRef, spec 046).
-func reportCardFactsFromEvidence(def sim.ExerciseDefinition, evidence []sim.EvidenceRef) []reportCardFact {
-	counts := make(map[string]int, len(def.RubricTerms))
-	for _, ev := range evidence {
-		counts[ev.Type]++
-	}
-	return reportCardFactsFromCounts(def, counts)
 }
 
 // reportCard wraps a resolved report card as a consoleCard seam element

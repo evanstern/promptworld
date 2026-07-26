@@ -119,6 +119,15 @@ type State struct {
 	// aligns each death against it). omitempty — pre-044 snapshots stay
 	// byte-identical.
 	CharterFingerprint string `json:"charter_fingerprint,omitempty"`
+	// Charter authorship (spec 072 FR-006): whether the most recently observed
+	// effective charter was player-authored (!CharterObservedPayload.Default),
+	// set ONLY by the same metatron.charter_observed arm — the-law's rubric
+	// charter conjunct reads it beside the fingerprint. The zero value is
+	// conservative: false = not known player-authored, so a pre-072 snapshot
+	// with a custom charter already in force renders the term pending until
+	// the next charter revision is observed — honest degradation, never a
+	// false ✓. omitempty — existing snapshots stay byte-identical.
+	CharterCustom bool `json:"charter_custom,omitempty"`
 	// Morgue epilogues (spec 044 US2, FR-010): the narrator's recorded
 	// mourning prose per death (or the run end, agent -1), bounded ring on
 	// the chronicle pattern so the scribe replica and attaching clients can

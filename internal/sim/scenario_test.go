@@ -604,3 +604,120 @@ func eventTypes(evs []store.Event) []string {
 	}
 	return out
 }
+
+// theLawCharterEvent builds a metatron.charter_observed fixture event.
+func theLawCharterEvent(tick int64, fp string, def bool) store.Event {
+	return store.Event{Tick: tick, Type: "metatron.charter_observed",
+		Payload: mustPayload(CharterObservedPayload{Fingerprint: fp, Default: def})}
+}
+
+// theLawNormEvent builds a passed meeting.proposal_resolved fixture event —
+// the ONLY producer of State.Norms entries (resolveProposal), so the law
+// term's ledger fills exactly the way production history fills it.
+func theLawNormEvent(tick int64) store.Event {
+	return store.Event{Tick: tick, Type: "meeting.proposal_resolved",
+		Payload: mustPayload(ProposalResolvedPayload{
+			ProposalPayload: ProposalPayload{ProposalID: 1, Kind: ProposeCurfew,
+				Target: -1, Proposer: 0, Text: "no one leaves the fires after dusk"},
+			Passed: true,
+		})}
+}
+
+// TestTheLawRubricTable is the-law's rubric evaluator table test (spec 072
+// FR-007, US2 — the TestFirstNightRubricTable model): per-term satisfaction
+// over state facts, with every mutation arriving through the reducer — the
+// charter authorship flag enters state ONLY via metatron.charter_observed.
+func TestTheLawRubricTable(t *testing.T) {
+	m := testMap(TheLawExercise.Seed)
+	fold := func(events ...store.Event) *State {
+		s := NewState(TheLawExercise.Seed, m)
+		for _, e := range events {
+			if err := s.Apply(e); err != nil {
+				t.Fatal(err)
+			}
+			s.Tick = e.Tick
+		}
+		return s
+	}
+
+	cases := []struct {
+		name      string
+		s         *State
+		wantMet   [2]bool // law adopted, player-authored charter
+		wantCount [2]int
+	}{
+		{"genesis: both pending, zero counts",
+			fold(), [2]bool{false, false}, [2]int{0, 0}},
+		{"default charter observed: authorship never met by the game's own hand",
+			fold(theLawCharterEvent(10, "aaaa11112222", true)), [2]bool{false, false}, [2]int{0, 1}},
+		{"custom charter observed: authorship met",
+			fold(theLawCharterEvent(10, "bbbb33334444", false)), [2]bool{false, true}, [2]int{0, 1}},
+		{"norm adopted: law met with the ledger count",
+			fold(theLawNormEvent(20)), [2]bool{true, false}, [2]int{1, 0}},
+		{"both terms met",
+			fold(theLawCharterEvent(10, "bbbb33334444", false), theLawNormEvent(20)),
+			[2]bool{true, true}, [2]int{1, 1}},
+		{"revert to the default charter flips authorship back off (present force)",
+			fold(theLawCharterEvent(10, "bbbb33334444", false), theLawCharterEvent(30, "cccc55556666", true)),
+			[2]bool{false, false}, [2]int{0, 1}},
+	}
+	for _, c := range cases {
+		terms := EvaluateRubric(c.s, TheLawExercise, c.s.Tick)
+		if len(terms) != 2 {
+			t.Fatalf("%s: %d terms, want 2", c.name, len(terms))
+		}
+		for i, term := range terms {
+			if term.Met != c.wantMet[i] || term.Count != c.wantCount[i] {
+				t.Errorf("%s: term %q Met=%v Count=%d, want Met=%v Count=%d",
+					c.name, term.Label, term.Met, term.Count, c.wantMet[i], c.wantCount[i])
+			}
+		}
+	}
+}
+
+// TestTheLawReplayEquivalence (spec 072 US2-5): folding the recorded events
+// into a live state and replaying the same log over a fresh genesis land on
+// byte-identical state and identical EvaluateRubric results — the charter
+// flag has no writer outside the event-sourced reducer arm, so live fold and
+// genesis replay cannot diverge.
+func TestTheLawReplayEquivalence(t *testing.T) {
+	m := testMap(TheLawExercise.Seed)
+	log := []store.Event{
+		theLawCharterEvent(10, "aaaa11112222", true),
+		theLawNormEvent(20),
+		theLawCharterEvent(30, "bbbb33334444", false),
+	}
+	for i := range log {
+		log[i].Seq = int64(i + 1)
+	}
+
+	live := NewState(TheLawExercise.Seed, m)
+	for _, e := range log {
+		if err := live.Apply(e); err != nil {
+			t.Fatalf("live apply %s: %v", e.Type, err)
+		}
+		live.Tick = e.Tick
+	}
+	liveTerms := EvaluateRubric(live, TheLawExercise, live.Tick)
+	if !liveTerms[0].Met || !liveTerms[1].Met {
+		t.Fatalf("live fold should satisfy both terms: %+v", liveTerms)
+	}
+
+	replayed := NewState(TheLawExercise.Seed, m)
+	for _, e := range log {
+		if err := replayed.Apply(e); err != nil {
+			t.Fatalf("replay apply %s: %v", e.Type, err)
+		}
+		replayed.Tick = e.Tick
+	}
+	if live.Hash() != replayed.Hash() {
+		t.Fatalf("replayed state diverged from live:\nlive:     %s\nreplayed: %s",
+			live.Marshal(), replayed.Marshal())
+	}
+	replayTerms := EvaluateRubric(replayed, TheLawExercise, replayed.Tick)
+	for i := range liveTerms {
+		if liveTerms[i] != replayTerms[i] {
+			t.Errorf("term %d diverged: live %+v, replayed %+v", i, liveTerms[i], replayTerms[i])
+		}
+	}
+}

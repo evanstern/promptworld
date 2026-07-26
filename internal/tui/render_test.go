@@ -877,28 +877,70 @@ func TestReportCardThreeSiteEquivalence(t *testing.T) {
 	}
 }
 
-// TestReportCardFactsFromCountsSharedByBothDerivations: the events-derived
-// and evidence-derived helpers produce identical rows given equivalent
-// inputs — one core (reportCardFactsFromCounts), two adapters.
-func TestReportCardFactsFromCountsSharedByBothDerivations(t *testing.T) {
-	def := sim.FirstNightExercise
-	events := []store.Event{
-		{Type: "sim.day_started"},
-		{Type: "metatron.order_placed"},
+// TestPostmortemReportCardFailedTermRendersMissed is spec 072's motivating
+// regression (SC-001): a run-ended first-night world with two recorded
+// deaths renders ✗ on "no villager dies" with the honest backing count —
+// never the presence-derived ✓ the deleted generic builders produced
+// ("agent died (agent.died: 2)" used to grade MET because the event type
+// was merely present).
+func TestPostmortemReportCardFailedTermRendersMissed(t *testing.T) {
+	m := testModel(t)
+	m.w.Manifest.Scenario = &world.ScenarioConfig{Exercise: "first-night"}
+	m.replica.Deaths = []sim.DeathRecord{
+		{Agent: 0, Tick: 90, Cause: "gru"},
+		{Agent: 1, Tick: 95, Cause: "exposure"},
 	}
-	evidence := []sim.EvidenceRef{
-		{Type: "sim.day_started"},
-		{Type: "metatron.order_placed"},
+	m.applyEvent(runEndedEvent(1, 100, "gru", m.replica.Deaths))
+
+	card := m.postmortemReportCard(100)
+	if !strings.Contains(card, "✗ no villager dies (agent.died: 2)") {
+		t.Fatalf("failed death term must render ✗ with its honest count:\n%s", card)
 	}
-	fromEvents := reportCardFactsFromEvents(def, events)
-	fromEvidence := reportCardFactsFromEvidence(def, evidence)
-	if len(fromEvents) != len(fromEvidence) {
-		t.Fatalf("length mismatch: %d vs %d", len(fromEvents), len(fromEvidence))
+	if strings.Contains(card, "✓ no villager dies") {
+		t.Fatalf("presence-derived ✓ on a failing zero-wanted term — the exact lie spec 072 deletes:\n%s", card)
 	}
-	for i := range fromEvents {
-		if fromEvents[i] != fromEvidence[i] {
-			t.Errorf("row %d differs: %+v vs %+v", i, fromEvents[i], fromEvidence[i])
+	// Labels are the evaluator's hand-authored plain language, not the
+	// mechanical event-type gloss (US1-5).
+	if strings.Contains(card, "agent died (") {
+		t.Errorf("mechanical humanizeEventType gloss leaked back in:\n%s", card)
+	}
+	if !strings.Contains(card, "village survives to dawn of day 2") {
+		t.Errorf("hand-authored rubric label missing:\n%s", card)
+	}
+	// The postmortem is a concluded surface: unmet terms carry ✗, never the
+	// live pending marker.
+	if strings.Contains(card, "…") {
+		t.Errorf("concluded surface rendered a live pending marker:\n%s", card)
+	}
+}
+
+// TestReportCardCrossSurfaceIdenticalRows (spec 072 US1-4): the postmortem
+// overlay and the console checklist card render identical glyph+label rows
+// for the same exercise at the same replica state — one shared fact
+// resolver, by construction.
+func TestReportCardCrossSurfaceIdenticalRows(t *testing.T) {
+	m := testModel(t)
+	m.w.Manifest.Scenario = &world.ScenarioConfig{Exercise: "first-night"}
+	m.replica.Deaths = []sim.DeathRecord{{Agent: 0, Tick: 90, Cause: "gru"}}
+	m.applyEvent(runEndedEvent(1, 100, "gru", m.replica.Deaths))
+
+	rows := func(view string) []string {
+		var out []string
+		for _, line := range strings.Split(view, "\n") {
+			if i := strings.IndexAny(line, "✓✗…"); i >= 0 {
+				out = append(out, strings.TrimSpace(strings.Trim(line[i:], "│ ")))
+			}
 		}
+		return out
+	}
+	postmortem := rows(m.postmortemReportCard(100))
+	card := m.buildChecklistCard()
+	if card == nil {
+		t.Fatal("console checklist card absent on an ended scored run")
+	}
+	console := rows(card.renderCard(100))
+	if len(postmortem) == 0 || fmt.Sprint(postmortem) != fmt.Sprint(console) {
+		t.Errorf("surfaces disagree:\npostmortem: %v\nconsole:    %v", postmortem, console)
 	}
 }
 
@@ -959,14 +1001,17 @@ func TestMorgueRowsCharterObservationHonesty(t *testing.T) {
 	}
 }
 
-// TestCeremonyReportCardPrefersRecordedEvidence: the ceremony's checklist
-// uses the recorded pass's own Evidence (authoritative — FR-019), not a
-// generic ring scan, when the qualifying pass is still retained.
+// TestCeremonyReportCardPrefersRecordedEvidence: with the qualifying pass
+// still retained, the ceremony's checklist is a re-read of that record
+// (spec 072 FR-002) — every term met, backing drawn from the pass's own
+// Evidence (authoritative — FR-019), labels from the evaluator's
+// hand-authored terms, never a live re-grade.
 func TestCeremonyReportCardPrefersRecordedEvidence(t *testing.T) {
 	m := testModel(t)
 	m.replica.CurriculumPasses = []sim.CurriculumPass{
 		{Exercise: "first-night", Stage: "stage-1", Evidence: []sim.EvidenceRef{
-			{Type: "sim.day_started"}, {Type: "metatron.order_placed"},
+			{Type: "sim.day_started", Seq: 40, Tick: 890},
+			{Type: "metatron.order_placed", Seq: 12, Tick: 200},
 		}},
 	}
 	m.applyEvent(stageUnlockedEvent(1, 200, "stage-2", "first-night"))
@@ -974,8 +1019,43 @@ func TestCeremonyReportCardPrefersRecordedEvidence(t *testing.T) {
 	if !strings.Contains(view, "report card · first-night") {
 		t.Fatalf("ceremony should render the proving exercise's report card: %q", view)
 	}
-	if !strings.Contains(view, "sim.day_started: 1") || !strings.Contains(view, "metatron.order_placed: 1") {
-		t.Errorf("ceremony report card should reflect the recorded pass's own Evidence: %q", view)
+	// Evidence-backed rows carry the recorded refs; the recorded pass proves
+	// every term held at pass time, so NO unmet marker may render even
+	// though the replica's own live rubric would still grade terms pending.
+	if !strings.Contains(view, "sim.day_started · seq 40") || !strings.Contains(view, "metatron.order_placed · seq 12") {
+		t.Errorf("ceremony report card should carry the recorded pass's own Evidence refs: %q", view)
+	}
+	if !strings.Contains(view, "✓ village survives to dawn of day 2") || !strings.Contains(view, "✓ no villager dies") {
+		t.Errorf("recorded pass must render all terms met with evaluator labels: %q", view)
+	}
+	if strings.Contains(view, "✗") || strings.Contains(view, "…") {
+		t.Errorf("recorded-pass card must carry no unmet marker (re-read, never re-grade): %q", view)
+	}
+}
+
+// TestCeremonyReportCardAgedOutPassFallsBackToRubric (spec 072 edge case,
+// pinned as a decision): the qualifying pass has left the bounded
+// CurriculumPasses retention, so the ceremony grades sim.EvaluateRubric
+// over the current replica with concluded markers — current-state truth,
+// honest about what it can still see.
+func TestCeremonyReportCardAgedOutPassFallsBackToRubric(t *testing.T) {
+	m := testModel(t)
+	m.applyEvent(stageUnlockedEvent(1, 200, "stage-2", "first-night"))
+	if len(m.replica.CurriculumPasses) != 0 {
+		t.Fatal("fixture: retention must be empty (the aged-out posture)")
+	}
+	view := m.ceremonyView(100, 30)
+	if !strings.Contains(view, "report card · first-night") {
+		t.Fatalf("aged-out fallback should still render the proving exercise's card: %q", view)
+	}
+	// Concluded vocabulary over current state: at tick 0 the survival and
+	// watch terms are not provably met — ✗, never a false ✓ and never the
+	// live pending marker on this concluded surface.
+	if !strings.Contains(view, "✗ village survives to dawn of day 2") || !strings.Contains(view, "✓ no villager dies (agent.died: 0)") {
+		t.Errorf("aged-out card should grade the current replica with concluded markers: %q", view)
+	}
+	if strings.Contains(view, "…") {
+		t.Errorf("concluded surface rendered a live pending marker: %q", view)
 	}
 }
 

@@ -28,7 +28,8 @@ class — pure functions of (state, tick), no whitelist entries, the
 `metatron.order_expired` pattern; the spec-054 scenario rubric machinery
 (`scenario.go`'s `scenarioRubricEvents`, TASK-119) is the production emitter
 — see [[scenario-machinery]] — and test fixtures remain the only in-tree
-emitter for exercises whose rubric evaluator is still unbuilt content work.
+emitter for exercises without pass emission (`the-law` since spec 072 has a
+production EVALUATOR but still no emitter — FR-009 content work).
 The reducer appends passes to the bounded `State.CurriculumPasses` ring
 (`curriculumPassRetain` 32) and latches unlocks into `State.StagesUnlocked`
 once per (world, stage), rejecting duplicates and `stage-1` (the unearned
@@ -68,12 +69,13 @@ score-narrative framing (failure is a story, not a scold), and — since spec
 `IncidentVisibility` override ([[scenario-machinery]]). Two ship
 (`ScenarioExercises`): **first-night** (stage-1, seed 46101 — keep the
 village alive through night one by directing the guardian: visions, omens,
-and the watch; the only exercise with a production rubric evaluator today,
-plus an authored night-one `gru_emerges` incident) and **the-law** (stage-2,
-seed 46102 — get a norm adopted while a player-authored charter revision is
-in force, the SC-004 conjunct; its rubric evaluator is still unbuilt content
-work — state retains only the charter fingerprint, not the `Default` flag
-the conjunct needs). The spec-054 scenario/rubric machinery consumes the
+and the watch; a production rubric evaluator AND pass emission, plus an
+authored night-one `gru_emerges` incident) and **the-law** (stage-2, seed
+46102 — get a norm adopted while a player-authored charter revision is in
+force, the SC-004 conjunct; since spec 072 it has a production rubric
+evaluator too — `theLawRubric` over `State.Norms` and the persisted
+`State.CharterCustom` authorship flag, [[scenario-machinery]] — though pass
+emission remains content work). The spec-054 scenario/rubric machinery consumes the
 catalog end to end ([[scenario-machinery]]); `Manifest.Scenario` is its
 consumed schema seam, no longer reserved ([[world-save-directory]]).
 Surfacing: `ipc.WorldStatus.Stage`/`StageOverridden` ride status, `promptworld
@@ -103,5 +105,6 @@ truth — any proving world's log still carries its `curriculum.stage_unlocked`
 events. Since spec 054 (TASK-119), the `first-night` exercise's production
 rubric evaluator lands `curriculum.exercise_passed`/`stage_unlocked` on a
 real scenario world (`promptworld new --scenario first-night`) — see
-[[scenario-machinery]]; `the-law`'s evaluator remains unbuilt content work,
-so a stage-2 world still needs `--override` until it lands.
+[[scenario-machinery]]; `the-law` evaluates for real since spec 072 (live
+gauges and card surfaces), but its pass EMISSION remains unbuilt content
+work, so a stage-3 unlock still needs `--override` until it lands.

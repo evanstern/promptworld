@@ -7,7 +7,7 @@ sources:
   - internal/tui/views.go
   - internal/tui/help.go
   - internal/skin/skin.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+verified_against: b3f4da3c29e3cbbd933e366abe76a5d6ef0f2be9
 ---
 
 # Takeover surfaces (ceremony + postmortem)
@@ -94,7 +94,9 @@ find which recorded `CurriculumPass` earned the stage — a read-only twin for
 replay purposes only (`EvaluateUnlock` itself refuses to re-evaluate an
 already-latched stage); honest-false once the qualifying pass has aged out
 of the bounded 32-entry `CurriculumPasses` retention, in which case the
-report card falls back to a generic events-ring derivation instead of the
+report card identifies the proving exercise by stage (`provingStageFor`)
+and grades `sim.EvaluateRubric` over the current replica with concluded
+markers (spec 072's pinned fallback — current-state truth) instead of the
 pass's own authoritative `Evidence`.
 
 **Replayability** — split to [[report-card-renderer]]: the help overlay's
@@ -108,8 +110,11 @@ Split to [[report-card-renderer]]: one rubric-checklist implementation
 (`reportCardFact`/`reportCardView`/`reportCardMode`), several sites — the
 postmortem (concluded), the ceremony (concluded), and, via a `consoleCard`
 wrapper, spec 053's guardian-console card seam (production wiring completed
-by [[grounded-feedback]], TASK-115) — plus the two fact-builders that derive
-rows from the client's chronicle ring or a `CurriculumPass`'s own `Evidence`.
+by [[grounded-feedback]], TASK-115) — plus, since spec 072, the ONE shared
+fact resolver (`resolveReportCardFacts`) all three surfaces derive verdicts
+through: the recorded pass (all-met, evidence-backed) else
+`sim.EvaluateRubric` over the replica, so a failed term renders honest ✗
+everywhere and the surfaces can never disagree.
 
 ## Connections
 

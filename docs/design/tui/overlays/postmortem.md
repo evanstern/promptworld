@@ -2,7 +2,7 @@
 title: Overlay — postmortem
 class: overlay
 status: shipped
-verified_against: ded11c2b415dc31472ab9103996f5d2493078001
+verified_against: 348a100c22f650d27e6fba517ea7f1f1aed1af73
 sources:
   - internal/tui/tui.go
   - internal/tui/views.go
@@ -41,10 +41,9 @@ a scold.
 │  run has ended.                                                       │
 │                                                                        │
 │  ┌─ report card · first-night ──────────────────────────────────┐    │
-│  │ ✗ sim day started (sim.day_started: 0)                         │   │
-│  │ ✓ agent died (agent.died: 2)                                   │   │
-│  │ ✗ metatron nudged (metatron.nudged: 0)                         │   │
-│  │ ✓ metatron order placed (metatron.order_placed: 1)             │   │
+│  │ ✗ village survives to dawn of day 2 (sim.day_started: 0)       │   │
+│  │ ✗ no villager dies (agent.died: 2)                             │   │
+│  │ ✓ a watch set before nightfall (metatron.order_placed: 1)      │   │
 │  └──────────────────────────────────────────────────────────────┘    │
 │                                                                        │
 │  morgue — no-blame evidence                                           │
@@ -54,17 +53,19 @@ a scold.
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-**Known simplification** (not resolved by this feature): the report card's
-marker is a generic event-presence evaluation (`reportCardFactsFromEvents`,
-`internal/tui/views.go`) — met = the term's cataloged event type appears at
-least once in the run. This is backwards for a "zero wanted" term: the
-mockup above shows `agent died (agent.died: 2)` as ✓ even though two deaths
-are the exercise's FAILING outcome, not its passing one. `internal/sim/
-curriculum.go`'s own doc comments name TASK-119's scenario rubric machinery
-as the eventual owner of curated per-term pass/fail semantics (some terms
-want zero occurrences, some combine several with OR); this renderer is a
-deliberately generic mechanism that stays correct and stable regardless of
-how that content evolves — see `overlays/ceremony.md`'s identical note.
+**Grading contract** (spec 072 — report-card truth): every card surface
+derives its per-term verdicts through ONE shared resolver
+(`resolveReportCardFacts`, `internal/tui/reportcard.go`), whose sources are,
+in precedence order: the recorded `CurriculumPass` (the instrument — all
+terms met by construction, backed by the pass's own evidence), else
+`sim.EvaluateRubric` over the replica — the SAME pure derivation the pass
+emitter reads, so the exercise panel, the emitter, and every card can never
+disagree. A failed term on this concluded surface renders `✗` with its
+honest backing count — the mockup's `✗ no villager dies (agent.died: 2)` is
+the shipped behavior (two deaths FAIL the zero-wanted term; the old
+presence-based ✓ is deleted, not bypassed). Term labels are the evaluator's
+hand-authored plain language (`RubricTerm.Label`), not a mechanical
+event-type gloss — see `overlays/ceremony.md`'s matching note.
 
 ## Layering & trigger
 
@@ -114,12 +115,14 @@ One rubric-checklist renderer, three call sites:
 3. **`overlays/ceremony.md`** — the "instrument authoritative" checklist
    inside an unlock celebration.
 
-Content: one row per rubric term (from the exercise's event-derived rubric,
+Content: one row per evaluated rubric term (`sim.EvaluateRubric`'s
+`RubricTerm` — hand-authored label, per-term verdict, backing event count;
 [[curriculum-ladder]]), a met/pending or met/missed marker depending on
 call site (a still-running exercise shows met/pending; a concluded one
-shows met/missed), and the backing event reference. The renderer is
-identical everywhere it appears; only its surrounding takeover/inline/
-celebratory chrome differs per call site.
+shows met/missed), and the backing event reference (the pass's own evidence
+ref when a recorded pass backs the card). The renderer AND the fact
+resolver are identical everywhere they appear (spec 072); only the
+surrounding takeover/inline/celebratory chrome differs per call site.
 
 ## Dismissal
 
@@ -168,7 +171,7 @@ ended state model-free. This overlay adds no fact a linear observer lacks.
 | postmortem takeover | closed · open | `run.ended` / `State.Ended` (dual-source, matching `Model.runEnded()`) | `unbuilt (wave 4)` | (opens automatically) · — | reorient decision 6 | — |
 | run-end narrated line | — | `run.ended` payload (final cause) | `unbuilt (wave 4)`, shares wording with [[chronicle]]'s existing digest/narrated line | — (display-only) | reorient decision 6 (surface); TASK-60/spec 044 (line text, pre-existing) | — |
 | morgue evidence rows | — | morgue no-blame register ([[morgue]]) | `unbuilt (wave 4)` (content pre-exists in `morgue.md`) | — | reorient decision 6 / spec 044 | — |
-| report card (scored runs only) | absent (ambient) · shown (scored) | exercise rubric evidence | `unbuilt (wave 4)`, shared with `pages/guardian-console.md`/`overlays/ceremony.md` | — | reorient FR-018/D5 | — |
+| report card (scored runs only) | absent (ambient) · shown (scored) | `sim.EvaluateRubric` over the replica / recorded pass (shared resolver, spec 072) | `unbuilt (wave 4)`, shared with `pages/guardian-console.md`/`overlays/ceremony.md` | — | reorient FR-018/D5 · spec 072 | — |
 | dismiss | open → closed | player action | `unbuilt (wave 4)` | `esc` · — | reorient decision 6 | — |
 | quit/detach | — | player action | existing quit path (unchanged) | `q` · — | pre-existing | — |
 | replay via reopen key | closed → open | `Model.runEnded()` | `unbuilt (wave 4)` | `p` · — | reorient FR-013 | — |

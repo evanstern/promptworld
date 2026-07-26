@@ -2,7 +2,7 @@
 title: Page — guardian console
 class: page
 status: shipped
-verified_against: bdb0686ad869bc4a0b2521d5e9b4d75dd7fa2ba4
+verified_against: 348a100c22f650d27e6fba517ea7f1f1aed1af73
 sources:
   - internal/tui/views.go
   - internal/tui/tui.go
@@ -21,11 +21,12 @@ rubric-checklist renderer (`reportCardView`) and its `consoleCard` seam
 wrapper (`reportCard`); spec 063 (TASK-115) ships the PRODUCTION — the
 stopping-point producer daemon-side (run end, pause, exercise resolution)
 and the client composition `rebuildConsoleCards`
-(`internal/tui/reportcard.go`), which composes the checklist card (from
-`replica.CurriculumPasses` rubric evidence) ABOVE the stored
-`guardian.report_card` attribution note (`noteCard`) in this seam — one
-artifact, checklist authoritative, the note additive prose beneath it (spec
-063 standing resolution 1).
+(`internal/tui/reportcard.go`), which composes the checklist card — facts
+from the shared resolver `resolveReportCardFacts` (spec 072): the recorded
+`CurriculumPass` when one exists, else `sim.EvaluateRubric` over the
+replica — ABOVE the stored `guardian.report_card` attribution note
+(`noteCard`) in this seam — one artifact, checklist authoritative, the note
+additive prose beneath it (spec 063 standing resolution 1).
 
 ## Mockup
 
@@ -48,8 +49,8 @@ artifact, checklist authoritative, the note additive prose beneath it (spec
 │ └──────────────────────────────────────────────────────────────────┘  │
 │                                                                          │
 │ ┌─ report card · first-night ─────────────────────────────────────┐    │
-│ │ ✓ sim day started (sim.day_started: 1)                            │    │
-│ │ … metatron order placed (metatron.order_placed: 0)                │    │
+│ │ ✓ no villager dies (agent.died: 0)                                │    │
+│ │ … a watch set before nightfall (metatron.order_placed: 0)         │    │
 │ └───────────────────────────────────────────────────────────────┘    │
 └──────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────┐
@@ -106,14 +107,17 @@ classification, reused verbatim, not a second vocabulary.
    stores an attribution note as a `guardian.report_card` event (run end:
    the `morgue.epilogue` channel), and the client composes the card into
    this seam via `rebuildConsoleCards` (`internal/tui/reportcard.go`): the
-   rubric checklist FIRST when rubric evidence exists (`reportCardView`
+   rubric checklist FIRST when the world carries a rubric (`reportCardView`
    wrapped as `reportCard` — spec 056's D5 shared renderer, proven into
-   this seam by `TestConsoleCardSeamComposesReportCard`), then the STORED
-   note (`noteCard` over `State.GuardianReportCard`), re-read on connect
-   and on the landed event, never re-graded — one artifact, checklist
-   authoritative, the note additive prose beneath it (spec 063 standing
-   resolution 1). Between stopping points the existing unseen badge
-   announces a fresh card; nothing ever interrupts mid-run.
+   this seam by `TestConsoleCardSeamComposesReportCard`; verdicts from the
+   spec-072 shared resolver — the recorded pass re-read when one exists,
+   else `sim.EvaluateRubric` over the replica, live `…` markers until the
+   exercise concludes or the run ends), then the STORED note (`noteCard`
+   over `State.GuardianReportCard`), re-read on connect and on the landed
+   event — one artifact, checklist authoritative, the note additive prose
+   beneath it (spec 063 standing resolution 1). Between stopping points the
+   existing unseen badge announces a fresh card; nothing ever interrupts
+   mid-run.
 
 ## Composer
 
@@ -189,7 +193,7 @@ adds a richer TUI presentation of what already exists.
 | charter/skills read surface | default · player-authored · preset-locked; skills bound · locked | `metatron.Status` (`CharterDefault`/`CharterLocked`/`CharterPreset`/`Skills`/`SkillsLocked`) | `charterReadSurfaceLines`/`charterReadSurfaceBox` | — (display-only) | spec 053 | — |
 | `$EDITOR` handoff | idle · shelled-out · returned | on-disk `charter.md` (content hash, pre/post) | `startEditorHandoff` (`tea.ExecProcess`) | `e` · — | spec 053 | — |
 | "charter changed — next turn binds it" confirmation | absent · shown once · error notice | pre/post content-hash comparison (`editorRoundTripMsg`) | `Model.consoleNotice` | — | spec 053 | — |
-| report-card rubric checklist (inline) | absent · shown (rubric evidence exists) | `replica.CurriculumPasses` rubric evidence, shared with `overlays/postmortem.md`'s `reportCardView` (spec 056) | `reportCard` (`consoleCard` wrapper, `internal/tui/views.go`), composed FIRST by `rebuildConsoleCards` | — | reorient D5 / TASK-127; production spec 063 | — |
+| report-card rubric checklist (inline) | absent · shown (stopping point on record) | shared resolver (`resolveReportCardFacts`, spec 072): recorded `CurriculumPass` else `sim.EvaluateRubric` over the replica — same source as `overlays/postmortem.md`/`overlays/ceremony.md` | `reportCard` (`consoleCard` wrapper, `internal/tui/views.go`), composed FIRST by `rebuildConsoleCards` | — | reorient D5 / TASK-127; production spec 063; grading spec 072 | — |
 | composer | dormant · focused · busy | `panels/minibuffer.md` (same component, unchanged) | `minibufferView` (existing) | `m` focus · — | TASK-34 (reused) | `skin.guardian.epithet` |
 
 **Parity rollout**: `G` (open console) and `e` ($EDITOR handoff) have no

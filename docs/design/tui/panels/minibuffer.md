@@ -2,7 +2,7 @@
 title: Panel — minibuffer (guardian input)
 class: panel
 status: shipped
-verified_against: ed93211ced3deb76e9b1f2fa4902c6f3d9dbc59d
+verified_against: 348a100c22f650d27e6fba517ea7f1f1aed1af73
 sources:
   - internal/tui/views.go
 ---

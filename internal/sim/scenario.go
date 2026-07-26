@@ -272,15 +272,17 @@ type RubricTerm struct {
 
 // EvaluateRubric derives per-term satisfaction for def from state facts the
 // reducer already maintains — pure over (state, definition, tick), no log
-// scan (research R4). v1 implements the first-night rubric end-to-end
-// (FR-004); other exercises get their content terms rendered pending —
-// the-law's charter conjunct is not state-derivable today (state retains
-// only the fingerprint, not the Default flag), so its production evaluator
-// is future content work, documented here rather than faked.
+// scan (research R4). Both cataloged exercises carry production arms:
+// first-night (FR-004) and the-law (spec 072 FR-007 — the charter conjunct
+// reads State.CharterCustom, persisted beside the fingerprint by the
+// metatron.charter_observed reducer arm). Exercises without an arm get
+// their content terms rendered pending — the honest default, never faked.
 func EvaluateRubric(s *State, def ExerciseDefinition, tick int64) []RubricTerm {
 	switch def.ID {
 	case "first-night":
 		return firstNightRubric(s, tick)
+	case "the-law":
+		return theLawRubric(s)
 	}
 	terms := make([]RubricTerm, 0, len(def.RubricTerms))
 	for _, ev := range def.RubricTerms {
@@ -311,6 +313,29 @@ func firstNightRubric(s *State, tick int64) []RubricTerm {
 			Met: len(s.Deaths) == 0, Count: len(s.Deaths)},
 		{Label: "a watch set before nightfall", Event: "metatron.order_placed",
 			Met: watch != nil, Count: watchCount},
+	}
+}
+
+// theLawRubric is spec 072 FR-007's condition set over state facts. The law
+// term reads the adopted-norm ledger: every State.Norms entry is appended
+// only by resolveProposal on a passed meeting.proposal_resolved, so the
+// count is a faithful adopted-law ledger (repealed norms stay on state with
+// Active=false and still count — adopted-ever semantics, matching the
+// exercise's "get a norm adopted" teaching goal). The charter term reads the
+// persisted authorship of the most recent charter observation (CharterCustom
+// beside CharterFingerprint — latest observation wins, exactly how the
+// fingerprint itself is kept, so a revert to the default charter flips the
+// term back off: "in force" means present force).
+func theLawRubric(s *State) []RubricTerm {
+	observed := 0
+	if s.CharterFingerprint != "" {
+		observed = 1
+	}
+	return []RubricTerm{
+		{Label: "a village law adopted", Event: "meeting.proposal_resolved",
+			Met: len(s.Norms) > 0, Count: len(s.Norms)},
+		{Label: "a player-authored charter in force", Event: "metatron.charter_observed",
+			Met: s.CharterFingerprint != "" && s.CharterCustom, Count: observed},
 	}
 }
 
@@ -389,7 +414,13 @@ func ExerciseOutcome(s *State, exercise string) string {
 func scenarioRubricEvents(s *State, nextTick int64, batch []store.Event) []store.Event {
 	def := s.scenario.def
 	if def.ID != "first-night" {
-		return nil // v1: only first-night has a production evaluator (FR-004)
+		// Only first-night EMITS (spec 072 FR-009): the-law now has a
+		// production evaluator (theLawRubric — its gauges and card surfaces
+		// are live), but its boundary tick, evidence assembly
+		// (CharterObservedEvidence needs the recorded event's Seq/Tick, which
+		// state deliberately does not retain), and pass emission are
+		// exercise-catalog content work, not this guard's.
+		return nil
 	}
 	// Boundary: dawn of day 2 — the same arithmetic the sim.day_started
 	// emission uses, so the pass rides the exact tick the day boundary lands.

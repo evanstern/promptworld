@@ -7,7 +7,7 @@ sources:
   - internal/sim/agents.go
   - internal/sim/morgue.go
   - internal/sim/curriculum.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+verified_against: b3f4da3c29e3cbbd933e366abe76a5d6ef0f2be9
 ---
 
 # Sim state: world & social fields
@@ -77,7 +77,14 @@ summary (`{tick, deaths, final_cause}`, set once by the `run.ended` arm and
 never cleared by any event, so snapshot+replay restores the ended posture on
 restart for free), `CharterFingerprint` (the most recent effective-charter
 content hash a Guardian turn ran under — the full revision timeline lives in
-the event log), and the `MorgueEpilogues []MorgueEpilogue` bounded ring
+the event log) with, since spec 072, its authorship twin `CharterCustom bool`
+(`charter_custom` — whether that most recent observation was player-authored,
+`!CharterObservedPayload.Default`, set only by the same
+`metatron.charter_observed` arm; the conservative false zero value means a
+pre-072 snapshot with a custom charter in force reads "not known
+player-authored" until the next revision is observed — the-law's rubric
+charter conjunct reads it, [[scenario-machinery]]), and the
+`MorgueEpilogues []MorgueEpilogue` bounded ring
 (`morgueEpilogueCap` 32, the chronicle pattern) of narrator mourning prose —
 all `omitempty`, so every pre-044 snapshot stays byte-identical with no
 format bump — and, since spec 046 ([[curriculum-ladder]]), the ladder's

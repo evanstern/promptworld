@@ -145,8 +145,9 @@ func scenarioCardModel(t *testing.T) Model {
 // TestReportCardChecklistOnly (T012, standing resolution 1's checklist-only
 // case): an exercise resolution with NO stored note composes exactly one
 // card — TASK-127's shared reportCardView wrapped as its reportCard
-// consoleCard — with concluded markers derived from the recorded pass's own
-// Evidence, and no attribution block.
+// consoleCard — all terms met (the recorded pass is the instrument — spec
+// 072 FR-002), backing preferring the pass's own Evidence, and no
+// attribution block.
 func TestReportCardChecklistOnly(t *testing.T) {
 	m := scenarioCardModel(t)
 	m.replica.CurriculumPasses = []sim.CurriculumPass{{
@@ -167,12 +168,40 @@ func TestReportCardChecklistOnly(t *testing.T) {
 	if !strings.Contains(rendered, "report card · first-night") {
 		t.Errorf("checklist card missing the shared renderer's title: %q", rendered)
 	}
-	// Concluded markers from the pass's evidence: met terms ✓, unmet ✗.
-	if !strings.Contains(rendered, "✓ sim day started") || !strings.Contains(rendered, "✗ metatron nudged") {
-		t.Errorf("checklist markers wrong: %q", rendered)
+	// The recorded pass proves every term held at pass time: evaluator
+	// labels, all met, evidence-backed where a term's event type matches.
+	if !strings.Contains(rendered, "✓ village survives to dawn of day 2 (sim.day_started · seq 40)") ||
+		!strings.Contains(rendered, "✓ a watch set before nightfall (metatron.order_placed · seq 12)") ||
+		!strings.Contains(rendered, "✓ no villager dies") {
+		t.Errorf("checklist rows wrong: %q", rendered)
+	}
+	if strings.Contains(rendered, "✗") || strings.Contains(rendered, "…") {
+		t.Errorf("recorded-pass checklist must carry no unmet marker (re-read, never re-grade): %q", rendered)
 	}
 	if strings.Contains(rendered, "what your words did") {
 		t.Error("checklist-only card carries an attribution block")
+	}
+}
+
+// TestReportCardChecklistLiveMarkers (spec 072 FR-002's live leg): a stored
+// attribution note is a stopping point with no pass and no run end — the
+// checklist grades sim.EvaluateRubric live: met terms ✓, unmet terms the
+// pending … marker, never the concluded ✗.
+func TestReportCardChecklistLiveMarkers(t *testing.T) {
+	m := scenarioCardModel(t)
+	m.replica.GuardianReportCard = &sim.GuardianReportCard{Fingerprint: "ff00", Note: "a note"}
+	m.rebuildConsoleCards()
+	if len(m.consoleCards) != 2 {
+		t.Fatalf("consoleCards = %d, want 2 (checklist + note)", len(m.consoleCards))
+	}
+	rendered := m.consoleCards[0].renderCard(90)
+	if !strings.Contains(rendered, "… village survives to dawn of day 2") ||
+		!strings.Contains(rendered, "✓ no villager dies (agent.died: 0)") ||
+		!strings.Contains(rendered, "… a watch set before nightfall (metatron.order_placed: 0)") {
+		t.Errorf("live checklist rows wrong: %q", rendered)
+	}
+	if strings.Contains(rendered, "✗") {
+		t.Errorf("live checklist must never render the concluded ✗ marker: %q", rendered)
 	}
 }
 
