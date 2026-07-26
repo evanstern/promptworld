@@ -10,7 +10,7 @@ sources:
   - internal/guardian/turn.go
   - internal/guardian/toolcalls.go
   - internal/sim/state.go
-verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
+verified_against: 510a3c3133e120d84cd50525dbc4ee0d3ec01cdc
 ---
 
 # Grounded feedback layer (explain, tutor guide, report card)
