@@ -22,8 +22,8 @@ split implementer/orchestrator per plan D4).
 
 **Independent Test**: fixture matrix in `scripts/check-merge-drift.test.mjs`.
 
-- [ ] T003 [US1] Predicate + finding swap in `gatePr`: evaluate pin-vs-branch per overlapped note; fail → block `wiki-repin-missing` (message names note, matched sources, remedy); pass → no finding; scoped `wiki-note-malformed` escalation for predicate-needed notes, in `scripts/check-merge-drift.mjs` (plan D2, spec FR-001/002/004/005)
-- [ ] T004 [US1] Fixture-repo matrix: overlap-no-repin blocks; repinned-pass; source re-touched after pin blocks; pin unreachable from tip blocks; no-overlap branch unchanged; malformed-needed-note blocks — in `scripts/check-merge-drift.test.mjs` (plan D5, spec US1 scenarios + edge cases)
+- [X] T003 [US1] Predicate + finding swap in `gatePr`: evaluate pin-vs-branch per overlapped note; fail → block `wiki-repin-missing` (message names note, matched sources, remedy); pass → no finding; scoped `wiki-note-malformed` escalation for predicate-needed notes, in `scripts/check-merge-drift.mjs` (plan D2, spec FR-001/002/004/005)
+- [X] T004 [US1] Fixture-repo matrix: overlap-no-repin blocks; repinned-pass; source re-touched after pin blocks; pin unreachable from tip blocks; no-overlap branch unchanged; malformed-needed-note blocks — in `scripts/check-merge-drift.test.mjs` (plan D5, spec US1 scenarios + edge cases)
 
 ## Phase 4: User Story 2 — Player docs cannot go stale through a merge (P1)
 
@@ -31,8 +31,8 @@ split implementer/orchestrator per plan D4).
 
 **Independent Test**: stub-checker fixture tests.
 
-- [ ] T005 [US2] Player-docs checker spawn in `gatePr` gated on `docs/wiki/` changes; env-var override `CHECK_MERGE_DRIFT_PLAYER_DOCS_CHECKER` for tests; exit 1 → `player-docs-stale` block, exit 2 → `player-docs-env-error` block, no invocation without wiki changes, in `scripts/check-merge-drift.mjs` (plan D3, spec FR-003)
-- [ ] T006 [US2] Stub-checker tests (exit 0/1/2 + not-invoked case) in `scripts/check-merge-drift.test.mjs` (plan D5)
+- [X] T005 [US2] Player-docs checker spawn in `gatePr` gated on `docs/wiki/` changes; env-var override `CHECK_MERGE_DRIFT_PLAYER_DOCS_CHECKER` for tests; exit 1 → `player-docs-stale` block, exit 2 → `player-docs-env-error` block, no invocation without wiki changes, in `scripts/check-merge-drift.mjs` (plan D3, spec FR-003)
+- [X] T006 [US2] Stub-checker tests (exit 0/1/2 + not-invoked case) in `scripts/check-merge-drift.test.mjs` (plan D5)
 
 ## Phase 5: User Story 3 — The doctrine says what the gate enforces (P2)
 

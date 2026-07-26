@@ -9,6 +9,8 @@
 //   specs/051-merge-drift-gates/contracts/report-schema.md
 //   specs/065-claim-before-work/contracts/gate-cli-delta.md — claim mode,
 //   worktree --task / claim-aware --spec, session branch-unpushed
+//   specs/069-wiki-in-pr-gate/spec.md — pr mode blocks: wiki-repin-missing
+//   (pin-vs-branch predicate), player-docs-stale / player-docs-env-error
 //
 // Node >= 18, ESM, zero npm dependencies (stdlib fs/path/child_process/crypto
 // only). Requires git >= 2.38 (`git merge-tree --write-tree`).
@@ -54,7 +56,7 @@
 //      or fetch failure in a fail-closed mode: pr, worktree, claim)
 
 import { existsSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
-import { join } from 'node:path';
+import { isAbsolute, join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
@@ -612,6 +614,13 @@ function computeDelegatedSurface(name, mainWt, relScriptPath, args, extractTouch
   }
   return { name, checker: 'delegated', stale: r.status !== 0, touched: [...new Set(touched)] };
 }
+
+// Default checker path for pr mode's in-branch player-docs block (spec 069
+// FR-003, research R2): the checker owns the meta-pin grammar (spec 026
+// contract) and its exit codes are stable (0 fresh / 1 stale / 2 env error).
+// Overridable via CHECK_MERGE_DRIFT_PLAYER_DOCS_CHECKER so the node:test
+// harness can stub it — same dependency-injection seam the fixtures use.
+const PLAYER_DOCS_CHECKER = '.claude/skills/player-docs/scripts/check-freshness.mjs';
 
 export function computePlayerDocsSurface(mainWt) {
   return computeDelegatedSurface(
@@ -1456,22 +1465,136 @@ function runPr(flags, cwd) {
     );
   }
 
+  // Wiki grounding rides the PR (spec 069, FR-001/002/004/005): a branch
+  // touching wiki-pinned sources must itself carry the re-verification.
+  // Pin-vs-branch predicate at branch tip T, per overlapped note:
+  //   (a) the note is modified on the branch (note ∈ branchFiles),
+  //   (b) its frontmatter at T carries a readable verified_against pin,
+  //   (c) the pin is reachable from T (merge-base --is-ancestor),
+  //   (d) no matched source changed after the pin
+  //       (rev-list <pin>..T -- <matched> empty).
+  // ALL hold -> no finding at all: a satisfied re-pin is not noise (FR-002 —
+  // the old warn-level wiki-sources-overlap is replaced, not duplicated).
+  // Any clause fails -> block (wiki-repin-missing). A note DELETED at T while
+  // its sources are touched counts as re-verified — deletion IS a
+  // re-verification outcome (structural drift; spec 069 edge cases), so
+  // clauses (b)-(d) are vacuous for a file absent at T. Malformed frontmatter
+  // at T blocks via wiki-note-malformed ONLY for predicate-needed notes
+  // (FR-005, research R5); notes the branch doesn't overlap keep today's
+  // session-mode advisory posture.
   const wikiNotes = loadWikiNotes(cwd, originMainTip);
   const wikiHits = wikiSourcesOverlap(branchFiles, wikiNotes);
+  const notesAtTip = loadWikiNotesAt(tip, [...wikiHits.keys()], cwd);
+  const branchFileSet = new Set(branchFiles);
+  const repinRemedy = 'run /grounding-wiki:wiki-update in the worktree and commit the re-pin';
   for (const [notePath, matched] of wikiHits) {
-    findings.push(
-      makeFinding({
-        severity: 'warn',
-        gate: 'pr',
-        rule: 'wiki-sources-overlap',
-        message: `branch touches source(s) pinned by ${notePath}: ${matched.join(
-          ', '
-        )} — re-check via /grounding-wiki:wiki-update`,
-        evidence: [notePath, ...matched],
-        task,
-        key: branchName,
-      })
-    );
+    const noteAtTip = notesAtTip.get(notePath);
+    const noteModified = branchFileSet.has(notePath);
+    if (noteModified && noteAtTip === null) continue; // deleted on the branch — re-verified structurally
+    let failedClause = null;
+    if (!noteModified) {
+      failedClause = 'the note is not modified on the branch';
+    } else if (noteAtTip.malformed) {
+      findings.push(
+        makeFinding({
+          severity: 'block',
+          gate: 'pr',
+          rule: 'wiki-note-malformed',
+          message: `${notePath}: frontmatter at the branch tip is missing/incomplete (sources: / verified_against:) — the pin-vs-branch predicate needs a readable pin for source(s) ${matched.join(
+            ', '
+          )}; ${repinRemedy}`,
+          evidence: [notePath, ...matched],
+          task,
+          key: branchName,
+        })
+      );
+      continue;
+    } else if (!isAncestor(noteAtTip.verified_against, tip, cwd)) {
+      failedClause = `verified_against ${noteAtTip.verified_against} is not reachable from the branch tip`;
+    } else {
+      const revs = git(['rev-list', `${noteAtTip.verified_against}..${tip}`, '--', ...matched], { cwd });
+      if (revs.status !== 0 || revs.stdout.trim().length > 0) {
+        failedClause = `matched source(s) changed after the verified_against pin ${noteAtTip.verified_against}`;
+      }
+    }
+    if (failedClause) {
+      findings.push(
+        makeFinding({
+          severity: 'block',
+          gate: 'pr',
+          rule: 'wiki-repin-missing',
+          message: `${notePath} pins source(s) this branch touches (${matched.join(
+            ', '
+          )}) but the branch does not carry the re-verification: ${failedClause} — ${repinRemedy}`,
+          evidence: [notePath, ...matched],
+          task,
+          key: branchName,
+        })
+      );
+    }
+  }
+
+  // Player docs ride the same PR (spec 069, FR-003, plan D3): when the branch
+  // modifies docs/wiki/, run the freshness checker in the gated worktree and
+  // map its exit-code contract (spec 026: 0 fresh / 1 stale / 2 env error) to
+  // findings. No docs/wiki change -> the checker is not invoked at all.
+  if (branchFiles.some((f) => f.startsWith('docs/wiki/'))) {
+    const checkerRel = process.env.CHECK_MERGE_DRIFT_PLAYER_DOCS_CHECKER || PLAYER_DOCS_CHECKER;
+    const checkerCwd = worktreePath || cwd;
+    const checkerAbs = isAbsolute(checkerRel) ? checkerRel : join(checkerCwd, checkerRel);
+    if (!existsSync(checkerAbs)) {
+      findings.push(
+        makeFinding({
+          severity: 'block',
+          gate: 'pr',
+          rule: 'player-docs-env-error',
+          message: `player-docs freshness checker not found at ${checkerAbs} — cannot verify docs/player/ against this branch's docs/wiki/ changes`,
+          evidence: [checkerAbs, branchName],
+          task,
+          key: branchName,
+        })
+      );
+    } else {
+      const r = runNode(checkerAbs, ['--check', '--json'], checkerCwd);
+      if (r.status === 1) {
+        // Name the stale page(s) when the checker's --json report parses
+        // (FR-004); a non-JSON exit-1 (e.g. a broken page) still blocks with
+        // the generic message.
+        let stalePages = [];
+        try {
+          stalePages = (JSON.parse(r.stdout).pages || [])
+            .filter((p) => p.verdict !== 'fresh')
+            .map((p) => p.page)
+            .filter(Boolean);
+        } catch {
+          stalePages = [];
+        }
+        const which = stalePages.length ? `stale page(s): ${stalePages.join(', ')}` : 'docs/player/ is stale';
+        findings.push(
+          makeFinding({
+            severity: 'block',
+            gate: 'pr',
+            rule: 'player-docs-stale',
+            message: `branch changes docs/wiki/ but ${which} — regenerate via the player-docs skill in the worktree and commit the pages in this PR`,
+            evidence: [...(stalePages.length ? stalePages : ['docs/player']), branchName],
+            task,
+            key: branchName,
+          })
+        );
+      } else if (r.status !== 0) {
+        findings.push(
+          makeFinding({
+            severity: 'block',
+            gate: 'pr',
+            rule: 'player-docs-env-error',
+            message: `player-docs freshness checker failed (exit ${r.status}) — environment error; cannot verify docs/player/ against this branch's docs/wiki/ changes`,
+            evidence: [checkerAbs, branchName],
+            task,
+            key: branchName,
+          })
+        );
+      }
+    }
   }
 
   const tuiFiles = tuiSurfaceFiles(branchFiles);
