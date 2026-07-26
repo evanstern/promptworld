@@ -1,9 +1,9 @@
 {
   "planted": "pdlc:bootstrap",
-  "version": "0.8.0",
+  "version": "0.21.0",
   "peers": [
     "backlog",
     "spec-kit"
   ],
-  "plantedAt": "2026-07-18T15:09:22.649Z"
+  "plantedAt": "2026-07-26T17:57:25.917Z"
 }
