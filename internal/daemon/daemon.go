@@ -814,12 +814,13 @@ func pidAlive(pid int) bool {
 }
 
 // IsRunning reports whether a live daemon holds this world's pidfile.
+// Deliberately version-agnostic (spec 068 lived the alternative): pidfile
+// liveness must be checkable for a world this build can no longer
+// world.Open (e.g. an old format_version), or a running old-version daemon
+// could never be detected — let alone stopped — by a newer binary
+// (TASK-147). world.PidPathIn is a pure path join, not a validating open.
 func IsRunning(dir string) (bool, int) {
-	w, err := world.Open(dir)
-	if err != nil {
-		return false, 0
-	}
-	data, err := os.ReadFile(w.PidPath())
+	data, err := os.ReadFile(world.PidPathIn(dir))
 	if err != nil {
 		return false, 0
 	}
