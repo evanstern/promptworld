@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-25 04:43'
-updated_date: '2026-07-25 23:50'
+updated_date: '2026-07-26 00:45'
 labels:
   - learning-game
   - metatron
@@ -58,4 +58,6 @@ Note also: this task's spec is already written against 'internal/guardian' (post
 Spec renumbered 059 → 063: the MVLS session's merged spec 059-metatron-survival-autonomy (PR #90) claimed the number first on main; renumbered per collision doctrine (drift-check catch, 2026-07-25).
 
 Dispatched (UI-sweep orchestrator, handoff 2026-07-25b step 3): spec-implementer on Opus 4.8 per recorded rubric; worktree .worktrees/task-115 fast-forwarded to 9386e6a before dispatch. Gates met (TASK-121 skin contract via PR #94; console seam via PR #87). Parallel with TASK-127 (Sonnet), which ships the shared reportCardView renderer this task consumes — rebase-reconciliation round budgeted when 127 merges first. Implementer warned of pre-existing red TestCatalogSweep on main (TASK-140 hotfix in flight).
+
+Implementation complete (Opus 4.8 spec-implementer): 10 commits, tip 031efff (incl. orchestrator's post-rebase pin fix); all 17 spec tasks done; PR #100 open, gated at the planning tier — design gate green, merge-drift pr green, race suite green except the pre-existing TestCatalogSweep red that PR #98 fixes. Merge queue: #98 → 119 → #99 (127) → #100 (this). Five deviations reviewed and accepted, notably: explain is Effect:Read (contract's zero-cost clause wins over its literal expressive-class wording); explain added to stage1CeilingTools (read-only, tutor's home stage — recorded on D9 page + stage tests); stagesLadder relocated to internal/world (tui+CLI single source). Seam status: attribution note ships standalone behind consoleCard; checklist-card prepend in rebuildConsoleCards is the single reconciliation point when #99 merges; the {checklist-only, both} render cases land at that rebase. Done flip held on PR #100 merge.
 <!-- SECTION:NOTES:END -->
