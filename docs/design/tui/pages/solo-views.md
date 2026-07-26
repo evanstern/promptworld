@@ -2,7 +2,7 @@
 title: Page — solo views + narrow fallback
 class: page
 status: shipped
-verified_against: 9905c70f326d027a34425081442270bdb80648f7
+verified_against: d2206458f7a520379a7e882c4fe19e6b448e281c
 sources:
   - internal/tui/views.go
   - internal/tui/tui.go
