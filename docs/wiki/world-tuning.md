@@ -1,12 +1,12 @@
 ---
 name: world-tuning
-description: The spec-048 world tuning manifest (tuning.json) — the promotion path for doctrine constants to per-world dials, clamp-validated at boot, event-logged as sim.tuning_applied so replay never reads the file, and the five first-promoted dials (refuel-dying window, fire burn per wood, gru emergence chance, planner cadence, encounter cooldown)
+description: The spec-048 world tuning manifest (tuning.json) — the promotion path for doctrine constants to per-world dials: the five first-promoted dials (refuel-dying window, fire burn per wood, gru emergence chance, planner cadence, encounter cooldown), TuningState, nil-safe accessors, and the manifest's clamp table; boot seeding, the genesis pin, and replay independence split into [[world-tuning-boot-seeding]]
 kind: component
 sources:
   - internal/sim/tuning.go
   - internal/daemon/daemon.go
   - internal/world/world.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+verified_against: aedcf52f680ed68910e185c3ccde44bd320517b6
 ---
 
 # World tuning manifest
@@ -21,14 +21,13 @@ never a behavior change by itself.
 
 ## How it works
 
-**The five promoted dials** (`internal/sim/tuning.go`): `RefuelDyingBelow`
-(the reflex's fire-refuel-dying window, default 10800 ticks / 3 game-hours —
-raised from 3600 by spec 057 / TASK-108 on world-01 burnout evidence),
-`FireBurnPerWood` (fuel added per wood, default 14400 ticks / 4 game-hours),
-`GruEmergePerMille` (nightly emergence chance, default 600 per mille),
-`PlannerCadenceTicks` (the mind driver's per-agent baseline cadence, default
-1800 ticks / 30 game-minutes), and `EncounterCooldownTicks` (the per-pair
-encounter cooldown, default 7200 ticks / 2 game-hours). Each was previously a
+**The five promoted dials** (`internal/sim/tuning.go`, defaults and clamp
+bounds in the table below): `RefuelDyingBelow` (the reflex's
+fire-refuel-dying window — raised from 3600 by spec 057 / TASK-108 on
+world-01 burnout evidence), `FireBurnPerWood` (fuel added per wood),
+`GruEmergePerMille` (nightly emergence chance), `PlannerCadenceTicks` (the
+mind driver's per-agent baseline cadence), and `EncounterCooldownTicks` (the
+per-pair encounter cooldown). Each was previously a
 bare package constant (`refuelDyingBelow`/`fireBurnPerWood` in `agents.go`,
 `gruEmergePerMille` in `gru.go`, the exported `sim.PlannerCadenceTicks` in
 `agents.go`, `encounterCooldownTicks` in `mind/mind.go`); spec 048 relocates
@@ -96,65 +95,28 @@ tuning state from any single event without scanning history. The reducer arm
 (`state.go`) is a pure, idempotent `s.Tuning = &TuningState{...}` assignment
 — it re-applies cleanly on replay and the boot seed never double-counts.
 
-**Boot seeding** (`daemon.go`'s `seedTuning`, spec 048): follows the
-`seedMeetingConvention` shape — build event → `state.Apply` →
-`st.AppendEvents` — so the seed lands in the log like genesis. Called right
-after `seedMeetingConvention` and before the loop starts and before
-`mind.New`, so no tick and no planner schedule ever runs ahead of the tuned
-values ([[daemon-lifecycle]]). Behavior:
-
-- **Absent file**: seeds nothing — state keeps whatever tuning it already
-  carries (defaults for a fresh world, or values already in the log from a
-  prior boot's event). This is the "absent tuning.json == current behavior"
-  invariant (FR-001).
-- **Present file**: `ParseTuning` clamps and warns (each warning printed as
-  `daemon: <warning>`) or fails boot. The resolved effective set is compared
-  against `state.EffectiveTuning()`; identical sets append nothing (a
-  restart with an unchanged file never grows the log), and a differing set
-  prints one `daemon: tuning.json applied: <all five fields>` line, builds
-  the event via `sim.NewTuningEvent(state.Tick, *parsed)`, applies it, and
-  appends it.
-
-**The genesis pin** (spec 057 / TASK-108): `promptworld new` seeds one
-`sim.tuning_applied` event carrying the full current default set among the
-genesis events (`GenesisTuningEvent` in `tuning.go`, appended right after
-`world.created` in `cmd/promptworld/commands.go`), so a post-057 world's
-effective doctrine is fixed in its own log at birth — later changes to any
-`default*` constant never rewrite its replay. `promptworld migrate`
-deliberately does NOT back-fill the pin: pre-057 and migrated worlds follow
-compiled defaults, a documented determinism hazard
-(`control-surface-and-calibration.md` §6, the TASK-75 class). The boot seed
-compares a manifest against the pinned set exactly as before — no
-`seedTuning` change was needed.
-
-**Replay and file independence** (FR-005/FR-007): replay derives tuning
-values EXCLUSIVELY from `sim.tuning_applied` events in the log — defaults
-until the first one (which for post-057 worlds is the genesis pin), never
-`tuning.json` itself. A world that ran under tuned values replays identically
-even if the file is later edited, deleted, or the whole directory copied
-elsewhere; a pre-048 log simply contains no such event, so pre-048 worlds and
-logs load and replay unchanged on compiled defaults. Editing `tuning.json`
-while the daemon runs has no effect until the next boot (no hot exposure —
-that is §6 step 3 and explicitly out of scope here).
+**Boot seeding, the genesis pin, and replay independence** split into
+[[world-tuning-boot-seeding]]: how `daemon.go`'s `seedTuning` applies the
+manifest at boot (absent-file no-op vs present-file clamp-and-compare), the
+spec-057 genesis pin that fixes a freshly-created world's doctrine at birth,
+and why replay derives tuning EXCLUSIVELY from logged `sim.tuning_applied`
+events, never `tuning.json` itself.
 
 ## Connections
 
 [[world-save-directory]] hosts `TuningPath()` (`tuning.json`, a `manifest.json`
-peer, never validated by that package); [[daemon-lifecycle]] calls
-`seedTuning` right after the meeting-convention seed, before the loop and
-`mind.New`; [[sim-state-reducer]] owns `State.Tuning` and the one
-`sim.tuning_applied` Apply arm; [[reflex-policy]] reads `RefuelDyingBelow()`
-for the reflex's refuel rung; [[executor]] reads `FireBurnPerWood()` for the
-fire-build/refuel fuel window; [[gru]] reads `GruEmergePerMille()` for the
-nightly emergence roll; [[agent-mind]] reads `PlannerCadence()` for the mind
-driver's per-agent stagger/schedule and `EncounterCooldown()` for the
-first-adjacency encounter gate; [[memory-retrieval]] and [[decision-context]]
-document the two RNG-bucketing call sites (`memory.go`, `social.go`)
-deliberately pinned to the DEFAULT cadence constant rather than this dial;
-[[event-types]] catalogs `sim.tuning_applied`'s payload shape. Upstream
-design record: `specs/048-tuning-manifest/` (spec.md, data-model.md,
-`contracts/tuning.md`), and `docs/design/control-surface-and-calibration.md`
-§6, the promotion-path report this feature implements.
+peer, never validated by that package); [[sim-state-reducer]] owns
+`State.Tuning` and the one `sim.tuning_applied` Apply arm; [[reflex-policy]]
+reads `RefuelDyingBelow()` for the reflex's refuel rung; [[executor]] reads
+`FireBurnPerWood()` for the fire-build/refuel fuel window; [[gru]] reads
+`GruEmergePerMille()` for the nightly emergence roll; [[agent-mind]] reads
+`PlannerCadence()` for the mind driver's per-agent stagger/schedule and
+`EncounterCooldown()` for the first-adjacency encounter gate;
+[[memory-retrieval]] and [[decision-context]] document the two RNG-bucketing
+call sites (`memory.go`, `social.go`) deliberately pinned to the DEFAULT
+cadence constant rather than this dial; [[event-types]] catalogs
+`sim.tuning_applied`'s payload shape. See [[world-tuning-boot-seeding]] for
+who calls `seedTuning` and the upstream design record.
 
 ## Operational notes
 

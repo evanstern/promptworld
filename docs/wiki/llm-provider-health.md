@@ -1,6 +1,6 @@
 ---
 name: llm-provider-health
-description: Operator-facing provider health conditions (spec 034, TASK-84) — a boot + periodic model-existence preflight, a worker-side tool-silence detector, one condition slot per provider with precedence, and the daemon/status/TUI surfaces that make a dead or tool-silent local tier loud instead of silently brain-dead
+description: Operator-facing provider health conditions (spec 034, TASK-84) — the condition slot with precedence, the worker-side tool-silence detector, and the daemon/status/TUI surfaces that make a dead or tool-silent local tier loud instead of silently brain-dead; the boot+periodic preflight probe and its embedding-traffic interaction split into a linked child note.
 kind: component
 sources:
   - internal/llm/llm.go
@@ -11,7 +11,7 @@ sources:
   - internal/daemon/daemon.go
   - cmd/promptworld/commands.go
   - internal/tui/views.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+verified_against: aedcf52f680ed68910e185c3ccde44bd320517b6
 ---
 
 # LLM provider health (preflight + tool-silence detection)
@@ -42,27 +42,13 @@ fires it again with `active:false`. `Orchestrator.SetConditionHook` installs
 the sole consumer (mirroring `SetRecalibrateHook`); `fireCondition` always
 runs it outside any provider lock.
 
-**Preflight probe** (`internal/llm/preflight.go`, US1): `probeModels` does a
-`GET {endpoint}/models` (the OpenAI-compat listing standard; `/api/tags` is
-Ollama-proprietary and rejected as router-specific) with the same Bearer-if-
-key auth rule as the chat transport, timeout `preflightTimeout` (5s, a
-package var so tests can shrink it). It classifies into `probeHealthy` (the
-configured model id is in `data[].id`), `probeMissing` (valid listing,
-id absent), `probeUnreachable` (transport error/timeout), or
-`probeUnsupported` (non-2xx, or 2xx whose body isn't the `{"data":[…]}`
-shape — a router-variance skip, never a false `model-missing`, logged once
-via `preflightLogf` and left for the runtime net to cover). `preflightProbe`
-reconciles the classification through `setPreflightCondition`/
-`clearPreflightCondition` — the former can reclassify DOWNWARD between the
-two preflight kinds (unreachable ⇄ missing) by clearing before re-raising,
-since `raiseCondition`'s precedence guard alone can't express that direction.
-`preflightEligible` scopes probing to `openai_compat` transport providers,
-name-sorted (`anthropic` has no local registry to list, FR-001 exempt).
-`RunPreflight(ctx)` probes every eligible provider once at boot, then every
-`preflightInterval` (60s, package var) re-probes **only** providers still
-holding an active preflight condition — a healthy world makes zero
-steady-state probe traffic — re-logging the standing warning each cadence
-(repeat-loudness) independent of the transition hook.
+**Preflight probe & embedding interaction** ([[llm-preflight-detection]]):
+`probeModels` (`GET {endpoint}/models`, US1) classifies each `openai_compat`
+provider healthy/missing/unreachable/unsupported; `RunPreflight` probes once
+at boot then re-probes only providers with an active condition every 60s. A
+successful embedding call (spec 042, TASK-102) skips the tool-silence
+detector entirely but still clears a stale preflight condition — the
+TASK-102 fix for a bare-model-alias false positive.
 
 **Tool-silence detector** (`observeSuccess`, `internal/llm/llm.go`, US2): the
 worker's success path (after `t.health.succeed()`) calls
@@ -85,28 +71,6 @@ per FR-005. `toolSilentRemedy` keys the remedy text to the RESOLVED
 `tool_mode: "json"`; json → the model itself is unsuited for tool work.
 Transport failures never reach `observeSuccess` (the worker replies before
 the success path) — they neither count nor reset; the breaker owns those.
-
-**Embedding traffic clears preflight, skips tool-silence** (spec 042,
-[[memory-retrieval]], TASK-102): `Orchestrator.Embed` calls the embedding
-route's head provider's transport directly, bypassing the worker — so embeds
-never reach `observeSuccess` and never feed the tool-silence detector
-(embeddings carry no tool calls, so tool-silence has no meaning for them).
-But a successful embed DOES clear a stale preflight condition
-(`model-missing`/`endpoint-unreachable`) on the embedding provider via
-`clearPreflightCondition`, mirroring `observeSuccess`'s tool-free branch: a
-completed call proves the endpoint reachable and the model served. Before
-TASK-102 a bare model alias that resolves fine at the endpoint (e.g.
-`all-minilm` vs the listing's `all-minilm:latest`) preflighted against
-`data[].id` and stuck with a spurious permanent warning; now that warning is
-a transient boot-time blip that self-heals on the first successful embed
-(regression-tested in `internal/llm/embed_test.go`). The embedding
-subsystem's OWN failure signal is a separate mechanism riding the same wire
-shape: `mind.NewEmbedder`'s debounced-per-episode failure callback (wired in
-[[daemon-lifecycle]]) prints a daemon-log WARNING and lands a
-`daemon.llm_warning` event (`kind: "embedding-unavailable"`) through the same
-`Loop.InjectOperator` door this feature uses — the event type and door are
-shared, and while this feature's detectors never RAISE from an embed call,
-a successful embed does CLEAR its preflight conditions (above).
 
 **Fresh-world defaults** (US3) close the loop from the other end — see
 [[llm-orchestrator]]'s `DefaultConfig` for the `cogito:3b` + `tool_mode:
@@ -137,13 +101,10 @@ than the first-run experience.
   — [[llm-orchestrator]]).
 - **`promptworld status`** ([[cli-promptworld]]): `renderStatusHuman` prints
   one `WARNING llm provider "<name>": <detail> — <remedy>` line
-  (`llmConditionWarnings`) per affected provider, right after the clock line;
-  no active condition renders byte-identical pre-034 output for this block.
-  Since spec 035 (FR-004/US3), one `providerCalibrationLine` per provider
-  follows right after — unconditionally, whenever the world has an LLM
-  section, independent of condition state — so a healthy, uncalibrated world's
-  human status output is no longer byte-identical to pre-034: it now always
-  gains the calibration rows.
+  (`llmConditionWarnings`) per affected provider, right after the clock line.
+  Since spec 035, one `providerCalibrationLine` per provider follows right
+  after, unconditionally — so even a healthy, uncalibrated world's status
+  output now always gains the calibration rows.
 - **TUI** ([[tui-client]]): the header gains a red `[llm: <provider> <kind>]`
   badge (`firstLLMCondition`, the `[degraded]` badge's pattern) while any
   condition is active; the provider table (`llmProviderLines` — since
@@ -154,26 +115,21 @@ than the first-run experience.
 
 ## Connections
 
-Builds on [[llm-orchestrator]]'s `provider`/worker/breaker machinery — the
+Builds on [[llm-orchestrator]]'s provider/worker/breaker machinery — the
 condition slot sits beside `tierHealth`, the detector rides the worker's
-existing success path, and `SetConditionHook` mirrors
-`SetRecalibrateHook`. [[daemon-lifecycle]] wires the hook and starts
-`RunPreflight` in its own goroutine at boot. [[sim-loop]]'s `InjectOperator`
-door is the sole path the durable `daemon.llm_warning` event
-([[event-types]]) rides while the loop runs; the reducer no-ops it exactly
-like `daemon.started`/`stopped` ([[sim-state-reducer]]). [[cli-promptworld]]
-and [[tui-client]] render the condition fields; [[cognition]]'s per-provider
-estimator and this feature's condition slot are independent — a governed,
-throttled world and a dead-tier warning can both be true at once. Spec 035's
-calibration-UX surfaces (the boot `uncalibratedBootWarning`, `set_speed`'s
-uncalibrated warning, and `providerCalibrationLine`) are a separate,
-independent signal riding alongside this one on the same `renderStatusHuman`
-output and the same `ProviderStatus` struct — a dead/tool-silent condition
-and an uncalibrated provider are orthogonal facts that can both be true.
-[[memory-retrieval]]'s embedding traffic never raises this feature's
-conditions (successful embeds clear stale preflight ones, TASK-102) and
-raises its own, differently-sourced `daemon.llm_warning` through the same
-door.
+success path, and `SetConditionHook` mirrors `SetRecalibrateHook`.
+[[daemon-lifecycle]] wires the hook and starts `RunPreflight` at boot.
+[[sim-loop]]'s `InjectOperator` door is the sole path the durable
+`daemon.llm_warning` event ([[event-types]]) rides while the loop runs; the
+reducer no-ops it like `daemon.started`/`stopped` ([[sim-state-reducer]]).
+[[cli-promptworld]] and [[tui-client]] render the condition fields;
+[[cognition]]'s per-provider estimator and this feature's condition slot are
+independent — a governed world and a dead-tier warning can both be true.
+Spec 035's calibration-UX surfaces ride alongside this one on the same
+status output — orthogonal facts, both can be true. [[memory-retrieval]]'s
+embedding traffic never raises this feature's conditions (successful embeds
+clear stale preflight ones, TASK-102) and raises its own,
+differently-sourced `daemon.llm_warning` through the same door.
 
 ## Operational notes
 

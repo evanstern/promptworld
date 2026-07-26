@@ -1,13 +1,12 @@
 ---
 name: tool-registry
-description: The single source of truth for agent capabilities (spec 014, extended specs 017/019/021/029/041/058) — every tool as name + params + gate + effect + cost in one registry; prompt vocabulary, parse validation, sim-door validation, durations, and rosters all derived; the tool-use loop's declared rosters and InputSchema derivation; the authoritative miracle cost table, RestrictEnum, and the derived Guardian tool guidance (spec 021); the spec-029 Guardian agency surface (send_vision/send_omen/monitor_and_act/cancel_order + pause/start/adjust_speed) with authored array schemas and the clock-speed ladder mirror; the spec-041 search verb and send_vision's optional place grant; the spec-058 expressive-text Clamp flag and the dormant-verb (collect_water/bathe) roster prune; boot-time coverage gate
+description: The single source of truth for agent capabilities (spec 014, extended specs 017/019/021/029/041/058) — every tool as name + params + gate + effect + cost in one registry; a tool call is a REQUEST, an event is the FACT. Overview + cross-note connections here; the tool catalog, Guardian tool surface, authored-schema/clamp mechanics, and derive/roster/validate machinery each split into their own child note (see below) — load a child for its file-level detail.
 kind: component
 sources:
   - internal/tool/tool.go
   - internal/tool/registry.go
-  - internal/tool/roster.go
   - internal/tool/derive.go
-  - internal/tool/validate.go
+  - internal/tool/roster.go
   - internal/sim/toolcheck.go
 verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
 ---
@@ -26,334 +25,37 @@ curing that drift is the migration's sole permitted behavioral delta (FR-012).
 
 ## How it works
 
-**The catalog** (`registry.go`): the pre-spec-017 30 entries, plus two spec-017
-additions — `set_plan` (a loop-only planning tool) and `work_miracle` (the Guardian's
-fourth tool) — plus four spec-019 additions, the journal tools; plus six spec-032
-additions (US1-3: walls, an axe, paths); spec 029 then retires the two nudges and
-adds seven Guardian tools (`send_vision`, `send_omen`, `monitor_and_act`,
-`cancel_order`, `pause`, `start`, `adjust_speed`); and spec 041 US4 adds one more
-World verb, `search` (`Effect: World, Gate: Resolvable, Cost.DurationTicks: 0,
-PlanStep: true, ReflexEligible: true`) — deliberate exploration, appended after
-`build_path` so the registration-order byte anchor holds; no args in v1 (a kind
-hint is a documented future extension, since selection is nearest-frontier
-regardless); and spec 064 (needs-conditioned recovery, [[executor]]/
-[[reflex-policy]]) adds one more still, `warm_up` (`Effect: World, Gate:
-Resolvable, Cost.DurationTicks: 0, PlanStep: true`, NOT `ReflexEligible` — the
-reflex's own warmth rungs issue the equivalent conditioned `goto_warmth`
-themselves, so `warm_up` is planner-only), appended after `search` — the
-warmth-RECOVERY verb — walk to known warmth and LOITER there until warmth
-actually recovers, instead of `goto_warmth`'s arrive-and-done — with an
-optional `until_warmth` `Number` param (no `Min`/`Max`; the driver never
-rejects it, the sim clamps it with notice, spec 064 R3 / the 058 clamp
-posture) — assembled in order: `worldTools`
-(now 32 World verbs: the 24 legacy verbs in the old goal-vocabulary order, then
-`build_wall_plank`/`build_wall_stone`/`demolish`/`repair`/`craft_axe`/`build_path`/
-`search`/`warm_up`,
-appended after `withdraw` so no existing tool's registration position shifts —
-`worldToolsBase` wraps these too, so every one also gains the shared `reason`
-param), `set_plan`, `expressiveTools` (`say`/`gist`/`muse`), `guardianTools`
-(spec 029's agency surface, [[guardian-orders]]: `converse`/`send_vision`/
-`send_omen`/`monitor_and_act`/`cancel_order`/`pause`/`start`/`adjust_speed`/
-`work_miracle` — the retired `nudge_dream`/`nudge_omen` replaced by
-`send_vision`/`send_omen` — plus, since spec 063, `explain` appended last
-([[grounded-feedback]]'s read-only mechanics-facts tool: `Effect: Read,
-Gate: None`, a free-text `topic` param deliberately NOT an `Enum` so an
-unknown topic can return the explainable-topic catalog as a repairable
-miss rather than a schema rejection)), `journalTools`
-(`write_journal_entry`/`delete_from_journal`/`search_journal`/`read_journal`,
-appended last so no existing tool's position shifts). The tool groups are
-declared as separate literals (`worldTools`, `expressiveTools`, `guardianTools`,
-`journalTools`) rather than one, so `set_plan`'s schema can be built from
-`worldTools` alone and spliced in — building it from the assembled `registry` would
-be an initialization cycle. The spec-032 verbs carry `PlanStep: true` like every
-pre-existing World verb, so they fall out of `isLegacyWorldTool`'s discriminator
-for free — planner-only, no `ReflexEligible` — and join `RosterVillager`/
-`LoopRosterVillager` with no separate list to maintain; the storage verbs'
-`itemKinds` vocabulary (`kind` param on `drop`/`pick_up`/`deposit`/`withdraw`)
-gains `"axes"` alongside the pre-existing kinds. Each `Tool` (`tool.go`) carries an `EffectClass`
-(`World` → intents, executor-grounded; `Expressive` → immediate whitelisted event
-batches; `Read` → data back into cognition, consumed by [[tool-loop]] — spec 019
-ships the first production Read entries, `search_journal`/`read_journal`),
-`Param`s (`AgentName`/`Text`/`Enum`/`Number` kinds — `Number` (spec 017 R12) pays
-the spec-014 debt that left the storage verbs' `qty` unmodeled: bounded by
-optional `Min`/`Max`, 0/0 meaning unbounded; every `Param` also carries an
-optional `Description`, spec 019 T024, emitted verbatim as the derived JSON
-Schema property's `"description"` — `""` means no description; since spec 058
-FR-001, `Clamp bool` marks an EXPRESSIVE `Text` param whose over-cap value the
-[[tool-loop]] driver truncates rune-safely and lets the call proceed, instead
-of rejecting it — `Validate()` enforces `Clamp` only ever appearing on a `Text`
-param), a `GateClass`,
-and a `Cost` (work `DurationTicks` for world verbs, `TextCapBytes`/
-`TextCapRunes` for expressive text, nudge/miracle charges). World verbs keep
-their prompt gloss prose (`PromptGloss`) byte-exact from the old hand-written
-prompt block. `converse` is classified Expressive with empty `Events` (it lands
-no world events — transcript-only), so `Validate`'s Events rule is
-one-directional: Events non-empty ⇒ Expressive.
+This note's file-level detail splits into four children by domain
+(corpus-spec v2 summary-style split); each links back here.
 
-**The journal tools** (`registry.go`, spec 019 US3): `write_journal_entry` and
-`delete_from_journal` are Expressive (their `journal.entry_written`/
-`journal.entry_deleted` Events land through the `InjectSocial` door like any
-other whitelisted batch); `search_journal` and `read_journal` are `Read` — data
-returned into cognition, grounding nothing. All four carry `Gate: None` (no
-scene, no charge — the reducer dry-run, budget or existence, is the only gate)
-and are villager-only: they join `LoopRosterVillager` alone, never a Guardian
-roster, since journals are private. Every acting villager world tool also gains
-an optional bounded `reason` param (spec 019 R12 / T024) — the model's free-text
-"why" for the action — via a post-declaration pass: `worldTools` wraps a new
-`worldToolsBase` literal, appending `reasonParam()` (`Kind: Text, Required:
-false, MaxRunes: ReasonCapRunes` = 200, with a capability-only description) to
-every entry's `Params`, so the shared param is defined once and no verb's
-literal repeats it. `reason` is deliberately absent from `muse` (interiority is
-already free-standing) and every Guardian tool. `set_plan`'s authored
-`InputSchemaJSON` (`setPlanSchema`) separately gains an optional top-level
-`reason` string (same `ReasonCapRunes` cap) alongside its `steps` array — the
-plan-level why, threaded to `InjectArgs.Reason`.
+**The World/villager tool catalog** — `registry.go`'s tool-group assembly
+order (`worldTools`/`worldToolsBase`, `set_plan`, `expressiveTools`,
+`guardianTools`, `journalTools`), the `Tool` struct's `EffectClass`/`Param`/
+`GateClass`/`Cost` fields, the four spec-019 journal tools' `Read`/
+`Expressive` split, and the `isLegacyWorldTool` discriminator that governs
+free-text vocabulary membership — moved to [[tool-registry-world-catalog]].
 
-**The legacy/loop split** (`isLegacyWorldTool`, `derive.go`, spec 017 R11): a World
-tool no longer automatically belongs to the free-text goal vocabulary — the
-discriminator is `Effect == World && PlanStep`. Every pre-spec-017 World tool
-already carries `PlanStep: true` (the TASK-55 single-walk invariant), so the
-filter changes nothing for them; `set_plan` is `Effect World` (it lands through
-the same `InjectIntent` path) but carries `PlanStep: false` because it is
-loop-only vocabulary, not a legacy free-text goal — so it is excluded from
-`VocabularyLine()`, `WorldGoals()`, and `RosterVillager` for free, with no
-separate exclusion list anywhere.
+**The Guardian tool surface** — the spec-029 agency surface (`send_vision`/
+`send_omen`/`monitor_and_act`/`cancel_order`/the meta tools,
+[[guardian-orders]]), the authoritative miracle cost table (`MiracleCost`/
+`MiracleCostsByEvent`), `RestrictEnum`'s per-world capability gating, and the
+derived `GuardianToolGuidance`/`GuardianReadGuidance`/
+`GuardianTargetingGuidance` prompt prose — moved to
+[[tool-registry-guardian-tools]].
 
-**`set_plan` and `work_miracle`'s schemas** (`registry.go`): `set_plan` needs an
-authored `InputSchemaJSON` override — the registry's scalar `Param` model has no
-`ParamKind` for a `steps` array — built by
-`setPlanSchema(pruneDormant(legacyWorldNamesFrom(worldTools)))` (the
-`pruneDormant` wrap is spec 058 US3, above):
-a `steps` array of `{goal, kind, qty}` objects — no longer capped by a
-declared `maxItems` (spec 058 FR-003: an oversized array now clamps at the
-landing guard instead of failing the driver's structural walk; `PlanStepCap`
-(3) survives only as `description` guidance) — `goal`'s
-enum drawn from the SAME legacy-World-tool filter `VocabularyLine`/`WorldGoals` use,
-so the plan vocabulary can never drift from the free-text one even though the two
-can't share one function call (an initialization-cycle constraint). `work_miracle`
-needs no override: its flat parameter surface (`kind` required Enum over
-`miracleKinds` = `move`/`remove`/`give_item`/`time_snap`, plus every per-kind field
-as an optional scalar) is fully Params-derived. (Pre-spec-029 this was also
-load-bearing: the loop driver's `validateArgs` routed every `InputSchemaJSON`
-tool through `set_plan`'s validator, so an override here would have validated
-`work_miracle` against the wrong shape. Spec 029 replaced that dispatch with a
-general schema-lite walker that validates each authored tool against ITS OWN
-schema ([[tool-loop]]), so an override would no longer mis-validate — but Params
-derivation stays the right choice regardless, keeping `InputSchema` (what the
-model sees) and `validateArgs` (what the driver enforces) sourced from the same
-`Params`.) `work_miracle` is `Effect Expressive` (not `World`): it
-lands a bounded event batch through the SAME `InjectSocial` door the nudges use
-(`Guardian.landMiracle` → `BuildMiracleBatch`), has no intent and no work duration,
-and — decisively — `Validate` forbids a World tool from declaring `Events`, which
-`work_miracle` must (so the sim-side coverage check can pin its event set ⊆ the
-whitelist). There is deliberately no `gratis` parameter: the angel can never waive
-a charge (spec 016 FR-007/SC-005) — structural absence, not a sanitized field.
+**Authored schemas and clamp-with-notice** — why `set_plan` and
+`work_miracle` need hand-authored `InputSchemaJSON` overrides instead of
+`Params` derivation, and the spec-058 Clamp mechanism (`reasonParam`/`say`/
+`gist`/`muse`/`set_plan`'s `reason`) that truncates an over-cap expressive
+field instead of rejecting the call — moved to
+[[tool-registry-schema-clamping]].
 
-**Clamp-with-notice (spec 058 FR-001, TASK-110)**: the four EXPRESSIVE text
-surfaces — `reasonParam()`'s shared `reason` (every acting villager world tool
-and `set_plan`), and `expressiveTools`' `say.text`/`gist.gist`/`muse.text` —
-carry `Clamp: true`, so an over-cap value truncates rune-safely at the
-[[tool-loop]] driver instead of the whole call being rejected (world-01
-diagnosis: ~93% of 807 rejections were exactly this shape). `say`/`gist` don't
-ride the villager tool-use loop today (scene-gated, `roster.go`) so the
-driver's `Text` arm never actually sees their `Clamp` flag — their real
-enforcement is the conversation scene parser (`internal/mind/parse.go`
-`parseSay`/`parseOutcome`), which already truncated rather than rejected and
-this task made rune-safe (`toolloop.ClampBytes`, fixing a latent multi-byte
-UTF-8 split at the byte-cap boundary); the registry `Param` still carries
-`Clamp` regardless, keeping it the single source of truth for which fields are
-expressive. `set_plan`'s schema drops `maxItems` from its `steps` array
-(`setPlanSchema`) — an oversized plan no longer fails the driver's structural
-walk at all, reaching the landing guard ([[sim-loop]]) instead, which clamps
-to the first `PlanStepCap` steps with a notice; the cap survives only as
-prose guidance in the schema's `description`. `set_plan`'s top-level `reason`
-(the one clampable field that ISN'T a `Param` — its authored
-`InputSchemaJSON` override bypasses `Params` derivation) is clamped by the
-[[tool-loop]] driver keyed on the field name, not a `Clamp` flag. Prose
-glosses that advertised the pruned verbs below move in the same change:
-`glossQuarry` drops its `collect_water` clause and `glossBuildOven` drops its
-`bathe` clause.
-
-**The spec-029 Guardian agency surface** (`registry.go`, TASK-27,
-[[guardian-orders]]): `nudge_dream`/`nudge_omen` are RETIRED; `guardianTools`
-now declares, in order, `converse`, then `send_vision` (a waking vision for ONE
-living villager at any hour — required `target` AgentName + required `text`,
-`MaxBytes`/`TextCapBytes` 400, `Gate Charge`, `Events`
-`metatron.nudged`/`agent.memory_added` — since spec 041 FR-014 also carrying
-an OPTIONAL place-grant triple, `place_kind`/`place_x`/`place_y`, all riding
-together (the handler refuses a partial triple); `place_kind` is an `Enum`
-over `placeFactKinds` — [[mental-maps]]'s closed `PlaceFact` vocabulary
-(spec 044 US4 added `grave`, the structure kind the `agent.died` reducer arm
-places at a death tile), hand-mirrored here since `tool` must not import
-`sim`, so a drift here can
-only over- or under-offer the model, never land a false fact (the reducer
-dry-run is the semantic authority) — and `Events` gains
-`metatron.place_revealed` between the nudge and the memory), `send_omen` (required `targets` Text —
-comma-separated living names or `"everyone"` — + required `text`, same cap/gate/
-events; the night-only gate lives in the reducer, not the tool), then the
-`Gate: None` order and meta tools. `monitor_and_act` is the SECOND authored-
-`InputSchemaJSON` tool (`monitorAndActSchema`, arrays the scalar `Param` model
-cannot express): a `{condition ≤300, action ≤400}` NL pair, a required
-`event_types` string array (1..4 items) whose item `enum` is
-`observableEventTypes` — a curated 12-entry vocabulary of genuinely-emitted event
-types (`agent.slept`/`woke`/`died`/`memory_added`/`intent_set`,
-`social.conversation`/`promise_broken`/`rumor_told`, `gru.attacked`,
-`norm.violated`, `sim.night_started`/`day_started`; the spec draft's
-`meeting.norm_enacted` was dropped as un-emitted, `norm.violated` standing in),
-an optional `keywords` array (≤6, each ≤40), a `confirm` boolean (marks a fuzzy
-order needing a `metatron_watch` confirm, [[llm-orchestrator]]/[[cognition]]),
-and `ttl_days` (1..7); its declared `Events` is `metatron.order_placed`.
-`cancel_order` takes a required `id` Text, `Events` `metatron.order_cancelled`.
-The three CHARGE-FREE meta tools `pause`, `start` (optional `speed` Enum), and
-`adjust_speed` (required `speed` Enum) are `Effect Expressive` with EMPTY
-`Events` — the `converse` precedent (acting cardinality applies, but nothing is
-injected; the clock's own `clock.paused`/`clock.resumed` remain the record).
-Their `speed` Enum is `clockSpeeds` (`"1x"`/`"4x"`/`"8x"`/`"16x"`/`"32x"`), a
-hand-carried MIRROR of `internal/clock`'s ladder (`tool` is a leaf and cannot
-import `clock`); `ClockSpeeds()` exports a copy and `internal/guardian`'s
-`TestClockSpeedsMirrorLadder` pins it equal to `clock.CappedLadder()` — the
-drift guard, same pattern as the sim-duration mirror.
-
-**The miracle cost source and the spec-021 derivations** (`registry.go`,
-`derive.go`; TASK-64): the per-kind miracle cost table is declared HERE, beside
-`miracleKinds` — `MiracleCost(kind) (int, bool)` and `MiracleCostsByEvent()`
-(kind↔event-type mapping, fresh map per call) are the ONE authoritative price
-source: `sim.miracleCost` derives from `MiracleCostsByEvent()` (the import
-direction already existed — [[guardian-miracles]]) and the guardian's prompt renders
-costs from `MiracleCost`, so a price edit propagates to enforcement and prose in
-one edit (`work_miracle.Cost.Charges` stays 1 — the Charge gate's minimum, not a
-price). Two new derive.go surfaces serve [[guardian]]'s per-world capability
-gating: `RestrictEnum(t, param, allowed)` returns a copy-on-write `Tool` whose
-named Enum param keeps only the allowed values (registry never mutated; the
-tool's own Enum order preserved; `InputSchema` of the restricted copy declares
-only granted values), and `GuardianToolGuidance(roster)` renders the acting-tool
-guidance prose — per tool its name, argument surface (from `Params`, the same
-source `InputSchema` walks), and charge cost — replacing the hand-written prose
-list `turnSystemPrompt` used to carry, so described ≡ declared ≡ priced by
-construction (drift tests in `derive_test.go`). Since spec 036 the per-tool
-description falls back to the tool's own `PromptGloss` when `guardianToolDesc`
-has no entry — the branch bundle tools ([[bundle-tools]]) render through; it is
-byte-inert for every map-covered built-in, pinned by the before/after
-byte-identity test in `derive_test.go`. Since spec 063 ([[grounded-feedback]]),
-`GuardianToolGuidance` also SKIPS every `Effect: Read` tool in the roster
-(`explain` today) — a read tool costs nothing and never consumes the turn's
-one act, so listing it under the "call exactly ONE of these" acting doctrine
-would misrepresent it; a sibling `GuardianReadGuidance(roster)` renders those
-tools' own "you may also READ freely" paragraph instead (empty when the
-roster grants none, byte-inert for every pre-063 roster, which never carried
-a Read tool). Since spec 059 (US3), `derive.go` also
-exports `GuardianTargetingGuidance()` — a static one-line prose pointer
-("Aim your workings: …" — spec 052's display re-theming of the frozen
-`work_miracle` tool family; the tool id itself never renames) that introduces
-the miracle targeting digest in a
-miracle-capable turn's prompt; it carries no data of its own (the tool
-package has no world state to draw positions/passability from) — the digest
-itself is assembled turn-side (`internal/guardian/turn.go`'s
-`buildTargetingDigest`, [[guardian-orders]]/[[guardian-miracles]]), this
-function is only the fixed prose that introduces it.
-
-**Derived surfaces** (`derive.go`): each consumer is one walk of the registry —
-`VocabularyLine()` (the prompt's goal list, byte-identical to the old constant,
-now over the legacy-only filter), `PromptGlossBlock()` (the per-verb gloss
-prose — scoped to `isLegacyWorldTool` tools only, since this IS the world-verb
-goal prose; the journal tools' glosses, spec 019, are model-facing tool
-descriptions delivered per-tool through the loop's `ToolDecl`, not this legacy
-prose surface), `WorldGoals()` (the mind parser's accept set), and
-`PlanStepGoals()` (the sim door's plan-step accept set) all walk
-`legacyWorldNames()`. `InputSchema(t)` (spec 017 data-model.md §1) is the
-tool-use loop's new consumer: returns `t.InputSchemaJSON` verbatim when set,
-else derives a JSON Schema object from `t.Params` (`paramSchema` per-kind:
-`AgentName`/`Text` → string, +`maxLength` from `MaxRunes`/`MaxBytes`; `Enum` →
-string with an `enum`; `Number` → integer, +`minimum`/`maximum` from `Min`/
-`Max`; every kind then gains `"description"` from `Param.Description` when
-non-empty, spec 019 T024) — deterministic output since `Params` is already
-registration-ordered and the one Go map in play (`properties`) holds only
-property-name keys, which `encoding/json` sorts lexicographically.
-
-**Rosters** (`roster.go`): capability is roster membership, expressed as data.
-`RosterVillager` = the legacy world verbs (derived via `isLegacyWorldTool`,
-registration order — `set_plan` excluded) + `say`/`muse`/`gist`; `RosterGuardian`
-= `converse` plus every acting tool the guardian may use (spec 029:
-`send_omen`/`send_vision`/`monitor_and_act`/`cancel_order`/`work_miracle`/
-`pause`/`start`/`adjust_speed` — plus, since spec 063, `explain`
-([[grounded-feedback]]) appended last) — it mirrors `LoopRosterGuardian`'s names plus
-`converse`, so `work_miracle` IS now on this set (it wasn't pre-029). Since spec
-029 the guardian's nudge/send form is validated against the reducer's explicit
-form set, not this roster ([[guardian-orders]]), so `RosterGuardian`'s only live
-consumer is the boot-time name-resolution check in `Validate` — kept in step to
-keep that gate honest. `OnRoster()` is the door predicate: [[sim-loop]]'s intent
-door requires a World tool on the villager roster.
-Two new roster exports serve [[tool-loop]] specifically, returning full `Tool`
-values (not just names, since `InputSchema` needs `Params`/`InputSchemaJSON`):
-`LoopRosterVillager()` = every legacy World tool — MINUS `dormantVillagerVerbs`
-(spec 058 US3, TASK-110: `collect_water`, `bathe` — a non-choice today, water
-has no consumer and both verbs' world-01 usage collapsed to near-zero; a
-revisit-condition comment at the prune site names the trigger: a designed
-thirst need) — then `set_plan`, then `muse`
-(`say`/`gist` stay scene-gated and out of the loop roster this task — scenes
-remain driver-run, not model-initiated), then the four spec-019 journal tools
-(`write_journal_entry`, `delete_from_journal`, `search_journal`, `read_journal`
-— appended last so no existing declared tool's position shifts). `setPlanTool`'s
-own step-goal enum (`registry.go`) is a SEPARATE villager-facing prompt
-surface built from the same legacy-World-tool set, so it applies the shared
-`pruneDormant()` filter too — without it a model could still offer
-`collect_water`/`bathe` as a plan STEP even after they left the declared
-roster. `RosterVillager` (the door's name-only membership check) and
-`PlanStepGoals()` (the plan-step accept set) are deliberately UNTOUCHED — the
-sim executor still honors both verbs so a historical world's `collect_water`/
-`bathe` events replay exactly, and reintroduction to the model-facing surfaces
-is a roster/gloss edit, not a rebuild;
-`LoopRosterGuardian()` = `send_omen`, `send_vision`, `monitor_and_act`,
-`cancel_order`, `work_miracle`, then the meta tools `pause`, `start`,
-`adjust_speed` (spec 029 order), then — since spec 063 — `explain`
-appended last (the read-only mechanics-facts tool, [[grounded-feedback]]) —
-deliberately NOT `RosterGuardian`, because `converse` is excluded: it is the
-guardian's final-answer channel (the loop's `Result.Final`), not a callable tool,
-and declaring it would trap a `converse` call as `rejected_unknown` (the guardian
-installs no `converse` handler by design). The journal tools are villager-only
-— `LoopRosterGuardian` is untouched, since journals are private.
-
-The registry is deliberately closed: spec 036's bundle tools ([[bundle-tools]])
-NEVER enter it. `internal/bundle` synthesizes its own `tool.Tool` values
-(Effect Expressive, `PromptGloss` from the manifest) and the guardian turn
-assembly appends them to the per-job roster and handler map after
-`grantedRoster` — built-ins always win name collisions at bundle load, so no
-dynamic registration can perturb the registration-order byte-identity the
-derived prompt surfaces depend on.
-
-**Validation** (`validate.go` + `internal/sim/toolcheck.go`): `tool.Validate()`
-checks the registry's internal consistency (unique non-empty names, known effect
-classes, Events ⇒ Expressive, PlanStep/ReflexEligible only on World tools, Number
-params' Min/Max not inverted, a set `InputSchemaJSON` is valid-JSON object shape,
-roster names resolve, and — since spec 058 FR-001 — `Clamp` set only on a `Text`
-param) and returns ALL violations. Spec 017 lifts the spec-014
-restriction barring Read tools from a roster (`tool-loop` is now the Read
-consumer; spec 017 itself shipped zero production Read entries, but a roster
-naming one was no longer a `Validate` error — spec 019 ships the first two,
-`search_journal`/`read_journal`, both on `LoopRosterVillager`). `sim.ValidateToolCoverage()` checks the sim side —
-every GOAL-DOOR World tool (Effect World AND PlanStep true — the same
-`isLegacyWorldTool` predicate) has a resolver-table entry and a duration, and
-every Expressive tool's declared `Events` ⊆ the `InjectSocial` whitelist —
-read through `sim.InjectableSocialEvent` (spec 036), the exported membership
-accessor that keeps this gate and the bundle boot gate ([[bundle-tools]])
-enforcing the SAME whitelist the door does.
-`set_plan` is a World tool that deliberately carries `PlanStep: false`, so
-`validateCoverage` skips it — it grounds through its own door (`injectPlan`, each
-step resolving its own already-covered goal), never through `resolveGoal`/
-`goalResolvers`. Both `tool.Validate()` and `sim.ValidateToolCoverage()` run
-first thing in [[daemon-lifecycle]]'s `daemon.Run`, before the world opens: a
-malformed registry or roster aborts boot with a config error, never a tick-time
-failure.
-
-**What derives on the sim side** ([[executor]], [[reflex-policy]]): `intentDuration`
-reads a table built from the registry's `Cost.DurationTicks` at init, filtered to
-goal-door (World && PlanStep) tools (context overrides — spear-hunt, oven-cook —
-stay in the executor's `workDuration`, since the station/inventory is only known
-at completion time), and `resolveGoal` is a name-keyed resolver table
-(`goalResolvers`) with the old switch arms verbatim. The registry's duration
-literals are hand-carried mirrors of the sim constants (R7 — `tool` is a leaf
-package that imports nothing internal); `TestWorldToolDurationsMatchSimConstants`
-pins the two hand-equal so they can never silently drift.
+**Derived surfaces, rosters, and validation** — `derive.go`'s per-consumer
+walks (`VocabularyLine`/`PromptGlossBlock`/`WorldGoals`/`PlanStepGoals`/
+`InputSchema`), `roster.go`'s villager/Guardian roster data (`RosterVillager`/
+`RosterGuardian`/`LoopRosterVillager`/`LoopRosterGuardian`, the dormant-verb
+prune), and the boot-time `tool.Validate()`/`sim.ValidateToolCoverage()`
+consistency gates — moved to [[tool-registry-derivation-rosters]].
 
 ## Connections
 

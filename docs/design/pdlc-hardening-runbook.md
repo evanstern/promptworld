@@ -9,7 +9,7 @@ lifecycle design → code → approval → wiki grounding → PR → merge → c
 main) and the three board cards win. Plan-of-record is the board; this file carries only
 ordering, doctrine, and the log.
 
-**Status:** signed-off · operator sign-off on lanes: 2026-07-26 (lanes as written;
+**Status:** done · operator sign-off on lanes: 2026-07-26 (lanes as written;
 player-docs placement decided IN-PR; praxisflux upstream halves confirmed out of scope
 — follow-up lives in ~/neumo/projects/praxis)
 <!-- Only the OPERATOR flips draft → signed-off (the author never pre-fills it). An
@@ -163,3 +163,4 @@ dropped (tail lane) — if dropped, that is recorded here, not rounded up to don
 |------|------|----|-------|-------|
 | 2026-07-26 | TASK-145 | #106 | merge commit (origin 922223b lineage) | spec 069; gate live: wiki-repin-missing + player-docs blocks; constitution v1.2.0; first PR under review of its own doctrine |
 | 2026-07-26 | TASK-144 | #107 | merge commit | spec 070; Close joins workers; first live block of the 069 gate — 3 findings satisfied in-branch |
+| 2026-07-26 | TASK-146 | #109 | merge commit | spec 071; corpus v2 adopted — 109 children, CAPSULES.md, gate green in failure mode; 14-way Sonnet fan-out, 0 exemptions |

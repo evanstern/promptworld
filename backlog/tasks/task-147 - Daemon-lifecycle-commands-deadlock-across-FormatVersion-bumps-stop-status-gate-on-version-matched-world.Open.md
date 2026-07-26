@@ -3,10 +3,10 @@ id: TASK-147
 title: >-
   Daemon lifecycle commands deadlock across FormatVersion bumps: stop/status
   gate on version-matched world.Open
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-26 15:57'
-updated_date: '2026-07-26 16:28'
+updated_date: '2026-07-26 17:53'
 labels:
   - bug
   - cli
@@ -23,10 +23,10 @@ Shipped by PR #105 (spec 068, FormatVersion 4→5). Live incident 2026-07-26: a 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 promptworld stop reaches and gracefully stops a running daemon in a world whose format_version is NOT the current one (regression test with a deliberately wrong-version manifest)
-- [ ] #2 promptworld status reports the daemon for a wrong-version world instead of erroring at Open
-- [ ] #3 Commands that genuinely read/write world content keep the version gate (migrate hint unchanged); only daemon-lifecycle paths bypass it
-- [ ] #4 go build/vet/test green; one PR
+- [x] #1 promptworld stop reaches and gracefully stops a running daemon in a world whose format_version is NOT the current one (regression test with a deliberately wrong-version manifest)
+- [x] #2 promptworld status reports the daemon for a wrong-version world instead of erroring at Open
+- [x] #3 Commands that genuinely read/write world content keep the version gate (migrate hint unchanged); only daemon-lifecycle paths bypass it
+- [x] #4 go build/vet/test green; one PR
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -36,3 +36,9 @@ Implementation complete on task-147-stop-version-gate (aedcf52, Sonnet tier): st
 
 PR #108 opened (branch task-147-stop-version-gate @ 0391837): fix + 5 regression tests + spec-069 in-branch grounding (13 notes, player docs) + TASK-144 collision resolved by merge; pr gate warnings-only. Awaiting operator merge.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Fixed and merged (PR #108). stop/status are version-agnostic: cmdStop never opens the world (requireWorldDir + pid/socket paths via new world.SockPathIn/PidPathIn); cmdStatus dials the socket first and maps the new world.ErrFormatVersionMismatch to 'daemon not running' on the offline branch. Deeper root cause fixed: daemon.IsRunning itself called world.Open and reported any Open failure as not-running — now a pure pidfile+liveness check. 5 regression tests incl. a live stand-in daemon killed through a wrong-version manifest. Audit: attach/timectl/speed/work + content commands stay gated per the card's carve-out. Spec-069 grounding rode the branch (13 notes re-verified, 3 prose; player docs refreshed; TASK-144 collision resolved by merge). Sonnet tier (single-package surgical fix, trivial exemption).
+<!-- SECTION:FINAL_SUMMARY:END -->

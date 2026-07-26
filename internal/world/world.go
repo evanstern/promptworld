@@ -297,6 +297,23 @@ func Create(dir, name string, seed uint64) (*World, error) {
 	return &World{Dir: dir, Manifest: m}, nil
 }
 
+// ErrFormatVersionMismatch is Open's one failure mode that is not a genuine
+// content problem: the manifest parsed fine, it's just a format_version this
+// build doesn't support (older or newer) — the world itself may be perfectly
+// healthy. Daemon-lifecycle callers that only need socket/pid reachability
+// (TASK-147: stop/status must reach a running old-version daemon rather
+// than deadlock behind the migrate hint) match this with errors.As to tell
+// "can't read this world's content" apart from any other Open failure
+// (corrupt JSON, a directory that was never a world at all, ...), which
+// still surfaces verbatim.
+type ErrFormatVersionMismatch struct {
+	Got, Want int
+}
+
+func (e *ErrFormatVersionMismatch) Error() string {
+	return fmt.Sprintf("world format_version %d unsupported (this build supports %d); run 'promptworld migrate <world>' to upgrade an older world", e.Got, e.Want)
+}
+
 // Open loads and validates an existing save directory.
 func Open(dir string) (*World, error) {
 	data, err := os.ReadFile(filepath.Join(dir, ManifestName))
@@ -308,7 +325,7 @@ func Open(dir string) (*World, error) {
 		return nil, fmt.Errorf("corrupt %s: %w", ManifestName, err)
 	}
 	if m.FormatVersion != FormatVersion {
-		return nil, fmt.Errorf("world format_version %d unsupported (this build supports %d); run 'promptworld migrate <world>' to upgrade an older world", m.FormatVersion, FormatVersion)
+		return nil, &ErrFormatVersionMismatch{Got: m.FormatVersion, Want: FormatVersion}
 	}
 	if m.TickGameSeconds != 1 {
 		return nil, fmt.Errorf("tick_game_seconds %d unsupported (must be 1)", m.TickGameSeconds)
@@ -444,9 +461,21 @@ func (w *World) TuningPath() string { return filepath.Join(w.Dir, "tuning.json")
 // legal: boot reseeds from calibration/bootstrap alone, exactly as before this
 // file existed.
 func (w *World) EstimatorStatePath() string { return filepath.Join(w.Dir, "estimator_state.json") }
-func (w *World) SockPath() string           { return filepath.Join(w.Dir, "daemon.sock") }
-func (w *World) PidPath() string            { return filepath.Join(w.Dir, "daemon.pid") }
-func (w *World) CharterPath() string        { return filepath.Join(w.Dir, "charter.md") }
+
+// SockPathIn and PidPathIn are the bare-dir counterparts of SockPath/PidPath
+// below — pure path joins, not a validating Open. Daemon-lifecycle callers
+// (start/stop/status, daemon.IsRunning) need the socket/pid path for a world
+// this build cannot necessarily world.Open (e.g. a format_version this build
+// doesn't support): a deadlock lived exactly this (TASK-147, spec 068's
+// FormatVersion 4→5) — a running old-version daemon that a version-gated
+// Open made unreachable to stop. World-content commands keep the Open gate;
+// only these lifecycle paths bypass it.
+func SockPathIn(dir string) string { return filepath.Join(dir, "daemon.sock") }
+func PidPathIn(dir string) string  { return filepath.Join(dir, "daemon.pid") }
+
+func (w *World) SockPath() string    { return SockPathIn(w.Dir) }
+func (w *World) PidPath() string     { return PidPathIn(w.Dir) }
+func (w *World) CharterPath() string { return filepath.Join(w.Dir, "charter.md") }
 
 // VillageCharterPath is the village's law (TASK-13) — a scribe-rendered
 // derived view of event-sourced norms, distinct from Guardian's
