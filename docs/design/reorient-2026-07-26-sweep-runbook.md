@@ -156,6 +156,7 @@ file's execution log complete and status flipped to done. TASK-111/136/137 untou
 
 | date | task | PR | merge | notes |
 |------|------|----|-------|-------|
+| 2026-07-26 | TASK-151 | #119 | 576fcd3 | Lane D anchor; 9 exercises / 3 incident kinds / 12 lessons; the-law pass emission completes 072 FR-009; skills_observed fills the spec-046 stage-3→4 slot; ambient dice deferred to TASK-28 as scoped |
 | 2026-07-26 | TASK-152 | #118 | fb8c865 | Ladder view live; StageEarned substrate relocated (parity by construction); reconciled in-branch with #116/#117 |
 | 2026-07-26 | TASK-67 | #116 | 4daf75c | Lane C complete; fork+compare shipped; wallet-inheritance decision ratified in-spec (R4); surfaced pre-existing wiki budget debt from PR #115 (carded) |
 | 2026-07-26 | TASK-142 | #115 | 011ce4e | Lane B complete; look-cursor + TILE pane + mouse parity + badge deep-link; merged with 5-commit docs-only base lag (zero overlap, drift gate green) to preserve 26 in-branch pins |

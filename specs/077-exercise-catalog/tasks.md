@@ -184,10 +184,10 @@ as reducer-valid, ambient-indistinguishable, replay-safe events.
 
 ## Phase 9: Polish & close-out
 
-- [ ] T027 Full proof: `gofmt -l` clean; `go test ./...` green (snapshots byte-identical;
+- [x] T027 Full proof: `gofmt -l` clean; `go test ./...` green (snapshots byte-identical;
   ambient-world regression T012 green); `node scripts/check-merge-drift.mjs pr` from the
   worktree exits 0; PR opens carrying code + design + wiki + player docs together; merge
   via `gh pr merge --merge` only (spec SC-005/006, FR-024)
-- [ ] T028 Post-merge (root): spec-bridge sync, board AC ticks, tasks.md ticks, runbook
+- [x] T028 Post-merge (root): spec-bridge sync, board AC ticks, tasks.md ticks, runbook
   execution-log row, AND the `first-faith-event` rider note appended to TASK-118 via the
   `backlog` CLI — derived state only, no grounding content on main (spec FR-020/024)

@@ -4,7 +4,7 @@ title: Faith-driven charge regeneration (endogenous mana) — spec-first
 status: To Do
 assignee: []
 created_date: '2026-07-25 04:43'
-updated_date: '2026-07-26 20:26'
+updated_date: '2026-07-26 20:36'
 labels:
   - learning-game
   - metatron
@@ -34,4 +34,6 @@ Learning-game synthesis Wave 3 (operator decision 4, ratified 2026-07-25). Metat
 Reorient 2026-07-26 decision 9: lane order — after TASK-67 (duel first: completes the learn-iterate loop), before TASK-112 (agentization changes what earns faith; TASK-112 AC5/AC6 already legislate the tutor-lane exclusion). Strip integration pre-specified at panels/guardian-strip.md §4 (dashed faith segment contract). Corpus riders: failure-spiral AC grounded in the Hades God-Mode reasoning (Meta-Progression-and-Failure); overjustification caution — faith stays an in-fiction resource, never a badge/streak surface.
 
 Realigned 2026-07-26 (guardian-directives ideation, operator-endorsed): FULFILLED DIRECTIVES are the natural endogenous faith source — villager compliance with the guardian's directives closes the god-game mana loop (prosperity of the flock funds the power that shapes it; research/Game-Gameplay-Patterns/Indirect-Control-and-Divine-Intervention.md). Order after TASK-157 (guardian directives/designations); the spec-first pass here should define faith earned on directive fulfillment events (directive.* vocabulary lands in TASK-157) alongside any other faith sources it identifies.
+
+Rider from TASK-151 close-out (spec 077 FR-020): when faith-driven charge regen ships, add the 'first-faith-event' lesson to the tranche — deliberately NOT stubbed in spec 077 because no faith event type exists yet; the lesson catalog taxonomy test pins its absence until then.
 <!-- SECTION:NOTES:END -->
