@@ -210,27 +210,39 @@ Ratified doctrine, binding on this entire corpus, not just this page:
    convenience, never a second, richer control scheme with keyboard-only
    gaps. This corpus's mockups and behavior sections are written keyboard-
    first for exactly this reason.
-3. **Rollout is incremental, honestly tracked.** This doctrine shipped in
-   this same feature (spec 049, decision 8) alongside its own first
-   compliant control: chronicle jump-to-source (`⏎` · click line —
-   `panels/chronicle.md`) is the corpus's first row with a real mouse
-   target, landing keyboard and mouse together as the doctrine requires
-   (rule 1). Every other control in `docs/design/tui/` still has a key but
-   no mouse target — `internal/tui` predates this doctrine entirely for
-   everything else, including spec 053's `G` (guardian console), `5`
-   (systems tab), and `e` ($EDITOR handoff), each recorded as a parity gap
-   on its own owning page rather than silently shipped as if display-only. Every panel/overlay page in this corpus carries a
-   **"Parity rollout"** note listing its keyed-but-mouseless controls rather
-   than silently marking them `—` as if display-only; a control graduates
-   out of that note the moment its page's control table gains a real mouse
-   target, one control (or one page) at a time. This page's own footer/
-   mode-key tables have no mouse column of their own (they're the printable
-   card, not a control table) — the authoritative per-control mouse status
-   lives on each control's owning panel/overlay page, cross-referenced from
-   here by page link. Spec 054's two new bindings — the exercise tab's `6`
-   and the briefing's any-key dismiss — land keyboard-only and are tracked
-   as parity gaps on `panels/exercise.md`'s own rollout note, exactly as
-   that page promised from birth.
+3. **Rollout is incremental, honestly tracked — and mechanized (spec 073,
+   TASK-154).** This doctrine shipped in this same feature (spec 049,
+   decision 8) alongside its own first compliant control: chronicle
+   jump-to-source (`⏎` · click line — `panels/chronicle.md`) is the corpus's
+   first row with a real mouse target, landing keyboard and mouse together
+   as the doctrine requires (rule 1). Every other control in
+   `docs/design/tui/` still has a key but no mouse target — `internal/tui`
+   predates this doctrine entirely for everything else, including spec
+   053's `G` (guardian console), `5` (systems tab), and `e` ($EDITOR
+   handoff), each recorded as a parity gap on its own owning page rather
+   than silently shipped as if display-only. Every panel/overlay page in
+   this corpus carries a **"Parity rollout"** note listing its
+   keyed-but-mouseless controls rather than silently marking them `—` as if
+   display-only; a control graduates out of that note the moment its
+   page's control table gains a real mouse target, one control (or one
+   page) at a time. This page's own footer/mode-key tables have no mouse
+   column of their own (they're the printable card, not a control table) —
+   the authoritative per-control mouse status lives on each control's
+   owning panel/overlay page, cross-referenced from here by page link. Spec
+   054's two new bindings — the exercise tab's `6` and the briefing's
+   any-key dismiss — land keyboard-only and are tracked as parity gaps on
+   `panels/exercise.md`'s own rollout note, exactly as that page promised
+   from birth. This tracking is no longer hand-audited alone:
+   `TestMouseParitySweep` (`internal/tui/mouseparity_test.go`) parses every
+   canonical-header control table under `docs/design/tui/` and fails the
+   build when a non-`—` mouse cell has no proven handler (a hand-audited
+   oracle entry whose live `tea.MouseMsg` dispatch demonstrates the
+   documented effect) or when a page carries a keyed-but-mouseless row with
+   no `**Parity rollout**` note. **Graduation contract**: a control leaves
+   its page's rollout note only when, in the same PR, it gains (1) a real
+   mouse cell in the control table (replacing `—`), (2) a matching entry in
+   the sweep's oracle, and (3) that entry's live-dispatch check passing —
+   never a documentation-only promotion.
 
 ## Binding-selection rules
 
