@@ -3,6 +3,7 @@
 // docs/design/tui/, the living TUI design reference.
 //
 // Contract: specs/047-tui-design-reference-v2/contracts/check-script.md
+// Contract (semantic-cells): specs/075-design-gate-semantic-lint/spec.md
 //
 // Node >= 18, ESM, zero npm dependencies (stdlib fs/path/child_process only).
 // This script NEVER writes any file. It only reads and reports — pins are
@@ -12,7 +13,7 @@
 //   node scripts/check-tui-design.mjs [--json] [--changed [<range>]]
 //
 //   no flags        structural checks only: file-set, pins, control-tables,
-//                    anatomy.
+//                    semantic-cells, anatomy.
 //   --changed [<r>] additionally run the same-PR gate over git range <r>
 //                    (default origin/main...HEAD).
 //   --json          emit the report as JSON instead of human-readable lines.
@@ -263,6 +264,50 @@ function main() {
         rel,
         `duplicate: found ${canonicalHits} canonical-header table(s) and ${nonCanonicalHits} non-canonical control-shaped table(s) (expected exactly one canonical table)`
       );
+    }
+  }
+
+  // --- check: semantic-cells (status: shipped pages only) ---
+  // spec 075: a shipped page's control table may not carry a renderer cell
+  // (column 4) claiming `unbuilt (wave` — the rot class where the marker
+  // outlives the wave that shipped it, leaving either a lie (renderer exists)
+  // or an orphaned pointer. `unbuilt (pending TASK-<n>)` cells and prose
+  // occurrences outside a canonical table are never flagged (D1/D3).
+  for (const [rel, { text }] of parsed) {
+    if (!text) continue;
+    const fm = parseFrontmatter(text);
+    if (!fm || fm.status !== 'shipped') continue;
+
+    const lines = text.split(/\r?\n/);
+    for (let i = 0; i < lines.length - 1; i++) {
+      const line = lines[i].trim();
+      if (!line.startsWith('|')) continue;
+      const nextLine = lines[i + 1].trim();
+      if (!/^\|[\s:|-]+\|$/.test(nextLine)) continue; // not a header/separator pair
+
+      const headerCols = line.split('|').slice(1, -1);
+      if (headerCols.length !== 7) continue;
+      const normalized = '| ' + headerCols.map((c) => c.trim()).join(' | ') + ' |';
+      if (normalized !== CANONICAL_HEADER) continue; // not the canonical table
+
+      // Walk data rows following the header + separator pair while they stay
+      // `|`-prefixed 7-column rows.
+      for (let j = i + 2; j < lines.length; j++) {
+        const rowLine = lines[j];
+        const rowTrimmed = rowLine.trim();
+        if (!rowTrimmed.startsWith('|')) break;
+        const rowCols = rowTrimmed.split('|').slice(1, -1);
+        if (rowCols.length !== 7) break;
+
+        const renderer = rowCols[3].trim();
+        if (renderer.includes('unbuilt (wave')) {
+          violate(
+            'semantic-cells',
+            rel,
+            `line ${j + 1}: renderer cell ${JSON.stringify(renderer)} claims unbuilt on a shipped page — name the real renderer symbol, or retag to \`unbuilt (pending TASK-<n>)\` with a live owner`
+          );
+        }
+      }
     }
   }
 
