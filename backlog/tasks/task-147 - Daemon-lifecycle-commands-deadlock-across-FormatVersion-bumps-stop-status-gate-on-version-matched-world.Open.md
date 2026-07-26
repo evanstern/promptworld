@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-26 15:57'
-updated_date: '2026-07-26 16:17'
+updated_date: '2026-07-26 16:28'
 labels:
   - bug
   - cli
@@ -33,4 +33,6 @@ Shipped by PR #105 (spec 068, FormatVersion 4→5). Live incident 2026-07-26: a 
 
 <!-- SECTION:NOTES:BEGIN -->
 Implementation complete on task-147-stop-version-gate (aedcf52, Sonnet tier): stop/status version-agnostic via world.SockPathIn/PidPathIn; root cause was deeper than the card's diagnosis — daemon.IsRunning itself called world.Open and returned not-running for any Open failure (fixed, empirically verified); 5 regression tests; audit left attach/timectl/speed/work gated per the card's carve-out. PR blocked by spec 069 wiki-repin-missing (13 notes) — in-branch re-pin pass dispatched.
+
+PR #108 opened (branch task-147-stop-version-gate @ 0391837): fix + 5 regression tests + spec-069 in-branch grounding (13 notes, player docs) + TASK-144 collision resolved by merge; pr gate warnings-only. Awaiting operator merge.
 <!-- SECTION:NOTES:END -->

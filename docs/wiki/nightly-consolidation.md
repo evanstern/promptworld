@@ -1,6 +1,6 @@
 ---
 name: nightly-consolidation
-description: Sleep-triggered cloud-tier memory digestion — promotions/fades, evidence-gated belief provenance with a computed-on-read confidence decay, self-narrative — behind a deterministic persona firewall validator and a once-per-night event-sourced ledger
+description: Sleep-triggered cloud-tier memory digestion — trigger/ledger, the consolidation call, evidence-gated belief provenance, self-narrative, and atomic landing — behind a deterministic persona firewall validator and a once-per-night event-sourced ledger; belief confidence decay split into [[nightly-belief-decay]]
 kind: component
 sources:
   - internal/sim/consolidate.go
@@ -97,33 +97,13 @@ injection door ([[sim-loop]]): promotes, fades, day-gist (`agent.memory_added`,
 `agent.belief_revised` now also carrying the resolved `Evidence` refs and the
 `Direct` flag `enforceProvenance` computed — narrative replacement, marker.
 Reducer cases (`internal/sim/consolidate.go`) are total — vanished targets
-no-op. A newly formed belief always anchors its decay clock to formation
-(`Reinforced = tick`, spec 030 US2); a revision refreshes that anchor ONLY when
-`Direct` is true — a nightly retelling of pure hearsay changes the stored
-confidence but must not keep the clock eternally fresh. Transport/tier failure
-(circuit open, budget, timeout) lands **no marker**: the attempt never
-happened, the next sleep retries, the world never blocks.
+no-op. Transport/tier failure (circuit open, budget, timeout) lands **no
+marker**: the attempt never happened, the next sleep retries, the world never
+blocks.
 
-**Belief confidence decay** (spec 030 US2, `sim.EffectiveConfidence`,
-`internal/sim/consolidate.go`): a belief's stored `Confidence` never mutates and
-no decay event is ever logged — decay is computed purely on read, the same
-precedent as memory recency (`SelectMemories` scores on read). Effective
-confidence halves every `BeliefHalfLifeDays` (8) game-days since the belief's
-`Reinforced` tick — an order of magnitude slower than a memory's own one-day
-recency half-life, so convictions outlive vividness. A belief with
-`Reinforced == 0` (any belief formed before spec 030) is a legacy grandfather:
-it never decays until a revision or an `agent.belief_reinforced` event first
-stamps an anchor. Below `BeliefConfidenceFloor` (20 — just under the rumor
-tellability floor of 25, so the story keeps being retold after nobody stakes a
-decision on it) a belief stops driving behavior: read sites should drop it from
-model-facing prompts (`sim.PromptBeliefs` is the shared exclusion helper; the
-nightly held-beliefs prompt above is the one documented exception, marking
-rather than dropping so faded beliefs stay revisable) and the scribe renders it
-hedged rather than as a live conviction ([[agent-mind]]). A separate,
-currently producer-less event, `agent.belief_reinforced`
-(`BeliefReinforcedPayload{Agent, BeliefID}`), re-anchors a held belief's clock
-to now — the reducer arm and its tests ship in spec 030 as the seam for a
-future grounded-observation channel; nothing in-tree emits it yet.
+**Belief confidence decay** — how a landed revision's `Reinforced` anchor
+governs fade, the legacy-grandfather case, and the below-floor prompt
+exclusion — split into [[nightly-belief-decay]].
 
 ## Connections
 

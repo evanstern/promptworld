@@ -1,11 +1,9 @@
 ---
 name: skin
-description: The runtime skin substrate (spec 052, TASK-121) — the fiction layer as data. One token lookup (world skin.json override → compiled default table → the token path itself) supplies every display string the player sees for the guardian and the curriculum ladder; the event log and every serialized identifier stay skin-free.
+description: The runtime skin substrate (spec 052, TASK-121) — the fiction layer as data. One token lookup (world skin.json override → compiled default table → the token path itself) supplies every display string the player sees for the guardian and the curriculum ladder; the event log and every serialized identifier stay skin-free. Loading/validation and wire carriage split to [[skin-loading-and-wire]].
 kind: component
 sources:
   - internal/skin/skin.go
-  - internal/skin/load.go
-  - examples/skins/raven.json
 verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
 ---
 
@@ -87,50 +85,13 @@ from split literals deliberately, since the token-completeness sweep
 matches whole dotted token paths and this family's membership is enumerated
 by the table itself.
 
-**Loading** (`load.go`, `Load(worldDir)`): reads `<worldDir>/skin.json`
-following the `capabilities.json` fallback discipline (spec 052 FR-003,
-research R1/R4) — no file is the common case (silently the default skin); an
-unreadable or malformed file is the default skin plus one notice; an invalid
-individual FIELD falls back to that field's default plus a notice while the
-rest of the document still applies (one bad field never bricks the whole
-skin); unknown top-level keys (`knownSkinKeys`: `name`/`epithet`/`tab_label`/
-`voice`/`strings`/`stages`) or unknown token paths inside `strings` are
-ignored with a notice, never an error. Identity fields (`name`/`epithet`/
-`tab_label`) are validated as single-line (`singleLine` — no control
-characters, the name-injection surface's shape rule), non-blank, UTF-8, and
-length-capped (`nameMaxRunes` 40, `epithetMaxRunes` 20 shared by epithet and
-tab_label); generic `strings` overrides cap at `stringMaxRunes` (120) and a
-stage's `line` at `lineMaxRunes` (120); `voice` is the one long-form field,
-capped at `voiceMaxChars` (4000, the bundle-SOUL character-cap precedent) —
-hostile VOICE CONTENT is the [[guardian]]'s fixed prompt frame's job to
-contain (FR-004), the loader's cap only bounds volume. `Parse` is the
-loader's testable core (`Load` adds only the file read); both never return a
-nil `*Skin`. The result is boot-frozen exactly like [[bundle-tools]]' bundle
-surface and [[curriculum-ladder]]'s stage facts: loaded once at daemon boot,
-installed via `SetSkin`, and a skin.json edit takes effect only on restart.
-
-**The example skin** (`examples/skins/raven.json`, spec 052 FR-014, T017):
-the format's living documentation — a full alternate re-theme ("the Raven", a
-trickster spirit) covering every identity field, every vocabulary string
-(`working_noun` → `"trick"`, `vision_noun` → `"whisper"`, `omen_noun` →
-`"wingbeat"`, `family_label` → `"raven"`), and all four stage identities
-("The Whisper", "The Bargain", "The Rookery", "The Long Flight" — same
-one-line identities, re-voiced names). `TestExampleRavenSkinLoads`
-(`example_skin_test.go`) proves it loads with ZERO notices — a stale example
-would otherwise silently drift from the format `Parse` actually accepts.
-
-**Status wire carriage** (spec 052 FR-012, contract §7): the daemon resolves
-the boot-frozen skin daemon-side and sends the resolved facts on
-`ipc.StatusData` — `SkinName`/`SkinEpithet`/`SkinTabLabel`/`SkinFamilyLabel`
-(identity fields, always sent by a post-052 daemon, resolved against the
-compiled default table even for the default skin) plus `SkinStrings`/
-`SkinStages` (only a world skin's OVERRIDES, `omitempty` — the default skin
-sends neither map) so a client (CLI, TUI) never reads world files to render
-skin vocabulary; `FromFacts` is the client-side twin of `Load`, rebuilding a
-`*Skin` from exactly those wire facts for local `Resolve` calls (e.g. the
-[[tui-client]] help overlay's lesson-catalog skin resolution). Additive
-`omitempty` fields mean a pre-052 daemon/client pair interoperates unchanged
-— absent fields render the default Guardian skin.
+**Loading and wire carriage** — split to [[skin-loading-and-wire]]: how
+`Load`/`Parse` read and validate `<worldDir>/skin.json` (per-field
+fallback-with-notice, identity/length caps, the `voice` character cap), the
+`examples/skins/raven.json` example skin that documents the format with a
+zero-notice completeness test, and the `ipc.StatusData` wire carriage
+(`FromFacts`) that lets a client (CLI, TUI) resolve skin facts without
+reading `skin.json` directly.
 
 ## Connections
 
