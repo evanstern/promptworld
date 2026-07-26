@@ -164,6 +164,7 @@ func (mt *Guardian) enqueueCard(reason string, tick int64, passLine string, ende
 
 // reportCardWorker consumes card jobs (the digestWorker shape).
 func (mt *Guardian) reportCardWorker() {
+	defer mt.wg.Done()
 	for {
 		select {
 		case <-mt.done:

@@ -451,6 +451,7 @@ func (mt *Guardian) matchOrders(batch []store.Event) {
 // triggered turns and confirms serialize with each other and, via the shared
 // turnBusy, with console turns (R6).
 func (mt *Guardian) triggerWorker() {
+	defer mt.wg.Done()
 	for {
 		select {
 		case <-mt.done:
