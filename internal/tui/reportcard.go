@@ -1,15 +1,14 @@
 package tui
 
-// The report-card console card (spec 063 T012): the attribution-note half of
-// the ONE composed card artifact (standing resolution 1). The stored note is
-// re-read from replica state (State.GuardianReportCard — the reducer keeps
-// the latest card; the log keeps history) and composed into spec 053's card
-// seam (consoleCard / Model.consoleCards / consoleCardLines). TASK-127's
-// shared rubric-checklist renderer (reportCardView, spec 056 contract §4)
-// composes ABOVE the note inside the same seam when rubric data exists —
-// the checklist is authoritative, the note additive prose beneath it,
-// clearly its own block; until that renderer merges, the note ships
-// standalone behind the same seam (spec 063 assumption 1). Between stopping
+// The report-card console card (spec 063 T012): the ONE composed card
+// artifact (standing resolution 1). The stored attribution note is re-read
+// from replica state (State.GuardianReportCard — the reducer keeps the
+// latest card; the log keeps history) and composed into spec 053's card
+// seam (consoleCard / Model.consoleCards / consoleCardLines); TASK-127's
+// shared rubric-checklist renderer (reportCardView via its reportCard
+// wrapper, spec 056 / views.go) composes ABOVE the note inside the same
+// seam whenever rubric data exists — the checklist is authoritative, the
+// note additive prose beneath it, clearly its own block. Between stopping
 // points the existing unseen-badge pattern announces a fresh card — never a
 // takeover, never mid-run (FR-006).
 
@@ -17,6 +16,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/evanstern/promptworld/internal/sim"
 	"github.com/evanstern/promptworld/internal/skin"
 )
 
@@ -73,16 +73,62 @@ func (m *Model) buildNoteCard(sk *skin.Skin) *noteCard {
 	}
 }
 
+// buildChecklistCard resolves the rubric-checklist half of the card (spec
+// 063 standing resolution 1) through TASK-127's shared renderer: the seeded
+// exercise's rubric terms as reportCardFacts, wrapped as the spec-056
+// reportCard consoleCard. nil on an ambient world (no rubric exists) and —
+// the stopping-point discipline — nil until a stopping point is visible in
+// durable state: a stored attribution note, a recorded pass for this
+// exercise (exercise resolution), or the ended run. Facts prefer the
+// recorded pass's own Evidence (the ceremony's authoritative source,
+// reportCardFactsFromEvidence) and fall back to the chronicle-ring
+// derivation; the marker vocabulary is live (met/pending) until the
+// exercise concludes or the run ends.
+func (m *Model) buildChecklistCard() *reportCard {
+	def, ok := m.scenarioExercise()
+	if !ok || m.replica == nil {
+		return nil
+	}
+	var pass *sim.CurriculumPass
+	for i := range m.replica.CurriculumPasses {
+		if m.replica.CurriculumPasses[i].Exercise == def.ID {
+			pass = &m.replica.CurriculumPasses[i]
+			break
+		}
+	}
+	if pass == nil && m.replica.GuardianReportCard == nil && !m.runEnded() {
+		return nil // no stopping point on the record yet — no card, no theater
+	}
+	mode := reportCardLive
+	var facts []reportCardFact
+	switch {
+	case pass != nil:
+		mode = reportCardConcluded
+		facts = reportCardFactsFromEvidence(def, pass.Evidence)
+	default:
+		if m.runEnded() {
+			mode = reportCardConcluded
+		}
+		facts = reportCardFactsFromEvents(def, m.events)
+	}
+	return &reportCard{title: def.ID, facts: facts, mode: mode}
+}
+
 // rebuildConsoleCards recomposes the console card seam from replica state —
 // the stored-note re-read, never a re-grade (FR-006). Called on connect
 // (late attach shows the stored card) and when a guardian.report_card event
-// lands. Composition order per standing resolution 1: the rubric checklist
-// (TASK-127's consoleCard wrapper over reportCardView) composes FIRST when
-// rubric data exists; the attribution note beneath it. This task ships the
-// note half; the checklist wrapper joins this exact seam when spec 056's
-// renderer merges.
+// lands. Composition order per standing resolution 1 — ONE artifact, two
+// ingredient classes: the rubric checklist (TASK-127's reportCard wrapper
+// over the shared reportCardView, spec 056) composes FIRST when rubric data
+// exists — always authoritative; the attribution note (noteCard) is
+// additive prose beneath it, clearly its own block, never a second scoring
+// computation. Either half absent degrades to the other alone; both absent
+// leaves the seam empty.
 func (m *Model) rebuildConsoleCards() {
 	m.consoleCards = m.consoleCards[:0]
+	if c := m.buildChecklistCard(); c != nil {
+		m.consoleCards = append(m.consoleCards, *c)
+	}
 	if c := m.buildNoteCard(m.sk()); c != nil {
 		m.consoleCards = append(m.consoleCards, *c)
 	}

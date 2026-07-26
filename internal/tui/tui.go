@@ -1942,16 +1942,20 @@ func (m *Model) applyEvent(e store.Event) {
 			m.takeover = takeoverCeremony
 		}
 	}
-	// A fresh report card (spec 063 T012): recompose the console card seam
-	// from the just-reduced state (the stored note, never a re-grade) and
-	// announce it with the existing unseen-badge pattern when the guardian
-	// surface isn't visible — at most a badge between stopping points, never
-	// a takeover (FR-006).
-	if e.Type == "guardian.report_card" {
+	// The report card's console seam (spec 063 T012): recompose from the
+	// just-reduced state on every stopping-point-relevant event — the fresh
+	// stored note, an exercise resolution (the checklist half concludes),
+	// or the run's end. A fresh NOTE additionally announces itself with the
+	// existing unseen-badge pattern when the guardian surface isn't visible
+	// — at most a badge between stopping points, never a takeover (FR-006).
+	switch e.Type {
+	case "guardian.report_card":
 		m.rebuildConsoleCards()
 		if !m.guardianVisible() {
 			m.guardianUnseen = true
 		}
+	case "curriculum.exercise_passed", "run.ended":
+		m.rebuildConsoleCards()
 	}
 	m.lastSeq = e.Seq
 	m.events = append(m.events, e)
