@@ -23,14 +23,14 @@ grounding rides the PR, no post-merge tail).
 **Purpose**: the pure helpers every story consumes, landed with the existing suite
 byte-green so regressions are attributable.
 
-- [ ] T001 Extract `cameraOrigin(vw, vh) (x0, y0)` on Model in
+- [X] T001 Extract `cameraOrigin(vw, vh) (x0, y0)` on Model in
       `internal/tui/views.go` from `renderMapGrid`'s inline centroid+pan+clamp math
       (research R3, the spec-049 `wandererCentroid` extraction precedent), plus a
       `mapViewportDims()` helper recomputing (vw, vh) from
       `computeColumns`/`computeRows`/`mapViewportTiles` for both widescreen home and
       the narrow map pane. `renderMapGrid` calls them; rendered bytes unchanged
       (existing goldens + `TestTilesIdentityPin` must pass untouched).
-- [ ] T002 [P] Add `internal/sim/env.go`: exported pure `EnvAt(s, x, y, tick)
+- [X] T002 [P] Add `internal/sim/env.go`: exported pure `EnvAt(s, x, y, tick)
       EnvSample` (`Warm`+`WarmSource`, `Lit`) sharing private cores with `warmAt`
       (`internal/sim/terrain.go:140`) and `litAt` (`internal/sim/gru.go:70`), which
       thin to wrappers — behavior unchanged (research R4; FR-007's no-reducer-change
@@ -47,7 +47,7 @@ code.
 
 **Purpose**: the skeleton both P1 stories hang off; blocks all user stories.
 
-- [ ] T003 Model state + entry/exit in `internal/tui/tui.go` and new
+- [X] T003 Model state + entry/exit in `internal/tui/tui.go` and new
       `internal/tui/look.go` (data-model.md "Look-cursor mode state"): `lookActive`,
       `lookX/Y`, `lookFocus`, `lookSel`, `lookDrill`, `lookDrillScroll`; `v` case in
       `handleGlobalKey` gated on map-visible + `gameMap != nil` (strict documented
@@ -55,19 +55,19 @@ code.
       exit zeroes look state and resets `panX/panY` (resume following). `handleKey`
       gains the `lookActive → handleLookKey` layer between the console and inspect
       checks (research R1), with `esc` and `v` exiting from cursor focus.
-- [ ] T004 Visibility dormancy (research R1):
+- [X] T004 Visibility dormancy (research R1):
       `chronicleVisible`/`villagersVisible`/`exerciseVisible` in
       `internal/tui/tui.go` gain `!m.lookActive &&` guards so inspect/villagers key
       layers, reply badging (`guardianVisible` callers), mouse guards, and
       `currentHelpMode` all treat the TILE view as the thing visible during the
       borrow. Console (`G`) and solo-zoom paths exit the mode first; help/takeover
       layer above without ending it (FR-013).
-- [ ] T005 Borrow seam in `internal/tui/views.go` (research R2): `dockTabsRow`
+- [X] T005 Borrow seam in `internal/tui/views.go` (research R2): `dockTabsRow`
       renders the highlighted `TILE (x,y)` pseudo-label (normal labels dim-inactive)
       and `dockTabContent` short-circuits to `tileBody` while `lookActive` —
       `m.dockTab` never written, placeholder body acceptable until T009. Digits
       `2`–`6` in `handleLookKey` clear mode state then delegate to `selectTab`.
-- [ ] T006 Foundational tests in `internal/tui/tui_test.go` /
+- [X] T006 Foundational tests in `internal/tui/tui_test.go` /
       `internal/tui/look_test.go`: `v` toggles (and no-ops with no world state /
       while solo / in console); mode entry from chronicle-inspect preserves
       `chronSelected`/`chronDetailScroll` and `2` restores inspect intact (spec edge
@@ -88,17 +88,17 @@ geometry throughout.
 **Independent test**: walk the cursor to every world edge and back at a fixed
 terminal size; camera tracks at the 2-tile margin; panel dimensions never change.
 
-- [ ] T007 [US1] Movement + camera in `internal/tui/look.go`: `hjkl`+arrows move 1,
+- [X] T007 [US1] Movement + camera in `internal/tui/look.go`: `hjkl`+arrows move 1,
       `H/J/K/L` move 8, clamped to `[0,W)×[0,H)` (never wrap); camera push keeps the
       cursor ≥2 tiles inside the viewport via `cameraOrigin`/`mapViewportDims`
       adjusting `panX/panY`, degrading at world edges (camera stops, cursor may reach
       the border); `c` snaps camera to cursor (the `centerCameraOn` formula).
-- [ ] T008 [US1] Cursor render + title in `internal/tui/views.go`: `renderMapGrid`
+- [X] T008 [US1] Cursor render + title in `internal/tui/views.go`: `renderMapGrid`
       applies a background-highlight style transform on the cursor tile while
       `lookActive` (style transform, never a glyph change — spec-068 FR-003
       discipline); `mapPanelView`/`mapView` title becomes
       `MAP · cursor (x,y) · c center · esc exit` in-mode. Mode-off bytes untouched.
-- [ ] T009 [P] [US1] Tests: movement/clamp/jump matrix incl. world-smaller-than-
+- [X] T009 [P] [US1] Tests: movement/clamp/jump matrix incl. world-smaller-than-
       viewport fixtures; camera-push geometry (cursor at margin ⇒ pan delta, at world
       edge ⇒ no pan); arrows move the cursor never the free pan in-mode (AS 1.5);
       exit resumes following (`panX/panY == 0`); the SC-003 geometry pin — full
@@ -119,7 +119,7 @@ registry whatis prose and warmth/light levels.
 **Independent test**: park the cursor on a composed fixture tile (agent + pile +
 chest + shelter + fire radius, day and night) and read the pane top-to-bottom.
 
-- [ ] T010 [US2] `tileBody` assembly + renderer in `internal/tui/look.go`
+- [X] T010 [US2] `tileBody` assembly + renderer in `internal/tui/look.go`
       (data-model.md "TILE view row model"): header `TILE (x,y) · <registry
       meaning>`; bands strictly agents (needs bars + intent; gru row when abroad
       here) → piles/chests (`summarizePileContents`/`describeChest`) → structures
@@ -128,15 +128,15 @@ chest + shelter + fire radius, day and night) and read the pane top-to-bottom.
       overrides) → events; empty bands render nothing (dead/empty-tile edge cases);
       whatis resolves through the registry rows (`internal/tui/tiles.go`) with no
       renderer edit needed for future rows (FR-010).
-- [ ] T011 [P] [US2] Env header in `internal/tui/look.go`: map
+- [X] T011 [P] [US2] Env header in `internal/tui/look.go`: map
       `sim.EnvAt` + `State.Night` + on-shelter into the warmth/light levels + notes
       table (data-model.md; 3-step discrete meters; gru-safety notes restate
       `gruProtected`; "open water" terrain flavor; NO canopy note — research R4).
-- [ ] T012 [P] [US2] `tileEvents(x, y)` in `internal/tui/look.go` (research R5):
+- [X] T012 [P] [US2] `tileEvents(x, y)` in `internal/tui/look.go` (research R5):
       filter `m.events` through `subjectRegistry` keeping only recorded-position
       (`hasPos`) matches, most recent first, pane-budget capped; never decodes
       unregistered types.
-- [ ] T013 [US2] Tests: hierarchy order pinned on the composed fixture (AC #9);
+- [X] T013 [US2] Tests: hierarchy order pinned on the composed fixture (AC #9);
       registry round-trip — `registerTile` a test row, assert its meaning reaches the
       TILE header with no renderer edit (SC-002, the spec-068 SC-002 seam's fourth
       surface); env header cases day/night × fire/shelter/exposed × water flavor
@@ -156,22 +156,22 @@ the focus contract's one-client claim stays true.
 **Independent test**: the four-esc unwind from an open drill back to
 centroid-following, one visible layer per press.
 
-- [ ] T014 [US3] Focus + selection in `internal/tui/look.go`/`views.go`: `⏎`/`tab`
+- [X] T014 [US3] Focus + selection in `internal/tui/look.go`/`views.go`: `⏎`/`tab`
       from cursor focus → `lookFocusPane` with the pane border amber
       (`panelFocus` token — focus is drawn, rule 2); `j/k` move `lookSel` over
       drillable rows (clamped, `clampVillSelected` idiom); `esc` releases pane →
       cursor.
-- [ ] T015 [US3] Drill-ins in `internal/tui/look.go`: `⏎` on an agent row renders
+- [X] T015 [US3] Drill-ins in `internal/tui/look.go`: `⏎` on an agent row renders
       the villager-detail family (`villagerDetailBody`) for that agent index
       in-pane; an event row renders the raw-JSON inspector family
       (`formatInspector`/`chronicleDetailPane` — the FR-020 raw-behind-a-drill
       boundary); a chest/pile row renders contents detail; `J/K`-style scroll via
       `lookDrillScroll` (render-clamped); `esc` releases drill → pane.
-- [ ] T016 [US3] Narrow fallback (FR-012, research R7): `v` on the active map pane
+- [X] T016 [US3] Narrow fallback (FR-012, research R7): `v` on the active map pane
       raises the cursor; `⏎`/`tab` swaps that pane's body to the TILE view
       (transient body replacement); same esc chain; `mapView` shares the cursor
       highlight/title from T008.
-- [ ] T017 [P] [US3] Tests: SC-004 esc-chain enumeration (drill → pane → cursor →
+- [X] T017 [P] [US3] Tests: SC-004 esc-chain enumeration (drill → pane → cursor →
       off → global esc untouched, exactly one layer per press, every state); no new
       text capture — extend `internal/tui/focus_test.go`'s contract sweep to assert
       printable keys in every look state never buffer anywhere (FR-004); complete
@@ -186,17 +186,17 @@ centroid-following, one visible layer per press.
 **Goal**: click-tile moves/enters the cursor; click-row selects, second click
 drills — landing keyboard+mouse together (decision 8 rule 1).
 
-- [ ] T018 [US4] Hit regions (data-model.md): `mapHitRegion` recorded by
+- [X] T018 [US4] Hit regions (data-model.md): `mapHitRegion` recorded by
       `mapPanelView`/`mapView` (grid origin, `x0/y0`, `vw/vh`, 2-col stride) and
       `tileHitRegion` recorded by the TILE body renderer (`rowIndex` from the same
       `tileRow` slice) — the `chronHit` pointer/invalidation lifecycle
       (`internal/tui/tui.go:303-315`).
-- [ ] T019 [US4] `handleMouse` routing in `internal/tui/tui.go` (research R6):
+- [X] T019 [US4] `handleMouse` routing in `internal/tui/tui.go` (research R6):
       existing guards (left-release only; help-open/minibuffer-focused no-ops) →
       TILE pane region (select row, acquiring pane focus; second click on the
       selected row drills) → map region (move cursor / enter mode) → existing
       chronicle path unchanged.
-- [ ] T020 [P] [US4] Tests in `internal/tui/tui_test.go` (the `mouseLeftRelease`
+- [X] T020 [P] [US4] Tests in `internal/tui/tui_test.go` (the `mouseLeftRelease`
       helper): click-tile enters the mode at the clicked tile / moves an active
       cursor (AS 4.1/4.2); pane row click + double-click drill (AS 4.3); guard
       no-ops (AS 4.4); out-of-region and stride-boundary hit math; chronicle click
@@ -206,13 +206,13 @@ drills — landing keyboard+mouse together (decision 8 rule 1).
 
 ## Phase 7: User Story 5 — badge deep-link (P3) 🎯 help.md layer-2 row
 
-- [ ] T021 [US5] `openHelp` pre-focus in `internal/tui/tui.go`/`help.go` (research
+- [X] T021 [US5] `openHelp` pre-focus in `internal/tui/tui.go`/`help.go` (research
       R8): with ≥1 active conditional header badge (`[degraded]`, `[llm: …]`,
       `[suppressed: …]` — the same predicates `headerView` uses), open on the
       screen-walkthrough section scrolled so the first active badge's
       `headerAnatomy` row is visible (index resolved from the shared table); no
       badge → byte-identical open.
-- [ ] T022 [P] [US5] Tests: badge-active open lands on the screen section at the
+- [X] T022 [P] [US5] Tests: badge-active open lands on the screen section at the
       right row per badge kind; badge-free open byte-identical (existing
       `help_test.go` pins must pass unchanged); overlay navigation after a
       pre-focused open unchanged (AS 5.3).
@@ -221,7 +221,7 @@ drills — landing keyboard+mouse together (decision 8 rule 1).
 
 ## Phase 8: In-app reference completeness (FR-014)
 
-- [ ] T023 `helpModeLook` keys page in `internal/tui/help.go` (research R9):
+- [X] T023 `helpModeLook` keys page in `internal/tui/help.go` (research R9):
       `currentHelpMode` gains the look case right after the console branch; the keys
       section pages through the mode's table (`v`, moves, jumps, `c`, `⏎`/`tab`,
       `j/k ⏎`, `2`–`6`, `esc`); footer hints for cursor and pane-focused states in

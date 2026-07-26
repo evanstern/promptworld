@@ -43,6 +43,11 @@ var (
 	styleFeedSpeech  = lipgloss.NewStyle().Bold(true)
 	styleFeedClock   = lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
 	styleFeedSelect  = lipgloss.NewStyle().Reverse(true)
+	// styleLookCursor (spec 074) is the look-cursor's background-highlight
+	// transform — the styleFeedSelect precedent, a second named token
+	// because its meaning ("the map cursor is here") is distinct from "this
+	// list row is selected", even though the visual language is the same.
+	styleLookCursor = lipgloss.NewStyle().Reverse(true)
 
 	// Family color roles (contracts/digest-grammar.md §4, TASK-60 Phase 5):
 	// applied to the type column for natural-phrase families, and to the
@@ -132,6 +137,12 @@ func (m Model) narrowView() string {
 		// Body replacement (R2), same precedent as the pane switch below —
 		// the active pane's body swaps out, chrome stays (FR-006).
 		b.WriteString(m.helpNarrowView())
+	case m.active == paneMap && m.lookActive && m.lookFocus != lookFocusCursor:
+		// FR-012 (narrow fallback): `⏎`/`tab` swaps the map pane's body to
+		// the TILE view — a transient body replacement, content swap only
+		// (the "one component, two widths" posture); cursor focus keeps
+		// showing the map itself (with its cursor highlight/title, T008).
+		b.WriteString(m.tileView())
 	case m.active == paneMap:
 		b.WriteString(m.mapView())
 	case m.active == paneChronicle:
@@ -400,6 +411,17 @@ func (m Model) footerView() string {
 		// console and would otherwise mis-route through those hints for a
 		// screen that isn't actually visible.
 		return styleDim.Render("G back · esc back · m ask · " + pause + " · q quit · ? help")
+	case m.lookActive:
+		// The look-cursor mode's own footer (spec 074 research R9): checked
+		// ahead of inspect/villagers below for the same reason the console
+		// case above is — the borrow makes chronicleVisible/villagersVisible
+		// false already, but this is the explicit, readable version of that.
+		switch m.lookFocus {
+		case lookFocusCursor:
+			return styleDim.Render("hjkl/arrows move · HJKL jump · c center · ⏎/tab pane · 2-6 tab · esc exit · ? help")
+		default:
+			return styleDim.Render("j/k select · ⏎ drill · esc back · 2-6 tab · ? help")
+		}
 	case m.inspecting():
 		return styleDim.Render("j/k select · J/K scroll detail · " + resume + " · m ask · ? help")
 	case m.villagersVisible() && m.villDetail && m.villDecisions:
@@ -882,10 +904,17 @@ func (m Model) mapPanelView(cols, rows int) string {
 		rows = 5
 	}
 	title := "MAP · following centroid"
-	if m.panX != 0 || m.panY != 0 {
+	switch {
+	case m.lookActive:
+		// Spec 074 US1 AS1: the cursor's coordinates and its two live keys
+		// replace the pan/follow title while the mode is active.
+		title = fmt.Sprintf("MAP · cursor (%d,%d) · c center · esc exit", m.lookX, m.lookY)
+	case m.panX != 0 || m.panY != 0:
 		title = "MAP · panned (c to recenter)"
 	}
 	vw, vh := mapViewportTiles(cols, rows-1) // -1: title row lives outside the grid box
+	x0, y0 := m.cameraOrigin(vw, vh)
+	m.recordMapHit(x0, y0, vw, vh) // spec 074 research R6: this frame's click geometry
 	grid, legend := m.renderMapGrid(vw, vh)
 	content := styleHeader.Render(title) + "\n" + grid
 	if legend != "" {
@@ -955,7 +984,14 @@ func (m Model) soloTitle() string {
 }
 
 // dockTabsRow is the tab row that "doubles as the panel title" (dock.md).
+// While the look-cursor mode borrows the dock (spec 074 research R2), every
+// normal label renders dim-inactive and a highlighted `TILE (x,y)`
+// pseudo-label replaces the active highlight — never a numbered tab, never
+// a write to m.dockTab.
 func (m Model) dockTabsRow() string {
+	if m.lookActive {
+		return m.lookDockTabsRow()
+	}
 	tabs := []struct {
 		p     pane
 		label string
@@ -992,11 +1028,33 @@ func (m Model) dockTabsRow() string {
 	return strings.Join(parts, styleDim.Render(" │ "))
 }
 
+// lookDockTabsRow is dockTabsRow's borrow-active rendering (research R2):
+// every normal tab label dim-inactive, plus the highlighted `TILE (x,y)`
+// pseudo-label appended — m.dockTab is never read here beyond the label
+// list itself, so nothing about the underlying tab selection changes.
+func (m Model) lookDockTabsRow() string {
+	labels := []string{"chronicle", m.sk().TabLabel(), "villagers", "systems"}
+	if m.exerciseID() != "" {
+		labels = append(labels, "exercise")
+	}
+	var parts []string
+	for _, l := range labels {
+		parts = append(parts, styleTabInactive.Render(l))
+	}
+	parts = append(parts, styleTabActive.Render(strings.ToUpper(fmt.Sprintf("TILE (%d,%d)", m.lookX, m.lookY))))
+	return strings.Join(parts, styleDim.Render(" │ "))
+}
+
 // dockTabContent renders just the active tab's body — shared verbatim by
-// the dock panel and the solo view.
+// the dock panel and the solo view. While the look-cursor mode is active it
+// short-circuits to the borrowed TILE view (research R2) before ever
+// reading m.dockTab.
 func (m Model) dockTabContent(width, height int) string {
 	if height < 3 {
 		height = 3
+	}
+	if m.lookActive {
+		return m.tileBody(width, height)
 	}
 	switch m.dockTab {
 	case paneChronicle:
@@ -1361,7 +1419,16 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 	for y := y0; y < y0+vh; y++ {
 		var row strings.Builder
 		for x := x0; x < x0+vw; x++ {
-			row.WriteString(tile(x, y) + " ")
+			cell := tile(x, y)
+			if m.lookActive && x == m.lookX && y == m.lookY {
+				// Spec 074 T008: the cursor is a background-style transform
+				// over whatever glyph tile() resolves — the feedSelect
+				// precedent — never a glyph change (spec-068 FR-003
+				// discipline). Mode-off rendering never reaches this branch,
+				// so the identity pins stay byte-identical (SC-007).
+				cell = styleLookCursor.Render(cell)
+			}
+			row.WriteString(cell + " ")
 		}
 		rows = append(rows, strings.TrimRight(row.String(), " "))
 	}
@@ -1625,8 +1692,18 @@ func (m Model) mapView() string {
 	if m.height > 12 {
 		vh = m.height - 10
 	}
+	x0, y0 := m.cameraOrigin(vw, vh)
+	m.recordMapHit(x0, y0, vw, vh) // spec 074 research R6: narrow records mapHit the same way
 	grid, legend := m.renderMapGrid(vw, vh)
 	return styleBox.Render(grid) + "\n" + legend
+}
+
+// tileView is the narrow fallback's TILE-view body-replacement wrapper
+// (FR-012) — the villagersView box-sizing precedent, content from the same
+// tileBody the widescreen dock borrow uses (one renderer, two widths).
+func (m Model) tileView() string {
+	body := m.tileBody(clampInt(m.width-6, 20, 500), clampInt(m.height-6, 4, 500))
+	return styleBox.Render(body)
 }
 
 func clampInt(v, lo, hi int) int {
@@ -3099,11 +3176,19 @@ func (m Model) villagerRosterBody(width, height int) string {
 // so a long belief/memory/narrative line can never push the panel past its
 // column budget either (SC-004).
 func (m Model) villagerDetailBody(width, height int) string {
+	sel := clampInt(m.villSelected, 0, len(m.replica.Agents)-1)
+	return m.villagerDetailBodyFor(m.replica.Agents[sel], width, height)
+}
+
+// villagerDetailBodyFor is villagerDetailBody's core, parametrized on the
+// agent rather than reading m.villSelected — the seam the look-cursor TILE
+// view's agent drill-in reuses (spec 074 research R5/US3 AS2) to show an
+// arbitrary agent index's detail inside the same pane budget, with no fork
+// of the renderer.
+func (m Model) villagerDetailBodyFor(a sim.Agent, width, height int) string {
 	if height < 1 {
 		height = 1
 	}
-	sel := clampInt(m.villSelected, 0, len(m.replica.Agents)-1)
-	a := m.replica.Agents[sel]
 	wide := width >= 40
 
 	lines := []string{strings.ToUpper(a.Name), ""}
