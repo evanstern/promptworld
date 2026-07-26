@@ -8,19 +8,26 @@ when no skill has triggered.
 
 ## The loop
 
-Ground the codebase → plan as specs → build → re-ground → teach/render:
+Ground the codebase → plan as specs → build + re-ground in the branch → PR →
+merge → teach/render:
 
 ```
 grounding-wiki (docs/wiki) ──corpus──▶ codebase-to-course (docs/course)
         │
-        └─grounding─▶ spec/plan ──▶ build ──▶ wiki-update (re-ground) ──▶ …
+        └─grounding─▶ spec/plan ─▶ build ─▶ wiki-update + player-docs ─▶ PR ─▶ merge ─▶ …
+                                 └──────── one task branch ──────────┘
 ```
+
+Re-grounding happens INSIDE the task branch, before the PR (spec 069): the
+wiki re-pin and regenerated player docs ride the same PR as the code they
+verify.
 
 ## Plugin roles (entry skills)
 
 - **grounding-wiki** — the code-grounded corpus in `docs/wiki/`: per-concept notes pinned to
-  the commit they were verified against. Build once with `/grounding-wiki:wiki-build`; after
-  merging changes that touch files any note lists as sources, run `/grounding-wiki:wiki-update`.
+  the commit they were verified against. Build once with `/grounding-wiki:wiki-build`; when a
+  task branch touches files any note lists as sources, run `/grounding-wiki:wiki-update` in
+  that branch's worktree BEFORE opening the PR — the re-pin rides the PR (spec 069).
 - **codebase-to-course** — interactive single-page HTML course in `docs/course/`, for
   non-technical readers. Reads `docs/wiki/` as its primary input when present.
 - **build** — implements a SPEC handed off through `.handoff/` (`/build:implement`) and
@@ -48,12 +55,16 @@ grounding-wiki (docs/wiki) ──corpus──▶ codebase-to-course (docs/course
   gate or edit derived state by hand.
 - **Handoffs:** plugins compose only through files + gates, never by calling each other.
   Payloads ride the gitignored `.handoff/` transport; evidence lives in tracked state.
-- **Grounding freshness:** `docs/wiki/` is load-bearing, not decoration. Changes that touch
-  pinned sources aren't done until the wiki is re-pinned (`/grounding-wiki:wiki-update`).
+- **Grounding freshness:** `docs/wiki/` is load-bearing, not decoration. A branch that
+  touches pinned sources must carry its own re-pin: run `/grounding-wiki:wiki-update` in the
+  worktree and commit it on the branch BEFORE the PR — the pr gate BLOCKS
+  (`wiki-repin-missing`, spec 069) until the branch itself re-verifies every note whose
+  sources it touched. Re-pinning is pre-PR work, never a post-merge tail on main.
 - **Player docs:** `docs/player/` (plain-language HTML for non-engineers) is generated from
-  the wiki + README.md + docs/llm-providers.md by the `player-docs` project skill — run it
-  after `/grounding-wiki:wiki-update` re-pins notes; check freshness with
-  `node .claude/skills/player-docs/scripts/check-freshness.mjs --check`.
+  the wiki + README.md + docs/llm-providers.md by the `player-docs` project skill. When a
+  branch changes `docs/wiki/`, regenerate the pages IN THE SAME BRANCH — the pr gate runs
+  `node .claude/skills/player-docs/scripts/check-freshness.mjs --check` and BLOCKS on
+  staleness (`player-docs-stale`, spec 069); stale pages cannot ride through a merge.
 
 <!-- pdlc:peer:backlog BEGIN -->
 ## Backlog.md — the board (officially supported peer)
@@ -105,12 +116,35 @@ at three choke points. No daemon, no CI, no PR comments — findings are exit co
 
 Exit 0 = pass (clean or warnings-only), 1 = blocked (do not proceed), 2 = usage/env
 error. The script never rebases, merges, commits to, or resets any task branch or its
-worktree — resolution always stays with the owning session.
+worktree — resolution always stays with the owning session. pr mode also enforces the
+wiki-in-PR lifecycle (spec 069, next block): `wiki-repin-missing`, `player-docs-stale`,
+and `player-docs-env-error` are blocking findings, with no bypass flag.
 
 These gates are also hook-enforced at the harness level (`.claude/settings.json`,
 `scripts/hooks/merge-drift-hook.mjs`): a PreToolUse hook blocks `gh pr create` and
 `git worktree add` when the corresponding gate exits nonzero, and a SessionStart hook
 injects the session gate's report as context without ever blocking session start.
+
+## Wiki-in-PR lifecycle (spec 069)
+
+A task's lifecycle is (1) design (2) code (3) approval (4) wiki grounding + player
+docs, in-branch (5) PR (6) merge (7) close task + commit main. Grounding rides the
+PR; the pr gate enforces it, and step 7 is bookkeeping only.
+
+- **In-branch grounding (gated):** the pr gate blocks (`wiki-repin-missing`) unless
+  the branch itself re-verifies every wiki note whose pinned sources it touches —
+  note re-pinned on the branch, pin reachable from the branch tip, no source touched
+  after the pin. It likewise blocks (`player-docs-stale`) when the branch changes
+  `docs/wiki/` without regenerating `docs/player/`. There is no bypass flag;
+  emergencies go through the operator editing hook config, visibly and deliberately.
+- **Merge-commit-only:** merge PRs with `gh pr merge --merge`. In-branch re-pins are
+  branch commit hashes; a squash merge rewrites them out of main's history and stales
+  every pin the PR carried (observed on this repo — the squash-rewrites-pins hazard).
+- **Step 7 is derived state only:** after the merge, the ONLY sanctioned main commits
+  are bookkeeping DERIVED from the merged artifacts — board card moves, spec-bridge
+  sync, tasks.md ticks, runbook execution logs — per spec 065's claim protocol and
+  the pdlc:sweep re-ground step. Grounding content (wiki notes, player docs, design
+  references) always rides the PR, never a post-merge commit.
 
 ## Model-tiered workflow (constitution Principle V, v1.1.0)
 

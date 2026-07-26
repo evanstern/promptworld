@@ -40,7 +40,7 @@ split implementer/orchestrator per plan D4).
 
 **Independent Test**: doc review vs TASK-145 ACs; constitution Sync Impact Report.
 
-- [ ] T007 [US3] CLAUDE.md rewrite: PDLC loop diagram (wiki grounding in-branch, pre-PR), Grounding-freshness + Player-docs rules at the pr choke point, merge-commit-only (`gh pr merge --merge`), step-7 derived-state-only paragraph citing spec 065 + pdlc:sweep re-ground, in `CLAUDE.md` (spec FR-007)
+- [X] T007 [US3] CLAUDE.md rewrite: PDLC loop diagram (wiki grounding in-branch, pre-PR), Grounding-freshness + Player-docs rules at the pr choke point, merge-commit-only (`gh pr merge --merge`), step-7 derived-state-only paragraph citing spec 065 + pdlc:sweep re-ground, in `CLAUDE.md` (spec FR-007)
 - [ ] T008 [US3] Constitution Principle IV amendment via `speckit-constitution` (MINOR bump to v1.2.0, Sync Impact Report) — ORCHESTRATOR task, committed onto the task branch, in `.specify/memory/constitution.md` (spec FR-008)
 
 ## Phase 6: Polish & Cross-Cutting
