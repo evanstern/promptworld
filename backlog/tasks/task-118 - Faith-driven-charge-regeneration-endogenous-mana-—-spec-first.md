@@ -1,10 +1,10 @@
 ---
 id: TASK-118
 title: Faith-driven charge regeneration (endogenous mana) — spec-first
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-25 04:43'
-updated_date: '2026-07-26 20:36'
+updated_date: '2026-07-26 23:55'
 labels:
   - learning-game
   - metatron
@@ -36,4 +36,6 @@ Reorient 2026-07-26 decision 9: lane order — after TASK-67 (duel first: comple
 Realigned 2026-07-26 (guardian-directives ideation, operator-endorsed): FULFILLED DIRECTIVES are the natural endogenous faith source — villager compliance with the guardian's directives closes the god-game mana loop (prosperity of the flock funds the power that shapes it; research/Game-Gameplay-Patterns/Indirect-Control-and-Divine-Intervention.md). Order after TASK-157 (guardian directives/designations); the spec-first pass here should define faith earned on directive fulfillment events (directive.* vocabulary lands in TASK-157) alongside any other faith sources it identifies.
 
 Rider from TASK-151 close-out (spec 077 FR-020): when faith-driven charge regen ships, add the 'first-faith-event' lesson to the tranche — deliberately NOT stubbed in spec 077 because no faith event type exists yet; the lesson catalog taxonomy test pins its absence until then.
+
+Sweep claim (runbook docs/design/faith-directives-sweep-runbook.md, signed-off 2026-07-26): spec 085-faith-regen. Tier: Opus 4.8 — reducer doctrine (faith as event-sourced state, regen as pure function), doctrine-adjacent by definition. Dependencies satisfied: TASK-67 (duel) and TASK-157 (directives — directive.fulfilled is the named faith seam, specs/084-guardian-directives/contracts/events.md §3) both merged. Board claim at root per TASK-161; spec stub rides the branch.
 <!-- SECTION:NOTES:END -->
