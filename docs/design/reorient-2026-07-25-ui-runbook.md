@@ -64,10 +64,15 @@ ls -d specs/*/ | sed 's|specs/0*||;s|-.*||' | sort -n | tail -1   # highest spec
 | TASK-124 | 049 | #84 | c388c41 | 2026-07-25 | Lane 1; jump-to-source + parity retrofit |
 | TASK-126 | 050 | #83 | f18e9a4 | 2026-07-25 | Lane 1; guardian strip |
 | TASK-130 | — | #81 | ef696aa | 2026-07-25 | adjacent player-docs refresh (not in queue) |
-| TASK-121 | 052 | — | — | in flight | Lane 1; contract published on main |
-| TASK-125 | 053 | — | — | in flight | Lane 2; dispatched by sibling session |
+| TASK-121 | 052 | #94 | 70acb2e | 2026-07-25 | Lane 1; skin contract + sweep merged; AC #6 re-ground closed by MVLS player-docs 998ea90 + wiki 10b3247 |
+| TASK-125 | 053 | #87 | — | 2026-07-25 | Lane 2; guardian console + systems split |
 | TASK-117 | 055 | #88 | dfa73d7 | 2026-07-25 | Lane 3; session 3 — lesson row shipped (Sonnet), 18/18 tasks, board Done |
-| TASK-127 | 056 | — | — | in flight | Lane 3; sibling session — dispatch gated on 121's merge |
+| TASK-127 | 056 | #99 | ded11c2 | 2026-07-25 | Lane 3; takeovers + reportCardView seam (Sonnet); 2-round rebase over 119 |
+| TASK-140 | — | #98 | 87f7251 | 2026-07-25 | hotfix (trivial-exempt): main-red TestCatalogSweep — recovery_stalled catalog row (Sonnet) |
+| TASK-119 | 054 | #101 | d220645 | 2026-07-25 | Lane 2; scenario machinery + rubric emitter (Opus); closed TASK-135 as production-wired |
+| TASK-115 | 063 | #100 | bdb0686 | 2026-07-25 | Lane 3; explain/tutor/report card (Opus); checklist-above-note seam plugged into 127's renderer |
+| TASK-128 | 066 | #102 | 24ae434 | 2026-07-25 | Lane 4; stage defaults + authority-page parity sweep (Sonnet) |
+| TASK-129 | 060 | #103 | 7e3c2b5 | 2026-07-25 | Lane 5; villager strip + map overlays (Sonnet). SWEEP COMPLETE — all 10 queued tasks Done; TASK-67 remains optional, not started |
 
 ## Execution lanes (dependency-ordered; parallelize within a lane)
 
