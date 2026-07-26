@@ -6,7 +6,7 @@ sources:
   - internal/tui/grammar.go
   - internal/tui/digest.go
   - internal/tui/tui.go
-verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
+verified_against: cffd9a79bbed61ccac573d97c6cf544565b40336
 ---
 
 # TUI chronicle feed and digest grammar
@@ -38,10 +38,14 @@ the example skin); `curriculum.*` and every other family render raw by design
 (inspector-class visibility, FR-020) — the ONE skinned display surface; the
 rest of the raw feed and inspector stays honest, unskinned wire vocabulary.
 Families carry color-role tints, key tokens (names, speech, amounts, causes)
-emphasis, and five high-salience types (`agent.died`, `gru.attacked`,
-`social.chest_taken`, `norm.violated`, and — spec 077's only tier
-addition — `stranger.took`, beside `chest_taken` because theft is theft)
-render whole-line alert. Since spec 038,
+emphasis, and six high-salience types (`agent.died`, `gru.attacked`,
+`social.chest_taken`, `norm.violated`, spec 077's `stranger.took` — beside
+`chest_taken` because theft is theft — and spec 083's
+`sim.neglect_detected`, beside `agent.died` because a need neglected to the
+edge of death is the same class of alarm with runway left; its digest row
+carries the deterministic per-need wording "Ash is dangerously cold and has
+done nothing about it (warmth 0)" / starving / exhausted,
+[[executor-needs-survival]]) render whole-line alert. Since spec 038,
 `agent.build_failed` ([[executor]], [[event-types]]) gets its own entry —
 builder, emphasized goal and reason ("Ash's build_wall_stone failed — site no
 longer buildable") — a failure at a glance without joining the whole-line

@@ -16,7 +16,7 @@ sources:
   - internal/tui/tui.go
   - internal/tui/digest.go
   - internal/tui/grammar.go
-verified_against: 510a3c3133e120d84cd50525dbc4ee0d3ec01cdc
+verified_against: cffd9a79bbed61ccac573d97c6cf544565b40336
 ---
 
 # Guardian report card

@@ -8,7 +8,7 @@ sources:
   - internal/tui/digest.go
   - internal/tui/tui.go
   - internal/tui/look.go
-verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
+verified_against: cffd9a79bbed61ccac573d97c6cf544565b40336
 ---
 
 # TUI map view
@@ -31,7 +31,10 @@ static terrain check — with the replica's agents on top (by initial,
 lowercase asleep, † dead — since spec 060, [[village-lens]], a living
 agent's STYLE additionally carries two condition overlays over the same
 glyph: needs-critical when Health/Food/Warmth/Rest crosses its existing
-danger band, else suppressed-mind when its latest decision trace is a
+danger band — since spec 083 this same overlay subsumes the neglect
+detector's map presentation by construction, no new token
+([[village-lens]], [[executor-needs-survival]]) — else suppressed-mind when
+its latest decision trace is a
 router suppression, needs-critical winning when both apply; neither
 condition changes what glyph or case renders, only its style) plus built
 structures: fires render lit ▲ while the

@@ -4,7 +4,7 @@ description: The SHIFT/KEEP taxonomy (rebaseTicks) every tick-anchored int64 sta
 kind: component
 sources:
   - internal/sim/miracles.go
-verified_against: 510a3c3133e120d84cd50525dbc4ee0d3ec01cdc
+verified_against: cffd9a79bbed61ccac573d97c6cf544565b40336
 ---
 
 # Guardian's miracle rebase taxonomy
@@ -58,7 +58,17 @@ classified SHIFT or KEEP in its doc comment:
   snap's read-time expiry — the `Structure.FuelUntil` shape, only-non-zero)
   and `Stranger.LastMove`/`Stranger.LastTake` (the entity's cadence anchors,
   the `Gru.LastAttack` shape) — all SHIFT, so a snap preserves a live
-  snap's remaining window and the stranger's cooldowns.
+  snap's remaining window and the stranger's cooldowns. Spec 083
+  ([[executor-needs-survival]], [[sim-state-agent-fields]]) adds the six
+  `NeglectState` tick anchors — `FoodSince`/`WarmthSince`/`RestSince` (the
+  band-entry anchors: elapsed = tick − Since gates the neglect window in
+  `NeglectDue`; 0 = not in band) and `FoodIntent`/`WarmthIntent`/`RestIntent`
+  (the last-class-intent stamps: elapsed = tick − Intent is the zero-intent
+  clause; 0 = never) — all SHIFT only-non-zero, the
+  `Belief.Reinforced`/`NeedsAnchorTick` elapsed-anchor shape: left unshifted,
+  a snap would age every in-band episode past the window and fire the
+  detector the instant it landed. The `*Fired` latches are bools (episode
+  state, no tick field, no taxonomy entry).
 - **KEEP** — a historical timestamp or an identity/counter; rewriting it would
   rewrite history or break a reference. `Agent.Generation`, `Agent.LastGoalTick`,
   `Memory.Tick`, `Memory.Conv` (spec 019: a conversation-ref identity, the same
@@ -93,8 +103,9 @@ classified SHIFT or KEEP in its doc comment:
   `Memory.Seq`/`Agent.SitVecTick` fields, spec 043's `IntentRecord.Tick`/
   `OutcomeTick` (KEEP) and `Agent.NeedsAnchorTick` (SHIFT), spec 061's
   `PairTalk.Tick` (SHIFT), spec 062's `Agent.LastMindIntentDone` (SHIFT,
-  only-non-zero), and spec 063's `GuardianReportCard.Tick`/`Seq`/`Citations`
-  (KEEP) as new tick-anchored
+  only-non-zero), spec 063's `GuardianReportCard.Tick`/`Seq`/`Citations`
+  (KEEP), and spec 083's six `NeglectState` anchors (SHIFT, only-non-zero)
+  as new tick-anchored
   `int64` fields requiring classification, confirming the taxonomy guard holds
   across features outside miracles' own spec.
 

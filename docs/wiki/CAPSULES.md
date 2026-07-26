@@ -30,7 +30,7 @@ hand; regenerate whenever any note's `description:` changes:
 - [[sim-state-reducer]] — State + Apply: the single mutation path, live and replay; split into six child notes below
   sim.State and Apply — the single event-driven mutation path used identically live and in replay; canonical JSON for hashing. Field catalog and per-family Apply-arm detail split across six children; load this note for the whole-state model, Tick handling, and Marshal/Hash — the children for arm-level detail.
 
-  - [[sim-state-agent-fields]] — clock + per-agent field catalog: needs/intents/inventories/memories, Journal, IntentLog, NeedsAnchor, LastMindIntentDone
+  - [[sim-state-agent-fields]] — clock + per-agent field catalog: needs/intents/inventories/memories, Journal, IntentLog, NeedsAnchor, LastMindIntentDone, Neglect (spec 083)
   Per-agent field catalog on sim.State — clock, needs/intents/inventories/memories, Journal, mental-map pointer, IntentLog ring, NeedsAnchor trajectory, LastMindIntentDone reflex-yield anchor
 
   - [[sim-state-world-fields]] — shared-world field catalog: structures/piles, social fabric, gru/stranger incident state, chronicle ring, Guardian charges/orders, governance
@@ -39,7 +39,7 @@ hand; regenerate whenever any note's `description:` changes:
     - [[sim-state-outcome-fields]] — split from sim-state-world-fields: run-outcome & progression fields — Deaths/RunEnd, charter/skills observation state, morgue epilogues, curriculum passes/unlocks, tuning, report card
   Split from [[sim-state-world-fields]] — the run-outcome and progression fields on sim.State: the Deaths/RunEnd ledger and Ended latch (spec 044), charter/skills observation fingerprints + coordinates (specs 072/077), the MorgueEpilogues ring, curriculum passes/stage unlocks (spec 046), the world-tuning dial set (spec 048), and the Guardian report card (spec 063). Read when touching these fields' shapes or omitempty round-trip guarantees.
 
-  - [[sim-state-apply-agents]] — genesis + core per-agent Apply arms: movement/eating/talk/needs/death, v2 crafting, v3 storage events, walls
+  - [[sim-state-apply-agents]] — genesis + core per-agent Apply arms: movement/eating/talk/needs/death, spec-083 neglect anchors, v2 crafting, v3 storage events, walls
   sim.State.Apply's core per-agent arms — genesis placement, clock/night/forage ticks, intent/movement/eating/talk/needs/death, v2 crafting yields, v3 storage events, and the wall demolish/repair family
 
   - [[sim-state-intent-lifecycle]] — intent-ring closure arms (build_failed, stampIntentOutcome, recovery_stalled), hail family, death/run-end effects
@@ -60,7 +60,7 @@ hand; regenerate whenever any note's `description:` changes:
   - [[executor-agent-state]] — The agent body's persisted shape — eight named villagers, integer Needs/Inventory, the mental-map/vector/intent-log/needs-anchor pointer fields…
   The agent body's persisted shape — eight named villagers, integer Needs/Inventory, the mental-map/vector/intent-log/needs-anchor pointer fields other subsystems own end to end, and where tuning constants live. Load when tracing what an Agent struct actually carries or where a decay/yield/cost constant is defined.
 
-  - [[executor-needs-survival]] — The per-minute needs heartbeat, fire fuel/warmth, eating, needs-conditioned recovery holds (warm_up), and the run-end death detector — how an…
+  - [[executor-needs-survival]] — The per-minute needs heartbeat, fire fuel/warmth, eating, needs-conditioned recovery holds (warm_up), the spec-083 neglect detector, and the run-end death…
   The per-minute needs heartbeat, fire fuel/warmth, eating, needs-conditioned recovery holds (warm_up), and the run-end death detector — how an agent's Needs decay, recover, and can reach zero. Load for death causes, fuel/eat/recover mechanics, or the run.ended contract.
 
   - [[executor-goals-and-intents]] — The Intent state machine (walk, instant-on-arrival, work-goal re-validation, duration lookup) and the full v2/spec-032 goal set it executes —…
@@ -120,8 +120,8 @@ hand; regenerate whenever any note's `description:` changes:
   - [[event-types-agent-intents]] — Agent intent-lifecycle event rows split from [[event-types]]: agent.intent_set/work_started/intent_done/recovery_stalled/build_failed/moved
   Agent intent-lifecycle event rows split from [[event-types]]: agent.intent_set/work_started/intent_done/recovery_stalled/build_failed/moved. Load when tracing how an intent is set, worked, completed, aborted (build failure or a stalled needs-conditioned recovery hold), or how movement drives mental-map sighting.
 
-  - [[event-types-agent-vitals]] — Agent vitals/mortality event rows split from [[event-types]]: agent.needs_changed/died, run.ended, agent.slept/woke
-  Agent vitals/mortality event rows split from [[event-types]]: agent.needs_changed/died, run.ended, agent.slept/woke. Load when tracing needs decay/anchoring, death causes (starvation/exposure/collapse/gru), the death ledger and grave placement, or run-ending/postmortem posture.
+  - [[event-types-agent-vitals]] — Agent vitals/mortality event rows split from [[event-types]]: agent.needs_changed/died, run.ended, agent.slept/woke, sim.neglect_detected (spec 083)
+  Agent vitals/mortality event rows split from [[event-types]]: agent.needs_changed/died, run.ended, agent.slept/woke, sim.neglect_detected (spec 083). Load when tracing needs decay/anchoring, death causes (starvation/exposure/collapse/gru), the death ledger and grave placement, or run-ending/postmortem posture.
 
   - [[event-types-mental-map]] — Perception and mental-map event rows split from [[event-types]]: agent.moved, agent.saw, agent.map_corrected, social.place_told…
   Perception and mental-map event rows split from [[event-types]]: agent.moved, agent.saw, agent.map_corrected, social.place_told, metatron.place_revealed. Load when tracing spec 041's per-agent spatial knowledge — perception sweeps, told directions, corrected/stale facts, and vision-granted places.

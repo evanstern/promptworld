@@ -1,12 +1,12 @@
 ---
 name: sim-state-agent-fields
-description: Per-agent field catalog on sim.State — clock, needs/intents/inventories/memories, Journal, mental-map pointer, IntentLog ring, NeedsAnchor trajectory, LastMindIntentDone reflex-yield anchor
+description: Per-agent field catalog on sim.State — clock, needs/intents/inventories/memories, Journal, mental-map pointer, IntentLog ring, NeedsAnchor trajectory, LastMindIntentDone reflex-yield anchor, Neglect detector substrate (spec 083)
 kind: component
 sources:
   - internal/sim/state.go
   - internal/sim/agents.go
   - internal/sim/journal.go
-verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
+verified_against: cffd9a79bbed61ccac573d97c6cf544565b40336
 ---
 
 # Sim state: agent & clock fields
@@ -72,6 +72,20 @@ int64` (`omitempty`) — the tick the agent's most recent NON-REFLEX
 reflex's PREP rungs consult to defer to a recent planner decision
 (`prepYields`, elapsed = tick−LastMindIntentDone gated against
 `prepYieldTicks`); 0 is the permanent sentinel for a never-mind-driven
+agent — plus, since spec 083, `Neglect *NeglectState` (`omitempty` POINTER,
+the Journal/Hail/Map precedent: a pre-083 snapshot round-trips
+byte-identically) — the death-by-neglect detector's derived substrate: per
+survival need, flat fields (no maps — fixed canonical JSON) for the
+band-entry anchor (`*Since`, tick the need crossed below its spec-062 danger
+band; 0 = not in band), the last-class-intent stamp (`*Intent`, tick a
+`needClassGoals` goal landed; 0 = never), and the one-per-episode fired
+latch (`*Fired`), written ONLY by three reducer arms (needs_changed /
+intent_set / the new `sim.neglect_detected` — [[sim-state-apply-agents]],
+[[sim-state-intent-lifecycle]]), lazily allocated on first non-zero write,
+read by the executor's heartbeat sweep and the exported `NeglectDue`
+predicate ([[executor-needs-survival]]); its six tick anchors are SHIFT
+(only-non-zero) under the rebase taxonomy
+([[guardian-miracle-rebase-taxonomy]]).
 
 ## Connections
 

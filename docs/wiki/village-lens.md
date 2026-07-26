@@ -8,7 +8,7 @@ sources:
   - internal/tui/help.go
   - internal/sim/agents.go
   - internal/tui/tiles.go
-verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
+verified_against: cffd9a79bbed61ccac573d97c6cf544565b40336
 ---
 
 # Village lens (villager strip + map condition overlays)
@@ -76,7 +76,14 @@ the colors, emphasis, and priority rule are the identical pre-registry bytes:
   existing `dangerRestBelow` constant rather than naming a new number).
   Morale carries no such band in sim today, so it's deliberately excluded —
   there's nothing to reuse. Rendered `styleAgentCritical` (bold + underline,
-  red).
+  red). Since spec 083 this overlay is also, by construction, the map
+  presentation of the neglect detector ([[executor-needs-survival]]): the
+  detector fires on the same exported band constants this predicate reads,
+  so a neglect-firing villager is always already painted critical — no new
+  token, glyph, or legend row; the subsumption is a pinned contract
+  (`TestRenderMapGridNeglectFiringRendersCritical`,
+  `internal/tui/village_lens_test.go`), and the chronicle's whole-line
+  alert ([[tui-chronicle-feed]]) is the event-shaped surface.
 - **Suppressed-mind** (`agentSuppressedMind(i)`): true when an agent's
   latest decision-trace chain (`m.traces.chainsFor(i)`, most-recent-first —
   [[tui-client]]'s decision-trace projection) is a router suppression —

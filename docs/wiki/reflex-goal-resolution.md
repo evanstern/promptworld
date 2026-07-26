@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/policy.go
   - internal/sim/path.go
-verified_against: 9e8fb36e750dda15a633ba3ff8c44141f02debf2
+verified_against: cffd9a79bbed61ccac573d97c6cf544565b40336
 ---
 
 # Reflex goal resolution — consumables and exploration

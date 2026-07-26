@@ -4,7 +4,7 @@ description: Child of [[reflex-policy]] — the five SURVIVAL rungs of decideInt
 kind: component
 sources:
   - internal/sim/policy.go
-verified_against: 9e8fb36e750dda15a633ba3ff8c44141f02debf2
+verified_against: cffd9a79bbed61ccac573d97c6cf544565b40336
 ---
 
 # Reflex survival rungs

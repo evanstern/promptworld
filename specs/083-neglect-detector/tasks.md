@@ -114,7 +114,7 @@ tests green.
 
 ## Phase 6: Grounding — wiki-in-PR obligations (in-branch, pr-gate enforced)
 
-- [ ] T017 `/grounding-wiki:wiki-update` reconciliation over the branch diff;
+- [X] T017 `/grounding-wiki:wiki-update` reconciliation over the branch diff;
       review-work re-pins expected on `docs/wiki/executor-needs-survival.md`,
       `sim-state-agent-fields.md`, `sim-state-apply-agents.md`,
       `sim-state-intent-lifecycle.md`, `reflex-policy.md`, `agent-memory-window.md`
@@ -123,7 +123,7 @@ tests green.
       `guardian-survival-watches.md` (composition seam, per judgment), and the
       chronicle/tiles TUI notes; computed re-pins for the rest — all pinned to branch
       commits (plan D7, spec SC-007)
-- [ ] T018 Regenerate `docs/player/` via the `player-docs` skill (wiki changed in
+- [X] T018 Regenerate `docs/player/` via the `player-docs` skill (wiki changed in
       T017); run the probe directly:
       `node .claude/skills/player-docs/scripts/check-freshness.mjs --check` passes
       in-branch (plan D7, spec SC-007)
