@@ -4,13 +4,20 @@
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/scripts/hooks/merge-drift-hook.mjs\" pre-bash", "timeout": 90, "statusMessage": "merge-drift gate" }
+          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/scripts/hooks/merge-drift-hook.mjs\" pre-bash", "timeout": 90, "statusMessage": "merge-drift gate" },
+          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/scripts/hooks/root-guard-hook.mjs\" pre-bash", "timeout": 30, "statusMessage": "root-guard gate" }
         ]
       },
       {
         "matcher": "Write|Edit",
         "hooks": [
           { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/scripts/hooks/merge-drift-hook.mjs\" pre-write", "timeout": 90, "statusMessage": "merge-drift claim gate" }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|NotebookEdit",
+        "hooks": [
+          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/scripts/hooks/root-guard-hook.mjs\" pre-write", "timeout": 30, "statusMessage": "root-guard gate" }
         ]
       }
     ],
