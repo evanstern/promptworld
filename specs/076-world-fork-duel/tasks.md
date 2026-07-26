@@ -14,11 +14,11 @@ Phase 1's link step. Phases 6–8 are the design/wiki gates and close-out.
 
 ## Phase 1: Setup
 
-- [ ] T001 Link this spec to the board BEFORE implementation (AC #6): `spec-bridge:link`
+- [X] T001 Link this spec to the board BEFORE implementation (AC #6): `spec-bridge:link`
       for `specs/076-world-fork-duel/` ↔ TASK-67 from the repo root; verify the card
       carries the Spec marker (orchestrator step — recorded here so the gate is a task,
       not an assumption)
-- [ ] T002 Cut the task worktree from fresh origin/main: `git fetch origin && git pull
+- [X] T002 Cut the task worktree from fresh origin/main: `git fetch origin && git pull
       --ff-only` at root, `node scripts/check-merge-drift.mjs worktree --spec 076 --task
       TASK-67`, then `git worktree add .worktrees/task-67 -b task-67-world-fork-duel
       origin/main`; push the branch on first commit (claim protocol); baseline
@@ -27,20 +27,20 @@ Phase 1's link step. Phases 6–8 are the design/wiki gates and close-out.
 
 ## Phase 2: Foundational — lineage vocabulary + store helper (blocks Phase 3)
 
-- [ ] T003 `WorldForkedPayload` struct (data-model §1) in the shared payload block +
+- [X] T003 `WorldForkedPayload` struct (data-model §1) in the shared payload block +
       `case "world.forked":` recorded-history no-op arm beside `world.created`, in
       `internal/sim/state.go`; reducer test: applying the event mutates nothing
       (marshal-identical state before/after), in `internal/sim/sim_test.go` or a new
       `internal/sim/fork_event_test.go` (plan D1, spec FR-007)
-- [ ] T004 [P] `world.forked` digest registry entry + `catalogFixture` row ("forked from
+- [X] T004 [P] `world.forked` digest registry entry + `catalogFixture` row ("forked from
       `<parent>` at day D, HH:MM"), in `internal/tui/digest.go` +
       `internal/tui/digest_test.go` — `TestCatalogSweep` totality holds with the new
       event type (plan D1, spec FR-009)
-- [ ] T005 [P] `LineageConfig` + `Manifest.Lineage *LineageConfig json:"lineage,omitempty"`
+- [X] T005 [P] `LineageConfig` + `Manifest.Lineage *LineageConfig json:"lineage,omitempty"`
       + `Open` structural validation (present block: non-empty `parent`, `fork_tick >= 0`);
       tests: lineage-less `world.json` round-trips byte-identically, validation table, in
       `internal/world/world.go` + `internal/world/world_test.go` (plan D2, spec FR-008)
-- [ ] T006 [P] `Store.MetaByPrefix(prefix) (map[string]string, error)` + test, in
+- [X] T006 [P] `Store.MetaByPrefix(prefix) (map[string]string, error)` + test, in
       `internal/store/store.go` + `internal/store/store_test.go` (plan D3, spec FR-012)
 
 ## Phase 3: User Story 1 — the fork verb; both run side by side (P1, board ACs #1/#2/#4/#5)
