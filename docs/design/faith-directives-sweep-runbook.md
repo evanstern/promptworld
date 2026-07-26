@@ -171,3 +171,4 @@ done. TASK-136/137/156/159 untouched by this sweep.
 
 | date | task | PR | merge | notes |
 |------|------|----|-------|-------|
+| 2026-07-26 | TASK-97 | #123 | ee069ab | Lane A start; internal/target leaf grammar + designation seam contract-named; guardian-probe mirror deviation ratified (live path required it, agentXY discipline, Turn-path proof) |

@@ -113,7 +113,7 @@ two-consumer grammar). Planning/gating stays on Fable 5.
   `digestRegistry` entry + `catalogFixture` row + `docs/wiki/event-types.md`
   row so `TestCatalogSweep` (`internal/tui/digest_test.go`) passes — never
   merge with the sweep red or the type undocumented
-- [ ] T018 Full gates from `.worktrees/task-97`: `gofmt -l` clean;
+- [x] T018 Full gates from `.worktrees/task-97`: `gofmt -l` clean;
   `go test ./...` green; `node scripts/check-merge-drift.mjs pr` exits 0
   (includes wiki-repin-missing / player-docs-stale findings). Then ONE PR
   for the whole task; merge with `gh pr merge --merge` ONLY
@@ -122,7 +122,7 @@ two-consumer grammar). Planning/gating stays on Fable 5.
 
 ## Phase 7: Post-merge bookkeeping (derived state, lands by merge — TASK-160)
 
-- [ ] T019 After the PR merges: spec-bridge sync (TASK-97 → Done as
+- [x] T019 After the PR merges: spec-bridge sync (TASK-97 → Done as
   artifacts prove), tick this tasks.md, runbook execution-log row
   (`docs/design/faith-directives-sweep-runbook.md`), unblock note on
   TASK-157 (its dependency is met; point it at the contract seam section).
