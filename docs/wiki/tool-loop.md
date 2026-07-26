@@ -1,11 +1,10 @@
 ---
 name: tool-loop
-description: The bounded agent tool-use loop driver (spec 017) — submit/dispatch/feed-back to one landed action or a hard cap, transport-agnostic and sim-agnostic, shared by the villager planner and the Guardian's console turn
+description: The bounded agent tool-use loop driver (spec 017) — submit/dispatch/feed-back to one landed action or a hard cap, transport-agnostic and sim-agnostic, shared by the villager planner and the Guardian's console turn. Overview + connections here; the round/verdict contract, the CallRecord/termination machinery, and provider-pin/retry/estimator driver integration each split into their own child note.
 kind: component
 sources:
   - internal/toolloop/loop.go
   - internal/toolloop/record.go
-  - internal/toolloop/clamp.go
 verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
 ---
 
@@ -24,196 +23,29 @@ recording, and event emission to the consumer — a shared leaf below both
 
 ## How it works
 
-**Doctrine, preserved verbatim from the TASK-52 design decisions**: a tool
-call is a REQUEST; an event is the FACT; the gate decides; the executor
-grounds work in time and space. The driver enforces bounds and RECORDS
-requests — it never mutates world state itself. Every durable effect flows
-through a handler that wraps an existing landing door (`InjectIntent`, the
-`InjectSocial` whitelist), so the loop cannot manufacture a fact the gates
-would not admit. Reads return data and ground nothing. Speaking, musing, and
-thinking are tools too — game-state integrity applies to expression, not only
-world mutation.
+This note's file-level detail splits into three children by domain
+(corpus-spec v2 summary-style split); each links back here.
 
-**`Run` contract** (`Run(ctx, orch *llm.Orchestrator, j Job) (Result, error)`,
-delegating to an unexported `run` over a `submitter` interface — `Submit` +
-`ObserveCognition` + `ResolveProvider` (the run-level pin seam, spec 024) — so
-the control flow is unit-testable against a scripted
-stub with no network or real orchestrator): a `Job` carries `JobID` (the
-existing cognition job identifier, threading every `CallRecord`), `Kind`,
-`System`, `Seed` (the initial user turn), `Roster []tool.Tool`, `Handlers
-map[string]Handler`, `MaxRounds`, `MaxTokens`, an optional `Provider` (an
-explicit pin — `promptworld calibrate` sets it so a reference sample measures a
-NAMED provider; empty for every live mind/guardian caller), and
-`Record func(CallRecord)`
-(the artifact sink; the consumer buffers/lands records — never touched by the
-driver beyond calling it). `MaxRounds <= 0` is defensively treated as 1 (the
-real normalization is `llm.Config.Rounds()`, upstream). `Run` guarantees
-(contracts/loop-api.md): it terminates within `MaxRounds` provider rounds; at
-most one acting call lands; every model tool call yields exactly one
-`CallRecord` via `j.Record` (ordinals 1-based, dense, emission-ordered); a
-read-effect tool never consumes the action; `SkipObserve` rides every internal
-`Submit`; the governor estimator is fed the whole-`Run` wall time only on
-a completed termination (successes-only, below); and a transport-level
-provider failure is retried EXACTLY ONCE per run (spec 025, below) before it
-terminates.
+**Round contract and verdict taxonomy** — the TASK-52 request/event/gate/
+executor doctrine, the `Run(ctx, orch, Job)` contract and its guarantees, the
+one-landed-acting-call cardinality rule (Read tools exempt), and the driver's
+full `Verdict` taxonomy including the spec-058 `VerdictLandedClamped`
+clamp-with-notice shape — moved to [[tool-loop-round-verdict]].
 
-**Run-level provider pin** (spec 024 R9, the FR-008 extension; spec 025
-composition): an empty `Job.Provider` is NOT unpinned — `run` resolves the
-kind's provider ONCE at run start (`submitter.ResolveProvider`, a dry
-chain-walk naming the current admissible chain head) and stamps
-`Request.Provider` on EVERY round's `Submit`, so a multi-round cognition never
-changes models mid-transcript. The transport retry below inherits the pin
-structurally (it re-enters the same `Submit`), so a retry always re-hits the
-SAME provider; a genuinely down pinned provider fails the run per spec 025
-semantics and the NEXT cognition's resolve walks the chain to a fallback. This
-is the cognition-run analog of [[social-fabric]]'s conversation scene pin: with
-per-call chain-walking, the breaker strike from the very failure being retried
-would itself be a walk trigger — a mid-run switch would mix native vs JSON
-tool-call ID conventions and mis-attribute the whole-run observation. An
-explicit `Job.Provider` is honored as-is, never re-resolved; a `ResolveProvider`
-miss (a test stub without the seam) leaves the pin empty, falling back to
-per-kind routing.
+**CallRecord sink, termination taxonomy, and the transcript invariant** — the
+`CallRecord`/`Record` artifact sink (2 KiB arg-capping), the `Termination`
+taxonomy (`TermLanded`/`TermModelDone`/`TermCapExhausted`/
+`TermAdmissionRefused`/`TermProviderError`/`TermCtxDone`) and their error
+semantics, and the one-assistant-turn-per-round transcript invariant load-
+bearing for `openaiCompat`'s synthesized call IDs — moved to
+[[tool-loop-records-termination]].
 
-**Transport retry — one per run** (spec 025, TASK-72,
-`specs/025-llm-robustness-knobs/contracts/loop-retry.md`): when a `Submit`
-fails and `terminationForSubmitErr` classifies it `provider_error` (transport;
-NOT the admission-ladder sentinels, NOT context death), the loop re-submits
-the identical transcript once — a failed `Submit` appended nothing, so the
-retry is byte-identical, and it consumes no round (`rounds` counts model
-responses). On a second transport failure, or the first after the run's retry
-is spent, the loop terminates `provider_error` with the latest error exactly
-as a single failure did pre-025. Admission refusals and ctx-done never retry
-(the governor spoke; busy-is-not-down), and a handler infrastructure failure
-is not a transport failure (the model call succeeded; handlers are
-side-effectful) — those paths are unchanged. `Result.Retried` /
-`Result.RetryReason` (the FIRST failure's text; non-empty iff `Retried`)
-report the consumed retry for the consumer to surface as a NON-terminal
-`cog.outcome` carrying `sim.OutcomeRetried` — the TASK-42 conversation
-vocabulary, so no new event type — making every recovery countable from the
-trail alone. Estimator/breaker doctrine is untouched structurally: the
-retried `Submit` rides `SkipObserve` like any round, a recovered run ends in
-the success family and feeds exactly one `ObserveCognition`, a twice-failed
-run feeds zero, and each `Submit` strikes the breaker as an independent call.
-
-**Cardinality — one landed acting call, reads exempt**: a tool is "acting"
-(`isActing`) iff its `tool.EffectClass` is `World` or `Expressive`; a `Read`
-tool does not consume the cognition's one action. Once an acting call has
-landed within a response, EVERY remaining call in that same response —
-including further reads — is rejected `rejected_cardinality`: the cognition's
-one action is spent (FR-004, R8). A read-effect tool dispatched on a non-final
-round returns its data and grounds nothing; dispatched on the FINAL round (at
-the cap) it is instead recorded `unlanded` without ever calling its handler —
-the loop is out of rounds to make use of what it would learn. An acting call,
-by contrast, is dispatched on every round including the last — it can land as
-the terminal answer without needing a follow-up round.
-
-**Verdict taxonomy** (`Verdict`, data-model.md §5): the DRIVER owns
-`rejected_unknown` (the call names a tool not on this cognition's roster, or
-one with no registered handler), `rejected_malformed` (driver-side schema/
-param validation — `validateArgs`, catching missing required args, wrong
-scalar types, enum membership, number bounds, text caps; a tool with an
-authored `InputSchemaJSON` override is instead validated against THAT schema
-by a general schema-lite walker — `validateAuthored`/`walkSchema`, spec 029 R5
-— NOT against `set_plan`'s shape as the retired `validateSetPlan` did), and
-`rejected_cardinality`. A handler's returned `Outcome`
-owns `landed`, `rejected_gate` (the door refused — stale, guard, scene,
-charge), `read_ok`, and `read_error`. `unlanded` covers a call the loop
-terminated before dispatching (cap reached, or a trailing call after an
-infrastructure failure in the same batch). Since spec 058 (FR-001/FR-003,
-TASK-110, `clamp.go`) a landed call has a second shape: `VerdictLandedClamped`
-carries every `landed` control-flow consequence (consumes the action, ends the
-loop) but marks that a Clamp-flagged expressive field — or set_plan's own step
-count — was truncated to its cap rather than the whole call being rejected;
-`validateArgs` returns `(finalArgs, clampNotice, rejectReason)` instead of a
-bare reject string — `rejectReason != ""` still means reject exactly as
-before, but a non-empty `clampNotice` on an otherwise-passing call means
-`finalArgs` carries a Clamp-flagged `Text` param (or the authored-schema path's
-top-level `reason`, clamped by field name via `clampTopLevelText` since an
-`InputSchemaJSON` override bypasses `Param` derivation) truncated rune-safely
-by `clamp.go`'s `ClampRunes`/`ClampBytes` (never splitting a UTF-8 sequence,
-the `NormTextMax` idiom factored out for every byte-cap caller); `run` rewrites
-`call.Args` to the clamped value in place BEFORE dispatch, so the handler, the
-`CallRecord`, and the eventual event payload all see only the truncated text.
-A clean `VerdictLanded` whose args were clamped upstream is upgraded to
-`VerdictLandedClamped` by `run` itself once the handler returns; a handler may
-also originate `VerdictLandedClamped` directly when its clamp condition is
-domain-specific and the loop can't detect it generically (`set_plan`'s own
-step-count clamp, [[agent-mind]]'s `handleSetPlan`) — either way the
-model-facing result gains a `withClampNotice` suffix naming the field and the
-clamp (FR-001's "the model can adapt"), and the recorded `Reason` carries that
-same notice (or, when the handler originated the clamp itself, its own
-`ResultForModel` phrasing) so a clamped acceptance is queryable exactly like a
-rejection, never silent. Every model tool call ends with exactly one of these
-verdicts.
-
-**`CallRecord`/`Record` sink** (`record.go`): `CallRecord{JobID, Ordinal,
-Tool, Args, Verdict, Reason, Tier}` is the first-class artifact for one model
-tool call (FR-007); `{JobID, Ordinal}` is the correlation key. `Args` is a
-capped copy (`capArgs`, 2 KiB `maxArgsBytes`) — within the cap, a fresh byte
-copy (never aliasing the transcript's buffer); over the cap, it collapses to a
-valid JSON string `{"_truncated":true,"prefix":"…"}` with a UTF-8-clean
-prefix (a byte-boundary cut that splits a multi-byte rune drops the dangling
-partial rather than let `json.Marshal` substitute `U+FFFD`). The driver calls
-`j.Record` for every dispatch decision it makes — landed, every rejection
-kind, every read outcome, every `unlanded` — so a consumer's telemetry (both
-[[agent-mind]]'s mind and [[guardian]] land these as `cog.tool_call` events
-via the shared `sim.NewCogToolCallPayload`, [[event-types]], [[cognition]])
-can reconstruct the complete call trace even for a cognition where nothing
-ever landed. Since spec 058, `verdictRequiresReason` ([[agent-mind]]'s
-telemetry emitter) adds `VerdictLandedClamped` to the verdicts whose
-`cog.tool_call` MUST carry a non-empty `Reason` — a clamped acceptance has no
-query value at all without the notice naming what was truncated.
-
-**Termination taxonomy** (`Termination`, data-model.md §4): `TermLanded` /
-`TermModelDone` (the model produced no tool call — Run reports this honestly;
-the CONSUMER decides how to record the failure, FR-015) / `TermCapExhausted`
-return a nil error; `TermAdmissionRefused` (the submit-side admission ladder —
-budget/queue/circuit/best-effort sentinels) / `TermProviderError` /
-`TermCtxDone` (context canceled or deadline exceeded) return the underlying
-error alongside. `terminationForSubmitErr` maps a `Submit` failure onto one of
-the latter three (a `provider_error` `Submit` failure first passes through the
-one-per-run transport retry above); a handler's infrastructure failure (`Outcome.Err != nil`)
-always terminates the loop with `TermProviderError`, recording the failing
-call and every trailing call in the same batch as `unlanded`
-(`recordInfraFailure`) — every model tool call still yields exactly one
-record even when the loop dies mid-batch.
-
-**Successes-only whole-loop estimator feeding**: `Run`'s deferred exit hook
-always sets `res.TotalMillis` (part of `Result` regardless of outcome), but
-feeds `Orchestrator.ObserveCognition(j.Kind, pin, res.TotalMillis)` — the run
-PIN names the provider whose estimator receives the sample, exact by
-construction since every round Submitted to it — ONLY on a
-completed termination — `TermLanded`, `TermModelDone`, `TermCapExhausted` —
-each of which measured completed model work (`TermCapExhausted` did N full
-provider rounds). The failure family (`TermAdmissionRefused`/
-`TermProviderError`/`TermCtxDone`) did no completed thought and feeds nothing,
-so a refused or errored loop cannot skew the governor's EWMA toward zero —
-mirroring [[llm-orchestrator]]'s own per-call worker doctrine ("a fast
-failure is not a latency observation of completed thought"). Every
-per-round `Submit` inside the loop sets `Request.SkipObserve: true` so no
-fractional per-round sample separately reaches the estimator; the whole-`Run`
-observation is the ONLY sample a loop cognition contributes, in the SAME unit
-([[cognition]]'s `TierProfile.SecondsPerPoint` doctrine) a single-shot kind's
-one-call wall time is.
-
-**Transcript invariant — one assistant turn per round**: the transcript
-(`[]llm.Turn`) opens with the seed user turn and each round appends exactly
-ONE assistant turn (`assistantEcho`: the model's prose, if any, then one
-`llm.Block{ToolUse: ...}` per emitted call, in emission order) followed by one
-user turn carrying that round's tool results (`resultBlock` per call). This
-one-assistant-turn-per-round shape is load-bearing, not cosmetic: the
-`openaiCompat` json-mode fallback ([[llm-orchestrator]]'s `callJSON`)
-synthesizes a per-round call ID as `"env-<round>"` from the COUNT OF
-ASSISTANT TURNS already in the transcript (`jsonModeRound`), since the flat
-envelope carries no ID of its own — any deviation from exactly one assistant
-turn per round would collide synthesized IDs across rounds.
-
-**Roster and schema wiring**: `Run` builds the wire-level `[]llm.ToolDecl`
-from `j.Roster` — `Name`, `Description: t.PromptGloss`, `InputSchema:
-tool.InputSchema(t)` ([[tool-registry]]) — once per invocation; the roster
-itself (`tool.LoopRosterVillager()` / `tool.LoopRosterGuardian()`) and its
-authored or derived schemas are the tool registry's responsibility, not this
-package's.
+**Provider pin, transport retry, and roster/schema wiring** — the run-level
+provider pin (`ResolveProvider` stamped once per run), the one-per-run
+transport retry (`provider_error` classification, `Result.Retried`/
+`RetryReason`), the successes-only whole-loop estimator feed to
+`Orchestrator.ObserveCognition`, and how `Run` builds `[]llm.ToolDecl` from
+the tool-registry roster — moved to [[tool-loop-driver-integration]].
 
 ## Connections
 

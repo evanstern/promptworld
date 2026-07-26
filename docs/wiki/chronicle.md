@@ -1,6 +1,6 @@
 ---
 name: chronicle
-description: The narrated story feed (TASK-11) — cloud narrator turns notable events into chapter entries injected as chronicle.entry; a snapshot-carried ring is the catch-up mechanism; spec 044 rides morgue epilogues on the same single-flight worker and router class
+description: The narrated story feed — a cloud narrator compresses notable events into chapter entries (chronicle.entry) on a snapshot-carried ring, the ambient world's catch-up mechanism; spec 044 rides morgue epilogues on the same single-flight worker and router class. Load for narration behavior, chapter/epilogue failure handling, or the chronicle/morgue views.
 kind: component
 sources:
   - internal/sim/chronicle.go
@@ -25,7 +25,7 @@ The reducer appends it to `State.Chronicle`, a bounded ring (`chronicleCap`
 = 256 — weeks of story at the narrator's ~2 chapters/game-day; the
 [[event-log]] keeps everything forever). Because the ring rides
 `State.Marshal`, the TUI's state-snapshot fetch and daemon recovery both
-deliver narrated history with no extra protocol — that IS the catch-up.
+deliver narrated history with no extra protocol.
 `thread` is a stable lowercase slug naming a storyline across chapters;
 `agents` are roster indices, the basis of the TUI's agent filter.
 
@@ -48,10 +48,10 @@ same narrative weight as a broken promise, a trust violation), musings, and
 gone"), directions changing hands (`social.place_told`, "X told Y about the
 <kind> at (x,y)"), and a divine reveal (`metatron.place_revealed`, "A vision
 showed X the <kind> at (x,y)") — each voiced by the first fact in the event's
-canonical order even when the batch carries more than one, and (TASK-13) the whole
+canonical order, and (TASK-13) the whole
 [[governance]] arc: assemblies with attendance named (meeting hours rendered
-from the convention since TASK-36, including the birth of an emergent
-convention), grievances raised, proposals tabled/passed/voted down with
+from the TASK-36 convention, including an emergent convention's birth),
+grievances raised, proposals tabled/passed/voted down with
 tallies, exiles, and witnessed norm violations — each stamped with in-world
 time. Since spec 046 ([[curriculum-ladder]]) a `curriculum.stage_unlocked`
 event also earns a line — "The village's watcher earned `<stage>`.", the stage
@@ -65,7 +65,7 @@ the night chapter; a chapter with no lines spends no call. Since spec 054
 ([[scenario-machinery]]), a scenario world's `Mind.SetScenario(exercise)`
 (installed once at boot, before the loop starts) arms ONE additional chapter
 trigger at the exercise's pass/fail boundary — additive to the day/night
-cadence, which stays untouched: `curriculum.exercise_passed` always closes a
+cadence: `curriculum.exercise_passed` always closes a
 chapter, and `run.ended` closes one only when the mind's scenario id is set
 — so a sub-one-game-day scenario run still yields a narrated chapter
 carrying the outcome, and an ambient world (no scenario armed) never fires
@@ -87,8 +87,8 @@ recorded input, like all model output.
 **Morgue epilogues ride the same worker** (spec 044 US2, `narrate.go`): an
 absorbed `agent.died` or `run.ended` also queues a `narrJob{epilogue: true}`
 via `queueEpilogue` — the SAME single-flight narrator worker and the SAME
-router class as chapters (`routeVerdict("chronicle", llm.KindNarrator)` — no
-new model-call class). The job's lines are a replica-built fact sheet
+router class as chapters (`routeVerdict("chronicle", llm.KindNarrator)`).
+The job's lines are a replica-built fact sheet
 (`epilogueFacts`: name/cause/day, standing bonds, up to 8 highest-salience
 retained memories; `runEpilogueFacts`: every death of the run from the
 `run.ended` payload's ledger, `agent` = -1 for the run end) and the worker's
@@ -96,7 +96,7 @@ retained memories; `runEpilogueFacts`: every death of the run from the
 no-invention system prompt, then lands the prose as a recorded
 `morgue.epilogue` event through `InjectSocial` — one of the two prose types
 an ENDED world's door still accepts (the run-end epilogue lands AFTER
-`run.ended` by construction). Failure discipline is the chronicle's own: a
+`run.ended`). Failure discipline is the chronicle's own: a
 suppressed verdict, a full queue, a transport error, or empty output is a
 logged GAP in the morgue's prose, never a stall or retry — the [[morgue]]'s
 factual record never waits on it.
@@ -121,23 +121,18 @@ passes the `*store.Store`; call sites passing none render no morgue) and
 ## Connections
 
 [[event-types]] catalogs `chronicle.entry`; [[sim-state-reducer]] holds the
-ring; [[sim-loop]] whitelists the injection (and keeps `chronicle.entry` +
-`morgue.epilogue` on the narrower ended-world whitelist); [[llm-orchestrator]]
-routes `KindNarrator` to the cloud tier; [[tui-client]] and the scribe render
-it; [[snapshots]] carry the ring through recovery; [[mental-maps]] emits the
-three place-knowledge events the narrator voices; [[morgue]] is the spec-044
-legacy document whose epilogues the narrator worker writes and whose file the
-scribe renders; [[curriculum-ladder]] owns the spec-046 unlock event the
-narrator turns into a chapter line; [[scenario-machinery]] owns the spec-054
-`curriculum.exercise_passed` line and the additional chapter trigger at the
-exercise's pass/fail boundary.
+ring; [[sim-loop]] whitelists the injection (narrower on an ended world);
+[[llm-orchestrator]] routes `KindNarrator` to the cloud tier; [[tui-client]]
+and the scribe render it; [[snapshots]] carry the ring through recovery.
+[[mental-maps]], [[morgue]], [[curriculum-ladder]], and [[scenario-machinery]]
+each own an event type this note's narrator voices — see How it works above
+for which.
 
 ## Operational notes
 
 Live-proven (chronicle-proof world, 32x, gemma local + 9router cloud): chapters
 landed at both boundaries, the narrator reused thread slugs across chapters
 unprompted beyond the offered list, gru night drama narrated from real events,
-and the ring survived a daemon restart (chronicle.md regenerated from recovered
-state). Cost: ~2 narrator calls per game day — noise against the $100/month
+and the ring survived a daemon restart. Cost: ~2 narrator calls per game day — noise against the $100/month
 ceiling. The chapter buffer is in-memory: a daemon restart loses the current
 chapter's collected lines (the story resumes at the next boundary).

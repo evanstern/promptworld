@@ -1,6 +1,6 @@
 ---
 name: scenario-machinery
-description: The spec-054 scenario incident-schedule + rubric machinery — the director-lite incident source that lands authored pressure (gru_emerges) into a scenario world, the rubric evaluator that is spec 046's awaited production emitter for curriculum.exercise_passed/stage_unlocked, the boot-frozen ArmScenario runtime, and the TUI exercise tab that surfaces both
+description: The spec-054 scenario incident-schedule + rubric core — ArmScenario compiling an authored Schedule, the director-lite incident source landing gru_emerges pressure, and the rubric evaluator that is spec 046's awaited production emitter for curriculum.exercise_passed/stage_unlocked. Surfacing/wiring split to [[scenario-machinery-surfacing]].
 kind: component
 sources:
   - internal/sim/scenario.go
@@ -9,19 +9,6 @@ sources:
   - internal/sim/gru.go
   - internal/sim/guardian.go
   - internal/sim/state.go
-  - internal/sim/loop.go
-  - internal/world/world.go
-  - internal/daemon/daemon.go
-  - internal/scribe/scribe.go
-  - internal/scribe/morgue.go
-  - internal/mind/mind.go
-  - internal/mind/narrate.go
-  - internal/tui/exercise.go
-  - internal/tui/tui.go
-  - internal/tui/views.go
-  - cmd/promptworld/commands.go
-  - internal/ipc/protocol.go
-  - internal/ipc/server.go
 verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
 ---
 
@@ -31,12 +18,14 @@ Spec 054 (TASK-119) is spec 046's awaited production half: the curriculum
 ladder's [[curriculum-ladder]] `ExerciseDefinition`s and their
 `curriculum.exercise_passed`/`stage_unlocked` events existed since spec 046,
 but nothing emitted them outside test fixtures until this feature — an
-authored incident scheduler that lands deterministic pressure into a scenario
-world, and a rubric evaluator that watches the same world's replica for the
-exercise's pass boundary. Both are the EXECUTOR EMISSION CLASS (the
+authored incident scheduler landing deterministic pressure into a scenario
+world, plus a rubric evaluator watching the same replica for the exercise's
+pass boundary. Both are the EXECUTOR EMISSION CLASS (the
 `metatron.order_expired`/`charge_regenerated` precedent): pure functions of
 (state, boot-frozen scenario config, tick), no LLM, no injection door — the
 recorded events are the only latches, so a restart or replay resumes exactly.
+Downstream surfacing (status/CLI, manifest, boot wiring, narration, TUI) is
+covered by the split-off [[scenario-machinery-surfacing]].
 
 ## How it works
 
@@ -47,13 +36,12 @@ result as `armedScenario{def, source}` to `State.scenario` — unexported and
 NEVER serialized, exactly the `State.m *worldmap.Map` precedent: canonical
 state bytes are unchanged by arming, and replay needs no scenario runtime at
 all (the recorded events are the persistence). Called exactly once, at
-daemon boot (`armScenario` in `internal/daemon/daemon.go`, the `SetStage`
-discipline), from the manifest's `Scenario` block; a world that never calls
-it is byte-identical to pre-054 on every path. `world.migrated`'s wholesale
-state replacement carries the scenario runtime across the swap the same way
-it carries `m` ([[sim-state-reducer]]). `State.ScenarioExerciseID()` reports
-the armed exercise id, `""` for an ambient world — the loop's status
-composer and the daemon's `armScenario` return value both read it.
+daemon boot (the `SetStage` discipline, [[scenario-machinery-surfacing]]),
+from the manifest's `Scenario` block; a world that never calls it is
+byte-identical to pre-054 on every path. `world.migrated`'s wholesale state
+replacement carries the scenario runtime across the swap the same way it
+carries `m` ([[sim-state-reducer]]). `State.ScenarioExerciseID()` reports
+the armed exercise id, `""` for an ambient world.
 
 **The incident source** (`incidentSource` interface, `incidentsDue(s,
 nextTick) []incident`): the director seam (contract §6). v1 ships exactly one
@@ -119,102 +107,25 @@ definition's own override wins, else the stage-keyed default (forecast at
 stages 1–2 and pre-ladder, fog from stage 3, `docs/design/tui/patterns/
 stage-defaults.md`). A vocabulary in every signature, never a boolean.
 
-**Surfacing — status/CLI** ([[sim-loop]], [[ipc-protocol]],
-[[cli-promptworld]]): `sim.Status` gains additive `omitempty`
-`ScenarioExercise`/`ScenarioOutcome`, composed inside the loop goroutine
-(`status()`) so the pair is always coherent with `Tick` — absent for an
-ambient world, so its status bytes are unchanged. `ipc.WorldStatus` mirrors
-the same two fields (`ipc/protocol.go`), folded in by `ipc/server.go`'s
-`statusData` straight from the loop's snapshot; `promptworld status`'s
-`scenarioStatusLine` renders `exercise: <id> — <outcome>` (`failed` renders
-`failed (run ended)`), empty for an ambient world or an old daemon.
-`promptworld new --scenario <id>` (`cmd/promptworld/commands.go`) resolves
-the id against `sim.ExerciseByID` (unknown ids refuse, listing the whole
-`sim.ScenarioExercises` catalog), IMPLIES the exercise's stage and pins its
-authored seed (an explicit `--stage`/`--seed` may only agree, never
-override), rides the existing earned-stage gate unchanged (a scenario never
-bypasses the earn gate), and stamps the manifest's `Scenario` block
-set-after-create via `world.SetScenario` (the `SetStage` pattern — write-once,
-no toggle command).
-
-**Manifest consumption** ([[world-save-directory]]): `world.Manifest.Scenario`
-(`*ScenarioConfig{Exercise}`) is no longer the spec-046 reserved/unconsumed
-seam — `world.Open` now validates a present block against
-`ValidScenarioExercise` (a local mirror of `sim.ScenarioExercises`' id set,
-the `validLadderStage` twin-list precedent — the deterministic core and the
-save-directory package deliberately don't import each other;
-`TestScenarioVocabularyMirrorsSimCatalog` pins the two in sync), refusing an
-unknown exercise id loudly rather than silently booting ambient.
-`world.SetScenario(dir, exercise)` is the write-once stamp `promptworld new
---scenario` calls right after `Create`.
-
-**Boot arming** ([[daemon-lifecycle]]): `daemon.armScenario(w, state)` reads
-the manifest's `Scenario` block, resolves it via `sim.ExerciseByID` (a
-catalog miss here is a real corruption — `world.Open` already validated it —
-refused loudly, never silently booted ambient), calls `state.ArmScenario`,
-and returns the armed exercise id. Called after `seedSurvivalWatches`, before
-the sim loop exists, so no tick ever runs unarmed. When armed, the scribe
-(`scr.SetScenario(exercise)`) and the mind (`md.SetScenario(exercise)`) each
-receive the exercise id the same boot-frozen way, both before their
-respective consumers start.
-
-**Narration and the morgue** ([[chronicle]], [[morgue]]): `Scribe.
-SetScenario(exercise)` installs the exercise id and re-renders the morgue
-immediately, so an already-ended scenario world's run summary carries the
-exercise line from the very first boot render on restart.
-`writeRunSummary` (`internal/scribe/morgue.go`) gains a `scenarioExercise`
-parameter: on a scenario world it appends "**The exercise**: `<id>` —
-`<outcome>`. _Stated as evidence; the reader draws the lesson._" to the
-run-end section, in the same no-blame evidence register as the rest of the
-morgue — failure is stated, never scored. `Mind.SetScenario(exercise)`
-(`internal/mind/mind.go`) arms the narrator's additional chapter trigger:
-`chronicleNote` (`internal/mind/narrate.go`) gains a
-`curriculum.exercise_passed` case ("The watcher's exercise — `<id>` — was
-passed: the village made it through.") and a scenario-cadence trigger that
-closes ONE additional chapter at the exercise's pass/fail boundary —
-`curriculum.exercise_passed` always closes a chapter; `run.ended` closes one
-only when `md.scenarioExercise != ""` — additive to the ambient day/night
-cadence, which stays untouched (`exercise_passed` only ever lands on
-scenario worlds, and the `run.ended` half is gated on the armed scenario), so
-a sub-one-game-day scenario run still yields a narrated chapter carrying the
-outcome.
-
-**The exercise tab** (`internal/tui/exercise.go`, [[tui-client]]): a fifth
-dock tab, `paneExercise` (key `6`), present ONLY on a scenario world
-(`Model.exerciseID()` reads `m.w.Manifest.Scenario` plus a live
-`sim.ExerciseByID` re-check — world-shaped, not stage-shaped; absent on every
-ambient world, and the tab, its help row, and its footer hint all vanish with
-it rather than rendering inert). An attach-time briefing (framing +
-incident-visibility mode) shows once per attach, dismissed by any key while
-it's visible (`exerciseBriefingShowing`, reset on reconnect); after dismissal
-the body renders one gauge row per `sim.EvaluateRubric` term over the live
-replica (met/pending marker, backing event count — the SAME pure function
-the executor's pass precondition reads, so panel and emitter can never
-disagree), an incident line under `VisibilityForecast` (omitted entirely
-under fog, never blanked), and a pass/fail banner once `sim.ExerciseOutcome`
-resolves (dual-sourced with the TUI's own `runEnded()` posture for a live
-transition the replica snapshot hasn't folded yet).
+**Surfacing, wiring, and the exercise tab** — split into
+[[scenario-machinery-surfacing]]: once armed, the exercise id rides
+status/CLI, the manifest, boot wiring, chronicle/morgue narration, and a
+fifth TUI dock tab present only on a scenario world. See the child for the
+per-surface field/call-site detail.
 
 ## Connections
 
-[[curriculum-ladder]] owns the `ExerciseDefinition` content this note's
-machinery consumes (`ScenarioExercises`, `Schedule`, `IncidentVisibility`)
-and the `EvaluateUnlock` gate conjuncts `scenarioRubricEvents` calls;
-[[executor]] hosts both emission call sites inside `stepEvents`; [[gru]]
-shares the night-emergence preemption (`gruScheduledTonight`); [[event-types]]
-catalogs `curriculum.exercise_passed`/`stage_unlocked` and `GuardianOrder.
-PlacedSeq`; [[guardian-orders]] owns `GuardianOrder.PlacedSeq`'s stamping
-(the reducer arm, `stampSeqs`) that `OrderPlacedEvidence` re-locates;
-[[sim-state-reducer]] owns the unexported `State.scenario` field, sharing the
-`State.m` unserialized-boot-frozen-state precedent; [[sim-loop]] and
-[[ipc-protocol]]/[[ipc-server]] carry the additive `ScenarioExercise`/
-`ScenarioOutcome` status facts; [[world-save-directory]] validates and
-carries the manifest's `Scenario` block; [[daemon-lifecycle]] arms the
-runtime at boot and hands the exercise id to the scribe and mind;
-[[chronicle]] narrates the pass event and the additional chapter trigger;
-[[morgue]] names the exercise outcome in the run summary; [[cli-promptworld]]
-fronts `new --scenario` and the status line; [[tui-client]] hosts the
-exercise dock tab.
+[[curriculum-ladder]] owns the `ExerciseDefinition` content consumed here
+(`ScenarioExercises`, `Schedule`, `IncidentVisibility`) and the
+`EvaluateUnlock` gate `scenarioRubricEvents` calls; [[executor]] hosts both
+emission call sites inside `stepEvents`; [[gru]] shares the night-emergence
+preemption (`gruScheduledTonight`); [[event-types]] catalogs
+`curriculum.exercise_passed`/`stage_unlocked` and `GuardianOrder.PlacedSeq`;
+[[guardian-orders]] owns `PlacedSeq`'s stamping (`stampSeqs`) that
+`OrderPlacedEvidence` re-locates; [[sim-state-reducer]] owns the unexported
+`State.scenario` field, sharing the `State.m` precedent;
+[[scenario-machinery-surfacing]] is the split-off child covering every
+downstream surface.
 
 ## Operational notes
 

@@ -1,17 +1,11 @@
 ---
 name: cognition
-description: The cognition horizon substrate — decision-class registry (Fibonacci points, 1x staleness budgets scaled by clock speed at the delivery gates via EffectiveBudgetTicks, spec 067), seconds-per-point estimation with spike rejection, deterministic LLM-vs-reflex routing, the calibration profile, and the adaptive-throttle debt/governor feedback controller
+description: The cognition horizon substrate — the decision-class registry (Fibonacci points, 1x staleness budgets scaled by clock speed at the delivery gates via EffectiveBudgetTicks, spec 067) and the pure Route/RoutePaused LLM-vs-reflex routing arithmetic and delivery-gate doctrine; estimation/calibration, horizon summaries/telemetry, and the adaptive-throttle governor split into child notes
 kind: component
 sources:
   - internal/cognition/doc.go
   - internal/cognition/registry.go
-  - internal/cognition/estimate.go
-  - internal/cognition/estimator_state.go
   - internal/cognition/route.go
-  - internal/cognition/calibration.go
-  - internal/cognition/horizon.go
-  - internal/cognition/governor.go
-  - internal/sim/cognition.go
 verified_against: 30912a9cd5d2334f76425ac8ca5b74a7a7c90876
 ---
 
@@ -46,25 +40,22 @@ registered (`planner` 3pt/1200t degrading to reflex, `conversation`
 13pt/7200t, `meeting` 2pt/3600t degrading to a template, `consolidation`
 5pt/28800t, `chronicle` 5pt/86400t, `metatron` 5pt/86400t); values are
 doctrine — changing one is a reviewed code change, never runtime tuning.
-The `musing` class retired with spec 017: musing is no longer a scheduled
-call kind gated by its own router entry — it is a roster tool inside the
-planner's tool-use loop, so it now shares the `planner` class's 3pt/1200t
-horizon gate rather than carrying its own 1pt/3600t budget ([[agent-mind]],
-[[tool-loop]]). Spec 029 adds no new class: the angel's fuzzy-order confirm
-kind (`metatron_watch`, [[guardian-orders]]) maps to the EXISTING `metatron`
-class (5pt/86400t) — same actor, event-triggered not cadence-scheduled, a
-one-line `kindToClass` entry on the narrator/drama→`chronicle` precedent, so the
-spec-007 registry doctrine contract is untouched. Spec 063 ([[grounded-feedback]])
-adds the guardian's report-card critique kind (`report_card`) on the
-identical one-line-entry shape, into the SAME `metatron` class — same actor,
-`DegradeSkip` (an unavailable chain means the deterministic card parts
-stand alone), event-triggered at stopping points, never cadence-scheduled.
-`kindToClass` maps every LLM
-call kind (as a string, keeping the package leaf) to a class; `ValidateKinds` enforces FR-002 at daemon start
-— an unmapped kind, a non-Fibonacci point value, or a non-positive budget is
-a fatal startup error. `Degrade` names the suppression floor: `skip`
-(recorded, not silent), `reflex`, or `template` (a `faster-tier` variant
-existed but was never wired past skip and was removed as dead code, TASK-71).
+The `musing` class retired with spec 017 — musing is now a roster tool inside
+the planner's tool-use loop and shares the `planner` class's 3pt/1200t gate
+rather than its own former 1pt/3600t budget ([[agent-mind]], [[tool-loop]]).
+Spec 029 and spec 063 ([[grounded-feedback]]) add no new classes: the angel's
+fuzzy-order confirm kind (`metatron_watch`, [[guardian-orders]]) and the
+guardian's report-card kind (`report_card`, `DegradeSkip` — an unavailable
+chain means the deterministic card parts stand alone) both map onto the
+EXISTING `metatron` class (5pt/86400t) via one-line `kindToClass` entries on
+the narrator/drama→`chronicle` precedent — same actor, event-triggered not
+cadence-scheduled, so the spec-007 registry doctrine contract stays untouched.
+`kindToClass` maps every LLM call kind (as a string, keeping the package leaf)
+to a class; `ValidateKinds` enforces FR-002 at daemon start — an unmapped
+kind, a non-Fibonacci point value, or a non-positive budget is a fatal
+startup error. `Degrade` names the suppression floor: `skip` (recorded, not
+silent), `reflex`, or `template` (a `faster-tier` variant existed but was
+never wired past skip and was removed as dead code, TASK-71).
 
 **Routing** (`route.go`): `Route(dc, ticksPerSecond, secondsPerPoint)` is pure
 arithmetic — predicted wall seconds = points × seconds-per-point; predicted
@@ -84,285 +75,65 @@ paused fact is the caller's to supply from event-reduced state — the function
 stays pure. `Route` itself is untouched, so running-world verdicts are
 byte-identical to pre-040.
 
-**Estimation** (`estimate.go`): `Estimator` holds one provider's live
-seconds-per-point as an EWMA (`EWMAAlpha` 0.2) over per-point-normalized call
-durations. A sample beyond `SpikeFactor` (3.0) times the current estimate is
-excluded from the EWMA but retained — with its value — in a `WindowSize`-20
-ring of `{secPerPoint, spike}` slots; on the sample that first drives the
-rolling spike rate over a full window past `BreachRate` (0.2, lowered from
-0.3 in TASK-113 — adoption now needs ≥5 spikes per 20-window instead of ≥7,
-faster median adoption with the one-shot-rejection property intact), the estimator
-ADOPTS (spec 031, breach-adoption): it re-seeds `estimate` to the window
-median (all retained values, spike and non-spike alike), zeroes the ring, and
-`Sample` returns a non-nil `Adoption{Prior, Adopted, SpikeRate}` — the
-`cog.recalibration_recommended` episode, which now has an actor instead of
-being an unread signal. Re-arm is structural: a fresh window must refill
-before any further verdict, and post-adoption samples in the new regime are no
-longer spikes against the adopted estimate. One-shot lag spikes (too few to
-breach) are thus still rejected while systemic drift — including a step change
-larger than `SpikeFactor`, which pre-031 froze the estimate forever — is
-followed within one window. Learned estimates survive restarts (TASK-113):
-`EstimatorState` persists every provider's live seconds-per-point to
-`estimator_state.json` in the world dir (`estimator_state.go` — daemon-written
-every 5 minutes and at shutdown, unlike the human-only `calibration.json`),
-and boot reseeds each provider to `ReseedValue` = max(calibration/bootstrap
-seed, persisted estimate) — the persisted value only ever RAISES a seed, never
-undercuts a fresher human calibration or the pessimistic bootstrap floor.
-Pre-113, the estimator was process-lifetime: world-01's 36 restarts reset it
-to the optimistic calibration floor 36 times, re-triggering the staleness
-storm each boot. The file never enters the event log and is never read during
-replay — the estimator sits outside the reducer entirely.
+**Estimation and calibration** split into [[cognition-estimator-calibration]]:
+per-provider live seconds-per-point estimation (EWMA, spike rejection,
+breach-adoption, persisted estimator state surviving restarts) and the
+human-authored calibration profile (`calibration.json`) that seeds it.
 
-**Calibration** (`calibration.go`): `Profile` is `calibration.json` in the
-world save directory (`World.CalibrationPath()`), written only by the
-`promptworld calibrate` subcommand (full-file replace via `Save`) — the daemon
-never writes it, so the recorded baseline moves only under a human's hand.
-`LoadProfile` treats a missing file as legal (nil, nil) and a malformed one as
-a warning the daemon downgrades to bootstrap defaults.
-`SeedFor(p, name, zeroPriced)` returns a provider's recorded seconds-per-point
-— the profile is keyed by PROVIDER NAME since spec 024; legacy worlds derive
-providers named `local`/`cloud`, so pre-024 tier-keyed profiles keep matching
-with no translation — or, on a miss, a bootstrap by pricing class: zero-priced
-providers seed `BootstrapLocalSecPerPt` (20.0), priced ones
-`BootstrapCloudSecPerPt` (10.0) — an
-uncalibrated world fails toward reflex, never toward stale action.
-`TierProfile.SecondsPerPoint`'s unit is doctrine, spelled out since spec 017:
-for a single-shot kind it is one model call's wall time per point; for a loop
-cognition (the villager planner) it is the WHOLE tool-use
-loop's wall time per point — the same unit [[llm-orchestrator]]'s live
-estimator observes via `Orchestrator.ObserveCognition` ([[tool-loop]]), so a
-seeded baseline and a live observation stay directly comparable and the
-router's suppression arithmetic stays truthful when a cognition spends N
-model calls, not one.
-`profileEntry(p, name)` (spec 035 R3) is the single presence test ("a usable,
-positive-`SecondsPerPoint` entry exists for this provider") that both
-`SeedFor`'s seed-value choice and the exported `Calibrated(p, name) bool`
-apply, so "what seed?" and "is this provider calibrated?" can never disagree.
-`Calibrated` is the provenance a caller outside this package records —
-`llm.Orchestrator.SeedCalibration` stamps each provider's `calibratedAt` from
-it ([[llm-orchestrator]]), and the CLI/status surfaces render "uncalibrated
-(bootstrap)" for a provider where it's false ([[cli-promptworld]],
-[[llm-provider-health]]).
+**Horizon summaries and telemetry** split into [[cognition-horizon-telemetry]]:
+the operator-facing horizon-summary surfaces every status view reads, plus
+the two per-call telemetry payloads `internal/sim/cognition.go` records.
 
-**Horizon summaries** (`horizon.go`, spec 035 R1): `WatchedClasses()` returns
-a copy of the fixed `planner`/`conversation`/`meeting` set the operator-facing
-surfaces summarize or gate on. `HorizonSummary(secPerPt)` evaluates `Route`
-for each watched class across the fixed speed ladder (1/4/8/16/32) at one
-seconds-per-point and joins the per-class verdict ("planner suppressed above
-16x", "conversation OK at 32x", or "… always suppressed"); its per-class
-max-safe-rung loop is extracted (spec 039 FR-002) as
-`MaxSafeSpeed(class, secPerPt)` — the highest ladder speed at which the class
-still routes to the model, 0 when even 1x suppresses (callers clamp to the
-ladder floor), the teaching-posture rung that decides through `Route` so a
-posture can never disagree with the router. The summary body was moved verbatim
-from `cmd/promptworld/calibrate.go` so the daemon's boot warning, the
-`set_speed` warning, and `promptworld calibrate` all read the ONE
-implementation (FR-006): the printed horizon can never disagree with the
-router. `MaxSafeSpeed(class, secPerPt)` (spec 039 FR-002) is `HorizonSummary`'s
-per-class maxOK loop pulled out into its own export: the highest
-`horizonLadder` rung at which the named class still routes to the model under
-`secPerPt` (0 when even 1x suppresses it, or the class is unregistered) —
-`HorizonSummary` now calls it rather than duplicating the loop. It decides
-through the same `Route` call as everything else here, so a posture derived
-from it can never disagree with the router either; the teaching-posture
-default ([[daemon-lifecycle]]) and its `set_speed`/status overrides
-([[ipc-server]]) are its callers, clamping its 0 result to the ladder floor via
-[[game-clock]]'s `SpeedForRate`.
-`SuppressedAt(ticksPerSecond, secPerPtFor)` is the live-estimate twin
-— same watched classes and `Route` arithmetic, but at one live
-ticks-per-second against a per-class resolver that can exclude a class
-entirely (`ok=false`) when its serving provider is calibrated, so a
-calibrated class never contributes to the warning; this backs the
-`set_speed` uncalibrated-warning composition ([[ipc-server]]).
-
-Spec 037 (`contracts/status-horizon.md`) generalizes the live-estimate twin
-into a structured base: `ClassStanding{Class, Suppressed, Verdict}` and
-`LiveHorizon(ticksPerSecond, secPerPtFor) []ClassStanding` evaluate the same
-watched classes and `Route` arithmetic once, returning each INCLUDED class's
-full standing (the verdict's arithmetic string and all) in `WatchedClasses`
-order — a class whose resolver returns `ok=false` is excluded entirely (no
-entry, not merely never-suppressed), and `ticksPerSecond <= 0` (uncapped max
-speed) suppresses every included class via `Route`'s uncapped phrasing.
-`SuppressedAt` is now re-based as a suppressed-names filter over
-`LiveHorizon` — one watched-class iteration total, so every operator-facing
-horizon surface, from the plain warning to the richer per-class status, can
-never disagree with the router (spec 035 FR-006 posture, extended).
-[[ipc-server]]'s `horizonClasses` composes `LiveHorizon` at the loop's
-effective speed into the status wire's structured horizon, rendered per
-class by [[cli-promptworld]] and [[tui-client]].
-
-**Adaptive-throttle governor** (`governor.go`, spec 028, doctrine research R6):
-extends the horizon from the other side — instead of only scoping what a
-model may decide at a given speed, the world governs its own effective speed
-when the player wants both high speed and high thought fidelity. The
-player's speed setting becomes a CEILING, not a promise: `Debt` and
-`Governor` are pure, stdlib-only functions of a snapshot the daemon supplies
-every sample; nothing here calls a model, reads a wall clock, or is
-config-tunable at runtime.
-
-- **Debt** (`Debt(pending []PendingDebtInput, ticksPerSecond) (debt float64,
-  jobs int)`): the aggregate staleness signal (spec 033, revising spec 028
-  FR-001/FR-002) — for each pending thought the seconds are piecewise:
-  `PredictedSec − ElapsedSec` while within prediction (remaining work, drains
-  as today), `ElapsedSec` once overrun (full accrued drift, grows) — then
-  `× ticksPerSecond / BudgetTicks(class)`. An overdue thought's elapsed time
-  IS its grounded debt; the pre-033 floor-to-zero inverted the signal under
-  overload (worst drift → least debt → no shed, the world-01 defect). The
-  boundary jump at `ElapsedSec == PredictedSec` is doctrine
-  (specs/033-governor-accrued-debt/contracts/debt-formula.md). `debt` is the
-  sum, `jobs` counts only positive-contributing entries (overdue thoughts now
-  contribute, so they count). Unknown kinds are skipped (they cannot reach a
-  model) and `ticksPerSecond ≤ 0` (uncapped max) yields zero — pure
-  arithmetic, no randomness, identical inputs always yield identical debt.
-- **`Governor`** (a hysteresis state machine, one instance owned by the
-  daemon's sampler, [[daemon-lifecycle]]): `Sample(debt, jobs, paused,
-  effective, requested) Decision` counts consecutive qualifying SAMPLES, not
-  wall durations, at the daemon's fixed `GovernorCadence`. Breach accrues
-  while `debt > ShedThreshold` and the effective speed sits above the 1x
-  floor (`clock.LadderIndex`); a continuous `BreachWindow` sheds exactly one
-  notch (`clock.CappedLadder()[idx-1]`). Recovery accrues only while governed
-  with room to climb — the debt PROJECTED at the next notch up (current debt
-  scaled by that notch's tick-rate ratio, FR-006) stays under `ShedThreshold ×
-  RecoverHeadroom`; a continuous `RecoveryWindow` (deliberately longer than
-  `BreachWindow` — asymmetric hysteresis, US3) recovers one notch, never
-  above the requested ceiling. Any decision, pause, or a speed change between
-  samples resets both windows; a paused sample is a no-op (FR-013 — elapsed
-  pause time never counts). At the 1x floor with debt still over threshold,
-  the governor saturates silently — no decision, visible only via status.
-- **Doctrine constants** (versioned with the code, never runtime knobs,
-  FR-007 — same posture as the registry's points/budgets): `GovernorCadence`
-  1 s (the daemon's sampling interval), `ShedThreshold` 1.0 (budget-fractions
-  above which breach accrues), `BreachWindow` 5 s, `RecoverHeadroom` 0.5
-  (scales `ShedThreshold` to the recovery ceiling), `RecoveryWindow` 20 s.
-- **Who owns/calls it**: the daemon builds a `governorSampler` only when an
-  orchestrator exists (a no-LLM world constructs zero governor machinery,
-  FR-003/SC-004) and runs it in its own goroutine, sampling
-  `llm.Orchestrator.PendingCognition()` ([[llm-orchestrator]]) and the
-  [[sim-loop]]'s non-blocking status door every cadence, storing the debt
-  reading for status, and issuing any resulting shed/recover `Decision`
-  through the loop's `Govern` door — which lands it as a recorded
-  `clock.governor_shed`/`clock.governor_recovered` event or drops it silently
-  if it no longer applies ([[event-types]], [[sim-state-reducer]]). The
-  package itself owns no goroutine, no wall clock, and no loop reference —
-  only the pure `Debt` function and the `Governor` decision struct.
-
-**Tool-call telemetry** (`internal/sim/cognition.go`, spec 017 FR-007):
-`CogToolCallPayload` (`Job`, `Ordinal`, `Tool`, `Args` capped to 2 KiB,
-`Verdict` — the stringified `toolloop.Verdict` enum — `Reason`, `Tier`,
-`SnapshotTick`) is one record per tool call a cognition's loop saw: landed,
-landed_clamped (spec 058 FR-001/FR-003, `toolloop.VerdictLandedClamped` —
-[[tool-loop]]), rejected, read, or unlanded. `{Job, Ordinal}` is the correlation key
-(1-based, dense per job, model-emission order). It rides the same reducer-no-op
-`cog.*` doctrine as every other cognition event ([[event-types]]).
-`NewCogToolCallPayload` assembles the payload sim-side — deliberately with
-only plain/stdlib argument types (no `toolloop` or `mind` import) — so both
-loop consumers ([[agent-mind]]'s mind, [[guardian]]) unpack their own
-`toolloop.CallRecord` and call this one shared constructor rather than each
-inventing its own payload shape.
-
-**Memory-relevance divergence telemetry** (`internal/sim/cognition.go`, spec
-042 US2): `MemoryDivergencePayload` (`Agent`, `Tick`, `Mode`, `Legacy`/
-`Augmented` — both memory `Seq` lists in window order, `Overlap`,
-`Displacement`, `Vectorless`, `SitTick`) is one record per selection the mind
-makes while a world's `memory_relevance` flag is `"shadow"` or `"on"`,
-recording how the relevance-augmented window (`sim.SelectMemoriesRelevant`)
-ranks against the legacy window (`sim.SelectMemories`) it is shadowing —
-the evidence the shadow-mode US2→US3 promotion decision is made from. It
-rides the same reducer-no-op `cog.*` doctrine as `CogToolCallPayload` above
-([[event-types]]). `NewMemoryDivergencePayload` computes `Overlap` (memories
-present, by `Seq`, in both windows) and `Displacement` (the summed absolute
-rank distance of each shared member) purely over the two selected `[]Memory`
-slices — a pre-042, seq-less memory (`Seq` 0) never counts as shared, since
-it carries no durable identity. [[memory-retrieval]] owns the selector this
-payload audits and the shadow/on posture that gates its emission.
+**The adaptive-throttle governor** split into [[cognition-governor-debt]]:
+the pure `Debt` staleness signal and the `Governor` hysteresis state machine
+(spec 028) that turns the player's speed setting into a ceiling, shedding and
+recovering one speed notch at a time.
 
 ## Connections
 
 The [[agent-mind]] consults `Route` before every enqueue (`routeVerdict` in
 `internal/mind/telemetry.go`) and records suppressions and thought outcomes as
-`cog.thought` / `cog.outcome` events ([[event-types]]) — since spec 043 a
-planner `cog.thought` additionally carries the assembled decision context's
-sizes, `CogThoughtPayload`'s additive-last, `omitempty`
-`PromptBytes`/`BlockBytes`/`DroppedBlocks` fields (zero-valued on every
-non-planner emission and every pre-043 log; [[decision-context]] owns the
-block inventory they measure); while the mind's
-replica is paused, `routeVerdict` short-circuits to `RoutePaused` — before the
-uncapped branch, so paused wins even at max (spec 040) — and the suppression floors
-are the [[reflex-policy]] and pre-authored templates. The [[llm-orchestrator]]
-owns one `Estimator` per provider (spec 024), feeds it each completed call's
-duration normalized by the kind's point cost (successes only), and exposes the
-live estimate back to the mind via `EstimateForKind` — the kind's currently
-admissible chain-head provider's estimate, so a fast small model is never
-averaged with a slow quality model. Since spec 017 the planner's per-round calls
-inside [[tool-loop]] each opt out of that per-call feed (`Request.SkipObserve`)
-and the loop itself reports exactly one whole-cognition observation via
-`Orchestrator.ObserveCognition` when it finishes — and only on a completed
-termination (landed / model_done / cap_exhausted); the failure family
-(admission_refused / provider_error / ctx_done) feeds the estimator nothing,
-mirroring the single-shot worker's own successes-only doctrine so a governor
-observation is always a completed cognition's true cost, never a fragment of
-one or a fast failure. The [[sim-loop]] enforces the budget at landing:
-an intent whose measured staleness exceeds its class's
-`EffectiveBudgetTicks` at the reducer's own event-sourced effective speed
-(spec 067 — pure, replay-safe) is rejected (`OutcomeRejectedStale`) at the
-injection door, with the reason naming the scaled budget and its derivation
+`cog.thought`/`cog.outcome` events ([[event-types]]; since spec 043 a planner
+`cog.thought` also carries the decision context's assembled sizes,
+[[decision-context]]); while paused, `routeVerdict` short-circuits to
+`RoutePaused` before the uncapped branch, so paused wins even at max (spec
+040), and the suppression floors are [[reflex-policy]] and pre-authored
+templates. See [[cognition-estimator-calibration]] for the live per-provider
+estimate behind `secondsPerPoint`.
+
+The [[sim-loop]] enforces the budget at landing: an intent whose measured
+staleness exceeds its class's `EffectiveBudgetTicks` at the reducer's
+event-sourced effective speed (spec 067 — pure, replay-safe) is rejected
+(`OutcomeRejectedStale`) at the injection door, naming the scaled budget
 (`staleness 9800 > budget 9600 (1200 at 1x × 8x)`). The split is doctrine:
 scheduling gates pace cognition against the fiction, delivery gates forgive
 queue-inflated latency against the wall. The residual gap is documented, not
 closed (spec 067 FR-006): a thought whose WALL latency exceeds `BudgetTicks`
 seconds still dies rejected-stale at every capped speed while the horizon —
 which predicts from calibrated per-call latency, excluding endpoint queue
-wait — keeps reporting the class healthy. The daemon ([[daemon-lifecycle]]) runs `ValidateKinds`
-before any model is reachable and seeds the estimators from the profile;
-[[cli-promptworld]]'s `calibrate` subcommand benchmarks the host+model and
-writes the profile, delegating its own horizon printout to `HorizonSummary`.
-Since spec 035, [[daemon-lifecycle]]'s boot warning and [[ipc-server]]'s
-`set_speed` warning also read `HorizonSummary`/`SuppressedAt`; since spec 039,
-[[daemon-lifecycle]]'s boot-time teaching-posture default and [[ipc-server]]'s
-`postureWarning`/`postureStatus` read `MaxSafeSpeed` the same way, and
-[[llm-orchestrator]]'s `SeedCalibration` reads `Calibrated` to stamp each
-provider's `calibratedAt`. Since spec 037, [[ipc-server]]'s `horizonClasses`
-also reads `LiveHorizon` directly (not just the `SuppressedAt` filter) to
-compose the status wire's structured per-class horizon, and
-[[llm-orchestrator]]'s daemon-lifetime `SuppressionCounts` (fed by
-[[agent-mind]]'s `emitSuppressed` through the `suppressionCounting` seam)
-rides alongside each entry as its `SuppressedCount` — a fact this package
-itself never tracks. The daemon's governor sampler ([[daemon-lifecycle]])
-drives `Debt`/`Governor` from [[llm-orchestrator]]'s `PendingCognition`
-snapshot and the [[sim-loop]]'s status/`Govern` doors; the router
-([[sim-loop]]'s landing ladder, and every `Route` call above) reads the
-EFFECTIVE speed the governor may have shed, so shedding speed deterministically
-widens what the model may own and recovery narrows it again (spec 028 FR-010,
+wait — keeps reporting the class healthy.
+
+Every operator-facing horizon surface and the daemon's governor sampler read
+[[cognition-horizon-telemetry]] and [[cognition-governor-debt]] respectively
+rather than re-deriving `Route`'s verdicts; the router itself always reads
+whatever EFFECTIVE speed the governor may have shed (spec 028 FR-010,
 extending decision-4 from the other side).
 
 ## Operational notes
 
-No environment variables; the only file read is `calibration.json` in the
-world directory, and only `promptworld calibrate` writes it. With no profile
-(or an unreadable one), bootstrap defaults (local 20 s/pt, cloud 10 s/pt)
-apply and — since spec 035 — the daemon prints a full boot WARNING block
-(uncalibrated statement, `HorizonSummary` at the bootstrap seeds, and the
-exact `promptworld calibrate <world>` command), not just a one-line reminder
-([[daemon-lifecycle]]). Telemetry: router verdicts land as `cog.outcome`
-events with the arithmetic string as the reason; estimator drift surfaces as
-`cog.recalibration_recommended` (fires once per breach episode, and since spec
-031 the same episode adopts — the payload's additive `prior_s_per_pt` →
-`adopted_s_per_pt` fields carry the re-seed arithmetic, `estimate_s_per_pt`
-remaining "current estimate at emission", i.e. the adopted value);
-`Estimator.Stats` exposes estimate, rolling spike rate, and lifetime
-sample/spike counts. Since spec 042, `cog.memory_divergence` records one
-shadow/on-mode selection's rank divergence per emission, purely observational
-— it gates nothing itself ([[memory-retrieval]]). `OutcomeRetried` (`"retried"`, TASK-42) is the one
-NON-terminal outcome value — a scene reply failed to parse and the scene
-continued via one retry; consumers summing job completions must filter it, and
-the payload's optional `Raw`/`Retried` fields (omitempty) carry the failed
-reply's bounded verbatim text and the consumed-a-retry flag on terminals.
-`OutcomeClamped` (`"clamped"`, spec 058 US2/FR-003) is a TERMINAL sibling of
-`OutcomeLanded` on the [[sim-loop]] landing decision: a `set_plan` submission
-longer than `PlanStepCap` still lands, truncated to the first `PlanStepCap`
-steps, and this outcome distinguishes that clamped acceptance from a clean one
-in the `cog.outcome` trail — the reducer-side (`sim`) outcome-vocabulary
-analog of `toolloop.VerdictLandedClamped` one layer down, not the same value.
-Base budgets are never widened automatically — the spec 067 speed scaling is
-fixed arithmetic over the event-sourced clock rate, not an adaptive widening;
-persistent suppression or rejection on one class is a human retune signal.
+Telemetry: router verdicts land as `cog.outcome` events with the arithmetic
+string as the reason (estimator/calibration and horizon/governor telemetry
+are on the split notes above).
+`OutcomeRetried` (`"retried"`, TASK-42) is the one NON-terminal outcome — a
+scene reply failed to parse and continued via one retry; consumers summing
+completions must filter it, and the optional `Raw`/`Retried` fields
+(omitempty) carry the failed reply's bounded text and the retry flag on
+terminals. `OutcomeClamped` (`"clamped"`, spec 058 US2/FR-003) is a TERMINAL
+sibling of `OutcomeLanded` on the [[sim-loop]] landing decision: a `set_plan`
+submission longer than `PlanStepCap` still lands, truncated to
+`PlanStepCap` steps — distinguishing clamped from clean acceptance in the
+`cog.outcome` trail, the `sim`-side analog of `toolloop.VerdictLandedClamped`,
+not the same value.
+Base budgets are never widened automatically — spec 067's speed scaling is
+fixed arithmetic over the event-sourced clock rate; persistent suppression or
+rejection on one class is a human retune signal.

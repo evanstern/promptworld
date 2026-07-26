@@ -1,33 +1,15 @@
 ---
 name: grounded-feedback
-description: The spec-063 grounded feedback layer — the guardian's read-only `explain` tool (deterministic fact sheets over the registry/doctrine ground truth), the compiled-in tutor guide, the report-card producer (a cheap-chain attribution note citing recorded events, stored via guardian.report_card), the KindReportCard route, and the help overlay's D9 guardian section
+description: The spec-063 grounded feedback layer — orientation (explain tool, tutor guide) splits to [[explain-tutor-guide]]; attribution (report-card producer, KindReportCard, console seam) splits to [[guardian-report-card]]. Load this note for the layer's shared framing and cross-subsystem connections.
 kind: component
 sources:
   - internal/tool/explain.go
   - internal/tool/registry.go
-  - internal/tool/derive.go
-  - internal/tool/roster.go
   - internal/guardian/reportcard.go
   - internal/guardian/guardian.go
   - internal/guardian/turn.go
   - internal/guardian/toolcalls.go
-  - internal/guardian/charter.go
-  - internal/persona/charter.go
-  - internal/sim/reportcard.go
   - internal/sim/state.go
-  - internal/sim/loop.go
-  - internal/llm/llm.go
-  - internal/llm/config.go
-  - internal/cognition/registry.go
-  - internal/skin/skin.go
-  - internal/tui/reportcard.go
-  - internal/tui/help.go
-  - internal/tui/tiles.go
-  - internal/tui/tui.go
-  - internal/tui/digest.go
-  - internal/tui/grammar.go
-  - internal/world/world.go
-  - cmd/promptworld/stages.go
 verified_against: bb6f083e00d8ea4aeb2c5fde6cdfaea0f5dcff84
 ---
 
@@ -44,219 +26,33 @@ fact sheet.
 
 ## How it works
 
-**The `explain` tool** (`internal/tool/explain.go`, US1/US2): a new
-`Effect: Read`, `Gate: None` guardian tool — the journal-tool precedent
-extended to the guardian: it returns a deterministic fact sheet into
-cognition, grounds nothing, and the loop driver's read exemption means it
-never consumes the turn's one mediated act ("explaining is speech, not an
-act"). `topic` is a free `Text` param (not an `Enum`): an unknown topic must
-return the explainable-topic catalog as a repairable miss, so the driver's
-schema layer must not reject it first. `ExplainSheet(topic, scope)` composes
-every sheet TOOL-SIDE from the same registry entries and doctrine constants
-the mechanics run on ("described ≡ declared", `derive.go`'s own property
-extended to the answer path) — the six fixed topics are:
-
-- `roster` — what THIS world grants (from `ExplainScope.Granted`), then what
-  exists in the catalog but isn't granted here (the grant distinction: a
-  sheet never pretends a tool doesn't exist).
-- `costs` — every granted tool's price, `work_miracle` broken out per kind,
-  from the registry's own `Cost`/`MiracleCost` — the same source
-  `GuardianToolGuidance` renders, so a described price can never drift from
-  the enforced one.
-- `charges` — the charge-economy doctrine (cap 3, genesis 1, +1/6 game
-  hours) — MIRRORED from `internal/sim`'s `GuardianChargeCap`/
-  `GuardianGenesisCharges`/`GuardianChargeRegenTicks` (the leaf-package
-  discipline: `sim`'s `TestExplainChargeDoctrineMirrorsSim` pins the copy).
-- `workings` — the `work_miracle` kind vocabulary, per-kind arguments and
-  price, ungranted kinds named honestly.
-- `decisions` — the recorded verdict vocabulary (`landed`, `landed_clamped`,
-  `rejected_gate`, …) with a player-facing meaning per class — MIRRORED from
-  `internal/toolloop`'s `Verdict` constants (`toolloop`'s
-  `TestExplainDecisionClassesMirrorVerdicts` pins the name set equal).
-- `glyphs` — the map legend — MIRRORED from `internal/tui`'s `mapGlyphs`
-  table — since spec 068 the [[tile-registry]] living in `tiles.go`, grown
-  with each row's style token and world binding rather than the bare
-  glyph/name/meaning triple, but still the same table `tui`'s
-  `TestExplainGlyphsMirrorLegend` pins `explain.go`'s copy equal to,
-  glyph-for-glyph (the spec-068 marsh `░`/sand `▒` rows included) — so the
-  explained legend can never drift from the drawn one.
-
-Any cataloged tool's own name is also a topic (`<tool-id>` detail: what it
-does, its argument surface, its price, and whether THIS world grants it).
-`ExplainScope{Granted, Catalog, Stage}` is the world slice a sheet
-describes — `Granted` is the SAME effective roster the turn declares
-(three-layer coherence: `internal/guardian/turn.go`'s `runTurn` builds it
-from the same `roster` slice used for the loop declaration), `Catalog` is
-the grant-independent `LoopRosterGuardian()`.
-
-`explain` joins `guardianTools`/`RosterGuardian`/`loopGuardianTools`
-(`internal/tool/registry.go`/`roster.go`) appended last, so no existing
-tool's registration position shifts — [[tool-registry]] covers the
-registry-side mechanics.
-
-**The read-tool prompt paragraph** (`GuardianReadGuidance`, `derive.go`): a
-read tool like `explain` is NOT an acting tool — it costs nothing and never
-consumes the turn's one act, so listing it under `GuardianToolGuidance`'s
-"call exactly ONE of these" acting doctrine would be a lie. `derive.go`
-gains a sibling function that walks the roster for `Effect == Read` tools
-and renders a "You may also READ freely…" paragraph instead; `turn.go`
-composes it BEFORE the acting block so the acting doctrine's own closing
-sentence stays the prompt's last byte (the adversarial battery's
-`fixedFrameLast` pin: the frame staying last is the invariant, not just the
-wording). Empty roster (no read tool granted) renders nothing — byte-inert
-for every pre-063 world, which never carried one.
-
-**The tutor guide** (`persona.TutorGuide`, `internal/persona/charter.go`,
-US3, standing resolution 2): compiled-in game-authored prompt substrate —
-the `TutorCharter` sibling, never a player skill, never bound through
-`skills/`, untouched by the stage-3 skill lock. Composed by
-`buildTurnSystemPrompt` ONLY on tutor-preset worlds (`mt.charterPreset ==
-"tutor"`, keyed on the charter preset, not the stage — a tutor world keeps
-its guide as it climbs the ladder), in the editable zone AFTER the
-charter/persona SOULs/skin voice and BEFORE the skill files and the fixed
-frame — a non-tutor world composes byte-identically to pre-063. Content:
-orient first (what the world is, how to ask, one concrete first thing to
-try), mechanics facts come from `explain` ONLY (never memory or estimate),
-teach the verbs by example, point UI/key questions at the `?` overlay, and
-keep the economy honest (say the cost before spending it).
-
-**The report-card producer** (`internal/guardian/reportcard.go`, US4): a
-stopping-point consumer on the digest worker's own notify-consumer pattern
-(the `digestWorker` shape — `cardQ`, `reportCardWorker`). The absorb
-goroutine collects the guardian's own recorded activity into a bounded
-`cardTrail` ring (`cardTrailMax` 48 — `cog.tool_call` records from guardian
-turns, landed `metatron.*` acts) and fires a bounded card job at three
-stopping points: `run.ended`, `curriculum.exercise_passed`, and a
-`clock.paused` episode (debounced — at most one card per pause episode via
-`cardPauseSpent`, re-armed on `clock.resumed`). Both trigger scans run on
-the ABSORB goroutine, after the replica applies the batch (the
-`matchOrders` discipline) — a card can never fire during replay, since no
-guardian runs during reconstruction. `enqueueCard` is activity-gated: with
-no new guardian activity since the last card (tracked via `cardDoneSeq`,
-the graded high-water mark), nothing is queued — the deterministic
-checklist half stands alone.
-
-`produceCard` runs ONE cheap-chain call (`llm.KindReportCard`, below) per
-job: the system prompt casts the model as the guardian "writing a brief
-report card on your own recent service," instructed to attribute outcomes
-to the charter's own words and cite evidence by `seq N` — `cardPrompt`
-renders the charter revision in force, the recorded trail with real seqs,
-and the R1 mechanics facts (`tool.ExplainSheet("charges", …)` — the SAME
-fact source `explain` serves, so the card's own arithmetic can never
-disagree with what a player could ask for directly). `validateCitations`
-(`citationRe`, `\bseq\s+(\d+)\b`) extracts every cited seq and checks it
-against the fed trail — a note citing an unrecorded seq is dropped WHOLE
-(deterministic degradation beats a plausible fabrication); every other
-failure path (no orchestrator, empty critique, a door rejection) is a
-silent skip with one log line, never error theater, and play is never
-blocked.
-
-**Storage — two doors, one intent**: a non-run-ending card lands as
-`guardian.report_card` (`GuardianReportCardPayload{Fingerprint, Note,
-Citations}`, whitelisted in [[sim-loop]]'s `InjectSocial` door) — the
-reducer arm (`internal/sim/reportcard.go`'s `applyReportCard`) validates
-rather than clamps (non-empty fingerprint/note, note ≤ `reportCardNoteMaxRunes`
-1200, every citation strictly precedes the card event's own seq — a card
-can never cite the future) and keeps only the LATEST card on
-`State.GuardianReportCard *GuardianReportCard` (`omitempty`; the log keeps
-history). A run-ending card instead rides the EXISTING `morgue.epilogue`
-channel (agent `-1`, beside the narrator's own run-end epilogue, prefixed
-"Report card (under charter `<fingerprint>`): …") — the ended door already
-narrows to recorded prose, so `guardian.report_card` deliberately does NOT
-join `endedProseWhitelist` ([[morgue]] renders both epilogues in the same
-blockquoted section).
-
-**`KindReportCard`** (`internal/llm/llm.go`/`config.go`): a new accepted
-`Kind` ("report_card", frozen from birth per spec 052 ruling 2), routed by
-default `local→cloud` (the `KindGuardianWatch` cheap-first shape) and
-classified into the existing `metatron` cognition class
-(`internal/cognition/registry.go` — same actor, `DegradeSkip`,
-event-triggered at stopping points, never cadence-scheduled). A pre-063
-`llm.json` backfills the route from `defaultRoutes()` with a boot log line
-(`defaultBackfillKinds`, the `KindGuardianWatch` precedent).
-
-**Stage-1 grant + the taught-verb table** (`internal/guardian/charter.go`,
-US5): `explain` joins `stage1CeilingTools` — read-only, zero-cost,
-tutor-lane by construction, so it widens no acting capability; it is the
-tutor preset's own grounding tool and stage-1 IS the orientation stage.
-`StageCeilingVerbs(stage)` exports the stage ceiling's granted loop-tool
-names in registry order (`applyStageCeiling(fullGrant(), stage).
-grantedTools()` — the SAME intersection the turn's own grant runs), so the
-help overlay's guardian section (below) can never teach a verb the door
-would refuse.
-
-**The D9 guardian help section** (`internal/tui/help.go`, US5, the spec-045
-content-contract's one deliberate, named amendment): `helpSectionGuardian`
-reads the single polled `Status.Stage` scalar to select which STATIC page
-to show — stage-keyed and model-free, so for a given stage the bytes are
-constant and nil status renders the pre-ladder variant (every verb, no
-lock). Content: the stage identity (skin-resolved) and its teaching concept
-(`world.StagesLadder[stage]`, below — the SAME table `promptworld stages`
-renders from), the verbs the stage ceiling grants
-(`guardian.StageCeilingVerbs`), and one canned example ask per verb
-(`Skin.ExampleAsk(toolID)`, a `skin.guardian.example_ask.<tool-id>` token
-family — one row per shipped guardian loop tool, keyed by the frozen tool
-id). The section's own title resolves through the skin's epithet
-(`helpSectionLabel`); every other section stays static chrome.
-
-**The report-card console seam** (`internal/tui/reportcard.go`, T012, spec
-063 standing resolution 1 — "one composed card artifact"): [[takeover-surfaces]]
-shipped the shared `reportCardView` renderer and an empty `consoleCard`
-seam; this feature is the production wiring. `rebuildConsoleCards` composes,
-in order: the rubric checklist (`buildChecklistCard`, TASK-127's
-`reportCard` wrapper — nil until a stopping point is visible in durable
-state: a stored note, a recorded pass for the seeded exercise, or the ended
-run; live `met/pending` marker vocabulary until the exercise concludes or
-the run ends, then `met/missed`) FIRST — always authoritative — then the
-attribution note (`buildNoteCard`, `noteCard`) — additive prose beneath it,
-clearly its own block, never a second scoring computation. Either half
-absent degrades to the other alone. Recomposed on connect (a late attach
-re-reads the stored card, no badge) and on every stopping-point-relevant
-event (`guardian.report_card`, `curriculum.exercise_passed`, `run.ended`) —
-a fresh NOTE additionally sets the existing unseen-badge flag
-(`guardianUnseen`) when the guardian pane isn't visible: at most a badge
-between stopping points, never a takeover (FR-006). `guardian.report_card`
-also gets its own [[tui-client]] digest-registry entry and joins a new
-`"guardian"` namespace in `familyByNamespace` (guardian voice, the
-`curriculum` precedent) — the frozen `metatron.*` family is untouched.
-
-**`stagesLadder` relocated** (`cmd/promptworld/stages.go` → `internal/world/
-world.go`, T014): the ladder's skin-independent content
-(`StageLadderInfo{Concept, Grants, UnlockEvidence}`, `StageOrder`,
-`StagesLadder`) moved from `cmd/promptworld` (package `main`, which
-`internal/tui` cannot import) to `internal/world` so the D9 help section
-and `promptworld stages` read the exact same table — `cmd/promptworld/
-stages.go` keeps its own `stageOrder`/`stagesLadder` names as plain aliases
-(`= world.StageOrder`/`world.StagesLadder`) so its rendering code is
-unchanged. [[world-save-directory]] and [[cli-promptworld]] cover the
-before/after of this move.
+Two additive pieces make up the layer. **Orientation** — the guardian's
+read-only `explain` tool (deterministic fact sheets over the registry/
+doctrine ground truth), the compiled-in tutor guide, the stage-1 taught-verb
+grant, the D9 help-overlay guardian section, and the `stagesLadder`
+relocation — splits to [[explain-tutor-guide]]. **Attribution** — the
+report-card producer (a cheap-chain note citing recorded events by `seq N`),
+its two storage doors (`guardian.report_card` / the `morgue.epilogue`
+channel), the `KindReportCard` route, and the report-card console seam —
+splits to [[guardian-report-card]]. Both read the SAME registry/doctrine
+ground truth and the same `ExplainSheet` facts, so a report card's own
+arithmetic can never disagree with what a player could ask `explain` for
+directly.
 
 ## Connections
 
-[[tool-registry]] declares `explain` and owns `GuardianToolGuidance`/
-`GuardianReadGuidance`'s derivation; [[tile-registry]] (spec 068) owns the
-`tiles.go` table the `glyphs` sheet mirrors; [[guardian]] hosts the turn assembly
-that composes the tutor guide and the read-guidance paragraph, and the
-absorb loop that drives the report-card producer; [[guardian-miracles]]
-shares the mirrored `MiracleCost`/`miracleKindArgs` source `explain`'s
-`costs`/`workings` sheets read; [[curriculum-ladder]] owns
-`sim.EvaluateUnlock`/`StagesUnlocked` the report card's pass-derived facts
-read, and the stage ceiling `StageCeilingVerbs` intersects;
-[[takeover-surfaces]] owns the shared `reportCardView` renderer and the
-`consoleCard` seam this feature wires into production, and the ceremony
-whose own report card uses the identical facts derivation;
-[[scenario-machinery]] is `sim.ExerciseDefinition`'s `RubricTerms` source
-both the checklist card and the report-card producer's mechanics facts
-ultimately ground in; [[event-types]] catalogs `guardian.report_card`;
-[[sim-state-reducer]] owns `State.GuardianReportCard` and the
-`applyReportCard` arm; [[morgue]] is where a run-ending card's note
-actually lands (the `morgue.epilogue` channel); [[llm-orchestrator]] routes
-`KindReportCard`; [[cognition]] classifies it into the `metatron` decision
-class; [[skin]] supplies `CeremonyChapter`'s sibling tokens
-(`ReportCardLabel`/`AttributionLabel`/`ExampleAsk`); [[tui-client]] hosts
-the digest entry, the namespace mapping, and the console-card recomposition
-this note's producer and consumer sides meet at; [[world-save-directory]]
-and [[cli-promptworld]] cover the `stagesLadder` relocation.
+[[explain-tutor-guide]] holds the orientation half (explain tool, tutor
+guide, stage-1 grant, D9 help section, `stagesLadder` relocation) and its
+own detailed connections ([[tool-registry]], [[tile-registry]],
+[[curriculum-ladder]], [[world-save-directory]], [[cli-promptworld]]).
+[[guardian-report-card]] holds the attribution half (report-card producer,
+storage, `KindReportCard`, console seam) and its own detailed connections
+([[takeover-surfaces]], [[scenario-machinery]], [[event-types]],
+[[sim-state-reducer]], [[morgue]], [[llm-orchestrator]], [[cognition]],
+[[skin]], [[tui-client]]). [[guardian]] hosts the turn assembly both halves
+compose into and the absorb loop that drives the report-card producer;
+[[guardian-miracles]] shares the mirrored `MiracleCost` source both the
+`explain` sheets and the report card's arithmetic read.
 
 ## Operational notes
 

@@ -1,6 +1,6 @@
 ---
 name: world-save-directory
-description: One directory = one world run — manifest (world.json), path helpers, create/open validation, clean separability, v1→v2→v3→v4 migration
+description: One directory = one world run — manifest (world.json), create/open validation, path helpers, clean separability, v1→v2→v3→v4→v5 migration; the manifest field-by-field catalog and the path-helper catalog live in two split-off children
 kind: component
 sources:
   - internal/world/world.go
@@ -14,80 +14,21 @@ verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
 containing everything that run owns and nothing any other run touches. Copying a
 stopped world's directory is a complete, restorable archive.
 
-## How it works
+Two children (summary-style, corpus-spec v2) carry the field-by-field and
+file-by-file detail:
 
-`Manifest` (serialized as `world.json` at the dir root) carries `name`, `seed`
-(uint64), `created_at` (RFC3339, metadata only — wall time never enters sim state),
-`format_version` (currently **5** — spec 068's terrain-vocabulary break
-([[worldmap-generation]], [[tile-registry]]) bumped it from 4: new worlds generate
-marsh/sand terrain gated by the manifest's `terrain_gen` field, and software
-predating that field would silently IGNORE it and regenerate different terrain
-under the same manifest — agents and structures standing on water (FR-007); a
-pre-068 build refuses a v5 world at `Open` with the migrate hint instead of
-mis-generating (C10) — on top of spec 041's per-agent mental-map break
-([[mental-maps]]) that bumped it from 3 to 4: private spatial knowledge gates target
-resolution, so a v3 world loaded with no seeded maps would leave every
-villager knowing nothing (research D7) — on top of spec 013's inventory/storage
-break that bumped it from 2, on top of spec 012's resources/food/crafting break
-that bumped it from 1; a v1-v4 manifest is refused by `Open` with a
-pointer to `promptworld migrate <world>` — [[world-migration]]), `tick_game_seconds` (fixed 1),
-`map_width`/`map_height` (default 64×64; zero/absent values from older saves default
-on `Open`), an optional `terrain_gen` int (spec 068, `json:"terrain_gen,omitempty"`:
-absent/0 = legacy terrain generation, bit-identical to every pre-068 world;
-`worldmap.GenMarshSand` (2) = the marsh/sand shoreline pass — what `Create` writes for
-every new world; `Open` refuses any other value outright, the same fail-closed
-posture as `memory_relevance`, so a future generation version this build doesn't
-implement is never silently mis-generated), and an optional `meeting` block (TASK-36, `MeetingConfig`:
-`convene`/`open` as "HH:MM" 24-hour game clock times, optional `x`/`y` meeting
-place) — the per-world meeting convention the daemon seeds on boot
-([[governance]], [[daemon-lifecycle]]); `promptworld new` never writes it, so
-emergent is the default. It also carries an optional `teaching` bool
-(`Manifest.Teaching`, `omitempty`, decision-6/spec 039): absent means
-non-teaching (a non-teaching `world.json` round-trips byte-identically, no
-`FormatVersion` bump — an additive defaulting bool old readers ignore); when
-true, the daemon defaults the world's speed to the highest planner-safe
-ladder rung at every boot and surfaces the horizon arithmetic on override
-([[daemon-lifecycle]], [[cognition]]). It also carries an optional
-`memory_relevance` string (`Manifest.MemoryRelevance`, `omitempty`, spec 042,
-[[memory-retrieval]]): absent (`""`) keeps today's salience+recency memory
-window; `"shadow"` additionally computes the relevance-augmented window and
-records rank divergence while prompts still see the legacy window; `"on"`
-lets the augmented window feed prompts (divergence still recorded). `Open`
-refuses any other value outright — a typo must never silently run as off —
-and the field is additive `omitempty`, so a pre-042 `world.json` round-trips
-byte-identically with no `FormatVersion` bump. Spec 046
-([[curriculum-ladder]]) adds three more additive `omitempty` fields on the
-same closed-vocabulary/no-bump pattern: `stage` (`Manifest.Stage`,
-`stage-1`..`stage-4` via the `Stage1`..`Stage4` constants — the world's
-curriculum-ladder stage, set once at creation and IMMUTABLE for the world's
-lifetime: no mutation command exists or will, deliberately unlike
-`SetTeaching`'s live toggle; absent (`""`) means a pre-ladder world, ungated
-with stage-4 semantics, so existing worlds lose nothing; `Open` validates via
-`ValidStage`), `stage_overridden` (`bool` — the honesty marker `promptworld
-new --stage <id> --override` stamps when a world is created at an unearned
-stage, making overridden runs comparable as overridden runs), and
-`charter_preset` (`""`/`"default"` = the authored default charter, `"tutor"`
-= the stage-1 orientation preset — the constant that seeds `charter.md` at
-genesis and, at stage-1 where instruction files are locked, IS the effective
-charter regardless of edits ([[guardian]]); `Open` validates via
-`ValidCharterPreset`). A fourth addition, the optional `scenario` block (`ScenarioConfig{exercise}`,
-naming a `sim.ExerciseDefinition.ID`), was RESERVED on the `meeting`-block
-precedent through spec 046; spec 054 ([[scenario-machinery]]) consumes it:
-`Open` now validates a present block against `ValidScenarioExercise` — a
-LOCAL mirror of `sim.ScenarioExercises`' id set (the `validLadderStage`
-twin-list precedent, in reverse: the deterministic core does not import this
-save-directory package and this package does not import the core, so each
-side keeps its own closed vocabulary; `TestScenarioVocabularyMirrorsSimCatalog`
-pins the two in sync) — refusing an unknown exercise id with `corrupt
-world.json: scenario exercise %q unknown` rather than silently booting
-ambient. `SetScenario(dir, exercise)` (`SetStage`'s write-mechanics sibling
-— exactly ONE caller, `promptworld new --scenario`, once, immediately after
-`Create`) is the write-once stamp; it does not re-validate its argument
-(callers pass an already-`ValidScenarioExercise`-checked id). The daemon
-arms the boot-frozen scenario runtime from this block at every boot
-(`sim.State.ArmScenario`, [[daemon-lifecycle]]) — the incident schedule,
-rubric evaluator, status facts, and exercise tab all key off it; a world
-with no `scenario` block stays byte-identical to pre-054 on every path.
+- [[world-save-manifest-fields]] — every `Manifest` (`world.json`) field, in
+  the order each spec added it: `format_version` history, `tick_game_seconds`,
+  map dims, `terrain_gen`, the `meeting` block, and the additive
+  `teaching`/`memory_relevance`/`stage`/`stage_overridden`/`charter_preset`/
+  `scenario` fields, plus `Open`'s validation of each.
+- [[world-save-path-helpers]] — the path-helper catalog: every well-known
+  file a save directory can contain (`world.db`, `llm.json`,
+  `calibration.json`, sockets/pidfile/log, `charter.md`, `metatron/`,
+  `village_charter.md`, `morgue.md`, `bundles/`, `tuning.json`) and the
+  runtime-only files swept between daemon runs.
+
+## How it works
 
 Since spec 063 ([[grounded-feedback]], T014), `world.go` also hosts the
 curriculum ladder's SKIN-INDEPENDENT content — `StageLadderInfo{Concept,
@@ -96,7 +37,7 @@ from `cmd/promptworld/stages.go` (package `main`, which `internal/tui`
 cannot import) so the TUI help overlay's D9 guardian section and
 `promptworld stages` read the exact same table; `stages.go` keeps its own
 `stageOrder`/`stagesLadder` names as plain aliases so its rendering code is
-unchanged. This is data only, unrelated to the manifest fields above.
+unchanged. This is data only, unrelated to the manifest fields (see [[world-save-manifest-fields]]).
 `World.Map()` regenerates the terrain from the seed,
 dimensions, and (spec 068) the manifest's `terrain_gen` — deterministic, so the map
 is never stored ([[worldmap-generation]]).
@@ -126,31 +67,6 @@ is never stored ([[worldmap-generation]]).
   `promptworld stage <world> …` toggle exists or ever will). It does not
   re-validate its arguments (the `SetTeaching` contract): callers pass
   already-`ValidStage`/`ValidCharterPreset`-checked values.
-- Path helpers centralize layout: `DBPath()` → `world.db`, `LLMConfigPath()` →
-  `llm.json` (the [[llm-orchestrator]] config, written by `new`, deletable to
-  disable inference), `CalibrationPath()` → `calibration.json` (the
-  seconds-per-point profile written only by `promptworld calibrate` —
-  [[cognition]]; an absent file is legal, pessimistic bootstrap defaults apply),
-  `EstimatorStatePath()` → `estimator_state.json` (the daemon-written snapshot
-  of live latency estimates, TASK-113 — absent is legal, boot then seeds from
-  calibration/bootstrap alone; never event-sourced, never read during replay),
-  `SockPath()` → `daemon.sock`, `PidPath()` → `daemon.pid`,
-  `LogPath()` → `daemon.log`, `CharterPath()` → `charter.md` (the player-editable
-  prompt), `GuardianDir()` → `metatron/` (dir name frozen, spec 052 ruling 2 — the Guardian's soul and transcript —
-  [[guardian]]), and `VillageCharterPath()` → `village_charter.md` (the village's
-  scribe-rendered law, deliberately distinct from the Guardian's charter —
-  [[governance]], TASK-13), `MorguePath()` → `morgue.md` (spec 044: the run's
-  accumulating legacy document — one factual epitaph per death plus a run-end
-  summary, scribe-rendered; a regenerable view over the event history, never a
-  source of truth, exactly like the chronicle and village charter —
-  [[morgue]]), and `BundlesDir()` → `bundles/` (spec 036: the
-  drop-in persona/tool bundle root, discovered and boot-frozen by
-  [[bundle-tools]]; absent means no bundles, never an error), and
-  `TuningPath()` → `tuning.json` (spec 048: the optional, operator-
-  authored, sparse per-world tuning manifest promoting doctrine constants
-  to per-world dials — absent means every dial keeps its doctrine-constant
-  default, exactly today's behavior; never written by `promptworld new`;
-  [[world-tuning]] has the full mechanism).
 
 Runtime files (`daemon.sock`, `daemon.pid`) exist only while a daemon runs and are
 swept by [[daemon-lifecycle]] when stale. The full layout is documented in
@@ -185,25 +101,12 @@ v4 source, bumps `Manifest.FormatVersion` to 5, and returns
 [[daemon-lifecycle]] opens the world and cross-checks the manifest against store meta;
 [[event-log]] and [[snapshots]] live inside `world.db`; [[ipc-server]] binds the socket
 at `SockPath()`. [[cli-promptworld]]'s `new` creates worlds and `migrate` upgrades
-an older one ([[world-migration]]). [[worldmap-generation]] is the spec-068
-subsystem the CURRENT format version (5) exists to support — the `terrain_gen`
-field this note validates and the daemon reads at boot to call `GenerateV`;
-[[mental-maps]] is the spec-041 subsystem that bumped it to 4 one break earlier.
-[[curriculum-ladder]] is the spec-046
-subsystem behind the `stage`/`stage_overridden`/`charter_preset` manifest
-fields — the daemon reads them at boot and hands them boot-frozen to
-[[guardian]] for the stage ceiling and the stage-1 instruction lock; the
-per-user unlocks record that gates `promptworld new`'s default stage lives
-outside the save directory (in the worlds home), advisory and never an
-authority over anything in this directory. [[scenario-machinery]] is the
-spec-054 subsystem that validates and consumes the `scenario` block this
-note covers — the daemon reads it at boot the same boot-frozen way as
-`stage`. [[grounded-feedback]] (spec 063) relocated the `StagesLadder`
-content table here and reads it from the TUI help overlay's D9 guardian
-section; [[cli-promptworld]]'s `stages` command is the other reader.
-[[world-tuning]] is the spec-048
-subsystem `TuningPath()` fronts — a peer of `llm.json`/`calibration.json`,
-consumed by the daemon's boot seed, never validated by this package.
+an older one ([[world-migration]]). [[world-save-manifest-fields]] and
+[[world-save-path-helpers]] carry the field-by-field and file-by-file detail
+this note summarizes — their own Connections sections link the subsystem
+each field/path belongs to (worldmap-generation, mental-maps,
+curriculum-ladder, scenario-machinery, grounded-feedback, world-tuning,
+llm-orchestrator, cognition, guardian, governance, morgue, bundle-tools).
 
 ## Operational notes
 
