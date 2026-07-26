@@ -2,7 +2,7 @@
 title: Overlay — help (`?`)
 class: overlay
 status: shipped
-verified_against: 85f45a121e538d93048f52a1ad22472284ec0938
+verified_against: 0de6736be90629cf98727cbdc76c8e24e19c9ce6
 sources:
   - internal/tui/help.go
   - internal/tui/tui.go
