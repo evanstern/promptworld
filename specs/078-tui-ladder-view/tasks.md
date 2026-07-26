@@ -133,7 +133,7 @@ parity); Phase 4 → AC #2 (help.md byte-identity row + design gate).
 
 ## Phase 7: Post-merge bookkeeping (root, derived state only)
 
-- [ ] T012 From repo root after merge: spec-bridge sync (TASK-152 → Done as
+- [x] T012 From repo root after merge: spec-bridge sync (TASK-152 → Done as
   artifacts prove), tick this tasks.md, runbook execution-log row
   (`docs/design/reorient-2026-07-26-sweep-runbook.md`), worktree + branch
   cleanup, ff-pull root (spec 065 / constitution IV boundary — no grounding
