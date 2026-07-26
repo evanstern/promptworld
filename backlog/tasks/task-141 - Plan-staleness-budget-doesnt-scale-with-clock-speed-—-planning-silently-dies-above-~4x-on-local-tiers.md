@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-07-26 02:33'
+updated_date: '2026-07-26 02:34'
 labels:
   - mvls
   - behavior-hygiene
@@ -26,3 +27,9 @@ Found during the TASK-122 measurement run (2026-07-25, world ~/.promptworld/meas
 - [ ] #2 Chosen mechanism keeps planning viable at 8x on a calibrated local tier (proven by test or measured run) without breaking replay determinism
 - [ ] #3 Horizon/status surfaces stop reporting 'planner thinking' as healthy when plan landing is structurally dead (or the gap is explicitly documented)
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Diagnosis pin (AC#1 progress): the rejection fires at internal/sim/landing.go rungStale ('staleness %d > budget %d', dc.BudgetTicks) via OutcomeRejectedStale (internal/sim/cognition.go). The per-class BudgetTicks value (set_plan class = 1200) is the constant that doesn't scale with clock speed — full consumption-site map is the spec's first task.
+<!-- SECTION:NOTES:END -->
