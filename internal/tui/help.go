@@ -23,55 +23,16 @@ import (
 )
 
 // --- T002: the shared map-glyph table (FR-005 anti-drift substrate) ---
-
-// glyphEntry is one row of the map's glyph key. Glyph+Name concatenate with
-// no separator to reproduce renderMapGrid's existing compact legend token
-// (e.g. "~water", "▤▩wall" — two glyphs sharing one entry since the plank/
-// stone walls have always rendered as one legend token); Meaning is the
-// plain-language sentence the overlay's glyph walkthrough page renders
-// instead (US2, FR-004).
-type glyphEntry struct {
-	Glyph   string
-	Name    string
-	Meaning string
-}
-
-// mapGlyphs is renderMapGrid's (views.go) legend line rendered *from* this
-// table (legendGlyphLine below) — one source, so a glyph added here reaches
-// both the compact in-game legend and the overlay's full walkthrough
-// automatically (FR-005/SC-003; research.md R3/R8: this is also the seam
-// that picks up spec 044's grave glyph, whenever it lands, without a second
-// edit). The "G" gru row is a real gap this feature closes: the glyph has
-// always been drawn (views.go tile(), styleGru) but was never in the legend
-// text — SC-002 requires the overlay to decode 100% of what the map can
-// draw, so it's added here (and, by construction, to the compact legend too).
 //
-// The "✝" grave row (spec 044 US4, ratified follow-up): every post-044
-// death's grave shares its tile with the dead agent it belongs to, and
-// renderMapGrid's tile() priority normally lets the agent glyph win a shared
-// tile (the same rule the chest/path rows rely on) — so without a carve-out
-// this glyph would advertise something the map could never actually show.
-// The carve-out: a dead agent AT a tile that also holds a grave renders the
-// grave glyph instead of the plain dead marker (the body becomes the grave);
-// a graveless dead agent (pre-044 replay/history) is unaffected.
-var mapGlyphs = []glyphEntry{
-	{"~", "water", "water — impassable to foot travel"},
-	{"♠", "wood", "a tree — choppable for wood"},
-	{"\"", "forage", "wild forage — gatherable food"},
-	{"^", "rock", "an intact rock outcrop — quarriable for stone"},
-	{",", "quarried", "a depleted outcrop — passable, already quarried"},
-	{"ᴥ", "den", "a gru's den"},
-	{"▲", "fire", "a lit fire — warmth, cooking"},
-	{"△", "cold", "a cold fire, out of fuel"},
-	{"⌂", "shelter", "a built shelter"},
-	{"▣", "oven", "a built oven"},
-	{"%", "pile", "a ground stockpile of dropped goods"},
-	{"☐", "chest", "a built chest, holding goods"},
-	{"▤▩", "wall", "a built wall (▤ plank, ▩ stone); dim = damaged"},
-	{"·", "path", "a paved path (tan) — distinct from plain ground's dim ·"},
-	{"G", "gru", "the gru — a predator; approach at your peril"},
-	{"✝", "grave", "a villager's grave — marks where a death occurred"},
-}
+// The table itself now lives in tiles.go as the tile REGISTRY (spec 068):
+// the spec 045 glyph-key triple (Glyph, Name, Meaning — Glyph+Name
+// concatenate with no separator into the compact legend token, e.g.
+// "~water", "▤▩wall"; Meaning is the walkthrough sentence) grown with each
+// row's style token and world binding. This file keeps the two render
+// surfaces that read it — legendGlyphLine below and the walkthrough's glyph
+// page — so the map's key line and the overlay can still never silently
+// diverge (FR-005), and a row added to the registry reaches both with no
+// edit here (spec 068 SC-002).
 
 // agentGlyphNote / mapControlNote are the legend's trailing free-text
 // clauses — not table rows (they describe a per-agent-name convention and a

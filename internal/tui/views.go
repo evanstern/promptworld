@@ -27,10 +27,10 @@ var (
 	// styleEnded is the postmortem header token (spec 044 R12) — bold red,
 	// the finality register PAUSED's amber deliberately doesn't carry.
 	styleEnded  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("1"))
-	styleNight  = lipgloss.NewStyle().Foreground(lipgloss.Color("4"))
-	styleAgent  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("2"))
-	styleAsleep = lipgloss.NewStyle().Foreground(lipgloss.Color("6"))
-	styleBox    = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Padding(0, 1)
+	styleNight = lipgloss.NewStyle().Foreground(lipgloss.Color("4"))
+	// styleAgent / styleAsleep (and every other per-tile style) live in
+	// tiles.go, resolved from the tile registry's token table (spec 068).
+	styleBox = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Padding(0, 1)
 
 	// Style tokens (patterns/layout.md "Style tokens") — one named style per
 	// role, panels refer to the role never a raw color.
@@ -1578,70 +1578,10 @@ func summarizePileContents(piles []sim.Pile) string {
 	return strings.Join(parts, " ")
 }
 
-// Terrain glyphs. Night dims the palette rather than hiding the world.
-var (
-	styleWater    = lipgloss.NewStyle().Foreground(lipgloss.Color("4"))
-	styleTree     = lipgloss.NewStyle().Foreground(lipgloss.Color("2"))
-	styleForage   = lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
-	styleRock     = lipgloss.NewStyle().Foreground(lipgloss.Color("245"))
-	styleDepleted = lipgloss.NewStyle().Faint(true).Foreground(lipgloss.Color("240"))
-	styleDen      = lipgloss.NewStyle().Foreground(lipgloss.Color("5"))
-	styleFire     = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("208"))
-	styleFireCold = lipgloss.NewStyle().Faint(true).Foreground(lipgloss.Color("240"))
-	styleShelter  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("130"))
-	styleOven     = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("166"))
-	// Pile (spec 013 US2): "%" is the roguelike convention for a ground
-	// item/goods stash, distinct from every existing glyph; tan/gold (178)
-	// reads as "cache" without colliding with fire's orange (208), oven's
-	// burnt orange (166), or shelter's brown (130).
-	stylePile = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("178"))
-	// Chest (spec 013 US3): "☐" (empty box) reads as a container distinct
-	// from every existing glyph — unlike a pile's loose "%", a chest is a
-	// built structure with a lid. Dark goldenrod (136) sits between pile's
-	// tan (178) and shelter's brown (130) without matching either, so a
-	// chest never gets mistaken for a stockpile or a house at a glance.
-	styleChest = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("136"))
-	// Wall (spec 032 US1): "▤" (plank) / "▩" (stone) read as solid barriers
-	// distinct from every existing glyph; slate gray (250) sets them apart from
-	// intact rock's "^" (245) and the burnt-orange structures. A damaged wall
-	// (HP < max) renders faint (240), the cold-fire dim precedent.
-	styleWall        = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("250"))
-	styleWallDamaged = lipgloss.NewStyle().Faint(true).Foreground(lipgloss.Color("240"))
-	// Path (spec 032 US3): "·" in warm tan (137) — the paved-route glyph, set
-	// apart from plain grass's dim "·" without colliding with any structure glyph.
-	stylePath = lipgloss.NewStyle().Foreground(lipgloss.Color("137"))
-	styleGru  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("196"))
-	// Grave (spec 044 US4): "✝" marks a death site — a somber, persistent
-	// marker, so it renders faint gray (244) rather than any of the vivid
-	// living-structure colors (fire/shelter/oven/chest), the cold-fire (240)
-	// precedent for "spent"/inert glyphs.
-	styleGrave = lipgloss.NewStyle().Faint(true).Foreground(lipgloss.Color("244"))
-
-	// Map condition overlays (spec 060 US2): style variants layered over an
-	// already-legended glyph (an agent's own initial, or fire's "▲"), not
-	// new glyphs — panels/map.md's priority is needs-critical > suppressed-
-	// mind > plain awake/asleep. Steady styles only (standing resolution 3:
-	// "pulse" is a style, never terminal blink).
-	//
-	// styleAgentCritical: a living villager with a need in its danger band
-	// (needsCritical below) — bold + underlined red, distinct from both the
-	// dead marker's plain bold red (styleErr) and the gru's bold red (196,
-	// a different glyph entirely) under every color profile the family-tint
-	// discipline covers (TestFamilyTintDistinctPerFamily precedent).
-	styleAgentCritical = lipgloss.NewStyle().Bold(true).Underline(true).Foreground(lipgloss.Color("1"))
-	// styleAgentSuppressed: the map form of spec 037's "a skipped thought is
-	// visible" — faint, a cooler hue than the critical red so the priority
-	// rule (needs-critical wins) reads correctly at a glance even before a
-	// player has learned the vocabulary.
-	styleAgentSuppressed = lipgloss.NewStyle().Faint(true).Foreground(lipgloss.Color("135"))
-	// styleFireDying: a fire inside its dying-fuel window (State.
-	// RefuelDyingBelow, spec 057) — still lit ("▲" — it only goes cold once
-	// FuelUntil actually passes), but a warmer/redder warn tone than lit
-	// fire's plain orange (208) and nothing like cold fire's faint gray
-	// (240), so "about to go out" reads distinctly from both "burning fine"
-	// and "already out."
-	styleFireDying = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("202"))
-)
+// Per-tile styles (terrain, structures, markers, agent conditions) live in
+// tiles.go, resolved from the tile registry's classed token table (spec 068
+// FR-001/FR-002). Night still dims the palette rather than hiding the world
+// — a Faint(true) transform tile() applies over the token-resolved style.
 
 // mapView is the narrow-fallback map pane: today's vw/vh formula,
 // unchanged (pages/solo-views.md "Narrow fallback" — "today's single-pane
