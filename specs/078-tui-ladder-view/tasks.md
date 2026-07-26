@@ -71,18 +71,19 @@ parity); Phase 4 → AC #2 (help.md byte-identity row + design gate).
 
 ## Phase 4: User Story 2 — design authority, same PR (P2, board AC #2)
 
-- [ ] T008 [US2] Amend `docs/design/tui/overlays/help.md`: Section 5 "The
+- [X] T008 [US2] Amend `docs/design/tui/overlays/help.md`: Section 5 "The
   ladder" content contract; byte-identity classification table row
   (unlocks-record-derived, model-free — exact wording per plan D6); control
   table row naming `helpLadderLines` + its data sources (plan D6, spec
   FR-011)
-- [ ] T009 [US2] Re-verify + re-pin help.md (`verified_against` → branch
+- [X] T009 [US2] Re-verify + re-pin help.md (`verified_against` → branch
   commit); run `node scripts/check-tui-design.mjs --changed` from the
-  worktree until it exits 0 (spec 047 same-PR gate, spec SC-002)
+  worktree until it exits 0 (spec 047 same-PR gate, spec SC-002). Pinned to
+  1210c05 (this branch); `check-tui-design.mjs --changed` exits 0.
 
 ## Phase 5: Grounding (in-branch, per the wiki-in-PR lifecycle)
 
-- [ ] T010 Re-verify + re-pin every wiki note whose pinned sources this
+- [X] T010 Re-verify + re-pin every wiki note whose pinned sources this
   branch touched: `docs/wiki/tui-input-help.md` (help.go/tui.go),
   `cli-world-lifecycle.md` + `curriculum-ladder.md` (stages.go),
   `curriculum-ladder-progression.md` (unlocks.go) — fold the new
@@ -91,16 +92,30 @@ parity); Phase 4 → AC #2 (help.md byte-identity row + design gate).
   and confirm `node .claude/skills/player-docs/scripts/check-freshness.mjs
   --check` exits 0 — note the 073 lesson: the freshness checker also tracks
   `docs/design/tui/*` plain-file sources, so re-check after T009's re-pin
-  (plan D7, spec SC-004, constitution IV)
+  (plan D7, spec SC-004, constitution IV). Widened in practice: 24 wiki
+  notes overlapped this branch's touched sources (help.go/tui.go/
+  unlocks.go/stages.go/commands.go), not just the four named above — 7 got
+  real content edits (also explain-tutor-guide.md, testing-strategy.md,
+  testing-curriculum-takeover.md), 17 were mechanical re-pins (confirmed
+  via `grounding-wiki` plan tooling that their diffs don't touch what they
+  claim). `docs/player/keys-reference.html` got real prose (the ladder is
+  genuinely new in-game content); 7 other player pages got pin-only
+  bumps. `check-freshness.mjs --check` exits 0 (13/13 fresh).
 
 ## Phase 6: Polish & gates
 
-- [ ] T011 `gofmt -l` clean; full `go test ./...` green; `node
+- [X] T011 `gofmt -l` clean; full `go test ./...` green; `node
   scripts/check-merge-drift.mjs pr` from `.worktrees/task-152` exits 0
   (wiki-repin-missing / player-docs-stale both clear); PR opens carrying
   code + parity test + help.md amendment + wiki re-pins + player-docs
   together; merged with `gh pr merge --merge` ONLY (merge-commit-only —
-  in-branch pins are branch hashes) (plan D8, spec SC-003)
+  in-branch pins are branch hashes) (plan D8, spec SC-003). `gofmt -l`
+  clean; `go test ./...` — all 22 packages ok (e2e 172s, mind 132s, no
+  FAIL); `check-merge-drift.mjs pr` exit 0, verdict=warnings only
+  (stale-base: 2 board-only commits on origin/main, no source overlap;
+  tui-surface: informational, already satisfied; dirty-worktree:
+  expected pre-final-commit). PR/merge is the orchestrator's step, not
+  this session's.
 
 ## Phase 7: Post-merge bookkeeping (root, derived state only)
 
