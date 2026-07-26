@@ -10,7 +10,7 @@ sources:
   - cmd/promptworld/work.go
   - cmd/promptworld/divergence.go
   - cmd/promptworld/stages.go
-verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
+verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
 ---
 
 # promptworld CLI
@@ -93,19 +93,27 @@ ambiguous or unknown names exit 1). `worldArg`/`parseWorldFlags` wrap the older
   manifest's `Scenario` block set-after-create via `world.SetScenario` (the
   `SetStage` pattern) and the summary gains a trailing `scenario: <id> —
   <concept>` line naming the exercise panel's key (`6`).
-- `migrate <world>` — the one-time upgrade of an older world (v1 or v2) to the
-  current format (spec 012 US6 for v1→v2, spec 013 for v2→v3 —
+- `migrate <world>` — the one-time upgrade of an older world (v1 through v4) to the
+  current format (spec 012 US6 for v1→v2, spec 013 for v2→v3, spec 041 for v3→v4,
+  spec 068 for v4→v5 —
   [[world-migration]]): resolves `<world>` via `resolveWorldForMigrate`, which
   unlike `resolveWorld`/`worlds.Resolve` must reach older-format worlds that this
   build cannot `world.Open` — a path argument passes through verbatim, a bare name
   resolves against the worlds home then the known-worlds registry by manifest
   *presence* alone, never the version gate. Hands the whole
-  archive/transform/rewrite ceremony to `world.Migrate`
-  ([[world-save-directory]]), which admits a v1 or v2 source (a v1 world chains
-  1→2→3 in one run; an already-current world is refused outright) and archives the
-  original database under a name keyed to the source format (`world.v1.db` or
-  `world.v2.db`). Prints a human summary (seed, villagers carried, continuation
-  tick, source event count, archive path, and the `start` command to run next).
+  ceremony to `world.Migrate`
+  ([[world-save-directory]]), which admits a v1-v4 source (an older world chains
+  every remaining step in one run, e.g. 1→2→3→4→5; an already-current world is
+  refused outright). For a v1-v3 source it archives the
+  original database under a name keyed to the source format (`world.v1.db`,
+  `world.v2.db`, or `world.v3.db`) and prints a human summary (seed, villagers
+  carried, continuation
+  tick, source event count, archive path, and the `start` command to run next). A
+  v4 source instead takes the spec-068 manifest-only path (`MigrateResult.
+  ManifestOnly`, [[world-migration]]) — no archive, no transform, since nothing
+  about the world's log, state, or terrain changes — and `cmdMigrate` prints a
+  distinct summary naming it a manifest-only upgrade whose event log and terrain
+  carry over unchanged.
 - `ps [--all] [--json]` — machine-wide listing of worlds with live-proven state
   ([[instance-manager]]): discovery over the worlds home + registry, concurrent
   bounded probes, `NAME STATE PID TICK GAME TIME SPEED LLM PATH` table or a JSON

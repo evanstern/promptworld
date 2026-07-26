@@ -1,16 +1,16 @@
 ---
 name: world-migration
-description: The snapshot-cut migration chain (spec 012 US6 v1→v2, spec 013 v2→v3, spec 041 v3→v4) — carries a stopped world's people (and, from v2 on, its land, and from v3 on, a granted mental map) across a save-format break as a single world.migrated event
+description: The snapshot-cut migration chain (spec 012 US6 v1→v2, spec 013 v2→v3, spec 041 v3→v4) plus the spec-068 manifest-only v4→v5 step — carries a stopped world's people (and, from v2 on, its land, and from v3 on, a granted mental map) across a save-format break as a single world.migrated event, or (v4→v5) just bumps the manifest
 kind: component
 sources:
   - internal/sim/migrate.go
   - internal/world/migrate.go
-verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
+verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
 ---
 
 # World migration
 
-promptworld has broken its save format three times. Spec 012 (resources/food/crafting
+promptworld has broken its save format four times. Spec 012 (resources/food/crafting
 v2) widened `Inventory` from the legacy `{wood, food}` pair to the full v2 resource
 set and gave terrain generation rock outcrops — a v1 world's bytes simply don't mean
 the same thing under a v2 build. Spec 013 (inventory/storage v3) added a bulk cap,
@@ -19,14 +19,20 @@ ground piles, chests, theft, and rot, which change how the reducer/executor trea
 replayed under v3 code would diverge even though v2 and v3 land are identical.
 Spec 041 ([[mental-maps]], v4) gates target resolution on a per-agent mental map
 that a pre-041 world simply has none of — a v3 log loaded all-nil would leave
-every villager knowing nothing, mass starvation. Either way, `internal/world.Open`
+every villager knowing nothing, mass starvation. Spec 068 ([[worldmap-generation]],
+[[tile-registry]], v5) adds a marsh/sand shoreline terrain pass selected by the
+manifest's `terrain_gen` field — a pre-068 build reading that field's absence as
+"nothing to see here" and regenerating LEGACY terrain under a v5 manifest would
+silently strand agents and structures the daemon actually placed on marsh/sand
+(FR-007), so the break exists purely to make that mismatch refuse loudly instead.
+Either way, `internal/world.Open`
 refuses any manifest whose `format_version` isn't
 the current one ([[world-save-directory]]). `promptworld migrate <world>`
 ([[cli-promptworld]]) is the one-time, offline door a stopped older world walks
-through to keep running; it admits a v1, v2, **or** v3 source and refuses an
+through to keep running; it admits a v1 through v4 source and refuses an
 already-current world outright ("nothing to migrate").
 
-The three steps have different design pins because their inputs differ:
+The four steps have different design pins because their inputs differ:
 
 - **v1→v2** (research R10): **"keep the people, reset the land"** — terrain
   generation itself changed (rock outcrops), so every villager and the whole
@@ -43,9 +49,17 @@ The three steps have different design pins because their inputs differ:
   (perception radius) plus witnessed place-facts for every current structure
   and ground pile, all stamped at the migration tick — never a blank map that
   would have to re-discover a village it already lives in.
+- **v4→v5** (spec 068, TASK-143, C11): **manifest-only** — the one step that
+  transforms nothing. A carried-forward v4 world's event log, state, and terrain
+  don't change: its `terrain_gen` stays absent, so it keeps generating LEGACY
+  terrain, bit-identical to what it always has. The version bump exists solely so
+  pre-068 software refuses to open it (rather than silently regenerating terrain
+  under an algorithm the manifest didn't ask for); there is nothing to archive,
+  transform, or cut a fresh snapshot for.
 
-An older world chains every step it needs in one `migrate` run (1→2→3→4 for a
-v1 source); a v2 world runs the last two steps, a v3 world only the last.
+An older world chains every step it needs in one `migrate` run (1→2→3→4→5 for a
+v1 source); a v2 world runs the last three steps, a v3 world the last two, and a
+v4 world only the manifest-only bump.
 
 ## How it works
 
@@ -61,12 +75,16 @@ The work splits across two packages by concern:
   `sim.State` its mental maps into v4 (`TransformV3State`/`TransformV3Snapshot`).
   None runs on the live reducer path.
 
-**Client-side and offline**: `Migrate(dir)` refuses a running daemon (a pidfile
-liveness check duplicated from `internal/daemon` rather than imported, to avoid an
-import cycle) and refuses if the source-format archive already exists — `world.v1.db`
+**Client-side and offline**: `Migrate(dir)` refuses a running daemon FIRST (a
+pidfile liveness check duplicated from `internal/daemon` rather than imported, to
+avoid an import cycle) — this check runs for every source version, v4 included,
+ahead of the v4→v5 manifest-only short-circuit above — then, for a v1-v3 source,
+refuses if the source-format archive already exists — `world.v1.db`
 for a v1 source, `world.v2.db` for a v2 source, `world.v3.db` for a v3 source
 (`archiveDBPath`, keyed to
-`Manifest.FormatVersion`; the already-migrated guard, never overwritten). Keying the
+`Manifest.FormatVersion`; the already-migrated guard, never overwritten); a v4
+source never reaches this archive check at all, since its manifest-only
+short-circuit above returns first. Keying the
 guard to the *source* format means a v2 world produced by an earlier v1→2 migration
 — which still carries a stale `world.v1.db` from that run — remains migratable to
 v3 (or a v3 world from an earlier run remains migratable to v4): its own guard is
@@ -169,6 +187,21 @@ the explored bitmaps) then:
   recorded for the planning tier — `data-model.md`'s "dead agents: map
   retained" invariant already wants the field present).
 
+**The v4→v5 step** (spec 068 C11, `Migrate`'s own early branch — there is no
+`sim.TransformV4State`, because nothing in `sim.State` changes): before any of the
+snapshot-cut ceremony below runs, `Migrate` checks
+`w.Manifest.FormatVersion == 4` and, if so, takes a SEPARATE short path: bump
+`Manifest.FormatVersion` to the current version (5), write the manifest, and return
+`MigrateResult{Name, Seed, ManifestOnly: true}` — every other `MigrateResult` field
+(`AgentsCarried`, `Tick`, `SourceEvents`, `ArchivePath`) stays zero, since none of
+that ceremony ran. No archive is created, no fresh log is written, no covering
+snapshot is cut — cutting one here would imply a state break that does not exist,
+and would demand a covering snapshot for what is otherwise a no-op. The world's
+`terrain_gen` field stays exactly what it was (absent, for every world that predates
+spec 068) — a migrated v5 world therefore keeps generating LEGACY terrain
+([[worldmap-generation]]), the whole point being that only a `promptworld new`-born
+world gets the marsh/sand pass.
+
 **Writing the result**: after the transform succeeds, `archiveDB` renames
 `world.db` (and any `-wal`/`-shm` sidecars) to the source-format archive —
 `world.v1.db` for a v1 source, `world.v2.db` for a v2 source, `world.v3.db`
@@ -189,26 +222,38 @@ restore is the same rename-back).
 
 [[cli-promptworld]]'s `migrate` command is the only caller; [[world-save-directory]]
 defines the format-version gate this bridges and the `world.v1.db`/`world.v2.db`/
-`world.v3.db` archive artifacts; [[sim-state-reducer]]'s `Apply` applies `world.migrated` as a
+`world.v3.db` archive artifacts (v4→v5 creates none); [[sim-state-reducer]]'s `Apply` applies `world.migrated` as a
 wholesale state replace (validated by matching `Seed`); [[event-types]] catalogs the
 payload; [[executor]] is what the migrated agents' inventory (and, from v3, the bulk
 cap and death-spill rule) belongs to; [[mental-maps]] is what the v3→v4 step grants
 and owns the `MentalMap`/`PlaceFact` types the transform constructs directly;
-[[snapshots]] is the general mechanism this
-borrows (a covering snapshot plus a minimal event tail) to make the migrated log
-replay-provable with zero source-format history.
+[[worldmap-generation]] is what the v4→v5 step's bump makes an old build refuse to
+mis-generate — the `terrain_gen` field and the marsh/sand pass it gates; [[snapshots]] is the general mechanism v1-v4's steps
+borrow (a covering snapshot plus a minimal event tail) to make the migrated log
+replay-provable with zero source-format history — the manifest-only v4→v5 step
+needs neither.
 
 ## Operational notes
 
 Migration is irreversible in practice (though recoverable mid-crash, above): the
 source-format archive (`world.v1.db`, `world.v2.db`, or `world.v3.db`) is kept, never
 auto-deleted, as the human's escape hatch, but nothing in the codebase restores
-from it automatically. A world with no valid covering snapshot (never cleanly
+from it automatically (the v4→v5 step creates no archive at all — there is nothing
+to restore from, since nothing changed). A world with no valid covering snapshot (never cleanly
 stopped) cannot be migrated at all — there is no path that migrates live event
-history directly. `internal/sim/migrate_test.go` and `internal/world/migrate_test.go`
-exercise all three transforms and the full command against fixture v1, v2, and v3
+history directly (this doesn't apply to the archive-free v4→v5 step, which never
+reads a snapshot). `internal/sim/migrate_test.go` and `internal/world/migrate_test.go`
+exercise all three snapshot-cut transforms and the full command against fixture v1, v2, and v3
 worlds, including a v1 fixture that chains 1→2→3→4 in one run
 (`TestTransformV3GrantsKnowledge`/`TestTransformV3ChainReducerReplay`,
 `TestMigrateV3HappyPath`/`TestMigrateV3ReplayDeterminism` cover the v3→v4 leg
 specifically, [[testing-strategy]]); `internal/sim/whole_feature_test.go`
 covers the storage-surface event types this migration must also carry correctly.
+`internal/world/terrain_gen_test.go` (spec 068, T012) covers the v4→v5 leg
+specifically: `TestMigrateV4ManifestOnlyPreservesTerrain` proves a migrated world's
+regenerated map `Hash()` is unchanged before and after and that the stand-in event
+database bytes are never touched; `TestOpenRejectsV4WithMigrateHint` pins the v4
+refusal a pre-migration v5 build shows; `TestNewWorldsMarkedWithTerrainGen`/
+`TestOpenRejectsUnknownTerrainGen`/`TestOpenAbsentTerrainGenIsLegacy` cover the
+`terrain_gen` field's write/validate/legacy-default behavior on the `Create`/`Open`
+side of the same break ([[world-save-directory]]).

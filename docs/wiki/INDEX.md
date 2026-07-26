@@ -25,8 +25,8 @@ that note (re-pin with `/grounding-wiki:wiki-update`).
 ## Persistence
 
 - [[world-save-directory]] — one dir = one run; manifest, layout, separability
-- [[world-migration]] — v1→v2 snapshot-cut migration: keep the people, reset the land
-- [[worldmap-generation]] — seeded terrain (water/woods/forage/rock/dens); regenerated, never stored
+- [[world-migration]] — snapshot-cut migration chain v1→v2→v3→v4 (keep the people, then the land, then a granted mental map) plus the spec-068 manifest-only v4→v5 terrain-vocabulary bump
+- [[worldmap-generation]] — seeded terrain (water/woods/forage/rock/dens, and — since spec 068, on new worlds — a versioned marsh/sand shoreline pass); regenerated, never stored
 - [[event-log]] — append-only SQLite events table; seq contiguity; source of truth
 - [[snapshots]] — hash-verified recovery accelerator; cadence and fallback chain
 - [[world-tuning]] — spec-048 world tuning manifest (tuning.json): five promoted doctrine dials, clamp-validated at boot, event-logged as sim.tuning_applied, replay file-independent
@@ -37,6 +37,7 @@ that note (re-pin with `/grounding-wiki:wiki-update`).
 - [[ipc-server]] — sessions, gapless subscribe-replay, overflow drop, long-path sockets
 - [[ipc-client]] — dial, request correlation, push demux
 - [[tui-client]] — Bubble Tea four-pane client over a live log-shipped replica
+- [[tile-registry]] — the spec-068 tile registry: one data table (glyph, legend name, overlay meaning, classed style token, state variants, world binding) feeding the map renderer, the compact legend, and the ? overlay glyph walkthrough from a single source
 - [[cli-promptworld]] — the single binary's subcommands and exit discipline
 - [[instance-manager]] — machine-wide ps, worlds home, name-or-path addressing, advisory registry
 

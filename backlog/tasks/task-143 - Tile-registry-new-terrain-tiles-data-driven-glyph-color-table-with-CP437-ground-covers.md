@@ -3,10 +3,10 @@ id: TASK-143
 title: >-
   Tile registry + new terrain tiles: data-driven glyph/color table with CP437
   ground covers
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-26 14:45'
-updated_date: '2026-07-26 15:48'
+updated_date: '2026-07-26 16:14'
 labels:
   - game-ui
   - tui
@@ -27,19 +27,29 @@ Spec: specs/068-tile-registry
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A tile registry (data, not code literals) is the single source for map glyph+style; renderMapGrid, legendGlyphLine, and the ? overlay all read from it; no per-tile style literals remain in views.go
-- [ ] #2 2-3 new ground-cover terrain kinds (CP437 shading tier) generate in new worlds, render via the registry, appear in legend and ? overlay, and are covered by worldmap + TUI tests
-- [ ] #3 Existing worlds/replays render byte-identically for the pre-existing vocabulary (no regression in golden/TUI tests)
-- [ ] #4 Spec linked on the board via spec-bridge:link before implementation; wiki re-pinned after merge
+- [x] #1 A tile registry (data, not code literals) is the single source for map glyph+style; renderMapGrid, legendGlyphLine, and the ? overlay all read from it; no per-tile style literals remain in views.go
+- [x] #2 2-3 new ground-cover terrain kinds (CP437 shading tier) generate in new worlds, render via the registry, appear in legend and ? overlay, and are covered by worldmap + TUI tests
+- [x] #3 Existing worlds/replays render byte-identically for the pre-existing vocabulary (no regression in golden/TUI tests)
+- [x] #4 Spec linked on the board via spec-bridge:link before implementation; wiki re-pinned after merge
 - [x] #5 Spec phase: Setup — pin current behavior BEFORE touching anything
 - [x] #6 Spec phase: Foundational — the registry substrate
 - [x] #7 Spec phase: User Story 1 — one tile table drives map, legend, overlay (P1) 🎯 MVP
 - [x] #8 Spec phase: User Story 2 — marsh and sand (P2)
-- [ ] #9 Spec phase: Polish & cross-cutting
+- [x] #9 Spec phase: Polish & cross-cutting
 <!-- AC:END -->
+
+
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 spec-bridge sync: Setup — pin current behavior BEFORE touching anything: 2/2 · Foundational — the registry substrate: 1/1 · User Story 1 — one tile table drives map, legend, overlay (P1) 🎯 MVP: 5/5 · User Story 2 — marsh and sand (P2): 6/6 · Polish & cross-cutting: 1/2
+
+spec-bridge sync: Setup — pin current behavior BEFORE touching anything: 2/2 · Foundational — the registry substrate: 1/1 · User Story 1 — one tile table drives map, legend, overlay (P1) 🎯 MVP: 5/5 · User Story 2 — marsh and sand (P2): 6/6 · Polish & cross-cutting: 2/2 — status In Progress → Done
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+All spec tasks complete (Setup — pin current behavior BEFORE touching anything: 2/2 · Foundational — the registry substrate: 1/1 · User Story 1 — one tile table drives map, legend, overlay (P1) 🎯 MVP: 5/5 · User Story 2 — marsh and sand (P2): 6/6 · Polish & cross-cutting: 2/2). Derived Done by spec-bridge sync.
+<!-- SECTION:FINAL_SUMMARY:END -->

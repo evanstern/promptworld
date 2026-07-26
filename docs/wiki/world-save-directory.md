@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/world/world.go
   - internal/world/migrate.go
-verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
+verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
 ---
 
 # World save directory
@@ -18,15 +18,26 @@ stopped world's directory is a complete, restorable archive.
 
 `Manifest` (serialized as `world.json` at the dir root) carries `name`, `seed`
 (uint64), `created_at` (RFC3339, metadata only — wall time never enters sim state),
-`format_version` (currently **4** — spec 041's per-agent mental-map break
-([[mental-maps]]) bumped it from 3: private spatial knowledge gates target
+`format_version` (currently **5** — spec 068's terrain-vocabulary break
+([[worldmap-generation]], [[tile-registry]]) bumped it from 4: new worlds generate
+marsh/sand terrain gated by the manifest's `terrain_gen` field, and software
+predating that field would silently IGNORE it and regenerate different terrain
+under the same manifest — agents and structures standing on water (FR-007); a
+pre-068 build refuses a v5 world at `Open` with the migrate hint instead of
+mis-generating (C10) — on top of spec 041's per-agent mental-map break
+([[mental-maps]]) that bumped it from 3 to 4: private spatial knowledge gates target
 resolution, so a v3 world loaded with no seeded maps would leave every
 villager knowing nothing (research D7) — on top of spec 013's inventory/storage
 break that bumped it from 2, on top of spec 012's resources/food/crafting break
-that bumped it from 1; a v1, v2, or v3 manifest is refused by `Open` with a
+that bumped it from 1; a v1-v4 manifest is refused by `Open` with a
 pointer to `promptworld migrate <world>` — [[world-migration]]), `tick_game_seconds` (fixed 1),
 `map_width`/`map_height` (default 64×64; zero/absent values from older saves default
-on `Open`), and an optional `meeting` block (TASK-36, `MeetingConfig`:
+on `Open`), an optional `terrain_gen` int (spec 068, `json:"terrain_gen,omitempty"`:
+absent/0 = legacy terrain generation, bit-identical to every pre-068 world;
+`worldmap.GenMarshSand` (2) = the marsh/sand shoreline pass — what `Create` writes for
+every new world; `Open` refuses any other value outright, the same fail-closed
+posture as `memory_relevance`, so a future generation version this build doesn't
+implement is never silently mis-generated), and an optional `meeting` block (TASK-36, `MeetingConfig`:
 `convene`/`open` as "HH:MM" 24-hour game clock times, optional `x`/`y` meeting
 place) — the per-world meeting convention the daemon seeds on boot
 ([[governance]], [[daemon-lifecycle]]); `promptworld new` never writes it, so
@@ -86,16 +97,20 @@ cannot import) so the TUI help overlay's D9 guardian section and
 `promptworld stages` read the exact same table; `stages.go` keeps its own
 `stageOrder`/`stagesLadder` names as plain aliases so its rendering code is
 unchanged. This is data only, unrelated to the manifest fields above.
-`World.Map()` regenerates the terrain from the seed and
-dimensions — deterministic, so the map is never stored ([[worldmap-generation]]).
+`World.Map()` regenerates the terrain from the seed,
+dimensions, and (spec 068) the manifest's `terrain_gen` — deterministic, so the map
+is never stored ([[worldmap-generation]]).
 
 - `Create(dir, name, seed)` refuses any existing non-empty directory, creates
   `agents/` (empty — flat files for later features live there), and writes the
-  manifest. The genesis `world.created` event is appended by the CLI `new` command,
-  not here.
+  manifest — since spec 068 (C12) stamping `TerrainGen: worldmap.GenMarshSand` so
+  every NEW world is born on the current terrain generation; only a migrated
+  legacy world carries an absent `terrain_gen`. The genesis `world.created` event
+  is appended by the CLI `new` command, not here.
 - `Open(dir)` reads and validates the manifest: unknown `format_version`, a
-  `tick_game_seconds` other than 1, or a malformed `meeting` block (bad "HH:MM",
-  or convene not strictly before open) is a hard error, so an old binary can
+  `tick_game_seconds` other than 1, a malformed `meeting` block (bad "HH:MM",
+  or convene not strictly before open), or (spec 068) a `terrain_gen` outside
+  `{absent/0, worldmap.GenMarshSand}` is a hard error, so an old binary can
   never half-load a newer world.
 - `SetTeaching(dir, on)` (spec 039) is the offline read-modify-write for the
   `Teaching` marker: `Open`s the manifest, flips the field, rewrites
@@ -142,9 +157,9 @@ swept by [[daemon-lifecycle]] when stale. The full layout is documented in
 `specs/001-world-daemon/contracts/storage.md`.
 
 **Migration** (`migrate.go`, spec 012 US6 for v1→v2 + spec 013 for v2→v3 +
-spec 041 for v3→v4 —
+spec 041 for v3→v4 + spec 068 for v4→v5 —
 [[world-migration]] has the full design): `OpenForMigration(dir)` loads a world
-manifest without the current version gate — it admits `format_version` 1, 2, or 3
+manifest without the current version gate — it admits `format_version` 1 through 4
 (the sole purpose is migrating an older world this build otherwise can't `Open`) and
 refuses an already-current world outright; `Migrate(dir)` runs the whole ceremony —
 refuse a live daemon or an already-migrated source (the guard is keyed to the
@@ -158,15 +173,23 @@ overwritten and never deleted), write a fresh log (`world.created` then
 `world.migrated`) plus its covering snapshot, then bump `Manifest.FormatVersion` to
 the current version last — a crash between the archive and the manifest bump
 leaves a recoverable state (restore = rename the archive back, reset the
-manifest).
+manifest). The v4→v5 step (spec 068, [[world-migration]]) is different in kind: it
+is manifest-only — no state transform, no snapshot cut, no archive — since a
+carried-forward v4 world's event log, state, and terrain (`terrain_gen` stays
+absent, so it keeps legacy generation) do not change at all; `Migrate` detects a
+v4 source, bumps `Manifest.FormatVersion` to 5, and returns
+`MigrateResult{ManifestOnly: true}`.
 
 ## Connections
 
 [[daemon-lifecycle]] opens the world and cross-checks the manifest against store meta;
 [[event-log]] and [[snapshots]] live inside `world.db`; [[ipc-server]] binds the socket
 at `SockPath()`. [[cli-promptworld]]'s `new` creates worlds and `migrate` upgrades
-an older one ([[world-migration]]). [[mental-maps]] is the spec-041 subsystem the
-current format version exists to support. [[curriculum-ladder]] is the spec-046
+an older one ([[world-migration]]). [[worldmap-generation]] is the spec-068
+subsystem the CURRENT format version (5) exists to support — the `terrain_gen`
+field this note validates and the daemon reads at boot to call `GenerateV`;
+[[mental-maps]] is the spec-041 subsystem that bumped it to 4 one break earlier.
+[[curriculum-ladder]] is the spec-046
 subsystem behind the `stage`/`stage_overridden`/`charter_preset` manifest
 fields — the daemon reads them at boot and hands them boot-frozen to
 [[guardian]] for the stage ceiling and the stage-1 instruction lock; the

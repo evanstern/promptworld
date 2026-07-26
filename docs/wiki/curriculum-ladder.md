@@ -10,7 +10,7 @@ sources:
   - internal/world/world.go
   - internal/guardian/charter.go
   - cmd/promptworld/stages.go
-verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
+verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
 ---
 
 # Curriculum ladder
