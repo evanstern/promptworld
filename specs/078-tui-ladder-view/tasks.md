@@ -11,7 +11,7 @@ parity); Phase 4 → AC #2 (help.md byte-identity row + design gate).
 
 ## Phase 1: Setup
 
-- [ ] T001 Cut the worktree per protocol (from a fresh repo root:
+- [X] T001 Cut the worktree per protocol (from a fresh repo root:
   `git fetch origin && git pull --ff-only`, then
   `node scripts/check-merge-drift.mjs worktree --spec 078 --task TASK-152`,
   then `git worktree add .worktrees/task-152 -b task-152-tui-ladder-view origin/main`;
@@ -22,11 +22,11 @@ parity); Phase 4 → AC #2 (help.md byte-identity row + design gate).
 
 ## Phase 2: Foundational — the shared earned rule (blocks US1)
 
-- [ ] T002 Relocate the earned rule into `internal/worlds/unlocks.go`:
+- [X] T002 Relocate the earned rule into `internal/worlds/unlocks.go`:
   nil-safe `(u *Unlocks) StageEarned(stage string) bool` (stage-1
   unconditional floor ∨ record entry), doc comment naming the spec 063 T014
   one-source-two-surfaces precedent (plan D1, spec FR-003)
-- [ ] T003 `cmd/promptworld/stages.go` consumes it: delete local
+- [X] T003 `cmd/promptworld/stages.go` consumes it: delete local
   `stageEarned`, point `cmdStages` + `highestEarnedStage` at the method;
   assert zero output change (`stages` text + `--json`) via existing tests /
   a quick fixture run; unit-test the method in

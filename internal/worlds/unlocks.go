@@ -16,6 +16,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/evanstern/promptworld/internal/world"
 )
 
 // UnlocksPath returns <root>/unlocks.json.
@@ -68,6 +70,19 @@ func (u *Unlocks) Earned(stage string) bool {
 	}
 	_, ok := u.Entries[stage]
 	return ok
+}
+
+// StageEarned reports whether stage is offered WITHOUT an override: stage-1
+// is every player's floor (asked of no one — R9's "default stage-1 for new
+// players" made unconditional rather than conditioned on an empty record),
+// every other stage needs a record entry (Earned). RELOCATED here from
+// cmd/promptworld/stages.go's package-main `stageEarned` (spec 063 T014's
+// one-source-two-surfaces precedent extended from catalog content to earned
+// state, spec 078 FR-003): `promptworld stages` and the TUI's forward-ladder
+// section both call this method instead of keeping two copies of the rule.
+// Nil-receiver safe, like Earned.
+func (u *Unlocks) StageEarned(stage string) bool {
+	return stage == world.Stage1 || u.Earned(stage)
 }
 
 // unlocksWarnf surfaces an unlocks-record warning (warn-not-error, the
