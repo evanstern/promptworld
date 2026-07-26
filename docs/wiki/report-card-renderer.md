@@ -1,12 +1,13 @@
 ---
 name: report-card-renderer
-description: The shared rubric-checklist renderer (D5): reportCardFact/reportCardView/reportCardMode and the two fact-builders, reused by the postmortem, the ceremony, and (via consoleCard) the guardian console; the help overlay's ceremony-replay section reusing the same helpers; and the skin's per-stage D6 ceremony chapter. Split from [[takeover-surfaces]]; read when touching views.go, help.go, or skin.go's ceremony-chapter table.
+description: The shared rubric-checklist renderer (D5) and the spec-072 shared fact resolver: reportCardFact/reportCardView/reportCardMode plus resolveReportCardFacts and its two evaluator-sourced fact-builders, reused by the postmortem, the ceremony, and (via consoleCard) the guardian console; the help overlay's ceremony-replay section reusing the same helpers; and the skin's per-stage D6 ceremony chapter. Read when touching views.go, reportcard.go, help.go, or skin.go's ceremony-chapter table.
 kind: component
 sources:
   - internal/tui/views.go
+  - internal/tui/reportcard.go
   - internal/tui/help.go
   - internal/skin/skin.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+verified_against: b3f4da3c29e3cbbd933e366abe76a5d6ef0f2be9
 ---
 
 # The shared report-card renderer (D5)
@@ -22,28 +23,49 @@ themselves.
 One rubric-checklist implementation, several sites: the postmortem
 (concluded — a finished run), the ceremony (concluded — "the instrument
 authoritative", FR-019), and, via a `consoleCard` wrapper, spec 053's
-guardian-console card seam — spec 056 shipped only the renderer and the
-wrapper (`type reportCard struct{title, facts, mode}`, `var _ consoleCard =
-reportCard{}` the compile-time proof), leaving production wiring into
-`Model.consoleCards` for [[grounded-feedback]] (TASK-115) to complete.
+guardian-console card seam — spec 056 shipped the renderer and the wrapper
+(`type reportCard struct{title, facts, mode}`, `var _ consoleCard =
+reportCard{}` the compile-time proof), [[grounded-feedback]] (TASK-115)
+the production wiring into `Model.consoleCards`.
 
 - `reportCardFact{Term, Met, Backing}` is one already-resolved rubric row —
-  facts are computed once at open time by small helpers, never inside the
-  renderer, so its output is identical at every call site by construction.
+  facts are computed once at open time by the shared resolver, never inside
+  the renderer, so its output is identical at every call site by construction.
 - `reportCardMode` selects the marker vocabulary only: `reportCardConcluded`
   (met `✓` / missed `✗` — a run or exercise that's over) vs `reportCardLive`
   (met `✓` / pending `…` — still running); the same rows and backing
   references either way.
 - `reportCardView(title, facts, mode, width)` is the one renderer every
   site calls — a bordered box, one line per fact, `"✓/✗/… <term> (<backing>)"`.
-- `reportCardFactsFromEvents`/`reportCardFactsFromEvidence` derive facts
-  from, respectively, the client's own bounded chronicle ring (the fallback
-  source) or a recorded `CurriculumPass`'s own `Evidence` list (the
-  ceremony's preferred, authoritative source — exactly the satisfying
-  events `sim.EvaluateUnlock` itself read). `humanizeEventType` is a
-  deliberately generic mechanical gloss ("agent.died" → "agent died") —
-  placeholder copy pending curated per-term prose from a future scenario
-  rubric evolution ([[scenario-machinery]]).
+
+## The shared fact resolver (spec 072 — report-card truth)
+
+`resolveReportCardFacts(def, pass)` (`internal/tui/reportcard.go`) is the
+ONE precedence switch every card surface derives facts through — the
+postmortem (`postmortemReportCard`), the ceremony (`ceremonyReportCardFor`),
+and the console checklist (`buildChecklistCard`):
+
+1. **Recorded pass** (`recordedPassFor`) — the instrument: every term
+   renders met (the emitter only fires when every term held; re-read, never
+   re-grade), backing preferring the pass's own `Evidence` refs
+   (`reportCardFactsFromPass`, `"<type> · seq <n>"`, first match by event
+   type).
+2. **Run ended** — concluded `sim.EvaluateRubric` facts over the replica
+   (`reportCardFactsFromRubric`): a failed term renders `✗` with its honest
+   backing count (`"agent.died: 2"` on a two-death run), never a
+   presence-derived `✓`.
+3. **Still running** — the same rubric facts in live (`…` pending) mode.
+
+Labels are always `sim.RubricTerm.Label`'s hand-authored plain language
+("no villager dies") — the evaluator is the same pure derivation the pass
+emitter and the exercise tab's gauges read ([[scenario-machinery]]), so no
+two surfaces can disagree. A nil replica yields no facts (no card). The
+pre-072 presence-based builders (`reportCardFactsFromCounts/FromEvents/
+FromEvidence`) and the mechanical `humanizeEventType` gloss are deleted:
+they graded a term met the first time its event type appeared at all —
+backwards for zero-wanted terms (two deaths rendered `✓ agent died`).
+The ceremony's aged-out-pass edge falls back to path 2 (concluded rubric
+over current state), a pinned decision rather than an accident.
 
 ## Replayability
 

@@ -9,7 +9,7 @@ sources:
   - internal/sim/gru.go
   - internal/sim/guardian.go
   - internal/sim/state.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+verified_against: b3f4da3c29e3cbbd933e366abe76a5d6ef0f2be9
 ---
 
 # Scenario machinery (incident schedule + rubric)
@@ -84,13 +84,24 @@ grants ([[curriculum-ladder]]) — pass first, once-only via the state latch
 duplicate rejection (suspenders). Failure emits NOTHING: `run.ended` is the
 sole fail signal (`sim.ExerciseOutcome` below), never an event of its own.
 `EvaluateRubric(s, def, tick) []RubricTerm{Label, Event, Met, Count}` is the
-shared derivation both this emitter's pass precondition and the exercise
-panel's live gauges read — v1 implements `first-night`'s rubric end-to-end
-(FR-004: survive to dawn of day 2, zero deaths, a player-origin standing
-order placed before night one's fall — `firstNightWatch` scans
-`State.GuardianOrders` earliest-first by `(PlacedTick, PlacedSeq)`); every
-other exercise renders its `RubricTerms` as unevaluated pending rows (content
-work, not faked). Evidence rides `OrderPlacedEvidence(order)` — curriculum's
+shared derivation this emitter's pass precondition, the exercise panel's
+live gauges, AND every report-card surface (spec 072's shared resolver,
+[[report-card-renderer]]) read. Both cataloged exercises carry production
+arms: `first-night` (FR-004: survive to dawn of day 2, zero deaths, a
+player-origin standing order placed before night one's fall —
+`firstNightWatch` scans `State.GuardianOrders` earliest-first by
+`(PlacedTick, PlacedSeq)`) and `the-law` (spec 072 FR-007, `theLawRubric`:
+the law term met when `State.Norms` is non-empty — every entry appended
+only by `resolveProposal` on a passed proposal, count = the adopted-ever
+ledger — and the charter term met when `CharterFingerprint != "" &&
+CharterCustom`, the authorship flag the `metatron.charter_observed` reducer
+arm persists as `!Default`; latest observation wins, so a revert to the
+default charter flips the term back off). An exercise without an arm
+renders its `RubricTerms` as unevaluated pending rows (the honest default,
+not faked). Emission stays first-night-only (spec 072 FR-009): the-law's
+boundary tick, evidence assembly (`CharterObservedEvidence` needs the
+observed event's `Seq`/`Tick`, which state does not retain), and pass
+emission remain exercise-catalog content work. Evidence rides `OrderPlacedEvidence(order)` — curriculum's
 second sanctioned `EvidenceRef` constructor beside `CharterObservedEvidence`
 — which re-locates the watch's placement event via the reducer-stamped
 `GuardianOrder.PlacedSeq` (`(Seq, Tick)` coordinates, the `Memory.Seq`
@@ -130,10 +141,11 @@ downstream surface.
 ## Operational notes
 
 Two exercises ship (`sim.ScenarioExercises`): `first-night` (stage-1, seed
-46101) has a full production rubric evaluator and an authored `Schedule`
-(one `gru_emerges` entry, night one at (44,0)); `the-law` (stage-2, seed
-46102) has no production evaluator yet — its charter conjunct is not
-state-derivable today (state retains only the fingerprint, not the `Default`
-flag) — so its rubric renders as pending content work, never faked.
+46101) has a full production rubric evaluator, pass emission, and an
+authored `Schedule` (one `gru_emerges` entry, night one at (44,0));
+`the-law` (stage-2, seed 46102) has a production EVALUATOR since spec 072
+(the once-documented blocker — the charter `Default` flag not being
+state-derivable — was removed by persisting `State.CharterCustom` in the
+reducer) but no pass emission yet (FR-009, content work).
 `TestScenarioSchedulesCompile` pins every cataloged schedule compiles at
 boot (a compile error here is a content bug, never a runtime one).

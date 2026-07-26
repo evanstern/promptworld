@@ -8,7 +8,7 @@ sources:
   - internal/sim/loop.go
   - internal/tool/registry.go
   - internal/tool/roster.go
-verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
+verified_against: b3f4da3c29e3cbbd933e366abe76a5d6ef0f2be9
 ---
 
 # Agent journal

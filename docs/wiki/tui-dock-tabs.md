@@ -6,7 +6,7 @@ sources:
   - internal/tui/tui.go
   - internal/tui/views.go
   - internal/tui/reportcard.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+verified_against: b3f4da3c29e3cbbd933e366abe76a5d6ef0f2be9
 ---
 
 # TUI dock tabs (chronicle, guardian, systems)
@@ -99,8 +99,10 @@ mode) shows once per attach and is dismissed by any key while visible
 eater, gated to fire only while the exercise tab is the thing on screen and
 the minibuffer is unfocused); afterward the body renders one gauge row per
 `sim.EvaluateRubric` term (met/pending marker, backing event count — the
-SAME pure function the executor's pass precondition reads, so the panel and
-the emitter can never disagree), an incident-schedule line under forecast
+SAME pure function the executor's pass precondition and, since spec 072,
+every report-card surface read ([[report-card-renderer]]), so the panel,
+the emitter, and the cards can never disagree; both cataloged exercises
+evaluate for real), an incident-schedule line under forecast
 visibility (omitted, never blanked, under fog), and a pass/fail banner once
 `sim.ExerciseOutcome` resolves ([[scenario-machinery]] owns the whole
 subsystem). `paneKey`/`dockTabKey` extend to `6`; `nextDockTab`/`prevDockTab`

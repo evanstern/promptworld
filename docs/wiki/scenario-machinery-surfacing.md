@@ -16,7 +16,7 @@ sources:
   - cmd/promptworld/commands.go
   - internal/ipc/protocol.go
   - internal/ipc/server.go
-verified_against: 801db7c1b15fb567732bc5c6063464e918353a4d
+verified_against: b3f4da3c29e3cbbd933e366abe76a5d6ef0f2be9
 ---
 
 # Scenario machinery — surfacing, wiring, and the exercise tab
@@ -98,11 +98,14 @@ incident-visibility mode) shows once per attach, dismissed by any key while
 it's visible (`exerciseBriefingShowing`, reset on reconnect); after dismissal
 the body renders one gauge row per `sim.EvaluateRubric` term over the live
 replica (met/pending marker, backing event count — the SAME pure function
-the executor's pass precondition reads, so panel and emitter can never
-disagree), an incident line under `VisibilityForecast` (omitted entirely
-under fog, never blanked), and a pass/fail banner once `sim.ExerciseOutcome`
-resolves (dual-sourced with the TUI's own `runEnded()` posture for a live
-transition the replica snapshot hasn't folded yet).
+the executor's pass precondition AND, since spec 072, every report-card
+surface read ([[report-card-renderer]]), so panel, emitter, and cards can
+never disagree; both cataloged exercises evaluate for real — the-law's
+gauges flip on adopted norms and the persisted charter authorship flag,
+[[scenario-machinery]]), an incident line under `VisibilityForecast`
+(omitted entirely under fog, never blanked), and a pass/fail banner once
+`sim.ExerciseOutcome` resolves (dual-sourced with the TUI's own `runEnded()`
+posture for a live transition the replica snapshot hasn't folded yet).
 
 ## Connections
 
