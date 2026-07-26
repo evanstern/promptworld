@@ -10,9 +10,9 @@ synthesis (TASK-118's Wave-3 ratification), and the guardian-directives ideation
 hardness on TASK-157) win. Plan-of-record is the board; this file carries only ordering,
 doctrine, and the log.
 
-**Status:** draft · operator sign-off on lanes: pending
-<!-- Only the OPERATOR flips draft → signed-off (the author never pre-fills it). An
-     executing session must refuse a runbook whose status it cannot verify. -->
+**Status:** signed-off · operator sign-off on lanes: 2026-07-26 (operator selected
+"Signed off — execute" on the drafted lanes, in-session; drafted by the orchestrator,
+lanes NOT operator-specified verbatim — the sign-off is the authority).
 
 ## Read first (in this order)
 
@@ -113,9 +113,16 @@ doctrine-adjacent); there is no Sonnet slice in this sweep.
   observed across the predecessor sweep; skill-level fix carded as praxis TASK-57).
   A pin-free branch may still rebase.
 - **Spec rigor:** full Spec Kit + `spec-bridge:link` BEFORE implementation for every
-  task. Claim-before-work (spec 065) verbatim: first commit = card In Progress + spec
-  stub, pushed immediately; rejected push = stop-the-lane signal; specs/board
-  bookkeeping to main at root, task branch carries code only.
+  task.
+- **Root is READ-ONLY (TASK-160, merged 0ff4210 — supersedes the predecessor sweep's
+  root-bookkeeping practice, hook-enforced, no bypass):** everything — code, specs,
+  board moves, runbook rows — is authored on a `.worktrees/` branch and lands on main
+  only by merge (`gh pr merge --merge` for the task PR; `git merge --no-ff` at root
+  for bookkeeping branches). Claim flow reconciled with spec 065: the claim commit
+  (card → In Progress + spec stub) is the TASK BRANCH's first commit, pushed with the
+  branch, then immediately landed on main via `git merge --no-ff` at root — that main
+  push is still the mutual-exclusion event; rejection = stop-the-lane signal. No
+  rebases anywhere; freshen branches by merging main in.
 
 ## Concurrency & conflict doctrine
 
