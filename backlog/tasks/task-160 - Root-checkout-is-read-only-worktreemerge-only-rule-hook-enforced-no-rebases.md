@@ -3,10 +3,10 @@ id: TASK-160
 title: >-
   Root checkout is read-only: worktree+merge-only rule, hook-enforced (no
   rebases)
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-26 21:19'
-updated_date: '2026-07-26 21:20'
+updated_date: '2026-07-26 21:28'
 labels: []
 dependencies: []
 priority: high
@@ -25,11 +25,11 @@ Supersedes the 'derived state commits directly to main' practice: board/spec-bri
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 scripts/hooks/root-guard-hook.mjs blocks at root: git commit (except concluding a conflicted merge, MERGE_HEAD present), cherry-pick, revert, am, merge --squash, and branch creation (checkout -b / switch -c); blocks git rebase anywhere in the repo; blocks force-pushes; fails open on malformed stdin, out-of-jurisdiction paths, or internal errors
-- [ ] #2 Write/Edit/NotebookEdit to tracked (non-gitignored) files in the root checkout are blocked; paths under .worktrees/ and gitignored paths pass
-- [ ] #3 .claude/settings.json wires the guard: PreToolUse on Bash and on Write|Edit|NotebookEdit, alongside the existing merge-drift hooks
-- [ ] #4 CLAUDE.md: worktrees block rewritten as the iron-clad root-read-only rule (worktree + merge only, no rebases, sanctioned root git ops enumerated); claim-before-work and wiki-in-PR step-7 blocks amended for consistency
-- [ ] #5 Guard verified against stdin fixtures in a scratch repo: root commit blocked, worktree commit allowed, rebase blocked everywhere, merge at root allowed, merge-concluding commit allowed, root Edit blocked, gitignored/worktree Edit allowed
+- [x] #1 scripts/hooks/root-guard-hook.mjs blocks at root: git commit (except concluding a conflicted merge, MERGE_HEAD present), cherry-pick, revert, am, merge --squash, and branch creation (checkout -b / switch -c); blocks git rebase anywhere in the repo; blocks force-pushes; fails open on malformed stdin, out-of-jurisdiction paths, or internal errors
+- [x] #2 Write/Edit/NotebookEdit to tracked (non-gitignored) files in the root checkout are blocked; paths under .worktrees/ and gitignored paths pass
+- [x] #3 .claude/settings.json wires the guard: PreToolUse on Bash and on Write|Edit|NotebookEdit, alongside the existing merge-drift hooks
+- [x] #4 CLAUDE.md: worktrees block rewritten as the iron-clad root-read-only rule (worktree + merge only, no rebases, sanctioned root git ops enumerated); claim-before-work and wiki-in-PR step-7 blocks amended for consistency
+- [x] #5 Guard verified against stdin fixtures in a scratch repo: root commit blocked, worktree commit allowed, rebase blocked everywhere, merge at root allowed, merge-concluding commit allowed, root Edit blocked, gitignored/worktree Edit allowed
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -47,3 +47,9 @@ Supersedes the 'derived state commits directly to main' practice: board/spec-bri
 <!-- SECTION:NOTES:BEGIN -->
 Tier: spec-implementer @ Opus 4.8. Rubric: doctrine-adjacent behavior change (SDLC enforcement hook); not routine single-package feature work.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented by spec-implementer @ Opus 4.8 (commits bd7d615, 23d7694), reviewed and independently spot-checked by the planning session. scripts/hooks/root-guard-hook.mjs enforces: root checkout read-only (commit/cherry-pick/revert/am/merge --squash/branch-creation blocked at root; commit allowed only with MERGE_HEAD present), git rebase blocked repo-wide, force-pushes blocked, Write/Edit/NotebookEdit to non-gitignored root files blocked (.worktrees/ and gitignored paths pass). Wired in .claude/settings.json alongside the merge-drift hooks. CLAUDE.md: worktrees block replaced by the iron-clad 'Root checkout is READ-ONLY' doctrine; claim protocol reconciled (claim authored on the task branch, landed via immediate manual merge at root — main push stays the mutual-exclusion event); wiki-in-PR step 7 bookkeeping now rides branches too. Verified: 34/34 stdin fixtures in a scratch repo + 6/6 live spot-checks against this repo. No wiki note pins any touched file — no re-pin due. No bypass flag by design.
+<!-- SECTION:FINAL_SUMMARY:END -->
