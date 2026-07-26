@@ -255,6 +255,13 @@ var injectSocialWhitelist = map[string]bool{
 	// never simulation state — so it also survives the ended-world narrowing
 	// below (endedProseWhitelist).
 	"morgue.epilogue": true,
+	// The guardian's report card (spec 063 US4): the stored attribution note
+	// — cheap-chain critique prose citing recorded events, injected by the
+	// stopping-point producer (internal/guardian) and reduced to the latest
+	// card on state. Recorded prose only, never simulation state; the
+	// RUN-END card rides morgue.epilogue instead, so this type deliberately
+	// does NOT join endedProseWhitelist.
+	"guardian.report_card": true,
 	// Guardian standing orders (spec 029): the injected order-lifecycle events.
 	// order_placed (monitor_and_act) and order_cancelled (cancel_order) are the
 	// two Expressive tools' Events; order_triggered is injected by the trigger

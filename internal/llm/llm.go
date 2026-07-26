@@ -54,6 +54,15 @@ const (
 	// (route chain local→cloud) and rate-capped per order — never a tool loop.
 	// "metatron_watch" is a FROZEN llm.json route kind (spec 052 ruling 2).
 	KindGuardianWatch Kind = "metatron_watch"
+	// KindReportCard is the guardian's report-card critique (spec 063 US4,
+	// FR-007): one bounded cheap-chain call per stopping point that authors
+	// the attribution note from the recorded trail — the KindGuardianWatch
+	// precedent (cheap-first local, reliable cloud fallback), budget-capped
+	// caller-side and debounced producer-side; never a tool loop. Route
+	// failure or absence degrades to the deterministic card parts silently.
+	// "report_card" is an llm.json route kind: frozen from birth (spec 052
+	// ruling 2 applies to every serialized kind) — it never renames.
+	KindReportCard Kind = "report_card"
 	// KindEmbedding is the vector-producing kind (spec 042): the mind-side
 	// embedder driver's route to a local embedding model. Deliberately NOT in
 	// acceptedKinds — it never dispatches through Submit's chat machinery or
@@ -93,6 +102,7 @@ var acceptedKinds = map[Kind]struct{}{
 	KindGuardian:      {},
 	KindMeeting:       {},
 	KindGuardianWatch: {},
+	KindReportCard:    {},
 }
 
 // Kinds returns every call kind the orchestrator accepts, sorted — the

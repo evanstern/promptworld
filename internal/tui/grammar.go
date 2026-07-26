@@ -93,6 +93,10 @@ var familyByNamespace = map[string]eventFamily{
 	// player's guardian is who watches, teaches, and reports the unlock), not a
 	// distinct visual role.
 	"curriculum": familyGuardian,
+	// guardian (spec 063 — guardian.report_card, NEW vocabulary; the frozen
+	// metatron.* family above is untouched): the feedback layer's own
+	// namespace, guardian voice like curriculum.
+	"guardian": familyGuardian,
 }
 
 // eventFamilyOf derives a type's family from its namespace prefix (R2). New

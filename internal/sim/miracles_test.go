@@ -823,6 +823,9 @@ func TestRebaseTaxonomyComplete(t *testing.T) {
 		"CurriculumPass.Tick":              keep, // spec 046: when the pass was recorded (history), like Memory.Tick
 		"EvidenceRef.Tick":                 keep, // spec 046: audit pointer at a recorded event's tick — history, never a deadline
 		"EvidenceRef.Seq":                  keep, // spec 046: the evidence event's store seq — an identity, like Memory.Seq
+		"GuardianReportCard.Tick":          keep, // spec 063: when the card landed (history, MorgueEpilogue.Tick shape)
+		"GuardianReportCard.Seq":           keep, // spec 063: the card event's own seq — an identity, like Memory.Seq
+		"GuardianReportCard.Citations":     keep, // spec 063: cited event seqs — identities into recorded history, like EvidenceRef.Seq
 		// spec 048 tuning dials are DURATIONS (game-second spans), not absolute
 		// tick timestamps — a timeline rebase never shifts them (rebaseTicks
 		// leaves s.Tuning untouched). GruEmergePerMille is a uint64 probability,

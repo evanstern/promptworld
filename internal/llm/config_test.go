@@ -65,9 +65,10 @@ func TestLegacyShapeDerivesRegistry(t *testing.T) {
 			t.Errorf("kind %q has no derived route", kind)
 			continue
 		}
-		// The watch kind (spec 029) is the one multi-entry default chain:
-		// cheap-first local with a reliable cloud fallback (contracts/routing.md).
-		if kind == KindGuardianWatch {
+		// The watch kind (spec 029) and the report-card kind (spec 063) are
+		// the multi-entry default chains: cheap-first local with a reliable
+		// cloud fallback (contracts/routing.md).
+		if kind == KindGuardianWatch || kind == KindReportCard {
 			if rc.NoFallback || !reflect.DeepEqual(rc.Chain, []string{"local", "cloud"}) {
 				t.Errorf("route %q = %+v, want a [local cloud] fallback chain", kind, rc)
 			}
@@ -380,6 +381,84 @@ func TestDefaultsIncludeWatchKind(t *testing.T) {
 	}
 	if _, ok := routes[KindGuardianWatch]; !ok {
 		t.Error("DefaultConfig does not route metatron_watch")
+	}
+}
+
+// TestReportCardRouteKind (spec 063 T009): the report-card kind is accepted,
+// default-routed on the cheap-first [local cloud] chain (the metatron_watch
+// precedent), backfilled into pre-063 v2 configs with a boot log line, and
+// re-routable explicitly like any kind.
+func TestReportCardRouteKind(t *testing.T) {
+	if _, ok := acceptedKinds[KindReportCard]; !ok {
+		t.Fatal("KindReportCard is not an accepted kind")
+	}
+	rc, ok := defaultRoutes()[string(KindReportCard)]
+	if !ok {
+		t.Fatal("defaultRoutes() has no report_card entry")
+	}
+	if !reflect.DeepEqual(rc.Chain, []string{"local", "cloud"}) {
+		t.Errorf("default report_card chain = %v, want [local cloud]", rc.Chain)
+	}
+	_, routes, err := DefaultConfig().resolveRegistry()
+	if err != nil {
+		t.Fatalf("DefaultConfig resolveRegistry: %v", err)
+	}
+	if _, ok := routes[KindReportCard]; !ok {
+		t.Error("DefaultConfig does not route report_card")
+	}
+
+	// Backfill: a pre-063 v2 config (report_card route absent) still boots,
+	// gains the default chain, and the boot channel names the kind.
+	body := `{"monthly_budget_usd":100,` +
+		`"providers":{` +
+		`"local":{"transport":"openai_compat","endpoint":"http://x/v1","model":"g"},` +
+		`"cloud":{"transport":"anthropic","model":"claude","input_usd_per_mtok":5}},` +
+		`"routes":{"planner":["local"],"conversation":["local"],"meeting":["local"],` +
+		`"consolidation":["cloud"],"narrator":["cloud"],"drama":["cloud"],"metatron":["cloud"],` +
+		`"metatron_watch":["local","cloud"]}}`
+	var logged []string
+	prev := configWarnf
+	configWarnf = func(format string, args ...any) { logged = append(logged, fmt.Sprintf(format, args...)) }
+	defer func() { configWarnf = prev }()
+	cfg, err := LoadConfig(writeConfigFile(t, body))
+	if err != nil {
+		t.Fatalf("pre-063 v2 config must still boot, got: %v", err)
+	}
+	_, routes, err = cfg.resolveRegistry()
+	if err != nil {
+		t.Fatalf("resolveRegistry: %v", err)
+	}
+	got, ok := routes[KindReportCard]
+	if !ok {
+		t.Fatal("report_card route was not backfilled")
+	}
+	if got.NoFallback || !reflect.DeepEqual(got.Chain, []string{"local", "cloud"}) {
+		t.Errorf("backfilled report_card route = %+v, want the default [local cloud] chain", got)
+	}
+	named := false
+	for _, l := range logged {
+		if strings.Contains(l, string(KindReportCard)) {
+			named = true
+		}
+	}
+	if !named {
+		t.Errorf("backfill emitted no boot log line naming %q; got %v", KindReportCard, logged)
+	}
+
+	// Explicit routing wins over the default, like any kind.
+	explicit := v2Body(`{"planner":["gemma"],"conversation":["gemma"],"meeting":["gemma"],` +
+		`"consolidation":["anthropic"],"narrator":["anthropic"],"drama":["anthropic"],` +
+		`"metatron":["anthropic"],"metatron_watch":["gemma"],"report_card":["anthropic"]}`)
+	cfg2, err := LoadConfig(writeConfigFile(t, explicit))
+	if err != nil {
+		t.Fatalf("explicit report_card route: %v", err)
+	}
+	_, routes2, err := cfg2.resolveRegistry()
+	if err != nil {
+		t.Fatalf("resolveRegistry: %v", err)
+	}
+	if got := routes2[KindReportCard]; !reflect.DeepEqual(got.Chain, []string{"anthropic"}) {
+		t.Errorf("explicit report_card chain = %v, want [anthropic]", got.Chain)
 	}
 }
 

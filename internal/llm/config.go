@@ -478,10 +478,14 @@ func defaultRoutes() map[string]RouteConfig {
 		string(KindNarrator):      {Chain: []string{"cloud"}},
 		string(KindDrama):         {Chain: []string{"cloud"}},
 		string(KindGuardian):      {Chain: []string{"cloud"}},
-		// The watch confirm (spec 029) is the one multi-entry default chain:
+		// The watch confirm (spec 029) is a multi-entry default chain:
 		// cheap-first local for a bare yes/no, reliable cloud fallback. Operators
 		// re-route it like any kind.
 		string(KindGuardianWatch): {Chain: []string{"local", "cloud"}},
+		// The report-card critique (spec 063) rides the same cheap-first
+		// shape: a few grounded sentences per stopping point, local first,
+		// cloud fallback — never premium by default.
+		string(KindReportCard): {Chain: []string{"local", "cloud"}},
 	}
 }
 
@@ -494,6 +498,9 @@ func defaultRoutes() map[string]RouteConfig {
 // protection unchanged), and an unknown route KEY is still a boot error.
 var defaultBackfillKinds = map[Kind]struct{}{
 	KindGuardianWatch: {},
+	// report_card (spec 063): post-format kind — a pre-063 llm.json keeps
+	// booting, its route backfilled from defaultRoutes with a boot log line.
+	KindReportCard: {},
 }
 
 // configWarnf surfaces a config boot log line (warn-not-error), mirroring

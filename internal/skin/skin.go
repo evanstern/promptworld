@@ -67,6 +67,25 @@ var defaultTable = map[string]string{
 	// and recorded payload values stay frozen (FR-005/FR-009).
 	"skin.guardian.vision_noun": "vision",
 	"skin.guardian.omen_noun":   "omen",
+	// Report-card labels (spec 063 US4, contract §4): the card's box title
+	// and the attribution note's own block header — the note is additive
+	// prose beneath the checklist, clearly its own block (standing
+	// resolution 1).
+	"skin.guardian.report_card_label": "report card",
+	"skin.guardian.attribution_label": "what your words did",
+	// Per-verb example asks (spec 063 US5, D9): one canned player phrasing
+	// per guardian loop tool — the ? overlay's guardian section teaches how
+	// asking looks at the deterministic floor. Keyed by the frozen tool id;
+	// the phrasing uses the default skin's working/vision/omen nouns.
+	"skin.guardian.example_ask.send_vision":     `"show Ash a vision of the fire dying"`,
+	"skin.guardian.example_ask.send_omen":       `"send everyone an omen tonight: stay near the fire"`,
+	"skin.guardian.example_ask.monitor_and_act": `"watch for anyone going hungry, and warn them"`,
+	"skin.guardian.example_ask.cancel_order":    `"release the watch on the fire"`,
+	"skin.guardian.example_ask.work_miracle":    `"work a working: move the wolf away from the village"`,
+	"skin.guardian.example_ask.pause":           `"pause the world"`,
+	"skin.guardian.example_ask.start":           `"start the world again at 4x"`,
+	"skin.guardian.example_ask.adjust_speed":    `"slow the world down to 1x"`,
+	"skin.guardian.example_ask.explain":         `"what does a vision cost?"`,
 }
 
 func init() {

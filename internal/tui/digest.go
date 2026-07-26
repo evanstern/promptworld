@@ -1211,6 +1211,20 @@ var digestRegistry = map[string]digestFunc{
 			txt(" (proven by "), emph(p.Exercise), txt(")"),
 		}), true
 	},
+
+	// guardian.report_card (spec 063 US4): the stored attribution note — the
+	// cheap-chain critique the console card seam re-reads. Skin card label
+	// (contract §4/D2); morgue.epilogue's truncation manner for the prose.
+	"guardian.report_card": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.GuardianReportCardPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{
+			txt(sk.Resolve("skin.guardian.report_card_label") + " under charter "), emph(p.Fingerprint),
+			txt(": "), txt(truncateRunes(p.Note, 80)),
+		}), true
+	},
 }
 
 // --- jump-to-source subject resolution (spec 049, contract §2/FR-002) ---

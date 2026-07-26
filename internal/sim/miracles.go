@@ -228,6 +228,9 @@ func (s *State) applyTimeSnapped(e store.Event) error {
 //	Belief.Tick, KnownRumor.Tick,
 //	Guard.Generation, Rumor.OriginTick, ConvoRecord.Conv (identity — the
 //	founding-talk tick doubles as the conversation id), ConvoRecord.Tick,
+//	GuardianReportCard.Tick/Seq/Citations (spec 063: when the card landed +
+//	the card event's identity + cited event seqs — history and identities,
+//	never deadlines),
 //	ChronicleEntry.Tick/Day/FromTick/ToTick, Meeting.LastMeetingDay,
 //	MeetingConvention.EstablishedDay, Norm.DayPassed/DayRepealed/DayAmended,
 //	NormViolation.Tick. Day-denominated governance fields re-arm naturally under

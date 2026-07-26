@@ -146,6 +146,11 @@ func TestWhitelistDiffIdentical(t *testing.T) {
 		// one of the two types the ENDED world's narrowed door still accepts).
 		"metatron.charter_observed": true,
 		"morgue.epilogue":           true,
+		// Spec 063 US4 (report card) deliberately widens the boundary by
+		// exactly one entry: the stopping-point producer's stored attribution
+		// note (recorded prose, latest-card reducer). The run-end card rides
+		// morgue.epilogue instead, so the ENDED narrowing is untouched.
+		"guardian.report_card": true,
 	}
 	for typ := range want {
 		if !injectSocialWhitelist[typ] {
