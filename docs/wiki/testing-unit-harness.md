@@ -8,7 +8,7 @@ sources:
   - internal/sim/whole_feature_test.go
   - internal/world/migrate_test.go
   - internal/mind/replay_test.go
-verified_against: 4c66d240b2715706964f02cfd2396256c9957d8e
+verified_against: 93837e1885bff17114df75e5382ac60dee24776a
 ---
 
 # Unit determinism & replay harness

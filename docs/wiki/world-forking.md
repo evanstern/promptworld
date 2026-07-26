@@ -7,7 +7,7 @@ sources:
   - internal/sim/state.go
   - cmd/promptworld/fork.go
   - cmd/promptworld/compare.go
-verified_against: 0fd2104c59c54be8e8071d319fa4ce192083faf3
+verified_against: 93837e1885bff17114df75e5382ac60dee24776a
 ---
 
 # World forking & the duel

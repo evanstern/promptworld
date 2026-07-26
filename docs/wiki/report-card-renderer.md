@@ -7,7 +7,7 @@ sources:
   - internal/tui/reportcard.go
   - internal/tui/help.go
   - internal/skin/skin.go
-verified_against: 4c66d240b2715706964f02cfd2396256c9957d8e
+verified_against: 93837e1885bff17114df75e5382ac60dee24776a
 ---
 
 # The shared report-card renderer (D5)
