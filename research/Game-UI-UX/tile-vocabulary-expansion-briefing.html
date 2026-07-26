@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tile Vocabulary Expansion — Game-UI-UX Briefing</title>
+<style>
+  /* praxisflux:tokens:start */
+  /* ---- design tokens (light) ---- */
+  :root{
+    --bg:#f4f6f9; --card:#ffffff; --ink:#1b2733; --muted:#5a6776;
+    --accent:#4f46e5; --accent2:#0e9488; --warn:#b4530a;
+    --line:#dde3ea; --chip:#f3f5f8;
+    --callout-bg:#f5f5ff; --warn-bg:#fff6ee; --ok-bg:#eefaf7;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0e141b; --card:#161d26; --ink:#e7ecf2; --muted:#9aa7b5;
+      --accent:#8b83ff; --accent2:#3ac9b8; --warn:#e8903f;
+      --line:#28323e; --chip:#1d2630;
+      --callout-bg:#1b1d38; --warn-bg:#33220f; --ok-bg:#0f2a27;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0e141b; --card:#161d26; --ink:#e7ecf2; --muted:#9aa7b5;
+    --accent:#8b83ff; --accent2:#3ac9b8; --warn:#e8903f;
+    --line:#28323e; --chip:#1d2630;
+    --callout-bg:#1b1d38; --warn-bg:#33220f; --ok-bg:#0f2a27;
+  }
+  :root[data-theme="light"]{
+    --bg:#f4f6f9; --card:#ffffff; --ink:#1b2733; --muted:#5a6776;
+    --accent:#4f46e5; --accent2:#0e9488; --warn:#b4530a;
+    --line:#dde3ea; --chip:#f3f5f8;
+    --callout-bg:#f5f5ff; --warn-bg:#fff6ee; --ok-bg:#eefaf7;
+  }
+  /* praxisflux:tokens:end */
+
+  /* ---- reset + base ---- */
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55;
+    -webkit-text-size-adjust:100%;padding:0}
+  .wrap{max-width:940px;margin:0 auto;padding:40px 24px 80px}
+  h1,h2,h3{font-family:var(--mono);letter-spacing:-.01em}
+  h1{font-size:1.9rem;line-height:1.2;margin:.2em 0 .35em;text-wrap:balance}
+  h2{font-size:1.25rem;margin:2.2em 0 .6em;padding-top:1.2em;border-top:1px solid var(--line)}
+  h3{font-size:1.02rem;margin:1.4em 0 .4em}
+  p,li{font-size:1.02rem;max-width:70ch}
+  .muted{color:var(--muted)}
+  a{color:var(--accent)}
+  code,.mono{font-family:var(--mono);background:var(--chip);border:1px solid var(--line);
+    border-radius:6px;padding:1px 6px;font-size:.9em}
+  .eyebrow{font-family:var(--mono);font-size:.78rem;text-transform:uppercase;
+    letter-spacing:.14em;color:var(--muted)}
+  .callout{border-left:4px solid var(--accent);background:var(--callout-bg);
+    border-radius:0 10px 10px 0;padding:14px 18px;margin:16px 0}
+  .callout.warn{border-left-color:var(--warn);background:var(--warn-bg)}
+  .callout.ok{border-left-color:var(--accent2);background:var(--ok-bg)}
+  .callout p{margin:.3em 0}
+
+  /* ---- auditable data table ---- */
+  table.data{border-collapse:collapse;width:100%;margin:16px 0;font-size:.95rem}
+  table.data caption{text-align:left;color:var(--muted);font-size:.88rem;margin-bottom:6px}
+  table.data th,table.data td{border:1px solid var(--line);padding:7px 11px;text-align:left;
+    vertical-align:top}
+  table.data thead th{background:var(--chip);font-weight:700;font-family:var(--mono);
+    font-size:.82rem;text-transform:uppercase;letter-spacing:.06em}
+  table.data td.num{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--mono)}
+  .table-scroll{overflow-x:auto}
+
+  /* ---- theme toggle ---- */
+  .theme-toggle{position:fixed;top:14px;right:14px;z-index:50;font:inherit;font-size:.9rem;
+    color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:8px;
+    padding:6px 12px;cursor:pointer}
+  .theme-toggle:hover{background:var(--chip)}
+  .theme-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  @media print{ .theme-toggle{display:none} body{background:#fff} }
+
+  /* ================= subject-specific: the terminal ================= */
+  /* Terminal panels are DELIBERATELY single-theme: a terminal map is dark in both
+     page themes, so the xterm-256 colors shown are the actual shipped values. */
+  .term{background:#0c1117;color:#c8d2dc;border:1px solid #232c37;border-radius:10px;
+    font-family:var(--mono);line-height:1.35;padding:14px 16px;overflow-x:auto;
+    font-size:.95rem;white-space:pre}
+  .term .cap{white-space:normal;display:block;color:#7d8a97;font-size:.75rem;
+    text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px;border-bottom:1px solid #232c37;
+    padding-bottom:6px}
+  .term .legend{white-space:normal;display:block;color:#7d8a97;font-size:.78rem;
+    margin-top:8px;border-top:1px solid #232c37;padding-top:6px}
+  /* shipped styles, from internal/tui/views.go:1581-1644 */
+  .t-grass{color:#4a5561}
+  .t-water{color:#3d6bd6}          /* ANSI 4 (themeable) */
+  .t-tree{color:#3fae5a}           /* ANSI 2 (themeable) */
+  .t-forage{color:#c9a832}         /* ANSI 3 (themeable) */
+  .t-rock{color:#8a8a8a}           /* 256:245 */
+  .t-depleted{color:#585858}       /* 256:240 faint */
+  .t-path{color:#af875f}           /* 256:137 */
+  .t-fire{color:#ff8700;font-weight:700}      /* 256:208 bold */
+  .t-firedying{color:#ff5f00;font-weight:700} /* 256:202 bold */
+  .t-firecold{color:#585858}                  /* 256:240 faint */
+  .t-shelter{color:#af5f00;font-weight:700}   /* 256:130 bold */
+  .t-oven{color:#d75f00;font-weight:700}      /* 256:166 bold */
+  .t-chest{color:#af8700;font-weight:700}     /* 256:136 bold */
+  .t-pile{color:#d7af00;font-weight:700}      /* 256:178 bold */
+  .t-wall{color:#bcbcbc;font-weight:700}      /* 256:250 bold */
+  .t-walldmg{color:#585858}                   /* 256:240 faint */
+  .t-den{color:#b954c4}            /* ANSI 5 (themeable) */
+  .t-grave{color:#808080}          /* 256:244 faint */
+  .t-agent{color:#e7ecf2;font-weight:700}
+  .t-asleep{color:#9aa7b5}
+  .t-critical{color:#e05252;font-weight:700;text-decoration:underline} /* ANSI 1 bold+underline */
+  .t-suppressed{color:#af5fff}     /* 256:135 faint */
+  .t-dead{color:#e05252;font-weight:700}
+  .t-gru{color:#ff2020;font-weight:700}       /* 256:196 bold */
+  .t-shade{color:#6b7683}
+
+  /* glyph chip rows */
+  .chips{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
+  .chip{display:flex;align-items:center;gap:9px;background:var(--card);
+    border:1px solid var(--line);border-radius:8px;padding:6px 12px 6px 6px}
+  .chip .g{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;
+    background:#0c1117;border-radius:6px;font-family:var(--mono);font-size:1.15rem;flex:none}
+  .chip .l{font-size:.85rem;line-height:1.25}
+  .chip .l small{display:block;color:var(--muted);font-family:var(--mono);font-size:.72rem}
+
+  /* swatches */
+  .sw{display:inline-block;width:.95em;height:.95em;border-radius:3px;vertical-align:-.12em;
+    border:1px solid rgba(128,128,128,.45);margin-right:.4em}
+
+  /* rule cards */
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin:18px 0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .card .n{font-family:var(--mono);color:var(--accent);font-size:.8rem;letter-spacing:.1em}
+  .card h3{margin:.25em 0 .35em;font-size:.98rem}
+  .card p{font-size:.9rem;margin:0;color:var(--muted)}
+
+  /* ladder */
+  .ladder{display:flex;flex-direction:column;gap:12px;margin:16px 0;counter-reset:tier}
+  .tier{display:grid;grid-template-columns:44px 1fr;gap:14px;background:var(--card);
+    border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .tier .rank{font-family:var(--mono);font-size:1.5rem;color:var(--accent);line-height:1.1}
+  .tier h3{margin:0 0 .25em}
+  .tier p{margin:.2em 0;font-size:.95rem}
+
+  /* smallville chain */
+  .chain{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;margin:14px 0}
+  .chain .step{background:var(--card);border:1px solid var(--line);border-radius:8px;
+    padding:10px 14px;font-size:.88rem;flex:1 1 150px}
+  .chain .step b{display:block;font-family:var(--mono);font-size:.8rem;margin-bottom:2px}
+  .chain .arr{align-self:center;color:var(--muted);font-family:var(--mono);flex:none}
+
+  .twocol{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin:14px 0}
+
+  footer{margin-top:48px;border-top:1px solid var(--line);padding-top:16px;
+    font-size:.85rem;color:var(--muted)}
+  footer p{font-size:.85rem}
+  @media (prefers-reduced-motion: reduce){ *{transition:none !important} }
+</style>
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle light/dark theme">◐ theme</button>
+<div class="wrap">
+
+<p class="eyebrow">Game-UI-UX · research briefing · 2026-07-26</p>
+<h1>Expanding the tile vocabulary</h1>
+<p class="muted">What the corpus supports for new tile types, alternative colors, avatar
+characters, and fonts — rendered from
+<span class="mono">Analysis-Tile-Vocabulary-Expansion.md</span>.</p>
+
+<div class="callout">
+<p><strong>Verdict — expand by borrowing conventions, not by inventing.</strong>
+Spend <em>color</em> before spending new <em>characters</em>; treat the roguelike/CP437
+vocabulary as the dictionary for new tiles; keep avatars as case-coded letters and push emoji
+to the inspector layer; and if a richer surface is wanted, ship it as a swappable
+"tileset" skin over the same grid — never a second rendering model.</p>
+</div>
+
+<!-- ============================ HERO: the baseline =========================== -->
+<h2>The vocabulary being expanded</h2>
+<p>Everything below is shipped today (<span class="mono">internal/tui/views.go:1581–1644</span>
+and the tile switch at <span class="mono">1290–1330</span>). Three properties make this baseline
+corpus-correct, and every addition must preserve them: it uses the shared convention where one
+exists, it distinguishes <em>states</em> by style rather than new glyphs, and one shared table
+feeds both the legend and the <span class="mono">?</span> overlay.</p>
+
+<div class="term" role="img" aria-label="Sample promptworld map: water, trees, forage, rock, paths, structures, and villager letters rendered as colored terminal glyphs">
+<span class="cap">promptworld — map panel (day) · composed from the shipped glyph table</span>
+<span class="t-water">~ ~</span> <span class="t-tree">♠ ♠</span> <span class="t-grass">· ·</span> <span class="t-rock">^ ^</span> <span class="t-depleted">,</span> <span class="t-grass">· · ·</span> <span class="t-den">ᴥ</span> <span class="t-grass">·</span>
+<span class="t-water">~ ~</span> <span class="t-tree">♠</span> <span class="t-grass">· ·</span> <span class="t-forage">"</span> <span class="t-grass">·</span> <span class="t-rock">^</span> <span class="t-grass">· ·</span> <span class="t-asleep">b</span> <span class="t-grass">· · ·</span>
+<span class="t-water">~</span> <span class="t-grass">· ·</span> <span class="t-forage">" "</span> <span class="t-grass">· ·</span> <span class="t-path">·</span> <span class="t-path">·</span> <span class="t-path">·</span> <span class="t-path">·</span> <span class="t-path">·</span> <span class="t-grass">· ·</span>
+<span class="t-grass">· ·</span> <span class="t-agent">A</span> <span class="t-grass">·</span> <span class="t-wall">▤ ▤ ▤</span> <span class="t-path">·</span> <span class="t-grass">·</span> <span class="t-critical">M</span> <span class="t-grass">· · ·</span> <span class="t-grave">✝</span>
+<span class="t-grass">· ·</span> <span class="t-grass">·</span> <span class="t-grass">·</span> <span class="t-wall">▤</span> <span class="t-shelter">⌂</span> <span class="t-wall">▤</span> <span class="t-path">·</span> <span class="t-fire">▲</span> <span class="t-grass">·</span> <span class="t-oven">▣</span> <span class="t-grass">· ·</span>
+<span class="t-grass">· ·</span> <span class="t-suppressed">e</span> <span class="t-grass">·</span> <span class="t-wall">▤ ▤ ▤</span> <span class="t-path">·</span> <span class="t-grass">·</span> <span class="t-pile">%</span> <span class="t-chest">☐</span> <span class="t-grass">· ·</span> <span class="t-gru">G</span>
+<span class="t-grass">· · ·</span> <span class="t-walldmg">▩</span> <span class="t-grass">· ·</span> <span class="t-firecold">▲</span> <span class="t-grass">· ·</span> <span class="t-firedying">▲</span> <span class="t-grass">· · ·</span>
+<span class="legend">day · ~ water · ♠ tree · " forage · ^ rock · , depleted · · path/grass ·
+▲ fire · ⌂ shelter · ▣ oven · ☐ chest · % pile · ▤▩ wall · ᴥ den · ✝ grave ·
+letters = villagers (case: awake/asleep) · G gru · night dims, never hides</span>
+</div>
+
+<!-- ============================ FOUR RULES =========================== -->
+<h2>The four rules of the verdict</h2>
+<div class="cards">
+  <div class="card"><span class="n">RULE 1</span>
+    <h3>Borrow, don't invent</h3>
+    <p>New terrain comes from the roguelike convention set, then CP437. A novel glyph is a
+    vocabulary word the player must learn — Ge: "many players have difficulty making that
+    conceptual leap."</p></div>
+  <div class="card"><span class="n">RULE 2</span>
+    <h3>Color before characters</h3>
+    <p>A new state of an existing thing is a style variant of the learned glyph — the
+    cold-fire / dying-fire / damaged-wall pattern — never a new character.</p></div>
+  <div class="card"><span class="n">RULE 3</span>
+    <h3>Letters on the grid, emoji in the inspector</h3>
+    <p>Case-coded initials carry two free channels (who + awake/asleep). Smallville's emoji
+    ambience belongs to the strip/roster layer, not terminal cells.</p></div>
+  <div class="card"><span class="n">RULE 4</span>
+    <h3>One grid, swappable skins</h3>
+    <p>DF Classic ↔ Premium is "just swapping out some glyphs. The grid structure underneath
+    is the same everywhere." Any richer tileset is a projection of the same tile table.</p></div>
+</div>
+
+<!-- ============================ EXPANSION LADDER =========================== -->
+<h2>New tile types — the selection ladder</h2>
+<p>ASCII maps read fast <em>because</em> players leverage "years of experience distinguishing a
+very specific set of symbols" (Ge, <em>ASCII vs. Tiles</em>). That advantage only accrues to
+conventional glyphs, so candidates are taken in this order:</p>
+
+<div class="ladder">
+  <div class="tier"><div class="rank">1</div><div>
+    <h3>The roguelike convention dictionary</h3>
+    <p>Pre-learned by genre-literate players since Rogue (RogueBasin's documented vocabulary;
+    DF's animal letters).</p>
+    <div class="chips">
+      <div class="chip"><span class="g t-wall">&lt;</span><span class="l">transitions / stairs<small>RogueBasin</small></span></div>
+      <div class="chip"><span class="g t-forage">?</span><span class="l">documents, scrolls<small>RogueBasin</small></span></div>
+      <div class="chip"><span class="g t-firedying">!</span><span class="l">consumables, potions<small>RogueBasin</small></span></div>
+      <div class="chip"><span class="g t-tree">c d</span><span class="l">animals as lowercase letters<small>DF: c cat · d dog</small></span></div>
+    </div></div></div>
+  <div class="tier"><div class="rank">2</div><div>
+    <h3>CP437's texture &amp; chrome repertoire</h3>
+    <p>"One of the more common choices for ASCII layout… used by games like Dwarf Fortress"
+    (Ge). Shading glyphs read as <em>texture, not object</em> — the grounded candidates for new
+    ground covers and density gradients (marsh, snow depth, crop maturity).</p>
+    <div class="chips">
+      <div class="chip"><span class="g t-shade">░</span><span class="l">light shade<small>U+2591 · CP437</small></span></div>
+      <div class="chip"><span class="g t-shade">▒</span><span class="l">medium shade<small>U+2592 · CP437</small></span></div>
+      <div class="chip"><span class="g t-shade">▓</span><span class="l">dark shade<small>U+2593 · CP437</small></span></div>
+      <div class="chip"><span class="g t-wall">═ ║</span><span class="l">box-drawing chrome<small>already the wall/UI family</small></span></div>
+    </div></div></div>
+  <div class="tier"><div class="rank">3</div><div>
+    <h3>Novel Unicode — last resort</h3>
+    <p>The project has gone here before (<span class="mono">ᴥ ▣ ✝</span>) and it works because
+    each is <em>visually unlike everything else on the grid</em>. Every candidate must clear the
+    existing set at small sizes and in dense clusters — exactly Ge's side-by-side test. Each one
+    also spends legend budget: vocabulary growth degrades the teaching surface before it
+    degrades the map.</p></div></div>
+</div>
+
+<!-- ============================ CURRENT VOCAB TABLE =========================== -->
+<h2>Auditable baseline — every glyph &amp; color shipped today</h2>
+<div class="table-scroll">
+<table class="data">
+<caption>Source: internal/tui/views.go:1581–1644 (style table) and 1290–1330 (tile switch).
+"ANSI n" = themeable 16-color slot; "256:n" = fixed xterm-256 code (hex shown as commonly rendered).</caption>
+<thead><tr><th>Glyph</th><th>Meaning</th><th>Color</th><th>Style rule</th></tr></thead>
+<tbody>
+<tr><td class="num">·</td><td>grass</td><td><span class="sw" style="background:#4a5561"></span>dim</td><td>ground default</td></tr>
+<tr><td class="num">·</td><td>path</td><td><span class="sw" style="background:#af875f"></span>256:137 warm tan</td><td>same glyph as grass — color-only distinction (the one violation of "never color alone")</td></tr>
+<tr><td class="num">~</td><td>water</td><td><span class="sw" style="background:#3d6bd6"></span>ANSI 4</td><td>themeable semantic slot</td></tr>
+<tr><td class="num">♠</td><td>tree</td><td><span class="sw" style="background:#3fae5a"></span>ANSI 2</td><td>themeable semantic slot</td></tr>
+<tr><td class="num">"</td><td>forage</td><td><span class="sw" style="background:#c9a832"></span>ANSI 3</td><td>themeable semantic slot</td></tr>
+<tr><td class="num">^</td><td>rock</td><td><span class="sw" style="background:#8a8a8a"></span>256:245</td><td>—</td></tr>
+<tr><td class="num">,</td><td>depleted ground</td><td><span class="sw" style="background:#585858"></span>256:240</td><td>faint = spent</td></tr>
+<tr><td class="num">▲</td><td>fire — lit / dying / cold</td><td><span class="sw" style="background:#ff8700"></span>208 → <span class="sw" style="background:#ff5f00"></span>202 → <span class="sw" style="background:#585858"></span>240</td><td>one glyph, three styles: bold / warm-shift / faint</td></tr>
+<tr><td class="num">⌂</td><td>shelter</td><td><span class="sw" style="background:#af5f00"></span>256:130 bold</td><td>material earth tone</td></tr>
+<tr><td class="num">▣</td><td>oven</td><td><span class="sw" style="background:#d75f00"></span>256:166 bold</td><td>material earth tone</td></tr>
+<tr><td class="num">☐</td><td>chest</td><td><span class="sw" style="background:#af8700"></span>256:136 bold</td><td>sits between pile 178 and shelter 130 by design</td></tr>
+<tr><td class="num">%</td><td>pile (ground stash)</td><td><span class="sw" style="background:#d7af00"></span>256:178 bold</td><td>roguelike convention glyph</td></tr>
+<tr><td class="num">▤ ▩</td><td>wall — plank / stone</td><td><span class="sw" style="background:#bcbcbc"></span>256:250 bold; damaged <span class="sw" style="background:#585858"></span>240</td><td>faint = damaged (cold-fire precedent)</td></tr>
+<tr><td class="num">ᴥ</td><td>den</td><td><span class="sw" style="background:#b954c4"></span>ANSI 5</td><td>novel Unicode</td></tr>
+<tr><td class="num">✝</td><td>grave</td><td><span class="sw" style="background:#808080"></span>256:244 faint</td><td>faint = inert/spent</td></tr>
+<tr><td class="num">A / a</td><td>villager — awake / asleep</td><td>ink / muted</td><td>case is a free channel</td></tr>
+<tr><td class="num">A̲</td><td>needs-critical villager</td><td><span class="sw" style="background:#e05252"></span>ANSI 1</td><td>bold + underline; wins over suppressed</td></tr>
+<tr><td class="num">a</td><td>suppressed-mind villager</td><td><span class="sw" style="background:#af5fff"></span>256:135 faint</td><td>cooler hue so critical reads as higher priority</td></tr>
+<tr><td class="num">†</td><td>dead (no grave)</td><td><span class="sw" style="background:#e05252"></span>red bold</td><td>pre-044 replays only</td></tr>
+<tr><td class="num">G</td><td>gru</td><td><span class="sw" style="background:#ff2020"></span>256:196 bold</td><td>collides with the agent-letter namespace — reserve a case/color combo as counts grow</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ============================ COLOR GRAMMAR =========================== -->
+<h2>Alternative colors — a semantic grammar, not a decorative one</h2>
+
+<div class="twocol">
+<div>
+<h3>Severity is a fixed 4-step language</h3>
+<p>RimWorld codes every event with the same four colors, on letters <em>and</em> on its History
+graph. Any new promptworld color should first answer "which severity band is this?"</p>
+<div class="chips">
+  <div class="chip"><span class="g" style="color:#4f8fde">◆</span><span class="l">good<small>blue</small></span></div>
+  <div class="chip"><span class="g" style="color:#9aa7b5">◆</span><span class="l">neutral<small>grey</small></span></div>
+  <div class="chip"><span class="g" style="color:#c9a832">◆</span><span class="l">bad<small>yellow</small></span></div>
+  <div class="chip"><span class="g" style="color:#e05252">◆</span><span class="l">direct threat<small>red</small></span></div>
+</div>
+</div>
+<div>
+<h3>States recolor; they never re-glyph</h3>
+<p>The shipped dimming/warning grammar, generalized: <strong>faint = spent</strong>,
+<strong>warm-shift = deteriorating</strong>, <strong>bold+underline = critical</strong>.
+RimWorld 1.5's mood glow is the same move.</p>
+<div class="term" style="font-size:1.05rem" role="img" aria-label="The fire glyph in three styles: lit orange, dying red-orange, cold faint gray; the wall glyph intact and damaged; a villager letter plain and critical">
+<span class="cap">one glyph, many states</span>
+<span class="t-fire">▲</span> lit    <span class="t-firedying">▲</span> dying    <span class="t-firecold">▲</span> cold
+<span class="t-wall">▤</span> intact <span class="t-walldmg">▤</span> damaged
+<span class="t-agent">A</span> fine   <span class="t-critical">A</span> critical <span class="t-suppressed">a</span> suppressed
+</div>
+</div>
+</div>
+
+<h3>Where each palette lives</h3>
+<ul>
+<li><strong>Meaning-bearing colors → the themeable ANSI 16.</strong> Danger, severity, faction.
+User themes then can't break semantics (terminals expose 16 user-themeable colors — Textual).</li>
+<li><strong>Material colors → the 256 palette.</strong> The earth tones
+(130/136/137/166/178/202/208) are decorative distinctions, not warnings. Cost: they ignore user
+themes and can collapse on 16-color terminals.</li>
+<li><strong>Externalize the scheme.</strong> Cogmind keeps message colors in an external text
+file explicitly as a colorblind aid — promptworld's ratified skin-token contract (D2) is the
+same mechanism. New tile colors are born as tokens, never literals.</li>
+<li><strong>Never color alone.</strong> Cogmind's multi-channel rule + WCAG H86: anything a
+player must act on needs a second channel — glyph, case, legend, or a feed line.
+Path-vs-grass is tolerable only because it's low-stakes.</li>
+</ul>
+
+<!-- ============================ AVATARS =========================== -->
+<h2>Avatar characters — letters on the grid, emoji one layer up</h2>
+<p>The corpus offers three avatar models: DF/roguelike letters, RimWorld's portrait bar, and
+Smallville's sprites with LLM-generated <strong>emoji speech bubbles</strong>. Per-agent
+inspection is documented to hold to ~25 agents; promptworld's 8–20 villagers sit inside that.
+Keep initials as grid identity — and steal the Smallville chain at the strip/inspector layer,
+where the TUI's roster → detail drill-down already mirrors it:</p>
+
+<div class="chain">
+  <div class="step"><b>ambient glyph</b>emoji / badge beside the name in the villager strip</div>
+  <div class="arr">→</div>
+  <div class="step"><b>click / select</b>full natural-language action</div>
+  <div class="arr">→</div>
+  <div class="step"><b>detail</b>needs, thoughts, decisions</div>
+  <div class="arr">→</div>
+  <div class="step"><b>memory stream</b>the full inspector</div>
+</div>
+
+<p>Emoji <em>as map glyphs</em> are a layout hazard in a terminal: double-width characters break
+cell alignment (inferred from the corpus's cell-geometry facts, not a documented failure — see
+open questions). On a web renderer, over-avatar bubbles are proven by Smallville and could
+coexist with letter glyphs — the rule is renderer-specific.</p>
+
+<!-- ============================ FONTS =========================== -->
+<h2>Fonts — an architecture decision, three grounded rules</h2>
+<div class="cards">
+  <div class="card"><span class="n">FONT 1</span>
+    <h3>Mixed dimensions are the ideal</h3>
+    <p>Cogmind: square-ish cells for the map, narrow fonts for text panels — "the best of both
+    worlds." The TUI already fakes square cells by writing a space after every tile; a web
+    renderer should make it explicit: the map font and the UI font are <em>two</em> choices.</p></div>
+  <div class="card"><span class="n">FONT 2</span>
+    <h3>CP437 coverage is the gate</h3>
+    <p>Any candidate must cover box-drawing, shading, and the shipped set
+    (⌂ ▣ ▤ ▩ ♠ ᴥ ✝) at map size. The corpus names requirements, not fonts — a known gap.</p></div>
+  <div class="card"><span class="n">FONT 3</span>
+    <h3>Scale cell size, never grid extent</h3>
+    <p>Cogmind fixes a guaranteed-visible map area and balances gameplay against it; font size
+    is the responsive variable. Don't let a font choice silently change how much world a player
+    sees.</p></div>
+</div>
+
+<!-- ============================ TILESET =========================== -->
+<h2>If "expand tiles" means a graphical tileset</h2>
+<div class="callout ok">
+<p><strong>One grid model, swappable glyph/tile skins.</strong> DF Classic and Premium are one
+codebase — "the switch… is just swapping out some glyphs. The grid structure underneath is the
+same everywhere" (Tarn Adams). ASCII glyphs and any sprite tileset are projections of the same
+tile table — which also matches the one-legend-source discipline and the skin-token direction.</p>
+</div>
+<p>Both halves of the DF evidence apply: Ge's market fact that "the average player will always
+choose to play with a tileset" argues <em>for</em> shipping one; DF Premium's documented visual
+noise in busy forts is the caution — richer tiles raise the noise floor, and Sylvester's
+"noise is signal that fails to transmit meaning" applies to tile art exactly as to text.</p>
+
+<!-- ============================ TENSIONS =========================== -->
+<h2>Tensions &amp; open gaps</h2>
+<div class="callout warn">
+<p><strong>Convention vs. fiction.</strong> The roguelike dictionary carries meanings from other
+games. If promptworld's audience is less genre-literate than Cogmind's, the "pre-learned"
+advantage weakens — the legend/<span class="mono">?</span>-overlay channel has to carry more.</p>
+</div>
+<div class="callout warn">
+<p><strong>Earth tones vs. themeability.</strong> The 256-palette materials are what make the
+map read warm and physical, but they forfeit theme-consistency. "Semantics on the 16, materials
+on the 256" preserves both at a real cost the skin-token layer only partially recovers.</p>
+</div>
+<ul>
+<li><strong>No specific font names are grounded</strong> — only coverage and dimension
+requirements. A small follow-up research pass would close this before a web renderer commits.</li>
+<li><strong>No tested colorblind-safe palette exists in the branch.</strong> Cogmind
+externalizes colors <em>for</em> colorblind players and RimWorld's severity language is
+hue-dependent, but neither source supplies a validated palette. The skin-token contract is the
+home; the palette itself is ungrounded.</li>
+<li><strong>Natural-language state at density</strong> (the MOC's standing open question) bears
+directly on the avatar/emoji layer and remains unresearched.</li>
+</ul>
+
+<footer>
+<p><strong>Basis.</strong> Rendered from
+<span class="mono">research/Game-UI-UX/Analysis-Tile-Vocabulary-Expansion.md</span> (2026-07-26),
+which reasons across <span class="mono">TUI-and-Roguelike-UI-Craft</span> (Ge/Cogmind: ASCII vs.
+Tiles, Fonts in Roguelikes, Message Log, upscaling; RogueBasin conventions; Textual color
+constraints; WCAG H86), <span class="mono">Dwarf-Fortress-Interface</span> (16-color classic set,
+glyph-swap architecture, Premium trade-offs), <span class="mono">RimWorld-Interface</span>
+(severity language, mood glow, noise doctrine),
+<span class="mono">LLM-Agent-Sim-Interfaces</span> (Smallville emoji chain, scale threshold), and
+<span class="mono">Recurring-Interface-Patterns</span> — all cited into
+<span class="mono">_grounding.md</span>. Baseline glyphs/colors read from
+<span class="mono">internal/tui/views.go:1581–1644, 1290–1330</span> and
+<span class="mono">docs/wiki/tui-client.md</span> (project surfaces, cited by path).
+Terminal panels render fixed dark values so the shipped xterm-256 colors display faithfully in
+both page themes; ANSI-16 slots are shown at typical values and marked themeable.</p>
+</footer>
+
+</div>
+<script>
+  // praxisflux:theme:start
+  function praxisfluxCycleTheme(btn){
+    const order=["auto","light","dark"], label={auto:"◐ auto",light:"☀ light",dark:"☾ dark"};
+    const next=order[(order.indexOf(btn.dataset.mode||"auto")+1)%order.length];
+    if(next==="auto") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme",next);
+    btn.dataset.mode=next; btn.textContent=label[next]; return next;
+  }
+  // praxisflux:theme:end
+  document.getElementById('themeToggle').addEventListener('click',(e)=>praxisfluxCycleTheme(e.currentTarget));
+</script>
+</body>
+</html>
