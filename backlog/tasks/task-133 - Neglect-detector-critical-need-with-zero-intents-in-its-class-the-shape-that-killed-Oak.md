@@ -3,10 +3,10 @@ id: TASK-133
 title: >-
   Neglect detector: critical need with zero intents in its class (the shape that
   killed Oak)
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-25 18:57'
-updated_date: '2026-07-26 17:58'
+updated_date: '2026-07-26 21:33'
 labels:
   - mvls
   - thrash-detection
@@ -32,4 +32,6 @@ Follow-on carded from TASK-106 research (docs/design/thrash-detection-research.m
 
 <!-- SECTION:NOTES:BEGIN -->
 Reorient 2026-07-26 (board move 13): relabeled a learning-game prerequisite — neglect is the observed ambient failure shape (Oak's warmth slide), and postmortem attribution can't teach unless the sim can name neglect when it happens. Its alert enters through the shipped severity grammar (chronicle whole-line alert + map overlay, patterns/chronicle-grammar.md), never a new channel.
+
+Sweep claim (runbook docs/design/faith-directives-sweep-runbook.md, signed-off 2026-07-26): spec 083-neglect-detector. Tier: Opus 4.8 — reducer/percept event + high-salience memory injection + world-01 log validation; cognition-adjacent. TASK-160 claim flow: claim authored on the task branch, landed on main by merge.
 <!-- SECTION:NOTES:END -->
