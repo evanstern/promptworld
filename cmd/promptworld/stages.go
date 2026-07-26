@@ -18,53 +18,15 @@ import (
 	"github.com/evanstern/promptworld/internal/worlds"
 )
 
-// stageLadderInfo is the ladder table's SKIN-INDEPENDENT content (spec.md
-// "The ladder" table): the concept taught, what the world grants, and what
-// evidence unlocks the next stage. Contrast internal/skin.StageIdentity,
-// which is skin DATA (display name + one-line identity) — this table is
-// substrate fact, invariant across skins.
-type stageLadderInfo struct {
-	Concept        string
-	Grants         string
-	UnlockEvidence string // "" only for stage-4 (graduation — nothing unlocks past it)
-}
-
-// stageOrder is the ladder's presentation order — always all four stages,
-// per FR-003 ("later stages are visible with their identity, concept, and
-// unlock evidence stated").
-var stageOrder = []string{world.Stage1, world.Stage2, world.Stage3, world.Stage4}
-
-// stagesLadder mirrors spec.md's ladder table (client-approved 2026-07-25,
-// AC #5) plus the ratified stage-1 ceiling amendment (TASK-119 board
-// artifact "first-night teaches visions+orders" — standing orders joined the
-// stage-1 grant, contracts/stage-gating.md).
-var stagesLadder = map[string]stageLadderInfo{
-	world.Stage1: {
-		Concept: "conversational prompting: asking well, watching outcomes, iterating",
-		Grants: "the base conversational guardian + basic query/nudge tools (visions, omens, " +
-			"and the watch — monitor_and_act/cancel_order); instruction files are locked " +
-			"(the default or tutor charter is in force, edits get an honest notice)",
-		UnlockEvidence: "pass a stage-1 scenario (the first-night exercise)",
-	},
-	world.Stage2: {
-		Concept: "instruction authoring: durable behavior lives in an authored instruction file",
-		Grants:  "stage-1 grants + charter editing unlocked",
-		UnlockEvidence: "pass a stage-2 scenario while a player-authored charter revision " +
-			"is in force",
-	},
-	world.Stage3: {
-		Concept: "capability design: what the guardian can do is itself authored — skill " +
-			"files + tool grants",
-		Grants: "stage-2 grants + skill files compose + the gated tool manifest opens",
-		UnlockEvidence: "pass a stage-3 scenario in which a player-granted tool's act " +
-			"contributes to the pass",
-	},
-	world.Stage4: {
-		Concept:        "mastery: indirect influence at world scale; the ambient world as the endgame",
-		Grants:         "the full tool roster, including capstone capabilities (canonization)",
-		UnlockEvidence: "", // graduation (synthesis decision 3) — nothing unlocks past it
-	},
-}
+// The ladder table's skin-independent content RELOCATED to internal/world
+// (spec 063 T014): the help overlay's guardian section (D9) reads the same
+// table this command renders from, and internal/tui cannot import package
+// main — one source, two surfaces. These aliases keep this file's rendering
+// code shaped as before.
+var (
+	stageOrder   = world.StageOrder
+	stagesLadder = world.StagesLadder
+)
 
 // stageEarned reports whether stage is offered WITHOUT an override: stage-1
 // is every player's floor (asked of no one — R9's "default stage-1 for new

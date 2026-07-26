@@ -120,8 +120,8 @@ func TestSurvivalWatchIsMiracleCapableRoster(t *testing.T) {
 // today's restrictive doctrine verbatim (FR-004/FR-005).
 func TestSurvivalFrameCarveOut(t *testing.T) {
 	roster := tool.LoopRosterGuardian()
-	normal := buildTurnSystemPrompt(false, "CHARTER", nil, roster)
-	survival := buildTurnSystemPrompt(true, "CHARTER", nil, roster)
+	normal := buildTurnSystemPrompt(false, "CHARTER", "", nil, roster)
+	survival := buildTurnSystemPrompt(true, "CHARTER", "", nil, roster)
 
 	// The non-survival frame is byte-identical to the pinned initiative doctrine.
 	if !strings.Contains(normal, guardianInitiativeFrame) {

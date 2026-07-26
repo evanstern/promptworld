@@ -11,6 +11,7 @@ import (
 	"github.com/evanstern/promptworld/internal/bundle"
 	"github.com/evanstern/promptworld/internal/clock"
 	"github.com/evanstern/promptworld/internal/llm"
+	"github.com/evanstern/promptworld/internal/persona"
 	"github.com/evanstern/promptworld/internal/sim"
 	"github.com/evanstern/promptworld/internal/skin"
 	"github.com/evanstern/promptworld/internal/store"
@@ -278,7 +279,12 @@ func (mt *Guardian) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 	}
 
 	result := TurnResult{}
-	d := &turnDispatch{mt: mt, charges: charges, alive: alive, night: night, tick: tick, result: &result, grant: grant}
+	d := &turnDispatch{mt: mt, charges: charges, alive: alive, night: night, tick: tick, result: &result, grant: grant,
+		// The explain scope (spec 063 US1): the SAME final roster this turn
+		// declares (granted subset, bundle tools included, work_miracle's
+		// kind enum already narrowed) plus the grant-independent catalog and
+		// the stage id — fact sheets describe exactly this turn's world.
+		scope: tool.ExplainScope{Granted: roster, Catalog: tool.LoopRosterGuardian(), Stage: mt.stage}}
 
 	// Built-in handlers first, then the grant-filtered bundle handlers layered on
 	// top (no name overlap survives boot — C1 skips a bundle tool that collides
@@ -289,11 +295,21 @@ func (mt *Guardian) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 		handlers[name] = h
 	}
 
+	// The tutor guide (spec 063 US3, standing resolution 2): compiled-in game
+	// substrate, composed ONLY on tutor-preset worlds — keyed on the world's
+	// charter preset, not its stage, so a tutor world keeps its guide as it
+	// climbs. Every other world passes "" and composes byte-identically to
+	// pre-063 (FR-004).
+	guide := ""
+	if mt.charterPreset == "tutor" {
+		guide = persona.TutorGuide
+	}
+
 	callCtx, cancel := context.WithTimeout(ctx, turnTimeout)
 	res, err := mt.runLoop(callCtx, toolloop.Job{
 		JobID:     jobID,
 		Kind:      llm.KindGuardian,
-		System:    buildTurnSystemPrompt(o.survival, charter, skills, roster, souls...),
+		System:    buildTurnSystemPrompt(o.survival, charter, guide, skills, roster, souls...),
 		Seed:      turnUserPrompt(tick, charges, alive, orders, moments, story, mt.soulTail(), mt.transcriptTail(), digest, directive),
 		Roster:    roster,
 		Handlers:  handlers,
@@ -943,22 +959,33 @@ func hasWorkMiracle(roster []tool.Tool) bool {
 // (extend, don't break) — an absent argument composes byte-identically to the
 // pre-036 prompt.
 func turnSystemPrompt(charter string, skills []skillFile, roster []tool.Tool, souls ...string) string {
-	return buildTurnSystemPrompt(false, charter, skills, roster, souls...)
+	return buildTurnSystemPrompt(false, charter, "", skills, roster, souls...)
 }
 
 // buildTurnSystemPrompt is turnSystemPrompt with the survival-frame selector
-// (spec 059 US2, T005). survival=false composes byte-identically to the pre-059
-// prompt (guardianInitiativeFrame verbatim, FR-005); survival=true swaps ONLY the
-// initiative frame for guardianSurvivalFrame — the non-negotiables, the roster
-// guidance, and every other byte are unchanged, so the carve-out is exactly the
-// initiative doctrine and nothing more. runTurn passes the turn's survival origin;
-// the pre-059 wrapper above pins false for every existing call site (extend,
+// (spec 059 US2, T005) and the tutor-guide slot (spec 063 US3). survival=false
+// composes byte-identically to the pre-059 prompt (guardianInitiativeFrame
+// verbatim, FR-005); survival=true swaps ONLY the initiative frame for
+// guardianSurvivalFrame — the non-negotiables, the roster guidance, and every
+// other byte are unchanged, so the carve-out is exactly the initiative
+// doctrine and nothing more. runTurn passes the turn's survival origin; the
+// pre-059 wrapper above pins false for every existing call site (extend,
 // don't break).
-func buildTurnSystemPrompt(survival bool, charter string, skills []skillFile, roster []tool.Tool, souls ...string) string {
+//
+// guide is the compiled-in tutor guide (persona.TutorGuide) on tutor-preset
+// worlds, "" everywhere else (spec 063 FR-004): it composes in the EDITABLE
+// zone — after the charter, the persona SOULs, and the skin voice, before the
+// skill files — so the fixed frame still lands LAST and unconditionally on
+// every path (spec 021 INV-1); an empty guide composes byte-identically to
+// pre-063 (the non-tutor byte-identity guarantee, SC-003).
+func buildTurnSystemPrompt(survival bool, charter, guide string, skills []skillFile, roster []tool.Tool, souls ...string) string {
 	var b strings.Builder
 	b.WriteString(charter)
 	for _, s := range souls {
 		fmt.Fprintf(&b, "\n\n--- persona ---\n%s", s)
+	}
+	if guide != "" {
+		fmt.Fprintf(&b, "\n\n--- guide (game-authored) ---\n%s", guide)
 	}
 	for _, s := range skills {
 		fmt.Fprintf(&b, "\n\n--- skill: %s ---\n%s", s.name, s.text)
@@ -972,12 +999,19 @@ func buildTurnSystemPrompt(survival bool, charter string, skills []skillFile, ro
 		strings.Join(sim.AgentNames[:], ", "), guardianNonNegotiables, initiative)
 
 	guidance := tool.GuardianToolGuidance(roster)
+	// The read-tool paragraph (spec 063 US1/US2): explain's free-to-read
+	// doctrine, rendered from the granted roster like the acting guidance —
+	// empty (and byte-inert) when no read tool is granted.
+	readGuidance := tool.GuardianReadGuidance(roster)
 	if guidance == "" {
 		// Conversation-only world: no acting tools granted (FR-006). The guardian
 		// still converses — speech is never gateable.
 		b.WriteString("This world grants you no acting tools — you may only counsel the " +
 			"player in words. To SPEAK to the player, simply reply with your words; " +
 			"that reply is what the player reads, and speaking costs nothing.")
+		if readGuidance != "" {
+			b.WriteString("\n\n" + readGuidance)
+		}
 		return b.String()
 	}
 
@@ -992,6 +1026,13 @@ func buildTurnSystemPrompt(survival bool, charter string, skills []skillFile, ro
 		// the compile-time default, not a token: no skin byte reaches the
 		// frame). work_miracle is the frozen tool id the model calls.
 		b.WriteString("You cannot work a working (the work_miracle tool) for free, and you can never remove a villager.\n\n")
+	}
+	// The read paragraph composes BEFORE the acting block, so the acting
+	// doctrine's closing sentence stays the prompt's last byte — the
+	// adversarial battery pins that tail (fixedFrameLast), and the frame
+	// staying last is the invariant, not just the wording.
+	if readGuidance != "" {
+		b.WriteString(readGuidance + "\n")
 	}
 	b.WriteString("To SPEAK to the player, simply reply with your words — that reply is what the " +
 		"player reads, and speaking costs nothing. To ACT on the player's behalf, call exactly ONE " +

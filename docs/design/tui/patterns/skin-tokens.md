@@ -2,7 +2,7 @@
 title: Pattern — skin tokens (doc conventions + the runtime contract)
 class: pattern
 status: shipped
-verified_against: c8d80800fc5d34c5c31ab54751ebfb3ba80efc5b
+verified_against: fdc682dbdfeead5d29944acd2f55adbc1dda7d92
 ---
 
 # Pattern: skin tokens
@@ -103,6 +103,17 @@ already-written files and every serialized identifier (event types
 | `skin.guardian.notes_label` | `the guardian's notes` | display references to the frozen `metatron/soul.md` path |
 | `skin.guardian.vision_noun` | `vision` | display rendering of the frozen `"vision"` nudge form (payloads/tool ids frozen; default-skin-retained folk vocabulary) |
 | `skin.guardian.omen_noun` | `omen` | display rendering of the frozen `"omen"` nudge form |
+| `skin.guardian.report_card_label` | `report card` | the report-card box title (spec 063): `pages/guardian-console.md` inline card, chronicle digest row for `guardian.report_card`, postmortem card header |
+| `skin.guardian.attribution_label` | `what your words did` | the attribution note's own block header inside the card (spec 063 standing resolution 1 — the note is its own block beneath the checklist) |
+| `skin.guardian.example_ask.send_vision` | `"show Ash a vision of the fire dying"` | `overlays/help.md` guardian section (D9): one canned ask per granted verb, keyed by the frozen tool id |
+| `skin.guardian.example_ask.send_omen` | `"send everyone an omen tonight: stay near the fire"` | help guardian section (D9) |
+| `skin.guardian.example_ask.monitor_and_act` | `"watch for anyone going hungry, and warn them"` | help guardian section (D9) |
+| `skin.guardian.example_ask.cancel_order` | `"release the watch on the fire"` | help guardian section (D9) |
+| `skin.guardian.example_ask.work_miracle` | `"work a working: grant Ash food from thin air"` | help guardian section (D9) |
+| `skin.guardian.example_ask.pause` | `"pause the world"` | help guardian section (D9) |
+| `skin.guardian.example_ask.start` | `"start the world again at 4x"` | help guardian section (D9) |
+| `skin.guardian.example_ask.adjust_speed` | `"slow the world down to 1x"` | help guardian section (D9) |
+| `skin.guardian.example_ask.explain` | `"what does a vision cost?"` | help guardian section (D9) |
 | `skin.stage.stage-1.name` … `skin.stage.stage-4.name` | The Voice / The Written Word / The Craft / The Stewardship | stage display identities (`internal/skin` StageIdentity; spec 046 surfaces) |
 | `skin.stage.stage-1.line` … `skin.stage.stage-4.line` | "you speak, it acts" / "your law outlives the conversation" / "you shape what it can do" / "a world in your care" | one-line stage identity descriptions |
 | `skin.stage.stage-2.ceremony_chapter` | "Your play proved The Written Word: a law that outlives the conversation, written once and honored by every turn since." | `overlays/ceremony.md`'s D6 authorship-voice narrated chapter (spec 056) — stage-1 has no entry (never unlocked, `sim.EvaluateUnlock` never returns it) |

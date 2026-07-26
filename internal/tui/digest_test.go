@@ -223,6 +223,12 @@ var catalogFixture = map[string]digestFixture{
 		`{"stage":"stage-2","exercise":"first-night","tick":50000}`,
 		`Guardian's watcher earned The Written Word (proven by first-night)`,
 	},
+
+	// --- guardian (spec 063 — the grounded feedback layer) ---
+	"guardian.report_card": {
+		`{"fingerprint":"a1b2c3d4e5f6","note":"Your charter never mentions coordinates; the working was rejected twice for them.","citations":[812,907]}`,
+		`report card under charter a1b2c3d4e5f6: Your charter never mentions coordinates; the working was rejected twice for the…`,
+	},
 }
 
 // TestCatalogSweep is the SC-001 gate (contract §7): every fixture type

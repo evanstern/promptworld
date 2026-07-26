@@ -73,7 +73,7 @@ var RosterVillager = func() []string {
 // nudge form is validated against the reducer's explicit form set, not this
 // roster (contracts/events.md), so this set's live consumer is the boot-time
 // name-resolution check in Validate; keeping it in step keeps that gate honest.
-var RosterGuardian = []string{"converse", "send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed"}
+var RosterGuardian = []string{"converse", "send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed", "explain"}
 
 // OnRoster reports whether name is on roster — the door membership check.
 func OnRoster(roster []string, name string) bool {
@@ -131,7 +131,10 @@ func LoopRosterVillager() []Tool {
 // converse call as rejected_unknown (guardian installs no converse handler, by
 // design: "converse is the transcript, not a door"), so it is offered only as
 // the implicit text channel, never as a tool the model can call.
-var loopGuardianTools = []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed"}
+// explain (spec 063) is appended last: the read-only facts tool joins the
+// declared loop surface like any other guardian tool — grant-gated through
+// the same three layers — without shifting any existing tool's position.
+var loopGuardianTools = []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed", "explain"}
 
 // LoopRosterGuardian returns the ordered declared-tool list the guardian
 // tool-use loop presents to the model (loopGuardianTools), resolved to full

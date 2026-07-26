@@ -270,7 +270,9 @@ func TestGuardianToolGuidancePromptGlossFallback(t *testing.T) {
 func TestGuardianToolGuidanceByteIdentity(t *testing.T) {
 	for _, tl := range LoopRosterGuardian() {
 		desc, ok := guardianToolDesc[tl.Name]
-		if !ok || tl.Name == "work_miracle" {
+		// Read tools (spec 063: explain) render through GuardianReadGuidance,
+		// never an acting bullet — skipped here like the multi-line miracle.
+		if !ok || tl.Name == "work_miracle" || tl.Effect == Read {
 			continue
 		}
 		got := GuardianToolGuidance([]Tool{tl})
@@ -290,8 +292,18 @@ func TestGuardianToolGuidanceDrift(t *testing.T) {
 	roster := LoopRosterGuardian()
 	g := GuardianToolGuidance(roster)
 
-	// Every roster tool name appears.
+	// Every ACTING roster tool name appears; a Read tool (spec 063: explain)
+	// renders in the read paragraph instead, never the acting bullets.
 	for _, tl := range roster {
+		if tl.Effect == Read {
+			if strings.Contains(g, tl.Name) {
+				t.Errorf("acting guidance mentions read tool %q", tl.Name)
+			}
+			if !strings.Contains(GuardianReadGuidance(roster), tl.Name) {
+				t.Errorf("read guidance omits roster read tool %q", tl.Name)
+			}
+			continue
+		}
 		if !strings.Contains(g, tl.Name) {
 			t.Errorf("guidance omits roster tool %q", tl.Name)
 		}

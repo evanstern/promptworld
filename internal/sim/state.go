@@ -132,6 +132,12 @@ type State struct {
 	CurriculumPasses []CurriculumPass `json:"curriculum_passes,omitempty"`
 	StagesUnlocked   []string         `json:"stages_unlocked,omitempty"`
 
+	// The latest report card (spec 063 US4): the guardian.report_card arm
+	// keeps the most recent stored card on state (the log keeps history), so
+	// the console card seam re-reads the stored note — never re-grades. nil
+	// until the first card; omitempty keeps pre-063 snapshots byte-identical.
+	GuardianReportCard *GuardianReportCard `json:"guardian_report_card,omitempty"`
+
 	// World tuning manifest (spec 048) — event-sourced: the full effective set
 	// of promoted doctrine dials, set by the sim.tuning_applied arm. nil ≡ the
 	// default set (every pre-048 snapshot and world); omitempty keeps pre-048
@@ -1812,6 +1818,9 @@ func (s *State) Apply(e store.Event) error {
 
 	case "morgue.epilogue":
 		return s.applyMorgueEpilogue(e)
+
+	case "guardian.report_card":
+		return s.applyReportCard(e)
 
 	case "metatron.time_snapped", "metatron.item_granted",
 		"metatron.entity_moved", "metatron.entity_removed":

@@ -24,6 +24,7 @@ import (
 	"github.com/evanstern/promptworld/internal/llm"
 	"github.com/evanstern/promptworld/internal/sim"
 	"github.com/evanstern/promptworld/internal/store"
+	"github.com/evanstern/promptworld/internal/tool"
 	"github.com/evanstern/promptworld/internal/toolloop"
 )
 
@@ -40,6 +41,11 @@ type turnDispatch struct {
 	tick    int64
 	result  *TurnResult
 	grant   grantSet // this world's capability grant (spec 021 US2): gates handlers + land
+	// scope is the explain tool's world slice (spec 063 US1): the SAME
+	// effective granted roster the turn declared (three-layer coherence), the
+	// full catalog, and the stage id — so a fact sheet can never disagree
+	// with what this turn actually offers.
+	scope tool.ExplainScope
 
 	records []toolloop.CallRecord
 }
@@ -92,7 +98,26 @@ func (mt *Guardian) turnHandlers(d *turnDispatch) map[string]toolloop.Handler {
 	if d.grant.allows("adjust_speed") {
 		h["adjust_speed"] = mt.handleAdjustSpeed(d)
 	}
+	if d.grant.allows("explain") {
+		h["explain"] = mt.handleExplain(d)
+	}
 	return h
+}
+
+// handleExplain serves the read-only explain tool (spec 063 US1): the fact
+// sheet is composed TOOL-SIDE (tool.ExplainSheet) from the registry/doctrine
+// ground truth, scoped to this turn's effective grant — the model can choose
+// when to ask and how to converse around the answer, never alter the fact
+// text (standing resolution 3). Always read_ok: an unknown topic's result is
+// the honest topic catalog (FR-002's repairable miss), which IS the data the
+// model asked for. Effect Read means the driver never counts this call as
+// the turn's mediated act and no event beyond the standard cog.tool_call
+// telemetry ever lands (FR-002).
+func (mt *Guardian) handleExplain(d *turnDispatch) toolloop.Handler {
+	return func(_ context.Context, call llm.ToolCall) toolloop.Outcome {
+		topic := argString(call.Args, "topic")
+		return toolloop.Outcome{Verdict: toolloop.VerdictReadOK, ResultForModel: tool.ExplainSheet(topic, d.scope)}
+	}
 }
 
 // handleVision wraps landVision (spec 029 T006). Door accept → landed (the report

@@ -3,16 +3,23 @@ package tui
 // Help overlay content (spec 045-tui-help-overlay, TASK-116). Everything in
 // this file is static data + pure rendering, the digest.go convention: no
 // daemon/IPC/event/world-state reads, so the overlay is byte-identical on a
-// no-LLM world by construction (R6, SC-004). The mode key tables are R3's
-// "derived not duplicated" substrate — cross-checked against the real
-// dispatch code by help_test.go's keymap sweep (FR-003/SC-003); the glyph
-// table (below) is renderMapGrid's own legend source, so the map's key line
-// and this file's glyph walkthrough page can never silently diverge
-// (FR-005).
+// no-LLM world by construction (R6, SC-004) — with ONE deliberate, named
+// amendment (spec 063 US5, D9, recorded on overlays/help.md): the guardian
+// section reads the single polled Status.Stage scalar to select which
+// STATIC page to show. Stage-keyed, model-free — for a given stage the
+// bytes are constant, and nil status renders the pre-ladder variant. The
+// mode key tables are R3's "derived not duplicated" substrate —
+// cross-checked against the real dispatch code by help_test.go's keymap
+// sweep (FR-003/SC-003); the glyph table (below) is renderMapGrid's own
+// legend source, so the map's key line and this file's glyph walkthrough
+// page can never silently diverge (FR-005).
 
 import (
 	"fmt"
 	"strings"
+
+	"github.com/evanstern/promptworld/internal/guardian"
+	"github.com/evanstern/promptworld/internal/world"
 )
 
 // --- T002: the shared map-glyph table (FR-005 anti-drift substrate) ---
@@ -342,6 +349,11 @@ const (
 	helpSectionWalkthrough
 	helpSectionLessons
 	helpSectionCeremonies
+	// helpSectionGuardian is the D9 guardian section (spec 063 US5): the
+	// deliberate spec-045 content-contract amendment recorded on
+	// overlays/help.md — stage-keyed, model-free, byte-identical per
+	// identical status. tab/shift+tab reach it like every other section.
+	helpSectionGuardian
 	helpSectionCount
 )
 
@@ -350,6 +362,20 @@ var helpSectionTitle = [helpSectionCount]string{
 	helpSectionWalkthrough: "the screen",
 	helpSectionLessons:     "lessons",
 	helpSectionCeremonies:  "ceremonies",
+	// The guardian section's title resolves through the skin at render time
+	// (helpSectionLabel below); this static cell is the skin-free fallback.
+	helpSectionGuardian: "the guardian",
+}
+
+// helpSectionLabel resolves a section's display title — the guardian
+// section's carries the world skin's epithet (spec 052 D2: fiction strings
+// resolve through the skin lookup); every other section's title is
+// non-fiction chrome and stays the static cell.
+func (m Model) helpSectionLabel(s helpSection) string {
+	if s == helpSectionGuardian {
+		return "the " + m.sk().Epithet()
+	}
+	return helpSectionTitle[s]
 }
 
 // helpPanelView is the overlay's body-replacement panel (R2): the solo-zoom
@@ -366,7 +392,7 @@ func (m Model) helpPanelView(cols, rows int) string {
 	if inner < 10 {
 		inner = 10
 	}
-	title := styleHeader.Render("HELP · " + helpSectionTitle[m.helpSection])
+	title := styleHeader.Render("HELP · " + m.helpSectionLabel(m.helpSection))
 	contentRows := rows - 5 // title(1) + blank(1) + footer(1) inside the box's own -2 budget
 	if contentRows < 1 {
 		contentRows = 1
@@ -390,6 +416,8 @@ func (m Model) helpContentLines(width, maxLines int) []string {
 		raw = helpLessonsLines(width)
 	case helpSectionCeremonies:
 		raw = m.ceremonyReplayLines(width)
+	case helpSectionGuardian:
+		raw = m.helpGuardianLines(width)
 	default:
 		raw = m.helpKeysLines(width)
 	}
@@ -438,6 +466,39 @@ func (m Model) helpWalkthroughLines(width int) []string {
 	for _, d := range m.dockTabEntries() {
 		lines = append(lines, clipLine(fmt.Sprintf("%s %-10s %s", d.Key, d.Name, d.Purpose), width))
 	}
+	return lines
+}
+
+// helpGuardianLines is the D9 guardian section (spec 063 US5, FR-008;
+// content contract: overlays/help.md §4): stage identity (skin-resolved),
+// the stage's teaching concept (world.StagesLadder — the same table
+// `promptworld stages` renders from), the verbs the stage ceiling grants
+// (guardian.StageCeilingVerbs — the SAME intersection the turn's grant
+// runs), and one canned example ask per verb (skin tokens). A pure function
+// of the ONE polled Status.Stage scalar plus the boot-frozen world skin:
+// for a given stage the bytes are constant — byte-identical per identical
+// status (SC-005), never LLM-derived. Nil status renders the pre-ladder
+// variant (all verbs, no lock) — never a blank or an error.
+func (m Model) helpGuardianLines(width int) []string {
+	stage := m.currentStage()
+	sk := m.sk()
+	var lines []string
+	if si, ok := sk.Stage(stage); ok {
+		lines = append(lines, styleHeader.Render(si.Name+" ("+stage+") — "+si.Line))
+		info := world.StagesLadder[stage]
+		lines = append(lines, wrapText("teaches: "+info.Concept, width)...)
+		lines = append(lines, wrapText("grants: "+info.Grants, width)...)
+	} else {
+		// Pre-ladder / nil-status variant: ungated, stage-4 semantics.
+		lines = append(lines, styleHeader.Render("Your "+sk.Epithet()))
+		lines = append(lines, styleDim.Render("a pre-ladder world — ungated; every verb below is available"))
+	}
+	lines = append(lines, "", styleHeader.Render("What asking looks like"))
+	for _, verb := range guardian.StageCeilingVerbs(stage) {
+		lines = append(lines, clipLine(fmt.Sprintf("%-16s try: %s", verb, sk.ExampleAsk(verb)), width))
+	}
+	lines = append(lines, "",
+		styleDim.Render("ask in your own words (m) — these are only examples; \"what does X cost?\" is always free"))
 	return lines
 }
 

@@ -2,10 +2,11 @@
 title: Page — guardian console
 class: page
 status: shipped
-verified_against: ded11c2b415dc31472ab9103996f5d2493078001
+verified_against: fdc682dbdfeead5d29944acd2f55adbc1dda7d92
 sources:
   - internal/tui/views.go
   - internal/tui/tui.go
+  - internal/tui/reportcard.go
 ---
 
 # Page: guardian console
@@ -14,14 +15,17 @@ The Staged Cockpit's headline surface (reorientation decisions 1/2, D5): the
 guardian conversation elevated to a first-class, full-height page — the
 "document-style" reading experience the compact dock tab
 ([panels/guardian.md](../panels/guardian.md)) deliberately doesn't try to be.
-**Built** (spec 053, TASK-125). The report-card CARD content's renderer
-(`reportCardView`) and its `consoleCard` seam wrapper (`reportCard`) shipped
-with spec 056/TASK-127 — proven to compose into this page's seam by test
-(`TestConsoleCardSeamComposesReportCard`) — but `Model.consoleCards` stays
-empty in production this feature: D5 assigns the CONSOLE's actual card
-PRODUCTION (deciding when a card appears at a stopping point — run end,
-pause, exercise resolution) to TASK-115, so the control table below keeps
-that row naming the shipped renderer rather than `unbuilt`.
+**Built** (spec 053, TASK-125). The report-card CARD content D5 assigned to
+TASK-115/127 is now **whole**: spec 056 (TASK-127) shipped the shared
+rubric-checklist renderer (`reportCardView`) and its `consoleCard` seam
+wrapper (`reportCard`); spec 063 (TASK-115) ships the PRODUCTION — the
+stopping-point producer daemon-side (run end, pause, exercise resolution)
+and the client composition `rebuildConsoleCards`
+(`internal/tui/reportcard.go`), which composes the checklist card (from
+`replica.CurriculumPasses` rubric evidence) ABOVE the stored
+`guardian.report_card` attribution note (`noteCard`) in this seam — one
+artifact, checklist authoritative, the note additive prose beneath it (spec
+063 standing resolution 1).
 
 ## Mockup
 
@@ -96,19 +100,20 @@ classification, reused verbatim, not a second vocabulary.
    **"charter changed — next turn binds it"** — honest about the
    re-read-every-turn timing (edits are live by construction, `[[metatron]]`),
    never implying the running turn changes retroactively.
-5. **Report-card cards** (D5) — the inline composition slot (`consoleCard`
-   interface, `Model.consoleCards`, composed between the turn stream and the
-   read surface) is always empty in THIS feature's production client, but
-   the renderer it will show is shipped: `reportCardView`
-   ([overlays/postmortem.md](../overlays/postmortem.md)'s D5 shared
-   renderer) wrapped as a `reportCard` value satisfying `consoleCard`
-   (`internal/tui/views.go`) — proven end to end by
-   `TestConsoleCardSeamComposesReportCard`. TASK-115's stopping-point
-   production (deciding WHEN a card appears — run end, pause, exercise
-   resolution — and populating `Model.consoleCards` with one) is the only
-   remaining producer — the chronicle-⏎ reserved-seam precedent: an honest,
-   already-wired, already-tested attachment point beats a placeholder that
-   renders nothing meaningful.
+5. **Report-card cards** (D5) — **whole and production real**: the
+   guardian's stopping-point producer (run end, exercise resolution,
+   debounced pause episodes — `internal/guardian/reportcard.go`, spec 063)
+   stores an attribution note as a `guardian.report_card` event (run end:
+   the `morgue.epilogue` channel), and the client composes the card into
+   this seam via `rebuildConsoleCards` (`internal/tui/reportcard.go`): the
+   rubric checklist FIRST when rubric evidence exists (`reportCardView`
+   wrapped as `reportCard` — spec 056's D5 shared renderer, proven into
+   this seam by `TestConsoleCardSeamComposesReportCard`), then the STORED
+   note (`noteCard` over `State.GuardianReportCard`), re-read on connect
+   and on the landed event, never re-graded — one artifact, checklist
+   authoritative, the note additive prose beneath it (spec 063 standing
+   resolution 1). Between stopping points the existing unseen badge
+   announces a fresh card; nothing ever interrupts mid-run.
 
 ## Composer
 
@@ -179,11 +184,12 @@ adds a richer TUI presentation of what already exists.
 | open/close console | closed · open | `Model.console` | `consoleView`, `openConsole`/`closeConsole` | `G` (open/toggle) · — | spec 053 | — |
 | document-style turn block | you · guardian · special-row (⚡/👁/⏲/note) | `Model.transcript` (shared with `panels/guardian.md`) | `consoleTurnLines` | — | spec 053 | `skin.guardian.epithet` |
 | scrollback | tail (0) · scrolled N | `Model.consoleScroll` | `consoleScrollWindow` | `J`/`K` · — | spec 053 | — |
-| card seam (composition point) | always empty this feature | `Model.consoleCards` (`consoleCard` interface) | `consoleCardLines` | — | spec 053 (seam only) | — |
+| card seam (composition point) | empty · composed | `Model.consoleCards` (`consoleCard` interface) | `consoleCardLines` | — | spec 053 (seam); spec 063 (first producer) | — |
+| report-card attribution note | absent · shown (stored note) · badge while unseen | `State.GuardianReportCard` (stored `guardian.report_card` note — re-read, never re-graded) | `noteCard.renderCard`, composed by `rebuildConsoleCards` | — | spec 063 (reorient D5) | `skin.guardian.report_card_label`, `skin.guardian.attribution_label` |
 | charter/skills read surface | default · player-authored · preset-locked; skills bound · locked | `metatron.Status` (`CharterDefault`/`CharterLocked`/`CharterPreset`/`Skills`/`SkillsLocked`) | `charterReadSurfaceLines`/`charterReadSurfaceBox` | — (display-only) | spec 053 | — |
 | `$EDITOR` handoff | idle · shelled-out · returned | on-disk `charter.md` (content hash, pre/post) | `startEditorHandoff` (`tea.ExecProcess`) | `e` · — | spec 053 | — |
 | "charter changed — next turn binds it" confirmation | absent · shown once · error notice | pre/post content-hash comparison (`editorRoundTripMsg`) | `Model.consoleNotice` | — | spec 053 | — |
-| report-card card (inline) | absent this feature (renderer shipped, production population `unbuilt (TASK-115)`) | shared with `overlays/postmortem.md`'s `reportCardView` | `reportCard` (`consoleCard` wrapper, `internal/tui/views.go`) — plugs into `consoleCard`/`Model.consoleCards` above | — | reorient D5 | — |
+| report-card rubric checklist (inline) | absent · shown (rubric evidence exists) | `replica.CurriculumPasses` rubric evidence, shared with `overlays/postmortem.md`'s `reportCardView` (spec 056) | `reportCard` (`consoleCard` wrapper, `internal/tui/views.go`), composed FIRST by `rebuildConsoleCards` | — | reorient D5 / TASK-127; production spec 063 | — |
 | composer | dormant · focused · busy | `panels/minibuffer.md` (same component, unchanged) | `minibufferView` (existing) | `m` focus · — | TASK-34 (reused) | `skin.guardian.epithet` |
 
 **Parity rollout**: `G` (open console) and `e` ($EDITOR handoff) have no

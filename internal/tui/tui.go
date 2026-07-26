@@ -583,6 +583,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		populateHelpLessons(m.worldSkin)
 		m.replica = msg.replica
 		m.lastSeq = msg.lastSeq
+		m.rebuildConsoleCards()        // spec 063: a late attach re-reads the stored card (no badge — nothing fresh)
 		m.clampVillSelected()          // R5: connectedMsg swaps the replica wholesale
 		m.chronDetailScroll = 0        // data-model.md: detail pane scroll resets on reconnect
 		m.villDecisionsScroll = 0      // data-model.md: decisions scroll resets on reconnect
@@ -1940,6 +1941,21 @@ func (m *Model) applyEvent(e store.Event) {
 			// (same-kind, non-stacking — the newest milestone wins).
 			m.takeover = takeoverCeremony
 		}
+	}
+	// The report card's console seam (spec 063 T012): recompose from the
+	// just-reduced state on every stopping-point-relevant event — the fresh
+	// stored note, an exercise resolution (the checklist half concludes),
+	// or the run's end. A fresh NOTE additionally announces itself with the
+	// existing unseen-badge pattern when the guardian surface isn't visible
+	// — at most a badge between stopping points, never a takeover (FR-006).
+	switch e.Type {
+	case "guardian.report_card":
+		m.rebuildConsoleCards()
+		if !m.guardianVisible() {
+			m.guardianUnseen = true
+		}
+	case "curriculum.exercise_passed", "run.ended":
+		m.rebuildConsoleCards()
 	}
 	m.lastSeq = e.Seq
 	m.events = append(m.events, e)

@@ -36,14 +36,15 @@ var wantExpressive = []string{"say", "gist", "muse"}
 // wantGuardian is the guardian DOOR roster (RosterGuardian) name set (spec 029:
 // converse plus the agency acting tools; nudge_dream/nudge_omen retired). Order-
 // insensitive — TestRostersResolve sorts before comparing.
-var wantGuardian = []string{"converse", "send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed"}
+var wantGuardian = []string{"converse", "send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed", "explain"}
 
 // wantGuardianCatalog is the guardian tools' catalog membership in REGISTRATION
 // order (spec 029): converse, then the two influence forms (send_vision/
 // send_omen), the standing-order tools (monitor_and_act/cancel_order), the meta
 // tools (pause/start/adjust_speed), then work_miracle last (its position unshifted
 // by the migration).
-var wantGuardianCatalog = []string{"converse", "send_vision", "send_omen", "monitor_and_act", "cancel_order", "pause", "start", "adjust_speed", "work_miracle"}
+// explain (spec 063) is appended last so no pre-063 tool's position shifts.
+var wantGuardianCatalog = []string{"converse", "send_vision", "send_omen", "monitor_and_act", "cancel_order", "pause", "start", "adjust_speed", "work_miracle", "explain"}
 var wantVillagerExpressiveTail = []string{"say", "muse", "gist"}
 
 // wantJournal is the four villager journal tools (spec 019, US3): two Expressive

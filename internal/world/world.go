@@ -137,6 +137,57 @@ const (
 	CharterPresetTutor   = "tutor"
 )
 
+// StageLadderInfo is the ladder table's SKIN-INDEPENDENT content (spec 046
+// spec.md "The ladder" table): the concept taught, what the world grants,
+// and what evidence unlocks the next stage. Contrast internal/skin's
+// StageIdentity, which is skin DATA (display name + one-line identity) —
+// this table is substrate fact, invariant across skins. RELOCATED here from
+// cmd/promptworld/stages.go (spec 063 T014): the help overlay's guardian
+// section (D9) reads the same table `promptworld stages` renders from, and
+// internal/tui cannot import package main — one source, two surfaces.
+type StageLadderInfo struct {
+	Concept        string
+	Grants         string
+	UnlockEvidence string // "" only for stage-4 (graduation — nothing unlocks past it)
+}
+
+// StageOrder is the ladder's presentation order — always all four stages,
+// per spec 046 FR-003 ("later stages are visible with their identity,
+// concept, and unlock evidence stated").
+var StageOrder = []string{Stage1, Stage2, Stage3, Stage4}
+
+// StagesLadder mirrors spec 046 spec.md's ladder table (client-approved
+// 2026-07-25, AC #5) plus the ratified stage-1 ceiling amendment (TASK-119
+// board artifact "first-night teaches visions+orders" — standing orders
+// joined the stage-1 grant, contracts/stage-gating.md).
+var StagesLadder = map[string]StageLadderInfo{
+	Stage1: {
+		Concept: "conversational prompting: asking well, watching outcomes, iterating",
+		Grants: "the base conversational guardian + basic query/nudge tools (visions, omens, " +
+			"and the watch — monitor_and_act/cancel_order); instruction files are locked " +
+			"(the default or tutor charter is in force, edits get an honest notice)",
+		UnlockEvidence: "pass a stage-1 scenario (the first-night exercise)",
+	},
+	Stage2: {
+		Concept: "instruction authoring: durable behavior lives in an authored instruction file",
+		Grants:  "stage-1 grants + charter editing unlocked",
+		UnlockEvidence: "pass a stage-2 scenario while a player-authored charter revision " +
+			"is in force",
+	},
+	Stage3: {
+		Concept: "capability design: what the guardian can do is itself authored — skill " +
+			"files + tool grants",
+		Grants: "stage-2 grants + skill files compose + the gated tool manifest opens",
+		UnlockEvidence: "pass a stage-3 scenario in which a player-granted tool's act " +
+			"contributes to the pass",
+	},
+	Stage4: {
+		Concept:        "mastery: indirect influence at world scale; the ambient world as the endgame",
+		Grants:         "the full tool roster, including capstone capabilities (canonization)",
+		UnlockEvidence: "", // graduation (synthesis decision 3) — nothing unlocks past it
+	},
+}
+
 // ValidCharterPreset reports whether s is a legal Manifest.CharterPreset
 // value: "", "default", or "tutor".
 func ValidCharterPreset(s string) bool {

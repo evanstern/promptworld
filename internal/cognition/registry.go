@@ -62,6 +62,12 @@ var kindToClass = map[string]string{
 	// a one-line mapping — the narrator/drama→chronicle precedent — without
 	// touching the spec-007 registry.md doctrine contract.
 	"metatron_watch": "metatron",
+	// The guardian's report-card critique (spec 063) shares the guardian
+	// class for the same reasons the watch confirm does: same actor,
+	// DegradeSkip (an unavailable chain means the deterministic card parts
+	// stand alone — nothing runs), event-triggered at stopping points, never
+	// cadence-scheduled.
+	"report_card": "metatron",
 }
 
 // ClassFor returns the registered class by name.

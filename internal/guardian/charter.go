@@ -627,7 +627,12 @@ func intersectGrant(g grantSet, gd *bundle.GrantDoc) grantSet {
 // (world-shaping) and pause/start/adjust_speed (clock control; neither query
 // nor nudge — the player keeps direct CLI/TUI clock control at every stage).
 // No bundle tools (the empty-intersection effect of the explicit list below).
-var stage1CeilingTools = []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order"}
+// explain (spec 063) joins the stage-1 ceiling: it is the tutor preset's own
+// grounding tool — stage-1 IS the orientation stage, and the guide's
+// mechanics-via-explain contract (persona.TutorGuide) needs the tool granted
+// where the guide composes. Read-only, zero-cost, tutor-lane by construction,
+// so it widens no acting capability.
+var stage1CeilingTools = []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "explain"}
 
 // stageCeiling returns the stage's capability ceiling as a narrowing doc —
 // the same shape a persona bundle's grant uses, so intersectGrant applies it
@@ -648,6 +653,17 @@ func stageCeiling(stage string) *bundle.GrantDoc {
 		return &bundle.GrantDoc{Tools: stage1CeilingTools, MiracleKinds: []string{}}
 	}
 	return nil
+}
+
+// StageCeilingVerbs returns the guardian loop-tool names the stage's ceiling
+// grants, in registry order — the full loop roster for a ceiling-less stage
+// or a pre-ladder world (spec 063 US5/D9): the help overlay's guardian
+// section renders exactly this static per-stage set, derived through the
+// SAME intersection the turn's grant runs (applyStageCeiling over the full
+// default grant), so the taught verb list can never drift from the ceiling
+// the door enforces. Deterministic: grantedTools walks the loop roster.
+func StageCeilingVerbs(stage string) []string {
+	return applyStageCeiling(fullGrant(), stage).grantedTools()
 }
 
 // applyStageCeiling intersects the stage ceiling into the world-level grant
