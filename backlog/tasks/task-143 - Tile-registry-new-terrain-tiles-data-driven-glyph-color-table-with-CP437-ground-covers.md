@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-26 14:45'
-updated_date: '2026-07-26 14:57'
+updated_date: '2026-07-26 15:48'
 labels:
   - game-ui
   - tui
@@ -31,9 +31,15 @@ Spec: specs/068-tile-registry
 - [ ] #2 2-3 new ground-cover terrain kinds (CP437 shading tier) generate in new worlds, render via the registry, appear in legend and ? overlay, and are covered by worldmap + TUI tests
 - [ ] #3 Existing worlds/replays render byte-identically for the pre-existing vocabulary (no regression in golden/TUI tests)
 - [ ] #4 Spec linked on the board via spec-bridge:link before implementation; wiki re-pinned after merge
-- [ ] #5 Spec phase: Setup — pin current behavior BEFORE touching anything
-- [ ] #6 Spec phase: Foundational — the registry substrate
-- [ ] #7 Spec phase: User Story 1 — one tile table drives map, legend, overlay (P1) 🎯 MVP
-- [ ] #8 Spec phase: User Story 2 — marsh and sand (P2)
+- [x] #5 Spec phase: Setup — pin current behavior BEFORE touching anything
+- [x] #6 Spec phase: Foundational — the registry substrate
+- [x] #7 Spec phase: User Story 1 — one tile table drives map, legend, overlay (P1) 🎯 MVP
+- [x] #8 Spec phase: User Story 2 — marsh and sand (P2)
 - [ ] #9 Spec phase: Polish & cross-cutting
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+spec-bridge sync: Setup — pin current behavior BEFORE touching anything: 2/2 · Foundational — the registry substrate: 1/1 · User Story 1 — one tile table drives map, legend, overlay (P1) 🎯 MVP: 5/5 · User Story 2 — marsh and sand (P2): 6/6 · Polish & cross-cutting: 1/2
+<!-- SECTION:NOTES:END -->
