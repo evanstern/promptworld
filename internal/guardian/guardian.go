@@ -191,6 +191,14 @@ type Guardian struct {
 
 	events chan []store.Event
 	done   chan struct{}
+
+	// wg joins the four goroutines New starts (run, digestWorker,
+	// triggerWorker, reportCardWorker): Close closes done then waits on wg,
+	// so a caller that drives a queue right after Close (every fixture's
+	// newTestGuardian pattern) can never race a worker still parking in its
+	// select — wg.Add(1) sits immediately before each go statement below,
+	// keeping the add-site obvious for any future fifth worker.
+	wg sync.WaitGroup
 }
 
 // New starts the guardian from a state snapshot. The metatron/ dir and an
@@ -256,9 +264,13 @@ func New(orch Submitter, social Injector, loop LoopControl, m *worldmap.Map, see
 	}
 	mt.digFrom = replica.Tick / digestWindowTicks
 	mt.mirrorState()
+	mt.wg.Add(1)
 	go mt.run()
+	mt.wg.Add(1)
 	go mt.digestWorker()
+	mt.wg.Add(1)
 	go mt.triggerWorker()
+	mt.wg.Add(1)
 	go mt.reportCardWorker()
 	return mt, nil
 }
@@ -271,7 +283,15 @@ func (mt *Guardian) Observe(events []store.Event) {
 	}
 }
 
-func (mt *Guardian) Close() { close(mt.done) }
+// Close signals every worker New started to stop and waits for all four to
+// exit before returning — a caller (production shutdown, or a test fixture
+// driving a queue right after Close) is guaranteed no worker is still
+// in-flight. A Close during an in-flight job blocks until that job's current
+// iteration completes; no timeout (shutdown correctness over speed).
+func (mt *Guardian) Close() {
+	close(mt.done)
+	mt.wg.Wait()
+}
 
 // SetBundles installs the boot-frozen bundle set the turn assembly merges into
 // its roster/handler surface (spec 036 T013/T014). The daemon calls it once
@@ -307,6 +327,7 @@ func (mt *Guardian) soulPath() string       { return filepath.Join(mt.guardianDi
 func (mt *Guardian) transcriptPath() string { return filepath.Join(mt.guardianDir(), "transcript.md") }
 
 func (mt *Guardian) run() {
+	defer mt.wg.Done()
 	for {
 		select {
 		case <-mt.done:
