@@ -100,9 +100,9 @@ closed vocabulary — a tool cannot produce any event type outside it:
 
 | Kind | Produces | Required fields | Notes |
 |---|---|---|---|
-| `move_entity` | `metatron.entity_moved` | `target`, `to_x`, `to_y` | target must be a living villager |
-| `remove_entity` | `metatron.entity_removed` | `target` | |
-| `grant_item` | `metatron.item_granted` | `target`, `item`, `qty` | `qty` must be 1–99 |
+| `move_entity` | `metatron.entity_moved` | `target`, `to_x`, `to_y` | a villager (by name or `villager@X,Y`), `structure@X,Y`, or `pile@X,Y` — see [Target addresses](#target-addresses) |
+| `remove_entity` | `metatron.entity_removed` | `target` | `structure@X,Y`, `pile@X,Y`, or `terrain@X,Y` — never a villager (rejected at compile) |
+| `grant_item` | `metatron.item_granted` | `target`, `item`, `qty` | a villager only; `qty` must be 1–99 |
 | `snap_time` | `metatron.time_snapped` | `to_tick` | |
 | `narrate` | `agent.memory_added` (×N) | `text`, `recipients` | see below |
 
@@ -110,6 +110,51 @@ closed vocabulary — a tool cannot produce any event type outside it:
 (resolves to the invocation's `target` argument — the tool must declare a
 param named `target` to use this form), or a JSON array of specific villager
 names.
+
+### Target addresses
+
+A `target` names its entity through the spec-082 address grammar (normative:
+`specs/082-target-addressing/data-model.md`; parser: `internal/target`).
+Substitution runs first, so an address can be composed from `{args.…}` in a
+declarative effect or built as a plain string in a script — same grammar,
+same compile path either way:
+
+| You write | It means |
+|---|---|
+| `Rega` | the living villager named Rega (v1 behavior, unchanged) |
+| `villager:Rega` | the same, explicit |
+| `villager@5,5` | the villager standing on (5,5) — two on one tile resolves to the first by roster index, exactly like the miracle door |
+| `structure@12,7` | the structure on (12,7) — at most one ever stands on a tile |
+| `pile@{args.x},{args.y}` | the ground pile on the tile the args name |
+| `terrain@9,2` | the tree/forage/rock tile at (9,2) (`remove_entity` only) |
+
+Which forms each effect kind accepts is the table above: `move_entity` takes
+villagers, structures, and piles (terrain cannot be moved); `remove_entity`
+takes structures, piles, and terrain (a villager can NEVER be removed — the
+compiler rejects every villager form with the doctrine message, and the
+reducer would refuse it anyway); `grant_item` takes villagers only.
+
+Rules worth knowing before they bite:
+
+- **Reserved prefixes.** A target starting `villager@`/`villager:`/
+  `structure@`/`pile@`/`terrain@` is ALWAYS parsed as a structured address —
+  a typo like `structure@` or `pile@north,7` is a compile error naming the
+  effect and the bad address, never a silent "no villager named that". Any
+  other string is a villager name, so every pre-082 manifest behaves
+  byte-identically.
+- **Coordinates** are non-negative integers, bounds-checked against the map
+  at compile; whether the tile actually holds what you named is checked at
+  compile too (`no structure at (9,9)`), and the reducer's dry run remains
+  the final authority (occupied destination, already-cleared terrain, charge
+  shortfall). Every failure rejects the whole invocation — nothing lands, no
+  charge is spent.
+- **Declare address params as `text`**, not `agent_name` — `agent_name` args
+  are validated as villager names and will never carry `structure@12,7`.
+- **Rect and line forms exist but are not for bundles.** `class@1,5..3,9`
+  (inclusive rectangle) and `class@1,5->1,9` (inclusive axis-aligned line)
+  parse — the grammar is shared with the guardian designation tools
+  (TASK-157: settlement zones, structure sites, wall lines) — but every
+  bundle effect rejects them as reserved for designation consumers.
 
 Caps enforced by the compiler, regardless of declarative or scripted origin:
 - ≤32 events per batch, after `narrate` recipient expansion.
