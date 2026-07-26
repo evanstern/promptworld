@@ -1,9 +1,10 @@
 ---
 id: TASK-154
 title: 'Mouse-parity sweep test: control tables become a gate'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-26 17:57'
+updated_date: '2026-07-26 18:06'
 labels:
   - tooling
   - game-ui
@@ -24,3 +25,9 @@ Reorient 2026-07-26 decision 8. Input parity (2026-07-25 decision 8) is doctrine
 - [ ] #1 A test parses control tables and fails on any non-'—' mouse cell without a handler
 - [ ] #2 patterns/keymap.md rollout note updated to reflect mechanized tracking
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Sweep claim (runbook docs/design/reorient-2026-07-26-sweep-runbook.md): spec 073-mouse-parity-sweep. Tier: Sonnet — tooling/test, single surface (control-table parser + handler assertion, keymap.md rollout-note burn-down).
+<!-- SECTION:NOTES:END -->
