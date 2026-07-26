@@ -2,7 +2,7 @@
 title: Panel — lesson row
 class: panel
 status: shipped
-verified_against: 2d7a54940f8512340143e8ca5a8ba53e6e196aa2
+verified_against: 6e83f579db2b448c9c59b15575bf564b1e9b1852
 sources:
   - internal/tui/lessons.go
   - internal/tui/views.go

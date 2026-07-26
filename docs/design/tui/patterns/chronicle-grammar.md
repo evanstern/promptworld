@@ -2,7 +2,7 @@
 title: Pattern — chronicle grammar
 class: pattern
 status: shipped
-verified_against: 2d7a54940f8512340143e8ca5a8ba53e6e196aa2
+verified_against: 6e83f579db2b448c9c59b15575bf564b1e9b1852
 sources:
   - internal/tui/digest.go
   - internal/tui/grammar.go
@@ -95,7 +95,11 @@ Family = the event type's namespace prefix (`world`, `clock`, `sim`,
 `agent`, `social`, `meeting`/`norm` → merged into one `governance` family,
 `gru` — joined by `stranger` (spec 077: the night trickster rides the gru's
 own threat-family voice, a second nocturnal entity rather than a new visual
-role), `chronicle`, `metatron`, `daemon`, `cog`).
+role), `chronicle`, `metatron` — joined by `designation` and `directive`
+(spec 084: the guardian's plan layer rides the guardian family voice, like
+the standing orders it clones; seven digest rows — placed/cancelled/
+fulfilled × issued/cancelled/fulfilled/expired — all natural-phrase,
+`TestCatalogSweep`-covered), `daemon`, `cog`).
 
 | Family | Voice |
 |---|---|

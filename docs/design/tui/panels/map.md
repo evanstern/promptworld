@@ -2,7 +2,7 @@
 title: Panel — map (terrain camera viewport)
 class: panel
 status: shipped
-verified_against: 2d7a54940f8512340143e8ca5a8ba53e6e196aa2
+verified_against: 6e83f579db2b448c9c59b15575bf564b1e9b1852
 sources:
   - internal/tui/views.go
   - internal/tui/tiles.go
@@ -47,7 +47,9 @@ Every glyph `renderMapGrid` can draw, and the priority a tile resolves in
 (`tile()`, top wins): gru (`G`) > stranger (`S`, spec 077 — the second
 nocturnal entity shares the gru's precedence tier; the gru wins a legal but
 rare shared tile, being the greater threat) > agents > structures > piles >
-dens > terrain. Two dynamic-overlay carve-outs exist within that order:
+dens > designation marks (spec 084 — beneath every real world entity, above
+the path/terrain tier) > terrain. Two dynamic-overlay carve-outs exist
+within that order:
 
 - **Dead-agent-on-grave** (spec 044 US4): a dead agent standing on a tile
   that also holds a grave renders the grave glyph (`✝`, `styleGrave`)
@@ -79,6 +81,9 @@ dens > terrain. Two dynamic-overlay carve-outs exist within that order:
 | `S` | the stranger — a night trickster after unattended stores (`State.Stranger`, entity like the gru); appended registry row, violet 135 bold | spec 077 |
 | `░` | marsh — walkable wet ground near water (new-terrain worlds, `terrain_gen: 2`) | spec 068 |
 | `▒` | sand — walkable shoreline flat (new-terrain worlds, `terrain_gen: 2`) | spec 068 |
+| `◇` | guardian-marked structure site (`State.Designations`, ACTIVE only — fulfilled/cancelled marks stop rendering, state-derived) | spec 084 |
+| `┄` | guardian-marked wall line — one segment per enumerated line tile (`sim.DesignationTiles`, the same enumeration the fulfillment predicate checks) | spec 084 |
+| `◦` | guardian-marked settlement zone — PERIMETER tiles only (interior unmarked: extent, never wallpaper) | spec 084 |
 | `A`/`a`/`†` | agent by initial — uppercase awake, lowercase asleep, `†` dead; a living agent's STYLE (not case) additionally carries a condition overlay (below) | TASK-34, overlays spec 060 |
 
 Night dimming (`m.replica.Night`): every terrain-level style gains `.Faint(true)`
@@ -92,12 +97,15 @@ registry (`internal/tui/tiles.go`) — one table (`mapGlyphs`, grown from spec
 plain-language overlay meaning, style token, style-only state variants
 (fire `dying`, wall `damaged`), and the world binding it renders. `tile()`
 (`renderMapGrid`, `internal/tui/views.go`) keeps ONLY the priority logic —
-gru > agents > structures > piles > dens > path > quarried > base terrain —
-and resolves every leaf through the registry's binding indexes (the
-stranger row appended per spec 068 FR-009 — the pinned legend/overlay
-prefix stays byte-identical, marsh/sand's own precedent); the compact
-legend line and the `?` overlay walkthrough render from the same rows, so a
-tile added to the table reaches all three surfaces with no renderer edit.
+gru > agents > structures > piles > dens > designation marks > path >
+quarried > base terrain — and resolves every leaf through the registry's
+binding indexes (the stranger row appended per spec 068 FR-009 — the pinned
+legend/overlay prefix stays byte-identical, marsh/sand's own precedent; the
+three spec-084 designation rows appended the same way, one shared
+semantic-16 `designation` token — a plan mark is meaning, not material);
+the compact legend line and the `?` overlay walkthrough render from the
+same rows, so a tile added to the table reaches all three surfaces with no
+renderer edit.
 
 Style tokens are classed per the tile-vocabulary analysis's palette rule:
 **semantic-16** (themeable ANSI 0–15: water 4, tree 2, forage 3, den 5, the
