@@ -1099,6 +1099,81 @@ var digestRegistry = map[string]digestFunc{
 		}
 		return join([]seg{txt(sk.Name() + " ran under "), emphN(len(p.Names)), txt(noun), emph(p.Fingerprint)}), true
 	},
+	// designation.* / directive.* (spec 084): the guardian's plan layer —
+	// designations (world plan artifacts) and directives (hard villager
+	// bindings). Voice mirrors the standing-order rows above: the guardian is
+	// the subject for injected acts; the executor-emitted terminals
+	// (fulfilled/expired) read as the world answering the plan. Cancelled/
+	// fulfilled/expired carry only ids (OrderIDPayload / the fulfilled seam
+	// payload), so they reference the entity by id.
+	"designation.placed": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.Designation](e)
+		if !ok {
+			return nil, false
+		}
+		segs := []seg{txt(sk.Name() + " marked a "), emph(p.Kind), txt(" at "), coord(p.X, p.Y)}
+		if p.Kind != sim.DesignationStructureSite {
+			segs = append(segs, txt(".."), coord(p.X2, p.Y2))
+		}
+		if p.StructureKind != "" {
+			segs = append(segs, txt(" ("), emph(p.StructureKind), txt(")"))
+		}
+		if p.Label != "" {
+			segs = append(segs, txt(" — "), speech(truncateRunes(p.Label, 40)))
+		}
+		return join(segs), true
+	},
+	"designation.cancelled": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.OrderIDPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{txt(sk.Name() + " withdrew a designation ("), emph(p.ID), txt(")")}), true
+	},
+	"designation.fulfilled": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.OrderIDPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{txt("the village fulfilled " + sk.Name() + "'s mark ("), emph(p.ID), txt(")")}), true
+	},
+	"directive.issued": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.Directive](e)
+		if !ok {
+			return nil, false
+		}
+		segs := []seg{txt(sk.Name() + " charged ")}
+		for i, tgt := range p.Targets {
+			if i > 0 {
+				segs = append(segs, txt(", "))
+			}
+			segs = append(segs, nameOf(names, tgt))
+		}
+		segs = append(segs, txt(": "), speech(truncateRunes(p.Text, 80)))
+		return join(segs), true
+	},
+	"directive.cancelled": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.OrderIDPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{txt(sk.Name() + " lifted a charge ("), emph(p.ID), txt(")")}), true
+	},
+	"directive.fulfilled": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.DirectiveFulfilledPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{txt("the village fulfilled " + sk.Name() + "'s charge ("), emph(p.ID),
+			txt(", serving "), emph(p.DesignationID), txt(")")}), true
+	},
+	"directive.expired": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.OrderIDPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{txt(sk.Name() + "'s charge lapsed ("), emph(p.ID), txt(")")}), true
+	},
 	// morgue.epilogue (spec 044 US2): the narrator's recorded mourning prose
 	// — agent -1 is the run-end epilogue. chronicle.entry's truncation manner.
 	"morgue.epilogue": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {

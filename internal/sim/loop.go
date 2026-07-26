@@ -276,6 +276,20 @@ var injectSocialWhitelist = map[string]bool{
 	"metatron.order_placed":    true,
 	"metatron.order_cancelled": true,
 	"metatron.order_triggered": true,
+	// The guardian's plan layer (spec 084): injected designation placement/
+	// cancellation (place_designation / cancel_designation) and directive
+	// issue/cancellation (issue_directive / cancel_directive — issued rides
+	// atomically with per-target agent.memory_added companions, already
+	// whitelisted above). The dry-run's validating arms (plans.go) enforce
+	// form/bounds/occupancy/caps/TTL/targets before anything lands.
+	// designation.fulfilled, directive.fulfilled, and directive.expired need
+	// NO entry — they are executor-emitted, never injected, the
+	// metatron.order_expired / charge_regenerated precedent; whitelist
+	// absence is what refuses an injected forgery of a structural fact.
+	"designation.placed":    true,
+	"designation.cancelled": true,
+	"directive.issued":      true,
+	"directive.cancelled":   true,
 	// Governance flavor (TASK-13): the ONLY injectable governance type —
 	// re-texts an enacted norm in the proposer's voice; outcomes stay
 	// executor-deterministic. The dry-run enforces norm existence + text cap.

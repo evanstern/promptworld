@@ -86,6 +86,13 @@ var defaultTable = map[string]string{
 	"skin.guardian.example_ask.start":           `"start the world again at 4x"`,
 	"skin.guardian.example_ask.adjust_speed":    `"slow the world down to 1x"`,
 	"skin.guardian.example_ask.explain":         `"what does a vision cost?"`,
+	// The plan layer (spec 084): one example ask per plan verb, the same
+	// frozen-tool-id keying.
+	"skin.guardian.example_ask.place_designation":  `"mark a shelter site at 4,5"`,
+	"skin.guardian.example_ask.cancel_designation": `"withdraw the shelter-site mark"`,
+	"skin.guardian.example_ask.issue_directive":    `"charge Ash and Birch to raise the shelter I marked, within three days"`,
+	"skin.guardian.example_ask.cancel_directive":   `"lift the charge you laid on Ash"`,
+	"skin.guardian.example_ask.survey_site":        `"survey the ground around 10,10"`,
 }
 
 func init() {

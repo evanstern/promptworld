@@ -159,6 +159,9 @@ hand; regenerate whenever any note's `description:` changes:
   - [[event-types-guardian-actions]] — Guardian miracle-action and gru event rows split from [[event-types]]: metatron.time_snapped/item_granted/entity_moved/entity_removed, the gru.*…
   Guardian miracle-action and gru event rows split from [[event-types]]: metatron.time_snapped/item_granted/entity_moved/entity_removed, the gru.* family. Load when tracing miracle cost/gratis mechanics or the gru antagonist's emergence/attack lifecycle including the spec 044 escalated-kill path.
 
+  - [[event-types-guardian-plans]] — Guardian plan-layer event rows split from [[event-types]] (spec 084): designation.placed/cancelled/fulfilled, directive.issued/cancelled/fulfilled/expired
+  Guardian plan-layer event rows split from [[event-types]] (spec 084): the injected designation placement/cancel and directive issue/cancel, the executor-emitted fulfillment/expiry sweeps, and the directive.fulfilled TASK-118 faith seam payload. Load when tracing the designation/directive lifecycle or the injected-vs-executor door split.
+
 - [[world-save-directory]] — one dir = one run; manifest, layout, separability; split into two child notes below
   One directory = one world run — manifest (world.json), create/open validation, path helpers, clean separability, v1→v2→v3→v4→v5 migration, and the spec-076 fork ceremony (fresh prefix log at the snapshot boundary under a fresh identity); the manifest field-by-field catalog and the path-helper catalog live in two split-off children
 
@@ -410,6 +413,9 @@ hand; regenerate whenever any note's `description:` changes:
 
 - [[guardian-orders]] — the standing-orders subsystem: event-sourced watches compiled to free structural predicates, live matching, system-authored triggered turns, fuzzy confirm, daytime-omen deferral
   The event-sourced standing-orders subsystem (spec 029/052/059) — GuardianOrder entity model, caps/TTL/prune, and the player-facing monitor_and_act/cancel_order surface. Event dispatch splits to [[guardian-order-events]], matching/triggering/deferral to [[guardian-order-triggering]], and the boot-seeded survival watches to [[guardian-survival-watches]]. Load for the entity model, tool surface, and cross-subsystem connections.
+
+- [[guardian-designations]] — the durable plan layer (spec 084): designations (event-sourced world plan artifacts, structural fulfillment predicates), hard directives (TTL-bounded villager bindings), the DIRECTIVE reflex rung, the neverDrop directive context block, charge-free survey_site
+  The guardian's plan-making verbs (spec 084) — sim.Designation/sim.Directive cloning the GuardianOrder discipline, the seven-event injected/executor-emitted door split, the all-villager announcement grant, the SURVIVAL → DIRECTIVE → PREP reflex rung with the instant heed_directive goal, the neverDrop directive context block, the TUI designation marks, and the turn-side survey_site fact sheet. Load when tracing place_designation/issue_directive or why a villager serves a marked site.
 
   - [[guardian-order-events]] — The four standing-order lifecycle events (order_placed/triggered/cancelled/expired) — reducer dispatch through applyGuardian, the door dry-run's…
   The four standing-order lifecycle events (order_placed/triggered/cancelled/expired) — reducer dispatch through applyGuardian, the door dry-run's rejection rules, and transitionGuardianOrder's cancel/expiry/trigger race resolution. Split from [[guardian-orders]]; load when tracing event-sourced order lifecycle mechanics.

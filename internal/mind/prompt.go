@@ -154,10 +154,19 @@ func knownPlaces(s *sim.State, idx int) string {
 	// Grave (spec 044 US4): a death site is exactly the kind of individually-
 	// named, narratively-weighted place this set exists for — never grouped
 	// with the count+nearest resource kinds below.
-	landmark := map[string]bool{"fire": true, "shelter": true, "oven": true, "chest": true, "grave": true}
+	// "designation" (spec 084 FR-006): the guardian's announced plan mark —
+	// individually named like a grave, never grouped. The fact carries only
+	// the anchor; the designation entity in state supplies kind and label
+	// (PlaceFact.Detail is an int64 scalar and cannot carry the phrase), with
+	// an honest generic fallback once the entity has been pruned away.
+	landmark := map[string]bool{"fire": true, "shelter": true, "oven": true, "chest": true, "grave": true, "designation": true}
 	var places []string
 	for _, f := range a.Map.Facts {
 		if !landmark[f.Kind] || !f.Fresh(now) {
+			continue
+		}
+		if f.Kind == "designation" {
+			places = append(places, designationLandmark(s, f.X, f.Y))
 			continue
 		}
 		var entry string
@@ -230,6 +239,49 @@ func knownPlaces(s *sim.State, idx int) string {
 		}
 	}
 	return b.String()
+}
+
+// designationLandmark renders one designation place fact (spec 084 FR-006) —
+// the guardian's mark as a landmark, enriched from the designation entity at
+// the anchor when state still holds it (prefer an ACTIVE one; a mark whose
+// entity was pruned keeps an honest generic line — remembered history, the
+// burned-out-fire precedent).
+func designationLandmark(s *sim.State, x, y int) string {
+	var found *sim.Designation
+	for i := range s.Designations {
+		d := &s.Designations[i]
+		if d.X != x || d.Y != y {
+			continue
+		}
+		if d.Status == "active" {
+			found = d
+			break
+		}
+		if found == nil {
+			found = d
+		}
+	}
+	if found == nil {
+		return fmt.Sprintf("a place the Guardian once marked at (%d,%d)", x, y)
+	}
+	var what string
+	switch found.Kind {
+	case sim.DesignationStructureSite:
+		what = fmt.Sprintf("a %s site the Guardian marked at (%d,%d)", strings.ReplaceAll(found.StructureKind, "_", " "), x, y)
+	case sim.DesignationWallLine:
+		what = fmt.Sprintf("a wall line the Guardian marked from (%d,%d) to (%d,%d)", found.X, found.Y, found.X2, found.Y2)
+	case sim.DesignationSettlementZone:
+		what = fmt.Sprintf("a settlement zone the Guardian marked, (%d,%d) to (%d,%d)", found.X, found.Y, found.X2, found.Y2)
+	default:
+		what = fmt.Sprintf("a place the Guardian marked at (%d,%d)", x, y)
+	}
+	if found.Label != "" {
+		what += fmt.Sprintf(" (%q)", found.Label)
+	}
+	if found.Status != "active" {
+		what += " — since " + found.Status
+	}
+	return what
 }
 
 // joinAnd joins items with commas and a final "and" ("a", "a and b",

@@ -1,6 +1,6 @@
 ---
 name: sim-state-apply-world
-description: sim.State.Apply's world/governance dispatch arms — the unexported map/scenario fields, mental-map knowledge growth, gru/governance/miracle/guardian-order dispatch, curriculum unlocks, world-tuning, and world.migrated's wholesale replace
+description: sim.State.Apply's world/governance dispatch arms — the unexported map/scenario fields, mental-map knowledge growth, gru/governance/miracle/guardian-order dispatch, the spec-084 designation./directive. plan dispatch (applyPlan), curriculum unlocks, world-tuning, and world.migrated's wholesale replace
 kind: component
 sources:
   - internal/sim/state.go
@@ -8,7 +8,7 @@ sources:
   - internal/sim/miracles.go
   - internal/sim/morgue.go
   - internal/sim/curriculum.go
-verified_against: 53d45c96e1702299daec61d2f826fee7364a845c
+verified_against: 048259bb42b03cc6ebeb13a49f367c2e3a7d4d37
 ---
 
 # Sim state: world & governance dispatch arms
@@ -44,7 +44,11 @@ without `State` ever serializing the map.
 migration), keeping the reducer total; `social.place_told` (the talk
 sidecar's directions exchange) and `metatron.place_revealed` (a vision's
 optional place grant) route through the `applySocial`/`applyGuardian`
-dispatchers below, upserting into the RECEIVER's map only where the fact is
+dispatchers below (since spec 084 the seven `designation.*`/`directive.*`
+types dispatch to `applyPlan` in `plans.go` the same way — validate-not-clamp
+arms, one-way transition doors, the `designation.placed` arm's all-villager
+announcement grant; [[guardian-designations]]), upserting into the
+RECEIVER's map only where the fact is
 absent or its own knowledge staler. Several
 EXISTING arms gained silent DERIVED bookkeeping with no new event: `agent.moved`,
 `agent.woke`, and a `villager`-class `metatron.entity_moved` each call

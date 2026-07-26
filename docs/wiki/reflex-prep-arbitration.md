@@ -4,10 +4,18 @@ description: Child of [[reflex-policy]] — the PREP yield gate (spec 062, "inst
 kind: component
 sources:
   - internal/sim/policy.go
-verified_against: 9e8fb36e750dda15a633ba3ff8c44141f02debf2
+verified_against: 048259bb42b03cc6ebeb13a49f367c2e3a7d4d37
 ---
 
 # Reflex PREP arbitration and wander
+
+> Since spec 084, the DIRECTIVE rung (`directiveDecision`,
+> [[guardian-designations]]) sits BETWEEN survival and this gate: a hard
+> guardian directive preempts PREP and wander whenever it resolves, and is
+> deliberately NOT gated by `prepYields` — the yield window exists so
+> instinct doesn't counter-schedule the MIND, and a directive is the
+> villager's current duty, not instinct noise (the planner sees the same
+> directive through the context block, so rung and planner pull together).
 
 Child of [[reflex-policy]]: the opportunistic-upkeep half of `decideIntent`'s
 arbitration doctrine — `prepDecision`, which runs only when the yield gate

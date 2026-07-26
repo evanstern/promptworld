@@ -7,7 +7,7 @@ sources:
   - internal/tui/views.go
   - internal/tui/layout.go
   - internal/tui/digest.go
-verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
+verified_against: 048259bb42b03cc6ebeb13a49f367c2e3a7d4d37
 ---
 
 # TUI client mechanics: connection, header, and layout

@@ -136,8 +136,13 @@ type Guardian struct {
 	// only; the reducer stays authoritative for everything else.
 	structXY [][2]int
 	pileXY   [][2]int
-	moments  []string // queued, surfaced oldest-first at the next turn
-	story    []string // recent chronicle entries (TASK-11), prompt grounding
+	// structKind mirrors each structure's kind, parallel to structXY (spec
+	// 084 US1: the survey sheet lists structures kind + tile and counts
+	// wall-blocked tiles in its passability summary, turn-side, without
+	// racing the replica).
+	structKind []string
+	moments    []string // queued, surfaced oldest-first at the next turn
+	story      []string // recent chronicle entries (TASK-11), prompt grounding
 	// charterFP / ended mirror State.CharterFingerprint / State.Ended (spec
 	// 044 US2): the turn worker's charter observation (observeCharter) reads
 	// them under stateMu to decide whether a metatron.charter_observed emission
@@ -157,6 +162,17 @@ type Guardian struct {
 	orders        []sim.GuardianOrder
 	lastPlaceTick int64
 	lastPlaceSeq  int
+
+	// Plan-layer mirrors (spec 084, the orders-mirror discipline): the
+	// replica's Designations/Directives are the authority; the turn worker
+	// reads these copies under stateMu for id minting and the prompt's plan
+	// sections. planMintTick/planMintSeq are the per-prefix ("dsg"/"dir")
+	// same-tick id disambiguators — the lastPlaceTick/lastPlaceSeq shape,
+	// safe under turnBusy serialization.
+	designations []sim.Designation
+	directives   []sim.Directive
+	planMintTick map[string]int64
+	planMintSeq  map[string]int
 
 	// Trigger pipeline (spec 029 US3, data-model §5): the absorb goroutine matches
 	// live events against active orders and enqueues onto triggerQ; a dedicated
@@ -246,6 +262,8 @@ func New(orch Submitter, social Injector, loop LoopControl, m *worldmap.Map, see
 		pendingTrigger:  map[string]bool{},
 		lastConfirmTick: map[string]int64{},
 		survivalLatch:   map[string]map[int]bool{},
+		planMintTick:    map[string]int64{},
+		planMintSeq:     map[string]int{},
 		done:            make(chan struct{}),
 	}
 	mt.loopRounds = loopRounds
@@ -409,8 +427,10 @@ func (mt *Guardian) mirrorState() {
 	// Structure/pile tile mirrors (spec 082): position-only, for the turn
 	// worker's bundle-effect target resolution probe.
 	mt.structXY = mt.structXY[:0]
+	mt.structKind = mt.structKind[:0]
 	for i := range mt.replica.Structures {
 		mt.structXY = append(mt.structXY, [2]int{mt.replica.Structures[i].X, mt.replica.Structures[i].Y})
+		mt.structKind = append(mt.structKind, mt.replica.Structures[i].Kind)
 	}
 	mt.pileXY = mt.pileXY[:0]
 	for i := range mt.replica.Piles {
@@ -419,6 +439,10 @@ func (mt *Guardian) mirrorState() {
 	// The standing-order mirror (spec 029): the replica is the authority, copied
 	// so the turn worker reads orders under stateMu without racing the replica.
 	mt.orders = append(mt.orders[:0], mt.replica.GuardianOrders...)
+	// The plan-layer mirrors (spec 084): same discipline — id minting and the
+	// prompt's designation/directive sections read these, never the replica.
+	mt.designations = append(mt.designations[:0], mt.replica.Designations...)
+	mt.directives = append(mt.directives[:0], mt.replica.Directives...)
 	// The narrated chronicle (TASK-11) is the village's own story — the
 	// guardian reads its tail so conversation is grounded even before its
 	// soul has accreted (fresh reigns, upgraded worlds).

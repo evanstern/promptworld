@@ -6,7 +6,7 @@ sources:
   - internal/sim/state.go
   - internal/sim/agents.go
   - internal/sim/stranger.go
-verified_against: 53d45c96e1702299daec61d2f826fee7364a845c
+verified_against: 048259bb42b03cc6ebeb13a49f367c2e3a7d4d37
 ---
 
 # Sim state: world & social fields
@@ -68,6 +68,10 @@ spent-to-zero bank round-trips as 0; [[guardian]], TASK-12) — the standing-ord
 substrate (`GuardianOrders []GuardianOrder`, spec 029, `omitempty` — here an
 empty order set genuinely IS the zero value, unlike the charge bank, so a
 pre-029 snapshot with the field absent unmarshals to nil; [[guardian-orders]])
+— the guardian plan layer (`Designations []Designation` and
+`Directives []Directive`, spec 084, both `omitempty` on the same precedent —
+pre-084 snapshots load byte-identical, no format bump;
+[[guardian-designations]])
 — and the village's
 law ([[governance]], TASK-13): `MeetingPlace` (set once), the `Meeting`
 lifecycle (including the TASK-36 emergent-gathering watch fields

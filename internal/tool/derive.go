@@ -210,6 +210,14 @@ var guardianToolDesc = map[string]string{
 	// explain (spec 063) renders under GuardianReadGuidance, never the acting
 	// bullets — this gloss is its read-paragraph line.
 	"explain": "the game's exact facts on a topic: roster, costs, charges, workings, decisions, glyphs, or a tool's name",
+	// The plan layer (spec 084): four charge-free acting verbs plus the
+	// survey read tool (which, like explain, renders under
+	// GuardianReadGuidance — this gloss is its read-paragraph line).
+	"place_designation":  "stake a durable plan on the world: a structure site, a wall line, or a settlement zone — announced to every villager",
+	"cancel_designation": "withdraw a designation by its id",
+	"issue_directive":    "bind villagers to an active designation: a hard command with your framing words and a lifetime in days",
+	"cancel_directive":   "withdraw a directive by its id",
+	"survey_site":        "a deterministic site fact sheet: terrain mix, nearest water/tree/rock, structures, passability",
 }
 
 // miracleKindArgs is the per-kind argument hint rendered under work_miracle,

@@ -189,7 +189,10 @@ var preLadderGoldenFrames = []preLadderGoldenFrame{
 		// precedent) — this narrow frame renders the legend line, so its hash
 		// moved with the sanctioned vocabulary growth, nothing else
 		// (TestTilesIdentityPin still guards the frozen prefix bytes).
-		want: "0676b22e12e59fc683e6f7cdd8495c0c932fbfac87cc629e0b2ffc8f5d4006a1",
+		// Re-pinned again for spec 084 (TASK-157): the legend grew the three
+		// appended designation tokens (◇site ┄wallplan ◦zone) — the same
+		// sanctioned append-only growth, same guard.
+		want: "8c3a8fdaee1ad1e3d2b9593aa936a68fe07adfe5fba4aeed5574c662d95baeaa",
 		build: func(t *testing.T) Model {
 			m := testModel(t)
 			seedEvents(&m, 20)

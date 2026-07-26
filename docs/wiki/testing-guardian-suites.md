@@ -7,7 +7,7 @@ sources:
   - internal/guardian/guardian_test.go
   - internal/guardian/guardian_gaps_test.go
   - internal/guardian/orders_test.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+verified_against: 048259bb42b03cc6ebeb13a49f367c2e3a7d4d37
 ---
 
 # Guardian behavior & standing-order suites

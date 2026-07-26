@@ -2,7 +2,7 @@
 title: Overlay — postmortem
 class: overlay
 status: shipped
-verified_against: 08046253d67f3b436b0793756ce13e790d43fdac
+verified_against: 6e83f579db2b448c9c59b15575bf564b1e9b1852
 sources:
   - internal/tui/tui.go
   - internal/tui/views.go

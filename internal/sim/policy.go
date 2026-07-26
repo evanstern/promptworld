@@ -42,6 +42,20 @@ func decideIntent(s *State, m *worldmap.Map, idx int, tick int64) decision {
 	if d, ok := survivalDecision(s, m, a, tick); ok {
 		return d
 	}
+	// DIRECTIVE (spec 084 FR-012, the operator's hardness ruling): a villager
+	// first makes sure it is not dying (survival, above, unconditioned), then
+	// executes its active directives, then free time. The rung is
+	// deliberately NOT gated by prepYields — the yield window exists so
+	// instinct doesn't counter-schedule the MIND, but a directive is not
+	// instinct noise: it is the villager's current duty, and the planner sees
+	// the same directive through the context block, so rung and planner pull
+	// the same direction (research R5). Stateless: it re-derives everything
+	// from State.Directives at each idle decision, so resumption after any
+	// interruption is free (AC #6) and a directive-free world is
+	// byte-identical to pre-084 (the first scan finds nothing).
+	if d, ok := directiveDecision(s, m, a, idx, tick); ok {
+		return d
+	}
 	// PREP yields to intelligence (spec 062 US1, FR-002): the prep group runs
 	// only when it is not deferring to a recent non-reflex intent or to a need
 	// in its danger band. When it yields, the agent wanders (idle filler) —
@@ -54,6 +68,151 @@ func decideIntent(s *State, m *worldmap.Map, idx int, tick int64) decision {
 	}
 	return wanderDecision(s, m, a, idx, tick)
 }
+
+// reflexBuildable is the CLOSED set of structure kinds the reflex layer knows
+// how to build with materials in hand (spec 084 data-model §8): the
+// resolveGoal build set MINUS the planner-only shelter (spec 012 FR-012 — the
+// reflex never enters the crafting economy for shelter) and the walls (which
+// take the wall_line route below, adjacent-stand). Everything else routes to
+// walk-to-site and lets the planner own the clever part.
+func reflexBuildable(kind string) bool {
+	switch kind {
+	case "fire", "chest", "oven":
+		return true
+	}
+	return false
+}
+
+// atOrAdjacent reports the agent standing on or 4-adjacent to (x,y).
+func atOrAdjacent(a *Agent, x, y int) bool {
+	return abs(a.X-x)+abs(a.Y-y) <= 1
+}
+
+// wallKindFor picks the wall kind a directive's wall-line leg builds: the
+// designation's narrowing when set, else whichever wall the agent can afford
+// — plank first (fixed order, deterministic).
+func wallKindFor(a *Agent, d *Designation) (string, bool) {
+	try := func(kind string) bool {
+		r, ok := recipeFor("build_" + kind)
+		return ok && hasItems(a.Inv, r.Inputs)
+	}
+	if d.StructureKind != "" {
+		return d.StructureKind, try(d.StructureKind)
+	}
+	if try("wall_plank") {
+		return "wall_plank", true
+	}
+	if try("wall_stone") {
+		return "wall_stone", true
+	}
+	return "", false
+}
+
+// standTileFor finds the passable 4-neighbor of (x,y) nearest the agent
+// (Manhattan, fixed neighbor order breaking ties) — the stand tile for an
+// adjacent-build/walk leg toward an impassable target. Deterministic.
+func standTileFor(s *State, m *worldmap.Map, a *Agent, x, y int) (Point, bool) {
+	best, found := Point{}, false
+	bestD := 0
+	for _, d := range [][2]int{{0, -1}, {0, 1}, {-1, 0}, {1, 0}} {
+		nx, ny := x+d[0], y+d[1]
+		if !passable(m, s, nx, ny) {
+			continue
+		}
+		dist := abs(a.X-nx) + abs(a.Y-ny)
+		if !found || dist < bestD {
+			best, bestD, found = Point{X: nx, Y: ny}, dist, true
+		}
+	}
+	return best, found
+}
+
+// directiveDecision is the DIRECTIVE rung (spec 084 FR-012, data-model §8):
+// it selects the OLDEST active directive addressing the agent (slice order =
+// issue order) whose bound designation is still active, and resolves a
+// concrete intent per the per-kind routing table — build at the site when the
+// build is reflex-expressible with materials in hand, else walk to the site
+// (the heed_directive goal, instant on arrival), else fall through to the
+// ladder below (the planner, reading the directive context block, owns the
+// clever part — the villager never deadlocks idle-at-site). A directive whose
+// designation is non-active is skipped (orphan — the sweep expires it). Pure
+// over state; no rung state exists to pause or resume.
+func directiveDecision(s *State, m *worldmap.Map, a *Agent, idx int, tick int64) (decision, bool) {
+	var dir *Directive
+	for i := range s.Directives {
+		d := &s.Directives[i]
+		if d.Status != "active" || !directiveAddresses(d, idx) {
+			continue
+		}
+		dir = d
+		break
+	}
+	if dir == nil {
+		return decision{}, false
+	}
+	dsg := s.designationByID(dir.DesignationID)
+	if dsg == nil || dsg.Status != "active" {
+		return decision{}, false
+	}
+	walkTo := func(x, y int) (decision, bool) {
+		return decision{intent: &Intent{Goal: "heed_directive", TargetX: x, TargetY: y}}, true
+	}
+	switch dsg.Kind {
+	case DesignationStructureSite:
+		if reflexBuildable(dsg.StructureKind) && buildSite(m, s, dsg.X, dsg.Y) {
+			if r, ok := recipeFor("build_" + dsg.StructureKind); ok && hasItems(a.Inv, r.Inputs) {
+				return decision{intent: &Intent{Goal: "build_" + dsg.StructureKind,
+					TargetX: dsg.X, TargetY: dsg.Y}}, true
+			}
+		}
+		if !atOrAdjacent(a, dsg.X, dsg.Y) && passable(m, s, dsg.X, dsg.Y) {
+			return walkTo(dsg.X, dsg.Y)
+		}
+		return decision{}, false // at the site, cannot act: the planner's job
+	case DesignationWallLine:
+		// First unwalled tile in the line's own enumeration order (endpoint
+		// order preserved — the guardian's build direction).
+		var gap *target2 // (x, y) of the first tile lacking a qualifying wall
+		for _, t := range DesignationTiles(dsg) {
+			w := wallAt(s, t.X, t.Y)
+			if w != nil && (dsg.StructureKind == "" || w.Kind == dsg.StructureKind) {
+				continue
+			}
+			gap = &target2{t.X, t.Y}
+			break
+		}
+		if gap == nil {
+			return decision{}, false // fulfilled; the sweep will stamp it
+		}
+		stand, ok := standTileFor(s, m, a, gap.x, gap.y)
+		if !ok {
+			return decision{}, false // unreachable line tile: planner's job
+		}
+		if kind, afford := wallKindFor(a, dsg); afford && buildSite(m, s, gap.x, gap.y) {
+			return decision{intent: &Intent{Goal: "build_" + kind,
+				TargetX: stand.X, TargetY: stand.Y, ResX: gap.x, ResY: gap.y}}, true
+		}
+		if !atOrAdjacent(a, gap.x, gap.y) {
+			return walkTo(stand.X, stand.Y)
+		}
+		return decision{}, false
+	case DesignationSettlementZone:
+		if a.X >= dsg.X && a.X <= dsg.X2 && a.Y >= dsg.Y && a.Y <= dsg.Y2 {
+			return decision{}, false // presence achieved; what to build inside is mind work
+		}
+		if p, ok := nearest(m, s, a.X, a.Y, func(x, y int) bool {
+			return x >= dsg.X && x <= dsg.X2 && y >= dsg.Y && y <= dsg.Y2 && passable(m, s, x, y)
+		}); ok {
+			return walkTo(p.X, p.Y)
+		}
+		return decision{}, false
+	}
+	return decision{}, false
+}
+
+// target2 is directiveDecision's tiny tile holder (avoids importing target's
+// Tile into more signatures than needed).
+type target2 struct{ x, y int }
 
 // prepYields reports whether the PREP rung group must defer this round (spec
 // 062 US1, FR-002): instinct yields to intelligence. Two independent clauses,

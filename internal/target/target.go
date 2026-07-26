@@ -164,6 +164,26 @@ func Parse(s string) (Address, error) {
 	return parseLocus(t, class, rest)
 }
 
+// ParseLocus parses one BARE locus string per the spec-082 locus grammar
+// (spec 084 FR-003, research R4 — the designation-tool entry point): a point
+// ("4,5"), an inclusive rect ("1,1..8,8", corners normalized min/max), or an
+// inclusive axis-aligned line ("2,2->2,9", endpoint order preserved). It
+// reuses parseLocus — the SAME grammar, normalization, and Tiles() enumeration
+// every other consumer binds to (the one-parser law: two consumers can never
+// disagree on what "1,1..8,8" means or enumerates) — with an empty,
+// designation-neutral Class: the 082 class vocabulary names world entity
+// classes, none of which a designation addresses, and extending the class
+// table would widen the bundle reserved-prefix surface for zero benefit
+// (research R4). The four entity classes, the reserved-prefix rule, and
+// Parse itself are untouched.
+func ParseLocus(s string) (Address, error) {
+	t := strings.TrimSpace(s)
+	if t == "" {
+		return Address{}, errf(ErrSyntax, "empty locus")
+	}
+	return parseLocus(t, "", t)
+}
+
 // parseLocus parses the tile-address remainder after "<class>@": a point, an
 // inclusive rect ("..", corners normalized min/max), or an inclusive
 // axis-aligned line ("->", endpoint order preserved). Spaces are permitted

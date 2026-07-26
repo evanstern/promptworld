@@ -4,7 +4,7 @@ description: The runtime skin substrate (spec 052, TASK-121) — the fiction lay
 kind: component
 sources:
   - internal/skin/skin.go
-verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
+verified_against: 048259bb42b03cc6ebeb13a49f367c2e3a7d4d37
 ---
 
 # Skin
@@ -58,7 +58,9 @@ takeover renders. Since spec 063 ([[grounded-feedback]]), the table also
 gains `report_card_label`/`attribution_label` (the report card's box title
 and the attribution note's own block header) and a per-verb `example_ask`
 family, one `skin.guardian.example_ask.<tool-id>` row per shipped guardian
-loop tool (e.g. `.send_vision` → `"show Ash a vision of the fire dying"`) —
+loop tool (e.g. `.send_vision` → `"show Ash a vision of the fire dying"`;
+spec 084 adds the five plan-layer rows, `.place_designation` through
+`.survey_site` — [[guardian-designations]]) —
 the help overlay's D9 guardian section teaches asking from these.
 
 **`Skin` and its typed accessors**: a `*Skin` holds string-token overrides

@@ -2,7 +2,7 @@
 title: Pattern — skin tokens (doc conventions + the runtime contract)
 class: pattern
 status: shipped
-verified_against: bdb0686ad869bc4a0b2521d5e9b4d75dd7fa2ba4
+verified_against: 6e83f579db2b448c9c59b15575bf564b1e9b1852
 ---
 
 # Pattern: skin tokens
@@ -114,6 +114,11 @@ already-written files and every serialized identifier (event types
 | `skin.guardian.example_ask.start` | `"start the world again at 4x"` | help guardian section (D9) |
 | `skin.guardian.example_ask.adjust_speed` | `"slow the world down to 1x"` | help guardian section (D9) |
 | `skin.guardian.example_ask.explain` | `"what does a vision cost?"` | help guardian section (D9) |
+| `skin.guardian.example_ask.place_designation` | `"mark a shelter site at 4,5"` | help guardian section (spec 084: the plan layer's example asks, same frozen-tool-id keying) |
+| `skin.guardian.example_ask.cancel_designation` | `"withdraw the shelter-site mark"` | help guardian section (spec 084) |
+| `skin.guardian.example_ask.issue_directive` | `"charge Ash and Birch to raise the shelter I marked, within three days"` | help guardian section (spec 084) |
+| `skin.guardian.example_ask.cancel_directive` | `"lift the charge you laid on Ash"` | help guardian section (spec 084) |
+| `skin.guardian.example_ask.survey_site` | `"survey the ground around 10,10"` | help guardian section (spec 084) |
 | `skin.stage.stage-1.name` … `skin.stage.stage-4.name` | The Voice / The Written Word / The Craft / The Stewardship | stage display identities (`internal/skin` StageIdentity; spec 046 surfaces) |
 | `skin.stage.stage-1.line` … `skin.stage.stage-4.line` | "you speak, it acts" / "your law outlives the conversation" / "you shape what it can do" / "a world in your care" | one-line stage identity descriptions |
 | `skin.stage.stage-2.ceremony_chapter` | "Your play proved The Written Word: a law that outlives the conversation, written once and honored by every turn since." | `overlays/ceremony.md`'s D6 authorship-voice narrated chapter (spec 056) — stage-1 has no entry (never unlocked, `sim.EvaluateUnlock` never returns it) |

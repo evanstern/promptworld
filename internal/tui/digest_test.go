@@ -199,6 +199,24 @@ var catalogFixture = map[string]digestFixture{
 	"metatron.order_triggered": {`{"id":"ord-100-1","matched_type":"sim.forage_regrown","matched_tick":150}`, `Guardian's watch came true (sim.forage_regrown @ t150)`},
 	"metatron.order_cancelled": {`{"id":"ord-100-1"}`, `Guardian released a watch (ord-100-1)`},
 	"metatron.order_expired":   {`{"id":"ord-100-1"}`, `Guardian's watch lapsed (ord-100-1)`},
+
+	// --- the plan layer (spec 084 — designations and directives) ---
+	"designation.placed": {
+		`{"id":"dsg-100-0","kind":"structure_site","x":4,"y":5,"x2":4,"y2":5,"structure_kind":"shelter","label":"north shelter","placed_tick":100,"status":"active"}`,
+		`Guardian marked a structure_site at (4,5) (shelter) — "north shelter"`,
+	},
+	"designation.cancelled": {`{"id":"dsg-100-0"}`, `Guardian withdrew a designation (dsg-100-0)`},
+	"designation.fulfilled": {`{"id":"dsg-100-0"}`, `the village fulfilled Guardian's mark (dsg-100-0)`},
+	"directive.issued": {
+		`{"id":"dir-200-0","designation_id":"dsg-100-0","targets":[0,1],"text":"Raise the shelter I have marked.","issued_tick":200,"expires_tick":459200,"status":"active"}`,
+		`Guardian charged Ash, Birch: "Raise the shelter I have marked."`,
+	},
+	"directive.cancelled": {`{"id":"dir-200-0"}`, `Guardian lifted a charge (dir-200-0)`},
+	"directive.fulfilled": {
+		`{"id":"dir-200-0","designation_id":"dsg-100-0","targets":[0,1],"issued_tick":200}`,
+		`the village fulfilled Guardian's charge (dir-200-0, serving dsg-100-0)`,
+	},
+	"directive.expired": {`{"id":"dir-200-0"}`, `Guardian's charge lapsed (dir-200-0)`},
 	"metatron.charter_observed": {
 		`{"fingerprint":"ab12cd34ef56","default":false}`,
 		`Guardian ran under charter ab12cd34ef56 (player-authored)`,
