@@ -9,7 +9,9 @@ lifecycle design → code → approval → wiki grounding → PR → merge → c
 main) and the three board cards win. Plan-of-record is the board; this file carries only
 ordering, doctrine, and the log.
 
-**Status:** draft · operator sign-off on lanes: pending
+**Status:** signed-off · operator sign-off on lanes: 2026-07-26 (lanes as written;
+player-docs placement decided IN-PR; praxisflux upstream halves confirmed out of scope
+— follow-up lives in ~/neumo/projects/praxis)
 <!-- Only the OPERATOR flips draft → signed-off (the author never pre-fills it). An
      executing session must refuse a runbook whose status it cannot verify. -->
 
