@@ -4,7 +4,7 @@ title: Stage-shaped TUI layout defaults
 status: In Progress
 assignee: []
 created_date: '2026-07-25 14:45'
-updated_date: '2026-07-25 23:58'
+updated_date: '2026-07-26 02:11'
 labels:
   - learning-game
   - tui
@@ -38,4 +38,6 @@ Spec: specs/066-stage-defaults
 
 <!-- SECTION:NOTES:BEGIN -->
 spec-bridge link: specs/066-stage-defaults attached (spec+plan+tasks complete, 16 tasks; derived status In Progress — spec phase done, implementation not dispatched). Dispatch gated on TASK-119's merge per runbook Lane 4 (128 runs after the tabs/rows it governs exist: 125 ✓, 117 ✓, 119 pending).
+
+Dispatched (UI-sweep orchestrator): spec-implementer on Sonnet. Rubric: single-package TUI layout/view code with tests alongside — routine tier per constitution Principle V; WATCH ITEM: touches every mode's layout — escalate one-way to Opus if gates fail (recorded per runbook Lane 4). Worktree .worktrees/task-128 cut from post-119 main (828686b) — everything the spec governs now exists except the villager strip (TASK-129, tolerated-absent by design). Expect rebases over #99/#100 merges.
 <!-- SECTION:NOTES:END -->
