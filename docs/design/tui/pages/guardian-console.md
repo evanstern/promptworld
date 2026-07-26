@@ -2,7 +2,7 @@
 title: Page — guardian console
 class: page
 status: shipped
-verified_against: REPIN-SPEC-063
+verified_against: fdc682dbdfeead5d29944acd2f55adbc1dda7d92
 sources:
   - internal/tui/views.go
   - internal/tui/tui.go
