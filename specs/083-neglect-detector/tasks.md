@@ -30,7 +30,7 @@ wiki-in-PR obligations and close-out.
 - [X] T003 `needClassGoals` map + `needClassOf` beside the goal-resolver registry, in
       `internal/sim/policy.go`; `TestNeedClassGoalsResolve` pins every member resolves
       (anti-rot), in `internal/sim/policy_test.go` (plan D1, data-model §6, spec FR-003)
-- [ ] T004 Extend the `agent.needs_changed` arm (band anchors set/clear + latch clear
+- [X] T004 Extend the `agent.needs_changed` arm (band anchors set/clear + latch clear
       on recovery) and the `agent.intent_set` arm (class stamp after `appendIntent`);
       add the `sim.neglect_detected` arm (Fired latch), in `internal/sim/state.go`
       (~1718 / ~845); arm unit tests in `internal/sim/neglect_test.go` (plan D1,
@@ -58,7 +58,7 @@ generation bumps; genesis replay hash-identical.
       comment — research R6) + the three fixed per-need voice-of-evidence texts
       (`OriginWitness`, `Why` empty), in `internal/sim/memory.go` (plan D2, data-model
       §4, spec FR-006)
-- [ ] T009 [US1] Mechanism tests: fires exactly once per episode (second window
+- [X] T009 [US1] Mechanism tests: fires exactly once per episode (second window
       silent); re-fires after recovery + relapse; class intent inside window defers;
       asleep skipped at the beat; generation bump lands; live-vs-replay hash identity
       with the detector's own events in the log (`governor_replay_test.go` idiom);
@@ -73,14 +73,14 @@ fixtures binding, real-log probe as recorded evidence.
 **Independent Test**: `go test ./internal/sim/` (fixtures);
 `PROMPTWORLD_WORLD01_DB=… go test ./internal/daemon/ -run Neglect` (probe).
 
-- [ ] T010 [US2] Oak-shaped recorded fixture (warmth 636→0 at 4/min, only reflex
+- [X] T010 [US2] Oak-shaped recorded fixture (warmth 636→0 at 4/min, only reflex
       `chop` + planner `wander` records): fires at band-entry + 7200 — before the
       trajectory's death tick, health ≈ 900 at firing (runway assertion) — in
       `internal/sim/neglect_test.go` (plan D4, spec FR-007, SC-001)
-- [ ] T011 [US2] Healthy fixtures: class-intent-inside-window (Oak-day-4 shuttling
+- [X] T011 [US2] Healthy fixtures: class-intent-inside-window (Oak-day-4 shuttling
       shape) silent; dip-and-recover-before-T silent with anchors reset — in
       `internal/sim/neglect_test.go` (plan D4, spec FR-007, SC-001)
-- [ ] T012 [US2] Env-guarded world-01 probe (the `TestSageThrashWindowContextReplay`
+- [X] T012 [US2] Env-guarded world-01 probe (the `TestSageThrashWindowContextReplay`
       copy-and-replay idiom + `replayToTick`): predicate true at sampled ticks in Oak's
       final ~6 h, false on sampled labeled-healthy episodes and Ash/Hazel; skips
       without `PROMPTWORLD_WORLD01_DB`; record one run's output as task evidence — in
