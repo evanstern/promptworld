@@ -51,7 +51,7 @@ determinism-proven copy at the latest snapshot, inheriting the parent's wallet.
 **Independent Test**: e2e — new → run past a snapshot → stop → fork → start both → both
 answer status, `ps` shows both; unit — replay-to-hash identities.
 
-- [ ] T007 [US1] `world.Fork(srcDir, destDir, newName) (*ForkResult, error)` ceremony in
+- [X] T007 [US1] `world.Fork(srcDir, destDir, newName) (*ForkResult, error)` ceremony in
       new `internal/world/fork.go` (plan D3 steps 1–7: Open + live-daemon refusal +
       LatestValidSnapshot boundary (nil → refuse with remedy) + empty-dest check with
       best-effort cleanup on error + fresh log prefix stream + boundary snapshot +
@@ -59,28 +59,28 @@ answer status, `ps` shows both; unit — replay-to-hash identities.
       (name/created_at/lineage new, ALL else verbatim, seed carried) + R9 sidecar
       copy/skip + `ForkResult` per data-model §4) (spec FR-002..005, FR-007/008,
       FR-012)
-- [ ] T008 [US1] Ceremony tests in new `internal/world/fork_test.go`: happy path
+- [X] T008 [US1] Ceremony tests in new `internal/world/fork_test.go`: happy path
       (contiguity 1..N+1, boundary snapshot hash verifies, `world.forked` payload exact,
       manifest field-by-field carry, scribe views/runtime/archives NOT copied); refusal
       table (no snapshot / non-empty dest / live pidfile / bad name); partial-failure
       cleanup (plan D3, spec US1 scenarios 1/4, edge cases)
-- [ ] T009 [US1] Determinism proofs (board AC #4, FR-010 a+b) in
+- [X] T009 [US1] Determinism proofs (board AC #4, FR-010 a+b) in
       `internal/world/fork_test.go`: genesis replay of the fork's log through
       `sim.NewState` + `Apply` marshal-hashes equal to the boundary snapshot's
       `state_hash` AND to the parent's state hash at the same (tick, seq) — the
       byte-identity property (spec US1 scenario 3, SC-003)
-- [ ] T010 [US1] Wallet inheritance proof (board AC #5, SC-006): parent store with
+- [X] T010 [US1] Wallet inheritance proof (board AC #5, SC-006): parent store with
       seeded `llm_spend_<month>` total + per-provider keys → `Fork` → `llm.NewMeter`
       over the fork's store reports the same spent/attribution, in
       `internal/world/fork_test.go` (spec FR-012/013)
-- [ ] T011 [US1] CLI `fork` subcommand: new `cmd/promptworld/fork.go` + dispatch/usage in
+- [X] T011 [US1] CLI `fork` subcommand: new `cmd/promptworld/fork.go` + dispatch/usage in
       `cmd/promptworld/main.go` — resolveWorld source, `new`-convention name/path dest,
       `--at latest-snapshot` sole accepted value (default; other values refused naming
       the follow-on), summary print (boundary day/HH:MM + tick, events carried,
       truncated tail, lineage, ended-boundary warning, spend line, start-both
       next-steps); CLI tests in `cmd/promptworld/fork_test.go` (plan D4, spec FR-001/002,
       US1 scenario 5)
-- [ ] T012 [US1] e2e in new `e2e/fork_e2e_test.go` (SC-001 + FR-010 c): create pure-sim
+- [X] T012 [US1] e2e in new `e2e/fork_e2e_test.go` (SC-001 + FR-010 c): create pure-sim
       world, run at max past a snapshot, stop (cuts final snapshot), fork, start BOTH,
       both answer `status` and appear in `ps --json` as running, stop both; then replay
       the FORK's full log from genesis and assert its hash matches its own final

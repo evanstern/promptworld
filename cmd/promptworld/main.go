@@ -25,6 +25,10 @@ Usage:
   promptworld new <path> [--name NAME] [--seed N] [--teaching] [--stage ...] [--override] [--charter-preset ...]
                                                    create a world at an explicit path (legacy form)
   promptworld migrate <world>                      migrate a stopped older world (v1/v2) to the current format
+  promptworld fork <world> <new-name> [--at latest-snapshot]
+                                                   copy a stopped world at its latest snapshot under a
+                                                   fresh identity (same seed, own daemon) — edit the
+                                                   fork's charter, run both, compare the outcomes
   promptworld ps [--all] [--json]                  list world daemons machine-wide
   promptworld daemon <world>                       run the daemon in the foreground
   promptworld start <world>                        start a detached daemon
@@ -65,6 +69,8 @@ func dispatch(cmd string) (func([]string) error, bool) {
 		return cmdNew, true
 	case "migrate":
 		return cmdMigrate, true
+	case "fork":
+		return cmdFork, true
 	case "ps":
 		return cmdPs, true
 	case "daemon":
