@@ -109,7 +109,7 @@ already-written files and every serialized identifier (event types
 | `skin.guardian.example_ask.send_omen` | `"send everyone an omen tonight: stay near the fire"` | help guardian section (D9) |
 | `skin.guardian.example_ask.monitor_and_act` | `"watch for anyone going hungry, and warn them"` | help guardian section (D9) |
 | `skin.guardian.example_ask.cancel_order` | `"release the watch on the fire"` | help guardian section (D9) |
-| `skin.guardian.example_ask.work_miracle` | `"work a working: move the wolf away from the village"` | help guardian section (D9) |
+| `skin.guardian.example_ask.work_miracle` | `"work a working: grant Ash food from thin air"` | help guardian section (D9) |
 | `skin.guardian.example_ask.pause` | `"pause the world"` | help guardian section (D9) |
 | `skin.guardian.example_ask.start` | `"start the world again at 4x"` | help guardian section (D9) |
 | `skin.guardian.example_ask.adjust_speed` | `"slow the world down to 1x"` | help guardian section (D9) |
