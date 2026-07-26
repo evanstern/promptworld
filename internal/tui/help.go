@@ -81,6 +81,13 @@ var mapGlyphs = []glyphEntry{
 const (
 	agentGlyphNote = "agents by initial (lowercase asleep, †dead)"
 	mapControlNote = "arrows pan, c center"
+	// conditionOverlayNote (spec 060 US2, AS5: "the legend names the new
+	// marker styles") documents the three map condition overlays. Like
+	// agentGlyphNote/mapControlNote above, this is a prose note rather than
+	// a mapGlyphs row: every overlay is a STYLE variant of an
+	// already-legended glyph (an agent's own initial, or fire's "▲"), not a
+	// new glyph, so there is no new Glyph value to key a table row on.
+	conditionOverlayNote = "needs-critical & suppressed-mind mark agents, dying marks fire — needs-critical wins when both apply"
 )
 
 // legendGlyphLine renders mapGlyphs compactly ("~water ♠wood ..." — T002):
@@ -461,6 +468,7 @@ func (m Model) helpWalkthroughLines(width int) []string {
 		clipLine(fmt.Sprintf("%-4s %s", "A/a", "a villager's initial — uppercase awake, lowercase asleep ("+agentGlyphNote+")"), width),
 		clipLine(fmt.Sprintf("%-4s %s", "†", "a dead villager"), width),
 		clipLine(fmt.Sprintf("%-4s %s", "", mapControlNote), width),
+		clipLine(fmt.Sprintf("%-4s %s", "", conditionOverlayNote), width),
 	)
 	lines = append(lines, "", styleHeader.Render("Dock tabs"))
 	for _, d := range m.dockTabEntries() {

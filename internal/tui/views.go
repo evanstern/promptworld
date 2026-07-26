@@ -1047,6 +1047,34 @@ func (m Model) dockTabContent(width, height int) string {
 	return ""
 }
 
+// --- map condition overlays (panels/map.md "Wave 5", spec 060 US2) ---
+
+// needsCritical reports whether a living villager has any need at its
+// existing danger-band threshold — the SAME thresholds the reflex's own
+// PREP-gate/survival rungs already treat as "in danger" (internal/sim
+// agents.go/guardian.go), reused rather than re-derived so this overlay can
+// never drift from the sim's own vocabulary (D1: presentation only, no new
+// tuning constants). Morale has no such band in sim today (only
+// health/food/warmth/rest ever gate a survival or PREP-yield rung), so it is
+// deliberately not part of this check — there is nothing to reuse for it.
+func needsCritical(n sim.Needs) bool {
+	return n.Health < sim.SurvivalNearDeathBelow ||
+		n.Food < sim.SurvivalStarvingRearm ||
+		n.Warmth < sim.SurvivalFreezingRearm ||
+		n.Rest < sim.DangerRestBelow
+}
+
+// agentSuppressedMind reports whether agent i's latest decision-trace chain
+// is a router suppression (spec 037's "a skipped thought is visible" — this
+// is its map form, spec 060 US2 AS2): chainsFor is most-recent-first, so
+// index 0 is always this frame's latest chain, and it clears the moment a
+// later, non-suppressed outcome lands. No agent index ever has chains before
+// its first cognition, so an agent with none is simply never marked.
+func (m Model) agentSuppressedMind(i int) bool {
+	chains := m.traces.chainsFor(i)
+	return len(chains) > 0 && chains[0].Suppressed
+}
+
 // --- map (panels/map.md: "Rendering is unchanged") ---
 
 // wandererCentroid is the live (non-dead) agent centroid the camera follows
@@ -1141,9 +1169,18 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 				// Lit vs cold (spec 012 T019/T024): lit iff current tick <
 				// FuelUntil. A cold fire shows a hollow, faint glyph so the
 				// player can tell a dead fire from a burning one (SC-006).
-				if m.replica.Tick < st.FuelUntil {
+				// Dying (spec 060 US2 AS3): a THIRD, still-lit state — inside
+				// the sim's own dying-fuel window (State.RefuelDyingBelow,
+				// spec 057 — the exact remaining-fuel threshold the reflex's
+				// own refuel-before-cold rule already keys on, so this never
+				// invents a second window) — rendered in the warn style
+				// before FuelUntil actually passes and it goes cold.
+				switch {
+				case m.replica.Tick < st.FuelUntil && st.FuelUntil-m.replica.Tick < m.replica.RefuelDyingBelow():
+					structures[[2]int{st.X, st.Y}] = styleFireDying.Render("▲")
+				case m.replica.Tick < st.FuelUntil:
 					structures[[2]int{st.X, st.Y}] = styleFire.Render("▲")
-				} else {
+				default:
 					structures[[2]int{st.X, st.Y}] = styleFireCold.Render("△")
 				}
 			case "shelter":
@@ -1197,7 +1234,7 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 		for _, p := range m.replica.Piles {
 			piles[[2]int{p.X, p.Y}] = true
 		}
-		for _, a := range m.replica.Agents {
+		for i, a := range m.replica.Agents {
 			g := strings.ToUpper(a.Name[:1])
 			switch {
 			case a.Dead && graves[[2]int{a.X, a.Y}]:
@@ -1209,10 +1246,27 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 				g = styleGrave.Render("✝")
 			case a.Dead:
 				g = styleErr.Render("†")
-			case a.Asleep:
-				g = styleAsleep.Render(strings.ToLower(g))
 			default:
-				g = styleAgent.Render(g)
+				// Living: awake/asleep still decides the glyph's CASE, exactly
+				// as before this feature; the map condition overlays (spec 060
+				// US2) then decide which STYLE paints it — needs-critical >
+				// suppressed-mind > the plain awake/asleep styles (priority:
+				// physical danger over cognitive telemetry, FR-003/AS4). With
+				// neither condition present this is byte-identical to the
+				// pre-060 rendering.
+				ch := g
+				style := styleAgent
+				if a.Asleep {
+					ch = strings.ToLower(g)
+					style = styleAsleep
+				}
+				switch {
+				case needsCritical(a.Needs):
+					style = styleAgentCritical
+				case m.agentSuppressedMind(i):
+					style = styleAgentSuppressed
+				}
+				g = style.Render(ch)
 			}
 			agents[[2]int{a.X, a.Y}] = g
 		}
@@ -1342,8 +1396,8 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 	// help.go) — one source, so the overlay's glyph walkthrough (FR-005)
 	// and this compact legend line can never silently diverge.
 	legend = styleDim.Render(fmt.Sprintf(
-		"%s · [%d,%d–%d,%d of %d×%d] · %s · %s · %s%s%s",
-		phase, x0, y0, x0+vw-1, y0+vh-1, gm.W, gm.H, legendGlyphLine(), agentGlyphNote, mapControlNote, pilesInfo, chestsInfo))
+		"%s · [%d,%d–%d,%d of %d×%d] · %s · %s · %s · %s%s%s",
+		phase, x0, y0, x0+vw-1, y0+vh-1, gm.W, gm.H, legendGlyphLine(), agentGlyphNote, mapControlNote, conditionOverlayNote, pilesInfo, chestsInfo))
 	return grid, legend
 }
 
@@ -1562,6 +1616,31 @@ var (
 	// living-structure colors (fire/shelter/oven/chest), the cold-fire (240)
 	// precedent for "spent"/inert glyphs.
 	styleGrave = lipgloss.NewStyle().Faint(true).Foreground(lipgloss.Color("244"))
+
+	// Map condition overlays (spec 060 US2): style variants layered over an
+	// already-legended glyph (an agent's own initial, or fire's "▲"), not
+	// new glyphs — panels/map.md's priority is needs-critical > suppressed-
+	// mind > plain awake/asleep. Steady styles only (standing resolution 3:
+	// "pulse" is a style, never terminal blink).
+	//
+	// styleAgentCritical: a living villager with a need in its danger band
+	// (needsCritical below) — bold + underlined red, distinct from both the
+	// dead marker's plain bold red (styleErr) and the gru's bold red (196,
+	// a different glyph entirely) under every color profile the family-tint
+	// discipline covers (TestFamilyTintDistinctPerFamily precedent).
+	styleAgentCritical = lipgloss.NewStyle().Bold(true).Underline(true).Foreground(lipgloss.Color("1"))
+	// styleAgentSuppressed: the map form of spec 037's "a skipped thought is
+	// visible" — faint, a cooler hue than the critical red so the priority
+	// rule (needs-critical wins) reads correctly at a glance even before a
+	// player has learned the vocabulary.
+	styleAgentSuppressed = lipgloss.NewStyle().Faint(true).Foreground(lipgloss.Color("135"))
+	// styleFireDying: a fire inside its dying-fuel window (State.
+	// RefuelDyingBelow, spec 057) — still lit ("▲" — it only goes cold once
+	// FuelUntil actually passes), but a warmer/redder warn tone than lit
+	// fire's plain orange (208) and nothing like cold fire's faint gray
+	// (240), so "about to go out" reads distinctly from both "burning fine"
+	// and "already out."
+	styleFireDying = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("202"))
 )
 
 // mapView is the narrow-fallback map pane: today's vw/vh formula,
