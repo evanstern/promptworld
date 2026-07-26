@@ -6,8 +6,14 @@
 // Contract: NOTHING is modified in the root checkout directly. Every change is
 // authored on a branch in a worktree under .worktrees/ and reaches main ONLY
 // by merge (PR `gh pr merge --merge` or manual `git merge --no-ff` at root).
-// Rebases are forbidden everywhere in this repo. See CLAUDE.md
-// "Root checkout is READ-ONLY".
+// ONE ratified exception (TASK-161): Backlog.md board state — backlog/ is the
+// plan of record and the concurrent-session mutex, so board-sync commits
+// scoped entirely to backlog/ are allowed at root (edited via the backlog CLI,
+// committed scoped to backlog/ paths only, pushed immediately). The exception
+// applies to pre-bash `git commit` ONLY: pre-write still blocks Write/Edit of
+// backlog/ at root (hand-editing the board is forbidden; the CLI via Bash is
+// the sanctioned editor). Rebases are forbidden everywhere in this repo. See
+// CLAUDE.md "Root checkout is READ-ONLY".
 //
 // Node >= 18, ESM, zero npm dependencies (stdlib fs/path/child_process only).
 // Modeled on scripts/hooks/merge-drift-hook.mjs (same stdin protocol, cd-prefix
@@ -30,7 +36,28 @@
 //       `rev-parse --show-toplevel` realpath-equals $CLAUDE_PROJECT_DIR —
 //       worktrees under .worktrees/ have their own toplevel and pass as
 //       NOT root):
-//         commit          (unless concluding a merge: MERGE_HEAD resolves)
+//         commit          `--amend` is denied OUTRIGHT — checked BEFORE both
+//                         allow paths (it rewrites the previous root commit,
+//                         and --amend with MERGE_HEAD present is not a merge
+//                         conclusion). Otherwise UNLESS one of two allow
+//                         paths holds (checked in order):
+//                         (1) concluding a merge — MERGE_HEAD resolves
+//                             (checked FIRST, so a conflicted-merge
+//                             conclusion is never forced through rule 2);
+//                         (2) board-sync exception (TASK-161) — backlog/ is
+//                             the plan of record and the concurrent-session
+//                             mutex, so board-state commits land directly on
+//                             main at root. The commit qualifies when ALL
+//                             hold: no -a/--all/--interactive/-p/--patch/
+//                             -i/--include among the post-subcommand args
+//                             (git-global -p before `commit` is paginate and
+//                             harmless); no --pathspec-from-file (cannot be
+//                             statically verified); and either every explicit
+//                             pathspec arg is under backlog/ (option VALUES
+//                             like the -m message are never pathspecs), or —
+//                             with no pathspecs — `git diff --cached
+//                             --name-only` is NON-empty and entirely under
+//                             backlog/.
 //         cherry-pick, revert, am
 //         merge --squash  (plain merge is ALLOWED — it is how branches land)
 //         checkout -b/-B, switch -c/-C    (branch creation at root)
@@ -189,6 +216,105 @@ function parseGitInvocation(command, gitIndex) {
   return { subcommand: tokens[i], args: tokens.slice(i + 1), cPaths };
 }
 
+// ---------------------------------------------------------------------------
+// Board-sync exception (TASK-161): classify a root `git commit` invocation.
+//
+// `git commit` options (long form, space-separated) that consume the NEXT
+// token as their VALUE — those value tokens are never pathspecs (a quoted
+// `-m "fix backlog/ stuff"` message must never be parsed as a pathspec).
+// `--opt=value` inline forms consume nothing extra. Short options (-m, -F,
+// -c, -C, -t) are handled by the cluster walk below.
+const COMMIT_LONG_WITH_VALUE = new Set([
+  '--message', '--file', '--reuse-message', '--reedit-message', '--fixup',
+  '--squash', '--author', '--date', '--cleanup', '--pathspec-from-file',
+  '--template', '--trailer',
+]);
+// Long flags that deny the exception outright: staging/selection widened
+// beyond explicit pathspecs (-a/--all, --include), interactive/partial
+// staging, or a pathspec source we cannot statically verify.
+const COMMIT_LONG_DENY = new Set(['--all', '--interactive', '--patch', '--include']);
+// Short option chars, within a cluster, that consume a value (the remainder
+// of the token, or the next token when the char is last).
+const COMMIT_SHORT_WITH_VALUE = 'mFcCt';
+// Short option chars that deny the exception: a (--all), p (--patch — note
+// this is `-p` AFTER the commit subcommand; the git GLOBAL `-p` before it is
+// paginate and never reaches these args), i (--include).
+const COMMIT_SHORT_DENY = 'api';
+
+// Is this pathspec token entirely under backlog/? Relative paths must start
+// with `backlog/` (after stripping a leading `./`); absolute paths must
+// realpath-resolve strictly under <root>/backlog/.
+function boardPathspecOk(tok, realProjectDir) {
+  let p = stripQuotes(tok);
+  while (p.startsWith('./')) p = p.slice(2);
+  if (p.startsWith('/')) {
+    const real = realResolve(p);
+    if (!real) return false;
+    return real.startsWith(joinPath(realProjectDir, 'backlog') + '/');
+  }
+  return p.startsWith('backlog/');
+}
+
+// Does this root `git commit` invocation qualify for the board-sync
+// exception? Fail-CLOSED within the exception: anything unverifiable means
+// "not board-sync" (the commit then blocks) — the fail-open posture of the
+// hook overall never widens this allow path.
+function isBoardSyncCommit(args, effDir, realProjectDir) {
+  const pathspecs = [];
+  let afterDashDash = false;
+  for (let i = 0; i < args.length; i++) {
+    const tok = args[i];
+    if (afterDashDash) {
+      pathspecs.push(tok);
+      continue;
+    }
+    if (tok === '--') {
+      afterDashDash = true;
+      continue;
+    }
+    if (!tok.startsWith('-')) {
+      pathspecs.push(tok);
+      continue;
+    }
+    // Long option.
+    if (tok.startsWith('--')) {
+      if (tok === '--pathspec-from-file' || tok.startsWith('--pathspec-from-file=')) {
+        return false; // cannot statically verify the pathspec source
+      }
+      const eq = tok.indexOf('=');
+      const name = eq === -1 ? tok : tok.slice(0, eq);
+      if (COMMIT_LONG_DENY.has(name)) return false;
+      if (eq === -1 && COMMIT_LONG_WITH_VALUE.has(name)) i += 1; // skip value
+      continue; // any other long flag: skip, consumes nothing
+    }
+    // Short option, possibly clustered (-am) or with embedded value (-mMSG).
+    const cluster = tok.slice(1);
+    for (let j = 0; j < cluster.length; j++) {
+      const ch = cluster[j];
+      if (COMMIT_SHORT_DENY.includes(ch)) return false;
+      if (COMMIT_SHORT_WITH_VALUE.includes(ch)) {
+        // Value = remainder of this token; if none, the next token.
+        if (j === cluster.length - 1) i += 1;
+        break;
+      }
+      // Benign valueless short flag (-s, -n, -v, -q, -e, ...): keep walking.
+    }
+  }
+
+  if (pathspecs.length > 0) {
+    // Explicit pathspecs: every one must be under backlog/ (regardless of
+    // what is staged — git commits exactly these paths).
+    return pathspecs.every((p) => boardPathspecOk(p, realProjectDir));
+  }
+
+  // No pathspecs: the staged set decides — non-empty and entirely backlog/.
+  const staged = tryExec('git', ['-C', effDir, 'diff', '--cached', '--name-only']);
+  if (staged.status !== 0) return false;
+  const files = staged.stdout.split('\n').filter((l) => l.trim() !== '');
+  if (files.length === 0) return false;
+  return files.every((f) => f.startsWith('backlog/'));
+}
+
 function block(sub, rule) {
   process.stderr.write(
     `root-guard: blocked \`git ${sub}\` — ${rule}.\n` +
@@ -270,10 +396,24 @@ function runPreBash() {
     if (realTop !== realProjectDir) continue; // a worktree (own toplevel): not root
 
     if (sub === 'commit') {
-      // The one sanctioned root commit: concluding a merge (MERGE_HEAD present).
+      // `--amend` at root is denied OUTRIGHT, before either allow path: it
+      // rewrites the previous root commit — possibly a merge landing or
+      // another session's board push — and an --amend with MERGE_HEAD
+      // present is not a merge conclusion. A board fix-up is simply a
+      // second board-sync commit.
+      if (args.includes('--amend')) {
+        block(sub, '`git commit --amend` at the root checkout rewrites the previous root commit (possibly a merge landing or another session\'s board push); main history is append-by-merge only — a board fix-up is a second board-sync commit');
+      }
+      // Allow path 1 (checked FIRST of the two allow paths — a
+      // conflicted-merge conclusion must never be forced through the
+      // backlog-only rule): concluding a merge (MERGE_HEAD present).
       const mergeHead = tryExec('git', ['-C', effDir, 'rev-parse', '-q', '--verify', 'MERGE_HEAD']);
       if (mergeHead.status !== 0) {
-        block(sub, 'direct commits at the root checkout are forbidden (only a commit concluding a conflicted merge, MERGE_HEAD present, is allowed)');
+        // Allow path 2: the board-sync exception (TASK-161) — a commit
+        // scoped entirely to backlog/.
+        if (!isBoardSyncCommit(args, effDir, realProjectDir)) {
+          block(sub, 'direct commits at the root checkout are forbidden EXCEPT board-sync commits scoped entirely to backlog/ (TASK-161: no -a/--patch/--include, every pathspec — or, with none, every staged path — under backlog/) and merge-concluding commits (MERGE_HEAD present)');
+        }
       }
     } else if (sub === 'cherry-pick' || sub === 'revert' || sub === 'am') {
       block(sub, `\`git ${sub}\` writes history at the root checkout; main only advances by merge`);
