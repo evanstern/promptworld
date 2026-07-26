@@ -31,7 +31,7 @@ findings) before the cell fixes, green run (exit 0) after.
 
 ## Phase 5: Post-merge bookkeeping (derived state only)
 
-- [ ] T011 At root after the merge: spec-bridge sync, tasks.md ticks, runbook execution-log row; worktree removed, branch deleted, root ff-pulled (plan D8)
+- [x] T011 At root after the merge: spec-bridge sync, tasks.md ticks, runbook execution-log row; worktree removed, branch deleted, root ff-pulled (plan D8)
 
 ## Dependencies
 
