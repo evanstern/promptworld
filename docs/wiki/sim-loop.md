@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/loop.go
   - internal/sim/landing.go
-verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
+verified_against: 30912a9cd5d2334f76425ac8ca5b74a7a7c90876
 ---
 
 # Sim loop
@@ -129,8 +129,15 @@ former cross-loop flags. The extraction is behavior-identical; the rungs:
 
 1. dead/asleep agent → `rejected-unavailable`;
 2. `Generation` mismatch with `Agent.Generation` → `superseded`;
-3. staleness over the class's `BudgetTicks` (looked up via
-   `cognition.ClassFor`) → `rejected-stale`;
+3. staleness over the class's budget → `rejected-stale`. Since spec 067
+   (TASK-141) the budget is `EffectiveBudgetTicks(tps)` — the class's 1x
+   `BudgetTicks` (via `cognition.ClassFor`) scaled by the reducer's own
+   event-sourced effective speed at the landing tick
+   (`state.Speed.TicksPerSecond()`; unscaled at uncapped speed), keeping the
+   gate a pure function of event-sourced state so replay determinism holds
+   while a constant-wall-time thought is judged the same at every capped
+   speed. The reason names the derivation (`staleness 9800 > budget 9600
+   (1200 at 1x × 8x)`);
 4. since spec 061 (TASK-109, [[social-fabric]]): `rungPairCooldown` — a
    `talk_to` landing whose living target the actor spoke with inside
    `EncounterCooldown()` (the [[world-tuning]] spec-048 dial, [[sim-state-reducer]]'s

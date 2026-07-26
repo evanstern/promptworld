@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/social.go
   - internal/mind/convo.go
-verified_against: ad4871faa7988ce5b2d7f029ada59f653afaa569
+verified_against: 30912a9cd5d2334f76425ac8ca5b74a7a7c90876
 ---
 
 # Social fabric
@@ -146,7 +146,14 @@ suffix. The scene's terminal
 atomically. Landing is also staleness-enforced (TASK-32): a completed scene
 whose wall time overran the conversation class's budget in ticks (the router
 admitted it, but the provider ran slower than predicted) injects nothing and
-records `cog.outcome{rejected-stale}` with the arithmetic. Since TASK-42
+records `cog.outcome{rejected-stale}` with the arithmetic. Since spec 067
+(TASK-141) that pre-abort compares against the same scaled delivery-gate
+predicate as the [[sim-loop]] landing rung — the class's 1x `BudgetTicks`
+scaled through `cognition.EffectiveBudgetTicks` by the event-sourced
+effective speed, read from a worker-facing atomic tick-rate mirror the
+absorb loop keeps current (the same pattern as the mind's `tick` mirror) —
+so the mind-side pre-check can never disagree with the reducer gate it
+fronts, and the reason carries the scaled-budget derivation. Since TASK-42
 (specs/011-conversation-robustness) a scene tolerates one bad reply per site
 rather than dying on the first: a parse-failed utterance gets one same-speaker
 retry (one utterance retry TOTAL per scene — retry-not-skip, preserving the

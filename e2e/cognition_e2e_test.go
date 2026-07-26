@@ -180,12 +180,15 @@ func TestCognitionTelemetryAudit(t *testing.T) {
 	}
 }
 
-// TestCognitionStaleRejectionUnderLatency (US3, SC-001): a calibration
-// profile claiming a fast model (1 s/pt) lets the router admit planners at
-// 32x; the mock then takes ~45s per planner call, so the landing arrives
-// ~1440 game-ticks stale against the 1200-tick budget — rejected, recorded,
-// classified prediction-miss, while the reflex floor keeps the world moving.
-func TestCognitionStaleRejectionUnderLatency(t *testing.T) {
+// TestCognitionStaleLandingScalesWithSpeed (spec 067 US1, SC-001; formerly
+// TestCognitionStaleRejectionUnderLatency, which pinned the pre-067 fixed
+// budget): a calibration profile claiming a fast model (1 s/pt) lets the
+// router admit planners at 32x; the mock then takes ~45s per planner call, so
+// the landing arrives ~1440 game-ticks stale — past the old fixed 1200-tick
+// budget (the structural death this spec kills), but well inside the scaled
+// budget (1200 at 1x × 32x = 38400). The late-but-valid thought LANDS, and
+// nothing executes past the scaled budget.
+func TestCognitionStaleLandingScalesWithSpeed(t *testing.T) {
 	if testing.Short() {
 		t.Skip("latency-injection e2e takes ~90s")
 	}
@@ -195,9 +198,10 @@ func TestCognitionStaleRejectionUnderLatency(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
 		time.Sleep(45 * time.Second)
-		// A late but valid tool call: the planner loop lands forage ~1440 ticks
-		// stale, caught at the door as a prediction-miss stale rejection.
-		json.NewEncoder(w).Encode(openAIReply(string(body), `{"goal":"forage","reason":"late thought"}`))
+		// A late but valid tool call: the planner loop lands wander ~1440 ticks
+		// stale — inside the 32x scaled budget, so it must land (wander so the
+		// landing never depends on the villager knowing a forage tile).
+		json.NewEncoder(w).Encode(openAIReply(string(body), `{"goal":"wander","reason":"late thought"}`))
 	}))
 	defer srv.Close()
 
@@ -224,37 +228,36 @@ func TestCognitionStaleRejectionUnderLatency(t *testing.T) {
 	run(t, "speed", dir, "32x")
 
 	deadline := time.Now().Add(150 * time.Second)
-	var rejection *sim.CogOutcomePayload
-	for time.Now().Before(deadline) && rejection == nil {
+	var late *sim.CogOutcomePayload
+	for time.Now().Before(deadline) && late == nil {
 		time.Sleep(3 * time.Second)
 		st, err := store.Open(filepath.Join(dir, "world.db"))
 		if err != nil {
 			continue
 		}
 		st.ReplayEvents(0, func(e store.Event) error {
-			if e.Type != "cog.outcome" || rejection != nil {
+			if e.Type != "cog.outcome" || late != nil {
 				return nil
 			}
 			var p sim.CogOutcomePayload
-			if json.Unmarshal(e.Payload, &p) == nil &&
-				p.Class == "planner" && p.Outcome == sim.OutcomeRejectedStale {
-				rejection = &p
+			if json.Unmarshal(e.Payload, &p) == nil && p.Class == "planner" &&
+				(p.Outcome == sim.OutcomeLanded || p.Outcome == sim.OutcomeAdapted) &&
+				p.StalenessTicks > 1200 {
+				late = &p
 			}
 			return nil
 		})
 		st.Close()
 	}
-	if rejection == nil {
-		t.Fatal("no stale rejection recorded under injected latency")
-	}
-	if rejection.StalenessTicks <= 1200 {
-		t.Errorf("rejected at staleness %d, budget is 1200", rejection.StalenessTicks)
-	}
-	if rejection.Kind != sim.RejectKindPredictionMiss {
-		t.Errorf("kind = %q, want prediction-miss (45s actual vs 3s predicted)", rejection.Kind)
+	if late == nil {
+		t.Fatal("no planner landing past the old 1200-tick budget — the scaled budget did not forgive the latency")
 	}
 
-	// SC-001 audit: nothing executed past its budget.
+	// Audit: nothing executed past the SCALED budget (1200 at 1x × 32x),
+	// and nothing died rejected-stale inside it — the run holds speed at 32x
+	// throughout, so the effective planner budget is 38400 ticks (spec 067
+	// SC-001/FR-001).
+	const scaledBudget = 38400
 	st, err := store.Open(filepath.Join(dir, "world.db"))
 	if err != nil {
 		t.Fatal(err)
@@ -265,12 +268,16 @@ func TestCognitionStaleRejectionUnderLatency(t *testing.T) {
 			return nil
 		}
 		var p sim.CogOutcomePayload
-		if json.Unmarshal(e.Payload, &p) != nil {
+		if json.Unmarshal(e.Payload, &p) != nil || p.Class != "planner" {
 			return nil
 		}
 		if (p.Outcome == sim.OutcomeLanded || p.Outcome == sim.OutcomeAdapted) &&
-			p.Class == "planner" && p.StalenessTicks > 1200 {
-			t.Errorf("SC-001 violated: %s executed at staleness %d", p.Job, p.StalenessTicks)
+			p.StalenessTicks > scaledBudget {
+			t.Errorf("SC-001 violated: %s executed at staleness %d past the scaled budget", p.Job, p.StalenessTicks)
+		}
+		if p.Outcome == sim.OutcomeRejectedStale && p.StalenessTicks <= scaledBudget {
+			t.Errorf("pre-067 structural death: %s rejected-stale at staleness %d inside the scaled budget %d",
+				p.Job, p.StalenessTicks, scaledBudget)
 		}
 		return nil
 	})

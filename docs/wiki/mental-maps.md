@@ -17,7 +17,7 @@ sources:
   - internal/guardian/turn.go
   - internal/guardian/toolcalls.go
   - internal/tool/registry.go
-verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
+verified_against: 30912a9cd5d2334f76425ac8ca5b74a7a7c90876
 ---
 
 # Mental maps
