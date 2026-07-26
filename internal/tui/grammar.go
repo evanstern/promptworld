@@ -523,11 +523,15 @@ func styleWrapLine(prefix string, summary []seg, width, maxWrap int) []styledLin
 // tier (§2/§4) — rendered whole-line in the alert role regardless of
 // family. Spec 077 (FR-016) grows the shipped four by exactly one:
 // stranger.took joins beside social.chest_taken — theft is theft, and it is
-// the ONLY addition (no new tier, no new channel).
+// the ONLY addition (no new tier, no new channel). Spec 083 (FR-010) repeats
+// that precedent: sim.neglect_detected joins beside agent.died — a survival
+// need neglected to the edge of death is the agent.died class of alarm,
+// surfaced while there is still runway to act. Membership only; the
+// styleFeedAlert whole-line path is untouched.
 func isAlertType(eventType string) bool {
 	switch eventType {
 	case "agent.died", "gru.attacked", "social.chest_taken", "norm.violated",
-		"stranger.took":
+		"stranger.took", "sim.neglect_detected":
 		return true
 	}
 	return false

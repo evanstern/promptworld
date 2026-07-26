@@ -19,8 +19,8 @@ subscribers verbatim.
 
 ## Event catalog, by domain
 
-The full per-type catalog (92 event types across the format's history, specs
-012 through 077) is split by event domain — each child inherits this note's
+The full per-type catalog (93 event types across the format's history, specs
+012 through 083) is split by event domain — each child inherits this note's
 `verified_against` pin, carries the domain's own history-of-format-changes
 prose and catalog rows verbatim, and links back here. Spec 077's seven new
 types: the scenario-incident family — `sim.cold_snap`, `sim.forage_blighted`,
@@ -28,10 +28,14 @@ and the stranger entity's `stranger.arrived` / `stranger.moved` /
 `stranger.took` / `stranger.departed` ([[event-types-scenario-incidents]]) —
 plus the guardian's `metatron.skills_observed` skills observation
 ([[event-types-guardian-morgue]], the `metatron.charter_observed` twin).
+Spec 083 adds one: `sim.neglect_detected`, the death-by-neglect percept — a
+survival need below its danger band for a full neglect window with zero
+intents in its class ([[event-types-agent-vitals]]); executor-emitted on the
+needs heartbeat, whole-line alert tier in the chronicle.
 
 - [[event-types-clock-world]] — Clock/scheduler and world-lifecycle events — pause/resume/speed/governor, day/night, forage regrowth, world genesis/migration/forking (`world.forked`, spec 076), daemon lifecycle and LLM-provider warnings.
 - [[event-types-agent-intents]] — Agent intent lifecycle — intent_set/work_started/intent_done/recovery_stalled/build_failed/moved, including the spec 062/064 yield-window and needs-conditioned recovery arms.
-- [[event-types-agent-vitals]] — Agent vitals and mortality — needs_changed, died (with the spec 044 death ledger/grave), run.ended, and sleep/wake.
+- [[event-types-agent-vitals]] — Agent vitals and mortality — needs_changed, died (with the spec 044 death ledger/grave), run.ended, sleep/wake, and the spec 083 neglect_detected percept.
 - [[event-types-mental-map]] — Perception and mental-map events — moved, saw, map_corrected, place_told, place_revealed (spec 041's per-agent spatial knowledge family).
 - [[event-types-harvesting-consumption]] — Harvesting and consumption — forage/chop/hunt/quarry/collect_water yields, food rot, cook/bathe/refuel/eat, spear/axe breakage, fire burnout.
 - [[event-types-crafting-building]] — Crafting, building and goods movement — crafted/built, wall chip/destroy/repair, drop/pick_up/deposit/withdraw, and the spec 012/013/032 format-bump history.

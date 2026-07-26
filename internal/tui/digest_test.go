@@ -71,6 +71,11 @@ var catalogFixture = map[string]digestFixture{
 		`{"x":10,"y":12,"radius":4,"tiles":[{"x":10,"y":12},{"x":11,"y":12}],"regrow_tick":460800}`,
 		`blight struck the forage at (10,12) (+1 more tiles)`,
 	},
+	// spec 083: the death-by-neglect percept (alert tier — whole-line).
+	"sim.neglect_detected": {
+		`{"agent":2,"need":"warmth","level":0,"since":499320}`,
+		`Cedar is dangerously cold and has done nothing about it (warmth 0)`,
+	},
 
 	// --- agent: acts & needs ---
 	"agent.intent_set": {

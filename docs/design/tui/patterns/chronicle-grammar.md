@@ -107,16 +107,21 @@ name), **speech** (a quoted utterance — the speech privilege
 `social.conversation_turn`/`rumor_told` and a few governance/mind types
 carry), **emphasis** (amounts, item kinds, causes, outcomes, coordinates).
 High-salience types (`agent.died`, `gru.attacked`, `social.chest_taken`,
-`norm.violated`, and — spec 077's ONLY addition to this tier —
-`stranger.took`, beside `social.chest_taken` because theft is theft) render
-the **whole line** in the alert role regardless of family. No new tier and
+`norm.violated`, spec 077's `stranger.took` — beside `social.chest_taken`
+because theft is theft — and spec 083's `sim.neglect_detected`, beside
+`agent.died` because a survival need neglected to the edge of death is the
+same class of alarm surfaced while there is still runway) render the
+**whole line** in the alert role regardless of family. No new tier and
 no new channel exists: the spec-077 event vocabulary (`sim.cold_snap`,
 `sim.forage_blighted`, `stranger.arrived/moved/took/departed`,
 `metatron.skills_observed`) enters entirely through existing family voices
 — `sim.*` rows in the sim voice (the blight uses the agent.saw
 first-fact-plus-count shape for its tile list), `stranger.*` in the
 gru/threat voice, `metatron.skills_observed` mirroring the charter
-observation's line.
+observation's line — and spec 083's `sim.neglect_detected` repeats the
+precedent exactly: one `isAlertType` case plus a sim-voice digest row with
+deterministic per-need wording (*Name* `is dangerously cold and has done
+nothing about it (warmth 0)`; starving/exhausted for food/rest).
 
 Several digest rows render slightly differently than a naive reading of
 their contract row would suggest, because the real payload struct doesn't
@@ -175,7 +180,7 @@ token block — roles, never raw colors, at every call site):
 | `name` | `styleFeedName` | resolved agent names, bold green — unchanged |
 | `speech` | `styleFeedSpeech` | quoted utterances, bold — unchanged |
 | `emphasis` | `styleFeedEmphasis` | amounts/kinds/causes/coords — underline |
-| `alert` | `styleFeedAlert` | whole-line, bold red — `agent.died`/`gru.attacked`/`social.chest_taken`/`norm.violated`/`stranger.took` (spec 077) |
+| `alert` | `styleFeedAlert` | whole-line, bold red — `agent.died`/`gru.attacked`/`social.chest_taken`/`norm.violated`/`stranger.took` (spec 077)/`sim.neglect_detected` (spec 083) |
 | `selection` | `styleFeedSelect` | inspect-mode row background (reverse) — unchanged |
 
 For labeled-voice families (cog/clock/daemon) the family tint applies to

@@ -44,6 +44,11 @@ covers the panel's modes.
   (Mode 2) — no extra keypress required.
 - `r` toggles raw feed ↔ narrated view (existing narrator entries), `a` / `t`
   filter by agent / thread — existing behaviors, preserved in both modes.
+- High-salience alert types render whole-line bold red (`styleFeedAlert`) at
+  every width — the grammar page's alert tier (`agent.died`, `gru.attacked`,
+  `social.chest_taken`, `norm.violated`, `stranger.took` — spec 077,
+  `sim.neglect_detected` — spec 083); membership lives in `isAlertType`
+  (`internal/tui/grammar.go`), never a per-panel list.
 
 ## Mode 2 — inspect (clock paused)
 

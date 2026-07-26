@@ -94,15 +94,15 @@ precedent; no new tier, channel, or token.
 **Independent Test**: `TestCatalogSweep` green; alert render + overlay-subsumption
 tests green.
 
-- [ ] T013 [US3] `"sim.neglect_detected"` case in `isAlertType`
+- [X] T013 [US3] `"sim.neglect_detected"` case in `isAlertType`
       (`internal/tui/grammar.go`) + `digestRegistry` entry with deterministic per-need
       wording (`internal/tui/digest.go`) + `catalogFixture` row
       (`internal/tui/digest_test.go`) (plan D3, spec FR-010/011)
-- [ ] T014 [US3] Backticked `sim.neglect_detected` mention in
+- [X] T014 [US3] Backticked `sim.neglect_detected` mention in
       `docs/wiki/event-types.md` (TestCatalogSweep doc↔catalog anti-drift) + the §3
       wording row in `specs/018-chronicle-digest/contracts/digest-grammar.md` (plan D3,
       spec FR-011)
-- [ ] T015 [US3] Render tests: chronicle row renders whole-line `styleFeedAlert`; a
+- [X] T015 [US3] Render tests: chronicle row renders whole-line `styleFeedAlert`; a
       neglect-state agent fixture paints `styleAgentCritical` on the map grid (the
       FR-012 subsumption pin — no tiles.go change), in `internal/tui/` tests (plan D3,
       spec FR-012, SC-005)

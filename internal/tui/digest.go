@@ -983,6 +983,28 @@ var digestRegistry = map[string]digestFunc{
 		}
 		return join(segs), true
 	},
+	// sim.neglect_detected (spec 083): the death-by-neglect percept — a
+	// survival need below its danger band for the neglect window with zero
+	// intents in its class. Deterministic per-need wording: name + peril +
+	// inaction + the pre-tick level.
+	"sim.neglect_detected": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) { // alert (neglect tier — spec 083)
+		p, ok := decode[sim.NeglectDetectedPayload](e)
+		if !ok {
+			return nil, false
+		}
+		var peril string
+		switch p.Need {
+		case "food":
+			peril = " is starving and has done nothing about it ("
+		case "warmth":
+			peril = " is dangerously cold and has done nothing about it ("
+		case "rest":
+			peril = " is exhausted and has done nothing about it ("
+		default:
+			return nil, false
+		}
+		return join([]seg{nameOf(names, p.Agent), txt(peril + p.Need + " "), emphN(p.Level), txt(")")}), true
+	},
 	"chronicle.entry": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.ChronicleEntryPayload](e)
 		if !ok {
