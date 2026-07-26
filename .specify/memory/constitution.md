@@ -1,22 +1,26 @@
 <!--
 Sync Impact Report
-- Version change: 1.0.1 → 1.1.0 (MINOR: Principle V materially expanded to a three-tier
-  model scheme; spec-rigor rule added to Development Workflow)
+- Version change: 1.1.0 → 1.2.0 (MINOR: Principle IV materially expanded — enforcement
+  choke point named; in-PR grounding, merge-commit-only, and derived-state-only
+  post-merge boundary added per spec 069 / TASK-145, operator direction 2026-07-26)
 - Modified principles:
-  - V. Model-Tiered Workflow — two-tier (plan/implement) split expanded to three tiers
-    (Fable 5 planning / Opus 4.8 senior implementation / Sonnet implementation) with an
-    escalation rubric; rubric operationalized in .claude/agents/spec-implementer.md
-- Added sections:
-  - Development Workflow — spec-rigor rule: non-trivial TASKs MUST run full Spec Kit
-    before implementation; explicit triviality exemption criteria
+  - IV. Grounding Freshness — re-verification moved from an unanchored "before done"
+    obligation to the merge-drift pr gate as the blocking choke point: wiki re-pins and
+    player-docs regeneration ride the task branch (wiki-repin-missing /
+    player-docs-stale, no bypass); merge-commit-only doctrine; post-merge main commits
+    bounded to derived state (spec 065 claim protocol + pdlc:sweep re-ground)
+- Added sections: none
 - Removed sections: none
 - Templates:
   - ✅ .specify/templates/plan-template.md — Constitution Check gate is generic; unaffected
   - ✅ .specify/templates/spec-template.md — no constitution references; unaffected
   - ✅ .specify/templates/tasks-template.md — no constitution references; unaffected
   - ✅ .specify/templates/checklist-template.md — no constitution references; unaffected
-  - ✅ CLAUDE.md — Model-tiered workflow section rewritten to match (three tiers + spec rigor)
-  - ✅ .claude/agents/spec-implementer.md — escalation rubric added
+  - ✅ CLAUDE.md — Wiki-in-PR lifecycle block (spec 069) + loop diagram + grounding rules
+    rewritten on the same branch (task-145-wiki-in-pr-gate); Principle V version
+    reference bumped to v1.2.0
+- Previous report (1.0.1 → 1.1.0): Principle V expanded to three tiers with escalation
+  rubric; spec-rigor rule added to Development Workflow (see git history)
 - Follow-up TODOs: none
 -->
 
@@ -59,11 +63,22 @@ transport; evidence in tracked state), never by calling each other.
 
 `docs/wiki/` is load-bearing, not decoration. A change that touches files any wiki note
 lists as sources is not done until the wiki is re-verified and re-pinned
-(`/grounding-wiki:wiki-update`). Downstream renderings (`docs/course/`) read the wiki as
-their primary input and inherit its freshness.
+(`/grounding-wiki:wiki-update`) — and that re-verification MUST ride the change's own
+task branch: the merge-drift pr gate is the enforcement choke point (spec 069), blocking
+PR creation (`wiki-repin-missing`) until the branch itself carries the re-pin, and
+blocking (`player-docs-stale`) when the branch changes `docs/wiki/` without regenerating
+`docs/player/`. There is no bypass flag. PRs merge as merge commits (`gh pr merge
+--merge`) — in-branch pins are branch commit hashes a squash merge would rewrite stale.
+After the merge, the ONLY sanctioned main commits are derived state — board card moves,
+spec-bridge sync, tasks.md ticks, runbook execution logs (spec 065 claim protocol; the
+pdlc:sweep re-ground step); grounding content NEVER lands as a post-merge commit.
+Downstream renderings (`docs/course/`) read the wiki as their primary input and inherit
+its freshness.
 
 **Rationale:** stale grounding is worse than none — it lends false confidence to plans
-and specs built on it.
+and specs built on it; and grounding that trails its change onto main detaches the
+evidence from the review that needed it (operator direction 2026-07-26, TASK-141
+post-merge tail as the motivating case).
 
 ### V. Model-Tiered Workflow
 
@@ -137,4 +152,4 @@ PATCH for clarifications. Every plan's Constitution Check MUST verify compliance
 the version named in its footer; runtime development guidance lives in `CLAUDE.md` and
 MUST stay consistent with this document.
 
-**Version**: 1.1.0 | **Ratified**: 2026-07-20 | **Last Amended**: 2026-07-21
+**Version**: 1.2.0 | **Ratified**: 2026-07-20 | **Last Amended**: 2026-07-26
