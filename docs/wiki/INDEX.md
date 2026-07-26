@@ -18,7 +18,8 @@ that note (re-pin with `/grounding-wiki:wiki-update`).
   - [[sim-loop-injection-doors]] — Loop.InjectSocial (the mind's whitelisted conversation/consolidation/musing/chronicle/nudge/miracle/telemetry door) and Loop.InjectOperator (the…
 - [[sim-state-reducer]] — State + Apply: the single mutation path, live and replay; split into six child notes below
   - [[sim-state-agent-fields]] — clock + per-agent field catalog: needs/intents/inventories/memories, Journal, IntentLog, NeedsAnchor, LastMindIntentDone
-  - [[sim-state-world-fields]] — shared-world field catalog: structures/piles, social fabric, Guardian charges/orders, governance, morgue, curriculum, tuning, report card
+  - [[sim-state-world-fields]] — shared-world field catalog: structures/piles, social fabric, gru/stranger incident state, chronicle ring, Guardian charges/orders, governance
+    - [[sim-state-outcome-fields]] — split from sim-state-world-fields: run-outcome & progression fields — Deaths/RunEnd, charter/skills observation state, morgue epilogues, curriculum passes/unlocks, tuning, report card
   - [[sim-state-apply-agents]] — genesis + core per-agent Apply arms: movement/eating/talk/needs/death, v2 crafting, v3 storage events, walls
   - [[sim-state-intent-lifecycle]] — intent-ring closure arms (build_failed, stampIntentOutcome, recovery_stalled), hail family, death/run-end effects
   - [[sim-state-apply-world]] — map/scenario fields + world/governance dispatch: mental-maps, gru/governance/miracle/guardian-order, curriculum, tuning, world.migrated
@@ -85,7 +86,9 @@ that note (re-pin with `/grounding-wiki:wiki-update`).
 - [[tui-client]] — Bubble Tea four-pane client over a live log-shipped replica; split into six child notes below
   - [[tui-client-mechanics]] — connection/replica lifecycle, header postmortem/governed-speed readouts, reconnect resilience, and the widescreen/narrow layout's fold cascade
   - [[tui-map-view]] — the map camera region: terrain/overlay glyph rendering, camera pan/jump-to-source, and the legend's stockpile/chest inspection additions
-  - [[tui-dock-tabs]] — the dock's tab bar, guardian console, and chronicle/guardian/systems tab contents
+    - [[tui-look-cursor]] — split from tui-map-view: the spec-074 look-cursor mode's map side — cursor movement/camera push, extracted camera helpers, reverse-video rendering, mouse parity
+  - [[tui-dock-tabs]] — the dock's tab bar, guardian console, chronicle/guardian/systems tab contents, and the scenario-only exercise tab
+    - [[tui-dock-tile-view]] — split from tui-dock-tabs: the look-cursor mode's transient TILE-view borrow of the dock body — pseudo-label, tile row hierarchy, drill-ins, mouse parity
   - [[tui-villagers-tab]] — the villagers roster/detail/decisions sub-view and its decision-trace projection
   - [[tui-chronicle-feed]] — the chronicle pane's narrated/raw toggle and the digest grammar registry
   - [[tui-input-help]] — the focus contract, time controls, and the full-screen help overlay
@@ -158,8 +161,9 @@ that note (re-pin with `/grounding-wiki:wiki-update`).
 - [[governance]] — norms and votes: the daily meeting under an event-sourced convention, relationship-driven law, the village charter
 - [[curriculum-ladder]] — the spec-046 four-stage teaching ladder: immutable world stage with informed override, the guardian's tool ceiling + stage-1 instruction lock (default/tutor presets), curriculum.* unlock events with auditable evidence, the per-user unlocks record, seeded exercises
 - [[curriculum-ladder-progression]] — split from curriculum-ladder: how a stage is actually earned — the curriculum.* unlock chain and EvaluateUnlock gate conjuncts, the per-user unlocks.json record, and ExerciseDefinition content
-- [[scenario-machinery]] — the spec-054 director-lite incident scheduler + rubric evaluator: the production emitter for curriculum.* events, boot-frozen ArmScenario runtime, gru-emergence preemption, and the TUI exercise tab
-- [[scenario-machinery-surfacing]] — split from scenario-machinery: downstream surfacing/wiring once armed — status/CLI facts, manifest consumption, daemon boot arming, chronicle/morgue narration, and the TUI exercise dock tab
+- [[scenario-machinery]] — the spec-054 director-lite incident scheduler: boot-frozen ArmScenario runtime, the four-kind incident source, gru-emergence preemption, and the incident reducer arms
+  - [[scenario-rubric]] — split from scenario-machinery: the generalized rubric emitter — boundary dawns, per-exercise EvaluateRubric arms, sanctioned-constructor evidence, ExerciseOutcome, and the nine-exercise catalog
+  - [[scenario-machinery-surfacing]] — split from scenario-machinery: downstream surfacing/wiring once armed — status/CLI facts, manifest consumption, daemon boot arming, chronicle/morgue narration, and the TUI exercise dock tab
 - [[takeover-surfaces]] — the spec-056 takeover family: the stage-unlock ceremony and run-end postmortem full-screen pages
   - [[report-card-renderer]] — the shared rubric-checklist renderer (D5) the postmortem/ceremony/guardian-console card seam reuse, the help overlay's ceremony-replay section, and the skin's per-stage D6 ceremony chapter
 - [[grounded-feedback]] — the spec-063 grounded feedback layer: the guardian's read-only explain tool, the compiled-in tutor guide, the report-card producer (cheap-chain attribution note over recorded events), and the help overlay's D9 guardian section
