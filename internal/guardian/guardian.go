@@ -128,8 +128,16 @@ type Guardian struct {
 	// refreshed per batch) — the turn worker reads it to build the miracle
 	// targeting digest (spec 059 US3) without racing the replica.
 	agentNeeds []needMirror
-	moments    []string // queued, surfaced oldest-first at the next turn
-	story      []string // recent chronicle entries (TASK-11), prompt grounding
+	// structXY / pileXY mirror every structure's / ground pile's tile
+	// (absorb-owned, refreshed per batch) so a console turn's bundle handlers
+	// can resolve spec-082 class+tile effect targets (structure@X,Y /
+	// pile@X,Y presence, compile-time error quality) without racing the
+	// replica the absorb goroutine owns — the agentXY discipline. Positions
+	// only; the reducer stays authoritative for everything else.
+	structXY [][2]int
+	pileXY   [][2]int
+	moments  []string // queued, surfaced oldest-first at the next turn
+	story    []string // recent chronicle entries (TASK-11), prompt grounding
 	// charterFP / ended mirror State.CharterFingerprint / State.Ended (spec
 	// 044 US2): the turn worker's charter observation (observeCharter) reads
 	// them under stateMu to decide whether a metatron.charter_observed emission
@@ -397,6 +405,16 @@ func (mt *Guardian) mirrorState() {
 		mt.agentXY[i] = [2]int{mt.replica.Agents[i].X, mt.replica.Agents[i].Y}
 		n := mt.replica.Agents[i].Needs
 		mt.agentNeeds[i] = needMirror{Health: n.Health, Food: n.Food, Warmth: n.Warmth}
+	}
+	// Structure/pile tile mirrors (spec 082): position-only, for the turn
+	// worker's bundle-effect target resolution probe.
+	mt.structXY = mt.structXY[:0]
+	for i := range mt.replica.Structures {
+		mt.structXY = append(mt.structXY, [2]int{mt.replica.Structures[i].X, mt.replica.Structures[i].Y})
+	}
+	mt.pileXY = mt.pileXY[:0]
+	for i := range mt.replica.Piles {
+		mt.pileXY = append(mt.pileXY, [2]int{mt.replica.Piles[i].X, mt.replica.Piles[i].Y})
 	}
 	// The standing-order mirror (spec 029): the replica is the authority, copied
 	// so the turn worker reads orders under stateMu without racing the replica.

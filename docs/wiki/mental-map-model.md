@@ -7,7 +7,7 @@ sources:
   - internal/sim/state.go
   - internal/sim/miracles.go
   - internal/sim/migrate.go
-verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
+verified_against: 510a3c3133e120d84cd50525dbc4ee0d3ec01cdc
 ---
 
 # Mental map data model
