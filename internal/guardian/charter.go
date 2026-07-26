@@ -655,6 +655,17 @@ func stageCeiling(stage string) *bundle.GrantDoc {
 	return nil
 }
 
+// StageCeilingVerbs returns the guardian loop-tool names the stage's ceiling
+// grants, in registry order — the full loop roster for a ceiling-less stage
+// or a pre-ladder world (spec 063 US5/D9): the help overlay's guardian
+// section renders exactly this static per-stage set, derived through the
+// SAME intersection the turn's grant runs (applyStageCeiling over the full
+// default grant), so the taught verb list can never drift from the ceiling
+// the door enforces. Deterministic: grantedTools walks the loop roster.
+func StageCeilingVerbs(stage string) []string {
+	return applyStageCeiling(fullGrant(), stage).grantedTools()
+}
+
 // applyStageCeiling intersects the stage ceiling into the world-level grant
 // (spec 046 FR-004, the narrowGrantForBundles idiom): intersection-only, so a
 // player's capabilities.json may narrow WITHIN the ceiling but never exceed
