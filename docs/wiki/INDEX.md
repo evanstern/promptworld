@@ -67,6 +67,7 @@ that note (re-pin with `/grounding-wiki:wiki-update`).
 - [[world-migration]] — snapshot-cut migration chain v1→v2→v3→v4 (keep the people, then the land, then a granted mental map) plus the spec-068 manifest-only v4→v5 terrain-vocabulary bump; split into two child notes below
   - [[world-migration-catalog]] — each step's design pin (keep-people-reset-land / carry-everything / grant-knowledge / manifest-only) plus the write-mechanics that commit a migration to disk
   - [[world-migration-transforms]] — the four transform algorithms themselves (TransformV1Snapshot/TransformV2State/TransformV3State, and Migrate's manifest-only v4→v5 branch)
+- [[world-forking]] — the spec-076 fork ceremony (fresh prefix log at the snapshot boundary, world.forked lineage, seed carried, wallet inherited) and the promptworld fork/compare duel doors
 - [[worldmap-generation]] — seeded terrain (water/woods/forage/rock/dens, and — since spec 068, on new worlds — a versioned marsh/sand shoreline pass); regenerated, never stored
 - [[event-log]] — append-only SQLite events table; seq contiguity; source of truth
 - [[snapshots]] — hash-verified recovery accelerator; cadence and fallback chain

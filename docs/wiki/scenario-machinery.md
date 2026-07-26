@@ -9,23 +9,23 @@ sources:
   - internal/sim/gru.go
   - internal/sim/guardian.go
   - internal/sim/state.go
-verified_against: b3f4da3c29e3cbbd933e366abe76a5d6ef0f2be9
+verified_against: 0fd2104c59c54be8e8071d319fa4ce192083faf3
 ---
 
 # Scenario machinery (incident schedule + rubric)
 
-Spec 054 (TASK-119) is spec 046's awaited production half: the curriculum
-ladder's [[curriculum-ladder]] `ExerciseDefinition`s and their
+Spec 054 (TASK-119) is spec 046's awaited production half:
+[[curriculum-ladder]]'s `ExerciseDefinition`s and their
 `curriculum.exercise_passed`/`stage_unlocked` events existed since spec 046,
-but nothing emitted them outside test fixtures until this feature — an
-authored incident scheduler landing deterministic pressure into a scenario
-world, plus a rubric evaluator watching the same replica for the exercise's
+but nothing emitted them outside fixtures — this feature adds the authored
+incident scheduler landing deterministic pressure into a scenario world,
+plus the rubric evaluator watching the same replica for the exercise's
 pass boundary. Both are the EXECUTOR EMISSION CLASS (the
 `metatron.order_expired`/`charge_regenerated` precedent): pure functions of
 (state, boot-frozen scenario config, tick), no LLM, no injection door — the
 recorded events are the only latches, so a restart or replay resumes exactly.
-Downstream surfacing (status/CLI, manifest, boot wiring, narration, TUI) is
-covered by the split-off [[scenario-machinery-surfacing]].
+Downstream surfacing (status/CLI, manifest, boot wiring, narration, TUI):
+[[scenario-machinery-surfacing]].
 
 ## How it works
 
@@ -88,41 +88,33 @@ shared derivation this emitter's pass precondition, the exercise panel's
 live gauges, AND every report-card surface (spec 072's shared resolver,
 [[report-card-renderer]]) read. Both cataloged exercises carry production
 arms: `first-night` (FR-004: survive to dawn of day 2, zero deaths, a
-player-origin standing order placed before night one's fall —
-`firstNightWatch` scans `State.GuardianOrders` earliest-first by
-`(PlacedTick, PlacedSeq)`) and `the-law` (spec 072 FR-007, `theLawRubric`:
-the law term met when `State.Norms` is non-empty — every entry appended
-only by `resolveProposal` on a passed proposal, count = the adopted-ever
-ledger — and the charter term met when `CharterFingerprint != "" &&
-CharterCustom`, the authorship flag the `metatron.charter_observed` reducer
-arm persists as `!Default`; latest observation wins, so a revert to the
-default charter flips the term back off). An exercise without an arm
+player-origin watch placed before night one's fall — `firstNightWatch`
+scans `State.GuardianOrders` earliest-first) and `the-law` (spec 072
+FR-007, `theLawRubric`: law term met on non-empty `State.Norms` — the
+adopted-ever ledger `resolveProposal` appends — charter term on
+`CharterFingerprint != "" && CharterCustom`, persisted as `!Default` by the
+`metatron.charter_observed` arm; latest observation wins, so a revert to
+the default charter flips it back off). An exercise without an arm
 renders its `RubricTerms` as unevaluated pending rows (the honest default,
 not faked). Emission stays first-night-only (spec 072 FR-009): the-law's
 boundary tick, evidence assembly (`CharterObservedEvidence` needs the
 observed event's `Seq`/`Tick`, which state does not retain), and pass
 emission remain exercise-catalog content work. Evidence rides `OrderPlacedEvidence(order)` — curriculum's
-second sanctioned `EvidenceRef` constructor beside `CharterObservedEvidence`
-— which re-locates the watch's placement event via the reducer-stamped
-`GuardianOrder.PlacedSeq` (`(Seq, Tick)` coordinates, the `Memory.Seq`
-precedent; [[guardian-orders]] owns the field and its stamping). Failure is
-never emitted: `ExerciseOutcome(s, exercise)` derives `in_progress` /
-`passed` / `failed` purely from replica facts (`hasCurriculumPass` vs
-`s.Ended`) — shared by the loop's status composer and the exercise panel's
-banner, so every surface reports the same word.
+second sanctioned `EvidenceRef` constructor — re-locating the watch's
+placement event via the reducer-stamped `GuardianOrder.PlacedSeq`
+([[guardian-orders]] owns the stamping). `ExerciseOutcome(s, exercise)`
+derives `in_progress`/`passed`/`failed` purely from replica facts
+(`hasCurriculumPass` vs `s.Ended`) — shared by the loop's status composer
+and the exercise panel's banner, so every surface reports the same word.
 
 **Incident visibility** (reorientation D4): `IncidentVisibilityFor(def,
-stage)` resolves `VisibilityForecast` ("the schedule is shown ahead of time")
-or `VisibilityFog` ("incidents are revealed only as they happen") — a
-definition's own override wins, else the stage-keyed default (forecast at
-stages 1–2 and pre-ladder, fog from stage 3, `docs/design/tui/patterns/
-stage-defaults.md`). A vocabulary in every signature, never a boolean.
+stage)` resolves the forecast/fog vocabulary — detail in
+[[scenario-machinery-surfacing]].
 
 **Surfacing, wiring, and the exercise tab** — split into
 [[scenario-machinery-surfacing]]: once armed, the exercise id rides
 status/CLI, the manifest, boot wiring, chronicle/morgue narration, and a
-fifth TUI dock tab present only on a scenario world. See the child for the
-per-surface field/call-site detail.
+fifth TUI dock tab present only on a scenario world.
 
 ## Connections
 
@@ -144,8 +136,7 @@ Two exercises ship (`sim.ScenarioExercises`): `first-night` (stage-1, seed
 46101) has a full production rubric evaluator, pass emission, and an
 authored `Schedule` (one `gru_emerges` entry, night one at (44,0));
 `the-law` (stage-2, seed 46102) has a production EVALUATOR since spec 072
-(the once-documented blocker — the charter `Default` flag not being
-state-derivable — was removed by persisting `State.CharterCustom` in the
-reducer) but no pass emission yet (FR-009, content work).
+(the charter-authorship blocker removed by persisting `State.CharterCustom`)
+but no pass emission yet (FR-009, content work).
 `TestScenarioSchedulesCompile` pins every cataloged schedule compiles at
 boot (a compile error here is a content bug, never a runtime one).

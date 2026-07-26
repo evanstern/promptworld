@@ -7,7 +7,7 @@ sources:
   - internal/tui/tiles.go
   - internal/tui/digest.go
   - internal/tui/tui.go
-verified_against: b3f4da3c29e3cbbd933e366abe76a5d6ef0f2be9
+verified_against: 0fd2104c59c54be8e8071d319fa4ce192083faf3
 ---
 
 # TUI map view

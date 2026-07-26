@@ -150,7 +150,7 @@ machinery-only difference → no divergence; interleave labeled and tick-ordered
 
 ## Phase 7: Grounding — wiki-in-PR obligations (in-branch, pr-gate enforced)
 
-- [ ] T020 `/grounding-wiki:wiki-update` reconciliation over the branch diff;
+- [X] T020 `/grounding-wiki:wiki-update` reconciliation over the branch diff;
       review-work re-pins expected on `world-save-directory.md`,
       `world-save-manifest-fields.md`, `world-save-path-helpers.md`,
       `cli-world-lifecycle.md`/`cli-promptworld.md`, `event-log.md`, `snapshots.md`,
@@ -160,7 +160,7 @@ machinery-only difference → no divergence; interleave labeled and tick-ordered
       note) and `deterministic-rng.md` (re-verify); a new `world-forking` concept note
       if the update plan calls for one; computed re-pins for other notes listing touched
       sources — all pinned to branch commits (plan D8, spec FR-021)
-- [ ] T021 Regenerate `docs/player/` via the `player-docs` skill (wiki changed in T020);
+- [X] T021 Regenerate `docs/player/` via the `player-docs` skill (wiki changed in T020);
       `node .claude/skills/player-docs/scripts/check-freshness.mjs --check` passes
       in-branch (plan D8, spec FR-021)
 

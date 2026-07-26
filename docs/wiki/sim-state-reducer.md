@@ -9,7 +9,7 @@ sources:
   - internal/sim/journal.go
   - internal/sim/morgue.go
   - internal/sim/miracles.go
-verified_against: b3f4da3c29e3cbbd933e366abe76a5d6ef0f2be9
+verified_against: 0fd2104c59c54be8e8071d319fa4ce192083faf3
 ---
 
 # Sim state & reducer
@@ -71,7 +71,11 @@ Wall-clock time never appears in state.
 
 Unknown event types — including `daemon.*` and `world.created` — are
 recorded history but state no-ops, so new event types never break old
-replay.
+replay. `world.forked` (spec 076, [[world-forking]]) carries an EXPLICIT
+no-op arm beside `world.created` (self-documentation; the type is never
+"unknown" to future totality checks): the no-op is load-bearing — it keeps
+a fork's state at the fork tick byte-identical to its parent's, since
+lineage lives in the event and the manifest mirror, never on `State`.
 
 ## Connections
 

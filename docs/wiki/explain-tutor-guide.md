@@ -14,7 +14,7 @@ sources:
   - internal/tui/tui.go
   - internal/world/world.go
   - cmd/promptworld/stages.go
-verified_against: 801db7c1b15fb567732bc5c6063464e918353a4d
+verified_against: 0fd2104c59c54be8e8071d319fa4ce192083faf3
 ---
 
 # Explain tool and tutor guide
