@@ -441,3 +441,182 @@ test('the CLI still runs main() when invoked through a symlink', () => {
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+// ---------------------------------------------------------------------------
+// spec 080 — paused-label lanes downgrade to info (praxisflux TASK-55
+// counterpart). Same fixture pattern as the 069 section: a bare origin + one
+// clone in a tmpdir, isolated git config (ENV69), the real CLI spawned as a
+// child process, assertions on exit code + finding rules. Cards live on
+// origin/main AND in the clone's working tree — isTaskPaused reads the main
+// worktree's working tree, the board of record for a local operator pause.
+// ---------------------------------------------------------------------------
+
+const root80 = mkdtempSync(join(tmpdir(), 'paused-lanes-test-'));
+after(() => rmSync(root80, { recursive: true, force: true }));
+
+const origin80 = join(root80, 'origin.git');
+run69('git', ['init', '--bare', '-b', 'main', origin80]);
+const clone80 = join(root80, 'clone');
+run69('git', ['clone', origin80, clone80]);
+const gitIn80 = (...args) => gitIn69(clone80, ...args);
+
+function commitAll80(msg) {
+  gitIn80('add', '-A');
+  gitIn80('commit', '-m', msg);
+  return gitIn80('rev-parse', 'HEAD').stdout.trim();
+}
+
+function card80(id, labelsYaml, extra = '') {
+  return `---\nid: ${id}\ntitle: fixture ${id}\nstatus: In Progress\n${labelsYaml}\n---\n\n## Description\n\nFixture card.${extra}\n`;
+}
+
+// Seed: conflict target, a wiki-pinned source, four cards (two paused — one
+// block-list labels, one inline-flow labels — two live controls), and a spec
+// dir claimed by the paused TASK-810 for the ownership-protection tests.
+write69(clone80, 'conflict.txt', 'base\n');
+write69(clone80, 'internal/pw/x.go', 'package pw // v1\n');
+write69(
+  clone80,
+  'backlog/tasks/task-810 - paused-fixture.md',
+  card80('TASK-810', 'labels:\n  - pdlc\n  - paused', ' Spec: specs/090-paused-claim')
+);
+write69(clone80, 'backlog/tasks/task-811 - live-fixture.md', card80('TASK-811', 'labels:\n  - pdlc'));
+write69(clone80, 'backlog/tasks/task-812 - paused-inline-fixture.md', card80('TASK-812', 'labels: [paused]'));
+write69(clone80, 'backlog/tasks/task-813 - live-cleanup-fixture.md', card80('TASK-813', 'labels: []'));
+write69(clone80, 'specs/090-paused-claim/CLAIM.md', '# Spec 090 — claimed by TASK-810 (fixture)\n');
+const seed80 = commitAll80('seed: fixture cards, sources, claimed spec dir');
+write69(clone80, 'docs/wiki/pw.md', `---\nverified_against: ${seed80}\nsources:\n  - internal/pw/x.go\n---\n\n# PW\n`);
+commitAll80('seed: wiki note pinned');
+gitIn80('push', 'origin', 'main');
+
+function branch80(name, mutate) {
+  gitIn80('switch', '-c', name, 'main');
+  try {
+    mutate();
+  } finally {
+    gitIn80('switch', 'main');
+  }
+}
+
+// Task branches fork BEFORE main advances, so both conflict with origin/main
+// on conflict.txt (and with each other) — deliberately unpushed, so session
+// mode also exercises branch-unpushed on both.
+branch80('task-810-paused-work', () => {
+  write69(clone80, 'conflict.txt', 'paused side\n');
+  commitAll80('paused-side edit');
+});
+branch80('task-811-live-work', () => {
+  write69(clone80, 'conflict.txt', 'live side\n');
+  commitAll80('live-side edit');
+});
+branch80('task-810-wiki-touch', () => {
+  write69(clone80, 'internal/pw/x.go', 'package pw // v2\n');
+  commitAll80('touch pinned source, no re-pin');
+});
+write69(clone80, 'conflict.txt', 'main side\n');
+commitAll80('main advance: conflict.txt');
+gitIn80('push', 'origin', 'main');
+
+// Merged-at-tip worktrees (ancestor => cleanup-eligible): one paused, one live.
+gitIn80('worktree', 'add', join(clone80, '.worktrees', 'task-812'), '-b', 'task-812-parked', 'origin/main');
+gitIn80('worktree', 'add', join(clone80, '.worktrees', 'task-813'), '-b', 'task-813-parked', 'origin/main');
+
+function gate80(mode, args = []) {
+  return run69(process.execPath, [SCRIPT_PATH, mode, '--json', ...args], { cwd: clone80 });
+}
+
+function findBy80(report, rule, evidenceHas) {
+  return report.findings.find(
+    (f) => f.rule === rule && evidenceHas.every((e) => f.evidence.includes(e))
+  );
+}
+
+test('080/session: a paused task branch downgrades drift findings to info, pause as evidence; live control stays warn', () => {
+  const r = gate80('session');
+  assert.equal(r.status, 0, `session must pass: ${r.stdout}${r.stderr}`);
+  const report = parseGate69(r);
+
+  const pausedConflict = findBy80(report, 'textual-conflict', ['task-810-paused-work']);
+  assert.ok(pausedConflict, 'expected a textual-conflict finding for the paused branch');
+  assert.equal(pausedConflict.severity, 'info', 'paused branch conflict must be info');
+  assert.ok(pausedConflict.evidence.includes('paused:TASK-810'), 'pause must be cited as evidence');
+  assert.match(pausedConflict.message, /TASK-810 is paused/);
+
+  const liveConflict = findBy80(report, 'textual-conflict', ['task-811-live-work']);
+  assert.ok(liveConflict, 'expected a textual-conflict finding for the live branch');
+  assert.equal(liveConflict.severity, 'warn', 'live branch conflict must stay warn');
+  assert.ok(!liveConflict.evidence.some((e) => e.startsWith('paused:')));
+
+  const pausedPair = findBy80(report, 'pairwise-conflict', ['task-810-paused-work', 'task-811-live-work']);
+  assert.ok(pausedPair, 'expected the paused x live pairwise finding');
+  assert.equal(pausedPair.severity, 'info', 'either side paused downgrades the pair');
+  assert.ok(pausedPair.evidence.includes('paused:TASK-810'));
+
+  const livePair = findBy80(report, 'pairwise-conflict', ['task-811-live-work', 'task-813-parked']);
+  assert.ok(livePair, 'expected the live x live pairwise finding');
+  assert.equal(livePair.severity, 'warn', 'a fully-live pair must stay warn');
+
+  const pausedUnpushed = findBy80(report, 'branch-unpushed', ['task-810-paused-work']);
+  assert.ok(pausedUnpushed && pausedUnpushed.severity === 'info', 'paused unpushed branch downgrades');
+  const liveUnpushed = findBy80(report, 'branch-unpushed', ['task-811-live-work']);
+  assert.ok(liveUnpushed && liveUnpushed.severity === 'warn', 'live unpushed branch stays warn');
+});
+
+test('080/session: cleanup is never prescribed for a paused branch/worktree (inline labels form detected)', () => {
+  const r = gate80('session');
+  assert.equal(r.status, 0);
+  const report = parseGate69(r);
+
+  const pausedCleanup = findBy80(report, 'cleanup-eligible', ['task-812-parked']);
+  assert.ok(pausedCleanup, 'expected a cleanup-eligible finding for the paused parked branch');
+  assert.equal(pausedCleanup.severity, 'info');
+  assert.match(pausedCleanup.message, /cleanup not prescribed/);
+  assert.ok(pausedCleanup.evidence.includes('paused:TASK-812'), 'inline labels: [paused] must be detected');
+
+  const liveCleanup = findBy80(report, 'cleanup-eligible', ['task-813-parked']);
+  assert.ok(liveCleanup && liveCleanup.severity === 'warn', 'live parked branch keeps the prescription warn');
+
+  const prescribed = report.cleanupPrescriptions.map((p) => p.branch);
+  assert.ok(!prescribed.includes('task-812-parked'), '--apply-cleanup must never see the paused branch');
+  assert.ok(prescribed.includes('task-813-parked'), 'the live merged branch is still prescribed');
+});
+
+test('080/pr: gating a paused task branch — blocking conflict downgrades to info, gate exits 0', () => {
+  const r = gate80('pr', ['--branch', 'task-810-paused-work']);
+  assert.equal(r.status, 0, `paused branch pr gate must pass: ${r.stdout}${r.stderr}`);
+  const report = parseGate69(r);
+  assert.equal(report.verdict === 'blocked', false);
+  const conflict = report.findings.find((f) => f.rule === 'textual-conflict');
+  assert.ok(conflict, 'the conflict is still reported');
+  assert.equal(conflict.severity, 'info');
+  assert.ok(conflict.evidence.includes('paused:TASK-810'));
+  const stale = report.findings.find((f) => f.rule === 'stale-base');
+  assert.ok(stale && stale.severity === 'info', 'stale-base downgrades too');
+});
+
+test('080/pr: the live control branch still blocks on the same conflict', () => {
+  const r = gate80('pr', ['--branch', 'task-811-live-work']);
+  assert.equal(r.status, 1, `live branch pr gate must block: ${r.stdout}${r.stderr}`);
+  const f = parseGate69(r).findings.find((x) => x.rule === 'textual-conflict');
+  assert.ok(f && f.severity === 'block');
+});
+
+test('080/pr: pausing is not a spec-069 bypass — wiki-repin-missing still blocks a paused task branch', () => {
+  const r = gate80('pr', ['--branch', 'task-810-wiki-touch']);
+  assert.equal(r.status, 1, `spec-069 block must survive the pause: ${r.stdout}${r.stderr}`);
+  const f = parseGate69(r).findings.find((x) => x.rule === 'wiki-repin-missing');
+  assert.ok(f, 'expected a wiki-repin-missing finding');
+  assert.equal(f.severity, 'block');
+});
+
+test('080/worktree+claim: ownership protections stay blocking when the owner is paused', () => {
+  const w = gate80('worktree', ['--spec', '090', '--task', 'TASK-999']);
+  assert.equal(w.status, 1, `worktree spec collision must still block: ${w.stdout}${w.stderr}`);
+  const wf = parseGate69(w).findings.find((x) => x.rule === 'spec-number-collision');
+  assert.ok(wf && wf.severity === 'block', 'a paused owner still protects its claimed number');
+
+  const c = gate80('claim', ['--dir', '090-stolen-name']);
+  assert.equal(c.status, 1, `claim collision must still block: ${c.stdout}${c.stderr}`);
+  const cf = parseGate69(c).findings.find((x) => x.rule === 'spec-number-collision');
+  assert.ok(cf && cf.severity === 'block');
+});

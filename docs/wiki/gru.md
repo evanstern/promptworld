@@ -48,6 +48,16 @@ these rules sit upstream of target selection, unchanged by the spec 044
 escalation (FR-016): a protected agent can never be killed because it can
 never be attacked at all.
 
+**Decomposed for read-only export** (spec 074-look-cursor, TASK-142): `litAt`
+now delegates to a private `lightSource(s, x, y) (lit bool, source string)`
+core in this file — same scan, same radius, same behavior (a thin wrapper,
+byte-for-byte the same predicate) — so `internal/sim/env.go`'s exported
+`EnvAt(s, x, y, tick)` can report a tile's light truth for the TUI's
+look-cursor TILE view without a second, potentially-drifting radius
+constant. `warmAt`'s sibling decomposition lives in [[executor-world-state]]
+(`terrain.go`'s `warmthSource`). Neither reducer nor tuning behavior changed;
+this is a pure read-side export.
+
 **Movement** (`gru.moved{x, y}`, one tile per `gruMoveEveryTicks = 4`, slightly
 faster than agents' 5): greedy chase toward the nearest visible agent (ties to
 the lowest index), seeded prowl when nobody is visible. Deliberately greedy
@@ -117,7 +127,8 @@ revision then in force; [[reflex-policy]] supplies the flee-to-warmth response;
 [[social-fabric]] turns witness memories into rumors; [[tui-client]] renders it
 as a red G; [[worldmap-generation]] bounds its spawn border; [[scenario-machinery]]
 shares the night-emergence preemption check (`gruScheduledTonight`) and owns
-the scheduled emission itself.
+the scheduled emission itself; [[tui-map-view]]'s look-cursor TILE view reads
+`sim.EnvAt` (this file's `lightSource` core) for a tile's light level/note.
 
 ## Operational notes
 

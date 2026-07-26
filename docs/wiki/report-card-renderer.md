@@ -1,6 +1,6 @@
 ---
 name: report-card-renderer
-description: The shared rubric-checklist renderer (D5) and the spec-072 shared fact resolver: reportCardFact/reportCardView/reportCardMode plus resolveReportCardFacts and its two evaluator-sourced fact-builders, reused by the postmortem, the ceremony, and (via consoleCard) the guardian console; the help overlay's ceremony-replay section reusing the same helpers; and the skin's per-stage D6 ceremony chapter. Read when touching views.go, reportcard.go, help.go, or skin.go's ceremony-chapter table.
+description: The shared rubric-checklist renderer (D5) and the spec-072 fact resolver — exported replica-parametric by spec 076 (tui.ResolveRubricFacts/RecordedPassFor/RenderReportCard): reused by the postmortem, the ceremony, the guardian console, and promptworld compare's duel (the fourth consumer); plus the help overlay's ceremony-replay section and the skin's per-stage D6 ceremony chapter. Read when touching views.go, reportcard.go, help.go, or skin.go's ceremony-chapter table.
 kind: component
 sources:
   - internal/tui/views.go
@@ -40,26 +40,36 @@ the production wiring into `Model.consoleCards`.
 
 ## The shared fact resolver (spec 072 — report-card truth)
 
-`resolveReportCardFacts(def, pass)` (`internal/tui/reportcard.go`) is the
+`ResolveRubricFacts(state, def, pass)` (`internal/tui/reportcard.go` —
+exported replica-parametric by spec 076; `Model.resolveReportCardFacts` and
+`Model.recordedPassFor` are now thin wrappers passing `m.replica`, the old
+`runEnded()` conjunct folded into the state-driven `s.Ended` read) is the
 ONE precedence switch every card surface derives facts through — the
 postmortem (`postmortemReportCard`), the ceremony (`ceremonyReportCardFor`),
-and the console checklist (`buildChecklistCard`):
+the console checklist (`buildChecklistCard`), and (the fourth consumer)
+`promptworld compare`'s duel scoreboard ([[world-forking]]), which reaches
+it through the exported surface: `ReportCardFact`/`ReportCardMode` type
+aliases with `ReportCardConcluded`/`ReportCardLive` consts,
+`RecordedPassFor(state, exercise)` for the instrument lookup, and
+`RenderReportCard(title, facts, mode, width)` wrapping `reportCardView` —
+the duel card and the postmortem card are the same artifact by
+construction, and a second precedence switch anywhere is a spec violation:
 
-1. **Recorded pass** (`recordedPassFor`) — the instrument: every term
+1. **Recorded pass** (`RecordedPassFor`) — the instrument: every term
    renders met (the emitter only fires when every term held; re-read, never
    re-grade), backing preferring the pass's own `Evidence` refs
    (`reportCardFactsFromPass`, `"<type> · seq <n>"`, first match by event
    type).
-2. **Run ended** — concluded `sim.EvaluateRubric` facts over the replica
-   (`reportCardFactsFromRubric`): a failed term renders `✗` with its honest
-   backing count (`"agent.died: 2"` on a two-death run), never a
+2. **Run ended** (`s.Ended`) — concluded `sim.EvaluateRubric` facts over the
+   state (`reportCardFactsFromRubric`): a failed term renders `✗` with its
+   honest backing count (`"agent.died: 2"` on a two-death run), never a
    presence-derived `✓`.
 3. **Still running** — the same rubric facts in live (`…` pending) mode.
 
 Labels are always `sim.RubricTerm.Label`'s hand-authored plain language
 ("no villager dies") — the evaluator is the same pure derivation the pass
 emitter and the exercise tab's gauges read ([[scenario-machinery]]), so no
-two surfaces can disagree. A nil replica yields no facts (no card). The
+two surfaces can disagree. A nil state yields no facts (no card). The
 pre-072 presence-based builders (`reportCardFactsFromCounts/FromEvents/
 FromEvidence`) and the mechanical `humanizeEventType` gloss are deleted:
 they graded a term met the first time its event type appeared at all —

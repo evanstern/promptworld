@@ -48,6 +48,13 @@ Runtime files (`daemon.sock`, `daemon.pid`) exist only while a daemon runs and a
 swept by [[daemon-lifecycle]] when stale. The full layout is documented in
 `specs/001-world-daemon/contracts/storage.md`.
 
+The spec-076 fork ceremony ([[world-forking]]) consumes this catalog as its
+copy/skip table: player input and per-world profiles copy into a fork
+(`llm.json`, `calibration.json`, `estimator_state.json`, `charter.md`,
+`tuning.json`, `metatron/`, `bundles/`, `agents/`); runtime files, migration
+archives, and the scribe's regenerable views (`chronicle.md`, `morgue.md`,
+`village_charter.md`) stay behind.
+
 ## Connections
 
 Back to [[world-save-directory]] for the manifest/`Create`/`Open` mechanics

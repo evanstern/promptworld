@@ -120,7 +120,8 @@ of the retired raw constants.
 `world.migrated` (spec 012 US6) is the one case that does not incrementally mutate
 fields: after checking the payload's `State.Seed` matches (a mismatched payload
 no-ops, keeping `Apply` total), it replaces `*s` wholesale with the embedded state —
-[[world-migration]] is the only producer.
+[[world-migration]] is the only producer. `world.forked` (spec 076,
+[[world-forking]]): an explicit no-op arm — provenance stays off `State`.
 
 ## Connections
 

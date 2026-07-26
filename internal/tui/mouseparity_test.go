@@ -20,6 +20,10 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	tea "github.com/charmbracelet/bubbletea"
+
+	"github.com/evanstern/promptworld/internal/sim"
 )
 
 // controlTableCorpusRoot is the relative read from this package's directory
@@ -190,6 +194,111 @@ var mouseParityOracle = []mouseParityOracleEntry{
 		claim:   "click line",
 		check:   checkChronicleJumpToSourceMouseClaim,
 	},
+	{
+		page:    "panels/map.md",
+		control: "look-cursor toggle + click-move",
+		claim:   "click a map tile (enters the mode there if inactive, moves the cursor there if already active)",
+		check:   checkLookCursorMapClickMouseClaim,
+	},
+	{
+		page:    "panels/dock.md",
+		control: "TILE pane row select/drill",
+		claim:   "click a row selects, a second click drills",
+		check:   checkLookCursorTilePaneClickMouseClaim,
+	},
+}
+
+// checkLookCursorMapClickMouseClaim proves panels/map.md's click-tile claim
+// (spec 074-look-cursor, US4 AS1/AS2): a left-release inside the recorded
+// mapHitRegion enters the look-cursor mode at the clicked tile when it was
+// inactive, and moves an already-active cursor there without re-entering —
+// the TestLookMouseClickEntersModeAtClickedTile/
+// TestLookMouseClickMovesActiveCursor precedents (look_test.go), reused
+// rather than duplicated.
+func checkLookCursorMapClickMouseClaim(t *testing.T) {
+	t.Helper()
+	m := widescreenModel(t)
+	m.replica.Agents = nil
+	cols := computeColumns(m.width)
+	rows := computeRows(m.height, m.wantsLessonRow())
+	_ = m.mapPanelView(cols.MapCols, rows.Body) // records mapHit
+
+	hit := m.mapHit
+	if hit == nil || !hit.valid {
+		t.Fatal("test setup: mapHit should be valid after rendering the map panel")
+	}
+	clickX, clickY := hit.originX+2, hit.originY+1
+
+	// Inactive -> enters the mode at the clicked tile.
+	mdl, _ := m.Update(mouseLeftRelease(clickX, clickY))
+	mm := mdl.(Model)
+	if !mm.lookActive {
+		t.Fatal("clicking a map tile should enter the look-cursor mode")
+	}
+	wantX, wantY := hit.x0+1, hit.y0+1
+	if mm.lookX != wantX || mm.lookY != wantY {
+		t.Fatalf("cursor should land on the clicked tile (%d,%d), got (%d,%d)", wantX, wantY, mm.lookX, mm.lookY)
+	}
+
+	// Already active -> moves the cursor, no mode churn.
+	_ = mm.mapPanelView(cols.MapCols, rows.Body) // re-record mapHit under the active mode
+	hit2 := mm.mapHit
+	clickX2, clickY2 := hit2.originX+6, hit2.originY+2
+	mdl2, _ := mm.Update(mouseLeftRelease(clickX2, clickY2))
+	after := mdl2.(Model)
+	if !after.lookActive {
+		t.Fatal("a second click should not exit the mode")
+	}
+	if after.lookX != hit2.x0+3 || after.lookY != hit2.y0+2 {
+		t.Errorf("cursor should move to the newly clicked tile: got (%d,%d)", after.lookX, after.lookY)
+	}
+}
+
+// checkLookCursorTilePaneClickMouseClaim proves panels/dock.md's TILE-pane
+// click claim (spec 074-look-cursor, US4 AS3): clicking a row selects it
+// (acquiring pane focus), and a second click on the already-selected row
+// drills in — the TestLookMouseTilePaneClickSelectsThenDrills precedent
+// (look_test.go), reused rather than duplicated.
+func checkLookCursorTilePaneClickMouseClaim(t *testing.T) {
+	t.Helper()
+	m := widescreenModel(t)
+	m.replica.Agents = []sim.Agent{{Name: "Ash", X: 8, Y: 8}}
+	var mdl tea.Model = update(m, "v")
+	mm := mdl.(Model)
+	mm.lookX, mm.lookY = 8, 8
+	mdl = mm
+
+	cols := computeColumns(mdl.(Model).width)
+	rows := computeRows(mdl.(Model).height, mdl.(Model).wantsLessonRow())
+	_ = mdl.(Model).dockPanelView(cols.DockCols, rows.Body) // records tileHit
+
+	hit := mdl.(Model).tileHit
+	if hit == nil || !hit.valid {
+		t.Fatal("test setup: tileHit should be valid after rendering the dock panel")
+	}
+	rowOffset := -1
+	for i, ri := range hit.rowIndex {
+		if ri >= 0 {
+			rowOffset = i
+			break
+		}
+	}
+	if rowOffset < 0 {
+		t.Fatal("test setup: expected at least one selectable TILE-pane row")
+	}
+	clickX, clickY := hit.originX, hit.originY+rowOffset
+
+	mdl2, _ := mdl.(Model).Update(mouseLeftRelease(clickX, clickY))
+	sel1 := mdl2.(Model)
+	if sel1.lookFocus != lookFocusPane || sel1.lookSel != hit.rowIndex[rowOffset] {
+		t.Fatalf("first click should select the row and acquire pane focus: focus=%v sel=%d", sel1.lookFocus, sel1.lookSel)
+	}
+
+	mdl3, _ := sel1.Update(mouseLeftRelease(clickX, clickY))
+	sel2 := mdl3.(Model)
+	if sel2.lookFocus != lookFocusDrill {
+		t.Error("a second click on the already-selected row should drill in")
+	}
 }
 
 // checkChronicleJumpToSourceMouseClaim proves panels/chronicle.md's "click

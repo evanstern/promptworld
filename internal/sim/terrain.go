@@ -134,23 +134,34 @@ func buildSite(m *worldmap.Map, s *State, x, y int) bool {
 	return true
 }
 
-// warmAt: within fireWarmRadius of a LIT fire, or exactly on a shelter tile.
-// A fire is lit iff tick < FuelUntil (T019): a burned-out fire grants no
-// warmth. Shelter warmth is unchanged (no fuel).
-func warmAt(s *State, x, y int, tick int64) bool {
+// warmthSource decomposes warmAt's own scan into the warmth truth PLUS which
+// structure kind produced it — "fire" (within fireWarmRadius of a LIT fire)
+// or "shelter" (exactly on a shelter tile) — in the exact structure-scan
+// order warmAt has always used, so a tile satisfying both never disagrees on
+// which source env.go's EnvAt attributes it to (spec 074 research R4).
+// warmAt is a thin wrapper over this (SC-006: the two can never diverge).
+func warmthSource(s *State, x, y int, tick int64) (warm bool, source string) {
 	for _, st := range s.Structures {
 		switch st.Kind {
 		case "fire":
 			if tick < st.FuelUntil && abs(st.X-x)+abs(st.Y-y) <= fireWarmRadius {
-				return true
+				return true, "fire"
 			}
 		case "shelter":
 			if st.X == x && st.Y == y {
-				return true
+				return true, "shelter"
 			}
 		}
 	}
-	return false
+	return false, ""
+}
+
+// warmAt: within fireWarmRadius of a LIT fire, or exactly on a shelter tile.
+// A fire is lit iff tick < FuelUntil (T019): a burned-out fire grants no
+// warmth. Shelter warmth is unchanged (no fuel).
+func warmAt(s *State, x, y int, tick int64) bool {
+	warm, _ := warmthSource(s, x, y, tick)
+	return warm
 }
 
 func (s *State) structureAt(kind string, x, y int) bool {

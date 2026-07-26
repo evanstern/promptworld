@@ -89,6 +89,15 @@ scenario worlds, and the `run.ended` half is gated on the armed scenario), so
 a sub-one-game-day scenario run still yields a narrated chapter carrying the
 outcome.
 
+**Incident visibility** (reorientation D4, `IncidentVisibilityFor(def,
+stage)` in `internal/sim/scenario.go`): resolves `VisibilityForecast` ("the
+schedule is shown ahead of time") or `VisibilityFog` ("incidents are
+revealed only as they happen") — a definition's own override wins, else the
+stage-keyed default (forecast at stages 1–2 and pre-ladder, fog from stage
+3, `docs/design/tui/patterns/stage-defaults.md`). A vocabulary in every
+signature, never a boolean; the tab below and the attach briefing are its
+consumers.
+
 **The exercise tab** (`internal/tui/exercise.go`, [[tui-client]]): a fifth
 dock tab, `paneExercise` (key `6`), present ONLY on a scenario world
 (`Model.exerciseID()` reads `m.w.Manifest.Scenario` plus a live

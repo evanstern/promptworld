@@ -38,13 +38,15 @@ resilience, and the widescreen/narrow layout's three-step fold cascade
 
 **Map view** — [[tui-map-view]]. The map camera region: terrain/agent/
 structure glyph rendering resolved through the tile registry, condition
-overlays, camera pan and jump-to-source, and the legend's stockpile-zone/
-chest inspection additions.
+overlays, camera pan and jump-to-source, the look-cursor tile-inspection
+mode (spec 074-look-cursor), and the legend's stockpile-zone/chest
+inspection additions.
 
 **Dock tabs (chronicle, guardian, systems)** — [[tui-dock-tabs]]. The dock's
 tab bar, the guardian tab's skin-resolved label, the guardian console
-full-height page, and the chronicle/guardian/systems tab contents (LLM
-provider table, cognition horizon block, standing-orders block). The
+full-height page, the chronicle/guardian/systems tab contents (LLM
+provider table, cognition horizon block, standing-orders block), and the
+look-cursor mode's transient TILE-view borrow of the dock body. The
 scenario-only exercise tab is covered there too.
 
 **Villagers tab** — [[tui-villagers-tab]]. The villagers roster, detail view,

@@ -100,6 +100,24 @@ type Manifest struct {
 	// an ambient world: every scenario code path stays dormant and the
 	// world is byte-identical to pre-054.
 	Scenario *ScenarioConfig `json:"scenario,omitempty"`
+	// Lineage records fork provenance (spec 076): the parent world this one
+	// was forked from and the boundary tick. The world.forked event in this
+	// world's own log is authoritative; this block is the offline mirror
+	// (compare's default window) — written once by Fork, never mutated.
+	// Additive omitempty, no FormatVersion bump (the Teaching precedent): a
+	// lineage-less world.json round-trips byte-identically.
+	Lineage *LineageConfig `json:"lineage,omitempty"`
+}
+
+// LineageConfig is the fork-provenance manifest mirror (spec 076 FR-008).
+// Parent is the parent world's manifest name at fork time; ParentCreatedAt
+// (RFC3339) disambiguates renamed/recreated parents; ForkTick is the
+// boundary snapshot tick the fork was cut at. Validated structurally at
+// Open (non-empty parent, fork_tick >= 0) — not a closed vocabulary.
+type LineageConfig struct {
+	Parent          string `json:"parent"`
+	ParentCreatedAt string `json:"parent_created_at,omitempty"`
+	ForkTick        int64  `json:"fork_tick"`
 }
 
 // ScenarioConfig names the exercise a world is seeded to run (spec 046 US4,
@@ -359,6 +377,17 @@ func Open(dir string) (*World, error) {
 	// must name a shipped exercise — a typo must never silently boot ambient.
 	if m.Scenario != nil && !ValidScenarioExercise(m.Scenario.Exercise) {
 		return nil, fmt.Errorf("corrupt %s: scenario exercise %q unknown (want a shipped exercise id, or the block absent)", ManifestName, m.Scenario.Exercise)
+	}
+	// Lineage block (spec 076 FR-008): structural check only — a present
+	// block must name its parent and carry a sane boundary tick. Absence is
+	// the byte-identical pre-fork path.
+	if m.Lineage != nil {
+		if m.Lineage.Parent == "" {
+			return nil, fmt.Errorf("corrupt %s: lineage block missing its parent name", ManifestName)
+		}
+		if m.Lineage.ForkTick < 0 {
+			return nil, fmt.Errorf("corrupt %s: lineage fork_tick %d negative", ManifestName, m.Lineage.ForkTick)
+		}
 	}
 	// Terrain generation (spec 068 C12, the format_version posture): absent/0
 	// is legacy; the current generation is accepted; anything else — a future

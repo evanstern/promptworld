@@ -71,7 +71,11 @@ Wall-clock time never appears in state.
 
 Unknown event types — including `daemon.*` and `world.created` — are
 recorded history but state no-ops, so new event types never break old
-replay.
+replay. `world.forked` (spec 076, [[world-forking]]) carries an EXPLICIT
+no-op arm beside `world.created` (self-documentation; the type is never
+"unknown" to future totality checks): the no-op is load-bearing — it keeps
+a fork's state at the fork tick byte-identical to its parent's, since
+lineage lives in the event and the manifest mirror, never on `State`.
 
 ## Connections
 

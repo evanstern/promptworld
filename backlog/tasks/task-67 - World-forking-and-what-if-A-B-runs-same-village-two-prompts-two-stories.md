@@ -1,10 +1,10 @@
 ---
 id: TASK-67
 title: 'World forking and what-if A/B runs (same village, two prompts, two stories)'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-23 03:28'
-updated_date: '2026-07-26 18:52'
+updated_date: '2026-07-26 20:13'
 labels:
   - review-2026-07-22
   - teaching-game
@@ -23,17 +23,27 @@ From the 2026-07-22 team review (new-ideas item 5) — the killer teaching featu
 Scope: (a) promptworld fork <world> <new-name> [--at latest-snapshot] — copy the save dir truncated to a chosen snapshot boundary, assign a fresh world identity (name registration, socket, any world-scoped ids) so both run side by side; document the semantics of forking mid-log vs at-snapshot (simplest v1: latest snapshot only). (b) Lineage recorded in the fork (parent world + fork tick) as an event/metadata so provenance is durable. (c) A comparison surface: v1 can be CLI — promptworld compare <a> <b> [--since tick] rendering the two chronicles side-by-side or interleaved with divergence markers; a TUI view can come later. (d) Doctrine note: forks are independent worlds afterward (no merging, ever). Design question to settle in spec: does the fork inherit the LLM budget meter or get its own (interacts with the global monthly ceiling — review flagged cost attribution as coarse).
 
 Depends on nothing, but pairs naturally with the decision-trace view (TASK-63): trace explains one run, fork contrasts two.
+
+Spec: specs/076-world-fork-duel
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 promptworld fork creates a runnable copy at the latest snapshot with fresh identity; both worlds run simultaneously
-- [ ] #2 Fork lineage (parent, fork tick) durably recorded in the new world
-- [ ] #3 A compare surface renders two chronicles against each other with divergence visible
-- [ ] #4 Forked world passes the determinism harness independently (replay to identical hash)
-- [ ] #5 Budget-meter semantics for forks decided and documented in the spec
-- [ ] #6 Spec Kit spec written and linked via spec-bridge before implementation (non-trivial task)
-- [ ] #7 Compare/duel output includes an event-derived rubric (deaths, needs floors, norms passed, charge efficiency, rejected-call rate) rendered plain-language per the glossary discipline (no raw enums in a grade)
+- [x] #1 promptworld fork creates a runnable copy at the latest snapshot with fresh identity; both worlds run simultaneously
+- [x] #2 Fork lineage (parent, fork tick) durably recorded in the new world
+- [x] #3 A compare surface renders two chronicles against each other with divergence visible
+- [x] #4 Forked world passes the determinism harness independently (replay to identical hash)
+- [x] #5 Budget-meter semantics for forks decided and documented in the spec
+- [x] #6 Spec Kit spec written and linked via spec-bridge before implementation (non-trivial task)
+- [x] #7 Compare/duel output includes an event-derived rubric (deaths, needs floors, norms passed, charge efficiency, rejected-call rate) rendered plain-language per the glossary discipline (no raw enums in a grade)
+- [x] #8 Spec phase: Setup
+- [x] #9 Spec phase: Foundational — lineage vocabulary + store helper (blocks Phase 3)
+- [x] #10 Spec phase: User Story 1 — the fork verb; both run side by side (P1, board ACs #1/#2/#4/#5)
+- [x] #11 Spec phase: User Story 2 — the duel scoreboard (P2, board AC #7)
+- [x] #12 Spec phase: User Story 3 — divergence + interleaved chronicles (P3, board AC #3)
+- [x] #13 Spec phase: Design reference — authority gate (spec 047)
+- [x] #14 Spec phase: Grounding — wiki-in-PR obligations (in-branch, pr-gate enforced)
+- [x] #15 Spec phase: Polish & close-out
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -46,6 +56,8 @@ Reorient 2026-07-25 rescope (D7): v1 compare surface is the rubric-first scorebo
 Reorient 2026-07-26 decision 3 (docs/design/reorient-2026-07-26-ui.md): promoted to HIGH and reframed as the loop's iteration rung — all D7 prerequisites shipped (spec 054 rubric evaluator, spec 056/063 report-card renderer, glossary discipline, postmortem register), so v1 is dramatically cheaper than when scoped. v1 = rubric-first scoreboard sharing reportCardView + sim.EvaluateRubric (AC #7's rubric should be EvaluateRubric terms, not a bespoke list); phase 2 = the Boatmurdered-style shareable HTML retelling (one renderer family); dual side-by-side TUI stays deferred. Depends on TASK-149 — the duel must not compare false checkmarks.
 
 Sweep claim (runbook docs/design/reorient-2026-07-26-sweep-runbook.md): spec 076-world-fork-duel. Tier: Opus 4.8 — cross-package architectural (world-lifecycle fork, fresh identity, lineage events, determinism harness, compare surface). Dependency satisfied: TASK-149 merged (PR #113, f78358a) — duel scoreboard shares resolveReportCardFacts/reportCardView + sim.EvaluateRubric, comparing true verdicts.
+
+AC5 settled at spec time (research R4): fork INHERITS the wallet — per-world meter architecture (meter.go meta table + per-world llm.json) means no machine-global ceiling exists to share; spend keys copied so forking never mints budget. Deviates with evidence from the runbook's original recommendation; runbook amended, operator surfaced.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -56,3 +68,9 @@ created: 2026-07-25 04:42
 Rescoped per learning-game synthesis (2026-07-25): reframed from teaching feature to core game verb — the fork-duel is the grader and postmortem (charter A vs B on a seeded fork; 'here is what your prompt change did'). Hybrid-scoring decision applies: duels are a scored surface. Framed as the losing-is-fun postmortem artifact. Grounding: both vault analyses, recommendation 2 in each.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Merged via PR #116 (merge commit 4daf75c). promptworld fork ships as a fresh-store ceremony (events streamed to snapshot boundary, hash re-verified, world.forked lineage event, seed carried, identity fresh, wallet inherited — never mints budget); promptworld compare renders the rubric-first duel scoreboard through the exported spec-072 resolver (plain language, no raw enums; lost duel = truthful postmortem), divergence over story events with honest identical-since-fork line, interleaved chronicles. Determinism proofs green (fork replays to identical hash independently; boundary state byte-identical to parent). Phase 2 (HTML retelling) and dual-TUI remain deferred as scoped. Tier: Opus 4.8 as recorded.
+<!-- SECTION:FINAL_SUMMARY:END -->

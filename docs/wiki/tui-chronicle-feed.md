@@ -88,7 +88,11 @@ new `guardian` namespace joins `familyByNamespace`, mapped onto the SAME
 guardian family voice the FROZEN `metatron.*` namespace uses (the digest
 line renders the skin's report-card label, the charter fingerprint, and the
 note's own text truncated to 80 runes, the `morgue.epilogue` truncation
-manner). The four
+manner). Since spec 076, `world.forked` ([[world-forking]]) gets a
+world-lifecycle-voice entry — "forked from `<parent>` at day D, HH:MM", the
+fork's provenance rendered in game time (the digest line is the v1
+rendering; a chronicle narration of the split is a documented unfunded
+follow-on). The four
 [[guardian-miracles]] types render in the guardian family voice, with a
 trailing emphasized `(forced)` annotation (`gratisMark`) whenever the
 payload's gratis flag waived the charge — an operator force is never
@@ -98,7 +102,10 @@ future types fall back to the compact resolved-name JSON of the old grammar
 covering `agent`, `a`, `b`, `from`, `to`, `speaker`, `listener`, `subject`,
 `owner`, `taker` — still drives that fallback and the inspector). A sweep
 test (`digest_test.go`) fails if any type cataloged in [[event-types]] lacks
-a digest. Pausing puts the visible chronicle into **inspect mode**:
+a digest. Pausing puts the visible chronicle into **inspect mode** — dormant
+whenever the look-cursor mode (spec 074-look-cursor, [[tui-map-view]]) has
+borrowed the dock, since `chronicleVisible()` reads false for the duration
+of that borrow, the same as if a different tab were selected:
 `j`/`k`/`g`/`G` select, and the selected event's full detail shows
 automatically in an always-on **detail pane** at the panel bottom — seq,
 tick, type, the stored payload verbatim, pretty-printed with `// name`

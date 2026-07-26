@@ -706,3 +706,61 @@ func TestResizeRoundTripWhilePausedWithSelection(t *testing.T) {
 			mm.panX, mm.panY, mm.gameMap.W, mm.gameMap.H)
 	}
 }
+
+// TestLookModeNeverCapturesText (spec 074 FR-004, T017): the focus contract's
+// "exactly one text-capture client" claim stays true — no look-cursor focus
+// layer (cursor/pane/drill) ever buffers a printable key anywhere; the
+// minibuffer remains the only client, exactly as patterns/focus-contract.md
+// states before this feature and still states after it (the doc amendment
+// this test backs).
+func TestLookModeNeverCapturesText(t *testing.T) {
+	printable := []string{"u", "i", "c", "k", "z"} // avoids "q" (quit) and "m" (minibuffer focus) — global keys, not text capture
+
+	build := func(t *testing.T) Model {
+		m := widescreenModel(t)
+		m.replica.Agents = []sim.Agent{{Name: "Ash"}}
+		var mdl tea.Model = update(m, "v")
+		return mdl.(Model)
+	}
+
+	t.Run("cursor focus", func(t *testing.T) {
+		m := build(t)
+		var mdl tea.Model = m
+		for _, k := range printable {
+			mdl = update(mdl, k)
+		}
+		mm := mdl.(Model)
+		if mm.mbFocused || mm.mbInput != "" {
+			t.Errorf("cursor focus must never capture text: mbFocused=%v mbInput=%q", mm.mbFocused, mm.mbInput)
+		}
+	})
+	t.Run("pane focus", func(t *testing.T) {
+		m := build(t)
+		var mdl tea.Model = update(m, "enter")
+		for _, k := range printable {
+			mdl = update(mdl, k)
+		}
+		mm := mdl.(Model)
+		if mm.mbFocused || mm.mbInput != "" {
+			t.Errorf("pane focus must never capture text: mbFocused=%v mbInput=%q", mm.mbFocused, mm.mbInput)
+		}
+	})
+	t.Run("drill focus", func(t *testing.T) {
+		m := build(t)
+		mm := m
+		mm.lookX, mm.lookY = mm.replica.Agents[0].X, mm.replica.Agents[0].Y
+		var mdl tea.Model = mm
+		mdl = update(mdl, "enter") // -> pane
+		mdl = update(mdl, "enter") // -> drill (agent row)
+		if mdl.(Model).lookFocus != lookFocusDrill {
+			t.Fatal("test setup: expected drill focus")
+		}
+		for _, k := range printable {
+			mdl = update(mdl, k)
+		}
+		got := mdl.(Model)
+		if got.mbFocused || got.mbInput != "" {
+			t.Errorf("drill focus must never capture text: mbFocused=%v mbInput=%q", got.mbFocused, got.mbInput)
+		}
+	})
+}

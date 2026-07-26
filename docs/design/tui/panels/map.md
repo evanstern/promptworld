@@ -6,6 +6,7 @@ verified_against: 2d7a54940f8512340143e8ca5a8ba53e6e196aa2
 sources:
   - internal/tui/views.go
   - internal/tui/tiles.go
+  - internal/tui/look.go
 ---
 
 # Panel: map
@@ -171,16 +172,38 @@ agent never carries either overlay (no needs, no mind to suppress).
 terminal blink — accessibility + terminal-variance doctrine, identical to
 the existing damaged-wall/cold-fire faded-treatment precedent.
 
-**Look-cursor: evaluated and deferred** (spec 060 standing resolution 2).
-The feature's task asked whether a free-roaming look-cursor should exist
-alongside the growing legend line. Conclusion: chronicle jump-to-source
-(spec 049) plus the legend's own inspection line (piles/chests, above)
-already cover "what is that tile" for every shipped surface; a look-cursor
-would add a FOURTH inspection modality with its own key-mode for marginal
-gain over what these three overlays already make visible from orbit.
-Deferred — re-open if playtesting shows legend-line overflow pain becomes
-the actual bottleneck (not addressed by a look-cursor anyway, which doesn't
-touch the legend).
+**Look-cursor: re-opened and shipped** (spec 074-look-cursor, TASK-142 —
+re-opens the spec 060 standing resolution 2 deferral below). The deferral's
+own resurfacing trigger ("re-open if playtesting shows ... the actual
+bottleneck") was never what re-opened this: the operator's 2026-07-26 request
+plus reorientation synthesis decision 4 ("the map cannot be interrogated")
+is the signal — a distinct gap from legend-line overflow, and this feature's
+research (specs/074-look-cursor/research.md) grounds it in the code as read
+at re-open time, not a re-litigation of the original evaluation. `v` toggles
+a cursor on the map (`hjkl`/arrows move 1, `H/J/K/L` jump 8, a 2-tile margin
+pushes the camera, `c` snaps); while active the dock body is borrowed by a
+transient TILE view (`panels/dock.md`) — the fourth inspection modality the
+original deferral named, now justified by decision 4's gap rather than
+legend-line pressure. Original deferral text, preserved for its own history:
+
+> The feature's task asked whether a free-roaming look-cursor should exist
+> alongside the growing legend line. Conclusion: chronicle jump-to-source
+> (spec 049) plus the legend's own inspection line (piles/chests, above)
+> already cover "what is that tile" for every shipped surface; a look-cursor
+> would add a FOURTH inspection modality with its own key-mode for marginal
+> gain over what these three overlays already make visible from orbit.
+> Deferred — re-open if playtesting shows legend-line overflow pain becomes
+> the actual bottleneck (not addressed by a look-cursor anyway, which doesn't
+> touch the legend).
+
+**Cursor rendering**: a background-highlight style transform
+(`styleLookCursor`, `lipgloss.Reverse(true)`) over whatever glyph `tile()`
+resolves at the cursor tile — never a new glyph (spec-068 FR-003 discipline
+extended; `TestTilesIdentityPin`'s goldens are untouched because mode-off
+rendering never reaches this branch). The title row gains a third state:
+`MAP · cursor (x,y) · c center · esc exit` — see `patterns/keymap.md`'s new
+"Mode: look-cursor" table for the full key set and the borrow's key-layering
+rule, and `patterns/focus-contract.md` for the pane-focus scope note.
 
 ## Control table
 
@@ -195,7 +218,16 @@ touch the legend).
 | camera recenter | — | `Model.panX`/`panY` reset | `mapPanelView` | `c` · — | TASK-34 | — |
 | legend / inspection line | terrain-only · +piles · +chests | in-view piles/chests | `renderMapGrid` (legend half) | — (display-only) | spec 013 | — |
 | condition overlay | needs-critical · suppressed-mind · dying-fire | `replica.Agents` (`Needs`) · `Model.traces` · `replica.Structures` (`FuelUntil`) | `renderMapGrid` (`needsCritical`, `agentSuppressedMind`, fire branch) | — (display-only) | reorient Wave 5, spec 060 | — |
+| look-cursor toggle + click-move | off · on; cursor tile `(lookX,lookY)` | `Model.lookActive`, `lookX`/`lookY` | `handleGlobalKey` "v", `handleLookCursorKey` (`look.go`) | `v` · click a map tile (enters the mode there if inactive, moves the cursor there if already active) | spec 074 | — |
+| look-cursor keyboard move/jump | cursor tile `(lookX,lookY)` | `Model.lookX`/`lookY` | `handleLookCursorKey` (`look.go`) | `hjkl`/arrows move 1 · `HJKL` jump 8 · — | spec 074 | — |
+| look-cursor camera snap | following · panned-to-cursor | `Model.panX`/`panY` | `snapCameraToCursor` (`look.go`) | `c` (in-mode) · — | spec 074 | — |
+| look-cursor tile highlight | highlighted · plain | `Model.lookActive`, `lookX`/`lookY` | `renderMapGrid` (`styleLookCursor` transform) | — (display-only) | spec 074 | — |
 
-**Parity rollout**: pan (`←↑↓→`) and recenter (`c`) have no mouse target
-today; tracked here rather than omitted (decision 8, formal doctrine in
-`patterns/keymap.md`, T024).
+**Parity rollout**: pan (`←↑↓→`) and recenter (`c`, outside the mode) still
+have no mouse target — tracked here rather than omitted (decision 8, formal
+doctrine in `patterns/keymap.md`). The map's first REAL mouse target ships
+with this feature: a left-click on a visible tile enters the look-cursor
+mode there (or moves an already-active cursor) — `patterns/keymap.md`'s
+mouse-parity note and `panels/dock.md`'s TILE-pane click target are the
+other two legs of the same click-tile/click-row parity landing (US4,
+decision 8 rule 1: keyboard and mouse land together).

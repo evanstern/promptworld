@@ -1,10 +1,11 @@
 ---
 name: world-save-directory
-description: One directory = one world run — manifest (world.json), create/open validation, path helpers, clean separability, v1→v2→v3→v4→v5 migration; the manifest field-by-field catalog and the path-helper catalog live in two split-off children
+description: One directory = one world run — manifest (world.json), create/open validation, path helpers, clean separability, v1→v2→v3→v4→v5 migration, and the spec-076 fork ceremony (fresh prefix log at the snapshot boundary under a fresh identity); the manifest field-by-field catalog and the path-helper catalog live in two split-off children
 kind: component
 sources:
   - internal/world/world.go
   - internal/world/migrate.go
+  - internal/world/fork.go
 verified_against: 4c66d240b2715706964f02cfd2396256c9957d8e
 ---
 
@@ -104,12 +105,20 @@ absent, so it keeps legacy generation) do not change at all; `Migrate` detects a
 v4 source, bumps `Manifest.FormatVersion` to 5, and returns
 `MigrateResult{ManifestOnly: true}`.
 
+**Forking** (`fork.go`, spec 076 — [[world-forking]] has the full design):
+`Fork(srcDir, destDir, newName)` copies a stopped world at its latest
+snapshot under a fresh identity: parent event prefix into a fresh
+`world.db`, boundary snapshot verbatim, one `world.forked` lineage event,
+meta + manifest stamped (seed carried). Forks never merge.
+
 ## Connections
 
 [[daemon-lifecycle]] opens the world and cross-checks the manifest against store meta;
 [[event-log]] and [[snapshots]] live inside `world.db`; [[ipc-server]] binds the socket
 at `SockPath()`. [[cli-promptworld]]'s `new` creates worlds and `migrate` upgrades
-an older one ([[world-migration]]). [[world-save-manifest-fields]] and
+an older one ([[world-migration]]). [[world-forking]] is `fork.go`'s
+ceremony in full, plus the `promptworld fork`/`compare` doors.
+[[world-save-manifest-fields]] and
 [[world-save-path-helpers]] carry the field-by-field and file-by-file detail
 this note summarizes — their own Connections sections link the subsystem
 each field/path belongs to (worldmap-generation, mental-maps,

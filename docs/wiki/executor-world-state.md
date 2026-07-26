@@ -83,7 +83,15 @@ generator produced, and `passable` admits both alongside grass/forage/Depleted
 (marsh/sand carry no resource affordance and are never buildable, same as forage).
 Structures (`fire`, `shelter`, `oven`, `chest`)
 exist only in state; `warmAt` is a *lit* fire within Manhattan radius 2, or standing on a
-shelter (ovens grant no warmth). `fireStructAt`/`litFireAt` locate a fire by
+shelter (ovens grant no warmth) — decomposed (spec 074-look-cursor, TASK-142)
+into a private `warmthSource(s, x, y, tick) (warm bool, source string)` core
+that attributes WHICH structure (fire vs. shelter, in the same scan order
+`warmAt` always used) provided the warmth; `warmAt` is now a thin wrapper, and
+`internal/sim/env.go`'s exported `EnvAt` reads the same core so the TUI's
+look-cursor TILE view can show a warmth level/source without a duplicated
+radius constant (`gru.md`'s `lightSource` is the sibling decomposition for
+light). Behavior and byte output are unchanged — a pure read-side export, no
+reducer/tuning change. `fireStructAt`/`litFireAt` locate a fire by
 coordinate and test lit-ness for the refuel/cook completion checks. Spec 032
 adds two more structure kinds and the first one to affect pathing: `isWall`
 names the wall family (`wall_plank`, `wall_stone`); `passable` now checks

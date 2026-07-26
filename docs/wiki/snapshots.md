@@ -53,7 +53,10 @@ skips nothing.
 [[sim-loop]] produces snapshots; [[daemon-lifecycle]] consumes them at startup;
 [[sim-state-reducer]]'s canonical marshal is what gets hashed; [[event-log]] remains
 the truth they accelerate; [[world-migration]] borrows the covering-snapshot
-mechanism to make a migrated log replay-provable with zero v1 history.
+mechanism to make a migrated log replay-provable with zero v1 history;
+[[world-forking]] (spec 076) forks at `LatestValidSnapshot`'s boundary —
+the same verified walk — carrying that one snapshot verbatim (hash
+re-verified) as the fork's recovery floor.
 
 ## Operational notes
 

@@ -28,8 +28,12 @@ type digestFixture struct {
 // fixture row, or a fixture row without a digest, fails the sweep.
 var catalogFixture = map[string]digestFixture{
 	// --- world / clock / daemon ---
-	"world.created":   {`{"name":"Ashgrove","seed":42}`, `world "Ashgrove" created · seed 42`},
-	"world.migrated":  {`{"from_format":2,"source_events":100,"source_tick":500,"state":{}}`, `migrated from format v2 · 100 events @ tick 500`},
+	"world.created":  {`{"name":"Ashgrove","seed":42}`, `world "Ashgrove" created · seed 42`},
+	"world.migrated": {`{"from_format":2,"source_events":100,"source_tick":500,"state":{}}`, `migrated from format v2 · 100 events @ tick 500`},
+	"world.forked": {
+		`{"parent_name":"aria","parent_seed":42,"parent_created_at":"2026-07-26T00:00:00Z","fork_tick":97200,"fork_seq":5000}`,
+		`forked from "aria" at day 2, 09:00`,
+	},
 	"clock.paused":    {`{}`, `paused`},
 	"clock.resumed":   {`{}`, `resumed`},
 	"clock.speed_set": {`{"speed":"4x"}`, `speed=4x`},

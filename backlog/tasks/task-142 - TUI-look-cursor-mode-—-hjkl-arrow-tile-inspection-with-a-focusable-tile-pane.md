@@ -1,10 +1,10 @@
 ---
 id: TASK-142
 title: TUI look-cursor mode — hjkl/arrow tile inspection with a focusable tile pane
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-26 04:28'
-updated_date: '2026-07-26 18:23'
+updated_date: '2026-07-26 19:28'
 labels: []
 dependencies: []
 references:
@@ -40,28 +40,26 @@ Spec: specs/074-look-cursor
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 v toggles look-cursor mode; cursor moves with hjkl+arrows (shift = 8-tile jump) and pushes the camera at the viewport margin
-- [ ] #2 While the mode is active the dock shows a transient TILE view (terrain, structures, piles, agents with needs/intent, recent events at that tile); 2–5 exit the mode and restore the chosen tab with prior state intact
-- [ ] #3 ⏎/tab focuses the tile pane (focus drawn per focus-contract rule 2); j/k+⏎ select and drill into agents/contents/events; esc releases exactly one layer per press back to following
-- [ ] #4 No new focusable text input; focus contract's 'exactly one client' claim remains true and its page says so
-- [ ] #5 Mouse parity ships with keyboard: click-tile moves/enters the cursor, click-row selects/drills (decision 8 rule 1)
-- [ ] #6 docs/design/tui re-verified and amended in the same PR (map.md deferral re-opened, keymap.md, dock.md, focus-contract.md, anatomy.md); check-tui-design.mjs --changed passes
-- [ ] #7 Every tile's inspector header lists warmth and light levels (meter + plain-language note: fire radius, shelter cover, open water; daylight, canopy, indoors, firelight); light may need a small sim-side derivation to expose
-- [ ] #8 Map and dock panel geometry is fixed (layout.md column budget) — entering the mode, focusing the pane, and drilling in swap content only, never panel size
-- [ ] #9 TILE pane lists contents in DF's fixed hierarchy: agents → piles/chests → structures → terrain (stable scan order)
-- [ ] #10 TILE pane whatis prose comes from the spec-068 tile registry's meaning rows (internal/tui/tiles.go) — plain language per FR-020; the look-cursor becomes the third in-place lookup after ? and explain
-- [ ] #11 Spec phase: Setup — shared substrate (no behavior change)
-- [ ] #12 Spec phase: Foundational — mode state, key layer, borrow seam
-- [ ] #13 Spec phase: User Story 1 — cursor movement + camera (P1) 🎯 AC #1, AC #8
-- [ ] #14 Spec phase: User Story 2 — the TILE view (P1) 🎯 AC #2, AC #7, AC #9, AC #10
-- [ ] #15 Spec phase: User Story 3 — pane focus, drill-in, esc chain (P2) 🎯 AC #3, AC #4
-- [ ] #16 Spec phase: User Story 4 — mouse parity (P2) 🎯 AC #5
-- [ ] #17 Spec phase: User Story 5 — badge deep-link (P3) 🎯 help.md layer-2 row
-- [ ] #18 Spec phase: In-app reference completeness (FR-014)
-- [ ] #19 Spec phase: Same-PR gate obligations — design reference, grounding, verification
+- [x] #1 v toggles look-cursor mode; cursor moves with hjkl+arrows (shift = 8-tile jump) and pushes the camera at the viewport margin
+- [x] #2 While the mode is active the dock shows a transient TILE view (terrain, structures, piles, agents with needs/intent, recent events at that tile); 2–5 exit the mode and restore the chosen tab with prior state intact
+- [x] #3 ⏎/tab focuses the tile pane (focus drawn per focus-contract rule 2); j/k+⏎ select and drill into agents/contents/events; esc releases exactly one layer per press back to following
+- [x] #4 No new focusable text input; focus contract's 'exactly one client' claim remains true and its page says so
+- [x] #5 Mouse parity ships with keyboard: click-tile moves/enters the cursor, click-row selects/drills (decision 8 rule 1)
+- [x] #6 docs/design/tui re-verified and amended in the same PR (map.md deferral re-opened, keymap.md, dock.md, focus-contract.md, anatomy.md); check-tui-design.mjs --changed passes
+- [x] #7 Every tile's inspector header lists warmth and light levels (meter + plain-language note: fire radius, shelter cover, open water; daylight, canopy, indoors, firelight); light may need a small sim-side derivation to expose
+- [x] #8 Map and dock panel geometry is fixed (layout.md column budget) — entering the mode, focusing the pane, and drilling in swap content only, never panel size
+- [x] #9 TILE pane lists contents in DF's fixed hierarchy: agents → piles/chests → structures → terrain (stable scan order)
+- [x] #10 TILE pane whatis prose comes from the spec-068 tile registry's meaning rows (internal/tui/tiles.go) — plain language per FR-020; the look-cursor becomes the third in-place lookup after ? and explain
+- [x] #11 Spec phase: Setup — shared substrate (no behavior change)
+- [x] #12 Spec phase: Foundational — mode state, key layer, borrow seam
+- [x] #13 Spec phase: User Story 1 — cursor movement + camera (P1) 🎯 AC #1, AC #8
+- [x] #14 Spec phase: User Story 2 — the TILE view (P1) 🎯 AC #2, AC #7, AC #9, AC #10
+- [x] #15 Spec phase: User Story 3 — pane focus, drill-in, esc chain (P2) 🎯 AC #3, AC #4
+- [x] #16 Spec phase: User Story 4 — mouse parity (P2) 🎯 AC #5
+- [x] #17 Spec phase: User Story 5 — badge deep-link (P3) 🎯 help.md layer-2 row
+- [x] #18 Spec phase: In-app reference completeness (FR-014)
+- [x] #19 Spec phase: Same-PR gate obligations — design reference, grounding, verification
 <!-- AC:END -->
-
-
 
 ## Implementation Notes
 
@@ -72,3 +70,9 @@ Reorient 2026-07-26 decision 4: runs in the next UI lane. Cross-grounding amendm
 
 Sweep claim (runbook docs/design/reorient-2026-07-26-sweep-runbook.md): spec 074-look-cursor. Tier: Sonnet — view/rendering feature in internal/tui; AC7 light-level derivation is a read-only sim helper, inside the routine tier; escalation to Opus only via the rubric as an operator checkpoint. Runbook defaults at spec time: reverse-jump stays UNSCHEDULED (open question 4); pull-surface budget tension recorded in spec, no navigation ruling (open question 3).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Merged via PR #115 (merge commit 011ce4e). Look-cursor mode shipped: v toggles, hjkl/HJKL+arrows with camera push/snap, dock TILE borrow (DF hierarchy, tile-registry whatis, sim.EnvAt warmth/light header), focus+drill esc-chain (one layer per press), full mouse parity proven via two oracle entries in the mechanized sweep, badge deep-link built (closing TASK-150's pending retag). map.md spec-060 deferral re-opened+amended; 6 design pages, 26 wiki notes, 7 player pages re-grounded in-branch. Judgment calls logged on the PR/report: guardianVisible dormancy guard, H/J/K/L+c tracked as honest parity gaps (no natural mouse gesture). Tier: Sonnet as recorded; no escalation.
+<!-- SECTION:FINAL_SUMMARY:END -->

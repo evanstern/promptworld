@@ -14,18 +14,18 @@ verified_against: 4c66d240b2715706964f02cfd2396256c9957d8e
 
 # Scenario machinery (incident schedule + rubric)
 
-Spec 054 (TASK-119) is spec 046's awaited production half: the curriculum
-ladder's [[curriculum-ladder]] `ExerciseDefinition`s and their
+Spec 054 (TASK-119) is spec 046's awaited production half:
+[[curriculum-ladder]]'s `ExerciseDefinition`s and their
 `curriculum.exercise_passed`/`stage_unlocked` events existed since spec 046,
-but nothing emitted them outside test fixtures until this feature — an
-authored incident scheduler landing deterministic pressure into a scenario
-world, plus a rubric evaluator watching the same replica for the exercise's
+but nothing emitted them outside fixtures — this feature adds the authored
+incident scheduler landing deterministic pressure into a scenario world,
+plus the rubric evaluator watching the same replica for the exercise's
 pass boundary. Both are the EXECUTOR EMISSION CLASS (the
 `metatron.order_expired`/`charge_regenerated` precedent): pure functions of
 (state, boot-frozen scenario config, tick), no LLM, no injection door — the
 recorded events are the only latches, so a restart or replay resumes exactly.
-Downstream surfacing (status/CLI, manifest, boot wiring, narration, TUI) is
-covered by the split-off [[scenario-machinery-surfacing]].
+Downstream surfacing (status/CLI, manifest, boot wiring, narration, TUI):
+[[scenario-machinery-surfacing]].
 
 ## How it works
 
@@ -151,17 +151,13 @@ posture. Failure is never emitted: `ExerciseOutcome(s, exercise)` derives
 and the exercise panel's banner, so every surface reports the same word.
 
 **Incident visibility** (reorientation D4): `IncidentVisibilityFor(def,
-stage)` resolves `VisibilityForecast` ("the schedule is shown ahead of time")
-or `VisibilityFog` ("incidents are revealed only as they happen") — a
-definition's own override wins, else the stage-keyed default (forecast at
-stages 1–2 and pre-ladder, fog from stage 3, `docs/design/tui/patterns/
-stage-defaults.md`). A vocabulary in every signature, never a boolean.
+stage)` resolves the forecast/fog vocabulary — detail in
+[[scenario-machinery-surfacing]].
 
 **Surfacing, wiring, and the exercise tab** — split into
 [[scenario-machinery-surfacing]]: once armed, the exercise id rides
 status/CLI, the manifest, boot wiring, chronicle/morgue narration, and a
-fifth TUI dock tab present only on a scenario world. See the child for the
-per-surface field/call-site detail.
+fifth TUI dock tab present only on a scenario world.
 
 ## Connections
 

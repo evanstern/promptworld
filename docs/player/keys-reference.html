@@ -73,9 +73,10 @@ mean</a> instead.</p>
 
 <p>One thing to know up front: the whole game is playable from the keyboard alone —
 every key below reaches everything, and that stays true no matter what. Mouse
-support is a separate, additive convenience layered on top; so far it covers exactly
-one action, the chronicle jump described below, and everywhere else a click simply
-does nothing.</p>
+support is a separate, additive convenience layered on top; today it covers three
+things — the chronicle jump described below, clicking a map tile (described in
+"Looking at a specific tile"), and clicking a row in that tile's detail list — and
+everywhere else a click simply does nothing.</p>
 
 <h2>Normal view (nothing focused — the default)</h2>
 <table>
@@ -160,6 +161,43 @@ event" instead and nothing moves</td></tr>
 <p>Clicking an entry's line is the game's first mouse control — everywhere else, a
 click still does nothing.</p>
 
+<h2>Looking at a specific tile (press <code>v</code>)</h2>
+<p>Press <code>v</code> from the normal view and a highlighted cursor appears on the
+map — move it anywhere, and a details panel takes over the tab area on the right,
+listing everything on that one tile: any villager standing there (with their needs
+and what they're doing), any pile or chest, any building, the ground itself, and
+recent goings-on there. Press <code>v</code> again (or <code>esc</code>) to put that
+panel back to whatever it was showing before — nothing you had open is lost.</p>
+<table>
+<tr><th>Key</th><th>Action</th></tr>
+<tr><td><code>v</code></td><td>Toggle the tile cursor on/off</td></tr>
+<tr><td><code>h j k l</code> or the arrow keys, or click a tile</td><td>Move the
+cursor one tile (a click also turns the cursor on if it wasn't already)</td></tr>
+<tr><td><code>H J K L</code></td><td>Jump the cursor 8 tiles at once, stopping at
+the edge of the map</td></tr>
+<tr><td><code>c</code></td><td>Snap the view to follow the cursor</td></tr>
+<tr><td><code>⏎</code> or <code>tab</code></td><td>Move into the details panel
+(its border glows to show it has your attention)</td></tr>
+<tr><td><code>2</code>-<code>5</code> (<code>6</code> on a scenario world)</td>
+<td>Turn the cursor off and switch straight to that tab</td></tr>
+<tr><td><code>esc</code></td><td>Step back one level at a time — out of a detail
+you drilled into, then out of the details panel, then off the cursor entirely</td></tr>
+</table>
+<p>Once you've moved into the details panel (<code>⏎</code>/<code>tab</code>), or
+clicked one of its rows:</p>
+<table>
+<tr><th>Key</th><th>Action</th></tr>
+<tr><td><code>j</code> / <code>k</code>, or click a row</td><td>Select a row in the
+list</td></tr>
+<tr><td><code>⏎</code>, or click the already-selected row again</td><td>Open that
+row's full detail — a villager's full profile, or the raw record of a past
+event</td></tr>
+<tr><td><code>esc</code> or <code>tab</code></td><td>Back out one level</td></tr>
+</table>
+<p>Every tile also shows how warm and how bright it is right now, in plain words
+(e.g. "warm — in a lit fire's radius", "dark — indoors"), and — where relevant — a
+note on whether that keeps a villager safe from the gru.</p>
+
 <h2>The villagers tab</h2>
 <table>
 <tr><th>Key</th><th>Roster list</th><th>A villager's detail view</th></tr>
@@ -207,7 +245,11 @@ a permanent replay of every stage-unlock ceremony you've earned in this world,
 and a page on the guardian itself: your current stage, what it teaches, every
 verb it grants you, and one example ask per verb. It never touches the world:
 opening it doesn't pause anything,
-and closing it puts you back exactly where you were.</p>
+and closing it puts you back exactly where you were. One more courtesy: if a
+warning badge is showing in the header when you press <code>?</code> (degraded
+speed, an AI provider problem, a skipped-thinking notice), the overlay opens
+straight to the "tour of everything on screen" page, scrolled right to the line
+that explains that badge — you don't have to go hunting for it.</p>
 <table>
 <tr><th>Key</th><th>Action</th></tr>
 <tr><td><code>?</code> or <code>esc</code></td><td>Close the overlay</td></tr>
@@ -216,8 +258,9 @@ keys → the screen → lessons → ceremonies → the guardian</td></tr>
 <tr><td><code>t</code></td><td>Keys section: switch between the basic and advanced
 key lists</td></tr>
 <tr><td><code>n</code> / <code>p</code></td><td>Keys section: page through every
-mode's key list (including the guardian-typing keys, which <code>?</code> can't
-reach directly)</td></tr>
+mode's key list — normal view, typing to the guardian, looking back through the
+feed, the villagers tab (roster and detail), the split/single view, and (new)
+looking at a specific tile</td></tr>
 <tr><td><code>J</code> / <code>K</code></td><td>Scroll a long page</td></tr>
 </table>
 <p>The guardian section always shows something useful, even on a brand-new
@@ -240,6 +283,10 @@ resume · m ask · ? help</code></td></tr>
 quit · ? help</code></td></tr>
 <tr><td>A villager's detail view</td><td><code>esc back · space pause · q
 quit · ? help</code></td></tr>
+<tr><td>Looking at a specific tile</td><td><code>hjkl/arrows move · HJKL jump · c
+center · ⏎/tab open details · 2-6 tab · esc exit · ? help</code></td></tr>
+<tr><td>Inside that tile's details panel</td><td><code>j/k select · ⏎ open · esc
+back · 2-6 tab · ? help</code></td></tr>
 <tr><td>A stage-unlock ceremony</td><td><code>esc dismiss · q — the world keeps
 running</code></td></tr>
 <tr><td>The postmortem</td><td><code>esc dismiss · q quit</code></td></tr>

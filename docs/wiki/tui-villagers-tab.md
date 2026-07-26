@@ -27,9 +27,17 @@ the reducer/executor clamp gathers and crafts against, so the number never
 drifts from what an action will actually do), then the full carried-inventory
 line — wood/stone/water/planks/refined-stone counts, the food triplet
 raw/cooked/meals, and (when carried) a spear count with the most-worn spear's
-remaining uses. While the villagers tab is visible, `j`/`k`/`g`/`G` move the
+remaining uses. While the villagers tab is visible — since spec
+074-look-cursor, `villagersVisible()` also reads false whenever the
+look-cursor mode has borrowed the dock, so these keys go dormant during
+that borrow exactly as they would if a different tab were selected
+([[tui-map-view]]) — `j`/`k`/`g`/`G` move the
 cursor and `⏎` opens the selected villager's **detail view**
-(`villagerDetailBody`): identity/vitals, an objective line (active
+(`villagerDetailBody`, which since spec 074-look-cursor is a thin
+`m.villSelected`-reading wrapper over `villagerDetailBodyFor(a sim.Agent, ...)`
+— the look-cursor mode's TILE-pane agent drill-in reuses the parametrized
+core to show an arbitrary agent's detail with no forked renderer,
+[[tui-dock-tabs]]): identity/vitals, an objective line (active
 `Intent.Goal` marked current; else the reducer-stamped `Agent.LastGoal` +
 tick marked `last:`; else "no objective yet" — [[sim-state-reducer]]),
 itemized inventory, beliefs/narrative when consolidation has produced them,

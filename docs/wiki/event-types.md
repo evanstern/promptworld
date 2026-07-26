@@ -19,7 +19,7 @@ subscribers verbatim.
 
 ## Event catalog, by domain
 
-The full per-type catalog (91 event types across the format's history, specs
+The full per-type catalog (92 event types across the format's history, specs
 012 through 077) is split by event domain — each child inherits this note's
 `verified_against` pin, carries the domain's own history-of-format-changes
 prose and catalog rows verbatim, and links back here. Spec 077's seven new
@@ -29,7 +29,7 @@ and the stranger entity's `stranger.arrived` / `stranger.moved` /
 plus the guardian's `metatron.skills_observed` skills observation
 ([[event-types-guardian-morgue]], the `metatron.charter_observed` twin).
 
-- [[event-types-clock-world]] — Clock/scheduler and world-lifecycle events — pause/resume/speed/governor, day/night, forage regrowth, world genesis/migration, daemon lifecycle and LLM-provider warnings.
+- [[event-types-clock-world]] — Clock/scheduler and world-lifecycle events — pause/resume/speed/governor, day/night, forage regrowth, world genesis/migration/forking (`world.forked`, spec 076), daemon lifecycle and LLM-provider warnings.
 - [[event-types-agent-intents]] — Agent intent lifecycle — intent_set/work_started/intent_done/recovery_stalled/build_failed/moved, including the spec 062/064 yield-window and needs-conditioned recovery arms.
 - [[event-types-agent-vitals]] — Agent vitals and mortality — needs_changed, died (with the spec 044 death ledger/grave), run.ended, and sleep/wake.
 - [[event-types-mental-map]] — Perception and mental-map events — moved, saw, map_corrected, place_told, place_revealed (spec 041's per-agent spatial knowledge family).

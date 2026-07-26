@@ -12,6 +12,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/evanstern/promptworld/internal/ipc"
+	"github.com/evanstern/promptworld/internal/llm"
 	"github.com/evanstern/promptworld/internal/sim"
 )
 
@@ -45,6 +46,11 @@ func TestHelpOpensFromEveryMode(t *testing.T) {
 			return m
 		}, helpModeSolo},
 		{"narrow fallback", func(t *testing.T) Model { return testModel(t) }, helpModeSolo},
+		{"look-cursor", func(t *testing.T) Model {
+			m := widescreenModel(t)
+			m.lookActive = true
+			return m
+		}, helpModeLook},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -290,6 +296,27 @@ var realModeKeys = map[helpModeKey][]string{
 		"q", "1", "2", "3", "4", "5", "6", "tab", "shift+tab", "m",
 		"a", "t", "r", "up", "down", "left", "right", "c", " ", "[", "]",
 	},
+	// handleLookKey (look.go): claimed at every focus layer — h/j/k/l/
+	// arrows/H/J/K/L/c/enter move or jump the cursor (cursor focus), select/
+	// scroll (pane/drill focus, j/k/J/K only — left/right/H/L are a
+	// documented no-op there so they can never leak to the global pan);
+	// tab/shift+tab and digits 2-6 are claimed at every layer too (never
+	// leaking to the global dock-cycle/solo-zoom, which would silently
+	// change dockTab/solo underneath the borrow). "G" is claimed only to
+	// exit the mode first, then deliberately falls through (handled=false)
+	// to the SAME global "G" case every other mode reaches — one
+	// console-open path, not two. "q"/"m"/" "/"["/"]" fall through
+	// unclaimed exactly as FR-013 requires. "a"/"t"/"r"/"1" are excluded:
+	// each reaches a global case, but chronicleVisible()==false (the
+	// borrow's own guard) makes a/t/r's body inert, and 1 merely re-asserts
+	// state (solo=false, active=paneMap) that lookEntryAllowed() already
+	// required true — no real effect while this mode is active (the
+	// villagers-roster "d" exclusion precedent, one row up).
+	helpModeLook: {
+		"v", "h", "j", "k", "l", "up", "down", "left", "right",
+		"H", "J", "K", "L", "c", "enter", "tab", "shift+tab", "esc",
+		"2", "3", "4", "5", "6", "G", "q", "m", " ", "[", "]",
+	},
 }
 
 func keySet(keys []string) map[string]int {
@@ -399,6 +426,94 @@ func TestHelpWalkthroughCoversEveryHeaderBadge(t *testing.T) {
 		if !strings.Contains(lines, want) {
 			t.Errorf("walkthrough missing header element/badge %q", want)
 		}
+	}
+}
+
+// --- spec 074 FR-011/R8: the badge deep-link ---
+
+// TestHelpBadgeDeepLinkOpensPreFocused: with a conditional header badge
+// active, '?' opens the overlay pre-focused on the screen-walkthrough
+// section, scrolled so that badge's headerAnatomy row is visible.
+func TestHelpBadgeDeepLinkOpensPreFocused(t *testing.T) {
+	cases := []struct {
+		name   string
+		status *ipc.StatusData
+		want   string
+	}{
+		{"degraded", &ipc.StatusData{Clock: ipc.ClockStatus{Degraded: true}}, "[degraded]"},
+		{"llm condition", &ipc.StatusData{LLM: &llm.Status{Providers: []llm.ProviderStatus{{Name: "anthropic", Condition: "rate_limited"}}}}, "[llm: provider kind]"},
+		{"suppressed", &ipc.StatusData{Horizon: []ipc.HorizonClass{{Class: "cognition", Suppressed: true}}}, "[suppressed: classes]"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			m := widescreenModel(t)
+			m.status = tc.status
+			var mdl tea.Model = m
+			mdl = update(mdl, "?")
+			mm := mdl.(Model)
+			if mm.helpSection != helpSectionWalkthrough {
+				t.Fatalf("badge-active open should land on the screen-walkthrough section, got %v", mm.helpSection)
+			}
+			lines := mm.helpWalkthroughLines(200)
+			windowed := paginateHelpContent(lines, mm.helpScroll, 3)
+			if !strings.Contains(strings.Join(windowed, "\n"), tc.want) {
+				t.Errorf("badge %q's row should be visible at scroll %d:\n%s", tc.want, mm.helpScroll, strings.Join(windowed, "\n"))
+			}
+		})
+	}
+}
+
+// TestHelpNoBadgeOpensByteIdentical: with no conditional badge active,
+// opening the overlay is byte-identical to before this feature — the keys
+// section, scroll 0.
+func TestHelpNoBadgeOpensByteIdentical(t *testing.T) {
+	m := widescreenModel(t)
+	m.status = &ipc.StatusData{Clock: ipc.ClockStatus{}}
+	var mdl tea.Model = m
+	mdl = update(mdl, "?")
+	mm := mdl.(Model)
+	if mm.helpSection != helpSectionKeys || mm.helpScroll != 0 {
+		t.Errorf("no active badge should open byte-identically (keys section, scroll 0): section=%v scroll=%d", mm.helpSection, mm.helpScroll)
+	}
+}
+
+// TestHelpBadgeDeepLinkNavigationUnchanged (AS 5.3): after a pre-focused
+// open, ordinary overlay navigation (tab/section cycling) behaves exactly
+// as it does from any other open.
+func TestHelpBadgeDeepLinkNavigationUnchanged(t *testing.T) {
+	m := widescreenModel(t)
+	m.status = &ipc.StatusData{Clock: ipc.ClockStatus{Degraded: true}}
+	var mdl tea.Model = m
+	mdl = update(mdl, "?")
+	mdl = update(mdl, "tab")
+	mm := mdl.(Model)
+	if mm.helpSection != helpSectionLessons {
+		t.Errorf("tab from the walkthrough section should cycle to lessons, got %v", mm.helpSection)
+	}
+	if mm.helpScroll != 0 {
+		t.Error("cycling sections should reset scroll")
+	}
+}
+
+// TestHelpLookModePageReachableAndFooterHint (FR-014): the look-cursor mode
+// has its own keys page (reachable frozen-open and via n/p paging), and the
+// footer advertises the mode's primary hints while it is active.
+func TestHelpLookModePageReachableAndFooterHint(t *testing.T) {
+	m := widescreenModel(t)
+	m.lookActive = true
+	if got := m.currentHelpMode(); got != helpModeLook {
+		t.Fatalf("currentHelpMode during the look-cursor mode = %v, want helpModeLook", got)
+	}
+	var mdl tea.Model = m
+	mdl = update(mdl, "?") // freezes helpPageMode = helpModeLook
+	lines := strings.Join(mdl.(Model).helpKeysLines(200), "\n")
+	if !strings.Contains(lines, "Look-cursor") {
+		t.Errorf("look-cursor mode page should render its own title: %q", lines)
+	}
+
+	footer := m.footerView()
+	if !strings.Contains(footer, "esc") {
+		t.Errorf("footer should hint the mode's esc-release while active: %q", footer)
 	}
 }
 

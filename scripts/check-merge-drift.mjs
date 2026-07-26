@@ -11,6 +11,9 @@
 //   worktree --task / claim-aware --spec, session branch-unpushed
 //   specs/069-wiki-in-pr-gate/spec.md — pr mode blocks: wiki-repin-missing
 //   (pin-vs-branch predicate), player-docs-stale / player-docs-env-error
+//   specs/080-paused-label-lanes/spec.md — a paused task's branch/worktree
+//   drift findings downgrade to info in every mode; its cleanup is never
+//   prescribed (praxisflux TASK-55 counterpart)
 //
 // Node >= 18, ESM, zero npm dependencies (stdlib fs/path/child_process/crypto
 // only). Requires git >= 2.38 (`git merge-tree --write-tree`).
@@ -377,6 +380,82 @@ function findTaskFile(mainWt, taskId) {
     if (f.endsWith('.md') && re.test(f)) return join(dir, f);
   }
   return null;
+}
+
+// --- paused-lane marker (spec 080, praxisflux TASK-55 counterpart) ----------
+// An operator can pause an In Progress task without moving it on the board:
+// the card carries a `paused` label in its frontmatter `labels:` list,
+// set/cleared only via `backlog task edit --labels`, with provenance recorded
+// on the card as a "paused by <who> <date>: <why>" append-note (the
+// praxisflux paused-lane convention). A paused task's branch/worktree is the
+// pausing operator's parked state, NOT another session's live lane, so drift
+// findings about it (conflicts, stale base, unpushed, overlap,
+// cleanup-eligible) downgrade from block/warn to info — pause cited as
+// evidence — and its branch/worktree is never prescribed for cleanup.
+// Detection reads the card in the MAIN worktree's working tree: the pause is
+// a local operator act on the board of record, and origin lag must not
+// resurrect blocking findings for a lane the operator just paused.
+// Deliberately NOT downgraded: ownership protections (claim mode and
+// worktree mode's spec-number-collision keep guarding a paused task's
+// claimed number) and pr mode's spec-069 grounding blocks
+// (wiki-repin-missing, wiki-note-malformed, player-docs-*) — pausing a task
+// is not a gate bypass.
+
+function parseTaskLabels(text) {
+  const fmMatch = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!fmMatch) return [];
+  const fm = fmMatch[1];
+  const block = fm.match(/^labels:[ \t]*\r?\n((?:[ \t]+-[^\n]*\n?)+)/m);
+  if (block) {
+    return block[1]
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l.startsWith('-'))
+      .map((l) => l.replace(/^-\s*/, '').trim().replace(/^['"]|['"]$/g, ''));
+  }
+  const inline = fm.match(/^labels:[ \t]*\[([^\]]*)\]/m);
+  if (inline) {
+    return inline[1]
+      .split(',')
+      .map((s) => s.trim().replace(/^['"]|['"]$/g, ''))
+      .filter(Boolean);
+  }
+  return [];
+}
+
+const pausedTaskCache = new Map(); // `${mainWt}|${taskId}` -> boolean
+
+export function isTaskPaused(mainWt, taskId) {
+  if (!taskId) return false;
+  const key = `${mainWt}|${taskId}`;
+  if (pausedTaskCache.has(key)) return pausedTaskCache.get(key);
+  let paused = false;
+  const p = findTaskFile(mainWt, taskId);
+  if (p) {
+    try {
+      paused = parseTaskLabels(readFileSync(p, 'utf8')).includes('paused');
+    } catch {
+      paused = false;
+    }
+  }
+  pausedTaskCache.set(key, paused);
+  return paused;
+}
+
+// Mode-uniform wrapper for DRIFT findings about a task branch/worktree: when
+// any involved task is paused, the finding lands as info with the pause in
+// its evidence. Non-drift findings must keep calling makeFinding directly.
+function makeDriftFinding(spec, mainWt, involvedTasks) {
+  const paused = [...new Set(involvedTasks.filter(Boolean))].filter((t) => isTaskPaused(mainWt, t));
+  if (paused.length === 0 || RANK[spec.severity] <= RANK.info) return makeFinding(spec);
+  return makeFinding({
+    ...spec,
+    severity: 'info',
+    message: `${spec.message} — downgraded to info: ${paused.join(', ')} ${
+      paused.length === 1 ? 'is' : 'are'
+    } paused (label 'paused'; provenance on the card's notes)`,
+    evidence: [...spec.evidence, ...paused.map((t) => `paused:${t}`)],
+  });
 }
 
 // --- origin/main TREE readers (spec 065) -----------------------------------
@@ -985,7 +1064,7 @@ function runSession(flags, cwd) {
       const remoteRef = git(['rev-parse', '--verify', '--quiet', `refs/remotes/origin/${b.name}`], { cwd: mainWt });
       if (aheadCount > 0 && remoteRef.status !== 0) {
         findings.push(
-          makeFinding({
+          makeDriftFinding({
             severity: 'warn',
             gate: 'session',
             rule: 'branch-unpushed',
@@ -993,7 +1072,7 @@ function runSession(flags, cwd) {
             evidence: [b.name],
             task: b.task,
             key: b.name,
-          })
+          }, mainWt, [b.task])
         );
       }
     }
@@ -1002,7 +1081,7 @@ function runSession(flags, cwd) {
       const overlap = backlogOverlap(b.changedFiles, mainFiles);
       if (overlap.length) {
         findings.push(
-          makeFinding({
+          makeDriftFinding({
             severity: 'warn',
             gate: 'session',
             rule: 'backlog-overlap',
@@ -1010,12 +1089,12 @@ function runSession(flags, cwd) {
             evidence: [...overlap, b.name],
             task: b.task,
             key: b.name,
-          })
+          }, mainWt, [b.task])
         );
       }
       for (const c of specNumberCollisions(b.changedFiles, takenSpecs)) {
         findings.push(
-          makeFinding({
+          makeDriftFinding({
             severity: 'warn',
             gate: 'session',
             rule: 'spec-number-collision',
@@ -1025,7 +1104,7 @@ function runSession(flags, cwd) {
             evidence: [`specs/${c.newDir}`, `specs/${c.takenDir}`],
             task: b.task,
             key: b.name,
-          })
+          }, mainWt, [b.task])
         );
       }
     }
@@ -1039,18 +1118,35 @@ function runSession(flags, cwd) {
       // (detection-rules.md §4): reported to the planning tier.
       const deleteFlag = b.cleanupReason === 'empty-contribution' ? '-D' : '-d';
       const commands = [`git worktree remove ${b.worktree}`, `git branch ${deleteFlag} ${b.name}`];
-      findings.push(
-        makeFinding({
-          severity: 'warn',
-          gate: 'session',
-          rule: 'cleanup-eligible',
-          message: `${b.name} is cleanup-eligible (${b.cleanupReason}): ${commands.join(' && ')}`,
-          evidence: [b.worktree, b.name],
-          task: b.task,
-          key: b.name,
-        })
-      );
-      cleanupPrescriptions.push({ branch: b.name, commands, applied: false, _worktree: b.worktree, _deleteFlag: deleteFlag });
+      if (isTaskPaused(mainWt, b.task)) {
+        // Spec 080: a paused task's branch/worktree is parked operator state
+        // — never prescribed for cleanup, so --apply-cleanup can never touch
+        // it. The finding stays (info) so the parked lane remains visible.
+        findings.push(
+          makeFinding({
+            severity: 'info',
+            gate: 'session',
+            rule: 'cleanup-eligible',
+            message: `${b.name} is cleanup-eligible (${b.cleanupReason}) but ${b.task} is paused (label 'paused') — cleanup not prescribed; branch and worktree stay untouched`,
+            evidence: [b.worktree, b.name, `paused:${b.task}`],
+            task: b.task,
+            key: b.name,
+          })
+        );
+      } else {
+        findings.push(
+          makeFinding({
+            severity: 'warn',
+            gate: 'session',
+            rule: 'cleanup-eligible',
+            message: `${b.name} is cleanup-eligible (${b.cleanupReason}): ${commands.join(' && ')}`,
+            evidence: [b.worktree, b.name],
+            task: b.task,
+            key: b.name,
+          })
+        );
+        cleanupPrescriptions.push({ branch: b.name, commands, applied: false, _worktree: b.worktree, _deleteFlag: deleteFlag });
+      }
     }
   }
 
@@ -1061,7 +1157,7 @@ function runSession(flags, cwd) {
     matrix.push({ a: b.name, b: 'origin/main', conflict: !!mt.conflict, files: mt.files || [] });
     if (mt.conflict) {
       findings.push(
-        makeFinding({
+        makeDriftFinding({
           severity: 'warn',
           gate: 'session',
           rule: 'textual-conflict',
@@ -1069,7 +1165,7 @@ function runSession(flags, cwd) {
           evidence: [...mt.files, b.name],
           task: b.task,
           key: b.name,
-        })
+        }, mainWt, [b.task])
       );
     }
   }
@@ -1082,8 +1178,9 @@ function runSession(flags, cwd) {
       const mt = mergeTree(A.tip, B.tip, mainWt);
       matrix.push({ a: A.name, b: B.name, conflict: !!mt.conflict, files: mt.files || [] });
       if (mt.conflict) {
+        // Either side paused -> the pair cannot race to merge; downgrade.
         findings.push(
-          makeFinding({
+          makeDriftFinding({
             severity: 'warn',
             gate: 'session',
             rule: 'pairwise-conflict',
@@ -1091,7 +1188,7 @@ function runSession(flags, cwd) {
             evidence: [...mt.files, A.name, B.name],
             task: A.task,
             key: A.name,
-          })
+          }, mainWt, [A.task, B.task])
         );
       }
     }
@@ -1296,6 +1393,13 @@ function runWorktree(flags, cwd) {
       // ownership, not absence, is the invariant. With --task, pass when the
       // taken dir's Spec marker (read from the origin/main tree) attributes
       // to that task; block when it attributes elsewhere or to none.
+      // Spec 080: deliberately NOT routed through makeDriftFinding — this is
+      // an ownership protection OF the taken number's task (paused or not),
+      // not a drift finding ABOUT its branch/worktree; a paused owner still
+      // blocks. Worktree mode emits no branch-scoped drift findings today,
+      // so the paused downgrade is vacuously satisfied here; any future
+      // branch-scoped finding in this mode must route through
+      // makeDriftFinding like session/pr do.
       const owner = flags.task ? attributeBySpecDirOnOriginMain(originMainTip, takenDir, mainWt) : null;
       if (!(flags.task && owner === flags.task)) {
         const maxTaken = Math.max(...taken.keys());
@@ -1423,7 +1527,7 @@ function runPr(flags, cwd) {
   if (mt.conflict) {
     for (const file of mt.files) {
       findings.push(
-        makeFinding({
+        makeDriftFinding({
           severity: 'block',
           gate: 'pr',
           rule: 'textual-conflict',
@@ -1431,14 +1535,14 @@ function runPr(flags, cwd) {
           evidence: [file, branchName],
           task,
           key: branchName,
-        })
+        }, mainWt, [task])
       );
     }
   }
 
   if (lag > 0) {
     findings.push(
-      makeFinding({
+      makeDriftFinding({
         severity: 'warn',
         gate: 'pr',
         rule: 'stale-base',
@@ -1446,14 +1550,14 @@ function runPr(flags, cwd) {
         evidence: [branchName],
         task,
         key: branchName,
-      })
+      }, mainWt, [task])
     );
   }
 
   const overlap = backlogOverlap(branchFiles, mainFiles);
   if (overlap.length) {
     findings.push(
-      makeFinding({
+      makeDriftFinding({
         severity: 'warn',
         gate: 'pr',
         rule: 'backlog-overlap',
@@ -1461,7 +1565,7 @@ function runPr(flags, cwd) {
         evidence: [...overlap, branchName],
         task,
         key: branchName,
-      })
+      }, mainWt, [task])
     );
   }
 
@@ -1616,7 +1720,7 @@ function runPr(flags, cwd) {
   const taken = takenSpecNumbers(originMainTip, cwd);
   for (const c of specNumberCollisions(branchFiles, taken)) {
     findings.push(
-      makeFinding({
+      makeDriftFinding({
         severity: 'warn',
         gate: 'pr',
         rule: 'spec-number-collision',
@@ -1626,7 +1730,7 @@ function runPr(flags, cwd) {
         evidence: [`specs/${c.newDir}`, `specs/${c.takenDir}`],
         task,
         key: branchName,
-      })
+      }, mainWt, [task])
     );
   }
 
