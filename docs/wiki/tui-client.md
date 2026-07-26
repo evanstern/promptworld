@@ -12,7 +12,7 @@ sources:
   - internal/tui/help.go
   - internal/tui/lessons.go
   - internal/tui/reportcard.go
-verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
+verified_against: 7e3c2b5f5f23eb8e5fcb37d0f867dbc6f46a289b
 ---
 
 # TUI client
@@ -99,20 +99,31 @@ glyphs + `(N/cap)`, a `next +1 @ <time>` regen forecast derived from
 `guardianStripView`, each segment degrading to absence rather than a
 misleading zero), a one-line
 **Guardian minibuffer** above the footer, and per-mode footer hints. Since
+spec 060 (TASK-129, reorient decision 12) a one-line borderless **villager
+strip** sits directly under the header — see [[village-lens]] for its
+glanceability content and the map's sibling condition overlays. Since
 spec 055 (TASK-117, reorient decision 5) a two-line borderless **lesson row**
 sits above the guardian strip whenever a first-occurrence lesson is active
-and the stage default allows it (`lessonRowDefault` in layout.go: on at
-curriculum stages 1–2; at stage 3+/pre-ladder the row never renders and a
+and the stage default allows it (`lessonRowDefault` in layout.go, since spec
+066 a pure delegation onto the shared stage-defaults table —
+[[stage-defaults]]: on at curriculum stages 1–2; at stage 3+/pre-ladder the
+row never renders and a
 quiet `[lesson]` header badge points at the `?` overlay instead —
-`lessonBadgeVisible`); under height pressure the row folds to that same
-badge BEFORE the guardian strip (`rowBudget.Lesson`), which stays the last
-chrome to fold (`rowBudget.Strip`, `computeRows` keeps it while body ≥ 10
-rows); folded, the strip's content relocates into the minibuffer's dormant
-placeholder line instead of hiding. Below 112
+`lessonBadgeVisible`); under height pressure the fold cascade now runs THREE
+steps in ruled order (`patterns/layout.md` ruling a): the villager strip
+folds FIRST (`rowBudget.VillagerStrip`, relocating to a `[N villagers]`
+header badge — `villagerCountBadge`), then the lesson row folds to its
+badge (`rowBudget.Lesson`), then the guardian strip folds LAST
+(`rowBudget.Strip`, `computeRows` keeps it while body ≥ 10 rows); folded,
+the guardian strip's content relocates into the minibuffer's dormant
+placeholder line instead of hiding — the villager strip and lesson row
+have no such relocation, only their header-badge fallback. Below 112
 columns it falls back to the original single-pane UI (header + tab bar + one
 active pane), unchanged except that the guardian pane carries the same strip
 above its minibuffer and the lesson row is carried above whichever pane is
-active with identical stage defaults (`narrowView`). `View` output is exactly terminal-height in every mode
+active with identical stage defaults (`narrowView`) — the villager strip is
+never carried into the narrow layout at all (stage-defaults ruling b).
+`View` output is exactly terminal-height in every mode
 (every panel body is clipped to its row budget — `clipContent`), and resizes
 re-clamp pan/selection state (`clampGeometry`).
 
@@ -122,8 +133,16 @@ Regions: the **map** is a camera window over the generated terrain from
 ᴥ glyphs, plus dynamic overlay state read off the replica (never part of the
 static tile) — a quarried-out rock outcrop renders as a faint `,` ahead of the
 static terrain check — with the replica's agents on top (by initial,
-lowercase asleep, † dead) plus built structures: fires render lit ▲ while the
-current tick is before the structure's `FuelUntil` and fall back to a faint,
+lowercase asleep, † dead — since spec 060, [[village-lens]], a living
+agent's STYLE additionally carries two condition overlays over the same
+glyph: needs-critical when Health/Food/Warmth/Rest crosses its existing
+danger band, else suppressed-mind when its latest decision trace is a
+router suppression, needs-critical winning when both apply; neither
+condition changes what glyph or case renders, only its style) plus built
+structures: fires render lit ▲ while the
+current tick is before the structure's `FuelUntil` — since spec 060 a THIRD,
+still-lit "dying" style applies inside `State.RefuelDyingBelow()`'s window
+before that, distinct from both plain lit and cold — and fall back to a faint,
 hollow cold glyph △ once fuel runs out, shelters ⌂, ovens ▣, chests ☐ (spec
 013 US3), and the [[gru]] as a red G while it is abroad; ground piles (spec
 013 US2, `Model.replica.Piles`) render as a dedicated overlay `%`, layered
@@ -433,7 +452,10 @@ conditional badge, dock-tab rows, and a `mapGlyphs` table **shared with
 `renderMapGrid`'s legend line** (`legendGlyphLine`) so the overlay's glyph
 walkthrough and the map legend cannot silently diverge — extracting it also
 fixed a real gap: the gru's `G` was drawn but never listed in the legend
-text. The shared table gained the `✝` grave row with spec 044; it is the
+text. Since spec 060, both surfaces also carry a `conditionOverlayNote`
+prose line naming the three map condition overlays ([[village-lens]]) — a
+note rather than a `mapGlyphs` row, since every overlay is a style variant
+of an already-legended glyph, never a new one. The shared table gained the `✝` grave row with spec 044; it is the
 dead-agent-on-grave carve-out in `renderMapGrid` (above) that keeps the row
 honest — without it the map could never actually show the glyph it
 advertises. The lessons section is the pull half of the
@@ -501,7 +523,12 @@ report-card renderer, and the help overlay's ceremonies section;
 [[grounded-feedback]] (spec 063) owns the `explain` tool's guardian-side
 integration, the report-card producer whose stored note this note's
 `consoleCard`/digest surfaces render, and the help overlay's D9 guardian
-section.
+section. [[stage-defaults]] (spec 066) owns the single authority table
+`lessonRowDefault` now delegates to and the live re-resolution/first-
+occurrence-arrival plumbing wired into `Update`'s `statusMsg` case;
+[[village-lens]] (spec 060) owns the villager strip's own content/overflow
+rendering and the map's three condition overlays this note's map-region
+paragraph describes.
 
 ## Operational notes
 

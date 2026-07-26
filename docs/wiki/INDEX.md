@@ -65,6 +65,8 @@ that note (re-pin with `/grounding-wiki:wiki-update`).
 - [[scenario-machinery]] — the spec-054 director-lite incident scheduler + rubric evaluator: the production emitter for curriculum.* events, boot-frozen ArmScenario runtime, gru-emergence preemption, and the TUI exercise tab
 - [[takeover-surfaces]] — the spec-056 takeover family: the stage-unlock ceremony and run-end postmortem full-screen pages, and the shared report-card renderer (D5) they compose
 - [[grounded-feedback]] — the spec-063 grounded feedback layer: the guardian's read-only explain tool, the compiled-in tutor guide, the report-card producer (cheap-chain attribution note over recorded events), and the help overlay's D9 guardian section
+- [[stage-defaults]] — the spec-066 stage-shaped TUI layout defaults: one authority table governing per-stage chrome visibility (never a capability lock), the resolution engine, session overrides, and first-occurrence-arrival plumbing
+- [[village-lens]] — the spec-060 village-lens completion: the villager strip (colonist-bar roster glance, folds to a header badge) and the map's needs-critical/suppressed-mind/dying-fire condition overlays
 
 ## Lifecycle & quality
 
