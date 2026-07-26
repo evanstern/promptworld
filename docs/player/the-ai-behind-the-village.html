@@ -9,10 +9,10 @@
 <meta name="promptworld-docs:source" content="docs/wiki/llm-orchestrator.md@31c893e0406653197e467a89b2fdb96f0bcf2ee0">
 <meta name="promptworld-docs:source" content="docs/wiki/nightly-consolidation.md@2bc94f55c57880e07f0e52e5de20c9cd527ab340">
 <meta name="promptworld-docs:source" content="docs/wiki/social-fabric.md@30912a9cd5d2334f76425ac8ca5b74a7a7c90876">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@8495b34ffb9ee5dc02e224025f0a23313bbab900">
-<meta name="promptworld-docs:source" content="docs/wiki/mental-maps.md@8495b34ffb9ee5dc02e224025f0a23313bbab900">
-<meta name="promptworld-docs:source" content="docs/wiki/memory-retrieval.md@8495b34ffb9ee5dc02e224025f0a23313bbab900">
-<meta name="promptworld-docs:source" content="docs/wiki/decision-context.md@8495b34ffb9ee5dc02e224025f0a23313bbab900">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@048259bb42b03cc6ebeb13a49f367c2e3a7d4d37">
+<meta name="promptworld-docs:source" content="docs/wiki/mental-maps.md@048259bb42b03cc6ebeb13a49f367c2e3a7d4d37">
+<meta name="promptworld-docs:source" content="docs/wiki/memory-retrieval.md@048259bb42b03cc6ebeb13a49f367c2e3a7d4d37">
+<meta name="promptworld-docs:source" content="docs/wiki/decision-context.md@048259bb42b03cc6ebeb13a49f367c2e3a7d4d37">
 <title>The AI behind the village — promptworld player docs</title>
 <style>
   :root {
@@ -94,6 +94,13 @@ persona and recent memories as the basis for the decision. This mix is why a vil
 can run smoothly at high speed instead of grinding to a halt waiting on AI responses
 for every little thing: most of a villager's second-to-second existence is free,
 and AI is spent where it actually matters.</p>
+<p>Those built-in rules follow a fixed order of priorities: staying alive always
+comes first; then any <em>directive</em> your guardian has laid on the villager (a
+hard command bound to a plan mark on the map — the villager walks to the site and
+works it); and only then ordinary upkeep and free time. When the AI model does think
+for a directed villager, the guardian's exact words — and what the plan requires —
+are placed in front of it too, marked as something never to be dropped, so instinct
+and intelligence pull in the same direction.</p>
 
 <h2>Each villager only knows what they've actually seen</h2>
 <p>Villagers aren't born knowing the map. Each one carries their own private

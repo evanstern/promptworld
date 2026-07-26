@@ -8,7 +8,7 @@ sources:
   - internal/guardian/charter.go
   - cmd/promptworld/stages.go
   - internal/worlds/unlocks.go
-verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
+verified_against: 048259bb42b03cc6ebeb13a49f367c2e3a7d4d37
 ---
 
 # Curriculum ladder
@@ -73,7 +73,11 @@ stage-2 pin the roster to `stage1CeilingTools` — `send_omen`, `send_vision`,
 `monitor_and_act`, `cancel_order` (the ratified TASK-119 amendment put
 standing orders in the stage-1 grant — the first-night exercise teaches the
 watch), plus, since spec 063, `explain` (read-only, zero-cost, the
-tutor guide's own grounding tool — [[grounded-feedback]]), with no miracle
+tutor guide's own grounding tool — [[grounded-feedback]]), plus, since
+spec 084, the five charge-free plan-layer tools (`place_designation`/
+`cancel_designation`/`issue_directive`/`cancel_directive`/`survey_site` —
+the plan loop is a teaching primitive, the monitor_and_act precedent;
+[[guardian-designations]]), with no miracle
 kinds and the empty-intersection effect shutting
 out bundle tools; stage-3, stage-4, and pre-ladder worlds have no ceiling.
 `guardian.StageCeilingVerbs(stage)` exports a stage's granted loop-tool

@@ -5,7 +5,7 @@ kind: concept
 sources:
   - internal/sim/state.go
   - internal/sim/gru.go
-verified_against: 8495b34ffb9ee5dc02e224025f0a23313bbab900
+verified_against: 048259bb42b03cc6ebeb13a49f367c2e3a7d4d37
 ---
 
 # Event types
@@ -44,6 +44,7 @@ plus the guardian's `metatron.skills_observed` skills observation
 - [[event-types-guardian-orders]] — Guardian standing-order events — charge_regenerated, nudged, order_placed/triggered/cancelled/expired, and the spec 029/059 survival-watch lifecycle.
 - [[event-types-guardian-morgue]] — Guardian morgue and report-card events — charter_observed (+ spec 077's skills_observed twin), morgue.epilogue, guardian.report_card, chronicle.entry.
 - [[event-types-guardian-actions]] — Guardian miracle actions and gru events — time_snapped/item_granted/entity_moved/entity_removed, and the gru emerged/moved/sighted/attacked/withdrew family.
+- [[event-types-guardian-plans]] — Guardian plan-layer events (spec 084) — `designation.placed`/`designation.cancelled`/`designation.fulfilled` and `directive.issued`/`directive.cancelled`/`directive.fulfilled`/`directive.expired`: injected placement/issue/cancel, executor-emitted fulfillment/expiry, the TASK-118 faith seam payload.
 
 ## Conventions
 

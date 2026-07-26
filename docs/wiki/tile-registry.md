@@ -6,7 +6,7 @@ sources:
   - internal/tui/tiles.go
   - internal/tui/views.go
   - internal/tui/help.go
-verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
+verified_against: 048259bb42b03cc6ebeb13a49f367c2e3a7d4d37
 ---
 
 # Tile registry
@@ -54,7 +54,11 @@ style-only token — `"dying"` on fire, `"damaged"` on wall), and a binding:
 rock, the quarried/`Depleted` kind, and — since spec 068 — marsh/sand), or
 `Keys []string` for a structure/marker row (`"fire"`, `"fire_cold"`,
 `"shelter"`, `"oven"`, `"chest"`, `"wall_plank"`, `"wall_stone"`, `"path"`,
-`"pile"`, `"den"`, `"gru"`, `"grave"`, and — spec 077 — `"stranger"`,
+`"pile"`, `"den"`, `"gru"`, `"grave"`, spec 077's `"stranger"`, and —
+spec 084 — `"designation_site"`/`"designation_line"`/`"designation_zone"`
+(the guardian plan marks `◇`/`┄`/`◦`, one shared semantic-16 `designation`
+token; rendered by `renderMapGrid` from `State.Designations`, ACTIVE only,
+beneath every real entity — [[guardian-designations]]),
 the night trickster's appended `S` row, violet 135 bold beside the gru's
 red) — `KeyGlyphs` overrides the drawn
 character per key when one row's `Keys` share a glyph slot (the wall row's

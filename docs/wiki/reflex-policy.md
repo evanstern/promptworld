@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/policy.go
   - internal/sim/path.go
-verified_against: 9e8fb36e750dda15a633ba3ff8c44141f02debf2
+verified_against: 048259bb42b03cc6ebeb13a49f367c2e3a7d4d37
 ---
 
 # Reflex policy & pathfinding
@@ -59,9 +59,15 @@ two explicitly classified rung groups plus an idle filler, each its own
 function — "instinct that yields to intelligence": the reflex ladder is a
 safety net, not a scheduler, and the classification lives in **code
 structure** (FR-001), not prose: `survivalDecision` (life-saving instinct,
-runs first, unconditioned), `prepDecision` (opportunistic village upkeep,
-yields to a recent planner intent or a danger band), and `wanderDecision`
-(the idle filler). Root cause this fixed (spike TASK-101, 057 audit): the
+runs first, unconditioned), `directiveDecision` (spec 084 — the guardian's
+HARD directives, between survival and prep: unconditioned by the yield
+window and danger bands, stateless — it re-derives the oldest active
+directive addressing the agent from `State.Directives` at every idle
+decision, so interruption-resume needs zero code and a directive-free world
+is byte-identical; routing per kind in [[guardian-designations]], incl. the
+new instant `heed_directive` walk goal), `prepDecision` (opportunistic
+village upkeep, yields to a recent planner intent or a danger band), and
+`wanderDecision` (the idle filler). Root cause this fixed (spike TASK-101, 057 audit): the
 reflex's PREP rungs used to fire the instant a planner intent completed,
 never checked warmth, and counter-scheduled the agent away from the fire the
 planner just sent it to — world-01's forage↔goto_warmth thrash (Sage: 436

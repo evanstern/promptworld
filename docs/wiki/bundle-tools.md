@@ -11,7 +11,7 @@ sources:
   - internal/bundle/script.go
   - internal/bundle/worldview.go
   - internal/target/target.go
-verified_against: 510a3c3133e120d84cd50525dbc4ee0d3ec01cdc
+verified_against: 048259bb42b03cc6ebeb13a49f367c2e3a7d4d37
 ---
 
 # Bundle tools
@@ -82,9 +82,12 @@ descriptive whole-invocation rejection naming the effect index, field, and
 offending address. Rect (`class@X1,Y1..X2,Y2`) and axis-aligned line
 (`class@X1,Y1->X2,Y2`) forms parse in the shared package — with normalized
 corners, preserved endpoint order, and deterministic `Tiles()` enumeration —
-but bundles reject them as reserved for the TASK-157 designation consumers
-(settlement zone, structure site, wall line), which will import the same leaf
-from `internal/tool`. Live turns resolve against the guardian's probe, which
+but bundles reject them as reserved for the designation consumers
+(settlement zone, structure site, wall line) — landed by spec 084
+([[guardian-designations]]) through `target.ParseLocus`, a bare-locus entry
+point over the same grammar/normalization/`Tiles()` enumeration; the class
+table and reserved-prefix surface are untouched, so bundle behavior is
+byte-identical. Live turns resolve against the guardian's probe, which
 mirrors structure/pile tiles per absorb batch (the `agentXY` discipline) and
 carries the static map.
 

@@ -6,7 +6,7 @@ sources:
   - internal/tui/grammar.go
   - internal/tui/digest.go
   - internal/tui/tui.go
-verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
+verified_against: 048259bb42b03cc6ebeb13a49f367c2e3a7d4d37
 ---
 
 # TUI chronicle feed and digest grammar
@@ -69,6 +69,13 @@ existing voices — `run` in the world-lifecycle voice, `morgue` in the
 chronicle's narrated-prose voice: `run.ended` ("the run ended · N dead ·
 final cause <cause>" — the postmortem reader's feed-line summary; the full
 ledger stays in the payload/detail pane),
+since spec 084 the seven plan-layer types get entries in the guardian
+family voice (`familyByNamespace` maps the new `designation`/`directive`
+namespaces onto `familyGuardian`): "Guardian marked a structure_site at
+(4,5) (shelter) — «label»", "Guardian charged Ash, Birch: «text»", the
+id-referencing cancelled/lapsed lines, and the world-answers-the-plan
+"the village fulfilled Guardian's mark/charge (id)" terminals
+([[guardian-designations]], `TestCatalogSweep`-covered);
 `morgue.epilogue` ("epilogue for <name>: <text>", `chronicle.entry`-style
 80-rune truncation; agent −1 renders as "the run" — the run-end epilogue),
 and `metatron.charter_observed` ("Guardian ran under charter <fingerprint>

@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/tool/registry.go
   - internal/tool/derive.go
-verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
+verified_against: 048259bb42b03cc6ebeb13a49f367c2e3a7d4d37
 ---
 
 # Tool registry — the Guardian tool surface
@@ -34,11 +34,14 @@ events; the night-only gate lives in the reducer, not the tool), then the
 `InputSchemaJSON` tool (`monitorAndActSchema`, arrays the scalar `Param` model
 cannot express): a `{condition ≤300, action ≤400}` NL pair, a required
 `event_types` string array (1..4 items) whose item `enum` is
-`observableEventTypes` — a curated 12-entry vocabulary of genuinely-emitted event
+`observableEventTypes` — a curated vocabulary of genuinely-emitted event
 types (`agent.slept`/`woke`/`died`/`memory_added`/`intent_set`,
 `social.conversation`/`promise_broken`/`rumor_told`, `gru.attacked`,
 `norm.violated`, `sim.night_started`/`day_started`; the spec draft's
-`meeting.norm_enacted` was dropped as un-emitted, `norm.violated` standing in),
+`meeting.norm_enacted` was dropped as un-emitted, `norm.violated` standing
+in; spec 084 grows it 12 → 16 with the four `directive.*` lifecycle types —
+enum-only, so standing orders watch the guardian's plan layer through the
+unmodified matcher, [[guardian-designations]]),
 an optional `keywords` array (≤6, each ≤40), a `confirm` boolean (marks a fuzzy
 order needing a `metatron_watch` confirm, [[llm-orchestrator]]/[[cognition]]),
 and `ttl_days` (1..7); its declared `Events` is `metatron.order_placed`.
@@ -75,7 +78,7 @@ has no entry — the branch bundle tools ([[bundle-tools]]) render through; it i
 byte-inert for every map-covered built-in, pinned by the before/after
 byte-identity test in `derive_test.go`. Since spec 063 ([[grounded-feedback]]),
 `GuardianToolGuidance` also SKIPS every `Effect: Read` tool in the roster
-(`explain` today) — a read tool costs nothing and never consumes the turn's
+(`explain`; `survey_site` since spec 084) — a read tool costs nothing and never consumes the turn's
 one act, so listing it under the "call exactly ONE of these" acting doctrine
 would misrepresent it; a sibling `GuardianReadGuidance(roster)` renders those
 tools' own "you may also READ freely" paragraph instead (empty when the
@@ -90,6 +93,22 @@ package has no world state to draw positions/passability from) — the digest
 itself is assembled turn-side (`internal/guardian/turn.go`'s
 `buildTargetingDigest`, [[guardian-orders]]/[[guardian-miracles]]), this
 function is only the fixed prose that introduces it.
+
+Spec 084 ([[guardian-designations]]) appends the five plan-layer tools
+after `explain`, all `Gate: None` (the plan layer is charge-free — recorded
+decision): `place_designation` (`kind` Enum over `designationKinds`,
+`target` Text — a bare spec-082 locus parsed by `target.ParseLocus`,
+`structure_kind` Enum over `buildableStructureKinds` — a hand-carried
+mirror of sim's recipes-derived list, drift-pinned from internal/guardian —
+`min_structures` Number 1..12, `label` Text ≤80; Events
+`designation.placed`), `cancel_designation`/`cancel_directive` (required
+`id`), `issue_directive` (`designation_id`, `targets` — the send_omen
+comma-names/"everyone" vocabulary — `text` ≤400 runes, `ttl_days` 1..7
+default 3; Events `directive.issued` + `agent.memory_added`), and the
+Effect-Read `survey_site` (`x`/`y` required, `radius` clamped 1..8 default
+4 — renders under `GuardianReadGuidance` like explain). All five join
+`RosterGuardian`, `loopGuardianTools`, AND the stage-1 ceiling (the
+`monitor_and_act` every-stage teaching-primitive precedent).
 
 ## Connections
 
