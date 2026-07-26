@@ -3,10 +3,10 @@ id: TASK-144
 title: >-
   Flaky test: TestReportCardRunEndRidesEpilogue fails deterministically in
   isolation (order-dependent)
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-26 15:14'
-updated_date: '2026-07-26 16:06'
+updated_date: '2026-07-26 16:20'
 labels:
   - flaky-test
 dependencies: []
@@ -24,13 +24,13 @@ Spec: specs/070-guardian-test-order
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Test passes in isolation with -count=5 and in the full suite
-- [ ] #2 Root cause (the shared state) named in task notes
-- [ ] #3 internal/guardian report-card/digest/trigger tests pass -count=50 clean in isolation and full-package (was -count=5 — too weak, 5 iterations pass by luck)
-- [ ] #4 Spec phase: Setup
-- [ ] #5 Spec phase: User Story 1 + 2 — deterministic worker shutdown (P1)
-- [ ] #6 Spec phase: Grounding (in-branch, per the in-PR doctrine)
-- [ ] #7 Spec phase: Polish
+- [x] #1 Test passes in isolation with -count=5 and in the full suite
+- [x] #2 Root cause (the shared state) named in task notes
+- [x] #3 internal/guardian report-card/digest/trigger tests pass -count=50 clean in isolation and full-package (was -count=5 — too weak, 5 iterations pass by luck)
+- [x] #4 Spec phase: Setup
+- [x] #5 Spec phase: User Story 1 + 2 — deterministic worker shutdown (P1)
+- [x] #6 Spec phase: Grounding (in-branch, per the in-PR doctrine)
+- [x] #7 Spec phase: Polish
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -41,4 +41,14 @@ Claim per spec 065: specs/070-guardian-test-order/ stubbed. Sweep lane 1 (runboo
 Spec 070 authored (compact — diagnosis pinned, fix prescribed: WaitGroup join in Close). Tier checkpoint resolved by operator 2026-07-26: Sonnet holds (concurrency analysis complete at planning tier; fix surgical). AC strengthened to -count=50.
 
 Spec: specs/070-guardian-test-order
+
+spec-bridge sync: Setup: 1/1 · User Story 1 + 2 — deterministic worker shutdown (P1): 2/2 · Grounding (in-branch, per the in-PR doctrine): 1/1 · Polish: 2/2 — status In Progress → Done
+
+Proof: pre-fix 5/20 failures; post-fix -count=50 isolation + -count=10 -race + full suite clean (PR #107). Root cause named: no join in Close; select randomness. AC1-3 checked against merged artifacts.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+All spec tasks complete (Setup: 1/1 · User Story 1 + 2 — deterministic worker shutdown (P1): 2/2 · Grounding (in-branch, per the in-PR doctrine): 1/1 · Polish: 2/2). Derived Done by spec-bridge sync.
+<!-- SECTION:FINAL_SUMMARY:END -->
