@@ -8,10 +8,12 @@ notes, `docs/design/control-surface-and-calibration.md` §3/§7, and the user de
 2026-07-24 recorded on each task win. Plan-of-record is the board; this file carries only
 ordering, doctrine, and the log.
 
-**Status:** executing — code complete (all 6 PRs merged, grounding fresh, Done flips landed);
-remaining: TASK-122 measurement run (in flight, ETA ~2026-07-26 evening) and TASK-111's
-live-evidence ACs (delegated to TASK-136/137). Operator sign-off on lanes: 2026-07-25
-(lanes as authored; TASK-89 live-world touch approved "go ahead anytime").
+**Status:** done — every scoped task closed except TASK-111, which stays In Progress by
+explicit operator decision until its live-evidence ACs resolve via TASK-136/137 (cards
+outside this runbook's scope; a combined crisis-experiment design was proposed to the
+operator). Measurement verdict (TASK-122, 2026-07-26): worst agent 6.73 flips/game-day
+over 5.204 game-days on the compound build — 90.7% below baseline, zero deaths.
+Operator sign-off on lanes: 2026-07-25.
 <!-- Only the OPERATOR flips draft → signed-off (the author never pre-fills it). An
      executing session must refuse a runbook whose status it cannot verify. -->
 
@@ -239,3 +241,4 @@ sweep; this log complete and status flipped to done.
 | 2026-07-25 | TASK-103 | #93 | 46b1841 | day-rung-drops-chop deviation gated+pinned; 104-before-103 amendment reconciled (premise disproven) |
 | 2026-07-25 | TASK-104 | #96 | 5acb5b5 | 4 deviations gated+accepted (exposureWakeBelow=150, survival-preemption yield, governance quorum exclusion, rest analog test-only); clean rebase across guardian rename |
 | 2026-07-25 | TASK-122 | — (measurement) | — | LAUNCHED: fresh world seed 4242, gemma @ 4x, ~24h wall; flip_count.py committed + baseline-validated |
+| 2026-07-26 | TASK-122 | — (measurement) | — | DONE: worst 6.73/day vs bar 36 over 5.204 game-days; 0 deaths; evidence committed; TASK-141 carded from run findings |
