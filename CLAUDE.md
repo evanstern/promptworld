@@ -146,7 +146,7 @@ PR; the pr gate enforces it, and step 7 is bookkeeping only.
   the pdlc:sweep re-ground step. Grounding content (wiki notes, player docs, design
   references) always rides the PR, never a post-merge commit.
 
-## Model-tiered workflow (constitution Principle V, v1.1.0)
+## Model-tiered workflow (constitution Principle V, v1.2.0)
 
 Three tiers, enforced by delegation (`.specify/memory/constitution.md`, Principle V):
 
