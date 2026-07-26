@@ -87,6 +87,13 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 	// The gru: nightly emergence, stalking, wounds, dawn withdrawal (gru.go).
 	events = append(events, gruStep(s, m, night, nextTick)...)
 
+	// The stranger (spec 077 US2): store-seeking movement, bounded takes,
+	// dawn departure (stranger.go). Ordered after gruStep and before the
+	// governance/social beats (pinned by TestStrangerStepsAfterGru); a world
+	// where no stranger ever arrived returns nil on the first check —
+	// byte-identical pre-077 behavior (FR-017).
+	events = append(events, strangerStep(s, m, night, nextTick)...)
+
 	// Governance (TASK-13): the meeting lifecycle (only once a convention is
 	// established — TASK-36) and the per-minute violation detectors
 	// (governance.go).
@@ -131,7 +138,8 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 			if a.Dead {
 				continue
 			}
-			n := decayNeeds(a.Needs, a.Asleep, night, warmAt(s, a.X, a.Y, nextTick), s.structureAt("shelter", a.X, a.Y))
+			n := decayNeeds(a.Needs, a.Asleep, night, warmAt(s, a.X, a.Y, nextTick), s.structureAt("shelter", a.X, a.Y),
+				coldSnapActive(s, nextTick))
 			emit("agent.needs_changed", NeedsPayload{
 				Agent: i, Health: n.Health, Food: n.Food, Rest: n.Rest, Warmth: n.Warmth, Morale: n.Morale,
 			})
@@ -1469,7 +1477,7 @@ func workDuration(s *State, a *Agent, in *Intent) int64 {
 	return intentDuration(in.Goal)
 }
 
-func decayNeeds(n Needs, asleep, night, warm, onShelter bool) Needs {
+func decayNeeds(n Needs, asleep, night, warm, onShelter, coldSnap bool) Needs {
 	n.Food = maxInt(0, n.Food-foodDecay)
 	if asleep {
 		// T037: sleeping on a shelter tile recovers rest at the boosted rate
@@ -1485,6 +1493,12 @@ func decayNeeds(n Needs, asleep, night, warm, onShelter bool) Needs {
 	switch {
 	case warm:
 		n.Warmth = minInt(1000, n.Warmth+warmthGainFire)
+	case night && coldSnap:
+		// Spec 077 (FR-010): a cold snap is "a colder night" — the SAME
+		// outdoor-night arithmetic at the harsher rate; fire warmth (above)
+		// beats it exactly as it beats ambient cold, and expiry is the
+		// caller's read-time coldSnapActive check (no end event).
+		n.Warmth = maxInt(0, n.Warmth-warmthLossColdSnap)
 	case night:
 		n.Warmth = maxInt(0, n.Warmth-warmthLossCold)
 	default:

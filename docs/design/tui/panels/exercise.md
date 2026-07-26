@@ -2,7 +2,7 @@
 title: Panel — exercise (scenario tab)
 class: panel
 status: shipped
-verified_against: 348a100c22f650d27e6fba517ea7f1f1aed1af73
+verified_against: 2d7a54940f8512340143e8ca5a8ba53e6e196aa2
 sources:
   - internal/tui/exercise.go
   - internal/tui/tui.go
@@ -74,13 +74,14 @@ falls through inert.
    gauge shows the term in plain language, a met/pending marker (`✓`/`…`),
    and the backing event type + count (engineer-facing detail, FR-020 — the
    plain-language callout is the term itself; the raw event reference sits
-   alongside it, not instead of it). Both cataloged exercises carry
-   production evaluator arms — `first-night` (spec 054 FR-004) and
-   `the-law` (spec 072: the law term over the adopted-norm ledger, the
-   charter term over the persisted `State.CharterCustom` authorship flag) —
-   so no shipped exercise renders permanently pending; a future exercise
-   without an evaluator arm gets its terms rendered pending, the honest
-   default.
+   alongside it, not instead of it). Every cataloged exercise carries a
+   production evaluator arm (spec 077 FR-002 — the nine-exercise catalog
+   below; sweep-tested, `TestNoCatalogedExerciseReachesDefaultArm`), so no
+   shipped exercise renders permanently pending; a future exercise without
+   an evaluator arm gets its terms rendered pending, the honest default.
+   Zero-wanted terms ("nothing is taken", counting the `stranger.took`
+   ledger) render Met at genesis — an empty ledger IS the claim (the
+   spec-072 honest-gauge posture).
 4. **Incident-visibility vocabulary** (D4) — a **vocabulary, not a
    boolean**, per `patterns/stage-defaults.md` (the authority) and
    `sim.IncidentVisibilityFor` (definition override wins, else the
@@ -116,6 +117,41 @@ falls through inert.
   ceremony is the *celebratory* takeover the same evidence earns (shipped —
   spec 056/TASK-127; no coupling here, and since spec 072 both surfaces
   also share the same `sim.EvaluateRubric` verdict source).
+
+## The exercise catalog (spec 077 — nine exercises, 3/2/2/2 by stage)
+
+`sim.ScenarioExercises` (`internal/sim/curriculum.go`) is the single source
+this panel, `promptworld new --scenario`, and `world.ValidScenarioExercise`
+all derive from — no second hand-maintained list anywhere. Seeds
+46101–46109, unique; boundaries are dawn-shaped (`BoundaryDay` N = dawn of
+day N; 0 = rolling, every dawn from day 2).
+
+| ID | Stage | Seed | Boundary | Schedule |
+|---|---|---|---|---|
+| `first-night` | stage-1 | 46101 | day 2 | gru_emerges d1 22:00 |
+| `cold-dawn` | stage-1 | 46103 | day 2 | cold_snap d1 22:00, 8h |
+| `stranger-at-the-gate` | stage-1 | 46104 | day 2 | stranger_arrives d1 23:00 |
+| `the-law` | stage-2 | 46102 | rolling | — |
+| `blighted-larder` | stage-2 | 46105 | day 4 | forage_blight d2 08:00, r4 |
+| `toolsmith` | stage-3 | 46106 | rolling | — |
+| `fog-watch` | stage-3 | 46107 | day 3 | cold_snap d1 22:00 6h · gru_emerges d2 22:00 |
+| `long-winter` | stage-4 | 46108 | day 4 | cold_snap 8h · forage_blight r4 · stranger_arrives · gru_emerges (days 1–3) |
+| `stewards-charge` | stage-4 | 46109 | rolling | — |
+
+## Incident vocabulary (spec 077 — four kinds, kind-specific params)
+
+The closed `IncidentScheduleEntry` kind vocabulary the forecast line
+renders (`incidentNoun`, `exerciseIncidentLine`). Every kind lands as
+reducer-valid events indistinguishable from an ambient cause — no
+authored/scenario marker in any payload; ambient dice paths are TASK-28's
+recorded scope.
+
+| Kind | Params | Emits | Surfaced as |
+|---|---|---|---|
+| `gru_emerges` | X,Y (border tile) | `gru.emerged` | "the gru emerges" |
+| `cold_snap` | Hours [1,24] | `sim.cold_snap` | "a cold snap" |
+| `forage_blight` | X,Y + Radius [1,8] | `sim.forage_blighted` | "the forage blights" |
+| `stranger_arrives` | X,Y (border tile) | `stranger.arrived` (+ `stranger.moved/took/departed` from the entity) | "a stranger arrives" |
 
 ## Stage defaults
 

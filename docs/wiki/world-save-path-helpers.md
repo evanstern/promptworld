@@ -4,7 +4,7 @@ description: internal/world's path-helper catalog — every well-known file a sa
 kind: component
 sources:
   - internal/world/world.go
-verified_against: 0fd2104c59c54be8e8071d319fa4ce192083faf3
+verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
 ---
 
 # World save directory: path helpers

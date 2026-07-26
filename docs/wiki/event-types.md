@@ -1,11 +1,11 @@
 ---
 name: event-types
-description: Event taxonomy overview — the payload-struct/canonical-JSON convention, the outcome-payload doctrine, and a routing index into the 14 domain-split event catalogs (clock/world, agent intents/vitals, mental map, harvesting, crafting/building, social memory/consolidation, social protocol, cognition telemetry, curriculum, guardian orders/morgue/actions). Load a child for a type's payload/reducer row; load this note for cross-cutting conventions.
+description: Event taxonomy overview — the payload-struct/canonical-JSON convention, the outcome-payload doctrine, and a routing index into the 15 domain-split event catalogs (clock/world, agent intents/vitals, mental map, harvesting, crafting/building, social memory/consolidation, social protocol, cognition telemetry, curriculum, scenario incidents, guardian orders/morgue/actions). Load a child for a type's payload/reducer row; load this note for cross-cutting conventions.
 kind: concept
 sources:
   - internal/sim/state.go
   - internal/sim/gru.go
-verified_against: 8ec9aefc624396325c0083d2be207d5fcb057420
+verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
 ---
 
 # Event types
@@ -19,10 +19,15 @@ subscribers verbatim.
 
 ## Event catalog, by domain
 
-The full per-type catalog (85 event types across the format's history, specs
-012 through 076) is split by event domain — each child inherits this note's
+The full per-type catalog (92 event types across the format's history, specs
+012 through 077) is split by event domain — each child inherits this note's
 `verified_against` pin, carries the domain's own history-of-format-changes
-prose and catalog rows verbatim, and links back here.
+prose and catalog rows verbatim, and links back here. Spec 077's seven new
+types: the scenario-incident family — `sim.cold_snap`, `sim.forage_blighted`,
+and the stranger entity's `stranger.arrived` / `stranger.moved` /
+`stranger.took` / `stranger.departed` ([[event-types-scenario-incidents]]) —
+plus the guardian's `metatron.skills_observed` skills observation
+([[event-types-guardian-morgue]], the `metatron.charter_observed` twin).
 
 - [[event-types-clock-world]] — Clock/scheduler and world-lifecycle events — pause/resume/speed/governor, day/night, forage regrowth, world genesis/migration/forking (`world.forked`, spec 076), daemon lifecycle and LLM-provider warnings.
 - [[event-types-agent-intents]] — Agent intent lifecycle — intent_set/work_started/intent_done/recovery_stalled/build_failed/moved, including the spec 062/064 yield-window and needs-conditioned recovery arms.
@@ -34,9 +39,10 @@ prose and catalog rows verbatim, and links back here.
 - [[event-types-memory-consolidation]] — Memory embedding and consolidation — memory_embedded/situation_embedded, journal entries, the nightly consolidation family, belief_reinforced.
 - [[event-types-social-protocol]] — Governance and hail-protocol events — meeting/norm families, convention_established, gathering_observed, and the hail family.
 - [[event-types-cognition-telemetry]] — Cognition telemetry and planning — cog.thought/outcome/tool_call/memory_divergence, intent_rejected, plan_set/plan_step_started/plan_expired.
-- [[event-types-curriculum-events]] — Curriculum-ladder events — exercise_passed and stage_unlocked, the spec 046/054 staged-world unlock gates.
+- [[event-types-curriculum-events]] — Curriculum-ladder events — exercise_passed and stage_unlocked, the spec 046/054 staged-world unlock gates (emission generalized to the nine-exercise catalog by spec 077).
+- [[event-types-scenario-incidents]] — Scenario-incident events (spec 077) — cold snap, forage blight, and the stranger entity family: ambient-indistinguishable authored pressure.
 - [[event-types-guardian-orders]] — Guardian standing-order events — charge_regenerated, nudged, order_placed/triggered/cancelled/expired, and the spec 029/059 survival-watch lifecycle.
-- [[event-types-guardian-morgue]] — Guardian morgue and report-card events — charter_observed, morgue.epilogue, guardian.report_card, chronicle.entry.
+- [[event-types-guardian-morgue]] — Guardian morgue and report-card events — charter_observed (+ spec 077's skills_observed twin), morgue.epilogue, guardian.report_card, chronicle.entry.
 - [[event-types-guardian-actions]] — Guardian miracle actions and gru events — time_snapped/item_granted/entity_moved/entity_removed, and the gru emerged/moved/sighted/attacked/withdrew family.
 
 ## Conventions

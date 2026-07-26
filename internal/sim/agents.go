@@ -685,10 +685,15 @@ const (
 	restDecayAwake = 1
 	restRegenSleep = 4 // full recharge in ~4 game-hours
 	warmthLossCold = 4 // night, outdoors, no fire: full → 0 in ~4 game-hours
-	warmthGainFire = 6
-	warmthGainDay  = 2
-	healthLoss     = 3 // per minute while starving or freezing (~5.5h to die)
-	healthRegen    = 1 // fed and rested
+	// warmthLossColdSnap (spec 077 FR-010): the cold-snap night rate — the
+	// same outdoor-night arithmetic (decayNeeds) at double the bite, active
+	// only while tick < State.ColdSnapUntil (coldSnapActive, read-time
+	// expiry). Fire warmth beats it exactly as it beats ambient night cold.
+	warmthLossColdSnap = 8
+	warmthGainFire     = 6
+	warmthGainDay      = 2
+	healthLoss         = 3 // per minute while starving or freezing (~5.5h to die)
+	healthRegen        = 1 // fed and rested
 
 	// Thresholds the reflex policy keys on.
 	hungryAt = 350

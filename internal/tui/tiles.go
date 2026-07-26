@@ -104,7 +104,11 @@ var (
 	tokWall      = newToken("wall", classMaterial256, "250", true, false, false)
 	tokPath      = newToken("path", classMaterial256, "137", false, false, false)
 	tokGru       = newToken("gru", classMaterial256, "196", true, false, false)
-	tokGrave     = newToken("grave", classMaterial256, "244", false, true, false)
+	// tokStranger (spec 077): the night trickster — violet 135, bold, so it
+	// reads as an entity beside the gru's red without stealing the
+	// predator's alarm color (family-tint discipline, spec 068 R3).
+	tokStranger = newToken("stranger", classMaterial256, "135", true, false, false)
+	tokGrave    = newToken("grave", classMaterial256, "244", false, true, false)
 	// tokGround: plain grass's dim "·" — no foreground (the terminal's own
 	// default, themeable by definition), faint.
 	tokGround = newToken("ground", classSemantic16, "", false, true, false)
@@ -222,6 +226,11 @@ var mapGlyphs = []tileEntry{
 		Token: tokMarsh, Terrain: []worldmap.TileKind{worldmap.Marsh}},
 	{Glyph: "▒", Name: "sand", Meaning: "a sandy shoreline flat — open, walkable",
 		Token: tokSand, Terrain: []worldmap.TileKind{worldmap.Sand}},
+	// The stranger (spec 077 US2): an entity like the gru — the map needs a
+	// body to render (research R4). Appended after the shipped vocabulary,
+	// so the pinned legend/overlay prefix stays byte-identical (FR-009).
+	{Glyph: "S", Name: "stranger", Meaning: "a stranger — a night trickster after unattended stores",
+		Token: tokStranger, Keys: []string{"stranger"}},
 }
 
 // groundTile is plain open ground — the terrain fallback for any kind

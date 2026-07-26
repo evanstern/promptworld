@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/loop.go
   - internal/sim/landing.go
-verified_against: 30912a9cd5d2334f76425ac8ca5b74a7a7c90876
+verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
 ---
 
 # Sim loop — landing ladder

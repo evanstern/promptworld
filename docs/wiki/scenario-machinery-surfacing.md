@@ -1,6 +1,6 @@
 ---
 name: scenario-machinery-surfacing
-description: How the spec-054 scenario runtime surfaces once armed — boot-frozen ArmScenario wiring at daemon boot, the ipc/status/CLI ScenarioExercise/Outcome facts, the manifest's consumed Scenario block, chronicle/morgue narration of the pass/fail boundary, and the TUI's fifth exercise dock tab.
+description: How the scenario runtime surfaces once armed — boot-frozen ArmScenario wiring at daemon boot, the ipc/status/CLI ScenarioExercise/Outcome facts, the manifest's consumed Scenario block (nine exercise ids since spec 077), chronicle/morgue narration of the pass/fail boundary, and the TUI's fifth exercise dock tab with its four-kind incident forecast nouns.
 kind: component
 sources:
   - internal/sim/loop.go
@@ -16,7 +16,7 @@ sources:
   - cmd/promptworld/commands.go
   - internal/ipc/protocol.go
   - internal/ipc/server.go
-verified_against: a8d2b7f17989321471cff43c4e760e83f58bbd55
+verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
 ---
 
 # Scenario machinery — surfacing, wiring, and the exercise tab
@@ -49,7 +49,8 @@ no toggle command).
 **Manifest consumption** ([[world-save-directory]]): `world.Manifest.Scenario`
 (`*ScenarioConfig{Exercise}`) is no longer the spec-046 reserved/unconsumed
 seam — `world.Open` now validates a present block against
-`ValidScenarioExercise` (a local mirror of `sim.ScenarioExercises`' id set,
+`ValidScenarioExercise` (a local mirror of `sim.ScenarioExercises`' id set
+— nine ids since spec 077's catalog wave,
 the `validLadderStage` twin-list precedent — the deterministic core and the
 save-directory package deliberately don't import each other;
 `TestScenarioVocabularyMirrorsSimCatalog` pins the two in sync), refusing an

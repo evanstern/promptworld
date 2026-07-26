@@ -221,6 +221,21 @@ type CharterObservedPayload struct {
 	Default     bool   `json:"default"`
 }
 
+// SkillsObservedPayload — metatron.skills_observed (spec 077 FR-006): the
+// bound skill-file set a Guardian turn actually ran under — charter_observed's
+// twin, emitted by the same turn pipeline through the same inject_social door,
+// only when the fingerprint differs from State.SkillsFingerprint. Names is
+// the bound file list in composition order (provenance, like Status's skills
+// list). An EMPTY bound set never emits — absence is not an observation, and
+// stages 1–2 (where skill files don't bind) are structurally silent. Skill
+// files are inherently player-authored (no game-shipped ones exist), so no
+// default flag rides here: SkillsObservedEvidence derives Custom: true by
+// construction (curriculum.go). Evidence only: no scoring fields.
+type SkillsObservedPayload struct {
+	Fingerprint string   `json:"fingerprint"`
+	Names       []string `json:"names"`
+}
+
 // applyGuardian is the reducer arm for metatron.* events. The nudged arm
 // validates rather than clamps: the InjectSocial dry-run runs this on a
 // state copy, so invalid spends are rejected at the door and recorded
@@ -434,6 +449,32 @@ func (s *State) applyGuardian(e store.Event) error {
 		}
 		s.CharterFingerprint = p.Fingerprint
 		s.CharterCustom = !p.Default
+		// Spec 077 (FR-005): persist the observation's envelope coordinates
+		// (the PlacedSeq apply-time-stamp precedent) so the-law's pass
+		// evidence is state-derivable (CharterEvidenceFromState) — the
+		// spec-072 FR-009 blocker removed. The dry-run probe applies with
+		// Seq 0 and is discarded; the recorded event stamps the real seq,
+		// identical live and in replay.
+		s.CharterObservedSeq = e.Seq
+		s.CharterObservedTick = e.Tick
+	case "metatron.skills_observed":
+		// Spec 077 (FR-006): the skills-observation twin of the charter arm
+		// above — latest observation wins, exactly how the charter
+		// fingerprint is kept. The door requires a non-empty fingerprint AND
+		// a non-empty name list: an empty bound set is never an observation.
+		var p SkillsObservedPayload
+		if err := json.Unmarshal(e.Payload, &p); err != nil {
+			return fmt.Errorf("apply %s: %w", e.Type, err)
+		}
+		if p.Fingerprint == "" {
+			return fmt.Errorf("apply %s: empty fingerprint", e.Type)
+		}
+		if len(p.Names) == 0 {
+			return fmt.Errorf("apply %s: empty skill-file set (absence is not an observation)", e.Type)
+		}
+		s.SkillsFingerprint = p.Fingerprint
+		s.SkillsObservedSeq = e.Seq
+		s.SkillsObservedTick = e.Tick
 	}
 	return nil
 }

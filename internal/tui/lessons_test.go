@@ -66,6 +66,17 @@ func lessonFixtureEventPayload(t *testing.T, id string) store.Event {
 		return mkEvent("metatron.charter_observed", sim.CharterObservedPayload{Fingerprint: "abcd1234", Default: false})
 	case "first-fuzzy-order":
 		return mkEvent("metatron.order_placed", sim.GuardianOrder{ID: "ord-2", Confirm: true})
+	// --- tranche 2 (spec 077 US3) ---
+	case "first-explain-answer":
+		return mkEvent("cog.tool_call", sim.CogToolCallPayload{Job: "j1", Tool: "explain", Verdict: "read_ok"})
+	case "first-report-card":
+		return mkEvent("guardian.report_card", sim.GuardianReportCardPayload{Fingerprint: "a1b2c3", Note: "steady work"})
+	case "first-skill-file":
+		return mkEvent("metatron.skills_observed", sim.SkillsObservedPayload{Fingerprint: "ab12cd34ef56", Names: []string{"10-watch.md"}})
+	case "same-refusal-pattern":
+		// One same-reason rejection — the FOLD entry needs three of these
+		// (the sweep primes two; the fold tests below drive the arithmetic).
+		return mkEvent("cog.tool_call", sim.CogToolCallPayload{Job: "j1", Tool: "gather", Verdict: "rejected_gate", Reason: "outside the charter"})
 	}
 	t.Fatalf("lessonFixtureEvent: no fixture wired for id %q", id)
 	return store.Event{}
@@ -74,8 +85,8 @@ func lessonFixtureEventPayload(t *testing.T, id string) store.Event {
 // --- T003: catalog shape + skin-token resolution ---
 
 func TestLessonCatalogMinimumTaxonomy(t *testing.T) {
-	if len(lessonCatalog) != 8 {
-		t.Fatalf("lessonCatalog has %d entries, want exactly 8 (contracts/lessons-catalog.md minimum taxonomy)", len(lessonCatalog))
+	if len(lessonCatalog) != 12 {
+		t.Fatalf("lessonCatalog has %d entries, want exactly 12 (contracts minimum 8 + spec 077 tranche 2)", len(lessonCatalog))
 	}
 	seen := map[string]bool{}
 	mechanics, prompting := 0, 0
@@ -95,12 +106,20 @@ func TestLessonCatalogMinimumTaxonomy(t *testing.T) {
 		default:
 			t.Errorf("entry %q has an unrecognized tier %q", e.ID, e.Tier)
 		}
-		if e.Trigger == nil {
-			t.Errorf("entry %q has a nil Trigger predicate", e.ID)
+		// Exactly one trigger seam per entry (spec 077 FR-019): a pure
+		// per-event predicate OR the one fold-trigger — never both, never
+		// neither.
+		if (e.Trigger == nil) == (e.FoldTrigger == nil) {
+			t.Errorf("entry %q must carry exactly one of Trigger/FoldTrigger", e.ID)
 		}
 	}
-	if mechanics != 5 || prompting != 3 {
-		t.Errorf("got %d mechanics + %d prompting entries, want 5 + 3", mechanics, prompting)
+	if mechanics != 5 || prompting != 7 {
+		t.Errorf("got %d mechanics + %d prompting entries, want 5 + 7 (spec 077 FR-018)", mechanics, prompting)
+	}
+	// first-faith-event is OUT (spec 077 FR-020): TASK-118 unrun — the
+	// catalog must not stub it.
+	if seen["first-faith-event"] {
+		t.Error("first-faith-event is stubbed — it rides TASK-118, never this catalog (FR-020)")
 	}
 }
 
@@ -150,8 +169,23 @@ func TestLessonTriggersSweepEachTaxonomyEntryOnce(t *testing.T) {
 			ev := lessonFixtureEvent(t, entry.ID)
 			now := time.Now()
 
+			// The fold entry (spec 077): its fixture event is ALSO
+			// first-rejected-tool-call's trigger — mark that one seen so the
+			// row is free, and prime two same-reason strikes; the third (the
+			// sweep's own ingest below) crosses the threshold.
+			if entry.FoldTrigger != nil {
+				worlds.MarkLessonSeen("first-rejected-tool-call", "world-a")
+			}
+
 			// World A / this client's first boot: a fresh seen-record.
 			ltA := newLessonTriggers(lessonSeenIDs(worlds.LoadLessonsSeen()))
+			if entry.FoldTrigger != nil {
+				for i := 0; i < sameRefusalThreshold-1; i++ {
+					if got := ltA.ingest(lessonFixtureEvent(t, entry.ID), now); got != nil {
+						t.Fatalf("priming strike %d surfaced %v, want nothing before the threshold", i+1, got)
+					}
+				}
+			}
 			surfaced := ltA.ingest(ev, now)
 			if surfaced == nil || surfaced.ID != entry.ID {
 				t.Fatalf("world A: expected %q to surface, got %v", entry.ID, surfaced)
@@ -203,6 +237,80 @@ func TestLessonPromptingTriggersDiscriminate(t *testing.T) {
 				t.Errorf("expected no lesson to surface, got %v", got)
 			}
 		})
+	}
+}
+
+// rejectionEvent builds one rejected cog.tool_call with the given reason.
+func rejectionEvent(reason string) store.Event {
+	e := mkEvent("cog.tool_call", sim.CogToolCallPayload{Job: "j1", Tool: "gather",
+		Verdict: "rejected_gate", Reason: reason})
+	e.Seq = 1
+	return e
+}
+
+// TestSameRefusalFoldThreeStrikes (spec 077 US3 AS-4, SC-004): two
+// same-reason rejections surface nothing; the third surfaces
+// same-refusal-pattern — once per player, never again.
+func TestSameRefusalFoldThreeStrikes(t *testing.T) {
+	// first-rejected-tool-call pre-seen so the row is free for the detector.
+	lt := newLessonTriggers(map[string]bool{"first-rejected-tool-call": true})
+	now := time.Now()
+	for i := 0; i < 2; i++ {
+		if got := lt.ingest(rejectionEvent("outside the charter"), now); got != nil {
+			t.Fatalf("strike %d surfaced %v, want nothing", i+1, got)
+		}
+	}
+	got := lt.ingest(rejectionEvent("outside the charter"), now)
+	if got == nil || got.ID != "same-refusal-pattern" {
+		t.Fatalf("third strike surfaced %v, want same-refusal-pattern", got)
+	}
+	// A fourth same-reason rejection never re-surfaces it (seen).
+	if again := lt.ingest(rejectionEvent("outside the charter"), now); again != nil {
+		t.Errorf("fourth strike re-surfaced %v", again)
+	}
+}
+
+// TestSameRefusalFoldMixedReasonsNeverTrigger (AS-4's negative): three
+// DIFFERENT-reason rejections never trigger the detector, and reasonless /
+// non-rejection verdicts never count at all.
+func TestSameRefusalFoldMixedReasonsNeverTrigger(t *testing.T) {
+	lt := newLessonTriggers(map[string]bool{"first-rejected-tool-call": true})
+	now := time.Now()
+	for _, reason := range []string{"outside the charter", "too many targets", "stale snapshot"} {
+		if got := lt.ingest(rejectionEvent(reason), now); got != nil {
+			t.Fatalf("mixed reasons surfaced %v, want nothing", got)
+		}
+	}
+	// Reasonless rejections and read verdicts are not strikes.
+	empty := mkEvent("cog.tool_call", sim.CogToolCallPayload{Job: "j1", Tool: "gather", Verdict: "rejected_gate"})
+	read := mkEvent("cog.tool_call", sim.CogToolCallPayload{Job: "j1", Tool: "explain", Verdict: "read_error", Reason: "outside the charter"})
+	for i := 0; i < 5; i++ {
+		if got := lt.ingest(empty, now); got != nil {
+			t.Fatalf("reasonless rejection surfaced %v", got)
+		}
+		if got := lt.ingest(read, now); got != nil {
+			t.Fatalf("read_error surfaced %v (only rejected_* verdicts count)", got)
+		}
+	}
+}
+
+// TestLessonFoldReasonCap: past the cap, NEW reasons stop being tracked
+// (bounded fold, spec 077 FR-019) — already-tracked reasons keep counting.
+func TestLessonFoldReasonCap(t *testing.T) {
+	var f lessonFold
+	for i := 0; i < lessonFoldReasonCap; i++ {
+		f.note(rejectionEvent(strings.Repeat("r", i+1)))
+	}
+	f.note(rejectionEvent("one past the cap"))
+	if len(f.rejections) != lessonFoldReasonCap {
+		t.Fatalf("fold tracks %d reasons, want capped at %d", len(f.rejections), lessonFoldReasonCap)
+	}
+	if f.rejections["one past the cap"] != 0 {
+		t.Error("a reason past the cap was tracked")
+	}
+	f.note(rejectionEvent("r")) // an already-tracked reason still counts
+	if f.rejections["r"] != 2 {
+		t.Errorf("tracked reason count = %d, want 2", f.rejections["r"])
 	}
 }
 

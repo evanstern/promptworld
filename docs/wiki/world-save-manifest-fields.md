@@ -4,7 +4,7 @@ description: world.json's field-by-field catalog — format_version history, tic
 kind: component
 sources:
   - internal/world/world.go
-verified_against: 0fd2104c59c54be8e8071d319fa4ce192083faf3
+verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
 ---
 
 # World save manifest: field catalog
@@ -71,7 +71,10 @@ charter regardless of edits ([[guardian]]); `Open` validates via
 `ValidCharterPreset`). A fourth addition, the optional `scenario` block (`ScenarioConfig{exercise}`,
 naming a `sim.ExerciseDefinition.ID`), was RESERVED on the `meeting`-block
 precedent through spec 046; spec 054 ([[scenario-machinery]]) consumes it:
-`Open` now validates a present block against `ValidScenarioExercise` — a
+`Open` now validates a present block against `ValidScenarioExercise` —
+since spec 077 a nine-id vocabulary (`first-night`, `cold-dawn`,
+`stranger-at-the-gate`, `the-law`, `blighted-larder`, `toolsmith`,
+`fog-watch`, `long-winter`, `stewards-charge`) — a
 LOCAL mirror of `sim.ScenarioExercises`' id set (the `validLadderStage`
 twin-list precedent, in reverse: the deterministic core does not import this
 save-directory package and this package does not import the core, so each

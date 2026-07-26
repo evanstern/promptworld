@@ -15,7 +15,7 @@ sources:
   - internal/world/world.go
   - internal/worlds/unlocks.go
   - cmd/promptworld/stages.go
-verified_against: a8d2b7f17989321471cff43c4e760e83f58bbd55
+verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
 ---
 
 # Explain tool and tutor guide
@@ -57,7 +57,8 @@ extended to the answer path) — the six fixed topics are:
   `rejected_gate`, …) with a player-facing meaning per class — MIRRORED from
   `internal/toolloop`'s `Verdict` constants
   (`TestExplainDecisionClassesMirrorVerdicts` pins the set equal).
-- `glyphs` — the map legend — MIRRORED from `internal/tui`'s `mapGlyphs`
+- `glyphs` — the map legend (grown with spec 077's `S` stranger row) —
+  MIRRORED from `internal/tui`'s `mapGlyphs`
   table (since spec 068 the [[tile-registry]] in `tiles.go`) —
   `TestExplainGlyphsMirrorLegend` pins `explain.go`'s copy glyph-for-glyph,
   so the explained legend can never drift from the drawn one.

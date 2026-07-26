@@ -9,7 +9,7 @@ sources:
   - internal/tui/tiles.go
   - internal/tui/look.go
   - internal/worlds/unlocks.go
-verified_against: ad2a6543a9caf51d1cd28af863291f3daa3bd4eb
+verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
 ---
 
 # TUI input, focus, and help overlay
@@ -93,8 +93,11 @@ diverge, and the registry's OWN row order is frozen (append-only) so this
 history stays accurate. Since spec 060, both surfaces also carry a `conditionOverlayNote`
 prose line naming the three map condition overlays ([[village-lens]]) — a
 note rather than a `mapGlyphs` row, since every overlay is a style variant
-of an already-legended glyph, never a new one. The shared table gained the `✝` grave row with spec 044 and, since spec 068, the `░` marsh / `▒` sand
-rows ([[tile-registry]], [[worldmap-generation]]); the grave row is the
+of an already-legended glyph, never a new one. The shared table gained the `✝` grave row with spec 044, the `░` marsh /
+`▒` sand rows with spec 068, and the `S` stranger row with spec 077 (the
+night trickster entity, [[event-types-scenario-incidents]] — appended, so
+the pinned prefix stays byte-identical; [[tile-registry]],
+[[worldmap-generation]]); the grave row is the
 dead-agent-on-grave carve-out in `renderMapGrid` (above) that keeps the row
 honest — without it the map could never actually show the glyph it
 advertises. The lessons section is the pull half of the
@@ -104,10 +107,17 @@ init, so the overlay lists every lesson the push half can ever show — the
 placeholder line survives only as a defensive empty-table branch. The push
 half is the lesson row above: `lessonTriggers.ingest` folds the same event
 stream `applyEvent` feeds the decision-trace projection, firing each of the
-8 static catalog entries (5 mechanics — first suppression/gru
-attack/charge-regen/order-expiry/death; 3 prompting — first rejected
-`cog.tool_call`, first custom charter, first fuzzy order) at most once per
-player: one active lesson at a time (text line + `→` pointer line ending
+12 static catalog entries (5 mechanics — first suppression/gru
+attack/charge-regen/order-expiry/death; 7 prompting since spec 077's
+tranche 2 — first rejected `cog.tool_call` (`rejected_*` verdicts only,
+narrowed by spec 077: an explain answer's `read_ok` is not a refusal),
+first custom charter, first fuzzy order, first explain answer, first
+report card, first skill file, and the same-refusal-pattern wrong-thing
+detector — the catalog's ONE stateful trigger seam, a bounded
+session-local `lessonFold` counting rejections per identical non-empty
+reason, firing on the third strike, never on mixed reasons;
+`first-faith-event` is deliberately absent, riding TASK-118) at most once
+per player: one active lesson at a time (text line + `→` pointer line ending
 `(? for more · x dismiss)`), dwelling until its done-signal event or a
 global `x` dismiss, with a bounded FIFO queue whose stale entries decay
 rather than surface late. Seen-state is per-user and cross-world

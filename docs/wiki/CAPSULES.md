@@ -147,6 +147,9 @@ hand; regenerate whenever any note's `description:` changes:
   - [[event-types-guardian-orders]] — Guardian standing-order event rows split from [[event-types]]:…
   Guardian standing-order event rows split from [[event-types]]: metatron.charge_regenerated/nudged/order_placed/order_triggered/order_cancelled/order_expired. Load when tracing charge regen, nudge validation, or the spec 029/059 standing-order and survival-watch lifecycle.
 
+  - [[event-types-scenario-incidents]] — Scenario-incident event rows split from [[event-types]] (spec 077): sim.cold_snap, sim.forage_blighted, the stranger.* family
+  Scenario-incident event rows split from [[event-types]] (spec 077): sim.cold_snap, sim.forage_blighted, and the stranger entity family (arrived/moved/took/departed). Load when tracing the exercise catalog's authored pressure or the stranger's night arc.
+
   - [[event-types-guardian-morgue]] — Guardian morgue/report-card event rows split from [[event-types]]: metatron.charter_observed, morgue.epilogue, guardian.report_card, chronicle.entry
   Guardian morgue/report-card event rows split from [[event-types]]: metatron.charter_observed, morgue.epilogue, guardian.report_card, chronicle.entry. Load when tracing spec 044 charter-fingerprint observation, run epilogues, or the spec 063 grounded-feedback report card.
 

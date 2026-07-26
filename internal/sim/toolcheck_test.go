@@ -146,6 +146,10 @@ func TestWhitelistDiffIdentical(t *testing.T) {
 		// one of the two types the ENDED world's narrowed door still accepts).
 		"metatron.charter_observed": true,
 		"morgue.epilogue":           true,
+		// Spec 077 (exercise catalog) deliberately widens the boundary by
+		// exactly one entry: the turn pipeline's skills observation — the
+		// charter observation's twin, the stage-3 gate's evidence event.
+		"metatron.skills_observed": true,
 		// Spec 063 US4 (report card) deliberately widens the boundary by
 		// exactly one entry: the stopping-point producer's stored attribution
 		// note (recorded prose, latest-card reducer). The run-end card rides

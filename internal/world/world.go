@@ -136,7 +136,10 @@ type ScenarioConfig struct {
 // import sim) pins the two in sync.
 func ValidScenarioExercise(s string) bool {
 	switch s {
-	case "first-night", "the-law":
+	case "first-night", "cold-dawn", "stranger-at-the-gate",
+		"the-law", "blighted-larder",
+		"toolsmith", "fog-watch",
+		"long-winter", "stewards-charge":
 		return true
 	}
 	return false

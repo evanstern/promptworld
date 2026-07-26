@@ -129,6 +129,7 @@ var explainGlyphs = []explainGlyph{
 	{"✝", "grave", "a villager's grave — marks where a death occurred"},
 	{"░", "marsh", "marshy wet ground near water — open, walkable"},
 	{"▒", "sand", "a sandy shoreline flat — open, walkable"},
+	{"S", "stranger", "a stranger — a night trickster after unattended stores"},
 }
 
 // explainAgentGlyphNote mirrors help.go's agentGlyphNote (same pin test).

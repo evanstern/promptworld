@@ -6,7 +6,7 @@ sources:
   - internal/sim/executor.go
   - internal/sim/recipes.go
   - internal/sim/terrain.go
-verified_against: 03987d380ff92948495abe8b9b34e196d050154d
+verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
 ---
 
 # Executor — goal completions

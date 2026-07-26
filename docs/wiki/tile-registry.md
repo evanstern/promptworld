@@ -6,7 +6,7 @@ sources:
   - internal/tui/tiles.go
   - internal/tui/views.go
   - internal/tui/help.go
-verified_against: ad2a6543a9caf51d1cd28af863291f3daa3bd4eb
+verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
 ---
 
 # Tile registry
@@ -54,7 +54,9 @@ style-only token — `"dying"` on fire, `"damaged"` on wall), and a binding:
 rock, the quarried/`Depleted` kind, and — since spec 068 — marsh/sand), or
 `Keys []string` for a structure/marker row (`"fire"`, `"fire_cold"`,
 `"shelter"`, `"oven"`, `"chest"`, `"wall_plank"`, `"wall_stone"`, `"path"`,
-`"pile"`, `"den"`, `"gru"`, `"grave"`) — `KeyGlyphs` overrides the drawn
+`"pile"`, `"den"`, `"gru"`, `"grave"`, and — spec 077 — `"stranger"`,
+the night trickster's appended `S` row, violet 135 bold beside the gru's
+red) — `KeyGlyphs` overrides the drawn
 character per key when one row's `Keys` share a glyph slot (the wall row's
 `▤`/`▩`). A **variant changes style only, never the glyph** (FR-003/C5 by
 construction) — night dimming is a `Faint(true)` transform layered over the
@@ -79,7 +81,8 @@ structure kind with no bound row renders invisible, as before the registry
 existed). `(tileRef).render(state)` draws the binding's `Glyph` in its
 `state`-resolved style in one call.
 
-**tile()'s own priority is unchanged** (views.go): gru > agents > structures
+**tile()'s own priority** (views.go): gru > stranger (spec 077 — the
+second entity shares the gru's tier; the gru wins a shared tile) > agents > structures
 > piles > dens > path > depleted/terrain — the registry supplies WHAT each
 branch draws, never the precedence itself. A structure kind not explicitly
 cased (the `default` arm) now resolves through `renderTileKey` if a row

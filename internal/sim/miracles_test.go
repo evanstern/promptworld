@@ -785,6 +785,9 @@ func TestRebaseTaxonomyComplete(t *testing.T) {
 		"PlaceFact.Seen":            shift, // spec 041: mental-map freshness anchor (Belief.Reinforced shape)
 		"PeerSighting.Seen":         shift, // spec 041 T013: sighting recency anchor, same shape
 		"Agent.NeedsAnchorTick":     shift, // spec 043 US2: trajectory-window edge anchor (Belief.Reinforced shape), 0 = unset
+		"State.ColdSnapUntil":       shift, // spec 077: cold-snap expiry deadline, read live (Structure.FuelUntil shape)
+		"Stranger.LastMove":         shift, // spec 077: movement-cadence anchor (Gru.LastAttack shape)
+		"Stranger.LastTake":         shift, // spec 077: take-cooldown anchor (Gru.LastAttack shape)
 		// KEEP — history / identity / counters.
 		"Agent.Generation":                 keep,
 		"Agent.LastConsolidatedNight":      keep,
@@ -821,6 +824,12 @@ func TestRebaseTaxonomyComplete(t *testing.T) {
 		"DeathRecord.Tick":                 keep, // spec 044: when the death happened (history, like NormViolation.Tick)
 		"MorgueEpilogue.Tick":              keep, // spec 044 US2: when the epilogue landed (history, ChronicleEntry.Tick shape)
 		"CurriculumPass.Tick":              keep, // spec 046: when the pass was recorded (history), like Memory.Tick
+		"Stranger.Night":                   keep, // spec 077: 1-based arrival night — identity, like Rumor.OriginTick
+		"StrangerTake.Tick":                keep, // spec 077: when the take happened — ledger history (DeathRecord.Tick shape)
+		"State.CharterObservedSeq":         keep, // spec 077: log coordinate of the recorded observation — identity, like Memory.Seq
+		"State.CharterObservedTick":        keep, // spec 077: log coordinate — evidence pointer, like EvidenceRef.Tick
+		"State.SkillsObservedSeq":          keep, // spec 077: log coordinate — identity, like Memory.Seq
+		"State.SkillsObservedTick":         keep, // spec 077: log coordinate — evidence pointer, like EvidenceRef.Tick
 		"EvidenceRef.Tick":                 keep, // spec 046: audit pointer at a recorded event's tick — history, never a deadline
 		"EvidenceRef.Seq":                  keep, // spec 046: the evidence event's store seq — an identity, like Memory.Seq
 		"GuardianReportCard.Tick":          keep, // spec 063: when the card landed (history, MorgueEpilogue.Tick shape)

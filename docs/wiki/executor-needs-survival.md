@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/executor.go
   - internal/sim/agents.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
 ---
 
 # Executor — needs, survival, and run end
@@ -19,7 +19,12 @@ that a fully-dead village triggers.
 **Heartbeat**: every game-minute (`tick%60 == 0`) each living agent's needs decay via
 `decayNeeds`: food always falls; rest falls awake (or recovers asleep — at
 `restRegenShelter` (6/minute) on a shelter tile, `restRegenSleep` (4) otherwise, the
-plank economy's payoff for building one); warmth falls at night outdoors, recovers
+plank economy's payoff for building one); warmth falls at night outdoors —
+at `warmthLossCold` (4/minute) ambiently, or `warmthLossColdSnap` (8, spec
+077) while a scheduled cold snap holds (`coldSnapActive`: `tick <
+State.ColdSnapUntil`, a read-time check with no end event — the same
+arithmetic path, just a harsher night; fire warmth beats the snap exactly
+as it beats ambient cold) — recovers
 near a **lit** fire or in shelter, drifts up by day. A fire is lit iff
 `tick < Structure.FuelUntil` — `warmAt` takes the tick and checks it, so a burned-out
 fire grants no warmth. Zero food or zero warmth drains health; health at 0 emits

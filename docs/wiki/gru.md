@@ -4,7 +4,7 @@ description: The nocturnal sight-triggered predator — an event-sourced entity 
 kind: component
 sources:
   - internal/sim/gru.go
-verified_against: 03987d380ff92948495abe8b9b34e196d050154d
+verified_against: 4c66d240b2715706964f02cfd2396256c9957d8e
 ---
 
 # The gru
@@ -106,6 +106,15 @@ and the victim's own memories (sighting, attack) stamp `OriginAction` — they a
 the agent's own direct experience of the moment, not a report of someone else's
 act — while the nearby witness memory stamps `OriginWitness`, matching every
 other witness site in the sim. [[event-types]] catalogs the family.
+
+**Shared protection predicates (spec 077):** `gruProtected` (fire light +
+shelter, `litAt`'s wider-than-warmth radius) is no longer the gru's alone —
+the stranger ([[event-types-scenario-incidents]], `internal/sim/stranger.go`)
+reuses it verbatim for both its movement avoidance and its entry-tile
+validity (`strangerEntryValid`), so "light is safety" is one rule with two
+consumers, never two copies. The two entities are independent: separate
+latches (`State.Gru` / `State.Stranger`), legal on the same night, and the
+stranger takes goods where the gru takes health.
 
 ## Connections
 

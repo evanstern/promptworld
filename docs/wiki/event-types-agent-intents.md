@@ -6,7 +6,7 @@ sources:
   - internal/sim/agents.go
   - internal/sim/executor.go
   - internal/sim/landing.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
 ---
 
 # Event types — agent intent lifecycle

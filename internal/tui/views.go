@@ -1365,6 +1365,10 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 	if m.replica != nil && m.replica.Gru != nil {
 		gruX, gruY = m.replica.Gru.X, m.replica.Gru.Y
 	}
+	strangerX, strangerY := -1, -1
+	if m.replica != nil && m.replica.Stranger != nil {
+		strangerX, strangerY = m.replica.Stranger.X, m.replica.Stranger.Y
+	}
 
 	night := m.replica != nil && m.replica.Night
 	tile := func(x, y int) string {
@@ -1375,6 +1379,12 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 		// registry supplies leaves, this switch supplies precedence.
 		if x == gruX && y == gruY {
 			return tileKey("gru").render("")
+		}
+		// The stranger (spec 077): the gru's precedence tier — an entity
+		// outranks agents/structures; the gru wins a (legal but rare)
+		// shared tile, being the greater threat.
+		if x == strangerX && y == strangerY {
+			return tileKey("stranger").render("")
 		}
 		if g, ok := agents[[2]int{x, y}]; ok {
 			return g

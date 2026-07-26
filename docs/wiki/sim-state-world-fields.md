@@ -7,7 +7,7 @@ sources:
   - internal/sim/agents.go
   - internal/sim/morgue.go
   - internal/sim/curriculum.go
-verified_against: 0fd2104c59c54be8e8071d319fa4ce192083faf3
+verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
 ---
 
 # Sim state: world & social fields
@@ -44,7 +44,15 @@ never decays; [[nightly-consolidation]] covers the decay curve), self-narrative,
 and the
 once-per-night consolidation ledger ([[nightly-consolidation]]) — the
 [[gru]] (`Gru *Gru`, nil while not abroad; `omitempty` keeps pre-TASK-10
-snapshots valid) — and, since spec 061 ([[social-fabric]]), the conversation
+snapshots valid) — joined since spec 077 by the incident state
+([[event-types-scenario-incidents]]): `ColdSnapUntil int64` (the cold
+snap's read-time expiry latch — `coldSnapActive` is `tick < ColdSnapUntil`,
+no end event exists), `Stranger *Stranger` (`{X, Y, Night, LastMove,
+LastTake}`, nil while not abroad — the gru's entity precedent), and
+`StrangerTakes []StrangerTake` (`{Tick, X, Y, Kind, N}`, a ring bounded at
+32 on the standing-order prune precedent — the durable take ledger
+zero-wanted rubric terms count), all `omitempty` so pre-077 snapshots
+round-trip byte-identically — and, since spec 061 ([[social-fabric]]), the conversation
 loop damper's world truth: `PairTalks []PairTalk` (`omitempty`, the
 Journal/Hail/Map pointer-precedent's slice sibling) — an unordered per-pair
 last-exchange tick, `{A,B,Tick}` with a stored `A<B` invariant and the slice
@@ -83,7 +91,15 @@ the event log) with, since spec 072, its authorship twin `CharterCustom bool`
 `metatron.charter_observed` arm; the conservative false zero value means a
 pre-072 snapshot with a custom charter in force reads "not known
 player-authored" until the next revision is observed — the-law's rubric
-charter conjunct reads it, [[scenario-machinery]]), and the
+charter conjunct reads it, [[scenario-machinery]]) and, since spec 077,
+the observation COORDINATES `CharterObservedSeq/CharterObservedTick`
+(stamped by the same arm from the event envelope — what
+`CharterEvidenceFromState` re-locates pass evidence with; zero = a pre-077
+snapshot, the evidence honestly absent until the next observation stamps
+them) plus the skills-observation triple
+`SkillsFingerprint`/`SkillsObservedSeq`/`SkillsObservedTick` (set only by
+the `metatron.skills_observed` arm — the stage-3 evidence substrate,
+[[curriculum-ladder-progression]]), and the
 `MorgueEpilogues []MorgueEpilogue` bounded ring
 (`morgueEpilogueCap` 32, the chronicle pattern) of narrator mourning prose —
 all `omitempty`, so every pre-044 snapshot stays byte-identical with no

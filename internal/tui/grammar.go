@@ -74,15 +74,19 @@ const (
 // a meeting is village fabric and a norm is what a meeting produces, and the
 // chronicle treats both as one family rather than two.
 var familyByNamespace = map[string]eventFamily{
-	"world":     familyWorld,
-	"run":       familyWorld, // run.ended (spec 044): world-lifecycle voice
-	"clock":     familyClock,
-	"sim":       familySim,
-	"agent":     familyAgent,
-	"social":    familySocial,
-	"meeting":   familyGovernance,
-	"norm":      familyGovernance,
-	"gru":       familyGru,
+	"world":   familyWorld,
+	"run":     familyWorld, // run.ended (spec 044): world-lifecycle voice
+	"clock":   familyClock,
+	"sim":     familySim,
+	"agent":   familyAgent,
+	"social":  familySocial,
+	"meeting": familyGovernance,
+	"norm":    familyGovernance,
+	"gru":     familyGru,
+	// stranger (spec 077 US2 — the night trickster) rides the gru's own
+	// threat-family voice: it is the second nocturnal entity, not a new
+	// visual role (FR-016 — no new channels, no new tiers).
+	"stranger":  familyGru,
 	"chronicle": familyChronicle,
 	"morgue":    familyChronicle, // morgue.epilogue (spec 044): narrated prose, chronicle voice
 	"metatron":  familyGuardian,  // FROZEN namespace key (spec 052 ruling 2); display-aliased per FR-013
@@ -515,11 +519,15 @@ func styleWrapLine(prefix string, summary []seg, width, maxWrap int) []styledLin
 	return out
 }
 
-// isAlertType is the digest-grammar contract's four high-salience types
-// (§2/§4) — rendered whole-line in the alert role regardless of family.
+// isAlertType is the digest-grammar contract's high-salience whole-line
+// tier (§2/§4) — rendered whole-line in the alert role regardless of
+// family. Spec 077 (FR-016) grows the shipped four by exactly one:
+// stranger.took joins beside social.chest_taken — theft is theft, and it is
+// the ONLY addition (no new tier, no new channel).
 func isAlertType(eventType string) bool {
 	switch eventType {
-	case "agent.died", "gru.attacked", "social.chest_taken", "norm.violated":
+	case "agent.died", "gru.attacked", "social.chest_taken", "norm.violated",
+		"stranger.took":
 		return true
 	}
 	return false

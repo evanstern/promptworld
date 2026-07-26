@@ -184,7 +184,12 @@ var preLadderGoldenFrames = []preLadderGoldenFrame{
 	},
 	{
 		name: "narrow-home",
-		want: "19ac79e890bcf1355bed5e88cc9dcef1377da6e923619e40626dc168a676eb8a",
+		// Re-pinned for spec 077 (TASK-151): the map legend legitimately grew
+		// the appended "S stranger" token (tiles.go, the marsh/sand FR-009
+		// precedent) — this narrow frame renders the legend line, so its hash
+		// moved with the sanctioned vocabulary growth, nothing else
+		// (TestTilesIdentityPin still guards the frozen prefix bytes).
+		want: "0676b22e12e59fc683e6f7cdd8495c0c932fbfac87cc629e0b2ffc8f5d4006a1",
 		build: func(t *testing.T) Model {
 			m := testModel(t)
 			seedEvents(&m, 20)

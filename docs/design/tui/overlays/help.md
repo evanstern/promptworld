@@ -2,7 +2,7 @@
 title: Overlay — help (`?`)
 class: overlay
 status: shipped
-verified_against: 1210c057aabdfeb3012dceaa0a574e5f63513de5
+verified_against: 2d7a54940f8512340143e8ca5a8ba53e6e196aa2
 sources:
   - internal/tui/help.go
   - internal/tui/tiles.go
@@ -289,7 +289,7 @@ under an explicit classification instead of eroding the invariant silently.
 | header anatomy row | static | `headerAnatomy` | `helpWalkthroughLines` | — (display-only) | spec 045 | — |
 | map glyph row | static | `mapGlyphs` (shared with `legendGlyphLine`) | `helpWalkthroughLines` | — | spec 045 | — |
 | dock tab row | static | `dockTabs` | `helpWalkthroughLines` | — | spec 045 | — |
-| lessons pull-reference entry | populated (8 catalog entries) · empty (placeholder line, degenerate only) | `helpLessons`, populated from `lessonCatalog` (`populateHelpLessons`) | `helpLessonsLines` | — | spec 045 (seam); content spec 055/TASK-117 | — |
+| lessons pull-reference entry | populated (12 catalog entries, spec 077 tranche 2) · empty (placeholder line, degenerate only) | `helpLessons`, populated from `lessonCatalog` (`populateHelpLessons`) | `helpLessonsLines` | — | spec 045 (seam); content spec 055/TASK-117 | — |
 | the guardian section (stage identity/concept) | per-stage · pre-ladder (nil status) | `Status.Stage`, `world.StagesLadder`, `skin.Stage` | `helpGuardianLines` | — (display-only) | reorient D9 / spec 063 | `skin.stage.stage-N.name`/`.line` |
 | the guardian section (granted verbs) | per-stage ceiling | `guardian.StageCeilingVerbs` (the turn grant's own `applyStageCeiling` intersection) | `helpGuardianLines` | — | reorient D9 / spec 063 | — |
 | the guardian section (example ask per verb) | static, per verb | the per-verb example-ask token family (skin-tokens.md) | `helpGuardianLines` | — | reorient D9 / spec 063 | `skin.guardian.example_ask.send_vision` (one per verb, keyed by tool id) |

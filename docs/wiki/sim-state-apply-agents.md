@@ -7,7 +7,7 @@ sources:
   - internal/sim/agents.go
   - internal/sim/recipes.go
   - internal/sim/terrain.go
-verified_against: 8ec9aefc624396325c0083d2be207d5fcb057420
+verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
 ---
 
 # Sim state: core agent Apply arms

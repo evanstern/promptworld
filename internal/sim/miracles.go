@@ -182,6 +182,14 @@ func (s *State) applyTimeSnapped(e store.Event) error {
 //	                      (0 = legacy grandfather, must stay 0 so it never decays)
 //	Gru.LastAttack        attack-cooldown anchor; ONLY non-zero (0 = never) and
 //	                      only while the gru is abroad
+//	State.ColdSnapUntil   cold-snap expiry deadline (spec 077): read live
+//	                      against the clock (coldSnapActive), so a snap
+//	                      forward preserves the snap's remaining window —
+//	                      the Structure.FuelUntil shape; ONLY non-zero
+//	                      (0 = no snap ever)
+//	Stranger.LastMove     movement-cadence anchor (spec 077, the
+//	Stranger.LastTake     Gru.LastAttack shape); ONLY non-zero (0 = fresh
+//	                      arrival) and only while the stranger is abroad
 //	Meeting.OpenedTick    assembly-phase anchor; ONLY non-zero (in-flight meeting)
 //	Meeting.GatherStart   emergent-gathering-watch anchor; ONLY non-zero
 //	GuardianOrder.ExpiresTick  standing-order expiry deadline (spec 029); shifted
@@ -231,6 +239,14 @@ func (s *State) applyTimeSnapped(e store.Event) error {
 //	GuardianReportCard.Tick/Seq/Citations (spec 063: when the card landed +
 //	the card event's identity + cited event seqs — history and identities,
 //	never deadlines),
+//	StrangerTake.Tick (spec 077: when the take happened — a historical
+//	ledger fact, the DeathRecord.Tick shape), Stranger.Night (spec 077: the
+//	1-based arrival night — identity, like Rumor.OriginTick),
+//	State.CharterObservedSeq/CharterObservedTick and
+//	State.SkillsObservedSeq/SkillsObservedTick (spec 077: log coordinates
+//	re-locating recorded observation events — identities, the Memory.Seq /
+//	EvidenceRef.Tick shape; rewriting them would point evidence at ticks
+//	where nothing was recorded),
 //	ChronicleEntry.Tick/Day/FromTick/ToTick, Meeting.LastMeetingDay,
 //	MeetingConvention.EstablishedDay, Norm.DayPassed/DayRepealed/DayAmended,
 //	NormViolation.Tick. Day-denominated governance fields re-arm naturally under
@@ -318,6 +334,14 @@ func rebaseTicks(s *State, delta int64) {
 	}
 	if s.Gru != nil {
 		shift(&s.Gru.LastAttack)
+	}
+	// Spec 077: the snap's remaining window and the stranger's cadence
+	// anchors survive the jump (SHIFT); the take ledger's ticks and the
+	// observation coordinates are history/identity (KEEP — untouched).
+	shift(&s.ColdSnapUntil)
+	if s.Stranger != nil {
+		shift(&s.Stranger.LastMove)
+		shift(&s.Stranger.LastTake)
 	}
 	shift(&s.Meeting.OpenedTick)
 	shift(&s.Meeting.GatherStart)

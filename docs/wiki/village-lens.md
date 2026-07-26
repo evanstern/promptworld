@@ -8,7 +8,7 @@ sources:
   - internal/tui/help.go
   - internal/sim/agents.go
   - internal/tui/tiles.go
-verified_against: ad2a6543a9caf51d1cd28af863291f3daa3bd4eb
+verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
 ---
 
 # Village lens (villager strip + map condition overlays)

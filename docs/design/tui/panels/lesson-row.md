@@ -2,7 +2,7 @@
 title: Panel — lesson row
 class: panel
 status: shipped
-verified_against: 348a100c22f650d27e6fba517ea7f1f1aed1af73
+verified_against: 2d7a54940f8512340143e8ca5a8ba53e6e196aa2
 sources:
   - internal/tui/lessons.go
   - internal/tui/views.go
@@ -106,17 +106,20 @@ has no room for a bordered box's own top/bottom rule):
 ### Trigger taxonomy
 
 Two lesson tiers, both feeding the same one-active/dwell/anti-spam
-machinery (`lessonCatalog`, `internal/tui/lessons.go`,
-`contracts/lessons-catalog.md`'s 8-entry minimum taxonomy):
+machinery (`lessonCatalog`, `internal/tui/lessons.go` —
+`contracts/lessons-catalog.md`'s 8-entry minimum taxonomy, grown to 12 by
+spec 077 US3's tranche 2):
 
 - **Mechanics lessons** (5 shipped) — first-occurrence UI mechanics:
   suppression, the gru's first attack, the guardian's action-budget regen,
   a standing order's first expiry, and a villager's first death.
-- **Prompting-verb lessons** (3 shipped, the pivot's teaching core) —
+- **Prompting-verb lessons** (7 shipped, the pivot's teaching core) —
   first-occurrence moments in the *player's own prompting practice*:
-  - first rejected tool call (a `cog.tool_call` verdict other than landed,
-    turn-scoped) — teaches that the guardian's grant is real and refusals
-    are informative, not broken.
+  - first rejected tool call (a `cog.tool_call` `rejected_*` verdict —
+    narrowed by spec 077 from "other than landed": spec 063's read
+    verdicts postdate the original predicate, and a successful `explain`
+    answer lands `read_ok`, which is an answer, not a refusal) — teaches
+    that the guardian's grant is real and refusals are informative.
   - first custom charter observed
     (`metatron.charter_observed{default: false}`) — teaches that editing
     `charter.md` and returning changes the guardian's voice.
@@ -125,6 +128,24 @@ machinery (`lessonCatalog`, `internal/tui/lessons.go`,
     implementation binds to the actual catalog names at build time") —
     teaches that a vaguely-worded standing order still binds, with its
     fuzziness marked honestly.
+  - first explain answer (spec 077: `cog.tool_call` with tool `explain`
+    and verdict `read_ok`) — teaches the grounded-feedback surface: the
+    answer is read from recorded facts, never improvised.
+  - first report card (spec 077: `guardian.report_card`) — teaches the
+    graded-conduct surface and that its citations are checkable.
+  - first skill file (spec 077: `metatron.skills_observed`) — teaches the
+    stage-3 concept: a bound skill file shapes what the guardian can do.
+  - same-refusal pattern (spec 077, the first WRONG-THING detector): the
+    third `cog.tool_call` rejection carrying the identical non-empty
+    `Reason` — implemented on the catalog's ONE stateful trigger seam, a
+    bounded session-local fold (`lessonFold`: per-reason counter, cap 32;
+    `lessonEntry.FoldTrigger`, every other entry a pure per-event
+    predicate). Points the player at the decision trace and their charter,
+    not at the refusal itself. Mixed reasons never trigger it.
+
+  Deliberately absent: `first-faith-event` — TASK-118 (faith) has not run
+  and no faith event type exists; the entry rides TASK-118 as a content
+  rider (spec 077 FR-020), never a stub here.
 
 ### Stage defaults
 

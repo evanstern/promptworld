@@ -6,7 +6,7 @@ sources:
   - internal/sim/state.go
   - internal/sim/loop.go
   - internal/daemon/daemon.go
-verified_against: 0fd2104c59c54be8e8071d319fa4ce192083faf3
+verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
 ---
 
 # Event types — clock & world events
