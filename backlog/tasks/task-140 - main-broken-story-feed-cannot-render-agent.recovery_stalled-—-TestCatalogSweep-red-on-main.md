@@ -3,9 +3,10 @@ id: TASK-140
 title: >-
   main broken: story feed cannot render agent.recovery_stalled —
   TestCatalogSweep red on main
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-07-25 23:47'
+updated_date: '2026-07-26 01:53'
 labels: []
 dependencies: []
 priority: high
@@ -20,7 +21,19 @@ TASK-104 (spec 064, PR #96) shipped the agent.recovery_stalled event and its pos
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 digestRegistry renders agent.recovery_stalled (agent name, goal, need — honest abort voice per event-types.md row), with subject-candidate entry
-- [ ] #2 catalogFixture row added; TestCatalogSweep green
-- [ ] #3 full go test -race ./... green in the worktree
+- [x] #1 digestRegistry renders agent.recovery_stalled (agent name, goal, need — honest abort voice per event-types.md row), with subject-candidate entry
+- [x] #2 catalogFixture row added; TestCatalogSweep green
+- [x] #3 full go test -race ./... green in the worktree
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Model tier: Sonnet (spec-implementer, default). Rubric: single-package TUI view/rendering fix with tests alongside — routine tier per constitution Principle V. Trivial-exempt from Spec Kit (surgical, file:line diagnosis on card, ACs on card). Dispatched by UI-sweep orchestrator; found while gating TASK-119's rebase (branch test failure reproduced identically on origin/main).
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Merged via PR #98 (squash 87f7251). digestRegistry + subject-candidate rows for agent.recovery_stalled mirroring agent.build_failed; catalogFixture row ('Birch's warm_up stalled — warmth not recovering'). TestCatalogSweep green on main again (verified post-merge at root); full -race suite was green in the worktree (22 packages). Sonnet spec-implementer, trivial-exempt. Wiki note tui-client.md lists digest.go as a source — re-pin rides the TASK-119 re-ground cycle.
+<!-- SECTION:FINAL_SUMMARY:END -->
