@@ -132,7 +132,7 @@ a v5 world (marsh+sand present, legend/overlay decode them), old build refuses t
 - [x] T015 Full-suite + build verification: `go build ./... && go vet ./... && go test ./...`
       green; run quickstart.md §3 against a fresh world and §2 against a fixture v4 world
       (record evidence on TASK-143 board notes).
-- [ ] T016 Post-merge re-grounding (runs at root AFTER the PR merges, per project law):
+- [x] T016 Post-merge re-grounding (runs at root AFTER the PR merges, per project law):
       `/grounding-wiki:wiki-update` for notes sourcing the touched files (at minimum
       `docs/wiki/tui-client.md`, `docs/wiki/world-model.md`, `docs/wiki/world-migration.md`),
       then `node .claude/skills/player-docs/scripts/check-freshness.mjs --check` and refresh
