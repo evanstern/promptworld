@@ -126,7 +126,7 @@ getting-started's step, executable without `--scenario`.
       `node scripts/check-merge-drift.mjs pr` → exit 0 (SC-005;
       `player-docs-stale` probe = T012's command). `check-tui-design.mjs` is
       NOT applicable (no `docs/design/tui/` or `internal/tui/` changes).
-- [ ] T017 Open the one PR for TASK-153; merge merge-commit-only
+- [x] T017 Open the one PR for TASK-153; merge merge-commit-only
       (`gh pr merge --merge` — in-branch pins die under squash). Post-merge:
       derived state only (board move via `backlog` CLI from repo root,
       spec-bridge sync, tasks.md ticks).

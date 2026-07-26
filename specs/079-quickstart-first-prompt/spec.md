@@ -116,7 +116,7 @@ page's source tag set changed; the probe exits 0.
    tool / composing a skill file and frames the stage-3 scenario (a
    self-granted tool contributing to the pass) as the when-ready exercise.
 4. **Given** stage-4-the-stewardship.html, **Then** its block scripts a
-   stewardship first session and states plainly there is no exercise to pass.
+   stewardship first session and states plainly that no exercise gates the stage (reconciled 2026-07-26 at implementation: spec 077 shipped two OPTIONAL stage-4 exercises after this spec was authored; an ambient stage-4 world remains unscored by design) to pass.
 5. **Given** all four blocks, **When** their sources are audited, **Then**
    every factual claim projects from the page's already-declared
    `specs/046-curriculum-ladder/` sources — no stage page gains or loses a

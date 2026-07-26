@@ -7,7 +7,7 @@ conflicts as routine. Direction is decided; do not re-litigate it:
 `docs/design/reorient-2026-07-26-ui.md` (the merged synthesis, PR #110) wins.
 Plan-of-record is the board; this file carries only ordering, doctrine, and the log.
 
-**Status:** signed-off · operator sign-off on lanes: 2026-07-26 (lanes specified verbatim
+**Status:** done (2026-07-26) · operator sign-off on lanes: 2026-07-26 (lanes specified verbatim
 by the operator in the `/pdlc:sweep` invocation — Waves A–D with dependencies and the
 TASK-111/136/137 pause — which this runbook transcribes rather than re-derives).
 
@@ -156,6 +156,7 @@ file's execution log complete and status flipped to done. TASK-111/136/137 untou
 
 | date | task | PR | merge | notes |
 |------|------|----|-------|-------|
+| 2026-07-26 | TASK-153 | #120 | ae938bd | Sweep tail; first-prompt step durable via the three-place player-docs mechanism (page + source pin + SKILL.md contract); stage-4 wording reconciled with 077 |
 | 2026-07-26 | TASK-151 | #119 | 576fcd3 | Lane D anchor; 9 exercises / 3 incident kinds / 12 lessons; the-law pass emission completes 072 FR-009; skills_observed fills the spec-046 stage-3→4 slot; ambient dice deferred to TASK-28 as scoped |
 | 2026-07-26 | TASK-152 | #118 | fb8c865 | Ladder view live; StageEarned substrate relocated (parity by construction); reconciled in-branch with #116/#117 |
 | 2026-07-26 | TASK-67 | #116 | 4daf75c | Lane C complete; fork+compare shipped; wallet-inheritance decision ratified in-spec (R4); surfaced pre-existing wiki budget debt from PR #115 (carded) |
