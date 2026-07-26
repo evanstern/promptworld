@@ -16,11 +16,11 @@ pages, and `.claude/skills/player-docs/SKILL.md`. No Go code, no
 
 ## Phase 1: Setup & baseline
 
-- [ ] T001 Verify the baseline: from the worktree run
+- [X] T001 Verify the baseline: from the worktree run
       `node .claude/skills/player-docs/scripts/check-freshness.mjs --check`
       — must exit 0 (13 fresh) before any edit; if not, stop and surface
       (another lane's churn landed; re-read research.md R7).
-- [ ] T002 Capture current pins: record `docs/wiki/skin.md`'s
+- [X] T002 Capture current pins: record `docs/wiki/skin.md`'s
       `verified_against` value (spec-time: `31c893e0406653197e467a89b2fdb96f0bcf2ee0`)
       and confirm the `skin.guardian.example_ask.*` values in that note still
       match `internal/skin/skin.go`'s default table byte-for-byte
@@ -31,14 +31,14 @@ pages, and `.claude/skills/player-docs/SKILL.md`. No Go code, no
 **Purpose**: US3 (P1) — make the next regeneration reproduce this content.
 SKILL.md defines what Phases 3–4 must write, so it lands first.
 
-- [ ] T003 [US3] Amend `.claude/skills/player-docs/SKILL.md` mapping table:
+- [X] T003 [US3] Amend `.claude/skills/player-docs/SKILL.md` mapping table:
       reconcile the rows for the five touched pages to their actual declared
       sources post-change — `getting-started.html` row gains
       `docs/wiki/skin.md` AND is corrected to list the page's full current
       source set (12 sources on main + skin.md; bounded reconciliation,
       research.md R6); the four `stage-N-*.html` rows re-checked against
       those pages' tags (expected: unchanged).
-- [ ] T004 [US3] Add SKILL.md editorial shape notes (precedent: the TASK-114
+- [X] T004 [US3] Add SKILL.md editorial shape notes (precedent: the TASK-114
       pair and TASK-68 quartet paragraphs): (a) getting-started carries an
       "ask your guardian one thing" step after watch-it-live — sample ask
       byte-verbatim from the `skin.guardian.example_ask.*` family as
@@ -55,7 +55,7 @@ SKILL.md defines what Phases 3–4 must write, so it lands first.
 
 ## Phase 3: User Story 1 — getting-started first-prompt step (board AC #1) 🎯
 
-- [ ] T005 [US1] In `docs/player/getting-started.html`, insert the new
+- [X] T005 [US1] In `docs/player/getting-started.html`, insert the new
       numbered step "Ask your guardian one thing" between the current
       "4. Watch it live" and "5. When you're done" (renumber the stopping
       step): where to type (the guardian message box in `promptworld ui`,
@@ -65,11 +65,11 @@ SKILL.md defines what Phases 3–4 must write, so it lands first.
       guardian replies/acts; the charge line above the message box shows the
       cost), and that this works on any world, no scenario needed (FR-001,
       FR-002, FR-006 spirit).
-- [ ] T006 [US1] In the same step, add the `?`-overlay pointer and the skin
+- [X] T006 [US1] In the same step, add the `?`-overlay pointer and the skin
       honesty note (FR-003): the overlay's guardian section lists one example
       ask per verb *your world* grants, in *your world's* phrasing; the
       phrasings printed here are the default Guardian skin's.
-- [ ] T007 [US1] Add the source meta tag (FR-004): one new line in `<head>` —
+- [X] T007 [US1] Add the source meta tag (FR-004): one new line in `<head>` —
       `<meta name="promptworld-docs:source" content="docs/wiki/skin.md@<current verified_against>">`
       — grammar `<path>@<40-hex-lowercase>`, pin captured in T002. Touch no
       other tag.
@@ -83,21 +83,21 @@ FR-005/FR-006: 3–5 ordered steps, every claim projected from the page's
 already-declared spec 046 sources, NO source-tag changes, ask linked to
 getting-started's step, executable without `--scenario`.
 
-- [ ] T008 [P] [US2] `docs/player/stage-1-the-voice.html`: "Your first
+- [X] T008 [P] [US2] `docs/player/stage-1-the-voice.html`: "Your first
       session" block — create (`promptworld new my-village`, default stage) →
       start → `ui` → ask one thing (link to getting-started's first-prompt
       step; vision/omen/watch are the stage's whole verb set) → when ready,
       re-create with `--scenario first-night` and keep everyone alive to dawn
       of day 2.
-- [ ] T009 [P] [US2] `docs/player/stage-2-the-written-word.html`: block
+- [X] T009 [P] [US2] `docs/player/stage-2-the-written-word.html`: block
       includes opening `charter.md` and writing one durable line (in force
       from the guardian's next turn), watching it hold without re-asking;
       when ready, `the-law` — pass with your own revision in force.
-- [ ] T010 [P] [US2] `docs/player/stage-3-the-craft.html`: block includes
+- [X] T010 [P] [US2] `docs/player/stage-3-the-craft.html`: block includes
       granting one tool beyond the basics (capability settings) or composing
       a skill file, then seeing the guardian actually use it; when ready, a
       stage-3 scenario where your granted tool contributes to the pass.
-- [ ] T011 [P] [US2] `docs/player/stage-4-the-stewardship.html`: block
+- [X] T011 [P] [US2] `docs/player/stage-4-the-stewardship.html`: block
       scripts a stewardship first session (full roster incl. capstone; set
       the pace, step back, steward through the guardian) and states plainly
       there is no exercise to pass — this stage is graduation.
