@@ -161,3 +161,5 @@ dropped (tail lane) — if dropped, that is recorded here, not rounded up to don
 
 | date | task | PR | merge | notes |
 |------|------|----|-------|-------|
+| 2026-07-26 | TASK-145 | #106 | merge commit (origin 922223b lineage) | spec 069; gate live: wiki-repin-missing + player-docs blocks; constitution v1.2.0; first PR under review of its own doctrine |
+| 2026-07-26 | TASK-144 | #107 | merge commit | spec 070; Close joins workers; first live block of the 069 gate — 3 findings satisfied in-branch |

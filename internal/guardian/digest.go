@@ -184,6 +184,7 @@ func digestKeeperSystem(name string) string {
 }
 
 func (mt *Guardian) digestWorker() {
+	defer mt.wg.Done()
 	for {
 		select {
 		case <-mt.done:
