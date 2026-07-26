@@ -2,9 +2,10 @@
 title: Pattern — focus contract
 class: pattern
 status: shipped
-verified_against: c8d80800fc5d34c5c31ab54751ebfb3ba80efc5b
+verified_against: 4eb6471ae06298f4fce438c98d8169c9e47e6308
 sources:
   - internal/tui/tui.go
+  - internal/tui/look.go
 ---
 
 # Pattern: focus contract
@@ -52,6 +53,15 @@ spacebar-pause are silently swallowed and only an undiscoverable `esc` (or
   introduces no second client either: its composer IS the minibuffer, reused,
   not a new input widget — the console honors this contract by construction
   rather than by exception.
+- **The look-cursor mode's TILE pane** (spec 074-look-cursor,
+  `../panels/dock.md` "Borrow seam") is a **drawn selection scope, not a
+  text client** — the "exactly one client" claim stays true. `⏎`/`tab`
+  moving keyboard focus into the pane draws the SAME amber border rule 2
+  already names (the `panelFocus` token, matching the console's own drawn-
+  focus sub-panels), but `j`/`k` there select a row; no printable key ever
+  buffers anywhere in any of the mode's three focus layers (cursor/pane/
+  drill) — verified by `internal/tui/focus_test.go`'s
+  `TestLookModeNeverCapturesText`, extending this contract's own sweep.
 
 ## Acceptance checks
 

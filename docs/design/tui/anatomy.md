@@ -2,7 +2,7 @@
 title: Anatomy — region index
 class: index
 status: shipped
-verified_against: d2206458f7a520379a7e882c4fe19e6b448e281c
+verified_against: 4eb6471ae06298f4fce438c98d8169c9e47e6308
 ---
 
 # Anatomy: the region index
@@ -48,6 +48,7 @@ forthcoming.
 | camera pan / recenter | `panels/map.md` | arrow keys, `c` |
 | legend / inspection line (glyph key + in-view piles/chests) | `panels/map.md` | spec 013 T021/T026; first row shed when height is scarce |
 | map condition overlay | `panels/map.md` | Wave 5 stub row, unbuilt |
+| look-cursor (toggle, move/jump, camera push/snap, tile highlight) | `panels/map.md` | spec 074-look-cursor; re-opens the spec 060 standing resolution 2 deferral; the map's first real mouse target (click-tile) |
 
 ## Dock region (tab container + per-tab content)
 
@@ -65,6 +66,7 @@ forthcoming.
 | villagers tab — detail (identity/objective/inventory/beliefs/memories) | `panels/villagers.md` | spec 015 |
 | villagers tab — decisions sub-view | `panels/villagers.md` | spec 020 |
 | exercise tab (framing, attach briefing, rubric gauges, forecast/fog vocabulary, pass/fail) | `panels/exercise.md` | spec 054 (D11/D4), key `6`; world-shaped not stage-shaped (`patterns/stage-defaults.md`) |
+| TILE view (transient dock-body borrow while look-cursor is active) | `panels/dock.md` | spec 074-look-cursor; not a tab — no `pane` value, no digit, no cycle membership |
 
 ## Teaching-chrome region (below the body, above the minibuffer)
 
@@ -98,8 +100,8 @@ forthcoming.
 
 | Region | Owning file | Notes |
 |---|---|---|
-| help overlay — keys section (6 mode pages, 2 tiers) | `overlays/help.md` | spec 045 |
-| help overlay — the screen section (header anatomy, map glyphs, dock tabs) | `overlays/help.md` | spec 045; anti-drift shared tables |
+| help overlay — keys section (7 mode pages, 2 tiers) | `overlays/help.md` | spec 045; look-cursor mode page added spec 074 |
+| help overlay — the screen section (header anatomy, map glyphs, dock tabs) | `overlays/help.md` | spec 045; anti-drift shared tables; badge deep-link pre-focus spec 074 |
 | help overlay — lessons pull-reference | `overlays/help.md` | seam, ships empty |
 | help overlay — ceremony replay section (Section 4) | `overlays/help.md` | spec 056/TASK-127; stored, never regenerated |
 | help overlay — the guardian section (Section 5) | `overlays/help.md` **(specified)** | D9; stage identity/concept, granted verbs, example asks |

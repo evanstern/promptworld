@@ -2,11 +2,12 @@
 title: Overlay — help (`?`)
 class: overlay
 status: shipped
-verified_against: 08046253d67f3b436b0793756ce13e790d43fdac
+verified_against: 66e36e9a7a627161d4b2ec95dcc18aa0f4f91d20
 sources:
   - internal/tui/help.go
   - internal/tui/tiles.go
   - internal/tui/tui.go
+  - internal/tui/look.go
 ---
 
 # Overlay: help
@@ -20,13 +21,12 @@ stays the one printable reference card and only points here.
 
 **Hybrid status, stated plainly**: `status: shipped`. Sections 1–3 shipped
 with spec 045/055; **Section 4 (ceremony replay) shipped with spec 056
-(TASK-127)** and **Section 5 (the guardian, D9) shipped with spec 063
-(TASK-115)** — both sections' control-table rows below name real renderer
-symbols. Only the badge-deep-link row in the classification below remains
-genuinely unbuilt — marked individually in the control table as
-`unbuilt (pending TASK-142, layer-2)`, pointing at its live owner rather
-than a build-schedule wave marker (spec 075), the same hybrid posture
-`panels/systems.md` uses for the same reason.
+(TASK-127)**, **Section 5 (the guardian, D9) shipped with spec 063
+(TASK-115)**, and **the badge deep-link row — previously retagged
+`unbuilt (pending TASK-142, layer-2)` by spec 075's semantic-cells lint
+pass — shipped with spec 074-look-cursor (TASK-142)** — every row's
+control-table entry below now names a real renderer symbol; nothing on
+this page remains `unbuilt`.
 
 ## Mockup
 
@@ -75,8 +75,8 @@ than a build-schedule wave marker (spec 075), the same hybrid posture
 The mode you were in when you pressed `?` (`m.helpMode`, frozen via
 `currentHelpMode`) determines the starting page, but `n`/`p` page across
 **every** mode's key table regardless of where you opened from — the only way
-to read the minibuffer's page, since `?` never opens from there. Six mode
-pages total (`helpModeKey`):
+to read the minibuffer's page, since `?` never opens from there. Seven mode
+pages total (`helpModeKey`; spec 074-look-cursor added the seventh):
 
 | Mode page | Covers |
 |---|---|
@@ -86,6 +86,7 @@ pages total (`helpModeKey`):
 | Villagers (roster) | `handleVillagersKey`, roster state — selection, jump, open detail |
 | Villagers (detail) | same handler, detail/decisions state — toggle decisions, back, scroll |
 | Solo zoom / narrow fallback | the identical global dispatch, partitioned into a different basic/advanced split for its footer |
+| Look-cursor (tile inspection) | `handleLookKey` family (`internal/tui/look.go`) — cursor move/jump/snap, pane focus/select, drill-in, exit-and-select; spec 074, checked right after the console branch in `currentHelpMode` (the mode borrows the dock, so the villagers/inspect branches would otherwise mis-route) |
 
 Each page has a **basic** tier (≈ the footer-hinted set for that mode) and an
 **advanced** tier (`t` toggles) — every real, working binding appears in
@@ -196,12 +197,18 @@ call, no world-state dependency beyond one scalar) — see "Byte-identity
 classification" below for the precise restatement of what the no-LLM floor
 guarantee still covers.
 
-**Badge deep-link (retained layer-2 row)**: `?` opening pre-focused on the
-active badge's row (e.g. opening help from a screen showing `[llm: …]`
-scrolls Section 2 straight to that badge's `headerAnatomy` row) is retained
-here as a cheap, specified layer-2 addition — **not built** in this slice;
-recorded in the control table below rather than silently dropped. It
-applies corpus-wide (any active badge), not only to the guardian section.
+**Badge deep-link — shipped (spec 074-look-cursor, FR-011)**: `?` opening
+pre-focused on the active badge's row (e.g. opening help from a screen
+showing `[llm: …]` scrolls Section 2 straight to that badge's
+`headerAnatomy` row) — `openHelp`'s pre-focus step (`internal/tui/tui.go`):
+with ≥1 active conditional badge (`[degraded]`, `[llm: …]`, `[suppressed:
+…]`, checked in that header order — the first active one wins), `helpSection`
+is set to the screen-walkthrough section and `helpScroll` to that badge's
+`headerAnatomy` row index (`firstActiveBadgeRow`, resolved from the SAME
+shared table `helpWalkthroughLines` renders, so the scroll target can never
+drift from the rendered row). No active badge → the open is byte-identical
+to before this feature (keys section, scroll 0). It applies corpus-wide (any
+mode, any active badge), not only to the guardian section.
 
 ## Byte-identity classification (research.md R4)
 
@@ -214,7 +221,7 @@ this overlay, classified:
 | screen walkthrough | **byte-identical** with nil status |
 | the guardian (D9, above) | **stage-keyed, model-free**: content is a pure function of the stage value; for a given stage the bytes are constant; nil status renders the pre-ladder variant (all verbs). Never LLM-derived. |
 | lessons registry | **status-derived** (active/seen state per user); the registry's catalog text is static, its state columns are live |
-| badge deep-link focus | **status-derived** (which row is pre-focused depends on active badges); content unchanged |
+| badge deep-link focus | **status-derived** (which row is pre-focused depends on active badges); content unchanged — **shipped** (spec 074-look-cursor/TASK-142) |
 | ceremony replay entries | **status-derived** (which ceremonies exist depends on run history — `replica.StagesUnlocked`; replayed content is stored, not regenerated) — **shipped** (spec 056/TASK-127) |
 
 **The no-LLM floor guarantee, restated**: with nil status AND no LLM
@@ -234,7 +241,7 @@ under an explicit classification instead of eroding the invariant silently.
 | open/dismiss overlay | closed · open | `Model.helpOpen` | `openHelp`/`closeHelp` | `?` (open, any non-text mode) · `esc`/`?` (dismiss) · — | spec 045 | — |
 | section cycle | keys · screen · lessons · the guardian | `Model.helpSection` | `helpPanelView` (title via `helpSectionLabel`) | `tab`/`shift+tab` · — | spec 045; guardian section spec 063 | `skin.guardian.epithet` (guardian section title) |
 | tier toggle (keys section) | basic · advanced | `Model.helpTier` | `helpKeysLines` | `t` · — | spec 045 | — |
-| mode paging (keys section) | 6 mode pages | `Model.helpPageMode` | `helpKeysLines`, `nextHelpMode`/`prevHelpMode` | `n`/`p` · — | spec 045 | — |
+| mode paging (keys section) | 7 mode pages | `Model.helpPageMode` | `helpKeysLines`, `nextHelpMode`/`prevHelpMode` | `n`/`p` · — | spec 045; 7th (look-cursor) page spec 074 | — |
 | pager scroll | — | `Model.helpScroll` | `paginateHelpContent` | `J`/`K` · — | spec 045 | — |
 | header anatomy row | static | `headerAnatomy` | `helpWalkthroughLines` | — (display-only) | spec 045 | — |
 | map glyph row | static | `mapGlyphs` (shared with `legendGlyphLine`) | `helpWalkthroughLines` | — | spec 045 | — |
@@ -243,7 +250,8 @@ under an explicit classification instead of eroding the invariant silently.
 | the guardian section (stage identity/concept) | per-stage · pre-ladder (nil status) | `Status.Stage`, `world.StagesLadder`, `skin.Stage` | `helpGuardianLines` | — (display-only) | reorient D9 / spec 063 | `skin.stage.stage-N.name`/`.line` |
 | the guardian section (granted verbs) | per-stage ceiling | `guardian.StageCeilingVerbs` (the turn grant's own `applyStageCeiling` intersection) | `helpGuardianLines` | — | reorient D9 / spec 063 | — |
 | the guardian section (example ask per verb) | static, per verb | the per-verb example-ask token family (skin-tokens.md) | `helpGuardianLines` | — | reorient D9 / spec 063 | `skin.guardian.example_ask.send_vision` (one per verb, keyed by tool id) |
-| badge deep-link focus (layer-2) | unfocused · pre-focused on active badge | active header badge at open | `unbuilt (pending TASK-142, layer-2)` | — | reorient (retained per D9 discussion) | — |
+| badge deep-link focus (layer-2) | unfocused · pre-focused on active badge | active header badge at open | `openHelp`/`firstActiveBadgeRow` (`internal/tui/tui.go`) | — (display-only; the badge itself has no click target) | spec 074-look-cursor (retained per D9 discussion, shipped here) | — |
+| look-cursor keys page | basic · advanced | `handleLookKey` dispatch (`look.go`) | `helpKeysLines` (page 7) | `n`/`p` to reach; `?` mid-mode freezes on it | spec 074 | — |
 | ceremony replay entries | none · N replayable | `replica.StagesUnlocked`/`CurriculumPasses` | `ceremonyReplayLines` (`internal/tui/help.go`), shared rendering with `overlays/ceremony.md` | `tab`/`shift+tab` to reach · — | reorient FR-013 | — |
 
 **Parity rollout**: every control above has a key but no mouse target today;
