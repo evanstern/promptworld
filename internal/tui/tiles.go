@@ -138,21 +138,6 @@ var (
 	styleGrave           = tokGrave.style
 )
 
-// Transitional token views for the not-yet-rewired tile() leaves (T003→T005:
-// removed when renderMapGrid resolves these through the binding indexes).
-var (
-	styleWater    = tokWater.style
-	styleTree     = tokTree.style
-	styleForage   = tokForage.style
-	styleRock     = tokRock.style
-	styleDepleted = tokSpent.style
-	styleDen      = tokDen.style
-	styleShelter  = tokShelter.style
-	styleOven     = tokOven.style
-	stylePile     = tokPile.style
-	styleChest    = tokChest.style
-	styleGru      = tokGru.style
-)
 
 // --- the registry rows (grown glyphEntry, spec 045 → spec 068) ---
 
@@ -314,4 +299,15 @@ func renderTileKey(key, state string) (string, bool) {
 		return "", false
 	}
 	return r.render(state), true
+}
+
+// tileKey resolves a binding key the shipped vocabulary guarantees a row
+// for; a missing row falls back to plain ground — impossible for shipped
+// keys (the coverage sweep pins every drawable binding to a row), and
+// instantly visible in the identity pin if it ever regresses.
+func tileKey(key string) tileRef {
+	if r, ok := keyTiles[key]; ok {
+		return r
+	}
+	return tileRef{entry: &groundTile, glyph: groundTile.Glyph}
 }

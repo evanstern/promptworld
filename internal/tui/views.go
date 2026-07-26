@@ -1177,18 +1177,14 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 				// before FuelUntil actually passes and it goes cold.
 				switch {
 				case m.replica.Tick < st.FuelUntil && st.FuelUntil-m.replica.Tick < m.replica.RefuelDyingBelow():
-					structures[[2]int{st.X, st.Y}] = styleFireDying.Render("▲")
+					structures[[2]int{st.X, st.Y}] = tileKey("fire").render("dying")
 				case m.replica.Tick < st.FuelUntil:
-					structures[[2]int{st.X, st.Y}] = styleFire.Render("▲")
+					structures[[2]int{st.X, st.Y}] = tileKey("fire").render("")
 				default:
-					structures[[2]int{st.X, st.Y}] = styleFireCold.Render("△")
+					structures[[2]int{st.X, st.Y}] = tileKey("fire_cold").render("")
 				}
-			case "shelter":
-				structures[[2]int{st.X, st.Y}] = styleShelter.Render("⌂")
-			case "oven":
-				structures[[2]int{st.X, st.Y}] = styleOven.Render("▣")
-			case "chest":
-				structures[[2]int{st.X, st.Y}] = styleChest.Render("☐")
+			case "shelter", "oven", "chest":
+				structures[[2]int{st.X, st.Y}] = tileKey(st.Kind).render("")
 			case "grave":
 				// Spec 044 US4 (FR-017): reducer-placed at a death tile, never
 				// player-built. Recorded in `structures` (so a grave whose
@@ -1199,7 +1195,7 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 				// agent it belongs to, and there the agent glyph branch
 				// overrides itself to the grave (ratified follow-up) rather
 				// than let the frozen "†" permanently hide it.
-				structures[[2]int{st.X, st.Y}] = styleGrave.Render("✝")
+				structures[[2]int{st.X, st.Y}] = tileKey("grave").render("")
 				graves[[2]int{st.X, st.Y}] = true
 			case "path":
 				// Spec 032 US3: a path is a walkable tile improvement, so it
@@ -1211,16 +1207,20 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 			case "wall_plank", "wall_stone":
 				// Spec 032 US1: walls block movement (structures win over terrain
 				// in tile()), so they always show. A damaged wall (HP below the
-				// derived max) renders dim, the cold-fire precedent, so the player
-				// can spot a wall under demolition at a glance.
-				glyph := "▤"
-				if st.Kind == "wall_stone" {
-					glyph = "▩"
-				}
+				// derived max) renders in the wall row's "damaged" style variant
+				// (same glyph, spent style — the cold-fire precedent), so the
+				// player can spot a wall under demolition at a glance.
+				state := ""
 				if st.HP < sim.WallMaxHP(st.Kind) {
-					structures[[2]int{st.X, st.Y}] = styleWallDamaged.Render(glyph)
-				} else {
-					structures[[2]int{st.X, st.Y}] = styleWall.Render(glyph)
+					state = "damaged"
+				}
+				structures[[2]int{st.X, st.Y}] = tileKey(st.Kind).render(state)
+			default:
+				// Any other structure kind renders through its registry row when
+				// one binds it (SC-002: a registered tile reaches the map with no
+				// edit here); an unbound kind stays invisible, exactly as before.
+				if g, ok := renderTileKey(st.Kind, ""); ok {
+					structures[[2]int{st.X, st.Y}] = g
 				}
 			}
 		}
@@ -1243,9 +1243,9 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 				// tile, so this is the common case; the plain "†" below is
 				// what a graveless dead agent (pre-044 replay/history, or a
 				// hand-built test replica) still shows.
-				g = styleGrave.Render("✝")
+				g = tileKey("grave").render("")
 			case a.Dead:
-				g = styleErr.Render("†")
+				g = styleAgentDead.Render("†")
 			default:
 				// Living: awake/asleep still decides the glyph's CASE, exactly
 				// as before this feature; the map condition overlays (spec 060
@@ -1283,8 +1283,13 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 
 	night := m.replica != nil && m.replica.Night
 	tile := func(x, y int) string {
+		// Priority order is this function's own logic (gru > agents >
+		// structures > piles > dens > path > depleted > base terrain);
+		// WHAT each branch draws — glyph and style — resolves through the
+		// tile registry (tiles.go, spec 068 C1). Never the reverse: the
+		// registry supplies leaves, this switch supplies precedence.
 		if x == gruX && y == gruY {
-			return styleGru.Render("G")
+			return tileKey("gru").render("")
 		}
 		if g, ok := agents[[2]int{x, y}]; ok {
 			return g
@@ -1293,39 +1298,36 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 			return g
 		}
 		if piles[[2]int{x, y}] {
-			return stylePile.Render("%")
+			return tileKey("pile").render("")
 		}
 		if dens[[2]int{x, y}] {
-			return styleDen.Render("ᴥ")
+			return tileKey("den").render("")
 		}
-		var s string
-		var st lipgloss.Style
+		var ref tileRef
 		switch {
 		case paths[[2]int{x, y}]:
 			// Spec 032 US3: a paved path — "·" in a warm tan, distinct from
 			// plain grass's dim "·" so a laid path reads at a glance. Terrain
 			// level: agents/structures/piles above already won by here.
-			s, st = "·", stylePath
+			ref = tileKey("path")
 		case quarried[[2]int{x, y}]:
 			// Depleted outcrop (effective-kind path, worldmap.Depleted):
 			// passable dug-out ground, distinct from both intact rock and
 			// plain grass (research R8).
-			s, st = ",", styleDepleted
-		case gm.At(x, y) == worldmap.Water:
-			s, st = "~", styleWater
-		case gm.At(x, y) == worldmap.Tree:
-			s, st = "♠", styleTree
-		case gm.At(x, y) == worldmap.Forage:
-			s, st = "\"", styleForage
-		case gm.At(x, y) == worldmap.Rock:
-			s, st = "^", styleRock
+			ref = terrainTile(worldmap.Depleted)
 		default:
-			s, st = "·", styleDim
+			// Base terrain — any kind without a registry row of its own
+			// (grass, since genesis) is plain ground.
+			ref = terrainTile(gm.At(x, y))
 		}
+		st := ref.style("")
 		if night {
+			// Night dims the palette rather than hiding the world: a style
+			// TRANSFORM over the token-resolved style (FR-003/C5), exactly
+			// the pre-registry behavior — terrain level only.
 			st = st.Faint(true)
 		}
-		return st.Render(s)
+		return st.Render(ref.glyph)
 	}
 
 	var rows []string
