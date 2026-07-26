@@ -122,7 +122,7 @@ func TestMeetingConfigSeconds(t *testing.T) {
 func TestOpenRejectsBadMeeting(t *testing.T) {
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, ManifestName),
-		[]byte(`{"name":"x","seed":1,"format_version":4,"tick_game_seconds":1,"meeting":{"convene":"13:00","open":"12:00"}}`), 0o644); err != nil {
+		[]byte(`{"name":"x","seed":1,"format_version":5,"tick_game_seconds":1,"meeting":{"convene":"13:00","open":"12:00"}}`), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := Open(dir); err == nil {
@@ -133,7 +133,7 @@ func TestOpenRejectsBadMeeting(t *testing.T) {
 func TestOpenAcceptsMeeting(t *testing.T) {
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, ManifestName),
-		[]byte(`{"name":"x","seed":1,"format_version":4,"tick_game_seconds":1,"meeting":{"convene":"11:30","open":"12:00","x":7,"y":9}}`), 0o644); err != nil {
+		[]byte(`{"name":"x","seed":1,"format_version":5,"tick_game_seconds":1,"meeting":{"convene":"11:30","open":"12:00","x":7,"y":9}}`), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	w, err := Open(dir)
@@ -151,7 +151,7 @@ func TestOpenAcceptsMeeting(t *testing.T) {
 func TestTeachingMarkerDefaultsFalse(t *testing.T) {
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, ManifestName),
-		[]byte(`{"name":"x","seed":1,"format_version":4,"tick_game_seconds":1}`), 0o644); err != nil {
+		[]byte(`{"name":"x","seed":1,"format_version":5,"tick_game_seconds":1}`), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	w, err := Open(dir)
@@ -251,7 +251,7 @@ func TestBundlesDir(t *testing.T) {
 func TestMemoryRelevanceRoundTrip(t *testing.T) {
 	for _, mode := range []string{MemoryRelevanceShadow, MemoryRelevanceOn} {
 		dir := t.TempDir()
-		manifest := `{"name":"x","seed":1,"format_version":4,"tick_game_seconds":1,"memory_relevance":"` + mode + `"}`
+		manifest := `{"name":"x","seed":1,"format_version":5,"tick_game_seconds":1,"memory_relevance":"` + mode + `"}`
 		if err := os.WriteFile(filepath.Join(dir, ManifestName), []byte(manifest), 0o644); err != nil {
 			t.Fatal(err)
 		}
@@ -287,7 +287,7 @@ func TestMemoryRelevanceRoundTrip(t *testing.T) {
 func TestOpenRejectsBadMemoryRelevance(t *testing.T) {
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, ManifestName),
-		[]byte(`{"name":"x","seed":1,"format_version":4,"tick_game_seconds":1,"memory_relevance":"sometimes"}`), 0o644); err != nil {
+		[]byte(`{"name":"x","seed":1,"format_version":5,"tick_game_seconds":1,"memory_relevance":"sometimes"}`), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	_, err := Open(dir)
@@ -304,7 +304,7 @@ func TestOpenRejectsBadMemoryRelevance(t *testing.T) {
 func TestStageRoundTrip(t *testing.T) {
 	for _, stage := range []string{Stage1, Stage2, Stage3, Stage4} {
 		dir := t.TempDir()
-		manifest := `{"name":"x","seed":1,"format_version":4,"tick_game_seconds":1,` +
+		manifest := `{"name":"x","seed":1,"format_version":5,"tick_game_seconds":1,` +
 			`"stage":"` + stage + `","stage_overridden":true,"charter_preset":"tutor"}`
 		if err := os.WriteFile(filepath.Join(dir, ManifestName), []byte(manifest), 0o644); err != nil {
 			t.Fatal(err)
@@ -332,7 +332,7 @@ func TestStageRoundTrip(t *testing.T) {
 func TestAbsentStageIsUngated(t *testing.T) {
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, ManifestName),
-		[]byte(`{"name":"x","seed":1,"format_version":4,"tick_game_seconds":1}`), 0o644); err != nil {
+		[]byte(`{"name":"x","seed":1,"format_version":5,"tick_game_seconds":1}`), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	w, err := Open(dir)
@@ -365,7 +365,7 @@ func TestOpenRejectsBadStage(t *testing.T) {
 	for _, bad := range []string{"stage-5", "stage-0", "Stage-1", "1", "graduated"} {
 		dir := t.TempDir()
 		if err := os.WriteFile(filepath.Join(dir, ManifestName),
-			[]byte(`{"name":"x","seed":1,"format_version":4,"tick_game_seconds":1,"stage":"`+bad+`"}`), 0o644); err != nil {
+			[]byte(`{"name":"x","seed":1,"format_version":5,"tick_game_seconds":1,"stage":"`+bad+`"}`), 0o644); err != nil {
 			t.Fatal(err)
 		}
 		_, err := Open(dir)
@@ -388,7 +388,7 @@ func TestOpenRejectsBadCharterPreset(t *testing.T) {
 	}
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, ManifestName),
-		[]byte(`{"name":"x","seed":1,"format_version":4,"tick_game_seconds":1,"charter_preset":"drill-sergeant"}`), 0o644); err != nil {
+		[]byte(`{"name":"x","seed":1,"format_version":5,"tick_game_seconds":1,"charter_preset":"drill-sergeant"}`), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	_, err := Open(dir)

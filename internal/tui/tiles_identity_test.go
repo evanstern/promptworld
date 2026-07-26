@@ -100,12 +100,12 @@ func tilesIdentityFixture(t *testing.T) Model {
 	// Living agents: the centroid of (12..15, 12) is (13,12), so a 24×16
 	// viewport spans x∈[1,24], y∈[4,19] — everything below sits inside it.
 	m.replica.Agents = []sim.Agent{
-		{Name: "Ash", X: 12, Y: 12, Needs: healthyNeeds},                 // awake: "A"
-		{Name: "Bo", X: 13, Y: 12, Asleep: true, Needs: healthyNeeds},    // asleep: "b"
+		{Name: "Ash", X: 12, Y: 12, Needs: healthyNeeds},                                               // awake: "A"
+		{Name: "Bo", X: 13, Y: 12, Asleep: true, Needs: healthyNeeds},                                  // asleep: "b"
 		{Name: "Cyn", X: 14, Y: 12, Needs: sim.Needs{Health: 1000, Food: 1, Rest: 1000, Warmth: 1000}}, // needs-critical
-		{Name: "Dot", X: 15, Y: 12, Needs: healthyNeeds},                 // suppressed-mind (trace below)
-		{Name: "Eve", X: 16, Y: 12, Dead: true, Needs: sim.Needs{}},      // dead on a grave → "✝"
-		{Name: "Fyn", X: 17, Y: 12, Dead: true, Needs: sim.Needs{}},      // dead, no grave → "†"
+		{Name: "Dot", X: 15, Y: 12, Needs: healthyNeeds},                                               // suppressed-mind (trace below)
+		{Name: "Eve", X: 16, Y: 12, Dead: true, Needs: sim.Needs{}},                                    // dead on a grave → "✝"
+		{Name: "Fyn", X: 17, Y: 12, Dead: true, Needs: sim.Needs{}},                                    // dead, no grave → "†"
 	}
 	// Dot's latest chain is a router suppression (spec 060 US2 AS2).
 	m.applyEvent(outcomeEvent(1, "meeting-3-900", "meeting", 3, sim.OutcomeSuppressed, "budget exhausted"))

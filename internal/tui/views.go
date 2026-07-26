@@ -26,7 +26,7 @@ var (
 	stylePaused = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("3"))
 	// styleEnded is the postmortem header token (spec 044 R12) — bold red,
 	// the finality register PAUSED's amber deliberately doesn't carry.
-	styleEnded  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("1"))
+	styleEnded = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("1"))
 	styleNight = lipgloss.NewStyle().Foreground(lipgloss.Color("4"))
 	// styleAgent / styleAsleep (and every other per-tile style) live in
 	// tiles.go, resolved from the tile registry's token table (spec 068).

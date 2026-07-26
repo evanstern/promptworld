@@ -68,7 +68,7 @@ func TestScenarioRoundTrip(t *testing.T) {
 func TestOpenRejectsBadScenario(t *testing.T) {
 	for _, bad := range []string{"bogus-exercise", ""} {
 		dir := t.TempDir()
-		manifest := `{"name":"x","seed":1,"format_version":4,"tick_game_seconds":1,` +
+		manifest := `{"name":"x","seed":1,"format_version":5,"tick_game_seconds":1,` +
 			`"scenario":{"exercise":"` + bad + `"}}`
 		if err := os.WriteFile(filepath.Join(dir, ManifestName), []byte(manifest), 0o644); err != nil {
 			t.Fatal(err)

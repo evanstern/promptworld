@@ -15,15 +15,20 @@ import (
 
 const (
 	ManifestName = "world.json"
-	// FormatVersion 4 is the mental-maps break (spec 041): per-agent private
-	// spatial knowledge gates target resolution, so a v3 world loaded without
-	// seeded maps would leave every villager knowing nothing — mass starvation;
-	// the semantics of existing worlds change, which is exactly what format
-	// bumps are for (research D7). An older world is refused with instructions
-	// to run `promptworld migrate`. FormatVersion 3 was the spec 013
-	// inventory/storage break (bulk cap, yield truncation, death spill);
-	// FormatVersion 2 the spec 012 resources/food/crafting break.
-	FormatVersion = 4
+	// FormatVersion 5 is the terrain-vocabulary break (spec 068): new worlds
+	// generate marsh/sand terrain gated by the manifest's terrain_gen field,
+	// and software predating the field would silently IGNORE it and
+	// regenerate different terrain under the same manifest — agents and
+	// structures standing on water (FR-007). The version bump makes a
+	// new-vocabulary world unmistakable: a pre-068 build refuses it at Open
+	// with the migrate hint instead of mis-generating (C10). FormatVersion 4
+	// was the mental-maps break (spec 041): per-agent private spatial
+	// knowledge gates target resolution, so a v3 world loaded without seeded
+	// maps would leave every villager knowing nothing — mass starvation.
+	// FormatVersion 3 was the spec 013 inventory/storage break (bulk cap,
+	// yield truncation, death spill); FormatVersion 2 the spec 012
+	// resources/food/crafting break.
+	FormatVersion = 5
 )
 
 type Manifest struct {
@@ -34,9 +39,18 @@ type Manifest struct {
 	TickGameSeconds int    `json:"tick_game_seconds"`
 	// Map dimensions; zero values (older saves) default to
 	// worldmap.DefaultSize on Open. Terrain is regenerated from
-	// (Seed, MapWidth, MapHeight), never persisted.
+	// (Seed, MapWidth, MapHeight, TerrainGen), never persisted.
 	MapWidth  int `json:"map_width,omitempty"`
 	MapHeight int `json:"map_height,omitempty"`
+	// TerrainGen selects the terrain generation algorithm (spec 068,
+	// FR-006/FR-007): absent/0 = legacy generation, bit-identical to
+	// pre-068 (worldmap.GenLegacy — what `promptworld migrate` leaves a
+	// carried-forward world with, so its terrain never shifts);
+	// worldmap.GenMarshSand (2) adds the marsh/sand shoreline pass and is
+	// what `promptworld new` writes. Any other value is refused at Open
+	// (the format_version posture): a future generation must never be
+	// silently re-generated under this build's algorithms.
+	TerrainGen int `json:"terrain_gen,omitempty"`
 	// Meeting is an optional per-world meeting convention (TASK-36). When
 	// present, the daemon seeds a meeting.convention_established event on boot
 	// so the convene→open lifecycle honors it. Absent, no meeting convenes
@@ -269,6 +283,9 @@ func Create(dir, name string, seed uint64) (*World, error) {
 		TickGameSeconds: 1,
 		MapWidth:        worldmap.DefaultSize,
 		MapHeight:       worldmap.DefaultSize,
+		// New worlds are born on the current terrain generation (spec 068
+		// C12); only migrated legacy worlds carry an absent terrain_gen.
+		TerrainGen: worldmap.GenMarshSand,
 	}
 	data, err := json.MarshalIndent(m, "", "  ")
 	if err != nil {
@@ -322,6 +339,15 @@ func Open(dir string) (*World, error) {
 	// must name a shipped exercise — a typo must never silently boot ambient.
 	if m.Scenario != nil && !ValidScenarioExercise(m.Scenario.Exercise) {
 		return nil, fmt.Errorf("corrupt %s: scenario exercise %q unknown (want a shipped exercise id, or the block absent)", ManifestName, m.Scenario.Exercise)
+	}
+	// Terrain generation (spec 068 C12, the format_version posture): absent/0
+	// is legacy; the current generation is accepted; anything else — a future
+	// generation this build does not implement — is refused, never silently
+	// re-generated under the wrong algorithm.
+	switch m.TerrainGen {
+	case worldmap.GenLegacy, worldmap.GenMarshSand:
+	default:
+		return nil, fmt.Errorf("world terrain_gen %d unsupported (this build supports %d, or the key absent for legacy terrain); upgrade promptworld to open this world", m.TerrainGen, worldmap.GenMarshSand)
 	}
 	return &World{Dir: dir, Manifest: m}, nil
 }
@@ -389,9 +415,11 @@ func SetStage(dir, stage string, overridden bool, charterPreset string) error {
 }
 
 // Map regenerates the world's terrain from the manifest — deterministic, so
-// daemon and clients derive identical maps without any wire transfer.
+// daemon and clients derive identical maps without any wire transfer. The
+// manifest's terrain generation version rides along (spec 068): an absent/0
+// terrain_gen reproduces legacy terrain bit-identically.
 func (w *World) Map() *worldmap.Map {
-	return worldmap.Generate(w.Manifest.Seed, w.Manifest.MapWidth, w.Manifest.MapHeight)
+	return worldmap.GenerateV(w.Manifest.Seed, w.Manifest.MapWidth, w.Manifest.MapHeight, w.Manifest.TerrainGen)
 }
 
 func (w *World) DBPath() string        { return filepath.Join(w.Dir, "world.db") }

@@ -93,18 +93,18 @@ var (
 	// tokSpent is the shared "depleted/inert" register: quarried-out rock,
 	// a cold fire, a damaged wall — all faint 240, one token (the classing
 	// table's "depleted/cold/damaged 240" row).
-	tokSpent   = newToken("spent", classMaterial256, "240", false, true, false)
-	tokDen     = newToken("den", classSemantic16, "5", false, false, false)
-	tokFire    = newToken("fire", classMaterial256, "208", true, false, false)
+	tokSpent     = newToken("spent", classMaterial256, "240", false, true, false)
+	tokDen       = newToken("den", classSemantic16, "5", false, false, false)
+	tokFire      = newToken("fire", classMaterial256, "208", true, false, false)
 	tokFireDying = newToken("fire-dying", classMaterial256, "202", true, false, false)
-	tokShelter = newToken("shelter", classMaterial256, "130", true, false, false)
-	tokOven    = newToken("oven", classMaterial256, "166", true, false, false)
-	tokPile    = newToken("pile", classMaterial256, "178", true, false, false)
-	tokChest   = newToken("chest", classMaterial256, "136", true, false, false)
-	tokWall    = newToken("wall", classMaterial256, "250", true, false, false)
-	tokPath    = newToken("path", classMaterial256, "137", false, false, false)
-	tokGru     = newToken("gru", classMaterial256, "196", true, false, false)
-	tokGrave   = newToken("grave", classMaterial256, "244", false, true, false)
+	tokShelter   = newToken("shelter", classMaterial256, "130", true, false, false)
+	tokOven      = newToken("oven", classMaterial256, "166", true, false, false)
+	tokPile      = newToken("pile", classMaterial256, "178", true, false, false)
+	tokChest     = newToken("chest", classMaterial256, "136", true, false, false)
+	tokWall      = newToken("wall", classMaterial256, "250", true, false, false)
+	tokPath      = newToken("path", classMaterial256, "137", false, false, false)
+	tokGru       = newToken("gru", classMaterial256, "196", true, false, false)
+	tokGrave     = newToken("grave", classMaterial256, "244", false, true, false)
 	// tokGround: plain grass's dim "·" — no foreground (the terminal's own
 	// default, themeable by definition), faint.
 	tokGround = newToken("ground", classSemantic16, "", false, true, false)
@@ -137,7 +137,6 @@ var (
 	stylePath            = tokPath.style
 	styleGrave           = tokGrave.style
 )
-
 
 // --- the registry rows (grown glyphEntry, spec 045 → spec 068) ---
 

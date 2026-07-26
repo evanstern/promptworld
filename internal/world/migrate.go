@@ -7,8 +7,10 @@ package world
 // the source world's covering snapshot, transforms it (internal/sim), and writes
 // a fresh log whose single world.migrated event carries the full transformed
 // state, so the log alone reproduces the migrated world byte-identically. An
-// older world chains every step (1→2→3→4) in one run; the archive name is
+// older world chains every step (1→2→3→4→5) in one run; the archive name is
 // keyed to the source format (world.v1.db, world.v2.db, or world.v3.db).
+// The 4→5 step is manifest-only (spec 068): no state or log change, so a v4
+// source skips the snapshot-cut ceremony entirely.
 
 import (
 	"encoding/json"
@@ -33,11 +35,16 @@ type MigrateResult struct {
 	Tick          int64 // the continuation tick (carried from v1)
 	SourceEvents  int64 // v1 events archived in world.v1.db
 	ArchivePath   string
+	// ManifestOnly marks a v4→v5 upgrade (spec 068): nothing about a v4
+	// world's event log or state changes under v5 — the break exists so
+	// pre-068 software refuses new-terrain worlds — so the migration bumps
+	// the manifest and touches nothing else. The counters above stay zero.
+	ManifestOnly bool
 }
 
 // OpenForMigration loads a world directory WITHOUT the current version gate,
 // for the sole purpose of migrating it. It admits any older supported source
-// format (v1, v2, or v3) and refuses everything else: an already-current (or future)
+// format (v1 through v4) and refuses everything else: an already-current (or future)
 // world has nothing to migrate, and a corrupt manifest is refused exactly as
 // Open would. Map dimensions are defaulted identically to Open so a regenerated
 // map matches what the daemon will boot.
@@ -53,8 +60,8 @@ func OpenForMigration(dir string) (*World, error) {
 	if m.FormatVersion == FormatVersion {
 		return nil, fmt.Errorf("world %q is already format_version %d — nothing to migrate", m.Name, FormatVersion)
 	}
-	if m.FormatVersion < 1 || m.FormatVersion > 3 {
-		return nil, fmt.Errorf("world %q is format_version %d; only v1, v2, and v3 worlds can be migrated to v%d", m.Name, m.FormatVersion, FormatVersion)
+	if m.FormatVersion < 1 || m.FormatVersion >= FormatVersion {
+		return nil, fmt.Errorf("world %q is format_version %d; only v1 through v%d worlds can be migrated to v%d", m.Name, m.FormatVersion, FormatVersion-1, FormatVersion)
 	}
 	if m.TickGameSeconds != 1 {
 		return nil, fmt.Errorf("tick_game_seconds %d unsupported (must be 1)", m.TickGameSeconds)
@@ -105,6 +112,21 @@ func Migrate(dir string) (*MigrateResult, error) {
 	// v1 world cannot be world.Open'd under this build).
 	if running, pid := daemonAlive(w); running {
 		return nil, fmt.Errorf("daemon is running (pid %d) — stop it first: promptworld stop %s", pid, dir)
+	}
+
+	// v4 → v5 is a manifest-only upgrade (spec 068 C11): the version bump
+	// exists so PRE-068 software refuses new-terrain worlds — a carried-
+	// forward v4 world's event log, state, and terrain (terrain_gen stays
+	// absent ⇒ legacy generation, bit-identical) do not change at all, so
+	// there is nothing to archive, transform, or rewrite. Deliberately no
+	// snapshot-cut: cutting a fresh log here would imply a state break that
+	// does not exist, and would demand a covering snapshot for a no-op.
+	if w.Manifest.FormatVersion == 4 {
+		w.Manifest.FormatVersion = FormatVersion
+		if err := writeManifest(w); err != nil {
+			return nil, err
+		}
+		return &MigrateResult{Name: w.Manifest.Name, Seed: w.Manifest.Seed, ManifestOnly: true}, nil
 	}
 
 	// Already-migrated guard: the archive is never overwritten (FR-025). The
@@ -163,7 +185,8 @@ func Migrate(dir string) (*MigrateResult, error) {
 		}
 	}
 
-	// Transform the covering-snapshot state to the current (v4) format,
+	// Transform the covering-snapshot state to the current format (the v4
+	// state shape — v5 changed no state, only the manifest gate above),
 	// chaining every step from the source version in one run: v1→v2 re-places
 	// souls on the v2 regeneration of the same seed (w.Map() uses this build's
 	// generator, so they stand on passable v2 tiles, rock outcrops included);
