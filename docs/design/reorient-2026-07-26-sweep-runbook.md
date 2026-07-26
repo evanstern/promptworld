@@ -130,9 +130,9 @@ Record the model tier + rubric justification on each board task at dispatch
 ## Operator checkpoints (do not proceed silently)
 
 - **TASK-142 spec time — reverse-jump home** (synthesis open question 4: rider on 142,
-  rider on 154, or own card). Default taken by this sweep: leave it UNSCHEDULED (it is
-  the delta's net-new unscheduled rec); surface the recommendation in the final report
-  rather than folding it into 142's scope. Folding it in would be a silent scope grow.
+  rider on 154, or own card). Resolved by operator 2026-07-26: "rider is fine" — recorded as a rider
+  on TASK-17 (the jump-to-source / resolveSubject village-lens lane, its natural home
+  now that TASK-142/154 are Done); no card minted.
 - **TASK-142 spec time — pull-surface budget** (open question 3): record the tension in
   the spec's notes; no navigation ruling is taken in this sweep.
 - **TASK-67 spec — fork budget-meter semantics** RESOLVED at spec time, deviating from
@@ -140,7 +140,7 @@ Record the model tier + rubric justification on each board task at dispatch
   meter is per-world (world meta table + per-world llm.json) — no machine-global wallet
   exists to share. Encoded: the fork INHERITS the wallet (llm.json + llm_spend_* meta
   copied verbatim; forking never mints fresh budget; independent meters thereafter).
-  Surfaced to the operator in the sweep report.
+  Operator ratified 2026-07-26: "go with the evidence."
 - Tier escalations (one-way Sonnet → Opus; record rubric justification on the task).
 - Lane amendments (amend this file, note why, tell the operator).
 
@@ -162,5 +162,5 @@ file's execution log complete and status flipped to done. TASK-111/136/137 untou
 | 2026-07-26 | TASK-67 | #116 | 4daf75c | Lane C complete; fork+compare shipped; wallet-inheritance decision ratified in-spec (R4); surfaced pre-existing wiki budget debt from PR #115 (carded) |
 | 2026-07-26 | TASK-142 | #115 | 011ce4e | Lane B complete; look-cursor + TILE pane + mouse parity + badge deep-link; merged with 5-commit docs-only base lag (zero overlap, drift gate green) to preserve 26 in-branch pins |
 | 2026-07-26 | TASK-150 | #114 | 495d8cb | Lane A complete; red-run proved 8 cells (7 postmortem + 1 help.md); help.md badge cell retagged pending TASK-142 |
-| 2026-07-26 | TASK-149 | #113 | f78358a | Lane A anchor merged; unblocks 150/67/151. Doctrine tension logged: implementer merged origin/main into the branch (not rebase) to preserve 43 in-branch pin hashes — pr gate green; operator may want to ratify merge-over-rebase for pin-carrying branches |
+| 2026-07-26 | TASK-149 | #113 | f78358a | Lane A anchor merged; unblocks 150/67/151. Doctrine tension RATIFIED by operator 2026-07-26: merges over rebases for pin-carrying branches (preserve pin hashes); skill-level fix carded as praxis TASK-57 |
 | 2026-07-26 | TASK-154 | #112 | 86b776d | Lane B first merge; mutation check proven; player-docs pin gap found+fixed in-branch (freshness probe must run directly, not just via pr gate) |
