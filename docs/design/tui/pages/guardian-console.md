@@ -2,7 +2,7 @@
 title: Page — guardian console
 class: page
 status: shipped
-verified_against: 348a100c22f650d27e6fba517ea7f1f1aed1af73
+verified_against: 1ecf8dbe009e7083f2cf352334ec6ee9df7b6ebb
 sources:
   - internal/tui/views.go
   - internal/tui/tui.go
@@ -22,8 +22,11 @@ wrapper (`reportCard`); spec 063 (TASK-115) ships the PRODUCTION — the
 stopping-point producer daemon-side (run end, pause, exercise resolution)
 and the client composition `rebuildConsoleCards`
 (`internal/tui/reportcard.go`), which composes the checklist card — facts
-from the shared resolver `resolveReportCardFacts` (spec 072): the recorded
-`CurriculumPass` when one exists, else `sim.EvaluateRubric` over the
+from the shared resolver `resolveReportCardFacts` (spec 072; since spec
+076 a thin Model wrapper over the exported replica-parametric
+`tui.ResolveRubricFacts`, whose fourth consumer is the CLI duel —
+`promptworld compare`): the recorded `CurriculumPass` when one exists,
+else `sim.EvaluateRubric` over the
 replica — ABOVE the stored `guardian.report_card` attribution note
 (`noteCard`) in this seam — one artifact, checklist authoritative, the note
 additive prose beneath it (spec 063 standing resolution 1).
@@ -193,7 +196,7 @@ adds a richer TUI presentation of what already exists.
 | charter/skills read surface | default · player-authored · preset-locked; skills bound · locked | `metatron.Status` (`CharterDefault`/`CharterLocked`/`CharterPreset`/`Skills`/`SkillsLocked`) | `charterReadSurfaceLines`/`charterReadSurfaceBox` | — (display-only) | spec 053 | — |
 | `$EDITOR` handoff | idle · shelled-out · returned | on-disk `charter.md` (content hash, pre/post) | `startEditorHandoff` (`tea.ExecProcess`) | `e` · — | spec 053 | — |
 | "charter changed — next turn binds it" confirmation | absent · shown once · error notice | pre/post content-hash comparison (`editorRoundTripMsg`) | `Model.consoleNotice` | — | spec 053 | — |
-| report-card rubric checklist (inline) | absent · shown (stopping point on record) | shared resolver (`resolveReportCardFacts`, spec 072): recorded `CurriculumPass` else `sim.EvaluateRubric` over the replica — same source as `overlays/postmortem.md`/`overlays/ceremony.md` | `reportCard` (`consoleCard` wrapper, `internal/tui/views.go`), composed FIRST by `rebuildConsoleCards` | — | reorient D5 / TASK-127; production spec 063; grading spec 072 | — |
+| report-card rubric checklist (inline) | absent · shown (stopping point on record) | shared resolver (`resolveReportCardFacts`, spec 072 — exported replica-parametric as `tui.ResolveRubricFacts` by spec 076): recorded `CurriculumPass` else `sim.EvaluateRubric` over the replica — same source as `overlays/postmortem.md`/`overlays/ceremony.md` and the `promptworld compare` duel card | `reportCard` (`consoleCard` wrapper, `internal/tui/views.go`), composed FIRST by `rebuildConsoleCards` | — | reorient D5 / TASK-127; production spec 063; grading spec 072; export spec 076 | — |
 | composer | dormant · focused · busy | `panels/minibuffer.md` (same component, unchanged) | `minibufferView` (existing) | `m` focus · — | TASK-34 (reused) | `skin.guardian.epithet` |
 
 **Parity rollout**: `G` (open console) and `e` ($EDITOR handoff) have no

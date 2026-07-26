@@ -143,7 +143,7 @@ machinery-only difference → no divergence; interleave labeled and tick-ordered
 
 ## Phase 6: Design reference — authority gate (spec 047)
 
-- [ ] T019 `node scripts/check-tui-design.mjs --changed` from the worktree: re-verify +
+- [X] T019 `node scripts/check-tui-design.mjs --changed` from the worktree: re-verify +
       re-pin every page flagged by the `internal/tui` diff (reportcard.go/views.go/
       digest.go pins); amend only where a page states something the diff falsifies (none
       expected — verify, don't assume); gate passes (plan D7, spec FR-021)
