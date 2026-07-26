@@ -106,7 +106,7 @@ tests green.
       neglect-state agent fixture paints `styleAgentCritical` on the map grid (the
       FR-012 subsumption pin — no tiles.go change), in `internal/tui/` tests (plan D3,
       spec FR-012, SC-005)
-- [ ] T016 [US3] Amend `docs/design/tui/patterns/chronicle-grammar.md` (alert-tier
+- [X] T016 [US3] Amend `docs/design/tui/patterns/chronicle-grammar.md` (alert-tier
       enumeration + color-roles `alert` row), `panels/chronicle.md`, `panels/map.md`
       (condition overlays name neglect); then
       `node scripts/check-tui-design.mjs --changed` from the worktree — re-verify +

@@ -2,7 +2,7 @@
 title: Pattern — chronicle grammar
 class: pattern
 status: shipped
-verified_against: 2d7a54940f8512340143e8ca5a8ba53e6e196aa2
+verified_against: 0f8a43c8564cf12ec065cba7858d9ac9b404407d
 sources:
   - internal/tui/digest.go
   - internal/tui/grammar.go
