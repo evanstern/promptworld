@@ -78,6 +78,13 @@ func fixedBlocks(s *sim.State, idx int, futureLine string) []contextBlock {
 		{Name: "self_history", Priority: neverDrop, Render: func() string { return renderSelfHistory(s, idx) }},
 		{Name: "inventory", Priority: neverDrop, Render: func() string { return renderInventory(s, idx) }},
 		{Name: "plan_echo", Priority: 6, Render: func() string { return renderPlanEcho(s, idx) }},
+		// directive (spec 084 FR-011): the guardian's hard command — neverDrop
+		// (a command a villager can forget under budget pressure is not hard;
+		// the block is small and bounded: ≤2 directives × ≤400-rune text).
+		// Positioned after the agent's own plan (the mind's commitments render
+		// first; a planner deciding between its plan and the divine command
+		// sees both adjacent) and before the droppable world-knowledge blocks.
+		{Name: "directive", Priority: neverDrop, Render: func() string { return renderDirective(s, idx) }},
 		{Name: "known_places", Priority: 5, Render: func() string { return renderKnownPlaces(s, idx) }},
 		{Name: "social_law", Priority: 4, Render: func() string { return renderSocialLaw(s, idx) }},
 	}
@@ -372,6 +379,102 @@ func guardPhrase(s *sim.State, g sim.Guard) string {
 	default:
 		return "when its condition holds"
 	}
+}
+
+// directiveRenderCap bounds the directive block (spec 084, data-model §7): at
+// most this many active directives render, oldest first — the rung executes
+// one at a time, and two lines of divine command are ample context.
+const directiveRenderCap = 2
+
+// renderDirective is the directive block's renderer (spec 084 FR-011): up to
+// directiveRenderCap ACTIVE directives addressing this agent (resolved target
+// indices; Village is provenance only), oldest first (IssuedTick, then id),
+// each carrying the guardian's framing text VERBATIM (recorded event data —
+// the firewall's only prose channel), the bound designation's kind and site,
+// what fulfillment requires (the predicate in plain words), and plain-words
+// time remaining. A directive whose designation is no longer active is
+// skipped (orphan — the rung skips it too, and the sweep expires it). Empty
+// state renders "" and the block is omitted entirely, so a directive-free
+// world's assembled prompt stays byte-identical to pre-084 output (SC-006).
+// A pure function of (State, agentIdx) — model-free, available in every
+// degraded mode.
+func renderDirective(s *sim.State, idx int) string {
+	type bound struct {
+		d   *sim.Directive
+		dsg *sim.Designation
+	}
+	var mine []bound
+	for i := range s.Directives {
+		d := &s.Directives[i]
+		if d.Status != "active" {
+			continue
+		}
+		addressed := false
+		for _, t := range d.Targets {
+			if t == idx {
+				addressed = true
+				break
+			}
+		}
+		if !addressed {
+			continue
+		}
+		dsg := s.DesignationByID(d.DesignationID)
+		if dsg == nil || dsg.Status != "active" {
+			continue
+		}
+		mine = append(mine, bound{d, dsg})
+	}
+	if len(mine) == 0 {
+		return ""
+	}
+	sort.SliceStable(mine, func(i, j int) bool {
+		if mine[i].d.IssuedTick != mine[j].d.IssuedTick {
+			return mine[i].d.IssuedTick < mine[j].d.IssuedTick
+		}
+		return mine[i].d.ID < mine[j].d.ID
+	})
+	if len(mine) > directiveRenderCap {
+		mine = mine[:directiveRenderCap]
+	}
+	var b strings.Builder
+	b.WriteString("The Guardian has charged you (a hard command — see to it after your own survival, before anything else):\n")
+	for _, m := range mine {
+		fmt.Fprintf(&b, "- %q — %s; %s.\n", m.d.Text, directiveGoalPhrase(m.dsg), directiveTimeLeft(s.Tick, m.d.ExpiresTick))
+	}
+	return b.String()
+}
+
+// directiveGoalPhrase renders the bound designation's site and fulfillment
+// requirement in plain second-person words (the predicate table, data-model
+// §6, phrased for the villager).
+func directiveGoalPhrase(d *sim.Designation) string {
+	switch d.Kind {
+	case sim.DesignationStructureSite:
+		return fmt.Sprintf("a %s must stand at (%d,%d)", strings.ReplaceAll(d.StructureKind, "_", " "), d.X, d.Y)
+	case sim.DesignationWallLine:
+		kind := "a wall"
+		if d.StructureKind != "" {
+			kind = "a " + strings.ReplaceAll(d.StructureKind, "_", " ")
+		}
+		return fmt.Sprintf("%s must stand on every tile of the line (%d,%d) to (%d,%d)", kind, d.X, d.Y, d.X2, d.Y2)
+	case sim.DesignationSettlementZone:
+		return fmt.Sprintf("at least %d structures must stand within the zone (%d,%d) to (%d,%d)", d.MinStructures, d.X, d.Y, d.X2, d.Y2)
+	}
+	return fmt.Sprintf("serve the mark at (%d,%d)", d.X, d.Y)
+}
+
+// directiveTimeLeft phrases the remaining lifetime in game days — the
+// writeStandingOrders days-left shape, floored honestly.
+func directiveTimeLeft(now, expires int64) string {
+	days := (expires - now) / (24 * 3600)
+	if days <= 0 {
+		return "less than a day remains"
+	}
+	if days == 1 {
+		return "about 1 day remains"
+	}
+	return fmt.Sprintf("about %d days remain", days)
 }
 
 // renderKnownPlaces is contract block 6: the spec-041 known-places section plus

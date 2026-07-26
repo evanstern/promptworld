@@ -972,10 +972,13 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 	case "sleep":
 		emit("agent.slept", AgentPayload{Agent: i})
 		return events
-	case "wander", "goto_warmth", "seek", "search":
+	case "wander", "goto_warmth", "seek", "search", "heed_directive":
 		// search (spec 041 US4) is wander-class: instant on arrival — the
 		// walk itself did the exploring (movement marks explored terrain and
-		// the perception beat witnesses what's there).
+		// the perception beat witnesses what's there). heed_directive (spec
+		// 084 research R13) is the DIRECTIVE rung's walk-to-site leg, the
+		// same completion shape: arrival IS the outcome, and the next idle
+		// decision picks the work leg (or the planner does).
 		emit("agent.intent_done", AgentPayload{Agent: i})
 		return events
 	case "refuel_fire":

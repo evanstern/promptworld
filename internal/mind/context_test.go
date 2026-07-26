@@ -848,3 +848,135 @@ func TestBudgetFitAggregate(t *testing.T) {
 		t.Fatal("no thoughts assembled")
 	}
 }
+
+// --- spec 084: the directive block (FR-011) ---
+
+// directiveState builds a fixture with an active designation + directive
+// addressing agent 0 (and one addressing only agent 1, to prove scoping).
+func directiveState(t *testing.T) *sim.State {
+	t.Helper()
+	s := richContextState(t)
+	s.Designations = []sim.Designation{
+		{ID: "dsg-100-0", Kind: sim.DesignationStructureSite, X: 4, Y: 5, X2: 4, Y2: 5,
+			StructureKind: "shelter", PlacedTick: 100, Status: "active"},
+		{ID: "dsg-100-1", Kind: sim.DesignationSettlementZone, X: 1, Y: 1, X2: 6, Y2: 6,
+			MinStructures: 3, PlacedTick: 100, Status: "active"},
+	}
+	s.Directives = []sim.Directive{
+		{ID: "dir-200-0", DesignationID: "dsg-100-0", Targets: []int{0, 1},
+			Text: "Raise the shelter I have marked.", IssuedTick: 200,
+			ExpiresTick: s.Tick + 3*24*3600, Status: "active"},
+		{ID: "dir-200-1", DesignationID: "dsg-100-1", Targets: []int{1},
+			Text: "Settle the valley.", IssuedTick: 200,
+			ExpiresTick: s.Tick + 2*24*3600, Status: "active"},
+	}
+	return s
+}
+
+// TestDirectiveBlockRenders (US4 AS4): the block carries the guardian's text
+// verbatim, the designation's kind + site, the fulfillment requirement, and
+// plain-words time remaining — for the ADDRESSED agent only, in contract
+// position between plan_echo and known_places, at neverDrop priority.
+func TestDirectiveBlockRenders(t *testing.T) {
+	s := directiveState(t)
+	got := renderDirective(s, 0)
+	for _, want := range []string{
+		"The Guardian has charged you",
+		`"Raise the shelter I have marked."`,
+		"a shelter must stand at (4,5)",
+		"about 3 days remain",
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("block missing %q:\n%s", want, got)
+		}
+	}
+	if strings.Contains(got, "Settle the valley") {
+		t.Error("agent 0's block renders a directive addressing only agent 1")
+	}
+	// Agent 1 sees both, oldest-first by (IssuedTick, id).
+	got1 := renderDirective(s, 1)
+	if !strings.Contains(got1, "Raise the shelter") || !strings.Contains(got1, "Settle the valley") {
+		t.Errorf("agent 1's block missing a directive:\n%s", got1)
+	}
+	if strings.Index(got1, "Raise the shelter") > strings.Index(got1, "Settle the valley") {
+		t.Errorf("directives not oldest-first:\n%s", got1)
+	}
+
+	// Contract position + neverDrop: assembled under a zero budget, the block
+	// survives while every droppable neighbor sheds.
+	asm := assembleBudget(s, 0, sim.WindowK, "", "", 0)
+	if _, ok := asm.blockBytes["directive"]; !ok {
+		t.Errorf("directive block dropped under budget pressure (must be neverDrop): %v", asm.blockBytes)
+	}
+	full := assembleContext(s, 0, sim.WindowK, "", "")
+	planIdx := strings.Index(full.text, "Your plan")
+	dirIdx := strings.Index(full.text, "The Guardian has charged you")
+	placesIdx := strings.Index(full.text, "Places you know")
+	if planIdx >= 0 && !(planIdx < dirIdx) || placesIdx >= 0 && !(dirIdx < placesIdx) {
+		t.Errorf("directive block out of contract position (plan %d, directive %d, places %d)", planIdx, dirIdx, placesIdx)
+	}
+}
+
+// TestDirectiveBlockScopes: expired/cancelled directives and orphans (bound
+// designation non-active) render nothing; the cap holds at 2 oldest.
+func TestDirectiveBlockScopes(t *testing.T) {
+	s := directiveState(t)
+	// Orphan: cancel the designation — the block (like the rung) skips it.
+	s.Designations[0].Status = "cancelled"
+	if got := renderDirective(s, 0); got != "" {
+		t.Errorf("orphaned directive rendered: %q", got)
+	}
+	s.Designations[0].Status = "active"
+	// Non-active directive renders nothing.
+	s.Directives[0].Status = "expired"
+	if got := renderDirective(s, 0); got != "" {
+		t.Errorf("expired directive rendered: %q", got)
+	}
+	s.Directives[0].Status = "active"
+	// Cap 2: a third directive addressing agent 1 stays unrendered.
+	s.Directives = append(s.Directives, sim.Directive{
+		ID: "dir-300-0", DesignationID: "dsg-100-0", Targets: []int{1},
+		Text: "A third charge.", IssuedTick: 300, ExpiresTick: s.Tick + 24*3600, Status: "active"})
+	if got := renderDirective(s, 1); strings.Contains(got, "A third charge") {
+		t.Errorf("cap 2 not applied:\n%s", got)
+	}
+}
+
+// TestDirectiveFreeByteIdentity (SC-006): a directive-free world's assembled
+// prompt is byte-identical to the same world with the block registry entry
+// present — the empty block renders "" and is omitted entirely, and the
+// blockBytes accounting never mentions it.
+func TestDirectiveFreeByteIdentity(t *testing.T) {
+	s := richContextState(t)
+	asm := assembleContext(s, 0, sim.WindowK, "", "")
+	if _, ok := asm.blockBytes["directive"]; ok {
+		t.Error("directive-free world accounts a directive block")
+	}
+	if strings.Contains(asm.text, "The Guardian has charged you") {
+		t.Error("directive-free prompt carries directive text")
+	}
+	// And the known-places designation landmark line is likewise absent.
+	if strings.Contains(asm.text, "Guardian marked") {
+		t.Error("directive-free prompt carries a designation landmark")
+	}
+}
+
+// TestDesignationLandmarkInKnownPlaces (FR-006): a granted designation fact
+// renders as an individually-named landmark, enriched from the entity in
+// state, with the honest generic fallback once the entity is gone.
+func TestDesignationLandmarkInKnownPlaces(t *testing.T) {
+	s := directiveState(t)
+	a := &s.Agents[0]
+	addFact(a.Map, sim.PlaceFact{Kind: "designation", X: 4, Y: 5, Seen: s.Tick,
+		Provenance: sim.ProvenanceRevealed})
+	got := knownPlaces(s, 0)
+	if !strings.Contains(got, `a shelter site the Guardian marked at (4,5)`) {
+		t.Errorf("landmark missing/wrong:\n%s", got)
+	}
+	// Entity pruned away: the generic remembered-history line.
+	s.Designations = nil
+	got = knownPlaces(s, 0)
+	if !strings.Contains(got, "a place the Guardian once marked at (4,5)") {
+		t.Errorf("fallback landmark missing:\n%s", got)
+	}
+}

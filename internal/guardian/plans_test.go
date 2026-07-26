@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/evanstern/promptworld/internal/sim"
+	"github.com/evanstern/promptworld/internal/store"
 	"github.com/evanstern/promptworld/internal/tool"
 )
 
@@ -341,4 +342,84 @@ func TestPlanPromptSections(t *testing.T) {
 	if strings.Contains(got, "dsg-1-1") {
 		t.Error("consumed designation rendered")
 	}
+}
+
+// TestDirectiveWatchComposition (AC #7 / SC-003, T017): a standing order
+// placed via the REAL monitor_and_act door watching "directive.fulfilled"
+// triggers through the UNMODIFIED matchOrders path when the executor sweep
+// fulfills a directive — zero new trigger code: the directive lifecycle is
+// watchable purely because the four directive.* types joined the
+// observableEventTypes enum (registry.go).
+func TestDirectiveWatchComposition(t *testing.T) {
+	mt, inj, grant := planFixture(t)
+
+	// The enum really carries the four types (the schema is built from it).
+	schema := string(tool.InputSchema(mustLookup(t, "monitor_and_act")))
+	for _, typ := range []string{"directive.issued", "directive.fulfilled", "directive.cancelled", "directive.expired"} {
+		if !strings.Contains(schema, typ) {
+			t.Errorf("monitor_and_act schema enum missing %q", typ)
+		}
+	}
+
+	// Place the watch through the real door.
+	order, why := mt.placeOrder("player", orderArgs{
+		Condition:  "a directive is fulfilled",
+		Action:     "tell the player the plan came true",
+		EventTypes: []string{"directive.fulfilled"},
+	}, 100, grant)
+	if why != "" {
+		t.Fatalf("watch refused: %q", why)
+	}
+
+	// Build the real lifecycle in the injector state: place, issue, fulfil the
+	// designation, then the directive — the executor sweep's own emission
+	// order and payload (the sweep's provenance is pinned sim-side by
+	// TestPlanSweepOnceOnlyAndLag; this test feeds the recorded batch to the
+	// live matcher exactly as the absorb path would).
+	if _, why := mt.landPlaceDesignation("structure_site", "4,5", "shelter", 0, false, "", 100, grant); why != "" {
+		t.Fatal(why)
+	}
+	alive := map[int]bool{}
+	for i := range inj.state.Agents {
+		alive[i] = true
+	}
+	dir, why := mt.landIssueDirective("dsg-100-0", sim.AgentNames[0], "Raise it.", 0, 200, alive, grant)
+	if why != "" {
+		t.Fatal(why)
+	}
+	inj.state.Structures = append(inj.state.Structures, sim.Structure{Kind: "shelter", X: 4, Y: 5})
+	if err := inj.state.Apply(store.Event{Tick: 300, Type: "designation.fulfilled",
+		Payload: mustJSON(sim.OrderIDPayload{ID: "dsg-100-0"})}); err != nil {
+		t.Fatal(err)
+	}
+	dirFulfilled := []store.Event{{Tick: 301, Type: "directive.fulfilled",
+		Payload: mustJSON(sim.DirectiveFulfilledPayload{
+			ID: dir.ID, DesignationID: "dsg-100-0", Targets: dir.Targets, IssuedTick: dir.IssuedTick})}}
+	if err := inj.state.Apply(dirFulfilled[0]); err != nil {
+		t.Fatal(err)
+	}
+
+	// Sync the door-landed order into the replica + mirror (the absorb
+	// goroutine's job, done by hand in unit tests), then match the LIVE batch
+	// through the existing, unmodified matcher.
+	syncOrdersFromDoor(mt, inj)
+	mt.matchOrders(dirFulfilled)
+	select {
+	case job := <-mt.triggerQ:
+		if job.order.ID != order.ID || job.matchedType != "directive.fulfilled" {
+			t.Fatalf("trigger job = %+v", job)
+		}
+	default:
+		t.Fatal("directive.fulfilled did not trigger the watch through matchOrders")
+	}
+}
+
+// mustLookup resolves a registry tool or fails the test.
+func mustLookup(t *testing.T, name string) tool.Tool {
+	t.Helper()
+	tl, ok := tool.Lookup(name)
+	if !ok {
+		t.Fatalf("tool %q not registered", name)
+	}
+	return tl
 }

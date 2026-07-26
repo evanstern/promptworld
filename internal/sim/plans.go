@@ -165,6 +165,11 @@ func DesignationTiles(d *Designation) []target.Tile {
 	return designationAddress(d).Tiles()
 }
 
+// DesignationByID returns the designation named id, or nil — exported for
+// internal/mind (spec 084 FR-011: the directive context block renders the
+// bound designation's kind, site, and fulfillment requirement from state).
+func (s *State) DesignationByID(id string) *Designation { return s.designationByID(id) }
+
 // designationByID returns the designation named id, or nil. Linear over the
 // bounded slice (active ≤ 16 + retained 32), matching every other entity scan.
 func (s *State) designationByID(id string) *Designation {
