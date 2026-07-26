@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/design/tui/patterns/keymap.md@245ecc0105f028c1ae621a23ac7c5263b5a58565">
-<meta name="promptworld-docs:source" content="docs/design/tui/overlays/help.md@245ecc0105f028c1ae621a23ac7c5263b5a58565">
+<meta name="promptworld-docs:source" content="docs/design/tui/patterns/keymap.md@b54041ef1aef37cb9d739ef362bd5b63d72573a2">
+<meta name="promptworld-docs:source" content="docs/design/tui/overlays/help.md@b54041ef1aef37cb9d739ef362bd5b63d72573a2">
 <title>Keys reference — promptworld player docs</title>
 <style>
   :root {
@@ -82,11 +82,11 @@ does nothing.</p>
 <tr><th>Key</th><th>Action</th></tr>
 <tr><td><code>1</code></td><td>Return to the split view (from a solo tab)</td></tr>
 <tr><td><code>2</code> / <code>3</code> / <code>4</code> / <code>5</code></td><td>Switch to
-the chronicle / Metatron / villagers / systems tab — the same key again fills the screen
+the chronicle / the guardian / villagers / systems tab — the same key again fills the screen
 with that tab; press it a third time (or <code>1</code>) to go back</td></tr>
 <tr><td><code>G</code></td><td>Open the guardian console — the conversation as a
 full-screen document, with charter/skills alongside it (see below)</td></tr>
-<tr><td><code>m</code></td><td>Start typing to Metatron</td></tr>
+<tr><td><code>m</code></td><td>Start typing to the guardian</td></tr>
 <tr><td><code>x</code></td><td>Dismiss the lesson bar — the two-line tip that appears
 the first time something new happens (with no tip showing, <code>x</code> does
 nothing)</td></tr>
@@ -98,12 +98,20 @@ nothing)</td></tr>
 <tr><td><code>a</code> / <code>t</code></td><td>Chronicle: filter by villager /
 storyline</td></tr>
 <tr><td><code>?</code></td><td>Open the built-in help overlay (works everywhere
-except while typing to Metatron — there it just types a <code>?</code>)</td></tr>
+except while typing to the guardian — there it just types a <code>?</code>)</td></tr>
+<tr><td><code>p</code></td><td>Reopen the run's postmortem — only once the run has
+ended (see below); does nothing on a run that's still going</td></tr>
 <tr><td><code>q</code></td><td>Quit — just detaches, the world keeps running</td></tr>
 <tr><td><code>ctrl+c</code></td><td>Quit, from any mode</td></tr>
 </table>
+<p>On a <strong>scenario world</strong> — one created with
+<code>promptworld new --scenario &lt;exercise&gt;</code> (see the
+<a href="stage-1-the-voice.html">stage pages</a>) — a sixth tab, <code>6</code>,
+selects the exercise tab the same way <code>2</code>-<code>5</code> select
+theirs (same solo-zoom, same footer convention). An ordinary world has no such
+tab, and <code>6</code> does nothing on one.</p>
 
-<h2>Talking to Metatron (after pressing <code>m</code>)</h2>
+<h2>Talking to the guardian (after pressing <code>m</code>)</h2>
 <table>
 <tr><th>Key</th><th>Action</th></tr>
 <tr><td>Printable keys, <code>space</code></td><td>Type into your message</td></tr>
@@ -125,7 +133,7 @@ other keys (<code>space</code>, <code>[</code> / <code>]</code>,
 <tr><th>Key</th><th>Action</th></tr>
 <tr><td><code>G</code> / <code>1</code> / <code>esc</code></td><td>Close, back to
 whatever was open before</td></tr>
-<tr><td><code>m</code></td><td>Start typing to Metatron (the same message box as
+<tr><td><code>m</code></td><td>Start typing to the guardian (the same message box as
 everywhere else)</td></tr>
 <tr><td><code>e</code></td><td>Open <code>charter.md</code> in your own text editor
 (your <code>$EDITOR</code>); on return, the console confirms "charter changed — next
@@ -167,21 +175,46 @@ decisions (why they did what they did)</td></tr>
 roster list</td></tr>
 </table>
 
+<h2>When the run ends</h2>
+<p>Two full-screen moments take over the keyboard entirely — while either is on
+screen, every other key does nothing (except <code>ctrl+c</code>, which always
+quits).</p>
+<p><strong>A stage-unlock ceremony</strong> appears the moment you earn a new
+stage: a short celebration naming what you just proved and what it unlocks.</p>
+<p><strong>The postmortem</strong> appears once, the moment a run ends (your
+last villager has died) — a full-screen summary of how the run went. You can
+also reopen it any time afterward with <code>p</code> from the normal view.</p>
+<table>
+<tr><th>Key</th><th>Ceremony</th><th>Postmortem</th></tr>
+<tr><td><code>esc</code></td><td>Dismiss (returns to whatever was beneath —
+nothing else is force-closed)</td><td>Dismiss — reopen later with
+<code>p</code></td></tr>
+<tr><td><code>q</code></td><td>Quit/detach — the world keeps running</td>
+<td>Quit/detach — plainly, since the run itself has actually ended</td></tr>
+<tr><td>everything else, including <code>?</code></td><td colspan="2">Does
+nothing — the takeover keeps the screen until you press <code>esc</code> or
+<code>q</code></td></tr>
+</table>
+<p>Missed or dismissed a ceremony? Nothing is lost — the help overlay's
+ceremonies section (below) keeps a permanent replay of every stage you've
+ever unlocked in that world.</p>
+
 <h2>The help overlay (after pressing <code>?</code>)</h2>
 <p>The overlay shows this same information in-game — the keys for whatever screen
-you were just on, a tour of everything on screen, and every lesson the game can
-teach you (including ones you dismissed with <code>x</code> — nothing is ever lost).
+you were just on, a tour of everything on screen, every lesson the game can
+teach you (including ones you dismissed with <code>x</code> — nothing is ever lost),
+and a permanent replay of every stage-unlock ceremony you've earned in this world.
 It never touches the world: opening it doesn't pause anything,
 and closing it puts you back exactly where you were.</p>
 <table>
 <tr><th>Key</th><th>Action</th></tr>
 <tr><td><code>?</code> or <code>esc</code></td><td>Close the overlay</td></tr>
-<tr><td><code>tab</code> / <code>shift+tab</code></td><td>Cycle its three sections:
-keys → the screen → lessons</td></tr>
+<tr><td><code>tab</code> / <code>shift+tab</code></td><td>Cycle its four sections:
+keys → the screen → lessons → ceremonies</td></tr>
 <tr><td><code>t</code></td><td>Keys section: switch between the basic and advanced
 key lists</td></tr>
 <tr><td><code>n</code> / <code>p</code></td><td>Keys section: page through every
-mode's key list (including the Metatron-typing keys, which <code>?</code> can't
+mode's key list (including the guardian-typing keys, which <code>?</code> can't
 reach directly)</td></tr>
 <tr><td><code>J</code> / <code>K</code></td><td>Scroll a long page</td></tr>
 </table>
@@ -189,11 +222,12 @@ reach directly)</td></tr>
 <h2>Quick hints (what the footer shows you)</h2>
 <table>
 <tr><th>What's on screen</th><th>Footer hint</th></tr>
-<tr><td>Normal view</td><td><code>2 chronicle 3 metatron 4 villagers 5 systems (again:
-solo) · G console · m ask · space pause · q quit · ? help</code></td></tr>
+<tr><td>Normal view</td><td><code>2 chronicle 3 guardian 4 villagers 5 systems (again:
+solo) · G console · m ask · space pause · q quit · ? help</code> — on a scenario
+world, <code>6 exercise</code> joins the tab list</td></tr>
 <tr><td>The guardian console</td><td><code>G back · esc back · m ask · space pause ·
 q quit · ? help</code></td></tr>
-<tr><td>Talking to Metatron</td><td><code>esc release · ⏎ send · ↑↓
+<tr><td>Talking to the guardian</td><td><code>esc release · ⏎ send · ↑↓
 history</code></td></tr>
 <tr><td>Looking back (paused)</td><td><code>j/k select · J/K scroll detail · space
 resume · m ask · ? help</code></td></tr>
@@ -201,8 +235,11 @@ resume · m ask · ? help</code></td></tr>
 quit · ? help</code></td></tr>
 <tr><td>A villager's detail view</td><td><code>esc back · space pause · q
 quit · ? help</code></td></tr>
+<tr><td>A stage-unlock ceremony</td><td><code>esc dismiss · q — the world keeps
+running</code></td></tr>
+<tr><td>The postmortem</td><td><code>esc dismiss · q quit</code></td></tr>
 </table>
-<p>Only the Metatron-typing hint skips <code>? help</code> — while you're typing,
+<p>Only the guardian-typing hint skips <code>? help</code> — while you're typing,
 <code>?</code> is just a character.</p>
 
 <footer><a href="index.html">&larr; Back to player docs index</a></footer>
