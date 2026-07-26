@@ -161,7 +161,7 @@ directive-before-free-time, interruption-friendly, resumable).
 
 ## Phase 8: Grounding + gates (the wiki-in-PR lifecycle, spec 069)
 
-- [ ] T028 Wiki re-pins IN-BRANCH per plan.md's re-pin set (the pr gate
+- [X] T028 Wiki re-pins IN-BRANCH per plan.md's re-pin set (the pr gate
   is the authority: every note whose `sources:` this branch touched),
   including the NEW plan-layer note (e.g. `guardian-designations`) +
   INDEX row + event-types family row; `docs/player/` regenerated
