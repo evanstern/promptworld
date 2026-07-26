@@ -3,10 +3,10 @@ id: TASK-146
 title: >-
   Wiki corpus-spec v2 adoption: CAPSULES.md + 35 notes over the 8000-char size
   budget
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-26 15:38'
-updated_date: '2026-07-26 16:25'
+updated_date: '2026-07-26 16:51'
 labels:
   - wiki
   - tech-debt
@@ -25,19 +25,27 @@ Spec: specs/071-corpus-v2-adoption
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 All notes within the 8000-char budget or explicitly size_budget_exempt with a reason
-- [ ] #2 All description capsules within 500 chars
-- [ ] #3 CAPSULES.md generated and the freshness gate passes in v2 (failure) mode
-- [ ] #4 Spec phase: Setup
-- [ ] #5 Spec phase: User Story 1 — the corpus passes v2 (P1)
-- [ ] #6 Spec phase: User Story 2 — downstream intact (P1)
-- [ ] #7 Spec phase: Polish
+- [x] #1 All notes within the 8000-char budget or explicitly size_budget_exempt with a reason
+- [x] #2 All description capsules within 500 chars
+- [x] #3 CAPSULES.md generated and the freshness gate passes in v2 (failure) mode
+- [x] #4 Spec phase: Setup
+- [x] #5 Spec phase: User Story 1 — the corpus passes v2 (P1)
+- [x] #6 Spec phase: User Story 2 — downstream intact (P1)
+- [x] #7 Spec phase: Polish
 <!-- AC:END -->
-
-
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 Claim per spec 065: specs/071-corpus-v2-adoption/ stubbed; compact spec authored (decisions: summary-style splits with parents keeping filenames; children inherit pins; split/tighten/exempt rubric; CAPSULES.md last; orchestrator-led with Sonnet fan-out per runbook lane 2). Sweep runbook: docs/design/pdlc-hardening-runbook.md.
+
+spec-bridge sync: Setup: 1/1 · User Story 1 — the corpus passes v2 (P1): 4/4 · User Story 2 — downstream intact (P1): 2/2 · Polish: 2/2. Batch accounting: 14 Sonnet workers, 37 notes → 109 children, all verbatim-move ratios ≥100%, 0 exemptions; corpus-wide audit 161 notes 0 violations; INDEX coverage complete.
+
+spec-bridge sync: Setup: 1/1 · User Story 1 — the corpus passes v2 (P1): 4/4 · User Story 2 — downstream intact (P1): 2/2 · Polish: 2/2 — status In Progress → Done
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+All spec tasks complete (Setup: 1/1 · User Story 1 — the corpus passes v2 (P1): 4/4 · User Story 2 — downstream intact (P1): 2/2 · Polish: 2/2). Derived Done by spec-bridge sync.
+<!-- SECTION:FINAL_SUMMARY:END -->
