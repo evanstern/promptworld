@@ -4,7 +4,7 @@ title: Scenario incident-schedule machinery (director-lite scheduled emissions)
 status: Done
 assignee: []
 created_date: '2026-07-25 04:43'
-updated_date: '2026-07-26 02:09'
+updated_date: '2026-07-26 02:38'
 labels:
   - learning-game
   - design-session
@@ -56,6 +56,8 @@ fingerprint: 67484f01df7f
 spec-bridge sync: Setup: 1/1 · Foundational — the sim machinery: 5/5 · User Story 3 — promptworld new --scenario (P2, small; unblocks manual testing): 1/1 · User Story 1+2 e2e (P1): 2/2 · User Story 4 — the exercise tab (P2): 3/3 · User Story 5 — narration + morgue (P3): 2/2 · Polish & Cross-Cutting Concerns: 3/3 — status In Progress → Done
 
 Human ACs #1-7 ticked on merge evidence (PR #101, d220645): scheduled-emission primitive w/ replay tests; Manifest.Scenario schedules+rubrics+pass signal; first-night e2e; director seam documented in spec 054; exercise panel w/ live per-term gauges; forecast/fog vocabulary + attach briefing; scenario-cadence narration + morgue. Merged by UI-sweep orchestrator; cross-feature riders: survival-seeder seq pre-stamp, console-suppresses-briefing rule.
+
+Re-ground complete (delegated Sonnet doc agent): wiki 4e9af1a — 16 notes re-verified/re-pinned incl. executor, curriculum-ladder, sim-loop, tui-client, morgue, chronicle, guardian-orders, event-types; NEW note scenario-machinery.md; Manifest.Scenario flipped reserved→consumed; player docs a3a4617 — 8/13 pages regenerated (incl. keys-reference.html which had silently drifted since spec 052; now current with exercise tab, p key, takeovers). TASK-119's full handoff step 2 loop is closed.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
