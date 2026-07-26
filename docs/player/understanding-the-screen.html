@@ -4,9 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@31c893e0406653197e467a89b2fdb96f0bcf2ee0">
-<meta name="promptworld-docs:source" content="docs/wiki/takeover-surfaces.md@31c893e0406653197e467a89b2fdb96f0bcf2ee0">
-<meta name="promptworld-docs:source" content="docs/wiki/grounded-feedback.md@31c893e0406653197e467a89b2fdb96f0bcf2ee0">
+<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@7e3c2b5f5f23eb8e5fcb37d0f867dbc6f46a289b">
+<meta name="promptworld-docs:source" content="docs/wiki/takeover-surfaces.md@7e3c2b5f5f23eb8e5fcb37d0f867dbc6f46a289b">
+<meta name="promptworld-docs:source" content="docs/wiki/grounded-feedback.md@7e3c2b5f5f23eb8e5fcb37d0f867dbc6f46a289b">
+<meta name="promptworld-docs:source" content="docs/wiki/village-lens.md@7e3c2b5f5f23eb8e5fcb37d0f867dbc6f46a289b">
+<meta name="promptworld-docs:source" content="docs/wiki/stage-defaults.md@7e3c2b5f5f23eb8e5fcb37d0f867dbc6f46a289b">
 <title>What do all those things on screen mean? — promptworld player docs</title>
 <style>
   :root {
@@ -126,6 +128,15 @@ world leaves you to read.</li>
 <p>None of these means anything is broken — each is the world being upfront about
 its own state on your behalf.</p>
 
+<h2>The villager strip: your whole roster, at a glance</h2>
+<p>One plain line sits right under the header, always on: a count of your
+villagers plus one letter per villager, in the same style the map uses —
+bright for awake, dim for asleep, faint <code>†</code> for dead. It's a
+glanceability shortcut, nothing more — everything it shows is also in the
+villagers tab in full. If your terminal gets too short to fit it, it folds
+into a quiet <code>[N villagers]</code> badge in the header instead of
+disappearing; it never appears at all in the narrow single-pane layout.</p>
+
 <h2>The map</h2>
 <p>The map is a camera window that follows your villagers around as they move; arrow
 keys pan it manually, and <code>c</code> recenters on the group. As your village grows,
@@ -151,6 +162,8 @@ different color, since anyone crossing a path walks noticeably faster</td></tr>
 <table>
 <tr><th>Glyph</th><th>Meaning</th></tr>
 <tr><td><code>▲</code></td><td>A fire, currently lit</td></tr>
+<tr><td><code>▲</code> (warm red)</td><td>A fire that's about to run out of fuel —
+still lit, but refuel it soon</td></tr>
 <tr><td><code>△</code></td><td>A fire that's burned out — the same spot, faded and
 hollow, once its fuel runs out</td></tr>
 <tr><td><code>⌂</code></td><td>A shelter</td></tr>
@@ -179,6 +192,13 @@ never placed</td></tr>
 <tr><td><code>G</code> (shown in red)</td><td>The gru — a nocturnal threat — while it's
 out and about</td></tr>
 </table>
+<p>A living villager's letter can also change <em>style</em> (never its letter or
+case) to flag trouble: bold red underline means one of their needs has fallen
+into real danger, and a cooler, faint tint means their last thought got
+skipped to keep the world running at speed (see the
+<a href="time-and-speed.html">time & speed page</a>). If both are true at
+once, the danger styling wins — a body in trouble always outranks a skipped
+thought.</p>
 
 <h2>The feed: chronicle or raw events</h2>
 <p>Below (or beside) the map sits your village's story, in one of two forms:</p>
