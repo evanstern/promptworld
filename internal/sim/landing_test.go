@@ -104,15 +104,37 @@ func TestLandingRungSuperseded(t *testing.T) {
 }
 
 func TestLandingRungStale(t *testing.T) {
-	// planner has a real budget: staleness above it is stale, at/below is fresh.
-	if got := rungStale("planner", 100000); got == "" {
-		t.Error("large staleness not flagged stale")
+	// The budget scales with the event-sourced clock speed (spec 067 FR-001):
+	// BudgetTicks is the planner's wall-clock patience at 1x.
+	// 1x behavior is unchanged (FR-007/SC-003).
+	if got := rungStale("planner", 100000, 1); got == "" {
+		t.Error("large staleness not flagged stale at 1x")
 	}
-	if got := rungStale("planner", 0); got != "" {
+	if got := rungStale("planner", 0, 1); got != "" {
 		t.Errorf("fresh landing flagged stale: %q", got)
 	}
+	// US1 scenario 2: 1300 ticks at 1x rejects exactly as before, the reason
+	// naming the effective budget and its derivation (FR-004).
+	if got, want := rungStale("planner", 1300, 1), "staleness 1300 > budget 1200 (1200 at 1x × 1x)"; got != want {
+		t.Errorf("1x rejection reason = %q, want %q", got, want)
+	}
+	// US1 scenario 1: the measured 8x regime (250s plan thoughts ≈ 2000 ticks,
+	// TASK-122) lands — 2000 ≤ 1200 × 8.
+	if got := rungStale("planner", 2000, 8); got != "" {
+		t.Errorf("measured 8x regime flagged stale: %q", got)
+	}
+	// US1 scenario 3: past the wall patience even the scaled budget rejects,
+	// with the contract grammar verbatim (contracts/landing-gate.md).
+	if got, want := rungStale("planner", 9700, 8), "staleness 9700 > budget 9600 (1200 at 1x × 8x)"; got != want {
+		t.Errorf("8x rejection reason = %q, want %q", got, want)
+	}
+	// Uncapped speed keeps the unscaled base budget and the terse reason —
+	// the gate must not multiply by zero (spec 067 edge case).
+	if got, want := rungStale("planner", 2000, 0), "staleness 2000 > budget 1200"; got != want {
+		t.Errorf("uncapped rejection reason = %q, want %q", got, want)
+	}
 	// An unmetered/unknown class carries no budget: never stale.
-	if got := rungStale("no-such-class", 100000); got != "" {
+	if got := rungStale("no-such-class", 100000, 1); got != "" {
 		t.Errorf("unknown class flagged stale: %q", got)
 	}
 }

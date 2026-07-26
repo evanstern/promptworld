@@ -73,7 +73,11 @@ func (l *Loop) landIntent(in *InjectArgs, emit func(string, any)) error {
 		if reason := rungSuperseded(a, in.Generation); reason != "" {
 			return reject(OutcomeSuperseded, reason)
 		}
-		if reason := rungStale(in.Class, staleness); reason != "" {
+		// The tick rate is the reducer's own event-sourced effective speed at
+		// the landing tick (spec 067 FR-002): reduced from clock.speed_set /
+		// governor events, so the gate stays a pure function of event-sourced
+		// state and replay determinism holds.
+		if reason := rungStale(in.Class, staleness, l.state.Speed.TicksPerSecond()); reason != "" {
 			return reject(OutcomeRejectedStale, reason)
 		}
 		// Pair cooldown (spec 061, TASK-109): a deliberate talk_to between a pair
@@ -209,13 +213,30 @@ func rungSuperseded(a *Agent, generation int64) string {
 	return ""
 }
 
-// rungStale — the landing exceeded its class's staleness budget. Returns the
-// reason, or "" when fresh (or the class carries no budget).
-func rungStale(class string, staleness int64) string {
-	if dc, ok := cognition.ClassFor(class); ok && staleness > dc.BudgetTicks {
-		return fmt.Sprintf("staleness %d > budget %d", staleness, dc.BudgetTicks)
+// rungStale — the landing exceeded its class's staleness budget. The budget is
+// the class's 1x wall-clock patience scaled by the event-sourced effective
+// speed at the landing tick (spec 067 FR-001): a constant-wall-time thought is
+// judged the same at every capped speed, so planning survives the fast rungs
+// instead of dying rejected-stale above ~4x on local tiers. ticksPerSecond <= 0
+// (uncapped max — theoretical: Route suppresses every class there) keeps the
+// unscaled base budget. The rejection reason names the effective budget AND
+// its derivation (FR-004, contracts/landing-gate.md grammar) so recorded
+// audits never show the misleading base constant. Returns the reason, or ""
+// when fresh (or the class carries no budget).
+func rungStale(class string, staleness int64, ticksPerSecond float64) string {
+	dc, ok := cognition.ClassFor(class)
+	if !ok {
+		return ""
 	}
-	return ""
+	budget := dc.EffectiveBudgetTicks(ticksPerSecond)
+	if staleness <= budget {
+		return ""
+	}
+	if ticksPerSecond <= 0 {
+		return fmt.Sprintf("staleness %d > budget %d", staleness, budget)
+	}
+	return fmt.Sprintf("staleness %d > budget %d (%d at 1x × %gx)",
+		staleness, budget, dc.BudgetTicks, ticksPerSecond)
 }
 
 // walkGuards runs the guard rungs in order and produces one landingDecision. The
