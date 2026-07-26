@@ -22,12 +22,13 @@ sources:
   - internal/skin/skin.go
   - internal/tui/reportcard.go
   - internal/tui/help.go
+  - internal/tui/tiles.go
   - internal/tui/tui.go
   - internal/tui/digest.go
   - internal/tui/grammar.go
   - internal/world/world.go
   - cmd/promptworld/stages.go
-verified_against: 30912a9cd5d2334f76425ac8ca5b74a7a7c90876
+verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
 ---
 
 # Grounded feedback layer (explain, tutor guide, report card)
@@ -73,8 +74,12 @@ extended to the answer path) — the six fixed topics are:
   `internal/toolloop`'s `Verdict` constants (`toolloop`'s
   `TestExplainDecisionClassesMirrorVerdicts` pins the name set equal).
 - `glyphs` — the map legend — MIRRORED from `internal/tui`'s `mapGlyphs`
-  table (`tui`'s `TestExplainGlyphsMirrorLegend` pins it equal, so the
-  explained legend can never drift from the drawn one).
+  table — since spec 068 the [[tile-registry]] living in `tiles.go`, grown
+  with each row's style token and world binding rather than the bare
+  glyph/name/meaning triple, but still the same table `tui`'s
+  `TestExplainGlyphsMirrorLegend` pins `explain.go`'s copy equal to,
+  glyph-for-glyph (the spec-068 marsh `░`/sand `▒` rows included) — so the
+  explained legend can never drift from the drawn one.
 
 Any cataloged tool's own name is also a topic (`<tool-id>` detail: what it
 does, its argument surface, its price, and whether THIS world grants it).
@@ -229,7 +234,8 @@ before/after of this move.
 ## Connections
 
 [[tool-registry]] declares `explain` and owns `GuardianToolGuidance`/
-`GuardianReadGuidance`'s derivation; [[guardian]] hosts the turn assembly
+`GuardianReadGuidance`'s derivation; [[tile-registry]] (spec 068) owns the
+`tiles.go` table the `glyphs` sheet mirrors; [[guardian]] hosts the turn assembly
 that composes the tutor guide and the read-guidance paragraph, and the
 absorb loop that drives the report-card producer; [[guardian-miracles]]
 shares the mirrored `MiracleCost`/`miracleKindArgs` source `explain`'s

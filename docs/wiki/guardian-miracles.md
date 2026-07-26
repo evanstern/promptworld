@@ -11,7 +11,7 @@ sources:
   - internal/tool/derive.go
   - internal/ipc/server.go
   - cmd/promptworld/work.go
-verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
+verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
 ---
 
 
@@ -72,7 +72,11 @@ partial application (validate-not-clamp, reject-whole):
   `removeTerrain` overlays a tree/forage/rock tile through the SAME vocabulary the
   executor's own harvest completions use (chop→`Cleared`, forage→`Harvested` with a
   regrow deadline, quarry→`Quarried`, permanent) — a removed tile is a state the
-  executor could already have produced on its own; an already-overlaid tile is
+  executor could already have produced on its own; spec 068's marsh/sand ground
+  covers are deliberately absent from this switch — they have no depleted state the
+  executor could ever produce, so they fall to the same "holds no removable
+  terrain" refusal grass and water already draw ([[worldmap-generation]],
+  [[tile-registry]]); an already-overlaid tile is
   rejected as a no-op target.
 - **`applyItemGranted`**: validates a living, in-range agent index, a `grantableKind`
   (the `Inventory` key vocabulary plus `"spear"`/`"axe"` singular), and a positive

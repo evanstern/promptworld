@@ -7,7 +7,8 @@ sources:
   - internal/tui/layout.go
   - internal/tui/help.go
   - internal/sim/agents.go
-verified_against: 7e3c2b5f5f23eb8e5fcb37d0f867dbc6f46a289b
+  - internal/tui/tiles.go
+verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
 ---
 
 # Village lens (villager strip + map condition overlays)
@@ -59,7 +60,11 @@ byte-identical to pre-060).
 
 **Map condition overlays** (`renderMapGrid`, US2, panels/map.md "Wave 5"):
 three STYLE variants layered over glyphs the legend already names — never
-new glyphs of their own:
+new glyphs of their own. Since spec 068 ([[tile-registry]]), the styles named
+below resolve through the tile registry's classed tokens
+(`internal/tui/tiles.go` — `styleAgentCritical`/`styleAgentSuppressed`/
+`styleFireDying` are token-derived aliases, not literals of their own), but
+the colors, emphasis, and priority rule are the identical pre-registry bytes:
 
 - **Needs-critical** (`needsCritical(n sim.Needs)`): true when a living
   villager's Health/Food/Warmth/Rest crosses the SAME danger-band
@@ -107,7 +112,10 @@ feature extends. [[reflex-policy]] and [[guardian-orders]] own the
 danger-band constants this note's `needsCritical` reuses
 (`SurvivalNearDeathBelow`/`StarvingRearm`/`FreezingRearm`, spec 059) and the
 new `sim.DangerRestBelow` sibling. [[world-tuning]] owns
-`State.RefuelDyingBelow()`, the dying-fire window's source. [[cognition]]
+`State.RefuelDyingBelow()`, the dying-fire window's source. [[tile-registry]]
+(spec 068) is where the overlay styles this note describes now resolve from
+(classed tokens rather than literals) — this note's own overlay behavior is
+unchanged, only the styling mechanism moved. [[cognition]]
 and [[agent-mind]] are where a router suppression is decided; [[tui-client]]'s
 own decision-trace projection is where it's ingested client-side.
 

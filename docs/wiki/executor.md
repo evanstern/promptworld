@@ -9,7 +9,7 @@ sources:
   - internal/sim/terrain.go
   - internal/sim/recipes.go
   - internal/sim/memory.go
-verified_against: 7e3c2b5f5f23eb8e5fcb37d0f867dbc6f46a289b
+verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
 ---
 
 # Executor
@@ -384,7 +384,12 @@ after 12 game-hours (`sim.forage_regrown`), dens cool down 6 game-hours after a 
 A quarried rock outcrop (spec 012) is different from the other two: it does NOT
 revert to Grass — `effectiveKind` renders it as `worldmap.Depleted` permanently (no
 regrow in v1), `passable` allows walking across it, but it is neither buildable
-(`buildSite`) nor quarryable again. Structures (`fire`, `shelter`, `oven`, `chest`)
+(`buildSite`) nor quarryable again. Spec 068's marsh and sand ground covers
+([[worldmap-generation]]) deliberately have NO overlay arm here at all: nothing
+clears, harvests, or quarries them, so `effectiveKind` always renders whatever the
+generator produced, and `passable` admits both alongside grass/forage/Depleted
+(marsh/sand carry no resource affordance and are never buildable, same as forage).
+Structures (`fire`, `shelter`, `oven`, `chest`)
 exist only in state; `warmAt` is a *lit* fire within Manhattan radius 2, or standing on a
 shelter (ovens grant no warmth). `fireStructAt`/`litFireAt` locate a fire by
 coordinate and test lit-ness for the refuel/cook completion checks. Spec 032
@@ -454,7 +459,10 @@ constructors (`situatedMemoryEvent`/`situatedMemoryToned`/`situatedMemoryAboutEv
 `memoryAboutEvent` once every site had migrated, so no sim memory can be emitted
 unsituated). Each bakes a `Where` — the acting-or-witnessing agent's tile via
 `PlaceAt` → `describePlace`, a deterministic Manhattan-radius nearest-feature scan
-that names a station ("the fire") or terrain ("the woods") — and, for a driven
+that names a station ("the fire") or terrain ("the woods" — since spec 068,
+`featureDesc` also names marsh/sand tiles individually, "the marsh"/"the sand
+flat", as NOTABLE terrain rather than the generic "" plain grass gets,
+[[worldmap-generation]]) — and, for a driven
 personal act, a `Why` (the completing intent's `Reason`, `""` for reflex/witness)
 into the `MemoryAddedPayload`, and composes both into the memory text via
 `situateText`; the [[chronicle]]/scribe render what the payload carries with no
