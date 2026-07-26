@@ -3,9 +3,10 @@ id: TASK-157
 title: >-
   Guardian directives and designations: the durable plan layer (survey,
   designations, hard directives)
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-26 20:25'
+updated_date: '2026-07-26 22:15'
 labels:
   - learning-game
 dependencies:
@@ -34,3 +35,9 @@ Grounding: docs/wiki/guardian-orders.md (entity/lifecycle template), docs/wiki/r
 - [ ] #6 conversations/hails/dynamic stimuli interrupt directed work and the directive resumes afterward without code intervention (in-game-workaround-first doctrine proven)
 - [ ] #7 directive lifecycle events join observableEventTypes so standing orders can watch them
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Sweep claim (runbook docs/design/faith-directives-sweep-runbook.md, signed-off 2026-07-26): spec 084-guardian-directives. Tier: Opus 4.8 — cross-package (guardian tools + sim designation/directive entities + reflex-ladder arbitration, doctrine-adjacent + map render + decision context). Dependency satisfied: TASK-97 merged (PR #123) — internal/target grammar + designation seam live. Collision checkpoint passed: card was To Do, no sibling branch.
+<!-- SECTION:NOTES:END -->
