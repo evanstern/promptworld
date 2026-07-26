@@ -6,7 +6,8 @@ sources:
   - cmd/promptworld/commands.go
   - cmd/promptworld/ps.go
   - cmd/promptworld/stages.go
-verified_against: 801db7c1b15fb567732bc5c6063464e918353a4d
+  - internal/worlds/unlocks.go
+verified_against: ad2a6543a9caf51d1cd28af863291f3daa3bd4eb
 ---
 
 # CLI: world lifecycle commands
@@ -103,15 +104,20 @@ Split from [[cli-promptworld]] (full subcommand list there): `new`, `migrate`, `
   mirroring the spec's table: the concept taught, what the world grants, and
   the evidence that unlocks the next stage — stage-4's reads "nothing — this
   is graduation") plus the earned state from the per-user unlocks record
-  (`worlds.LoadUnlocks`): stage-1 is every player's unconditional floor
-  (`stageEarned`); any other stage is earned only by an unlocks-record entry,
-  whose proving world and exercise the earned line names; an unearned stage's
+  (`worlds.LoadUnlocks`): stage-1 is every player's unconditional floor;
+  any other stage is earned only by an unlocks-record entry, whose proving
+  world and exercise the earned line names; an unearned stage's
   row points at `new --stage <id> --override`. `--json` emits the same rows
   machine-readably (`proving_world`/`exercise` audit pointers only when
   earned by an entry). A missing/corrupt/unresolvable unlocks record simply
   means nothing beyond stage-1 is earned — the command never fails on record
   state. `highestEarnedStage` over the same record is what `new`'s default
-  `--stage` selection uses.
+  `--stage` selection uses. The earned rule itself is single-sourced as
+  `worlds.(*Unlocks).StageEarned` (spec 078, relocated from this file's own
+  former package-main `stageEarned`): `cmdStages`, `highestEarnedStage`, and
+  `cmdNew`'s `--override` gate all call the same method, and so does the
+  TUI's own forward-ladder view ([[grounded-feedback]]) — one earned rule,
+  every surface that shows it.
 
 ## Connections
 

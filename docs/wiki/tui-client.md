@@ -13,7 +13,7 @@ sources:
   - internal/tui/lessons.go
   - internal/tui/reportcard.go
   - internal/tui/tiles.go
-verified_against: 03987d380ff92948495abe8b9b34e196d050154d
+verified_against: ad2a6543a9caf51d1cd28af863291f3daa3bd4eb
 ---
 
 # TUI client

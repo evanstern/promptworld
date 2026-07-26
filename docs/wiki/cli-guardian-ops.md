@@ -7,7 +7,7 @@ sources:
   - cmd/promptworld/work.go
   - cmd/promptworld/calibrate.go
   - cmd/promptworld/divergence.go
-verified_against: 801db7c1b15fb567732bc5c6063464e918353a4d
+verified_against: ad2a6543a9caf51d1cd28af863291f3daa3bd4eb
 ---
 
 # CLI: guardian and LLM operator commands

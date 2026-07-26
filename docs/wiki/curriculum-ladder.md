@@ -7,7 +7,8 @@ sources:
   - internal/world/world.go
   - internal/guardian/charter.go
   - cmd/promptworld/stages.go
-verified_against: aedcf52f680ed68910e185c3ccde44bd320517b6
+  - internal/worlds/unlocks.go
+verified_against: ad2a6543a9caf51d1cd28af863291f3daa3bd4eb
 ---
 
 # Curriculum ladder
@@ -56,7 +57,11 @@ informed message naming the skipped concepts (skin names) unless
 honesty marker that keeps overridden runs comparable as overridden runs.
 `promptworld stages` is the ladder's front door: all four stages always
 visible (identity, concept, grants, unlock evidence, earned state with the
-proving world), an informed identity table, never a difficulty menu.
+proving world), an informed identity table, never a difficulty menu. The
+earned rule (stage-1's floor, else a record entry) is now
+`worlds.(*Unlocks).StageEarned` (spec 078, relocated from this file's
+former `stageEarned` — StagesLadder's T014 move repeated for earned
+state); `cmdStages` and the TUI ladder ([[grounded-feedback]]) both call it.
 
 **The stage ceiling** (`internal/guardian/charter.go`): `stageCeiling` returns
 a stage's capability ceiling as a `bundle.GrantDoc` — the same narrowing shape
@@ -123,10 +128,11 @@ handoff; [[cli-promptworld]] fronts `promptworld stages` and `new --stage`;
 (`Stage`/`StageName`) this note's ladder facts pair with;
 [[grounded-feedback]] (spec 063) relocated `StagesLadder`/`StageOrder` here
 from `cmd/promptworld`, added `explain` to `stage1CeilingTools`, and reads
-the stage ceiling via `StageCeilingVerbs` for the TUI help overlay's D9
-guardian section; [[curriculum-ladder-progression]] is the split-off child
-covering how a stage is actually earned; [[testing-strategy]] catalogs the
-per-layer suites.
+the stage ceiling via `StageCeilingVerbs` for the D9 guardian section,
+whose spec-078 ladder block also reads `StageEarned` above;
+[[curriculum-ladder-progression]] is the split-off child covering how a
+stage is actually earned; [[testing-strategy]] catalogs the per-layer
+suites.
 
 ## Operational notes
 
