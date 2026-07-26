@@ -1,4 +1,4 @@
-<!-- pdlc:grounding BEGIN v0.8.0 — planted by pdlc:bootstrap; refreshed wholesale on update. Keep project-specific edits OUTSIDE this block. -->
+<!-- pdlc:grounding BEGIN v0.21.0 — planted by pdlc:bootstrap; refreshed wholesale on update. Keep project-specific edits OUTSIDE this block. -->
 # promptworld — praxis development lifecycle (PDLC)
 
 This project is developed with the **praxisflux** plugin suite. This block is the always-on
@@ -8,26 +8,19 @@ when no skill has triggered.
 
 ## The loop
 
-Ground the codebase → plan as specs → build + re-ground in the branch → PR →
-merge → teach/render:
+Ground the codebase → plan as specs → build → re-ground → teach/render:
 
 ```
 grounding-wiki (docs/wiki) ──corpus──▶ codebase-to-course (docs/course)
         │
-        └─grounding─▶ spec/plan ─▶ build ─▶ wiki-update + player-docs ─▶ PR ─▶ merge ─▶ …
-                                 └──────── one task branch ──────────┘
+        └─grounding─▶ spec/plan ──▶ build ──▶ wiki-update (re-ground) ──▶ …
 ```
-
-Re-grounding happens INSIDE the task branch, before the PR (spec 069): the
-wiki re-pin and regenerated player docs ride the same PR as the code they
-verify.
 
 ## Plugin roles (entry skills)
 
 - **grounding-wiki** — the code-grounded corpus in `docs/wiki/`: per-concept notes pinned to
-  the commit they were verified against. Build once with `/grounding-wiki:wiki-build`; when a
-  task branch touches files any note lists as sources, run `/grounding-wiki:wiki-update` in
-  that branch's worktree BEFORE opening the PR — the re-pin rides the PR (spec 069).
+  the commit they were verified against. Build once with `/grounding-wiki:wiki-build`; after
+  merging changes that touch files any note lists as sources, run `/grounding-wiki:wiki-update`.
 - **codebase-to-course** — interactive single-page HTML course in `docs/course/`, for
   non-technical readers. Reads `docs/wiki/` as its primary input when present.
 - **build** — implements a SPEC handed off through `.handoff/` (`/build:implement`) and
@@ -36,6 +29,10 @@ verify.
   → `vault-artifact`) for grounding external topics.
 - **spec-bridge** — the kanban view over Spec Kit specs (see the Spec Kit block below, if
   opted in).
+- **pdlc** — the lifecycle's own verbs: `pdlc:bootstrap` (re)stamps this grounding after
+  plugin upgrades; `/pdlc:sweep` orchestrates a set of board tasks through the whole loop —
+  an authored, operator-signed-off runbook, then spec → PR → merge → re-ground per task,
+  parallel lanes with serial merges.
 
 ## Rules that always hold
 
@@ -47,24 +44,24 @@ verify.
   produce NEW artifacts; a question an existing artifact or principle already answers is
   resolved from it, not re-asked as a preference.
 - **One TASK, one PR:** a TASK is a top-level deliverable and maps 1:1 to a pull request —
-  one task, one branch, one PR. A SUBTASK (whatever the task system calls it) is internal
-  work breakdown and never gets its own PR: subtasks land as commits on the parent TASK's
-  single branch and merge together in that TASK's one PR.
+  one task, one branch, one PR. An EPIC (whatever the task system calls it) groups
+  deliverable TASKs and gets no PR of its own; a SUBTASK is internal work breakdown and
+  never gets its own PR: subtasks land as commits on the parent TASK's single branch and
+  merge together in that TASK's one PR. A PR exists only where it carries a stated reason
+  for a human to approve (a policy ratified, a posture changed, a contract made binding) —
+  never a diff for its own sake; work too small to give a reviewer a real decision merges
+  into the deliverable it serves.
 - **Gates:** a status can never exceed the artifacts that prove it. Plugins ship Stop hooks
   that enforce this; when a gate blocks, produce the missing artifact — don't argue with the
   gate or edit derived state by hand.
 - **Handoffs:** plugins compose only through files + gates, never by calling each other.
   Payloads ride the gitignored `.handoff/` transport; evidence lives in tracked state.
-- **Grounding freshness:** `docs/wiki/` is load-bearing, not decoration. A branch that
-  touches pinned sources must carry its own re-pin: run `/grounding-wiki:wiki-update` in the
-  worktree and commit it on the branch BEFORE the PR — the pr gate BLOCKS
-  (`wiki-repin-missing`, spec 069) until the branch itself re-verifies every note whose
-  sources it touched. Re-pinning is pre-PR work, never a post-merge tail on main.
-- **Player docs:** `docs/player/` (plain-language HTML for non-engineers) is generated from
-  the wiki + README.md + docs/llm-providers.md by the `player-docs` project skill. When a
-  branch changes `docs/wiki/`, regenerate the pages IN THE SAME BRANCH — the pr gate runs
-  `node .claude/skills/player-docs/scripts/check-freshness.mjs --check` and BLOCKS on
-  staleness (`player-docs-stale`, spec 069); stale pages cannot ride through a merge.
+- **Grounding freshness:** `docs/wiki/` is load-bearing, not decoration. Changes that touch
+  pinned sources aren't done until the wiki is re-pinned (`/grounding-wiki:wiki-update`).
+- **Corpus loading:** when a grounded corpus is present (`docs/wiki/` or similar), load its
+  `INDEX.md` first and route; load notes just-in-time — never bulk-load the corpus.
+  Whole-corpus orientation reads `CAPSULES.md` when it exists; without one, INDEX plus
+  just-in-time notes.
 
 <!-- pdlc:peer:backlog BEGIN -->
 ## Backlog.md — the board (officially supported peer)
@@ -96,6 +93,7 @@ Features are specified with GitHub Spec Kit (`specify`) under `specs/NNN-<featur
   mirrored criteria are internal breakdown, not PR boundaries.
 <!-- pdlc:peer:spec-kit END -->
 <!-- pdlc:grounding END -->
+
 
 ## TUI design reference — the UI authority gate (spec 047)
 
@@ -135,7 +133,11 @@ PR; the pr gate enforces it, and step 7 is bookkeeping only.
   the branch itself re-verifies every wiki note whose pinned sources it touches —
   note re-pinned on the branch, pin reachable from the branch tip, no source touched
   after the pin. It likewise blocks (`player-docs-stale`) when the branch changes
-  `docs/wiki/` without regenerating `docs/player/`. There is no bypass flag;
+  `docs/wiki/` without regenerating `docs/player/` — the plain-language HTML pages
+  generated from the wiki + `README.md` + `docs/llm-providers.md` by the
+  `player-docs` project skill
+  (`node .claude/skills/player-docs/scripts/check-freshness.mjs --check` is the
+  gate's probe). There is no bypass flag;
   emergencies go through the operator editing hook config, visibly and deliberately.
 - **Merge-commit-only:** merge PRs with `gh pr merge --merge`. In-branch re-pins are
   branch commit hashes; a squash merge rewrites them out of main's history and stales
