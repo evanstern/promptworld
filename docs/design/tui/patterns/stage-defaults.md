@@ -1,8 +1,14 @@
 ---
 title: Pattern — stage-shaped layout defaults
 class: pattern
-status: specified
-verified_against: d2206458f7a520379a7e882c4fe19e6b448e281c
+status: shipped
+verified_against: a73d4fc416e27b036bf65ec0dc70051fd5cbcf45
+sources:
+  - internal/tui/stagedefaults.go
+  - internal/tui/layout.go
+  - internal/tui/tui.go
+  - internal/tui/lessons.go
+  - internal/sim/scenario.go
 ---
 
 # Pattern: stage-defaults
@@ -61,9 +67,55 @@ now REAL — `internal/tui` gates the tab on the manifest block
 (`Model.exerciseID`) and `internal/sim`'s `IncidentVisibilityFor` implements
 this table's vocabulary column exactly (definition override wins; forecast
 at stages 1–2 and pre-ladder, fog from stage 3), pinned by
-`TestIncidentVisibilityVocabulary`. This page stays `specified` overall:
-the lesson-row/villager-strip rows and the ceremony/postmortem overlays
-remain unbuilt.
+`TestIncidentVisibilityVocabulary`.
+
+**Shipped for spec 066 (TASK-128)**: every row above is now REAL code, one
+table, one resolver — `internal/tui/stagedefaults.go`'s `stageDefaultsTable`
+mirrors this page cell-for-cell (`TestStageDefaultsSweep` parses this page
+at test time and fails the build on any drift), and
+`resolveStageDefaults(stage, hasScenario)` is the single resolution
+function every governed row above reduces to:
+
+- **Lesson row**: `layout.go`'s `lessonRowDefault` now delegates to
+  `resolveStageDefaults(...).LessonRowOn` (a pure refactor of the pre-066
+  stage-1/2-only check research.md R6 flagged for this table to absorb —
+  same behavior, one source now).
+- **Guardian strip, systems tab, guardian console**: every column reads
+  "on"/"reachable" — nothing gates them by stage in `internal/tui` (they
+  were already unconditional); `resolveStageDefaults` carries their values
+  for completeness and the parity sweep, not because a gate needed adding.
+- **Exercise tab, incident vocabulary**: unchanged since spec 054 above;
+  `resolveStageDefaults`'s `ExerciseTabOn`/`IncidentVocabulary` fields
+  mirror `Model.exerciseID`/`IncidentVisibilityFor` for one consolidated
+  starting-visible-set view (`SC-001` frame assertions), while the real
+  render call sites keep calling those functions directly (the latter
+  alone carries a per-definition override this table doesn't express).
+- **Villager strip**: resolved (`VillagerStripOn`) but inert — the surface
+  itself doesn't exist yet (TASK-129); absence is tolerated, not an error.
+- **Unlock ceremony, postmortem**: fire rules, layout-independent by
+  design (FR-008) — carried in the table for parity only; TASK-127's
+  overlays are a separate, not-yet-merged feature.
+- **Help overlay guardian section**: shipped for real by spec 063
+  (TASK-115, PR #100, merged during this feature's own implementation) —
+  `help.go`'s `helpGuardianLines` already reads `m.currentStage()` with the
+  identical fail-open pre-ladder posture (nil/unrecognized status → the
+  all-verbs variant) this table's own R3 rule states, sourced from
+  `world.StagesLadder`/`guardian.StageCeilingVerbs`/the world skin rather
+  than this table. `resolveStageDefaults`'s `HelpGuardianVariant` field
+  names which variant that same resolution selects — a second, test-only
+  view of the same fact (`TestResolveStageDefaultsHelpGuardianVariant`),
+  not a competing implementation.
+- **Live re-resolution / explicit overrides / first-occurrence arrival**
+  (US3): `tui.go`'s `statusMsg` handler diffs the resolved stage between
+  polls (never the first poll) and would route any newly-on governed
+  surface through the existing `lessonCatalog` first-occurrence machinery
+  (`stagedefaults.go`'s `newlyOnSurfaces`/`announceSurfaceArrival`); under
+  the table AS WRITTEN ABOVE this is a no-op on every real transition — no
+  row ever widens going up the ladder, only narrows or stays constant —
+  proven directly against synthetic fixtures
+  (`TestAnnounceSurfaceArrivalExactlyOnce`) rather than any live trigger.
+  A `surfaceOverrides` map exists with the correct re-resolution
+  precedence, but no in-session command sets one yet.
 
 ## Composition with the fold order
 
