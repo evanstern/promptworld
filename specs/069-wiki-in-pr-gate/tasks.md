@@ -45,7 +45,7 @@ split implementer/orchestrator per plan D4).
 
 ## Phase 6: Polish & Cross-Cutting
 
-- [ ] T009 Full harness green (`node --test scripts/*.test.mjs`); self-apply: `node scripts/check-merge-drift.mjs pr` from the worktree passes under the NEW logic before the PR opens (SC-003, SC-004 first half)
+- [X] T009 Full harness green (`node --test scripts/*.test.mjs`); self-apply: `node scripts/check-merge-drift.mjs pr` from the worktree passes under the NEW logic before the PR opens (SC-003, SC-004 first half)
 - [ ] T010 Post-merge (root): spec-bridge sync, tasks.md ticks, runbook execution-log row — derived state only, per the very doctrine this spec lands
 
 ## Dependencies & Execution Order
