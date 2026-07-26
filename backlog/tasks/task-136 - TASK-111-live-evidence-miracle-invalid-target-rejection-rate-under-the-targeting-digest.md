@@ -3,9 +3,10 @@ id: TASK-136
 title: >-
   TASK-111 live evidence: miracle invalid-target rejection rate under the
   targeting digest
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-25 19:37'
+updated_date: '2026-07-26 14:33'
 labels:
   - mvls
   - guardian-survival
@@ -24,3 +25,9 @@ Follow-up carded from the MVLS sweep (operator request 2026-07-25) so TASK-111's
 <!-- AC:BEGIN -->
 - [ ] #1 A post-059 run with >=5 angel miracle attempts measured; invalid-coordinate door rejections at or near 0, evidence recorded here and on TASK-111
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Evidence rides the TASK-137 crisis experiment (2026-07-26): harsh-dial worlds force survival turns -> miracle attempts; door rejection rate measured across both arms vs the world-01 pre-059 baseline (3 of 4 rejected).
+<!-- SECTION:NOTES:END -->
