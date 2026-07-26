@@ -10,7 +10,7 @@ sources:
   - internal/world/world.go
   - internal/guardian/charter.go
   - cmd/promptworld/stages.go
-verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
+verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
 ---
 
 # Curriculum ladder
@@ -96,9 +96,11 @@ tick, evidence?}`, each `EvidenceRef{type, seq, tick, custom?}` a re-locatable
 pointer into this world's log) and `curriculum.stage_unlocked`
 (`StageUnlockedPayload{stage, exercise, tick}`), are the executor emission
 class — pure functions of (state, tick), no whitelist entries, the
-`metatron.order_expired` pattern; TASK-119's scenario rubric machinery is the
-production emitter, so until it lands only test fixtures emit them. The
-reducer appends passes to the bounded `State.CurriculumPasses` ring
+`metatron.order_expired` pattern; the spec-054 scenario rubric machinery
+(`scenario.go`'s `scenarioRubricEvents`, TASK-119) is the production emitter
+— see [[scenario-machinery]] — and test fixtures remain the only in-tree
+emitter for exercises whose rubric evaluator is still unbuilt content work.
+The reducer appends passes to the bounded `State.CurriculumPasses` ring
 (`curriculumPassRetain` 32) and latches unlocks into `State.StagesUnlocked`
 once per (world, stage), rejecting duplicates and `stage-1` (the unearned
 floor). `sim.EvaluateUnlock(state, pass)` decides the gate conjuncts at
@@ -131,18 +133,25 @@ behavior ever reads it; its only consumers are `promptworld stages` and
 
 **The exercises** (`sim.ExerciseDefinition`) are CONTENT, not machinery —
 stage, deterministic seed, framing, an event-derived rubric whose every term
-must be a cataloged event type, the pass-signal shape, and a chronicle
-score-narrative framing (failure is a story, not a scold). Two ship
+must be a cataloged event type, the pass-signal shape, a chronicle
+score-narrative framing (failure is a story, not a scold), and — since spec
+054 — an optional authored `Schedule` of incidents plus an
+`IncidentVisibility` override ([[scenario-machinery]]). Two ship
 (`ScenarioExercises`): **first-night** (stage-1, seed 46101 — keep the
 village alive through night one by directing the guardian: visions, omens,
-and the watch) and **the-law** (stage-2, seed 46102 — get a norm adopted
-while a player-authored charter revision is in force, the SC-004 conjunct).
-TASK-119's scenario/rubric machinery is the consumer; the reserved
-`Manifest.Scenario` block is its schema seam ([[world-save-directory]]).
+and the watch; the only exercise with a production rubric evaluator today,
+plus an authored night-one `gru_emerges` incident) and **the-law** (stage-2,
+seed 46102 — get a norm adopted while a player-authored charter revision is
+in force, the SC-004 conjunct; its rubric evaluator is still unbuilt content
+work — state retains only the charter fingerprint, not the `Default` flag
+the conjunct needs). The spec-054 scenario/rubric machinery consumes the
+catalog end to end ([[scenario-machinery]]); `Manifest.Scenario` is its
+consumed schema seam, no longer reserved ([[world-save-directory]]).
 Surfacing: `ipc.WorldStatus.Stage`/`StageOverridden` ride status, `promptworld
-status` renders a skin-named stage line, and the TUI digest narrates both
-`curriculum.*` types under the guardian grammar family (the FROZEN `metatron`
-namespace's family-namespace mapping, [[tui-client]]).
+status` renders a skin-named stage line (plus, on a scenario world, an
+`exercise: <id> — <outcome>` line, [[scenario-machinery]]), and the TUI
+digest narrates both `curriculum.*` types under the guardian grammar family
+(the FROZEN `metatron` namespace's family-namespace mapping, [[tui-client]]).
 
 ## Connections
 
@@ -153,11 +162,12 @@ that same observation timeline. [[sim-state-reducer]] owns the two
 `curriculum.*` reducer arms and the `CurriculumPasses`/`StagesUnlocked`
 state; [[event-types]] catalogs the payload shapes. [[world-save-directory]]
 holds the `stage`/`stage_overridden`/`charter_preset` manifest facts and the
-reserved `scenario` block; [[daemon-lifecycle]] wires the always-on unlock
+consumed `scenario` block; [[daemon-lifecycle]] wires the always-on unlock
 observer and the boot-frozen `SetStage` handoff; [[cli-promptworld]] fronts
-`promptworld stages` and `new --stage`; [[skin]] supplies the four stages'
+`promptworld stages` and `new --stage`/`new --scenario`; [[skin]] supplies the four stages'
 player-visible identities (`Stage`/`StageName`) this note's ladder facts
-pair with; [[testing-strategy]] catalogs the
+pair with; [[scenario-machinery]] is the spec-054 production emitter for this
+note's two event types; [[testing-strategy]] catalogs the
 per-layer suites (reducer, guardian stage gating, daemon observer, unlocks
 record, CLI).
 
@@ -167,6 +177,9 @@ The ladder gates the GUARDIAN's capabilities, never the villagers' world:
 `TestCrossStageDeterminism` pins that the same seed ticks identically at
 every stage. Deleting `~/.promptworld/unlocks.json` forgets earned
 convenience, not truth — any proving world's log still carries its
-`curriculum.stage_unlocked` events. Until TASK-119 lands, no production code
-emits `curriculum.*` events: the observer idles, `stages` shows only stage-1
-earned, and every higher-stage world needs `--override`.
+`curriculum.stage_unlocked` events. Since spec 054 (TASK-119), the
+`first-night` exercise's production rubric evaluator lands
+`curriculum.exercise_passed`/`stage_unlocked` on a real scenario world
+(`promptworld new --scenario first-night`) — see [[scenario-machinery]];
+`the-law`'s evaluator remains unbuilt content work, so a stage-2 world still
+needs `--override` until it lands.

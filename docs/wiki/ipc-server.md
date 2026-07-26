@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/ipc/server.go
   - internal/ipc/socket.go
-verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
+verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
 ---
 
 # IPC server
@@ -93,7 +93,12 @@ spec 046, `statusData` likewise composes the world section's
 `Stage`/`StageOverridden` straight from the opened manifest
 (`s.w.Manifest.Stage`/`.StageOverridden`, [[curriculum-ladder]]) — additive
 `omitempty` again, so a pre-ladder world's bytes are unchanged
-([[ipc-protocol]]).
+([[ipc-protocol]]). Since spec 054, `statusData` also copies the loop's
+scenario facts into the world section — `ScenarioExercise`/`ScenarioOutcome`
+straight from `cs.ScenarioExercise`/`ScenarioOutcome` (the loop's status
+snapshot, so the pair is coherent with `Tick`) — the same `omitempty`
+discipline keeps an ambient world's status bytes unchanged
+([[ipc-protocol]], [[scenario-machinery]]).
 
 Since spec 037 (`contracts/status-horizon.md`), `statusDataFull` additionally
 sets `StatusData.Horizon` via `horizonClasses(cs)` whenever an orchestrator is
@@ -175,7 +180,12 @@ rendered by [[cli-promptworld]]'s `setSpeedLine`. `horizonClasses` reads
 [[cognition]]'s `MaxSafeSpeed` and [[game-clock]]'s `SpeedForRate` (the same
 call [[daemon-lifecycle]]'s boot default makes), and their results ride
 `StatusData.Warning`/`StatusData.Posture` ([[ipc-protocol]]), rendered by
-[[cli-promptworld]]'s `setSpeedLine`/`postureStatusLine`.
+[[cli-promptworld]]'s `setSpeedLine`/`postureStatusLine`. Since spec 054,
+`statusData`'s scenario facts read [[scenario-machinery]]'s
+`sim.ExerciseOutcome` (folded by the loop's `status()`), riding
+`StatusData.ScenarioExercise`/`ScenarioOutcome` ([[ipc-protocol]]), rendered
+by [[cli-promptworld]]'s `scenarioStatusLine` and the [[tui-client]] exercise
+tab.
 
 ## Operational notes
 

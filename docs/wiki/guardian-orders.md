@@ -15,7 +15,7 @@ sources:
   - internal/llm/llm.go
   - internal/llm/config.go
   - internal/daemon/daemon.go
-verified_against: e718294e2a9db4053323a4a9e42746ca53fb149c
+verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
 ---
 
 # Guardian's standing orders
@@ -37,8 +37,13 @@ record: `ID` (`"ord-<placedTick>-<seq>"`, deterministic, no RNG — `nextOrderID
 runes), `Action` (the NL action instruction, ≤400 runes), `EventTypes` (the structural
 predicate — non-empty, drawn from the observable vocabulary), `Agent` (a villager index,
 or `-1` for any), `Keywords` (a lowercase coarse text filter, ≤6), `Confirm` (fuzzy —
-needs the watch confirm), `PlacedTick`, `ExpiresTick`, and `Status`
-(`active` → `triggered` | `cancelled` | `expired`, one-way).
+needs the watch confirm), `PlacedTick`, `ExpiresTick`, `Status`
+(`active` → `triggered` | `cancelled` | `expired`, one-way), and — since spec
+054 — `PlacedSeq` (`omitempty`): the placement event's store seq, stamped by
+the reducer at apply time from the event envelope (the `Memory.Seq`
+precedent), never trusted from the payload (like `Status`) — it lets
+[[scenario-machinery]]'s `OrderPlacedEvidence` re-locate a recorded
+`metatron.order_placed` without a log scan.
 
 **Caps and bounds** (`sim` constants): at most `GuardianPlayerOrderCap` (3) ACTIVE
 **player-origin** orders may stand concurrently — system-origin deferral orders are
@@ -64,6 +69,11 @@ through [[sim-state-reducer]]'s `applyGuardian` arm:
   condition), a TTL outside 1..7 days, an out-of-range `Agent`, an over-long
   condition/action, and a player placement beyond the cap. The payload's `Status` is
   IGNORED — an order always lands `active`, then the retention prune runs.
+  Since spec 054, `PlacedSeq` is likewise IGNORED on the payload — the
+  reducer stamps it from the event's own store seq (`e.Seq`, identical live
+  and in replay: `Loop.stampSeqs` pre-assigns the same `last+i+1`
+  `AppendEvents` records, [[sim-loop]]), so [[scenario-machinery]]'s
+  `OrderPlacedEvidence` can trust it as a re-locatable identity.
 - **`metatron.order_triggered`** (`OrderTriggeredPayload{id, matched_type, matched_tick}`)
   — injected by the trigger worker when a match fires; NEVER emitted during replay.
 - **`metatron.order_cancelled`** (`OrderIDPayload{id}`) — injected by a `cancel_order`
@@ -174,7 +184,13 @@ Where every order above is player-authored and player-authority, three
 in EVERY world without any player action: seeded once at boot
 (`seedSurvivalWatches`, [[daemon-lifecycle]], called right after `seedTuning`
 and before the loop starts) via `sim.SurvivalWatchDefs`, the single home both
-the boot seeder and tests build from. They are the guardian's nature, not a
+the boot seeder and tests build from. Since spec 054, the seeder pre-assigns
+each placement event's store seq (`st.LastSeq() + i + 1`, the `Loop.
+stampSeqs` precedent) before applying — the reducer's `order_placed` arm
+stamps `PlacedSeq` from that envelope, so a boot-live watch's `PlacedSeq`
+agrees with what `AppendEvents` records rather than diverging at Seq 0; boot
+is single-writer, so `AppendEvents` then re-assigns the identical values.
+They are the guardian's nature, not a
 player configuration:
 
 - **Origin-keyed exemptions** (`internal/sim/guardian.go`'s `applyGuardian`):
@@ -284,7 +300,9 @@ expiry across a time snap. [[daemon-lifecycle]] seeds the three survival watches
 at boot (spec 059, `seedSurvivalWatches`, right after `seedTuning`); [[guardian]]
 holds `persona/charter.go`'s `DefaultCharter`, which since spec 059 states the
 survival duty in-fiction so the guardian's own narration stays honest about the
-carve-out. Spec: `specs/029-metatron-agency/` (TASK-27) — `spec.md` US2/
+carve-out. [[scenario-machinery]] is the spec-054 consumer of `PlacedSeq` —
+its `OrderPlacedEvidence` constructor re-locates a watch's placement event
+for the first-night exercise's rubric evidence. Spec: `specs/029-metatron-agency/` (TASK-27) — `spec.md` US2/
 US3/US4/US6, `data-model.md`, `contracts/events.md`, `contracts/routing.md`;
 `specs/059-metatron-survival-autonomy/` — `spec.md`, `plan.md`.
 

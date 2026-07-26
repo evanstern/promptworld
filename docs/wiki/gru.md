@@ -4,7 +4,7 @@ description: The nocturnal sight-triggered predator — an event-sourced entity 
 kind: component
 sources:
   - internal/sim/gru.go
-verified_against: cea7b8f83fa07f9fcfefe4dd861aa05a78448f1b
+verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
 ---
 
 # The gru
@@ -27,7 +27,14 @@ heartbeat's; a gru kill is the one death emitted from `gruStep` itself.
 `s.GruEmergePerMille()`, default 600 per mille — spec 048 promotes this to a
 per-world [[world-tuning]] dial, the default living in `tuning.go` as
 `defaultGruEmergePerMille`) decides whether it comes out; if so it slips in
-from a seeded passable, unlit border tile (`gru.emerged{night, x, y}`). At
+from a seeded passable, unlit border tile (`gru.emerged{night, x, y}`). Since
+spec 054, this random roll is skipped ENTIRELY on a scenario world whose
+armed incident schedule has a `gru_emerges` entry landing that same night
+(`gruScheduledTonight`) — the schedule preempts the dice, never two spawn
+mechanisms in one night, and skipping consumes no RNG draw (`rngAt` is
+coordinate-seeded, no stream), so ambient nights and unscheduled scenario
+nights roll exactly as before ([[scenario-machinery]] owns the scheduled
+emergence's own emission). At
 06:00 it is gone (`gru.withdrew{day}`, state nil). Every decision is a pure
 function of (seed, night/tick) — [[deterministic-rng]] — so the whole
 predator replays.
@@ -99,7 +106,9 @@ last living villager lands in the same batch as the `run.ended` declaration);
 fallout (ledger, grave); [[morgue]] mourns gru deaths under the charter
 revision then in force; [[reflex-policy]] supplies the flee-to-warmth response;
 [[social-fabric]] turns witness memories into rumors; [[tui-client]] renders it
-as a red G; [[worldmap-generation]] bounds its spawn border.
+as a red G; [[worldmap-generation]] bounds its spawn border; [[scenario-machinery]]
+shares the night-emergence preemption check (`gruScheduledTonight`) and owns
+the scheduled emission itself.
 
 ## Operational notes
 

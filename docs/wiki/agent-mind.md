@@ -14,7 +14,7 @@ sources:
   - internal/scribe/scribe.go
   - internal/scribe/morgue.go
   - internal/sim/memory.go
-verified_against: b19ca0e41d11229478cbe650e2ef79fe16514d07
+verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
 ---
 
 # Agent mind

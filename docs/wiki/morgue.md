@@ -8,7 +8,7 @@ sources:
   - internal/sim/state.go
   - internal/mind/narrate.go
   - internal/world/world.go
-verified_against: e718294e2a9db4053323a4a9e42746ca53fb149c
+verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
 ---
 
 # Morgue
@@ -44,7 +44,12 @@ same history reproduces the factual content byte-identically (SC-004), and
 the whole factual side is model-free: it renders with the LLM subsystem off.
 The scribe ([[agent-mind]]) re-renders on every batch carrying `agent.died`,
 `run.ended`, or `morgue.epilogue`, and once at boot — an empty world gets
-the "*No one has died. The village lives.*" posture line.
+the "*No one has died. The village lives.*" posture line. Since spec 054,
+`Scribe.SetScenario(exercise)` installs the armed scenario's exercise id and
+immediately re-renders, so an already-ended scenario world's run summary
+carries the exercise line from the very first boot render on restart —
+called once, by the daemon, right after `scribe.New` and before the sim
+loop starts ([[scenario-machinery]], [[daemon-lifecycle]]).
 
 **What an epitaph holds** (`captureEpitaph`, `writeEpitaph`): name, death
 day, and cause; curated deeds (`morgueDeedNote` — the [[chronicle]]'s
@@ -119,7 +124,14 @@ gap in the prose, never a stall of the factual record (FR-010).
 complete death ledger — `State.Deaths` accretes in the `agent.died` arm
 precisely so the emission needs no log scan): run length, the day-stamped
 population decline curve, every death with cause, and the run's notable
-events in the same curated deed vocabulary.
+events in the same curated deed vocabulary. Since spec 054
+([[scenario-machinery]]), on a scenario world `writeRunSummary` also takes
+the scribe's `scenarioExercise` id (installed by `Scribe.SetScenario`,
+below) and appends one "**The exercise**: `<id>` — `<outcome>`. _Stated as
+evidence; the reader draws the lesson._" line, `<outcome>` derived via
+`sim.ExerciseOutcome` — the same no-blame evidence register as the rest of
+the morgue: failure is stated, never scored. An ambient world (no scenario
+armed) renders this section byte-identically to pre-054.
 
 **Regenerability doctrine** (FR-011): `morgue.md` is a derived view, never a
 source of truth — exactly like the chronicle and village charter files. A
@@ -141,8 +153,9 @@ narrowed to recorded prose) and the `Status.Ended`/`EndedDay` surface;
 against; [[guardian-orders]] is the standing-order evidence; [[mental-maps]]
 carries the `grave` place-fact kind a death leaves in the world;
 [[agent-mind]] hosts the scribe that renders the file and the absorb hook
-that queues epilogues; [[world-save-directory]] is where `morgue.md` lives.
-Spec: `specs/044-run-outcomes-morgue/`.
+that queues epilogues; [[world-save-directory]] is where `morgue.md` lives;
+[[scenario-machinery]] is the spec-054 subsystem behind the run summary's
+exercise-outcome line. Spec: `specs/044-run-outcomes-morgue/`.
 
 ## Operational notes
 

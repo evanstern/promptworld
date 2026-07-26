@@ -6,7 +6,7 @@ sources:
   - internal/sim/chronicle.go
   - internal/mind/narrate.go
   - internal/scribe/scribe.go
-verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
+verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
 ---
 
 # Chronicle
@@ -57,8 +57,19 @@ time. Since spec 046 ([[curriculum-ladder]]) a `curriculum.stage_unlocked`
 event also earns a line — "The village's watcher earned `<stage>`.", the stage
 rendered through the skin package's display name (`skin.StageName`) — one of
 the ladder's two required in-game unlock surfaces (the other is the CLI status
-line). `sim.night_started` closes the day chapter, `sim.day_started` closes
-the night chapter; a chapter with no lines spends no call. Since TASK-32,
+line). Since spec 054 ([[scenario-machinery]]) a `curriculum.exercise_passed`
+event on a scenario world also earns a line — "The watcher's exercise —
+`<exercise>` — was passed: the village made it through." `sim.night_started`
+closes the day chapter, `sim.day_started` closes
+the night chapter; a chapter with no lines spends no call. Since spec 054
+([[scenario-machinery]]), a scenario world's `Mind.SetScenario(exercise)`
+(installed once at boot, before the loop starts) arms ONE additional chapter
+trigger at the exercise's pass/fail boundary — additive to the day/night
+cadence, which stays untouched: `curriculum.exercise_passed` always closes a
+chapter, and `run.ended` closes one only when the mind's scenario id is set
+— so a sub-one-game-day scenario run still yields a narrated chapter
+carrying the outcome, and an ambient world (no scenario armed) never fires
+the extra trigger. Since TASK-32,
 `closeChapter` also consults the [[cognition]] router (`routeVerdict` with the
 `chronicle` decision class, `llm.KindNarrator`) before enqueueing: the class's
 day-scale staleness budget passes at every watchable speed, but a suppression
@@ -117,7 +128,9 @@ it; [[snapshots]] carry the ring through recovery; [[mental-maps]] emits the
 three place-knowledge events the narrator voices; [[morgue]] is the spec-044
 legacy document whose epilogues the narrator worker writes and whose file the
 scribe renders; [[curriculum-ladder]] owns the spec-046 unlock event the
-narrator turns into a chapter line.
+narrator turns into a chapter line; [[scenario-machinery]] owns the spec-054
+`curriculum.exercise_passed` line and the additional chapter trigger at the
+exercise's pass/fail boundary.
 
 ## Operational notes
 

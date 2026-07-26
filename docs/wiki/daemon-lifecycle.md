@@ -6,7 +6,7 @@ sources:
   - internal/daemon/daemon.go
   - internal/daemon/curriculum.go
   - internal/daemon/estimator_persist.go
-verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
+verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
 ---
 
 # Daemon lifecycle
@@ -71,7 +71,14 @@ Startup sequence:
    `metatron.order_placed` events at the recovered tick; a fresh world's
    first boot seeds them, a pre-059 world's first boot after upgrade
    back-seeds them once, and every later boot finds them already active and
-   injects nothing ([[guardian-orders]]).
+   injects nothing ([[guardian-orders]]). Then, still before the pidfile's
+   recovery timing is stamped, `armScenario` (spec 054, [[scenario-machinery]]):
+   if the manifest carries a `Scenario` block, resolves it via
+   `sim.ExerciseByID` (a catalog miss here is a real corruption — `world.Open`
+   already validated it — refused loudly) and calls `state.ArmScenario`,
+   printing `daemon: scenario armed (<id>)`; an ambient world (no `Scenario`
+   block) arms nothing. This runs before the loop exists, so no tick ever
+   runs unarmed on a scenario world.
 6. Notify fan-out + companions: the loop's notify goes to the IPC broadcast, the
    always-on soul scribe (which since spec 044 is constructed with the open
    store as its event source — `scribe.New(dir, seed, map, snapshot, st)` —
@@ -85,12 +92,18 @@ Startup sequence:
    the per-user `~/.promptworld/unlocks.json` record with the world's
    name/path and a pointer to the same batch's `curriculum.exercise_passed`
    event as evidence; `worlds.UpsertUnlock` warns-and-continues on any
-   failure, so this advisory record can never perturb the loop — until
-   TASK-119's rubric machinery emits the events it simply sits idle,
-   [[curriculum-ladder]]), and — when an orchestrator exists — the mind driver
+   failure, so this advisory record can never perturb the loop — on a
+   pre-scenario world (no rubric emitter reachable, [[curriculum-ladder]])
+   it simply sits idle), and — when an orchestrator exists — the mind driver
    ([[agent-mind]]) and the Guardian component ([[guardian]], attached to the
    server via `SetGuardian` for the console); all consumers are non-blocking by
-   contract. The LLM
+   contract. On a scenario world (spec 054, [[scenario-machinery]]), the
+   scribe (`scr.SetScenario(exercise)`) and, when an orchestrator exists, the
+   mind (`md.SetScenario(exercise)`) each receive the armed exercise id right
+   after construction and before the loop starts — the scribe's call also
+   re-renders the morgue immediately, so an already-ended scenario world's
+   run summary carries the exercise line from the very first boot render on
+   restart. The LLM
    orchestrator ([[llm-orchestrator]]) starts only when `llm.json` exists
    (`llm.LoadConfig` → `llm.New` → `srv.SetLLM`), closed on exit — config-gated,
    fully outside the loop, so inference failures can never touch the simulation.
@@ -255,7 +268,10 @@ when `orch.HasEmbedding()`; its failure warning shares [[sim-loop]]'s
 [[world-tuning]] is the spec 048 manifest `seedTuning` loads, clamps, and
 seeds right after the meeting-convention seed. [[guardian-orders]] is what
 `seedSurvivalWatches` (spec 059) seeds right after the tuning seed and before
-the loop starts.
+the loop starts. [[scenario-machinery]] is what `armScenario` (spec 054)
+arms right after the survival watches and before the loop starts, and what
+the scribe's/mind's `SetScenario` handoffs (below, alongside `SetStage`)
+carry the armed exercise id into.
 
 ## Operational notes
 

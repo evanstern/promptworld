@@ -51,7 +51,14 @@ sources:
   - internal/persona/persona_test.go
   - e2e/daemon_e2e_test.go
   - e2e/determinism_e2e_test.go
-verified_against: 0b42d204718819d773be44c40ed26d42aba055f8
+  - internal/sim/scenario_test.go
+  - internal/daemon/scenario_boot_test.go
+  - internal/mind/scenario_narrate_test.go
+  - internal/scribe/scenario_morgue_test.go
+  - internal/tui/exercise_test.go
+  - internal/world/scenario_test.go
+  - cmd/promptworld/scenario_test.go
+verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
 ---
 
 # Testing strategy
@@ -276,7 +283,9 @@ recorded event's tick, never a deadline), and `EvidenceRef.Seq` (the evidence
 event's store seq, an identity like `Memory.Seq` —
 [[curriculum-ladder]]); spec 062 adds one SHIFT entry, `Agent.LastMindIntentDone`
 (the reflex PREP gate's yield-window anchor, only-non-zero, the
-`Belief.Reinforced`/`NeedsAnchorTick` shape — [[reflex-policy]])). Byte-identity replay suites
+`Belief.Reinforced`/`NeedsAnchorTick` shape — [[reflex-policy]]); spec 054
+adds one KEEP entry, `GuardianOrder.PlacedSeq` (the placement event's store
+seq — an identity, like `Memory.Seq`, [[scenario-machinery]])). Byte-identity replay suites
 (`TestMiracleReplayByteIdentity`, `TestMiracleSnapReplayByteIdentity`,
 `TestMiracleGrantReplayByteIdentity`) prove each miracle type replays to the
 same state hash as live application.
@@ -655,7 +664,15 @@ provenance/belief-decay suites prove the substrate [[guardian]]'s omen/vision/mi
 memories now stamp. [[mental-maps]]'s own dedicated suite
 (`internal/sim/mentalmap_test.go`) sits alongside the v3→v4 migration,
 rebase-taxonomy, determinism, and vision-place-reveal coverage this note
-tracks. Manual
+tracks. [[scenario-machinery]]'s spec-054 suite spans
+`internal/sim/scenario_test.go` (schedule compilation, incident/rubric
+emission, `TestScenarioSchedulesCompile`), `internal/daemon/
+scenario_boot_test.go` (boot arming end to end), `internal/mind/
+scenario_narrate_test.go` and `internal/scribe/scenario_morgue_test.go` (the
+chronicle/morgue surfaces), and `internal/tui/exercise_test.go` (the
+exercise dock tab) — plus `internal/world/scenario_test.go` and
+`cmd/promptworld/scenario_test.go` for the manifest validation and `new
+--scenario` CLI paths. Manual
 validation results live in `specs/001-world-daemon/quickstart-results.md`.
 
 ## Operational notes

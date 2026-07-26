@@ -9,7 +9,7 @@ sources:
   - internal/sim/terrain.go
   - internal/sim/recipes.go
   - internal/sim/memory.go
-verified_against: 6fa099b3025fae6702b2ec716cb69640918f2322
+verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
 ---
 
 # Executor
@@ -490,7 +490,15 @@ lapsed watch reproduces on replay with no guardian running — [[guardian-orders
 since spec 059 a survival watch is skipped by this sweep entirely — it is
 non-expiring by origin, not a timed order, so `ExpiresTick` is never
 consulted for it);
-its reflex fires only on agents idle past `reflexGraceTicks` (120). `stepEvents` also runs the
+its reflex fires only on agents idle past `reflexGraceTicks` (120). Since spec 054, an armed scenario world's `stepEvents` also consults its
+incident schedule (`scenarioIncidentEvents`) immediately BEFORE `gruStep` —
+a scheduled `gru.emerged` preempts that night's random emergence roll, so
+never two spawn mechanisms in one night — and its rubric evaluator
+(`scenarioRubricEvents`) immediately AFTER every emitter and BEFORE run-end
+detection, emitting `curriculum.exercise_passed` (+ same-batch
+`curriculum.stage_unlocked`) at the exercise's pass boundary; an ambient
+world (no scenario armed) enters neither branch, byte-identical to pre-054
+— [[scenario-machinery]] owns the whole subsystem. `stepEvents` also runs the
 [[gru]]'s whole turn (`gruStep`) each tick, and the heartbeat's near-death memory
 names "the gru" as the cause when the last wound was recent. The per-minute social beat
 (`socialEvents`, [[social-fabric]]) runs the adjacency ladder — repay an open
@@ -531,7 +539,9 @@ ladder and, via `resolveGoal`, the spec 032 wall/axe/path goals, and since spec
 is the per-agent knowledge store the perception sweep populates and the
 talk sidecar exchanges; [[sim-loop]]
 drives the tick; [[event-types]] catalogs the event families; the [[gru]] preys
-on the bodies at night; [[tui-client]] renders bodies, needs gauges, structures
+on the bodies at night; [[scenario-machinery]] consults `stepEvents` twice
+per tick on an armed scenario world (incidents before `gruStep`, the rubric
+before run-end detection); [[tui-client]] renders bodies, needs gauges, structures
 (including wall HP dimming and path tiles), fire lit/cold state, ground piles,
 and chest contents; [[worldmap-generation]] supplies the Rock kind quarry sites
 overlay onto; [[social-fabric]] carries the theft companion batch a non-owner

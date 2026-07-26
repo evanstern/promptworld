@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/world/world.go
   - internal/world/migrate.go
-verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
+verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
 ---
 
 # World save directory
@@ -59,12 +59,24 @@ stage, making overridden runs comparable as overridden runs), and
 = the stage-1 orientation preset — the constant that seeds `charter.md` at
 genesis and, at stage-1 where instruction files are locked, IS the effective
 charter regardless of edits ([[guardian]]); `Open` validates via
-`ValidCharterPreset`). A fourth addition, the optional `scenario` block
-(`ScenarioConfig{exercise}`, naming a `sim.ExerciseDefinition.ID`), is
-RESERVED on the `meeting`-block precedent: consumed by nothing yet and never
-written by `promptworld new` — it exists so TASK-119's scenario/incident
-machinery has a schema seam to land in, and this package deliberately does
-not validate it against the exercise catalog.
+`ValidCharterPreset`). A fourth addition, the optional `scenario` block (`ScenarioConfig{exercise}`,
+naming a `sim.ExerciseDefinition.ID`), was RESERVED on the `meeting`-block
+precedent through spec 046; spec 054 ([[scenario-machinery]]) consumes it:
+`Open` now validates a present block against `ValidScenarioExercise` — a
+LOCAL mirror of `sim.ScenarioExercises`' id set (the `validLadderStage`
+twin-list precedent, in reverse: the deterministic core does not import this
+save-directory package and this package does not import the core, so each
+side keeps its own closed vocabulary; `TestScenarioVocabularyMirrorsSimCatalog`
+pins the two in sync) — refusing an unknown exercise id with `corrupt
+world.json: scenario exercise %q unknown` rather than silently booting
+ambient. `SetScenario(dir, exercise)` (`SetStage`'s write-mechanics sibling
+— exactly ONE caller, `promptworld new --scenario`, once, immediately after
+`Create`) is the write-once stamp; it does not re-validate its argument
+(callers pass an already-`ValidScenarioExercise`-checked id). The daemon
+arms the boot-frozen scenario runtime from this block at every boot
+(`sim.State.ArmScenario`, [[daemon-lifecycle]]) — the incident schedule,
+rubric evaluator, status facts, and exercise tab all key off it; a world
+with no `scenario` block stays byte-identical to pre-054 on every path.
 `World.Map()` regenerates the terrain from the seed and
 dimensions — deterministic, so the map is never stored ([[worldmap-generation]]).
 
@@ -151,7 +163,10 @@ fields — the daemon reads them at boot and hands them boot-frozen to
 [[guardian]] for the stage ceiling and the stage-1 instruction lock; the
 per-user unlocks record that gates `promptworld new`'s default stage lives
 outside the save directory (in the worlds home), advisory and never an
-authority over anything in this directory. [[world-tuning]] is the spec-048
+authority over anything in this directory. [[scenario-machinery]] is the
+spec-054 subsystem that validates and consumes the `scenario` block this
+note covers — the daemon reads it at boot the same boot-frozen way as
+`stage`. [[world-tuning]] is the spec-048
 subsystem `TuningPath()` fronts — a peer of `llm.json`/`calibration.json`,
 consumed by the daemon's boot seed, never validated by this package.
 

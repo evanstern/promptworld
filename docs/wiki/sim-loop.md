@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/loop.go
   - internal/sim/landing.go
-verified_against: 0b42d204718819d773be44c40ed26d42aba055f8
+verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
 ---
 
 # Sim loop
@@ -72,7 +72,12 @@ are reducer no-ops — daemon lifecycle, never world state — the same reason
 shutdown is unaffected). The protocol `Status` gains additive `omitempty`
 `Ended`/`EndedDay` fields (the run-over posture and its game day, for
 rendering without a state fetch), and an ended world reports an effective
-rate of 0 like a paused one.
+rate of 0 like a paused one. Since spec 054, `status()` also composes
+additive `omitempty` `ScenarioExercise`/`ScenarioOutcome` fields — only when
+`s.ScenarioExerciseID()` reports an armed scenario — from
+`sim.ExerciseOutcome(s, id)`, inside the same loop goroutine as `Tick`, so
+the pair is always coherent with it; an ambient world's status bytes are
+unchanged ([[scenario-machinery]]).
 
 Auto-slow (`observeWindow`): every `degradeWindow = 5s` the loop compares achieved
 ticks/sec against the requested rate; sustained shortfall below 90% emits
@@ -286,7 +291,9 @@ spec 017 — its handlers wrap `InjectIntent` (world verbs, `set_plan`) and
 `CallRecord`s land as the `cog.tool_call` batch through the same social door.
 The [[executor]]'s `run.ended` declaration is what flips the loop into the
 ended posture; the [[morgue]] is the consumer of the two spec 044 whitelist
-types and of the narrowed ended-world door. Since spec 061, `rungPairCooldown`
+types and of the narrowed ended-world door. [[scenario-machinery]]'s
+`sim.ExerciseOutcome` is what `status()` reads for the spec-054
+`ScenarioExercise`/`ScenarioOutcome` status fields. Since spec 061, `rungPairCooldown`
 is this note's half of the conversation loop damper — [[social-fabric]] owns
 the mind-side novelty SHIM one layer above it, and [[sim-state-reducer]] owns
 the `PairTalks` ledger both read. Since spec 058, the plan rung's

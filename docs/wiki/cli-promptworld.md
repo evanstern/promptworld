@@ -10,7 +10,7 @@ sources:
   - cmd/promptworld/work.go
   - cmd/promptworld/divergence.go
   - cmd/promptworld/stages.go
-verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
+verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
 ---
 
 # promptworld CLI
@@ -44,8 +44,8 @@ bare names resolve through `resolveWorld` → `worlds.Resolve`
 ambiguous or unknown names exit 1). `worldArg`/`parseWorldFlags` wrap the older
 `dirArg`/`parseDirFlags` with that resolution.
 
-- `new <name> [--at DIR] [--seed] [--teaching] [--stage] [--override] [--charter-preset]` /
-  `new <path> [--name] [--seed] [--teaching] [--stage] [--override] [--charter-preset]` — a bare-word
+- `new <name> [--at DIR] [--seed] [--teaching] [--stage] [--override] [--charter-preset] [--scenario]` /
+  `new <path> [--name] [--seed] [--teaching] [--stage] [--override] [--charter-preset] [--scenario]` — a bare-word
   argument is a name: the world is created at `<worlds-home>/<name>` (or exactly
   `--at DIR`, which also registers it in the known-worlds registry), manifest name =
   the argument, validated by `worlds.ValidateName`. A path-shaped argument keeps the
@@ -83,7 +83,16 @@ ambiguous or unknown names exit 1). `worldArg`/`parseWorldFlags` wrap the older
   charterPreset)` seeds; a stage-1 world defaults it to `tutor` unless the
   player explicitly opts out with `--charter-preset default`. The printed
   summary gains a trailing `stage: <skin name> (<stage-id>)` line
-  (`stageStatusLine`, `[overridden]` suffix when forced).
+  (`stageStatusLine`, `[overridden]` suffix when forced). Since spec 054
+  ([[scenario-machinery]]), `--scenario <id>` resolves against the compiled
+  `sim.ScenarioExercises` catalog (an unknown id refuses, listing every
+  cataloged exercise); the scenario IMPLIES its stage and pins its authored
+  seed, so an explicit `--stage`/`--seed` may only agree (a mismatch
+  refuses) — the earned-stage gate above still applies to the implied
+  stage, a scenario never bypasses it. A resolved scenario writes the
+  manifest's `Scenario` block set-after-create via `world.SetScenario` (the
+  `SetStage` pattern) and the summary gains a trailing `scenario: <id> —
+  <concept>` line naming the exercise panel's key (`6`).
 - `migrate <world>` — the one-time upgrade of an older world (v1 or v2) to the
   current format (spec 012 US6 for v1→v2, spec 013 for v2→v3 —
   [[world-migration]]): resolves `<world>` via `resolveWorldForMigrate`, which
@@ -138,6 +147,11 @@ ambiguous or unknown names exit 1). `worldArg`/`parseWorldFlags` wrap the older
   `stageStatusLine` that `new` prints, right before the log line — read live
   from the wire's `StatusData.World.Stage`/`StageOverridden`; empty stage
   (every pre-046/pre-ladder world) omits the line, output unchanged. Since
+  spec 054 ([[scenario-machinery]]), a scenario world's status likewise
+  appends one `exercise: <id> — <outcome>` line (`scenarioStatusLine`,
+  `failed` rendering `failed (run ended)`) right after the stage line, read
+  live from the wire's `StatusData.World.ScenarioExercise`/`ScenarioOutcome`;
+  empty (every ambient world or old daemon) omits the line. Since
   spec 044, `clockLine` renders the run-over posture:
   when the wire's `Clock.Ended` is set, the running/paused clock line is
   replaced entirely by `tick N (...) — run ended day N, all villagers dead;
@@ -309,7 +323,10 @@ offline path. `stages` and `new`'s stage resolution read the per-user
 unlocks record (`worlds.LoadUnlocks`) and [[skin]]'s stage identity table, and
 `status`'s stage line renders [[ipc-protocol]]'s
 `WorldStatus.Stage`/`StageOverridden` — the [[curriculum-ladder]]'s CLI
-surfaces (spec 046).
+surfaces (spec 046). `new --scenario` and `status`'s exercise line read
+[[scenario-machinery]]'s `sim.ExerciseByID` catalog and
+[[ipc-protocol]]'s `WorldStatus.ScenarioExercise`/`ScenarioOutcome` (spec
+054).
 
 ## Operational notes
 

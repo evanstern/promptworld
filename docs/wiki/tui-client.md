@@ -11,7 +11,7 @@ sources:
   - internal/tui/decisions.go
   - internal/tui/help.go
   - internal/tui/lessons.go
-verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
+verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
 ---
 
 # TUI client
@@ -176,8 +176,9 @@ contents via `summarizeInventoryContents`, capacity `sim.ChestCap`) — a
 chest's `Store` is a plain counts inventory rather than dated batches,
 because chests preserve food indefinitely (no rot deadlines to track).
 
-The **dock** hosts four tabs — keys `2`/`3`/`4`/`5` select, the same key
-again zooms the tab solo, `1`/`esc` return to the composite. Since spec 052
+The **dock** hosts four tabs (five on a scenario world, see below) — keys
+`2`/`3`/`4`/`5` select, the same key again zooms the tab solo, `1`/`esc`
+return to the composite. Since spec 052
 the guardian tab's own label is [[skin]] data, never a compiled-in string:
 `Model.paneName(p)` (`tui.go`) resolves every OTHER tab from the static
 `paneNames` table but resolves `paneGuardian` through `m.sk().TabLabel()`
@@ -288,6 +289,25 @@ transcript row at ingest (`guardianVerdictRow`), which
 angel's refused and landed calls are visible in the transcript where before
 only the RPC reply's `⚡` miracle lines appeared.
 
+Since spec 054 (TASK-119), a fifth dock tab, **exercise** (key `6`,
+`internal/tui/exercise.go`), joins the row ONLY on a scenario world
+(`Model.exerciseID()` reads the attached world's manifest `Scenario` block
+plus a live `sim.ExerciseByID` re-check — world-shaped, not stage-shaped; an
+ambient world carries no tab, no help row, and no footer-hint digit at all,
+never an inert `6`). An attach-time briefing (framing + incident-visibility
+mode) shows once per attach and is dismissed by any key while visible
+(`exBriefingDismissed`, reset on reconnect — the one deliberate any-key
+eater, gated to fire only while the exercise tab is the thing on screen and
+the minibuffer is unfocused); afterward the body renders one gauge row per
+`sim.EvaluateRubric` term (met/pending marker, backing event count — the
+SAME pure function the executor's pass precondition reads, so the panel and
+the emitter can never disagree), an incident-schedule line under forecast
+visibility (omitted, never blanked, under fog), and a pass/fail banner once
+`sim.ExerciseOutcome` resolves ([[scenario-machinery]] owns the whole
+subsystem). `paneKey`/`dockTabKey` extend to `6`; `nextDockTab`/`prevDockTab`
+became `Model` methods so the dock-cycle order can consult `exerciseID()`
+and include or skip the tab.
+
 The **chronicle** renders the narrated story from the replica's
 snapshot-carried `State.Chronicle` ring ([[chronicle]]) or the raw feed (`r`
 toggles; raw is the automatic fallback with no narrated entries; `a`/`t`
@@ -317,7 +337,11 @@ entry — builder, emphasized goal, and emphasized reason ("Ash's build_wall_sto
 failed — site no longer buildable") — reading as a failure at a glance without
 promoting to the whole-line alert tier; a cancelled build was previously
 indistinguishable from a finished one because it shared `agent.intent_done`'s
-plain "finished" line. Since spec 041, four more [[mental-maps]] event types get registry entries,
+plain "finished" line. `agent.recovery_stalled` (spec 064, catalog row added
+TASK-140) gets the same distinct-from-"finished" treatment for a
+needs-conditioned recovery hold that showed no net gain across its stall
+window — "Ash's `warm_up` stalled — `warmth` not recovering" (subject and
+name resolution the `agent.build_failed` precedent). Since spec 041, four more [[mental-maps]] event types get registry entries,
 all sharing a first-fact-plus-count shape (a full fact list would flood the
 line; the detail pane holds the payload verbatim): `agent.saw` ("Ash saw fire
 at (x,y) (+N more)"), `social.place_told` ("Ash told Birch of fire at (x,y)
@@ -446,7 +470,10 @@ composition backed by [[cognition]]'s `LiveHorizon` and
 re-derivation, the same "polled, not projected" posture as the LLM condition
 surfaces. The guardian pane's stage segment and the two curriculum digest
 rows are [[curriculum-ladder]]'s TUI surfaces (spec 046), reading the
-angel's `Status.Stage`/lock fields and the `curriculum.*` event payloads. [[mental-maps]]'s four place-knowledge event types render through
+angel's `Status.Stage`/lock fields and the `curriculum.*` event payloads.
+The exercise dock tab is [[scenario-machinery]]'s spec-054 TUI surface,
+reading `sim.EvaluateRubric`/`sim.ExerciseOutcome` over the replica and the
+manifest's `Scenario` block. [[mental-maps]]'s four place-knowledge event types render through
 the raw digest feed with no dedicated pane of their own — the map/prompt
 side of the feature lives entirely in [[agent-mind]]/[[executor]], not here.
 

@@ -62,6 +62,7 @@ that note (re-pin with `/grounding-wiki:wiki-update`).
 - [[skin]] — the spec-052 runtime skin substrate: one token lookup (world skin.json → compiled default table → the token path) supplies every fiction display string (guardian name/epithet/vocabulary, curriculum stage identities); the event log and every serialized identifier stay skin-free
 - [[governance]] — norms and votes: the daily meeting under an event-sourced convention, relationship-driven law, the village charter
 - [[curriculum-ladder]] — the spec-046 four-stage teaching ladder: immutable world stage with informed override, the guardian's tool ceiling + stage-1 instruction lock (default/tutor presets), curriculum.* unlock events with auditable evidence, the per-user unlocks record, seeded exercises
+- [[scenario-machinery]] — the spec-054 director-lite incident scheduler + rubric evaluator: the production emitter for curriculum.* events, boot-frozen ArmScenario runtime, gru-emergence preemption, and the TUI exercise tab
 
 ## Lifecycle & quality
 

@@ -5,7 +5,7 @@ kind: concept
 sources:
   - internal/ipc/protocol.go
   - specs/001-world-daemon/contracts/client-protocol.md
-verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
+verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
 ---
 
 # IPC protocol
@@ -58,7 +58,12 @@ additive `omitempty` [[curriculum-ladder]] fields on `WorldStatus`: `stage`,
 the world's curriculum stage, and `stage_overridden`, true when the world was
 created at an unearned stage via `new --override`; both composed straight
 from the manifest by [[ipc-server]] and absent for every pre-046/pre-ladder
-world, so their status bytes are unchanged), `clock` (tick, game_time, paused,
+world, so their status bytes are unchanged — plus, since spec 054, two more
+additive `omitempty` [[scenario-machinery]] fields: `scenario_exercise`, the
+armed exercise id, and `scenario_outcome` (`in_progress`\|`passed`\|`failed`),
+both folded from the loop's status snapshot (`cs.ScenarioExercise`/
+`ScenarioOutcome`) so the pair is coherent with `Tick`, absent on an ambient
+world so its status bytes stay unchanged), `clock` (tick, game_time, paused,
 speed, effective_rate, degraded, metatron_charges — the ⚡ bank, so clients need no
 state fetch — plus, since spec 028, three additive `omitempty` adaptive-throttle
 fields: `requested_speed` (the player's ceiling from sim state, empty when
@@ -145,8 +150,10 @@ oversized reply → the substituted `reply too large` error above.
 [[ipc-server]] implements the daemon side; [[ipc-client]] the attach side;
 [[event-types]] defines what rides inside event pushes; [[cli-promptworld]] renders
 `StatusData` for humans, including its `postureStatusLine` over `Posture` (spec
-039) and its `stageStatusLine` over `WorldStatus.Stage`/`StageOverridden`
-(spec 046, [[curriculum-ladder]]). The [[tui-client]] consumes `state` + `subscribe` to run its
+039), its `stageStatusLine` over `WorldStatus.Stage`/`StageOverridden`
+(spec 046, [[curriculum-ladder]]), and its `scenarioStatusLine` over
+`WorldStatus.ScenarioExercise`/`ScenarioOutcome` (spec 054,
+[[scenario-machinery]]). The [[tui-client]] consumes `state` + `subscribe` to run its
 live replica. `miracle` is the CLI/IPC operator door into [[guardian-miracles]].
 
 ## Operational notes

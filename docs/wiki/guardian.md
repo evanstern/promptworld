@@ -13,7 +13,7 @@ sources:
   - internal/sim/guardian.go
   - internal/persona/charter.go
   - internal/skin/skin.go
-verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
+verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
 ---
 
 # Guardian

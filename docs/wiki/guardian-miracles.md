@@ -11,7 +11,7 @@ sources:
   - internal/tool/derive.go
   - internal/ipc/server.go
   - cmd/promptworld/work.go
-verified_against: e718294e2a9db4053323a4a9e42746ca53fb149c
+verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
 ---
 
 

@@ -11,7 +11,7 @@ sources:
   - internal/sim/terrain.go
   - internal/sim/morgue.go
   - internal/sim/curriculum.go
-verified_against: 9e8fb36e750dda15a633ba3ff8c44141f02debf2
+verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
 ---
 
 # Sim state & reducer
@@ -172,9 +172,15 @@ bytes are unchanged by it). `SetMap` attaches it to a `State` built outside
 `NewState` — the loop's dry-run probe and any replica reconstructed by
 unmarshalling into a bare `State` have none until called — so miracle reducer
 arms can consult the terrain vocabulary (`passable`/`buildSite`/`effectiveKind`)
-identically live, in the dry-run, and in replay. `world.migrated`'s wholesale
-`*s = p.State` replacement preserves the receiver's existing map across the
-swap (the unmarshalled payload state carries none of its own). `State.MapDims()`
+identically live, in the dry-run, and in replay. Since spec 054, `State` also
+carries a second field of the same class: an unexported, never-serialized
+`scenario *armedScenario` (the exercise definition + compiled incident
+source), attached once at daemon boot via `ArmScenario` — a world with no
+scenario block (nil here) is byte-identical to pre-054 on every path
+([[scenario-machinery]]). `world.migrated`'s wholesale
+`*s = p.State` replacement preserves the receiver's existing map AND armed
+scenario across the
+swap (the unmarshalled payload state carries neither of its own). `State.MapDims()`
 (spec 041) exposes the attached map's `(W, H)` — 0,0 when unattached — so the
 mind's prompt renderer ([[agent-mind]]) can size a mental-map bitmap read
 without the `State` ever serializing the map itself.
@@ -500,6 +506,10 @@ daemon projects from the `StagesUnlocked` latch this reducer owns.
 [[world-tuning]] covers the manifest file, the five promoted dials' defaults
 and clamp bounds, and the daemon boot seed that emits `sim.tuning_applied`;
 this reducer owns only the `State.Tuning` field and the one idempotent arm.
+[[scenario-machinery]] owns the unexported `State.scenario` field's type and
+lifecycle (`ArmScenario`), sharing the `State.m` unserialized-boot-frozen
+precedent this reducer documents, plus the `GuardianOrder.PlacedSeq` field
+this reducer's `applyGuardian` arm stamps.
 
 ## Operational notes
 
