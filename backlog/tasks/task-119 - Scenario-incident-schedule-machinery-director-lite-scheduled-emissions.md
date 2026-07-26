@@ -1,10 +1,10 @@
 ---
 id: TASK-119
 title: Scenario incident-schedule machinery (director-lite scheduled emissions)
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-25 04:43'
-updated_date: '2026-07-25 18:22'
+updated_date: '2026-07-26 02:09'
 labels:
   - learning-game
   - design-session
@@ -22,20 +22,20 @@ Spec: specs/054-scenario-machinery
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A deterministic scheduled-emission primitive exists (pure function of state+tick), replay-safe
-- [ ] #2 Scenario definitions carry authored incident schedules + event-derived rubrics + a pass/fail signal in world config
-- [ ] #3 At least one runnable scenario (e.g. first-night) demonstrates schedule -> incidents -> rubric -> morgue epitaph end to end
-- [ ] #4 Design leaves a documented seam for the post-v1 live director
-- [ ] #5 Exercise panel: framing + live rubric gauges + pass/fail in scenario worlds
-- [ ] #6 Per-exercise visibility vocabulary (not boolean); attach-time briefing
-- [ ] #7 Scenario-cadence narration renders score-narrative chapters during short runs
-- [ ] #8 Spec phase: Setup
-- [ ] #9 Spec phase: Foundational — the sim machinery
-- [ ] #10 Spec phase: User Story 3 — promptworld new --scenario (P2, small; unblocks manual testing)
-- [ ] #11 Spec phase: User Story 1+2 e2e (P1)
-- [ ] #12 Spec phase: User Story 4 — the exercise tab (P2)
-- [ ] #13 Spec phase: User Story 5 — narration + morgue (P3)
-- [ ] #14 Spec phase: Polish & Cross-Cutting Concerns
+- [x] #1 A deterministic scheduled-emission primitive exists (pure function of state+tick), replay-safe
+- [x] #2 Scenario definitions carry authored incident schedules + event-derived rubrics + a pass/fail signal in world config
+- [x] #3 At least one runnable scenario (e.g. first-night) demonstrates schedule -> incidents -> rubric -> morgue epitaph end to end
+- [x] #4 Design leaves a documented seam for the post-v1 live director
+- [x] #5 Exercise panel: framing + live rubric gauges + pass/fail in scenario worlds
+- [x] #6 Per-exercise visibility vocabulary (not boolean); attach-time briefing
+- [x] #7 Scenario-cadence narration renders score-narrative chapters during short runs
+- [x] #8 Spec phase: Setup
+- [x] #9 Spec phase: Foundational — the sim machinery
+- [x] #10 Spec phase: User Story 3 — promptworld new --scenario (P2, small; unblocks manual testing)
+- [x] #11 Spec phase: User Story 1+2 e2e (P1)
+- [x] #12 Spec phase: User Story 4 — the exercise tab (P2)
+- [x] #13 Spec phase: User Story 5 — narration + morgue (P3)
+- [x] #14 Spec phase: Polish & Cross-Cutting Concerns
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -52,4 +52,14 @@ fingerprint: 0c8de6eeb45c
 [merge-drift session] warn: task-119-scenario-machinery and task-121-skinnable-guardian will conflict on internal/tui/views.go whichever merges first
 evidence: internal/tui/views.go, task-119-scenario-machinery, task-121-skinnable-guardian
 fingerprint: 67484f01df7f
+
+spec-bridge sync: Setup: 1/1 · Foundational — the sim machinery: 5/5 · User Story 3 — promptworld new --scenario (P2, small; unblocks manual testing): 1/1 · User Story 1+2 e2e (P1): 2/2 · User Story 4 — the exercise tab (P2): 3/3 · User Story 5 — narration + morgue (P3): 2/2 · Polish & Cross-Cutting Concerns: 3/3 — status In Progress → Done
+
+Human ACs #1-7 ticked on merge evidence (PR #101, d220645): scheduled-emission primitive w/ replay tests; Manifest.Scenario schedules+rubrics+pass signal; first-night e2e; director seam documented in spec 054; exercise panel w/ live per-term gauges; forecast/fog vocabulary + attach briefing; scenario-cadence narration + morgue. Merged by UI-sweep orchestrator; cross-feature riders: survival-seeder seq pre-stamp, console-suppresses-briefing rule.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+All spec tasks complete (Setup: 1/1 · Foundational — the sim machinery: 5/5 · User Story 3 — promptworld new --scenario (P2, small; unblocks manual testing): 1/1 · User Story 1+2 e2e (P1): 2/2 · User Story 4 — the exercise tab (P2): 3/3 · User Story 5 — narration + morgue (P3): 2/2 · Polish & Cross-Cutting Concerns: 3/3). Derived Done by spec-bridge sync.
+<!-- SECTION:FINAL_SUMMARY:END -->
