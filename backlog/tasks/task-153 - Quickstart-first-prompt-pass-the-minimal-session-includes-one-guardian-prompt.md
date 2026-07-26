@@ -1,9 +1,10 @@
 ---
 id: TASK-153
 title: 'Quickstart first-prompt pass: the minimal session includes one guardian prompt'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-26 17:57'
+updated_date: '2026-07-26 19:29'
 labels:
   - player-docs
   - content
@@ -24,3 +25,9 @@ Reorient 2026-07-26 decision 7. getting-started.html's walkthrough never has the
 - [ ] #1 getting-started.html includes a first-prompt step sourced from skin.guardian.example_ask.*
 - [ ] #2 Each stage page carries a first-session do-this-then-this block
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Sweep claim (runbook docs/design/reorient-2026-07-26-sweep-runbook.md): spec 079-quickstart-first-prompt. Tier: Sonnet — content-only via the player-docs skill. Full Spec Kit per the runbook (content pass ≠ the constitution's surgical-fix trivial exemption). Sequenced last: docs/player churn from Lanes A–C settles first.
+<!-- SECTION:NOTES:END -->
