@@ -208,6 +208,72 @@ func TestExerciseGaugesTrackReplica(t *testing.T) {
 	}
 }
 
+// theLawModel is scenarioModel's the-law twin: a stage-2 world seeded with
+// the second cataloged exercise.
+func theLawModel(t *testing.T) Model {
+	t.Helper()
+	w, err := world.Create(t.TempDir()+"/w", "law", sim.TheLawExercise.Seed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.Manifest.Scenario = &world.ScenarioConfig{Exercise: "the-law"}
+	w.Manifest.Stage = world.Stage2
+	m := New(w)
+	m.replica = sim.NewState(w.Manifest.Seed, w.Map())
+	m.width, m.height = 140, 40
+	m.exBriefingDismissed = true
+	return m
+}
+
+// TestExerciseGaugesTheLawEvaluateForReal (spec 072 US2, SC-002): on a
+// the-law world the gauges evaluate from state facts — no term renders
+// permanently pending. The charter gauge flips ONLY on a custom (player-
+// authored) charter observation, never the default's (US2-2); the law gauge
+// flips when a passed proposal appends a norm. Zero code change in this tab
+// — the truth arrives through sim.EvaluateRubric's new production arm.
+func TestExerciseGaugesTheLawEvaluateForReal(t *testing.T) {
+	m := theLawModel(t)
+	body := m.exerciseBody(120, 20)
+	if !strings.Contains(body, "… a village law adopted") ||
+		!strings.Contains(body, "(meeting.proposal_resolved: 0)") ||
+		!strings.Contains(body, "… a player-authored charter in force") ||
+		!strings.Contains(body, "(metatron.charter_observed: 0)") {
+		t.Errorf("genesis gauges should be pending with zero counts:\n%s", body)
+	}
+
+	// The game's own (default) charter is observed: authorship stays pending
+	// — the game's authorship never satisfies the player-authorship term.
+	m.applyEvent(store.Event{Seq: 1, Tick: 100, Type: "metatron.charter_observed",
+		Payload: mustPayload(t, sim.CharterObservedPayload{Fingerprint: "aaaa11112222", Default: true})})
+	body = m.exerciseBody(120, 20)
+	if !strings.Contains(body, "… a player-authored charter in force") ||
+		!strings.Contains(body, "(metatron.charter_observed: 1)") {
+		t.Errorf("default charter must leave the authorship gauge pending (count 1):\n%s", body)
+	}
+
+	// A player-authored revision lands: the gauge flips met.
+	m.applyEvent(store.Event{Seq: 2, Tick: 200, Type: "metatron.charter_observed",
+		Payload: mustPayload(t, sim.CharterObservedPayload{Fingerprint: "bbbb33334444", Default: false})})
+	body = m.exerciseBody(120, 20)
+	if strings.Contains(body, "… a player-authored charter in force") ||
+		!strings.Contains(body, "a player-authored charter in force") {
+		t.Errorf("custom charter observation should flip the authorship gauge met:\n%s", body)
+	}
+
+	// A passed proposal appends a norm: the law gauge flips with the count.
+	m.applyEvent(store.Event{Seq: 3, Tick: 300, Type: "meeting.proposal_resolved",
+		Payload: mustPayload(t, sim.ProposalResolvedPayload{
+			ProposalPayload: sim.ProposalPayload{ProposalID: 1, Kind: sim.ProposeCurfew,
+				Target: -1, Proposer: 0, Text: "no one leaves the fires after dusk"},
+			Passed: true,
+		})})
+	body = m.exerciseBody(120, 20)
+	if strings.Contains(body, "… a village law adopted") ||
+		!strings.Contains(body, "(meeting.proposal_resolved: 1)") {
+		t.Errorf("an adopted norm should flip the law gauge with its ledger count:\n%s", body)
+	}
+}
+
 // TestExerciseForecastVsFog (US4 AS-3, D4): the incident line forecasts the
 // authored schedule at stages 1–2/pre-ladder and is omitted under fog
 // (stage 3+); a definition override wins over the stage default.

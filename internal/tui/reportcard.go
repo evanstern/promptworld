@@ -73,44 +73,106 @@ func (m *Model) buildNoteCard(sk *skin.Skin) *noteCard {
 	}
 }
 
+// --- the shared fact resolver (spec 072 FR-001/FR-002) ---
+//
+// All three card surfaces — the postmortem overlay, the ceremony takeover,
+// and this console card — derive their per-term verdicts here, from ONE
+// source: a recorded pass (the instrument) or sim.EvaluateRubric over the
+// replica (the same pure derivation the pass emitter reads). The panel, the
+// emitter, and every card can no longer disagree — and a failed term on a
+// concluded surface renders ✗, never a presence-derived ✓.
+
+// reportCardFactsFromRubric renders evaluated rubric terms as report-card
+// rows: hand-authored labels ("no villager dies"), honest verdicts, the
+// backing event count — RubricTerm is the single verdict currency (spec 072
+// FR-001/FR-004).
+func reportCardFactsFromRubric(terms []sim.RubricTerm) []reportCardFact {
+	facts := make([]reportCardFact, len(terms))
+	for i, term := range terms {
+		facts[i] = reportCardFact{Term: term.Label, Met: term.Met,
+			Backing: fmt.Sprintf("%s: %d", term.Event, term.Count)}
+	}
+	return facts
+}
+
+// reportCardFactsFromPass renders a recorded CurriculumPass: every term met
+// — the pass is the instrument, and scenarioRubricEvents emits only when
+// every term held, so the card is a re-read of that record, never a
+// re-grade (spec 063 doctrine; spec 072 FR-002). Backing prefers the pass's
+// own Evidence — the exact satisfying events the unlock derivation read —
+// first match by event type; a term with no matching ref keeps the rubric
+// backing.
+func reportCardFactsFromPass(terms []sim.RubricTerm, evidence []sim.EvidenceRef) []reportCardFact {
+	facts := make([]reportCardFact, len(terms))
+	for i, term := range terms {
+		backing := fmt.Sprintf("%s: %d", term.Event, term.Count)
+		for _, ev := range evidence {
+			if ev.Type == term.Event {
+				backing = fmt.Sprintf("%s · seq %d", ev.Type, ev.Seq)
+				break
+			}
+		}
+		facts[i] = reportCardFact{Term: term.Label, Met: true, Backing: backing}
+	}
+	return facts
+}
+
+// resolveReportCardFacts is the ONE precedence switch behind every card
+// surface (spec 072 FR-001/FR-002): a recorded pass wins (concluded,
+// all-met, evidence-backed); otherwise sim.EvaluateRubric over the replica
+// grades — concluded once the run ended, live (… pending) while it runs.
+// Labels always come from the evaluator's terms. A nil replica yields
+// nothing: a card invented from the events ring alone is exactly the
+// mechanism spec 072 deleted.
+func (m Model) resolveReportCardFacts(def sim.ExerciseDefinition, pass *sim.CurriculumPass) ([]reportCardFact, reportCardMode) {
+	if m.replica == nil {
+		return nil, reportCardLive
+	}
+	terms := sim.EvaluateRubric(m.replica, def, m.replica.Tick)
+	switch {
+	case pass != nil:
+		return reportCardFactsFromPass(terms, pass.Evidence), reportCardConcluded
+	case m.runEnded():
+		return reportCardFactsFromRubric(terms), reportCardConcluded
+	}
+	return reportCardFactsFromRubric(terms), reportCardLive
+}
+
+// recordedPassFor finds the retained CurriculumPass for the exercise, or
+// nil — the resolver's instrument lookup, shared by the console card and
+// the postmortem.
+func (m Model) recordedPassFor(exercise string) *sim.CurriculumPass {
+	if m.replica == nil {
+		return nil
+	}
+	for i := range m.replica.CurriculumPasses {
+		if m.replica.CurriculumPasses[i].Exercise == exercise {
+			return &m.replica.CurriculumPasses[i]
+		}
+	}
+	return nil
+}
+
 // buildChecklistCard resolves the rubric-checklist half of the card (spec
 // 063 standing resolution 1) through TASK-127's shared renderer: the seeded
-// exercise's rubric terms as reportCardFacts, wrapped as the spec-056
-// reportCard consoleCard. nil on an ambient world (no rubric exists) and —
-// the stopping-point discipline — nil until a stopping point is visible in
-// durable state: a stored attribution note, a recorded pass for this
-// exercise (exercise resolution), or the ended run. Facts prefer the
-// recorded pass's own Evidence (the ceremony's authoritative source,
-// reportCardFactsFromEvidence) and fall back to the chronicle-ring
-// derivation; the marker vocabulary is live (met/pending) until the
-// exercise concludes or the run ends.
+// exercise's evaluated rubric terms as reportCardFacts, wrapped as the
+// spec-056 reportCard consoleCard. nil on an ambient world (no rubric
+// exists) and — the stopping-point discipline — nil until a stopping point
+// is visible in durable state: a stored attribution note, a recorded pass
+// for this exercise (exercise resolution), or the ended run. Facts and
+// marker vocabulary come from the shared resolver (spec 072): the recorded
+// pass when one exists, else sim.EvaluateRubric — live (met/pending) until
+// the exercise concludes or the run ends.
 func (m *Model) buildChecklistCard() *reportCard {
 	def, ok := m.scenarioExercise()
 	if !ok || m.replica == nil {
 		return nil
 	}
-	var pass *sim.CurriculumPass
-	for i := range m.replica.CurriculumPasses {
-		if m.replica.CurriculumPasses[i].Exercise == def.ID {
-			pass = &m.replica.CurriculumPasses[i]
-			break
-		}
-	}
+	pass := m.recordedPassFor(def.ID)
 	if pass == nil && m.replica.GuardianReportCard == nil && !m.runEnded() {
 		return nil // no stopping point on the record yet — no card, no theater
 	}
-	mode := reportCardLive
-	var facts []reportCardFact
-	switch {
-	case pass != nil:
-		mode = reportCardConcluded
-		facts = reportCardFactsFromEvidence(def, pass.Evidence)
-	default:
-		if m.runEnded() {
-			mode = reportCardConcluded
-		}
-		facts = reportCardFactsFromEvents(def, m.events)
-	}
+	facts, mode := m.resolveReportCardFacts(def, pass)
 	return &reportCard{title: def.ID, facts: facts, mode: mode}
 }
 
