@@ -167,13 +167,13 @@ directive-before-free-time, interruption-friendly, resumable).
   INDEX row + event-types family row; `docs/player/` regenerated
   (`node .claude/skills/player-docs/scripts/check-freshness.mjs --check`
   green) (SC-008)
-- [ ] T029 Gates from the worktree: `node scripts/check-tui-design.mjs
+- [x] T029 Gates from the worktree: `node scripts/check-tui-design.mjs
   --changed` exit 0 (T012 pages amended); `node
   scripts/check-merge-drift.mjs pr` exit 0; open the ONE PR (body:
   hardness ruling, charge-free plan-layer + stage-availability
   assumptions flagged for the operator, the zero-interruption-code diff
   note); merge with `gh pr merge --merge` ONLY (SC-008)
-- [ ] T030 Post-merge bookkeeping (derived state only, authored on a
+- [x] T030 Post-merge bookkeeping (derived state only, authored on a
   branch and merged per TASK-160): spec-bridge sync, AC ticks
   (#1–#7 as proven), board card to Done with final summary; worktree
   cleanup
