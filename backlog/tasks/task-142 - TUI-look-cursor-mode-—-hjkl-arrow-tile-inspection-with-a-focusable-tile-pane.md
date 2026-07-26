@@ -4,7 +4,7 @@ title: TUI look-cursor mode — hjkl/arrow tile inspection with a focusable tile
 status: In Progress
 assignee: []
 created_date: '2026-07-26 04:28'
-updated_date: '2026-07-26 18:07'
+updated_date: '2026-07-26 18:23'
 labels: []
 dependencies: []
 references:
@@ -34,6 +34,8 @@ Add a look-cursor mode to the map: the player highlights a tile, moves it with h
 - Input parity (decision 8): ships keyboard + mouse together — click a tile moves the cursor (entering the mode if inactive); click a pane row selects/drills. First map control with a real mouse target.
 
 **Process:** non-trivial → full Spec Kit (specify → clarify → plan → tasks) with spec-bridge:link BEFORE implementation; one task, one branch, one PR from .worktrees/; claim commit per spec 065. PR must run scripts/check-tui-design.mjs --changed and amend docs/design/tui/ in the same PR (map.md deferral note, keymap.md new mode table + v binding, dock.md borrow seam, focus-contract.md scope note, anatomy.md).
+
+Spec: specs/074-look-cursor
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
@@ -48,7 +50,18 @@ Add a look-cursor mode to the map: the player highlights a tile, moves it with h
 - [ ] #8 Map and dock panel geometry is fixed (layout.md column budget) — entering the mode, focusing the pane, and drilling in swap content only, never panel size
 - [ ] #9 TILE pane lists contents in DF's fixed hierarchy: agents → piles/chests → structures → terrain (stable scan order)
 - [ ] #10 TILE pane whatis prose comes from the spec-068 tile registry's meaning rows (internal/tui/tiles.go) — plain language per FR-020; the look-cursor becomes the third in-place lookup after ? and explain
+- [ ] #11 Spec phase: Setup — shared substrate (no behavior change)
+- [ ] #12 Spec phase: Foundational — mode state, key layer, borrow seam
+- [ ] #13 Spec phase: User Story 1 — cursor movement + camera (P1) 🎯 AC #1, AC #8
+- [ ] #14 Spec phase: User Story 2 — the TILE view (P1) 🎯 AC #2, AC #7, AC #9, AC #10
+- [ ] #15 Spec phase: User Story 3 — pane focus, drill-in, esc chain (P2) 🎯 AC #3, AC #4
+- [ ] #16 Spec phase: User Story 4 — mouse parity (P2) 🎯 AC #5
+- [ ] #17 Spec phase: User Story 5 — badge deep-link (P3) 🎯 help.md layer-2 row
+- [ ] #18 Spec phase: In-app reference completeness (FR-014)
+- [ ] #19 Spec phase: Same-PR gate obligations — design reference, grounding, verification
 <!-- AC:END -->
+
+
 
 ## Implementation Notes
 
