@@ -13,7 +13,7 @@ sources:
   - internal/sim/guardian.go
   - internal/persona/charter.go
   - internal/skin/skin.go
-verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
+verified_against: 1bdc50c647a87b2ac221fe073f404df3e3ccd38f
 ---
 
 # Guardian
@@ -358,6 +358,16 @@ consumer on the SAME digest-worker notify pattern — see
 triggers, the cheap-chain critique, citation validation) and
 [[takeover-surfaces]] for the shared rubric-checklist renderer the console
 card seam and the postmortem/ceremony takeovers compose it beside.
+
+**Shutdown** (`guardian.go`): `New` starts four background goroutines — the absorb
+loop (`run`), `digestWorker`, `triggerWorker`, and `reportCardWorker` — each
+counted into a `sync.WaitGroup` at its spawn site. `Close` closes the shared
+`done` channel the workers select on, then waits on that WaitGroup, so `Close`
+cannot return until every one of the four has exited; a `Close` racing an
+in-flight job blocks until that job's current iteration finishes (no timeout —
+shutdown correctness over speed). This is why a caller (production, or a test
+fixture) that drives `cardQ`/`digQ`/`triggerQ` right after `Close` never races a
+worker still parking in its select.
 
 **Files** (bound to the run, not event-sourced): `charter.md` at the save-dir root
 (seeded by `persona.Genesis` — since spec 046 with an optional preset parameter,
