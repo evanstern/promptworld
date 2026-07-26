@@ -10,11 +10,11 @@ split implementer/orchestrator per plan D4).
 
 ## Phase 1: Setup
 
-- [ ] T001 Baseline from the task worktree: `node --test scripts/check-merge-drift.test.mjs scripts/claim-protocol.test.mjs` green before changes (worktree `.worktrees/task-145`)
+- [X] T001 Baseline from the task worktree: `node --test scripts/check-merge-drift.test.mjs scripts/claim-protocol.test.mjs` green before changes (worktree `.worktrees/task-145`)
 
 ## Phase 2: Foundational
 
-- [ ] T002 Note-at-tip reader `loadWikiNotesAt(ref, notePaths, cwd)` reusing the existing frontmatter parser, in `scripts/check-merge-drift.mjs` (plan D1)
+- [X] T002 Note-at-tip reader `loadWikiNotesAt(ref, notePaths, cwd)` reusing the existing frontmatter parser, in `scripts/check-merge-drift.mjs` (plan D1)
 
 ## Phase 3: User Story 1 — A code PR cannot open without its wiki grounding (P1)
 

@@ -517,6 +517,32 @@ function loadWikiNotes(cwd, originMainTip) {
   return notes;
 }
 
+// Read specific notes' frontmatter at an arbitrary ref (spec 069, plan D1):
+// pr mode's pin-vs-branch predicate judges the BRANCH TIP's committed state
+// (research R1 — an uncommitted re-pin isn't in the PR, so it can't satisfy a
+// PR gate). Same frontmatter grammar as loadWikiNotes — one parser, one
+// grammar. Returns Map(notePath -> note | null); null means the file does not
+// exist at ref (e.g. deleted on the branch).
+function loadWikiNotesAt(ref, notePaths, cwd) {
+  const notes = new Map();
+  for (const p of notePaths) {
+    const textRes = git(['show', `${ref}:${p}`], { cwd });
+    if (textRes.status !== 0) {
+      notes.set(p, null);
+      continue;
+    }
+    const fm = parseFrontmatter(textRes.stdout);
+    const malformed = !fm || !fm.verified_against || !fm.sources || fm.sources.length === 0;
+    notes.set(p, {
+      path: p,
+      sources: fm ? fm.sources : [],
+      verified_against: fm ? fm.verified_against : null,
+      malformed,
+    });
+  }
+  return notes;
+}
+
 function computeWikiGrounding(notes, cwd, originMainTip) {
   const findings = [];
   let anyStale = false;
