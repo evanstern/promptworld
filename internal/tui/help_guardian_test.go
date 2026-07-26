@@ -62,7 +62,7 @@ func TestHelpGuardianListsCeilingVerbs(t *testing.T) {
 			if !strings.Contains(body, v) {
 				t.Errorf("stage %s: section omits ceiling verb %q", stage, v)
 			}
-			ask := skin.Default().Resolve("skin.guardian.example_ask." + v)
+			ask := skin.Default().ExampleAsk(v)
 			if strings.HasPrefix(ask, "skin.") {
 				t.Errorf("verb %q has no example-ask token in the default table", v)
 			}

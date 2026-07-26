@@ -1221,7 +1221,7 @@ var digestRegistry = map[string]digestFunc{
 			return nil, false
 		}
 		return join([]seg{
-			txt(sk.Resolve("skin.guardian.report_card_label") + " under charter "), emph(p.Fingerprint),
+			txt(sk.ReportCardLabel() + " under charter "), emph(p.Fingerprint),
 			txt(": "), txt(truncateRunes(p.Note, 80)),
 		}), true
 	},

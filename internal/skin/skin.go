@@ -205,6 +205,23 @@ func (s *Skin) FormNoun(form string) string {
 	return form
 }
 
+// ExampleAsk resolves the per-verb example-ask token family (spec 063 US5,
+// D9): one canned player phrasing per guardian loop tool, keyed by the
+// FROZEN tool id — the "skin.guardian.example_ask.<tool-id>" rows of the
+// default table. The path is assembled from split literals deliberately:
+// the token-completeness sweep matches whole dotted token literals, and
+// this family's membership is enumerated by the table itself (one row per
+// shipped verb; the D9 tests assert every ceiling verb resolves to a real
+// row, never a raw path).
+func (s *Skin) ExampleAsk(toolID string) string {
+	return s.Resolve("skin.guardian." + "example_ask." + toolID)
+}
+
+// ReportCardLabel / AttributionLabel are the report card's display labels
+// (spec 063 US4, contract §4).
+func (s *Skin) ReportCardLabel() string  { return s.Resolve("skin.guardian.report_card_label") }
+func (s *Skin) AttributionLabel() string { return s.Resolve("skin.guardian.attribution_label") }
+
 // Voice is the persona-voice text composed into the guardian's system prompt
 // at the editable-zone SOUL seam ("" = no fragment). NEVER composed after
 // the fixed frame (FR-004) — the call site owns that invariant.

@@ -495,8 +495,7 @@ func (m Model) helpGuardianLines(width int) []string {
 	}
 	lines = append(lines, "", styleHeader.Render("What asking looks like"))
 	for _, verb := range guardian.StageCeilingVerbs(stage) {
-		ask := sk.Resolve("skin.guardian.example_ask." + verb)
-		lines = append(lines, clipLine(fmt.Sprintf("%-16s try: %s", verb, ask), width))
+		lines = append(lines, clipLine(fmt.Sprintf("%-16s try: %s", verb, sk.ExampleAsk(verb)), width))
 	}
 	lines = append(lines, "",
 		styleDim.Render("ask in your own words (m) — these are only examples; \"what does X cost?\" is always free"))

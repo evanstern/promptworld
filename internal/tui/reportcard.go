@@ -65,8 +65,8 @@ func (m *Model) buildNoteCard(sk *skin.Skin) *noteCard {
 		return nil
 	}
 	return &noteCard{
-		label:       sk.Resolve("skin.guardian.report_card_label"),
-		attribution: sk.Resolve("skin.guardian.attribution_label"),
+		label:       sk.ReportCardLabel(),
+		attribution: sk.AttributionLabel(),
 		fingerprint: rc.Fingerprint,
 		note:        rc.Note,
 		citations:   rc.Citations,
