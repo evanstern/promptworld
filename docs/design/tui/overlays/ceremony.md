@@ -2,7 +2,7 @@
 title: Overlay — unlock ceremony
 class: overlay
 status: shipped
-verified_against: ded11c2b415dc31472ab9103996f5d2493078001
+verified_against: 348a100c22f650d27e6fba517ea7f1f1aed1af73
 sources:
   - internal/tui/tui.go
   - internal/tui/views.go
@@ -25,8 +25,8 @@ interrupt policy, celebrating a milestone the player earned.
 │  own hand in its shaping.                                             │
 │                                                                        │
 │  ┌─ report card · the-law ──────────────────────────────────────┐    │
-│  │ ✓ meeting proposal resolved (meeting.proposal_resolved: 1)     │    │
-│  │ ✓ metatron charter observed (metatron.charter_observed: 1)     │    │
+│  │ ✓ a village law adopted (meeting.proposal_resolved · seq 812)   │    │
+│  │ ✓ a player-authored charter in force (metatron.charter_observe…│    │
 │  └────────────────────────────────────────────────────────────────┘   │
 │                                                                        │
 │                              esc dismiss · q — the world keeps running│
@@ -72,29 +72,32 @@ renders "THE CRAFT — unlocked".
   authored line per stage stays true regardless of which specific evidence
   earned it. Fiction strings render as skin tokens (`patterns/skin-tokens.md`).
 - **Rubric checklist (the instrument, authoritative)** — the SAME
-  `reportCardView` renderer `overlays/postmortem.md` and
-  `pages/guardian-console.md` compose (D5's one shared renderer, three
-  sites): the proving exercise's rubric terms, rendered as a plain
-  checklist. Content comes from the recorded `CurriculumPass`'s own
-  `Evidence` when the pass is still retained (`provingPass`,
-  `internal/tui/views.go`) — the authoritative source FR-019 calls "the
-  instrument" — falling back to a generic events-ring scan only if the pass
-  has aged out of the bounded 32-entry retention.
+  `reportCardView` renderer AND shared fact resolver `overlays/
+  postmortem.md` and `pages/guardian-console.md` compose (D5's one shared
+  renderer, three sites; spec 072's one resolver): the proving exercise's
+  evaluated rubric terms (`sim.EvaluateRubric` labels), rendered as a plain
+  checklist. With the recorded `CurriculumPass` still retained
+  (`provingPass`, `internal/tui/views.go`), the card is a re-read of that
+  record — every term met by construction, backed by the pass's own
+  `Evidence` — the authoritative source FR-019 calls "the instrument,"
+  never a re-grade. Only if the pass has aged out of the bounded 32-entry
+  retention does the resolver fall back to grading `sim.EvaluateRubric`
+  over the current replica, still with concluded markers (current-state
+  truth, the spec-072 pinned fallback).
 
 Both always render together; this is not a toggle — FR-019 rules "both,
 instrument authoritative," not "narration by default, instrument on
 request."
 
-**Known simplification** (not resolved by this feature): the checklist's
-per-term marker is a generic event-presence evaluation (met = the term's
-cataloged event type appears at least once in the evidence/ring) — it does
-not encode a term's actual pass semantics (some rubric terms want ZERO
-occurrences, e.g. `agent.died` on `first-night`; some combine several terms
-with OR). `internal/sim/curriculum.go`'s own doc comments name TASK-119's
-scenario rubric machinery as the eventual owner of curated per-term
-semantics; this renderer is built to stay correct regardless of how that
-content evolves (`reportCardFactsFromEvidence`/`reportCardFactsFromEvents`,
-`internal/tui/views.go`).
+**Grading contract** (spec 072 — report-card truth): the checklist's
+verdicts come from the shared resolver (`resolveReportCardFacts`,
+`internal/tui/reportcard.go`) — the recorded pass when retained (all-met,
+instrument-authoritative, evidence-backed), else `sim.EvaluateRubric` over
+the replica with concluded markers (the aged-out fallback above). The
+per-term pass semantics are the evaluator's own (zero-wanted terms like
+`agent.died` grade on the actual ledger, not event presence), and labels
+are its hand-authored plain language — the old generic presence-based
+builders are deleted. See `overlays/postmortem.md`'s matching note.
 
 ## Dismissal and the blessed stopping point (D13)
 

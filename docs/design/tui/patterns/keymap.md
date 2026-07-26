@@ -2,7 +2,7 @@
 title: Pattern — keymap
 class: pattern
 status: shipped
-verified_against: ded11c2b415dc31472ab9103996f5d2493078001
+verified_against: 348a100c22f650d27e6fba517ea7f1f1aed1af73
 sources:
   - internal/tui/tui.go
   - internal/tui/help.go

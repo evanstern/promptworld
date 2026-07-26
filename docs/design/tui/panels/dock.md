@@ -2,7 +2,7 @@
 title: Panel — dock (tab container)
 class: panel
 status: shipped
-verified_against: d2206458f7a520379a7e882c4fe19e6b448e281c
+verified_against: 348a100c22f650d27e6fba517ea7f1f1aed1af73
 sources:
   - internal/tui/tui.go
   - internal/tui/views.go
