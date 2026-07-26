@@ -3,10 +3,10 @@ id: TASK-97
 title: >-
   Bundle effects: target addressing for structures/piles/terrain
   (move_entity/remove_entity beyond villagers)
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-24 19:39'
-updated_date: '2026-07-26 21:43'
+updated_date: '2026-07-26 22:14'
 labels:
   - idea
 dependencies: []
@@ -22,6 +22,17 @@ Follow-up from TASK-85 (specs/036-scriptable-agent-tools). The v1 effect compile
 Spec: specs/082-target-addressing
 <!-- SECTION:DESCRIPTION:END -->
 
+## Acceptance Criteria
+<!-- AC:BEGIN -->
+- [x] #1 Spec phase: Setup
+- [x] #2 Spec phase: Foundational — the grammar package (blocks all user stories)
+- [x] #3 Spec phase: US1 — structures & piles by class+tile; remove_entity becomes real (P1) 🎯 MVP
+- [x] #4 Spec phase: US2 — terrain removal (P2)
+- [x] #5 Spec phase: US3 — the designation seam, contract-named (P3)
+- [x] #6 Spec phase: Grounding + gates (in-branch, wiki-in-PR lifecycle)
+- [x] #7 Spec phase: Post-merge bookkeeping (derived state, lands by merge — TASK-160)
+<!-- AC:END -->
+
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
@@ -30,13 +41,8 @@ Realigned 2026-07-26 (guardian-directives ideation): promoted to HIGH — now on
 Sweep claim (runbook docs/design/faith-directives-sweep-runbook.md, signed-off 2026-07-26): spec 082-target-addressing. Tier: Opus 4.8 — cross-package (bundle effect compiler + tool registry + metatron miracle paths); the grammar binds two consumers (bundle effects + TASK-157 designations), designed once. TASK-160 claim flow: claim authored on the task branch, landed on main by merge.
 <!-- SECTION:NOTES:END -->
 
-## Acceptance Criteria
-<!-- AC:BEGIN -->
-- [ ] #1 Spec phase: Setup
-- [ ] #2 Spec phase: Foundational — the grammar package (blocks all user stories)
-- [ ] #3 Spec phase: US1 — structures & piles by class+tile; remove_entity becomes real (P1) 🎯 MVP
-- [ ] #4 Spec phase: US2 — terrain removal (P2)
-- [ ] #5 Spec phase: US3 — the designation seam, contract-named (P3)
-- [ ] #6 Spec phase: Grounding + gates (in-branch, wiki-in-PR lifecycle)
-- [ ] #7 Spec phase: Post-merge bookkeeping (derived state, lands by merge — TASK-160)
-<!-- AC:END -->
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Merged via PR #123 (merge commit ee069ab). internal/target ships the one-string addressing grammar (bare-name/villager:/class@X,Y/rect/axis-aligned line) with the reserved-prefix rule and leaf-safety pin; bundle effects address structures/piles/terrain with payloads byte-identical to BuildMiracleBatch, whole-invocation atomicity, five-kind error taxonomy; villager remove_entity compile-rejected (reducer doctrine unchanged); TASK-157 designation seam contract-named in bundle-manifest.md. Guardian live-probe mirrors ratified as a necessary deviation. Tier: Opus 4.8 as recorded. Unblocks TASK-157.
+<!-- SECTION:FINAL_SUMMARY:END -->
