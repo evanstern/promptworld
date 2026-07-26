@@ -2,7 +2,7 @@
 title: Overlay — postmortem
 class: overlay
 status: shipped
-verified_against: 348a100c22f650d27e6fba517ea7f1f1aed1af73
+verified_against: 08046253d67f3b436b0793756ce13e790d43fdac
 sources:
   - internal/tui/tui.go
   - internal/tui/views.go
@@ -168,14 +168,14 @@ ended state model-free. This overlay adds no fact a linear observer lacks.
 
 | control/region | states | data source | renderer | keys+mouse | introduced-by | skin-token |
 |---|---|---|---|---|---|---|
-| postmortem takeover | closed · open | `run.ended` / `State.Ended` (dual-source, matching `Model.runEnded()`) | `unbuilt (wave 4)` | (opens automatically) · — | reorient decision 6 | — |
-| run-end narrated line | — | `run.ended` payload (final cause) | `unbuilt (wave 4)`, shares wording with [[chronicle]]'s existing digest/narrated line | — (display-only) | reorient decision 6 (surface); TASK-60/spec 044 (line text, pre-existing) | — |
-| morgue evidence rows | — | morgue no-blame register ([[morgue]]) | `unbuilt (wave 4)` (content pre-exists in `morgue.md`) | — | reorient decision 6 / spec 044 | — |
-| report card (scored runs only) | absent (ambient) · shown (scored) | `sim.EvaluateRubric` over the replica / recorded pass (shared resolver, spec 072) | `unbuilt (wave 4)`, shared with `pages/guardian-console.md`/`overlays/ceremony.md` | — | reorient FR-018/D5 · spec 072 | — |
-| dismiss | open → closed | player action | `unbuilt (wave 4)` | `esc` · — | reorient decision 6 | — |
+| postmortem takeover | closed · open | `run.ended` / `State.Ended` (dual-source, matching `Model.runEnded()`) | `postmortemView` (`internal/tui/views.go`) | (opens automatically) · — | reorient decision 6 | — |
+| run-end narrated line | — | `run.ended` payload (final cause) | `postmortemRunEndLine` (`internal/tui/views.go`), shares wording with [[chronicle]]'s existing digest/narrated line | — (display-only) | reorient decision 6 (surface); TASK-60/spec 044 (line text, pre-existing) | — |
+| morgue evidence rows | — | morgue no-blame register ([[morgue]]) | `morgueRows` (`internal/tui/views.go`) (content pre-exists in `morgue.md`) | — | reorient decision 6 / spec 044 | — |
+| report card (scored runs only) | absent (ambient) · shown (scored) | `sim.EvaluateRubric` over the replica / recorded pass (shared resolver, spec 072) | `postmortemReportCard` → `reportCardView` (`internal/tui/views.go`), shared with `pages/guardian-console.md`/`overlays/ceremony.md` | — | reorient FR-018/D5 · spec 072 | — |
+| dismiss | open → closed | player action | `handleTakeoverKey` (`internal/tui/tui.go`) | `esc` · — | reorient decision 6 | — |
 | quit/detach | — | player action | existing quit path (unchanged) | `q` · — | pre-existing | — |
-| replay via reopen key | closed → open | `Model.runEnded()` | `unbuilt (wave 4)` | `p` · — | reorient FR-013 | — |
-| replay via reattach | — | `State.Ended` at connect | `unbuilt (wave 4)` (reuses existing `runEnded()` dual-source posture) | (automatic on connect) · — | reorient FR-013 | — |
+| replay via reopen key | closed → open | `Model.runEnded()` | `handleKey` (`internal/tui/tui.go`) | `p` · — | reorient FR-013 | — |
+| replay via reattach | — | `State.Ended` at connect | `Model.runEnded()` (reuses existing dual-source posture) | (automatic on connect) · — | reorient FR-013 | — |
 
 **Parity rollout**: `esc`/`p` have no mouse target — recorded from birth as
 a parity gap (decision 8, formal doctrine in `patterns/keymap.md`, T024).
