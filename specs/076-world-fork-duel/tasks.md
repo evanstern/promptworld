@@ -166,13 +166,13 @@ machinery-only difference → no divergence; interleave labeled and tick-ordered
 
 ## Phase 8: Polish & close-out
 
-- [ ] T022 Full proof: `gofmt -l` clean; `go test ./...` green (including
+- [x] T022 Full proof: `gofmt -l` clean; `go test ./...` green (including
       `TestCatalogSweep` with the new event and every pre-existing snapshot/manifest
       byte-identity test — SC-007); `node scripts/check-merge-drift.mjs pr` from the
       worktree exits 0; PR opens carrying code + design re-pins + wiki + player docs
       together; merge via `gh pr merge --merge` ONLY (squash rewrites branch pins —
       observed hazard)
-- [ ] T023 Post-merge (root): `git worktree remove .worktrees/task-67` + branch delete +
+- [x] T023 Post-merge (root): `git worktree remove .worktrees/task-67` + branch delete +
       ff-pull; spec-bridge sync, board AC ticks (#1–#7), tasks.md ticks, runbook
       execution-log row — derived state only, no grounding content on main
 

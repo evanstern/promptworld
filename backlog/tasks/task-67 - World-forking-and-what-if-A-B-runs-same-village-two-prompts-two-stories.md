@@ -1,10 +1,10 @@
 ---
 id: TASK-67
 title: 'World forking and what-if A/B runs (same village, two prompts, two stories)'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-23 03:28'
-updated_date: '2026-07-26 19:10'
+updated_date: '2026-07-26 20:13'
 labels:
   - review-2026-07-22
   - teaching-game
@@ -29,21 +29,21 @@ Spec: specs/076-world-fork-duel
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 promptworld fork creates a runnable copy at the latest snapshot with fresh identity; both worlds run simultaneously
-- [ ] #2 Fork lineage (parent, fork tick) durably recorded in the new world
-- [ ] #3 A compare surface renders two chronicles against each other with divergence visible
-- [ ] #4 Forked world passes the determinism harness independently (replay to identical hash)
-- [ ] #5 Budget-meter semantics for forks decided and documented in the spec
-- [ ] #6 Spec Kit spec written and linked via spec-bridge before implementation (non-trivial task)
-- [ ] #7 Compare/duel output includes an event-derived rubric (deaths, needs floors, norms passed, charge efficiency, rejected-call rate) rendered plain-language per the glossary discipline (no raw enums in a grade)
-- [ ] #8 Spec phase: Setup
-- [ ] #9 Spec phase: Foundational — lineage vocabulary + store helper (blocks Phase 3)
-- [ ] #10 Spec phase: User Story 1 — the fork verb; both run side by side (P1, board ACs #1/#2/#4/#5)
-- [ ] #11 Spec phase: User Story 2 — the duel scoreboard (P2, board AC #7)
-- [ ] #12 Spec phase: User Story 3 — divergence + interleaved chronicles (P3, board AC #3)
-- [ ] #13 Spec phase: Design reference — authority gate (spec 047)
-- [ ] #14 Spec phase: Grounding — wiki-in-PR obligations (in-branch, pr-gate enforced)
-- [ ] #15 Spec phase: Polish & close-out
+- [x] #1 promptworld fork creates a runnable copy at the latest snapshot with fresh identity; both worlds run simultaneously
+- [x] #2 Fork lineage (parent, fork tick) durably recorded in the new world
+- [x] #3 A compare surface renders two chronicles against each other with divergence visible
+- [x] #4 Forked world passes the determinism harness independently (replay to identical hash)
+- [x] #5 Budget-meter semantics for forks decided and documented in the spec
+- [x] #6 Spec Kit spec written and linked via spec-bridge before implementation (non-trivial task)
+- [x] #7 Compare/duel output includes an event-derived rubric (deaths, needs floors, norms passed, charge efficiency, rejected-call rate) rendered plain-language per the glossary discipline (no raw enums in a grade)
+- [x] #8 Spec phase: Setup
+- [x] #9 Spec phase: Foundational — lineage vocabulary + store helper (blocks Phase 3)
+- [x] #10 Spec phase: User Story 1 — the fork verb; both run side by side (P1, board ACs #1/#2/#4/#5)
+- [x] #11 Spec phase: User Story 2 — the duel scoreboard (P2, board AC #7)
+- [x] #12 Spec phase: User Story 3 — divergence + interleaved chronicles (P3, board AC #3)
+- [x] #13 Spec phase: Design reference — authority gate (spec 047)
+- [x] #14 Spec phase: Grounding — wiki-in-PR obligations (in-branch, pr-gate enforced)
+- [x] #15 Spec phase: Polish & close-out
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -68,3 +68,9 @@ created: 2026-07-25 04:42
 Rescoped per learning-game synthesis (2026-07-25): reframed from teaching feature to core game verb — the fork-duel is the grader and postmortem (charter A vs B on a seeded fork; 'here is what your prompt change did'). Hybrid-scoring decision applies: duels are a scored surface. Framed as the losing-is-fun postmortem artifact. Grounding: both vault analyses, recommendation 2 in each.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Merged via PR #116 (merge commit 4daf75c). promptworld fork ships as a fresh-store ceremony (events streamed to snapshot boundary, hash re-verified, world.forked lineage event, seed carried, identity fresh, wallet inherited — never mints budget); promptworld compare renders the rubric-first duel scoreboard through the exported spec-072 resolver (plain language, no raw enums; lost duel = truthful postmortem), divergence over story events with honest identical-since-fork line, interleaved chronicles. Determinism proofs green (fork replays to identical hash independently; boundary state byte-identical to parent). Phase 2 (HTML retelling) and dual-TUI remain deferred as scoped. Tier: Opus 4.8 as recorded.
+<!-- SECTION:FINAL_SUMMARY:END -->
