@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 // check-merge-drift.mjs — deterministic merge-drift gates for the parallel
-// worktree SDLC, run at three choke points: session start, worktree cut,
-// and PR open.
+// worktree SDLC, run at four choke points: session start, spec-directory
+// claim, worktree cut, and PR open.
 //
 // Contracts (normative):
 //   specs/051-merge-drift-gates/contracts/gate-cli.md
 //   specs/051-merge-drift-gates/contracts/detection-rules.md
 //   specs/051-merge-drift-gates/contracts/report-schema.md
+//   specs/065-claim-before-work/contracts/gate-cli-delta.md — claim mode,
+//   worktree --task / claim-aware --spec, session branch-unpushed
 //
 // Node >= 18, ESM, zero npm dependencies (stdlib fs/path/child_process/crypto
 // only). Requires git >= 2.38 (`git merge-tree --write-tree`).
@@ -32,10 +34,14 @@
 // Usage:
 //   node scripts/check-merge-drift.mjs <mode> [flags]
 //
-//   modes: session | worktree | pr
+//   modes: session | claim | worktree | pr
 //
 //   --json              machine-readable report (report-schema.md)
+//   --dir <NNN-slug>     (claim) the spec directory being claimed/created
 //   --spec <NNN>         (worktree) also verify spec number NNN is unused
+//                        on origin/main — or, with --task, owned by that task
+//   --task <TASK-n>      (worktree) warn when the task's board card is not
+//                        In Progress on origin/main (claim missing/unpushed)
 //   --branch <name>       (pr) gate a branch other than the current checkout
 //   --notes              record task-attributable findings as board notes
 //   --apply-cleanup       (session) apply prescribed cleanup-eligible removals
@@ -45,7 +51,7 @@
 //   0  pass — clean or warnings-only
 //   1  blocked — >= 1 block-severity finding
 //   2  usage/environment error (bad invocation, not a git repo, git < 2.38,
-//      or fetch failure in a fail-closed mode: pr, worktree)
+//      or fetch failure in a fail-closed mode: pr, worktree, claim)
 
 import { existsSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
@@ -62,17 +68,19 @@ function usageError(msg) {
   process.exit(2);
 }
 
-const MODES = ['session', 'worktree', 'pr'];
+const MODES = ['session', 'claim', 'worktree', 'pr'];
 
 function parseArgs(argv) {
-  if (argv.length === 0) usageError('missing mode (session|worktree|pr)');
+  if (argv.length === 0) usageError('missing mode (session|claim|worktree|pr)');
   const mode = argv[0];
   if (!MODES.includes(mode)) usageError(`unknown mode ${JSON.stringify(mode)}`);
 
   const flags = {
     mode,
     json: false,
+    dir: null,
     spec: null,
+    task: null,
     branch: null,
     notes: false,
     applyCleanup: false,
@@ -83,10 +91,18 @@ function parseArgs(argv) {
     const arg = argv[i];
     if (arg === '--json') {
       flags.json = true;
+    } else if (arg === '--dir') {
+      const val = argv[++i];
+      if (val === undefined) usageError('--dir requires a value');
+      flags.dir = val;
     } else if (arg === '--spec') {
       const val = argv[++i];
       if (val === undefined) usageError('--spec requires a value');
       flags.spec = val;
+    } else if (arg === '--task') {
+      const val = argv[++i];
+      if (val === undefined) usageError('--task requires a value');
+      flags.task = val;
     } else if (arg === '--branch') {
       const val = argv[++i];
       if (val === undefined) usageError('--branch requires a value');
@@ -102,11 +118,26 @@ function parseArgs(argv) {
     }
   }
 
+  if (flags.dir !== null && mode !== 'claim') {
+    usageError('--dir is only valid in claim mode');
+  }
+  if (mode === 'claim' && flags.dir === null) {
+    usageError('claim mode requires --dir <NNN-slug>');
+  }
+  if (flags.dir !== null && !/^\d{3,}-[A-Za-z0-9._-]+$/.test(flags.dir)) {
+    usageError('--dir must be a spec directory name like 065-claim-before-work (NNN-slug)');
+  }
   if (flags.spec !== null && mode !== 'worktree') {
     usageError('--spec is only valid in worktree mode');
   }
   if (flags.spec !== null && !/^\d{1,5}$/.test(flags.spec)) {
     usageError('--spec must be numeric, e.g. 052');
+  }
+  if (flags.task !== null && mode !== 'worktree') {
+    usageError('--task is only valid in worktree mode');
+  }
+  if (flags.task !== null && !/^TASK-\d+$/.test(flags.task)) {
+    usageError('--task must look like TASK-139');
   }
   if (flags.branch !== null && mode !== 'pr') {
     usageError('--branch is only valid in pr mode');
@@ -342,6 +373,49 @@ function findTaskFile(mainWt, taskId) {
   const re = new RegExp(`^task-${n}([ .]|$)`);
   for (const f of readdirSync(dir)) {
     if (f.endsWith('.md') && re.test(f)) return join(dir, f);
+  }
+  return null;
+}
+
+// --- origin/main TREE readers (spec 065) -----------------------------------
+// The claim protocol defines ownership by presence on origin/main, so these
+// helpers read the FETCHED tree (ls-tree + show) and never the working dir —
+// a local card move that was never pushed is exactly the failure they must
+// catch. Pure reads; the mutation whitelist is untouched.
+
+function taskCardsOnOriginMain(originMainTip, cwd) {
+  // -z: card filenames routinely contain non-ASCII (em dashes), which plain
+  // ls-tree C-quotes — breaking both the regex match and the later git show.
+  const r = git(['ls-tree', '--name-only', '-z', originMainTip, '--', 'backlog/tasks/'], { cwd });
+  if (r.status !== 0) return [];
+  return r.stdout.split('\0').filter((l) => l.endsWith('.md'));
+}
+
+// -> { path: string|null, status: string|null }. Missing card or unparseable
+// frontmatter yields status null — callers treat that as "not claimed".
+function cardStatusOnOriginMain(originMainTip, taskId, cwd) {
+  const n = taskId.replace(/^TASK-/, '');
+  const re = new RegExp(`^task-${n}([ .]|$)`);
+  const path = taskCardsOnOriginMain(originMainTip, cwd).find((p) =>
+    re.test(p.replace(/^backlog\/tasks\//, ''))
+  );
+  if (!path) return { path: null, status: null };
+  const show = git(['show', `${originMainTip}:${path}`], { cwd });
+  if (show.status !== 0) return { path, status: null };
+  const m = show.stdout.match(/^status:\s*(.+?)\s*$/m);
+  return { path, status: m ? m[1].trim() : null };
+}
+
+// attributeBySpecDir against the origin/main tree (Spec marker lookup) — used
+// where ownership must be judged from the pushed state, not local files.
+function attributeBySpecDirOnOriginMain(originMainTip, specDirName, cwd) {
+  for (const p of taskCardsOnOriginMain(originMainTip, cwd)) {
+    const show = git(['show', `${originMainTip}:${p}`], { cwd });
+    if (show.status !== 0) continue;
+    if (show.stdout.includes(`Spec: specs/${specDirName}`)) {
+      const idm = show.stdout.match(/^id:\s*(TASK-\d+)/m);
+      if (idm) return idm[1];
+    }
   }
   return null;
 }
@@ -869,6 +943,25 @@ function runSession(flags, cwd) {
         })
       );
     }
+    // Claim-protocol audit (spec 065 FR-005): a local task branch with
+    // commits but no remote counterpart is invisible from every other clone.
+    if (/^task-\d+-/.test(b.name) && b.tip && b.mergeBase) {
+      const aheadCount = revListCount(`${b.mergeBase}..${b.tip}`, mainWt);
+      const remoteRef = git(['rev-parse', '--verify', '--quiet', `refs/remotes/origin/${b.name}`], { cwd: mainWt });
+      if (aheadCount > 0 && remoteRef.status !== 0) {
+        findings.push(
+          makeFinding({
+            severity: 'warn',
+            gate: 'session',
+            rule: 'branch-unpushed',
+            message: `${b.name} has ${aheadCount} local commit(s) but no remote counterpart — not auditable from other clones; run git push -u origin ${b.name}`,
+            evidence: [b.name],
+            task: b.task,
+            key: b.name,
+          })
+        );
+      }
+    }
     if (b.mergeBase) {
       const mainFiles = changedFiles(b.mergeBase, originMainTip, mainWt);
       const overlap = backlogOverlap(b.changedFiles, mainFiles);
@@ -1058,6 +1151,64 @@ function runSession(flags, cwd) {
 }
 
 // ---------------------------------------------------------------------------
+// Mode: claim (spec 065)
+// ---------------------------------------------------------------------------
+
+// Blocks authoring against a spec number already taken on origin/main — at
+// directory-creation (claim) time, before any content accumulates. Runs from
+// anywhere inside the repo. Idempotent for the owner: claiming a dirname
+// already on origin/main under the SAME name passes.
+function runClaim(flags, cwd) {
+  const f = git(['fetch', 'origin'], { cwd });
+  if (f.status !== 0) {
+    process.stderr.write(
+      `check-merge-drift: cannot reach remote (${(f.stderr || f.stdout).trim().split('\n')[0]}) — claim gate fails closed\n`
+    );
+    process.exit(2);
+  }
+  const originMainTip = gitOk(['rev-parse', 'origin/main'], { cwd }).trim();
+  const mainWt = resolveMainWorktree(cwd);
+  const root = readRootState(mainWt, originMainTip);
+
+  const findings = [];
+  const taken = takenSpecNumbers(originMainTip, mainWt);
+  const number = parseInt(flags.dir.match(/^(\d+)-/)[1], 10);
+  if (taken.has(number) && taken.get(number) !== flags.dir) {
+    const takenDir = taken.get(number);
+    const nextFree = Math.max(...taken.keys()) + 1;
+    findings.push(
+      makeFinding({
+        severity: 'block',
+        gate: 'claim',
+        rule: 'spec-number-collision',
+        message: `specs/${takenDir} already exists on origin/main for number ${formatSpecNum(
+          number
+        )} — claim specs/${flags.dir} is a collision; next free number is ${formatSpecNum(nextFree)}`,
+        evidence: [`specs/${takenDir}`],
+        task: attributeBySpecDir(mainWt, takenDir),
+        key: 'claim',
+      })
+    );
+  }
+
+  const sorted = sortFindings(findings);
+  const verdict = computeVerdict(sorted);
+  return {
+    mode: 'claim',
+    verdict,
+    exitCode: exitCodeFor(verdict),
+    originMain: originMainTip,
+    unverifiedAgainstRemote: false,
+    root,
+    branches: [],
+    matrix: [],
+    grounding: [],
+    findings: sorted,
+    cleanupPrescriptions: [],
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Mode: worktree
 // ---------------------------------------------------------------------------
 
@@ -1104,20 +1255,56 @@ function runWorktree(flags, cwd) {
     const taken = takenSpecNumbers(originMainTip, mainWt);
     const n = parseInt(flags.spec, 10);
     if (taken.has(n)) {
-      const maxTaken = Math.max(...taken.keys());
-      const nextFree = maxTaken + 1;
       const takenDir = taken.get(n);
+      // Claim-aware (spec 065): under claim-first doctrine the spec dir
+      // legitimately exists on origin/main BEFORE the worktree is cut —
+      // ownership, not absence, is the invariant. With --task, pass when the
+      // taken dir's Spec marker (read from the origin/main tree) attributes
+      // to that task; block when it attributes elsewhere or to none.
+      const owner = flags.task ? attributeBySpecDirOnOriginMain(originMainTip, takenDir, mainWt) : null;
+      if (!(flags.task && owner === flags.task)) {
+        const maxTaken = Math.max(...taken.keys());
+        const nextFree = maxTaken + 1;
+        const ownership = flags.task
+          ? ` (attributed to ${owner || 'no task'}, not ${flags.task})`
+          : '';
+        findings.push(
+          makeFinding({
+            severity: 'block',
+            gate: 'worktree',
+            rule: 'spec-number-collision',
+            message: `specs/${takenDir} already exists on origin/main for number ${formatSpecNum(n)}${ownership} — next free number is ${formatSpecNum(
+              nextFree
+            )}`,
+            evidence: [`specs/${takenDir}`],
+            task: owner || attributeBySpecDir(mainWt, takenDir),
+            key: 'spec',
+          })
+        );
+      }
+    }
+  }
+
+  // Card-claim check (spec 065 FR-003): the task's board card must be
+  // In Progress on origin/main before its worktree is cut — warn-only by
+  // design, because the claim commit itself needs a pre-propagation window.
+  if (flags.task) {
+    const card = cardStatusOnOriginMain(originMainTip, flags.task, mainWt);
+    if (card.status !== 'In Progress') {
+      const observed = card.path
+        ? card.status
+          ? `status is '${card.status}'`
+          : 'card frontmatter is unparseable'
+        : 'card file is missing';
       findings.push(
         makeFinding({
-          severity: 'block',
+          severity: 'warn',
           gate: 'worktree',
-          rule: 'spec-number-collision',
-          message: `specs/${takenDir} already exists on origin/main for number ${formatSpecNum(n)} — next free number is ${formatSpecNum(
-            nextFree
-          )}`,
-          evidence: [`specs/${takenDir}`],
-          task: attributeBySpecDir(mainWt, takenDir),
-          key: 'spec',
+          rule: 'card-not-claimed',
+          message: `${flags.task}'s board card is not In Progress on origin/main (${observed}) — claim missing or unpushed; claim-before-work: the first pushed commit moves the card to In Progress and creates the spec dir (spec 065)`,
+          evidence: [card.path || 'backlog/tasks/'],
+          task: flags.task,
+          key: flags.task,
         })
       );
     }
@@ -1349,6 +1536,7 @@ function main() {
 
   let report;
   if (flags.mode === 'session') report = runSession(flags, cwd);
+  else if (flags.mode === 'claim') report = runClaim(flags, cwd);
   else if (flags.mode === 'worktree') report = runWorktree(flags, cwd);
   else report = runPr(flags, cwd);
 
