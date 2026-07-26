@@ -1,19 +1,22 @@
 ---
 title: Overlay — postmortem
 class: overlay
-status: specified
-verified_against: c8906da39be3a5b861c2272af37db0a83dcded7a
+status: shipped
+verified_against: 85f45a121e538d93048f52a1ad22472284ec0938
+sources:
+  - internal/tui/tui.go
+  - internal/tui/views.go
 ---
 
 # Overlay: postmortem
 
-The run-end takeover (reorientation decision 6): when `run.ended` fires on
-an attached client, the postmortem seizes the screen immediately — the same
-maximum-salience interrupt policy as the ceremony, at the opposite emotional
-pole: the morgue's no-blame evidence register, never a scold. **Not
-built** — specified spec-before-build for Wave 4.
+The run-end takeover (reorientation decision 6, spec 056/TASK-127): when
+`run.ended` fires on an attached client, the postmortem seizes the screen
+immediately — the same maximum-salience interrupt policy as the ceremony, at
+the opposite emotional pole: the morgue's no-blame evidence register, never
+a scold.
 
-## Mockup — ambient (unscored) world
+## Mockup — ambient (unscored) world (real symbols — `postmortemView`)
 
 ```
 ┌ THE RUN HAS ENDED ─────────────────────────────────────────────────────┐
@@ -29,7 +32,7 @@ built** — specified spec-before-build for Wave 4.
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-## Mockup — scored/scenario run
+## Mockup — scored/scenario run (real symbols — `postmortemView`)
 
 ```
 ┌ THE RUN HAS ENDED ─────────────────────────────────────────────────────┐
@@ -38,8 +41,10 @@ built** — specified spec-before-build for Wave 4.
 │  run has ended.                                                       │
 │                                                                        │
 │  ┌─ report card · first-night ──────────────────────────────────┐    │
-│  │ ✗ village survives to dawn      (agent.died: 2)                │   │
-│  │ ✓ watch placed before nightfall (metatron.order_placed: 1)     │   │
+│  │ ✗ sim day started (sim.day_started: 0)                         │   │
+│  │ ✓ agent died (agent.died: 2)                                   │   │
+│  │ ✗ metatron nudged (metatron.nudged: 0)                         │   │
+│  │ ✓ metatron order placed (metatron.order_placed: 1)             │   │
 │  └──────────────────────────────────────────────────────────────┘    │
 │                                                                        │
 │  morgue — no-blame evidence                                           │
@@ -48,6 +53,18 @@ built** — specified spec-before-build for Wave 4.
 │                                                    esc dismiss · q quit│
 └──────────────────────────────────────────────────────────────────────┘
 ```
+
+**Known simplification** (not resolved by this feature): the report card's
+marker is a generic event-presence evaluation (`reportCardFactsFromEvents`,
+`internal/tui/views.go`) — met = the term's cataloged event type appears at
+least once in the run. This is backwards for a "zero wanted" term: the
+mockup above shows `agent died (agent.died: 2)` as ✓ even though two deaths
+are the exercise's FAILING outcome, not its passing one. `internal/sim/
+curriculum.go`'s own doc comments name TASK-119's scenario rubric machinery
+as the eventual owner of curated per-term pass/fail semantics (some terms
+want zero occurrences, some combine several with OR); this renderer is a
+deliberately generic mechanism that stays correct and stable regardless of
+how that content evolves — see `overlays/ceremony.md`'s identical note.
 
 ## Layering & trigger
 

@@ -2,7 +2,7 @@
 title: Page — guardian console
 class: page
 status: shipped
-verified_against: c8d80800fc5d34c5c31ab54751ebfb3ba80efc5b
+verified_against: 85f45a121e538d93048f52a1ad22472284ec0938
 sources:
   - internal/tui/views.go
   - internal/tui/tui.go
@@ -14,11 +14,14 @@ The Staged Cockpit's headline surface (reorientation decisions 1/2, D5): the
 guardian conversation elevated to a first-class, full-height page — the
 "document-style" reading experience the compact dock tab
 ([panels/guardian.md](../panels/guardian.md)) deliberately doesn't try to be.
-**Built** (spec 053, TASK-125) — the report-card CARD content is the one
-exception: D5 assigns it to TASK-115/127, so the control table below keeps
-that one row `unbuilt (wave 3/4)`, naming the shipped composition seam
-(`consoleCard`, `Model.consoleCards`, `views.go` `consoleView`) it will plug
-into.
+**Built** (spec 053, TASK-125). The report-card CARD content's renderer
+(`reportCardView`) and its `consoleCard` seam wrapper (`reportCard`) shipped
+with spec 056/TASK-127 — proven to compose into this page's seam by test
+(`TestConsoleCardSeamComposesReportCard`) — but `Model.consoleCards` stays
+empty in production this feature: D5 assigns the CONSOLE's actual card
+PRODUCTION (deciding when a card appears at a stopping point — run end,
+pause, exercise resolution) to TASK-115, so the control table below keeps
+that row naming the shipped renderer rather than `unbuilt`.
 
 ## Mockup
 
@@ -41,7 +44,8 @@ into.
 │ └──────────────────────────────────────────────────────────────────┘  │
 │                                                                          │
 │ ┌─ report card · first-night ─────────────────────────────────────┐    │
-│ │ ✓ village survives to dawn · ✓ watch placed before nightfall     │    │
+│ │ ✓ sim day started (sim.day_started: 1)                            │    │
+│ │ … metatron order placed (metatron.order_placed: 0)                │    │
 │ └───────────────────────────────────────────────────────────────┘    │
 └──────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────┐
@@ -92,15 +96,19 @@ classification, reused verbatim, not a second vocabulary.
    **"charter changed — next turn binds it"** — honest about the
    re-read-every-turn timing (edits are live by construction, `[[metatron]]`),
    never implying the running turn changes retroactively.
-5. **Report-card cards** (D5) — **not built this feature**: the inline
-   composition slot exists (`consoleCard` interface, `Model.consoleCards`,
-   composed between the turn stream and the read surface) and is always
-   empty. TASK-127's shared report-card renderer
-   ([overlays/postmortem.md](../overlays/postmortem.md)) and TASK-115's
-   stopping-point production (run end, pause, exercise resolution) are the
-   producers that plug into this seam later — the chronicle-⏎
-   reserved-seam precedent: an honest, already-wired attachment point beats
-   a placeholder that renders nothing meaningful.
+5. **Report-card cards** (D5) — the inline composition slot (`consoleCard`
+   interface, `Model.consoleCards`, composed between the turn stream and the
+   read surface) is always empty in THIS feature's production client, but
+   the renderer it will show is shipped: `reportCardView`
+   ([overlays/postmortem.md](../overlays/postmortem.md)'s D5 shared
+   renderer) wrapped as a `reportCard` value satisfying `consoleCard`
+   (`internal/tui/views.go`) — proven end to end by
+   `TestConsoleCardSeamComposesReportCard`. TASK-115's stopping-point
+   production (deciding WHEN a card appears — run end, pause, exercise
+   resolution — and populating `Model.consoleCards` with one) is the only
+   remaining producer — the chronicle-⏎ reserved-seam precedent: an honest,
+   already-wired, already-tested attachment point beats a placeholder that
+   renders nothing meaningful.
 
 ## Composer
 
@@ -175,7 +183,7 @@ adds a richer TUI presentation of what already exists.
 | charter/skills read surface | default · player-authored · preset-locked; skills bound · locked | `metatron.Status` (`CharterDefault`/`CharterLocked`/`CharterPreset`/`Skills`/`SkillsLocked`) | `charterReadSurfaceLines`/`charterReadSurfaceBox` | — (display-only) | spec 053 | — |
 | `$EDITOR` handoff | idle · shelled-out · returned | on-disk `charter.md` (content hash, pre/post) | `startEditorHandoff` (`tea.ExecProcess`) | `e` · — | spec 053 | — |
 | "charter changed — next turn binds it" confirmation | absent · shown once · error notice | pre/post content-hash comparison (`editorRoundTripMsg`) | `Model.consoleNotice` | — | spec 053 | — |
-| report-card card (inline) | absent · shown | shared with `overlays/postmortem.md`'s report-card renderer | `unbuilt (wave 3/4)` — plugs into `consoleCard`/`Model.consoleCards` above | — | reorient D5 | — |
+| report-card card (inline) | absent this feature (renderer shipped, production population `unbuilt (TASK-115)`) | shared with `overlays/postmortem.md`'s `reportCardView` | `reportCard` (`consoleCard` wrapper, `internal/tui/views.go`) — plugs into `consoleCard`/`Model.consoleCards` above | — | reorient D5 | — |
 | composer | dormant · focused · busy | `panels/minibuffer.md` (same component, unchanged) | `minibufferView` (existing) | `m` focus · — | TASK-34 (reused) | `skin.guardian.epithet` |
 
 **Parity rollout**: `G` (open console) and `e` ($EDITOR handoff) have no
