@@ -2,7 +2,7 @@
 title: Overlay — help (`?`)
 class: overlay
 status: shipped
-verified_against: ad7559c6db61b43e427a84eb58088d91f6108370
+verified_against: 08046253d67f3b436b0793756ce13e790d43fdac
 sources:
   - internal/tui/help.go
   - internal/tui/tiles.go
@@ -22,11 +22,11 @@ stays the one printable reference card and only points here.
 with spec 045/055; **Section 4 (ceremony replay) shipped with spec 056
 (TASK-127)** and **Section 5 (the guardian, D9) shipped with spec 063
 (TASK-115)** — both sections' control-table rows below name real renderer
-symbols. Only the badge-deep-link row in the classification below remains a
-`specified`/`unbuilt (wave 4)` addition — marked individually in the
-control table rather than forcing the whole page's frontmatter to
-`specified`, the same hybrid posture `panels/systems.md` uses for the same
-reason.
+symbols. Only the badge-deep-link row in the classification below remains
+genuinely unbuilt — marked individually in the control table as
+`unbuilt (pending TASK-142, layer-2)`, pointing at its live owner rather
+than a build-schedule wave marker (spec 075), the same hybrid posture
+`panels/systems.md` uses for the same reason.
 
 ## Mockup
 
@@ -243,7 +243,7 @@ under an explicit classification instead of eroding the invariant silently.
 | the guardian section (stage identity/concept) | per-stage · pre-ladder (nil status) | `Status.Stage`, `world.StagesLadder`, `skin.Stage` | `helpGuardianLines` | — (display-only) | reorient D9 / spec 063 | `skin.stage.stage-N.name`/`.line` |
 | the guardian section (granted verbs) | per-stage ceiling | `guardian.StageCeilingVerbs` (the turn grant's own `applyStageCeiling` intersection) | `helpGuardianLines` | — | reorient D9 / spec 063 | — |
 | the guardian section (example ask per verb) | static, per verb | the per-verb example-ask token family (skin-tokens.md) | `helpGuardianLines` | — | reorient D9 / spec 063 | `skin.guardian.example_ask.send_vision` (one per verb, keyed by tool id) |
-| badge deep-link focus (layer-2) | unfocused · pre-focused on active badge | active header badge at open | `unbuilt (wave 4, layer-2)` | — | reorient (retained per D9 discussion) | — |
+| badge deep-link focus (layer-2) | unfocused · pre-focused on active badge | active header badge at open | `unbuilt (pending TASK-142, layer-2)` | — | reorient (retained per D9 discussion) | — |
 | ceremony replay entries | none · N replayable | `replica.StagesUnlocked`/`CurriculumPasses` | `ceremonyReplayLines` (`internal/tui/help.go`), shared rendering with `overlays/ceremony.md` | `tab`/`shift+tab` to reach · — | reorient FR-013 | — |
 
 **Parity rollout**: every control above has a key but no mouse target today;
