@@ -278,3 +278,49 @@ func TestReportCardDigestRow(t *testing.T) {
 		t.Errorf("digest line = %q", line)
 	}
 }
+
+// TestExportedResolverIsTheModelResolver (spec 076 FR-018/SC-004): the
+// exported replica-parametric surface and the Model wrappers are the SAME
+// switch — facts, mode, pass lookup, and the rendered card are byte-equal
+// for the same state. The CLI duel consumes the exported face; this is the
+// proof it can never disagree with the postmortem overlay.
+func TestExportedResolverIsTheModelResolver(t *testing.T) {
+	m := testModel(t)
+	m.w.Manifest.Scenario = &world.ScenarioConfig{Exercise: "first-night"}
+	m.replica.Deaths = []sim.DeathRecord{{Agent: 0, Tick: 90, Cause: "gru"}}
+	m.applyEvent(runEndedEvent(1, 100, "gru", m.replica.Deaths))
+
+	def, ok := m.scenarioExercise()
+	if !ok {
+		t.Fatal("scenario exercise should resolve")
+	}
+	pass := m.recordedPassFor(def.ID)
+	if exported := RecordedPassFor(m.replica, def.ID); (pass == nil) != (exported == nil) {
+		t.Errorf("pass lookup disagrees: model %v, exported %v", pass, exported)
+	}
+
+	mFacts, mMode := m.resolveReportCardFacts(def, pass)
+	eFacts, eMode := ResolveRubricFacts(m.replica, def, pass)
+	if mMode != eMode {
+		t.Errorf("modes disagree: model %v, exported %v", mMode, eMode)
+	}
+	if len(mFacts) == 0 || len(mFacts) != len(eFacts) {
+		t.Fatalf("fact counts disagree: model %d, exported %d", len(mFacts), len(eFacts))
+	}
+	for i := range mFacts {
+		if mFacts[i] != eFacts[i] {
+			t.Errorf("fact %d disagrees:\nmodel:    %+v\nexported: %+v", i, mFacts[i], eFacts[i])
+		}
+	}
+
+	// The rendered artifact is identical too: the postmortem overlay's card
+	// IS RenderReportCard over the exported resolver's output.
+	if got, want := m.postmortemReportCard(100), RenderReportCard(def.ID, eFacts, eMode, 100); got != want {
+		t.Errorf("rendered cards diverge:\nmodel:\n%s\nexported:\n%s", got, want)
+	}
+
+	// A nil state renders nothing — the spec-072 nil-replica posture.
+	if facts, mode := ResolveRubricFacts(nil, def, nil); facts != nil || mode != ReportCardLive {
+		t.Errorf("nil state = (%v, %v), want (nil, live)", facts, mode)
+	}
+}

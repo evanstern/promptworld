@@ -15,7 +15,7 @@ sources:
   - internal/world/world.go
   - internal/worlds/unlocks.go
   - cmd/promptworld/stages.go
-verified_against: ad2a6543a9caf51d1cd28af863291f3daa3bd4eb
+verified_against: PENDING_MERGE_COMMIT
 ---
 
 # Explain tool and tutor guide

@@ -141,6 +141,21 @@ var digestRegistry = map[string]digestFunc{
 			txt(" · "), emphI64(p.SourceEvents), txt(" events @ tick "), emphI64(p.SourceTick),
 		}), true
 	},
+	// world.forked (spec 076 FR-009): the fork's provenance line — which
+	// world it split from and the boundary in game time. The digest line is
+	// the v1 rendering; a chronicle narration for the split is a documented
+	// unfunded follow-on (spec 076 Out of Scope).
+	"world.forked": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.WorldForkedPayload](e)
+		if !ok {
+			return nil, false
+		}
+		day, h, min, _ := clock.GameTime(p.ForkTick)
+		return join([]seg{
+			txt("forked from "), emph(fmt.Sprintf("%q", p.ParentName)),
+			txt(fmt.Sprintf(" at day %d, %02d:%02d", day, h, min)),
+		}), true
+	},
 	"clock.paused":  func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) { return []seg{txt("paused")}, true },
 	"clock.resumed": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) { return []seg{txt("resumed")}, true },
 	"clock.speed_set": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {

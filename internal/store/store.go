@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -203,6 +204,32 @@ func (s *Store) GetMeta(key string) (string, error) {
 		return "", nil
 	}
 	return v, err
+}
+
+// MetaByPrefix returns every meta row whose key starts with prefix — the
+// fork ceremony's wallet-inheritance read (spec 076 FR-012): every
+// llm_spend_* key (the authoritative monthly totals AND the per-provider
+// attribution keys) copies verbatim into a fork's fresh store, so forking
+// never mints fresh budget. Filtered in Go rather than SQL LIKE: the
+// callers' prefixes carry underscores, which LIKE would treat as wildcards,
+// and the meta table is tiny.
+func (s *Store) MetaByPrefix(prefix string) (map[string]string, error) {
+	rows, err := s.db.Query("SELECT key, value FROM meta")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := make(map[string]string)
+	for rows.Next() {
+		var k, v string
+		if err := rows.Scan(&k, &v); err != nil {
+			return nil, err
+		}
+		if strings.HasPrefix(k, prefix) {
+			out[k] = v
+		}
+	}
+	return out, rows.Err()
 }
 
 // CheckContiguity verifies the log has no gaps: seq runs 1..N. A gap is a

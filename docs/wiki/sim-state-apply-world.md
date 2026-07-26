@@ -8,7 +8,7 @@ sources:
   - internal/sim/miracles.go
   - internal/sim/morgue.go
   - internal/sim/curriculum.go
-verified_against: b3f4da3c29e3cbbd933e366abe76a5d6ef0f2be9
+verified_against: 0fd2104c59c54be8e8071d319fa4ce192083faf3
 ---
 
 # Sim state: world & governance dispatch arms
@@ -115,7 +115,8 @@ of the retired raw constants.
 `world.migrated` (spec 012 US6) is the one case that does not incrementally mutate
 fields: after checking the payload's `State.Seed` matches (a mismatched payload
 no-ops, keeping `Apply` total), it replaces `*s` wholesale with the embedded state —
-[[world-migration]] is the only producer.
+[[world-migration]] is the only producer. `world.forked` (spec 076,
+[[world-forking]]): an explicit no-op arm — provenance stays off `State`.
 
 ## Connections
 

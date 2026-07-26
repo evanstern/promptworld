@@ -6,8 +6,7 @@ sources:
   - internal/tui/tui.go
   - internal/tui/views.go
   - internal/tui/reportcard.go
-  - internal/tui/look.go
-verified_against: ad2a6543a9caf51d1cd28af863291f3daa3bd4eb
+verified_against: 8ec9aefc624396325c0083d2be207d5fcb057420
 ---
 
 # TUI dock tabs (chronicle, guardian, systems)

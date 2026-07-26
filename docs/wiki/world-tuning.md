@@ -6,7 +6,7 @@ sources:
   - internal/sim/tuning.go
   - internal/daemon/daemon.go
   - internal/world/world.go
-verified_against: aedcf52f680ed68910e185c3ccde44bd320517b6
+verified_against: 0fd2104c59c54be8e8071d319fa4ce192083faf3
 ---
 
 # World tuning manifest

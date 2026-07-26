@@ -28,7 +28,7 @@ sources:
   - internal/sim/rubric_hygiene_test.go
   - internal/tui/reportcard_test.go
   - internal/tui/help_guardian_test.go
-verified_against: ad2a6543a9caf51d1cd28af863291f3daa3bd4eb
+verified_against: PENDING_MERGE_COMMIT
 ---
 
 # Testing strategy

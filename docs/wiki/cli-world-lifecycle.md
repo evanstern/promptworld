@@ -1,19 +1,21 @@
 ---
 name: cli-world-lifecycle
-description: CLI world lifecycle — new (creation/stamping), migrate (v1-v4 upgrade), ps (discovery), stages (ladder)
+description: CLI world lifecycle — new (creation/stamping), migrate (v1-v4 upgrade), fork (snapshot-boundary copy under a fresh identity, spec 076), compare (the duel scoreboard), ps (discovery), stages (ladder)
 kind: component
 sources:
   - cmd/promptworld/commands.go
   - cmd/promptworld/ps.go
   - cmd/promptworld/stages.go
   - internal/worlds/unlocks.go
-verified_against: ad2a6543a9caf51d1cd28af863291f3daa3bd4eb
+  - cmd/promptworld/fork.go
+  - cmd/promptworld/compare.go
+verified_against: PENDING_MERGE_COMMIT
 ---
 
 # CLI: world lifecycle commands
 
-Split from [[cli-promptworld]] (full subcommand list there): `new`, `migrate`, `ps`,
-`stages` — creating, upgrading, and enumerating worlds.
+Split from [[cli-promptworld]]: `new`, `migrate`, `fork`, `compare`, `ps`,
+`stages` — creating, upgrading, forking, comparing, and enumerating worlds.
 
 ## How it works
 
@@ -87,6 +89,10 @@ Split from [[cli-promptworld]] (full subcommand list there): `new`, `migrate`, `
   about the world's log, state, or terrain changes — and `cmdMigrate` prints a
   distinct summary naming it a manifest-only upgrade whose event log and terrain
   carry over unchanged.
+- `fork <world> <new-name> [--at latest-snapshot]` / `compare <a> <b>
+  [--since TICK]` (`fork.go`/`compare.go`, spec 076) — snapshot-boundary
+  copy under a fresh identity via `world.Fork` (`<new-name>` follows `new`'s
+  conventions), and the duel scoreboard: [[world-forking]].
 - `ps [--all] [--json]` — machine-wide listing of worlds with live-proven state
   ([[instance-manager]]): discovery over the worlds home + registry, concurrent
   bounded probes, `NAME STATE PID TICK GAME TIME SPEED LLM PATH` table or a JSON
@@ -124,6 +130,7 @@ Split from [[cli-promptworld]] (full subcommand list there): `new`, `migrate`, `
 `new`: [[world-tuning]], [[agent-mind]], [[guardian]], [[social-fabric]],
 [[llm-orchestrator]], [[daemon-lifecycle]], [[cognition]], [[curriculum-ladder]],
 [[scenario-machinery]]. `migrate`: [[world-migration]], [[world-save-directory]].
+`fork`/`compare`: [[world-forking]].
 `ps`: [[instance-manager]]. `stages`: unlocks record + [[skin]] stage table,
 shared with [[grounded-feedback]]. See [[cli-promptworld]] for exit discipline,
 arg resolution, and siblings ([[cli-runtime-control]], [[cli-guardian-ops]]).

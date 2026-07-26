@@ -6,7 +6,7 @@ sources:
   - internal/tui/grammar.go
   - internal/tui/digest.go
   - internal/tui/tui.go
-verified_against: ad2a6543a9caf51d1cd28af863291f3daa3bd4eb
+verified_against: 8ec9aefc624396325c0083d2be207d5fcb057420
 ---
 
 # TUI chronicle feed and digest grammar
@@ -86,7 +86,11 @@ new `guardian` namespace joins `familyByNamespace`, mapped onto the SAME
 guardian family voice the FROZEN `metatron.*` namespace uses (the digest
 line renders the skin's report-card label, the charter fingerprint, and the
 note's own text truncated to 80 runes, the `morgue.epilogue` truncation
-manner). The four
+manner). Since spec 076, `world.forked` ([[world-forking]]) gets a
+world-lifecycle-voice entry — "forked from `<parent>` at day D, HH:MM", the
+fork's provenance rendered in game time (the digest line is the v1
+rendering; a chronicle narration of the split is a documented unfunded
+follow-on). The four
 [[guardian-miracles]] types render in the guardian family voice, with a
 trailing emphasized `(forced)` annotation (`gratisMark`) whenever the
 payload's gratis flag waived the charge — an operator force is never

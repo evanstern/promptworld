@@ -280,6 +280,22 @@ type (
 		Name string `json:"name"`
 		Seed uint64 `json:"seed"`
 	}
+	// WorldForkedPayload (spec 076) records the fork's provenance as the first
+	// event past the carried prefix: which world it was forked from and where.
+	// The reducer no-ops it (recorded history, like world.created) — fork state
+	// at the fork tick stays byte-identical to the parent's. ParentSeed always
+	// equals the fork's own seed (identity is name/directory/socket, never the
+	// seed — the carried prefix was generated under it, so replay determinism
+	// requires carrying it); ParentCreatedAt disambiguates renamed/recreated
+	// parents. Exactly one per fork; a fork of a fork appends its own, so
+	// lineage chains read newest-first, each hop naming its immediate parent.
+	WorldForkedPayload struct {
+		ParentName      string `json:"parent_name"`
+		ParentSeed      uint64 `json:"parent_seed"`
+		ParentCreatedAt string `json:"parent_created_at"` // RFC3339
+		ForkTick        int64  `json:"fork_tick"`         // boundary snapshot tick
+		ForkSeq         int64  `json:"fork_seq"`          // boundary snapshot seq (events 1..ForkSeq carried)
+	}
 	SpeedSetPayload struct {
 		Speed clock.Speed `json:"speed"`
 	}
@@ -530,6 +546,13 @@ func (s *State) Apply(e store.Event) error {
 	switch e.Type {
 	case "world.created":
 		// Genesis marker; state already reflects genesis.
+
+	case "world.forked":
+		// Fork provenance marker (spec 076): recorded history, a no-op on
+		// state — exactly world.created's posture. The no-op is what keeps a
+		// fork's state at the fork tick byte-identical to its parent's at the
+		// same (tick, seq); lineage lives in the event (and the manifest
+		// mirror), never on State.
 
 	case "clock.paused":
 		s.Paused = true

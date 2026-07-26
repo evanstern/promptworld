@@ -9,7 +9,7 @@ sources:
   - internal/worlds/discover.go
   - internal/worlds/probe.go
   - cmd/promptworld/ps.go
-verified_against: e137b82bb699eb323eb26c6a69c3dc83ca474b27
+verified_against: 0fd2104c59c54be8e8071d319fa4ce192083faf3
 ---
 
 # Instance manager
@@ -59,15 +59,20 @@ world is `running`/`paused` solely when its daemon answers a `status` round trip
 budget; a live pid that doesn't answer is `unresponsive`, never running. Dead-pid
 candidates become `stopped` (last-known clock via `OfflineSnapshot`, the extracted
 offline read `status` also uses), `unreadable` (corrupt manifest), or `missing`
-(registry path gone). `OfflineSnapshot` reconstructs the last-known state from
-the newest valid snapshot and — since spec 044 (FR-004) — folds any events
-newer than that snapshot into it (the snapshot cadence can trail the log,
-e.g. a crash right after a final death), exactly as recovery replay would; its
-signature grew two trailing run-outcome returns, `ended` and `endedDay` (the
-game day of the run end via the state's `RunEnd`, 0 unless ended), so a
-stopped ended world's `status` mirrors the live surface ([[morgue]]). `ps`'s
-own `fillOfflineSnapshot` discards the two new returns — stopped rows render
-as before. `cmd/promptworld/ps.go` renders the table
+(registry path gone). The state reconstruction itself is `OfflineState(w)`
+(extracted by spec 076 so `status`/`ps` and `promptworld compare` share ONE
+offline read — [[world-forking]]): the newest valid snapshot unmarshaled
+into a fresh state, then — since spec 044 (FR-004) — any events newer than
+that snapshot folded in (the snapshot cadence can trail the log, e.g. a
+crash right after a final death), exactly as recovery replay would; under
+WAL it is also safe against a RUNNING daemon's db (readers never block the
+single writer — the read reflects the last committed batch), which is what
+lets compare read live worlds. `OfflineSnapshot` wraps it, returning the
+clock fields plus the two spec-044 run-outcome returns, `ended` and
+`endedDay` (the game day of the run end via the state's `RunEnd`, 0 unless
+ended), so a stopped ended world's `status` mirrors the live surface
+([[morgue]]). `ps`'s own `fillOfflineSnapshot` discards the two run-outcome
+returns — stopped rows render as before. `cmd/promptworld/ps.go` renders the table
 (`NAME STATE PID TICK GAME TIME SPEED LLM PATH`) and the `--json` array reusing the
 `status --json` vocabulary; default shows live-pid states, `--all` adds the rest;
 inference on/off comes from `StatusData.LLM != nil` live, `llm.json` presence stopped.
@@ -77,7 +82,8 @@ inference on/off comes from `StatusData.LLM != nil` live, `llm.json` presence st
 [[cli-promptworld]] threads every per-world command through `resolveWorld` and hosts
 `ps`/`new`; [[daemon-lifecycle]] performs the boot-time registry upsert; probing rides
 [[ipc-client]] `status` and [[world-save-directory]]'s pidfile/socket layout; offline
-rows read [[snapshots]] + [[event-log]] via `OfflineSnapshot`.
+rows read [[snapshots]] + [[event-log]] via `OfflineSnapshot`;
+[[world-forking]]'s `compare` is `OfflineState`'s second consumer.
 
 ## Operational notes
 

@@ -8,7 +8,7 @@ sources:
   - internal/guardian/charter.go
   - cmd/promptworld/stages.go
   - internal/worlds/unlocks.go
-verified_against: ad2a6543a9caf51d1cd28af863291f3daa3bd4eb
+verified_against: PENDING_MERGE_COMMIT
 ---
 
 # Curriculum ladder

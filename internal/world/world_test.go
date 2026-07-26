@@ -1,6 +1,7 @@
 package world
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -397,5 +398,80 @@ func TestOpenRejectsBadCharterPreset(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "drill-sergeant") {
 		t.Errorf("refusal error should name the bad value, got: %v", err)
+	}
+}
+
+// TestLineagelessManifestByteIdentical (spec 076 FR-008/SC-002): the lineage
+// block is additive omitempty — a world that was never forked carries no
+// lineage key, and its world.json round-trips byte-identically through
+// Open + rewrite (the Teaching/MemoryRelevance precedent; no FormatVersion
+// bump rides this feature).
+func TestLineagelessManifestByteIdentical(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "w")
+	if _, err := Create(dir, "plain", 7); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	before, err := os.ReadFile(filepath.Join(dir, ManifestName))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(before), "lineage") {
+		t.Errorf("pre-fork manifest must not carry the lineage key, got:\n%s", before)
+	}
+	w, err := Open(dir)
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	if w.Manifest.Lineage != nil {
+		t.Errorf("pre-fork manifest resolved a lineage block: %+v", w.Manifest.Lineage)
+	}
+	if err := writeManifest(w); err != nil {
+		t.Fatalf("rewrite: %v", err)
+	}
+	after, err := os.ReadFile(filepath.Join(dir, ManifestName))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(after) != string(before) {
+		t.Errorf("lineage-less world.json must round-trip byte-identically:\nbefore:\n%s\nafter:\n%s", before, after)
+	}
+}
+
+// TestOpenValidatesLineage (spec 076 FR-008): a present lineage block gets a
+// structural check only — non-empty parent, fork_tick >= 0 — refused with the
+// standard corrupt-manifest error otherwise. Not a closed vocabulary.
+func TestOpenValidatesLineage(t *testing.T) {
+	base := `{"name":"x","seed":1,"created_at":"2026-07-26T00:00:00Z","format_version":5,"tick_game_seconds":1,"lineage":%s}`
+	cases := []struct {
+		name    string
+		lineage string
+		wantErr string // "" = must open
+	}{
+		{"valid", `{"parent":"aria","parent_created_at":"2026-07-01T00:00:00Z","fork_tick":97200}`, ""},
+		{"valid zero tick", `{"parent":"aria","fork_tick":0}`, ""},
+		{"missing parent", `{"fork_tick":97200}`, "lineage block missing its parent name"},
+		{"negative tick", `{"parent":"aria","fork_tick":-1}`, "lineage fork_tick -1 negative"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			manifest := fmt.Sprintf(base, tc.lineage)
+			if err := os.WriteFile(filepath.Join(dir, ManifestName), []byte(manifest), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			w, err := Open(dir)
+			if tc.wantErr == "" {
+				if err != nil {
+					t.Fatalf("Open should accept %s, got %v", tc.lineage, err)
+				}
+				if w.Manifest.Lineage == nil || w.Manifest.Lineage.Parent != "aria" {
+					t.Errorf("lineage block did not survive Open: %+v", w.Manifest.Lineage)
+				}
+				return
+			}
+			if err == nil || !strings.Contains(err.Error(), tc.wantErr) {
+				t.Errorf("Open(%s) error = %v, want it to contain %q", tc.lineage, err, tc.wantErr)
+			}
+		})
 	}
 }

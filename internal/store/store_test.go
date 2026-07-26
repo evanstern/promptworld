@@ -144,3 +144,41 @@ func TestMetaRoundTrip(t *testing.T) {
 		t.Errorf("GetMeta(seed) = %q, want 43", v)
 	}
 }
+
+// TestMetaByPrefix (spec 076 FR-012): the wallet-inheritance read — every
+// key with the prefix, nothing without it, and a literal-prefix match (the
+// underscore must not act as a LIKE wildcard: "llmXspend" must not match).
+func TestMetaByPrefix(t *testing.T) {
+	s := openTestStore(t)
+	for k, v := range map[string]string{
+		"llm_spend_2026-07":       "1.25",
+		"llm_spend_2026-07:cloud": "1.00",
+		"llm_spend_2026-06":       "9.99",
+		"llmXspend_2026-07":       "666", // underscore-as-wildcard trap
+		"seed":                    "42",
+	} {
+		if err := s.SetMeta(k, v); err != nil {
+			t.Fatal(err)
+		}
+	}
+	got, err := s.MetaByPrefix("llm_spend_")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]string{
+		"llm_spend_2026-07":       "1.25",
+		"llm_spend_2026-07:cloud": "1.00",
+		"llm_spend_2026-06":       "9.99",
+	}
+	if len(got) != len(want) {
+		t.Fatalf("MetaByPrefix = %v, want %v", got, want)
+	}
+	for k, v := range want {
+		if got[k] != v {
+			t.Errorf("MetaByPrefix[%q] = %q, want %q", k, got[k], v)
+		}
+	}
+	if empty, err := s.MetaByPrefix("nothing_"); err != nil || len(empty) != 0 {
+		t.Errorf("MetaByPrefix(nothing_) = %v, %v; want empty", empty, err)
+	}
+}

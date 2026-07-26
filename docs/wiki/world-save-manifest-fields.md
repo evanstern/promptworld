@@ -1,10 +1,10 @@
 ---
 name: world-save-manifest-fields
-description: world.json's field-by-field catalog — format_version history, tick_game_seconds, map dims, terrain_gen, the meeting block, teaching/memory_relevance/stage/stage_overridden/charter_preset/scenario additive fields, and their Open validation rules
+description: world.json's field-by-field catalog — format_version history, tick_game_seconds, map dims, terrain_gen, the meeting block, teaching/memory_relevance/stage/stage_overridden/charter_preset/scenario/lineage additive fields, and their Open validation rules
 kind: component
 sources:
   - internal/world/world.go
-verified_against: 801db7c1b15fb567732bc5c6063464e918353a4d
+verified_against: 0fd2104c59c54be8e8071d319fa4ce192083faf3
 ---
 
 # World save manifest: field catalog
@@ -86,6 +86,17 @@ arms the boot-frozen scenario runtime from this block at every boot
 (`sim.State.ArmScenario`, [[daemon-lifecycle]]) — the incident schedule,
 rubric evaluator, status facts, and exercise tab all key off it; a world
 with no `scenario` block stays byte-identical to pre-054 on every path.
+Spec 076 ([[world-forking]]) adds the optional `lineage` block
+(`LineageConfig{parent, parent_created_at, fork_tick}`, additive
+`omitempty`, no `FormatVersion` bump — the `teaching` precedent): fork
+provenance, written exactly once by `world.Fork` and never mutated — the
+fast offline mirror of the authoritative `world.forked` event in the fork's
+own log (compare's default window reads it). `Open` applies a structural
+check only (a present block must carry a non-empty `parent` and a
+`fork_tick >= 0`, else the standard corrupt-manifest error) — deliberately
+not a closed vocabulary, unlike `terrain_gen`/`memory_relevance`. A world
+that was never forked carries no `lineage` key and round-trips
+byte-identically.
 
 ## Connections
 
@@ -97,4 +108,5 @@ earlier; [[curriculum-ladder]] owns `stage`/`stage_overridden`/
 `charter_preset`; [[scenario-machinery]] validates and consumes `scenario`;
 [[governance]] and [[daemon-lifecycle]] read the `meeting` block at boot;
 [[memory-retrieval]] owns `memory_relevance`; [[world-migration]] is the
-bridge a pre-current `format_version` walks through.
+bridge a pre-current `format_version` walks through; [[world-forking]] owns
+the `lineage` block and why the fork's `seed` is carried, never fresh.
