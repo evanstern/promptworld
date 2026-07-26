@@ -6,7 +6,7 @@ sources:
   - internal/sim/executor.go
   - internal/sim/terrain.go
   - internal/sim/agents.go
-verified_against: 2136b30fb2c170d4e23ef2186ba0bbdb26c365c1
+verified_against: 03987d380ff92948495abe8b9b34e196d050154d
 ---
 
 # Executor — world state: storage economy and terrain

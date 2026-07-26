@@ -8,7 +8,7 @@ sources:
   - internal/tui/lessons.go
   - internal/tui/tiles.go
   - internal/tui/look.go
-verified_against: 2136b30fb2c170d4e23ef2186ba0bbdb26c365c1
+verified_against: 03987d380ff92948495abe8b9b34e196d050154d
 ---
 
 # TUI input, focus, and help overlay

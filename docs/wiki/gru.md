@@ -4,7 +4,7 @@ description: The nocturnal sight-triggered predator — an event-sourced entity 
 kind: component
 sources:
   - internal/sim/gru.go
-verified_against: 2136b30fb2c170d4e23ef2186ba0bbdb26c365c1
+verified_against: 03987d380ff92948495abe8b9b34e196d050154d
 ---
 
 # The gru
