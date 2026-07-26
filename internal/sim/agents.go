@@ -720,7 +720,11 @@ const (
 	// The mind driver's per-agent baseline cadence is spec-048-promoted: the
 	// default lives in tuning.go as defaultPlannerCadenceTicks and reads go
 	// through State.PlannerCadence() (nil-safe accessor).
-	witnessRadius    = 8
+	witnessRadius = 8
+	// WitnessRadius exports witnessRadius (spec 081) for internal/mind's absorb
+	// parity — the SAME one perceptual reality the sweep and the harvest arms
+	// use, never a second constant (spec 081 Assumption).
+	WitnessRadius    = witnessRadius
 	nearDeathBelow   = 200
 	nearDeathResetAt = 400
 	coldNightBelow   = 350

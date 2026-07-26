@@ -4,15 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/wiki/agent-mind.md@d304e8adb64fdf40e24bfeca3ca3420e8a840a35">
+<meta name="promptworld-docs:source" content="docs/wiki/agent-mind.md@8495b34ffb9ee5dc02e224025f0a23313bbab900">
 <meta name="promptworld-docs:source" content="docs/wiki/cognition.md@30912a9cd5d2334f76425ac8ca5b74a7a7c90876">
 <meta name="promptworld-docs:source" content="docs/wiki/llm-orchestrator.md@31c893e0406653197e467a89b2fdb96f0bcf2ee0">
 <meta name="promptworld-docs:source" content="docs/wiki/nightly-consolidation.md@2bc94f55c57880e07f0e52e5de20c9cd527ab340">
 <meta name="promptworld-docs:source" content="docs/wiki/social-fabric.md@30912a9cd5d2334f76425ac8ca5b74a7a7c90876">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@b6a20eaa4da1073a69959a5aff69591d931103a9">
-<meta name="promptworld-docs:source" content="docs/wiki/mental-maps.md@d304e8adb64fdf40e24bfeca3ca3420e8a840a35">
-<meta name="promptworld-docs:source" content="docs/wiki/memory-retrieval.md@b6a20eaa4da1073a69959a5aff69591d931103a9">
-<meta name="promptworld-docs:source" content="docs/wiki/decision-context.md@b6a20eaa4da1073a69959a5aff69591d931103a9">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@8495b34ffb9ee5dc02e224025f0a23313bbab900">
+<meta name="promptworld-docs:source" content="docs/wiki/mental-maps.md@8495b34ffb9ee5dc02e224025f0a23313bbab900">
+<meta name="promptworld-docs:source" content="docs/wiki/memory-retrieval.md@8495b34ffb9ee5dc02e224025f0a23313bbab900">
+<meta name="promptworld-docs:source" content="docs/wiki/decision-context.md@8495b34ffb9ee5dc02e224025f0a23313bbab900">
 <title>The AI behind the village — promptworld player docs</title>
 <style>
   :root {
@@ -108,10 +108,19 @@ village.</p>
 for a while even after they've wandered off, but the game quietly treats older
 memories of changeable things (like a fire, which burns down) as less
 trustworthy than a memory of somewhere sturdier (like a shelter or a quarry).
-When a villager actually goes back to a remembered spot and finds it's changed
-— a fire gone cold, a tree already chopped down — that discovery lands as its
-own little moment, and it's often memorable enough to make the villager stop
-and rethink what they were about to do next.</p>
+When a villager who was <em>elsewhere</em> comes back to a remembered spot and
+finds it's changed — a fire gone cold, a tree someone else felled while they
+were away — that discovery lands as its own little moment, and it's often
+memorable enough to make the villager stop and rethink what they were about to
+do next.</p>
+<p>A villager's own work, though, is remembered in the first person. When they
+fell a tree or quarry an outcrop themselves, they simply know it the moment it's
+done — "Felled the tree at (12,7)." — and so does anyone standing close enough
+to watch it happen; none of them later "discovers" that same stump as a
+mysterious loss. Only a villager who was truly absent gets the surprise on
+return. (Before a recent fix, villagers experienced their own wood-cutting as
+someone else's vandalism moments later, which quietly convinced them the world
+was going barren when it wasn't.)</p>
 <p>When a villager doesn't know of anything that would help — no known fire to
 warm up at, no known forage to eat — they can go <strong>searching</strong>:
 wander toward the edge of what they've explored so far, taking in whatever's
