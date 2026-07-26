@@ -108,6 +108,12 @@ var (
 	// tokGround: plain grass's dim "·" — no foreground (the terminal's own
 	// default, themeable by definition), faint.
 	tokGround = newToken("ground", classSemantic16, "", false, true, false)
+	// Marsh 65 (muted wet green) and sand 180 (pale warm tan) — spec 068 R3:
+	// material colors, distinct from tree's ANSI 2 / forage's ANSI 3 and
+	// from path 137 / pile 178 / chest 136 respectively under the
+	// family-tint discipline.
+	tokMarsh = newToken("marsh", classMaterial256, "65", false, false, false)
+	tokSand  = newToken("sand", classMaterial256, "180", false, false, false)
 
 	// The agent family: the letter/case resolution stays in tile() (the
 	// glyph is an agent's own initial), but the STYLES it paints with are
@@ -207,6 +213,15 @@ var mapGlyphs = []tileEntry{
 		Token: tokGru, Keys: []string{"gru"}},
 	{Glyph: "✝", Name: "grave", Meaning: "a villager's grave — marks where a death occurred",
 		Token: tokGrave, Keys: []string{"grave"}},
+	// Marsh + sand (spec 068 US2): the CP437 shading tier, per the
+	// tile-vocabulary analysis — new KINDS get new characters (never
+	// color-only), so a 16-color terminal still tells them apart. Appended
+	// after the shipped vocabulary: the pinned legend/overlay prefix stays
+	// byte-identical, these grow it (FR-009).
+	{Glyph: "░", Name: "marsh", Meaning: "marshy wet ground near water — open, walkable",
+		Token: tokMarsh, Terrain: []worldmap.TileKind{worldmap.Marsh}},
+	{Glyph: "▒", Name: "sand", Meaning: "a sandy shoreline flat — open, walkable",
+		Token: tokSand, Terrain: []worldmap.TileKind{worldmap.Sand}},
 }
 
 // groundTile is plain open ground — the terrain fallback for any kind

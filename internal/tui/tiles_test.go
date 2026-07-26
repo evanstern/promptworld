@@ -14,6 +14,7 @@ import (
 
 	"github.com/muesli/termenv"
 
+	"github.com/evanstern/promptworld/internal/sim"
 	"github.com/evanstern/promptworld/internal/worldmap"
 )
 
@@ -227,5 +228,110 @@ func TestTileRegistryFullDecode(t *testing.T) {
 	}
 	if !decoded {
 		t.Error("no legend row decodes plain ground's dim · (C2: the legend+overlay must decode everything the map draws)")
+	}
+}
+
+// --- spec 068 US2: marsh + sand reach every surface (T014) ---
+
+// TestMarshSandGlyphsDistinct (US2-AS5): the new kinds' characters differ
+// from each other and from every other glyph the registry can draw — a
+// 16-color terminal that collapses their material colors still tells them
+// apart by character alone.
+func TestMarshSandGlyphsDistinct(t *testing.T) {
+	newGlyphs := map[string]bool{"░": true, "▒": true}
+	for i := range mapGlyphs {
+		e := &mapGlyphs[i]
+		if e.Name == "marsh" || e.Name == "sand" {
+			continue
+		}
+		for _, g := range []rune(e.Glyph) {
+			if newGlyphs[string(g)] {
+				t.Errorf("row %q already draws %q — marsh/sand must be new characters, not recolors", e.Name, string(g))
+			}
+		}
+	}
+	if groundTile.Glyph == "░" || groundTile.Glyph == "▒" {
+		t.Error("ground already draws a shading glyph")
+	}
+}
+
+// TestMarshSandReachMapLegendOverlay (US2-AS3, SC-002 exercised for real):
+// the two appended registry rows reach the rendered map, the compact legend,
+// and the overlay walkthrough — with zero renderer edits, by construction.
+func TestMarshSandReachMapLegendOverlay(t *testing.T) {
+	withColorProfile(t, termenv.TrueColor)
+	line := legendGlyphLine()
+	if !strings.Contains(line, "░marsh") || !strings.Contains(line, "▒sand") {
+		t.Errorf("compact legend must carry the new tokens: %q", line)
+	}
+	walkthrough := strings.Join(Model{}.helpWalkthroughLines(200), "\n")
+	if !strings.Contains(walkthrough, "marshy wet ground near water — open, walkable") ||
+		!strings.Contains(walkthrough, "a sandy shoreline flat — open, walkable") {
+		t.Errorf("overlay walkthrough must decode marsh and sand:\n%s", walkthrough)
+	}
+
+	m := gen2Fixture(t)
+	grid, _ := m.renderMapGrid(24, 16)
+	if !strings.Contains(grid, tokMarsh.style.Render("░")) {
+		t.Errorf("marsh did not reach the map grid in its token style")
+	}
+	if !strings.Contains(grid, tokSand.style.Render("▒")) {
+		t.Errorf("sand did not reach the map grid in its token style")
+	}
+}
+
+// gen2Fixture is a GenMarshSand world with the camera panned onto a
+// shoreline patch that holds both new kinds inside the 24×16 viewport.
+func gen2Fixture(t *testing.T) Model {
+	t.Helper()
+	m := testModel(t)
+	gm := worldmap.GenerateV(42, 64, 64, worldmap.GenMarshSand)
+	m.gameMap = gm
+	m.replica = nil // terrain-only: no agents, structures, or night flag yet
+
+	// Find a marsh tile with a sand tile nearby (shorelines interleave the
+	// two), then aim the camera at it. Deterministic: first row-major hit.
+	for y := 0; y < gm.H; y++ {
+		for x := 0; x < gm.W; x++ {
+			if gm.At(x, y) != worldmap.Marsh {
+				continue
+			}
+			for sy := y - 6; sy <= y+6; sy++ {
+				for sx := x - 10; sx <= x+10; sx++ {
+					if gm.InBounds(sx, sy) && gm.At(sx, sy) == worldmap.Sand {
+						m.panX, m.panY = x-gm.W/2, y-gm.H/2
+						return m
+					}
+				}
+			}
+		}
+	}
+	t.Fatal("no marsh/sand shoreline patch found on the fixture seed")
+	return m
+}
+
+// TestGen2IdentityPin (T014's night pin): the gen=2 fixture's rendered grid,
+// day and night, pinned as goldens — night-dimmed marsh/sand rendering is a
+// frozen contract from the moment the vocabulary shipped. Minted once with
+// -update-tile-goldens against the just-landed registry rows; the T001
+// legacy goldens are untouched.
+func TestGen2IdentityPin(t *testing.T) {
+	withColorProfile(t, termenv.TrueColor)
+	m := gen2Fixture(t)
+	grid, _ := m.renderMapGrid(24, 16)
+	pinGolden(t, "tiles_gen2_grid_day", grid)
+
+	m.replica = sim.NewState(42, m.gameMap)
+	m.replica.Night = true
+	night, _ := m.renderMapGrid(24, 16)
+	pinGolden(t, "tiles_gen2_grid_night", night)
+
+	// Night dims, never hides (spec edge case): the shading glyphs are still
+	// there, in the faint-transformed token styles.
+	if !strings.Contains(night, tokMarsh.style.Faint(true).Render("░")) {
+		t.Error("night grid must carry faint-dimmed marsh")
+	}
+	if !strings.Contains(night, tokSand.style.Faint(true).Render("▒")) {
+		t.Error("night grid must carry faint-dimmed sand")
 	}
 }

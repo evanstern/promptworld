@@ -549,6 +549,9 @@ func (s *State) removeTerrain(e store.Event, p EntityRemovedPayload) error {
 		// Mirror agent.quarried: permanent depletion (no regrow entry).
 		s.Quarried = append(s.Quarried, Point{X: p.X, Y: p.Y})
 	default:
+		// Marsh and Sand (spec 068, C13) land here deliberately alongside
+		// grass/water: the new ground covers have no depleted state the
+		// executor could produce, so they are not removable terrain.
 		return fmt.Errorf("apply %s: (%d,%d) holds no removable terrain", e.Type, p.X, p.Y)
 	}
 	return nil

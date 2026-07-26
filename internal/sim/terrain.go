@@ -32,6 +32,9 @@ func effectiveKind(m *worldmap.Map, s *State, x, y int) worldmap.TileKind {
 			}
 		}
 	}
+	// Marsh and Sand (spec 068) deliberately have no overlay arm: nothing
+	// clears, harvests, or quarries the new ground covers — their effective
+	// kind is always their generated kind (C13/R6).
 	return k
 }
 
@@ -47,7 +50,10 @@ func passable(m *worldmap.Map, s *State, x, y int) bool {
 		return false
 	}
 	k := effectiveKind(m, s, x, y)
-	return k == worldmap.Grass || k == worldmap.Forage || k == worldmap.Depleted
+	// Marsh and Sand (spec 068): open walkable ground, exactly like grass —
+	// no movement cost, no affordances (FR-008/C9).
+	return k == worldmap.Grass || k == worldmap.Forage || k == worldmap.Depleted ||
+		k == worldmap.Marsh || k == worldmap.Sand
 }
 
 // isWall names the wall family (spec 032, research R1): kind ∈ {wall_plank,

@@ -131,6 +131,13 @@ func featureDesc(s *State, x, y int, excludeKind string) string {
 		return "the rock outcrop"
 	case worldmap.Forage:
 		return "the forage patch"
+	case worldmap.Marsh:
+		// Spec 068 (FR-008/C13): the new ground covers are NOTABLE terrain —
+		// named to agents, never a fallback label — unlike grass, whose ""
+		// below means "ordinary ground, nothing to say".
+		return "the marsh"
+	case worldmap.Sand:
+		return "the sand flat"
 	}
 	return ""
 }
