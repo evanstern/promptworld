@@ -45,6 +45,15 @@ func TestDefaultPromptsAreFictionFree(t *testing.T) {
 	// The spec-059 survival-frame variant (fixed-frame carve-out) and the
 	// targeting-digest preamble are prompt surfaces too.
 	assertPromptClean(t, "survival system prompt",
-		buildTurnSystemPrompt(true, persona.DefaultCharter, nil, roster))
+		buildTurnSystemPrompt(true, persona.DefaultCharter, "", nil, roster))
 	assertPromptClean(t, "targeting guidance", tool.GuardianTargetingGuidance())
+	// Spec 063 surfaces: the tutor-preset composition (guide in the editable
+	// zone), the read-tool guidance paragraph, and every explain fact sheet.
+	assertPromptClean(t, "tutor turn system prompt (guide composed)",
+		buildTurnSystemPrompt(false, persona.TutorCharter, persona.TutorGuide, nil, roster))
+	assertPromptClean(t, "read-tool guidance", tool.GuardianReadGuidance(roster))
+	sc := tool.ExplainScope{Granted: roster, Catalog: roster}
+	for _, topic := range append(tool.ExplainTopics(), "", "work_miracle", "unknown-topic") {
+		assertPromptClean(t, "explain sheet "+topic, tool.ExplainSheet(topic, sc))
+	}
 }

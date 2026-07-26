@@ -575,6 +575,21 @@ var guardianTools = []Tool{
 		Cost:   Cost{Charges: 1},
 		Events: []string{"metatron.time_snapped", "metatron.item_granted",
 			"metatron.entity_moved", "metatron.entity_removed", "agent.memory_added"}},
+	// explain (spec 063 US1, FR-001/FR-002): the guardian's read-only
+	// mechanics-facts tool. Effect READ — the journal-tool precedent: it
+	// returns a deterministic fact sheet into cognition (explain.go), grounds
+	// nothing, and the loop driver's read exemption (toolloop isActing) means
+	// it never consumes the turn's one mediated act — "explaining is speech,
+	// not an act", structurally. Gate None: no charge, no scene; the only
+	// gate is the world's capability grant (three-layer, like every guardian
+	// tool). `topic` is deliberately Text, NOT an Enum: an unknown topic must
+	// return the explainable-topic catalog as a repairable miss (FR-002), so
+	// the driver's schema layer must not reject it first. Appended last so no
+	// existing tool's registration position shifts.
+	{Name: "explain", Effect: Read, Gate: None,
+		Params: []Param{{Name: "topic", Kind: Text, Required: false, MaxRunes: 60,
+			Description: "what to explain: roster, costs, charges, workings, decisions, glyphs, or a tool's name; omit for the topic catalog"}},
+		PromptGloss: `explain returns the game's own exact mechanics facts — tool roster, prices, the charge economy, working kinds, decision verdicts, map glyphs. Free to call, any number of times, and it never counts as your act. Use it instead of guessing a number or a rule.`},
 }
 
 // journalTools are the villager-only journal capabilities (spec 019, US3): two

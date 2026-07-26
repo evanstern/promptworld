@@ -207,6 +207,9 @@ var guardianToolDesc = map[string]string{
 	"start":           "start the world clock (optionally at a named speed)",
 	"adjust_speed":    "change the world clock's speed",
 	"work_miracle":    "a direct world edit",
+	// explain (spec 063) renders under GuardianReadGuidance, never the acting
+	// bullets — this gloss is its read-paragraph line.
+	"explain": "the game's exact facts on a topic: roster, costs, charges, workings, decisions, glyphs, or a tool's name",
 }
 
 // miracleKindArgs is the per-kind argument hint rendered under work_miracle,
@@ -235,6 +238,14 @@ var miracleKindArgs = map[string]string{
 func GuardianToolGuidance(roster []Tool) string {
 	var b strings.Builder
 	for _, t := range roster {
+		// Read tools (spec 063: explain) are NOT acting tools — they cost
+		// nothing and never consume the turn's one act, so listing one under
+		// the "call exactly ONE of these" acting doctrine would be a lie.
+		// They render through GuardianReadGuidance instead. Byte-inert for
+		// every pre-063 roster (none carried a Read tool).
+		if t.Effect == Read {
+			continue
+		}
 		// A registry tool renders its hand-written gloss; a BUNDLE tool (spec 036
 		// T012) is absent from this map, so it falls back to its own PromptGloss +
 		// param surface. The fallback is byte-inert for every map-covered tool —
@@ -254,6 +265,30 @@ func GuardianToolGuidance(roster []Tool) string {
 		}
 		cost := t.Cost.Charges
 		fmt.Fprintf(&b, "  • %s(%s) — %s (%d %s)\n", t.Name, paramNameList(t), desc, cost, chargeWord(cost))
+	}
+	return b.String()
+}
+
+// GuardianReadGuidance renders the read-tool paragraph of the guardian turn
+// prompt (spec 063 US1/US2): one short block naming each granted READ tool
+// and the tutor-lane doctrine — free, unlimited, never the act. Empty when
+// the roster grants no read tool, so a world without explain composes a
+// byte-identical prompt (the FR-004 discipline). Walks the roster in order;
+// deterministic like GuardianToolGuidance.
+func GuardianReadGuidance(roster []Tool) string {
+	var b strings.Builder
+	for _, t := range roster {
+		if t.Effect != Read {
+			continue
+		}
+		if b.Len() == 0 {
+			b.WriteString("You may also READ freely — reading costs nothing, is never your act, and you may do it any number of times in a turn, before speaking or acting:\n")
+		}
+		desc := guardianToolDesc[t.Name]
+		if desc == "" {
+			desc = t.PromptGloss
+		}
+		fmt.Fprintf(&b, "  • %s(%s) — %s\n", t.Name, paramNameList(t), desc)
 	}
 	return b.String()
 }

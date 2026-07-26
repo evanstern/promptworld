@@ -627,7 +627,12 @@ func intersectGrant(g grantSet, gd *bundle.GrantDoc) grantSet {
 // (world-shaping) and pause/start/adjust_speed (clock control; neither query
 // nor nudge — the player keeps direct CLI/TUI clock control at every stage).
 // No bundle tools (the empty-intersection effect of the explicit list below).
-var stage1CeilingTools = []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order"}
+// explain (spec 063) joins the stage-1 ceiling: it is the tutor preset's own
+// grounding tool — stage-1 IS the orientation stage, and the guide's
+// mechanics-via-explain contract (persona.TutorGuide) needs the tool granted
+// where the guide composes. Read-only, zero-cost, tutor-lane by construction,
+// so it widens no acting capability.
+var stage1CeilingTools = []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "explain"}
 
 // stageCeiling returns the stage's capability ceiling as a narrowing doc —
 // the same shape a persona bundle's grant uses, so intersectGrant applies it
