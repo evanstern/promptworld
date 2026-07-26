@@ -135,10 +135,12 @@ Record the model tier + rubric justification on each board task at dispatch
   rather than folding it into 142's scope. Folding it in would be a silent scope grow.
 - **TASK-142 spec time — pull-surface budget** (open question 3): record the tension in
   the spec's notes; no navigation ruling is taken in this sweep.
-- **TASK-67 spec — fork budget-meter semantics** (its AC5 says "decided and documented
-  in the spec"): settle it in the spec with the recorded recommendation (forks share
-  the single global spend ceiling — it is global by design per the llm budget doctrine)
-  and surface the decision in the final report.
+- **TASK-67 spec — fork budget-meter semantics** RESOLVED at spec time, deviating from
+  this runbook's original recommendation with evidence (spec 076 research R4): the spend
+  meter is per-world (world meta table + per-world llm.json) — no machine-global wallet
+  exists to share. Encoded: the fork INHERITS the wallet (llm.json + llm_spend_* meta
+  copied verbatim; forking never mints fresh budget; independent meters thereafter).
+  Surfaced to the operator in the sweep report.
 - Tier escalations (one-way Sonnet → Opus; record rubric justification on the task).
 - Lane amendments (amend this file, note why, tell the operator).
 
