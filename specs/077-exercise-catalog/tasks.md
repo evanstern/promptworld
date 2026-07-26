@@ -96,13 +96,13 @@ as reducer-valid, ambient-indistinguishable, replay-safe events.
 
 ## Phase 4: User Story 1a — emitter generalization (blocks 4b; board AC #1)
 
-- [ ] T014 [US1] `ExerciseDefinition.BoundaryDay` + `boundaryDue(def, nextTick)` (fixed
+- [X] T014 [US1] `ExerciseDefinition.BoundaryDay` + `boundaryDue(def, nextTick)` (fixed
   dawn-of-day-N / rolling every-dawn from day 2); `scenarioRubricEvents` drops the
   `first-night`-only guard, keeps batch-death scan + `hasCurriculumPass` latch +
   pass→unlock same-batch order, and assembles evidence via the sanctioned constructors
   keyed by satisfied term type (data-model §4), in `internal/sim/scenario.go` +
   `internal/sim/curriculum.go` (plan D3, spec FR-003/004)
-- [ ] T015 [US1] Emitter generalization tests: first-night byte-identical behavior
+- [X] T015 [US1] Emitter generalization tests: first-night byte-identical behavior
   (regression), rolling boundary passes at first satisfying dawn and never re-emits,
   fixed-boundary miss emits nothing forever (`in_progress` until `run.ended`), all-dead
   dawn suppressed for every exercise, in `internal/sim/scenario_test.go` (spec US1
@@ -114,25 +114,25 @@ as reducer-valid, ambient-indistinguishable, replay-safe events.
 
 **Independent Test**: per-exercise `driveTicks` pass fixture + the no-default-arm sweep.
 
-- [ ] T016 [US1] Evaluator helpers (`deathsByCause`, `storedFoodTotal`,
+- [X] T016 [US1] Evaluator helpers (`deathsByCause`, `storedFoodTotal`,
   `playerOrderSince`; death-cause field names verified against the spec-044 ledger) +
   seven new rubric arms in `EvaluateRubric` per data-model §5, in
   `internal/sim/scenario.go`; per-arm table tests (the `TestTheLawRubricTable`
   precedent), in `internal/sim/scenario_test.go` (plan D4, spec FR-002)
-- [ ] T017 [US1] The seven new `ExerciseDefinition`s + `BoundaryDay` on the two shipped
+- [X] T017 [US1] The seven new `ExerciseDefinition`s + `BoundaryDay` on the two shipped
   ones (first-night: 2; the-law: 0/rolling), seeds 46103–46109, schedules per
   data-model §5, in `internal/sim/curriculum.go`; `TestScenarioSchedulesCompile` stays
   green; position-validity pins per authored position on its own seed's map (the
   `TestFirstNightSchedulePositionValid` precedent), in `internal/sim/scenario_test.go`
   (spec FR-001/008)
-- [ ] T018 [US1] Catalog sweeps: no cataloged id reaches `EvaluateRubric`'s default arm
+- [X] T018 [US1] Catalog sweeps: no cataloged id reaches `EvaluateRubric`'s default arm
   (new sweep test); `TestExerciseRubricTermsAreCatalogedEventTypes` green over the grown
   terms (needs T013), in `internal/sim/scenario_test.go` + `internal/tui/digest_test.go`
   (spec FR-002, SC-001)
-- [ ] T019 [US1] `world.ValidScenarioExercise` mirrors all nine ids;
+- [X] T019 [US1] `world.ValidScenarioExercise` mirrors all nine ids;
   `TestScenarioVocabularyMirrorsSimCatalog` green, in `internal/world/world.go` (+ its
   test) (spec FR-007)
-- [ ] T020 [US1] Pass-emission fixtures per exercise class (`driveTicks` harness):
+- [X] T020 [US1] Pass-emission fixtures per exercise class (`driveTicks` harness):
   the-law with `CharterEvidenceFromState` evidence → same-batch `stage_unlocked{stage-3}`
   (US1 scenario 3); toolsmith with `Custom: true` skills evidence → stage-4 unlock (US1
   scenario 4); a stage-4 pass with no unlock (scenario 5); cold-dawn/stranger-at-the-gate

@@ -74,15 +74,15 @@ const (
 // a meeting is village fabric and a norm is what a meeting produces, and the
 // chronicle treats both as one family rather than two.
 var familyByNamespace = map[string]eventFamily{
-	"world":     familyWorld,
-	"run":       familyWorld, // run.ended (spec 044): world-lifecycle voice
-	"clock":     familyClock,
-	"sim":       familySim,
-	"agent":     familyAgent,
-	"social":    familySocial,
-	"meeting":   familyGovernance,
-	"norm":      familyGovernance,
-	"gru": familyGru,
+	"world":   familyWorld,
+	"run":     familyWorld, // run.ended (spec 044): world-lifecycle voice
+	"clock":   familyClock,
+	"sim":     familySim,
+	"agent":   familyAgent,
+	"social":  familySocial,
+	"meeting": familyGovernance,
+	"norm":    familyGovernance,
+	"gru":     familyGru,
 	// stranger (spec 077 US2 — the night trickster) rides the gru's own
 	// threat-family voice: it is the second nocturnal entity, not a new
 	// visual role (FR-016 — no new channels, no new tiers).

@@ -170,17 +170,17 @@ var catalogFixture = map[string]digestFixture{
 	"norm.violated":                  {`{"norm_id":3,"violator":0,"witnesses":[1,2]}`, `Ash violated a norm (#3)`},
 
 	// --- gru / chronicle / guardian ---
-	"gru.emerged":                 {`{"night":1,"x":5,"y":5}`, `the gru emerged at (5,5)`},
-	"gru.moved":                   {`{"x":6,"y":6}`, `the gru prowls to (6,6)`},
-	"gru.sighted":                 {`{"agent":0,"x":5,"y":5}`, `Ash sighted the gru`},
-	"gru.attacked":                {`{"agent":0,"health":40}`, `the gru attacked Ash · health → 40`},
-	"gru.withdrew":                {`{"day":2}`, `the gru withdrew`},
+	"gru.emerged":  {`{"night":1,"x":5,"y":5}`, `the gru emerged at (5,5)`},
+	"gru.moved":    {`{"x":6,"y":6}`, `the gru prowls to (6,6)`},
+	"gru.sighted":  {`{"agent":0,"x":5,"y":5}`, `Ash sighted the gru`},
+	"gru.attacked": {`{"agent":0,"health":40}`, `the gru attacked Ash · health → 40`},
+	"gru.withdrew": {`{"day":2}`, `the gru withdrew`},
 	// spec 077 US2: the stranger — the gru-family threat voice; stranger.took
 	// joins the whole-line alert tier beside social.chest_taken (theft is theft).
-	"stranger.arrived":  {`{"night":2,"x":44,"y":0}`, `a stranger slipped in at (44,0)`},
-	"stranger.moved":    {`{"x":6,"y":6}`, `the stranger creeps to (6,6)`},
-	"stranger.took":     {`{"x":5,"y":5,"kind":"food_raw","n":2}`, `the stranger took 2 food_raw from the stores at (5,5)`},
-	"stranger.departed": {`{"day":2}`, `the stranger was gone by dawn of day 2`},
+	"stranger.arrived":            {`{"night":2,"x":44,"y":0}`, `a stranger slipped in at (44,0)`},
+	"stranger.moved":              {`{"x":6,"y":6}`, `the stranger creeps to (6,6)`},
+	"stranger.took":               {`{"x":5,"y":5,"kind":"food_raw","n":2}`, `the stranger took 2 food_raw from the stores at (5,5)`},
+	"stranger.departed":           {`{"day":2}`, `the stranger was gone by dawn of day 2`},
 	"chronicle.entry":             {`{"day":3,"from_tick":100,"to_tick":200,"text":"Ash lit the first fire.","thread":"cold-start","agents":[0]}`, `day 3 · cold-start: Ash lit the first fire.`},
 	"metatron.charge_regenerated": {`{}`, `a charge regenerated`},
 	"metatron.nudged":             {`{"form":"dream","targets":[0],"text":"beware the cold"}`, `Guardian dream → Ash: "beware the cold"`},
