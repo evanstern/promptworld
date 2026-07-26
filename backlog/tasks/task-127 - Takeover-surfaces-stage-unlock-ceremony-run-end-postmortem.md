@@ -4,7 +4,7 @@ title: 'Takeover surfaces: stage-unlock ceremony + run-end postmortem'
 status: In Progress
 assignee: []
 created_date: '2026-07-25 14:44'
-updated_date: '2026-07-25 23:50'
+updated_date: '2026-07-26 00:28'
 labels:
   - learning-game
   - tui
@@ -40,4 +40,6 @@ Spec: specs/056-takeover-surfaces
 Model tier: Sonnet (spec-implementer default). Rubric: single-package overlay state machine + rendering, tests alongside — routine tier per constitution Principle V. Both parked operator questions verified RESOLVED in the authored overlay pages (ambient postmortem = morgue-only; ceremony = both voices, instrument authoritative) — runbook checkpoint condition not met, proceeding per 'the pages win'. DISPATCH GATED on TASK-121's skin-contract merge (Lane 3 ordering); spec complete and ready.
 
 Dispatched (UI-sweep orchestrator, handoff 2026-07-25b step 3): spec-implementer on Sonnet per recorded rubric; worktree .worktrees/task-127 fast-forwarded to 9386e6a before dispatch. Gate condition met (TASK-121 merged, PR #94). Parallel with TASK-115 (Opus); merge order: smaller first, serial, re-ground between. Implementer warned of pre-existing red TestCatalogSweep on main (TASK-140 hotfix in flight).
+
+Implementation complete (Sonnet spec-implementer): 3 commits, tip 223771c; all 11 spec tasks done; PR #99 open, gated by orchestrator — design gate green, race suite green except the pre-existing TestCatalogSweep red that PR #98 (TASK-140) fixes; merge order: #98 first. Seven implementer judgment calls reviewed and accepted at the planning tier, notably: (1) rubric met/missed markers are event-presence-based until TASK-119's rubric machinery lands (documented in both overlay pages as a known simplification — reconcile at the 119/127 rebase); (2) scored/ambient detection reads Manifest.Scenario client-side (FR-006, no new IPC); (3) takeover wins over console page and help, esc peels one layer. reportCardView seam (TASK-115): unexported views.go symbols — reportCardView/reportCardFact/reportCardFactsFromEvents/reportCardFactsFromEvidence + consoleCard wrapper. Done flip held on PR #99 merge.
 <!-- SECTION:NOTES:END -->
