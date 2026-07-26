@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/world/world.go
   - internal/world/migrate.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+verified_against: aedcf52f680ed68910e185c3ccde44bd320517b6
 ---
 
 # World save directory
@@ -111,7 +111,15 @@ is never stored ([[worldmap-generation]]).
   `tick_game_seconds` other than 1, a malformed `meeting` block (bad "HH:MM",
   or convene not strictly before open), or (spec 068) a `terrain_gen` outside
   `{absent/0, worldmap.GenMarshSand}` is a hard error, so an old binary can
-  never half-load a newer world.
+  never half-load a newer world. Since TASK-147, the `format_version` mismatch
+  case alone is a distinguishable typed error, `*world.ErrFormatVersionMismatch{Got,
+  Want}` (every other `Open` failure — corrupt JSON, a bad `meeting` block, a
+  directory that was never a world — stays a plain wrapped error): the manifest
+  parsed fine, it's just a version this build doesn't support, so the world itself
+  may be perfectly healthy. Callers that only need daemon reachability (not content —
+  [[daemon-lifecycle]], [[cli-promptworld]]'s `stop`/`status`) match it with
+  `errors.As` to tell "can't read this world's content" apart from a genuine open
+  failure.
 - `SetTeaching(dir, on)` (spec 039) is the offline read-modify-write for the
   `Teaching` marker: `Open`s the manifest, flips the field, rewrites
   `world.json`. A running daemon reads `Teaching` only at boot, so this is a
@@ -134,7 +142,12 @@ is never stored ([[worldmap-generation]]).
   `EstimatorStatePath()` → `estimator_state.json` (the daemon-written snapshot
   of live latency estimates, TASK-113 — absent is legal, boot then seeds from
   calibration/bootstrap alone; never event-sourced, never read during replay),
-  `SockPath()` → `daemon.sock`, `PidPath()` → `daemon.pid`,
+  `SockPath()` → `daemon.sock`, `PidPath()` → `daemon.pid` (since TASK-147, thin
+  `*World` wrappers around the package-level `SockPathIn(dir)`/`PidPathIn(dir)` —
+  pure path joins, not a validating `Open` — so daemon-lifecycle callers that must
+  reach a world this build cannot necessarily `Open` (`daemon.IsRunning`, `stop`,
+  `status`'s live-dial, [[daemon-lifecycle]]) can get the socket/pid path without
+  one; world-content commands keep going through `Open` and the `*World` methods),
   `LogPath()` → `daemon.log`, `CharterPath()` → `charter.md` (the player-editable
   prompt), `GuardianDir()` → `metatron/` (dir name frozen, spec 052 ruling 2 — the Guardian's soul and transcript —
   [[guardian]]), and `VillageCharterPath()` → `village_charter.md` (the village's

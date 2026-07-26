@@ -6,7 +6,7 @@ sources:
   - internal/daemon/daemon.go
   - internal/daemon/curriculum.go
   - internal/daemon/estimator_persist.go
-verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
+verified_against: aedcf52f680ed68910e185c3ccde44bd320517b6
 ---
 
 # Daemon lifecycle
@@ -231,8 +231,14 @@ is still ours (a slow shutdown can overlap a successor daemon that has already
 claimed it; the CLI's stop wait is 30 s to match). SIGKILL skips all of this —
 that is the crash path recovery is tested against.
 
-`IsRunning(dir)` (used by CLI `start`/`stop`) reads the pidfile and probes liveness
-without touching the world.
+`IsRunning(dir)` (used by CLI `start`/`stop`/`status`) reads the pidfile and probes
+liveness without touching the world — deliberately, since TASK-147: it reads
+`world.PidPathIn(dir)` (a pure path join, not a validating `Open`) rather than going
+through a `*World`, so pidfile liveness stays checkable for a world this build can no
+longer `world.Open` (e.g. an older `format_version`). Before this, `IsRunning` opened
+the world first, so a running old-version daemon could never be detected — let alone
+stopped — by a newer binary; `migrate` also refuses to touch a live daemon, so the two
+gates combined could deadlock a world at an unsupported version.
 
 `replayToTick(seed, m, st, cutoff)` (spec 043) sits beside `recoverState` as a
 read-only reconstruction primitive the boot path never calls: it rebuilds

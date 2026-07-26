@@ -10,7 +10,7 @@ sources:
   - cmd/promptworld/work.go
   - cmd/promptworld/divergence.go
   - cmd/promptworld/stages.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+verified_against: aedcf52f680ed68910e185c3ccde44bd320517b6
 ---
 
 # promptworld CLI
@@ -127,7 +127,12 @@ ambiguous or unknown names exit 1). `worldArg`/`parseWorldFlags` wrap the older
   on the child.
 - `stop <world>` — sends `shutdown` over the socket (falls back to SIGTERM if the
   socket is dead but the pid lives), waits ≤30 s for the pidfile to clear. Idempotent:
-  "daemon not running" exits 0.
+  "daemon not running" exits 0. Since TASK-147, deliberately version-agnostic: it
+  checks the directory looks like a world (`requireWorldDir`, a bare manifest-presence
+  stat) and reaches the daemon via `daemon.IsRunning`/the socket path alone, never
+  `world.Open` — a running daemon on a world whose `format_version` this build can no
+  longer `Open` (the v4-world stop/migrate deadlock a version-gated `Open` produced,
+  since `migrate` also refuses a live daemon) is still stoppable.
 - `status <world> [--json]` — online: full `StatusData` via the client
   (`renderStatusHuman`), which — since spec 034 — prints one
   `WARNING llm provider "<name>": <detail> — <remedy>` line per provider
@@ -164,9 +169,16 @@ ambiguous or unknown names exit 1). `worldArg`/`parseWorldFlags` wrap the older
   when the wire's `Clock.Ended` is set, the running/paused clock line is
   replaced entirely by `tick N (...) — run ended day N, all villagers dead;
   world is an archive (read-only)` ([[morgue]]).
-  Offline: last-known state reconstructed read-only from the store (via
-  `worlds.OfflineSnapshot` — latest snapshot plus a fold of any newer events,
-  [[instance-manager]]), clearly labeled "daemon not running"; an ended
+  Reaching a live daemon is likewise version-agnostic (same `requireWorldDir` +
+  socket-dial-first shape as `stop`, TASK-147): the dial happens before any
+  `world.Open`, so a running daemon on a world this build can no longer `Open`
+  still answers normally. Offline: last-known state reconstructed read-only from the
+  store (via `worlds.OfflineSnapshot` — latest snapshot plus a fold of any newer
+  events, [[instance-manager]]), clearly labeled "daemon not running"; a world whose
+  manifest `format_version` this build can't `Open` (`world.ErrFormatVersionMismatch`,
+  [[world-save-directory]]) also reports "daemon not running" rather than the
+  migrate-hint error, since the dial above already ruled out a live daemon and the
+  point of this check is reachability, not content. An ended
   world's offline output carries the same posture — a `run ended day N, all
   villagers dead; world is an archive (read-only)` line before the log line,
   and `--json` gains `ended`/`ended_day` clock keys present only when ended,
