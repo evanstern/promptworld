@@ -16,6 +16,7 @@
 <meta name="promptworld-docs:source" content="docs/wiki/takeover-surfaces.md@b6a20eaa4da1073a69959a5aff69591d931103a9">
 <meta name="promptworld-docs:source" content="docs/wiki/grounded-feedback.md@b6a20eaa4da1073a69959a5aff69591d931103a9">
 <meta name="promptworld-docs:source" content="docs/wiki/village-lens.md@b6a20eaa4da1073a69959a5aff69591d931103a9">
+<meta name="promptworld-docs:source" content="docs/wiki/skin.md@31c893e0406653197e467a89b2fdb96f0bcf2ee0">
 <title>Getting started — promptworld player docs</title>
 <style>
   :root {
@@ -264,7 +265,28 @@ villager thinking is currently being suppressed for speed, a
 systems tab goes further, listing each kind of thinking with its own live status
 and skipped-thought count.</p>
 
-<h2>5. When you're done for now</h2>
+<h2>5. Ask your guardian one thing</h2>
+<p>Everything so far has been setup and watching. Now type something. Open the
+guardian tab in <code>promptworld ui</code> (or press <code>G</code> for the
+full-screen console) and put one concrete ask into the message box:</p>
+<pre><code>"show Ash a vision of the fire dying"</code></pre>
+<p>That's a private word to one villager — a <strong>vision</strong>, one of
+the handful of things your guardian can do at the first stage (alongside an
+<strong>omen</strong>, a message the whole village hears, and a <strong>watch</strong>,
+which asks it to keep an eye out and act the moment something happens). Send it
+and see what comes back: the guardian replies or acts on it, and the line above
+the message box — the one tracking your charge bank — is where the cost of
+that ask shows up. This works on any world, right away: no
+<code>--scenario</code>, nothing to set up first.</p>
+<p>That sample line is one phrasing from the default Guardian skin — the fiction
+this game ships with out of the box. Your own world might be running a
+different skin with its own voice, so don't take the words above as
+universal: press <code>?</code> for the built-in help overlay, and its
+guardian section lists one example ask per verb <em>your</em> world actually
+grants, in <em>your</em> world's own phrasing. That live, per-world list is
+always the one to trust for "what can I say."</p>
+
+<h2>6. When you're done for now</h2>
 <p>Quitting <code>attach</code> or <code>ui</code> only detaches your view — the daemon
 keeps the village running. If you actually want the world to stop simulating (e.g.
 you're shutting down your machine), stop the daemon itself:</p>
@@ -275,7 +297,7 @@ it was killed abruptly instead. <code>stop</code> and <code>status</code> both w
 on a world made by an older version of promptworld that you haven't upgraded yet — you
 don't need to run <code>migrate</code> first just to check on it or shut it down.</p>
 
-<h2>6. Try a change on a copy (fork &amp; compare)</h2>
+<h2>7. Try a change on a copy (fork &amp; compare)</h2>
 <p>Once a world has run for a while, you can copy it and experiment on the copy.
 <code>promptworld fork demo demo-b</code> makes a new world, <code>demo-b</code>,
 that is the same village with the same history up to its latest save point —

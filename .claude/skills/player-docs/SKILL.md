@@ -81,7 +81,7 @@ source not listed here, add it — and add the matching meta tag in the same cha
 | Page | Sources |
 |------|---------|
 | `index.html` | none (nav only) |
-| `getting-started.html` | `README.md`, `docs/wiki/cli-promptworld.md`, `docs/wiki/daemon-lifecycle.md`, `docs/wiki/tui-client.md` |
+| `getting-started.html` | `README.md`, `docs/wiki/cli-promptworld.md`, `docs/wiki/daemon-lifecycle.md`, `docs/wiki/tui-client.md`, `docs/wiki/llm-provider-health.md`, `docs/wiki/chronicle.md`, `docs/wiki/morgue.md`, `docs/wiki/gru.md`, `docs/wiki/curriculum-ladder.md`, `docs/wiki/takeover-surfaces.md`, `docs/wiki/grounded-feedback.md`, `docs/wiki/village-lens.md`, `docs/wiki/skin.md` |
 | `playing-via-metatron.html` | `docs/wiki/metatron.md`, `docs/wiki/metatron-miracles.md`, `docs/wiki/governance.md` |
 | `time-and-speed.html` | `docs/wiki/game-clock.md`, `docs/wiki/sim-loop.md`, `docs/wiki/cli-promptworld.md` |
 | `reading-the-story.html` | `docs/wiki/chronicle.md`, `docs/wiki/tui-client.md`, `docs/wiki/event-log.md` |
@@ -116,6 +116,36 @@ files rather than `docs/wiki/` notes (the spec is the source of truth for the
 ladder's client-approved names/table), so — the `keys-reference.html` precedent
 above — their source pins are plain-file `git log` pins, not `verified_against`
 frontmatter pins.
+
+`getting-started.html` carries a first-prompt step (spec 079, TASK-153): a numbered
+"Ask your guardian one thing" section, positioned after the watch-it-live step and
+before the stopping step, whose sample ask is a **byte-verbatim** value from the
+`skin.guardian.example_ask.*` family as documented in `docs/wiki/skin.md` (the
+declared source — never quote `internal/skin/skin.go` directly, and never
+paraphrase: a paraphrase is an independently asserted fact and does not survive
+regeneration), with the verb held to the pinned stage-1 tool ceiling (`send_vision`,
+`send_omen`, `monitor_and_act`, `cancel_order` —
+`specs/046-curriculum-ladder/contracts/stage-gating.md`; recommended exemplar:
+`send_vision` → `"show Ash a vision of the fire dying"`). The step must say what to
+expect back (the guardian replies or acts; the charge line above the message box is
+where the cost shows), must work on any world with no `--scenario` needed, must name
+the in-game `?` overlay's guardian section as the live, per-world list of one example
+ask per **granted** verb, and must carry the skin honesty note: the phrasing printed
+on the page is the default Guardian skin's, a custom skin re-voices it, and the `?`
+overlay always shows the world's own. A future regeneration reproduces this step
+rather than reverting to a watch-only walkthrough.
+
+Each `stage-N-*.html` page (spec 079, TASK-153) opens with a short "Your first
+session" do-this-then-this block (3-5 ordered steps) — create a world at that stage
+with no `--scenario`, the stage-appropriate first acts, then a when-you're-ready
+pointer to that stage's exercise (stage-4 states plainly that no exercise gates the
+stage itself — an ambient stage-4 world is unscored by design, per its own declared
+`spec.md` row, even though optional stage-4 scenario worlds exist per spec 077).
+Every claim in a block projects from that page's already-declared sources above —
+no stage page gains or loses a source tag for this addition. Only stage-1's block
+links to `getting-started.html`'s first-prompt step for the ask itself; a future
+regeneration reproduces every stage page's block rather than dropping back to a
+grants-only description.
 
 ## Provenance meta-tag format
 
