@@ -691,6 +691,22 @@ func (s *State) VillagerAt(x, y int) int {
 	return -1
 }
 
+// HasStructureAt reports whether a structure stands on (x,y). At most one
+// structure ever occupies a tile (the buildSite invariant structureIndexAt
+// documents), so presence is the tile's whole structure story. Exported for
+// the bundle effect compiler's class+tile target resolution (spec 082): the
+// compiler probes presence through the SAME one-per-tile lookup the miracle
+// reducer arms use, so a tile-addressed bundle effect and the reducer can
+// never disagree about which structure a tile names. Read-only,
+// deterministic, map-free — the VillagerAt discipline.
+func (s *State) HasStructureAt(x, y int) bool { return s.structureIndexAt(x, y) >= 0 }
+
+// HasPileAt reports whether a ground pile sits on (x,y) — one pile per tile
+// (the reducer invariant pileAt documents). Exported for the bundle effect
+// compiler's class+tile target resolution (spec 082), mirroring
+// HasStructureAt. Read-only, deterministic, map-free.
+func (s *State) HasPileAt(x, y int) bool { return s.pileAt(x, y) != nil }
+
 // AgentIndexByName resolves a villager name (case-insensitive, trimmed) to its
 // roster index, or -1 when no villager bears it. Exported for the IPC miracle
 // door, which receives a give_item's target by NAME (contracts §2); it resolves
