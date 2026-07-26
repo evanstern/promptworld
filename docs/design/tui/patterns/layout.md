@@ -2,7 +2,7 @@
 title: Pattern — layout
 class: pattern
 status: shipped
-verified_against: ed93211ced3deb76e9b1f2fa4902c6f3d9dbc59d
+verified_against: 2f1044b326023d26fda33a3c70de61f6e6563b0c
 sources:
   - internal/tui/layout.go
   - internal/tui/views.go
@@ -85,16 +85,15 @@ pre-ladder-defaulted-off, the lesson row starts already folded (badge form,
 0 rows), so fixed chrome there is **7 rows** by default before any fold
 pressure applies.
 
-**Reconciliation note (spec 050)**: this section describes the full
-stage-1–2 target once all three new chrome rows exist. As of spec 050, only
-the **guardian strip** is actually built (the villager strip is Wave 5, the
-lesson row Wave 4 — both still `unbuilt`); the shipped `computeRows`
-(`internal/tui/layout.go`) therefore implements a reduced budget —
-`header(1) + strip(0 or 1) + minibuffer(3) + footer(1)` — folding the strip
-(the only foldable row this feature's code has) once `totalRows − 6 <
-bodyMin (10)`, per the fold order below. The 9-row figure and the villager-
-strip/lesson-row fold steps become live only as those waves land; nothing
-about the ruled total order changes when they do.
+**Reconciliation note (spec 060, TASK-129)**: this section's full stage-1–2
+target is now the shipped reality — all three new chrome rows exist
+(guardian strip: spec 050; lesson row: spec 055/TASK-117; villager strip:
+spec 060/TASK-129), and `computeRows` (`internal/tui/layout.go`) implements
+the complete four-field row budget (`Header`, `VillagerStrip`, `Lesson`,
+`Strip` [guardian], `Body`, `Minibuffer`, `Footer`) folding all three in the
+ruled order below. Nothing about the ruled total order changed when the
+villager strip landed — it was always going to fold second, before the
+lesson row.
 
 ### Fold order (a total order over the collapsible rows)
 
@@ -104,11 +103,15 @@ reached:
 
 1. **map legend** (existing body-internal shed — stays first; unchanged
    from pre-reorientation).
-2. **villager strip → folds into a header count badge** (e.g.
-   `[12 villagers]` segment, `pages/home.md`'s header row).
+2. **villager strip → folds into a header count badge** — e.g.
+   `[12 villagers]`, appended to the header row (`pages/home.md`).
+   **Shipped** (spec 060, TASK-129): `computeRows`'s `VillagerStrip` field
+   drops to 0 at exactly this threshold, and `Model.villagerCountBadge`
+   (`internal/tui/views.go`) composes the header segment.
 3. **lesson row → folds to a header badge** (`[lesson]`); content remains
    reachable via `?` (pull) — the exact seam `overlays/help.md`'s lessons
-   section already specifies.
+   section already specifies. **Shipped** (spec 055, TASK-117):
+   `computeRows`'s `Lesson` field drops to 0 at exactly this threshold.
 4. **guardian strip → folds its content into the minibuffer's dormant
    line** (the budget text prefixes the dormant hint,
    `panels/guardian-strip.md`'s fold-relocation rule) — folds LAST because
@@ -116,9 +119,7 @@ reached:
    one row cheaper, never hides it outright. **Shipped** (spec 050):
    `computeRows`'s `Strip` field drops to 0 at exactly this threshold, and
    `minibufferView`'s dormant branch (`internal/tui/views.go`) composes the
-   relocated prefix via `guardianBudgetPrefix`. Steps 2 and 3 above remain
-   unbuilt (their chrome rows don't exist yet) — until they land, step 4 is
-   the only fold this total order's code actually performs.
+   relocated prefix via `guardianBudgetPrefix`.
 
 **Floor layout**: header + body(≥10) + minibuffer(3) + footer — the
 pre-reorientation stack. Terminals too short even for that (< 15 rows) keep

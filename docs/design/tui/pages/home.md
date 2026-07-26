@@ -2,7 +2,7 @@
 title: Page — home (widescreen composite)
 class: page
 status: shipped
-verified_against: c8906da39be3a5b861c2272af37db0a83dcded7a
+verified_against: 2f1044b326023d26fda33a3c70de61f6e6563b0c
 sources:
   - internal/tui/views.go
   - internal/tui/layout.go
@@ -47,19 +47,22 @@ inspect-mode detail pane
 the running feed. This mockup is corrected to match; see "Header segments"
 below for the full, reconciled header inventory (specs 028/034/037/039/044).
 
-## Mockup (teaching chrome, specified — Wave 2/4/5)
+## Mockup (full teaching chrome — shipped)
 
-This reorientation adds three new permanent chrome rows around this same
-composite — a villager strip under the header, a lesson row above the
-guardian strip, and the guardian strip itself above the minibuffer
-(decisions 5/7/12). **Not built yet** (each row's own page is
-`status: specified`, `renderer: unbuilt`); the row math and fold order are
-ruled in [../patterns/layout.md](../patterns/layout.md) (this feature) and
-each row is fully specified on its own page (mockup, control table, stage
-defaults, linear projection):
+Three permanent chrome rows exist around this same composite — a villager
+strip under the header, a lesson row above the guardian strip, and the
+guardian strip itself above the minibuffer (decisions 5/7/12). **All three
+are now shipped** (guardian strip: spec 050; lesson row: spec 055/TASK-117;
+villager strip: spec 060/TASK-129 — each row's own page is
+`status: shipped`); the row math and fold order are ruled in
+[../patterns/layout.md](../patterns/layout.md) and each row is fully
+specified on its own page (mockup, control table, stage defaults, linear
+projection). No header villager-count segment renders while the strip
+itself is showing — the two are mutually exclusive (FR-002; see
+"Header segments" below for the folded badge form):
 
 ```
- promptworld · attached · day 4 · 08:12 · 1×                4 villagers awake
+ promptworld · attached · day 4 · 08:12 · 1×
  ┌─ VILLAGER STRIP — one row, stage-defaulted ───────────────────────── (D12) ┐
  ┌─ MAP ──────────────────────────────────────┐ ┌─ chronicle │ … │ villagers ┐
  │  … unchanged …                             │ │  … unchanged …            │
@@ -70,6 +73,13 @@ defaults, linear projection):
  │ ⏎ m — speak with the {{skin.guardian.epithet}}…                            │
  └───────────────────────────────────────────────────────────────────────────┘
   2 chronicle 3 guardian 4 villagers (again: solo) · m ask · space pause · q quit
+```
+
+If height pressure instead folds the villager strip to its header badge
+form (`patterns/layout.md` ruling a step 2), the header row reads:
+
+```
+ promptworld · attached · day 4 · 08:12 · 1×                  [4 villagers]
 ```
 
 - [panels/villager-strip.md](../panels/villager-strip.md) (D12) —
@@ -111,6 +121,8 @@ no existing world's header changes because this feature landed.
 | `[degraded]` | absent · shown | pre-existing (`Clock.Degraded`) |
 | `[llm: provider kind]` | absent · shown (first name-sorted affected provider) | spec 034 |
 | `[suppressed: class, class]` | absent · shown (wire-ordered watched classes) | spec 037 |
+| `[lesson]` | absent · shown (stage-3+/pre-ladder default, or once the lesson row folds) | spec 055 |
+| `[N villagers]` | absent (the villager strip itself is showing) · shown (narrow, ruling b — or a widescreen fold, ruling a step 2) | spec 060 |
 
 The **postmortem posture** (spec 044): `ENDED` outranking `PAUSED` also makes
 the clock keys (space, `[`, `]`) client-side no-ops and swaps the footer's
@@ -140,6 +152,8 @@ fully functional (see [../panels/minibuffer.md](../panels/minibuffer.md) and
 | `[degraded]` badge | absent · shown | `Status.Clock.Degraded` | `headerView` | — | pre-existing | — |
 | `[llm: …]` badge | absent · shown | `Status.LLM` (`firstLLMCondition`) | `headerView` | — | spec 034 | — |
 | `[suppressed: …]` badge | absent · shown | `Status.Horizon` (`suppressedHorizonClasses`) | `headerView` | — | spec 037 | — |
+| `[lesson]` badge | absent · shown | `Model.lessonBadgeVisible` | `headerView` | — | spec 055 | — |
+| `[N villagers]` badge | absent · shown | `Model.villCount`, `computeRows.VillagerStrip` | `Model.villagerCountBadge` | — | spec 060 | — |
 
 **Parity rollout**: pause/resume (`space`) and speed (`[`/`]`) have no mouse
 target today; tracked here rather than omitted (decision 8, formal doctrine
