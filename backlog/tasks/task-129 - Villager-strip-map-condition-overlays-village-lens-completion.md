@@ -4,7 +4,7 @@ title: Villager strip + map condition overlays (village lens completion)
 status: In Progress
 assignee: []
 created_date: '2026-07-25 14:45'
-updated_date: '2026-07-25 18:58'
+updated_date: '2026-07-26 02:40'
 labels:
   - learning-game
   - tui
@@ -36,4 +36,6 @@ Spec: specs/060-village-lens
 
 <!-- SECTION:NOTES:BEGIN -->
 Model tier: Sonnet (spec-implementer default). Rubric: single-package rendering, tests alongside — routine tier. Standing resolutions in spec 060: strip is display-only per the authored page (board AC #1's click/jump clause satisfied vacuously — no actions, no parity gap); look-cursor DEFERRED with ruling recorded on map.md; dying-fire pulse = steady warn style, no blink. DISPATCH: Lane 5 tail — after Lane 3/4 merges.
+
+Dispatched (UI-sweep orchestrator): spec-implementer on Sonnet per recorded rubric; worktree .worktrees/task-129 cut from post-115 main (6056a22). Lane-5 gate met: Lane 3 fully merged (117 #88, 127 #99, 115 #100). Standing rulings from the card hold: strip display-only (AC #1 parity clause vacuous), look-cursor deferred (ruling on map.md), dying-fire pulse = steady warn. Expect rebase over TASK-128's merge (in dev concurrently; its stage-defaults table lists the villager strip as tolerated-absent, so either merge order reconciles).
 <!-- SECTION:NOTES:END -->
