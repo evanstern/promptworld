@@ -61,6 +61,12 @@ var catalogFixture = map[string]digestFixture{
 	"sim.fire_burned_out":    {`{"x":4,"y":5}`, `the fire at (4,5) burned out`},
 	"sim.food_rotted":        {`{"x":6,"y":6,"kind":"food_raw","n":4}`, `4 food_raw rotted at (6,6)`},
 	"sim.gathering_observed": {`{"x":1,"y":1,"start":500}`, `gathering at (1,1) since tick 500`},
+	// spec 077 US2: the two weather-shaped incident kinds (sim-family voice).
+	"sim.cold_snap": {`{"night":1,"until_tick":90000}`, `a cold snap grips night 1 (until t90000)`},
+	"sim.forage_blighted": {
+		`{"x":10,"y":12,"radius":4,"tiles":[{"x":10,"y":12},{"x":11,"y":12}],"regrow_tick":460800}`,
+		`blight struck the forage at (10,12) (+1 more tiles)`,
+	},
 
 	// --- agent: acts & needs ---
 	"agent.intent_set": {
@@ -169,6 +175,12 @@ var catalogFixture = map[string]digestFixture{
 	"gru.sighted":                 {`{"agent":0,"x":5,"y":5}`, `Ash sighted the gru`},
 	"gru.attacked":                {`{"agent":0,"health":40}`, `the gru attacked Ash · health → 40`},
 	"gru.withdrew":                {`{"day":2}`, `the gru withdrew`},
+	// spec 077 US2: the stranger — the gru-family threat voice; stranger.took
+	// joins the whole-line alert tier beside social.chest_taken (theft is theft).
+	"stranger.arrived":  {`{"night":2,"x":44,"y":0}`, `a stranger slipped in at (44,0)`},
+	"stranger.moved":    {`{"x":6,"y":6}`, `the stranger creeps to (6,6)`},
+	"stranger.took":     {`{"x":5,"y":5,"kind":"food_raw","n":2}`, `the stranger took 2 food_raw from the stores at (5,5)`},
+	"stranger.departed": {`{"day":2}`, `the stranger was gone by dawn of day 2`},
 	"chronicle.entry":             {`{"day":3,"from_tick":100,"to_tick":200,"text":"Ash lit the first fire.","thread":"cold-start","agents":[0]}`, `day 3 · cold-start: Ash lit the first fire.`},
 	"metatron.charge_regenerated": {`{}`, `a charge regenerated`},
 	"metatron.nudged":             {`{"form":"dream","targets":[0],"text":"beware the cold"}`, `Guardian dream → Ash: "beware the cold"`},
@@ -186,6 +198,11 @@ var catalogFixture = map[string]digestFixture{
 	"metatron.charter_observed": {
 		`{"fingerprint":"ab12cd34ef56","default":false}`,
 		`Guardian ran under charter ab12cd34ef56 (player-authored)`,
+	},
+	// spec 077 FR-006: the skills twin of the charter observation.
+	"metatron.skills_observed": {
+		`{"fingerprint":"ab12cd34ef56","names":["10-watch.md","20-tone.md"]}`,
+		`Guardian ran under 2 skill files ab12cd34ef56`,
 	},
 	"morgue.epilogue": {
 		`{"agent":0,"text":"Ash kept the fire until the end."}`,

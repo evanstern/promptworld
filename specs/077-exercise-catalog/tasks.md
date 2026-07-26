@@ -88,7 +88,7 @@ as reducer-valid, ambient-indistinguishable, replay-safe events.
 - [X] T012 [US2] Ambient-world regression proof: a no-scenario world's event stream under
   the new binary is byte-identical to pre-077 (determinism harness), in
   `internal/sim/sim_test.go` or sibling (spec FR-017, SC-002)
-- [ ] T013 [US2] Digest grammar: `familyByNamespace["stranger"]` (gru/threat voice),
+- [X] T013 [US2] Digest grammar: `familyByNamespace["stranger"]` (gru/threat voice),
   `stranger.took` into the whole-line alert set, `digestRegistry` + `catalogFixture`
   rows for all seven new types (data-model §2; blight uses first-fact-plus-count), in
   `internal/tui/grammar.go` + `internal/tui/digest.go` + `internal/tui/digest_test.go`;

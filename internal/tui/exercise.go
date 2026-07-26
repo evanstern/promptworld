@@ -120,6 +120,12 @@ func incidentNoun(kind string) string {
 	switch kind {
 	case sim.IncidentGruEmerges:
 		return "the gru emerges"
+	case sim.IncidentColdSnap:
+		return "a cold snap"
+	case sim.IncidentForageBlight:
+		return "the forage blights"
+	case sim.IncidentStrangerArrives:
+		return "a stranger arrives"
 	}
 	return strings.ReplaceAll(kind, "_", " ")
 }

@@ -916,6 +916,58 @@ var digestRegistry = map[string]digestFunc{
 	"gru.withdrew": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		return []seg{txt("the gru withdrew")}, true
 	},
+
+	// --- spec 077: the stranger (gru-family threat voice) + incident kinds ---
+
+	"stranger.arrived": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.StrangerArrivedPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{txt("a stranger slipped in at "), coord(p.X, p.Y)}), true
+	},
+	"stranger.moved": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.StrangerMovedPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{txt("the stranger creeps to "), coord(p.X, p.Y)}), true
+	},
+	"stranger.took": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) { // alert (theft tier)
+		p, ok := decode[sim.StrangerTookPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{txt("the stranger took "), emphN(p.N), txt(" " + p.Kind + " from the stores at "), coord(p.X, p.Y)}), true
+	},
+	"stranger.departed": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.StrangerDepartedPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{txt("the stranger was gone by dawn of day "), emphI64(p.Day)}), true
+	},
+	// sim.cold_snap / sim.forage_blighted (spec 077 US2): the two weather-
+	// shaped incident kinds, sim-family voice. The blight uses the
+	// agent.saw first-fact-plus-count shape for its tile list.
+	"sim.cold_snap": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.ColdSnapPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{txt("a cold snap grips night "), emphI64(p.Night), txt(" (until t"), emphI64(p.UntilTick), txt(")")}), true
+	},
+	"sim.forage_blighted": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.ForageBlightedPayload](e)
+		if !ok || len(p.Tiles) == 0 {
+			return nil, false
+		}
+		segs := []seg{txt("blight struck the forage at "), coord(p.Tiles[0].X, p.Tiles[0].Y)}
+		if more := len(p.Tiles) - 1; more > 0 {
+			segs = append(segs, txt(" (+"), emphN(more), txt(" more tiles)"))
+		}
+		return join(segs), true
+	},
 	"chronicle.entry": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.ChronicleEntryPayload](e)
 		if !ok {
@@ -1017,6 +1069,20 @@ var digestRegistry = map[string]digestFunc{
 			prov = "default"
 		}
 		return join([]seg{txt(sk.Name() + " ran under charter "), emph(p.Fingerprint), txt(" (" + prov + ")")}), true
+	},
+	// metatron.skills_observed (spec 077 FR-006): the skills twin of the
+	// charter observation above — the bound set's size and fingerprint (the
+	// names ride the payload; the inspector shows them verbatim).
+	"metatron.skills_observed": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.SkillsObservedPayload](e)
+		if !ok {
+			return nil, false
+		}
+		noun := " skill files "
+		if len(p.Names) == 1 {
+			noun = " skill file "
+		}
+		return join([]seg{txt(sk.Name() + " ran under "), emphN(len(p.Names)), txt(noun), emph(p.Fingerprint)}), true
 	},
 	// morgue.epilogue (spec 044 US2): the narrator's recorded mourning prose
 	// — agent -1 is the run-end epilogue. chronicle.entry's truncation manner.
