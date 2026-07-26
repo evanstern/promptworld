@@ -125,7 +125,9 @@ Record the model tier + rubric justification on each board task at dispatch
 - Two hotspot-heavy PRs never merge within one re-ground cycle without a rebase between.
 - Conflicting with a sibling session's open PR → the smaller PR merges first.
 - Spec-number collisions: check `origin/main:specs/` (the claim gate does this
-  mechanically) — 080 is the next expected free number; renumber on conflict.
+  mechanically) — numbers move fast here (080 was claimed by another session while this
+  runbook was being authored); always take the claim gate's answer, never a remembered
+  number.
 - Verify a PR is merged (`gh api repos/{owner}/{repo}/pulls/<n> --jq .merged`) before
   deleting its branch/worktree; never delete+recreate a closed PR's head.
 

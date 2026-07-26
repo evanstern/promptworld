@@ -3,10 +3,10 @@ id: TASK-111
 title: >-
   Metatron survival autonomy: genesis watch orders, act-on-own authority,
   targeting context
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-25 03:00'
-updated_date: '2026-07-25 22:09'
+updated_date: '2026-07-26 20:35'
 labels:
   - learning-game
   - guardian-survival
@@ -60,6 +60,10 @@ Live-evidence follow-ups carded (operator request 2026-07-25): TASK-136 (AC#3 li
 Renumber executed (2026-07-25): the 059 collision is resolved — THIS task keeps specs/059-metatron-survival-autonomy; TASK-115's spec moved to specs/063-grounded-feedback (not 060 — village-lens/conversation-loop-damper/instinct-yields claimed 060/061/062 while the collision sat open). spec-bridge check green: 63 linked tasks, none exceeding artifacts.
 
 Sync deviation (2026-07-25, deliberate): the bridge derives Done from spec artifacts (all phases complete), but operator-authored ACs #3b/#5 remain open by explicit operator decision pending TASK-136/137 live evidence — status HELD at In Progress. The spec-phase AC #10 (Polish) is checked; only the live-evidence ACs gate Done.
+
+spec-bridge sync: Foundational: 1/1 · User Story 1 — Survival watches from birth (P1): 3/3 · User Story 2 — Survival authority carve-out (P1): 4/4 · User Story 3 — Targeting digest (P2): 2/2 · Polish & Cross-Cutting: 2/2 — status In Progress → Done
+
+Operator decision (2026-07-26): close on mechanism per spec-bridge derivation. The 2026-07-25 hold is released; ACs #3 (live invalid-target rejection rate) and #5 (charter-delta experiment) remain unchecked HERE by design — their live-world evidence is delegated to TASK-136 and TASK-137 respectively, both In Progress. TASK-112 dispatch gating on that evidence stays a checkpoint in docs/design/guardian-directives-runbook.md.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -70,3 +74,9 @@ created: 2026-07-25 04:42
 Learning-game synthesis (2026-07-25): survival autonomy is the SURVIVAL LANE of the three-lane initiative frame (tutor lane: ungraded speech + read-only explain tool, charge-free; survival lane: autonomous, charge-gated — this task; ambition lane: player-authorized, unchanged). The lane's competence ceiling is an open operator question that gates the TASK-112 spec — machinery built here must not preempt it. See docs/design/learning-game-synthesis.md.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+All spec tasks complete (Foundational: 1/1 · User Story 1 — Survival watches from birth (P1): 3/3 · User Story 2 — Survival authority carve-out (P1): 4/4 · User Story 3 — Targeting digest (P2): 2/2 · Polish & Cross-Cutting: 2/2). Derived Done by spec-bridge sync.
+<!-- SECTION:FINAL_SUMMARY:END -->
