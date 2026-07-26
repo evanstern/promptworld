@@ -3,9 +3,10 @@ id: TASK-145
 title: >-
   Wiki grounding moves inside the PR cycle: blocking gate, no post-merge main
   commits
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-26 15:38'
+updated_date: '2026-07-26 15:54'
 labels:
   - process
   - pdlc
@@ -27,3 +28,9 @@ Operator direction (2026-07-26, during TASK-141): the lifecycle becomes (1) desi
 - [ ] #3 player-docs placement decided and documented (in-PR vs derived post-merge)
 - [ ] #4 Step 7 (close task + commit main) reconciled with the existing planned design, named by artifact
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Claim per spec 065: specs/069-wiki-in-pr-gate/ stubbed. Sweep lane 1 (runbook docs/design/pdlc-hardening-runbook.md, signed off 2026-07-26). Tier: Opus 4.8 for gate/hook code (doctrine-adjacent SDLC-critical infra; a defect blocks every future PR); constitution amendment stays planning-tier via speckit-constitution. Operator decisions recorded: player-docs regenerate IN the PR; praxisflux upstream out of scope.
+<!-- SECTION:NOTES:END -->

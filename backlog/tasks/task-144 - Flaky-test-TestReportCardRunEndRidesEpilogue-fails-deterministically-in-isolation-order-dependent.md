@@ -3,9 +3,10 @@ id: TASK-144
 title: >-
   Flaky test: TestReportCardRunEndRidesEpilogue fails deterministically in
   isolation (order-dependent)
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-26 15:14'
+updated_date: '2026-07-26 15:54'
 labels:
   - flaky-test
 dependencies: []
@@ -24,3 +25,9 @@ Found during TASK-141 implementation (2026-07-26): internal/guardian TestReportC
 - [ ] #1 Test passes in isolation with -count=5 and in the full suite
 - [ ] #2 Root cause (the shared state) named in task notes
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Claim per spec 065: specs/070-guardian-test-order/ stubbed. Sweep lane 1 (runbook docs/design/pdlc-hardening-runbook.md, signed off 2026-07-26). Tier: Sonnet (single-package test fix, routine); escalation to Opus is an operator checkpoint if root cause lands in concurrency machinery.
+<!-- SECTION:NOTES:END -->
