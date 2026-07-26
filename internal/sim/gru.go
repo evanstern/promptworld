@@ -65,15 +65,27 @@ const _ uint = gruWound - nearDeathBelow
 // gruNightIndex is the 1-based game night a tick belongs to (day 1 = night 1).
 func gruNightIndex(tick int64) int64 { return tick/86400 + 1 }
 
+// lightSource decomposes litAt's own scan into the light truth plus its
+// source — today "fire" (firelight) is the only source the sim models (spec
+// 074 research R4: the board's "canopy" example has no mechanic behind it,
+// so env.go's EnvAt deliberately omits a canopy note rather than invent
+// one) — kept as a named source rather than a bare bool so a future light
+// mechanic can extend this without another decomposition. litAt is a thin
+// wrapper over this (SC-006: the two can never diverge).
+func lightSource(s *State, x, y int) (lit bool, source string) {
+	for _, st := range s.Structures {
+		if st.Kind == "fire" && abs(st.X-x)+abs(st.Y-y) <= gruLightRadius {
+			return true, "fire"
+		}
+	}
+	return false, ""
+}
+
 // litAt: within fire light. Deliberately wider than warmAt's fire radius so
 // everyone huddled close enough to be warm is also protected.
 func litAt(s *State, x, y int) bool {
-	for _, st := range s.Structures {
-		if st.Kind == "fire" && abs(st.X-x)+abs(st.Y-y) <= gruLightRadius {
-			return true
-		}
-	}
-	return false
+	lit, _ := lightSource(s, x, y)
+	return lit
 }
 
 // gruProtected: light and shelter are safety — the gru neither sees agents

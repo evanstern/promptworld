@@ -2,10 +2,11 @@
 title: Panel — dock (tab container)
 class: panel
 status: shipped
-verified_against: 348a100c22f650d27e6fba517ea7f1f1aed1af73
+verified_against: 66e36e9a7a627161d4b2ec95dcc18aa0f4f91d20
 sources:
   - internal/tui/tui.go
   - internal/tui/views.go
+  - internal/tui/look.go
 ---
 
 # Panel: dock
@@ -56,6 +57,48 @@ seam — the same container regardless of which tab is active.
   `tab`/`shift+tab` cycling (`nextDockTab`/`prevDockTab`, now Model methods)
   including it exactly when present.
 
+## Borrow seam: the TILE view (spec 074-look-cursor)
+
+While the look-cursor mode ([../patterns/keymap.md](../patterns/keymap.md)
+"Mode: look-cursor") is active, the dock body is **borrowed** by a transient
+**TILE view** — the tile the map cursor sits on, in DF's fixed hierarchy
+(agents → piles/chests → structures → terrain → recent events), a header
+carrying the tile's registry whatis prose plus warmth/light levels
+(`internal/tui/tiles.go`'s `meaning` rows, spec 068). This is the same
+"one component, two widths" borrow shape the solo zoom already uses, applied
+along a different axis (content, not width):
+
+- **Not a tab**: no `pane` enum value, no key digit (`2`–`6` exit the mode
+  and select an actual tab instead of navigating to this), no membership in
+  `nextDockTab`/`prevDockTab`'s cycle.
+- **`m.dockTab` is never written** while borrowed — `dockTabsRow` renders
+  every normal label dim-inactive and appends a highlighted `TILE (x,y)`
+  pseudo-label in place of the usual active highlight; `dockTabContent`
+  short-circuits to the TILE renderer before ever reading `m.dockTab`. The
+  underlying tab's state (chronicle selection/scroll, villager selection,
+  scroll offsets — this page's own "each tab keeps its own state" rule)
+  therefore survives **by construction**: nothing about it ever changed,
+  there is nothing to restore.
+- **State preservation, concretely**: entering the mode while paused with
+  the chronicle selected and inspecting an event leaves that selection and
+  detail-pane scroll exactly where they were; exiting the mode (`esc`/`v`)
+  or pressing a tab digit (which exits first, then selects) shows the
+  chronicle exactly as it was left, inspect mode resuming automatically
+  (its own `chronicleVisible()`-gated entry, unaffected by this feature).
+- **Focus, drawn**: `⏎`/`tab` from the map cursor moves keyboard focus into
+  the TILE pane — its border renders amber (the `panelFocus` token,
+  [../patterns/focus-contract.md](../patterns/focus-contract.md) rule 2,
+  the same token the guardian console's own focused sub-panels use);
+  `j`/`k` select a row, `⏎` drills into an agent's detail (the villager-
+  detail renderer family), an event's raw-JSON inspector (`formatInspector`/
+  `chronicleDetailPane` — the FR-020 boundary, `panels/chronicle.md`), or a
+  chest/pile's contents.
+- **Covered by a body-replacing surface, the mode exits first**: opening the
+  guardian console (`G`) or a solo zoom (the exit-and-select digits) ends
+  the borrow before the new surface opens — it never survives underneath
+  one. The help overlay and a takeover layer ABOVE the borrow instead
+  (restoring it on dismissal by construction, same as every other mode).
+
 ## Behavior
 
 - **Default tab on launch:** chronicle ([chronicle.md](chronicle.md)).
@@ -82,9 +125,14 @@ seam — the same container regardless of which tab is active.
 | tab-switch → solo zoom | home,tab=k · solo(k) | `Model.solo`, `Model.dockTab` | `selectTab`, `widescreenView` | same key twice · — | TASK-34 | — |
 | solo → home / switch | solo(k) · home | `Model.solo` | `selectTab` | `1`/`esc` (home) · a different tab key (switch) · — | TASK-34 | — |
 | dock panel chrome | dormant border | — (static box) | `dockPanelView` | — | TASK-34 | — |
+| TILE view pseudo-label | shown (borrow active) | `Model.lookActive`, `lookX`/`lookY` | `dockTabsRow` (`lookDockTabsRow`) | — (display-only; entry is the map's own `v`/click) | spec 074 | — |
+| TILE pane row select/drill | none selected · selected · drilled | `Model.lookSel`, `lookFocus`, `lookDrill` | `tileBody` (`look.go`) | `j`/`k` select · `⏎` drill · click a row selects, a second click drills | spec 074 | — |
 
-**Parity rollout**: no control on this page has a mouse target today — the
-whole dock (`internal/tui`) predates the input-parity doctrine (decision 8).
-Every keyed row above is a parity gap tracked here honestly rather than
-silently omitted; the formal doctrine and rollout plan land in
-`patterns/keymap.md`.
+**Parity rollout**: the pre-existing tab row/switch/badge controls above
+still have no mouse target — the whole dock (`internal/tui`) predates the
+input-parity doctrine (decision 8), and this feature didn't touch them, so
+it didn't close that gap either. The TILE pane's row click is a NEW control
+this feature adds, and it ships with both a key and a mouse target together
+(decision 8 rule 1) — the second leg of spec 074's click-tile/click-row
+parity landing (`panels/map.md` is the first). The formal doctrine and
+rollout plan live in `patterns/keymap.md`.

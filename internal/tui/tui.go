@@ -298,6 +298,29 @@ type Model struct {
 	takeover            takeoverKind
 	ceremonyDeferred    bool
 	postmortemDismissed bool
+
+	// Look-cursor mode (spec 074-look-cursor, data-model.md "Look-cursor
+	// mode state"): a client-side-only tile inspector layered on the map —
+	// never persisted, never entering the replica. lookActive gates the key
+	// layer (look.go's handleLookKey), the dock borrow (dockTabsRow/
+	// dockTabContent), the cursor render (renderMapGrid), and the
+	// !lookActive visibility guards below (research R1). lookX/lookY are
+	// the cursor tile; lookFocus is which layer inside the mode holds the
+	// keyboard; lookSel is the selected TILE-pane row (into the flattened
+	// row list, look.go's tileRows); lookDrill/lookDrillScroll are the open
+	// drill-in target and its own scroll offset.
+	lookActive      bool
+	lookX, lookY    int
+	lookFocus       lookFocusKind
+	lookSel         int
+	lookDrill       lookDrillRef
+	lookDrillScroll int
+
+	// mapHit/tileHit (research R6) are the map grid's and the TILE pane's
+	// last-rendered click geometry — pointers for the same value-receiver
+	// View()-writes-through-a-pointer reason chronHit exists (tui.go:284).
+	mapHit  *mapHitRegion
+	tileHit *tileHitRegion
 }
 
 // chronHitRegion is the chronicle inspect-list's rendered geometry: which
@@ -324,6 +347,7 @@ func New(w *world.World) Model {
 	return Model{
 		w: w, gameMap: w.Map(), chronAgent: -1, dockTab: paneChronicle, chronSelected: -1,
 		traces: newDecisionTraces(), chronHit: &chronHitRegion{},
+		mapHit: &mapHitRegion{}, tileHit: &tileHitRegion{}, // spec 074: the chronHit pointer pattern
 		// Per-user seen-state (spec 055 FR-006): load-tolerant, advisory —
 		// worlds.LoadLessonsSeen() never errors, degrading to an empty
 		// record on a missing/corrupt file or an unresolvable home dir.
@@ -786,8 +810,14 @@ func (m Model) quit() (tea.Model, tea.Cmd) {
 
 // chronicleVisible reports whether the chronicle is the thing currently on
 // screen, in whichever layout is active — the gate for both the a/t/r
-// filter keys and automatic inspect-mode entry.
+// filter keys and automatic inspect-mode entry. Gains a !lookActive guard
+// (spec 074 research R1): while the look-cursor mode borrows the dock body,
+// the chronicle tab is NOT the thing visible regardless of m.dockTab — the
+// TILE view is (the villagers-mode scoping precedent).
 func (m Model) chronicleVisible() bool {
+	if m.lookActive {
+		return false
+	}
 	if isWidescreen(m.width) {
 		return m.dockTab == paneChronicle
 	}
@@ -799,9 +829,17 @@ func (m Model) chronicleVisible() bool {
 // the tab (minibuffer.md). The guardian console (spec 053 US1 AS4) renders
 // the SAME transcript as its primary content, so it counts as "visible" too
 // — the console adds no second badge system, it just shares this one.
+// Gains a !lookActive guard (spec 074 research R1, after the console check:
+// the two states are mutually exclusive — G exits the look mode before
+// opening the console, look.go's handleLookKey): while the borrow is
+// active, a guardian reply must badge, never stream, exactly like every
+// other visibility consumer this feature guards.
 func (m Model) guardianVisible() bool {
 	if m.console {
 		return true
+	}
+	if m.lookActive {
+		return false
 	}
 	if isWidescreen(m.width) {
 		return m.dockTab == paneGuardian
@@ -812,8 +850,12 @@ func (m Model) guardianVisible() bool {
 // villagersVisible reports whether the villagers tab is the thing currently
 // on screen — the gate for the roster/detail selection keys (contracts/
 // state-and-keys.md "Keys bind only while the villagers tab is the visible
-// dock tab or solo'd").
+// dock tab or solo'd"). Gains a !lookActive guard (spec 074 research R1),
+// the chronicleVisible precedent.
 func (m Model) villagersVisible() bool {
+	if m.lookActive {
+		return false
+	}
 	if isWidescreen(m.width) {
 		return m.dockTab == paneVillagers
 	}
@@ -839,9 +881,10 @@ func (m Model) exerciseID() string {
 }
 
 // exerciseVisible reports whether the exercise tab is the thing currently on
-// screen, in whichever layout is active — the villagersVisible shape.
+// screen, in whichever layout is active — the villagersVisible shape. Gains
+// a !lookActive guard (spec 074 research R1), same precedent.
 func (m Model) exerciseVisible() bool {
-	if m.exerciseID() == "" {
+	if m.exerciseID() == "" || m.lookActive {
 		return false
 	}
 	if isWidescreen(m.width) {
@@ -959,6 +1002,17 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		// actually showing right now.
 		return m.handleGlobalKey(msg)
 	}
+	if m.lookActive {
+		// The look-cursor mode (spec 074, research R1): layered between the
+		// console and inspect checks, claiming the whole contested key set
+		// so the (now-dormant, chronicleVisible/villagersVisible guards)
+		// inspect/villagers layers below never spuriously fire during the
+		// dock borrow. Unclaimed keys fall through to handleGlobalKey
+		// (space/[/]/m/q/p/? — FR-013).
+		if mdl, cmd, handled := m.handleLookKey(msg); handled {
+			return mdl, cmd
+		}
+	}
 	if m.inspecting() {
 		if mdl, cmd, handled := m.handleInspectKey(msg); handled {
 			return mdl, cmd
@@ -994,6 +1048,13 @@ func (m Model) currentHelpMode() helpModeKey {
 			return helpModeGlobal
 		}
 		return helpModeSolo
+	case m.lookActive:
+		// The look-cursor mode (spec 074 research R9): checked right after
+		// the console branch for the exact reason its comment above gives —
+		// the mode borrows the dock body, so the villagers/inspect branches
+		// below would mis-route through a dockTab/active reading that
+		// persists unchanged underneath the borrow.
+		return helpModeLook
 	case m.inspecting():
 		return helpModeInspect
 	case m.villagersVisible() && m.villDetail:
@@ -1014,7 +1075,11 @@ func (m Model) currentHelpMode() helpModeKey {
 // opened from (helpMode) so the page it shows can't drift while the
 // overlay owns the keyboard (spec.md "Edge Cases" — esc-release ordering
 // and the frozen context), and always starts on that mode's basic-tier
-// keys page.
+// keys page — UNLESS a conditional header badge is active (spec 074 FR-011,
+// research R8), in which case the overlay opens pre-focused on the
+// screen-walkthrough section, scrolled to that badge's headerAnatomy row
+// (help.go): the badge deep-link. No active badge keeps the open
+// byte-identical to before this feature (existing help_test.go pins).
 func (m Model) openHelp() (tea.Model, tea.Cmd) {
 	mode := m.currentHelpMode()
 	m.helpOpen = true
@@ -1023,7 +1088,35 @@ func (m Model) openHelp() (tea.Model, tea.Cmd) {
 	m.helpTier = false
 	m.helpSection = helpSectionKeys
 	m.helpScroll = 0
+	if idx, ok := m.firstActiveBadgeRow(); ok {
+		m.helpSection = helpSectionWalkthrough
+		m.helpScroll = idx
+	}
 	return m, nil
+}
+
+// firstActiveBadgeRow resolves the first (header order: degraded, llm,
+// suppressed) active conditional badge to its helpWalkthroughLines content
+// index (help.go): 1 (the "Header anatomy" title line) plus the badge's
+// position in headerAnatomy — the SAME shared table headerView's badges and
+// this walkthrough row derive from, so the pre-focus target can never drift
+// from what actually renders (research R8). ok is false with no status yet
+// or no active badge — openHelp's byte-identical fallback.
+func (m Model) firstActiveBadgeRow() (int, bool) {
+	if m.status == nil {
+		return 0, false
+	}
+	const headerAnatomyTitleLines = 1
+	if m.status.Clock.Degraded {
+		return headerAnatomyTitleLines + 6, true // headerAnatomy[6] = "[degraded]"
+	}
+	if _, _, ok := firstLLMCondition(m.status.LLM); ok {
+		return headerAnatomyTitleLines + 7, true // headerAnatomy[7] = "[llm: provider kind]"
+	}
+	if len(suppressedHorizonClasses(m.status.Horizon)) > 0 {
+		return headerAnatomyTitleLines + 8, true // headerAnatomy[8] = "[suppressed: classes]"
+	}
+	return 0, false
 }
 
 // closeHelp dismisses the overlay (esc or '?', toggle — FR-007) and resets
@@ -1147,6 +1240,16 @@ func (m Model) handleGlobalKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.selectTab(m.prevDockTab(m.dockTab))
 	case "m":
 		return m.focusMinibuffer()
+	case "v":
+		// Look-cursor mode entry (spec 074, research R1): a strict
+		// documented no-op when the map isn't the thing on screen or no
+		// world is attached (the `x`-key no-op precedent) — look.go's
+		// lookEntryAllowed is the single gate both this key and the mouse
+		// map-tile-click entry path read.
+		if m.lookEntryAllowed() {
+			m.enterLook()
+		}
+		return m, nil
 	case "x":
 		// Dismiss the active lesson (spec 055, FR-010, patterns/keymap.md):
 		// a strict no-op when nothing is active — Dismiss itself already
@@ -1677,38 +1780,12 @@ func (m Model) invalidateChronHit() {
 	}
 }
 
-// handleMouse routes tea.MouseMsg per contract §1 (US2, input-parity
-// doctrine decision 8): a left-button *release* landing inside the
-// chronicle's last-rendered list rows, while paused, selects that row and
-// applies the same jump rules ⏎ does (jumpToSource) — one behavior, two
-// input paths. Every other mouse event (wrong button/action, outside the
-// region, running clock, help/minibuffer focus, chronicle not visible) is a
-// no-op: mouse support adds no exclusive capability (FR-005), and this
-// feature binds nothing but the chronicle line click (research R2).
-func (m Model) handleMouse(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
-	if msg.Action != tea.MouseActionRelease || msg.Button != tea.MouseButtonLeft {
-		return m, nil
-	}
-	if m.helpOpen || m.mbFocused || !m.inspecting() {
-		return m, nil
-	}
-	hit := m.chronHit
-	if hit == nil || !hit.valid {
-		return m, nil
-	}
-	row := msg.Y - hit.originY
-	col := msg.X - hit.originX
-	if row < 0 || row >= len(hit.rowEvent) || col < 0 || col >= hit.width {
-		return m, nil
-	}
-	idx := hit.rowEvent[row]
-	if idx < 0 || idx >= len(m.events) {
-		return m, nil
-	}
-	m.chronSelected = idx
-	m.chronDetailScroll = 0 // data-model.md: reset on selection move, same as j/k
-	return m.jumpToSource()
-}
+// handleMouse (spec 074 research R6) now lives in look.go: it routes the
+// TILE-pane region and the map region ahead of this exact chronicle-line
+// click path (US2, input-parity doctrine decision 8), which is otherwise
+// unchanged — a left-button *release* landing inside the chronicle's
+// last-rendered list rows, while paused, selects that row and applies the
+// same jump rules ⏎ does (jumpToSource).
 
 // handleVillagersKey is contracts/state-and-keys.md's key grammar table,
 // layered on top of the global mode exactly like handleInspectKey — j/k/g/G
