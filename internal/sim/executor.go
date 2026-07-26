@@ -72,6 +72,46 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 		}
 	}
 
+	// Designation-fulfillment sweep (spec 084 FR-004, research R14): an active
+	// designation whose structural predicate holds emits designation.fulfilled
+	// — a pure function of (state, tick), the charge_regenerated/order_expired
+	// idiom. Emitted once: the same event flips the designation non-active, so
+	// the next tick's sweep skips it. Replay reproduces it deterministically
+	// with no guardian running. Sweep order within the tick is fixed:
+	// designations first (slice order), then directives — directive
+	// fulfillment reads designation STATUS from pre-tick state, so a
+	// designation fulfilled at tick T yields its bound directives'
+	// directive.fulfilled at T+1's sweep (the documented one-tick lag), never
+	// an order-dependent same-tick race.
+	for i := range s.Designations {
+		if d := &s.Designations[i]; d.Status == "active" && designationFulfilled(s, d) {
+			emit("designation.fulfilled", OrderIDPayload{ID: d.ID})
+		}
+	}
+
+	// Directive fulfillment/expiry sweep (spec 084 FR-009): per active
+	// directive, fulfillment is checked BEFORE expiry so a directive eligible
+	// for both at one boundary lands exactly ONE terminal (fulfilled wins —
+	// the work was done; the reducer would refuse a second terminal in the
+	// same batch). Fulfilled: the bound designation's status is "fulfilled".
+	// Expired: the TTL elapsed OR no targeted villager remains alive (the
+	// un-executable clause — a pure state check, no TTL wait). Both pure over
+	// (state, tick), each fired once by the same flips-non-active argument.
+	for i := range s.Directives {
+		d := &s.Directives[i]
+		if d.Status != "active" {
+			continue
+		}
+		if dsg := s.designationByID(d.DesignationID); dsg != nil && dsg.Status == "fulfilled" {
+			emit("directive.fulfilled", DirectiveFulfilledPayload{
+				ID: d.ID, DesignationID: d.DesignationID, Targets: d.Targets, IssuedTick: d.IssuedTick})
+			continue
+		}
+		if nextTick >= d.ExpiresTick || directiveTargetsAllDead(s, d) {
+			emit("directive.expired", OrderIDPayload{ID: d.ID})
+		}
+	}
+
 	// Scenario incidents (spec 054 US2): due authored emissions from the
 	// boot-frozen incident source (scenario.go) — the executor emission
 	// class, exactly the charge-regen idiom above: pure over (state, config,

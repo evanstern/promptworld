@@ -155,6 +155,16 @@ func TestWhitelistDiffIdentical(t *testing.T) {
 		// note (recorded prose, latest-card reducer). The run-end card rides
 		// morgue.epilogue instead, so the ENDED narrowing is untouched.
 		"guardian.report_card": true,
+		// Spec 084 (guardian plan layer) deliberately widens the boundary by
+		// exactly four entries: the injected designation placement/cancel and
+		// directive issue/cancel (the four plan tools' Events, pinned ⊆ this
+		// whitelist by ValidateToolCoverage). designation.fulfilled,
+		// directive.fulfilled, and directive.expired are EXECUTOR-emitted and
+		// deliberately never here — the order_expired precedent.
+		"designation.placed":    true,
+		"designation.cancelled": true,
+		"directive.issued":      true,
+		"directive.cancelled":   true,
 	}
 	for typ := range want {
 		if !injectSocialWhitelist[typ] {

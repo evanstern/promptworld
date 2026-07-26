@@ -105,6 +105,15 @@ type State struct {
 	// placement) so the status/trail can show recent history without unbounded
 	// growth.
 	GuardianOrders []GuardianOrder `json:"metatron_orders,omitempty"`
+	// The guardian's durable plan layer (spec 084): designations — world plan
+	// artifacts with structural fulfillment predicates — and directives — hard,
+	// TTL-bounded villager bindings to a designation. Both event-sourced under
+	// the GuardianOrders discipline (injected placement/issue/cancel; executor-
+	// emitted fulfillment/expiry; active + most recent 32 non-active retained).
+	// omitempty: a pre-084 snapshot (fields absent) unmarshals to nil,
+	// upgrade-free — no format bump (the spec-029 precedent).
+	Designations []Designation `json:"designations,omitempty"`
+	Directives   []Directive   `json:"directives,omitempty"`
 	// Norms and votes (TASK-13) — all event-sourced. Pre-TASK-13 snapshots
 	// unmarshal to zero values: no meeting place yet, no law, no meeting.
 	MeetingPlace *Point       `json:"meeting_place,omitempty"`
@@ -1889,6 +1898,11 @@ func (s *State) Apply(e store.Event) error {
 		"metatron.order_cancelled", "metatron.order_expired",
 		"metatron.charter_observed", "metatron.skills_observed":
 		return s.applyGuardian(e)
+
+	case "designation.placed", "designation.cancelled", "designation.fulfilled",
+		"directive.issued", "directive.cancelled", "directive.fulfilled",
+		"directive.expired":
+		return s.applyPlan(e)
 
 	case "morgue.epilogue":
 		return s.applyMorgueEpilogue(e)

@@ -49,7 +49,10 @@ type PeerSighting struct {
 // PlaceFact is one known dynamic entity. Kind is a closed vocabulary: the
 // structure kinds (fire/shelter/oven/chest/wall_plank/wall_stone/path/grave —
 // grave added spec 044 US4) plus the resource kinds (tree/forage/rock/
-// water_edge/den/pile). Seen is the game tick the fact was last perceived by
+// water_edge/den/pile) plus "designation" (spec 084 FR-006 — the guardian's
+// announced plan artifact, granted reducer-side to every living villager at
+// placement; NOT in placeFactKinds — send_vision reveals real world places
+// only). Seen is the game tick the fact was last perceived by
 // the ORIGINAL observer — talk transfer
 // (US5) copies the teller's value, so secondhand is never fresher. Provenance
 // reuses the Belief vocabulary (witnessed/told, plus revealed for divine
@@ -84,6 +87,9 @@ const ProvenanceRevealed = "revealed"
 const (
 	factHorizonVolatileTicks = 12 * 3600 // fires, piles: ~12 game-hours
 	factHorizonDurableTicks  = 4 * 86400 // structures/resources: 4 game-days
+	// Designation announcements (spec 084 FR-006) hold for the maximum
+	// directive TTL — the announcement outlives any directive bound to it.
+	factHorizonDesignationTicks = GuardianOrderTTLMaxDays * ticksPerGameDay // 7 game-days
 )
 
 // factHorizon is the per-kind freshness window.
@@ -91,6 +97,8 @@ func factHorizon(kind string) int64 {
 	switch kind {
 	case "fire", "pile":
 		return factHorizonVolatileTicks
+	case "designation":
+		return factHorizonDesignationTicks
 	}
 	return factHorizonDurableTicks
 }
