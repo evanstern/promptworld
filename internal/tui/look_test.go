@@ -601,6 +601,101 @@ func TestLookMouseTilePaneClickSelectsThenDrills(t *testing.T) {
 	}
 }
 
+// --- narrow fallback (FR-012, research R7): entry / body swap / unwind ---
+
+func TestLookNarrowEntrySwapAndUnwind(t *testing.T) {
+	m := testModel(t) // narrow (80x30), active defaults to paneMap
+	if isWidescreen(m.width) {
+		t.Fatal("test setup: expected narrow layout")
+	}
+	if m.active != paneMap {
+		t.Fatalf("test setup: expected active pane to default to paneMap, got %v", m.active)
+	}
+
+	var mdl tea.Model = update(m, "v")
+	mm := mdl.(Model)
+	if !mm.lookActive || mm.lookFocus != lookFocusCursor {
+		t.Fatal("'v' should raise the cursor on the narrow map pane")
+	}
+	// Cursor focus: narrowView still renders the map itself (with the cursor
+	// highlight), not the TILE view — content swap only happens once focus
+	// moves into the pane (FR-012).
+	view := mm.View()
+	if strings.Contains(view, "TILE (") {
+		t.Error("narrow cursor focus should still show the map, not the TILE view")
+	}
+
+	mdl = update(mdl, "enter")
+	afterFocus := mdl.(Model)
+	if afterFocus.lookFocus != lookFocusPane {
+		t.Fatal("enter should move focus into the TILE pane in narrow too")
+	}
+	swappedView := afterFocus.View()
+	if !strings.Contains(swappedView, "TILE (") {
+		t.Errorf("narrow pane focus should swap the map pane's body to the TILE view:\n%s", swappedView)
+	}
+
+	// Unwind: esc releases pane -> cursor -> mode off, each one layer.
+	mdl = update(mdl, "esc")
+	if mdl.(Model).lookFocus != lookFocusCursor || !mdl.(Model).lookActive {
+		t.Fatal("esc from narrow pane focus should release to cursor focus, mode still active")
+	}
+	mdl = update(mdl, "esc")
+	if mdl.(Model).lookActive {
+		t.Fatal("esc from narrow cursor focus should exit the mode entirely")
+	}
+}
+
+// TestLookFoldPressureResizeMidMode (spec edge case): a resize that triggers
+// the widescreen fold cascade while the mode is active must neither panic
+// nor change any panel dimension beyond what the fold itself would already
+// do mode-off — the mode participates in none of computeRows' fold
+// accounting (it adds zero chrome rows).
+func TestLookFoldPressureResizeMidMode(t *testing.T) {
+	m := widescreenModel(t)
+	m.replica.Agents = []sim.Agent{{Name: "Ash", X: 5, Y: 5}}
+	var mdl tea.Model = update(m, "v")
+	mdl = update(mdl, "enter") // pane focus, to exercise a non-trivial mode state
+
+	// Shrink height enough to trigger the fold cascade (villager strip, then
+	// lesson row, then guardian strip reclaim their rows) while still
+	// widescreen-wide.
+	mdl2, _ := mdl.(Model).Update(tea.WindowSizeMsg{Width: 140, Height: 20})
+	after := mdl2.(Model)
+
+	if !after.lookActive || after.lookFocus != lookFocusPane {
+		t.Fatal("a resize mid-mode should not itself change the mode's state")
+	}
+	view := after.View() // must not panic
+	if view == "" {
+		t.Fatal("view rendered empty after a fold-pressure resize mid-mode")
+	}
+	lines := strings.Split(view, "\n")
+	if len(lines) != after.height {
+		t.Errorf("View() line count = %d, want exactly height %d (B1 exact-height invariant) after a fold-pressure resize mid-mode", len(lines), after.height)
+	}
+
+	// Compare against the SAME resize with the mode off: the fold's own
+	// panel-dimension outcome must be identical whether or not the mode is
+	// active (the mode adds zero chrome rows, so it must never itself be
+	// the reason a panel's size differs).
+	mOff := widescreenModel(t)
+	mOff.replica.Agents = m.replica.Agents
+	mdlOff, _ := mOff.Update(tea.WindowSizeMsg{Width: 140, Height: 20})
+	offAfter := mdlOff.(Model)
+	cols := computeColumns(after.width)
+	rows := computeRows(after.height, after.wantsLessonRow())
+	rowsOff := computeRows(offAfter.height, offAfter.wantsLessonRow())
+	if rows != rowsOff {
+		t.Errorf("fold outcome differs mode-on vs mode-off at the same size: %+v vs %+v", rows, rowsOff)
+	}
+	mapPanel := after.mapPanelView(cols.MapCols, rows.Body)
+	dockPanel := after.dockPanelView(cols.DockCols, rows.Body)
+	if lipgloss.Height(mapPanel) != rows.Body || lipgloss.Height(dockPanel) != rows.Body {
+		t.Errorf("panel heights should match the folded body budget %d: map=%d dock=%d", rows.Body, lipgloss.Height(mapPanel), lipgloss.Height(dockPanel))
+	}
+}
+
 // --- SC-003: fixed geometry across mode entry / pane focus / drill / exit ---
 
 func TestLookFixedGeometryAcrossModeStates(t *testing.T) {
