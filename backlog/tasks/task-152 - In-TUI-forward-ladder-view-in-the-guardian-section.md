@@ -1,9 +1,10 @@
 ---
 id: TASK-152
 title: In-TUI forward-ladder view in the ? guardian section
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-26 17:57'
+updated_date: '2026-07-26 19:29'
 labels:
   - game-ui
   - pedagogy
@@ -24,3 +25,9 @@ Reorient 2026-07-26 decision 6. The forward ladder (all stages: identity · conc
 - [ ] #1 ? guardian section renders the four-stage ladder with earned/next state and unlock evidence, parity with stages --json
 - [ ] #2 overlays/help.md byte-identity table row added same-PR; check-tui-design.mjs --changed passes
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Sweep claim (runbook docs/design/reorient-2026-07-26-sweep-runbook.md): spec 078-tui-ladder-view. Tier: Sonnet — single-package deterministic TUI view (world.StagesLadder + worlds.LoadUnlocks, relocated by spec 063 T014 for exactly this). Sequenced after TASK-142's merge (shared help.go/help.md).
+<!-- SECTION:NOTES:END -->
