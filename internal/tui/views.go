@@ -208,7 +208,28 @@ func (m Model) headerView() string {
 	if m.lessonBadgeVisible() {
 		line += " " + styleDim.Render("[lesson]")
 	}
+	if badge := m.villagerCountBadge(); badge != "" {
+		line += " " + badge
+	}
 	return styleHeader.Render(line)
+}
+
+// villagerCountBadge is the villager strip's fold-relocation form
+// (panels/villager-strip.md, patterns/layout.md ruling a step 2): `[N
+// villagers]` appended to the header row whenever the strip itself isn't
+// rendering this frame — narrow (never carried, ruling b) or a widescreen
+// fold under height pressure (computeRows.VillagerStrip == 0). Absent with
+// no roster yet (nothing to count), so a pre-connect/empty-world header
+// stays byte-identical to before this feature.
+func (m Model) villagerCountBadge() string {
+	n := m.villCount()
+	if n == 0 {
+		return ""
+	}
+	if isWidescreen(m.width) && computeRows(m.height, m.wantsLessonRow()).VillagerStrip > 0 {
+		return "" // the strip itself is showing this frame — no badge needed
+	}
+	return styleDim.Render(fmt.Sprintf("[%d villagers]", n))
 }
 
 // currentStage reads the world's curriculum-ladder stage id directly off
@@ -429,6 +450,14 @@ func (m Model) widescreenView() string {
 
 	var b strings.Builder
 	b.WriteString(m.headerView() + "\n")
+	if rows.VillagerStrip > 0 {
+		// Villager strip (panels/villager-strip.md, spec 060 US1): one
+		// borderless row directly under the header, above the map ‖ dock
+		// body — rows.Body already accounts for whether this row is
+		// visible, so the composite's total height stays exact whether
+		// folded or not (B1's exact-height invariant).
+		b.WriteString(m.villagerStripView(m.width) + "\n")
+	}
 	b.WriteString(body + "\n")
 	if rows.Lesson > 0 {
 		// Lesson row (panels/lesson-row.md, spec 055): two borderless lines
@@ -2386,6 +2415,93 @@ func horizonRemedy(calibrated bool) string {
 		return "slow down"
 	}
 	return "calibrate or slow down"
+}
+
+// villagerStripGlyph renders one agent's villager-strip glyph — the SAME
+// priority/style rules renderMapGrid's own agent glyphs use (dead > asleep >
+// awake), so a player who already reads the map's vocabulary reads this
+// strip for free (panels/villager-strip.md "Structure"). Deliberately plain
+// "†" for the dead, never the map's dead-agent-on-grave carve-out: the strip
+// has no tile/grave concept at all (edge case "Dead villagers: strip shows
+// faint † in place — roster parity").
+func villagerStripGlyph(a sim.Agent) string {
+	g := strings.ToUpper(a.Name[:1])
+	switch {
+	case a.Dead:
+		return styleErr.Render("†")
+	case a.Asleep:
+		return styleAsleep.Render(strings.ToLower(g))
+	default:
+		return styleAgent.Render(g)
+	}
+}
+
+// villagerStripView renders the D12 colonist-bar row (panels/villager-
+// strip.md, spec 060 US1): "N villagers" (living + dead, matching the
+// villagers-tab roster) plus one name-initial glyph per villager in stable
+// roster order. Display-only (standing resolution 1: no cursor, no keys, no
+// mouse target) — this is purely a glanceability layer over facts the
+// villagers tab already shows in full (FR-006/D1).
+//
+// Width overflow sheds glyphs from the END with a trailing "…N" overflow
+// count — never a mid-glyph truncation (the corpus-wide "shed, never
+// silently truncate" discipline, mirrored from joinStripSegments above).
+// Every glyph in the run is a single display column, so the exact-fit
+// search below is a simple backward scan rather than joinStripSegments's
+// incremental one: try showing everyone first, and only if that overflows
+// width, search for the widest prefix that still leaves room for the
+// overflow marker.
+func (m Model) villagerStripView(width int) string {
+	if width < 1 {
+		width = 1
+	}
+	n := m.villCount()
+	count := fmt.Sprintf("%d villagers", n)
+	if n == 0 {
+		return clipLine(count, width)
+	}
+	glyphs := make([]string, n)
+	for i, a := range m.replica.Agents {
+		glyphs[i] = villagerStripGlyph(a)
+	}
+	avail := width - lipgloss.Width(count)
+	runWidth := func(k int) int {
+		w := 0
+		for i := 0; i < k; i++ {
+			w += lipgloss.Width(glyphs[i])
+		}
+		if k > 0 {
+			w += k - 1 // one separator space between each glyph
+		}
+		return w
+	}
+	if avail >= 1+runWidth(n) {
+		return count + " " + strings.Join(glyphs, " ")
+	}
+	for k := n - 1; k >= 0; k-- {
+		suffix := styleDim.Render(fmt.Sprintf("…%d", n-k))
+		// need is everything after "count": a leading separator, the
+		// (possibly empty) glyph run, another separator before the
+		// suffix (only when a run is actually present), and the suffix.
+		need := 1 + lipgloss.Width(suffix)
+		if k > 0 {
+			need += runWidth(k) + 1
+		}
+		if need <= avail {
+			var b strings.Builder
+			b.WriteString(count)
+			if k > 0 {
+				b.WriteString(" ")
+				b.WriteString(strings.Join(glyphs[:k], " "))
+			}
+			b.WriteString(" ")
+			b.WriteString(suffix)
+			return b.String()
+		}
+	}
+	// Pathologically narrow: not even the count + a bare overflow marker
+	// fits — hard-clip defensively rather than ever overflow the row.
+	return clipLine(count+" "+styleDim.Render(fmt.Sprintf("…%d", n)), width)
 }
 
 // guardianStripView renders the always-visible action-budget row
