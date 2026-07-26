@@ -6,7 +6,7 @@ sources:
   - internal/sim/memory.go
   - internal/mind/prompt.go
   - internal/mind/telemetry.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+verified_against: 8495b34ffb9ee5dc02e224025f0a23313bbab900
 ---
 
 # Agent memory window
@@ -22,7 +22,11 @@ pre-existing `SalDream` (8), kept below `GenerationBumpSalience` (9,
 never so high they'd interrupt an in-flight generation the way near-death or
 exile do. Spec 041 added two more on the low end: `salMapCorrected` (5, a
 mental-map correction — [[mental-maps]]) and `salPlaceTold` (3, the talk band,
-for giving/getting directions between villagers). Spec 032 added `salAxeBroke`
+for giving/getting directions between villagers). Spec 081 added `salChop` (4)
+and `salQuarry` (4) in the `salHunt` band — the actor's first-person memory of a
+completed chop/quarry ("Felled the tree at (x,y)." / "Quarried the outcrop at
+(x,y)."), the operator decision 2026-07-26 superseding the earlier
+"completed chops mint no memory" posture ([[mental-map-perception]]). Spec 032 added `salAxeBroke`
 (8) on the same band, the axe that spent
 its last harvest use. Spec 013's storage economy added two more on the same band:
 `salChestBuilt` (7, village-visible, the oven precedent) and `salTaking` (7,

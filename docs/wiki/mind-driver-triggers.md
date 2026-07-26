@@ -7,7 +7,7 @@ sources:
   - internal/mind/prompt.go
   - internal/mind/parse.go
   - internal/mind/telemetry.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+verified_against: 8495b34ffb9ee5dc02e224025f0a23313bbab900
 ---
 
 # Mind driver cadence and prompt content
@@ -27,7 +27,12 @@ mental-map correction that invalidates the agent's own current intent target
 (spec 041 US3: `absorb`'s `agent.map_corrected` case arms the agent only when
 one of the payload's gone facts matches the live intent's target or resolved
 coordinates — a correction elsewhere in the map stays quiet, carried into the
-next scheduled round as a memory instead; [[mental-maps]]), and —
+next scheduled round as a memory instead; [[mental-maps]]) — since spec 081 the
+same intent-match rule also arms on `agent.chopped`/`agent.quarried`: the actor
+re-arms (a chop always did; a quarry now too), and so does any villager within
+`sim.WitnessRadius` of the cleared tile whose live intent targeted it, standing
+in for the `agent.map_corrected` those on-scene witnesses no longer receive
+(the fact was removed silently at the act; [[mental-map-perception]]) — and —
 only while the replica is paused (spec 040, decision-6's paused authoring
 chain) — a landed Guardian nudge (`metatron.nudged`), which arms each targeted
 villager with the nudge event's seq as the causality edge; the game-time

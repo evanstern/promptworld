@@ -7,7 +7,7 @@ sources:
   - internal/sim/agents.go
   - internal/sim/recipes.go
   - internal/sim/terrain.go
-verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
+verified_against: 8495b34ffb9ee5dc02e224025f0a23313bbab900
 ---
 
 # Sim state: core agent Apply arms
@@ -81,7 +81,11 @@ bulk (`bulkCap − bulk(Inv)`); since spec 032 US2, `agent.chopped`/
 `quarryYieldAxe` (3) carrying an axe, re-derived from the SAME pre-mutation
 state the emitter checked (the spear-hunt precedent), spending `Axes[0]`'s
 last use; a spent-to-zero axe's removal rides its own companion
-`agent.axe_broke` (an `agent.spear_broke` clone), not this payload; the v3
+`agent.axe_broke` (an `agent.spear_broke` clone), not this payload; since spec
+081 both arms ALSO call `removeHarvestedFact` (the felled `tree` / quarried
+`rock` place-fact leaves the actor's map and every awake in-radius witness's
+map at the act event — provenance-blind, silent, [[mental-map-perception]]),
+positions read from the same pre-mutation state as the yield derivation; the v3
 storage events (spec 013 US2/US3/US5)
 move goods between an agent's `Inv` and a `Pile`/chest `Store`:
 `agent.dropped`/`agent.picked_up` create-or-merge or drain a tile's pile

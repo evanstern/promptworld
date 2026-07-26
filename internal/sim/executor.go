@@ -1252,6 +1252,12 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 		}
 	case "chop":
 		emit("agent.chopped", HarvestPayload{Agent: i, X: in.ResX, Y: in.ResY})
+		// Spec 081 (FR-003): the actor's own harvest is a first-person memory in
+		// the salHunt band, riding the same batch as the act (the hunt precedent
+		// above) — replacing the third-party-voiced map_corrected discovery the
+		// actor used to receive of its own felling.
+		events = append(events, situatedMemoryEvent(nextTick, i, salChop, where, in.Reason, OriginAction,
+			chopMemoryText, in.ResX, in.ResY))
 		axeBrokeIfLast()
 	case "hunt":
 		// T027: carrying a spear (checked against pre-mutation state, exactly
@@ -1371,6 +1377,9 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 		emit("agent.wall_repaired", WallWorkPayload{Agent: i, X: in.ResX, Y: in.ResY})
 	case "quarry":
 		emit("agent.quarried", HarvestPayload{Agent: i, X: in.ResX, Y: in.ResY})
+		// Spec 081 (FR-003): quarry parity with the chop memory above.
+		events = append(events, situatedMemoryEvent(nextTick, i, salQuarry, where, in.Reason, OriginAction,
+			quarryMemoryText, in.ResX, in.ResY))
 		axeBrokeIfLast()
 	case "collect_water":
 		emit("agent.collected_water", HarvestPayload{Agent: i, X: in.ResX, Y: in.ResY})

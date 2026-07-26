@@ -260,12 +260,39 @@ func (md *Mind) absorb(batch []store.Event) {
 			if json.Unmarshal(e.Payload, &p) == nil {
 				md.arm(p.Agent, e.Seq)
 			}
-		case "agent.intent_done", "agent.build_failed", "agent.foraged", "agent.chopped", "agent.hunted", "agent.built":
+		case "agent.intent_done", "agent.build_failed", "agent.foraged", "agent.hunted", "agent.built":
 			var p struct {
 				Agent int `json:"agent"`
 			}
 			if json.Unmarshal(e.Payload, &p) == nil {
 				md.arm(p.Agent, e.Seq)
+			}
+		case "agent.chopped", "agent.quarried":
+			// Spec 081 (FR-007 / contracts §5): a harvest re-arms its actor (a
+			// chop already did; a quarry now too) AND any on-scene witness whose
+			// live intent targeted the cleared tile — the act-time silent map
+			// removal (state.go removeHarvestedFact) is what those witnesses used
+			// to re-arm on via agent.map_corrected. The replica has applied the
+			// same reducer batch, so its positions and removed facts match the
+			// reducer's witness set; a witness out of radius kept its fact and
+			// re-arms later through the ordinary correction, exactly as today.
+			var p sim.HarvestPayload
+			if json.Unmarshal(e.Payload, &p) == nil {
+				md.arm(p.Agent, e.Seq)
+				for w := range md.replica.Agents {
+					if w == p.Agent {
+						continue
+					}
+					wa := &md.replica.Agents[w]
+					if absInt(wa.X-p.X)+absInt(wa.Y-p.Y) > sim.WitnessRadius {
+						continue
+					}
+					if in := wa.Intent; in != nil &&
+						((p.X == in.TargetX && p.Y == in.TargetY) ||
+							(p.X == in.ResX && p.Y == in.ResY)) {
+						md.arm(w, e.Seq)
+					}
+				}
 			}
 		case "sim.night_started":
 			for i := range md.replica.Agents {

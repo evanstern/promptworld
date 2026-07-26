@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/mind/mind.go
   - internal/mind/handlers.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+verified_against: 8495b34ffb9ee5dc02e224025f0a23313bbab900
 ---
 
 # Agent mind
@@ -33,7 +33,8 @@ divergence telemetry recorded per enqueued plan job.
 **Driver cadence and prompt content** ([[mind-driver-triggers]]): per-agent
 planner cadence with a phase-preserving stagger, the trigger set that arms a
 due thought (wake, completion, nightfall, encounters, mental-map corrections,
-paused Guardian nudges), and the social-law/known-places/village-law blocks a
+on-scene harvest acts re-arming intent-matched witnesses (spec 081), paused
+Guardian nudges), and the social-law/known-places/village-law blocks a
 villager's own history and mental map render into its own prompt.
 
 **The cognition gate and tool-use loop dispatch** ([[tool-use-dispatch]]): the
