@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
 <meta name="promptworld-docs:source" content="docs/design/tui/patterns/keymap.md@012032fb61b0112be9648370970a7e134966187d">
-<meta name="promptworld-docs:source" content="docs/design/tui/overlays/help.md@f3869df03de326d646d68ea716690da81e4840ca">
+<meta name="promptworld-docs:source" content="docs/design/tui/overlays/help.md@ad2a6543a9caf51d1cd28af863291f3daa3bd4eb">
 <title>Keys reference — promptworld player docs</title>
 <style>
   :root {
@@ -243,8 +243,10 @@ you were just on, a tour of everything on screen, every lesson the game can
 teach you (including ones you dismissed with <code>x</code> — nothing is ever lost),
 a permanent replay of every stage-unlock ceremony you've earned in this world,
 and a page on the guardian itself: your current stage, what it teaches, every
-verb it grants you, and one example ask per verb. It never touches the world:
-opening it doesn't pause anything,
+verb it grants you, one example ask per verb, and — below that — the whole
+ladder ahead of you: every stage in order, what each one teaches, what earns
+it, and whether you've already earned it (with a note on where, if you have).
+It never touches the world: opening it doesn't pause anything,
 and closing it puts you back exactly where you were. One more courtesy: if a
 warning badge is showing in the header when you press <code>?</code> (degraded
 speed, an AI provider problem, a skipped-thinking notice), the overlay opens
@@ -264,8 +266,11 @@ looking at a specific tile</td></tr>
 <tr><td><code>J</code> / <code>K</code></td><td>Scroll a long page</td></tr>
 </table>
 <p>The guardian section always shows something useful, even on a brand-new
-world or with no AI configured at all — it reads only your world's stage,
-never anything the guardian says.</p>
+world or with no AI configured at all — the current-stage part reads only
+your world's stage, never anything the guardian says, and the ladder below
+it reads your own earned-stages record (the same one <code>promptworld
+stages</code> reads from a terminal) — never anything from this specific
+world, so it looks the same no matter which world you're in.</p>
 
 <h2>Quick hints (what the footer shows you)</h2>
 <table>
