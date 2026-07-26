@@ -1,9 +1,10 @@
 ---
 id: TASK-135
 title: 'Curriculum ladder production wiring: the unlock gate never runs outside tests'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-07-25 19:29'
+updated_date: '2026-07-26 02:10'
 labels:
   - curriculum
   - review-2026-07-25
@@ -35,9 +36,15 @@ Non-trivial: full Spec Kit before implementation.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 EvaluateUnlock is called on the production event path, not only from tests
-- [ ] #2 A running world can cross stage-2 -> stage-3 and emits curriculum.stage_unlocked from that evaluation
-- [ ] #3 ScenarioExercises is reachable from a production path (or explicitly re-scoped with the reason recorded)
-- [ ] #4 Exactly one emitter of curriculum.stage_unlocked exists; TASK-127's ceremony consumes it and TASK-119's scheduler does not duplicate it
-- [ ] #5 TASK-68's AC#6 fixture caveat is retired, or TASK-68 carries an explicit note that it closed on a fixture and this task completed it
+- [x] #1 EvaluateUnlock is called on the production event path, not only from tests
+- [x] #2 A running world can cross stage-2 -> stage-3 and emits curriculum.stage_unlocked from that evaluation
+- [x] #3 ScenarioExercises is reachable from a production path (or explicitly re-scoped with the reason recorded)
+- [x] #4 Exactly one emitter of curriculum.stage_unlocked exists; TASK-127's ceremony consumes it and TASK-119's scheduler does not duplicate it
+- [x] #5 TASK-68's AC#6 fixture caveat is retired, or TASK-68 carries an explicit note that it closed on a fixture and this task completed it
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Satisfied by spec 054's merge (TASK-119, PR #101, d220645) — verified by the UI-sweep orchestrator per the handoff: (1) EvaluateUnlock called on the production event path (internal/sim/scenario.go:423, reached from the executor batch path per executor.go:359); (2) a passing scored run emits curriculum.exercise_passed and, when the gate grants, curriculum.stage_unlocked in the same batch (scenario.go:422-425) — stage-2→3 crossing reachable in a running world via the-law scenario; (3) ScenarioExercises production-reachable (internal/world/world.go, cmd/promptworld/commands.go); (4) exactly one emitter (grep-verified: scenario.go:424 only); daemon/curriculum.go + TASK-127's ceremony are consumers; the incident scheduler does not duplicate it; (5) TASK-68 AC#6 caveat retired with a note on TASK-68. nextLadderStage is production-reachable transitively via EvaluateUnlock (curriculum.go:202). No separate implementation was needed — the card's gap was closed by 054's rubric/pass evaluator design.
+<!-- SECTION:FINAL_SUMMARY:END -->

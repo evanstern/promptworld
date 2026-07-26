@@ -4,7 +4,7 @@ title: 'Curriculum ladder: learning topics gated to angel capabilities'
 status: Done
 assignee: []
 created_date: '2026-07-23 03:28'
-updated_date: '2026-07-25 19:31'
+updated_date: '2026-07-26 02:10'
 labels:
   - review-2026-07-22
   - teaching-game
@@ -79,6 +79,8 @@ Post-merge obligations complete 2026-07-25: wiki re-verified (22 notes + new cur
 REVIEW FINDING (2026-07-25) — PRINCIPLE III EXCEPTION, NOW OWNED. This task is Done with AC#6 ticked, and the tick's own note reads 'fixture-proven; production emission = TASK-119'. Two problems: (a) TASK-119 is scenario/incident machinery (spec 054) — it schedules emissions, it does not wire the unlock evaluator, so nothing actually owned the gap; (b) the evaluation layer has ZERO production callers — EvaluateUnlock (sim/curriculum.go:201), nextLadderStage (:153), CharterObservedEvidence (:242) and ScenarioExercises (:332) are reachable only from curriculum_test.go plus one TUI digest test. 332 lines of internal/sim held alive by its own assertions.
 
 Operator decision (2026-07-25): CARD THE WIRING, do not delete. Now owned by TASK-135. This task stays Done; AC#6 is explicitly recorded as fixture-closed, with production emission completed by TASK-135.
+
+AC #6 fixture caveat retired (2026-07-25, UI-sweep orchestrator): production emission landed with spec 054 (PR #101, d220645) — internal/sim/scenario.go:423-424 calls EvaluateUnlock on the production event path and is the single emitter of curriculum.exercise_passed / curriculum.stage_unlocked; TASK-135 records the verification.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
