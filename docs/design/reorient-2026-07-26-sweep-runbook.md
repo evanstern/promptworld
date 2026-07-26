@@ -156,6 +156,7 @@ file's execution log complete and status flipped to done. TASK-111/136/137 untou
 
 | date | task | PR | merge | notes |
 |------|------|----|-------|-------|
+| 2026-07-26 | TASK-142 | #115 | 011ce4e | Lane B complete; look-cursor + TILE pane + mouse parity + badge deep-link; merged with 5-commit docs-only base lag (zero overlap, drift gate green) to preserve 26 in-branch pins |
 | 2026-07-26 | TASK-150 | #114 | 495d8cb | Lane A complete; red-run proved 8 cells (7 postmortem + 1 help.md); help.md badge cell retagged pending TASK-142 |
 | 2026-07-26 | TASK-149 | #113 | f78358a | Lane A anchor merged; unblocks 150/67/151. Doctrine tension logged: implementer merged origin/main into the branch (not rebase) to preserve 43 in-branch pin hashes — pr gate green; operator may want to ratify merge-over-rebase for pin-carrying branches |
 | 2026-07-26 | TASK-154 | #112 | 86b776d | Lane B first merge; mutation check proven; player-docs pin gap found+fixed in-branch (freshness probe must run directly, not just via pr gate) |

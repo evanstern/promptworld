@@ -146,6 +146,11 @@ const (
 	helpModeVillagersRoster
 	helpModeVillagersDetail
 	helpModeSolo
+	// helpModeLook (spec 074-look-cursor, FR-014) is the look-cursor mode's
+	// own keys page — reachable via `?` pressed during the mode (frozen
+	// open, currentHelpMode's look.lookActive branch, tui.go) or by paging
+	// with n/p from any other mode's overlay, the FR-001 seam.
+	helpModeLook
 	helpModeCount
 )
 
@@ -249,6 +254,26 @@ var (
 	rowVillDetEnter = helpKeyRow{"⏎", []string{"enter"}, "no effect here (roster-only)"}
 )
 
+// --- look-cursor mode rows (handleLookKey family, look.go) ---
+//
+// Each physical key means something different depending on which focus
+// layer inside the mode holds the keyboard (cursor/pane/drill) — the
+// keymap sweep (TestHelpKeymapSweep) flattens ONE page per mode, so a key
+// claimed in more than one focus layer gets exactly ONE row here, its
+// Action text naming every meaning rather than being listed twice.
+var (
+	rowLookToggle = helpKeyRow{"v", []string{"v"}, "toggle the look-cursor mode"}
+	rowLookMove   = helpKeyRow{"hjkl/arrows", []string{"h", "j", "k", "l", "up", "down", "left", "right"},
+		"move the cursor one tile (cursor focus); select a TILE-pane row (pane focus, j/k only — left/right/up/down are a claimed no-op there)"}
+	rowLookJump = helpKeyRow{"HJKL", []string{"H", "J", "K", "L"},
+		"jump the cursor 8 tiles, clamped to the world edge (cursor focus); scroll the drill-in pane (J/K, drill focus — H/L are a claimed no-op there)"}
+	rowLookCenter = helpKeyRow{"c", []string{"c"}, "snap the camera onto the cursor (cursor focus only)"}
+	rowLookFocus  = helpKeyRow{"⏎/tab", []string{"enter", "tab", "shift+tab"},
+		"focus the TILE pane, amber border (cursor focus); drill into the selected row — ⏎ only (pane focus); tab/shift+tab release one layer back toward the cursor (pane/drill focus)"}
+	rowLookExit = helpKeyRow{"2-6", []string{"2", "3", "4", "5", "6"}, "exit the mode and select that dock tab"}
+	rowLookEsc  = helpKeyRow{"esc", []string{"esc"}, "release one layer: drill-in → pane → cursor → exit"}
+)
+
 // helpPages is the whole overlay's key content (T004) — indexed by
 // helpModeKey, each page partitioning its mode's real key set between the
 // two tiers (FR-002/FR-003; help_test.go's keymap sweep is the mechanical
@@ -300,6 +325,14 @@ var helpPages = [helpModeCount]helpModePage{
 		Advanced: []helpKeyRow{
 			rowTab6, rowDockCycle, rowAsk, rowSpeed, rowPan, rowRecenter,
 			rowChronA, rowChronT, rowChronR, rowExitSolo, rowNarrowMB,
+		},
+	},
+	helpModeLook: {
+		Title: "Look-cursor (tile inspection)",
+		Basic: []helpKeyRow{rowLookToggle, rowLookMove, rowLookJump, rowLookFocus, rowLookEsc},
+		Advanced: []helpKeyRow{
+			rowLookCenter, rowLookExit,
+			rowConsole, rowAsk, rowPause, rowSpeed, rowQuit,
 		},
 	},
 }

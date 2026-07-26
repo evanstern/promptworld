@@ -6,7 +6,7 @@ sources:
   - internal/tui/tiles.go
   - internal/tui/views.go
   - internal/tui/help.go
-verified_against: b3f4da3c29e3cbbd933e366abe76a5d6ef0f2be9
+verified_against: 03987d380ff92948495abe8b9b34e196d050154d
 ---
 
 # Tile registry

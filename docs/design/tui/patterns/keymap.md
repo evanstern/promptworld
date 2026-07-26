@@ -2,11 +2,12 @@
 title: Pattern — keymap
 class: pattern
 status: shipped
-verified_against: 5972a93b7b4a54889e2eb3c5c934eca1465e681a
+verified_against: 66e36e9a7a627161d4b2ec95dcc18aa0f4f91d20
 sources:
   - internal/tui/tui.go
   - internal/tui/help.go
   - internal/tui/views.go
+  - internal/tui/look.go
 ---
 
 # Pattern: keymap
@@ -93,6 +94,55 @@ Unlike inspect mode, this does **not** require the clock to be paused.
 → villager detail → **console** → solo → home — each press of `esc` releases
 exactly one layer. With no world state loaded (or an empty roster)
 `j/k/g/G/⏎` are strict no-ops.
+
+## Mode: look-cursor (`v` toggles it on; spec 074-look-cursor, layered on
+global exactly like inspect/villagers)
+
+`v` enters from the global mode whenever the map is the thing on screen
+(widescreen home — never solo — or the narrow map pane) and a world is
+attached; a strict documented no-op otherwise (the `x`-key precedent).
+While active, the dock body is borrowed by a transient **TILE view**
+([../panels/dock.md](../panels/dock.md)) — never a numbered tab, `m.dockTab`
+untouched — and the villagers/inspect key layers go dormant (their own
+tabs' visibility predicates read false during the borrow, the
+villagers-mode scoping precedent: "the TILE view is the thing visible").
+Unclaimed global keys (`space`, `[`/`]`, `m`, `q`, `p`, `?`) keep working;
+`a`/`t`/`r` (chronicle-only) and `1` are reachable but inert, since the
+chronicle isn't the thing visible and `1`'s state is already true
+(`lookEntryAllowed()` required it). `G` (console) exits the mode first, then
+opens the console exactly as it would from global — the borrow never
+survives being covered by a body-replacing surface (same rule for a solo
+zoom via the exit-and-select digits below).
+
+Three focus layers inside the mode, released one at a time by `esc`
+(`patterns/focus-contract.md` rule 3): **cursor** (the default) → **pane**
+(`⏎`/`tab`, amber border — focus is drawn) → **drill** (`⏎` on a drillable
+row). `tab`/`shift+tab` are a second way back toward the cursor from pane/
+drill (the same direction `esc` releases), claimed at every layer so they
+never leak to the global dock-cycle/solo-zoom underneath the borrow.
+
+| Key | Cursor focus | Pane focus | Drill focus |
+|---|---|---|---|
+| `v` | exit the mode (from anywhere inside it) | same | same |
+| `hjkl` / arrows | move the cursor 1 tile, pushing the camera at a 2-tile margin | select a TILE-pane row (`j`/`k` only; `left`/`right` a claimed no-op) | scroll the drill-in pane (`up`/`down` alias `J`/`K`; `left`/`right` a claimed no-op) |
+| `H`/`J`/`K`/`L` | jump the cursor 8 tiles, clamped to the world edge, never wrapping | `H`/`L` a claimed no-op; `J`/`K` alias `j`/`k` | `J`/`K` scroll the pane; `H`/`L` a claimed no-op |
+| `c` | snap the camera onto the cursor (`centerCameraOn`) | — | — |
+| `⏎` / `tab` | focus the TILE pane | `⏎` drills into the selected row; `tab`/`shift+tab` release to cursor | `tab`/`shift+tab` release to pane |
+| `esc` | exit the mode (camera resumes centroid-following) | release to cursor focus | release to pane focus |
+| `2`–`6` | exit the mode and select that dock tab (`selectTab` — pressing the tab already selected before entry zooms it solo, the one honest consequence of routing digits through the single `selectTab` grammar rather than a second one) | same | same |
+
+**Mouse** (US4, decision 8 rule 1 — ships together with the keyboard): a
+left-click on a map tile moves the cursor there, entering the mode first if
+it was inactive (`panels/map.md`); a click on a TILE-pane row selects it
+(acquiring pane focus if the cursor held it); a second click on the already-
+selected row drills in (`panels/dock.md`). No-ops while the help overlay is
+open or the minibuffer is focused, the same guards every other click in
+this corpus honors.
+
+**Narrow fallback** (FR-012): `v` raises the cursor on the map pane while it
+is active; `⏎`/`tab` swaps that single pane's body to the TILE view (content
+swap only — the "one component, two widths" posture, never a layout
+change); the esc chain is unchanged.
 
 ## Mode: console (the guardian console page is open; spec 053, layered on global)
 
@@ -186,6 +236,8 @@ minibuffer        esc release · ⏎ send · ↑↓ history
 inspect           j/k select · J/K scroll detail · space resume · m ask · ? help
 villagers roster  j/k select · ⏎ inspect · space pause · q quit · ? help
 villagers detail  esc back · space pause · q quit · ? help
+look-cursor (cursor focus)  hjkl/arrows move · HJKL jump · c center · ⏎/tab pane · 2-6 tab · esc exit · ? help
+look-cursor (pane focus)    j/k select · ⏎ drill · esc back · 2-6 tab · ? help
 console           G back · esc back · m ask · space pause · q quit · ? help
 ceremony          esc dismiss · q — the world keeps running
 postmortem        esc dismiss · q quit
@@ -232,14 +284,21 @@ Ratified doctrine, binding on this entire corpus, not just this page:
    054's two new bindings — the exercise tab's `6` and the briefing's
    any-key dismiss — land keyboard-only and are tracked as parity gaps on
    `panels/exercise.md`'s own rollout note, exactly as that page promised
-   from birth. This tracking is no longer hand-audited alone:
-   `TestMouseParitySweep` (`internal/tui/mouseparity_test.go`) parses every
-   canonical-header control table under `docs/design/tui/` and fails the
-   build when a non-`—` mouse cell has no proven handler (a hand-audited
-   oracle entry whose live `tea.MouseMsg` dispatch demonstrates the
-   documented effect) or when a page carries a keyed-but-mouseless row with
-   no `**Parity rollout**` note. **Graduation contract**: a control leaves
-   its page's rollout note only when, in the same PR, it gains (1) a real
+   from birth. Spec 074 (look-cursor) lands its own controls compliantly
+   too — click-tile (`panels/map.md`, the map's first real mouse target
+   ever) and click-row (`panels/dock.md`'s TILE pane) both ship in the same
+   PR as their keyboard bindings, each with a `TestMouseParitySweep` oracle
+   entry proving the live dispatch — while leaving the map's pre-existing
+   pan/recenter gap exactly as tracked (this feature didn't touch those
+   controls, so it didn't close that gap either). This tracking is no
+   longer hand-audited alone: `TestMouseParitySweep`
+   (`internal/tui/mouseparity_test.go`) parses every canonical-header
+   control table under `docs/design/tui/` and fails the build when a
+   non-`—` mouse cell has no proven handler (a hand-audited oracle entry
+   whose live `tea.MouseMsg` dispatch demonstrates the documented effect)
+   or when a page carries a keyed-but-mouseless row with no
+   `**Parity rollout**` note. **Graduation contract**: a control leaves its
+   page's rollout note only when, in the same PR, it gains (1) a real
    mouse cell in the control table (replacing `—`), (2) a matching entry in
    the sweep's oracle, and (3) that entry's live-dispatch check passing —
    never a documentation-only promotion.
@@ -256,6 +315,10 @@ future page's key choice is principled rather than arbitrary:
   letters were already claimed or read as ambiguous in context, so `x` (a
   conventional "close/dismiss" mnemonic in terminal UIs) was chosen instead
   and is called out here rather than silently deviating from the rule.
+  `v` (look-cursor toggle, spec 074) is a second recorded exception: `l` is
+  already the cursor's own in-mode right-move key, and "inspect" already
+  names the chronicle mode, so the mnemonic reaches one word further —
+  `v`iew, the plain-language framing this feature's TILE view itself uses.
 - **Reserved seams are wired to a documented no-op**, never left an
   undiscovered gap: before spec 049 filled it, the chronicle's `⏎`
   (jump-to-source, Wave 2/D3) was this corpus's precedent — a key that did
