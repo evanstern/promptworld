@@ -251,7 +251,7 @@ under an explicit classification instead of eroding the invariant silently.
 | the guardian section (granted verbs) | per-stage ceiling | `guardian.StageCeilingVerbs` (the turn grant's own `applyStageCeiling` intersection) | `helpGuardianLines` | — | reorient D9 / spec 063 | — |
 | the guardian section (example ask per verb) | static, per verb | the per-verb example-ask token family (skin-tokens.md) | `helpGuardianLines` | — | reorient D9 / spec 063 | `skin.guardian.example_ask.send_vision` (one per verb, keyed by tool id) |
 | badge deep-link focus (layer-2) | unfocused · pre-focused on active badge | active header badge at open | `openHelp`/`firstActiveBadgeRow` (`internal/tui/tui.go`) | — (display-only; the badge itself has no click target) | spec 074-look-cursor (retained per D9 discussion, shipped here) | — |
-| look-cursor keys page | basic · advanced | `handleLookKey` dispatch (`look.go`) | `helpKeysLines` (page 7) | `n`/`p` to reach; `?` mid-mode freezes on it | spec 074 | — |
+| look-cursor keys page | basic · advanced | `handleLookKey` dispatch (`look.go`) | `helpKeysLines` (page 7) | `n`/`p` to reach (`?` mid-mode freezes on it) · — | spec 074 | — |
 | ceremony replay entries | none · N replayable | `replica.StagesUnlocked`/`CurriculumPasses` | `ceremonyReplayLines` (`internal/tui/help.go`), shared rendering with `overlays/ceremony.md` | `tab`/`shift+tab` to reach · — | reorient FR-013 | — |
 
 **Parity rollout**: every control above has a key but no mouse target today;

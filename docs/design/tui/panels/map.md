@@ -212,8 +212,8 @@ rule, and `patterns/focus-contract.md` for the pane-focus scope note.
 | camera recenter | — | `Model.panX`/`panY` reset | `mapPanelView` | `c` · — | TASK-34 | — |
 | legend / inspection line | terrain-only · +piles · +chests | in-view piles/chests | `renderMapGrid` (legend half) | — (display-only) | spec 013 | — |
 | condition overlay | needs-critical · suppressed-mind · dying-fire | `replica.Agents` (`Needs`) · `Model.traces` · `replica.Structures` (`FuelUntil`) | `renderMapGrid` (`needsCritical`, `agentSuppressedMind`, fire branch) | — (display-only) | reorient Wave 5, spec 060 | — |
-| look-cursor toggle | off · on | `Model.lookActive` | `handleGlobalKey` "v" | `v` · click a map tile (enters at the clicked tile) | spec 074 | — |
-| look-cursor move/jump | cursor tile `(lookX,lookY)` | `Model.lookX`/`lookY` | `handleLookCursorKey` (`look.go`) | `hjkl`/arrows move 1 · `HJKL` jump 8 · click a tile moves the cursor | spec 074 | — |
+| look-cursor toggle + click-move | off · on; cursor tile `(lookX,lookY)` | `Model.lookActive`, `lookX`/`lookY` | `handleGlobalKey` "v", `handleLookCursorKey` (`look.go`) | `v` · click a map tile (enters the mode there if inactive, moves the cursor there if already active) | spec 074 | — |
+| look-cursor keyboard move/jump | cursor tile `(lookX,lookY)` | `Model.lookX`/`lookY` | `handleLookCursorKey` (`look.go`) | `hjkl`/arrows move 1 · `HJKL` jump 8 · — | spec 074 | — |
 | look-cursor camera snap | following · panned-to-cursor | `Model.panX`/`panY` | `snapCameraToCursor` (`look.go`) | `c` (in-mode) · — | spec 074 | — |
 | look-cursor tile highlight | highlighted · plain | `Model.lookActive`, `lookX`/`lookY` | `renderMapGrid` (`styleLookCursor` transform) | — (display-only) | spec 074 | — |
 
