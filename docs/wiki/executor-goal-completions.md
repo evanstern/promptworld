@@ -6,7 +6,7 @@ sources:
   - internal/sim/executor.go
   - internal/sim/recipes.go
   - internal/sim/terrain.go
-verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
+verified_against: 8495b34ffb9ee5dc02e224025f0a23313bbab900
 ---
 
 # Executor — goal completions
@@ -27,6 +27,13 @@ Completion behavior per goal:
   spear/hunt precedent) spends its last use on either harvest — spending it to
   zero emits a companion `agent.axe_broke` right after, in the same batch, plus
   a memory ("My axe broke at the work…"), the exact `agent.spear_broke` pattern.
+  Since spec 081, `chop`/`quarry` completion also mints the ACTOR a first-person
+  act memory in the same batch ("Felled the tree at (x,y)." / "Quarried the
+  outcrop at (x,y).", `salChop`/`salQuarry`, the hunt-memory shape) — superseding
+  the old "completed chops mint no memory" posture (operator decision
+  2026-07-26) — and the reducer arm removes the felled/quarried place-fact from
+  the actor's and every awake in-radius witness's mental map at the act event
+  ([[mental-map-perception]]).
 - `hunt` → `agent.hunted`; a carried spear (`Spears[0]`, checked pre-mutation) raises
   the yield to `huntYieldSpear` (vs. `huntYieldBare` bare-handed) and spends that
   spear's last use — spending it to zero emits a companion `agent.spear_broke` right
@@ -69,7 +76,7 @@ Completion behavior per goal:
   (`HP - chip >= 1`); the cycle that would take it to zero instead emits
   `agent.wall_destroyed`, which removes the structure and clears the intent. A
   plank wall takes 2 cycles, a stone wall 6. No memory (spam-avoidance, the
-  forage/chop precedent).
+  forage/path precedent — chop/quarry left that precedent in spec 081).
 - `repair` (spec 032 US1) → one cycle mends a still-damaged wall at `Res` with 1
   unit of its matching carried material (`wallRepairMaterial`: planks for
   `wall_plank`, refined stone for `wall_stone`), restoring `repairHPPerUnit`
@@ -81,7 +88,7 @@ Completion behavior per goal:
   intent's own `Target` tile (stand-on-target, like fire/oven/chest), spending
   `pathStoneCost` (1) raw stone; a path carries no `HP` (`isWall` is false for
   it) and emits no builder memory (not formative, same spam-avoidance
-  precedent as forage/chop). Standing on a path tile is what grants the 2x
+  precedent as forage). Standing on a path tile is what grants the 2x
   movement bonus described above (`pathAt`), not the build itself.
 - `cook` → up to `ovenBatchSize` FoodRaw converts to `agent.cooked`: at a fire,
   fuel-free, producing `food_cooked`; at an oven, additionally burning 1 carried

@@ -7,7 +7,7 @@ sources:
   - internal/sim/state.go
   - internal/sim/miracles.go
   - internal/sim/migrate.go
-verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
+verified_against: 8495b34ffb9ee5dc02e224025f0a23313bbab900
 ---
 
 # Mental map data model
@@ -54,8 +54,11 @@ factHorizon(kind)`, evaluated at READ time only — time never mutates a
 fact, so snapshots stay churn-free. Volatile kinds (`fire`, `pile`) get
 `factHorizonVolatileTicks` (12 game-hours); every other kind gets
 `factHorizonDurableTicks` (4 game-days). A stale fact stays stored (invisible
-to resolvers/prompt) until a correction or the agent's death removes it —
-staleness is never itself a removal. `PlaceFact.Fresh(now)` exports the same
+to resolvers/prompt) until something removes it: a perception correction, the
+agent's death, or — since spec 081 — a chop/quarry the agent performed or
+watched in radius (`removeHarvestedFact`, [[sim-state-reducer]], calling the
+same `removeFact` primitive from the `agent.chopped`/`agent.quarried` arms).
+Staleness is never itself a removal. `PlaceFact.Fresh(now)` exports the same
 test for [[agent-mind]]'s prompt renderer, one freshness rule shared by every
 reader.
 
