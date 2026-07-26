@@ -178,7 +178,7 @@ as reducer-valid, ambient-indistinguishable, replay-safe events.
   `world-save-manifest-fields.md` (vocabulary mirror), guardian children
   (`guardian-instruction-surface.md` — skills observation); computed re-pins for every
   other note listing touched sources — all pinned to branch commits (spec FR-023, SC-006)
-- [ ] T026 Regenerate `docs/player/` via the `player-docs` skill (wiki changed in T025);
+- [X] T026 Regenerate `docs/player/` via the `player-docs` skill (wiki changed in T025);
   `node .claude/skills/player-docs/scripts/check-freshness.mjs --check` passes in-branch
   (spec FR-023, SC-006)
 
