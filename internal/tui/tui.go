@@ -238,6 +238,16 @@ type Model struct {
 	// re-show anything already surfaced this session).
 	lessons lessonTriggers
 
+	// stageOverrides (spec 066, TASK-128, data-model.md "surfaceOverrides"):
+	// an in-session, per-surface visibility choice the player made
+	// explicitly, outranking stage re-resolution until the session ends
+	// (never persisted — applyOverrides, stagedefaults.go). No production
+	// key currently sets an entry here (no in-session command exists yet to
+	// toggle a governed surface); the field and its precedence rule are
+	// still carried so a future toggle command has a session-scoped place
+	// to land without another re-resolution mechanism.
+	stageOverrides surfaceOverrides
+
 	// Help overlay (spec 045, TASK-116; data-model.md "Model state"): a
 	// client-only presentation layer, head of the esc-release chain while
 	// open (help -> minibuffer -> decisions -> detail -> solo -> home).
@@ -630,6 +640,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case statusMsg:
 		wasPaused := m.status != nil && m.status.Clock.Paused
+		hadStatus := m.status != nil // spec 066 T011: a genuine baseline to diff against, not the first poll
+		prevStage := m.currentStage()
 		m.status = msg.status
 		m.worldSkin = skinFromStatus(msg.status) // spec 052: boot-frozen, but a daemon restart re-skins
 		nowPaused := m.status != nil && m.status.Clock.Paused
@@ -638,6 +650,29 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// (panels/chronicle.md Mode 2 "On resume"; contract §5/R7).
 			m.chronSelected = -1
 			m.chronDetailScroll = 0
+		}
+		// Stage-shaped layout defaults (spec 066, TASK-128, research.md R4):
+		// on a genuine live stage change (never the first status poll —
+		// that's boot resolution, already continuous via currentStage()
+		// reads at render time, not an "arrival"), re-resolve and route any
+		// newly-on governed surface through the existing first-occurrence
+		// lesson machinery (FR-005, SC-005). Under the CURRENT authority
+		// table this is a no-op on every real transition (see
+		// newlyOnSurfaces' doc comment, stagedefaults.go) — kept as real,
+		// tested plumbing rather than dead code (TestAnnounceSurfaceArrival
+		// ExactlyOnce, stagedefaults_test.go), forward-compatible with a
+		// future table revision that does widen a surface going up the
+		// ladder. Takeovers (ceremony/postmortem) fire off their own event
+		// triggers, independent of this path (FR-008).
+		if hadStatus {
+			if newStage := m.currentStage(); newStage != prevStage {
+				hasScenario := m.exerciseID() != ""
+				prevSet := resolveStageDefaults(prevStage, hasScenario)
+				nextSet := resolveStageDefaults(newStage, hasScenario)
+				for _, id := range newlyOnSurfaces(prevSet, nextSet) {
+					announceSurfaceArrival(&m.lessons, id, time.Now())
+				}
+			}
 		}
 		return m, nil
 

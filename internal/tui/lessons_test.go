@@ -587,3 +587,43 @@ func TestLessonRowNeverExceedsTwoRows(t *testing.T) {
 		}
 	}
 }
+
+// --- T013 (spec 066, TASK-128, SC-005): stage-driven surface arrival
+// routed through this same first-occurrence machinery ---
+
+// TestAnnounceSurfaceArrivalExactlyOnce proves stagedefaults.go's
+// announceSurfaceArrival dispatch against a synthetic catalog entry (no
+// real governed surface maps to one today — see surfaceArrivalLessonID's
+// doc comment, stagedefaults.go: under the CURRENT authority table no
+// numbered-stage transition ever widens a row): a mapped surface's arrival
+// surfaces its lesson exactly once even if announced twice, using this
+// package's own seen-map/dedupe machinery — no second mechanism.
+func TestAnnounceSurfaceArrivalExactlyOnce(t *testing.T) {
+	const testSurfaceID = "test-only-surface"
+	const testLessonID = "test-only-lesson"
+
+	origCatalog := lessonCatalog
+	origMap := surfaceArrivalLessonID
+	t.Cleanup(func() {
+		lessonCatalog = origCatalog
+		surfaceArrivalLessonID = origMap
+	})
+	lessonCatalog = append(append([]lessonEntry{}, origCatalog...), lessonEntry{
+		ID: testLessonID, Title: "Test", Body: "test", Text: "test", Pointer: "test",
+	})
+	surfaceArrivalLessonID = map[string]string{testSurfaceID: testLessonID}
+
+	lt := newLessonTriggers(nil)
+	now := time.Now()
+	first := announceSurfaceArrival(&lt, testSurfaceID, now)
+	if first == nil || first.ID != testLessonID {
+		t.Fatalf("first announcement should surface %q, got %+v", testLessonID, first)
+	}
+	second := announceSurfaceArrival(&lt, testSurfaceID, now)
+	if second != nil {
+		t.Errorf("second announcement of the same surface must not re-surface (exactly-once, SC-005), got %+v", second)
+	}
+	if !lt.seen[testLessonID] {
+		t.Error("the announced lesson must be marked seen")
+	}
+}
