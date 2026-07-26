@@ -1,11 +1,8 @@
 ---
 name: curriculum-ladder
-description: The spec-046 four-stage curriculum ladder — staged worlds, earned capabilities: stage ceiling, stage-1 instruction lock, curriculum.* unlock events, per-user unlocks record, seeded exercises
+description: The spec-046 four-stage curriculum ladder's identity — immutable per-world birth-fact stage, skin-supplied stage identities, the guardian's stage ceiling, and the stage-1 instruction lock/presets. How progression is earned (unlock events, the per-user record, exercise content) split to [[curriculum-ladder-progression]].
 kind: component
 sources:
-  - internal/sim/curriculum.go
-  - internal/daemon/curriculum.go
-  - internal/worlds/unlocks.go
   - internal/skin/skin.go
   - internal/world/world.go
   - internal/guardian/charter.go
@@ -101,99 +98,39 @@ game, never the player — which is exactly what keeps preset text from ever
 opening the stage-2→3 gate below (and keeps the [[morgue]]'s charter-evidence
 timeline honest).
 
-**The unlock chain** ([[event-types]], [[sim-state-reducer]]). Two event
-types, `curriculum.exercise_passed` (`ExercisePassedPayload{exercise, stage,
-tick, evidence?}`, each `EvidenceRef{type, seq, tick, custom?}` a re-locatable
-pointer into this world's log) and `curriculum.stage_unlocked`
-(`StageUnlockedPayload{stage, exercise, tick}`), are the executor emission
-class — pure functions of (state, tick), no whitelist entries, the
-`metatron.order_expired` pattern; the spec-054 scenario rubric machinery
-(`scenario.go`'s `scenarioRubricEvents`, TASK-119) is the production emitter
-— see [[scenario-machinery]] — and test fixtures remain the only in-tree
-emitter for exercises whose rubric evaluator is still unbuilt content work.
-The reducer appends passes to the bounded `State.CurriculumPasses` ring
-(`curriculumPassRetain` 32) and latches unlocks into `State.StagesUnlocked`
-once per (world, stage), rejecting duplicates and `stage-1` (the unearned
-floor). `sim.EvaluateUnlock(state, pass)` decides the gate conjuncts at
-emission time: stage-1→2, any stage-1 pass; stage-2→3, the pass's evidence
-must include a `metatron.charter_observed` entry with `Custom == true` —
-where `Custom` is NEVER asserted freehand but derived by
-`sim.CharterObservedEvidence`, the single sanctioned constructor, as the
-inverse of the recorded `CharterObservedPayload.Default` (spec 044 US2), so a
-default/preset charter structurally cannot satisfy the gate (SC-004) —
-stage-3→4, any `Custom` evidence entry (a player-granted tool's contributing
-act; which tool is TASK-119's exercise design). Stage-4 is graduation:
-nothing unlocks past it.
-
-**The per-user unlocks record** (`internal/worlds/unlocks.go`):
-`~/.promptworld/unlocks.json` (`<worlds.Root()>/unlocks.json`), a
-`{"unlocks": {"stage-2": {world, path, exercise, evidence, earned_at}}}` map
-written by the daemon's always-on observer (`internal/daemon/curriculum.go`,
-wired onto the notify fan-out before the LLM gate — a no-model world still
-records its unlocks, [[daemon-lifecycle]]) whenever it sees
-`curriculum.stage_unlocked`, with a pointer to the same batch's pass event as
-evidence. The doctrine is the worlds-registry's, plus one explicit softening:
-load-tolerant (missing/corrupt → empty, never an error; malformed entries
-dropped at load but entries whose world path no longer exists KEPT — an
-archived world is still historical proof), atomic `.tmp`+rename writes, and
-advisory-never-authority — an unresolvable home directory WARNS and degrades
-(the endpoint-lease precedent), because the record is pure convenience
-projected from world event histories, which remain the authority. No world
-behavior ever reads it; its only consumers are `promptworld stages` and
-`new`'s earned-stage check.
-
-**The exercises** (`sim.ExerciseDefinition`) are CONTENT, not machinery —
-stage, deterministic seed, framing, an event-derived rubric whose every term
-must be a cataloged event type, the pass-signal shape, a chronicle
-score-narrative framing (failure is a story, not a scold), and — since spec
-054 — an optional authored `Schedule` of incidents plus an
-`IncidentVisibility` override ([[scenario-machinery]]). Two ship
-(`ScenarioExercises`): **first-night** (stage-1, seed 46101 — keep the
-village alive through night one by directing the guardian: visions, omens,
-and the watch; the only exercise with a production rubric evaluator today,
-plus an authored night-one `gru_emerges` incident) and **the-law** (stage-2,
-seed 46102 — get a norm adopted while a player-authored charter revision is
-in force, the SC-004 conjunct; its rubric evaluator is still unbuilt content
-work — state retains only the charter fingerprint, not the `Default` flag
-the conjunct needs). The spec-054 scenario/rubric machinery consumes the
-catalog end to end ([[scenario-machinery]]); `Manifest.Scenario` is its
-consumed schema seam, no longer reserved ([[world-save-directory]]).
-Surfacing: `ipc.WorldStatus.Stage`/`StageOverridden` ride status, `promptworld
-status` renders a skin-named stage line (plus, on a scenario world, an
-`exercise: <id> — <outcome>` line, [[scenario-machinery]]), and the TUI
-digest narrates both `curriculum.*` types under the guardian grammar family
-(the FROZEN `metatron` namespace's family-namespace mapping, [[tui-client]]).
+**Earning the next stage** — split into
+[[curriculum-ladder-progression]]: two executor-emitted events,
+`curriculum.exercise_passed` and `curriculum.stage_unlocked`, latch
+`State.StagesUnlocked` once per (world, stage) under `sim.EvaluateUnlock`'s
+per-transition gate conjuncts (stage-2→3 and stage-3→4 require
+`Custom`-derived charter/tool evidence, never freehand-asserted); a per-user
+`~/.promptworld/unlocks.json` convenience record mirrors earned stages
+without ever being read by world behavior; and `sim.ExerciseDefinition`
+content (`first-night`, `the-law`) supplies the seeded rubric the spec-054
+scenario machinery evaluates. See the child for the event/evidence/exercise
+detail.
 
 ## Connections
 
 [[guardian]] applies the stage ceiling and the instruction lock inside its
 turn/status assembly and emits the `metatron.charter_observed` events whose
-`default` flag the gate derivation inverts; [[morgue]] aligns deaths against
-that same observation timeline. [[sim-state-reducer]] owns the two
-`curriculum.*` reducer arms and the `CurriculumPasses`/`StagesUnlocked`
-state; [[event-types]] catalogs the payload shapes. [[world-save-directory]]
-holds the `stage`/`stage_overridden`/`charter_preset` manifest facts and the
-consumed `scenario` block; [[daemon-lifecycle]] wires the always-on unlock
-observer and the boot-frozen `SetStage` handoff; [[cli-promptworld]] fronts
-`promptworld stages` and `new --stage`/`new --scenario`; [[skin]] supplies the four stages'
-player-visible identities (`Stage`/`StageName`) this note's ladder facts
-pair with; [[scenario-machinery]] is the spec-054 production emitter for this
-note's two event types; [[grounded-feedback]] (spec 063) relocated
-`StagesLadder`/`StageOrder` here from `cmd/promptworld`, added `explain` to
-`stage1CeilingTools`, and reads the stage ceiling via `StageCeilingVerbs` for
-the TUI help overlay's D9 guardian section; [[testing-strategy]] catalogs the
-per-layer suites (reducer, guardian stage gating, daemon observer, unlocks
-record, CLI).
+`default` flag the progression child's gate derivation inverts; [[morgue]]
+aligns deaths against that same observation timeline.
+[[world-save-directory]] holds the `stage`/`stage_overridden`/`charter_preset`
+manifest facts; [[daemon-lifecycle]] hands the boot-frozen `SetStage`
+handoff; [[cli-promptworld]] fronts `promptworld stages` and `new --stage`;
+[[skin]] supplies the four stages' player-visible identities
+(`Stage`/`StageName`) this note's ladder facts pair with;
+[[grounded-feedback]] (spec 063) relocated `StagesLadder`/`StageOrder` here
+from `cmd/promptworld`, added `explain` to `stage1CeilingTools`, and reads
+the stage ceiling via `StageCeilingVerbs` for the TUI help overlay's D9
+guardian section; [[curriculum-ladder-progression]] is the split-off child
+covering how a stage is actually earned; [[testing-strategy]] catalogs the
+per-layer suites.
 
 ## Operational notes
 
 The ladder gates the GUARDIAN's capabilities, never the villagers' world:
 `TestCrossStageDeterminism` pins that the same seed ticks identically at
-every stage. Deleting `~/.promptworld/unlocks.json` forgets earned
-convenience, not truth — any proving world's log still carries its
-`curriculum.stage_unlocked` events. Since spec 054 (TASK-119), the
-`first-night` exercise's production rubric evaluator lands
-`curriculum.exercise_passed`/`stage_unlocked` on a real scenario world
-(`promptworld new --scenario first-night`) — see [[scenario-machinery]];
-`the-law`'s evaluator remains unbuilt content work, so a stage-2 world still
-needs `--override` until it lands.
+every stage. See [[curriculum-ladder-progression]] for earned-progression
+operational notes (the unlocks record, exercise evaluator status).
