@@ -105,3 +105,6 @@ already-written files and every serialized identifier (event types
 | `skin.guardian.omen_noun` | `omen` | display rendering of the frozen `"omen"` nudge form |
 | `skin.stage.stage-1.name` … `skin.stage.stage-4.name` | The Voice / The Written Word / The Craft / The Stewardship | stage display identities (`internal/skin` StageIdentity; spec 046 surfaces) |
 | `skin.stage.stage-1.line` … `skin.stage.stage-4.line` | "you speak, it acts" / "your law outlives the conversation" / "you shape what it can do" / "a world in your care" | one-line stage identity descriptions |
+| `skin.stage.stage-2.ceremony_chapter` | "Your play proved The Written Word: a law that outlives the conversation, written once and honored by every turn since." | `overlays/ceremony.md`'s D6 authorship-voice narrated chapter (spec 056) — stage-1 has no entry (never unlocked, `sim.EvaluateUnlock` never returns it) |
+| `skin.stage.stage-3.ceremony_chapter` | "Your play proved The Craft: what the guardian can do now bears your own hand in its shaping." | `overlays/ceremony.md`'s D6 chapter |
+| `skin.stage.stage-4.ceremony_chapter` | "Your play proved The Stewardship: a world now stands in your care, exactly as you left it." | `overlays/ceremony.md`'s D6 chapter |

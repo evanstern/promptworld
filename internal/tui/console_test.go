@@ -764,3 +764,33 @@ func TestConsoleViewExactHeight(t *testing.T) {
 		t.Errorf("console View() = %d lines, want %d:\n%s", len(lines), mdl.(Model).height, v)
 	}
 }
+
+// --- spec 056: the shared report-card renderer composes into the card seam
+// (spec 053 contract §2.3; spec.md US3-AS2) — production wiring is
+// TASK-115's; this proves the seam itself accepts the shipped renderer
+// unmodified. ---
+
+// TestConsoleCardSeamComposesReportCard: a reportCard wrapped into
+// Model.consoleCards renders inside the console page's card slot, between
+// the turn stream and the read surface (contract §2.3), unmodified.
+func TestConsoleCardSeamComposesReportCard(t *testing.T) {
+	m := widescreenModel(t) // 140x40
+	m.connected = true
+	m.transcript = []string{"you: how did the night go?"}
+	m.consoleCards = []consoleCard{
+		reportCard{
+			title: "first-night",
+			facts: []reportCardFact{
+				{Term: "village survives to dawn", Met: true, Backing: "agent.died: 0"},
+			},
+			mode: reportCardConcluded,
+		},
+	}
+	view := m.consoleView()
+	if !strings.Contains(view, "report card · first-night") {
+		t.Errorf("consoleView should render the composed report card: %q", view)
+	}
+	if !strings.Contains(view, "village survives to dawn") {
+		t.Errorf("consoleView should render the report card's rows: %q", view)
+	}
+}

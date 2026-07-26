@@ -74,6 +74,25 @@ func init() {
 		defaultTable["skin.stage."+id+".name"] = si.Name
 		defaultTable["skin.stage."+id+".line"] = si.Line
 	}
+	for id, chapter := range defaultCeremonyChapters {
+		defaultTable["skin.stage."+id+".ceremony_chapter"] = chapter
+	}
+}
+
+// defaultCeremonyChapters is the D6 authorship-voice narrated chapter for
+// each UNLOCKABLE stage (spec 056, research R5: "D6 voice text lives beside
+// the stage identities in the skin substrate — one authored line per
+// stage, player-authorship register"). stage-1 is the ladder's floor and is
+// never unlocked (sim.EvaluateUnlock never returns it), so it carries no
+// entry here — nothing ever resolves it. A deliberately generic "your play"
+// framing (rather than "your charter") is used throughout: the gate a pass
+// satisfies varies by stage (any pass at stage-1; a charter revision at
+// stage-2; a player-granted tool at stage-3), so the chapter's subject
+// stays true regardless of which specific evidence earned it.
+var defaultCeremonyChapters = map[string]string{
+	"stage-2": "Your play proved The Written Word: a law that outlives the conversation, written once and honored by every turn since.",
+	"stage-3": "Your play proved The Craft: what the guardian can do now bears your own hand in its shaping.",
+	"stage-4": "Your play proved The Stewardship: a world now stands in your care, exactly as you left it.",
 }
 
 // DefaultTable returns a copy of the compiled default token table — the
@@ -198,6 +217,18 @@ func (s *Skin) StageName(id string) string {
 		return si.Name
 	}
 	return id
+}
+
+// CeremonyChapter resolves the D6 authorship-voice narrated chapter for a
+// ladder stage's unlock ceremony (spec 056, overlays/ceremony.md; research
+// R5/R6) — a plain token lookup like every other fiction string in this
+// package, so a world skin.json may re-voice it per stage via the generic
+// `strings` override map (no dedicated typed field needed: Resolve already
+// generalizes over any cataloged token path). stage-1 (never unlocked)
+// resolves to its own token path — visibly wrong, honest, and never
+// actually rendered by a real client (FR-001's fallback discipline).
+func (s *Skin) CeremonyChapter(stage string) string {
+	return s.Resolve("skin.stage." + stage + ".ceremony_chapter")
 }
 
 // StringOverrides returns a copy of the skin's token overrides (identity

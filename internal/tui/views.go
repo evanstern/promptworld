@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -75,7 +76,24 @@ func (m Model) View() string {
 		if m.fatalErr != "" {
 			return styleErr.Render("detached: "+m.fatalErr) + "\n"
 		}
+		if m.runEnded() {
+			// Spec 056 US1-AS5: quitting an ended world is never framed as
+			// "keeps running" — that would be false regardless of whether the
+			// quit happened from the postmortem itself or anywhere else on an
+			// already-ended world (the same honesty rule spec 044's
+			// read-only footer already applies globally, not just on one
+			// screen).
+			return "detached (the run has ended)\n"
+		}
 		return "detached (the world keeps running)\n"
+	}
+	if m.takeover != takeoverNone {
+		// The takeover family (spec 056, contracts/takeovers.md §1) wins the
+		// body slot over EVERYTHING — the console page, help, solo/narrow
+		// panes alike — checked ahead of every other branch below exactly
+		// like handleKey's dispatch does: the takeover IS the event, not a
+		// mode alongside the others.
+		return m.takeoverView()
 	}
 	if m.console {
 		// The guardian console (spec 053, research R1) is a first-class
@@ -325,6 +343,17 @@ func (m Model) tabsView() string {
 // (helpFooterHint, help.go) replaces it entirely (FR-012: no reference to
 // the mode beneath while help is open).
 func (m Model) footerView() string {
+	if m.takeover == takeoverCeremony {
+		// D13's blessed-stopping-point framing (contracts/takeovers.md §3) —
+		// checked ahead of helpOpen: a takeover keeps the body slot and its
+		// own footer regardless of any stale helpOpen state underneath.
+		return styleDim.Render("esc dismiss · q — the world keeps running")
+	}
+	if m.takeover == takeoverPostmortem {
+		// No keeps-running framing here (spec.md US1-AS5) — the run really
+		// has ended.
+		return styleDim.Render("esc dismiss · q quit")
+	}
 	if m.helpOpen {
 		return styleDim.Render(m.helpFooterHint())
 	}
@@ -421,6 +450,430 @@ func (m Model) widescreenView() string {
 	b.WriteString(m.footerView())
 	return b.String()
 }
+
+// --- takeover family (spec 056, contracts/takeovers.md; overlays/ceremony.md,
+// overlays/postmortem.md) ---
+//
+// The stage-unlock ceremony and the run-end postmortem: a first-class page
+// like the guardian console (checked ahead of it in View()), rendering
+// full-screen regardless of layout (patterns/layout.md ruling b — takeovers
+// are layout-independent) with the header/footer chrome every body-
+// replacement surface in this corpus keeps (overlays/help.md's
+// helpPanelView precedent). No minibuffer/dock/tabs — neither takeover
+// accepts text input or has a second pane to show.
+
+// takeoverView dispatches to whichever kind currently owns the body slot —
+// called only when m.takeover != takeoverNone (View()'s own guard).
+func (m Model) takeoverView() string {
+	width := m.width
+	if width < 40 {
+		width = 40
+	}
+	bodyRows := m.height - 2 // header(1) + footer(1); the box below owns its own -2 border budget
+	if bodyRows < 5 {
+		bodyRows = 5
+	}
+	var body string
+	switch m.takeover {
+	case takeoverCeremony:
+		body = m.ceremonyView(width, bodyRows)
+	case takeoverPostmortem:
+		body = m.postmortemView(width, bodyRows)
+	}
+	return m.headerView() + "\n" + body + "\n" + m.footerView()
+}
+
+// fitTakeoverLines truncates content to at most maxLines rows — the
+// takeover family has no scroll key (contracts/takeovers.md §1 lists none),
+// so overflow (an implausibly tall death ledger on a very short terminal)
+// sheds its tail with a count rather than growing the box past its
+// Height() budget — the same "never overflow the panel" discipline
+// paginateHelpContent (help.go) enforces for the help overlay (B1/B5).
+func fitTakeoverLines(lines []string, maxLines int) []string {
+	if maxLines < 1 {
+		maxLines = 1
+	}
+	if len(lines) <= maxLines {
+		return lines
+	}
+	out := append([]string{}, lines[:maxLines-1]...)
+	out = append(out, styleDim.Render(fmt.Sprintf("… (+%d more)", len(lines)-(maxLines-1))))
+	return out
+}
+
+// postmortemView is overlays/postmortem.md's takeover: the narrated run-end
+// line, the report card (scored runs only — FR-001/FR-018), then the
+// morgue's no-blame evidence rows (always).
+func (m Model) postmortemView(cols, rows int) string {
+	if rows < 5 {
+		rows = 5
+	}
+	inner := cols - 4
+	if inner < 10 {
+		inner = 10
+	}
+	var lines []string
+	lines = append(lines, wrapText(m.postmortemRunEndLine(), inner)...)
+	if card := m.postmortemReportCard(inner); card != "" {
+		lines = append(lines, "", card)
+	}
+	lines = append(lines, "", styleHeader.Render("morgue — no-blame evidence"))
+	deaths := m.morgueRows()
+	if len(deaths) == 0 {
+		lines = append(lines, styleDim.Render("no deaths recorded"))
+	}
+	for _, r := range deaths {
+		lines = append(lines, clipLine(fmt.Sprintf("%s · day %d · %s · charter observed: %s", r.Name, r.Day, r.Cause, r.Charter), inner))
+	}
+	lines = fitTakeoverLines(lines, rows-4) // title(1) + blank(1) + the box's own -2 border budget
+	content := styleHeader.Render("THE RUN HAS ENDED") + "\n\n" + strings.Join(lines, "\n")
+	return styleBox.Width(cols - 2).Height(rows - 2).Render(clipContent(content, cols-2))
+}
+
+// postmortemRunEndLine is the narrated run-end line (contracts/takeovers.md
+// §2 row 1), computed directly from the recorded run.ended payload
+// (RunEnd.FinalCause) rather than waiting on the async LLM-narrated
+// chronicle chapter — FR-001 requires the takeover within one frame, and
+// FR-006 requires model-free content. The wording mirrors internal/mind/
+// narrate.go's chronicleNote run.ended line verbatim (postmortem.md: "shares
+// wording with [[chronicle]]'s existing digest/narrated line").
+func (m Model) postmortemRunEndLine() string {
+	if m.replica == nil || m.replica.RunEnd == nil {
+		return "the run has ended"
+	}
+	return fmt.Sprintf("The last villager died of %s. The village stands empty — the run has ended.", m.replica.RunEnd.FinalCause)
+}
+
+// morgueRow is one death's evidence row (contracts/takeovers.md §2; research
+// R3): name, day, cause from the replica's run-end death ledger, plus the
+// closest charter observation at or before that death, scanned from the
+// client's own chronicle ring — never a file read (the durable render is
+// scribe's morgue.md; this is a live projection over what the client
+// already holds). Charter is "unknown" when the ring has rotated past the
+// relevant metatron.charter_observed event on a very long run (R3's honesty
+// rule), never guessed.
+type morgueRow struct {
+	Name, Cause, Charter string
+	Day                  int64
+}
+
+// morgueRows derives the postmortem's evidence rows from the replica's
+// run-end death ledger (spec 044's State.RunEnd) — empty (not nil-panicking)
+// before run.ended has landed or on a snapshot pre-dating spec 044.
+func (m Model) morgueRows() []morgueRow {
+	if m.replica == nil || m.replica.RunEnd == nil {
+		return nil
+	}
+	rows := make([]morgueRow, 0, len(m.replica.RunEnd.Deaths))
+	for _, d := range m.replica.RunEnd.Deaths {
+		name := "someone"
+		if d.Agent >= 0 && d.Agent < len(m.replica.Agents) {
+			name = m.replica.Agents[d.Agent].Name
+		}
+		day, _, _, _ := clock.GameTime(d.Tick)
+		rows = append(rows, morgueRow{Name: name, Day: day, Cause: d.Cause, Charter: m.closestCharterObservation(d.Tick)})
+	}
+	return rows
+}
+
+// closestCharterObservation scans the client's chronicle ring (m.events) for
+// the most recent metatron.charter_observed event at or before deathTick —
+// the same alignment rule morgue.md's render uses (internal/scribe/morgue.go
+// captureEpitaph), but over the bounded client-side ring instead of a full
+// replay: "unknown" is the honest answer once the ring has rotated past it
+// (research R3), never a guess.
+func (m Model) closestCharterObservation(deathTick int64) string {
+	var best *sim.CharterObservedPayload
+	var bestTick int64 = -1
+	for _, e := range m.events {
+		if e.Type != "metatron.charter_observed" || e.Tick > deathTick || e.Tick < bestTick {
+			continue
+		}
+		var p sim.CharterObservedPayload
+		if json.Unmarshal(e.Payload, &p) == nil {
+			pc := p
+			best = &pc
+			bestTick = e.Tick
+		}
+	}
+	if best == nil {
+		return "unknown"
+	}
+	if best.Default {
+		return "default"
+	}
+	return best.Fingerprint
+}
+
+// scenarioExercise resolves the attached world's seeded exercise, if any
+// (panels/exercise.md "Stage defaults": "present whenever the attached world
+// carries a Manifest.Scenario block" — a manifest fact the client already
+// holds, zero new IPC fields, FR-006). Absent block, or an id this build's
+// catalog doesn't know, is the honest ambient fallback — never a fabricated
+// card (spec.md Edge Cases: "the report card never renders on missing
+// data").
+func (m Model) scenarioExercise() (sim.ExerciseDefinition, bool) {
+	if m.w == nil || m.w.Manifest.Scenario == nil || m.w.Manifest.Scenario.Exercise == "" {
+		return sim.ExerciseDefinition{}, false
+	}
+	for _, def := range sim.ScenarioExercises {
+		if def.ID == m.w.Manifest.Scenario.Exercise {
+			return def, true
+		}
+	}
+	return sim.ExerciseDefinition{}, false
+}
+
+// postmortemReportCard renders the scored-run report card (concluded
+// markers), or "" on an ambient world / an unrecognized exercise id (FR-001,
+// FR-018 — the ambient/scored boundary; SC-002).
+func (m Model) postmortemReportCard(width int) string {
+	def, ok := m.scenarioExercise()
+	if !ok {
+		return ""
+	}
+	facts := reportCardFactsFromEvents(def, m.events)
+	return reportCardView(def.ID, facts, reportCardConcluded, width)
+}
+
+// ceremonyView is overlays/ceremony.md's takeover: the D6 authorship-voice
+// narrated chapter plus the report card (the instrument, authoritative —
+// FR-019: both, always). The stage identity is always
+// replica.StagesUnlocked's last entry while m.takeover == takeoverCeremony —
+// this is exactly the event that appended it (applyEvent, tui.go), so no
+// second Model field is needed to remember which stage is open.
+func (m Model) ceremonyView(cols, rows int) string {
+	if rows < 5 {
+		rows = 5
+	}
+	if m.replica == nil || len(m.replica.StagesUnlocked) == 0 {
+		return styleBox.Width(cols - 2).Height(rows - 2).Render("")
+	}
+	stage := m.replica.StagesUnlocked[len(m.replica.StagesUnlocked)-1]
+	inner := cols - 4
+	if inner < 10 {
+		inner = 10
+	}
+	var lines []string
+	lines = append(lines, wrapText(m.sk().CeremonyChapter(stage), inner)...)
+	if card := m.ceremonyReportCardFor(stage, inner); card != "" {
+		lines = append(lines, "", card)
+	}
+	lines = fitTakeoverLines(lines, rows-4)
+	title := styleHeader.Render(strings.ToUpper(m.sk().StageName(stage)) + " — unlocked")
+	content := title + "\n\n" + strings.Join(lines, "\n")
+	return styleBox.Width(cols - 2).Height(rows - 2).Render(clipContent(content, cols-2))
+}
+
+// provingPass finds the recorded CurriculumPass that earned an unlocked
+// stage, re-applying the SAME documented gate conjuncts sim.EvaluateUnlock
+// uses (internal/sim/curriculum.go's doc comment) — EvaluateUnlock itself
+// refuses to re-evaluate a stage already latched into StagesUnlocked (a
+// one-shot gate, by design), so this is the read-only twin for REPLAY
+// purposes only (research R5's "stored, never regenerated" ceremony
+// content): both the live-open ceremony and the `?` overlay's replay
+// section (help.go) call this, so they can never show different evidence
+// for the same stage. Honest-false when the qualifying pass has aged out of
+// the bounded 32-entry CurriculumPasses retention (data-model.md "unknown
+// honestly" — the ceremony/replay callers fall back to a generic
+// events-ring derivation, reportCardFactsFromEvents).
+func provingPass(replica *sim.State, stage string) (sim.CurriculumPass, bool) {
+	if replica == nil {
+		return sim.CurriculumPass{}, false
+	}
+	var from string
+	switch stage {
+	case "stage-2":
+		from = "stage-1"
+	case "stage-3":
+		from = "stage-2"
+	case "stage-4":
+		from = "stage-3"
+	default:
+		return sim.CurriculumPass{}, false
+	}
+	for _, p := range replica.CurriculumPasses {
+		if p.Stage != from {
+			continue
+		}
+		switch from {
+		case "stage-1":
+			return p, true // stage-1 -> stage-2: any stage-1 pass qualifies
+		case "stage-2":
+			for _, ev := range p.Evidence {
+				if ev.Type == "metatron.charter_observed" && ev.Custom {
+					return p, true
+				}
+			}
+		case "stage-3":
+			for _, ev := range p.Evidence {
+				if ev.Custom {
+					return p, true
+				}
+			}
+		}
+	}
+	return sim.CurriculumPass{}, false
+}
+
+// ceremonyReportCardFor renders the (concluded — the exercise already
+// passed) report card for the exercise that earned `stage`, preferring the
+// recorded pass's own Evidence (authoritative — FR-019's "instrument"
+// framing) and falling back to a generic events-ring derivation only when
+// the qualifying pass has aged out of retention. "" when the proving
+// exercise can't be identified at all (an uncataloged exercise id — an
+// honest, defensive absence; production emission, TASK-119's, always names
+// a cataloged id).
+func (m Model) ceremonyReportCardFor(stage string, width int) string {
+	pass, found := provingPass(m.replica, stage)
+	exerciseID := pass.Exercise
+	var def sim.ExerciseDefinition
+	var ok bool
+	for _, d := range sim.ScenarioExercises {
+		if d.ID == exerciseID {
+			def, ok = d, true
+			break
+		}
+	}
+	if !ok {
+		return ""
+	}
+	var facts []reportCardFact
+	if found {
+		facts = reportCardFactsFromEvidence(def, pass.Evidence)
+	} else {
+		facts = reportCardFactsFromEvents(def, m.events)
+	}
+	return reportCardView(def.ID, facts, reportCardConcluded, width)
+}
+
+// --- the shared report-card renderer (D5, contracts/takeovers.md §4) ---
+//
+// One rubric-checklist implementation, three sites: the postmortem
+// (concluded — a concluded run), the ceremony (concluded — "the instrument
+// authoritative"), and, via the consoleCard wrapper below, the guardian
+// console's card seam (spec 053; production wiring there is TASK-115's).
+
+// reportCardMode selects the marker vocabulary (contracts/takeovers.md §4) —
+// the SAME rows and backing references either way; only the glyph for an
+// unmet term changes.
+type reportCardMode int
+
+const (
+	reportCardConcluded reportCardMode = iota // met/missed — a run/exercise that's over
+	reportCardLive                            // met/pending — still running (TASK-115's future call site)
+)
+
+// reportCardFact is one already-resolved rubric row: the plain-language
+// term, whether it's met, and the backing event reference shown alongside
+// it (postmortem.md "Report card": "the backing event reference"). Facts
+// are computed once at open time by the small helpers below — the renderer
+// itself does no event derivation, so its output is identical at every call
+// site by construction (D5/SC-005).
+type reportCardFact struct {
+	Term    string
+	Met     bool
+	Backing string
+}
+
+// reportCardView is the D5 shared renderer (contracts/takeovers.md §4).
+func reportCardView(title string, facts []reportCardFact, mode reportCardMode, width int) string {
+	if width < 20 {
+		width = 20
+	}
+	inner := width - 4
+	if inner < 10 {
+		inner = 10
+	}
+	unmetGlyph := "✗" // ✗ — concluded
+	if mode == reportCardLive {
+		unmetGlyph = "…" // pending — still running
+	}
+	lines := make([]string, 0, len(facts))
+	for _, f := range facts {
+		glyph := "✓" // ✓ met, either mode
+		if !f.Met {
+			glyph = unmetGlyph
+		}
+		lines = append(lines, clipLine(fmt.Sprintf("%s %s (%s)", glyph, f.Term, f.Backing), inner))
+	}
+	content := styleHeader.Render("report card · "+title) + "\n" + strings.Join(lines, "\n")
+	return styleBox.Width(width - 2).Render(clipContent(content, width-2))
+}
+
+// humanizeEventType is a mechanical plain-language gloss of a cataloged
+// event type ("agent.died" -> "agent died") — a deliberately generic
+// placeholder, not hand-authored per-term copy (the mockups' "village
+// survives to dawn" phrasing is illustrative content this feature does not
+// have an authoritative source for; sim.ExerciseDefinition carries no
+// parallel plain-language term table). TASK-119's scenario rubric machinery
+// is the eventual owner of curated per-term copy and combining semantics
+// (some terms want zero occurrences, some want an OR of several —
+// curriculum.go's own doc comments); this renderer stays correct and stable
+// regardless of how that content evolves.
+func humanizeEventType(t string) string {
+	t = strings.ReplaceAll(t, ".", " ")
+	t = strings.ReplaceAll(t, "_", " ")
+	return t
+}
+
+// reportCardFactsFromCounts builds one fact per definition rubric term from
+// an already-tallied event-type count map — Met is true the first time the
+// term's event type is present at all (a deliberately generic
+// presence-based placeholder; see humanizeEventType's doc comment for the
+// scope note this shares).
+func reportCardFactsFromCounts(def sim.ExerciseDefinition, counts map[string]int) []reportCardFact {
+	facts := make([]reportCardFact, len(def.RubricTerms))
+	for i, term := range def.RubricTerms {
+		n := counts[term]
+		facts[i] = reportCardFact{Term: humanizeEventType(term), Met: n > 0, Backing: fmt.Sprintf("%s: %d", term, n)}
+	}
+	return facts
+}
+
+// reportCardFactsFromEvents derives facts from the client's own chronicle
+// ring (the postmortem's fallback source, and the ceremony's when the
+// proving pass has aged out of retention) — bounded by chronicleCap, honest
+// about what it can see, never a file read (FR-006).
+func reportCardFactsFromEvents(def sim.ExerciseDefinition, events []store.Event) []reportCardFact {
+	counts := make(map[string]int, len(def.RubricTerms))
+	for _, e := range events {
+		counts[e.Type]++
+	}
+	return reportCardFactsFromCounts(def, counts)
+}
+
+// reportCardFactsFromEvidence derives facts from a recorded pass's own
+// Evidence list — the ceremony's preferred, authoritative source (FR-019's
+// "instrument"): exactly the satisfying events the unlock derivation itself
+// read (sim.EvidenceRef, spec 046).
+func reportCardFactsFromEvidence(def sim.ExerciseDefinition, evidence []sim.EvidenceRef) []reportCardFact {
+	counts := make(map[string]int, len(def.RubricTerms))
+	for _, ev := range evidence {
+		counts[ev.Type]++
+	}
+	return reportCardFactsFromCounts(def, counts)
+}
+
+// reportCard wraps a resolved report card as a consoleCard seam element
+// (spec 053 contract §2.3; data-model.md consoleCard) — proves the shared
+// renderer composes into the console's card slot unmodified (spec.md US3
+// AS2, SC-005). Production wiring into Model.consoleCards is TASK-115's;
+// this feature ships only the wrapper and its seam-composition test.
+type reportCard struct {
+	title string
+	facts []reportCardFact
+	mode  reportCardMode
+}
+
+func (c reportCard) renderCard(width int) string {
+	return reportCardView(c.title, c.facts, c.mode, width)
+}
+
+// var _ consoleCard = reportCard{} — compile-time proof the wrapper
+// satisfies the seam (spec.md US3 AS2); console_test.go additionally
+// exercises it composed into Model.consoleCards end to end.
+var _ consoleCard = reportCard{}
 
 // mapPanelView is the widescreen MAP region — same glyph rendering as the
 // narrow mapView (map.md: "content unchanged"), sized from the column

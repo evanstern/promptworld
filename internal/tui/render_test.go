@@ -14,6 +14,7 @@ import (
 	"github.com/evanstern/promptworld/internal/llm"
 	"github.com/evanstern/promptworld/internal/sim"
 	"github.com/evanstern/promptworld/internal/store"
+	"github.com/evanstern/promptworld/internal/world"
 )
 
 // TestWidescreenViewExactHeight is the B1 regression: the widescreen
@@ -832,5 +833,174 @@ func TestChronicleDetailPaneActionsBarTruncatedWidth(t *testing.T) {
 	out := chronicleDetailPane(e, nil, 0, 20, 3, "no location for this event")
 	if len(out) != 3 {
 		t.Fatalf("chronicleDetailPane must render exactly paneRows lines even under width pressure, got %d", len(out))
+	}
+}
+
+// --- spec 056: takeover surfaces — the shared report-card renderer,
+// the ambient/scored boundary, and exact-height ---
+
+// TestReportCardThreeSiteEquivalence (SC-005): the same rubric fixture
+// renders identical rows (term + backing) at every site — concluded vs live
+// differ ONLY in the marker vocabulary for an unmet term — and composes
+// unmodified into the console's card seam (spec 053).
+func TestReportCardThreeSiteEquivalence(t *testing.T) {
+	facts := []reportCardFact{
+		{Term: "village survives to dawn", Met: false, Backing: "agent.died: 2"},
+		{Term: "metatron order placed", Met: true, Backing: "metatron.order_placed: 1"},
+	}
+	concluded := reportCardView("first-night", facts, reportCardConcluded, 60)
+	live := reportCardView("first-night", facts, reportCardLive, 60)
+
+	for _, f := range facts {
+		if !strings.Contains(concluded, f.Term) || !strings.Contains(concluded, f.Backing) {
+			t.Errorf("concluded card missing term/backing %q/%q:\n%s", f.Term, f.Backing, concluded)
+		}
+		if !strings.Contains(live, f.Term) || !strings.Contains(live, f.Backing) {
+			t.Errorf("live card missing term/backing %q/%q:\n%s", f.Term, f.Backing, live)
+		}
+	}
+	if !strings.Contains(concluded, "✗") {
+		t.Errorf("concluded mode's unmet marker should be ✗: %q", concluded)
+	}
+	if strings.Contains(live, "✗") {
+		t.Errorf("live mode must never render the concluded ✗ marker: %q", live)
+	}
+	if !strings.Contains(live, "…") {
+		t.Errorf("live mode's unmet marker should be …: %q", live)
+	}
+
+	// Seam composition (spec.md US3-AS2): a report card wrapped as a
+	// consoleCard renders byte-identically to a direct call.
+	card := reportCard{title: "first-night", facts: facts, mode: reportCardConcluded}
+	if got, want := card.renderCard(60), concluded; got != want {
+		t.Errorf("consoleCard wrapper diverged from a direct reportCardView call:\ngot:  %q\nwant: %q", got, want)
+	}
+}
+
+// TestReportCardFactsFromCountsSharedByBothDerivations: the events-derived
+// and evidence-derived helpers produce identical rows given equivalent
+// inputs — one core (reportCardFactsFromCounts), two adapters.
+func TestReportCardFactsFromCountsSharedByBothDerivations(t *testing.T) {
+	def := sim.FirstNightExercise
+	events := []store.Event{
+		{Type: "sim.day_started"},
+		{Type: "metatron.order_placed"},
+	}
+	evidence := []sim.EvidenceRef{
+		{Type: "sim.day_started"},
+		{Type: "metatron.order_placed"},
+	}
+	fromEvents := reportCardFactsFromEvents(def, events)
+	fromEvidence := reportCardFactsFromEvidence(def, evidence)
+	if len(fromEvents) != len(fromEvidence) {
+		t.Fatalf("length mismatch: %d vs %d", len(fromEvents), len(fromEvidence))
+	}
+	for i := range fromEvents {
+		if fromEvents[i] != fromEvidence[i] {
+			t.Errorf("row %d differs: %+v vs %+v", i, fromEvents[i], fromEvidence[i])
+		}
+	}
+}
+
+// TestPostmortemAmbientScoredBoundary (SC-002): zero report cards on ambient
+// runs, one on scored runs, across the fixture matrix — the report card
+// never renders on missing/unrecognized exercise data (spec.md Edge Cases).
+func TestPostmortemAmbientScoredBoundary(t *testing.T) {
+	cases := []struct {
+		name     string
+		scenario *world.ScenarioConfig
+		wantCard bool
+	}{
+		{"no scenario block (ambient)", nil, false},
+		{"scenario names an unknown exercise", &world.ScenarioConfig{Exercise: "no-such-exercise"}, false},
+		{"scenario names a cataloged exercise (scored)", &world.ScenarioConfig{Exercise: "first-night"}, true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			m := testModel(t)
+			m.w.Manifest.Scenario = tc.scenario
+			m.applyEvent(runEndedEvent(1, 100, "exposure", []sim.DeathRecord{{Agent: 0, Tick: 100, Cause: "exposure"}}))
+			view := m.postmortemView(100, 30)
+			hasCard := strings.Contains(view, "report card")
+			if hasCard != tc.wantCard {
+				t.Errorf("report card present = %v, want %v:\n%s", hasCard, tc.wantCard, view)
+			}
+			// The morgue register renders regardless (FR-001: "always").
+			if !strings.Contains(view, "morgue") {
+				t.Errorf("morgue evidence section must always render: %s", view)
+			}
+		})
+	}
+}
+
+// TestMorgueRowsCharterObservationHonesty (research R3): a death's closest
+// charter observation resolves from the client's own chronicle ring; absent
+// any such event, it renders "unknown" rather than guessing.
+func TestMorgueRowsCharterObservationHonesty(t *testing.T) {
+	m := testModel(t)
+	m.replica.Agents = []sim.Agent{{Name: "Ash"}}
+	m.applyEvent(store.Event{Seq: 1, Tick: 50, Type: "metatron.charter_observed",
+		Payload: json.RawMessage(`{"fingerprint":"abc123","default":false}`)})
+	m.applyEvent(runEndedEvent(2, 100, "exposure", []sim.DeathRecord{{Agent: 0, Tick: 100, Cause: "exposure"}}))
+	rows := m.morgueRows()
+	if len(rows) != 1 {
+		t.Fatalf("morgueRows() = %v, want 1 row", rows)
+	}
+	if rows[0].Charter != "abc123" {
+		t.Errorf("Charter = %q, want the recorded fingerprint", rows[0].Charter)
+	}
+
+	m2 := testModel(t)
+	m2.replica.Agents = []sim.Agent{{Name: "Rowan"}}
+	m2.applyEvent(runEndedEvent(1, 100, "exposure", []sim.DeathRecord{{Agent: 0, Tick: 100, Cause: "exposure"}}))
+	rows2 := m2.morgueRows()
+	if len(rows2) != 1 || rows2[0].Charter != "unknown" {
+		t.Errorf("Charter = %v, want \"unknown\" with no recorded observation", rows2)
+	}
+}
+
+// TestCeremonyReportCardPrefersRecordedEvidence: the ceremony's checklist
+// uses the recorded pass's own Evidence (authoritative — FR-019), not a
+// generic ring scan, when the qualifying pass is still retained.
+func TestCeremonyReportCardPrefersRecordedEvidence(t *testing.T) {
+	m := testModel(t)
+	m.replica.CurriculumPasses = []sim.CurriculumPass{
+		{Exercise: "first-night", Stage: "stage-1", Evidence: []sim.EvidenceRef{
+			{Type: "sim.day_started"}, {Type: "metatron.order_placed"},
+		}},
+	}
+	m.applyEvent(stageUnlockedEvent(1, 200, "stage-2", "first-night"))
+	view := m.ceremonyView(100, 30)
+	if !strings.Contains(view, "report card · first-night") {
+		t.Fatalf("ceremony should render the proving exercise's report card: %q", view)
+	}
+	if !strings.Contains(view, "sim.day_started: 1") || !strings.Contains(view, "metatron.order_placed: 1") {
+		t.Errorf("ceremony report card should reflect the recorded pass's own Evidence: %q", view)
+	}
+}
+
+// TestTakeoverExactHeight (B1/B5): both takeover kinds render to exactly
+// m.height lines, in narrow and widescreen, across several sizes.
+func TestTakeoverExactHeight(t *testing.T) {
+	sizes := []struct{ w, h int }{
+		{80, 24}, {80, 30}, {112, 20}, {140, 40}, {200, 24},
+	}
+	for _, sz := range sizes {
+		for _, kind := range []string{"ceremony", "postmortem"} {
+			t.Run(fmt.Sprintf("%dx%d/%s", sz.w, sz.h, kind), func(t *testing.T) {
+				m := testModel(t)
+				m.width, m.height = sz.w, sz.h
+				switch kind {
+				case "ceremony":
+					m.applyEvent(stageUnlockedEvent(1, 100, "stage-2", "first-night"))
+				case "postmortem":
+					m.applyEvent(runEndedEvent(1, 100, "exposure", []sim.DeathRecord{{Agent: 0, Tick: 100, Cause: "exposure"}}))
+				}
+				view := m.View()
+				if got := lipgloss.Height(view); got != sz.h {
+					t.Errorf("View() height = %d, want %d:\n%s", got, sz.h, view)
+				}
+			})
+		}
 	}
 }
