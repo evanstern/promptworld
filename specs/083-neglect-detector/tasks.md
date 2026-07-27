@@ -130,12 +130,12 @@ tests green.
 
 ## Phase 7: Polish & close-out
 
-- [ ] T019 Full proof from the worktree: `gofmt -l` clean; `go test ./...` green
+- [x] T019 Full proof from the worktree: `gofmt -l` clean; `go test ./...` green
       (TestCatalogSweep included; pre-083 snapshots byte-identical);
       `node scripts/check-merge-drift.mjs pr` exits 0; PR opens carrying code + design
       + wiki + player docs together; merge via `gh pr merge --merge` ONLY (squash
       rewrites in-branch pins — observed hazard) (spec SC-006/007)
-- [ ] T020 Post-merge bookkeeping — TASK-160 all-by-merge: board AC ticks, spec-bridge
+- [x] T020 Post-merge bookkeeping — TASK-160 all-by-merge: board AC ticks, spec-bridge
       sync, tasks.md ticks, runbook execution-log row are authored on a branch
       (task branch or short-lived bookkeeping branch) and land on main via merge —
       derived state only, no grounding content, nothing committed directly at root
