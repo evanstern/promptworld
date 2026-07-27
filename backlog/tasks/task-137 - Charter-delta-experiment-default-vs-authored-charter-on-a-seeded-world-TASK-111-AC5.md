@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-25 19:37'
-updated_date: '2026-07-27 02:09'
+updated_date: '2026-07-27 02:13'
 labels:
   - mvls
   - guardian-survival
@@ -30,8 +30,6 @@ REORIENT 2026-07-26 reframe (docs/design/reorient-2026-07-26-ui.md): this experi
 - [ ] #3 Verdict on the teaching-game premise recorded: measurable delta (charter is a real player verb) or proven absence (charter surface is decoration — redesign follow-up carded); TASK-112's hold resolved accordingly
 <!-- AC:END -->
 
-
-
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
@@ -40,4 +38,6 @@ Experiment launched (2026-07-26, operator go). Design: two same-seed (1337) worl
 RE-TASKED (2026-07-26, operator): the morning's v4 arm worlds were discarded before any meaningful span — main advanced under them (FormatVersion 5 / spec 068 terrain gen with marsh+sand, spec 069/070, guardian package rename) and the binary was rebuilt by a sibling session. The experiment now runs on the CURRENT build: both arms recreated at launch time with the fresh binary (same-seed pairing holds — both arms share whatever map seed 1337 generates under the new terrain gen; the authored charter text is preserved in this session and re-planted at creation). Runs scheduled for tonight per operator (rig must be idle — the gemma endpoint + CPU interfere with active work).
 
 Scheduled (operator, 2026-07-26): PARALLEL arms at 22:00 tonight -> ~04:00 done, rig free by morning. Symmetric-coupling caveat (shared gemma queue, same seed + dials both arms) will be recorded in the evidence doc. At launch: rebuild binary from current main (v5), recreate both arms fresh (new terrain gen), re-plant the authored charter from docs/design/evidence/task-137/authored-charter.md, harsh dials (fire_burn_per_wood=3600, gru_emerge_per_mille=1000), stage-4 --override, all-routes gemma, calibrate once + copy, verify horizon/tuning/watches before walking away. Trigger armed in-session.
+
+LAUNCHED 2026-07-26 22:00 window (parallel arms, per operator schedule). Binary rebuilt from main @072dd71. Both arms created fresh: ~/.promptworld/measure/task-137-{default,authored}, seed 1337, stage-4 --override. All routes gemma4:12b-mlx @ http://mbpro-m1.local:11434/v1 (parallel 4, endpoint_capacity 4). Harsh dials verified via sim.tuning_applied in both logs: fire_burn_per_wood=3600, gru_emerge_per_mille=1000. Arm B charter.md = docs/design/evidence/task-137/authored-charter.md verbatim (diff-verified after daemon start); arm A stock default. Calibration: 9.3 s/pt on gemma, copied A→B; horizon all-green at 8x (planner 222<=1200, conversation 962<=7200, meeting 148<=3600). Three sys-watch orders (near_death, starvation, exposure) active in both arms. Both daemons at 8x, effective rate 8.0, not degraded. Monitor armed: exits when both arms MAX(tick)>=172800 (~04:00). DEVIATION (recorded): tool_mode json→native on both arms identically — gemma4:12b-mlx on this ollama ignores response_format json_schema (fenced/empty JSON envelope; calibrate circuit-opened: 'tool-call envelope: invalid character backtick'); native tool-calls probe-verified working. Symmetric across arms, no confound beyond the already-noted shared-queue coupling. LAUNCH-BLOCKING FAILURE AVOIDED, all 7 pre-flight verifications passed.
 <!-- SECTION:NOTES:END -->
