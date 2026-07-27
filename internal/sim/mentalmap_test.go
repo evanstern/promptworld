@@ -878,7 +878,7 @@ func TestPlaceRevealedThroughDoor(t *testing.T) {
 	visionBatch := func(kind string, x, y int) []store.Event {
 		return []store.Event{
 			{Type: "metatron.nudged", Payload: mustPayload(GuardianNudgedPayload{
-				Form: "vision", Targets: []int{0}, Text: "Fire, beyond the ridge."})},
+				Form: "vision", Targets: Refs([]int{0}), Text: "Fire, beyond the ridge."})},
 			{Type: "agent.memory_added", Payload: mustPayload(MemoryAddedPayload{
 				Agent: Ref(0), Text: "You saw a vision: Fire, beyond the ridge.",
 				Salience: SalDream, Subject: Ref(-1), Origin: OriginOmen})},

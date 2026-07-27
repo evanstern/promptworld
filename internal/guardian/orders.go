@@ -600,7 +600,7 @@ func describeEvent(e store.Event) string {
 	case "gru.attacked":
 		var p sim.GruAttackedPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			return fmt.Sprintf("the gru attacked %s", name(p.Agent))
+			return fmt.Sprintf("the gru attacked %s", name(p.Agent.ID))
 		}
 	case "norm.violated":
 		if a := agentName("agent"); a != "" {

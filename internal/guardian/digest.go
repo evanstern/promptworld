@@ -51,7 +51,7 @@ func (mt *Guardian) observeMoment(e store.Event) {
 	case "gru.attacked":
 		var p sim.GruAttackedPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			line = fmt.Sprintf("%s — the gru attacked %s in the night", clock.Format(e.Tick), name(p.Agent))
+			line = fmt.Sprintf("%s — the gru attacked %s in the night", clock.Format(e.Tick), name(p.Agent.ID))
 		}
 	case "social.promise_broken":
 		var p sim.PromiseBrokenPayload
@@ -122,7 +122,7 @@ func (mt *Guardian) digestNote(e store.Event) {
 	case "gru.attacked":
 		var p sim.GruAttackedPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			line = fmt.Sprintf("The gru attacked %s.", name(p.Agent))
+			line = fmt.Sprintf("The gru attacked %s.", name(p.Agent.ID))
 		}
 	case "social.conversation":
 		var p sim.ConversationPayload

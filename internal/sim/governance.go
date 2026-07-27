@@ -233,28 +233,28 @@ type (
 		Start int64 `json:"start"`
 	}
 	MeetingOpenedPayload struct {
-		Attendees []int `json:"attendees"`
+		Attendees []AgentRef `json:"attendees"`
 	}
 	TurnTakenPayload struct {
-		Agent  int    `json:"agent"`
-		Raised string `json:"raised,omitempty"`
+		Agent  AgentRef `json:"agent"`
+		Raised string   `json:"raised,omitempty"`
 	}
 	// ProposalPayload is shared by tabled and resolved: resolved denormalizes
 	// the whole proposal so the reducer never looks back at a prior event.
 	ProposalPayload struct {
-		ProposalID int    `json:"proposal_id"`
-		Kind       string `json:"kind"`
-		NormID     int    `json:"norm_id,omitempty"` // amend/repeal target
-		Target     int    `json:"target"`            // exile: villager; -1 otherwise
-		Param      int    `json:"param,omitempty"`
-		Proposer   int    `json:"proposer"`
-		Text       string `json:"text"`
+		ProposalID int      `json:"proposal_id"`
+		Kind       string   `json:"kind"`
+		NormID     int      `json:"norm_id,omitempty"` // amend/repeal target
+		Target     AgentRef `json:"target"`            // exile: villager; -1 otherwise
+		Param      int      `json:"param,omitempty"`
+		Proposer   AgentRef `json:"proposer"`
+		Text       string   `json:"text"`
 	}
 	ProposalResolvedPayload struct {
 		ProposalPayload
-		Yeas   []int `json:"yeas"`
-		Nays   []int `json:"nays"`
-		Passed bool  `json:"passed"`
+		Yeas   []AgentRef `json:"yeas"`
+		Nays   []AgentRef `json:"nays"`
+		Passed bool       `json:"passed"`
 	}
 	ProposalRephrasedPayload struct {
 		ProposalID int    `json:"proposal_id"`
@@ -266,9 +266,9 @@ type (
 		Graced    bool `json:"graced,omitempty"`
 	}
 	NormViolatedPayload struct {
-		NormID    int   `json:"norm_id"`
-		Violator  int   `json:"violator"`
-		Witnesses []int `json:"witnesses"`
+		NormID    int        `json:"norm_id"`
+		Violator  AgentRef   `json:"violator"`
+		Witnesses []AgentRef `json:"witnesses"`
 	}
 )
 
@@ -322,7 +322,7 @@ func (s *State) applyGovernance(e store.Event) error {
 		}
 		s.Meeting.Phase = "open"
 		s.Meeting.OpenedTick = e.Tick
-		s.Meeting.Attendees = p.Attendees
+		s.Meeting.Attendees = refIDs(p.Attendees) // state keeps ints (spec 086 R2)
 		s.Meeting.NextSpeaker = 0
 		s.Meeting.ProposalsTabled = 0
 		s.Meeting.LastMeetingDay = DayIndex(e.Tick)
@@ -371,18 +371,18 @@ func (s *State) applyGovernance(e store.Event) error {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
 		n := normByID(s, p.NormID)
-		if n == nil || p.Violator < 0 || p.Violator >= len(s.Agents) {
+		if n == nil || p.Violator.ID < 0 || p.Violator.ID >= len(s.Agents) {
 			return nil // vanished subject: recorded history, no-op on state
 		}
-		n.Violations = append(n.Violations, NormViolation{Agent: p.Violator, Tick: e.Tick})
+		n.Violations = append(n.Violations, NormViolation{Agent: p.Violator.ID, Tick: e.Tick})
 		if len(n.Violations) > normViolationCap {
 			n.Violations = append(n.Violations[:0], n.Violations[len(n.Violations)-normViolationCap:]...)
 		}
 		for _, w := range p.Witnesses {
-			if w == p.Violator || w < 0 || w >= len(s.Agents) {
+			if w.ID == p.Violator.ID || w.ID < 0 || w.ID >= len(s.Agents) {
 				continue
 			}
-			r := s.relation(w, p.Violator)
+			r := s.relation(w.ID, p.Violator.ID)
 			r.Trust = clampInt(r.Trust-normViolationTrust, relMin, relMax)
 			r.Affection = clampInt(r.Affection-normViolationAffection, relMin, relMax)
 		}
@@ -402,12 +402,12 @@ func (s *State) resolveProposal(p ProposalResolvedPayload, tick int64) {
 		case ProposeCurfew:
 			if activeNormOfKind(s, NormCurfew) == nil {
 				s.appendNorm(Norm{Kind: NormCurfew, Target: -1, Param: p.Param,
-					Text: p.Text, Proposer: p.Proposer, DayPassed: day, Tally: tally})
+					Text: p.Text, Proposer: p.Proposer.ID, DayPassed: day, Tally: tally})
 			}
 		case ProposeRepayDebts:
 			if activeNormOfKind(s, NormRepayDebts) == nil {
 				s.appendNorm(Norm{Kind: NormRepayDebts, Target: -1,
-					Text: p.Text, Proposer: p.Proposer, DayPassed: day, Tally: tally})
+					Text: p.Text, Proposer: p.Proposer.ID, DayPassed: day, Tally: tally})
 			}
 		case ProposeAmend:
 			if n := normByID(s, p.NormID); n != nil && n.Active && !n.Amended {
@@ -421,9 +421,9 @@ func (s *State) resolveProposal(p ProposalResolvedPayload, tick int64) {
 				n.DayRepealed = day
 			}
 		case ProposeExile:
-			if p.Target >= 0 && p.Target < len(s.Agents) && !s.Agents[p.Target].Dead && !IsExiled(s, p.Target) {
-				s.appendNorm(Norm{Kind: NormExile, Target: p.Target,
-					Text: p.Text, Proposer: p.Proposer, DayPassed: day, Tally: tally})
+			if p.Target.ID >= 0 && p.Target.ID < len(s.Agents) && !s.Agents[p.Target.ID].Dead && !IsExiled(s, p.Target.ID) {
+				s.appendNorm(Norm{Kind: NormExile, Target: p.Target.ID,
+					Text: p.Text, Proposer: p.Proposer.ID, DayPassed: day, Tally: tally})
 			}
 		}
 	}
@@ -448,8 +448,10 @@ func (s *State) resolveProposal(p ProposalResolvedPayload, tick int64) {
 			}
 		}
 	}
-	deltas(p.Yeas, p.Nays)
-	deltas(p.Nays, p.Yeas)
+	// Fold .IDs only (spec 086): relation edges are state.
+	yeaIDs, nayIDs := refIDs(p.Yeas), refIDs(p.Nays)
+	deltas(yeaIDs, nayIDs)
+	deltas(nayIDs, yeaIDs)
 }
 
 func (s *State) appendNorm(n Norm) {
@@ -512,7 +514,7 @@ func governanceEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 			if attendees == nil {
 				attendees = []int{} // an empty meeting still opens (and closes)
 			}
-			emit("meeting.opened", MeetingOpenedPayload{Attendees: attendees})
+			emit("meeting.opened", MeetingOpenedPayload{Attendees: Refs(attendees)})
 		}
 
 		// The open meeting: speaking turns on cadence, then close.
@@ -665,7 +667,7 @@ func speakingTurn(s *State, nextTick int64) []store.Event {
 
 	speaker := s.Meeting.Attendees[s.Meeting.NextSpeaker]
 	if speaker < 0 || speaker >= len(s.Agents) || s.Agents[speaker].Dead {
-		emit("meeting.turn_taken", TurnTakenPayload{Agent: speaker}) // silent skip
+		emit("meeting.turn_taken", TurnTakenPayload{Agent: Ref(speaker)}) // silent skip
 		return events
 	}
 
@@ -674,7 +676,7 @@ func speakingTurn(s *State, nextTick int64) []store.Event {
 	if prop == nil {
 		raised = grievanceOf(s, speaker)
 	}
-	emit("meeting.turn_taken", TurnTakenPayload{Agent: speaker, Raised: raised})
+	emit("meeting.turn_taken", TurnTakenPayload{Agent: Ref(speaker), Raised: raised})
 	events = append(events, situatedMemoryEvent(nextTick, speaker, salMeetingSpoke,
 		PlaceAt(s, s.Agents[speaker].X, s.Agents[speaker].Y), "", OriginAction, "Spoke at the village meeting."))
 
@@ -688,19 +690,19 @@ func speakingTurn(s *State, nextTick int64) []store.Event {
 	yeas, nays := resolveVotes(s, *prop)
 	passed := len(yeas)*2 > len(yeas)+len(nays) // strict majority; ties fail
 	emit("meeting.proposal_resolved", ProposalResolvedPayload{
-		ProposalPayload: *prop, Yeas: yeas, Nays: nays, Passed: passed})
+		ProposalPayload: *prop, Yeas: Refs(yeas), Nays: Refs(nays), Passed: passed})
 
 	// Outcomes are memory fodder for everyone in the square.
-	proposer := &s.Agents[prop.Proposer]
+	proposer := &s.Agents[prop.Proposer.ID]
 	if passed {
-		events = append(events, situatedMemoryEvent(nextTick, prop.Proposer, salMeetingOutcome,
+		events = append(events, situatedMemoryEvent(nextTick, prop.Proposer.ID, salMeetingOutcome,
 			PlaceAt(s, proposer.X, proposer.Y), "", OriginAction, "The village passed my proposal: %s", prop.Text))
 	} else {
-		events = append(events, situatedMemoryEvent(nextTick, prop.Proposer, salMeetingOutcome,
+		events = append(events, situatedMemoryEvent(nextTick, prop.Proposer.ID, salMeetingOutcome,
 			PlaceAt(s, proposer.X, proposer.Y), "", OriginAction, "The village voted my proposal down: %s", prop.Text))
 	}
 	for _, v := range append(append([]int{}, yeas...), nays...) {
-		if v == prop.Proposer || v < 0 || v >= len(s.Agents) || s.Agents[v].Dead {
+		if v == prop.Proposer.ID || v < 0 || v >= len(s.Agents) || s.Agents[v].Dead {
 			continue
 		}
 		tone, verb := toneVotedYea, "for"
@@ -711,12 +713,12 @@ func speakingTurn(s *State, nextTick int64) []store.Event {
 		if !passed {
 			outcome = "failed"
 		}
-		events = append(events, situatedMemoryAboutEvent(nextTick, v, prop.Proposer, tone, salMeetingOutcome,
+		events = append(events, situatedMemoryAboutEvent(nextTick, v, prop.Proposer.ID, tone, salMeetingOutcome,
 			PlaceAt(s, s.Agents[v].X, s.Agents[v].Y), OriginWitness, "Voted %s %s's proposal (%s): %s", verb, proposer.Name, outcome, prop.Text))
 	}
-	if passed && prop.Kind == ProposeExile && prop.Target >= 0 && prop.Target < len(s.Agents) && !s.Agents[prop.Target].Dead {
-		events = append(events, situatedMemoryEvent(nextTick, prop.Target, salExiled,
-			PlaceAt(s, s.Agents[prop.Target].X, s.Agents[prop.Target].Y), "", OriginAction, "The village voted to cast me out."))
+	if passed && prop.Kind == ProposeExile && prop.Target.ID >= 0 && prop.Target.ID < len(s.Agents) && !s.Agents[prop.Target.ID].Dead {
+		events = append(events, situatedMemoryEvent(nextTick, prop.Target.ID, salExiled,
+			PlaceAt(s, s.Agents[prop.Target.ID].X, s.Agents[prop.Target.ID].Y), "", OriginAction, "The village voted to cast me out."))
 	}
 	return events
 }
@@ -748,8 +750,8 @@ func proposalFor(s *State, proposer int, nextTick int64) *ProposalPayload {
 	if activeNormOfKind(s, NormCurfew) == nil {
 		for _, m := range s.Agents[proposer].Memories {
 			if strings.Contains(m.Text, "gru") && nextTick-m.Tick <= gruFodderWindowTicks {
-				return &ProposalPayload{Kind: ProposeCurfew, Target: -1,
-					Param: nightStartSecond, Proposer: proposer,
+				return &ProposalPayload{Kind: ProposeCurfew, Target: Ref(-1),
+					Param: nightStartSecond, Proposer: Ref(proposer),
 					Text: "No one out alone after nightfall — the night hunts us."}
 			}
 		}
@@ -758,8 +760,8 @@ func proposalFor(s *State, proposer int, nextTick int64) *ProposalPayload {
 	if activeNormOfKind(s, NormRepayDebts) == nil {
 		for _, d := range s.Debts {
 			if d.Status == "broken" && d.Creditor == proposer {
-				return &ProposalPayload{Kind: ProposeRepayDebts, Target: -1,
-					Proposer: proposer,
+				return &ProposalPayload{Kind: ProposeRepayDebts, Target: Ref(-1),
+					Proposer: Ref(proposer),
 					Text:     "Debts must be repaid — a promise is a promise."}
 			}
 		}
@@ -772,12 +774,12 @@ func proposalFor(s *State, proposer int, nextTick int64) *ProposalPayload {
 		}
 		rel := s.RelationBetween(proposer, n.Proposer)
 		if n.Kind == NormCurfew && !n.Amended && rel.Affection >= 0 {
-			return &ProposalPayload{Kind: ProposeAmend, NormID: n.ID, Target: -1,
-				Param: (n.Param + curfewAmendDelta) % 86400, Proposer: proposer,
+			return &ProposalPayload{Kind: ProposeAmend, NormID: n.ID, Target: Ref(-1),
+				Param: (n.Param + curfewAmendDelta) % 86400, Proposer: Ref(proposer),
 				Text: "The curfew starts too early — give us two more hours of dusk."}
 		}
-		return &ProposalPayload{Kind: ProposeRepeal, NormID: n.ID, Target: -1,
-			Proposer: proposer,
+		return &ProposalPayload{Kind: ProposeRepeal, NormID: n.ID, Target: Ref(-1),
+			Proposer: Ref(proposer),
 			Text:     fmt.Sprintf("Strike the rule down — it serves nobody: %s", n.Text)}
 	}
 	// 4) Exile: the valve of last resort.
@@ -796,7 +798,7 @@ func proposalFor(s *State, proposer int, nextTick int64) *ProposalPayload {
 		}
 		pr := s.RelationBetween(proposer, t)
 		if others > 0 && sum/others < exileHostilityGate && pr.Trust+pr.Affection < 0 {
-			return &ProposalPayload{Kind: ProposeExile, Target: t, Proposer: proposer,
+			return &ProposalPayload{Kind: ProposeExile, Target: Ref(t), Proposer: Ref(proposer),
 				Text: fmt.Sprintf("%s is a danger to us all — cast them out.", s.Agents[t].Name)}
 		}
 	}
@@ -811,10 +813,10 @@ func resolveVotes(s *State, p ProposalPayload) (yeas, nays []int) {
 		if v < 0 || v >= len(s.Agents) || s.Agents[v].Dead {
 			continue
 		}
-		if p.Kind == ProposeExile && v == p.Target {
+		if p.Kind == ProposeExile && v == p.Target.ID {
 			continue
 		}
-		if v == p.Proposer || voteScore(s, v, p) >= 0 {
+		if v == p.Proposer.ID || voteScore(s, v, p) >= 0 {
 			yeas = append(yeas, v)
 		} else {
 			nays = append(nays, v)
@@ -824,7 +826,7 @@ func resolveVotes(s *State, p ProposalPayload) (yeas, nays []int) {
 }
 
 func voteScore(s *State, voter int, p ProposalPayload) int {
-	rp := s.RelationBetween(voter, p.Proposer)
+	rp := s.RelationBetween(voter, p.Proposer.ID)
 	base := rp.Trust + rp.Affection
 	switch p.Kind {
 	case ProposeAmend, ProposeRepeal:
@@ -832,7 +834,7 @@ func voteScore(s *State, voter int, p ProposalPayload) int {
 			base += selfInterestBonus
 		}
 	case ProposeExile:
-		rt := s.RelationBetween(voter, p.Target)
+		rt := s.RelationBetween(voter, p.Target.ID)
 		return -(rt.Trust + rt.Affection) + base/4
 	}
 	return base
@@ -942,7 +944,7 @@ func violationEvents(s *State, n *Norm, violator int, nextTick int64) []store.Ev
 		return nil
 	}
 	events := []store.Event{{Tick: nextTick, Type: "norm.violated",
-		Payload: mustPayload(NormViolatedPayload{NormID: n.ID, Violator: violator, Witnesses: witnesses})}}
+		Payload: mustPayload(NormViolatedPayload{NormID: n.ID, Violator: Ref(violator), Witnesses: Refs(witnesses)})}}
 	verb := "broke the village's law"
 	if n.Kind == NormExile {
 		verb = "defied their exile"

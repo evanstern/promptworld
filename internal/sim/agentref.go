@@ -96,6 +96,19 @@ func Refs(ids []int) []AgentRef {
 	return out
 }
 
+// refIDs is Refs' fold-side inverse: the bare indices a reducer arm reads
+// out of a ref slice (state keeps ints — the R2 law). nil in, nil out.
+func refIDs(refs []AgentRef) []int {
+	if refs == nil {
+		return nil
+	}
+	out := make([]int, len(refs))
+	for i, r := range refs {
+		out[i] = r.ID
+	}
+	return out
+}
+
 // agentRefType is the reflection sentinel validateRefs walks for.
 var agentRefType = reflect.TypeOf(AgentRef{})
 

@@ -60,7 +60,7 @@ func TestGruAttackedPreservesLastGoal(t *testing.T) {
 	apply(store.Event{Tick: 500, Type: "agent.intent_set",
 		Payload: mustPayload(IntentSetPayload{Agent: Ref(2), Goal: "forage"})})
 	apply(store.Event{Tick: 700, Type: "gru.attacked",
-		Payload: mustPayload(GruAttackedPayload{Agent: 2, Health: 300})})
+		Payload: mustPayload(GruAttackedPayload{Agent: Ref(2), Health: 300})})
 
 	a := s.Agents[2]
 	if a.Intent != nil {

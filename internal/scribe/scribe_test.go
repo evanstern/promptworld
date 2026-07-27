@@ -277,30 +277,30 @@ func governedEvents(t *testing.T) []store.Event {
 	t.Helper()
 	enact := sim.ProposalResolvedPayload{
 		ProposalPayload: sim.ProposalPayload{ProposalID: 1, Kind: sim.ProposeCurfew,
-			Target: -1, Param: 22 * 3600, Proposer: 1, Text: "No one out after nightfall."},
-		Yeas: []int{0, 1, 2}, Nays: []int{3}, Passed: true,
+			Target: sim.Ref(-1), Param: 22 * 3600, Proposer: sim.Ref(1), Text: "No one out after nightfall."},
+		Yeas: sim.Refs([]int{0, 1, 2}), Nays: sim.Refs([]int{3}), Passed: true,
 	}
 	amend := sim.ProposalResolvedPayload{
 		ProposalPayload: sim.ProposalPayload{ProposalID: 2, Kind: sim.ProposeAmend,
-			NormID: 1, Target: -1, Param: 0, Proposer: 2, Text: "later curfew"},
-		Yeas: []int{0, 1, 2}, Passed: true,
+			NormID: 1, Target: sim.Ref(-1), Param: 0, Proposer: sim.Ref(2), Text: "later curfew"},
+		Yeas: sim.Refs([]int{0, 1, 2}), Passed: true,
 	}
 	exile := sim.ProposalResolvedPayload{
 		ProposalPayload: sim.ProposalPayload{ProposalID: 3, Kind: sim.ProposeExile,
-			Target: 3, Proposer: 0, Text: "Rowan is a danger to us all — cast them out."},
-		Yeas: []int{0, 1, 2}, Passed: true,
+			Target: sim.Ref(3), Proposer: sim.Ref(0), Text: "Rowan is a danger to us all — cast them out."},
+		Yeas: sim.Refs([]int{0, 1, 2}), Passed: true,
 	}
 	repeal := sim.ProposalResolvedPayload{
 		ProposalPayload: sim.ProposalPayload{ProposalID: 4, Kind: sim.ProposeRepeal,
-			NormID: 1, Target: -1, Proposer: 2, Text: "strike it"},
-		Yeas: []int{0, 1, 2}, Passed: true,
+			NormID: 1, Target: sim.Ref(-1), Proposer: sim.Ref(2), Text: "strike it"},
+		Yeas: sim.Refs([]int{0, 1, 2}), Passed: true,
 	}
 	return []store.Event{
 		{Tick: 19800, Type: "meeting.place_designated", Payload: mustPayloadJSON(t, sim.MeetingPlacePayload{X: 12, Y: 34})},
 		{Tick: 21960, Type: "meeting.proposal_resolved", Payload: mustPayloadJSON(t, enact)},
 		{Tick: 21970, Type: "meeting.proposal_rephrased", Payload: mustPayloadJSON(t,
 			sim.ProposalRephrasedPayload{ProposalID: 1, NormID: 1, Text: "Stay by the fire once the dark comes down."})},
-		{Tick: 60000, Type: "norm.violated", Payload: mustPayloadJSON(t, sim.NormViolatedPayload{NormID: 1, Violator: 4, Witnesses: []int{5}})},
+		{Tick: 60000, Type: "norm.violated", Payload: mustPayloadJSON(t, sim.NormViolatedPayload{NormID: 1, Violator: sim.Ref(4), Witnesses: sim.Refs([]int{5})})},
 		{Tick: 108360, Type: "meeting.proposal_resolved", Payload: mustPayloadJSON(t, amend)},  // day 2
 		{Tick: 194400, Type: "meeting.proposal_resolved", Payload: mustPayloadJSON(t, exile)},  // day 3 noon
 		{Tick: 280800, Type: "meeting.proposal_resolved", Payload: mustPayloadJSON(t, repeal)}, // day 4 noon

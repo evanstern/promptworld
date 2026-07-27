@@ -611,7 +611,7 @@ func (mt *Guardian) landNudgeBatch(form string, targets []int, text string, extr
 		prefix = "You witnessed an omen: "
 	}
 	batch := []store.Event{{Type: "metatron.nudged", Payload: mustJSON(sim.GuardianNudgedPayload{
-		Form: form, Targets: targets, Text: text})}}
+		Form: form, Targets: sim.Refs(targets), Text: text})}}
 	for _, t := range targets {
 		batch = append(batch, store.Event{Type: "agent.memory_added", Payload: mustJSON(sim.MemoryAddedPayload{
 			Agent: sim.Ref(t), Text: prefix + text, Salience: sim.SalDream, Subject: sim.Ref(-1), Origin: sim.OriginOmen})})

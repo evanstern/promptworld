@@ -139,7 +139,7 @@ func gruStep(s *State, m *worldmap.Map, night bool, nextTick int64) []store.Even
 			continue
 		}
 		if abs(a.X-g.X)+abs(a.Y-g.Y) <= gruSightRadius {
-			emit("gru.sighted", GruSightedPayload{Agent: i, X: g.X, Y: g.Y})
+			emit("gru.sighted", GruSightedPayload{Agent: Ref(i), X: g.X, Y: g.Y})
 			events = append(events, situatedMemoryEvent(nextTick, i, salGruSighted,
 				PlaceAt(s, a.X, a.Y), "", OriginAction, "Saw the gru prowling in the dark."))
 		}
@@ -175,7 +175,7 @@ func gruStep(s *State, m *worldmap.Map, night bool, nextTick int64) []store.Even
 			floor = 0
 		}
 		health := maxInt(floor, a.Needs.Health-gruWound)
-		emit("gru.attacked", GruAttackedPayload{Agent: target, Health: health})
+		emit("gru.attacked", GruAttackedPayload{Agent: Ref(target), Health: health})
 		events = append(events, situatedMemoryEvent(nextTick, target, salGruAttack,
 			PlaceAt(s, a.X, a.Y), "", OriginAction, "The gru came out of the dark and tore into me."))
 		for w := range s.Agents {
@@ -287,12 +287,12 @@ type (
 		Y int `json:"y"`
 	}
 	GruSightedPayload struct {
-		Agent int `json:"agent"`
-		X     int `json:"x"`
-		Y     int `json:"y"`
+		Agent AgentRef `json:"agent"`
+		X     int      `json:"x"`
+		Y     int      `json:"y"`
 	}
 	GruAttackedPayload struct {
-		Agent int `json:"agent"`
+		Agent AgentRef `json:"agent"`
 		// Absolute post-wound value: >= gruWoundFloor when the pre-attack
 		// health was >= nearDeathBelow (healthy targets never die from one
 		// attack); may be 0 when the target was already weakened (pre-attack
@@ -328,26 +328,26 @@ func (s *State) applyGru(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		if s.Gru != nil && p.Agent >= 0 && p.Agent < len(s.Agents) {
-			s.Gru.Seen |= 1 << p.Agent
+		if s.Gru != nil && p.Agent.ID >= 0 && p.Agent.ID < len(s.Agents) {
+			s.Gru.Seen |= 1 << p.Agent.ID
 		}
 	case "gru.attacked":
 		var p GruAttackedPayload
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		if p.Agent < 0 || p.Agent >= len(s.Agents) {
-			return fmt.Errorf("apply %s: agent %d out of range", e.Type, p.Agent)
+		if p.Agent.ID < 0 || p.Agent.ID >= len(s.Agents) {
+			return fmt.Errorf("apply %s: agent %d out of range", e.Type, p.Agent.ID)
 		}
-		a := &s.Agents[p.Agent]
+		a := &s.Agents[p.Agent.ID]
 		a.Needs.Health = p.Health
 		a.Asleep = false
 		a.Intent = nil
 		a.IdleSince = e.Tick
 		if s.Gru != nil {
 			s.Gru.LastAttack = e.Tick
-			s.Gru.LastVictim = p.Agent
-			s.Gru.Seen |= 1 << p.Agent
+			s.Gru.LastVictim = p.Agent.ID
+			s.Gru.Seen |= 1 << p.Agent.ID
 		}
 	case "gru.withdrew":
 		s.Gru = nil

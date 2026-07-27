@@ -96,7 +96,7 @@ func TestChargeMirrorAccrualAndCap(t *testing.T) {
 	}
 
 	// A valid nudge decrements the mirror through the same absorb pipeline.
-	payload, err := json.Marshal(sim.GuardianNudgedPayload{Form: "dream", Targets: []int{0}, Text: "a whisper"})
+	payload, err := json.Marshal(sim.GuardianNudgedPayload{Form: "dream", Targets: sim.Refs([]int{0}), Text: "a whisper"})
 	if err != nil {
 		t.Fatal(err)
 	}

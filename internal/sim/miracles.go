@@ -33,10 +33,10 @@ type (
 	// ItemGrantedPayload provisions a living villager with known items,
 	// reject-never-clamp at the bulk cap (FR-011).
 	ItemGrantedPayload struct {
-		Agent  int    `json:"agent"`
-		Kind   string `json:"kind"`
-		Qty    int    `json:"qty"`
-		Gratis bool   `json:"gratis"`
+		Agent  AgentRef `json:"agent"`
+		Kind   string   `json:"kind"`
+		Qty    int      `json:"qty"`
+		Gratis bool     `json:"gratis"`
 	}
 	// EntityMovedPayload relocates a villager, structure, or pile from (X,Y) to
 	// (ToX,ToY) (FR-014).
@@ -420,11 +420,11 @@ func (s *State) applyItemGranted(e store.Event) error {
 	if err := json.Unmarshal(e.Payload, &p); err != nil {
 		return fmt.Errorf("apply %s: %w", e.Type, err)
 	}
-	if p.Agent < 0 || p.Agent >= len(s.Agents) {
-		return fmt.Errorf("apply %s: no villager at index %d", e.Type, p.Agent)
+	if p.Agent.ID < 0 || p.Agent.ID >= len(s.Agents) {
+		return fmt.Errorf("apply %s: no villager at index %d", e.Type, p.Agent.ID)
 	}
-	if s.Agents[p.Agent].Dead {
-		return fmt.Errorf("apply %s: %s is beyond a grant now", e.Type, s.Agents[p.Agent].Name)
+	if s.Agents[p.Agent.ID].Dead {
+		return fmt.Errorf("apply %s: %s is beyond a grant now", e.Type, s.Agents[p.Agent.ID].Name)
 	}
 	if !grantableKind(p.Kind) {
 		return fmt.Errorf("apply %s: unknown item kind %q", e.Type, p.Kind)
@@ -432,13 +432,13 @@ func (s *State) applyItemGranted(e store.Event) error {
 	if p.Qty <= 0 {
 		return fmt.Errorf("apply %s: grant quantity must be positive (got %d)", e.Type, p.Qty)
 	}
-	inv := &s.Agents[p.Agent].Inv
+	inv := &s.Agents[p.Agent.ID].Inv
 	// One bulk per granted unit (a fresh spear weighs one, like every other
 	// unit), so the grant's bulk is exactly qty — reject whole if it overflows
 	// the carry cap, never clamp to a partial delivery (FR-011).
 	if bulk(*inv)+p.Qty > bulkCap {
 		return fmt.Errorf("apply %s: granting %d %s to %s would exceed the carry cap (%d/%d already used)",
-			e.Type, p.Qty, p.Kind, s.Agents[p.Agent].Name, bulk(*inv), bulkCap)
+			e.Type, p.Qty, p.Kind, s.Agents[p.Agent.ID].Name, bulk(*inv), bulkCap)
 	}
 	if err := s.spendMiracleCharge(e.Type, p.Gratis); err != nil {
 		return err

@@ -58,8 +58,8 @@ func TestCharterObservedArm(t *testing.T) {
 func TestMorgueEpilogueArm(t *testing.T) {
 	s := NewState(7, testMap(7))
 	ok := []MorgueEpiloguePayload{
-		{Agent: 0, Text: "They kept the fire."},
-		{Agent: -1, Text: "The village is quiet now."},
+		{Agent: Ref(0), Text: "They kept the fire."},
+		{Agent: Ref(-1), Text: "The village is quiet now."},
 	}
 	for i, p := range ok {
 		if err := s.Apply(store.Event{Tick: int64(100 + i), Type: "morgue.epilogue", Payload: mustPayload(p)}); err != nil {
@@ -72,9 +72,9 @@ func TestMorgueEpilogueArm(t *testing.T) {
 		t.Errorf("ring = %+v, want the two epilogues in event order", s.MorgueEpilogues)
 	}
 	bad := []MorgueEpiloguePayload{
-		{Agent: len(s.Agents), Text: "x"}, // out of range
-		{Agent: -2, Text: "x"},            // below the run-end sentinel
-		{Agent: 0, Text: "   "},           // blank text
+		{Agent: Ref(len(s.Agents)), Text: "x"}, // out of range
+		{Agent: Ref(-2), Text: "x"},            // below the run-end sentinel
+		{Agent: Ref(0), Text: "   "},           // blank text
 	}
 	for i, p := range bad {
 		if err := s.Apply(store.Event{Tick: 200, Type: "morgue.epilogue", Payload: mustPayload(p)}); err == nil {
@@ -83,7 +83,7 @@ func TestMorgueEpilogueArm(t *testing.T) {
 	}
 	// Ring bound: overflow drops oldest.
 	for i := 0; i < morgueEpilogueCap+3; i++ {
-		p := MorgueEpiloguePayload{Agent: 0, Text: fmt.Sprintf("entry %d", i)}
+		p := MorgueEpiloguePayload{Agent: Ref(0), Text: fmt.Sprintf("entry %d", i)}
 		if err := s.Apply(store.Event{Tick: int64(300 + i), Type: "morgue.epilogue", Payload: mustPayload(p)}); err != nil {
 			t.Fatal(err)
 		}
@@ -105,7 +105,7 @@ func TestEndedDoorAcceptsMorgueEpilogue(t *testing.T) {
 	seqBefore := l.st.LastSeq()
 
 	res := runCommand(t, l, command{name: "inject_social", social: []store.Event{
-		{Type: "morgue.epilogue", Payload: mustPayload(MorgueEpiloguePayload{Agent: -1, Text: "The village is quiet now."})},
+		{Type: "morgue.epilogue", Payload: mustPayload(MorgueEpiloguePayload{Agent: Ref(-1), Text: "The village is quiet now."})},
 	}})
 	if res.err != nil {
 		t.Errorf("morgue.epilogue on an ended world refused: %v", res.err)

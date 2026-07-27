@@ -342,7 +342,7 @@ func TestResumeNoBurst(t *testing.T) {
 // (the door's charge/night validation is upstream — spec 040 D1), so it arms
 // every Target regardless of the reducer's form gates.
 func nudgeBatchEvents(seq, tick int64, form, text string, targets ...int) []store.Event {
-	nb, _ := json.Marshal(sim.GuardianNudgedPayload{Form: form, Targets: targets, Text: text})
+	nb, _ := json.Marshal(sim.GuardianNudgedPayload{Form: form, Targets: sim.Refs(targets), Text: text})
 	batch := []store.Event{{Seq: seq, Tick: tick, Type: "metatron.nudged", Payload: nb}}
 	prefix := "You saw a vision: "
 	if form == "omen" {

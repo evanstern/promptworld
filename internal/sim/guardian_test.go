@@ -41,7 +41,7 @@ func TestChargeInvariants(t *testing.T) {
 	}
 	for i := 0; i < GuardianChargeCap; i++ {
 		if err := s.Apply(nudgeEvent(t, 100, GuardianNudgedPayload{
-			Form: "dream", Targets: []int{0}, Text: "a quiet dream"})); err != nil {
+			Form: "dream", Targets: Refs([]int{0}), Text: "a quiet dream"})); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -49,7 +49,7 @@ func TestChargeInvariants(t *testing.T) {
 		t.Fatalf("charges = %d after spending the bank, want 0", s.GuardianCharges)
 	}
 	if err := s.Apply(nudgeEvent(t, 101, GuardianNudgedPayload{
-		Form: "dream", Targets: []int{0}, Text: "one too many"})); err == nil {
+		Form: "dream", Targets: Refs([]int{0}), Text: "one too many"})); err == nil {
 		t.Fatal("spend at 0 charges must be a reducer error (the dry-run gate)")
 	}
 }
@@ -67,16 +67,16 @@ func TestNudgeValidation(t *testing.T) {
 		p    GuardianNudgedPayload
 		dead int // -1 = none
 	}{
-		{"unknown form", GuardianNudgedPayload{Form: "whisper", Targets: []int{0}, Text: "t"}, -1},
-		{"vision multi-target", GuardianNudgedPayload{Form: "vision", Targets: []int{0, 1}, Text: "t"}, -1},
+		{"unknown form", GuardianNudgedPayload{Form: "whisper", Targets: Refs([]int{0}), Text: "t"}, -1},
+		{"vision multi-target", GuardianNudgedPayload{Form: "vision", Targets: Refs([]int{0, 1}), Text: "t"}, -1},
 		{"omen no targets", GuardianNudgedPayload{Form: "omen", Targets: nil, Text: "t"}, -1},
-		{"unknown target", GuardianNudgedPayload{Form: "vision", Targets: []int{99}, Text: "t"}, -1},
-		{"dead target", GuardianNudgedPayload{Form: "vision", Targets: []int{2}, Text: "t"}, 2},
-		{"empty text", GuardianNudgedPayload{Form: "vision", Targets: []int{0}, Text: ""}, -1},
-		{"over-cap text", GuardianNudgedPayload{Form: "vision", Targets: []int{0}, Text: string(long)}, -1},
+		{"unknown target", GuardianNudgedPayload{Form: "vision", Targets: Refs([]int{99}), Text: "t"}, -1},
+		{"dead target", GuardianNudgedPayload{Form: "vision", Targets: Refs([]int{2}), Text: "t"}, 2},
+		{"empty text", GuardianNudgedPayload{Form: "vision", Targets: Refs([]int{0}), Text: ""}, -1},
+		{"over-cap text", GuardianNudgedPayload{Form: "vision", Targets: Refs([]int{0}), Text: string(long)}, -1},
 		// dream (grandfathered) still requires exactly one target — a legacy
 		// multi-target payload is rejected just as it always was.
-		{"dream multi-target", GuardianNudgedPayload{Form: "dream", Targets: []int{0, 1}, Text: "t"}, -1},
+		{"dream multi-target", GuardianNudgedPayload{Form: "dream", Targets: Refs([]int{0, 1}), Text: "t"}, -1},
 	}
 	for _, c := range cases {
 		s := NewState(7, m)
@@ -93,20 +93,20 @@ func TestNudgeValidation(t *testing.T) {
 	// A daytime omen is rejected: the omen form lands only at night (spec 029).
 	day := NewState(7, m)
 	if err := day.Apply(nudgeEvent(t, 50, GuardianNudgedPayload{
-		Form: "omen", Targets: []int{0, 1}, Text: "not yet"})); err == nil {
+		Form: "omen", Targets: Refs([]int{0, 1}), Text: "not yet"})); err == nil {
 		t.Error("daytime omen must be rejected (omen is night-only)")
 	}
 
 	// The valid shapes pass: a vision any time; an omen at night.
 	s := NewState(7, m)
 	if err := s.Apply(nudgeEvent(t, 50, GuardianNudgedPayload{
-		Form: "vision", Targets: []int{0}, Text: "a waking light"})); err != nil {
+		Form: "vision", Targets: Refs([]int{0}), Text: "a waking light"})); err != nil {
 		t.Fatalf("valid vision rejected: %v", err)
 	}
 	night := NewState(7, m)
 	night.Night = true
 	if err := night.Apply(nudgeEvent(t, 50, GuardianNudgedPayload{
-		Form: "omen", Targets: []int{0, 1, 2, 3, 4, 5, 6, 7}, Text: "the sky split"})); err != nil {
+		Form: "omen", Targets: Refs([]int{0, 1, 2, 3, 4, 5, 6, 7}), Text: "the sky split"})); err != nil {
 		t.Fatalf("valid night omen rejected: %v", err)
 	}
 }
@@ -210,8 +210,8 @@ func TestChargesReplayIdentically(t *testing.T) {
 		// A grandfathered dream (legacy replay) and a live-form vision, so the
 		// replay test spans both an old and a new nudge form; neither depends on
 		// State.Night (only omen does), keeping this a pure charge-economy check.
-		nudgeEvent(t, 10, GuardianNudgedPayload{Form: "dream", Targets: []int{3}, Text: "d1"}),  // 2
-		nudgeEvent(t, 20, GuardianNudgedPayload{Form: "vision", Targets: []int{0}, Text: "v1"}), // 1
+		nudgeEvent(t, 10, GuardianNudgedPayload{Form: "dream", Targets: Refs([]int{3}), Text: "d1"}),  // 2
+		nudgeEvent(t, 20, GuardianNudgedPayload{Form: "vision", Targets: Refs([]int{0}), Text: "v1"}), // 1
 		regenEvent, // 2
 	}
 	for _, e := range events {

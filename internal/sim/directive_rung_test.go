@@ -348,7 +348,7 @@ func TestDirectiveReflexEndToEnd(t *testing.T) {
 	timeline := map[int64][]store.Event{
 		22000: {{Tick: 22000, Type: "designation.placed", Payload: mustPayload(dsg)}},
 		22050: {{Tick: 22050, Type: "directive.issued", Payload: mustPayload(dir)}},
-		22100: {{Tick: 22100, Type: "metatron.item_granted", Payload: mustPayload(ItemGrantedPayload{Agent: 0, Kind: "wood", Qty: fireWoodCost})}},
+		22100: {{Tick: 22100, Type: "metatron.item_granted", Payload: mustPayload(ItemGrantedPayload{Agent: Ref(0), Kind: "wood", Qty: fireWoodCost})}},
 	}
 
 	s := NewState(seed, m)

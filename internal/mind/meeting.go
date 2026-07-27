@@ -50,20 +50,20 @@ func (md *Mind) maybePhraseProposal(e store.Event) {
 	if n == nil || n.Text != p.Text {
 		return // enactment was a defensive no-op; nothing to phrase
 	}
-	if p.Proposer < 0 || p.Proposer >= len(md.replica.Agents) {
+	if p.Proposer.ID < 0 || p.Proposer.ID >= len(md.replica.Agents) {
 		return
 	}
 	// Router gate (FR-007): the degrade action is the template itself —
 	// enacted law never waits on a model.
 	if v := md.routeVerdict("meeting", llm.KindMeeting); !v.Allow {
-		md.emitSuppressed("meeting", p.Proposer, e.Tick, v)
+		md.emitSuppressed("meeting", p.Proposer.ID, e.Tick, v)
 		return
 	}
 	job := meetingJob{
 		proposalID: p.ProposalID,
 		normID:     n.ID,
-		name:       md.replica.Agents[p.Proposer].Name,
-		persona:    md.personas[p.Proposer],
+		name:       md.replica.Agents[p.Proposer.ID].Name,
+		persona:    md.personas[p.Proposer.ID],
 		template:   p.Text,
 	}
 	select {

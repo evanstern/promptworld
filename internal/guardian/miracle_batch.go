@@ -60,7 +60,7 @@ func BuildMiracleBatch(s *sim.State, kind string, p MiracleParams, gratis bool) 
 		text = memSnapped
 	case "give_item":
 		main = store.Event{Type: "metatron.item_granted", Payload: mustJSON(sim.ItemGrantedPayload{
-			Agent: p.Agent, Kind: p.Item, Qty: p.Qty, Gratis: gratis})}
+			Agent: sim.Ref(p.Agent), Kind: p.Item, Qty: p.Qty, Gratis: gratis})}
 		recipients = []int{p.Agent}
 		text = grantMemoryText(p.Qty, p.Item)
 	case "move":

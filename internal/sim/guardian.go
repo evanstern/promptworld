@@ -51,9 +51,9 @@ type (
 	// (exactly one living target) or "omen" (every villager alive at
 	// landing, recorded explicitly).
 	GuardianNudgedPayload struct {
-		Form    string `json:"form"`
-		Targets []int  `json:"targets"`
-		Text    string `json:"text"`
+		Form    string     `json:"form"`
+		Targets []AgentRef `json:"targets"`
+		Text    string     `json:"text"`
 	}
 	// ChargeRegeneratedPayload is empty — the event row's tick is the
 	// boundary crossed.
@@ -292,11 +292,11 @@ func (s *State) applyGuardian(e store.Event) error {
 			return fmt.Errorf("apply %s: unknown form %q", e.Type, p.Form)
 		}
 		for _, t := range p.Targets {
-			if t < 0 || t >= len(s.Agents) {
-				return fmt.Errorf("apply %s: unknown target %d", e.Type, t)
+			if t.ID < 0 || t.ID >= len(s.Agents) {
+				return fmt.Errorf("apply %s: unknown target %d", e.Type, t.ID)
 			}
-			if s.Agents[t].Dead {
-				return fmt.Errorf("apply %s: target %s is dead", e.Type, s.Agents[t].Name)
+			if s.Agents[t.ID].Dead {
+				return fmt.Errorf("apply %s: target %s is dead", e.Type, s.Agents[t.ID].Name)
 			}
 		}
 		if p.Text == "" || len(p.Text) > NudgeTextMax {

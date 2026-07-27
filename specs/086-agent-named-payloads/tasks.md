@@ -85,7 +85,7 @@ cluster tests green.
   (`consolidate.go` rows 42–47, `journal.go` rows 40–41, `cognition.go`
   rows 52–55, `plan.go` rows 56–57): fields + arms; `cog.tool_call` Args
   exempt (allowlist §5.2) (FR-002)
-- [ ] T010 [US1] Batch D — governance + gru + guardian actions + prose
+- [X] T010 [US1] Batch D — governance + gru + guardian actions + prose
   (`governance.go` rows 65–69 incl. embedded ProposalPayload + yeas/
   nays/witnesses, `gru.go` rows 63–64, `miracles.go` row 70,
   `morgue.go` row 71, `chronicle.go` row 72, `guardian.go` row 60

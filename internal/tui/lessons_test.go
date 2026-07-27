@@ -53,7 +53,7 @@ func lessonFixtureEventPayload(t *testing.T, id string) store.Event {
 	case "first-suppression":
 		return mkEvent("cog.outcome", sim.CogOutcomePayload{Job: "j1", Outcome: sim.OutcomeSuppressed})
 	case "first-gru-attack":
-		return mkEvent("gru.attacked", sim.GruAttackedPayload{Agent: 0, Health: 5})
+		return mkEvent("gru.attacked", sim.GruAttackedPayload{Agent: sim.Ref(0), Health: 5})
 	case "first-charge-regen":
 		return mkEvent("metatron.charge_regenerated", sim.ChargeRegeneratedPayload{})
 	case "first-order-expired":

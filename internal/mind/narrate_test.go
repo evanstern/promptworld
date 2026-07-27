@@ -156,7 +156,7 @@ func TestRunNarrationLands(t *testing.T) {
 	if p.Thread != "the-cold-start" {
 		t.Errorf("thread not slugified: %q", p.Thread)
 	}
-	if len(p.Agents) != 1 || p.Agents[0] != 0 {
+	if len(p.Agents) != 1 || p.Agents[0].ID != 0 {
 		t.Errorf("unknown names must drop, Ash resolves to 0: %v", p.Agents)
 	}
 }

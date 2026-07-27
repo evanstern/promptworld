@@ -1134,7 +1134,7 @@ func TestMiracleGrantHappy(t *testing.T) {
 	s.Agents[0].Inv = Inventory{} // known-empty pouch for an exact delta
 
 	if err := applyMiracleErr(s, 100, "metatron.item_granted", ItemGrantedPayload{
-		Agent: 0, Kind: "food_raw", Qty: 3}); err != nil {
+		Agent: Ref(0), Kind: "food_raw", Qty: 3}); err != nil {
 		t.Fatalf("grant rejected: %v", err)
 	}
 	if got := s.Agents[0].Inv.FoodRaw; got != 3 {
@@ -1160,7 +1160,7 @@ func TestMiracleGrantOverCapWholeReject(t *testing.T) {
 	before := s.Marshal()
 
 	err := applyMiracleErr(s, 40, "metatron.item_granted", ItemGrantedPayload{
-		Agent: 0, Kind: "wood", Qty: 1})
+		Agent: Ref(0), Kind: "wood", Qty: 1})
 	if err == nil {
 		t.Fatal("over-cap grant should be rejected whole")
 	}
@@ -1179,7 +1179,7 @@ func TestMiracleGrantUnknownKindReject(t *testing.T) {
 	before := s.Marshal()
 
 	if err := applyMiracleErr(s, 40, "metatron.item_granted", ItemGrantedPayload{
-		Agent: 0, Kind: "gold", Qty: 1}); err == nil {
+		Agent: Ref(0), Kind: "gold", Qty: 1}); err == nil {
 		t.Fatal("unknown item kind should be rejected")
 	}
 	if string(s.Marshal()) != string(before) {
@@ -1188,7 +1188,7 @@ func TestMiracleGrantUnknownKindReject(t *testing.T) {
 	// "spears" (plural, the storage key) is NOT the grant vocabulary — a grant
 	// names one fresh spear as "spear" (singular). The plural form is rejected.
 	if err := applyMiracleErr(s, 41, "metatron.item_granted", ItemGrantedPayload{
-		Agent: 0, Kind: "spears", Qty: 1}); err == nil {
+		Agent: Ref(0), Kind: "spears", Qty: 1}); err == nil {
 		t.Error(`"spears" (plural) should be rejected — the grant kind is "spear"`)
 	}
 }
@@ -1204,14 +1204,14 @@ func TestMiracleGrantDeadVillagerReject(t *testing.T) {
 	before := s.Marshal()
 
 	if err := applyMiracleErr(s, 40, "metatron.item_granted", ItemGrantedPayload{
-		Agent: 0, Kind: "food_raw", Qty: 1}); err == nil {
+		Agent: Ref(0), Kind: "food_raw", Qty: 1}); err == nil {
 		t.Fatal("grant to a dead villager should be rejected")
 	}
 	if string(s.Marshal()) != string(before) {
 		t.Error("rejected dead-villager grant mutated state")
 	}
 	if err := applyMiracleErr(s, 41, "metatron.item_granted", ItemGrantedPayload{
-		Agent: len(s.Agents), Kind: "food_raw", Qty: 1}); err == nil {
+		Agent: Ref(len(s.Agents)), Kind: "food_raw", Qty: 1}); err == nil {
 		t.Error("grant to an out-of-range agent index should be rejected")
 	}
 }
@@ -1226,7 +1226,7 @@ func TestMiracleGrantNonPositiveQtyReject(t *testing.T) {
 
 	for _, qty := range []int{0, -5} {
 		if err := applyMiracleErr(s, 40, "metatron.item_granted", ItemGrantedPayload{
-			Agent: 0, Kind: "food_raw", Qty: qty}); err == nil {
+			Agent: Ref(0), Kind: "food_raw", Qty: qty}); err == nil {
 			t.Errorf("grant of qty %d should be rejected", qty)
 		}
 	}
@@ -1246,7 +1246,7 @@ func TestMiracleGrantSpearShape(t *testing.T) {
 	s.Agents[0].Inv = Inventory{Spears: []int{1}} // one worn spear already carried
 
 	if err := applyMiracleErr(s, 100, "metatron.item_granted", ItemGrantedPayload{
-		Agent: 0, Kind: "spear", Qty: 2}); err != nil {
+		Agent: Ref(0), Kind: "spear", Qty: 2}); err != nil {
 		t.Fatalf("spear grant rejected: %v", err)
 	}
 	want := []int{1, spearDurability, spearDurability}
@@ -1265,7 +1265,7 @@ func TestMiracleGrantGratisZeroBank(t *testing.T) {
 	s.Agents[0].Inv = Inventory{}
 
 	if err := applyMiracleErr(s, 40, "metatron.item_granted", ItemGrantedPayload{
-		Agent: 0, Kind: "meals", Qty: 2, Gratis: true}); err != nil {
+		Agent: Ref(0), Kind: "meals", Qty: 2, Gratis: true}); err != nil {
 		t.Fatalf("gratis grant with an empty bank rejected: %v", err)
 	}
 	if s.Agents[0].Inv.Meals != 2 {
@@ -1294,9 +1294,9 @@ func TestMiracleGrantReplayByteIdentity(t *testing.T) {
 	}
 	commands := map[int64][]store.Event{
 		10: {{Tick: 10, Type: "metatron.item_granted", Payload: mustPayload(ItemGrantedPayload{
-			Agent: 0, Kind: "food_raw", Qty: 3})}},
+			Agent: Ref(0), Kind: "food_raw", Qty: 3})}},
 		20: {{Tick: 20, Type: "metatron.item_granted", Payload: mustPayload(ItemGrantedPayload{
-			Agent: 0, Kind: "spear", Qty: 2})}},
+			Agent: Ref(0), Kind: "spear", Qty: 2})}},
 	}
 
 	live := genesis()

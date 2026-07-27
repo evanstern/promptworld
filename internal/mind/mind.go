@@ -312,7 +312,7 @@ func (md *Mind) absorb(batch []store.Event) {
 				var p sim.GuardianNudgedPayload
 				if json.Unmarshal(e.Payload, &p) == nil {
 					for _, t := range p.Targets {
-						md.arm(t, e.Seq)
+						md.arm(t.ID, e.Seq)
 					}
 				}
 			}

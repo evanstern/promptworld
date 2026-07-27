@@ -277,7 +277,7 @@ func (mt *Guardian) produceCard(job cardJob) {
 		// renders that section, and the ended door still accepts it. Fixed
 		// mechanics vocabulary (the event log is skin-free).
 		batch = []store.Event{{Type: "morgue.epilogue", Payload: mustJSON(sim.MorgueEpiloguePayload{
-			Agent: -1, Text: fmt.Sprintf("Report card (under charter %s): %s", job.fingerprint, note)})}}
+			Agent: sim.Ref(-1), Text: fmt.Sprintf("Report card (under charter %s): %s", job.fingerprint, note)})}}
 	} else {
 		batch = []store.Event{{Type: "guardian.report_card", Payload: mustJSON(sim.GuardianReportCardPayload{
 			Fingerprint: job.fingerprint, Note: note, Citations: citations})}}

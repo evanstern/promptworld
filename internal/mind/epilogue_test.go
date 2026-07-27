@@ -98,7 +98,7 @@ func TestRunEpilogueLands(t *testing.T) {
 	if err := json.Unmarshal(e.Payload, &p); err != nil {
 		t.Fatal(err)
 	}
-	if p.Agent != 0 || p.Text != model.narrReply {
+	if p.Agent.ID != 0 || p.Text != model.narrReply {
 		t.Errorf("payload = %+v", p)
 	}
 }

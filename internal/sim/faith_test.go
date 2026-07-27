@@ -297,7 +297,7 @@ func TestFaithReplayByteIdentical(t *testing.T) {
 			d.ExpiresTick = 80 + 3*ticksPerGameDay
 			return d
 		}(), 0, 80)},
-		90:  {{Tick: 90, Type: "metatron.item_granted", Payload: mustPayload(ItemGrantedPayload{Agent: 0, Kind: "planks", Qty: 4})}},
+		90:  {{Tick: 90, Type: "metatron.item_granted", Payload: mustPayload(ItemGrantedPayload{Agent: Ref(0), Kind: "planks", Qty: 4})}},
 		100: {{Tick: 100, Type: "agent.built", Payload: mustPayload(BuiltPayload{Agent: Ref(0), Kind: "shelter", X: 10, Y: 10})}},
 		300: {issuedEvent(func() Directive {
 			d := validDirective("dir-300-0", "dsg-70-0", []int{2}, 300)

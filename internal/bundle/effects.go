@@ -404,7 +404,7 @@ func compileOne(idx int, e Effect, in CompileInput) ([]store.Event, error) {
 			return nil, ruleErr("T5", "effect %d (grant_item): qty %d out of range %d–%d", idx, e.Qty, qtyMin, qtyMax)
 		}
 		return []store.Event{event("metatron.item_granted", sim.ItemGrantedPayload{
-			Agent: i, Kind: e.Item, Qty: e.Qty, Gratis: false})}, nil
+			Agent: sim.Ref(i), Kind: e.Item, Qty: e.Qty, Gratis: false})}, nil
 	case "snap_time":
 		return []store.Event{event("metatron.time_snapped", sim.TimeSnappedPayload{
 			ToTick: e.ToTick, Gratis: false})}, nil

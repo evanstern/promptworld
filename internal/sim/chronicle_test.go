@@ -27,7 +27,7 @@ func TestChronicleRing(t *testing.T) {
 	e := chronicleEvent(t, 1000, ChronicleEntryPayload{
 		Day: 1, FromTick: 0, ToTick: 960,
 		Text:   "Ash built the first fire while Sage watched the treeline.",
-		Thread: "cold-start", Agents: []int{0, 7},
+		Thread: "cold-start", Agents: Refs([]int{0, 7}),
 	})
 	if err := s.Apply(e); err != nil {
 		t.Fatal(err)
@@ -63,7 +63,7 @@ func TestChronicleSurvivesMarshal(t *testing.T) {
 	m := worldmap.Generate(7, 32, 32)
 	s := NewState(7, m)
 	s.Apply(chronicleEvent(t, 500, ChronicleEntryPayload{
-		Day: 1, Text: "The village woke cold.", Thread: "cold-start", Agents: []int{2},
+		Day: 1, Text: "The village woke cold.", Thread: "cold-start", Agents: Refs([]int{2}),
 	}))
 
 	restored := NewState(7, m)

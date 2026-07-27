@@ -63,7 +63,7 @@ func morgueHistory(t *testing.T) []store.Event {
 		// Birch matters to and is owed by Ash: a divine grant funds the gift
 		// (gratis — no charge accounting in this scripted history), and the
 		// gave arm opens Ash's debt to Birch.
-		ev(4000, "metatron.item_granted", sim.ItemGrantedPayload{Agent: 1, Kind: "food_raw", Qty: 1, Gratis: true}),
+		ev(4000, "metatron.item_granted", sim.ItemGrantedPayload{Agent: sim.Ref(1), Kind: "food_raw", Qty: 1, Gratis: true}),
 		ev(4100, "social.gave", sim.GavePayload{From: sim.Ref(1), To: sim.Ref(0), Kind: "food"}),
 		ev(4200, "social.relation_changed", sim.RelationChangedPayload{
 			A: sim.Ref(1), B: sim.Ref(0), TrustDelta: 30, AffectionDelta: 5, Reason: "gift"}),
@@ -95,7 +95,7 @@ func morgueEpilogueEvents(t *testing.T, fromSeq int64) []store.Event {
 	}
 	return []store.Event{
 		ev(96000, "morgue.epilogue", sim.MorgueEpiloguePayload{
-			Agent: 1, Text: "Birch kept the fire while the others slept."}),
+			Agent: sim.Ref(1), Text: "Birch kept the fire while the others slept."}),
 	}
 }
 

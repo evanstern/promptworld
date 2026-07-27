@@ -854,14 +854,14 @@ var digestRegistry = map[string]digestFunc{
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" spoke at the meeting")}), true
+		return join([]seg{nameOf(names, p.Agent.ID), txt(" spoke at the meeting")}), true
 	},
 	"meeting.proposal_tabled": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.ProposalPayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Proposer), txt(" proposed: "), speech(p.Text)}), true
+		return join([]seg{nameOf(names, p.Proposer.ID), txt(" proposed: "), speech(p.Text)}), true
 	},
 	"meeting.proposal_resolved": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.ProposalResolvedPayload](e)
@@ -913,7 +913,7 @@ var digestRegistry = map[string]digestFunc{
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Violator), txt(" violated a norm (#"), emphN(p.NormID), txt(")")}), true
+		return join([]seg{nameOf(names, p.Violator.ID), txt(" violated a norm (#"), emphN(p.NormID), txt(")")}), true
 	},
 
 	// --- gru / chronicle / guardian ---
@@ -937,14 +937,14 @@ var digestRegistry = map[string]digestFunc{
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" sighted the gru")}), true
+		return join([]seg{nameOf(names, p.Agent.ID), txt(" sighted the gru")}), true
 	},
 	"gru.attacked": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) { // alert
 		p, ok := decode[sim.GruAttackedPayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{txt("the gru attacked "), nameOf(names, p.Agent), txt(" · health → "), emphN(p.Health)}), true
+		return join([]seg{txt("the gru attacked "), nameOf(names, p.Agent.ID), txt(" · health → "), emphN(p.Health)}), true
 	},
 	"gru.withdrew": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		return []seg{txt("the gru withdrew")}, true
@@ -1048,7 +1048,7 @@ var digestRegistry = map[string]digestFunc{
 			if i > 0 {
 				targets = append(targets, txt(", "))
 			}
-			targets = append(targets, nameOf(names, t))
+			targets = append(targets, nameOf(names, t.ID))
 		}
 		return join([]seg{txt(sk.Name() + " "), emph(sk.FormNoun(p.Form)), txt(" → ")}, targets, []seg{txt(": "), speech(p.Text)}), true
 	},
@@ -1258,8 +1258,8 @@ var digestRegistry = map[string]digestFunc{
 			return nil, false
 		}
 		who := []seg{txt("the run")}
-		if p.Agent >= 0 {
-			who = []seg{nameOf(names, p.Agent)}
+		if p.Agent.ID >= 0 {
+			who = []seg{nameOf(names, p.Agent.ID)}
 		}
 		return join([]seg{txt("epilogue for ")}, who, []seg{txt(": "), txt(truncateRunes(p.Text, 80))}), true
 	},
@@ -1285,7 +1285,7 @@ var digestRegistry = map[string]digestFunc{
 			return nil, false
 		}
 		return join([]seg{
-			txt(sk.Name() + " granted "), nameOf(names, p.Agent), txt(" "), emphN(p.Qty), txt(" "), emph(p.Kind),
+			txt(sk.Name() + " granted "), nameOf(names, p.Agent.ID), txt(" "), emphN(p.Qty), txt(" "), emph(p.Kind),
 		}, gratisMark(p.Gratis)), true
 	},
 	// entity_moved: the payload identifies its target by class + source
@@ -1764,21 +1764,21 @@ var subjectRegistry = map[string]subjectFunc{
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"meeting.proposal_tabled": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.ProposalPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Proposer), true
+		return actorCandidate(p.Proposer.ID), true
 	},
 	"norm.violated": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.NormViolatedPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Violator), true
+		return actorCandidate(p.Violator.ID), true
 	},
 
 	// --- gru ---
@@ -1801,14 +1801,14 @@ var subjectRegistry = map[string]subjectFunc{
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorPosCandidate(p.Agent, p.X, p.Y), true
+		return actorPosCandidate(p.Agent.ID, p.X, p.Y), true
 	},
 	"gru.attacked": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.GruAttackedPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 
 	// --- sim: place-only environmental events ---
@@ -1871,7 +1871,7 @@ var subjectRegistry = map[string]subjectFunc{
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 
 	// --- agent: actor-only (no recorded position anywhere in the payload) ---
@@ -2090,10 +2090,10 @@ var subjectRegistry = map[string]subjectFunc{
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		if p.Agent < 0 {
+		if p.Agent.ID < 0 {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 }
 
