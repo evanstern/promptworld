@@ -147,12 +147,12 @@ gate are satisfied.
   (`/grounding-wiki:wiki-update`; new `guardian-faith` note; event-types
   family rows) + `docs/player/` regenerated
   (`check-freshness.mjs --check` green) (constitution IV)
-- [ ] T024 From the worktree: `node scripts/check-merge-drift.mjs pr`
+- [x] T024 From the worktree: `node scripts/check-merge-drift.mjs pr`
   exits 0; open the ONE PR (body carries: the FR-005 posture decision +
   lever for operator review, the delta-table normative defaults, the
   untouched-packages review obligation); merge is `gh pr merge --merge`
   (SC-006)
-- [ ] T025 Post-merge bookkeeping (orchestrator, per TASK-160/161
+- [x] T025 Post-merge bookkeeping (orchestrator, per TASK-160/161
   landing laws): board card moves at root (board-sync exception);
   spec-bridge sync + tasks.md ticks ride a branch and land by merge —
   never a direct root commit; worktree removed, branch deleted, root
