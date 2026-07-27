@@ -105,6 +105,10 @@ var agentRefAllowlist = map[string]string{
 		"listed so the collision is a recorded decision",
 	"FaithChangedPayload.SourceID": "string source-EVENT id (encodes an agent index only for villager_died); " +
 		"covered by the additive Agent *AgentRef field instead",
+	"PlanStep.Target": "state-resident plan step (Agent.Plan — R2: no AgentRef reachable from State) " +
+		"riding agent.plan_set/plan_step payloads; the PlaceFact class — payload top-level agent field carries the ref",
+	"Guard.Target": "state-resident plan-step guard (nested in Agent.Plan via PlanStep.When — R2); " +
+		"the PlaceFact class, same as PlanStep.Target",
 }
 
 // intKinds are the reflect kinds the sweep treats as "bare index" material.
@@ -115,13 +119,6 @@ var intKinds = map[reflect.Kind]bool{
 	reflect.Uint64: true,
 }
 
-// censusMigrationComplete gates the sweep's failure mode while the spec 086
-// census migration is in flight (tasks.md T005): false logs violations
-// without failing (the sweep is never red mid-census), true makes every
-// violation a test failure. Flipped unconditional at T015 once the census
-// completes; it never goes back.
-const censusMigrationComplete = false
-
 // TestPayloadAgentRefSweep (FR-006, US2 AS-2): reflect over every catalog
 // payload type (fields, embedded structs, slices, pointers). Any int-kind
 // field (or slice/pointer of one) whose json tag's first segment is in the
@@ -129,10 +126,9 @@ const censusMigrationComplete = false
 // *AgentRef, unless (type, field) is on the frozen allowlist. Also enforces
 // no dead allowlist entries.
 func TestPayloadAgentRefSweep(t *testing.T) {
+	// Unconditional since T015 — the census is complete; every violation is
+	// a failure, forever.
 	report := t.Errorf
-	if !censusMigrationComplete {
-		report = t.Logf
-	}
 	liveAllowlist := map[string]bool{}
 	seen := map[reflect.Type]bool{}
 	for typ, zero := range PayloadCatalog {
@@ -156,6 +152,13 @@ func sweepType(report func(string, ...any), event string, rt reflect.Type, seen 
 		return
 	case reflect.Struct:
 	default:
+		return
+	}
+	if rt == reflect.TypeOf(State{}) {
+		// The R2 boundary (census row 75): world.migrated embeds the full
+		// canonical State, and State keeps bare ints BY LAW — descending
+		// would flag every state entity the invariant deliberately protects.
+		// TestNoAgentRefInState guards this boundary from the other side.
 		return
 	}
 	if seen[rt] {

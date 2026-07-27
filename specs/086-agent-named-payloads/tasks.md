@@ -116,15 +116,15 @@ prove the census; AC #1 is code + tests.
 
 ## Phase 4: US2 — enforcement flipped fully on (P1)
 
-- [ ] T015 [US2] `TestPayloadAgentRefSweep` flipped unconditional (the
+- [X] T015 [US2] `TestPayloadAgentRefSweep` flipped unconditional (the
   census-scoped constant from T005 removed); catalog updated to
   post-migration zero values incl. mirrors; synthetic-violation tests
   (vocabulary-tagged bare int fails; dead allowlist entry fails)
   (FR-006, US2 AS-1/2, SC-002)
-- [ ] T016 [US2] tui↔sim catalog weld: `catalogFixture` keys ⊆
+- [X] T016 [US2] tui↔sim catalog weld: `catalogFixture` keys ⊆
   `sim.PayloadCatalog` asserted in `internal/tui/digest_test.go`
   (FR-006, US2 AS-1)
-- [ ] T017 [US2] Door mutation coverage completed against migrated
+- [X] T017 [US2] Door mutation coverage completed against migrated
   types: every whitelisted agent-bearing type refused when unnamed;
   `mustPayload` panic paths per family (FR-005, US2 AS-3, SC-002)
 

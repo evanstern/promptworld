@@ -328,6 +328,15 @@ func TestCatalogSweep(t *testing.T) {
 			t.Errorf("docs/wiki/event-types.md backticks %q but the catalog fixture doesn't cover it", typ)
 		}
 	}
+
+	// The tui↔sim catalog weld (spec 086 FR-006, T016): every fixture key
+	// must be a sim.PayloadCatalog key — the sim-side registry is the single
+	// enumerable truth, and a digest for an uncataloged type cannot exist.
+	for typ := range catalogFixture {
+		if _, ok := sim.PayloadCatalog[typ]; !ok {
+			t.Errorf("catalogFixture key %q is not in sim.PayloadCatalog — the tui and sim catalogs drifted (spec 086 weld)", typ)
+		}
+	}
 }
 
 // TestExerciseRubricTermsAreCatalogedEventTypes (spec 046 T016, FR-010): every
