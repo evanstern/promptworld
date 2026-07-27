@@ -73,7 +73,11 @@ var RosterVillager = func() []string {
 // nudge form is validated against the reducer's explicit form set, not this
 // roster (contracts/events.md), so this set's live consumer is the boot-time
 // name-resolution check in Validate; keeping it in step keeps that gate honest.
-var RosterGuardian = []string{"converse", "send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed", "explain"}
+// The plan layer (spec 084) appends after explain: the four charge-free plan
+// verbs and the survey read tool, granted at every stage (the monitor_and_act
+// precedent — spec 084 Assumptions).
+var RosterGuardian = []string{"converse", "send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed", "explain",
+	"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site"}
 
 // OnRoster reports whether name is on roster — the door membership check.
 func OnRoster(roster []string, name string) bool {
@@ -134,7 +138,11 @@ func LoopRosterVillager() []Tool {
 // explain (spec 063) is appended last: the read-only facts tool joins the
 // declared loop surface like any other guardian tool — grant-gated through
 // the same three layers — without shifting any existing tool's position.
-var loopGuardianTools = []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed", "explain"}
+// The plan layer (spec 084) appends after explain in registration-order
+// discipline: place/cancel_designation, issue/cancel_directive (acting), and
+// survey_site (Read — the explain dispatch class).
+var loopGuardianTools = []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed", "explain",
+	"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site"}
 
 // LoopRosterGuardian returns the ordered declared-tool list the guardian
 // tool-use loop presents to the model (loopGuardianTools), resolved to full

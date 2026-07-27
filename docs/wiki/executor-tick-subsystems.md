@@ -23,7 +23,14 @@ new tick has reached, emitting `metatron.order_expired` (spec 029, the
 lapsed watch reproduces on replay with no guardian running — [[guardian-orders]];
 since spec 059 a survival watch is skipped by this sweep entirely — it is
 non-expiring by origin, not a timed order, so `ExpiresTick` is never
-consulted for it);
+consulted for it). Spec 084 adds the plan-layer sweeps immediately after the
+order-expiry sweep, the same once-only idiom: active designations whose
+structural predicate holds emit `designation.fulfilled` (slice order), then
+per active directive fulfilled-before-expired — `directive.fulfilled` when
+the bound designation is fulfilled, else `directive.expired` on TTL elapse
+or when no targeted villager remains alive — so exactly one terminal lands
+per boundary and a designation fulfilled at tick T fulfills its directives
+at T+1 (the documented one-tick lag — [[guardian-designations]]);
 its reflex fires only on agents idle past `reflexGraceTicks` (120). Since spec 054, an armed scenario world's `stepEvents` also consults its
 incident schedule (`scenarioIncidentEvents`) immediately BEFORE `gruStep` —
 a scheduled `gru.emerged` preempts that night's random emergence roll, so

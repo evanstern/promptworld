@@ -130,6 +130,10 @@ var explainGlyphs = []explainGlyph{
 	{"░", "marsh", "marshy wet ground near water — open, walkable"},
 	{"▒", "sand", "a sandy shoreline flat — open, walkable"},
 	{"S", "stranger", "a stranger — a night trickster after unattended stores"},
+	// Guardian designations (spec 084): the plan layer's three marks.
+	{"◇", "site", "a guardian-marked structure site — a designation awaiting its building"},
+	{"┄", "wallplan", "a guardian-marked wall line — a designation awaiting its wall"},
+	{"◦", "zone", "the edge of a guardian-marked settlement zone"},
 }
 
 // explainAgentGlyphNote mirrors help.go's agentGlyphNote (same pin test).

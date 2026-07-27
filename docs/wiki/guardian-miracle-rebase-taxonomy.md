@@ -29,7 +29,14 @@ classified SHIFT or KEEP in its doc comment:
   stays at 0 so it never decays), `Gru.LastAttack`, `Meeting.OpenedTick`,
   `Meeting.GatherStart`, and (spec 029) `GuardianOrder.ExpiresTick` — shifted ONLY
   for ACTIVE orders, so a standing order's remaining lifetime survives the jump (a
-  consumed order's deadline is a spent artifact, left put). Spec 041
+  consumed order's deadline is a spent artifact, left put); spec 084
+  ([[guardian-designations]]) adds `Directive.ExpiresTick`, the same
+  classification verbatim (ACTIVE only), while both plan entities' other
+  tick fields — `Designation.PlacedTick`/`PlacedSeq`,
+  `Directive.IssuedTick`/`PlacedSeq` — are history/identity KEEP (a
+  designation carries no future deadline at all, and the `designation`
+  place facts' `Seen` anchors ride the existing per-agent `PlaceFact.Seen`
+  SHIFT loop with no new code). Spec 041
   ([[mental-maps]]) adds `PlaceFact.Seen` and `PeerSighting.Seen`, the mental
   map's freshness anchors (fresh iff `now − Seen < horizon`, the
   `Belief.Reinforced` shape) — shifted unconditionally when non-zero, since a

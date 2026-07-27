@@ -46,6 +46,7 @@ type TurnResult struct {
 	Nudge     *Nudge       `json:"nudge,omitempty"`
 	Miracle   *Miracle     `json:"miracle,omitempty"`   // FROZEN JSON tag (spec 052 ruling 2): IPC clients decode it
 	Order     *OrderReport `json:"order,omitempty"`     // a placed standing order (spec 029 US2)
+	Plan      *PlanReport  `json:"plan,omitempty"`      // a landed plan act (spec 084): placed/cancelled designation, issued/cancelled directive
 	Cancelled []string     `json:"cancelled,omitempty"` // released order ids (cancel_order)
 	Clock     string       `json:"clock,omitempty"`     // a landed meta act's human line (spec 029 US5)
 	Charges   int          `json:"charges"`
@@ -204,6 +205,8 @@ func (mt *Guardian) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 	moments := append([]string(nil), mt.moments...)
 	story := append([]string(nil), mt.story...)
 	orders := append([]sim.GuardianOrder(nil), mt.orders...)
+	designations := append([]sim.Designation(nil), mt.designations...)
+	directives := append([]sim.Directive(nil), mt.directives...)
 	mt.stateMu.Unlock()
 
 	// Bundle tools (spec 036 T014): merge the granted bundle surface into all
@@ -333,7 +336,7 @@ func (mt *Guardian) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 		JobID:     jobID,
 		Kind:      llm.KindGuardian,
 		System:    buildTurnSystemPrompt(o.survival, charter, guide, skills, roster, souls...),
-		Seed:      turnUserPrompt(tick, charges, alive, orders, moments, story, mt.soulTail(), mt.transcriptTail(), digest, directive),
+		Seed:      turnUserPrompt(tick, charges, alive, orders, designations, directives, moments, story, mt.soulTail(), mt.transcriptTail(), digest, directive),
 		Roster:    roster,
 		Handlers:  handlers,
 		MaxRounds: mt.loopRounds,
@@ -371,7 +374,8 @@ func (mt *Guardian) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 	// said, the loop ran dry (model_done with no text, cap exhaustion, or a soft
 	// error) — the old scattered-thoughts fallback maps onto exactly these.
 	reply := strings.TrimSpace(res.Final)
-	if reply == "" && result.Nudge == nil && result.Miracle == nil && result.Order == nil && len(result.Cancelled) == 0 && result.Clock == "" {
+	if reply == "" && result.Nudge == nil && result.Miracle == nil && result.Order == nil &&
+		result.Plan == nil && len(result.Cancelled) == 0 && result.Clock == "" {
 		reply = "Forgive me — my thoughts scattered and I could not complete that. " +
 			"Nothing was done and nothing was spent. Ask again."
 	}
@@ -1148,7 +1152,7 @@ func survivalFlag(n needMirror) string {
 // verbatim. runTurn is the sole author of the origin-appropriate label: the label
 // lives in exactly one place, so a console turn carries it once and a system turn
 // never pretends its directive came from the player this turn (spec 029 R6).
-func turnUserPrompt(tick int64, charges int, alive map[int]bool, orders []sim.GuardianOrder, moments, story []string, soulTail, transcriptTail, digest, directive string) string {
+func turnUserPrompt(tick int64, charges int, alive map[int]bool, orders []sim.GuardianOrder, designations []sim.Designation, directives []sim.Directive, moments, story []string, soulTail, transcriptTail, digest, directive string) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "World clock: %s. Charges banked: %d of %d.\n", clock.Format(tick), charges, sim.GuardianChargeCap)
 	var dead []string
@@ -1165,6 +1169,12 @@ func turnUserPrompt(tick int64, charges int, alive map[int]bool, orders []sim.Gu
 	// the player can name one to cancel), condition, remaining game-days, and
 	// whether the order is fuzzy (needs a confirm) or purely structural.
 	writeStandingOrders(&b, tick, orders)
+	// The plan layer (spec 084 FR-015): active designations and directives —
+	// id, kind, site, days-left — so the guardian's counsel stays truthful to
+	// live state (the writeStandingOrders discipline). Empty when none are
+	// active, so a plan-free world's prompt is byte-unchanged.
+	writeDesignations(&b, designations)
+	writeDirectives(&b, tick, directives)
 	if len(moments) > 0 {
 		b.WriteString("\nMoments you have not yet reported (lead with these):\n")
 		for _, m := range moments {
@@ -1197,6 +1207,68 @@ func turnUserPrompt(tick int64, charges int, alive map[int]bool, orders []sim.Gu
 // 029 T010, FR-017). Only ACTIVE orders show (consumed ones are history the status
 // surface carries); remaining days floor at 0. A fuzzy order (Confirm) is marked
 // so the guardian sets honest expectations about the confirm step.
+// writeDesignations renders the active-designation block of the turn user
+// prompt (spec 084 FR-015): id (so the player can name one to cancel or bind a
+// directive to), kind, site, and the guardian's own label. Only ACTIVE
+// designations show — consumed ones are history the status trail carries.
+func writeDesignations(b *strings.Builder, designations []sim.Designation) {
+	var active []sim.Designation
+	for _, d := range designations {
+		if d.Status == "active" {
+			active = append(active, d)
+		}
+	}
+	if len(active) == 0 {
+		return
+	}
+	b.WriteString("\nDesignations you have marked on the world:\n")
+	for i := range active {
+		d := &active[i]
+		line := fmt.Sprintf("- %s: %s at %s", d.ID, d.Kind, describeDesignationSite(d))
+		if d.StructureKind != "" {
+			line += " (" + d.StructureKind + ")"
+		}
+		if d.Kind == sim.DesignationSettlementZone {
+			line += fmt.Sprintf(" (%d structures to settle it)", d.MinStructures)
+		}
+		if d.Label != "" {
+			line += fmt.Sprintf(" — %q", d.Label)
+		}
+		b.WriteString(line + "\n")
+	}
+}
+
+// writeDirectives renders the active-directive block (spec 084 FR-015): id,
+// the bound designation, who is charged, and remaining game-days (floored at
+// 0, the writeStandingOrders shape).
+func writeDirectives(b *strings.Builder, tick int64, directives []sim.Directive) {
+	var active []sim.Directive
+	for _, d := range directives {
+		if d.Status == "active" {
+			active = append(active, d)
+		}
+	}
+	if len(active) == 0 {
+		return
+	}
+	b.WriteString("\nDirectives you have laid on the village:\n")
+	for i := range active {
+		d := &active[i]
+		days := (d.ExpiresTick - tick) / ticksPerGameDay
+		if days < 0 {
+			days = 0
+		}
+		who := make([]string, 0, len(d.Targets))
+		for _, t := range d.Targets {
+			if t >= 0 && t < len(sim.AgentNames) {
+				who = append(who, sim.AgentNames[t])
+			}
+		}
+		fmt.Fprintf(b, "- %s: %s bound to %s — %q (%d day(s) left)\n",
+			d.ID, strings.Join(who, ", "), d.DesignationID, d.Text, days)
+	}
+}
+
 func writeStandingOrders(b *strings.Builder, tick int64, orders []sim.GuardianOrder) {
 	var active []sim.GuardianOrder
 	for _, o := range orders {

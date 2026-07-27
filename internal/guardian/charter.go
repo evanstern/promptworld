@@ -688,7 +688,14 @@ func intersectGrant(g grantSet, gd *bundle.GrantDoc) grantSet {
 // mechanics-via-explain contract (persona.TutorGuide) needs the tool granted
 // where the guide composes. Read-only, zero-cost, tutor-lane by construction,
 // so it widens no acting capability.
-var stage1CeilingTools = []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "explain"}
+// The plan layer (spec 084) joins the stage-1 ceiling too: designations,
+// directives, and survey are the plan-loop teaching primitives — granted at
+// every stage, the monitor_and_act precedent (spec 084 Assumptions, flagged
+// for operator review there). All five are charge-free; none is world-shaping
+// (villagers still do all the work by their own logic), so the stage-1
+// "no miracles, no clock control" posture is unchanged.
+var stage1CeilingTools = []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "explain",
+	"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site"}
 
 // stageCeiling returns the stage's capability ceiling as a narrowing doc —
 // the same shape a persona bundle's grant uses, so intersectGrant applies it

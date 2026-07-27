@@ -793,6 +793,7 @@ func TestRebaseTaxonomyComplete(t *testing.T) {
 		"MeetingState.OpenedTick":   shift,
 		"MeetingState.GatherStart":  shift,
 		"GuardianOrder.ExpiresTick": shift, // spec 029: a standing order's future expiry deadline
+		"Directive.ExpiresTick":     shift, // spec 084: a directive's TTL deadline — the GuardianOrder.ExpiresTick classification verbatim (ACTIVE only)
 		"PlaceFact.Seen":            shift, // spec 041: mental-map freshness anchor (Belief.Reinforced shape)
 		"PeerSighting.Seen":         shift, // spec 041 T013: sighting recency anchor, same shape
 		"Agent.NeedsAnchorTick":     shift, // spec 043 US2: trajectory-window edge anchor (Belief.Reinforced shape), 0 = unset
@@ -836,6 +837,10 @@ func TestRebaseTaxonomyComplete(t *testing.T) {
 		"NormViolation.Tick":               keep,
 		"GuardianOrder.PlacedTick":         keep, // spec 029: when the order was placed (history)
 		"GuardianOrder.PlacedSeq":          keep, // spec 054: the placement event's store seq — an identity, like Memory.Seq
+		"Designation.PlacedTick":           keep, // spec 084: when the designation was placed (history) — no future deadline exists on a designation
+		"Designation.PlacedSeq":            keep, // spec 084: the placement event's store seq — an identity (the GuardianOrder.PlacedSeq shape)
+		"Directive.IssuedTick":             keep, // spec 084: when the directive was issued (history)
+		"Directive.PlacedSeq":              keep, // spec 084: the issue event's store seq — an identity
 		"PlaceFact.Detail":                 keep, // spec 041: remembered value baked at emission, never re-derived (see rebaseTicks)
 		"RunEnd.Tick":                      keep, // spec 044: when the run ended (history; the world never ticks again)
 		"DeathRecord.Tick":                 keep, // spec 044: when the death happened (history, like NormViolation.Tick)

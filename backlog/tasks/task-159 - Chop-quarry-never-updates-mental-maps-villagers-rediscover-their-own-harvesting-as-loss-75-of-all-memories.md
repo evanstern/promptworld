@@ -3,10 +3,10 @@ id: TASK-159
 title: >-
   Chop/quarry never updates mental maps: villagers rediscover their own
   harvesting as loss (75% of all memories)
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-26 21:02'
-updated_date: '2026-07-26 22:02'
+updated_date: '2026-07-27 00:26'
 labels: []
 dependencies: []
 priority: high
@@ -49,3 +49,9 @@ Spec'd + planned 2026-07-26: specs/081-first-person-harvest-memory (spec, plan, 
 
 Implemented by spec-implementer @ Opus 4.8 (code 8495b34, wiki+player docs 4f5c926) — reducer act-time removal (actor + awake in-radius witnesses, provenance-blind), salChop/salQuarry=4 first-person act memories, mind absorb parity (also fixed latent gap: quarry now arms its actor), 9 new tests, go test ./... green, tui-design no-op, player-docs 13 fresh, merge-drift pr exit 0. 50 wiki notes re-pinned (11 body-updated). T018 live validation (fresh world sc081, seed 42, 9 game days, reflex-only): 98 chops → 98 first-person memories (SC-004 exact); 0 self-corrections (SC-001, baseline 103/103); 0 awake on-scene corrections — 11 in-radius correctors were all asleep at act tick, the designed exception (SC-002); loss memories 28% of all (was 75%), every one a genuine absent/asleep return-discovery (SC-003). SC-006 journal spot-check deferred to next LLM-backed world (scratch run had no LLM → no journals); causal chain fully evidenced mechanically. Quarry act path covered by unit tests (reflex-only run mints no quarry intents).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Fixed in PR #122 (merged into main; merge-commit, in-branch pins preserved). Spec 081: agent.chopped/agent.quarried reducer arms now remove the matching place-fact from the actor and every awake in-radius (8) witness at act time (provenance-blind, replay-deterministic, no new event types); actor mints one first-person act memory (salChop/salQuarry=4: 'Felled the tree at (x,y).' / 'Quarried the outcrop at (x,y).', operator decision 2026-07-26 — what is stored as memory may be re-evaluated later); mind absorb re-arms on-scene witnesses whose intent targeted the tile (+ fixed latent gap: quarry now arms its actor). agent.map_corrected narrowed to genuine absent/asleep return-discoveries. Evidence: 9 new tests + full suite green; live fresh-world validation — 0 self-corrections (baseline 103/103), 98/98 first-person memories, 0 awake on-scene corrections, loss memories 75%→28% all genuine. 50+ wiki notes re-pinned in-branch; player docs regenerated. SC-006 journal spot-check deferred to next LLM-backed world (noted on task).
+<!-- SECTION:FINAL_SUMMARY:END -->

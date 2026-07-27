@@ -1,6 +1,6 @@
 ---
 name: decision-context
-description: The per-turn decision-context inventory (spec 043) - scope, budget, drop order, observability fields (PromptBytes/BlockBytes/DroppedBlocks), and the deliberate absences for the villager planner prompt; see context-block-inventory for the full ten-block table and per-block rendering rules.
+description: The per-turn decision-context inventory (spec 043) - scope, budget, drop order, observability fields (PromptBytes/BlockBytes/DroppedBlocks), and the deliberate absences for the villager planner prompt; see context-block-inventory for the full block table (eleven blocks since spec 084's neverDrop directive block) and per-block rendering rules.
 kind: concept
 sources:
   - internal/mind/context.go
@@ -39,7 +39,7 @@ thoughts — every other class's `cog.thought` carries them zero-valued
 
 ## The block inventory ([[context-block-inventory]])
 
-The full ten-block contract table — frame, needs, self_history, inventory,
+The full contract table (eleven blocks since spec 084) — frame, needs, self_history, inventory,
 plan_echo, known_places/nearby, social_law, memories, memories_serendipity,
 and journal, each with its source of truth, appearance/empty-state
 condition, size cap, and drop priority — plus the as-implemented rendering

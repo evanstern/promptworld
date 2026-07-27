@@ -6,7 +6,7 @@ title: >-
 status: Done
 assignee: []
 created_date: '2026-07-26 22:10'
-updated_date: '2026-07-26 22:20'
+updated_date: '2026-07-26 23:57'
 labels: []
 dependencies: []
 priority: high
@@ -33,6 +33,8 @@ Trivial-exemption rationale: surgical amendment with complete diagnosis — scri
 
 <!-- SECTION:NOTES:BEGIN -->
 Tier: spec-implementer @ Opus 4.8 — doctrine-adjacent enforcement amendment (same rubric as TASK-160).
+
+Field bugs found by the faith-directives sweep orchestrator (2026-07-26), root-guard-hook.mjs board-sync path: (1) staged-set check tests startsWith backlog/ against git diff --cached --name-only, but git C-quotes non-ASCII paths (em-dash card filenames), so the quoted line starts with a doublequote and the exception fails CLOSED on exactly the cards it should allow — workaround applied at root: git config core.quotePath false; durable fix: strip C-quoting or run the subprocess with -c core.quotepath=false. (2) The pre-eval staged-set semantics mean 'git add X && git commit' compounds always fail (nothing staged at evaluation time) — stage and commit must be separate tool invocations; document or evaluate post-add. (3) Tokenizer appears to fail closed on parens in commit messages / parenthesized subshells containing git commit.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

@@ -178,15 +178,16 @@ func TestExplainTurnNeutrality(t *testing.T) {
 }
 
 // TestExplainLeavesInitiativeFrameBytes (T005, SC-002's zero initiative-frame
-// diffs): granting explain changes the read paragraph and nothing about the
-// frame — the non-negotiables and the initiative frame appear VERBATIM in
-// both compositions, and stripping the read paragraph from the granted
-// composition yields the ungranted one byte-for-byte.
+// diffs): granting the READ tools (explain; survey_site since spec 084)
+// changes the read paragraph and nothing about the frame — the
+// non-negotiables and the initiative frame appear VERBATIM in both
+// compositions, and stripping the read paragraph from the granted
+// composition yields the read-free one byte-for-byte.
 func TestExplainLeavesInitiativeFrameBytes(t *testing.T) {
 	full := tool.LoopRosterGuardian()
 	var without []tool.Tool
 	for _, tl := range full {
-		if tl.Name != "explain" {
+		if tl.Effect != tool.Read {
 			without = append(without, tl)
 		}
 	}

@@ -73,6 +73,13 @@ existing voices — `run` in the world-lifecycle voice, `morgue` in the
 chronicle's narrated-prose voice: `run.ended` ("the run ended · N dead ·
 final cause <cause>" — the postmortem reader's feed-line summary; the full
 ledger stays in the payload/detail pane),
+since spec 084 the seven plan-layer types get entries in the guardian
+family voice (`familyByNamespace` maps the new `designation`/`directive`
+namespaces onto `familyGuardian`): "Guardian marked a structure_site at
+(4,5) (shelter) — «label»", "Guardian charged Ash, Birch: «text»", the
+id-referencing cancelled/lapsed lines, and the world-answers-the-plan
+"the village fulfilled Guardian's mark/charge (id)" terminals
+([[guardian-designations]], `TestCatalogSweep`-covered);
 `morgue.epilogue` ("epilogue for <name>: <text>", `chronicle.entry`-style
 80-rune truncation; agent −1 renders as "the run" — the run-end epilogue),
 and `metatron.charter_observed` ("Guardian ran under charter <fingerprint>

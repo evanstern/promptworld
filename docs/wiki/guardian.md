@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/guardian/guardian.go
   - internal/skin/skin.go
-verified_against: 510a3c3133e120d84cd50525dbc4ee0d3ec01cdc
+verified_against: 048259bb42b03cc6ebeb13a49f367c2e3a7d4d37
 ---
 
 # Guardian
@@ -57,7 +57,13 @@ night-only) everyone; a **miracle** (`work_miracle`) spends the bank on a
 concrete world edit (move/remove/give_item/time_snap) via the shared
 `BuildMiracleBatch` door. See [[guardian-mediated-acts]] for both from the
 turn's side, and [[guardian-miracles]] for the miracle event types, cost
-table, rebase taxonomy, and landing doors.
+table, rebase taxonomy, and landing doors. Since spec 084 a third, CHARGE-FREE
+verb family — the durable plan layer — sits beside them:
+`place_designation`/`cancel_designation` stake checkable world plan
+artifacts, `issue_directive`/`cancel_directive` bind villagers to them (a
+HARD command, executed between survival and free time), and `survey_site`
+reads a deterministic site fact sheet; [[guardian-designations]] owns the
+whole subsystem.
 
 `monitor_and_act`/`cancel_order` place and retire event-sourced
 watch-and-act standing orders the guardian fires on its own initiative when

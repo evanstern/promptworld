@@ -195,6 +195,9 @@ func (s *State) applyTimeSnapped(e store.Event) error {
 //	GuardianOrder.ExpiresTick  standing-order expiry deadline (spec 029); shifted
 //	                      ONLY for ACTIVE orders (a consumed order's deadline is a
 //	                      spent artifact), so the remaining lifetime survives the jump
+//	Directive.ExpiresTick directive TTL deadline (spec 084, data-model §10) —
+//	                      the GuardianOrder.ExpiresTick classification verbatim:
+//	                      shifted ONLY for ACTIVE directives
 //	PlaceFact.Seen        mental-map freshness anchor (spec 041: fresh iff
 //	                      now-Seen < horizon — the Belief.Reinforced shape); ONLY
 //	                      non-zero. Left unshifted, a snap would instantly stale
@@ -235,6 +238,9 @@ func (s *State) applyTimeSnapped(e store.Event) error {
 // KEEP (history/identity — never rewritten): Agent.Generation,
 //
 //	GuardianOrder.PlacedTick (spec 029: when the order was placed, history),
+//	Designation.PlacedTick/PlacedSeq and Directive.IssuedTick/PlacedSeq
+//	(spec 084, data-model §10: placement/issue history and event-seq
+//	identities — a designation carries no future deadline at all),
 //	Agent.LastGoalTick, Agent.LastConsolidatedNight, Agent.ConsolidatedUpTo,
 //	Agent.LastConsolidateMark, IntentRecord.Tick / IntentRecord.OutcomeTick
 //	(spec 043: when an intent landed / when its outcome landed — a historical
@@ -354,6 +360,18 @@ func rebaseTicks(s *State, delta int64) {
 		// historical timestamp and is left unshifted (KEEP).
 		if s.GuardianOrders[i].Status == "active" {
 			shift(&s.GuardianOrders[i].ExpiresTick)
+		}
+	}
+	for i := range s.Directives {
+		// Spec 084 (data-model §10): a directive's expiry is a future deadline
+		// — the GuardianOrders classification verbatim: shift only ACTIVE
+		// directives so the remaining lifetime survives the jump. IssuedTick
+		// and PlacedSeq are history/identity (KEEP). Designations carry no
+		// future deadline at all — PlacedTick/PlacedSeq are history (KEEP,
+		// untouched) — and the "designation" place facts' Seen anchors already
+		// SHIFT in the per-agent a.Map.Facts loop above (no new code).
+		if s.Directives[i].Status == "active" {
+			shift(&s.Directives[i].ExpiresTick)
 		}
 	}
 	if s.Gru != nil {

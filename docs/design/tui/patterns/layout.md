@@ -2,7 +2,7 @@
 title: Pattern — layout
 class: pattern
 status: shipped
-verified_against: 348a100c22f650d27e6fba517ea7f1f1aed1af73
+verified_against: 6e83f579db2b448c9c59b15575bf564b1e9b1852
 sources:
   - internal/tui/layout.go
   - internal/tui/views.go

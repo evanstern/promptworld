@@ -208,3 +208,107 @@ func TestLeafImports(t *testing.T) {
 		}
 	}
 }
+
+// TestParseLocusForms covers the bare-locus entry point (spec 084 FR-003,
+// research R4): the same grammar, normalization, and enumeration as the
+// class-prefixed forms, with an empty designation-neutral Class. Each case
+// mirrors a Parse row above so the two entries cannot drift.
+func TestParseLocusForms(t *testing.T) {
+	cases := []struct {
+		in   string
+		want Address
+	}{
+		{"4,5", Address{Form: FormPoint, X: 4, Y: 5}},
+		{"0,0", Address{Form: FormPoint, X: 0, Y: 0}},
+		// Rect: corners unordered in the source, normalized min/max.
+		{"1,1..8,8", Address{Form: FormRect, X: 1, Y: 1, X2: 8, Y2: 8}},
+		{"3,9..1,5", Address{Form: FormRect, X: 1, Y: 5, X2: 3, Y2: 9}},
+		// Line: endpoint (author) order preserved.
+		{"2,2->2,9", Address{Form: FormLine, X: 2, Y: 2, X2: 2, Y2: 9}},
+		{"2,9->2,2", Address{Form: FormLine, X: 2, Y: 9, X2: 2, Y2: 2}},
+		// Whitespace: whole string trimmed; spaces after ',' and around
+		// '..'/'->' — the parseLocus rules verbatim.
+		{"  4,5  ", Address{Form: FormPoint, X: 4, Y: 5}},
+		{"1,1 .. 8,8", Address{Form: FormRect, X: 1, Y: 1, X2: 8, Y2: 8}},
+		{"2,2 -> 2,9", Address{Form: FormLine, X: 2, Y: 2, X2: 2, Y2: 9}},
+		{"4, 5", Address{Form: FormPoint, X: 4, Y: 5}},
+		// Zero-area rect and single-point line are valid.
+		{"2,2..2,2", Address{Form: FormRect, X: 2, Y: 2, X2: 2, Y2: 2}},
+		{"2,2->2,2", Address{Form: FormLine, X: 2, Y: 2, X2: 2, Y2: 2}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.in, func(t *testing.T) {
+			got, err := ParseLocus(tc.in)
+			if err != nil {
+				t.Fatalf("ParseLocus(%q): %v", tc.in, err)
+			}
+			if got != tc.want {
+				t.Errorf("ParseLocus(%q) = %+v, want %+v", tc.in, got, tc.want)
+			}
+		})
+	}
+}
+
+// TestParseLocusErrors pins the bare-locus taxonomy: malformed loci are
+// ErrSyntax; a diagonal line is ErrForm — the same kinds parseLocus mints for
+// the class-prefixed consumers (one taxonomy, one home).
+func TestParseLocusErrors(t *testing.T) {
+	cases := []struct {
+		in   string
+		kind ErrKind
+	}{
+		{"", ErrSyntax},
+		{"   ", ErrSyntax},
+		{"4", ErrSyntax},
+		{"4,", ErrSyntax},
+		{"a,b", ErrSyntax},
+		{"-1,5", ErrSyntax},
+		{"4.5,5", ErrSyntax},
+		{"1,1..2,2..3,3", ErrSyntax},
+		{"1,1..2,2->3,3", ErrSyntax},
+		{"1,1->3,3", ErrForm}, // diagonal — axis-aligned only in v1
+	}
+	for _, tc := range cases {
+		t.Run(tc.in, func(t *testing.T) {
+			_, err := ParseLocus(tc.in)
+			var te *Error
+			if !errors.As(err, &te) {
+				t.Fatalf("ParseLocus(%q) err = %v, want *Error", tc.in, err)
+			}
+			if te.Kind != tc.kind {
+				t.Errorf("ParseLocus(%q) kind = %q, want %q", tc.in, te.Kind, tc.kind)
+			}
+		})
+	}
+}
+
+// TestParseLocusTilesMatchParse pins the one-parser law's enumeration half:
+// a bare locus and its class-prefixed twin enumerate IDENTICAL tiles — the
+// bundle compiler and the designation tools can never disagree on a locus.
+func TestParseLocusTilesMatchParse(t *testing.T) {
+	pairs := [][2]string{
+		{"4,5", "structure@4,5"},
+		{"1,1..3,2", "structure@1,1..3,2"},
+		{"2,9->2,2", "structure@2,9->2,2"},
+		{"5,1->9,1", "structure@5,1->9,1"},
+	}
+	for _, p := range pairs {
+		bare, err := ParseLocus(p[0])
+		if err != nil {
+			t.Fatalf("ParseLocus(%q): %v", p[0], err)
+		}
+		classed, err := Parse(p[1])
+		if err != nil {
+			t.Fatalf("Parse(%q): %v", p[1], err)
+		}
+		bt, ct := bare.Tiles(), classed.Tiles()
+		if len(bt) != len(ct) {
+			t.Fatalf("%q vs %q: %d tiles vs %d", p[0], p[1], len(bt), len(ct))
+		}
+		for i := range bt {
+			if bt[i] != ct[i] {
+				t.Errorf("%q tile %d = %v, want %v", p[0], i, bt[i], ct[i])
+			}
+		}
+	}
+}

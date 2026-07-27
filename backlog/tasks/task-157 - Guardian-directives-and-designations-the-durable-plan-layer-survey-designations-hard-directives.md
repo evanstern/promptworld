@@ -3,10 +3,10 @@ id: TASK-157
 title: >-
   Guardian directives and designations: the durable plan layer (survey,
   designations, hard directives)
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-26 20:25'
-updated_date: '2026-07-26 22:33'
+updated_date: '2026-07-26 23:52'
 labels:
   - learning-game
 dependencies:
@@ -29,27 +29,31 @@ Spec: specs/084-guardian-directives
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 spec exists under specs/ and is linked to this task via spec-bridge before implementation starts
-- [ ] #2 survey read tool returns a deterministic site fact sheet, charge-free and non-acting (Read effect, GuardianReadGuidance path)
-- [ ] #3 designations are event-sourced, map-rendered, villager-knowable, and carry structural fulfillment predicates stamped in the reducer
-- [ ] #4 issue_directive/cancel_directive land through the injection door as recorded events; prompt firewall demonstrably intact
-- [ ] #5 DIRECTIVE reflex rung sits between SURVIVAL and PREP: survival always preempts; directives preempt prep/wander
-- [ ] #6 conversations/hails/dynamic stimuli interrupt directed work and the directive resumes afterward without code intervention (in-game-workaround-first doctrine proven)
-- [ ] #7 directive lifecycle events join observableEventTypes so standing orders can watch them
-- [ ] #8 Spec phase: Setup
-- [ ] #9 Spec phase: Foundational — grammar entry point, entities, doors, sweeps (blocks all user stories)
-- [ ] #10 Spec phase: US2 — designations placed, announced, rendered, fulfilled (P1) 🎯 MVP
-- [ ] #11 Spec phase: US3 — directives through the injection door; observable lifecycle (P1)
-- [ ] #12 Spec phase: US4 — the villager side: block + DIRECTIVE rung + interruption proof (P1)
-- [ ] #13 Spec phase: US1 — survey_site (P2)
-- [ ] #14 Spec phase: Cross-cutting surfaces
-- [ ] #15 Spec phase: Grounding + gates (the wiki-in-PR lifecycle, spec 069)
+- [x] #1 spec exists under specs/ and is linked to this task via spec-bridge before implementation starts
+- [x] #2 survey read tool returns a deterministic site fact sheet, charge-free and non-acting (Read effect, GuardianReadGuidance path)
+- [x] #3 designations are event-sourced, map-rendered, villager-knowable, and carry structural fulfillment predicates stamped in the reducer
+- [x] #4 issue_directive/cancel_directive land through the injection door as recorded events; prompt firewall demonstrably intact
+- [x] #5 DIRECTIVE reflex rung sits between SURVIVAL and PREP: survival always preempts; directives preempt prep/wander
+- [x] #6 conversations/hails/dynamic stimuli interrupt directed work and the directive resumes afterward without code intervention (in-game-workaround-first doctrine proven)
+- [x] #7 directive lifecycle events join observableEventTypes so standing orders can watch them
+- [x] #8 Spec phase: Setup
+- [x] #9 Spec phase: Foundational — grammar entry point, entities, doors, sweeps (blocks all user stories)
+- [x] #10 Spec phase: US2 — designations placed, announced, rendered, fulfilled (P1) 🎯 MVP
+- [x] #11 Spec phase: US3 — directives through the injection door; observable lifecycle (P1)
+- [x] #12 Spec phase: US4 — the villager side: block + DIRECTIVE rung + interruption proof (P1)
+- [x] #13 Spec phase: US1 — survey_site (P2)
+- [x] #14 Spec phase: Cross-cutting surfaces
+- [x] #15 Spec phase: Grounding + gates (the wiki-in-PR lifecycle, spec 069)
 <!-- AC:END -->
-
-
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 Sweep claim (runbook docs/design/faith-directives-sweep-runbook.md, signed-off 2026-07-26): spec 084-guardian-directives. Tier: Opus 4.8 — cross-package (guardian tools + sim designation/directive entities + reflex-ladder arbitration, doctrine-adjacent + map render + decision context). Dependency satisfied: TASK-97 merged (PR #123) — internal/target grammar + designation seam live. Collision checkpoint passed: card was To Do, no sibling branch.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Merged via PR #124 (merge commit 6a259c1). The durable plan layer ships: survey_site fact sheets (Read, charge-free); event-sourced designations (zone/site/wall-line via the 082 grammar, GuardianOrder discipline, map-rendered, village-announced, reducer-stamped fulfillment predicates); hard directives through the injection door with the vision-firewall atomic batch, TTL, decision-context block, and the DIRECTIVE rung between SURVIVAL and PREP — interruption-friendliness proven by EMPTY diffs on hail/convo/meeting/landing code, standing-order composition proven with zero matcher changes. directive.fulfilled is TASK-118's named faith seam. Charge-free + every-stage assumptions recorded for operator review. Tier: Opus 4.8 as recorded. Unblocks TASK-118.
+<!-- SECTION:FINAL_SUMMARY:END -->

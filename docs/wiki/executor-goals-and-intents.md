@@ -20,7 +20,10 @@ multi-cycle work) it can carry.
 **Intents**: `Intent{Goal, Target, Res, WorkStart}` executes as a state machine —
 walk (one tile per 5 ticks, staggered per agent, next hop from [[reflex-policy]]'s
 BFS), then on arrival: instant goals (`sleep`, `wander`, `goto_warmth`,
-`refuel_fire`, and since spec 041 `search` — [[mental-maps]]'s deliberate-
+`refuel_fire`, since spec 084 `heed_directive` — the DIRECTIVE rung's
+walk-to-site leg ([[guardian-designations]]), arrival IS the outcome and the
+next idle decision picks the work leg; never model-facing, the `seek`-alias
+class — and since spec 041 `search` — [[mental-maps]]'s deliberate-
 exploration goal, wander-class because the walk itself does the exploring:
 movement marks explored terrain and the perception beat witnesses what's
 there, so arrival needs no extra work) complete immediately; work goals

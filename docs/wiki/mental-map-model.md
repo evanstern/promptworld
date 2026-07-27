@@ -34,9 +34,13 @@ snapshot, round-trips byte-identically). `MentalMap{Explored, Facts, Peers}`:
   JSON bytes never depend on discovery order — at most one fact per
   `(Kind, X, Y)`. `Kind` is a closed vocabulary: the structure kinds
   (`fire`/`shelter`/`oven`/`chest`/`wall_plank`/`wall_stone`/`path`, plus —
-  since spec 044 US4 — `grave`) and the
+  since spec 044 US4 — `grave`), the
   perception-gated resource kinds (`tree`/`forage`/`rock`/`water_edge`/`den`/
-  `pile`). Spec 068's marsh/sand ground covers ([[worldmap-generation]])
+  `pile`), and — since spec 084 — `designation`: the guardian's announced
+  plan mark ([[guardian-designations]]), granted reducer-side by the
+  `designation.placed` arm to every living villager at the anchor tile
+  (provenance `revealed`); deliberately NOT in `placeFactKinds`
+  (send_vision reveals real world places only). Spec 068's marsh/sand ground covers ([[worldmap-generation]])
   deliberately do NOT join this vocabulary — they carry no resource
   affordance, so `perceptionEvents` has no fact kind to record for them; a
   villager's map has nothing to say about marsh or sand beyond what it can
@@ -52,8 +56,10 @@ snapshot, round-trips byte-identically). `MentalMap{Explored, Facts, Peers}`:
 **Freshness horizons** (research D6): a fact is fresh iff `now − Seen <
 factHorizon(kind)`, evaluated at READ time only — time never mutates a
 fact, so snapshots stay churn-free. Volatile kinds (`fire`, `pile`) get
-`factHorizonVolatileTicks` (12 game-hours); every other kind gets
-`factHorizonDurableTicks` (4 game-days). A stale fact stays stored (invisible
+`factHorizonVolatileTicks` (12 game-hours); `designation` gets
+`factHorizonDesignationTicks` (7 game-days — the max directive TTL, so the
+announcement outlives any directive bound to it, spec 084); every other
+kind gets `factHorizonDurableTicks` (4 game-days). A stale fact stays stored (invisible
 to resolvers/prompt) until something removes it: a perception correction, the
 agent's death, or — since spec 081 — a chop/quarry the agent performed or
 watched in radius (`removeHarvestedFact`, [[sim-state-reducer]], calling the

@@ -47,7 +47,12 @@ stranger as a violet `S` while abroad (`State.Stranger`, one priority rung
 below the gru; [[event-types-scenario-incidents]]); ground piles (spec
 013 US2, `Model.replica.Piles`) render as a dedicated overlay `%`, layered
 like structures rather than folded into them so a coincidental tile overlap
-loses neither glyph's priority silently. Since spec 032, a wall structure
+loses neither glyph's priority silently; since spec 084 ACTIVE guardian
+designations (`State.Designations`, [[guardian-designations]]) render as
+their own tier beneath every real entity and above paths/terrain — `◇`
+structure site, `┄` per enumerated wall-line tile, `◦` settlement-zone
+PERIMETER only — and consumed (fulfilled/cancelled) marks stop rendering,
+state-derived. Since spec 032, a wall structure
 (`wall_plank`/`wall_stone`) renders as a solid barrier glyph — `▤` plank, `▩`
 stone — dim (`styleWallDamaged`) whenever its `HP` is below `sim.WallMaxHP`,
 the same faded-glyph treatment as a burnt-out fire, so a wall under

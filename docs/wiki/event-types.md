@@ -48,6 +48,7 @@ needs heartbeat, whole-line alert tier in the chronicle.
 - [[event-types-guardian-orders]] — Guardian standing-order events — charge_regenerated, nudged, order_placed/triggered/cancelled/expired, and the spec 029/059 survival-watch lifecycle.
 - [[event-types-guardian-morgue]] — Guardian morgue and report-card events — charter_observed (+ spec 077's skills_observed twin), morgue.epilogue, guardian.report_card, chronicle.entry.
 - [[event-types-guardian-actions]] — Guardian miracle actions and gru events — time_snapped/item_granted/entity_moved/entity_removed, and the gru emerged/moved/sighted/attacked/withdrew family.
+- [[event-types-guardian-plans]] — Guardian plan-layer events (spec 084) — `designation.placed`/`designation.cancelled`/`designation.fulfilled` and `directive.issued`/`directive.cancelled`/`directive.fulfilled`/`directive.expired`: injected placement/issue/cancel, executor-emitted fulfillment/expiry, the TASK-118 faith seam payload.
 
 ## Conventions
 

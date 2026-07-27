@@ -335,3 +335,64 @@ func TestGen2IdentityPin(t *testing.T) {
 		t.Error("night grid must carry faint-dimmed sand")
 	}
 }
+
+// TestDesignationMarksRenderBeneathEntities (spec 084 US2 AS3, FR-007): the
+// three designation marks render at their tiles from replica state — active
+// only — a real structure on the same tile wins the glyph, a zone marks its
+// perimeter and never its interior, and fulfilled/cancelled designations stop
+// rendering.
+func TestDesignationMarksRenderBeneathEntities(t *testing.T) {
+	withColorProfile(t, termenv.TrueColor)
+	m := testModel(t)
+	cx, cy := m.gameMap.W/2, m.gameMap.H/2
+	m.replica.Agents = nil
+	// Clear terrain across the window so the marks land on plain ground.
+	for dy := -5; dy <= 5; dy++ {
+		for dx := -5; dx <= 5; dx++ {
+			m.gameMap.Tiles[(cy+dy)*m.gameMap.W+(cx+dx)] = worldmap.Grass
+		}
+	}
+	m.replica.Designations = []sim.Designation{
+		{ID: "dsg-1-0", Kind: sim.DesignationStructureSite, X: cx, Y: cy, X2: cx, Y2: cy,
+			StructureKind: "shelter", Status: "active"},
+		{ID: "dsg-1-1", Kind: sim.DesignationWallLine, X: cx - 3, Y: cy - 3, X2: cx - 1, Y2: cy - 3, Status: "active"},
+		{ID: "dsg-1-2", Kind: sim.DesignationSettlementZone, X: cx + 1, Y: cy + 1, X2: cx + 3, Y2: cy + 3, Status: "active"},
+		// Consumed: must not render anywhere.
+		{ID: "dsg-1-3", Kind: sim.DesignationStructureSite, X: cx - 4, Y: cy + 4, X2: cx - 4, Y2: cy + 4,
+			StructureKind: "oven", Status: "fulfilled"},
+	}
+	grid, _ := m.renderMapGrid(14, 14)
+	site := tokDesignation.style.Render("◇")
+	line := tokDesignation.style.Render("┄")
+	zone := tokDesignation.style.Render("◦")
+	if !strings.Contains(grid, site) || !strings.Contains(grid, line) || !strings.Contains(grid, zone) {
+		t.Fatalf("active designation marks missing from the grid:\n%s", grid)
+	}
+	if got := strings.Count(grid, line); got != 3 {
+		t.Errorf("wall-line segments drawn %d times, want 3 (every enumerated tile)", got)
+	}
+	// Zone: perimeter only — a 3x3 zone has 8 perimeter tiles, 1 interior.
+	if got := strings.Count(grid, zone); got != 8 {
+		t.Errorf("zone perimeter drawn %d times, want 8 (interior unmarked)", got)
+	}
+
+	// A real structure on the site tile wins the glyph.
+	m.replica.Structures = append(m.replica.Structures, sim.Structure{Kind: "shelter", X: cx, Y: cy})
+	grid, _ = m.renderMapGrid(14, 14)
+	if strings.Contains(grid, site) {
+		t.Errorf("the site mark still renders under a standing structure:\n%s", grid)
+	}
+	if !strings.Contains(grid, tokShelter.style.Render("⌂")) {
+		t.Errorf("the structure did not win the tile:\n%s", grid)
+	}
+
+	// Fulfilled/cancelled stop rendering: flip everything non-active.
+	for i := range m.replica.Designations {
+		m.replica.Designations[i].Status = "cancelled"
+	}
+	m.replica.Structures = nil
+	grid, _ = m.renderMapGrid(14, 14)
+	if strings.Contains(grid, site) || strings.Contains(grid, line) || strings.Contains(grid, zone) {
+		t.Errorf("consumed designations still render:\n%s", grid)
+	}
+}

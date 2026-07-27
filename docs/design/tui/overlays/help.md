@@ -2,7 +2,7 @@
 title: Overlay — help (`?`)
 class: overlay
 status: shipped
-verified_against: 2d7a54940f8512340143e8ca5a8ba53e6e196aa2
+verified_against: 6e83f579db2b448c9c59b15575bf564b1e9b1852
 sources:
   - internal/tui/help.go
   - internal/tui/tiles.go
@@ -170,7 +170,10 @@ section render from one source):
    `applyStageCeiling`-over-full-grant intersection the turn's roster runs
    ([[curriculum-ladder]]), never a second, hand-maintained tool list. The
    stage-1/2 ceiling gained `explain` (spec 063 — the tutor stage's
-   grounding tool).
+   grounding tool) and the five plan-layer tools (spec 084 —
+   place_designation / cancel_designation / issue_directive /
+   cancel_directive / survey_site, every-stage like monitor_and_act: the
+   plan loop is a teaching primitive), each with its own example-ask token.
 3. **One example ask per verb** — a sample player phrasing per granted
    verb, resolved through the per-verb example-ask token family (keyed by
    the frozen tool id, e.g. `skin.guardian.example_ask.send_vision` —

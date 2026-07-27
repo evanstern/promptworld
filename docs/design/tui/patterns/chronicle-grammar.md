@@ -95,7 +95,11 @@ Family = the event type's namespace prefix (`world`, `clock`, `sim`,
 `agent`, `social`, `meeting`/`norm` → merged into one `governance` family,
 `gru` — joined by `stranger` (spec 077: the night trickster rides the gru's
 own threat-family voice, a second nocturnal entity rather than a new visual
-role), `chronicle`, `metatron`, `daemon`, `cog`).
+role), `chronicle`, `metatron` — joined by `designation` and `directive`
+(spec 084: the guardian's plan layer rides the guardian family voice, like
+the standing orders it clones; seven digest rows — placed/cancelled/
+fulfilled × issued/cancelled/fulfilled/expired — all natural-phrase,
+`TestCatalogSweep`-covered), `daemon`, `cog`).
 
 | Family | Voice |
 |---|---|

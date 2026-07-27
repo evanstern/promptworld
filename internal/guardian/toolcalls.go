@@ -101,6 +101,24 @@ func (mt *Guardian) turnHandlers(d *turnDispatch) map[string]toolloop.Handler {
 	if d.grant.allows("explain") {
 		h["explain"] = mt.handleExplain(d)
 	}
+	// The plan layer (spec 084): four charge-free acting verbs (plans.go) and
+	// the survey read tool (survey.go), each grant-gated like every other —
+	// structural absence at the door when ungranted.
+	if d.grant.allows("place_designation") {
+		h["place_designation"] = mt.handlePlaceDesignation(d)
+	}
+	if d.grant.allows("cancel_designation") {
+		h["cancel_designation"] = mt.handleCancelDesignation(d)
+	}
+	if d.grant.allows("issue_directive") {
+		h["issue_directive"] = mt.handleIssueDirective(d)
+	}
+	if d.grant.allows("cancel_directive") {
+		h["cancel_directive"] = mt.handleCancelDirective(d)
+	}
+	if d.grant.allows("survey_site") {
+		h["survey_site"] = mt.handleSurvey(d)
+	}
 	return h
 }
 

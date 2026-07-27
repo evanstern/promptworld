@@ -4,7 +4,7 @@ description: Loop.InjectSocial (the mind's whitelisted conversation/consolidatio
 kind: component
 sources:
   - internal/sim/loop.go
-verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
+verified_against: 048259bb42b03cc6ebeb13a49f367c2e3a7d4d37
 ---
 
 # Sim loop — injection doors
@@ -33,7 +33,14 @@ the whitelist is only the isolation boundary — `metatron.order_placed`/
 `metatron.order_cancelled`/`metatron.order_triggered` (spec 029) join the
 whitelist the same way (placement/cancellation/trigger-match validation lives
 in the reducer arm); `metatron.order_expired` needs no whitelist entry — it is
-executor-emitted, never injected, the `charge_regenerated` precedent —
+executor-emitted, never injected, the `charge_regenerated` precedent — the
+four plan-layer types `designation.placed`/`designation.cancelled`/
+`directive.issued`/`directive.cancelled` (spec 084, [[guardian-designations]])
+join the same way (form/bounds/occupancy/caps/TTL/target validation lives in
+the `applyPlan` arms; `directive.issued` rides atomically with per-target
+`agent.memory_added` companions), while `designation.fulfilled`/
+`directive.fulfilled`/`directive.expired` are executor-emitted and
+deliberately absent, the `order_expired` precedent —
 (since spec 036 whitelist membership is also readable from outside the package
 via `InjectableSocialEvent(t)`, the single-source accessor both the tool
 coverage gate and the bundle boot gate ([[bundle-tools]]) enforce against) —

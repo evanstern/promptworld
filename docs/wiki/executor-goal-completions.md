@@ -17,7 +17,10 @@ change the reducer applies.
 
 ## How it works
 
-Completion behavior per goal:
+Completion behavior per goal (since spec 084, `heed_directive` — the
+DIRECTIVE rung's walk-to-site leg, [[guardian-designations]] — completes
+instantly on arrival via bare `agent.intent_done`, the `search`/`seek`
+class):
 - `chop` → `agent.chopped` (+`chopYieldBare` (1) Wood bare-handed, or
   `chopYieldAxe` (3) with a carried axe — spec 032 US2, replacing the old flat
   `chopWood` (2)). `quarry` → `agent.quarried` (+`quarryYieldBare`/`quarryYieldAxe`,
