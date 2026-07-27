@@ -4,11 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@048259bb42b03cc6ebeb13a49f367c2e3a7d4d37">
+<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@fc9566d527941d3950fdd307168556820bd0875b">
 <meta name="promptworld-docs:source" content="docs/wiki/takeover-surfaces.md@048259bb42b03cc6ebeb13a49f367c2e3a7d4d37">
-<meta name="promptworld-docs:source" content="docs/wiki/grounded-feedback.md@048259bb42b03cc6ebeb13a49f367c2e3a7d4d37">
-<meta name="promptworld-docs:source" content="docs/wiki/village-lens.md@048259bb42b03cc6ebeb13a49f367c2e3a7d4d37">
+<meta name="promptworld-docs:source" content="docs/wiki/grounded-feedback.md@fc9566d527941d3950fdd307168556820bd0875b">
+<meta name="promptworld-docs:source" content="docs/wiki/village-lens.md@fc9566d527941d3950fdd307168556820bd0875b">
 <meta name="promptworld-docs:source" content="docs/wiki/tile-registry.md@048259bb42b03cc6ebeb13a49f367c2e3a7d4d37">
+<meta name="promptworld-docs:source" content="docs/wiki/tui-chronicle-feed.md@fc9566d527941d3950fdd307168556820bd0875b">
 <meta name="promptworld-docs:source" content="docs/wiki/stage-defaults.md@ad2a6543a9caf51d1cd28af863291f3daa3bd4eb">
 <title>What do all those things on screen mean? — promptworld player docs</title>
 <style>
@@ -209,7 +210,10 @@ the mark.</td></tr>
 </table>
 <p>A living villager's letter can also change <em>style</em> (never its letter or
 case) to flag trouble: bold red underline means one of their needs has fallen
-into real danger, and a cooler, faint tint means their last thought got
+into real danger — including the moment the game calls a villager out for
+neglecting a need (that alert arrives as a highlighted line in the story feed;
+on the map the same red underline already covers it) — and a cooler, faint
+tint means their last thought got
 skipped to keep the world running at speed (see the
 <a href="time-and-speed.html">time & speed page</a>). If both are true at
 once, the danger styling wins — a body in trouble always outranks a skipped
@@ -241,9 +245,11 @@ for the exact keys and mouse clicks.</p>
 written by an AI narrator, catching you up without a blow-by-blow transcript. See the
 <a href="reading-the-story.html">reading the story page</a> for the full picture.</li>
 <li><strong>Raw feed</strong> (press <code>r</code> to switch) — every single event as
-its own short line, in the shape <code>TICK HH:MM type summary</code>. Four especially
-important event types — a death, a gru attack, a chest theft, a broken village law —
-render as a whole highlighted line so they never slip by unnoticed in a busy feed.</li>
+its own short line, in the shape <code>TICK HH:MM type summary</code>. A handful of
+especially important event types — a death, a gru attack, a theft (by a villager or
+by the night stranger), a broken village law, and a villager the game has caught
+neglecting a vital need for hours without doing anything about it — render as a
+whole highlighted line so they never slip by unnoticed in a busy feed.</li>
 </ul>
 <p>Pause the world (space bar) and the feed becomes selectable: move through entries
 and a detail panel at the bottom shows that entry's full record. That panel's bottom

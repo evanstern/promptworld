@@ -6,7 +6,7 @@ sources:
   - internal/sim/memory.go
   - internal/mind/prompt.go
   - internal/mind/telemetry.go
-verified_against: 048259bb42b03cc6ebeb13a49f367c2e3a7d4d37
+verified_against: fc9566d527941d3950fdd307168556820bd0875b
 ---
 
 # Agent memory window
@@ -20,7 +20,14 @@ cold fire nearby is background texture, not formative) — all, like the
 pre-existing `SalDream` (8), kept below `GenerationBumpSalience` (9,
 [[cognition]]) on purpose: memorable enough to surface in the working window,
 never so high they'd interrupt an in-flight generation the way near-death or
-exile do. Spec 041 added two more on the low end: `salMapCorrected` (5, a
+exile do. Spec 083's `salNeglect` (9) is the ONE deliberate exception to that
+keep-below-9 default: the neglect percept ("I am dangerously cold and I have
+done nothing to warm myself for hours." — fixed per-need texts,
+`neglectMemoryText`, `OriginWitness`, `Why` empty) JOINS the near-death/exile
+interrupt band because interrupting is its entire job — breaking a
+mis-scheduling mind out of its loop while there is still runway
+([[executor-needs-survival]]); the detector's one-per-episode fired latch
+bounds the interrupt rate. Spec 041 added two more on the low end: `salMapCorrected` (5, a
 mental-map correction — [[mental-maps]]) and `salPlaceTold` (3, the talk band,
 for giving/getting directions between villagers). Spec 081 added `salChop` (4)
 and `salQuarry` (4) in the `salHunt` band — the actor's first-person memory of a
@@ -114,5 +121,7 @@ and their drop priority under the context budget; [[world-tuning]] owns the
 tunable `PlannerCadence` dial the serendipity bucketing deliberately does NOT
 read; [[social-fabric]] carries the trust/relation side-effects a chest theft
 memory also produces; [[cognition]] owns `GenerationBumpSalience`, the
-ceiling every memory-emission salience is kept under on purpose.
+ceiling every memory-emission salience is kept under on purpose — except
+spec 083's `salNeglect`, which joins it deliberately
+([[executor-needs-survival]]).
 

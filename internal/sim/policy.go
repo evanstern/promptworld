@@ -928,6 +928,32 @@ func buildGoalResolvers() map[string]goalResolver {
 	}
 }
 
+// needClassGoals (spec 083 FR-003): which intent GOALS serve which survival
+// need. Lives HERE, beside the goal-resolver registry, so the dictionary and
+// the registry rot together or not at all (the TASK-106 research §2 warning;
+// TestNeedClassGoalsResolve pins every member against goalResolvers). v1
+// membership is goal-name-only (the IntentRecord.Goal granularity):
+//
+//   - food: forage/hunt/cook. NOT `eat` — a direct event, never an intent
+//     goal (the reflex eat path self-resolves via the needs reset). NOT the
+//     kind-parameterized transfers (pick_up/withdraw of food) — goal names
+//     can't see the kind, and classing every pick_up would mask genuine
+//     neglect while hauling wood (research R4's accepted v1 false-fire mode).
+//   - warmth: the seek/hold/build/refuel verbs. NOT `chop` — Oak's fatal
+//     window was full of reflex chops (research §1.3); wood-in-pouch is not
+//     warmth-seeking.
+//   - rest: sleep.
+var needClassGoals = map[string]string{
+	"forage": "food", "hunt": "food", "cook": "food",
+	"goto_warmth": "warmth", "warm_up": "warmth",
+	"build_fire": "warmth", "refuel_fire": "warmth",
+	"sleep": "rest",
+}
+
+// needClassOf returns the survival need a goal serves ("" for unclassed
+// goals) — the single lookup the intent_set reducer arm consults (spec 083).
+func needClassOf(goal string) string { return needClassGoals[goal] }
+
 // resolveGoal turns a planner-chosen goal into a concrete, deterministic
 // intent at the tick boundary (research R5). The model steers; the sim
 // drives. Errors mean the goal is impossible right now — nothing is emitted.

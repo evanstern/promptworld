@@ -8,7 +8,7 @@ sources:
   - internal/guardian/turn.go
   - internal/sim/executor.go
   - internal/daemon/daemon.go
-verified_against: 048259bb42b03cc6ebeb13a49f367c2e3a7d4d37
+verified_against: fc9566d527941d3950fdd307168556820bd0875b
 ---
 
 # Guardian survival watches
@@ -88,6 +88,22 @@ player configuration:
   a SEPARATE, independently-gated prompt addition (any turn whose granted
   roster offers `work_miracle`, not just a survival turn) — see
   [[guardian-miracles]] for its mechanics.
+- **Composition with the spec-083 neglect detector**
+  ([[executor-needs-survival]]): the two are DISJOINT layers with a
+  deliberate ordering — neglect fires UPSTREAM at the danger bands
+  (350/350/250) plus two hours of proven inaction, giving the VILLAGER the
+  first chance to save itself (the salience-9 percept + generation bump),
+  while these watches fire at the later emergencies (health < 200,
+  Food == 0, Warmth == 0) as the guardian's harder backstop — on Oak's
+  trajectory the percept lands ≈5 game-hours before the exposure watch's
+  moment, and no surface double-alarms (different events, different
+  consumers, different times). `matchSurvival` is untouched by spec 083;
+  what composes today with zero new code is only that
+  `sim.neglect_detected` sits in the world log/chronicle any guardian turn's
+  event window can read. A fourth system-origin watch KIND matching the
+  event structurally (the `orderMatches` shape) is a named, deliberately
+  unbuilt seam — a guardian-authority change owed its own deliverable
+  (spec 083 §Composition).
 
 ## Connections
 

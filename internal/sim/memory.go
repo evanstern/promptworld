@@ -288,7 +288,33 @@ const (
 	// salPlaceTold (spec 041 US5): giving/getting directions — the talk band
 	// (salTalk), social texture rather than a formative moment.
 	salPlaceTold = 3
+	// salNeglect (spec 083, research R6): the neglect percept JOINS the
+	// near-death/exile interrupt band (== GenerationBumpSalience, 9) — a
+	// DELIBERATE deviation from the keep-texture-below-9 default above: the
+	// percept's entire job is to break a mis-scheduling mind out of its loop
+	// while there is still runway, so the generation bump + next-prompt
+	// window win (salience 9, fresh recency) IS the planner beat — zero new
+	// nudge machinery. The one-per-episode fired latch bounds the interrupt
+	// rate by construction. Promoted-dial-READY, not a tuning.json dial.
+	salNeglect = 9
 )
+
+// neglectMemoryText is the fixed per-need voice-of-evidence text for the
+// neglect percept (spec 083 FR-006) — deterministic, one home beside the
+// salience table. First person, present peril plus proven inaction; Origin
+// is OriginWitness (perceiving one's own condition is direct perception) and
+// Why stays empty (no driving intent — the inaction is the subject).
+func neglectMemoryText(need string) string {
+	switch need {
+	case "food":
+		return "I am starving and I have done nothing to find food for hours."
+	case "warmth":
+		return "I am dangerously cold and I have done nothing to warm myself for hours."
+	case "rest":
+		return "I am exhausted and I have done nothing about resting for hours."
+	}
+	return ""
+}
 
 // placeToldText renders the two sides of a place-knowledge exchange (spec 041
 // US5, data-model: "Told Birch about the fire by the rock." / "Birch told you

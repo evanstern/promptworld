@@ -244,6 +244,36 @@ func TestRenderMapGridNeedsCriticalOverlay(t *testing.T) {
 	}
 }
 
+// TestRenderMapGridNeglectFiringRendersCritical (spec 083 FR-012, SC-005):
+// an agent in the neglect-FIRING state renders the shipped needs-critical
+// overlay — no new token, glyph, or legend row. Subsumption is by
+// construction (the detector's bands ARE the overlay predicate's exported
+// band constants); this test converts that coincidence into a pinned
+// contract: if the overlay's thresholds ever drift off the sim's danger
+// bands, a neglect-firing agent would stop rendering critical and this
+// fixture fails.
+func TestRenderMapGridNeglectFiringRendersCritical(t *testing.T) {
+	withColorProfile(t, termenv.TrueColor)
+	m := testModel(t)
+	cx, cy := m.gameMap.W/2, m.gameMap.H/2
+	ag := sim.Agent{Name: "Oak", X: cx, Y: cy,
+		Needs:   sim.Needs{Health: 900, Food: 600, Rest: 800, Warmth: 0, Morale: 600},
+		Neglect: &sim.NeglectState{WarmthSince: 499320}}
+	// Fixture sanity: this agent IS in the neglect-firing state (the exported
+	// predicate holds a full window past band entry with no class intent).
+	if !sim.NeglectDue(&ag, "warmth", 499320+7200) {
+		t.Fatal("fixture is not in the neglect-firing state")
+	}
+	if !needsCritical(ag.Needs) {
+		t.Fatal("subsumption broken: a neglect-firing agent is outside the needs-critical overlay")
+	}
+	m.replica.Agents = []sim.Agent{ag}
+	grid, _ := m.renderMapGrid(10, 10)
+	if !strings.Contains(grid, styleAgentCritical.Render("O")) {
+		t.Errorf("neglect-firing agent should render the needs-critical overlay: %q", grid)
+	}
+}
+
 // TestRenderMapGridSuppressedMindOverlay (US2 AS2): a living agent whose
 // latest decision outcome was a router suppression renders in the
 // suppressed-mind style.

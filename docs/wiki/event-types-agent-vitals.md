@@ -1,13 +1,13 @@
 ---
 name: event-types-agent-vitals
-description: Agent vitals/mortality event rows split from [[event-types]]: agent.needs_changed/died, run.ended, agent.slept/woke. Load when tracing needs decay/anchoring, death causes (starvation/exposure/collapse/gru), the death ledger and grave placement, or run-ending/postmortem posture.
+description: Agent vitals/mortality event rows split from [[event-types]]: agent.needs_changed/died, run.ended, agent.slept/woke, sim.neglect_detected (spec 083). Load when tracing needs decay/anchoring, death causes (starvation/exposure/collapse/gru), the death ledger and grave placement, the neglect percept, or run-ending/postmortem posture.
 kind: concept
 sources:
   - internal/sim/executor.go
   - internal/sim/state.go
   - internal/sim/gru.go
   - internal/sim/morgue.go
-verified_against: 048259bb42b03cc6ebeb13a49f367c2e3a7d4d37
+verified_against: fc9566d527941d3950fdd307168556820bd0875b
 ---
 
 # Event types — agent vitals & mortality
@@ -36,3 +36,4 @@ when the target was already weakened below `nearDeathBelow` ([[gru]]).
 | `agent.died` | `DiedPayload{agent, cause}` — cause ∈ `starvation`\|`exposure`\|`collapse`\|`gru` (spec 044 US3) | heartbeat at 0 health, **or** `gruStep` (spec 044 US3) on an escalated gru kill — emitted immediately after that attack's `gru.attacked`, cause `"gru"`, with an inline witness-death memory loop (gru attacks land off the %60 needs heartbeat, so the executor's own witness-death block never runs for them) | `Dead`, intent cleared; spec 013 (US2, FR-006, research R7): the agent's entire carried inventory spills into a pile at the death tile (created/merged, food batches stamped `tick + rotWindowTicks`), emptying `Inv` — reducer-internal, no new event; spec 044 US1: the death is also appended to the `State.Deaths` ledger (`{agent, tick, cause}`, application = event order) so the run-end declaration can carry the run's full death history without a log scan; spec 044 US4 (FR-017): a `Structure{Kind:"grave"}` is placed at the death tile — unconditional (no dedup against whatever else already occupies the tile; structures already coexist per-tile by kind) — visible on the map ([[tui-client]]), knowable to villagers ([[agent-mind]] known-places), and blocking future `buildSite` on that tile (deliberate, research R10) |
 | `run.ended` (spec 044 US1) | `RunEndedPayload{tick, deaths, final_cause}` — `deaths` is the whole run's ledger (`{agent, tick, cause}`, event order) | executor (`stepEvents`), in the same batch as the run's final `agent.died`, ordered after every same-tick death and its witness memories, guarded by `!State.Ended` — exactly once per world, ever; never injectable (no whitelist entries) | sets `State.Ended` (terminal latch — no event clears it, so restart/replay lands back ended) and `State.RunEnd`; the loop idles in the paused-mode posture (mutating commands refused, reads served), status surfaces gain `ended`/`ended_day`, and the TUI enters postmortem posture ([[tui-client]], [[sim-loop]]) |
 | `agent.slept` / `agent.woke` | `AgentPayload{agent}` | executor | sleep flag (slept clears intent) |
+| `sim.neglect_detected` (spec 083) | `NeglectDetectedPayload{agent, need, level, since}` — need ∈ `food`\|`warmth`\|`rest`, level = pre-tick value, since = band-entry tick | needs heartbeat sweep (`stepEvents` %60, `NeglectDue` — pure over pre-tick state: living AWAKE agent, need below its spec-062 danger band for `neglectWindowTicks` (7200) with zero class-goal intents (`needClassGoals`, [[reflex-policy]]) over the same window, episode latch clear); executor emission class, never injectable; a salience-9 `agent.memory_added` companion (fixed per-need voice-of-evidence text, `OriginWitness`, generation-bumping) rides the same batch immediately after | sets the need's one-per-episode fired latch on `Agent.Neglect` ([[sim-state-agent-fields]]); the latch and band anchor clear together when `agent.needs_changed` folds the need back to/above its band |

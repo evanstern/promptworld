@@ -356,3 +356,42 @@ func TestSearchExhaustionAndWanderUntouched(t *testing.T) {
 		t.Fatalf("wander must stay knowledge-free: %+v %v", in, err)
 	}
 }
+
+// TestNeedClassGoalsResolve (spec 083 FR-003) is the anti-rot pin: the need
+// class dictionary lives beside the goal-resolver registry so they rot
+// together or not at all — every classed goal MUST be a registered resolvable
+// goal, every class MUST be a recoveryNeeds member, and the v1 membership is
+// pinned exactly (a drive-by addition or removal is a deliberate spec change,
+// not a drift).
+func TestNeedClassGoalsResolve(t *testing.T) {
+	for goal, need := range needClassGoals {
+		if _, ok := goalResolvers[goal]; !ok {
+			t.Errorf("needClassGoals classes %q (%s) but the goal registry has no resolver for it — the dictionary rotted", goal, need)
+		}
+		if !isRecoveryNeed(need) {
+			t.Errorf("needClassGoals maps %q to %q, not a recoveryNeeds member", goal, need)
+		}
+	}
+	want := map[string]string{
+		"forage": "food", "hunt": "food", "cook": "food",
+		"goto_warmth": "warmth", "warm_up": "warmth",
+		"build_fire": "warmth", "refuel_fire": "warmth",
+		"sleep": "rest",
+	}
+	if len(needClassGoals) != len(want) {
+		t.Errorf("needClassGoals has %d members, want the pinned v1 set of %d", len(needClassGoals), len(want))
+	}
+	for goal, need := range want {
+		if got := needClassOf(goal); got != need {
+			t.Errorf("needClassOf(%q) = %q, want %q", goal, got, need)
+		}
+	}
+	// Deliberate exclusions (spec 083 research R4): chop is not warmth-class
+	// (Oak's fatal window was full of reflex chops), eat is a direct event
+	// (never an intent goal), and kind-parameterized transfers stay unclassed.
+	for _, goal := range []string{"chop", "eat", "pick_up", "withdraw", "wander"} {
+		if got := needClassOf(goal); got != "" {
+			t.Errorf("needClassOf(%q) = %q, want unclassed", goal, got)
+		}
+	}
+}

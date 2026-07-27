@@ -22,7 +22,7 @@ dock:    <HH:MM> <short-type>  <summary>          (tick dropped; wraps ≤3 line
 | agent, social, sim, world, governance (meeting/norm), gru, metatron, chronicle | natural phrase | type column |
 | cog, clock, daemon | labeled fields (`key=value`, space-separated, stable order) | type column + summary |
 
-Emphasis roles inside summaries: **name** (every resolved agent name), **speech** (quoted utterance), **emphasis** (amounts, item kinds, causes, outcomes, coordinates where load-bearing). High-salience types (`agent.died`, `gru.attacked`, `social.chest_taken`, `norm.violated`) render the whole line in the alert role.
+Emphasis roles inside summaries: **name** (every resolved agent name), **speech** (quoted utterance), **emphasis** (amounts, item kinds, causes, outcomes, coordinates where load-bearing). High-salience types (`agent.died`, `gru.attacked`, `social.chest_taken`, `norm.violated`, plus `stranger.took` — spec 077 — and `sim.neglect_detected` — spec 083) render the whole line in the alert role.
 
 ## 3. Per-type digest templates
 
@@ -51,6 +51,7 @@ Emphasis roles inside summaries: **name** (every resolved agent name), **speech*
 | `sim.fire_burned_out` | `the fire at ({x},{y}) burned out` |
 | `sim.food_rotted` | `{n} {kind} rotted at ({x},{y})` |
 | `sim.gathering_observed` | `gathering at ({x},{y}) since tick {start}`; all-zero payload → `gathering dispersed` |
+| `sim.neglect_detected` (spec 083) | *Name* ` is starving`\|` is dangerously cold`\|` is exhausted` (by `{need}` food\|warmth\|rest) + ` and has done nothing about it ({need} {level})` **(alert)** |
 
 ### agent — acts & needs
 
