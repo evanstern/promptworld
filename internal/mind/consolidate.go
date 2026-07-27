@@ -209,7 +209,7 @@ func (md *Mind) runConsolidation(job consolJob) {
 		seen[i] = true
 		m := job.buffer[i]
 		add("agent.memory_promoted", sim.MemoryPromotedPayload{
-			Agent: job.agent, MemTick: m.Tick, TextHash: sim.MemoryHash(m.Text), Boost: 3})
+			Agent: sim.Ref(job.agent), MemTick: m.Tick, TextHash: sim.MemoryHash(m.Text), Boost: 3})
 	}
 	for _, r := range out.Fade {
 		i := parseMemRef(r, len(job.buffer))
@@ -219,20 +219,20 @@ func (md *Mind) runConsolidation(job consolJob) {
 		seen[i] = true
 		m := job.buffer[i]
 		add("agent.memory_faded", sim.MemoryFadedPayload{
-			Agent: job.agent, MemTick: m.Tick, TextHash: sim.MemoryHash(m.Text)})
+			Agent: sim.Ref(job.agent), MemTick: m.Tick, TextHash: sim.MemoryHash(m.Text)})
 	}
 	add("agent.memory_added", sim.MemoryAddedPayload{
 		Agent: sim.Ref(job.agent), Text: out.Gist, Salience: sim.SalDayGist, Subject: sim.Ref(-1), Origin: sim.OriginDigest})
 	for _, b := range out.Beliefs {
 		add("agent.belief_revised", sim.BeliefRevisedPayload{
-			Agent: job.agent, BeliefID: b.ID, Statement: b.Statement,
+			Agent: sim.Ref(job.agent), BeliefID: b.ID, Statement: b.Statement,
 			Confidence: b.Confidence, Provenance: b.Provenance,
-			Source: b.Source, Subject: b.Subject,
+			Source: sim.Ref(b.Source), Subject: sim.Ref(b.Subject),
 			Evidence: b.resolved, Direct: b.direct})
 	}
-	add("agent.narrative_set", sim.NarrativeSetPayload{Agent: job.agent, Text: out.Narrative})
+	add("agent.narrative_set", sim.NarrativeSetPayload{Agent: sim.Ref(job.agent), Text: out.Narrative})
 	add("agent.consolidated", sim.ConsolidatedPayload{
-		Agent: job.agent, Night: job.night, UpTo: job.upTo,
+		Agent: sim.Ref(job.agent), Night: job.night, UpTo: job.upTo,
 		Outcome:  sim.ConsolidationAccepted,
 		Promoted: len(out.Promote), Faded: len(out.Fade), Beliefs: len(out.Beliefs),
 		Coerced: coerced, CostUSD: resp.CostUSD})
@@ -250,7 +250,7 @@ func (md *Mind) runConsolidation(job consolJob) {
 func (md *Mind) landMarker(job consolJob, outcome, reason string, cost float64) {
 	defer md.consolInFlight[job.agent].Store(false)
 	b, _ := json.Marshal(sim.ConsolidatedPayload{
-		Agent: job.agent, Night: job.night, Outcome: outcome, Reason: reason, CostUSD: cost})
+		Agent: sim.Ref(job.agent), Night: job.night, Outcome: outcome, Reason: reason, CostUSD: cost})
 	if err := md.social.InjectSocial([]store.Event{{Type: "agent.consolidated", Payload: b}}); err != nil {
 		log.Printf("mind: consolidation %s night %d marker rejected: %v", job.name, job.night, err)
 		return

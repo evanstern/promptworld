@@ -160,16 +160,16 @@ func (a *Agent) ConsolidationDue(tick int64) bool {
 // --- event payloads (all landed via the whitelisted injection door) ---
 
 type MemoryPromotedPayload struct {
-	Agent    int    `json:"agent"`
-	MemTick  int64  `json:"mem_tick"`
-	TextHash string `json:"text_hash"`
-	Boost    int    `json:"boost"`
+	Agent    AgentRef `json:"agent"`
+	MemTick  int64    `json:"mem_tick"`
+	TextHash string   `json:"text_hash"`
+	Boost    int      `json:"boost"`
 }
 
 type MemoryFadedPayload struct {
-	Agent    int    `json:"agent"`
-	MemTick  int64  `json:"mem_tick"`
-	TextHash string `json:"text_hash"`
+	Agent    AgentRef `json:"agent"`
+	MemTick  int64    `json:"mem_tick"`
+	TextHash string   `json:"text_hash"`
 }
 
 // MemoryRef is a memory's durable identity — the (tick, content-hash) pair that
@@ -181,13 +181,13 @@ type MemoryRef struct {
 }
 
 type BeliefRevisedPayload struct {
-	Agent      int    `json:"agent"`
-	BeliefID   int    `json:"belief_id"` // 0 = new belief
-	Statement  string `json:"statement"`
-	Confidence int    `json:"confidence"`
-	Provenance string `json:"provenance"`
-	Source     int    `json:"source"`
-	Subject    int    `json:"subject"`
+	Agent      AgentRef `json:"agent"`
+	BeliefID   int      `json:"belief_id"` // 0 = new belief
+	Statement  string   `json:"statement"`
+	Confidence int      `json:"confidence"`
+	Provenance string   `json:"provenance"`
+	Source     AgentRef `json:"source"`
+	Subject    AgentRef `json:"subject"`
 	// Evidence (spec 030) is the resolved durable identities of the memories the
 	// belief cites; Direct is whether >=1 of them is direct perception — both
 	// derived by the validator BEFORE landing so replay never re-classifies.
@@ -202,24 +202,24 @@ type BeliefRevisedPayload struct {
 // and reduced here, but no in-tree producer exists yet — the perception-of-
 // absence task is the intended one. 030 ships consumer + tests only.
 type BeliefReinforcedPayload struct {
-	Agent    int `json:"agent"`
-	BeliefID int `json:"belief_id"`
+	Agent    AgentRef `json:"agent"`
+	BeliefID int      `json:"belief_id"`
 }
 
 type NarrativeSetPayload struct {
-	Agent int    `json:"agent"`
-	Text  string `json:"text"`
+	Agent AgentRef `json:"agent"`
+	Text  string   `json:"text"`
 }
 
 type ConsolidatedPayload struct {
-	Agent    int    `json:"agent"`
-	Night    int64  `json:"night"`
-	UpTo     int64  `json:"up_to"` // buffer high-water mark; meaningful on accept
-	Outcome  string `json:"outcome"`
-	Reason   string `json:"reason,omitempty"`
-	Promoted int    `json:"promoted,omitempty"`
-	Faded    int    `json:"faded,omitempty"`
-	Beliefs  int    `json:"beliefs,omitempty"`
+	Agent    AgentRef `json:"agent"`
+	Night    int64    `json:"night"`
+	UpTo     int64    `json:"up_to"` // buffer high-water mark; meaningful on accept
+	Outcome  string   `json:"outcome"`
+	Reason   string   `json:"reason,omitempty"`
+	Promoted int      `json:"promoted,omitempty"`
+	Faded    int      `json:"faded,omitempty"`
+	Beliefs  int      `json:"beliefs,omitempty"`
 	// Coerced (spec 030) counts beliefs whose provenance the validator downgraded
 	// from "witnessed" for lack of direct-perception evidence — non-fatal
 	// telemetry, never a rejection. omitempty keeps pre-030 markers byte-stable.
@@ -242,7 +242,7 @@ func (s *State) applyConsolidation(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -262,7 +262,7 @@ func (s *State) applyConsolidation(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -278,7 +278,7 @@ func (s *State) applyConsolidation(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -298,7 +298,7 @@ func (s *State) applyConsolidation(e store.Event) error {
 			// not. Subsequent direct-evidence revisions refresh it (US2, T006).
 			a.Beliefs = append(a.Beliefs, Belief{
 				ID: s.NextBeliefID, Statement: p.Statement, Confidence: conf,
-				Provenance: p.Provenance, Source: p.Source, Subject: p.Subject,
+				Provenance: p.Provenance, Source: p.Source.ID, Subject: p.Subject.ID,
 				Tick: e.Tick, Reinforced: e.Tick,
 			})
 			s.NextBeliefID++
@@ -308,8 +308,8 @@ func (s *State) applyConsolidation(e store.Event) error {
 					a.Beliefs[i].Statement = p.Statement
 					a.Beliefs[i].Confidence = conf
 					a.Beliefs[i].Provenance = p.Provenance
-					a.Beliefs[i].Source = p.Source
-					a.Beliefs[i].Subject = p.Subject
+					a.Beliefs[i].Source = p.Source.ID
+					a.Beliefs[i].Subject = p.Subject.ID
 					a.Beliefs[i].Tick = e.Tick
 					// Revision re-anchors the decay clock ONLY when it rests on direct
 					// perception (spec 030 US2-AC3): a nightly revision citing only
@@ -331,7 +331,7 @@ func (s *State) applyConsolidation(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -352,7 +352,7 @@ func (s *State) applyConsolidation(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -363,7 +363,7 @@ func (s *State) applyConsolidation(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}

@@ -267,12 +267,12 @@ type (
 	// JournalWrittenPayload — journal.entry_written: the agent-authored text of
 	// one write. The reducer assigns the id and stamps the tick.
 	JournalWrittenPayload struct {
-		Agent int    `json:"agent"`
-		Text  string `json:"text"`
+		Agent AgentRef `json:"agent"`
+		Text  string   `json:"text"`
 	}
 	// JournalDeletedPayload — journal.entry_deleted: the id to remove.
 	JournalDeletedPayload struct {
-		Agent int `json:"agent"`
-		Entry int `json:"entry"`
+		Agent AgentRef `json:"agent"`
+		Entry int      `json:"entry"`
 	}
 )

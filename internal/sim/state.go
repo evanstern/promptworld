@@ -786,7 +786,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -799,7 +799,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -824,7 +824,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -844,7 +844,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -854,7 +854,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -869,7 +869,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}

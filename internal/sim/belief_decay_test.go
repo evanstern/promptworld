@@ -82,8 +82,8 @@ func TestDirectRevisionRefreshesClock(t *testing.T) {
 
 	// Form a belief at tick 1000 (Reinforced = 1000).
 	if err := s.Apply(consolidationEvent(t, 1000, "agent.belief_revised", BeliefRevisedPayload{
-		Agent: 0, BeliefID: 0, Statement: "Tendrils lurk past the ridge.", Confidence: 80,
-		Provenance: ProvenanceTold, Source: 3, Subject: -1,
+		Agent: Ref(0), BeliefID: 0, Statement: "Tendrils lurk past the ridge.", Confidence: 80,
+		Provenance: ProvenanceTold, Source: Ref(3), Subject: Ref(-1),
 		Evidence: []MemoryRef{{Tick: 100, Hash: "aa"}}, Direct: false,
 	})); err != nil {
 		t.Fatal(err)
@@ -93,8 +93,8 @@ func TestDirectRevisionRefreshesClock(t *testing.T) {
 	// Hearsay-only revision at day 8: confidence changes, clock does NOT refresh.
 	hearsayTick := int64(1000) + 8*day
 	if err := s.Apply(consolidationEvent(t, hearsayTick, "agent.belief_revised", BeliefRevisedPayload{
-		Agent: 0, BeliefID: id, Statement: "Tendrils lurk past the ridge.", Confidence: 60,
-		Provenance: ProvenanceTold, Source: 3, Subject: -1,
+		Agent: Ref(0), BeliefID: id, Statement: "Tendrils lurk past the ridge.", Confidence: 60,
+		Provenance: ProvenanceTold, Source: Ref(3), Subject: Ref(-1),
 		Evidence: []MemoryRef{{Tick: 200, Hash: "bb"}}, Direct: false,
 	})); err != nil {
 		t.Fatal(err)
@@ -111,8 +111,8 @@ func TestDirectRevisionRefreshesClock(t *testing.T) {
 	// Direct-evidence revision at day 10: clock refreshes to now.
 	directTick := int64(1000) + 10*day
 	if err := s.Apply(consolidationEvent(t, directTick, "agent.belief_revised", BeliefRevisedPayload{
-		Agent: 0, BeliefID: id, Statement: "I saw the tendrils myself.", Confidence: 70,
-		Provenance: ProvenanceWitnessed, Source: -1, Subject: -1,
+		Agent: Ref(0), BeliefID: id, Statement: "I saw the tendrils myself.", Confidence: 70,
+		Provenance: ProvenanceWitnessed, Source: Ref(-1), Subject: Ref(-1),
 		Evidence: []MemoryRef{{Tick: directTick - 10, Hash: "cc"}}, Direct: true,
 	})); err != nil {
 		t.Fatal(err)

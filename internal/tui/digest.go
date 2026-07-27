@@ -356,7 +356,7 @@ var digestRegistry = map[string]digestFunc{
 			return nil, false
 		}
 		return join([]seg{
-			nameOf(names, p.Agent), txt("'s "), emph(p.Goal), txt(" refused: "), emph(p.Reason),
+			nameOf(names, p.Agent.ID), txt("'s "), emph(p.Goal), txt(" refused: "), emph(p.Reason),
 			txt(" ("), emphI64(p.StalenessTicks), txt("t stale)"),
 		}), true
 	},
@@ -671,21 +671,21 @@ var digestRegistry = map[string]digestFunc{
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt("'s memory (t"), emphI64(p.MemTick), txt(") reinforced")}), true
+		return join([]seg{nameOf(names, p.Agent.ID), txt("'s memory (t"), emphI64(p.MemTick), txt(") reinforced")}), true
 	},
 	"agent.memory_faded": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.MemoryFadedPayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" forgot a memory (t"), emphI64(p.MemTick), txt(")")}), true
+		return join([]seg{nameOf(names, p.Agent.ID), txt(" forgot a memory (t"), emphI64(p.MemTick), txt(")")}), true
 	},
 	"agent.belief_revised": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.BeliefRevisedPayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" now believes: "), speech(p.Statement)}), true
+		return join([]seg{nameOf(names, p.Agent.ID), txt(" now believes: "), speech(p.Statement)}), true
 	},
 	// agent.belief_reinforced (spec 030 US2, FR-008): re-anchors a held belief's
 	// decay clock. Whitelisted through the injection door for the future
@@ -698,21 +698,21 @@ var digestRegistry = map[string]digestFunc{
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt("'s belief (#"), emphN(p.BeliefID), txt(") reinforced")}), true
+		return join([]seg{nameOf(names, p.Agent.ID), txt("'s belief (#"), emphN(p.BeliefID), txt(") reinforced")}), true
 	},
 	"agent.narrative_set": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.NarrativeSetPayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt("'s story: "), speech(p.Text)}), true
+		return join([]seg{nameOf(names, p.Agent.ID), txt("'s story: "), speech(p.Text)}), true
 	},
 	"agent.consolidated": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.ConsolidatedPayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" consolidated the night's memories")}), true
+		return join([]seg{nameOf(names, p.Agent.ID), txt(" consolidated the night's memories")}), true
 	},
 	"agent.plan_set": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.PlanSetPayload](e)
@@ -724,7 +724,7 @@ var digestRegistry = map[string]digestFunc{
 			goals[i] = st.Goal
 		}
 		return join([]seg{
-			nameOf(names, p.Agent), txt(" planned "), emphN(len(p.Steps)), txt(" steps: "),
+			nameOf(names, p.Agent.ID), txt(" planned "), emphN(len(p.Steps)), txt(" steps: "),
 			emph(truncateRunes(strings.Join(goals, ", "), 60)),
 		}), true
 	},
@@ -733,14 +733,14 @@ var digestRegistry = map[string]digestFunc{
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" began step "), emph(p.Step)}), true
+		return join([]seg{nameOf(names, p.Agent.ID), txt(" began step "), emph(p.Step)}), true
 	},
 	"agent.plan_expired": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.PlanStepPayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt("'s plan lapsed ("), emph(p.Reason), txt(")")}), true
+		return join([]seg{nameOf(names, p.Agent.ID), txt("'s plan lapsed ("), emph(p.Reason), txt(")")}), true
 	},
 
 	// --- social ---
@@ -1328,7 +1328,7 @@ var digestRegistry = map[string]digestFunc{
 			return nil, false
 		}
 		return labeled(
-			"job="+p.Job, "class="+p.Class, "agent="+agentName(names, p.Agent),
+			"job="+p.Job, "class="+p.Class, "agent="+agentName(names, p.Agent.ID),
 			fmt.Sprintf("pts=%d", p.Points), fmt.Sprintf("pred=%dms", p.PredictedWallMs),
 		), true
 	},
@@ -1338,7 +1338,7 @@ var digestRegistry = map[string]digestFunc{
 			return nil, false
 		}
 		pairs := []string{
-			"job=" + p.Job, p.Outcome, "agent=" + agentName(names, p.Agent),
+			"job=" + p.Job, p.Outcome, "agent=" + agentName(names, p.Agent.ID),
 			fmt.Sprintf("stale=%dt", p.StalenessTicks), fmt.Sprintf("wall=%dms", p.ActualWallMs),
 		}
 		if p.Kind != "" {
@@ -1412,7 +1412,7 @@ var digestRegistry = map[string]digestFunc{
 			return nil, false
 		}
 		return labeled(
-			"agent="+agentName(names, p.Agent), "mode="+p.Mode,
+			"agent="+agentName(names, p.Agent.ID), "mode="+p.Mode,
 			fmt.Sprintf("overlap=%d/%d", p.Overlap, len(p.Legacy)),
 			fmt.Sprintf("displaced=%d", p.Displacement),
 			fmt.Sprintf("vectorless=%d", p.Vectorless),
@@ -1904,7 +1904,7 @@ var subjectRegistry = map[string]subjectFunc{
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"agent.crafted": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.CraftedPayload](e)
@@ -1987,63 +1987,63 @@ var subjectRegistry = map[string]subjectFunc{
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"agent.memory_faded": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.MemoryFadedPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"agent.belief_revised": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.BeliefRevisedPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"agent.belief_reinforced": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.BeliefReinforcedPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"agent.narrative_set": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.NarrativeSetPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"agent.consolidated": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.ConsolidatedPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"agent.plan_set": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.PlanSetPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"agent.plan_step_started": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.PlanStepPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"agent.plan_expired": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.PlanStepPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"agent.memory_embedded": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.MemoryEmbeddedPayload](e)
@@ -2066,21 +2066,21 @@ var subjectRegistry = map[string]subjectFunc{
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"cog.outcome": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.CogOutcomePayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"cog.memory_divergence": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.MemoryDivergencePayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 
 	// morgue.epilogue: Agent -1 is the run-end epilogue sentinel (no single

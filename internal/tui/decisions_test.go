@@ -21,7 +21,7 @@ import (
 
 func thoughtEvent(seq, tick int64, job, class string, agent int, triggerSeq int64) store.Event {
 	b, _ := json.Marshal(sim.CogThoughtPayload{
-		Job: job, Class: class, Agent: agent, SnapshotTick: tick, TriggerSeq: triggerSeq,
+		Job: job, Class: class, Agent: sim.Ref(agent), SnapshotTick: tick, TriggerSeq: triggerSeq,
 	})
 	return store.Event{Seq: seq, Tick: tick, Type: "cog.thought", Payload: b}
 }
@@ -35,7 +35,7 @@ func toolCallEvent(seq int64, job string, ordinal int, tool, verdict, reason str
 
 func outcomeEvent(seq int64, job, class string, agent int, outcome, reason string) store.Event {
 	b, _ := json.Marshal(sim.CogOutcomePayload{
-		Job: job, Class: class, Agent: agent, Outcome: outcome, Reason: reason,
+		Job: job, Class: class, Agent: sim.Ref(agent), Outcome: outcome, Reason: reason,
 	})
 	return store.Event{Seq: seq, Type: "cog.outcome", Payload: b}
 }

@@ -133,9 +133,9 @@ func TestJournalRenders(t *testing.T) {
 
 	scr.Observe([]store.Event{
 		{Tick: 3600, Type: "journal.entry_written", Payload: mustPayloadJSON(t,
-			sim.JournalWrittenPayload{Agent: 0, Text: "Banked the fire before the cold set in."})},
+			sim.JournalWrittenPayload{Agent: sim.Ref(0), Text: "Banked the fire before the cold set in."})},
 		{Tick: 7200, Type: "journal.entry_written", Payload: mustPayloadJSON(t,
-			sim.JournalWrittenPayload{Agent: 0, Text: "Owe Birch a meal."})},
+			sim.JournalWrittenPayload{Agent: sim.Ref(0), Text: "Owe Birch a meal."})},
 	})
 
 	deadline := time.Now().Add(3 * time.Second)
@@ -151,7 +151,7 @@ func TestJournalRenders(t *testing.T) {
 			strings.Contains(s, "runes_") {
 			// Now delete entry #0 and confirm it disappears.
 			scr.Observe([]store.Event{{Tick: 7300, Type: "journal.entry_deleted",
-				Payload: mustPayloadJSON(t, sim.JournalDeletedPayload{Agent: 0, Entry: 0})}})
+				Payload: mustPayloadJSON(t, sim.JournalDeletedPayload{Agent: sim.Ref(0), Entry: 0})}})
 			d2 := time.Now().Add(3 * time.Second)
 			for time.Now().Before(d2) {
 				after, _ := os.ReadFile(persona.JournalPath(dir, "Ash"))
@@ -225,12 +225,12 @@ func TestSoulShowsConsolidatedGrowth(t *testing.T) {
 			{Tick: tick, Type: "agent.memory_added", Payload: mustPayloadJSON(t,
 				sim.MemoryAddedPayload{Agent: sim.Ref(0), Text: gist, Salience: sim.SalDayGist, Subject: sim.Ref(-1)})},
 			{Tick: tick, Type: "agent.belief_revised", Payload: mustPayloadJSON(t,
-				sim.BeliefRevisedPayload{Agent: 0, BeliefID: 0, Statement: belief,
-					Confidence: conf, Provenance: sim.ProvenanceWitnessed, Source: -1, Subject: -1})},
+				sim.BeliefRevisedPayload{Agent: sim.Ref(0), BeliefID: 0, Statement: belief,
+					Confidence: conf, Provenance: sim.ProvenanceWitnessed, Source: sim.Ref(-1), Subject: sim.Ref(-1)})},
 			{Tick: tick, Type: "agent.narrative_set", Payload: mustPayloadJSON(t,
-				sim.NarrativeSetPayload{Agent: 0, Text: narrative})},
+				sim.NarrativeSetPayload{Agent: sim.Ref(0), Text: narrative})},
 			{Tick: tick, Type: "agent.consolidated", Payload: mustPayloadJSON(t,
-				sim.ConsolidatedPayload{Agent: 0, Night: sim.NightIndex(tick), UpTo: tick,
+				sim.ConsolidatedPayload{Agent: sim.Ref(0), Night: sim.NightIndex(tick), UpTo: tick,
 					Outcome: sim.ConsolidationAccepted, Beliefs: 1})},
 		}
 	}

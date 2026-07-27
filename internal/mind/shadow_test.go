@@ -130,7 +130,7 @@ func TestShadowInvariant(t *testing.T) {
 		if divs[i].Mode != "shadow" {
 			t.Errorf("divergence mode = %q, want shadow", divs[i].Mode)
 		}
-		if divs[i].Agent == 0 {
+		if divs[i].Agent.ID == 0 {
 			agent0 = &divs[i]
 		}
 	}
@@ -205,7 +205,7 @@ func TestOnModeConsumesRelevantWindow(t *testing.T) {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			t.Fatal(err)
 		}
-		if p.Agent == 0 {
+		if p.Agent.ID == 0 {
 			found = true
 			if p.Mode != "on" {
 				t.Errorf("divergence mode = %q, want on", p.Mode)

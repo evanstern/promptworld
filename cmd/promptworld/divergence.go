@@ -80,7 +80,7 @@ func (r *divRow) add(p sim.MemoryDivergencePayload) {
 func aggregateDivergence(recs []sim.MemoryDivergencePayload) (keys []divKey, rows map[divKey]divRow, total divRow) {
 	rows = map[divKey]divRow{}
 	for _, p := range recs {
-		k := divKey{agent: p.Agent, day: p.Tick / divTicksPerDay}
+		k := divKey{agent: p.Agent.ID, day: p.Tick / divTicksPerDay}
 		row := rows[k]
 		row.add(p)
 		rows[k] = row

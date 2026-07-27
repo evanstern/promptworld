@@ -174,7 +174,7 @@ func (dt *decisionTraces) ingestThought(e store.Event, names []string, ring []st
 	if strings.HasPrefix(p.Job, guardianJobPrefix) {
 		dt.attribute(c, guardianAgent, true)
 	} else {
-		dt.attribute(c, p.Agent, true)
+		dt.attribute(c, p.Agent.ID, true)
 	}
 }
 
@@ -234,7 +234,7 @@ func (dt *decisionTraces) ingestOutcome(e store.Event) {
 	if strings.HasPrefix(p.Job, guardianJobPrefix) {
 		dt.attribute(c, guardianAgent, true)
 	} else {
-		dt.attribute(c, p.Agent, true)
+		dt.attribute(c, p.Agent.ID, true)
 	}
 }
 

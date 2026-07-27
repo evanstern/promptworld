@@ -43,8 +43,8 @@ func TestSoulRendersEffectiveBeliefConfidence(t *testing.T) {
 	scr.Observe([]store.Event{{
 		Tick: R, Type: "agent.belief_revised",
 		Payload: mustPayloadJSON(t, sim.BeliefRevisedPayload{
-			Agent: 0, BeliefID: 0, Statement: "The well runs deep.",
-			Confidence: 80, Provenance: sim.ProvenanceWitnessed, Source: -1, Subject: -1,
+			Agent: sim.Ref(0), BeliefID: 0, Statement: "The well runs deep.",
+			Confidence: 80, Provenance: sim.ProvenanceWitnessed, Source: sim.Ref(-1), Subject: sim.Ref(-1),
 		}),
 	}})
 	// Advance the replica's clock without touching the belief, so the render
@@ -98,15 +98,15 @@ func TestSoulRendersHedgedBelowFloorBelief(t *testing.T) {
 	scr.Observe([]store.Event{{
 		Tick: R, Type: "agent.belief_revised",
 		Payload: mustPayloadJSON(t, sim.BeliefRevisedPayload{
-			Agent: 0, BeliefID: 0, Statement: "The council meets at dawn.",
-			Confidence: 95, Provenance: sim.ProvenanceWitnessed, Source: -1, Subject: -1,
+			Agent: sim.Ref(0), BeliefID: 0, Statement: "The council meets at dawn.",
+			Confidence: 95, Provenance: sim.ProvenanceWitnessed, Source: sim.Ref(-1), Subject: sim.Ref(-1),
 		}),
 	}})
 	scr.Observe([]store.Event{{
 		Tick: R, Type: "agent.belief_revised",
 		Payload: mustPayloadJSON(t, sim.BeliefRevisedPayload{
-			Agent: 0, BeliefID: 0, Statement: "Tendrils lurk past the ridge.",
-			Confidence: 80, Provenance: sim.ProvenanceTold, Source: -1, Subject: -1,
+			Agent: sim.Ref(0), BeliefID: 0, Statement: "Tendrils lurk past the ridge.",
+			Confidence: 80, Provenance: sim.ProvenanceTold, Source: sim.Ref(-1), Subject: sim.Ref(-1),
 		}),
 	}})
 	scr.Observe([]store.Event{{

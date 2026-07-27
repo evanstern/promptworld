@@ -42,17 +42,17 @@ type PlanStep struct {
 
 // PlanSetPayload — agent.plan_set (loop-emitted on a plan landing).
 type PlanSetPayload struct {
-	Agent int        `json:"agent"`
+	Agent AgentRef   `json:"agent"`
 	Job   string     `json:"job"`
 	Steps []PlanStep `json:"steps"`
 }
 
 // PlanStepPayload — agent.plan_step_started / agent.plan_expired.
 type PlanStepPayload struct {
-	Agent  int    `json:"agent"`
-	Job    string `json:"job"`
-	Step   string `json:"step"`
-	Reason string `json:"reason,omitempty"`
+	Agent  AgentRef `json:"agent"`
+	Job    string   `json:"job"`
+	Step   string   `json:"step"`
+	Reason string   `json:"reason,omitempty"`
 }
 
 // planStepEvents evaluates the head step for an idle agent (executor-called,
@@ -67,7 +67,7 @@ func planStepEvents(s *State, m *worldmap.Map, idx int, tick int64) []store.Even
 	}
 	if st.Until > 0 && tick >= st.Until {
 		return []store.Event{ev("agent.plan_expired", PlanStepPayload{
-			Agent: idx, Job: st.Job, Step: st.Goal, Reason: "window closed"})}
+			Agent: Ref(idx), Job: st.Job, Step: st.Goal, Reason: "window closed"})}
 	}
 	if st.When != nil {
 		if ok, _ := st.When.EvalAt(s, idx, tick); !ok {
@@ -77,10 +77,10 @@ func planStepEvents(s *State, m *worldmap.Map, idx int, tick int64) []store.Even
 	intent, direct, err := resolveGoal(s, m, idx, st.Goal, st.Target, st.Kind, st.Qty, tick)
 	if err != nil {
 		return []store.Event{ev("agent.plan_expired", PlanStepPayload{
-			Agent: idx, Job: st.Job, Step: st.Goal, Reason: err.Error()})}
+			Agent: Ref(idx), Job: st.Job, Step: st.Goal, Reason: err.Error()})}
 	}
 	evs := []store.Event{ev("agent.plan_step_started", PlanStepPayload{
-		Agent: idx, Job: st.Job, Step: st.Goal})}
+		Agent: Ref(idx), Job: st.Job, Step: st.Goal})}
 	if direct == "agent.ate" {
 		if p, ok := eatOutcome(a); ok {
 			p.Agent = Ref(idx)

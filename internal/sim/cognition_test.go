@@ -38,12 +38,12 @@ func TestCognitionTelemetryIsNoOp(t *testing.T) {
 	before := s.Marshal()
 	payloads := map[string]any{
 		"cog.thought": CogThoughtPayload{
-			Job: "planner-3-100", Class: "planner", Agent: 3,
+			Job: "planner-3-100", Class: "planner", Agent: Ref(3),
 			SnapshotTick: 100, TriggerSeq: 42, Points: 3,
 			PredictedWallMs: 51000, PredictedLandTick: 1732,
 		},
 		"cog.outcome": CogOutcomePayload{
-			Job: "planner-3-100", Class: "planner", Agent: 3,
+			Job: "planner-3-100", Class: "planner", Agent: Ref(3),
 			Outcome: OutcomeSuppressed, Reason: "3pt x 17.0s/pt x 32x = 1632 ticks > budget 1200",
 		},
 		"cog.recalibration_recommended": RecalibrationPayload{

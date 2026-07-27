@@ -58,15 +58,15 @@ const PredictionMissFactor = 3
 // enqueued. trigger_seq is the event-log seq of the stimulus that armed the
 // trigger (0 = pure cadence): the causality edge stimulus → thought.
 type CogThoughtPayload struct {
-	Job               string `json:"job"`
-	Class             string `json:"class"`
-	Agent             int    `json:"agent"`
-	SnapshotTick      int64  `json:"snapshot_tick"`
-	Generation        int64  `json:"generation"`
-	TriggerSeq        int64  `json:"trigger_seq"`
-	Points            int    `json:"points"`
-	PredictedWallMs   int64  `json:"predicted_wall_ms"`
-	PredictedLandTick int64  `json:"predicted_land_tick"`
+	Job               string   `json:"job"`
+	Class             string   `json:"class"`
+	Agent             AgentRef `json:"agent"`
+	SnapshotTick      int64    `json:"snapshot_tick"`
+	Generation        int64    `json:"generation"`
+	TriggerSeq        int64    `json:"trigger_seq"`
+	Points            int      `json:"points"`
+	PredictedWallMs   int64    `json:"predicted_wall_ms"`
+	PredictedLandTick int64    `json:"predicted_land_tick"`
 	// Context-grounding observability (spec 043, FR-009/FR-010): the assembled
 	// user-prompt size, the per-block byte breakdown (keyed by contract block
 	// name), and the blocks the size budget dropped, in drop order. Additive,
@@ -83,17 +83,17 @@ type CogThoughtPayload struct {
 // Router suppressions carry the routing arithmetic in reason and have no
 // matching cog.thought (no call was made).
 type CogOutcomePayload struct {
-	Job             string `json:"job"`
-	Class           string `json:"class"`
-	Agent           int    `json:"agent"`
-	Outcome         string `json:"outcome"`
-	SnapshotTick    int64  `json:"snapshot_tick"`
-	LandingTick     int64  `json:"landing_tick"`
-	StalenessTicks  int64  `json:"staleness_ticks"`
-	PredictedWallMs int64  `json:"predicted_wall_ms"`
-	ActualWallMs    int64  `json:"actual_wall_ms"`
-	Kind            string `json:"kind,omitempty"`
-	Reason          string `json:"reason,omitempty"`
+	Job             string   `json:"job"`
+	Class           string   `json:"class"`
+	Agent           AgentRef `json:"agent"`
+	Outcome         string   `json:"outcome"`
+	SnapshotTick    int64    `json:"snapshot_tick"`
+	LandingTick     int64    `json:"landing_tick"`
+	StalenessTicks  int64    `json:"staleness_ticks"`
+	PredictedWallMs int64    `json:"predicted_wall_ms"`
+	ActualWallMs    int64    `json:"actual_wall_ms"`
+	Kind            string   `json:"kind,omitempty"`
+	Reason          string   `json:"reason,omitempty"`
 	// Raw / Retried (TASK-42): raw is the verbatim model reply on a scene
 	// parse failure (bounded, truncated on a rune boundary); retried marks a
 	// terminal scene outcome whose run consumed ≥1 retry. Both omitempty, so
@@ -106,10 +106,10 @@ type CogOutcomePayload struct {
 // intent. Its own type (not just telemetry) so souls/chronicle can later
 // notice refused intentions without parsing cog.* payloads.
 type IntentRejectedPayload struct {
-	Agent          int    `json:"agent"`
-	Goal           string `json:"goal"`
-	Reason         string `json:"reason"`
-	StalenessTicks int64  `json:"staleness_ticks"`
+	Agent          AgentRef `json:"agent"`
+	Goal           string   `json:"goal"`
+	Reason         string   `json:"reason"`
+	StalenessTicks int64    `json:"staleness_ticks"`
 }
 
 // CogToolCallPayload — cog.tool_call: one record per tool call the loop saw
@@ -188,15 +188,15 @@ type RecalibrationPayload struct {
 // gate decision is made from (FR-006/FR-007). Both windows ride as memory
 // Seqs in window order, auditable against their agent.memory_added events.
 type MemoryDivergencePayload struct {
-	Agent        int     `json:"agent"`
-	Tick         int64   `json:"tick"`
-	Mode         string  `json:"mode"`
-	Legacy       []int64 `json:"legacy"`
-	Augmented    []int64 `json:"augmented"`
-	Overlap      int     `json:"overlap"`
-	Displacement int     `json:"displacement"`
-	Vectorless   int     `json:"vectorless"`
-	SitTick      int64   `json:"sit_tick"`
+	Agent        AgentRef `json:"agent"`
+	Tick         int64    `json:"tick"`
+	Mode         string   `json:"mode"`
+	Legacy       []int64  `json:"legacy"`
+	Augmented    []int64  `json:"augmented"`
+	Overlap      int      `json:"overlap"`
+	Displacement int      `json:"displacement"`
+	Vectorless   int      `json:"vectorless"`
+	SitTick      int64    `json:"sit_tick"`
 }
 
 // NewMemoryDivergencePayload assembles the divergence record from the two
@@ -234,7 +234,7 @@ func NewMemoryDivergencePayload(agent int, tick int64, mode string, legacy, augm
 		}
 	}
 	return MemoryDivergencePayload{
-		Agent: agent, Tick: tick, Mode: mode,
+		Agent: Ref(agent), Tick: tick, Mode: mode,
 		Legacy: l, Augmented: g,
 		Overlap: overlap, Displacement: displacement,
 		Vectorless: vectorless, SitTick: sitTick,

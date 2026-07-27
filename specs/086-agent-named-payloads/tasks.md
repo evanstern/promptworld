@@ -81,7 +81,7 @@ cluster tests green.
   chest_taken/saw/place_told/place_revealed/map_corrected; PlaceFact.
   Source stays bare — allowlist §5.1): fields + sim emission sites +
   arms (FR-002)
-- [ ] T009 [US1] Batch C — consolidation + journal + cognition + plans
+- [X] T009 [US1] Batch C — consolidation + journal + cognition + plans
   (`consolidate.go` rows 42–47, `journal.go` rows 40–41, `cognition.go`
   rows 52–55, `plan.go` rows 56–57): fields + arms; `cog.tool_call` Args
   exempt (allowlist §5.2) (FR-002)

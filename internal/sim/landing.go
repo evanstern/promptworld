@@ -51,10 +51,10 @@ func (l *Loop) landIntent(in *InjectArgs, emit func(string, any)) error {
 				kind = RejectKindPredictionMiss
 			}
 			emit("agent.intent_rejected", IntentRejectedPayload{
-				Agent: in.Agent, Goal: in.Goal, Reason: reason, StalenessTicks: staleness,
+				Agent: Ref(in.Agent), Goal: in.Goal, Reason: reason, StalenessTicks: staleness,
 			})
 			emit("cog.outcome", CogOutcomePayload{
-				Job: in.JobID, Class: in.Class, Agent: in.Agent,
+				Job: in.JobID, Class: in.Class, Agent: Ref(in.Agent),
 				Outcome: outcome, SnapshotTick: in.SnapshotTick,
 				LandingTick: l.state.Tick, StalenessTicks: staleness,
 				PredictedWallMs: in.PredictedWallMs, ActualWallMs: in.ActualWallMs,
@@ -128,7 +128,7 @@ func (l *Loop) landIntent(in *InjectArgs, emit func(string, any)) error {
 		if in.Reason != "" {
 			emit("agent.thought", ThoughtPayload{Agent: Ref(in.Agent), Text: in.Reason, Source: "planner"})
 		}
-		emit("agent.plan_set", PlanSetPayload{Agent: in.Agent, Job: in.JobID, Steps: in.Plan})
+		emit("agent.plan_set", PlanSetPayload{Agent: Ref(in.Agent), Job: in.JobID, Steps: in.Plan})
 	} else {
 		// Roster door check (spec 014 US3, FR-008/FR-009): capability is roster
 		// membership. The goal must be a World tool on the villager roster; an
@@ -181,7 +181,7 @@ func (l *Loop) landIntent(in *InjectArgs, emit func(string, any)) error {
 
 	if in.Class != "" {
 		emit("cog.outcome", CogOutcomePayload{
-			Job: in.JobID, Class: in.Class, Agent: in.Agent,
+			Job: in.JobID, Class: in.Class, Agent: Ref(in.Agent),
 			Outcome: decision.outcome, SnapshotTick: in.SnapshotTick,
 			LandingTick: l.state.Tick, StalenessTicks: staleness,
 			PredictedWallMs: in.PredictedWallMs, ActualWallMs: in.ActualWallMs,

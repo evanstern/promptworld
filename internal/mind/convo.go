@@ -210,7 +210,7 @@ func (md *Mind) maybeStartConversation(e store.Event, priorExchange int64) {
 func (md *Mind) emitNothingNew(agent int, tick int64) {
 	b, _ := json.Marshal(sim.CogOutcomePayload{
 		Job:   fmt.Sprintf("conversation-%d", tick),
-		Class: "conversation", Agent: agent,
+		Class: "conversation", Agent: sim.Ref(agent),
 		Outcome: sim.OutcomeSuppressed, SnapshotTick: tick,
 		Reason: "nothing new since last exchange",
 	})

@@ -378,7 +378,7 @@ func unplannedAt(t *testing.T, h *harness, n int) []int {
 		}
 		var p sim.CogThoughtPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			planned[p.Agent] = true
+			planned[p.Agent.ID] = true
 		}
 	}
 	var out []int
@@ -427,7 +427,7 @@ func TestPausedNudgeWakesTargetOnce(t *testing.T) {
 		}
 		var p sim.CogThoughtPayload
 		return json.Unmarshal(e.Payload, &p) == nil && p.Class == "planner" &&
-			p.Agent == target && p.TriggerSeq == nudgeSeq
+			p.Agent.ID == target && p.TriggerSeq == nudgeSeq
 	})
 	if len(thoughts) != 1 {
 		t.Fatalf("nudge produced %d planner thoughts for the target, want exactly 1", len(thoughts))
@@ -502,7 +502,7 @@ func TestPausedOmenArmsOnlyTargets(t *testing.T) {
 				return false
 			}
 			var p sim.CogThoughtPayload
-			return json.Unmarshal(e.Payload, &p) == nil && p.Agent == tgt && p.TriggerSeq == omenSeq
+			return json.Unmarshal(e.Payload, &p) == nil && p.Agent.ID == tgt && p.TriggerSeq == omenSeq
 		})
 		if len(got) != 1 {
 			t.Fatalf("omen target %d got %d thoughts, want exactly 1", tgt, len(got))
@@ -513,7 +513,7 @@ func TestPausedOmenArmsOnlyTargets(t *testing.T) {
 			return false
 		}
 		var p sim.CogThoughtPayload
-		return json.Unmarshal(e.Payload, &p) == nil && p.Agent == control && p.TriggerSeq == omenSeq
+		return json.Unmarshal(e.Payload, &p) == nil && p.Agent.ID == control && p.TriggerSeq == omenSeq
 	}); len(bystander) != 0 {
 		t.Fatalf("untargeted villager %d was armed by the omen (%d thoughts)", control, len(bystander))
 	}
@@ -621,7 +621,7 @@ func TestPausedNudgeThinksAtSuppressingSpeed(t *testing.T) {
 			return false
 		}
 		var p sim.CogThoughtPayload
-		return json.Unmarshal(e.Payload, &p) == nil && p.Agent == target && p.TriggerSeq == nudgeSeq
+		return json.Unmarshal(e.Payload, &p) == nil && p.Agent.ID == target && p.TriggerSeq == nudgeSeq
 	})
 	if len(thoughts) != 1 {
 		t.Fatalf("paused nudge at 32x produced %d thoughts, want exactly 1 (paused routing must allow what set-speed suppresses)", len(thoughts))

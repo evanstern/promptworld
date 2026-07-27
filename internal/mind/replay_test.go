@@ -262,7 +262,7 @@ func TestJournalAndSituatedReplayByteIdentical(t *testing.T) {
 	var fill []store.Event
 	for i := 0; i < 4; i++ { // 4×1000 = 4000, exactly full
 		fill = append(fill, store.Event{Type: "journal.entry_written",
-			Payload: mustJSON(t, sim.JournalWrittenPayload{Agent: 1, Text: full})})
+			Payload: mustJSON(t, sim.JournalWrittenPayload{Agent: sim.Ref(1), Text: full})})
 	}
 	if err := loop.InjectSocial(fill); err != nil {
 		t.Fatalf("fill agent 1 journal: %v", err)

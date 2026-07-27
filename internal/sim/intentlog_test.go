@@ -72,7 +72,7 @@ func TestBuildFailedStampsFailed(t *testing.T) {
 func TestIntentRejectedAppendsClosed(t *testing.T) {
 	s := NewState(42, testMap(42))
 	applyTo(t, s, store.Event{Tick: 700, Type: "agent.intent_rejected",
-		Payload: mustPayload(IntentRejectedPayload{Agent: 3, Goal: "talk_to", Reason: "stale", StalenessTicks: 1646})})
+		Payload: mustPayload(IntentRejectedPayload{Agent: Ref(3), Goal: "talk_to", Reason: "stale", StalenessTicks: 1646})})
 	if s.Agents[3].Intent != nil {
 		t.Errorf("intent_rejected must not set a live Intent: %+v", s.Agents[3].Intent)
 	}
@@ -94,7 +94,7 @@ func TestPlanExpiredStampsOpenStep(t *testing.T) {
 	applyTo(t, s, store.Event{Tick: 1000, Type: "agent.intent_set",
 		Payload: mustPayload(IntentSetPayload{Agent: Ref(0), Goal: "goto_warmth", Source: "plan"})})
 	applyTo(t, s, store.Event{Tick: 1200, Type: "agent.plan_expired",
-		Payload: mustPayload(PlanStepPayload{Agent: 0, Job: "j", Step: "goto_warmth", Reason: "window closed"})})
+		Payload: mustPayload(PlanStepPayload{Agent: Ref(0), Job: "j", Step: "goto_warmth", Reason: "window closed"})})
 	if n := len(s.Agents[0].IntentLog); n != 1 {
 		t.Fatalf("IntentLog len = %d, want 1 (stamped, not appended)", n)
 	}
@@ -110,7 +110,7 @@ func TestPlanExpiredStampsOpenStep(t *testing.T) {
 func TestPlanExpiredAppendsUnfiredStep(t *testing.T) {
 	s := NewState(42, testMap(42))
 	applyTo(t, s, store.Event{Tick: 1200, Type: "agent.plan_expired",
-		Payload: mustPayload(PlanStepPayload{Agent: 0, Job: "j", Step: "hunt", Reason: "window closed"})})
+		Payload: mustPayload(PlanStepPayload{Agent: Ref(0), Job: "j", Step: "hunt", Reason: "window closed"})})
 	log := s.Agents[0].IntentLog
 	if len(log) != 1 {
 		t.Fatalf("IntentLog len = %d, want 1 (appended)", len(log))

@@ -22,8 +22,8 @@ func TestBeliefReinforcedReducer(t *testing.T) {
 
 	// Form a belief at tick 1000 (Reinforced = 1000).
 	if err := s.Apply(consolidationEvent(t, 1000, "agent.belief_revised", BeliefRevisedPayload{
-		Agent: 0, BeliefID: 0, Statement: "Tendrils lurk past the ridge.", Confidence: 80,
-		Provenance: ProvenanceTold, Source: 3, Subject: -1,
+		Agent: Ref(0), BeliefID: 0, Statement: "Tendrils lurk past the ridge.", Confidence: 80,
+		Provenance: ProvenanceTold, Source: Ref(3), Subject: Ref(-1),
 	})); err != nil {
 		t.Fatal(err)
 	}
@@ -32,7 +32,7 @@ func TestBeliefReinforcedReducer(t *testing.T) {
 	// Reinforcement at a much later tick re-anchors the clock.
 	const reinfTick = int64(1000) + 40*86400
 	if err := s.Apply(consolidationEvent(t, reinfTick, "agent.belief_reinforced", BeliefReinforcedPayload{
-		Agent: 0, BeliefID: id,
+		Agent: Ref(0), BeliefID: id,
 	})); err != nil {
 		t.Fatal(err)
 	}
@@ -47,7 +47,7 @@ func TestBeliefReinforcedReducer(t *testing.T) {
 	// Vanished target (unknown belief ID) is a total no-op — no error, no change.
 	before := s.Marshal()
 	if err := s.Apply(consolidationEvent(t, reinfTick+100, "agent.belief_reinforced", BeliefReinforcedPayload{
-		Agent: 0, BeliefID: 9999,
+		Agent: Ref(0), BeliefID: 9999,
 	})); err != nil {
 		t.Fatalf("vanished-target reinforcement errored: %v", err)
 	}
@@ -75,7 +75,7 @@ func TestBeliefReinforcedThroughDoor(t *testing.T) {
 
 	inject := func(t *testing.T, beliefID int) {
 		t.Helper()
-		b, err := json.Marshal(BeliefReinforcedPayload{Agent: 0, BeliefID: beliefID})
+		b, err := json.Marshal(BeliefReinforcedPayload{Agent: Ref(0), BeliefID: beliefID})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -147,12 +147,12 @@ func TestReinforcementReplayDeterminism(t *testing.T) {
 	events := []store.Event{
 		consolidationEvent(t, 20, "agent.memory_added", MemoryAddedPayload{Agent: Ref(0), Text: "Rowan claims tendrils.", Salience: 4, Subject: Ref(3), Origin: OriginGist}),
 		consolidationEvent(t, 30, "agent.belief_revised", BeliefRevisedPayload{
-			Agent: 0, BeliefID: 0, Statement: "Tendrils lurk past the ridge.", Confidence: 68,
-			Provenance: ProvenanceTold, Source: 3, Subject: -1,
+			Agent: Ref(0), BeliefID: 0, Statement: "Tendrils lurk past the ridge.", Confidence: 68,
+			Provenance: ProvenanceTold, Source: Ref(3), Subject: Ref(-1),
 			Evidence: []MemoryRef{{Tick: 20, Hash: MemoryHash("Rowan claims tendrils.")}}, Direct: false,
 		}),
 		// The grounded-observation seam fires much later (stand-in producer).
-		consolidationEvent(t, reinfTick, "agent.belief_reinforced", BeliefReinforcedPayload{Agent: 0, BeliefID: 1}),
+		consolidationEvent(t, reinfTick, "agent.belief_reinforced", BeliefReinforcedPayload{Agent: Ref(0), BeliefID: 1}),
 	}
 
 	replay := func() *State {
