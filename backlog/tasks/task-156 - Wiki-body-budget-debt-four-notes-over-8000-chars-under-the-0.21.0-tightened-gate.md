@@ -3,10 +3,10 @@ id: TASK-156
 title: >-
   Wiki body-budget debt: four notes over 8000 chars under the 0.21.0-tightened
   gate
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-26 20:13'
-updated_date: '2026-07-26 21:40'
+updated_date: '2026-07-27 02:06'
 labels:
   - wiki
   - tooling
@@ -29,3 +29,9 @@ Operator directive 2026-07-26: this work moves into a worktree on a task branch 
 
 2026-07-26: salvage complete — WIP committed on task-156-wiki-body-budget, CAPSULES.md regenerated, getting-started.html re-pinned (gru.md moved, facts unchanged). All gates green: corpus 167 fresh / zero budget violations, player-docs 13 fresh, pr gate pass. PR #121 open; merge awaits operator review of the (unreviewed, salvaged) wiki content.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Salvaged from the lost root-checkout session onto task-156-wiki-body-budget: four oversized notes split/trimmed via 4 extracted child notes (scenario-rubric, sim-state-outcome-fields, tui-dock-tile-view, tui-look-cursor) plus 12 note edits; CAPSULES.md regenerated, getting-started.html re-pinned. All gates green (corpus 167 fresh / zero budget violations, player-docs 13 fresh, pr gate pass). Landed on main via merge of PR #121 (2026-07-26). Worktree and branch cleaned up.
+<!-- SECTION:FINAL_SUMMARY:END -->
