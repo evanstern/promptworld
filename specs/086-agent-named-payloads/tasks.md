@@ -96,7 +96,7 @@ cluster tests green.
   `DeathRef` for `RunEndedPayload.Deaths`; arms fold `.ID`s into
   unchanged entities; door dry-runs validate mirrors;
   `TestNoAgentRefInState` still green (plan D4, FR-003)
-- [ ] T012 [US1] Batch F — `faith.changed` additive died-agent ref
+- [X] T012 [US1] Batch F — `faith.changed` additive died-agent ref
   (`faith.go` row 73, `omitempty`, set iff reason villager_died; other
   reasons byte-identical to spec 085 emissions — regression-pinned)
   (FR-002)
