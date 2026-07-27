@@ -23,7 +23,7 @@ replay). Planning/gating stays on Fable 5.
 
 ## Phase 1: Setup
 
-- [ ] T001 Worktree already cut (`.worktrees/task-17`, branch
+- [X] T001 Worktree already cut (`.worktrees/task-17`, branch
   `task-17-agent-named-payloads`; claim landed per spec 065/TASK-160/161
   flow). Confirm baseline: `go test ./...` green in the worktree; branch
   fresh vs `origin/main` — if stale, `git merge origin/main` INTO the
@@ -31,28 +31,28 @@ replay). Planning/gating stays on Fable 5.
 
 ## Phase 2: Foundational — the type, the catalog, the rails (blocks all user stories)
 
-- [ ] T002 `internal/sim/agentref.go`: `AgentRef` (struct marshal;
+- [X] T002 `internal/sim/agentref.go`: `AgentRef` (struct marshal;
   dual-shape `UnmarshalJSON`), `Ref`/`Refs` constructors,
   `validateRefs` reflection walk; doc comments carry the R2/R3 laws
   (never in State; never validated in Apply) (plan D1, FR-001)
-- [ ] T003 Type test tables: marshal shape + fixed field order + unicode
+- [X] T003 Type test tables: marshal shape + fixed field order + unicode
   name fixture; unmarshal bare int / object / `[]AgentRef` over both /
   pointer; constructor sentinels and out-of-range; `validateRefs`
   accept/reject matrix (FR-001, SC-002)
-- [ ] T004 `internal/sim/payloads.go`: `PayloadCatalog` seeded with every
+- [X] T004 `internal/sim/payloads.go`: `PayloadCatalog` seeded with every
   CURRENT payload type (pre-migration shapes — the catalog exists before
   the flip so the sweep can drive the migration); doc-anchored
   completeness test vs `docs/wiki/event-types.md` backticks; catalog
   covers `journal.*` and `sim.tuning_applied` (outside the tui catalog
   today) (plan D2, FR-006)
-- [ ] T005 `TestPayloadAgentRefSweep` (frozen vocabulary + four-entry
+- [X] T005 `TestPayloadAgentRefSweep` (frozen vocabulary + four-entry
   allowlist with rationale strings, data-model §5), landing with the
   vocabulary check scoped to already-migrated types via a census
   progress constant so the sweep is never red in any commit — flipped
   unconditional at T015 once the census completes; plus
   `TestNoAgentRefInState` (green from day one — State has no refs)
   (plan D2, FR-004/006, SC-002)
-- [ ] T006 Emission-door rails: `mustPayload` calls `validateRefs`
+- [X] T006 Emission-door rails: `mustPayload` calls `validateRefs`
   (panic contract); `InjectSocial` decodes via `PayloadCatalog` +
   `validateRefs`, refusing the batch pre-dry-run; mutation tests (unnamed
   in-roster ref panics / is refused); explicit test that `Apply` accepts

@@ -458,6 +458,14 @@ func livingCount(s *State) int {
 }
 
 func mustPayload(v any) json.RawMessage {
+	// Live-emission ref rail (spec 086 FR-005): an in-roster AgentRef missing
+	// its roster name (or a sentinel carrying a fake one) is the same class of
+	// programming bug as an unmarshalable payload — panic, don't record.
+	// Replay never comes through here (it streams stored bytes), so legacy
+	// unnamed rows are untouched by this check (research R3).
+	if err := validateRefs(v); err != nil {
+		panic(fmt.Sprintf("payload agent refs: %v", err))
+	}
 	b, err := json.Marshal(v)
 	if err != nil {
 		panic(fmt.Sprintf("payload marshal: %v", err))
