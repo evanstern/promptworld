@@ -290,6 +290,18 @@ var injectSocialWhitelist = map[string]bool{
 	"designation.cancelled": true,
 	"directive.issued":      true,
 	"directive.cancelled":   true,
+	// Prophecy (spec 085): the ONE injectable prophecy type — the prophesy
+	// tool's declaration, riding atomically with per-target agent.memory_added
+	// companions (already whitelisted above). The dry-run's validating arm
+	// (prophecy.go) enforces targets/text/TTL/cap/claim-vocabulary/
+	// already-true/duplicate before anything lands. prophecy.fulfilled,
+	// prophecy.failed, and faith.changed need NO entry — they are
+	// executor-emitted, never injected, the metatron.order_expired /
+	// charge_regenerated precedent; whitelist absence is what refuses an
+	// injected forgery of a verification verdict or a faith movement (faith
+	// must stay endogenous — a console-injectable score would be a cheat
+	// surface and break "no model judgment").
+	"prophecy.declared": true,
 	// Governance flavor (TASK-13): the ONLY injectable governance type —
 	// re-texts an enacted norm in the proposer's voice; outcomes stay
 	// executor-deterministic. The dry-run enforces norm existence + text cap.

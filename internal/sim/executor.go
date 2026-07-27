@@ -50,9 +50,17 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 		}
 	}
 
-	// Guardian charge regeneration (TASK-12): absolute 6-game-hour
-	// boundaries, pure function of (state, tick).
-	if nextTick%chargeRegenTicks == 0 && s.GuardianCharges < GuardianChargeCap {
+	// Guardian charge regeneration (TASK-12; spec 085 FR-004 rewrote the
+	// cadence): absolute boundaries of the faith-band cadence — a pure
+	// function of (faith score, scenario presence, tick), both inputs
+	// event-sourced/boot-frozen, so replay is inherited. Same check shape,
+	// same event, same empty payload as the fixed-6h original; a world that
+	// has never folded a faith event sits in the steady band and fires on a
+	// byte-identical schedule. Cadence 0 (the scenario forsaken band — the
+	// FR-005 spiral posture, see FaithRegenCadenceTicks) means the check
+	// never fires.
+	if c := FaithRegenCadenceTicks(s.FaithScore(), s.scenario != nil); c > 0 &&
+		nextTick%c == 0 && s.GuardianCharges < GuardianChargeCap {
 		emit("metatron.charge_regenerated", ChargeRegeneratedPayload{})
 	}
 
@@ -111,6 +119,15 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 			emit("directive.expired", OrderIDPayload{ID: d.ID})
 		}
 	}
+
+	// Prophecy verification sweep (spec 085 FR-008): active prophecies judged
+	// against their recorded claims — fulfil before fail, once, pure over
+	// (pre-tick state, tick), with companion OriginReport memories riding the
+	// batch (prophecy.go). Placed with the other guardian sweeps, after the
+	// directive sweep at a FIXED position: a designation fulfilling at T flips
+	// status at apply, so a dependent designation_fulfilled claim reads it
+	// directly at T+1's sweep — no extra lag rule needed, only this fixed slot.
+	events = append(events, prophecyEvents(s, nextTick)...)
 
 	// Scenario incidents (spec 054 US2): due authored emissions from the
 	// boot-frozen incident source (scenario.go) — the executor emission
@@ -397,6 +414,16 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 			}
 		}
 	}
+
+	// Faith accounting sweep (spec 085 FR-003): scan THIS tick's batch for the
+	// five faith-source events (directive fulfilled/expired, deaths, prophecy
+	// terminals) and emit one faith.changed per source in batch order — pure
+	// over (pre-tick state, this batch, tick), the run-end detector's own
+	// idiom below. Positioned AFTER every faith-source emitter (the directive
+	// and prophecy sweeps, gruStep, the needs heartbeat) and BEFORE the
+	// scenario rubric and run-end detection, so every source's faith companion
+	// lands in the same batch and run.ended stays the batch's last event.
+	events = append(events, faithEvents(s, events, nextTick)...)
 
 	// Scenario rubric (spec 054 US1): the pass boundary evaluation, pure over
 	// (pre-tick state, boot-frozen definition, next tick) plus THIS batch —

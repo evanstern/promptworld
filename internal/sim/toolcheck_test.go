@@ -165,6 +165,13 @@ func TestWhitelistDiffIdentical(t *testing.T) {
 		"designation.cancelled": true,
 		"directive.issued":      true,
 		"directive.cancelled":   true,
+		// Spec 085 (faith / prophecy) deliberately widens the boundary by
+		// exactly one entry: the prophesy tool's injected declaration (pinned
+		// ⊆ this whitelist by ValidateToolCoverage). prophecy.fulfilled,
+		// prophecy.failed, and faith.changed are EXECUTOR-emitted and
+		// deliberately never here — the order_expired precedent; absence is
+		// what refuses a forged verdict or faith movement.
+		"prophecy.declared": true,
 	}
 	for typ := range want {
 		if !injectSocialWhitelist[typ] {
