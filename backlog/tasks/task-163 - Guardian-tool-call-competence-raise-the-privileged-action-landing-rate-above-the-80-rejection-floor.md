@@ -3,9 +3,10 @@ id: TASK-163
 title: >-
   Guardian tool-call competence: raise the privileged-action landing rate above
   the 80% rejection floor
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-27 13:20'
+updated_date: '2026-07-27 14:17'
 labels:
   - mvls
   - guardian-survival
