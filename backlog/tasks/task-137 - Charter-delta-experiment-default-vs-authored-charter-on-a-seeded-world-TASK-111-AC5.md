@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-25 19:37'
-updated_date: '2026-07-26 16:31'
+updated_date: '2026-07-27 02:09'
 labels:
   - mvls
   - guardian-survival
@@ -18,14 +18,19 @@ ordinal: 107000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Follow-up carded from the MVLS sweep (operator request 2026-07-25) so TASK-111's AC5 anti-self-grading guard doesn't rot: prove charter quality measurably changes autonomous survival performance. Design: same world seed, two runs — DefaultCharter (now carrying the survival-duty wording, spec 059) vs an authored/tuned charter — with induced survival crises (e.g. tuning.json dials to make nights harsh); compare autonomous survival outcomes: deaths, near-death recoveries, survival-turn actions taken, charges spent on survival. The point is falsifiability: if charter wording makes no measurable difference, the charter surface is decoration and TASK-111's autonomy rests on the frame alone — that finding is as valuable as the delta. Tick TASK-111 AC#5 with the evidence.
+Follow-up carded from the MVLS sweep (operator request 2026-07-25) so TASK-111's AC5 anti-self-grading guard doesn't rot: prove charter quality measurably changes autonomous survival performance. Design: same world seed, two runs — DefaultCharter (survival-duty wording, spec 059) vs an authored/tuned charter — with induced survival crises (harsh tuning.json dials); compare autonomous survival outcomes: deaths, near-death recoveries, survival-turn actions taken, charges spent on survival. Tick TASK-111 AC#5 with the evidence.
+
+REORIENT 2026-07-26 reframe (docs/design/reorient-2026-07-26-ui.md): this experiment is now the falsifiability test of the pivot's core premise — that prompting the guardian is a real, rewarding player verb and not decoration. The charter IS the player's prompt: if an authored charter produces no measurable behavioral delta over DefaultCharter, the charter surface is decoration, the iteration rung (TASK-67 fork duel) duels over noise, and the curriculum ladder teaches a skill with no in-game payoff — a finding that forces a content/mechanics redesign and is exactly as valuable as the delta. The synthesis's course of action also holds TASK-112 (Metatron agentization) behind this task's evidence per TASK-112 AC5. Experiment design and the scheduled run are unchanged; the delta (or its proven absence) is now quoted as learning-game validity evidence, not just TASK-111 AC5 close-out.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 Two same-seed runs (default vs authored charter) with induced crises completed and compared
 - [ ] #2 Delta (or proven absence of delta) recorded with numbers here and on TASK-111; AC#5 resolution recorded
+- [ ] #3 Verdict on the teaching-game premise recorded: measurable delta (charter is a real player verb) or proven absence (charter surface is decoration — redesign follow-up carded); TASK-112's hold resolved accordingly
 <!-- AC:END -->
+
+
 
 ## Implementation Notes
 
