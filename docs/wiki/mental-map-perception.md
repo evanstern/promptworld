@@ -6,6 +6,8 @@ sources:
   - internal/sim/policy.go
   - internal/sim/path.go
   - internal/sim/executor.go
+  - internal/sim/state.go
+  - internal/mind/mind.go
   - internal/tool/registry.go
 verified_against: cffd9a79bbed61ccac573d97c6cf544565b40336
 ---
@@ -75,6 +77,37 @@ trigger; `agent.map_corrected` IS an absorb trigger — [[agent-mind]]'s `absorb
 re-arms the planner only when a removed fact matches the agent's OWN current
 intent target or resolved coordinates, so a correction elsewhere in the map
 stays quiet, carried into the next scheduled round as a memory instead.
+
+**Act-time removal narrows the correction** (spec 081, `internal/sim/state.go`
++ `internal/mind/mind.go`): before this feature, completing a chop/quarry
+marked the tile cleared/quarried in world state but left the tree/rock fact
+standing in every mental map — the actor's own included — so the sweep above
+"corrected" each of those maps a few ticks later, minting a third-party-voiced
+loss memory ("The tree at (x,y) had been felled when you looked.") for the very
+agent who swung the axe and for every bystander who watched (measured live: 75%
+of all memories formed). The `agent.chopped`/`agent.quarried` reducer arms now
+ALSO remove the matching place-fact (chop→`tree`, quarry→`rock`) at the act
+event — from the actor's map and from every OTHER awake living villager within
+`witnessRadius` of the tile (`State.removeHarvestedFact`, [[sim-state-reducer]];
+provenance-blind, so a `told` fact goes too — watching the tree fall overrides
+whoever told you about it). The removal is silent (no event, no memory). The
+actor instead carries a FIRST-PERSON act memory ("Felled the tree at (x,y)." /
+"Quarried the outcrop at (x,y).", `salChop`/`salQuarry`) minted by the executor
+as a companion `agent.memory_added` (the hunt precedent) — the operator decision
+2026-07-26 superseding the earlier "completed chops mint no memory" posture for
+these two acts. Because the on-scene facts are gone at the act tick, the sweep's
+correction half — untouched code — can now name only facts held by agents who
+were dead, asleep, or outside `witnessRadius` at removal time: the genuine
+return-discovery narrative (spec 041 US3). The same-tick race is safe by the
+`stepEvents` ordering — the sweep reads pre-batch state where the tree still
+stands, so no correction fires in the act's own batch. [[agent-mind]]'s `absorb`
+extends the re-arm trigger set so `agent.chopped`/`agent.quarried` re-arm the
+actor AND any in-radius witness whose live intent targeted the cleared tile —
+`agent.map_corrected` parity, since silent removal no longer gives those
+witnesses a correction to re-arm on (`WitnessRadius` is exported from
+`internal/sim` for this one perceptual reality). Out of scope (FR-010): forage
+regrow, pile draining, structure removal, and miracle terrain removal keep the
+correction narrative.
 
 **Graves** (spec 044 US4, [[morgue]]): a death leaves a persistent marker —
 the `agent.died` reducer arm ([[sim-state-reducer]]) appends

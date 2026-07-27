@@ -271,6 +271,15 @@ const (
 	// texture, not formative (contracts/events.md: "fire burned out while
 	// agents nearby, low"). Purely personal (no gossip subject).
 	salFireOut = 3
+	// salChop / salQuarry (spec 081): the actor's first-person memory of a
+	// completed chop/quarry, the salHunt band (memorable, below every
+	// generation-interrupting and rumor-seed threshold). The operator decision
+	// 2026-07-26 supersedes the earlier "completed chops mint no memory"
+	// spam-avoidance posture for these two acts — a villager's own harvest is
+	// now remembered in the first person instead of being "discovered" later as
+	// unexplained loss by the perception sweep.
+	salChop   = 4
+	salQuarry = 4
 	// salMapCorrected (spec 041 US3): discovering a remembered place gone —
 	// formative enough to enter the working-memory window and reshape plans,
 	// well below the generation-interrupting band (the absorb trigger, not
@@ -324,6 +333,15 @@ func placeToldText(other string, facts []PlaceFact, asTeller bool) string {
 	}
 	return fmt.Sprintf("%s told you of a %s at (%d,%d)%s.", other, what, f.X, f.Y, more)
 }
+
+// chopMemoryText / quarryMemoryText render the actor's first-person memory of a
+// completed harvest (spec 081) — the act-time counterpart to mapCorrectedText's
+// loss-discovery voice. Format strings consumed by the executor's chop/quarry
+// emit sites (the hunt-memory shape), situated by the actor's stand tile.
+const (
+	chopMemoryText   = "Felled the tree at (%d,%d)."
+	quarryMemoryText = "Quarried the outcrop at (%d,%d)."
+)
 
 // mapCorrectedText renders the situated first-person discovery of a remembered
 // place found gone (spec 041 US3, data-model: "The fire … was cold and dead

@@ -68,7 +68,18 @@ gone facts each ride a companion situated first-person discovery memory
 only via `agent.memory_added`, never appended directly by a reducer arm. Pure
 function of (state, map, tick): `stepEvents` reads, never mutates.
 [[mental-maps]] owns the mental-map subsystem this sweep populates and
-corrects; the executor's role is only the perception beat that drives it.
+corrects; the executor's role is only the perception beat that drives it. Since
+spec 081, an `agent.map_corrected` names only agents who were dead, asleep, or
+outside `witnessRadius` at removal time: the `agent.chopped`/`agent.quarried`
+reducer arms remove the felled/quarried fact from the actor's and every awake
+in-radius witness's map at the act event ([[mental-map-perception]],
+[[sim-state-reducer]]), so the sweep finds nothing to correct for the on-scene
+party. The same-tick beat is safe by the `stepEvents` ordering below —
+`perceptionEvents` runs before `executeAtTarget`, reading pre-batch state where
+the tree still stands. The chop/quarry emit sites additionally mint the actor a
+first-person act memory ("Felled the tree at (x,y)." / "Quarried the outcrop at
+(x,y).", `salChop`/`salQuarry`), a companion `agent.memory_added` in the act's
+batch (the hunt precedent) — see Memory emission below.
 
 **Memory emission**: the executor also emits `agent.memory_added` events from the salience table in
 `memory.go` ([[agent-mind]]) alongside memorable happenings — and since spec 019

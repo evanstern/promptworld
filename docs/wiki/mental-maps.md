@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/mentalmap.go
   - internal/tool/registry.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+verified_against: 8495b34ffb9ee5dc02e224025f0a23313bbab900
 ---
 
 # Mental maps
@@ -76,7 +76,9 @@ params.
 A villager's knowledge only ever grows or corrects through recorded events —
 there is no silent forgetting beyond the read-time freshness horizon, and a
 stale fact is invisible to resolvers/prompt without being physically removed
-until a correction (or death) does so. `internal/sim/mentalmap_test.go` is
+until a correction, a death, or — since spec 081 — a chop/quarry the villager
+performed or watched in radius removes it ([[mental-map-perception]]).
+`internal/sim/mentalmap_test.go` is
 the subsystem's own suite, alongside the v3→v4 migration, rebase-taxonomy,
 determinism, and vision-place-reveal coverage [[testing-strategy]] tracks.
 Exact freshness-horizon values are tuning (clarify Q5), soak-validated

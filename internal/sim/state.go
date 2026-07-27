@@ -571,6 +571,33 @@ func (s *State) recordPairTalk(a, b int, tick int64) {
 // without a row. Recovery sets Tick = max(snapshot tick, last event tick), so
 // at most one quiet stretch (bounded by the snapshot cadence) is re-lived —
 // deterministically, since sim events are a pure function of seed + tick.
+// removeHarvestedFact removes the (kind, x, y) place-fact at act time (spec 081):
+// from the acting villager's map unconditionally (no-op when absent) and from
+// every OTHER awake living villager within witnessRadius of (x,y) — watching a
+// tree fall or an outcrop go bare is not a later loss to discover. Positions are
+// read from the current (pre-mutation for the harvest arms) state, the axe-yield
+// re-derivation idiom. Provenance-blind and silent: no event, no memory, no
+// chronicle line (memories accrete only via agent.memory_added). The mind
+// replica applies the same arm, so replica maps stay byte-identical.
+func (s *State) removeHarvestedFact(kind string, x, y, actor int) {
+	for w := range s.Agents {
+		wa := &s.Agents[w]
+		if wa.Map == nil {
+			continue
+		}
+		if w == actor {
+			wa.Map.removeFact(kind, x, y)
+			continue
+		}
+		if wa.Dead || wa.Asleep {
+			continue
+		}
+		if abs(wa.X-x)+abs(wa.Y-y) <= witnessRadius {
+			wa.Map.removeFact(kind, x, y)
+		}
+	}
+}
+
 func (s *State) Apply(e store.Event) error {
 	agent := func(p int) (*Agent, error) {
 		if p < 0 || p >= len(s.Agents) {
@@ -1062,6 +1089,11 @@ func (s *State) Apply(e store.Event) error {
 		a.Intent = nil
 		a.IdleSince = e.Tick
 		s.Cleared = append(s.Cleared, Point{X: p.X, Y: p.Y})
+		// Spec 081 (FR-001/FR-004): the felled tree leaves the actor's map and
+		// every awake in-radius witness's map at the act event itself, so the
+		// perception sweep never later "corrects" a chop its owner or an on-scene
+		// witness already knows about. Absent facts are no-ops.
+		s.removeHarvestedFact("tree", p.X, p.Y, p.Agent)
 	case "agent.hunted":
 		var p HarvestPayload
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
@@ -1181,6 +1213,10 @@ func (s *State) Apply(e store.Event) error {
 		a.Intent = nil
 		a.IdleSince = e.Tick
 		s.Quarried = append(s.Quarried, Point{X: p.X, Y: p.Y})
+		// Spec 081 (FR-002/FR-004): quarry parity with the chop arm — the
+		// quarried-out rock leaves the actor's and every awake in-radius
+		// witness's map at the act event.
+		s.removeHarvestedFact("rock", p.X, p.Y, p.Agent)
 	case "agent.collected_water":
 		var p HarvestPayload
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
