@@ -4,7 +4,7 @@ description: Daemon boot sequence steps 0-5 and 7-8 — tool-registry gates, wor
 kind: pipeline
 sources:
   - internal/daemon/daemon.go
-verified_against: 801db7c1b15fb567732bc5c6063464e918353a4d
+verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
 ---
 
 # Daemon boot: validate, recover, wire-up

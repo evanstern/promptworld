@@ -8,7 +8,7 @@ sources:
   - internal/tui/help.go
   - internal/sim/agents.go
   - internal/tui/tiles.go
-verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
+verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
 ---
 
 # Village lens (villager strip + map condition overlays)
@@ -133,3 +133,16 @@ persisted state. `internal/tui/village_lens_test.go` covers the strip's
 overflow/shed behavior and both agent overlays' priority ordering;
 `layout_test.go` extends the fold-cascade coverage to the three-step order;
 `views_test.go`/`tui_test.go` extend existing render/update assertions.
+
+## Spec 086 — the reverse jump (the lens's other direction)
+
+Standing resolution 1 amended deliberately: the villager strip gains
+exactly ONE mouse affordance — clicking a glyph centers the map camera on
+that villager (`handleStripHitClick` → `centerCameraOn`; dead villagers
+jump to their grave; the `…N` overflow marker is never a target) — and
+still no cursor and no keys. Its keyboard path is the villagers tab's `J`
+over the SAME roster ordering. The villagers-tab roster gains the matching
+click (select + jump; narrow switches the active pane to the map). Both
+controls ship with mouse-parity oracle entries
+(`internal/tui/mouseparity_test.go`) and corpus rows
+(`docs/design/tui/panels/villager-strip.md`, `panels/villagers.md`).

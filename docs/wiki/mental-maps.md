@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/mentalmap.go
   - internal/tool/registry.go
-verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
+verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
 ---
 
 # Mental maps
@@ -83,3 +83,13 @@ the subsystem's own suite, alongside the v3→v4 migration, rebase-taxonomy,
 determinism, and vision-place-reveal coverage [[testing-strategy]] tracks.
 Exact freshness-horizon values are tuning (clarify Q5), soak-validated
 rather than derived from first principles.
+
+## Spec 086 — perception payloads carry named refs
+
+`agent.saw`/`agent.map_corrected`'s `agent`, `social.place_told`'s
+`from`/`to`, and `metatron.place_revealed`'s `agent` are `sim.AgentRef` on
+the wire. `PlaceFact.Source` (`src,omitempty`) deliberately stays a bare
+int — `PlaceFact` is state-resident (mental maps) AND rides four payloads,
+so the R2 no-refs-in-state invariant wins; it is a frozen, rationale-carrying
+allowlist entry in `TestPayloadAgentRefSweep` (the payloads' top-level
+actor fields carry the refs).

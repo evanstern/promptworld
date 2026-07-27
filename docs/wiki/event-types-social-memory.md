@@ -5,7 +5,7 @@ kind: concept
 sources:
   - internal/sim/agents.go
   - internal/sim/state.go
-verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
+verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
 ---
 
 # Event types — social & memory-authoring events
@@ -13,6 +13,15 @@ verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
 Back to [[event-types]] for the payload-grammar conventions and the full
 event-domain index.
 
+
+Spec 086 (agent-named payloads): every agent-referencing field in this
+family's payloads is a `sim.AgentRef` — the wire carries
+`{"id":N,"name":"…"}` objects (lists element-wise), the name stamped at
+emission from the fixed roster via `Ref`/`Refs`; sentinels marshal
+`{"id":-1,"name":""}`. Legacy bare-int rows decode through the dual-shape
+unmarshal forever and reducer arms fold `.ID`s only — the conventions and
+the normative back-compat matrix live on [[event-types]] ("Agent
+references are named refs").
 Spec 061 (the conversation loop damper — [[social-fabric]], [[sim-loop]],
 TASK-109) adds no new event type: `State` gains `omitempty` `PairTalks
 []PairTalk` (the event-sourced, unordered per-pair last-exchange ledger, `{a,

@@ -6,7 +6,7 @@ sources:
   - internal/sim/morgue.go
   - internal/mind/narrate.go
   - internal/sim/state.go
-verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
+verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
 ---
 
 # Morgue narrated epilogues
@@ -52,3 +52,11 @@ chronicle's own, and `morgue.epilogue` shares the ended-world door slot with
 arm. [[grounded-feedback]] (spec 063) is what lands a run-ending report card
 on this channel — see [[guardian-report-card]] for its producer mechanics.
 [[event-types]] catalogs `morgue.epilogue`. Spec: `specs/044-run-outcomes-morgue/`.
+
+## Spec 086 — the epilogue's agent is a named ref
+
+`MorgueEpiloguePayload.Agent` is a `sim.AgentRef` (−1 = the run-end
+epilogue, marshaled `{"id":-1,"name":""}` — sentinels are legal and never
+fake a name); a mourned villager's ref carries their roster name — death
+never blanks a name (names are the fixed roster constant). The arm folds
+`.ID` into the state ring.

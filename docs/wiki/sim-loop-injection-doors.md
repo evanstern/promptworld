@@ -4,7 +4,7 @@ description: Loop.InjectSocial (the mind's whitelisted conversation/consolidatio
 kind: component
 sources:
   - internal/sim/loop.go
-verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
+verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
 ---
 
 # Sim loop — injection doors
@@ -131,3 +131,15 @@ the narrowed ended-world door (see [[sim-loop]]'s ended gate). [[grounded-feedba
 (spec 063) is `guardian.report_card`'s injector, whitelisted here.
 [[bundle-tools]] enforces `InjectableSocialEvent(t)` as the single-source
 whitelist accessor alongside the tool coverage gate.
+
+## Spec 086 — the door validates agent refs before the dry-run
+
+`InjectSocial` gained a decode-and-refuse rail: each whitelisted event's
+payload is decoded through `sim.PayloadCatalog` (the sim-side event-type →
+zero-payload registry) and `validateRefs` walks the value — an in-roster
+`AgentRef` missing its exact roster name, or a sentinel carrying a fake
+one, refuses the WHOLE batch before the dry-run. This is the injection
+mirror of `mustPayload`'s panic contract on the executor path; both are
+live-emission-only rails — replay streams stored bytes and never passes a
+door, so legacy unnamed rows are untouched
+(`TestDoorRefusesEveryUnnamedWhitelistedType`, `internal/sim/loop.go`).

@@ -9,7 +9,7 @@ sources:
   - internal/sim/journal.go
   - internal/sim/morgue.go
   - internal/sim/miracles.go
-verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
+verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
 ---
 
 # Sim state & reducer
@@ -100,3 +100,19 @@ change via explicitly emitted transition events, so unloaded same-machine
 runs stay byte-deterministic. Adding a state field means adding events that
 set it — direct mutation outside `Apply` (except `Tick`) breaks the replay
 contract.
+
+## Spec 086 — refs fold by ID; names never enter state
+
+Every agent-referencing payload field is a `sim.AgentRef` (`{id,name}` on
+the wire, dual-shape unmarshal accepting legacy bare ints forever). Two
+laws hold in this reducer, permanently: (1) **no `AgentRef` is reachable
+from `sim.State`** — arms fold `ref.ID` (and `refIDs(...)` for lists) into
+the unchanged int-typed state entities, so `Marshal()`/`Hash()` bytes for
+any pre-086 history are byte-identical (`TestNoAgentRefInState`,
+`TestPre086ReplayByteIdentity`); (2) **no arm ever validates a name** —
+injected pre-086 rows replay through these same arms on every recovery, so
+name validation lives exclusively at the live-emission choke points
+(`mustPayload`, the `InjectSocial` door), which replay never traverses.
+The four state-shared payload types split into wire mirrors
+(`DirectiveIssuedPayload`, `OrderPlacedPayload`, `ProphecyDeclaredPayload`,
+`DeathRef`) whose arms fold `.ID`s into the unchanged entities.

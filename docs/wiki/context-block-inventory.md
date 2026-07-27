@@ -10,7 +10,7 @@ sources:
   - internal/sim/guard.go
   - internal/sim/memory.go
   - internal/sim/journal.go
-verified_against: fc9566d527941d3950fdd307168556820bd0875b
+verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
 ---
 
 # Decision-context block inventory

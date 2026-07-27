@@ -6,7 +6,7 @@ sources:
   - internal/tui/views.go
   - internal/tui/decisions.go
   - internal/tui/tui.go
-verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
+verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
 ---
 
 # TUI villagers tab
@@ -82,3 +82,14 @@ only the RPC reply's `⚡` miracle lines appeared.
 [[tui-client]] links here for the villagers tab; that note's own Connections
 section lists [[sim-state-reducer]] and [[agent-mind]] as this tab's
 underlying data sources.
+
+## Spec 086 — reverse jump: `J` and the roster-row click
+
+`J` in villagers mode (roster and detail views) centers the map camera on
+the selected villager (`handleVillagersKey`, `internal/tui/tui.go`) —
+keyboard primary for the spec 086 reverse-jump rider. Clicking a roster
+row selects it AND jumps (`handleRosterHitClick` over the renderer-recorded
+`rosterHit` region — the chronHit pointer pattern); in narrow the active
+pane switches to the map. Dead villagers jump to grave coordinates; empty
+replica is a no-op. Control table: `docs/design/tui/panels/villagers.md`;
+keymap: `patterns/keymap.md`.

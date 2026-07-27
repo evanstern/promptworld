@@ -9,7 +9,7 @@ sources:
   - internal/sim/guardian.go
   - internal/guardian/prophecy.go
   - internal/tool/registry.go
-verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
+verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
 ---
 
 # Guardian faith and prophecy — the endogenous mana loop
@@ -170,3 +170,19 @@ no faith from tutoring, no faith influence on villager behavior/prompts/
 cognition (`internal/cognition`/`internal/mind` untouched), no rumor-driven
 faith spread (companions are personal, `Subject: -1`), no tuning.json
 promotion, no badge surface.
+
+## Spec 086 — agent-named payloads
+
+`faith.changed` keeps its FROZEN three-field shape for every reason except
+one: when `reason` is `villager_died` the payload now also carries an
+additive `agent` ref — `Agent *AgentRef `json:"agent,omitempty"`` — the
+named `{id,name}` form of the index the string `source_id` still encodes
+(the SourceID encoding is untouched; it also names directive/prophecy ids
+for the other reasons and stays on the sweep's allowlist). `omitempty`
+keeps every non-death reason's emission byte-identical to spec 085's shape
+(`TestFaithChangedByteShapes`). `prophecy.declared` now rides the wire as
+the `ProphecyDeclaredPayload` mirror — `Targets []AgentRef` plus a claim
+mirror whose `Agent *AgentRef` is set only for the `survives` kind (index 0
+carries a FULL ref — the struct form has no omitempty-zero hazard) — while
+the state `Prophecy`/`ProphecyClaim` keep bare ints; the arm folds `.ID`s
+(`internal/sim/prophecy.go`).
