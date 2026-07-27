@@ -306,12 +306,18 @@ func explainCosts(sc ExplainScope) string {
 }
 
 // explainCharges renders the charge economy from the mirrored doctrine
-// constants (sim-pinned — see the header comment).
+// constants (sim-pinned — see the header comment). Since spec 085 the regen
+// cadence is a faith-band function (sim.FaithRegenCadenceTicks); the
+// mirrored constant here is the STEADY band — where every world begins —
+// and the sheet names the faith coupling qualitatively rather than
+// hand-carrying the whole band table into this leaf package (the sim table
+// is dial-ready and expected to move on play evidence).
 func explainCharges() string {
 	return fmt.Sprintf(`charges — the acting economy
 - the bank holds at most %d charges
 - a new world begins with %d charge banked
-- one charge regenerates every %d game hours (at absolute clock boundaries), up to the cap
+- one charge regenerates at absolute clock boundaries, up to the cap; the cadence follows the village's FAITH — every %d game hours while faith holds steady (where every world begins), faster when the village is fervent, slower when it wavers, slowest (or stopped, in a scenario world) when forsaken
+- faith rises with fulfilled directives and true prophecies; it falls with deaths, lapsed directives, and false prophecies
 - acting spends charges (see "costs"); speaking, reading, and refusing are free`,
 		explainChargeCap, explainGenesisCharges, explainRegenGameHours)
 }
