@@ -19,17 +19,20 @@ import (
 // This extends the existing catalog-sweep family: internal/tui's
 // TestExerciseRubricTermsAreCatalogedEventTypes pins every term to a REAL
 // cataloged event type; this sweep pins the complement — a term may not be
-// one of the types the tutor lane emits. Faith (TASK-118) is unshipped;
-// when a faith field/event exists, its type joins the banned set here (the
-// research R2 obligation, recorded where it will be enforced).
+// one of the types the tutor lane emits, and (spec 085 FR-012, discharging
+// the research R2 obligation this comment recorded) it may not be a faith.*
+// type either: faith is the UNSCORED score, in-fiction only (the
+// overjustification caution) — no exercise rubric may ever grade it, while
+// prophecy.* events remain rubric-eligible world events.
 func TestRubricHygieneNoTutorLaneTerms(t *testing.T) {
-	tutorLane := func(term string) bool {
-		return strings.HasPrefix(term, "cog.") || strings.HasPrefix(term, "guardian.")
+	banned := func(term string) bool {
+		return strings.HasPrefix(term, "cog.") || strings.HasPrefix(term, "guardian.") ||
+			strings.HasPrefix(term, "faith.")
 	}
 	for _, def := range ScenarioExercises {
 		for _, term := range def.RubricTerms {
-			if tutorLane(term) {
-				t.Errorf("exercise %q rubric term %q references tutor-lane telemetry — tutoring is charge-free, faith-free, and excluded from every rubric (spec 063 FR-003)",
+			if banned(term) {
+				t.Errorf("exercise %q rubric term %q references tutor-lane telemetry or the faith score — tutoring is charge-free, faith-free, faith is unscored, and both are excluded from every rubric (spec 063 FR-003, spec 085 FR-012)",
 					def.ID, term)
 			}
 		}

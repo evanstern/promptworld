@@ -5,7 +5,7 @@ kind: concept
 sources:
   - internal/sim/guardian.go
   - internal/daemon/daemon.go
-verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
+verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
 ---
 
 # Event types — guardian standing-order events
@@ -46,7 +46,7 @@ ordinary `order_placed` events, replay-safe like `seedMeetingConvention`/
 
 | Type | Payload struct | Emitted by | Reducer effect |
 |---|---|---|---|
-| `metatron.charge_regenerated` | `ChargeRegeneratedPayload{}` in `internal/sim/guardian.go` | executor, absolute 6-game-hour boundaries below cap | `GuardianCharges` +1, cap 3 ([[guardian]]) |
+| `metatron.charge_regenerated` | `ChargeRegeneratedPayload{}` in `internal/sim/guardian.go` | executor, absolute faith-band cadence boundaries below cap (spec 085: `FaithRegenCadenceTicks` — steady band = the old 6 game hours; [[guardian-faith]]) | `GuardianCharges` +1, cap 3 ([[guardian]]) |
 | `metatron.nudged` | `GuardianNudgedPayload{form, targets, text}` | Guardian console turn (injected, TASK-12) | validates (charges > 0, form ∈ vision\|omen\|dream, living targets, text cap) then `GuardianCharges` −1; `vision` (spec 029, replaces `dream` as the live one-target form) needs exactly one living target at any hour; `omen` needs ≥1 living targets AND `State.Night`; `dream` is legacy-only (grandfathered exactly-one-target validation so historical events replay, but no tool can emit a new one); villager memories ride companion `agent.memory_added` events in the same atomic batch |
 | `metatron.order_placed` (spec 029, [[guardian-orders]]) | `GuardianOrder{id, origin, condition, action, event_types, agent, keywords?, confirm?, placed_tick, expires_tick, status, survival?, placed_seq?}` | the guardian's `monitor_and_act` tool (injected via `InjectSocial`), or — since spec 059 — the daemon's boot-time `seedSurvivalWatches` for the three canonical system survival watches | validates (non-empty id not reused by any past order regardless of status, `origin` ∈ player\|system, non-empty `event_types`, `agent` index valid or −1 for any, `condition` ≤300 chars, `action` ≤400 chars, and — player-origin only — fewer than 3 already-active player orders, `GuardianPlayerOrderCap`; system-origin deferral orders are exempt from the cap); a non-empty `survival` (spec 059: `near_death`\|`starvation`\|`exposure`) MUST be `origin: system` and is EXEMPT from the ttl 1..7 game days bound (non-expiring by nature, `expires_tick` ignored); the payload's `status` is ignored — a landed order is always `active`; since spec 054 the payload's `placed_seq` is likewise IGNORED — the reducer stamps `PlacedSeq` from the event's own store seq (`e.Seq`) instead, so it agrees live and in replay ([[scenario-machinery]]'s `OrderPlacedEvidence` re-locates a watch's placement this way); `GuardianOrders` appended then pruned to every active order plus the most recent 32 non-active (`pruneGuardianOrders`) |
 | `metatron.order_triggered` | `OrderTriggeredPayload{id, matched_type, matched_tick}` | the angel's trigger worker (injected, live-only — NEVER emitted during replay, since the matching runs off live events the replica sees post-batch) | the named order transitions active → triggered (one-shot consumption); rejects an unknown id or one not currently active; a survival watch (spec 059) never lands this — it is non-consuming, so its own trigger runs no `order_triggered` at all ([[guardian-orders]]) |

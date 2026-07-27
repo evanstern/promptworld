@@ -312,7 +312,7 @@ func TestPlanIDMintingDeterministic(t *testing.T) {
 // byte-identical to a pre-084 one (empty sections render nothing).
 func TestPlanPromptSections(t *testing.T) {
 	alive := map[int]bool{0: true}
-	base := turnUserPrompt(100, 1, alive, nil, nil, nil, nil, nil, "", "", "", "The player says:\nhello")
+	base := turnUserPrompt(100, 1, sim.FaithGenesis, alive, nil, nil, nil, nil, nil, nil, "", "", "", "The player says:\nhello")
 	if strings.Contains(base, "Designations") || strings.Contains(base, "Directives") {
 		t.Error("plan-free prompt carries plan sections")
 	}
@@ -327,7 +327,7 @@ func TestPlanPromptSections(t *testing.T) {
 		{ID: "dir-2-0", DesignationID: "dsg-1-0", Targets: []int{0}, Text: "Raise it.",
 			IssuedTick: 100, ExpiresTick: 100 + 2*24*3600, Status: "active"},
 	}
-	got := turnUserPrompt(100, 1, alive, nil, designations, directives, nil, nil, "", "", "", "The player says:\nhello")
+	got := turnUserPrompt(100, 1, sim.FaithGenesis, alive, nil, designations, directives, nil, nil, nil, "", "", "", "The player says:\nhello")
 	for _, want := range []string{
 		"Designations you have marked on the world:",
 		`- dsg-1-0: structure_site at (4,5) (shelter) — "north shelter"`,

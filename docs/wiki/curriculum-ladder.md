@@ -8,7 +8,7 @@ sources:
   - internal/guardian/charter.go
   - cmd/promptworld/stages.go
   - internal/worlds/unlocks.go
-verified_against: 048259bb42b03cc6ebeb13a49f367c2e3a7d4d37
+verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
 ---
 
 # Curriculum ladder
@@ -77,7 +77,9 @@ tutor guide's own grounding tool — [[grounded-feedback]]), plus, since
 spec 084, the five charge-free plan-layer tools (`place_designation`/
 `cancel_designation`/`issue_directive`/`cancel_directive`/`survey_site` —
 the plan loop is a teaching primitive, the monitor_and_act precedent;
-[[guardian-designations]]), with no miracle
+[[guardian-designations]]), plus, since spec 085, `prophesy`
+(send_vision's stage profile — the same influence verb with a wager;
+[[guardian-faith]]), with no miracle
 kinds and the empty-intersection effect shutting
 out bundle tools; stage-3, stage-4, and pre-ladder worlds have no ceiling.
 `guardian.StageCeilingVerbs(stage)` exports a stage's granted loop-tool

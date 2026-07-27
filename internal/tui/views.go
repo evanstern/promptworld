@@ -2677,11 +2677,11 @@ func (m Model) villagerStripView(width int) string {
 }
 
 // guardianStripView renders the always-visible action-budget row
-// (panels/guardian-strip.md, spec 050): charge bank, next-regen forecast,
-// and standing-order count, each degrading to absence rather than a
-// misleading value (contract §2/§4 — data-model.md's presence matrix). No
-// faith segment at all — TASK-118 hasn't shipped (research R4.3/spec
-// assumption). Shared verbatim by the widescreen composite and the narrow
+// (panels/guardian-strip.md, spec 050; faith segment spec 085): charge bank,
+// next-regen forecast, standing-order count, and the faith score, each
+// degrading to absence — or, for faith, to the honest dashed form — rather
+// than a misleading value (contract §2/§4 — data-model.md's presence
+// matrix). Shared verbatim by the widescreen composite and the narrow
 // fallback (layout.md ruling b: "carried exactly as widescreen does") — one
 // renderer, two call sites (research R5).
 func (m Model) guardianStripView(width int) string {
@@ -2698,12 +2698,23 @@ func (m Model) guardianStripView(width int) string {
 			strings.Repeat("·", clampInt(sim.GuardianChargeCap-charges, 0, sim.GuardianChargeCap)),
 			charges, sim.GuardianChargeCap),
 	}
-	if charges < sim.GuardianChargeCap {
-		// Regen is omitted at a full bank (research R4.1): the executor
-		// only fires metatron.charge_regenerated below cap
-		// (internal/sim/executor.go), so forecasting an arrival that isn't
-		// scheduled would be a lie.
-		cadence := int64(sim.GuardianChargeRegenTicks)
+	// The effective regen cadence (spec 085 FR-009): the wire carries it
+	// (ClockStatus.FaithRegenTicks, served from sim.FaithRegenCadenceTicks —
+	// the single band authority; the TUI never re-derives bands). Against an
+	// OLDER daemon — detected by the absent faith field, never by a zero —
+	// fall back to the legacy exported steady-band constant, exactly what
+	// that daemon actually fires on. Cadence 0 from a spec-085 daemon means
+	// NO regen is scheduled (the scenario forsaken band).
+	cadence := m.status.Clock.FaithRegenTicks
+	if m.status.Clock.Faith == nil {
+		cadence = int64(sim.GuardianChargeRegenTicks)
+	}
+	if charges < sim.GuardianChargeCap && cadence > 0 {
+		// Regen is omitted at a full bank (research R4.1) and when no regen
+		// is scheduled at all (spec 085 — the R4.1 honesty rule generalized):
+		// the executor only fires metatron.charge_regenerated below cap and
+		// on a live cadence, so forecasting an arrival that isn't scheduled
+		// would be a lie.
 		next := m.status.Clock.Tick + (cadence - m.status.Clock.Tick%cadence)
 		segments = append(segments, fmt.Sprintf("next +1 @ %s", clock.FormatTOD(int(clock.SecondOfDay(next)))))
 	}
@@ -2721,14 +2732,26 @@ func (m Model) guardianStripView(width int) string {
 	}
 	segments = append(segments, fmt.Sprintf("👁 %d standing orders", orders))
 
+	// The faith segment (spec 085 FR-009, guardian-strip.md §4): `faith N`
+	// when the wire carries a score; `faith —` (present, dashed) when the
+	// daemon predates the field — the strip never claims a mechanic the
+	// daemon doesn't serve, and never invents a zero. Positioned LAST so the
+	// right-truncating join drops it first under width pressure (the §4
+	// drop-order contract: faith → orders → regen → bank).
+	if f := m.status.Clock.Faith; f != nil {
+		segments = append(segments, fmt.Sprintf("faith %d", *f))
+	} else {
+		segments = append(segments, "faith —")
+	}
+
 	return joinStripSegments(segments, width)
 }
 
 // joinStripSegments joins the strip's present segments with " · " (contract
 // §2), truncating from the right when the joined line would exceed width
-// (edge case: "segments truncate from the right with …" — faith [never
-// rendered by this feature] → orders → regen → bank; the bank is the
-// headline and the last thing standing). Never returns more than one
+// (edge case: "segments truncate from the right with …" — faith (spec 085)
+// → orders → regen → bank; the bank is the headline and the last thing
+// standing). Never returns more than one
 // line — if even the bank segment alone doesn't fit, it is hard-clipped
 // rather than wrapped (contract §1: the row budget is exactly 1).
 func joinStripSegments(segments []string, width int) string {

@@ -218,6 +218,9 @@ var guardianToolDesc = map[string]string{
 	"issue_directive":    "bind villagers to an active designation: a hard command with your framing words and a lifetime in days",
 	"cancel_directive":   "withdraw a directive by its id",
 	"survey_site":        "a deterministic site fact sheet: terrain mix, nearest water/tree/rock, structures, passability",
+	// prophesy (spec 085): the staked vision — the world itself judges the
+	// declared claim at its deadline, and faith rises or falls on the outcome.
+	"prophesy": "declare a prophecy: an omen carrying a machine-checkable claim the world will judge by its deadline — fulfilled earns the village's faith, failed costs more; it cannot be cancelled",
 }
 
 // miracleKindArgs is the per-kind argument hint rendered under work_miracle,

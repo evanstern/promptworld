@@ -806,6 +806,7 @@ func TestRebaseTaxonomyComplete(t *testing.T) {
 		"NeglectState.FoodIntent":   shift, // spec 083: last-class-intent stamp (elapsed anchor), 0 = never
 		"NeglectState.WarmthIntent": shift, // spec 083: last-class-intent stamp, 0 = never
 		"NeglectState.RestIntent":   shift, // spec 083: last-class-intent stamp, 0 = never
+		"Prophecy.DeadlineTick":     shift, // spec 085: a prophecy's future judgment deadline — the Directive.ExpiresTick classification verbatim (ACTIVE only)
 		// KEEP — history / identity / counters.
 		"Agent.Generation":                 keep,
 		"Agent.LastConsolidatedNight":      keep,
@@ -841,6 +842,8 @@ func TestRebaseTaxonomyComplete(t *testing.T) {
 		"Designation.PlacedSeq":            keep, // spec 084: the placement event's store seq — an identity (the GuardianOrder.PlacedSeq shape)
 		"Directive.IssuedTick":             keep, // spec 084: when the directive was issued (history)
 		"Directive.PlacedSeq":              keep, // spec 084: the issue event's store seq — an identity
+		"Prophecy.DeclaredTick":            keep, // spec 085: when the word was given (history, Directive.IssuedTick shape)
+		"Prophecy.PlacedSeq":               keep, // spec 085: the declaration event's store seq — an identity
 		"PlaceFact.Detail":                 keep, // spec 041: remembered value baked at emission, never re-derived (see rebaseTicks)
 		"RunEnd.Tick":                      keep, // spec 044: when the run ended (history; the world never ticks again)
 		"DeathRecord.Tick":                 keep, // spec 044: when the death happened (history, like NormViolation.Tick)

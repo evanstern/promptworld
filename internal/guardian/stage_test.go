@@ -46,8 +46,8 @@ func TestStageCeilingRosterTable(t *testing.T) {
 		{"", fullLoopRosterNames()}, // pre-ladder world: ungated
 		// Ratified amendment: standing orders are the stage-1 watch primitive;
 		// spec 063 adds the read-only explain (the tutor stage's grounding tool).
-		{"stage-1", []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "explain", "place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site"}},
-		{"stage-2", []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "explain", "place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site"}}, // stage-2 unlocks the charter, not tools
+		{"stage-1", []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "explain", "place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site", "prophesy"}},
+		{"stage-2", []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "explain", "place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site", "prophesy"}}, // stage-2 unlocks the charter, not tools
 		{"stage-3", fullLoopRosterNames()},
 		{"stage-4", fullLoopRosterNames()},
 	}
@@ -178,7 +178,7 @@ func TestStageThreeLayerCoherence(t *testing.T) {
 	for _, tl := range roster {
 		switch tl.Name {
 		case "send_omen", "send_vision", "monitor_and_act", "cancel_order", "explain",
-			"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site":
+			"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site", "prophesy":
 		default:
 			t.Errorf("declared roster leaks beyond-stage tool %s", tl.Name)
 		}
@@ -251,7 +251,7 @@ func TestStageOneInstructionLock(t *testing.T) {
 	if st.Skills != nil {
 		t.Errorf("status Skills should be empty below stage-3 (nothing composes), got %v", st.Skills)
 	}
-	if !reflect.DeepEqual(st.GrantedTools, []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "explain", "place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site"}) {
+	if !reflect.DeepEqual(st.GrantedTools, []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "explain", "place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site", "prophesy"}) {
 		t.Errorf("status granted tools = %v, want the stage-1 ceiling", st.GrantedTools)
 	}
 
@@ -392,7 +392,7 @@ func TestCrossStageDeterminism(t *testing.T) {
 	if reflect.DeepEqual(s1.granted, s4.granted) {
 		t.Error("granted surfaces should differ across stages (the diff isolates the surface)")
 	}
-	if !reflect.DeepEqual(s1.granted, []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "explain", "place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site"}) {
+	if !reflect.DeepEqual(s1.granted, []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "explain", "place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site", "prophesy"}) {
 		t.Errorf("stage-1 surface = %v", s1.granted)
 	}
 	if !reflect.DeepEqual(s4.granted, fullLoopRosterNames()) {

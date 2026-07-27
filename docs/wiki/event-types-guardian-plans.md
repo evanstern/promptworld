@@ -1,12 +1,12 @@
 ---
 name: event-types-guardian-plans
-description: "Guardian plan-layer event rows split from [[event-types]] (spec 084): designation.placed/cancelled/fulfilled and directive.issued/cancelled/fulfilled/expired. Load when tracing the designation/directive lifecycle, the injected-vs-executor-emitted door split, or the TASK-118 faith seam payload."
+description: "Guardian plan-layer event rows split from [[event-types]] (spec 084): designation.placed/cancelled/fulfilled and directive.issued/cancelled/fulfilled/expired. Load when tracing the designation/directive lifecycle, the injected-vs-executor-emitted door split, or the TASK-118 faith seam payload (consumed by spec 085 — [[guardian-faith]])."
 kind: concept
 sources:
   - internal/sim/plans.go
   - internal/sim/executor.go
   - internal/sim/loop.go
-verified_against: fc9566d527941d3950fdd307168556820bd0875b
+verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
 ---
 
 # Event types — guardian plan-layer events

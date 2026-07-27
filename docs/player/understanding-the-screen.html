@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@fc9566d527941d3950fdd307168556820bd0875b">
-<meta name="promptworld-docs:source" content="docs/wiki/takeover-surfaces.md@048259bb42b03cc6ebeb13a49f367c2e3a7d4d37">
-<meta name="promptworld-docs:source" content="docs/wiki/grounded-feedback.md@fc9566d527941d3950fdd307168556820bd0875b">
-<meta name="promptworld-docs:source" content="docs/wiki/village-lens.md@fc9566d527941d3950fdd307168556820bd0875b">
-<meta name="promptworld-docs:source" content="docs/wiki/tile-registry.md@048259bb42b03cc6ebeb13a49f367c2e3a7d4d37">
-<meta name="promptworld-docs:source" content="docs/wiki/tui-chronicle-feed.md@fc9566d527941d3950fdd307168556820bd0875b">
+<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@657c770f87404b936a0587db1f6b00e81b9f0ee6">
+<meta name="promptworld-docs:source" content="docs/wiki/takeover-surfaces.md@657c770f87404b936a0587db1f6b00e81b9f0ee6">
+<meta name="promptworld-docs:source" content="docs/wiki/grounded-feedback.md@657c770f87404b936a0587db1f6b00e81b9f0ee6">
+<meta name="promptworld-docs:source" content="docs/wiki/village-lens.md@657c770f87404b936a0587db1f6b00e81b9f0ee6">
+<meta name="promptworld-docs:source" content="docs/wiki/tile-registry.md@657c770f87404b936a0587db1f6b00e81b9f0ee6">
+<meta name="promptworld-docs:source" content="docs/wiki/tui-chronicle-feed.md@657c770f87404b936a0587db1f6b00e81b9f0ee6">
 <meta name="promptworld-docs:source" content="docs/wiki/stage-defaults.md@ad2a6543a9caf51d1cd28af863291f3daa3bd4eb">
 <title>What do all those things on screen mean? — promptworld player docs</title>
 <style>
@@ -367,10 +367,14 @@ in the overlay.</p>
 <p>Above the box where you type to the guardian sits one plain line with no border,
 visible no matter which of the three tabs is open: your charge bank as a row of
 lightning-bolt glyphs plus a <code>(used/cap)</code> count, when your next charge
-arrives (<code>next +1 @ &lt;time&gt;</code>) if the bank isn't already full, and how
-many standing orders you currently have running. Anything that doesn't apply yet — no
+arrives (<code>next +1 @ &lt;time&gt;</code>) if the bank isn't already full and a
+recharge is actually coming (the pace follows the village's faith, and at
+rock-bottom faith in a scenario world no recharge is scheduled at all — so none is
+forecast), how many standing orders you currently have running, and the village's
+faith as a plain <code>faith N</code> number. Anything that doesn't apply yet — no
 snapshot loaded yet, or a bank that's already full — simply doesn't show, rather than
-displaying a misleading zero.</p>
+displaying a misleading zero; against an older game daemon that doesn't report
+faith yet, the segment reads <code>faith —</code> instead of inventing a number.</p>
 <p>If your terminal window gets too short to fit everything, this strip is the very
 last thing to give way: instead of disappearing, its content folds into the dim
 placeholder text inside the empty message box instead. In a narrow terminal (below the

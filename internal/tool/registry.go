@@ -430,6 +430,14 @@ var observableEventTypes = []string{
 	// (watch directive.* instead — contracts/events.md §2).
 	"directive.issued", "directive.fulfilled",
 	"directive.cancelled", "directive.expired",
+	// The prophecy lifecycle (spec 085 FR-010): all three prophecy.* types are
+	// genuinely emitted (declared injected; fulfilled/failed executor-emitted
+	// by the verification sweep), so a standing order can watch the wager —
+	// "when my prophecy fails, tell me". Enum-only growth (16 → 19), the
+	// directive precedent: zero new trigger code. faith.changed deliberately
+	// stays OUT in v1 — guardian-economy bookkeeping the strip already
+	// surfaces continuously; widening later is a compatible enum-only change.
+	"prophecy.declared", "prophecy.fulfilled", "prophecy.failed",
 }
 
 // clockSpeeds mirrors internal/clock's watchable speed ladder (1x…32x; SpeedMax
@@ -491,6 +499,23 @@ func monitorAndActSchema() json.RawMessage {
 var placeFactKinds = []string{
 	"fire", "shelter", "oven", "chest", "wall_plank", "wall_stone", "path", "grave",
 	"tree", "forage", "rock", "water_edge", "den", "pile",
+}
+
+// prophecyClaimKinds is the closed prophecy claim vocabulary (spec 085,
+// data-model §5): prophesy's `claim_kind` Enum. Each kind's fulfil/fail
+// predicates live sim-side (internal/sim/prophecy.go); the reducer dry-run's
+// claim validation is the semantic authority, so a drift here can only over-
+// or under-offer, never land an invalid claim. FROZEN serialized identifiers
+// (spec 052 ruling 2): they land in recorded prophecy.declared payloads.
+var prophecyClaimKinds = []string{"designation_fulfilled", "structure_count", "population_at_least", "survives"}
+
+// ProphecyClaimKinds returns a copy of prophesy's claim-kind vocabulary, in
+// the order above. Exported for internal/guardian's drift cross-check test
+// (the DesignationKinds pattern).
+func ProphecyClaimKinds() []string {
+	out := make([]string, len(prophecyClaimKinds))
+	copy(out, prophecyClaimKinds)
+	return out
 }
 
 // designationKinds is the designation vocabulary (spec 084, data-model §1):
@@ -694,6 +719,37 @@ var guardianTools = []Tool{
 			{Name: "radius", Kind: Number,
 				Description: "tiles around the center to survey (default 4, clamped 1..8)"}},
 		PromptGloss: `survey_site returns a deterministic fact sheet for a site: the terrain mix within the radius, nearest water/tree/rock, structures present, and passability. Free, unlimited, never your act — survey before you plan.`},
+	// prophesy (spec 085, data-model §4): the guardian stakes its credibility —
+	// a vision with a wager attached. Gate Charge (1, the send_vision price:
+	// prophecy is influence on minds, and the wager needs a stake); the
+	// declaration rides atomically with one companion agent.memory_added per
+	// living target (the vision-memory shape, prompt firewall intact). The
+	// claim params are kind-conditional and handler-validated (partial or
+	// foreign args refused — the parseReveal shape); the reducer dry-run's
+	// claim door is the semantic authority. There is NO cancel verb: the word,
+	// once given, stands (research R8). Appended last so no existing tool's
+	// registration position shifts. The tool id and the claim-kind enum are
+	// FROZEN serialized identifiers (spec 052 ruling 2).
+	{Name: "prophesy", Effect: Expressive, Gate: Charge,
+		Params: []Param{
+			{Name: "targets", Kind: Text, Required: true,
+				Description: `comma-separated living villager names, or "everyone"`},
+			{Name: "text", Kind: Text, Required: true, MaxBytes: 400,
+				Description: "the foretelling, in your own words — delivered to the targets as an omen"},
+			{Name: "claim_kind", Kind: Enum, Required: true, Enum: prophecyClaimKinds,
+				Description: "the machine-checkable claim the world will judge: what makes this vision true"},
+			{Name: "designation_id", Kind: Text,
+				Description: "designation_fulfilled only: the designation that must fulfill"},
+			{Name: "structure_kind", Kind: Enum, Enum: buildableStructureKinds,
+				Description: "structure_count only: the structure kind to count"},
+			{Name: "min", Kind: Number, Min: 1, Max: 64,
+				Description: "structure_count / population_at_least: the threshold that must be reached"},
+			{Name: "agent", Kind: AgentName,
+				Description: "survives only: the villager who must live to the deadline"},
+			{Name: "deadline_days", Kind: Number, Min: 1, Max: 7,
+				Description: "game days before the claim is judged (default 3)"}},
+		Cost:   Cost{Charges: 1, TextCapBytes: 400},
+		Events: []string{"prophecy.declared", "agent.memory_added"}},
 }
 
 // journalTools are the villager-only journal capabilities (spec 019, US3): two

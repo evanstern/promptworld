@@ -8,7 +8,7 @@ sources:
   - internal/sim/miracles.go
   - internal/sim/morgue.go
   - internal/sim/curriculum.go
-verified_against: fc9566d527941d3950fdd307168556820bd0875b
+verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
 ---
 
 # Sim state: world & governance dispatch arms
@@ -47,7 +47,11 @@ optional place grant) route through the `applySocial`/`applyGuardian`
 dispatchers below (since spec 084 the seven `designation.*`/`directive.*`
 types dispatch to `applyPlan` in `plans.go` the same way — validate-not-clamp
 arms, one-way transition doors, the `designation.placed` arm's all-villager
-announcement grant; [[guardian-designations]]), upserting into the
+announcement grant; [[guardian-designations]] — and since spec 085
+`faith.changed` dispatches to `applyFaith` in `faith.go` (the clamping fold,
+the ONLY faith writer) and the three `prophecy.*` types to `applyProphecy`
+in `prophecy.go` (the declaration door spends the charge stake; the
+terminals re-validate and transition one-way); [[guardian-faith]]), upserting into the
 RECEIVER's map only where the fact is
 absent or its own knowledge staler. Several
 EXISTING arms gained silent DERIVED bookkeeping with no new event: `agent.moved`,

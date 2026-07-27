@@ -374,6 +374,16 @@ func rebaseTicks(s *State, delta int64) {
 			shift(&s.Directives[i].ExpiresTick)
 		}
 	}
+	for i := range s.Prophecies {
+		// Spec 085 (data-model §9): an ACTIVE prophecy's DeadlineTick is a
+		// future deadline — the Directive.ExpiresTick arm's clone: shift it so
+		// the remaining judgment window survives the jump. DeclaredTick is
+		// history (KEEP); a settled prophecy's ticks are spent artifacts
+		// (KEEP). FaithState carries no tick fields at all — untouched.
+		if s.Prophecies[i].Status == "active" {
+			shift(&s.Prophecies[i].DeadlineTick)
+		}
+	}
 	if s.Gru != nil {
 		shift(&s.Gru.LastAttack)
 	}

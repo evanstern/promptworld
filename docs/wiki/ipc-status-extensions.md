@@ -4,7 +4,7 @@ description: Split from [[ipc-protocol]] — StatusData's three additive omitemp
 kind: concept
 sources:
   - internal/ipc/protocol.go
-verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
+verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
 ---
 
 # IPC protocol — StatusData wire extensions

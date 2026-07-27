@@ -53,6 +53,15 @@ type Status struct {
 	// bytes are unchanged.
 	ScenarioExercise string `json:"scenario_exercise,omitempty"`
 	ScenarioOutcome  string `json:"scenario_outcome,omitempty"`
+	// Faith / FaithRegenTicks (spec 085 FR-009, data-model §7): the village
+	// faith score (nil-safe FaithScore projection — always present from a
+	// spec-085 daemon; the pointer lets clients detect an older daemon) and
+	// the EFFECTIVE charge-regen cadence (FaithRegenCadenceTicks — 0 = no
+	// regen scheduled, the scenario forsaken band). The strip's D1 projection
+	// rule: the CLI/IPC observer sees everything the strip shows, and the
+	// daemon never re-derives bands — the sim function is the single home.
+	Faith           *int  `json:"faith,omitempty"`
+	FaithRegenTicks int64 `json:"faith_regen_ticks,omitempty"`
 }
 
 // InjectArgs carries a planner decision into deterministic space.
@@ -290,6 +299,18 @@ var injectSocialWhitelist = map[string]bool{
 	"designation.cancelled": true,
 	"directive.issued":      true,
 	"directive.cancelled":   true,
+	// Prophecy (spec 085): the ONE injectable prophecy type — the prophesy
+	// tool's declaration, riding atomically with per-target agent.memory_added
+	// companions (already whitelisted above). The dry-run's validating arm
+	// (prophecy.go) enforces targets/text/TTL/cap/claim-vocabulary/
+	// already-true/duplicate before anything lands. prophecy.fulfilled,
+	// prophecy.failed, and faith.changed need NO entry — they are
+	// executor-emitted, never injected, the metatron.order_expired /
+	// charge_regenerated precedent; whitelist absence is what refuses an
+	// injected forgery of a verification verdict or a faith movement (faith
+	// must stay endogenous — a console-injectable score would be a cheat
+	// surface and break "no model judgment").
+	"prophecy.declared": true,
 	// Governance flavor (TASK-13): the ONLY injectable governance type —
 	// re-texts an enacted norm in the proposer's voice; outcomes stay
 	// executor-deterministic. The dry-run enforces norm existence + text cap.
@@ -472,6 +493,12 @@ func (l *Loop) status() Status {
 		st.ScenarioExercise = id
 		st.ScenarioOutcome = ExerciseOutcome(s, id)
 	}
+	// Faith projection (spec 085 FR-009): always present — the accessor is
+	// nil-safe, so even a world that never folded a faith event reports its
+	// genesis score and the effective cadence it actually regenerates at.
+	score := s.FaithScore()
+	st.Faith = &score
+	st.FaithRegenTicks = FaithRegenCadenceTicks(score, s.scenario != nil)
 	return st
 }
 

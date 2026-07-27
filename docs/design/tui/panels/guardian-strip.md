@@ -2,7 +2,7 @@
 title: Panel — guardian strip
 class: panel
 status: shipped
-verified_against: c8d80800fc5d34c5c31ab54751ebfb3ba80efc5b
+verified_against: fe87ae046b3cf13160443d8bb358cb44f651eaf6
 ---
 
 # Panel: guardian strip
@@ -16,7 +16,7 @@ never more than one glance away. **Shipped** (spec 050, Wave 2):
 ## Mockup
 
 ```
- ⚡⚡· (2/3) · next +1 @ 12:00 · 👁 2 standing orders
+ ⚡⚡· (2/3) · next +1 @ 12:00 · 👁 2 standing orders · faith 62
 ┌─────────────────────────────────────────────────────────────────────────┐
 │ ⏎ m — speak with the angel…                                            │
 └─────────────────────────────────────────────────────────────────────────┘
@@ -24,30 +24,36 @@ never more than one glance away. **Shipped** (spec 050, Wave 2):
 
 **No border** — one plain line, exactly 1 row (`patterns/layout.md`'s
 row-budget line item), directly above the minibuffer box. Reconciliation
-note: the shipped renderer drops the mockup's illustrative `charges` word
-and `faith —` segment (spec 050 FR-002/assumptions carry higher authority
-here than this page's original mockup did before it shipped) — the numeric
-`(N/cap)` already reads as a charge count without a label word, and the
-faith segment doesn't exist at all yet (see "Structure" below).
+note: the shipped renderer drops the mockup's original illustrative
+`charges` word (spec 050 FR-002 — the numeric `(N/cap)` already reads as a
+charge count without a label word); the faith segment shipped with spec 085
+(TASK-118) in the populated `faith N` form, with `faith —` as the
+older-daemon skew state (see "Structure" below).
 
 ## Structure
 
-Three segments today, left to right, each degrading to absence rather than
-a misleading zero when its underlying data isn't available (a fourth,
-faith, is reserved but not yet implemented — see below):
+Four segments, left to right, each degrading to absence — or, for faith,
+to the honest dashed form — rather than a misleading zero when its
+underlying data isn't available:
 
 1. **Charge bank** — the same `⚡`-filled/`·`-empty glyph run
    `panels/guardian.md`'s pane header already renders
    (`Status.Clock.GuardianCharges` / `sim.GuardianChargeCap`), plus the
    numeric form `(N/cap)` for at-a-glance reading without counting glyphs.
    Present whenever a status snapshot exists.
-2. **Regen** — `next +1 @ <time>`, the next absolute 6-game-hour boundary at
-   which `metatron.charge_regenerated` fires (`[[metatron]]`'s charge-economy
-   rule, cadence exported read-only as `sim.MetatronChargeRegenTicks`) — a
-   plain restatement of a mechanic that already exists, not a new one.
-   **Omitted at a full bank** (spec 050 ruling, research R4.1): the executor
-   only fires `charge_regenerated` below cap, so forecasting an arrival that
-   isn't scheduled would be a lie.
+2. **Regen** — `next +1 @ <time>`, the next absolute boundary of the
+   EFFECTIVE regen cadence. Since spec 085 the cadence is a pure function of
+   village faith (`sim.FaithRegenCadenceTicks` — the band table: fervent 4h /
+   steady 6h / wavering 12h / forsaken 24h-floor-or-stopped), so the strip
+   reads it off the wire (`Status.Clock.FaithRegenTicks`) rather than a
+   compiled constant; against an OLDER daemon that serves no faith field it
+   falls back to the legacy exported steady-band constant
+   (`sim.GuardianChargeRegenTicks`) — exactly what that daemon fires on.
+   **Omitted at a full bank** (spec 050 ruling, research R4.1) **and when no
+   regen is scheduled at all** (spec 085: wire cadence 0 — the scenario
+   forsaken band; the R4.1 honesty rule generalized): the executor only fires
+   `charge_regenerated` below cap and on a live cadence, so forecasting an
+   arrival that isn't scheduled would be a lie.
 3. **Standing-order count** — `👁 N standing orders`, the length of the
    client-side replica's `MetatronOrders` (the same underlying data
    `panels/guardian.md`'s full standing-orders block counts via its own IPC
@@ -57,13 +63,16 @@ faith, is reserved but not yet implemented — see below):
    value** here (spec 050 ruling): `👁 0 standing orders` renders rather than
    being omitted — the mechanic exists and its count is genuinely 0, unlike
    the absence cases below.
-4. **Faith** — reserved for TASK-118 (not yet landed, per the reorientation
-   move list). Will render as `faith —` (present, dashed) once TASK-118's
-   field exists on the wire but before this strip has anything meaningful to
-   show, and is **omitted entirely** (not even the dash, not even the
-   segment) while TASK-118 hasn't shipped at all — the strip must never
-   claim a mechanic that doesn't exist yet. Nothing in `guardianStripView`
-   references a faith field today; there is no code path to activate.
+4. **Faith** — `faith N` (spec 085, TASK-118): the village's event-sourced
+   devotion score (0..100), read from `Status.Clock.Faith` — a pointer field
+   a spec-085 daemon always serves (the sim accessor is nil-safe, genesis
+   50). Renders `faith —` (present, dashed) exactly when the pointer is nil
+   — a TUI carrying this renderer against a daemon that predates the field —
+   claiming nothing, inventing no zero (the strip's standing honesty rule).
+   Positioned LAST so it is the FIRST segment dropped under width pressure
+   (the drop-order contract below). In-fiction number only — no badge, no
+   streak, no delta arrow (the overjustification caution: faith is a world
+   fact, not a score surface).
 
 **Pre-status (connecting)**: before the first status snapshot arrives, the
 row is present — occupying its row budget — but renders blank (spec 050
@@ -71,10 +80,10 @@ ruling, research R4.2): no invented zeros for a bank or order count the
 client doesn't know yet.
 
 **Width pressure**: segments truncate from the right with `…` (spec 050
-ruling, research R4.3) — drop order is standing-orders, then regen, then the
-charge bank (the headline, and the only segment ever hard-clipped
-mid-segment, at widths too narrow even for it alone) — never wraps to a
-second row.
+ruling, research R4.3) — drop order is faith first (spec 085: positioned
+last), then standing-orders, then regen, then the charge bank (the headline,
+and the only segment ever hard-clipped mid-segment, at widths too narrow
+even for it alone) — never wraps to a second row.
 
 ## Behavior
 
@@ -113,20 +122,23 @@ second row.
 
 ## Linear-stream / CLI projection (D1)
 
-`promptworld status`/`metatron_status` already exposes the charge bank,
-regen timing (via the clock/charge-regen cadence fields), and the standing
-orders count model-free — a non-TUI observer loses nothing this strip
-surfaces; the strip is a glanceable TUI-side restatement of facts the
-CLI/IPC protocol already carries. This feature added no new wire field.
+`promptworld status`/`metatron_status` exposes the charge bank, the regen
+timing, the standing orders count, and (since spec 085) the faith score and
+the effective regen cadence (`ClockStatus.Faith` / `FaithRegenTicks`, both
+served from the sim's own `FaithScore`/`FaithRegenCadenceTicks` — the daemon
+never re-derives bands) model-free — a non-TUI observer loses nothing this
+strip surfaces; the strip is a glanceable TUI-side restatement of facts the
+CLI/IPC protocol carries. Spec 050 added no wire field; spec 085 added
+exactly the two above.
 
 ## Control table
 
 | control/region | states | data source | renderer | keys+mouse | introduced-by | skin-token |
 |---|---|---|---|---|---|---|
 | charge-bank segment | 0..cap charges | `Status.Clock.GuardianCharges`, `sim.GuardianChargeCap` | `guardianStripView` | — (display-only) | reorient decision 7 / spec 050 | — |
-| regen segment | next boundary time · omitted at full bank | `Status.Clock.Tick`, `sim.MetatronChargeRegenTicks` | `guardianStripView` | — | reorient decision 7 / spec 050 | — |
+| regen segment | next boundary time · omitted at full bank or when no regen is scheduled (wire cadence 0) | `Status.Clock.Tick`, `Status.Clock.FaithRegenTicks` (spec 085; `sim.GuardianChargeRegenTicks` fallback against a pre-085 daemon) | `guardianStripView` | — | reorient decision 7 / spec 050 / spec 085 | — |
 | standing-order count segment | 0..N (0 is a true value) | client replica `MetatronOrders` (length) | `guardianStripView` | — | reorient decision 7 / spec 050 | — |
-| faith segment | absent (pre-TASK-118) · present-dashed · populated | TASK-118's future status field | `unbuilt (pending TASK-118)` | — | reorient decision 7 | — |
+| faith segment | populated `faith N` · present-dashed `faith —` (nil pointer — older daemon) | `Status.Clock.Faith` (spec 085) | `guardianStripView` | — | reorient decision 7 / spec 085 | — |
 | fold-relocation into minibuffer | strip row · relocated-into-dormant-line | fold pressure (`patterns/layout.md`, `computeRows`) | `guardianBudgetPrefix` (composed in `minibufferView`'s dormant branch) | — | reorient decision 7 / `patterns/layout.md` ruling a / spec 050 | — |
 
 **Parity rollout**: this page is display-only end to end — no actionable

@@ -207,6 +207,8 @@ func (mt *Guardian) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 	orders := append([]sim.GuardianOrder(nil), mt.orders...)
 	designations := append([]sim.Designation(nil), mt.designations...)
 	directives := append([]sim.Directive(nil), mt.directives...)
+	prophecies := append([]sim.Prophecy(nil), mt.prophecies...)
+	faith := mt.faith
 	mt.stateMu.Unlock()
 
 	// Bundle tools (spec 036 T014): merge the granted bundle surface into all
@@ -336,7 +338,7 @@ func (mt *Guardian) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 		JobID:     jobID,
 		Kind:      llm.KindGuardian,
 		System:    buildTurnSystemPrompt(o.survival, charter, guide, skills, roster, souls...),
-		Seed:      turnUserPrompt(tick, charges, alive, orders, designations, directives, moments, story, mt.soulTail(), mt.transcriptTail(), digest, directive),
+		Seed:      turnUserPrompt(tick, charges, faith, alive, orders, designations, directives, prophecies, moments, story, mt.soulTail(), mt.transcriptTail(), digest, directive),
 		Roster:    roster,
 		Handlers:  handlers,
 		MaxRounds: mt.loopRounds,
@@ -1152,9 +1154,14 @@ func survivalFlag(n needMirror) string {
 // verbatim. runTurn is the sole author of the origin-appropriate label: the label
 // lives in exactly one place, so a console turn carries it once and a system turn
 // never pretends its directive came from the player this turn (spec 029 R6).
-func turnUserPrompt(tick int64, charges int, alive map[int]bool, orders []sim.GuardianOrder, designations []sim.Designation, directives []sim.Directive, moments, story []string, soulTail, transcriptTail, digest, directive string) string {
+func turnUserPrompt(tick int64, charges, faith int, alive map[int]bool, orders []sim.GuardianOrder, designations []sim.Designation, directives []sim.Directive, prophecies []sim.Prophecy, moments, story []string, soulTail, transcriptTail, digest, directive string) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "World clock: %s. Charges banked: %d of %d.\n", clock.Format(tick), charges, sim.GuardianChargeCap)
+	// The village's faith (spec 085 FR-013): in-fiction wording, always
+	// present — the guardian's counsel must know how the flock stands, and
+	// the score steers its own charge regeneration.
+	fmt.Fprintf(&b, "The village's faith in you stands at %d of 100 — %s. Faith rises when your directives are fulfilled and your prophecies come true; it falls with deaths, lapsed directives, and false prophecies, and it sets how quickly your charges return.\n",
+		faith, faithBandWord(faith))
 	var dead []string
 	for i, n := range sim.AgentNames {
 		if !alive[i] {
@@ -1175,6 +1182,10 @@ func turnUserPrompt(tick int64, charges int, alive map[int]bool, orders []sim.Gu
 	// active, so a plan-free world's prompt is byte-unchanged.
 	writeDesignations(&b, designations)
 	writeDirectives(&b, tick, directives)
+	// Active prophecies (spec 085 FR-013): id, claim, deadline — the
+	// writeStandingOrders shape; empty when none stand, so a prophecy-free
+	// world's prompt gains only the faith line above.
+	writeProphecies(&b, tick, prophecies)
 	if len(moments) > 0 {
 		b.WriteString("\nMoments you have not yet reported (lead with these):\n")
 		for _, m := range moments {
@@ -1266,6 +1277,48 @@ func writeDirectives(b *strings.Builder, tick int64, directives []sim.Directive)
 		}
 		fmt.Fprintf(b, "- %s: %s bound to %s — %q (%d day(s) left)\n",
 			d.ID, strings.Join(who, ", "), d.DesignationID, d.Text, days)
+	}
+}
+
+// faithBandWord renders the faith score's band in fiction (the data-model §6
+// vocabulary): prompt-side prose only — never a recorded payload.
+func faithBandWord(score int) string {
+	switch {
+	case score >= 75:
+		return "the village believes; power comes easily"
+	case score >= 40:
+		return "the old covenant pace holds"
+	case score >= 15:
+		return "doubt slows the flow"
+	default:
+		return "the well is nearly dry"
+	}
+}
+
+// writeProphecies renders the active-prophecy block of the turn user prompt
+// (spec 085 FR-013): id (the word cannot be cancelled, but the guardian must
+// speak of it truthfully), the machine-checkable claim, and remaining
+// game-days (floored at 0, the writeStandingOrders shape). Only ACTIVE
+// prophecies show — settled ones are history the chronicle carries.
+func writeProphecies(b *strings.Builder, tick int64, prophecies []sim.Prophecy) {
+	var active []sim.Prophecy
+	for _, p := range prophecies {
+		if p.Status == "active" {
+			active = append(active, p)
+		}
+	}
+	if len(active) == 0 {
+		return
+	}
+	b.WriteString("\nProphecies you have staked (the word, once given, stands):\n")
+	for i := range active {
+		p := &active[i]
+		days := (p.DeadlineTick - tick) / ticksPerGameDay
+		if days < 0 {
+			days = 0
+		}
+		fmt.Fprintf(b, "- %s: %q — judged by %s (%d day(s) left)\n",
+			p.ID, p.Text, describeClaim(&p.Claim), days)
 	}
 }
 

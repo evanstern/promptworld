@@ -119,6 +119,11 @@ func (mt *Guardian) turnHandlers(d *turnDispatch) map[string]toolloop.Handler {
 	if d.grant.allows("survey_site") {
 		h["survey_site"] = mt.handleSurvey(d)
 	}
+	// prophesy (spec 085): the charge-priced declared claim — grant-gated like
+	// every other tool; no cancel handler exists (the word stands).
+	if d.grant.allows("prophesy") {
+		h["prophesy"] = mt.handleProphesy(d)
+	}
 	return h
 }
 

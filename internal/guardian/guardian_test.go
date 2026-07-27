@@ -2045,7 +2045,7 @@ func TestStatusProvenance(t *testing.T) {
 		t.Error("no manifest ⇒ ManifestDefault true")
 	}
 	if !reflect.DeepEqual(s.GrantedTools, []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed", "explain",
-		"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site"}) {
+		"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site", "prophesy"}) {
 		t.Errorf("default granted tools = %v", s.GrantedTools)
 	}
 

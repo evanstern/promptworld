@@ -15,18 +15,24 @@ import (
 
 const (
 	// chargeRegenTicks: one charge per 6 game hours, at absolute boundaries
-	// (multiples of 21600 ticks) — a pure function of the clock.
+	// (multiples of 21600 ticks). Since spec 085 this is the STEADY BAND's
+	// cadence in the faith regen curve (faith.go FaithRegenCadenceTicks) —
+	// the genesis band, so a world that has never folded a faith event keeps
+	// exactly this schedule; the executor's boundary check now reads the
+	// band function, never this constant directly.
 	chargeRegenTicks = 6 * 3600
 	// GuardianChargeCap bounds the bank; GuardianGenesisCharges is day-1
 	// grace (a reign begins with one favor).
 	GuardianChargeCap      = 3
 	GuardianGenesisCharges = 1
-	// GuardianChargeRegenTicks is chargeRegenTicks exported for internal/tui
-	// (guardian strip, spec 050: the next-regen forecast derives the next
-	// absolute boundary from this cadence), mirroring the BulkCap/
-	// GuardianChargeCap export pattern (agents.go) — sim stays the single
-	// source of truth for the doctrine constant; the TUI never carries its
-	// own copy of "6 game hours".
+	// GuardianChargeRegenTicks is chargeRegenTicks exported for internal/tui,
+	// mirroring the BulkCap/GuardianChargeCap export pattern (agents.go) —
+	// sim stays the single source of truth for the doctrine constant; the TUI
+	// never carries its own copy of "6 game hours". Since spec 085 the strip's
+	// forecast reads the EFFECTIVE cadence off the wire
+	// (ClockStatus.FaithRegenTicks, served from FaithRegenCadenceTicks); this
+	// export survives as the steady-band value and the TUI's honest fallback
+	// against a pre-085 daemon that serves no faith fields.
 	GuardianChargeRegenTicks = chargeRegenTicks
 )
 

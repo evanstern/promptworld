@@ -678,6 +678,31 @@ func TestStatusDataShape(t *testing.T) {
 	}
 }
 
+// TestStatusFaithFold (spec 085 FR-009, the strip's D1 projection rule): the
+// faith score and the EFFECTIVE regen cadence fold into the clock section
+// from the loop's coherent snapshot — a spec-085 daemon ALWAYS serves both
+// (the sim accessor is nil-safe), so a fresh world reports its genesis score
+// and the steady-band cadence, and a non-TUI observer loses nothing the
+// strip shows.
+func TestStatusFaithFold(t *testing.T) {
+	h := newHarness(t, clock.Speed4x)
+	c := h.dial(t)
+
+	sd, err := c.Status("status", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sd.Clock.Faith == nil {
+		t.Fatal("spec-085 daemon served no faith field")
+	}
+	if *sd.Clock.Faith != sim.FaithGenesis {
+		t.Errorf("faith = %d, want the genesis %d", *sd.Clock.Faith, sim.FaithGenesis)
+	}
+	if sd.Clock.FaithRegenTicks != int64(sim.GuardianChargeRegenTicks) {
+		t.Errorf("faith_regen_ticks = %d, want the steady band %d", sd.Clock.FaithRegenTicks, sim.GuardianChargeRegenTicks)
+	}
+}
+
 // fakeGovernor is a scripted daemon governor surface for the status-fold tests.
 type fakeGovernor struct {
 	debt float64

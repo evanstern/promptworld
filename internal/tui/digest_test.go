@@ -222,6 +222,18 @@ var catalogFixture = map[string]digestFixture{
 		`the village fulfilled Guardian's charge (dir-200-0, serving dsg-100-0)`,
 	},
 	"directive.expired": {`{"id":"dir-200-0"}`, `Guardian's charge lapsed (dir-200-0)`},
+
+	// --- the faith economy (spec 085 — faith movements and prophecies) ---
+	"faith.changed": {
+		`{"delta":8,"reason":"directive_fulfilled","source_id":"dir-200-0"}`,
+		`the village's faith deepens (directive_fulfilled)`,
+	},
+	"prophecy.declared": {
+		`{"id":"pro-300-0","targets":[0,1],"text":"Before three dawns a shelter will stand.","claim":{"kind":"structure_count","structure_kind":"shelter","min":1},"declared_tick":300,"deadline_tick":559200,"status":"active"}`,
+		`Guardian foretells: "Before three dawns a shelter will stand."`,
+	},
+	"prophecy.fulfilled": {`{"id":"pro-300-0"}`, `Guardian's foretelling came true (pro-300-0)`},
+	"prophecy.failed":    {`{"id":"pro-300-0"}`, `Guardian's word did not come to pass (pro-300-0)`},
 	"metatron.charter_observed": {
 		`{"fingerprint":"ab12cd34ef56","default":false}`,
 		`Guardian ran under charter ab12cd34ef56 (player-authored)`,

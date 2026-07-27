@@ -616,8 +616,11 @@ func TestGuardianStripViewPresenceMatrix(t *testing.T) {
 				m.replica.GuardianOrders[i] = sim.GuardianOrder{ID: fmt.Sprintf("o%d", i), Status: "active"}
 			}
 			got := m.guardianStripView(200)
-			if strings.Contains(got, "faith") {
-				t.Errorf("no faith segment must ever appear (TASK-118 unshipped): %q", got)
+			// Spec 085 flipped the old absence pin to presence: a status with
+			// NO faith field (an older daemon) renders the honest dashed form
+			// — present, claiming nothing (guardian-strip.md §4).
+			if !strings.Contains(got, "faith —") {
+				t.Errorf("nil faith field must render the dashed segment: %q", got)
 			}
 			if hasRegen := strings.Contains(got, "next +1"); hasRegen != c.wantRegen {
 				t.Errorf("regen segment presence = %v, want %v: %q", hasRegen, c.wantRegen, got)
@@ -670,6 +673,76 @@ func TestGuardianStripViewLiveUpdate(t *testing.T) {
 	if !strings.Contains(afterExpiry, "👁 1 standing orders") {
 		t.Errorf("retained-but-terminal order count should match orderStatusLines' len() semantics: %q", afterExpiry)
 	}
+}
+
+// TestGuardianStripFaithStates (spec 085 US4 AS-1..3, SC-005): the §4 faith
+// segment's three honest states — populated from the wire, dashed against an
+// older daemon — plus the forecast honesty rules under the variable cadence:
+// the wire cadence drives the boundary, cadence 0 (the scenario forsaken
+// band) omits the segment, an older daemon falls back to the legacy exported
+// constant, and faith drops FIRST under width pressure.
+func TestGuardianStripFaithStates(t *testing.T) {
+	faith := func(n int) *int { return &n }
+
+	t.Run("populated from the wire", func(t *testing.T) {
+		m := testModel(t)
+		m.status = &ipc.StatusData{Clock: ipc.ClockStatus{GuardianCharges: 1, Tick: 100,
+			Faith: faith(62), FaithRegenTicks: 12 * 3600}}
+		got := m.guardianStripView(200)
+		if !strings.Contains(got, "faith 62") {
+			t.Errorf("populated segment missing: %q", got)
+		}
+		// The forecast reads the EFFECTIVE cadence off the wire: the next
+		// absolute 12h boundary from tick 100 is tick 43200 — 18:00 on the
+		// genesis clock (day 1 starts 06:00) — not the legacy 6h boundary.
+		if !strings.Contains(got, "next +1 @ 18:00") {
+			t.Errorf("forecast should use the wire cadence (12h): %q", got)
+		}
+	})
+
+	t.Run("dashed against an older daemon, legacy forecast fallback", func(t *testing.T) {
+		m := testModel(t)
+		m.status = &ipc.StatusData{Clock: ipc.ClockStatus{GuardianCharges: 1, Tick: 100}}
+		got := m.guardianStripView(200)
+		if !strings.Contains(got, "faith —") {
+			t.Errorf("dashed segment missing against a pre-085 daemon: %q", got)
+		}
+		// The legacy 6h boundary from tick 100 is tick 21600 — 12:00 on the
+		// genesis clock.
+		if !strings.Contains(got, "next +1 @ 12:00") {
+			t.Errorf("forecast should fall back to the legacy 6h constant: %q", got)
+		}
+	})
+
+	t.Run("cadence 0 omits the forecast (no regen scheduled)", func(t *testing.T) {
+		m := testModel(t)
+		m.status = &ipc.StatusData{Clock: ipc.ClockStatus{GuardianCharges: 0, Tick: 100,
+			Faith: faith(5), FaithRegenTicks: 0}}
+		got := m.guardianStripView(200)
+		if strings.Contains(got, "next +1") {
+			t.Errorf("scenario forsaken band must omit the forecast (never forecast an arrival that isn't scheduled): %q", got)
+		}
+		if !strings.Contains(got, "faith 5") {
+			t.Errorf("faith segment still renders while regen is stopped: %q", got)
+		}
+	})
+
+	t.Run("faith drops first under width pressure", func(t *testing.T) {
+		m := testModel(t)
+		m.status = &ipc.StatusData{Clock: ipc.ClockStatus{GuardianCharges: 1, Tick: 100,
+			Faith: faith(62), FaithRegenTicks: 6 * 3600}}
+		full := m.guardianStripView(200)
+		if !strings.Contains(full, "faith 62") {
+			t.Fatalf("fixture setup wrong: %q", full)
+		}
+		squeezed := m.guardianStripView(lipgloss.Width(full) - 1)
+		if strings.Contains(squeezed, "faith") {
+			t.Errorf("one column short must drop the faith segment first (§4 drop order): %q", squeezed)
+		}
+		if !strings.Contains(squeezed, "standing orders") {
+			t.Errorf("orders must outlive faith under pressure: %q", squeezed)
+		}
+	})
 }
 
 // TestJoinStripSegmentsTruncatesRightToLeft is joinStripSegments as a pure

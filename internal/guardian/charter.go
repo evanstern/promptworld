@@ -694,8 +694,13 @@ func intersectGrant(g grantSet, gd *bundle.GrantDoc) grantSet {
 // for operator review there). All five are charge-free; none is world-shaping
 // (villagers still do all the work by their own logic), so the stage-1
 // "no miracles, no clock control" posture is unchanged.
+// prophesy (spec 085) joins too, following send_vision's stage profile
+// (granted where visions are granted — it is the same influence verb with a
+// wager attached; spec 085 Assumptions, flagged for operator review there):
+// charge-priced like the nudges, not world-shaping, so the stage-1 posture
+// is still unchanged.
 var stage1CeilingTools = []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "explain",
-	"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site"}
+	"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site", "prophesy"}
 
 // stageCeiling returns the stage's capability ceiling as a narrowing doc —
 // the same shape a persona bundle's grant uses, so intersectGrant applies it

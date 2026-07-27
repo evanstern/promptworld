@@ -7,7 +7,7 @@ sources:
   - internal/tui/views.go
   - internal/tui/layout.go
   - internal/tui/digest.go
-verified_against: fc9566d527941d3950fdd307168556820bd0875b
+verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
 ---
 
 # TUI client mechanics: connection, header, and layout
@@ -94,8 +94,13 @@ client renders the **widescreen composite** — the map on the left and a tabbed
 **dock** on the right in a 50/50 split (`computeColumns` in layout.go; the map's
 viewport derives from the column budget via `mapViewportTiles`), a one-line
 borderless **guardian strip** (spec 050, reorient decision 7: charge-bank
-glyphs + `(N/cap)`, a `next +1 @ <time>` regen forecast derived from
-`sim.GuardianChargeRegenTicks`, and the replica's standing-order count —
+glyphs + `(N/cap)`, a `next +1 @ <time>` regen forecast — since spec 085 on
+the wire's EFFECTIVE faith-band cadence (`Status.Clock.FaithRegenTicks`;
+`sim.GuardianChargeRegenTicks` only as the fallback against a pre-085
+daemon, and omitted at cadence 0 — no regen scheduled), the replica's
+standing-order count, and (spec 085) the fourth `faith N` segment —
+`faith —` when the daemon predates the field, dropped first under width
+pressure ([[guardian-faith]]) —
 `guardianStripView`, each segment degrading to absence rather than a
 misleading zero), a one-line
 **Guardian minibuffer** above the footer, and per-mode footer hints. Since

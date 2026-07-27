@@ -10,7 +10,7 @@ sources:
   - internal/guardian/survey.go
   - internal/tool/registry.go
   - internal/mind/context.go
-verified_against: fc9566d527941d3950fdd307168556820bd0875b
+verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
 ---
 
 # Guardian designations and directives — the durable plan layer
@@ -86,7 +86,10 @@ its bound directives' `directive.fulfilled` at T+1 (the documented one-tick
 lag). `directive.expired` also fires when no targeted villager remains
 alive (the un-executable clause — no TTL wait). `directive.fulfilled`
 carries `{id, designation_id, targets, issued_tick}` — **the TASK-118
-faith-accounting seam** (recorded contract; this spec adds no faith state).
+faith-accounting seam** (recorded contract; this spec adds no faith state —
+spec 085 consumes it: the faith sweep mints `faith.changed{+8}` beside every
+`directive.fulfilled` and `{−4}` beside every `directive.expired`,
+[[guardian-faith]]).
 All four `directive.*` types join `observableEventTypes` (enum-only,
 12 → 16), so `monitor_and_act` standing orders watch the directive
 lifecycle through the unmodified `matchOrders` path — zero new trigger

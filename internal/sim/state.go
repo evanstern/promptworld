@@ -114,6 +114,18 @@ type State struct {
 	// upgrade-free — no format bump (the spec-029 precedent).
 	Designations []Designation `json:"designations,omitempty"`
 	Directives   []Directive   `json:"directives,omitempty"`
+	// Faith (spec 085) — the village's event-sourced devotion score, folded
+	// EXCLUSIVELY from executor-emitted faith.changed events (faith.go). nil
+	// means the genesis default (FaithGenesis, read through the nil-safe
+	// FaithScore accessor — the State.Tuning nil-means-default precedent);
+	// omitempty keeps every pre-085 snapshot byte-identical, no format bump.
+	Faith *FaithState `json:"faith,omitempty"`
+	// Prophecies (spec 085) — the guardian's declared, deadline-bounded,
+	// machine-checkable claims (prophecy.go), event-sourced under the
+	// Designations discipline (injected declaration; executor-emitted
+	// terminals; active + most recent 32 retained). omitempty: a pre-085
+	// snapshot unmarshals to nil, upgrade-free.
+	Prophecies []Prophecy `json:"prophecies,omitempty"`
 	// Norms and votes (TASK-13) — all event-sourced. Pre-TASK-13 snapshots
 	// unmarshal to zero values: no meeting place yet, no law, no meeting.
 	MeetingPlace *Point       `json:"meeting_place,omitempty"`
@@ -1980,6 +1992,12 @@ func (s *State) Apply(e store.Event) error {
 		"directive.issued", "directive.cancelled", "directive.fulfilled",
 		"directive.expired":
 		return s.applyPlan(e)
+
+	case "faith.changed":
+		return s.applyFaith(e)
+
+	case "prophecy.declared", "prophecy.fulfilled", "prophecy.failed":
+		return s.applyProphecy(e)
 
 	case "morgue.epilogue":
 		return s.applyMorgueEpilogue(e)

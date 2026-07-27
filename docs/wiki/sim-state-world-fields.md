@@ -6,7 +6,7 @@ sources:
   - internal/sim/state.go
   - internal/sim/agents.go
   - internal/sim/stranger.go
-verified_against: fc9566d527941d3950fdd307168556820bd0875b
+verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
 ---
 
 # Sim state: world & social fields
@@ -72,6 +72,11 @@ pre-029 snapshot with the field absent unmarshals to nil; [[guardian-orders]])
 `Directives []Directive`, spec 084, both `omitempty` on the same precedent —
 pre-084 snapshots load byte-identical, no format bump;
 [[guardian-designations]])
+— the faith economy (`Faith *FaithState`, spec 085, `omitempty`, nil =
+genesis 50 read only through the nil-safe `FaithScore()` accessor — the
+`Tuning` nil-means-default shape; and `Prophecies []Prophecy`, the
+guardian's declared machine-checkable claims, `omitempty` on the plan-layer
+precedent; [[guardian-faith]])
 — and the village's
 law ([[governance]], TASK-13): `MeetingPlace` (set once), the `Meeting`
 lifecycle (including the TASK-36 emergent-gathering watch fields
