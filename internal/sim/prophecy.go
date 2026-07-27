@@ -213,6 +213,13 @@ func (s *State) applyProphecy(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
+		// The stake (US3 AS-1): a prophecy spends one charge — the
+		// metatron.nudged arm's contract, so the spend is event-sourced (the
+		// declaration IS the spend's record) and replay reproduces the
+		// economy. Validated before anything else lands (validate-not-clamp).
+		if s.GuardianCharges <= 0 {
+			return fmt.Errorf("apply %s: no charges banked", e.Type)
+		}
 		if err := s.validateProphecyDeclared(e.Type, &p); err != nil {
 			return err
 		}
@@ -221,6 +228,7 @@ func (s *State) applyProphecy(e store.Event) error {
 		// designation.placed shape: identical live and in replay).
 		p.Status = "active"
 		p.PlacedSeq = e.Seq
+		s.GuardianCharges--
 		s.Prophecies = prunePlanEntities(append(s.Prophecies, p),
 			func(x Prophecy) bool { return x.Status == "active" })
 	case "prophecy.fulfilled":

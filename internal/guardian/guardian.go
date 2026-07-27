@@ -173,6 +173,12 @@ type Guardian struct {
 	directives   []sim.Directive
 	planMintTick map[string]int64
 	planMintSeq  map[string]int
+	// Prophecy mirror + faith mirror (spec 085, the plan-mirror discipline):
+	// the replica is the authority; the turn worker reads these under stateMu
+	// for id minting ("pro" prefix), the prompt's prophecy section, and the
+	// FR-013 faith line. faith is the nil-safe FaithScore projection.
+	prophecies []sim.Prophecy
+	faith      int
 
 	// Trigger pipeline (spec 029 US3, data-model §5): the absorb goroutine matches
 	// live events against active orders and enqueues onto triggerQ; a dedicated
@@ -443,6 +449,10 @@ func (mt *Guardian) mirrorState() {
 	// prompt's designation/directive sections read these, never the replica.
 	mt.designations = append(mt.designations[:0], mt.replica.Designations...)
 	mt.directives = append(mt.directives[:0], mt.replica.Directives...)
+	// The prophecy + faith mirrors (spec 085): same discipline again — the
+	// turn prompt's faith line and prophecy section read these copies.
+	mt.prophecies = append(mt.prophecies[:0], mt.replica.Prophecies...)
+	mt.faith = mt.replica.FaithScore()
 	// The narrated chronicle (TASK-11) is the village's own story — the
 	// guardian reads its tail so conversation is grounded even before its
 	// soul has accreted (fresh reigns, upgraded worlds).

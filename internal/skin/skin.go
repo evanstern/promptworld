@@ -93,6 +93,8 @@ var defaultTable = map[string]string{
 	"skin.guardian.example_ask.issue_directive":    `"charge Ash and Birch to raise the shelter I marked, within three days"`,
 	"skin.guardian.example_ask.cancel_directive":   `"lift the charge you laid on Ash"`,
 	"skin.guardian.example_ask.survey_site":        `"survey the ground around 10,10"`,
+	// Prophecy (spec 085): the staked vision, same frozen-tool-id keying.
+	"skin.guardian.example_ask.prophesy": `"prophesy to everyone: the shelter I marked will stand within three days"`,
 }
 
 func init() {

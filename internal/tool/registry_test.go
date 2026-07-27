@@ -37,7 +37,7 @@ var wantExpressive = []string{"say", "gist", "muse"}
 // converse plus the agency acting tools; nudge_dream/nudge_omen retired). Order-
 // insensitive — TestRostersResolve sorts before comparing.
 var wantGuardian = []string{"converse", "send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed", "explain",
-	"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site"}
+	"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site", "prophesy"}
 
 // wantGuardianCatalog is the guardian tools' catalog membership in REGISTRATION
 // order (spec 029): converse, then the two influence forms (send_vision/
@@ -47,8 +47,9 @@ var wantGuardian = []string{"converse", "send_omen", "send_vision", "monitor_and
 // explain (spec 063) is appended last so no pre-063 tool's position shifts.
 // The plan layer (spec 084) appends after explain in the same discipline:
 // the four charge-free acting plan verbs, then the survey read tool.
+// prophesy (spec 085) appends last again: the charge-priced declared claim.
 var wantGuardianCatalog = []string{"converse", "send_vision", "send_omen", "monitor_and_act", "cancel_order", "pause", "start", "adjust_speed", "work_miracle", "explain",
-	"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site"}
+	"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site", "prophesy"}
 var wantVillagerExpressiveTail = []string{"say", "muse", "gist"}
 
 // wantJournal is the four villager journal tools (spec 019, US3): two Expressive

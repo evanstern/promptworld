@@ -119,6 +119,7 @@ already-written files and every serialized identifier (event types
 | `skin.guardian.example_ask.issue_directive` | `"charge Ash and Birch to raise the shelter I marked, within three days"` | help guardian section (spec 084) |
 | `skin.guardian.example_ask.cancel_directive` | `"lift the charge you laid on Ash"` | help guardian section (spec 084) |
 | `skin.guardian.example_ask.survey_site` | `"survey the ground around 10,10"` | help guardian section (spec 084) |
+| `skin.guardian.example_ask.prophesy` | `"prophesy to everyone: the shelter I marked will stand within three days"` | help guardian section (spec 085: the staked vision, same frozen-tool-id keying) |
 | `skin.stage.stage-1.name` … `skin.stage.stage-4.name` | The Voice / The Written Word / The Craft / The Stewardship | stage display identities (`internal/skin` StageIdentity; spec 046 surfaces) |
 | `skin.stage.stage-1.line` … `skin.stage.stage-4.line` | "you speak, it acts" / "your law outlives the conversation" / "you shape what it can do" / "a world in your care" | one-line stage identity descriptions |
 | `skin.stage.stage-2.ceremony_chapter` | "Your play proved The Written Word: a law that outlives the conversation, written once and honored by every turn since." | `overlays/ceremony.md`'s D6 authorship-voice narrated chapter (spec 056) — stage-1 has no entry (never unlocked, `sim.EvaluateUnlock` never returns it) |

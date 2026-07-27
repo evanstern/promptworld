@@ -47,6 +47,16 @@ func TestProphecyDeclaredLandsActive(t *testing.T) {
 	if got.Status != "active" || got.PlacedSeq != 77 {
 		t.Errorf("landed status=%q placedSeq=%d, want active/77", got.Status, got.PlacedSeq)
 	}
+	// The stake: the declaration spent the genesis charge (US3 AS-1).
+	if s.GuardianCharges != GuardianGenesisCharges-1 {
+		t.Errorf("charges = %d, want %d (a prophecy spends one)", s.GuardianCharges, GuardianGenesisCharges-1)
+	}
+	// And an empty bank refuses the next word at the door.
+	p2 := validProphecy("pro-200-0", 200, []int{0})
+	p2.Claim.Min = 2
+	if err := s.Apply(declaredEvent(p2, 78, 200)); err == nil || !strings.Contains(err.Error(), "no charges banked") {
+		t.Fatalf("err = %v, want the charge-gate refusal", err)
+	}
 }
 
 // TestProphecyDeclaredValidationTable pins every data-model §4 rejection arm
@@ -55,6 +65,7 @@ func TestProphecyDeclaredLandsActive(t *testing.T) {
 func TestProphecyDeclaredValidationTable(t *testing.T) {
 	base := func() *State {
 		s := planState(t, 42)
+		s.GuardianCharges = GuardianChargeCap // multi-declaration cases need stakes
 		if err := s.Apply(placedEvent(validSite("dsg-1-0", 1), 1, 1)); err != nil {
 			t.Fatal(err)
 		}
@@ -157,6 +168,7 @@ func TestProphecyDeclaredValidationTable(t *testing.T) {
 
 	t.Run("cap 3 active", func(t *testing.T) {
 		s := base()
+		s.GuardianCharges = 10    // enough stakes that the CAP is the refusal hit
 		mins := []int{1, 2, 3, 4} // distinct claims, all unmet at genesis (no shelter)
 		for i := 0; i < GuardianProphecyCap; i++ {
 			p := validProphecy(idFor(i), 100, []int{0})
@@ -519,6 +531,10 @@ func TestProphecyLifecycleReplayByteIdentical(t *testing.T) {
 	stage := func(s *State) {
 		s.Agents[3].Needs.Food = 0
 		s.Agents[3].Needs.Health = 3
+		// Two prophecies and the miracle grant all land before the first regen
+		// boundary — bank the stakes on BOTH sides (the death-staging pattern:
+		// test scaffolding standing in for recorded history).
+		s.GuardianCharges = 3
 	}
 
 	fulfilling := Prophecy{ // structure_count met when the shelter builds

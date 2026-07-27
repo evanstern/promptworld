@@ -75,9 +75,10 @@ var RosterVillager = func() []string {
 // name-resolution check in Validate; keeping it in step keeps that gate honest.
 // The plan layer (spec 084) appends after explain: the four charge-free plan
 // verbs and the survey read tool, granted at every stage (the monitor_and_act
-// precedent — spec 084 Assumptions).
+// precedent — spec 084 Assumptions). prophesy (spec 085) appends last: the
+// charge-priced declared claim, following send_vision's stage profile.
 var RosterGuardian = []string{"converse", "send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed", "explain",
-	"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site"}
+	"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site", "prophesy"}
 
 // OnRoster reports whether name is on roster — the door membership check.
 func OnRoster(roster []string, name string) bool {
@@ -140,9 +141,10 @@ func LoopRosterVillager() []Tool {
 // the same three layers — without shifting any existing tool's position.
 // The plan layer (spec 084) appends after explain in registration-order
 // discipline: place/cancel_designation, issue/cancel_directive (acting), and
-// survey_site (Read — the explain dispatch class).
+// survey_site (Read — the explain dispatch class). prophesy (spec 085)
+// appends last, so no existing tool's declared position shifts.
 var loopGuardianTools = []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed", "explain",
-	"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site"}
+	"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site", "prophesy"}
 
 // LoopRosterGuardian returns the ordered declared-tool list the guardian
 // tool-use loop presents to the model (loopGuardianTools), resolved to full
