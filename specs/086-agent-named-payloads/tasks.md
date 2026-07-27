@@ -219,7 +219,7 @@ and amended authority pages.
   operator review, the split-law review obligation, the `J` keybinding +
   standing-resolution-1 amendment, the untouched-packages audit); merge
   is `gh pr merge --merge` (SC-006)
-- [ ] T031 Post-merge bookkeeping (orchestrator, per TASK-160/161
+- [x] T031 Post-merge bookkeeping (orchestrator, per TASK-160/161
   landing laws): board card moves at root (board-sync exception, scoped
   commit, pushed immediately); spec-bridge sync + tasks.md ticks ride a
   branch and land by merge — never a direct root commit; worktree
