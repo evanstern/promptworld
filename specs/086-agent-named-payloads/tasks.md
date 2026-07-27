@@ -100,13 +100,13 @@ cluster tests green.
   (`faith.go` row 73, `omitempty`, set iff reason villager_died; other
   reasons byte-identical to spec 085 emissions — regression-pinned)
   (FR-002)
-- [ ] T013 [US1] Batch G — out-of-sim emitters: `internal/mind` (convo,
+- [X] T013 [US1] Batch G — out-of-sim emitters: `internal/mind` (convo,
   consolidate, telemetry, handlers, embedder, narrate, meeting),
   `internal/guardian` (turn, miracle_batch, plans, orders, prophecy,
   reportcard), `internal/bundle/effects.go`,
   `internal/persona/files.go` — construction sites to `sim.Ref`/`Refs`
   (the roster constant; no state needed) (plan D6, FR-002)
-- [ ] T014 [US1] Family emission-drive suite consolidated: fixture
+- [X] T014 [US1] Family emission-drive suite consolidated: fixture
   drives per family asserting named refs FROM LOG BYTES ALONE, incl.
   sentinels (−1 any/personal/target), posthumous references, injected
   batches, bundle/persona sites (US1 AS-1..6, SC-001)
