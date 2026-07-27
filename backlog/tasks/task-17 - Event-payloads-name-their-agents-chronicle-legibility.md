@@ -1,10 +1,10 @@
 ---
 id: TASK-17
 title: Event payloads name their agents (chronicle legibility)
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-19 15:56'
-updated_date: '2026-07-26 21:09'
+updated_date: '2026-07-27 01:32'
 labels:
   - events
   - tui
@@ -34,4 +34,6 @@ Drift audit 2026-07-23: still real. Payloads carry indices only (internal/sim/ag
 Reorient 2026-07-26 (board move 10): reframed upward — agent-named payloads raise chronicle jump-to-source's locatable-event hit rate (resolveSubject), making this village-lens completion, not just chronicle hygiene.
 
 Rider (reorient 2026-07-26 delta, operator-placed 2026-07-26: 'rider is fine'): REVERSE JUMP — strip glyph / roster row → camera center on the map. The delta's one net-new unscheduled rec; homes here because this task already raises jump-to-source's locatable-event hit rate (resolveSubject) as village-lens completion — reverse jump is the same lens's other direction. Ships with a mouse-parity oracle entry per the TASK-154 gate when it lands.
+
+Sweep claim (runbook docs/design/faith-directives-sweep-runbook.md, signed-off 2026-07-26): spec 086-agent-named-payloads. Tier: Opus 4.8 — repo-wide payload migration (AgentRef across every agent-referencing emitter) + mechanical enforcement + back-compat replay. Deliberate Lane C tail: sweeps the sweep's own new payloads (directive.*, faith.*/prophecy.*, sim.neglect_detected, stranger.*) in one pass. Carries the operator-placed reverse-jump rider (strip glyph/roster row → camera center) with its mouse-parity oracle obligation.
 <!-- SECTION:NOTES:END -->
