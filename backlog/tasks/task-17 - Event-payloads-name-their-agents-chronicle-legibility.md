@@ -1,10 +1,10 @@
 ---
 id: TASK-17
 title: Event payloads name their agents (chronicle legibility)
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-19 15:56'
-updated_date: '2026-07-27 01:54'
+updated_date: '2026-07-27 04:11'
 labels:
   - events
   - tui
@@ -22,21 +22,19 @@ Spec: specs/086-agent-named-payloads
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every recorded event payload that references an agent carries both the index and the agent's name in its JSON
-- [ ] #2 The TUI chronicle shows agent names with no replica/post-hoc lookup
-- [ ] #3 The format is enforced mechanically (typed ref + append validation or exhaustive payload test), not by convention
-- [ ] #4 Replay of pre-change worlds still works; back-compat behavior is documented
-- [ ] #5 Spec phase: Setup
-- [ ] #6 Spec phase: Foundational — the type, the catalog, the rails (blocks all user stories)
-- [ ] #7 Spec phase: US1 — the census migration (P1) 🎯 — batched, compiler-driven
-- [ ] #8 Spec phase: US2 — enforcement flipped fully on (P1)
-- [ ] #9 Spec phase: US3 — back-compat proven and documented (P1)
-- [ ] #10 Spec phase: US4 — chronicle names + jump-to-source hit rate (P2)
-- [ ] #11 Spec phase: US5 — the reverse-jump rider (P3)
-- [ ] #12 Spec phase: Polish, grounding, gates
+- [x] #1 Every recorded event payload that references an agent carries both the index and the agent's name in its JSON
+- [x] #2 The TUI chronicle shows agent names with no replica/post-hoc lookup
+- [x] #3 The format is enforced mechanically (typed ref + append validation or exhaustive payload test), not by convention
+- [x] #4 Replay of pre-change worlds still works; back-compat behavior is documented
+- [x] #5 Spec phase: Setup
+- [x] #6 Spec phase: Foundational — the type, the catalog, the rails (blocks all user stories)
+- [x] #7 Spec phase: US1 — the census migration (P1) 🎯 — batched, compiler-driven
+- [x] #8 Spec phase: US2 — enforcement flipped fully on (P1)
+- [x] #9 Spec phase: US3 — back-compat proven and documented (P1)
+- [x] #10 Spec phase: US4 — chronicle names + jump-to-source hit rate (P2)
+- [x] #11 Spec phase: US5 — the reverse-jump rider (P3)
+- [x] #12 Spec phase: Polish, grounding, gates
 <!-- AC:END -->
-
-
 
 ## Implementation Notes
 
@@ -49,3 +47,9 @@ Rider (reorient 2026-07-26 delta, operator-placed 2026-07-26: 'rider is fine'): 
 
 Sweep claim (runbook docs/design/faith-directives-sweep-runbook.md, signed-off 2026-07-26): spec 086-agent-named-payloads. Tier: Opus 4.8 — repo-wide payload migration (AgentRef across every agent-referencing emitter) + mechanical enforcement + back-compat replay. Deliberate Lane C tail: sweeps the sweep's own new payloads (directive.*, faith.*/prophecy.*, sim.neglect_detected, stranger.*) in one pass. Carries the operator-placed reverse-jump rider (strip glyph/roster row → camera center) with its mouse-parity oracle obligation.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Merged via PR #127. AgentRef ships: every agent-referencing payload field on new emissions carries {id,name} (dual-shape unmarshal accepts legacy ints forever); 66 in-place + 4 mirrors + faith additive ref; enforcement at both emission rails + the PayloadCatalog sweep; AgentRef never reachable from State (reflection-pinned), so pre-086 replay is byte-identical (proven on a merge-base-generated 7684-event fixture). Chronicle names render from log bytes alone; resolveSubject locatable types 79→86. Reverse-jump rider shipped (strip glyph/roster click + J → camera center; graves for the dead) under both mouse-parity oracles, amending standing resolution 1. Four latent inline int-decoders in mind/scribe/guardian closed. Tier: Opus 4.8 as recorded. Sweep tail complete.
+<!-- SECTION:FINAL_SUMMARY:END -->
