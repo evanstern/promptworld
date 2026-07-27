@@ -6,7 +6,7 @@ title: >-
 status: Done
 assignee: []
 created_date: '2026-07-25 03:00'
-updated_date: '2026-07-27 08:27'
+updated_date: '2026-07-27 13:20'
 labels:
   - learning-game
   - guardian-survival
@@ -28,7 +28,7 @@ Spec: specs/059-metatron-survival-autonomy
 <!-- AC:BEGIN -->
 - [x] #1 new worlds start with the three survival watch orders active; existing worlds gain them via a one-time backfill or miracle door
 - [x] #2 a survival order match can land a vision or miracle with no player in the loop, still charge-gated
-- [ ] #3 miracle guidance includes live positions/passability; invalid-target rejections drop to ~0
+- [x] #3 miracle guidance includes live positions/passability; live invalid-target rejection rate measured and recorded via TASK-136 (amended 2026-07-27 per operator: record the data, not a ~0 gate — measured 80%, 8/10; binding constraint is model-side tool-call competence, not missing position context)
 - [x] #4 guardrails intact: no villager removal, no free miracles, charge economy unchanged
 - [x] #5 Anti-self-grading guard: charter quality measurably changes autonomous survival performance on a seeded world (default-charter vs authored-charter delta)
 - [x] #6 Spec phase: Foundational
@@ -66,6 +66,8 @@ spec-bridge sync: Foundational: 1/1 · User Story 1 — Survival watches from bi
 Operator decision (2026-07-26): close on mechanism per spec-bridge derivation. The 2026-07-25 hold is released; ACs #3 (live invalid-target rejection rate) and #5 (charter-delta experiment) remain unchecked HERE by design — their live-world evidence is delegated to TASK-136 and TASK-137 respectively, both In Progress. TASK-112 dispatch gating on that evidence stays a checkpoint in docs/design/guardian-directives-runbook.md.
 
 AC5 resolved via TASK-137 experiment (2026-07-27, docs/design/evidence/task-137/results.md): charter quality measurably changes autonomous guardian BEHAVIOR on a seeded world (default 0 landed interventions / 3 attempts vs authored 2 landed / 7 attempts, both arms same seed + harsh dials) — the charter surface is not self-grading decoration. Survival OUTCOME delta unproven at n=1 (1 starvation death each, same villager); the binding constraint was targeting competence (8/10 privileged attempts gate-rejected), which is AC#3/TASK-136 territory, not charter territory.
+
+AC#3 resolved via TASK-136 (2026-07-27, docs/design/evidence/task-137/results.md): live rejection rate measured at 80% (8/10 privileged attempts; 3/3 default arm, 5/7 authored arm) vs pre-059 baseline 3/4 — the ~0 hypothesis is refuted. The digest mechanism shipped and functions; every rejection was model-side tool-call incompetence (missing args, hallucinated coords, wrong kinds). AC#3 amended per operator decision on TASK-136 (record the data, not a ~0 gate) and checked. Follow-ups carded: guardian tool-call competence (the binding constraint) and a charter-delta outcome re-run at n>1.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
