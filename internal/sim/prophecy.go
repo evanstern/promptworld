@@ -58,14 +58,14 @@ const (
 // unlike a directive, a prophecy never expires all-targets-dead — the word
 // was spoken to the world, not contingent on its hearers.
 type Prophecy struct {
-	ID           string        `json:"id"`                // "pro-<declaredTick>-<seq>", the nextOrderID shape, no RNG
-	Targets      []int         `json:"targets"`           // living at declaration; ascending, unique
-	Village      bool          `json:"village,omitempty"` // declared to "everyone" (provenance marker)
-	Text         string        `json:"text"`              // 1..400 runes (NudgeTextMax — the registry TextCapBytes single source)
-	Claim        ProphecyClaim `json:"claim"`             // stored NORMALIZED (data-model §5)
-	DeclaredTick int64         `json:"declared_tick"`     // history → rebase KEEP
-	DeadlineTick int64         `json:"deadline_tick"`     // future deadline → rebase SHIFT while active
-	Status       string        `json:"status"`            // "active" | "fulfilled" | "failed" (one-way)
+	ID           string        `json:"id"`                   // "pro-<declaredTick>-<seq>", the nextOrderID shape, no RNG
+	Targets      []int         `json:"targets"`              // living at declaration; ascending, unique
+	Village      bool          `json:"village,omitempty"`    // declared to "everyone" (provenance marker)
+	Text         string        `json:"text"`                 // 1..400 runes (NudgeTextMax — the registry TextCapBytes single source)
+	Claim        ProphecyClaim `json:"claim"`                // stored NORMALIZED (data-model §5)
+	DeclaredTick int64         `json:"declared_tick"`        // history → rebase KEEP
+	DeadlineTick int64         `json:"deadline_tick"`        // future deadline → rebase SHIFT while active
+	Status       string        `json:"status"`               // "active" | "fulfilled" | "failed" (one-way)
 	PlacedSeq    int64         `json:"placed_seq,omitempty"` // reducer-stamped from e.Seq (the Designation contract)
 }
 
