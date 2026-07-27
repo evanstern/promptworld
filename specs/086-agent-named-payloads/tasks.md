@@ -153,14 +153,14 @@ is written where consumers will look.
 
 ## Phase 6: US4 — chronicle names + jump-to-source hit rate (P2)
 
-- [ ] T021 [US4] `internal/tui/grammar.go`/`digest.go`: `refName` helper
+- [X] T021 [US4] `internal/tui/grammar.go`/`digest.go`: `refName` helper
   (payload name first, `agentName` fallback); agent-bearing digest rows
   switched; `resolvePayloadNames`/`m.agentNames()` untouched as the
   historic fallback (plan D7, FR-007, US4 AS-2)
-- [ ] T022 [US4] `catalogFixture` rewritten to named payloads;
+- [X] T022 [US4] `catalogFixture` rewritten to named payloads;
   `TestCatalogSweep` gains the `names = nil` identical-output assertion
   for agent-bearing types (the AC #2 proof) (FR-007, US4 AS-1, SC-004)
-- [ ] T023 [US4] `resolveSubject` generic single-ref fallback
+- [X] T023 [US4] `resolveSubject` generic single-ref fallback
   (registry-first; exactly-one-distinct-in-roster ⇒ candidate; several ⇒
   unlocatable; `world.migrated` excluded); hit-rate test
   (registry+fallback > registry-only; pins `journal.entry_written`,

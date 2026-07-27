@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"os"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/evanstern/promptworld/internal/sim"
@@ -54,7 +55,7 @@ var catalogFixture = map[string]digestFixture{
 		`provider=local kind=model-missing warning detail=model not found remedy=ollama pull llama3`,
 	},
 	"run.ended": {
-		`{"tick":120000,"deaths":[{"agent":0,"tick":90000,"cause":"starvation"},{"agent":1,"tick":120000,"cause":"exposure"}],"final_cause":"exposure"}`,
+		`{"tick":120000,"deaths":[{"agent":{"id":0,"name":"Ash"},"tick":90000,"cause":"starvation"},{"agent":{"id":1,"name":"Birch"},"tick":120000,"cause":"exposure"}],"final_cause":"exposure"}`,
 		`the run ended · 2 dead · final cause exposure`,
 	},
 
@@ -73,116 +74,116 @@ var catalogFixture = map[string]digestFixture{
 	},
 	// spec 083: the death-by-neglect percept (alert tier — whole-line).
 	"sim.neglect_detected": {
-		`{"agent":2,"need":"warmth","level":0,"since":499320}`,
+		`{"agent":{"id":2,"name":"Cedar"},"need":"warmth","level":0,"since":499320}`,
 		`Cedar is dangerously cold and has done nothing about it (warmth 0)`,
 	},
 
 	// --- agent: acts & needs ---
 	"agent.intent_set": {
-		`{"agent":0,"goal":"forage","target_x":3,"target_y":4,"res_x":0,"res_y":0,"source":"reflex"}`,
+		`{"agent":{"id":0,"name":"Ash"},"goal":"forage","target_x":3,"target_y":4,"res_x":0,"res_y":0,"source":"reflex"}`,
 		`Ash intends forage (reflex) → (3,4)`,
 	},
-	"agent.work_started":     {`{"agent":1,"tick":100}`, `Birch set to work`},
-	"agent.intent_done":      {`{"agent":2}`, `Cedar finished`},
-	"agent.intent_rejected":  {`{"agent":3,"goal":"forage","reason":"blocked","staleness_ticks":5}`, `Rowan's forage refused: blocked (5t stale)`},
-	"agent.build_failed":     {`{"agent":3,"goal":"build_wall_stone","reason":"site blocked too long"}`, `Rowan's build_wall_stone failed — site blocked too long`},
-	"agent.recovery_stalled": {`{"agent":1,"goal":"warm_up","need":"warmth"}`, `Birch's warm_up stalled — warmth not recovering`},
-	"agent.moved":            {`{"agent":0,"x":1,"y":1}`, `Ash → (1,1)`},
+	"agent.work_started":     {`{"agent":{"id":1,"name":"Birch"},"tick":100}`, `Birch set to work`},
+	"agent.intent_done":      {`{"agent":{"id":2,"name":"Cedar"}}`, `Cedar finished`},
+	"agent.intent_rejected":  {`{"agent":{"id":3,"name":"Rowan"},"goal":"forage","reason":"blocked","staleness_ticks":5}`, `Rowan's forage refused: blocked (5t stale)`},
+	"agent.build_failed":     {`{"agent":{"id":3,"name":"Rowan"},"goal":"build_wall_stone","reason":"site blocked too long"}`, `Rowan's build_wall_stone failed — site blocked too long`},
+	"agent.recovery_stalled": {`{"agent":{"id":1,"name":"Birch"},"goal":"warm_up","need":"warmth"}`, `Birch's warm_up stalled — warmth not recovering`},
+	"agent.moved":            {`{"agent":{"id":0,"name":"Ash"},"x":1,"y":1}`, `Ash → (1,1)`},
 	"agent.saw": {
-		`{"agent":0,"facts":[{"kind":"fire","x":4,"y":5,"seen":100,"prov":"witnessed","detail":9000},{"kind":"tree","x":6,"y":5,"seen":100,"prov":"witnessed"}]}`,
+		`{"agent":{"id":0,"name":"Ash"},"facts":[{"kind":"fire","x":4,"y":5,"seen":100,"prov":"witnessed","detail":9000},{"kind":"tree","x":6,"y":5,"seen":100,"prov":"witnessed"}]}`,
 		`Ash saw fire at (4,5) (+1 more)`,
 	},
 	"agent.map_corrected": {
-		`{"agent":1,"gone":[{"kind":"fire","x":4,"y":5,"seen":100,"prov":"witnessed","detail":9000}]}`,
+		`{"agent":{"id":1,"name":"Birch"},"gone":[{"kind":"fire","x":4,"y":5,"seen":100,"prov":"witnessed","detail":9000}]}`,
 		`Birch found fire at (4,5) gone`,
 	},
 	"social.place_told": {
-		`{"from":0,"to":1,"facts":[{"kind":"fire","x":4,"y":5,"seen":100,"prov":"told","detail":9000},{"kind":"tree","x":6,"y":5,"seen":100,"prov":"told"}]}`,
+		`{"from":{"id":0,"name":"Ash"},"to":{"id":1,"name":"Birch"},"facts":[{"kind":"fire","x":4,"y":5,"seen":100,"prov":"told","detail":9000},{"kind":"tree","x":6,"y":5,"seen":100,"prov":"told"}]}`,
 		`Ash told Birch of fire at (4,5) (+1 more)`,
 	},
-	"agent.foraged":         {`{"agent":0,"x":1,"y":1}`, `Ash foraged at (1,1)`},
-	"agent.chopped":         {`{"agent":0,"x":1,"y":1}`, `Ash chopped wood at (1,1)`},
-	"agent.hunted":          {`{"agent":0,"x":1,"y":1}`, `Ash hunted at (1,1)`},
-	"agent.quarried":        {`{"agent":0,"x":1,"y":1}`, `Ash quarried stone at (1,1)`},
-	"agent.collected_water": {`{"agent":0,"x":1,"y":1}`, `Ash drew water at (1,1)`},
-	"agent.crafted":         {`{"agent":0,"kind":"planks"}`, `Ash crafted planks`},
-	"agent.built":           {`{"agent":0,"kind":"fire","x":1,"y":1}`, `Ash built a fire at (1,1)`},
-	"agent.wall_chipped":    {`{"agent":0,"x":1,"y":1}`, `Ash chipped away at the wall at (1,1)`},
-	"agent.wall_destroyed":  {`{"agent":0,"x":1,"y":1}`, `Ash tore down the wall at (1,1)`},
-	"agent.wall_repaired":   {`{"agent":0,"x":1,"y":1}`, `Ash repaired the wall at (1,1)`},
-	"agent.dropped":         {`{"agent":0,"x":3,"y":4,"kind":"wood","n":2}`, `Ash dropped 2 wood at (3,4)`},
-	"agent.picked_up":       {`{"agent":1,"x":3,"y":4,"kind":"wood","n":2}`, `Birch picked up 2 wood at (3,4)`},
-	"agent.deposited":       {`{"agent":2,"x":5,"y":5,"kind":"planks","n":6}`, `Cedar stored 6 planks in the chest at (5,5)`},
-	"agent.withdrew":        {`{"agent":3,"x":5,"y":5,"kind":"planks","n":1,"owner":0}`, `Rowan took 1 planks from Ash's chest`},
-	"agent.cooked":          {`{"agent":0,"station":"fire","consumed":2,"produced":1,"kind":"food_cooked"}`, `Ash cooked 1 food_cooked at the fire`},
-	"agent.bathed":          {`{"agent":0,"morale_after":80,"warmth_after":90}`, `Ash bathed · morale 80 warmth 90`},
-	"agent.refueled":        {`{"agent":0,"x":1,"y":1,"fuel_until":500}`, `Ash refueled the fire at (1,1)`},
-	"agent.spear_broke":     {`{"agent":0}`, `Ash's spear broke`},
-	"agent.axe_broke":       {`{"agent":0}`, `Ash's axe broke`},
-	"agent.ate":             {`{"agent":0,"meals":1,"cooked":0,"raw":0,"food_after":80}`, `Ash ate 1 meals → food 80`},
-	"agent.slept":           {`{"agent":0}`, `Ash fell asleep`},
-	"agent.woke":            {`{"agent":0}`, `Ash woke`},
-	"agent.needs_changed":   {`{"agent":0,"health":90,"food":50,"rest":60,"warmth":70,"morale":80}`, `Ash health=90 food=50 rest=60 warmth=70 morale=80`},
-	"agent.died":            {`{"agent":0,"cause":"starvation"}`, `Ash died: starvation`},
-	"agent.talked":          {`{"a":0,"b":1}`, `Ash chatted with Birch`},
+	"agent.foraged":         {`{"agent":{"id":0,"name":"Ash"},"x":1,"y":1}`, `Ash foraged at (1,1)`},
+	"agent.chopped":         {`{"agent":{"id":0,"name":"Ash"},"x":1,"y":1}`, `Ash chopped wood at (1,1)`},
+	"agent.hunted":          {`{"agent":{"id":0,"name":"Ash"},"x":1,"y":1}`, `Ash hunted at (1,1)`},
+	"agent.quarried":        {`{"agent":{"id":0,"name":"Ash"},"x":1,"y":1}`, `Ash quarried stone at (1,1)`},
+	"agent.collected_water": {`{"agent":{"id":0,"name":"Ash"},"x":1,"y":1}`, `Ash drew water at (1,1)`},
+	"agent.crafted":         {`{"agent":{"id":0,"name":"Ash"},"kind":"planks"}`, `Ash crafted planks`},
+	"agent.built":           {`{"agent":{"id":0,"name":"Ash"},"kind":"fire","x":1,"y":1}`, `Ash built a fire at (1,1)`},
+	"agent.wall_chipped":    {`{"agent":{"id":0,"name":"Ash"},"x":1,"y":1}`, `Ash chipped away at the wall at (1,1)`},
+	"agent.wall_destroyed":  {`{"agent":{"id":0,"name":"Ash"},"x":1,"y":1}`, `Ash tore down the wall at (1,1)`},
+	"agent.wall_repaired":   {`{"agent":{"id":0,"name":"Ash"},"x":1,"y":1}`, `Ash repaired the wall at (1,1)`},
+	"agent.dropped":         {`{"agent":{"id":0,"name":"Ash"},"x":3,"y":4,"kind":"wood","n":2}`, `Ash dropped 2 wood at (3,4)`},
+	"agent.picked_up":       {`{"agent":{"id":1,"name":"Birch"},"x":3,"y":4,"kind":"wood","n":2}`, `Birch picked up 2 wood at (3,4)`},
+	"agent.deposited":       {`{"agent":{"id":2,"name":"Cedar"},"x":5,"y":5,"kind":"planks","n":6}`, `Cedar stored 6 planks in the chest at (5,5)`},
+	"agent.withdrew":        {`{"agent":{"id":3,"name":"Rowan"},"x":5,"y":5,"kind":"planks","n":1,"owner":{"id":0,"name":"Ash"}}`, `Rowan took 1 planks from Ash's chest`},
+	"agent.cooked":          {`{"agent":{"id":0,"name":"Ash"},"station":"fire","consumed":2,"produced":1,"kind":"food_cooked"}`, `Ash cooked 1 food_cooked at the fire`},
+	"agent.bathed":          {`{"agent":{"id":0,"name":"Ash"},"morale_after":80,"warmth_after":90}`, `Ash bathed · morale 80 warmth 90`},
+	"agent.refueled":        {`{"agent":{"id":0,"name":"Ash"},"x":1,"y":1,"fuel_until":500}`, `Ash refueled the fire at (1,1)`},
+	"agent.spear_broke":     {`{"agent":{"id":0,"name":"Ash"}}`, `Ash's spear broke`},
+	"agent.axe_broke":       {`{"agent":{"id":0,"name":"Ash"}}`, `Ash's axe broke`},
+	"agent.ate":             {`{"agent":{"id":0,"name":"Ash"},"meals":1,"cooked":0,"raw":0,"food_after":80}`, `Ash ate 1 meals → food 80`},
+	"agent.slept":           {`{"agent":{"id":0,"name":"Ash"}}`, `Ash fell asleep`},
+	"agent.woke":            {`{"agent":{"id":0,"name":"Ash"}}`, `Ash woke`},
+	"agent.needs_changed":   {`{"agent":{"id":0,"name":"Ash"},"health":90,"food":50,"rest":60,"warmth":70,"morale":80}`, `Ash health=90 food=50 rest=60 warmth=70 morale=80`},
+	"agent.died":            {`{"agent":{"id":0,"name":"Ash"},"cause":"starvation"}`, `Ash died: starvation`},
+	"agent.talked":          {`{"a":{"id":0,"name":"Ash"},"b":{"id":1,"name":"Birch"}}`, `Ash chatted with Birch`},
 
 	// --- agent: mind & plans ---
-	"agent.memory_added": {`{"agent":0,"text":"the fire needs tending","salience":5,"subject":1,"tone":0}`, `Ash remembers: "the fire needs tending" · about Birch`},
+	"agent.memory_added": {`{"agent":{"id":0,"name":"Ash"},"text":"the fire needs tending","salience":5,"subject":{"id":1,"name":"Birch"}}`, `Ash remembers: "the fire needs tending" · about Birch`},
 	// Spec 042: embedding companions + divergence telemetry. Vectors are
 	// elided by design; the digest carries the identity/audit fields.
 	"agent.memory_embedded": {
-		`{"agent":0,"mem_seq":41,"vec":[0.1,0.2,0.3],"model":"all-minilm"}`,
+		`{"agent":{"id":0,"name":"Ash"},"mem_seq":41,"vec":[0.1,0.2,0.3],"model":"all-minilm"}`,
 		`Ash memory seq=41 embedded dims=3 model=all-minilm`,
 	},
 	"agent.situation_embedded": {
-		`{"agent":1,"tick":1801,"text":"daytime · at (3,4) · idle","vec":[0.1,0.2],"model":"all-minilm"}`,
+		`{"agent":{"id":1,"name":"Birch"},"tick":1801,"text":"daytime · at (3,4) · idle","vec":[0.1,0.2],"model":"all-minilm"}`,
 		`Birch situation: "daytime · at (3,4) · idle" dims=2 model=all-minilm`,
 	},
 	"cog.memory_divergence": {
-		`{"agent":2,"tick":1801,"mode":"shadow","legacy":[5,6],"augmented":[5,9],"overlap":1,"displacement":0,"vectorless":3,"sit_tick":1800}`,
+		`{"agent":{"id":2,"name":"Cedar"},"tick":1801,"mode":"shadow","legacy":[5,6],"augmented":[5,9],"overlap":1,"displacement":0,"vectorless":3,"sit_tick":1800}`,
 		`agent=Cedar mode=shadow overlap=1/2 displaced=0 vectorless=3`,
 	},
-	"agent.thought":           {`{"agent":0,"text":"I should forage","source":"planner"}`, `Ash thought: "I should forage" (planner)`},
-	"agent.memory_promoted":   {`{"agent":0,"mem_tick":100,"text_hash":"abc","boost":2}`, `Ash's memory (t100) reinforced`},
-	"agent.memory_faded":      {`{"agent":0,"mem_tick":100,"text_hash":"abc"}`, `Ash forgot a memory (t100)`},
-	"agent.belief_revised":    {`{"agent":0,"belief_id":0,"statement":"the fire needs tending","confidence":80,"provenance":"observed","source":0,"subject":0}`, `Ash now believes: "the fire needs tending"`},
-	"agent.belief_reinforced": {`{"agent":0,"belief_id":0}`, `Ash's belief (#0) reinforced`},
-	"agent.narrative_set":     {`{"agent":0,"text":"a long night"}`, `Ash's story: "a long night"`},
-	"agent.consolidated":      {`{"agent":0,"night":1,"up_to":100,"outcome":"accepted"}`, `Ash consolidated the night's memories`},
-	"agent.plan_set":          {`{"agent":0,"job":"forage_run","steps":[{"job":"forage_run","goal":"forage"},{"job":"forage_run","goal":"deposit"}]}`, `Ash planned 2 steps: forage, deposit`},
-	"agent.plan_step_started": {`{"agent":0,"job":"forage_run","step":"forage"}`, `Ash began step forage`},
-	"agent.plan_expired":      {`{"agent":0,"job":"forage_run","step":"forage","reason":"window closed"}`, `Ash's plan lapsed (window closed)`},
+	"agent.thought":           {`{"agent":{"id":0,"name":"Ash"},"text":"I should forage","source":"planner"}`, `Ash thought: "I should forage" (planner)`},
+	"agent.memory_promoted":   {`{"agent":{"id":0,"name":"Ash"},"mem_tick":100,"text_hash":"abc","boost":2}`, `Ash's memory (t100) reinforced`},
+	"agent.memory_faded":      {`{"agent":{"id":0,"name":"Ash"},"mem_tick":100,"text_hash":"abc"}`, `Ash forgot a memory (t100)`},
+	"agent.belief_revised":    {`{"agent":{"id":0,"name":"Ash"},"belief_id":0,"statement":"the fire needs tending","confidence":80,"provenance":"observed","source":{"id":0,"name":"Ash"},"subject":{"id":0,"name":"Ash"}}`, `Ash now believes: "the fire needs tending"`},
+	"agent.belief_reinforced": {`{"agent":{"id":0,"name":"Ash"},"belief_id":0}`, `Ash's belief (#0) reinforced`},
+	"agent.narrative_set":     {`{"agent":{"id":0,"name":"Ash"},"text":"a long night"}`, `Ash's story: "a long night"`},
+	"agent.consolidated":      {`{"agent":{"id":0,"name":"Ash"},"night":1,"up_to":100,"outcome":"accepted"}`, `Ash consolidated the night's memories`},
+	"agent.plan_set":          {`{"agent":{"id":0,"name":"Ash"},"job":"forage_run","steps":[{"job":"forage_run","goal":"forage","until":0},{"job":"forage_run","goal":"deposit","until":0}]}`, `Ash planned 2 steps: forage, deposit`},
+	"agent.plan_step_started": {`{"agent":{"id":0,"name":"Ash"},"job":"forage_run","step":"forage"}`, `Ash began step forage`},
+	"agent.plan_expired":      {`{"agent":{"id":0,"name":"Ash"},"job":"forage_run","step":"forage","reason":"window closed"}`, `Ash's plan lapsed (window closed)`},
 
 	// --- social ---
-	"social.conversation_turn": {`{"conv":100,"speaker":3,"listener":0,"text":"hello"}`, `Rowan→Ash "hello"`},
-	"social.rumor_told":        {`{"from":1,"to":2,"rumor_id":0,"subject":0,"tone":0,"text":"gossip","confidence":50}`, `Birch→Cedar rumor: "gossip"`},
-	"social.conversation":      {`{"conv":1,"a":0,"b":1,"gist":"argued about firewood","turns":6}`, `"argued about firewood" · 6 turns`},
-	"social.relation_changed":  {`{"a":0,"b":1,"trust_delta":2,"affection_delta":-1,"reason":"gift"}`, `Ash→Birch trust+2/affection-1 (gift)`},
-	"social.gave":              {`{"from":0,"to":1,"kind":"food"}`, `Ash gave Birch food`},
+	"social.conversation_turn": {`{"conv":100,"speaker":{"id":3,"name":"Rowan"},"listener":{"id":0,"name":"Ash"},"text":"hello"}`, `Rowan→Ash "hello"`},
+	"social.rumor_told":        {`{"from":{"id":1,"name":"Birch"},"to":{"id":2,"name":"Cedar"},"rumor_id":0,"subject":{"id":0,"name":"Ash"},"tone":0,"text":"gossip","confidence":50}`, `Birch→Cedar rumor: "gossip"`},
+	"social.conversation":      {`{"conv":1,"a":{"id":0,"name":"Ash"},"b":{"id":1,"name":"Birch"},"gist":"argued about firewood","turns":6}`, `"argued about firewood" · 6 turns`},
+	"social.relation_changed":  {`{"a":{"id":0,"name":"Ash"},"b":{"id":1,"name":"Birch"},"trust_delta":2,"affection_delta":-1,"reason":"gift"}`, `Ash→Birch trust+2/affection-1 (gift)`},
+	"social.gave":              {`{"from":{"id":0,"name":"Ash"},"to":{"id":1,"name":"Birch"},"kind":"food"}`, `Ash gave Birch food`},
 	"social.promise_broken":    {`{"id":7}`, `a promise was broken (#7)`},
-	"social.secret_seeded":     {`{"agent":0,"text":"a secret","tone":0}`, `a secret took root with Ash`},
-	"social.chest_taken":       {`{"owner":0,"taker":3,"x":5,"y":5}`, `Rowan raided Ash's chest at (5,5)`},
-	"social.hailed":            {`{"from":1,"to":3,"until":12345}`, `Birch hailed Rowan (until t12345)`},
-	"social.hail_met":          {`{"from":1,"to":3}`, `Birch met Rowan`},
-	"social.hail_expired":      {`{"from":0,"to":2}`, `Ash's hail to Cedar lapsed`},
+	"social.secret_seeded":     {`{"agent":{"id":0,"name":"Ash"},"text":"a secret","tone":0}`, `a secret took root with Ash`},
+	"social.chest_taken":       {`{"owner":{"id":0,"name":"Ash"},"taker":{"id":3,"name":"Rowan"},"x":5,"y":5}`, `Rowan raided Ash's chest at (5,5)`},
+	"social.hailed":            {`{"from":{"id":1,"name":"Birch"},"to":{"id":3,"name":"Rowan"},"until":12345}`, `Birch hailed Rowan (until t12345)`},
+	"social.hail_met":          {`{"from":{"id":1,"name":"Birch"},"to":{"id":3,"name":"Rowan"}}`, `Birch met Rowan`},
+	"social.hail_expired":      {`{"from":{"id":0,"name":"Ash"},"to":{"id":2,"name":"Cedar"}}`, `Ash's hail to Cedar lapsed`},
 
 	// --- governance (meeting.* / norm.*) — all 9 meeting.* rows + norm.violated ---
 	"meeting.convened":               {`{"x":1,"y":1}`, `meeting convened at (1,1)`},
-	"meeting.opened":                 {`{"attendees":[0,1]}`, `meeting opened`},
-	"meeting.turn_taken":             {`{"agent":0,"raised":""}`, `Ash spoke at the meeting`},
-	"meeting.proposal_tabled":        {`{"proposal_id":1,"kind":"amend","target":-1,"proposer":0,"text":"no stealing"}`, `Ash proposed: "no stealing"`},
-	"meeting.proposal_resolved":      {`{"proposal_id":1,"kind":"amend","target":-1,"proposer":0,"text":"no stealing","yeas":[0,1],"nays":[2],"passed":true}`, `proposal passed: "no stealing" (2-1)`},
+	"meeting.opened":                 {`{"attendees":[{"id":0,"name":"Ash"},{"id":1,"name":"Birch"}]}`, `meeting opened`},
+	"meeting.turn_taken":             {`{"agent":{"id":0,"name":"Ash"}}`, `Ash spoke at the meeting`},
+	"meeting.proposal_tabled":        {`{"proposal_id":1,"kind":"amend","target":{"id":-1,"name":""},"proposer":{"id":0,"name":"Ash"},"text":"no stealing"}`, `Ash proposed: "no stealing"`},
+	"meeting.proposal_resolved":      {`{"proposal_id":1,"kind":"amend","target":{"id":-1,"name":""},"proposer":{"id":0,"name":"Ash"},"text":"no stealing","yeas":[{"id":0,"name":"Ash"},{"id":1,"name":"Birch"}],"nays":[{"id":2,"name":"Cedar"}],"passed":true}`, `proposal passed: "no stealing" (2-1)`},
 	"meeting.proposal_rephrased":     {`{"proposal_id":1,"norm_id":1,"text":"no stealing from chests"}`, `norm rephrased: "no stealing from chests"`},
 	"meeting.closed":                 {`{"proposals":2}`, `meeting closed`},
 	"meeting.place_designated":       {`{"x":2,"y":2}`, `meeting place set at (2,2)`},
 	"meeting.convention_established": {`{"convene_second":72000,"open_second":75600,"x":2,"y":2,"source":"config"}`, `meeting convention: 21:00 at (2,2) (config)`},
-	"norm.violated":                  {`{"norm_id":3,"violator":0,"witnesses":[1,2]}`, `Ash violated a norm (#3)`},
+	"norm.violated":                  {`{"norm_id":3,"violator":{"id":0,"name":"Ash"},"witnesses":[{"id":1,"name":"Birch"},{"id":2,"name":"Cedar"}]}`, `Ash violated a norm (#3)`},
 
 	// --- gru / chronicle / guardian ---
 	"gru.emerged":  {`{"night":1,"x":5,"y":5}`, `the gru emerged at (5,5)`},
 	"gru.moved":    {`{"x":6,"y":6}`, `the gru prowls to (6,6)`},
-	"gru.sighted":  {`{"agent":0,"x":5,"y":5}`, `Ash sighted the gru`},
-	"gru.attacked": {`{"agent":0,"health":40}`, `the gru attacked Ash · health → 40`},
+	"gru.sighted":  {`{"agent":{"id":0,"name":"Ash"},"x":5,"y":5}`, `Ash sighted the gru`},
+	"gru.attacked": {`{"agent":{"id":0,"name":"Ash"},"health":40}`, `the gru attacked Ash · health → 40`},
 	"gru.withdrew": {`{"day":2}`, `the gru withdrew`},
 	// spec 077 US2: the stranger — the gru-family threat voice; stranger.took
 	// joins the whole-line alert tier beside social.chest_taken (theft is theft).
@@ -190,11 +191,11 @@ var catalogFixture = map[string]digestFixture{
 	"stranger.moved":              {`{"x":6,"y":6}`, `the stranger creeps to (6,6)`},
 	"stranger.took":               {`{"x":5,"y":5,"kind":"food_raw","n":2}`, `the stranger took 2 food_raw from the stores at (5,5)`},
 	"stranger.departed":           {`{"day":2}`, `the stranger was gone by dawn of day 2`},
-	"chronicle.entry":             {`{"day":3,"from_tick":100,"to_tick":200,"text":"Ash lit the first fire.","thread":"cold-start","agents":[0]}`, `day 3 · cold-start: Ash lit the first fire.`},
+	"chronicle.entry":             {`{"day":3,"from_tick":100,"to_tick":200,"text":"Ash lit the first fire.","thread":"cold-start","agents":[{"id":0,"name":"Ash"}]}`, `day 3 · cold-start: Ash lit the first fire.`},
 	"metatron.charge_regenerated": {`{}`, `a charge regenerated`},
-	"metatron.nudged":             {`{"form":"dream","targets":[0],"text":"beware the cold"}`, `Guardian dream → Ash: "beware the cold"`},
+	"metatron.nudged":             {`{"form":"dream","targets":[{"id":0,"name":"Ash"}],"text":"beware the cold"}`, `Guardian dream → Ash: "beware the cold"`},
 	"metatron.place_revealed": {
-		`{"agent":0,"facts":[{"kind":"fire","x":4,"y":5,"seen":100,"prov":"revealed","detail":9000}]}`,
+		`{"agent":{"id":0,"name":"Ash"},"facts":[{"kind":"fire","x":4,"y":5,"seen":100,"prov":"revealed","detail":9000}]}`,
 		`Guardian revealed fire at (4,5) to Ash`,
 	},
 	"metatron.order_placed": {
@@ -213,12 +214,12 @@ var catalogFixture = map[string]digestFixture{
 	"designation.cancelled": {`{"id":"dsg-100-0"}`, `Guardian withdrew a designation (dsg-100-0)`},
 	"designation.fulfilled": {`{"id":"dsg-100-0"}`, `the village fulfilled Guardian's mark (dsg-100-0)`},
 	"directive.issued": {
-		`{"id":"dir-200-0","designation_id":"dsg-100-0","targets":[0,1],"text":"Raise the shelter I have marked.","issued_tick":200,"expires_tick":459200,"status":"active"}`,
+		`{"id":"dir-200-0","designation_id":"dsg-100-0","targets":[{"id":0,"name":"Ash"},{"id":1,"name":"Birch"}],"text":"Raise the shelter I have marked.","issued_tick":200,"expires_tick":459200,"status":"active"}`,
 		`Guardian charged Ash, Birch: "Raise the shelter I have marked."`,
 	},
 	"directive.cancelled": {`{"id":"dir-200-0"}`, `Guardian lifted a charge (dir-200-0)`},
 	"directive.fulfilled": {
-		`{"id":"dir-200-0","designation_id":"dsg-100-0","targets":[0,1],"issued_tick":200}`,
+		`{"id":"dir-200-0","designation_id":"dsg-100-0","targets":[{"id":0,"name":"Ash"},{"id":1,"name":"Birch"}],"issued_tick":200}`,
 		`the village fulfilled Guardian's charge (dir-200-0, serving dsg-100-0)`,
 	},
 	"directive.expired": {`{"id":"dir-200-0"}`, `Guardian's charge lapsed (dir-200-0)`},
@@ -229,7 +230,7 @@ var catalogFixture = map[string]digestFixture{
 		`the village's faith deepens (directive_fulfilled)`,
 	},
 	"prophecy.declared": {
-		`{"id":"pro-300-0","targets":[0,1],"text":"Before three dawns a shelter will stand.","claim":{"kind":"structure_count","structure_kind":"shelter","min":1},"declared_tick":300,"deadline_tick":559200,"status":"active"}`,
+		`{"id":"pro-300-0","targets":[{"id":0,"name":"Ash"},{"id":1,"name":"Birch"}],"text":"Before three dawns a shelter will stand.","claim":{"kind":"structure_count","structure_kind":"shelter","min":1},"declared_tick":300,"deadline_tick":559200,"status":"active"}`,
 		`Guardian foretells: "Before three dawns a shelter will stand."`,
 	},
 	"prophecy.fulfilled": {`{"id":"pro-300-0"}`, `Guardian's foretelling came true (pro-300-0)`},
@@ -244,21 +245,21 @@ var catalogFixture = map[string]digestFixture{
 		`Guardian ran under 2 skill files ab12cd34ef56`,
 	},
 	"morgue.epilogue": {
-		`{"agent":0,"text":"Ash kept the fire until the end."}`,
+		`{"agent":{"id":0,"name":"Ash"},"text":"Ash kept the fire until the end."}`,
 		`epilogue for Ash: Ash kept the fire until the end.`,
 	},
 	"metatron.time_snapped":   {`{"to_tick":106200,"gratis":false}`, `Guardian snapped time forward to day 2 11:30`},
-	"metatron.item_granted":   {`{"agent":0,"kind":"food_raw","qty":2,"gratis":false}`, `Guardian granted Ash 2 food_raw`},
+	"metatron.item_granted":   {`{"agent":{"id":0,"name":"Ash"},"kind":"food_raw","qty":2,"gratis":false}`, `Guardian granted Ash 2 food_raw`},
 	"metatron.entity_moved":   {`{"class":"pile","x":3,"y":4,"to_x":6,"to_y":7,"gratis":false}`, `Guardian moved the pile at (3,4) to (6,7)`},
 	"metatron.entity_removed": {`{"class":"structure","x":12,"y":8,"gratis":false}`, `Guardian removed the structure at (12,8)`},
 
 	// --- cog (labeled) ---
 	"cog.thought": {
-		`{"job":"j1","class":"reflex","agent":0,"snapshot_tick":100,"generation":1,"trigger_seq":0,"points":5,"predicted_wall_ms":200,"predicted_land_tick":300}`,
+		`{"job":"j1","class":"reflex","agent":{"id":0,"name":"Ash"},"snapshot_tick":100,"generation":1,"trigger_seq":0,"points":5,"predicted_wall_ms":200,"predicted_land_tick":300}`,
 		`job=j1 class=reflex agent=Ash pts=5 pred=200ms`,
 	},
 	"cog.outcome": {
-		`{"job":"j1","class":"reflex","agent":0,"outcome":"landed","snapshot_tick":100,"landing_tick":150,"staleness_ticks":10,"predicted_wall_ms":200,"actual_wall_ms":220}`,
+		`{"job":"j1","class":"reflex","agent":{"id":0,"name":"Ash"},"outcome":"landed","snapshot_tick":100,"landing_tick":150,"staleness_ticks":10,"predicted_wall_ms":200,"actual_wall_ms":220}`,
 		`job=j1 landed agent=Ash stale=10t wall=220ms`,
 	},
 	"cog.recalibration_recommended": {
@@ -310,6 +311,19 @@ func TestCatalogSweep(t *testing.T) {
 		}
 		if got := plainSegs(segs); got != fx.want {
 			t.Errorf("%s: plain summary = %q, want %q", typ, got, fx.want)
+		}
+		// The AC #2 mechanical proof (spec 086 FR-007, US4 AS-1): an
+		// agent-bearing payload (its refs carry names) digests IDENTICALLY
+		// with names = nil — payload names suffice, no replica lookup.
+		if strings.Contains(fx.payload, `"name":"`) {
+			nilSegs, ok := fn(e, nil, nil)
+			if !ok {
+				t.Errorf("%s: digest fell back with names=nil", typ)
+				continue
+			}
+			if got := plainSegs(nilSegs); got != fx.want {
+				t.Errorf("%s: names=nil summary = %q, want %q — the digest still leans on the replica", typ, got, fx.want)
+			}
 		}
 	}
 
