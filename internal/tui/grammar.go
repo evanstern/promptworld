@@ -106,6 +106,11 @@ var familyByNamespace = map[string]eventFamily{
 	// family voice like the standing orders they clone.
 	"designation": familyGuardian,
 	"directive":   familyGuardian,
+	// The faith economy (spec 085 — faith movements and the prophecy
+	// lifecycle): guardian-domain happenings, guardian family voice like the
+	// plan layer above.
+	"faith":    familyGuardian,
+	"prophecy": familyGuardian,
 }
 
 // eventFamilyOf derives a type's family from its namespace prefix (R2). New

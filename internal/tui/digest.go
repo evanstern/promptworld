@@ -1196,6 +1196,42 @@ var digestRegistry = map[string]digestFunc{
 		}
 		return join([]seg{txt(sk.Name() + "'s charge lapsed ("), emph(p.ID), txt(")")}), true
 	},
+	// faith.changed / prophecy.* (spec 085): the faith economy — devotion and
+	// doubt, never points or numbers first (the overjustification caution);
+	// the reason rides as the mechanical footnote. Prophecy rows mirror the
+	// standing-order voice: the guardian declares, the world answers.
+	"faith.changed": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.FaithChangedPayload](e)
+		if !ok {
+			return nil, false
+		}
+		phrase := "the village's faith deepens"
+		if p.Delta < 0 {
+			phrase = "faith wavers in the village"
+		}
+		return join([]seg{txt(phrase + " ("), emph(p.Reason), txt(")")}), true
+	},
+	"prophecy.declared": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.Prophecy](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{txt(sk.Name() + " foretells: "), speech(truncateRunes(p.Text, 80))}), true
+	},
+	"prophecy.fulfilled": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.OrderIDPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{txt(sk.Name() + "'s foretelling came true ("), emph(p.ID), txt(")")}), true
+	},
+	"prophecy.failed": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.OrderIDPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{txt(sk.Name() + "'s word did not come to pass ("), emph(p.ID), txt(")")}), true
+	},
 	// morgue.epilogue (spec 044 US2): the narrator's recorded mourning prose
 	// — agent -1 is the run-end epilogue. chronicle.entry's truncation manner.
 	"morgue.epilogue": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {

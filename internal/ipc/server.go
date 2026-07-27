@@ -218,6 +218,10 @@ func (s *Server) statusData(cs sim.Status) StatusData {
 			// living worlds, keeping their status bytes unchanged.
 			Ended:    cs.Ended,
 			EndedDay: cs.EndedDay,
+			// Faith projection (spec 085 FR-009): straight from the loop's
+			// coherent snapshot — the D1 rule, no daemon-side re-derivation.
+			Faith:           cs.Faith,
+			FaithRegenTicks: cs.FaithRegenTicks,
 		},
 		Daemon: DaemonStatus{
 			Pid:           os.Getpid(),

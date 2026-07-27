@@ -110,9 +110,10 @@ func (f *lessonFold) note(e store.Event) {
 const lessonPullSuffix = "(? for more · x dismiss)"
 
 // lessonCatalog is the taxonomy (contracts/lessons-catalog.md's 8-entry
-// minimum, grown to 12 by spec 077 US3's tranche 2: 5 mechanics + 7
-// prompting) — the single source both the row (push) and the help overlay's
-// lessons section (pull, helpLessons) read from. Append-only at runtime;
+// minimum, grown to 12 by spec 077 US3's tranche 2 and to 13 by spec 085's
+// first-faith-event — the spec-077 rider: 6 mechanics + 7 prompting) — the
+// single source both the row (push) and the help overlay's lessons section
+// (pull, helpLessons) read from. Append-only at runtime;
 // every string is authored with skin tokens (lessonSkinResolve) for every
 // guardian reference (FR-008).
 var lessonCatalog = []lessonEntry{
@@ -233,9 +234,9 @@ var lessonCatalog = []lessonEntry{
 	},
 	// --- lesson tranche 2 (spec 077 US3, FR-018): the spec-063 feedback
 	// surfaces, the stage-3 skill-file concept, and the first wrong-thing
-	// detector. `first-faith-event` is deliberately ABSENT (FR-020): TASK-118
-	// has not run and no faith event type exists — the entry rides TASK-118
-	// as a content rider, never a stub here.
+	// detector. `first-faith-event` (once deliberately absent per FR-020)
+	// landed with spec 085 — the rider, closed — appended at the catalog's
+	// tail below.
 	{
 		ID:    "first-explain-answer",
 		Title: "Grounded answers",
@@ -288,6 +289,23 @@ var lessonCatalog = []lessonEntry{
 			reason, ok := rejectionReason(e)
 			return ok && f.rejections[reason] >= sameRefusalThreshold
 		},
+	},
+	// first-faith-event (spec 085 FR-011 — the spec-077 FR-020 rider, closed):
+	// the first faith movement a world ever folds. Direction-NEUTRAL by
+	// contract: faith can first move DOWN (a death), so the copy explains the
+	// mechanic without congratulating — devotion and doubt, never points or
+	// streaks (the overjustification caution).
+	{
+		ID:    "first-faith-event",
+		Title: "The village's faith",
+		Body: "The village's faith just moved — it rises when the {{skin.guardian.epithet}}'s " +
+			"directives are fulfilled and its prophecies come true, and falls with deaths, " +
+			"lapsed directives, and false prophecies. Faith sets how quickly the " +
+			"{{skin.guardian.epithet}}'s power returns.",
+		Text:    "The village's faith just moved — the flock's devotion now paces the {{skin.guardian.epithet}}'s power.",
+		Pointer: "→ watch the strip's faith segment, or press 3",
+		Tier:    lessonTierMechanics,
+		Trigger: func(e store.Event) bool { return e.Type == "faith.changed" },
 	},
 }
 

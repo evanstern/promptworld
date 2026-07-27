@@ -210,8 +210,13 @@ var preLadderGoldenFrames = []preLadderGoldenFrame{
 		},
 	},
 	{
+		// Re-pinned for spec 085 (TASK-118): the guardian strip gained its §4
+		// faith segment — this fixture's status carries no faith field (the
+		// pre-085 wire shape), so the frame legitimately grew the honest
+		// dashed `faith —` form. Verified directly by the strip's own tests
+		// (TestGuardianStripFaithStates); not a stage-defaults regression.
 		name: "widescreen-guardian-strip-charges",
-		want: "9eb5939e2bd54c496bac8bf1f02cab1fda38ff793a849592e3a47c71e98b220b",
+		want: "39833aed8f8a79c10ac195bddff97dcae2314540d11ab82f8530c9f105e1cd6d",
 		build: func(t *testing.T) Model {
 			m := widescreenModel(t)
 			m.connected = true

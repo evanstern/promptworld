@@ -77,6 +77,11 @@ func lessonFixtureEventPayload(t *testing.T, id string) store.Event {
 		// One same-reason rejection — the FOLD entry needs three of these
 		// (the sweep primes two; the fold tests below drive the arithmetic).
 		return mkEvent("cog.tool_call", sim.CogToolCallPayload{Job: "j1", Tool: "gather", Verdict: "rejected_gate", Reason: "outside the charter"})
+	// --- spec 085 (the spec-077 rider, closed) ---
+	case "first-faith-event":
+		// Direction-neutral by contract: a NEGATIVE first movement (a death)
+		// is the fixture, so the copy can never lean congratulatory.
+		return mkEvent("faith.changed", sim.FaithChangedPayload{Delta: -6, Reason: "villager_died", SourceID: "1"})
 	}
 	t.Fatalf("lessonFixtureEvent: no fixture wired for id %q", id)
 	return store.Event{}
@@ -85,8 +90,8 @@ func lessonFixtureEventPayload(t *testing.T, id string) store.Event {
 // --- T003: catalog shape + skin-token resolution ---
 
 func TestLessonCatalogMinimumTaxonomy(t *testing.T) {
-	if len(lessonCatalog) != 12 {
-		t.Fatalf("lessonCatalog has %d entries, want exactly 12 (contracts minimum 8 + spec 077 tranche 2)", len(lessonCatalog))
+	if len(lessonCatalog) != 13 {
+		t.Fatalf("lessonCatalog has %d entries, want exactly 13 (contracts minimum 8 + spec 077 tranche 2 + spec 085's first-faith-event)", len(lessonCatalog))
 	}
 	seen := map[string]bool{}
 	mechanics, prompting := 0, 0
@@ -113,13 +118,13 @@ func TestLessonCatalogMinimumTaxonomy(t *testing.T) {
 			t.Errorf("entry %q must carry exactly one of Trigger/FoldTrigger", e.ID)
 		}
 	}
-	if mechanics != 5 || prompting != 7 {
-		t.Errorf("got %d mechanics + %d prompting entries, want 5 + 7 (spec 077 FR-018)", mechanics, prompting)
+	if mechanics != 6 || prompting != 7 {
+		t.Errorf("got %d mechanics + %d prompting entries, want 6 + 7 (spec 077 FR-018 + spec 085 FR-011)", mechanics, prompting)
 	}
-	// first-faith-event is OUT (spec 077 FR-020): TASK-118 unrun — the
-	// catalog must not stub it.
-	if seen["first-faith-event"] {
-		t.Error("first-faith-event is stubbed — it rides TASK-118, never this catalog (FR-020)")
+	// first-faith-event is IN (spec 085 FR-011 — the spec-077 FR-020 rider,
+	// closed): the faith event type exists now, and the entry landed with it.
+	if !seen["first-faith-event"] {
+		t.Error("first-faith-event missing — spec 085 closes the spec-077 rider by shipping it")
 	}
 }
 

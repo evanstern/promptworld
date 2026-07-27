@@ -231,6 +231,17 @@ type ClockStatus struct {
 	// TASK-119's scenario machinery consumes (FR-005).
 	Ended    bool  `json:"ended,omitempty"`
 	EndedDay int64 `json:"ended_day,omitempty"`
+	// Faith / FaithRegenTicks (spec 085 FR-009, data-model §7): the village
+	// faith score and the EFFECTIVE charge-regen cadence, folded from the
+	// loop's coherent snapshot (sim.Status — the sim's FaithRegenCadenceTicks
+	// is the single band authority; the daemon never re-derives). Additive
+	// omitempty: a pre-085 daemon serves neither, and the strip renders the
+	// nil pointer as the honest dashed state (`faith —`) with the legacy
+	// exported cadence constant as its forecast fallback. FaithRegenTicks 0
+	// from a spec-085 daemon means NO regen is scheduled (the scenario
+	// forsaken band) — the forecast segment is omitted, never invented.
+	Faith           *int  `json:"faith,omitempty"`
+	FaithRegenTicks int64 `json:"faith_regen_ticks,omitempty"`
 }
 
 type DaemonStatus struct {
