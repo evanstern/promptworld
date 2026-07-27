@@ -74,6 +74,41 @@ outcomes" — its payload embeds the entire canonical `sim.State`, by design: it
 the single record standing in for the whole pre-break history, and the reducer's
 `state.Seed` check keeps it total (a mismatched payload no-ops rather than erroring).
 
+### Agent references are named refs (spec 086)
+
+Every agent-referencing payload field is a `sim.AgentRef` — the wire carries
+`{"id":2,"name":"Cedar"}` objects (and `[{…},{…}]` lists), the name stamped at
+emission from the fixed `AgentNames` roster constant via the `Ref`/`Refs`
+constructors, so the log is self-describing with no replica. Sentinels
+(canonically −1: any/none/personal) marshal `{"id":-1,"name":""}` — a fake
+name on a sentinel is as much a bug as a missing name on an agent. Four
+state-shared entities split into wire mirrors carrying refs while state keeps
+bare ints (`DirectiveIssuedPayload`, `OrderPlacedPayload`,
+`ProphecyDeclaredPayload`, `DeathRef` in `run.ended`) — no `AgentRef` is ever
+reachable from `sim.State` (the hash-stability invariant,
+`TestNoAgentRefInState`). Enforcement is mechanical: the typed ref, append
+validation at both live-emission doors (`mustPayload` panics; `InjectSocial`
+decodes via `sim.PayloadCatalog` and refuses the batch), and the doc-anchored
+`TestPayloadAgentRefSweep` over the catalog (frozen tag vocabulary + frozen
+rationale-carrying allowlist: `PlaceFact.Source`, `CogToolCallPayload.Args`,
+`IntentSetPayload.Source`, `FaithChangedPayload.SourceID`, `PlanStep.Target`,
+`Guard.Target` — the last two state-resident, the PlaceFact class).
+
+**The back-compat matrix (normative, permanent — spec 086 data-model §6):**
+
+| Input | Decoder behavior | Renderer behavior |
+|---|---|---|
+| pre-086 row, `"agent":2` | dual-shape unmarshal → `{2, ""}`; arm reads `.ID` — identical fold | name `""` → replica fallback (`agentName`); grammar-miss rows still via `resolvePayloadNames` |
+| post-086 row, `{"id":2,"name":"Cedar"}` | object branch; arm reads `.ID` | payload name rendered directly; no replica needed |
+| pre-086 snapshot | state shapes unchanged; decodes as today | n/a |
+| migrated v1–v4 world | `world.migrated` embeds State — shape untouched; migration never rewrites payloads | historic rows fall back as above |
+| pre-086 log, from-genesis replay | byte-identical `State.Marshal()`/`Hash()` | n/a |
+| live pre-086 world continued | new emissions named from the next event on; old rows keep their bytes | mixed feed: new rows payload-named, old rows fallback |
+
+Name validation NEVER lives in a reducer arm — replay accepts unnamed shapes
+forever; validation exists only at the live-emission choke points, which
+replay never traverses.
+
 ## Operational notes
 
 The outcome-payload

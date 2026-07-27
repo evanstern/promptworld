@@ -133,16 +133,16 @@ any path without a red test or a refused emission.
 
 ## Phase 5: US3 — back-compat proven and documented (P1)
 
-- [ ] T018 [US3] Pre-086 fixture log (checked in; spans the payload
+- [X] T018 [US3] Pre-086 fixture log (checked in; spans the payload
   families incl. injected social rows): from-genesis replay
   byte-identity (`Marshal`/`Hash`) vs recorded pre-086 state bytes;
   pre-086 snapshot decode + stored-hash verification; `world.migrated`
   fixture shape untouched (FR-004, US3 AS-1..3, SC-003)
-- [ ] T019 [US3] Mixed-era proofs: live-continuation test (old rows keep
+- [X] T019 [US3] Mixed-era proofs: live-continuation test (old rows keep
   bytes, new rows named); legacy-shape rows through every migrated arm
   (fold identity, no name rejection); same-seed double-run post-086
   event-history byte-equality (US3 AS-4/5, FR-012, SC-003)
-- [ ] T020 [US3] The documented contract: data-model §6 matrix
+- [X] T020 [US3] The documented contract: data-model §6 matrix
   re-grounded into the wiki event-types conventions (rides Phase 8's
   re-pin; THIS task adds the doc text to the note source so AC #4's
   "documented" clause has a durable home beyond the spec dir) (US3
