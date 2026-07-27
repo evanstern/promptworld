@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-27 13:20'
-updated_date: '2026-07-27 14:17'
+updated_date: '2026-07-27 14:22'
 labels:
   - mvls
   - guardian-survival
@@ -27,3 +27,9 @@ Carded from TASK-136's live measurement (2026-07-27, docs/design/evidence/task-1
 - [ ] #2 Post-fix run with >=10 privileged-action attempts: rejection rate measured, materially below the 80% baseline, evidence doc recorded
 - [ ] #3 The new rate replaces 80% as the quoted confound bound for prompt-attribution comparisons (TASK-137 evidence doc updated; TASK-67 duel scoreboard cites it)
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+AC#1 TRIAGE DECISION (2026-07-27, operator-steered): mitigation = STRONGER MODEL TIER for the guardian turn via the 9router proxy (openai_compat @ localhost:20128, probe-verified live). World-config only (llm.json routes) — no code change; prompt shaping and arg-repair retry DEFERRED unless the tier change fails to move the rate. Model ladder per operator: cc/claude-sonnet-5 first; escalate to cc/claude-opus-4-8 if the rate does not move materially; cc/claude-fable-5 sanctioned as an occasional probe only (thinking model, wall-clock heavy — never the always-on turn model). Rationale: the TASK-137 taxonomy shows all 8 rejections were model-side grammar/grounding fumbles (gemma4:12b-mlx native tool-calls); the spec-059 digest and the door behaved correctly, so the model is the knob — exactly the evidence doc's first re-run suggestion. CORRECTION to this card's framing: the failing privileged tool calls ride the guardian TURN (route 'metatron', the KindMetatron tool loop) — 'metatron_watch' is the bare yes/no order-match confirm (spec 029, never a tool loop) and stays cheap-first local. Experiment design: re-run the TASK-137 recipe (both arms, seed 1337, stage-4 --override, harsh dials fire_burn_per_wood=3600 / gru_emerge_per_mille=1000, 2 game-days @ 8x, authored charter re-planted verbatim from docs/design/evidence/task-137/authored-charter.md) with ONE variable changed: routes.metatron -> cc/claude-sonnet-5 (pricing 3/15 usd-per-mtok); every other route stays gemma4:12b-mlx tool_mode native as in the baseline. Binary rebuilt from current main — spec 086 payload census landed since baseline @072dd71 (payload plumbing, not guardian prompting; recorded for comparability). Worlds at ~/.promptworld/measure/task-163-{default,authored}.
+<!-- SECTION:NOTES:END -->
