@@ -3,10 +3,10 @@ id: TASK-137
 title: >-
   Charter-delta experiment: default vs authored charter on a seeded world
   (TASK-111 AC5)
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-25 19:37'
-updated_date: '2026-07-27 02:13'
+updated_date: '2026-07-27 08:27'
 labels:
   - mvls
   - guardian-survival
@@ -25,8 +25,8 @@ REORIENT 2026-07-26 reframe (docs/design/reorient-2026-07-26-ui.md): this experi
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Two same-seed runs (default vs authored charter) with induced crises completed and compared
-- [ ] #2 Delta (or proven absence of delta) recorded with numbers here and on TASK-111; AC#5 resolution recorded
+- [x] #1 Two same-seed runs (default vs authored charter) with induced crises completed and compared
+- [x] #2 Delta (or proven absence of delta) recorded with numbers here and on TASK-111; AC#5 resolution recorded
 - [ ] #3 Verdict on the teaching-game premise recorded: measurable delta (charter is a real player verb) or proven absence (charter surface is decoration — redesign follow-up carded); TASK-112's hold resolved accordingly
 <!-- AC:END -->
 
@@ -40,4 +40,12 @@ RE-TASKED (2026-07-26, operator): the morning's v4 arm worlds were discarded bef
 Scheduled (operator, 2026-07-26): PARALLEL arms at 22:00 tonight -> ~04:00 done, rig free by morning. Symmetric-coupling caveat (shared gemma queue, same seed + dials both arms) will be recorded in the evidence doc. At launch: rebuild binary from current main (v5), recreate both arms fresh (new terrain gen), re-plant the authored charter from docs/design/evidence/task-137/authored-charter.md, harsh dials (fire_burn_per_wood=3600, gru_emerge_per_mille=1000), stage-4 --override, all-routes gemma, calibrate once + copy, verify horizon/tuning/watches before walking away. Trigger armed in-session.
 
 LAUNCHED 2026-07-26 22:00 window (parallel arms, per operator schedule). Binary rebuilt from main @072dd71. Both arms created fresh: ~/.promptworld/measure/task-137-{default,authored}, seed 1337, stage-4 --override. All routes gemma4:12b-mlx @ http://mbpro-m1.local:11434/v1 (parallel 4, endpoint_capacity 4). Harsh dials verified via sim.tuning_applied in both logs: fire_burn_per_wood=3600, gru_emerge_per_mille=1000. Arm B charter.md = docs/design/evidence/task-137/authored-charter.md verbatim (diff-verified after daemon start); arm A stock default. Calibration: 9.3 s/pt on gemma, copied A→B; horizon all-green at 8x (planner 222<=1200, conversation 962<=7200, meeting 148<=3600). Three sys-watch orders (near_death, starvation, exposure) active in both arms. Both daemons at 8x, effective rate 8.0, not degraded. Monitor armed: exits when both arms MAX(tick)>=172800 (~04:00). DEVIATION (recorded): tool_mode json→native on both arms identically — gemma4:12b-mlx on this ollama ignores response_format json_schema (fenced/empty JSON envelope; calibrate circuit-opened: 'tool-call envelope: invalid character backtick'); native tool-calls probe-verified working. Symmetric across arms, no confound beyond the already-noted shared-queue coupling. LAUNCH-BLOCKING FAILURE AVOIDED, all 7 pre-flight verifications passed.
+
+COMPLETED 2026-07-27 ~04:10. Both arms ran 2 game-days at 8x under harsh dials (parallel per schedule; default ended tick 178,263, authored 177,807). Results: docs/design/evidence/task-137/results.md (merged 8406583). Headline: deaths 1 vs 1 — SAME villager (Rowan/7), SAME cause (starvation), authored arm ~12k ticks earlier (n=1 noise). Guardian BEHAVIOR moved decisively: landed interventions 0 (default) vs 2 (authored — targeted food-seeking visions to the starving villager 19k/3.5k ticks pre-death); attempts 3 vs 7. Binding constraint = tool competence, not motivation: 8/10 privileged attempts rejected by the targeting door (missing/hallucinated place coords, item kind 'fire', empty move class — all gemma4:12b-mlx grammar/grounding fumbles). AC5 verdict recorded on TASK-111: charter surface is NOT decoration (behavior delta real) but outcome delta unproven at n=1. TASK-136 sample recorded on its card. Worlds preserved at ~/.promptworld/measure/task-137-{default,authored} for re-analysis.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Charter-delta experiment executed per operator schedule (2026-07-26 22:00 launch, parallel arms, seed 1337, harsh dials, gemma4:12b-mlx all routes, tool_mode native deviation recorded). Delta found in guardian BEHAVIOR (0 vs 2 landed interventions, 3 vs 7 attempts — authored charter engages the guardian), null in OUTCOME (1 starvation death each, same villager, n=1). Dominant finding: 8/10 privileged attempts rejected at the targeting/validity door — tool competence is the floor under any charter. Evidence doc: docs/design/evidence/task-137/results.md. Feeds TASK-111 AC5 (resolved) and TASK-136 (rejection sample).
+<!-- SECTION:FINAL_SUMMARY:END -->

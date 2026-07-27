@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-25 19:37'
-updated_date: '2026-07-27 02:09'
+updated_date: '2026-07-27 08:27'
 labels:
   - mvls
   - guardian-survival
@@ -29,10 +29,10 @@ REORIENT 2026-07-26 reframe (docs/design/reorient-2026-07-26-ui.md): under the t
 - [ ] #2 Rejection rate quoted as the mechanical-noise/confound bound in TASK-137's evidence doc, so prompt-attribution comparisons (TASK-137, TASK-67 duel) can cite it
 <!-- AC:END -->
 
-
-
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 Evidence rides the TASK-137 crisis experiment (2026-07-26): harsh-dial worlds force survival turns -> miracle attempts; door rejection rate measured across both arms vs the world-01 pre-059 baseline (3 of 4 rejected).
+
+TASK-137 run produced the rejection-rate sample (2026-07-27, docs/design/evidence/task-137/results.md): 10 privileged-action attempts across both arms, 8 rejected by the targeting/validity door (80%; 3/3 default arm, 5/7 authored arm). Taxonomy: send_vision place grants missing place_x/place_y (2), hallucinated tree coords (1), work_miracle give_item with non-item kind 'fire'/empty (3), work_miracle move with empty entity class (2). All model-side (gemma4:12b-mlx native tool-calls). Zero invalid-target rejections converted to landed actions after retry within the same turn except Sage's vision (retried with coords — but hallucinated, re-rejected). Event evidence in ~/.promptworld/measure/task-137-{default,authored}/world.db (cog.tool_call verdict/reason fields).
 <!-- SECTION:NOTES:END -->
