@@ -201,7 +201,7 @@ and amended authority pages.
 
 ## Phase 8: Polish, grounding, gates
 
-- [ ] T028 Full-suite + scope-guard audit: `go test ./...`; zero diffs
+- [X] T028 Full-suite + scope-guard audit: `go test ./...`; zero diffs
   under `internal/cognition`/`internal/clock`/`internal/llm`/
   `internal/store`/`internal/world`; `internal/ipc` untouched; no new
   event types; no emission-order changes; stranger payloads untouched
