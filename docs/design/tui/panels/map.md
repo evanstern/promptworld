@@ -2,7 +2,7 @@
 title: Panel — map (terrain camera viewport)
 class: panel
 status: shipped
-verified_against: 6e83f579db2b448c9c59b15575bf564b1e9b1852
+verified_against: fc9566d527941d3950fdd307168556820bd0875b
 sources:
   - internal/tui/views.go
   - internal/tui/tiles.go
@@ -162,7 +162,13 @@ glyphs, not new glyphs:
   `sim.SurvivalFreezingRearm` (warmth), and the new `sim.DangerRestBelow`
   export (rest — the one need with no prior exported threshold). Morale has
   no danger band in sim today, so it is deliberately not part of this check.
-  Clears the frame recovery crosses back over the threshold.
+  Clears the frame recovery crosses back over the threshold. This overlay
+  also SUBSUMES the spec-083 neglect detector's map presentation by
+  construction — the detector fires on the same exported band constants this
+  predicate reads, so a neglect-firing villager is always already painted
+  needs-critical: no new token, glyph, or legend row exists for neglect
+  (`TestRenderMapGridNeglectFiringRendersCritical` pins the subsumption; the
+  chronicle's whole-line alert is the event-shaped surface).
 - **Suppressed-mind** (`styleAgentSuppressed`, faint magenta) — a living
   villager whose latest decision-trace chain (`Model.traces`,
   `internal/tui/decisions.go`) is a router suppression (`agentSuppressedMind`)

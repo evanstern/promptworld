@@ -222,6 +222,18 @@ func (s *State) applyTimeSnapped(e store.Event) error {
 //	                      duration-anchor rule governs). NeedsAnchor itself holds
 //	                      need LEVELS (0-1000 ints, not ticks) frozen with the
 //	                      world, so it carries no tick field and needs no entry.
+//	NeglectState.FoodSince/WarmthSince/RestSince  band-entry anchors (spec 083:
+//	                      elapsed = tick-Since gates the neglect window in
+//	                      NeglectDue); ONLY non-zero (0 = not in band). Left
+//	                      unshifted, a snap would age every in-band episode past
+//	                      the window and fire the detector the instant it landed.
+//	NeglectState.FoodIntent/WarmthIntent/RestIntent  last-class-intent stamps
+//	                      (spec 083: elapsed = tick-Intent is the zero-intent
+//	                      clause — read live against the clock, the
+//	                      Belief.Reinforced elapsed-anchor shape, NOT a history
+//	                      record like IntentRecord.Tick); ONLY non-zero (0 =
+//	                      never). The Fired latches are bools (episode state,
+//	                      no tick field, no entry).
 //
 // KEEP (history/identity — never rewritten): Agent.Generation,
 //
@@ -287,6 +299,18 @@ func rebaseTicks(s *State, delta int64) {
 		shift(&a.LastGive)
 		shift(&a.LastMindIntentDone) // spec 062 US1: yield-window anchor (Belief.Reinforced shape); 0 = never mind-driven, stays 0
 		shift(&a.NeedsAnchorTick)    // spec 043 US2: trajectory-window edge anchor; 0 = unset, stays 0
+		if a.Neglect != nil {
+			// Spec 083: the six neglect anchors are duration anchors (elapsed
+			// against the live clock gates the window) — SHIFT, zero=never/
+			// not-in-band sentinels stay zero. The Fired latches are episode
+			// state (bools), untouched by construction.
+			shift(&a.Neglect.FoodSince)
+			shift(&a.Neglect.WarmthSince)
+			shift(&a.Neglect.RestSince)
+			shift(&a.Neglect.FoodIntent)
+			shift(&a.Neglect.WarmthIntent)
+			shift(&a.Neglect.RestIntent)
+		}
 		for j := range a.Beliefs {
 			shift(&a.Beliefs[j].Reinforced) // spec 030: decay anchor (elapsed = tick-Reinforced); 0 = grandfather, stays 0
 		}

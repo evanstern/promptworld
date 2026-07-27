@@ -656,6 +656,8 @@ func TestSnapPreservesRemainingDurations(t *testing.T) {
 		When: &Guard{Type: GuardAfterTick, Tick: 49000, Generation: 7}}}
 	a.NeedsAnchor = &Needs{Warmth: 500} // levels: frozen, never shifted
 	a.NeedsAnchorTick = 43500
+	// Spec 083: two anchors set + one zero=sentinel per kind, plus a latch.
+	a.Neglect = &NeglectState{WarmthSince: 43600, WarmthIntent: 43700, WarmthFired: true}
 
 	// Sentinels: agent 1's not-started work and never-talked cooldown stay zero.
 	a2 := &s.Agents[1]
@@ -714,6 +716,15 @@ func TestSnapPreservesRemainingDurations(t *testing.T) {
 	eq("Meeting.GatherStart", s.Meeting.GatherStart, 58000+delta)
 	eq("Agent.NeedsAnchorTick", a.NeedsAnchorTick, 43500+delta)
 	eq("PairTalk.Tick", s.PairTalks[0].Tick, 59000+delta)
+	// Spec 083: the in-band episode and its zero-intent clock survive the jump;
+	// the not-in-band/never sentinels stay zero; the episode latch is untouched.
+	eq("NeglectState.WarmthSince", a.Neglect.WarmthSince, 43600+delta)
+	eq("NeglectState.WarmthIntent", a.Neglect.WarmthIntent, 43700+delta)
+	eq("NeglectState.FoodSince(0)", a.Neglect.FoodSince, 0)
+	eq("NeglectState.RestIntent(0)", a.Neglect.RestIntent, 0)
+	if !a.Neglect.WarmthFired {
+		t.Error("NeglectState.WarmthFired latch must survive a snap untouched")
+	}
 	// The anchor LEVELS ride the freeze untouched (need values, not ticks).
 	if a.NeedsAnchor == nil || a.NeedsAnchor.Warmth != 500 {
 		t.Errorf("NeedsAnchor levels changed across snap: %+v", a.NeedsAnchor)
@@ -789,6 +800,12 @@ func TestRebaseTaxonomyComplete(t *testing.T) {
 		"State.ColdSnapUntil":       shift, // spec 077: cold-snap expiry deadline, read live (Structure.FuelUntil shape)
 		"Stranger.LastMove":         shift, // spec 077: movement-cadence anchor (Gru.LastAttack shape)
 		"Stranger.LastTake":         shift, // spec 077: take-cooldown anchor (Gru.LastAttack shape)
+		"NeglectState.FoodSince":    shift, // spec 083: band-entry anchor (Belief.Reinforced shape), 0 = not in band
+		"NeglectState.WarmthSince":  shift, // spec 083: band-entry anchor, 0 = not in band
+		"NeglectState.RestSince":    shift, // spec 083: band-entry anchor, 0 = not in band
+		"NeglectState.FoodIntent":   shift, // spec 083: last-class-intent stamp (elapsed anchor), 0 = never
+		"NeglectState.WarmthIntent": shift, // spec 083: last-class-intent stamp, 0 = never
+		"NeglectState.RestIntent":   shift, // spec 083: last-class-intent stamp, 0 = never
 		"Prophecy.DeadlineTick":     shift, // spec 085: a prophecy's future judgment deadline — the Directive.ExpiresTick classification verbatim (ACTIVE only)
 		// KEEP — history / identity / counters.
 		"Agent.Generation":                 keep,

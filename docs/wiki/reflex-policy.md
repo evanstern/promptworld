@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/policy.go
   - internal/sim/path.go
-verified_against: 048259bb42b03cc6ebeb13a49f367c2e3a7d4d37
+verified_against: fc9566d527941d3950fdd307168556820bd0875b
 ---
 
 # Reflex policy & pathfinding
@@ -15,7 +15,19 @@ something to do — since TASK-7, only agents idle past the 120-tick grace (the
 planner's injection window). It is the permanent degraded mode: when no planner
 thoughts arrive, this keeps bodies alive. `resolveGoal` (same file) is the shared
 target resolver: planner goals from [[agent-mind]] resolve to coordinates through
-the exact same nearest-X helpers the reflex uses. Spec 012 widened `resolveGoal`'s
+the exact same nearest-X helpers the reflex uses. Since spec 083 the file
+also hosts `needClassGoals`/`needClassOf`, the neglect detector's need→goal
+class dictionary — deliberately BESIDE the goal-resolver registry so the
+dictionary and the registry rot together or not at all (the TASK-106
+research's rot rule; `TestNeedClassGoalsResolve` pins every member against
+`goalResolvers` and the exact v1 set): food = forage/hunt/cook, warmth =
+goto_warmth/warm_up/build_fire/refuel_fire, rest = sleep; `chop` is
+deliberately unclassed (Oak's fatal window was full of reflex chops), `eat`
+is a direct event (never an intent goal), and kind-parameterized transfers
+(pick_up/withdraw of food) stay unclassed at goal-name granularity — the
+`agent.intent_set` reducer arm consults `needClassOf` to stamp the
+detector's zero-intent clock ([[executor-needs-survival]],
+[[sim-state-apply-agents]]). Spec 012 widened `resolveGoal`'s
 goal set considerably (quarrying, water, crafting, an oven, refueling, cooking,
 bathing) while trimming the reflex ladder itself down to one addition — refueling
 a dying fire — and one removal — shelter-building dropped out of the reflex

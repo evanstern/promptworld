@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/state.go
   - internal/sim/agents.go
-verified_against: 048259bb42b03cc6ebeb13a49f367c2e3a7d4d37
+verified_against: fc9566d527941d3950fdd307168556820bd0875b
 ---
 
 # Sim state: intent-ring & lifecycle-end arms
@@ -41,7 +41,10 @@ never a completion) does not arm it, and neither does a reflex-sourced
 `"done"` closure (`isMindSource("reflex")` is false), so a no-planner world's
 anchor stays the permanent 0 sentinel;
 since spec 064 ([[executor]], [[reflex-policy]]) `agent.intent_set` carries an
-OPTIONAL completion condition onto the intent (described in [[sim-state-apply-agents]]), `agent.work_started`
+OPTIONAL completion condition onto the intent (described in
+[[sim-state-apply-agents]], as is its spec-083 neglect class-intent stamp —
+the intent-SET side of the lifecycle feeds the neglect detector's
+zero-intent clock; closures never touch it), `agent.work_started`
 gains a companion `Ref` field (`omitempty`) — a conditioned hold's work-started
 doubles as its hold anchor, so `Ref` captures the need level the per-tick
 no-net-gain check baselines against (0 and unread for every ordinary work

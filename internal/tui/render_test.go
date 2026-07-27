@@ -222,6 +222,26 @@ func TestRenderChronicleRowAlertWholeLine(t *testing.T) {
 	}
 }
 
+// TestRenderChronicleRowNeglectAlertWholeLine (spec 083 FR-010, SC-005): the
+// neglect percept renders whole-line in the alert role — membership in the
+// shipped tier, the stranger.took precedent — and its summary carries the
+// deterministic per-need wording (name + peril + inaction + level).
+func TestRenderChronicleRowNeglectAlertWholeLine(t *testing.T) {
+	withColorProfile(t, termenv.TrueColor)
+	e := store.Event{Seq: 1, Tick: 510180, Type: "sim.neglect_detected",
+		Payload: json.RawMessage(`{"agent":0,"need":"warmth","level":0,"since":499320}`)}
+	l := formatChronicleLine(e, []string{"Ash"}, nil)
+	cols := computeChronicleColumns([]chronicleLine{l}, false)
+	got := renderChronicleRow(l, cols, 120, 1, false)
+	want := styleFeedAlert.Render(plainChronicleLine(l, cols))
+	if got != want {
+		t.Errorf("neglect row should be styled whole-line with styleFeedAlert:\ngot:  %q\nwant: %q", got, want)
+	}
+	if plain := plainChronicleLine(l, cols); !strings.Contains(plain, "Ash is dangerously cold and has done nothing about it (warmth 0)") {
+		t.Errorf("neglect row wording drifted: %q", plain)
+	}
+}
+
 // TestRenderChronicleRowLabeledVoiceWholeLine: labeled-voice families
 // (cog/clock/daemon, contract §2) tint the whole line, not per-segment.
 func TestRenderChronicleRowLabeledVoiceWholeLine(t *testing.T) {

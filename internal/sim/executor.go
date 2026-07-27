@@ -190,6 +190,38 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 
 	// Per-game-minute needs heartbeat: decay, warmth, death.
 	if nextTick%60 == 0 {
+		// Neglect detector (spec 083, FR-004): per living AWAKE agent, per
+		// survival need in the fixed food→warmth→rest order, fire ONE
+		// sim.neglect_detected + its companion percept memory when the need
+		// has sat below its spec-062 danger band for neglectWindowTicks with
+		// zero class intents over the same window (NeglectDue — pure over
+		// PRE-tick state, the recoveryHoldEvents purity precedent). Sleeping
+		// agents are skipped at the beat (their inaction is sleep; the
+		// spec-064 wake ladder owns sleeping emergencies) — anchors keep
+		// accruing, so a still-critical waker fires on its next heartbeat.
+		// Emitted BEFORE this beat's needs_changed events on purpose: the
+		// batch then folds latch-then-needs, so a need that recovers on this
+		// very beat closes its episode cleanly (Since=0, Fired=false) instead
+		// of stranding a stale latch that would silence the NEXT episode.
+		// The companion memory (salNeglect = 9 = GenerationBumpSalience)
+		// bumps the agent's generation — the interrupt IS the research §3
+		// planner beat; the per-episode fired latch bounds the rate.
+		for i := range s.Agents {
+			a := &s.Agents[i]
+			if a.Dead || a.Asleep {
+				continue
+			}
+			for _, need := range neglectNeedOrder {
+				if !NeglectDue(a, need, nextTick) {
+					continue
+				}
+				emit("sim.neglect_detected", NeglectDetectedPayload{
+					Agent: i, Need: need, Level: needValue(a.Needs, need), Since: a.Neglect.Since(need),
+				})
+				events = append(events, situatedMemoryEvent(nextTick, i, salNeglect,
+					PlaceAt(s, a.X, a.Y), "", OriginWitness, "%s", neglectMemoryText(need)))
+			}
+		}
 		for i := range s.Agents {
 			a := &s.Agents[i]
 			if a.Dead {

@@ -1,11 +1,11 @@
 ---
 name: executor-needs-survival
-description: The per-minute needs heartbeat, fire fuel/warmth, eating, needs-conditioned recovery holds (warm_up), and the run-end death detector — how an agent's Needs decay, recover, and can reach zero. Load for death causes, fuel/eat/recover mechanics, or the run.ended contract.
+description: The per-minute needs heartbeat, fire fuel/warmth, eating, needs-conditioned recovery holds (warm_up), the spec-083 neglect detector, and the run-end death detector — how an agent's Needs decay, recover, and can reach zero. Load for death causes, fuel/eat/recover mechanics, the neglect percept, or the run.ended contract.
 kind: component
 sources:
   - internal/sim/executor.go
   - internal/sim/agents.go
-verified_against: 048259bb42b03cc6ebeb13a49f367c2e3a7d4d37
+verified_against: fc9566d527941d3950fdd307168556820bd0875b
 ---
 
 # Executor — needs, survival, and run end
@@ -91,6 +91,33 @@ bare `(agent, night)` of before. Held-pinned villagers are excluded from the
 emergent-gathering quorum ([[governance]]) — a survival hold is not an
 elective assembly.
 
+**Neglect detector** (spec 083, from the TASK-106 research §1.3 — the shape
+that killed Oak on world-01 day 7): the same `%60` heartbeat opens with a
+sweep, BEFORE the decay loop, over every living AWAKE agent × need in the
+fixed food→warmth→rest order, evaluating the exported pure predicate
+`NeglectDue(a, need, tick)` (`agents.go`) against PRE-tick state: need below
+its spec-062 danger band (`dangerFoodBelow`/`dangerWarmthBelow` 350,
+`dangerRestBelow` 250 — reused, one home) with the band-entry anchor a full
+`neglectWindowTicks` (7200, two game-hours; promoted-dial-READY doctrine
+const, not tuning.json) old, zero class-goal intents (`needClassGoals`,
+[[reflex-policy]]) over the same sliding window, and the episode's fired
+latch clear. On true it emits ONE `sim.neglect_detected`
+(`NeglectDetectedPayload{agent, need, level, since}` — executor emission
+class, no injection-door entry) followed immediately by a companion
+salience-9 `agent.memory_added` (`salNeglect` = `GenerationBumpSalience`, a
+deliberate join of the near-death/exile interrupt band — the generation bump
+IS the research's planner beat; fixed per-need voice-of-evidence text,
+`neglectMemoryText`, `OriginWitness`, `Why` empty). The anchors/latch live
+on `Agent.Neglect` ([[sim-state-agent-fields]]), written only by reducer
+arms; emitting the pair before the beat's `agent.needs_changed` means a
+same-beat recovery folds latch-then-reset and closes the episode cleanly.
+Sleepers are skipped at the beat (their inaction is sleep — the spec-064
+wake ladder owns sleeping emergencies) while anchors keep accruing, so a
+still-critical waker fires on its next heartbeat; the one-per-episode latch
+re-arms only when the need recovers to/above its band. The chronicle renders
+the event whole-line alert; the map's needs-critical overlay already covers
+the state by construction ([[tui-chronicle-feed]], [[village-lens]]).
+
 **Eating** (T018, `eatOutcome`): the reflex's `agent.ate` direct-event path (and the
 planner's guarded-plan equivalent) now computes an outcome rather than a
 bare marker. `eatOutcome` consumes the most-nutritious form first — `Meals` →
@@ -123,7 +150,8 @@ the top-of-function guard: exactly once per world, ever.
 
 Parent note: [[executor]]. [[world-tuning]] owns the fire-fuel dials read
 here; [[reflex-policy]] issues the conditioned `goto_warmth`/`warm_up`
-executed here and owns the wake ladder `wakeReason` consults;
+executed here, owns the `needClassGoals` dictionary the neglect detector's
+zero-intent clause reads, and owns the wake ladder `wakeReason` consults;
 [[governance]] excludes held-pinned villagers from its quorum;
 [[morgue]] consumes the run-end death history; `run.ended` freezes
 [[sim-loop]] into the ended posture.

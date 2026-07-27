@@ -1,13 +1,13 @@
 ---
 name: sim-state-apply-agents
-description: sim.State.Apply's core per-agent arms — genesis placement, clock/night/forage ticks, intent/movement/eating/talk/needs/death, v2 crafting yields, v3 storage events, and the wall demolish/repair family
+description: sim.State.Apply's core per-agent arms — genesis placement, clock/night/forage ticks, intent/movement/eating/talk/needs/death, the spec-083 neglect anchor/latch arms, v2 crafting yields, v3 storage events, and the wall demolish/repair family
 kind: component
 sources:
   - internal/sim/state.go
   - internal/sim/agents.go
   - internal/sim/recipes.go
   - internal/sim/terrain.go
-verified_against: 048259bb42b03cc6ebeb13a49f367c2e3a7d4d37
+verified_against: fc9566d527941d3950fdd307168556820bd0875b
 ---
 
 # Sim state: core agent Apply arms
@@ -54,7 +54,13 @@ tail, so those emissions marshal byte-identically to before; since spec 043
 US1 the arm also appends an `IntentRecord` to the agent's ring via
 `appendIntent` — source verbatim, oldest dropped past `intentLogCap` into a
 fresh backing array so canonical bytes never alias dead capacity; a previous
-record still open stays open, so an override reads as open-then-new),
+record still open stays open, so an override reads as open-then-new; and
+since spec 083 the arm stamps the neglect detector's last-class-intent clock
+— `needClassOf(goal)` non-empty (the `needClassGoals` dictionary beside the
+goal registry, [[reflex-policy]]) stamps that need's `*Intent = tick` on
+`Agent.Neglect`, source-agnostic on purpose: any scheduled class intent
+proves the mind engaged, whatever the outcome
+([[executor-needs-survival]])),
 movement, work
 products (inventory + overlays + structures), eating (`agent.ate`'s `AtePayload`
 sets the absolute post-eat food need and decrements each carried food form by its
@@ -69,7 +75,15 @@ trajectory anchor — once `tick − NeedsAnchorTick ≥ trajectoryWindowTicks`
 (1800, one planner cadence) it snapshots the current needs into
 `NeedsAnchor`/`NeedsAnchorTick`, so direction is measured over roughly the
 last window rather than instant-to-instant noise; on a fresh world the first
-window carries no anchor and renders steady), and death; the v2 resource/crafting events (`agent.quarried`/
+window carries no anchor and renders steady; and since spec 083 the same arm
+maintains the neglect detector's band-entry anchors on `Agent.Neglect`
+([[sim-state-agent-fields]]) — per need in food/warmth/rest, a value below
+its spec-062 danger band with no anchor set stamps `*Since = tick` (the
+downward crossing), and a value at/above the band clears the anchor AND the
+episode's fired latch together (episode over, detector re-armed); a third
+NEW arm, `sim.neglect_detected`, sets exactly the payload need's fired latch
+(one injection per episode — the executor sweep's emission,
+[[executor-needs-survival]]), nothing else), and death; the v2 resource/crafting events (`agent.quarried`/
 `collected_water`/`crafted`/`cooked`/`bathed`/`refueled`/`spear_broke`,
 `sim.fire_burned_out`) apply inventory deltas and structure/overlay changes,
 several by re-deriving the recipe from `recipes.go` (the single source for

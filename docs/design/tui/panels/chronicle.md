@@ -2,7 +2,7 @@
 title: Panel — chronicle (event feed)
 class: panel
 status: shipped
-verified_against: 6e83f579db2b448c9c59b15575bf564b1e9b1852
+verified_against: fc9566d527941d3950fdd307168556820bd0875b
 sources:
   - internal/tui/views.go
   - internal/tui/digest.go
@@ -44,6 +44,11 @@ covers the panel's modes.
   (Mode 2) — no extra keypress required.
 - `r` toggles raw feed ↔ narrated view (existing narrator entries), `a` / `t`
   filter by agent / thread — existing behaviors, preserved in both modes.
+- High-salience alert types render whole-line bold red (`styleFeedAlert`) at
+  every width — the grammar page's alert tier (`agent.died`, `gru.attacked`,
+  `social.chest_taken`, `norm.violated`, `stranger.took` — spec 077,
+  `sim.neglect_detected` — spec 083); membership lives in `isAlertType`
+  (`internal/tui/grammar.go`), never a per-panel list.
 
 ## Mode 2 — inspect (clock paused)
 
