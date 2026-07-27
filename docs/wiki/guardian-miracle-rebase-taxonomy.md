@@ -4,7 +4,7 @@ description: The SHIFT/KEEP taxonomy (rebaseTicks) every tick-anchored int64 sta
 kind: component
 sources:
   - internal/sim/miracles.go
-verified_against: cffd9a79bbed61ccac573d97c6cf544565b40336
+verified_against: 22bb41c887ef6a34c55a77b9b989b299f4dc6857
 ---
 
 # Guardian's miracle rebase taxonomy

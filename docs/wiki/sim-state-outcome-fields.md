@@ -8,7 +8,7 @@ sources:
   - internal/sim/curriculum.go
   - internal/sim/tuning.go
   - internal/sim/reportcard.go
-verified_against: cffd9a79bbed61ccac573d97c6cf544565b40336
+verified_against: 22bb41c887ef6a34c55a77b9b989b299f4dc6857
 ---
 
 # Sim state: run-outcome & progression fields

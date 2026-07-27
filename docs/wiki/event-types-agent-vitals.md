@@ -7,7 +7,7 @@ sources:
   - internal/sim/state.go
   - internal/sim/gru.go
   - internal/sim/morgue.go
-verified_against: cffd9a79bbed61ccac573d97c6cf544565b40336
+verified_against: 22bb41c887ef6a34c55a77b9b989b299f4dc6857
 ---
 
 # Event types — agent vitals & mortality
