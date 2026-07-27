@@ -337,7 +337,7 @@ func builderFailure(t *testing.T, log []store.Event) (failed, built, done int, r
 		case "agent.build_failed":
 			var p BuildFailedPayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.Agent == 0 {
+			if p.Agent.ID == 0 {
 				failed++
 				reason = p.Reason
 				failTick = e.Tick
@@ -347,13 +347,13 @@ func builderFailure(t *testing.T, log []store.Event) (failed, built, done int, r
 		case "agent.intent_done":
 			var p AgentPayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.Agent == 0 {
+			if p.Agent.ID == 0 {
 				done++
 			}
 		case "agent.memory_added":
 			var p MemoryAddedPayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.Agent == 0 && p.Origin == OriginAction && p.Salience == salShelter &&
+			if p.Agent.ID == 0 && p.Origin == OriginAction && p.Salience == salShelter &&
 				strings.Contains(p.Text, "never built") {
 				memory = true
 			}
@@ -540,7 +540,7 @@ func TestWallBuildSiteVanishedFailsLoud(t *testing.T) {
 		case "agent.build_failed":
 			var p BuildFailedPayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.Agent == 0 {
+			if p.Agent.ID == 0 {
 				failed++
 				reason, goal, failTick = p.Reason, p.Goal, e.Tick
 			}
@@ -549,13 +549,13 @@ func TestWallBuildSiteVanishedFailsLoud(t *testing.T) {
 		case "agent.intent_done":
 			var p AgentPayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.Agent == 0 {
+			if p.Agent.ID == 0 {
 				done++
 			}
 		case "agent.memory_added":
 			var p MemoryAddedPayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.Agent == 0 && p.Origin == OriginAction && p.Salience == salShelter &&
+			if p.Agent.ID == 0 && p.Origin == OriginAction && p.Salience == salShelter &&
 				strings.Contains(p.Text, "never built") && strings.Contains(p.Text, "stone wall") {
 				memTick = e.Tick
 			}
@@ -630,13 +630,13 @@ func TestWallLifecycleReplay(t *testing.T) {
 	pl := func(v any) []byte { return mustPayload(v) }
 	commands := map[int64][]store.Event{
 		0: {{Tick: 0, Type: "agent.intent_set", Payload: pl(IntentSetPayload{
-			Agent: 0, Goal: "build_wall_plank", TargetX: stand.X, TargetY: stand.Y, ResX: cx, ResY: cy, Source: "planner"})}},
+			Agent: Ref(0), Goal: "build_wall_plank", TargetX: stand.X, TargetY: stand.Y, ResX: cx, ResY: cy, Source: "planner"})}},
 		// The build completes at ~tick 601 (agent starts on the stand tile). Land
 		// demolish at 700 — inside the reflex grace (idle < 120), so the reflex
 		// hasn't repurposed the still-adjacent builder — then it tears the wall
 		// back down to open ground.
 		700: {{Tick: 700, Type: "agent.intent_set", Payload: pl(IntentSetPayload{
-			Agent: 0, Goal: "demolish", TargetX: stand.X, TargetY: stand.Y, ResX: cx, ResY: cy, Source: "planner"})}},
+			Agent: Ref(0), Goal: "demolish", TargetX: stand.X, TargetY: stand.Y, ResX: cx, ResY: cy, Source: "planner"})}},
 	}
 
 	const ticks = 4000

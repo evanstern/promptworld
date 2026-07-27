@@ -100,7 +100,7 @@ func startConvo(t *testing.T, h *harness, md *Mind) {
 	// these founding-lifecycle tests found the scene exactly as before.
 	md.maybeStartConversation(store.Event{
 		Tick: 100, Type: "agent.talked",
-		Payload: mustJSON(t, sim.TalkedPayload{A: 0, B: 1}),
+		Payload: mustJSON(t, sim.TalkedPayload{A: sim.Ref(0), B: sim.Ref(1)}),
 	}, 0)
 }
 
@@ -238,7 +238,7 @@ func TestConvoUtteranceRetryCompletes(t *testing.T) {
 		if e.Type == "social.conversation_turn" {
 			var p sim.ConversationTurnPayload
 			json.Unmarshal(e.Payload, &p)
-			speakers = append(speakers, p.Speaker)
+			speakers = append(speakers, p.Speaker.ID)
 		}
 	}
 	if len(speakers) != 2*sim.ConvoTurnsPerSide {
@@ -480,7 +480,7 @@ func TestConvoMemoryRecoversTranscript(t *testing.T) {
 		}
 		var p sim.ConversationTurnPayload
 		if json.Unmarshal(e.Payload, &p) == nil && p.Conv == conv {
-			got = append(got, turn{p.Speaker, p.Text})
+			got = append(got, turn{p.Speaker.ID, p.Text})
 		}
 	}
 
@@ -526,7 +526,7 @@ func TestConversationRunsAndLands(t *testing.T) {
 
 	md.maybeStartConversation(store.Event{
 		Tick: 100, Type: "agent.talked",
-		Payload: mustJSON(t, sim.TalkedPayload{A: 0, B: 1}),
+		Payload: mustJSON(t, sim.TalkedPayload{A: sim.Ref(0), B: sim.Ref(1)}),
 	}, 0)
 
 	convs := h.waitEvents(t, 10*time.Second, func(e store.Event) bool {
@@ -649,7 +649,7 @@ func TestSceneConversation(t *testing.T) {
 
 	md.maybeStartConversation(store.Event{
 		Tick: 100, Type: "agent.talked",
-		Payload: mustJSON(t, sim.TalkedPayload{A: 0, B: 1}),
+		Payload: mustJSON(t, sim.TalkedPayload{A: sim.Ref(0), B: sim.Ref(1)}),
 	}, 0)
 
 	convs := h.waitEvents(t, 10*time.Second, func(e store.Event) bool {
@@ -679,7 +679,7 @@ func TestSceneConversation(t *testing.T) {
 			// own "Talked with X." talk memories during the wait window.
 			if strings.Contains(p.Text, "argued about who tends the fire") {
 				gistMems++
-				if p.Agent == 0 && p.Subject == 1 && p.Tone == 2*30 {
+				if p.Agent.ID == 0 && p.Subject.ID == 1 && p.Tone == 2*30 {
 					sawSubjectTagged = true // agent 0's tone (+2) about counterpart 1
 				}
 			}
@@ -728,7 +728,7 @@ func TestConversationFailureInjectsNothing(t *testing.T) {
 
 	md.maybeStartConversation(store.Event{
 		Tick: 100, Type: "agent.talked",
-		Payload: mustJSON(t, sim.TalkedPayload{A: 0, B: 1}),
+		Payload: mustJSON(t, sim.TalkedPayload{A: sim.Ref(0), B: sim.Ref(1)}),
 	}, 0)
 	time.Sleep(500 * time.Millisecond)
 	all, _ := h.st.EventsSince(0, 0)
@@ -744,8 +744,8 @@ func TestConversationFailureInjectsNothing(t *testing.T) {
 func TestInjectSocialWhitelist(t *testing.T) {
 	h, _ := setupConvo(t, &scriptedModel{})
 	bad := []store.Event{
-		{Type: "social.conversation", Payload: mustJSON(t, sim.ConversationPayload{Conv: 1, A: 0, B: 1, Gist: "x", Turns: 2})},
-		{Type: "agent.died", Payload: mustJSON(t, sim.DiedPayload{Agent: 0, Cause: "murder-by-injection"})},
+		{Type: "social.conversation", Payload: mustJSON(t, sim.ConversationPayload{Conv: 1, A: sim.Ref(0), B: sim.Ref(1), Gist: "x", Turns: 2})},
+		{Type: "agent.died", Payload: mustJSON(t, sim.DiedPayload{Agent: sim.Ref(0), Cause: "murder-by-injection"})},
 	}
 	if err := h.loop.InjectSocial(bad); err == nil {
 		t.Fatal("whitelist must reject the batch")

@@ -156,7 +156,7 @@ func TestAsleepVillagersMissMeeting(t *testing.T) {
 	}
 	var op MeetingOpenedPayload
 	json.Unmarshal(opened[0].Payload, &op)
-	if containsInt(op.Attendees, 0) {
+	if containsInt(refIDs(op.Attendees), 0) {
 		t.Error("sleeping villager counted as an attendee")
 	}
 	if len(op.Attendees) != agentCount-1 {
@@ -236,11 +236,11 @@ func TestProposeVotePass(t *testing.T) {
 	}
 	var res ProposalResolvedPayload
 	json.Unmarshal(resolved[0].Payload, &res)
-	if res.Kind != ProposeCurfew || res.Proposer != 0 {
+	if res.Kind != ProposeCurfew || res.Proposer.ID != 0 {
 		t.Fatalf("resolved %+v, want add_curfew by 0", res.ProposalPayload)
 	}
 	wantYeas, wantNays := []int{0, 1, 2}, []int{3}
-	if !equalInts(res.Yeas, wantYeas) || !equalInts(res.Nays, wantNays) {
+	if !equalInts(refIDs(res.Yeas), wantYeas) || !equalInts(refIDs(res.Nays), wantNays) {
 		t.Errorf("votes yeas=%v nays=%v, want %v / %v", res.Yeas, res.Nays, wantYeas, wantNays)
 	}
 	if !res.Passed {
@@ -264,7 +264,7 @@ func TestProposeVotePass(t *testing.T) {
 		if e.Type == "agent.memory_added" {
 			var p MemoryAddedPayload
 			json.Unmarshal(e.Payload, &p)
-			if p.Subject == 0 && strings.Contains(p.Text, "proposal") {
+			if p.Subject.ID == 0 && strings.Contains(p.Text, "proposal") {
 				outcomeMemories++
 			}
 		}
@@ -363,8 +363,8 @@ func TestAmendAndRepealReducer(t *testing.T) {
 
 	amend := ProposalResolvedPayload{
 		ProposalPayload: ProposalPayload{ProposalID: 1, Kind: ProposeAmend, NormID: id,
-			Target: -1, Param: (nightStartSecond + curfewAmendDelta) % 86400, Proposer: 2, Text: "later curfew"},
-		Yeas: []int{0, 1, 2}, Nays: nil, Passed: true,
+			Target: Ref(-1), Param: (nightStartSecond + curfewAmendDelta) % 86400, Proposer: Ref(2), Text: "later curfew"},
+		Yeas: Refs([]int{0, 1, 2}), Nays: nil, Passed: true,
 	}
 	applyAll(t, s, []store.Event{{Tick: 90000, Type: "meeting.proposal_resolved", Payload: mustPayload(amend)}})
 	n := normByID(s, id)
@@ -374,8 +374,8 @@ func TestAmendAndRepealReducer(t *testing.T) {
 
 	repeal := ProposalResolvedPayload{
 		ProposalPayload: ProposalPayload{ProposalID: 2, Kind: ProposeRepeal, NormID: id,
-			Target: -1, Proposer: 2, Text: "strike it"},
-		Yeas: []int{0, 1, 2}, Nays: nil, Passed: true,
+			Target: Ref(-1), Proposer: Ref(2), Text: "strike it"},
+		Yeas: Refs([]int{0, 1, 2}), Nays: nil, Passed: true,
 	}
 	applyAll(t, s, []store.Event{{Tick: 180000, Type: "meeting.proposal_resolved", Payload: mustPayload(repeal)}})
 	n = normByID(s, id)
@@ -439,7 +439,7 @@ func TestCurfewViolationWitnessed(t *testing.T) {
 	for _, e := range governanceLog(log, "agent.memory_added") {
 		var p MemoryAddedPayload
 		json.Unmarshal(e.Payload, &p)
-		if p.Agent == 1 && p.Subject == 0 && p.Tone == toneViolation && p.Salience >= rumorMinSalience {
+		if p.Agent.ID == 1 && p.Subject.ID == 0 && p.Tone == toneViolation && p.Salience >= rumorMinSalience {
 			seeded = true
 		}
 	}
@@ -511,7 +511,7 @@ func TestRepayNormPiggyback(t *testing.T) {
 	}
 	var v NormViolatedPayload
 	json.Unmarshal(violations[0].Payload, &v)
-	if v.Violator != 2 || !containsInt(v.Witnesses, 3) {
+	if v.Violator.ID != 2 || !containsInt(refIDs(v.Witnesses), 3) {
 		t.Errorf("violation %+v, want debtor 2 witnessed by 3", v)
 	}
 }
@@ -539,10 +539,10 @@ func TestExileVoteAndShun(t *testing.T) {
 		t.Fatal("exile should table and resolve")
 	}
 	json.Unmarshal(resolved[0].Payload, &res)
-	if res.Kind != ProposeExile || res.Target != 3 {
+	if res.Kind != ProposeExile || res.Target.ID != 3 {
 		t.Fatalf("resolved %+v, want exile of 3", res.ProposalPayload)
 	}
-	if containsInt(res.Yeas, 3) || containsInt(res.Nays, 3) {
+	if containsInt(refIDs(res.Yeas), 3) || containsInt(refIDs(res.Nays), 3) {
 		t.Error("the subject must not vote on their own exile")
 	}
 	if !res.Passed || len(res.Yeas) != 3 {
@@ -556,7 +556,7 @@ func TestExileVoteAndShun(t *testing.T) {
 	for _, e := range governanceLog(events, "agent.memory_added") {
 		var p MemoryAddedPayload
 		json.Unmarshal(e.Payload, &p)
-		if p.Agent == 3 && p.Salience == salExiled {
+		if p.Agent.ID == 3 && p.Salience == salExiled {
 			castOut = true
 		}
 	}
@@ -586,16 +586,16 @@ func TestExileVoteAndShun(t *testing.T) {
 	}
 	var v NormViolatedPayload
 	json.Unmarshal(violations[0].Payload, &v)
-	if v.Violator != 3 {
-		t.Errorf("violator %d, want the exile (3)", v.Violator)
+	if v.Violator.ID != 3 {
+		t.Errorf("violator %d, want the exile (3)", v.Violator.ID)
 	}
 
 	// The village can forgive: repeal restores the exile's standing.
 	exileNorm := ActiveNorms(s)[0]
 	repeal := ProposalResolvedPayload{
 		ProposalPayload: ProposalPayload{ProposalID: 9, Kind: ProposeRepeal, NormID: exileNorm.ID,
-			Target: -1, Proposer: 0, Text: "let them back in"},
-		Yeas: []int{0, 1, 2}, Passed: true,
+			Target: Ref(-1), Proposer: Ref(0), Text: "let them back in"},
+		Yeas: Refs([]int{0, 1, 2}), Passed: true,
 	}
 	applyAll(t, s, []store.Event{{Tick: s.Tick, Type: "meeting.proposal_resolved", Payload: mustPayload(repeal)}})
 	if IsExiled(s, 3) {
@@ -610,7 +610,7 @@ func TestExileVoteAndShun(t *testing.T) {
 // the TARGET, not the proposer.
 func TestExileVoteScoreInversion(t *testing.T) {
 	s := NewState(7, testMap(7))
-	p := ProposalPayload{Kind: ProposeExile, Target: 3, Proposer: 0}
+	p := ProposalPayload{Kind: ProposeExile, Target: Ref(3), Proposer: Ref(0)}
 	// Voter 1 loves the target: nay regardless of liking the proposer.
 	s.relation(1, 3).Trust = 500
 	s.relation(1, 3).Affection = 400
@@ -671,8 +671,8 @@ func TestGovernanceReplay(t *testing.T) {
 	m := testMap(seed)
 	enact := ProposalResolvedPayload{
 		ProposalPayload: ProposalPayload{ProposalID: 1, Kind: ProposeCurfew, NormID: 0,
-			Target: -1, Param: nightStartSecond, Proposer: 0, Text: "No one out after nightfall."},
-		Yeas: []int{0, 1, 2}, Nays: nil, Passed: true,
+			Target: Ref(-1), Param: nightStartSecond, Proposer: Ref(0), Text: "No one out after nightfall."},
+		Yeas: Refs([]int{0, 1, 2}), Nays: nil, Passed: true,
 	}
 	live := NewState(seed, m)
 	// The convention rides the log (injected at tick 0), so replay reconstructs
@@ -781,7 +781,7 @@ func TestDegradedModeGovernanceEndToEnd(t *testing.T) {
 	}
 	var tp ProposalPayload
 	json.Unmarshal(tabled[0].Payload, &tp)
-	if tp.Kind != ProposeCurfew || tp.Proposer != 0 {
+	if tp.Kind != ProposeCurfew || tp.Proposer.ID != 0 {
 		t.Fatalf("tabled %+v, want add_curfew by agent 0", tp)
 	}
 	norms := ActiveNorms(s)

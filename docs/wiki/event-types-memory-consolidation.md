@@ -6,7 +6,7 @@ sources:
   - internal/sim/agents.go
   - internal/sim/journal.go
   - internal/sim/consolidate.go
-verified_against: fc9566d527941d3950fdd307168556820bd0875b
+verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
 ---
 
 # Event types — memory embedding & consolidation events
@@ -14,6 +14,15 @@ verified_against: fc9566d527941d3950fdd307168556820bd0875b
 Back to [[event-types]] for the payload-grammar conventions and the full
 event-domain index.
 
+
+Spec 086 (agent-named payloads): every agent-referencing field in this
+family's payloads is a `sim.AgentRef` — the wire carries
+`{"id":N,"name":"…"}` objects (lists element-wise), the name stamped at
+emission from the fixed roster via `Ref`/`Refs`; sentinels marshal
+`{"id":-1,"name":""}`. Legacy bare-int rows decode through the dual-shape
+unmarshal forever and reducer arms fold `.ID`s only — the conventions and
+the normative back-compat matrix live on [[event-types]] ("Agent
+references are named refs").
 Spec 019 (grounded memories — situated
 episodic memories + agent journal) adds **no** format bump: every addition is
 `omitempty`, byte-stable against pre-019 logs. `MemoryAddedPayload` gains

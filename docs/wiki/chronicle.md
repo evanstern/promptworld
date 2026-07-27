@@ -6,7 +6,7 @@ sources:
   - internal/sim/chronicle.go
   - internal/mind/narrate.go
   - internal/scribe/scribe.go
-verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
+verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
 ---
 
 # Chronicle
@@ -136,3 +136,12 @@ unprompted beyond the offered list, gru night drama narrated from real events,
 and the ring survived a daemon restart. Cost: ~2 narrator calls per game day — noise against the $100/month
 ceiling. The chapter buffer is in-memory: a daemon restart loses the current
 chapter's collected lines (the story resumes at the next boundary).
+
+## Spec 086 — chronicle.entry agents are named refs
+
+`ChronicleEntryPayload.Agents` is `[]AgentRef` on the wire (`{id,name}`
+objects; legacy bare-int lists decode dual-shape forever); the reducer arm
+folds `refIDs(...)` into the state ring's `ChronicleEntry.Agents []int` —
+names never enter state (R2). The narrator (`internal/mind/narrate.go`)
+constructs refs via `sim.Refs`; the injection door refuses an unnamed
+in-roster ref at live emission.

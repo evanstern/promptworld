@@ -280,7 +280,7 @@ func TestDirectiveHailInterruptResume(t *testing.T) {
 		t.Fatalf("decision = %+v, want heed_directive", d.intent)
 	}
 	if err := s.Apply(store.Event{Tick: s.Tick, Type: "agent.intent_set", Payload: mustPayload(IntentSetPayload{
-		Agent: 0, Goal: d.intent.Goal, TargetX: d.intent.TargetX, TargetY: d.intent.TargetY, Source: "reflex"})}); err != nil {
+		Agent: Ref(0), Goal: d.intent.Goal, TargetX: d.intent.TargetX, TargetY: d.intent.TargetY, Source: "reflex"})}); err != nil {
 		t.Fatal(err)
 	}
 	start := s.Tick
@@ -348,7 +348,7 @@ func TestDirectiveReflexEndToEnd(t *testing.T) {
 	timeline := map[int64][]store.Event{
 		22000: {{Tick: 22000, Type: "designation.placed", Payload: mustPayload(dsg)}},
 		22050: {{Tick: 22050, Type: "directive.issued", Payload: mustPayload(dir)}},
-		22100: {{Tick: 22100, Type: "metatron.item_granted", Payload: mustPayload(ItemGrantedPayload{Agent: 0, Kind: "wood", Qty: fireWoodCost})}},
+		22100: {{Tick: 22100, Type: "metatron.item_granted", Payload: mustPayload(ItemGrantedPayload{Agent: Ref(0), Kind: "wood", Qty: fireWoodCost})}},
 	}
 
 	s := NewState(seed, m)
@@ -358,13 +358,13 @@ func TestDirectiveReflexEndToEnd(t *testing.T) {
 	for _, e := range log {
 		if e.Type == "agent.built" {
 			var p BuiltPayload
-			if json.Unmarshal(e.Payload, &p) == nil && p.Agent == 0 && p.Kind == "fire" && p.X == site.X && p.Y == site.Y {
+			if json.Unmarshal(e.Payload, &p) == nil && p.Agent.ID == 0 && p.Kind == "fire" && p.X == site.X && p.Y == site.Y {
 				builtAtSite = true
 			}
 		}
 		if e.Type == "agent.intent_set" {
 			var p IntentSetPayload
-			if json.Unmarshal(e.Payload, &p) == nil && p.Agent == 0 && p.Source == "reflex" &&
+			if json.Unmarshal(e.Payload, &p) == nil && p.Agent.ID == 0 && p.Source == "reflex" &&
 				(p.Goal == "build_fire" || p.Goal == "heed_directive") &&
 				p.TargetX == site.X && p.TargetY == site.Y && e.Tick >= 22100 {
 				reflexIntent = true

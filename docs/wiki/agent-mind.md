@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/mind/mind.go
   - internal/mind/handlers.go
-verified_against: 8495b34ffb9ee5dc02e224025f0a23313bbab900
+verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
 ---
 
 # Agent mind

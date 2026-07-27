@@ -144,11 +144,11 @@ func (mt *Guardian) landProphesy(a *prophesyArgs, charges int, tick int64, alive
 	// FROZEN recorded-at-emission prefix (spec 052 ruling 1): the companion
 	// memory lands in agent.memory_added payloads — the event log is
 	// skin-free, so the wording is fixed mechanics vocabulary (data-model §8).
-	batch := []store.Event{{Type: "prophecy.declared", Payload: mustJSON(p)}}
+	batch := []store.Event{{Type: "prophecy.declared", Payload: mustJSON(p.DeclaredPayload())}}
 	for _, t := range targets {
 		batch = append(batch, store.Event{Type: "agent.memory_added", Payload: mustJSON(sim.MemoryAddedPayload{
-			Agent: t, Text: "The Guardian foretells: " + text, Salience: sim.SalDream,
-			Subject: -1, Origin: sim.OriginOmen})})
+			Agent: sim.Ref(t), Text: "The Guardian foretells: " + text, Salience: sim.SalDream,
+			Subject: sim.Ref(-1), Origin: sim.OriginOmen})})
 	}
 	if err := mt.social.InjectSocial(batch); err != nil {
 		log.Printf("guardian: prophecy rejected at the door: %v", err)

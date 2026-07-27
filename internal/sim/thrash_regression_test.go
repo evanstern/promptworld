@@ -127,7 +127,7 @@ func TestThrashRegressionDrivenRecovery(t *testing.T) {
 	// Inject a planner goto_warmth toward the warm tile at tick 1.
 	cmds := map[int64][]store.Event{
 		1: {{Tick: 1, Type: "agent.intent_set", Payload: mustPayload(IntentSetPayload{
-			Agent: 0, Goal: "goto_warmth", TargetX: tx, TargetY: ty, Source: "planner"})}},
+			Agent: Ref(0), Goal: "goto_warmth", TargetX: tx, TargetY: ty, Source: "planner"})}},
 	}
 	// Drive less than prepYieldTicks so the whole drive is inside the window.
 	log := driveTicks(t, s, m, 1500, cmds)
@@ -140,7 +140,7 @@ func TestThrashRegressionDrivenRecovery(t *testing.T) {
 		}
 		var p AgentPayload
 		json.Unmarshal(e.Payload, &p)
-		if p.Agent == 0 {
+		if p.Agent.ID == 0 {
 			doneTick = e.Tick
 			break
 		}
@@ -162,7 +162,7 @@ func TestThrashRegressionDrivenRecovery(t *testing.T) {
 		}
 		var p IntentSetPayload
 		json.Unmarshal(e.Payload, &p)
-		if p.Agent == 0 && isPrepGoal(p.Goal) {
+		if p.Agent.ID == 0 && isPrepGoal(p.Goal) {
 			t.Fatalf("reflex fired prep %q at tick %d (%d into the window) — the thrash loop is not dead",
 				p.Goal, e.Tick, e.Tick-doneTick)
 		}

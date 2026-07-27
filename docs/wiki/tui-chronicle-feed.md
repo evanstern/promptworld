@@ -6,7 +6,7 @@ sources:
   - internal/tui/grammar.go
   - internal/tui/digest.go
   - internal/tui/tui.go
-verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
+verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
 ---
 
 # TUI chronicle feed and digest grammar
@@ -141,3 +141,19 @@ gone by dawn of day N"); and `metatron.skills_observed` ("Guardian ran
 under N skill file(s) <fingerprint>" — the charter observation's twin,
 guardian family/skin-name subject).
 
+## Spec 086 — payload-first naming and the generic subject fallback
+
+Agent-bearing digests now read the payload ref's name first (`refSeg`/
+`refName`, `internal/tui/digest.go`): a post-086 row renders with NO
+replica lookup — proven by `TestCatalogSweep`'s `names = nil`
+identical-output assertion over every agent-bearing fixture. The replica
+`names` slice and the `resolvePayloadNames` regex rewriter survive as the
+historic-row fallback layer (legacy rows carry `Name == ""`), shrunk but
+never removed. `resolveSubject` gained a registry-miss generic pass: scan
+the payload for `{"id":N,"name":…}` ref objects; exactly one distinct
+in-roster id is the subject (live position, payload name), zero or several
+stay unlocatable — the honest-hint doctrine detected structurally.
+`world.migrated` stays hard-excluded. Hit rate: 79 registry-only vs 86
+registry+fallback locatable fixture rows (`TestResolveSubjectHitRate`),
+with `journal.entry_written`/`journal.entry_deleted` and
+`faith.changed{villager_died}` pinned as newly locatable.

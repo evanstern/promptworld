@@ -229,7 +229,7 @@ func TestMapOmitemptyStable(t *testing.T) {
 // a store seq — the spec-042 identity the reducer stamps onto the Memory.
 func memoryAddedEvent(seq, tick int64, agent int, text string) store.Event {
 	return store.Event{Seq: seq, Tick: tick, Type: "agent.memory_added",
-		Payload: mustPayload(MemoryAddedPayload{Agent: agent, Text: text, Salience: 3, Subject: -1})}
+		Payload: mustPayload(MemoryAddedPayload{Agent: Ref(agent), Text: text, Salience: 3, Subject: Ref(-1)})}
 }
 
 // TestPre042RoundTripByteIdentical (spec 042 T004, data-model invariants): a
@@ -306,7 +306,7 @@ func TestMemoryEmbeddedReducer(t *testing.T) {
 
 	embed := func(agent int, memSeq int64, vec []float32) error {
 		return s.Apply(store.Event{Seq: 20, Tick: 120, Type: "agent.memory_embedded",
-			Payload: mustPayload(MemoryEmbeddedPayload{Agent: agent, MemSeq: memSeq, Vec: vec, Model: "all-minilm"})})
+			Payload: mustPayload(MemoryEmbeddedPayload{Agent: Ref(agent), MemSeq: memSeq, Vec: vec, Model: "all-minilm"})})
 	}
 	if err := embed(0, 7, []float32{0.1, 0.2}); err != nil {
 		t.Fatalf("embed: %v", err)
@@ -340,7 +340,7 @@ func TestSituationEmbeddedReducer(t *testing.T) {
 	s := NewState(42, testMap(42))
 	sit := func(tick int64, vec []float32) error {
 		return s.Apply(store.Event{Seq: 30, Tick: tick, Type: "agent.situation_embedded",
-			Payload: mustPayload(SituationEmbeddedPayload{Agent: 2, Tick: tick, Text: "midday · by the river", Vec: vec, Model: "all-minilm"})})
+			Payload: mustPayload(SituationEmbeddedPayload{Agent: Ref(2), Tick: tick, Text: "midday · by the river", Vec: vec, Model: "all-minilm"})})
 	}
 	if err := sit(100, []float32{0.5}); err != nil {
 		t.Fatal(err)

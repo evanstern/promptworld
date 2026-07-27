@@ -330,6 +330,38 @@ type Model struct {
 	// View()-writes-through-a-pointer reason chronHit exists (tui.go:284).
 	mapHit  *mapHitRegion
 	tileHit *tileHitRegion
+
+	// stripHit/rosterHit (spec 086 US5 — the reverse-jump rider) are the
+	// villager strip's and the villagers-tab roster's last-rendered click
+	// geometry, same pointer/frame-top-invalidation pattern as chronHit:
+	// recorded by villagerStripView/villagerRosterBody each View(), consumed
+	// by handleMouse the next Update(). Clicking a strip glyph or a roster
+	// row centers the map camera on that villager (centerCameraOn — the
+	// spec 049 camera writer), the village lens's reverse direction.
+	stripHit  *stripHitRegion
+	rosterHit *rosterHitRegion
+}
+
+// stripHitRegion is the villager strip's rendered glyph geometry: the strip's
+// screen row and each rendered glyph's screen column (glyphs shed from the
+// end under width overflow — the hit region covers RENDERED glyphs only; the
+// …N overflow marker is never a target). Widescreen-only (the strip never
+// renders narrow).
+type stripHitRegion struct {
+	valid   bool
+	originY int   // the strip's screen row (headerRows while the strip renders)
+	glyphX  []int // glyphX[i] = screen column of villager i's glyph; single-column glyphs
+}
+
+// rosterHitRegion is the villagers-tab roster's rendered row-band geometry —
+// the chronHitRegion sibling for the roster body. rowAgent maps each rendered
+// body line to its villager index (-1 = heading/blank/spacer, consumed but
+// not a row).
+type rosterHitRegion struct {
+	valid            bool
+	originX, originY int   // screen cell of the roster body's first line
+	width            int   // column span of a hit
+	rowAgent         []int // rowAgent[i] = agent index for screen row originY+i; -1 = not a row
 }
 
 // chronHitRegion is the chronicle inspect-list's rendered geometry: which
@@ -357,6 +389,7 @@ func New(w *world.World) Model {
 		w: w, gameMap: w.Map(), chronAgent: -1, dockTab: paneChronicle, chronSelected: -1,
 		traces: newDecisionTraces(), chronHit: &chronHitRegion{},
 		mapHit: &mapHitRegion{}, tileHit: &tileHitRegion{}, // spec 074: the chronHit pointer pattern
+		stripHit: &stripHitRegion{}, rosterHit: &rosterHitRegion{}, // spec 086: the reverse-jump rider
 		// Per-user seen-state (spec 055 FR-006): load-tolerant, advisory —
 		// worlds.LoadLessonsSeen() never errors, degrading to an empty
 		// record on a missing/corrupt file or an unresolvable home dir.
@@ -1792,6 +1825,19 @@ func (m Model) invalidateChronHit() {
 	}
 }
 
+// invalidateReverseJumpHits marks the strip/roster hit regions stale —
+// called at the top of every View() (the chronHit frame-top pattern) so a
+// frame that never renders the strip (narrow/folded) or the roster (other
+// tab, detail view) can't leave a stray click acting on old geometry.
+func (m Model) invalidateReverseJumpHits() {
+	if m.stripHit != nil {
+		m.stripHit.valid = false
+	}
+	if m.rosterHit != nil {
+		m.rosterHit.valid = false
+	}
+}
+
 // handleMouse (spec 074 research R6) now lives in look.go: it routes the
 // TILE-pane region and the map region ahead of this exact chronicle-line
 // click path (US2, input-parity doctrine decision 8), which is otherwise
@@ -1864,6 +1910,20 @@ func (m Model) handleVillagersKey(msg tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 	case "enter":
 		if !m.villDetail && m.villCount() > 0 {
 			m.villDetail = true
+		}
+		return m, nil, true
+	case "J":
+		// Reverse jump (spec 086 US5, FR-010): center the map camera on the
+		// selected villager — the keyboard path of the strip-glyph/roster-row
+		// click (keyboard primary, input-parity doctrine). Works from the
+		// roster and the detail view alike; dead villagers jump to their
+		// grave (agents keep X,Y after death); an empty replica is a no-op.
+		if m.villCount() > 0 {
+			a := m.replica.Agents[clampInt(m.villSelected, 0, len(m.replica.Agents)-1)]
+			m.centerCameraOn(a.X, a.Y)
+			if !isWidescreen(m.width) {
+				m.active = paneMap // land where the jump's effect is visible
+			}
 		}
 		return m, nil, true
 	}

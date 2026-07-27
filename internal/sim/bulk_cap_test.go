@@ -48,7 +48,7 @@ func TestBulkYieldTruncatesAtPartialSpace(t *testing.T) {
 		s := NewState(seed, m)
 		a := &s.Agents[0]
 		a.Inv = Inventory{Wood: bulkCap - 1} // free 1; forage yields forageYieldV2 (2)
-		apply(t, s, "agent.foraged", HarvestPayload{Agent: 0, X: 3, Y: 4})
+		apply(t, s, "agent.foraged", HarvestPayload{Agent: Ref(0), X: 3, Y: 4})
 		if a.Inv.FoodRaw != 1 {
 			t.Errorf("FoodRaw = %d, want 1 (truncated from %d)", a.Inv.FoodRaw, forageYieldV2)
 		}
@@ -67,7 +67,7 @@ func TestBulkYieldTruncatesAtPartialSpace(t *testing.T) {
 		// truncates it to 1. The axe occupies a bulk itself, so wood starts at
 		// cap-2 (22 wood + 1 axe = 23, one free).
 		a.Inv = Inventory{Wood: bulkCap - 2, Axes: []int{axeDurability}}
-		apply(t, s, "agent.chopped", HarvestPayload{Agent: 0, X: 5, Y: 6})
+		apply(t, s, "agent.chopped", HarvestPayload{Agent: Ref(0), X: 5, Y: 6})
 		if a.Inv.Wood != bulkCap-1 { // 22 + min(3,1) = 23
 			t.Errorf("Wood = %d, want %d (axe yield 3 truncated to one free bulk)", a.Inv.Wood, bulkCap-1)
 		}
@@ -81,7 +81,7 @@ func TestBulkYieldTruncatesAtPartialSpace(t *testing.T) {
 		a := &s.Agents[0]
 		// Spec 032 US2: axe quarry yields quarryYieldAxe (3), truncated to one free.
 		a.Inv = Inventory{Wood: bulkCap - 2, Axes: []int{axeDurability}}
-		apply(t, s, "agent.quarried", HarvestPayload{Agent: 0, X: 7, Y: 8})
+		apply(t, s, "agent.quarried", HarvestPayload{Agent: Ref(0), X: 7, Y: 8})
 		if a.Inv.Stone != 1 { // 22 wood + 1 stone + 1 axe = 24 = cap
 			t.Errorf("Stone = %d, want 1 (axe yield 3 truncated to one free bulk)", a.Inv.Stone)
 		}
@@ -94,7 +94,7 @@ func TestBulkYieldTruncatesAtPartialSpace(t *testing.T) {
 		s := NewState(seed, m)
 		a := &s.Agents[0]
 		a.Inv = Inventory{Wood: bulkCap - 1}
-		apply(t, s, "agent.collected_water", HarvestPayload{Agent: 0, X: 9, Y: 9})
+		apply(t, s, "agent.collected_water", HarvestPayload{Agent: Ref(0), X: 9, Y: 9})
 		if a.Inv.Water != 1 { // collectWaterYield is already 1; still exercises the clamp path
 			t.Errorf("Water = %d, want 1", a.Inv.Water)
 		}
@@ -104,7 +104,7 @@ func TestBulkYieldTruncatesAtPartialSpace(t *testing.T) {
 		s := NewState(seed, m)
 		a := &s.Agents[0]
 		a.Inv = Inventory{Wood: bulkCap - 1} // free 1; bare hunt yields huntYieldBare (8)
-		apply(t, s, "agent.hunted", HarvestPayload{Agent: 0, X: 2, Y: 2})
+		apply(t, s, "agent.hunted", HarvestPayload{Agent: Ref(0), X: 2, Y: 2})
 		if a.Inv.FoodRaw != 1 {
 			t.Errorf("FoodRaw = %d, want 1 (truncated from %d)", a.Inv.FoodRaw, huntYieldBare)
 		}
@@ -118,7 +118,7 @@ func TestBulkYieldTruncatesAtPartialSpace(t *testing.T) {
 		a := &s.Agents[0]
 		// Wood 22 + one spear (1 bulk) = 23 → free 1; spear hunt yields 12.
 		a.Inv = Inventory{Wood: bulkCap - 2, Spears: []int{3}}
-		apply(t, s, "agent.hunted", HarvestPayload{Agent: 0, X: 2, Y: 2})
+		apply(t, s, "agent.hunted", HarvestPayload{Agent: Ref(0), X: 2, Y: 2})
 		if a.Inv.FoodRaw != 1 {
 			t.Errorf("FoodRaw = %d, want 1 (truncated from %d)", a.Inv.FoodRaw, huntYieldSpear)
 		}
@@ -157,13 +157,13 @@ func TestBulkZeroSpaceGatherNoEventNoDepletion(t *testing.T) {
 		case "agent.foraged":
 			var p HarvestPayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.Agent == 0 {
+			if p.Agent.ID == 0 {
 				sawForaged = true
 			}
 		case "agent.intent_done":
 			var p AgentPayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.Agent == 0 {
+			if p.Agent.ID == 0 {
 				sawDone = true
 			}
 		}
@@ -307,7 +307,7 @@ func TestBulkGaveReducerClampsDefensively(t *testing.T) {
 	giver.Inv = Inventory{FoodRaw: 5}
 	recv.Inv = Inventory{Wood: bulkCap} // already at the cap
 
-	e := store.Event{Tick: 1, Type: "social.gave", Payload: mustPayload(GavePayload{From: 0, To: 1, Kind: "food"})}
+	e := store.Event{Tick: 1, Type: "social.gave", Payload: mustPayload(GavePayload{From: Ref(0), To: Ref(1), Kind: "food"})}
 	if err := s.Apply(e); err != nil {
 		t.Fatalf("apply social.gave: %v", err)
 	}
@@ -336,7 +336,7 @@ func TestBulkEatingFreesBulk(t *testing.T) {
 	if !ok {
 		t.Fatal("a hungry, food-carrying agent produced no eat outcome")
 	}
-	p.Agent = 0
+	p.Agent = Ref(0)
 	e := store.Event{Tick: 1, Type: "agent.ate", Payload: mustPayload(p)}
 	if err := s.Apply(e); err != nil {
 		t.Fatalf("apply agent.ate: %v", err)

@@ -33,9 +33,9 @@ func enactedResolution(t *testing.T, md *Mind, passed bool) store.Event {
 	t.Helper()
 	p := sim.ProposalResolvedPayload{
 		ProposalPayload: sim.ProposalPayload{ProposalID: 1, Kind: sim.ProposeCurfew,
-			Target: -1, Param: 22 * 3600, Proposer: 2,
+			Target: sim.Ref(-1), Param: 22 * 3600, Proposer: sim.Ref(2),
 			Text: "No one out alone after nightfall — the night hunts us."},
-		Yeas: []int{0, 1, 2}, Nays: []int{3}, Passed: passed,
+		Yeas: sim.Refs([]int{0, 1, 2}), Nays: sim.Refs([]int{3}), Passed: passed,
 	}
 	e := mustEvent(t, 21600, "meeting.proposal_resolved", p)
 	if err := md.replica.Apply(e); err != nil {
@@ -105,8 +105,8 @@ func TestPhraseSkipsFailuresAndFlavorlessKinds(t *testing.T) {
 	drainMeetQ(md)
 	repeal := sim.ProposalResolvedPayload{
 		ProposalPayload: sim.ProposalPayload{ProposalID: 2, Kind: sim.ProposeRepeal,
-			NormID: md.replica.NextNormID, Target: -1, Proposer: 0, Text: "strike it"},
-		Yeas: []int{0, 1}, Passed: true,
+			NormID: md.replica.NextNormID, Target: sim.Ref(-1), Proposer: sim.Ref(0), Text: "strike it"},
+		Yeas: sim.Refs([]int{0, 1}), Passed: true,
 	}
 	e := mustEvent(t, 22000, "meeting.proposal_resolved", repeal)
 	if err := md.replica.Apply(e); err != nil {
@@ -219,13 +219,13 @@ func TestVillageLawPrompt(t *testing.T) {
 
 	enact := sim.ProposalResolvedPayload{
 		ProposalPayload: sim.ProposalPayload{ProposalID: 1, Kind: sim.ProposeCurfew,
-			Target: -1, Param: 22 * 3600, Proposer: 1, Text: "No one out after nightfall."},
-		Yeas: []int{0, 1, 2}, Passed: true,
+			Target: sim.Ref(-1), Param: 22 * 3600, Proposer: sim.Ref(1), Text: "No one out after nightfall."},
+		Yeas: sim.Refs([]int{0, 1, 2}), Passed: true,
 	}
 	exile := sim.ProposalResolvedPayload{
 		ProposalPayload: sim.ProposalPayload{ProposalID: 2, Kind: sim.ProposeExile,
-			Target: 3, Proposer: 1, Text: "Rowan is a danger to us all — cast them out."},
-		Yeas: []int{0, 1, 2}, Passed: true,
+			Target: sim.Ref(3), Proposer: sim.Ref(1), Text: "Rowan is a danger to us all — cast them out."},
+		Yeas: sim.Refs([]int{0, 1, 2}), Passed: true,
 	}
 	for i, p := range []sim.ProposalResolvedPayload{enact, exile} {
 		if err := s.Apply(mustEvent(t, int64(90000+i), "meeting.proposal_resolved", p)); err != nil {
@@ -265,23 +265,23 @@ func TestVillageLawPrompt(t *testing.T) {
 func TestGovernanceChronicleNotes(t *testing.T) {
 	md, _, _ := narrMind(t)
 
-	md.chronicleNote(mustEvent(t, 21600, "meeting.opened", sim.MeetingOpenedPayload{Attendees: []int{0, 1}}))
-	md.chronicleNote(mustEvent(t, 21960, "meeting.turn_taken", sim.TurnTakenPayload{Agent: 1, Raised: "Cedar never repaid me."}))
+	md.chronicleNote(mustEvent(t, 21600, "meeting.opened", sim.MeetingOpenedPayload{Attendees: sim.Refs([]int{0, 1})}))
+	md.chronicleNote(mustEvent(t, 21960, "meeting.turn_taken", sim.TurnTakenPayload{Agent: sim.Ref(1), Raised: "Cedar never repaid me."}))
 	md.chronicleNote(mustEvent(t, 22320, "meeting.proposal_tabled", sim.ProposalPayload{
-		ProposalID: 1, Kind: sim.ProposeCurfew, Target: -1, Proposer: 0, Text: "No one out after nightfall."}))
+		ProposalID: 1, Kind: sim.ProposeCurfew, Target: sim.Ref(-1), Proposer: sim.Ref(0), Text: "No one out after nightfall."}))
 	resolved := sim.ProposalResolvedPayload{
 		ProposalPayload: sim.ProposalPayload{ProposalID: 1, Kind: sim.ProposeCurfew,
-			Target: -1, Param: 22 * 3600, Proposer: 0, Text: "No one out after nightfall."},
-		Yeas: []int{0, 1}, Passed: true,
+			Target: sim.Ref(-1), Param: 22 * 3600, Proposer: sim.Ref(0), Text: "No one out after nightfall."},
+		Yeas: sim.Refs([]int{0, 1}), Passed: true,
 	}
 	md.replica.Apply(mustEvent(t, 22320, "meeting.proposal_resolved", resolved))
 	md.chronicleNote(mustEvent(t, 22320, "meeting.proposal_resolved", resolved))
 	md.chronicleNote(mustEvent(t, 22320, "norm.violated", sim.NormViolatedPayload{
-		NormID: md.replica.NextNormID, Violator: 2, Witnesses: []int{0}}))
+		NormID: md.replica.NextNormID, Violator: sim.Ref(2), Witnesses: sim.Refs([]int{0})}))
 	exiled := sim.ProposalResolvedPayload{
 		ProposalPayload: sim.ProposalPayload{ProposalID: 2, Kind: sim.ProposeExile,
-			Target: 3, Proposer: 0, Text: "out"},
-		Yeas: []int{0, 1}, Passed: true,
+			Target: sim.Ref(3), Proposer: sim.Ref(0), Text: "out"},
+		Yeas: sim.Refs([]int{0, 1}), Passed: true,
 	}
 	md.chronicleNote(mustEvent(t, 22680, "meeting.proposal_resolved", exiled))
 	md.chronicleNote(mustEvent(t, 25000, "meeting.closed", sim.MeetingClosedPayload{Proposals: 2}))

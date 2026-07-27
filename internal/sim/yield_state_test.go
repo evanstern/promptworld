@@ -110,9 +110,9 @@ func TestYieldAnchorArmedOnlyByMindCompletion(t *testing.T) {
 
 			// The intent lands with the source under test, then completes.
 			set := store.Event{Tick: 1000, Type: "agent.intent_set",
-				Payload: mustPayload(IntentSetPayload{Agent: 0, Goal: "goto_warmth", TargetX: a.X, TargetY: a.Y, Source: tc.source})}
+				Payload: mustPayload(IntentSetPayload{Agent: Ref(0), Goal: "goto_warmth", TargetX: a.X, TargetY: a.Y, Source: tc.source})}
 			done := store.Event{Tick: 1200, Type: "agent.intent_done",
-				Payload: mustPayload(AgentPayload{Agent: 0})}
+				Payload: mustPayload(AgentPayload{Agent: Ref(0)})}
 			if err := s.Apply(set); err != nil {
 				t.Fatal(err)
 			}
@@ -180,8 +180,8 @@ func TestReflexCompletionNeverArmsWindow(t *testing.T) {
 	s, m, a, now := prepAgent(t, 42)
 
 	set := store.Event{Tick: now - 50, Type: "agent.intent_set",
-		Payload: mustPayload(IntentSetPayload{Agent: 0, Goal: "wander", TargetX: a.X + 1, TargetY: a.Y, Source: "reflex"})}
-	done := store.Event{Tick: now - 40, Type: "agent.intent_done", Payload: mustPayload(AgentPayload{Agent: 0})}
+		Payload: mustPayload(IntentSetPayload{Agent: Ref(0), Goal: "wander", TargetX: a.X + 1, TargetY: a.Y, Source: "reflex"})}
+	done := store.Event{Tick: now - 40, Type: "agent.intent_done", Payload: mustPayload(AgentPayload{Agent: Ref(0)})}
 	if err := s.Apply(set); err != nil {
 		t.Fatal(err)
 	}

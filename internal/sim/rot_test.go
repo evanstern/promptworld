@@ -123,7 +123,7 @@ func TestDeathSpillInheritsFreshDeadline(t *testing.T) {
 	a.Inv = Inventory{FoodRaw: 4}
 	const deathTick = int64(600)
 
-	applyEvent(t, s, deathTick, "agent.died", DiedPayload{Agent: 0, Cause: "starvation"})
+	applyEvent(t, s, deathTick, "agent.died", DiedPayload{Agent: Ref(0), Cause: "starvation"})
 
 	p := s.pileAt(a.X, a.Y)
 	if p == nil || len(p.Food) != 1 {
@@ -174,7 +174,7 @@ func TestRotVsPickupSameTick(t *testing.T) {
 	}
 	px, py := fresh().Agents[0].X, fresh().Agents[0].Y
 	rot := store.Event{Tick: tick, Type: "sim.food_rotted", Payload: pl(FoodRottedPayload{X: px, Y: py, Kind: "food_raw", N: 5})}
-	pick := store.Event{Tick: tick, Type: "agent.picked_up", Payload: pl(PickedUpPayload{Agent: 0, X: px, Y: py, Kind: "food_raw", N: 3})}
+	pick := store.Event{Tick: tick, Type: "agent.picked_up", Payload: pl(PickedUpPayload{Agent: Ref(0), X: px, Y: py, Kind: "food_raw", N: 3})}
 
 	apply := func(order []store.Event) *State {
 		s := fresh()

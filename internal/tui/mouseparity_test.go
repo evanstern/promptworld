@@ -206,6 +206,74 @@ var mouseParityOracle = []mouseParityOracleEntry{
 		claim:   "click a row selects, a second click drills",
 		check:   checkLookCursorTilePaneClickMouseClaim,
 	},
+	// Reverse jump (spec 086 US5 — the operator-placed rider): the village
+	// lens's other direction, villager → their place in the world.
+	{
+		page:    "panels/villager-strip.md",
+		control: "reverse-jump",
+		claim:   "click glyph",
+		check:   checkVillagerStripReverseJumpMouseClaim,
+	},
+	{
+		page:    "panels/villagers.md",
+		control: "reverse-jump",
+		claim:   "click row",
+		check:   checkVillagersRosterReverseJumpMouseClaim,
+	},
+}
+
+// checkVillagerStripReverseJumpMouseClaim proves panels/villager-strip.md's
+// "click glyph" claim (spec 086 US5 AS-1/AS-5): a left-release on a rendered
+// strip glyph centers the map camera on that villager — real tea.MouseMsg
+// dispatch through m.Update, asserting the pan moved to centerCameraOn's
+// arithmetic (the TestStripGlyphClickCentersCamera path).
+func checkVillagerStripReverseJumpMouseClaim(t *testing.T) {
+	t.Helper()
+	m := reverseJumpModel(t)
+	_ = m.View() // records stripHit
+	if !m.stripHit.valid {
+		t.Fatal("test setup: stripHit should be valid after a widescreen render")
+	}
+	const i = 3
+	mdl, _ := m.Update(mouseLeftRelease(m.stripHit.glyphX[i], m.stripHit.originY))
+	mm := mdl.(Model)
+	a := mm.replica.Agents[i]
+	cx, cy := mm.wandererCentroid()
+	if mm.panX != a.X-cx || mm.panY != a.Y-cy {
+		t.Errorf("strip glyph click pan = (%d,%d), want centerCameraOn(%d,%d)", mm.panX, mm.panY, a.X, a.Y)
+	}
+}
+
+// checkVillagersRosterReverseJumpMouseClaim proves panels/villagers.md's
+// "click row" claim (spec 086 US5 AS-2/AS-5): a left-release on a roster
+// row band selects that villager AND centers the camera — select + act, the
+// chronicle click-line precedent (the TestRosterRowClickSelectsAndCentersCamera path).
+func checkVillagersRosterReverseJumpMouseClaim(t *testing.T) {
+	t.Helper()
+	m := reverseJumpModel(t)
+	m.dockTab = paneVillagers
+	_ = m.View() // records rosterHit
+	if !m.rosterHit.valid {
+		t.Fatal("test setup: rosterHit should be valid after rendering the roster")
+	}
+	row := -1
+	for r, idx := range m.rosterHit.rowAgent {
+		if idx == 2 {
+			row = r
+			break
+		}
+	}
+	if row < 0 {
+		t.Fatal("test setup: villager 2 has no rendered roster row")
+	}
+	mdl, _ := m.Update(mouseLeftRelease(m.rosterHit.originX+2, m.rosterHit.originY+row))
+	mm := mdl.(Model)
+	if mm.villSelected != 2 {
+		t.Errorf("roster row click should select villager 2, got %d", mm.villSelected)
+	}
+	if mm.panX == 0 && mm.panY == 0 {
+		t.Error("roster row click should also center the camera (select + act)")
+	}
 }
 
 // checkLookCursorMapClickMouseClaim proves panels/map.md's click-tile claim

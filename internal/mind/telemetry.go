@@ -105,7 +105,7 @@ func (md *Mind) emitSuppressed(class string, agent int, snapshotTick int64, v co
 	}
 	b, _ := json.Marshal(sim.CogOutcomePayload{
 		Job:   fmt.Sprintf("%s-%d-%d", class, agent, snapshotTick),
-		Class: class, Agent: agent,
+		Class: class, Agent: sim.Ref(agent),
 		Outcome: sim.OutcomeSuppressed, SnapshotTick: snapshotTick,
 		PredictedWallMs: v.PredictedWallMs, Reason: v.Arithmetic,
 	})
@@ -145,7 +145,7 @@ func (md *Mind) secondsPerPoint(kind llm.Kind) float64 {
 
 func cogThoughtEvent(m thoughtMeta) store.Event {
 	b, _ := json.Marshal(sim.CogThoughtPayload{
-		Job: m.job, Class: m.class.Class, Agent: m.agent,
+		Job: m.job, Class: m.class.Class, Agent: sim.Ref(m.agent),
 		SnapshotTick: m.snapshotTick, Generation: m.generation,
 		TriggerSeq: m.triggerSeq, Points: m.class.Points,
 		PredictedWallMs: m.predictedWallMs, PredictedLandTick: m.predictedLandTick,
@@ -171,7 +171,7 @@ func (md *Mind) cogSceneOutcome(m thoughtMeta, outcome, reason string, actualWal
 		staleness = 0
 	}
 	b, _ := json.Marshal(sim.CogOutcomePayload{
-		Job: m.job, Class: m.class.Class, Agent: m.agent,
+		Job: m.job, Class: m.class.Class, Agent: sim.Ref(m.agent),
 		Outcome: outcome, SnapshotTick: m.snapshotTick,
 		LandingTick: landing, StalenessTicks: staleness,
 		PredictedWallMs: m.predictedWallMs, ActualWallMs: actualWallMs,

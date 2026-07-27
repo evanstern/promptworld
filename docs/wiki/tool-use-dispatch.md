@@ -7,7 +7,7 @@ sources:
   - internal/mind/prompt.go
   - internal/mind/context.go
   - internal/mind/telemetry.go
-verified_against: 048259bb42b03cc6ebeb13a49f367c2e3a7d4d37
+verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
 ---
 
 # Cognition gate and tool-use loop dispatch

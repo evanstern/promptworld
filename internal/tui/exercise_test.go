@@ -264,7 +264,7 @@ func TestExerciseGaugesTheLawEvaluateForReal(t *testing.T) {
 	m.applyEvent(store.Event{Seq: 3, Tick: 300, Type: "meeting.proposal_resolved",
 		Payload: mustPayload(t, sim.ProposalResolvedPayload{
 			ProposalPayload: sim.ProposalPayload{ProposalID: 1, Kind: sim.ProposeCurfew,
-				Target: -1, Proposer: 0, Text: "no one leaves the fires after dusk"},
+				Target: sim.Ref(-1), Proposer: sim.Ref(0), Text: "no one leaves the fires after dusk"},
 			Passed: true,
 		})})
 	body = m.exerciseBody(120, 20)

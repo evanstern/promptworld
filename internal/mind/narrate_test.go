@@ -56,12 +56,12 @@ func mustEvent(t *testing.T, tick int64, typ string, p any) store.Event {
 func TestChronicleNoteWindowing(t *testing.T) {
 	md, _, _ := narrMind(t)
 
-	md.chronicleNote(mustEvent(t, 1000, "agent.died", sim.DiedPayload{Agent: 0, Cause: "starvation"}))
+	md.chronicleNote(mustEvent(t, 1000, "agent.died", sim.DiedPayload{Agent: sim.Ref(0), Cause: "starvation"}))
 	md.chronicleNote(mustEvent(t, 2000, "social.conversation", sim.ConversationPayload{
-		Conv: 2000, A: 1, B: 7, Gist: "argued about firewood", Topics: []string{"firewood"},
-		Participants: []int{1, 7},
+		Conv: 2000, A: sim.Ref(1), B: sim.Ref(7), Gist: "argued about firewood", Topics: []string{"firewood"},
+		Participants: sim.Refs([]int{1, 7}),
 	}))
-	md.chronicleNote(mustEvent(t, 3000, "agent.moved", sim.AgentMovedPayload{Agent: 3, X: 1, Y: 1})) // not notable
+	md.chronicleNote(mustEvent(t, 3000, "agent.moved", sim.AgentMovedPayload{Agent: sim.Ref(3), X: 1, Y: 1})) // not notable
 
 	md.chronicleNote(mustEvent(t, 57600, "sim.night_started", sim.DayPayload{Day: 1}))
 	var job narrJob
@@ -101,7 +101,7 @@ func TestChronicleNoteWindowing(t *testing.T) {
 func TestChronicleNoteChestTaken(t *testing.T) {
 	md, _, _ := narrMind(t)
 	md.chronicleNote(mustEvent(t, 1000, "social.chest_taken", sim.ChestTakenPayload{
-		Owner: 0, Taker: 3, X: 5, Y: 5,
+		Owner: sim.Ref(0), Taker: sim.Ref(3), X: 5, Y: 5,
 	}))
 	if len(md.narrLines) != 1 {
 		t.Fatalf("lines = %d, want 1", len(md.narrLines))
@@ -156,7 +156,7 @@ func TestRunNarrationLands(t *testing.T) {
 	if p.Thread != "the-cold-start" {
 		t.Errorf("thread not slugified: %q", p.Thread)
 	}
-	if len(p.Agents) != 1 || p.Agents[0] != 0 {
+	if len(p.Agents) != 1 || p.Agents[0].ID != 0 {
 		t.Errorf("unknown names must drop, Ash resolves to 0: %v", p.Agents)
 	}
 }

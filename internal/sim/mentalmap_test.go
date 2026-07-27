@@ -263,7 +263,7 @@ func TestMovedMarksExplored(t *testing.T) {
 		t.Skip("spawn tile has no passable neighbor on this seed")
 	}
 	if err := s.Apply(store.Event{Tick: 10, Type: "agent.moved",
-		Payload: mustPayload(AgentMovedPayload{Agent: 0, X: nx, Y: ny})}); err != nil {
+		Payload: mustPayload(AgentMovedPayload{Agent: Ref(0), X: nx, Y: ny})}); err != nil {
 		t.Fatalf("apply agent.moved: %v", err)
 	}
 	if !a.Map.ExploredAt(m.W, m.H, nx, ny) {
@@ -281,7 +281,7 @@ func TestMovedMarksExplored(t *testing.T) {
 	// Map-less agents skip the bookkeeping without error (nil-safe).
 	s.Agents[1].Map = nil
 	if err := s.Apply(store.Event{Tick: 11, Type: "agent.moved",
-		Payload: mustPayload(AgentMovedPayload{Agent: 1, X: s.Agents[1].X, Y: s.Agents[1].Y})}); err != nil {
+		Payload: mustPayload(AgentMovedPayload{Agent: Ref(1), X: s.Agents[1].X, Y: s.Agents[1].Y})}); err != nil {
 		t.Fatalf("apply agent.moved with nil map: %v", err)
 	}
 }
@@ -313,7 +313,7 @@ func TestPerceptionSweepWitnessesAndSettles(t *testing.T) {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			t.Fatal(err)
 		}
-		if p.Agent == 0 {
+		if p.Agent.ID == 0 {
 			mine = append(mine, e)
 		}
 	}
@@ -356,7 +356,7 @@ func TestPerceptionSweepWitnessesAndSettles(t *testing.T) {
 	for _, e := range perceptionEvents(s, m, beat+moveEveryTicks) {
 		var q SawPayload
 		json.Unmarshal(e.Payload, &q)
-		if q.Agent == 0 {
+		if q.Agent.ID == 0 {
 			t.Fatalf("settled map re-emitted agent.saw: %s", e.Payload)
 		}
 	}
@@ -367,7 +367,7 @@ func TestPerceptionSweepWitnessesAndSettles(t *testing.T) {
 	for _, e := range perceptionEvents(s, m, beat+2*moveEveryTicks) {
 		var q SawPayload
 		json.Unmarshal(e.Payload, &q)
-		if q.Agent == 0 {
+		if q.Agent.ID == 0 {
 			for _, f := range q.Facts {
 				if f.Kind == "fire" && f.Detail == 20000 {
 					saw = true
@@ -384,7 +384,7 @@ func TestPerceptionSweepWitnessesAndSettles(t *testing.T) {
 	for _, e := range perceptionEvents(s, m, beat+3*moveEveryTicks) {
 		var q SawPayload
 		json.Unmarshal(e.Payload, &q)
-		if q.Agent == 0 {
+		if q.Agent.ID == 0 {
 			t.Fatal("a sleeping agent perceived")
 		}
 	}
@@ -470,7 +470,7 @@ func TestMapCorrectionOnArrival(t *testing.T) {
 	}
 	move := func(tick int64, x, y int) {
 		if err := s.Apply(store.Event{Tick: tick, Type: "agent.moved",
-			Payload: mustPayload(AgentMovedPayload{Agent: 0, X: x, Y: y})}); err != nil {
+			Payload: mustPayload(AgentMovedPayload{Agent: Ref(0), X: x, Y: y})}); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -522,13 +522,13 @@ func TestMapCorrectionOnArrival(t *testing.T) {
 		case "agent.map_corrected":
 			var p MapCorrectedPayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.Agent == 0 {
+			if p.Agent.ID == 0 {
 				corrected = &p
 			}
 		case "agent.memory_added":
 			var p MemoryAddedPayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.Agent == 0 && p.Origin == OriginWitness {
+			if p.Agent.ID == 0 && p.Origin == OriginWitness {
 				memText = p.Text
 			}
 		}
@@ -600,7 +600,7 @@ func TestCorrectionSparesAvailabilityLapses(t *testing.T) {
 			if ok1 && ok2 {
 				spot, treeTile = f, tr
 				if err := s.Apply(store.Event{Tick: 1, Type: "agent.moved",
-					Payload: mustPayload(AgentMovedPayload{Agent: 0, X: x, Y: y})}); err != nil {
+					Payload: mustPayload(AgentMovedPayload{Agent: Ref(0), X: x, Y: y})}); err != nil {
 					t.Fatal(err)
 				}
 				placed = true
@@ -703,22 +703,22 @@ func TestPlaceTellTransfer(t *testing.T) {
 		case "social.place_told":
 			var p PlaceToldPayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.From == 0 && p.To == 1 {
+			if p.From.ID == 0 && p.To.ID == 1 {
 				if told != nil {
 					t.Fatal("more than one A→B place_told in a single talk")
 				}
 				q := p
 				told = &q
-			} else if p.From == 1 {
+			} else if p.From.ID == 1 {
 				t.Fatalf("empty-map B told A something: %+v", p)
 			}
 		case "agent.memory_added":
 			var p MemoryAddedPayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.Agent == 0 && strings.HasPrefix(p.Text, "Told Birch about the") {
+			if p.Agent.ID == 0 && strings.HasPrefix(p.Text, "Told Birch about the") {
 				tellerMem = true
 			}
-			if p.Agent == 1 && strings.HasPrefix(p.Text, "Ash told you of a") {
+			if p.Agent.ID == 1 && strings.HasPrefix(p.Text, "Ash told you of a") {
 				listenerMem = true
 			}
 		}
@@ -778,7 +778,7 @@ func TestPlaceTellStalerNeverOverwrites(t *testing.T) {
 	}
 	// Defensive reducer half: a staler payload still never overwrites.
 	e := store.Event{Tick: 1000, Type: "social.place_told", Payload: mustPayload(PlaceToldPayload{
-		From: 0, To: 1, Facts: []PlaceFact{{Kind: "fire", X: 30, Y: 30, Seen: 500, Provenance: ProvenanceTold, Source: 0, Detail: 700}},
+		From: Ref(0), To: Ref(1), Facts: []PlaceFact{{Kind: "fire", X: 30, Y: 30, Seen: 500, Provenance: ProvenanceTold, Source: 0, Detail: 700}},
 	})}
 	if err := s.Apply(e); err != nil {
 		t.Fatal(err)
@@ -827,7 +827,7 @@ func TestPlaceRevealedArm(t *testing.T) {
 
 	reveal := func(agent int, facts []PlaceFact, tick int64) error {
 		return s.Apply(store.Event{Tick: tick, Type: "metatron.place_revealed",
-			Payload: mustPayload(PlaceRevealedPayload{Agent: agent, Facts: facts})})
+			Payload: mustPayload(PlaceRevealedPayload{Agent: Ref(agent), Facts: facts})})
 	}
 
 	// A real place lands with the arm's normative stamps.
@@ -878,15 +878,15 @@ func TestPlaceRevealedThroughDoor(t *testing.T) {
 	visionBatch := func(kind string, x, y int) []store.Event {
 		return []store.Event{
 			{Type: "metatron.nudged", Payload: mustPayload(GuardianNudgedPayload{
-				Form: "vision", Targets: []int{0}, Text: "Fire, beyond the ridge."})},
+				Form: "vision", Targets: Refs([]int{0}), Text: "Fire, beyond the ridge."})},
 			{Type: "agent.memory_added", Payload: mustPayload(MemoryAddedPayload{
-				Agent: 0, Text: "You saw a vision: Fire, beyond the ridge.",
-				Salience: SalDream, Subject: -1, Origin: OriginOmen})},
+				Agent: Ref(0), Text: "You saw a vision: Fire, beyond the ridge.",
+				Salience: SalDream, Subject: Ref(-1), Origin: OriginOmen})},
 			{Type: "metatron.place_revealed", Payload: mustPayload(PlaceRevealedPayload{
-				Agent: 0, Facts: []PlaceFact{{Kind: kind, X: x, Y: y, Provenance: ProvenanceRevealed}}})},
+				Agent: Ref(0), Facts: []PlaceFact{{Kind: kind, X: x, Y: y, Provenance: ProvenanceRevealed}}})},
 			{Type: "agent.memory_added", Payload: mustPayload(MemoryAddedPayload{
-				Agent: 0, Text: "The vision showed you the fire at (7,7).",
-				Salience: SalDream, Subject: -1, Origin: OriginOmen})},
+				Agent: Ref(0), Text: "The vision showed you the fire at (7,7).",
+				Salience: SalDream, Subject: Ref(-1), Origin: OriginOmen})},
 		}
 	}
 
@@ -961,7 +961,7 @@ func TestDeadAgentKnowledgeHygiene(t *testing.T) {
 	a.Map.upsertFact(PlaceFact{Kind: "fire", X: 30, Y: 30, Seen: 900, Provenance: ProvenanceWitnessed, Detail: 999999})
 	b.Map.sightPeer(0, a.X, a.Y, 900)
 	if err := s.Apply(store.Event{Tick: 950, Type: "agent.died",
-		Payload: mustPayload(DiedPayload{Agent: 0, Cause: "starvation"})}); err != nil {
+		Payload: mustPayload(DiedPayload{Agent: Ref(0), Cause: "starvation"})}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -972,10 +972,10 @@ func TestDeadAgentKnowledgeHygiene(t *testing.T) {
 	for probe := tick; probe < tick+moveEveryTicks; probe++ {
 		for _, e := range perceptionEvents(s, m, probe) {
 			var p struct {
-				Agent int `json:"agent"`
+				Agent AgentRef `json:"agent"` // dual-shape (spec 086)
 			}
 			mustUnmarshal(t, e.Payload, &p)
-			if p.Agent == 0 {
+			if p.Agent.ID == 0 {
 				t.Fatalf("the dead perceived: %s %s", e.Type, e.Payload)
 			}
 		}
@@ -1018,7 +1018,7 @@ func TestDeadAgentKnowledgeHygiene(t *testing.T) {
 	// dead nor stamps the dead agent's peer list.
 	deadPeersBefore := len(round.Agents[0].Map.Peers)
 	if err := s.Apply(store.Event{Tick: tick + 5, Type: "agent.moved",
-		Payload: mustPayload(AgentMovedPayload{Agent: 1, X: a.X, Y: a.Y})}); err != nil {
+		Payload: mustPayload(AgentMovedPayload{Agent: Ref(1), X: a.X, Y: a.Y})}); err != nil {
 		t.Fatal(err)
 	}
 	if sight, ok := peerSightingOf(&s.Agents[1], 0); ok && sight.Seen > 900 {

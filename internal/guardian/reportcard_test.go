@@ -187,7 +187,7 @@ func TestReportCardRunEndRidesEpilogue(t *testing.T) {
 			}
 		}
 	}
-	if len(epilogues) != 1 || epilogues[0].Agent != -1 {
+	if len(epilogues) != 1 || epilogues[0].Agent.ID != -1 {
 		t.Fatalf("epilogues = %+v, want one agent -1 entry", epilogues)
 	}
 	if !strings.Contains(epilogues[0].Text, orch.reply) || !strings.Contains(epilogues[0].Text, job.fingerprint) {

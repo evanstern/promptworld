@@ -46,12 +46,12 @@ func (mt *Guardian) observeMoment(e store.Event) {
 	case "agent.died":
 		var p sim.DiedPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			line = fmt.Sprintf("%s — %s died of %s", clock.Format(e.Tick), name(p.Agent), p.Cause)
+			line = fmt.Sprintf("%s — %s died of %s", clock.Format(e.Tick), name(p.Agent.ID), p.Cause)
 		}
 	case "gru.attacked":
 		var p sim.GruAttackedPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			line = fmt.Sprintf("%s — the gru attacked %s in the night", clock.Format(e.Tick), name(p.Agent))
+			line = fmt.Sprintf("%s — the gru attacked %s in the night", clock.Format(e.Tick), name(p.Agent.ID))
 		}
 	case "social.promise_broken":
 		var p sim.PromiseBrokenPayload
@@ -110,19 +110,19 @@ func (mt *Guardian) digestNote(e store.Event) {
 	case "agent.died":
 		var p sim.DiedPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			line = fmt.Sprintf("%s died of %s.", name(p.Agent), p.Cause)
+			line = fmt.Sprintf("%s died of %s.", name(p.Agent.ID), p.Cause)
 		}
 	case "agent.built":
 		var p sim.BuiltPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			line = fmt.Sprintf("%s built a %s.", name(p.Agent), p.Kind)
+			line = fmt.Sprintf("%s built a %s.", name(p.Agent.ID), p.Kind)
 		}
 	case "gru.emerged":
 		line = "The gru emerged."
 	case "gru.attacked":
 		var p sim.GruAttackedPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			line = fmt.Sprintf("The gru attacked %s.", name(p.Agent))
+			line = fmt.Sprintf("The gru attacked %s.", name(p.Agent.ID))
 		}
 	case "social.conversation":
 		var p sim.ConversationPayload
@@ -131,8 +131,8 @@ func (mt *Guardian) digestNote(e store.Event) {
 		}
 	case "social.rumor_told":
 		var p sim.RumorToldPayload
-		if json.Unmarshal(e.Payload, &p) == nil && p.To >= 0 {
-			line = fmt.Sprintf("%s told %s a rumor: %q.", name(p.From), name(p.To), p.Text)
+		if json.Unmarshal(e.Payload, &p) == nil && p.To.ID >= 0 {
+			line = fmt.Sprintf("%s told %s a rumor: %q.", name(p.From.ID), name(p.To.ID), p.Text)
 		}
 	case "social.promise_broken":
 		line = "A promise was broken."

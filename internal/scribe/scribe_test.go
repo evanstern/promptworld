@@ -76,11 +76,11 @@ func TestSoulRendersSituatedContext(t *testing.T) {
 	scr.Observe([]store.Event{
 		// A fully situated memory (place with desc + why).
 		{Tick: 3600, Type: "agent.memory_added", Payload: mustPayloadJSON(t, sim.MemoryAddedPayload{
-			Agent: 0, Text: "Built a fire at the rock outcrop (23,41) — keep the Gru away.", Salience: 5, Subject: -1,
+			Agent: sim.Ref(0), Text: "Built a fire at the rock outcrop (23,41) — keep the Gru away.", Salience: 5, Subject: sim.Ref(-1),
 			Where: &sim.MemoryPlace{X: 23, Y: 41, Desc: "the rock outcrop"}, Why: "keep the Gru away."})},
 		// A conversation memory (place, no desc + conv ref).
 		{Tick: 3660, Type: "agent.memory_added", Payload: mustPayloadJSON(t, sim.MemoryAddedPayload{
-			Agent: 0, Text: "Talked with Birch — argued about the storm.", Salience: 4, Subject: 1,
+			Agent: sim.Ref(0), Text: "Talked with Birch — argued about the storm.", Salience: 4, Subject: sim.Ref(1),
 			Where: &sim.MemoryPlace{X: 7, Y: 12}, Conv: 3600})},
 		// A pre-019 memory (no situated fields) — must render as before.
 		{Tick: 3720, Type: "agent.memory_added", Payload: mustPayloadJSON(t, map[string]any{
@@ -133,9 +133,9 @@ func TestJournalRenders(t *testing.T) {
 
 	scr.Observe([]store.Event{
 		{Tick: 3600, Type: "journal.entry_written", Payload: mustPayloadJSON(t,
-			sim.JournalWrittenPayload{Agent: 0, Text: "Banked the fire before the cold set in."})},
+			sim.JournalWrittenPayload{Agent: sim.Ref(0), Text: "Banked the fire before the cold set in."})},
 		{Tick: 7200, Type: "journal.entry_written", Payload: mustPayloadJSON(t,
-			sim.JournalWrittenPayload{Agent: 0, Text: "Owe Birch a meal."})},
+			sim.JournalWrittenPayload{Agent: sim.Ref(0), Text: "Owe Birch a meal."})},
 	})
 
 	deadline := time.Now().Add(3 * time.Second)
@@ -151,7 +151,7 @@ func TestJournalRenders(t *testing.T) {
 			strings.Contains(s, "runes_") {
 			// Now delete entry #0 and confirm it disappears.
 			scr.Observe([]store.Event{{Tick: 7300, Type: "journal.entry_deleted",
-				Payload: mustPayloadJSON(t, sim.JournalDeletedPayload{Agent: 0, Entry: 0})}})
+				Payload: mustPayloadJSON(t, sim.JournalDeletedPayload{Agent: sim.Ref(0), Entry: 0})}})
 			d2 := time.Now().Add(3 * time.Second)
 			for time.Now().Before(d2) {
 				after, _ := os.ReadFile(persona.JournalPath(dir, "Ash"))
@@ -223,14 +223,14 @@ func TestSoulShowsConsolidatedGrowth(t *testing.T) {
 	night := func(tick int64, gist, narrative, belief string, conf int) []store.Event {
 		return []store.Event{
 			{Tick: tick, Type: "agent.memory_added", Payload: mustPayloadJSON(t,
-				sim.MemoryAddedPayload{Agent: 0, Text: gist, Salience: sim.SalDayGist, Subject: -1})},
+				sim.MemoryAddedPayload{Agent: sim.Ref(0), Text: gist, Salience: sim.SalDayGist, Subject: sim.Ref(-1)})},
 			{Tick: tick, Type: "agent.belief_revised", Payload: mustPayloadJSON(t,
-				sim.BeliefRevisedPayload{Agent: 0, BeliefID: 0, Statement: belief,
-					Confidence: conf, Provenance: sim.ProvenanceWitnessed, Source: -1, Subject: -1})},
+				sim.BeliefRevisedPayload{Agent: sim.Ref(0), BeliefID: 0, Statement: belief,
+					Confidence: conf, Provenance: sim.ProvenanceWitnessed, Source: sim.Ref(-1), Subject: sim.Ref(-1)})},
 			{Tick: tick, Type: "agent.narrative_set", Payload: mustPayloadJSON(t,
-				sim.NarrativeSetPayload{Agent: 0, Text: narrative})},
+				sim.NarrativeSetPayload{Agent: sim.Ref(0), Text: narrative})},
 			{Tick: tick, Type: "agent.consolidated", Payload: mustPayloadJSON(t,
-				sim.ConsolidatedPayload{Agent: 0, Night: sim.NightIndex(tick), UpTo: tick,
+				sim.ConsolidatedPayload{Agent: sim.Ref(0), Night: sim.NightIndex(tick), UpTo: tick,
 					Outcome: sim.ConsolidationAccepted, Beliefs: 1})},
 		}
 	}
@@ -277,30 +277,30 @@ func governedEvents(t *testing.T) []store.Event {
 	t.Helper()
 	enact := sim.ProposalResolvedPayload{
 		ProposalPayload: sim.ProposalPayload{ProposalID: 1, Kind: sim.ProposeCurfew,
-			Target: -1, Param: 22 * 3600, Proposer: 1, Text: "No one out after nightfall."},
-		Yeas: []int{0, 1, 2}, Nays: []int{3}, Passed: true,
+			Target: sim.Ref(-1), Param: 22 * 3600, Proposer: sim.Ref(1), Text: "No one out after nightfall."},
+		Yeas: sim.Refs([]int{0, 1, 2}), Nays: sim.Refs([]int{3}), Passed: true,
 	}
 	amend := sim.ProposalResolvedPayload{
 		ProposalPayload: sim.ProposalPayload{ProposalID: 2, Kind: sim.ProposeAmend,
-			NormID: 1, Target: -1, Param: 0, Proposer: 2, Text: "later curfew"},
-		Yeas: []int{0, 1, 2}, Passed: true,
+			NormID: 1, Target: sim.Ref(-1), Param: 0, Proposer: sim.Ref(2), Text: "later curfew"},
+		Yeas: sim.Refs([]int{0, 1, 2}), Passed: true,
 	}
 	exile := sim.ProposalResolvedPayload{
 		ProposalPayload: sim.ProposalPayload{ProposalID: 3, Kind: sim.ProposeExile,
-			Target: 3, Proposer: 0, Text: "Rowan is a danger to us all — cast them out."},
-		Yeas: []int{0, 1, 2}, Passed: true,
+			Target: sim.Ref(3), Proposer: sim.Ref(0), Text: "Rowan is a danger to us all — cast them out."},
+		Yeas: sim.Refs([]int{0, 1, 2}), Passed: true,
 	}
 	repeal := sim.ProposalResolvedPayload{
 		ProposalPayload: sim.ProposalPayload{ProposalID: 4, Kind: sim.ProposeRepeal,
-			NormID: 1, Target: -1, Proposer: 2, Text: "strike it"},
-		Yeas: []int{0, 1, 2}, Passed: true,
+			NormID: 1, Target: sim.Ref(-1), Proposer: sim.Ref(2), Text: "strike it"},
+		Yeas: sim.Refs([]int{0, 1, 2}), Passed: true,
 	}
 	return []store.Event{
 		{Tick: 19800, Type: "meeting.place_designated", Payload: mustPayloadJSON(t, sim.MeetingPlacePayload{X: 12, Y: 34})},
 		{Tick: 21960, Type: "meeting.proposal_resolved", Payload: mustPayloadJSON(t, enact)},
 		{Tick: 21970, Type: "meeting.proposal_rephrased", Payload: mustPayloadJSON(t,
 			sim.ProposalRephrasedPayload{ProposalID: 1, NormID: 1, Text: "Stay by the fire once the dark comes down."})},
-		{Tick: 60000, Type: "norm.violated", Payload: mustPayloadJSON(t, sim.NormViolatedPayload{NormID: 1, Violator: 4, Witnesses: []int{5}})},
+		{Tick: 60000, Type: "norm.violated", Payload: mustPayloadJSON(t, sim.NormViolatedPayload{NormID: 1, Violator: sim.Ref(4), Witnesses: sim.Refs([]int{5})})},
 		{Tick: 108360, Type: "meeting.proposal_resolved", Payload: mustPayloadJSON(t, amend)},  // day 2
 		{Tick: 194400, Type: "meeting.proposal_resolved", Payload: mustPayloadJSON(t, exile)},  // day 3 noon
 		{Tick: 280800, Type: "meeting.proposal_resolved", Payload: mustPayloadJSON(t, repeal)}, // day 4 noon

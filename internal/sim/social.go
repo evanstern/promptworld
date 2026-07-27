@@ -106,62 +106,62 @@ func SecretShareRoll(seed uint64, tick int64, agent int) bool {
 
 type (
 	RelationChangedPayload struct {
-		A              int    `json:"a"`
-		B              int    `json:"b"`
-		TrustDelta     int    `json:"trust_delta"`
-		AffectionDelta int    `json:"affection_delta"`
-		Reason         string `json:"reason"`
+		A              AgentRef `json:"a"`
+		B              AgentRef `json:"b"`
+		TrustDelta     int      `json:"trust_delta"`
+		AffectionDelta int      `json:"affection_delta"`
+		Reason         string   `json:"reason"`
 	}
 	GavePayload struct {
-		From int    `json:"from"`
-		To   int    `json:"to"`
-		Kind string `json:"kind"`
+		From AgentRef `json:"from"`
+		To   AgentRef `json:"to"`
+		Kind string   `json:"kind"`
 	}
 	PromiseBrokenPayload struct {
 		ID int `json:"id"`
 	}
 	RumorToldPayload struct {
-		From       int    `json:"from"`
-		To         int    `json:"to"`
-		RumorID    int    `json:"rumor_id"` // 0 = birth
-		Subject    int    `json:"subject"`
-		Tone       int    `json:"tone"`
-		Text       string `json:"text"`
-		Confidence int    `json:"confidence"`
-		Secret     bool   `json:"secret,omitempty"`
+		From       AgentRef `json:"from"`
+		To         AgentRef `json:"to"`
+		RumorID    int      `json:"rumor_id"` // 0 = birth
+		Subject    AgentRef `json:"subject"`
+		Tone       int      `json:"tone"`
+		Text       string   `json:"text"`
+		Confidence int      `json:"confidence"`
+		Secret     bool     `json:"secret,omitempty"`
 	}
 	SecretSeededPayload struct {
-		Agent int    `json:"agent"`
-		Text  string `json:"text"`
-		Tone  int    `json:"tone"`
+		Agent AgentRef `json:"agent"`
+		Text  string   `json:"text"`
+		Tone  int      `json:"tone"`
 	}
 	ConversationTurnPayload struct {
-		Conv     int64  `json:"conv"` // tick of the founding talk = conversation id
-		Speaker  int    `json:"speaker"`
-		Listener int    `json:"listener"`
-		Text     string `json:"text"`
+		Conv     int64    `json:"conv"` // tick of the founding talk = conversation id
+		Speaker  AgentRef `json:"speaker"`
+		Listener AgentRef `json:"listener"`
+		Text     string   `json:"text"`
 	}
 	ConversationPayload struct {
-		Conv  int64  `json:"conv"`
-		A     int    `json:"a"`
-		B     int    `json:"b"`
-		Gist  string `json:"gist"`
-		Turns int    `json:"turns"`
+		Conv  int64    `json:"conv"`
+		A     AgentRef `json:"a"`
+		B     AgentRef `json:"b"`
+		Gist  string   `json:"gist"`
+		Turns int      `json:"turns"`
 		// TASK-22: scenes may hold more than a pair; empty means [A, B]
 		// (pre-TASK-22 payloads replay unchanged).
-		Participants []int    `json:"participants,omitempty"`
-		Topics       []string `json:"topics,omitempty"`
-		Tones        []int    `json:"tones,omitempty"` // per participant, -2..2
+		Participants []AgentRef `json:"participants,omitempty"`
+		Topics       []string   `json:"topics,omitempty"`
+		Tones        []int      `json:"tones,omitempty"` // per participant, -2..2
 	}
 	// ChestTakenPayload — social.chest_taken (spec 013 US4, FR-011): the distinct
 	// taking happening co-emitted with a non-owner agent.withdrew. Canonical
 	// field order per contracts/events.md; the reducer records nothing beyond the
 	// event itself (chronicle/TUI material).
 	ChestTakenPayload struct {
-		Owner int `json:"owner"`
-		Taker int `json:"taker"`
-		X     int `json:"x"`
-		Y     int `json:"y"`
+		Owner AgentRef `json:"owner"`
+		Taker AgentRef `json:"taker"`
+		X     int      `json:"x"`
+		Y     int      `json:"y"`
 	}
 )
 
@@ -238,10 +238,10 @@ func (s *State) applySocial(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		if p.A == p.B || p.A < 0 || p.B < 0 || p.A >= len(s.Agents) || p.B >= len(s.Agents) {
-			return fmt.Errorf("apply %s: bad pair %d→%d", e.Type, p.A, p.B)
+		if p.A.ID == p.B.ID || p.A.ID < 0 || p.B.ID < 0 || p.A.ID >= len(s.Agents) || p.B.ID >= len(s.Agents) {
+			return fmt.Errorf("apply %s: bad pair %d→%d", e.Type, p.A.ID, p.B.ID)
 		}
-		r := s.relation(p.A, p.B)
+		r := s.relation(p.A.ID, p.B.ID)
 		r.Trust = clampInt(r.Trust+p.TrustDelta, relMin, relMax)
 		r.Affection = clampInt(r.Affection+p.AffectionDelta, relMin, relMax)
 
@@ -250,7 +250,7 @@ func (s *State) applySocial(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		giver, recv := &s.Agents[p.From], &s.Agents[p.To]
+		giver, recv := &s.Agents[p.From.ID], &s.Agents[p.To.ID]
 		// TODO(T018): giving is denominated in raw food for now; the food rewrite
 		// may reconsider which form is shared. Behavior-equivalent re-expression.
 		if giver.Inv.FoodRaw <= 0 {
@@ -269,14 +269,14 @@ func (s *State) applySocial(e store.Event) error {
 		// Ledger transition (reducer-internal): repayment first, else debt.
 		for i := range s.Debts {
 			d := &s.Debts[i]
-			if d.Status == "open" && d.Debtor == p.From && d.Creditor == p.To && d.Kind == p.Kind {
+			if d.Status == "open" && d.Debtor == p.From.ID && d.Creditor == p.To.ID && d.Kind == p.Kind {
 				d.Status = "kept"
 				return nil
 			}
 		}
 		s.NextDebtID++
 		s.Debts = append(s.Debts, Debt{
-			ID: s.NextDebtID, Debtor: p.To, Creditor: p.From,
+			ID: s.NextDebtID, Debtor: p.To.ID, Creditor: p.From.ID,
 			Kind: p.Kind, Due: e.Tick + debtDueTicks, Status: "open",
 		})
 
@@ -304,10 +304,10 @@ func (s *State) applySocial(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		if p.To < 0 || p.To >= len(s.Agents) {
-			return fmt.Errorf("apply %s: agent %d out of range", e.Type, p.To)
+		if p.To.ID < 0 || p.To.ID >= len(s.Agents) {
+			return fmt.Errorf("apply %s: agent %d out of range", e.Type, p.To.ID)
 		}
-		if to := &s.Agents[p.To]; to.Map != nil {
+		if to := &s.Agents[p.To.ID]; to.Map != nil {
 			for _, f := range p.Facts {
 				if held, ok := to.Map.factAt(f.Kind, f.X, f.Y); ok && held.Seen >= f.Seen {
 					continue
@@ -326,25 +326,25 @@ func (s *State) applySocial(e store.Event) error {
 			s.NextRumorID++
 			id = s.NextRumorID
 			s.Rumors = append(s.Rumors, Rumor{
-				ID: id, Subject: p.Subject, Tone: p.Tone, Secret: p.Secret,
-				OriginAgent: p.From, OriginTick: e.Tick,
+				ID: id, Subject: p.Subject.ID, Tone: p.Tone, Secret: p.Secret,
+				OriginAgent: p.From.ID, OriginTick: e.Tick,
 			})
 			// The originator holds their own version.
-			teller := &s.Agents[p.From]
+			teller := &s.Agents[p.From.ID]
 			if !knows(teller, id) {
 				teller.Known = append(teller.Known, KnownRumor{
 					RumorID: id, Text: p.Text, Confidence: 100, From: -1, Tick: e.Tick,
 				})
 			}
 		}
-		listener := &s.Agents[p.To]
+		listener := &s.Agents[p.To.ID]
 		if !knows(listener, id) {
 			listener.Known = append(listener.Known, KnownRumor{
-				RumorID: id, Text: p.Text, Confidence: p.Confidence, From: p.From, Tick: e.Tick,
+				RumorID: id, Text: p.Text, Confidence: p.Confidence, From: p.From.ID, Tick: e.Tick,
 			})
 			// Hearing shifts feeling toward the subject.
-			if p.Subject != p.To && p.Subject >= 0 && p.Subject < len(s.Agents) {
-				r := s.relation(p.To, p.Subject)
+			if p.Subject.ID != p.To.ID && p.Subject.ID >= 0 && p.Subject.ID < len(s.Agents) {
+				r := s.relation(p.To.ID, p.Subject.ID)
 				r.Affection = clampInt(r.Affection+p.Tone/4, relMin, relMax)
 			}
 		}
@@ -356,10 +356,10 @@ func (s *State) applySocial(e store.Event) error {
 		}
 		s.NextRumorID++
 		s.Rumors = append(s.Rumors, Rumor{
-			ID: s.NextRumorID, Subject: p.Agent, Tone: p.Tone, Secret: true,
-			OriginAgent: p.Agent, OriginTick: e.Tick,
+			ID: s.NextRumorID, Subject: p.Agent.ID, Tone: p.Tone, Secret: true,
+			OriginAgent: p.Agent.ID, OriginTick: e.Tick,
 		})
-		owner := &s.Agents[p.Agent]
+		owner := &s.Agents[p.Agent.ID]
 		owner.Known = append(owner.Known, KnownRumor{
 			RumorID: s.NextRumorID, Text: p.Text, Confidence: 100, From: -1, Tick: e.Tick,
 		})
@@ -383,9 +383,14 @@ func (s *State) applySocial(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		parts := p.Participants
+		// Fold ref IDs only (spec 086 R2): ConvoRecord is state — names never
+		// enter it.
+		var parts []int
+		for _, r := range p.Participants {
+			parts = append(parts, r.ID)
+		}
 		if len(parts) == 0 {
-			parts = []int{p.A, p.B} // pre-TASK-22 payloads
+			parts = []int{p.A.ID, p.B.ID} // pre-TASK-22 payloads
 		}
 		s.Conversations = append(s.Conversations, ConvoRecord{
 			Conv: p.Conv, Tick: e.Tick, Participants: parts,
@@ -414,10 +419,10 @@ func (s *State) applySocial(e store.Event) error {
 func theftCompanions(s *State, owner, taker, x, y int, nextTick int64, takerName string) []store.Event {
 	events := []store.Event{
 		{Tick: nextTick, Type: "social.chest_taken",
-			Payload: mustPayload(ChestTakenPayload{Owner: owner, Taker: taker, X: x, Y: y})},
+			Payload: mustPayload(ChestTakenPayload{Owner: Ref(owner), Taker: Ref(taker), X: x, Y: y})},
 		{Tick: nextTick, Type: "social.relation_changed",
 			Payload: mustPayload(RelationChangedPayload{
-				A: owner, B: taker, TrustDelta: theftTrustDelta,
+				A: Ref(owner), B: Ref(taker), TrustDelta: theftTrustDelta,
 				AffectionDelta: theftAffectionDelta, Reason: "theft"})},
 	}
 	// The owner remembers it wherever they are — but only if they live.

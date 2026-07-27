@@ -219,11 +219,11 @@ func TestJournalAndSituatedReplayByteIdentical(t *testing.T) {
 	// exercise the reduced-Memory situated fields deterministically. ---
 	if err := loop.InjectSocial([]store.Event{
 		{Type: "agent.memory_added", Payload: mustJSON(t, sim.MemoryAddedPayload{
-			Agent: 0, Text: "Built a fire at the rock outcrop (23,41) — keep the Gru away.", Salience: 5,
-			Subject: -1, Where: &sim.MemoryPlace{X: 23, Y: 41, Desc: "the rock outcrop"}, Why: "keep the Gru away."})},
+			Agent: sim.Ref(0), Text: "Built a fire at the rock outcrop (23,41) — keep the Gru away.", Salience: 5,
+			Subject: sim.Ref(-1), Where: &sim.MemoryPlace{X: 23, Y: 41, Desc: "the rock outcrop"}, Why: "keep the Gru away."})},
 		{Type: "agent.memory_added", Payload: mustJSON(t, sim.MemoryAddedPayload{
-			Agent: 0, Text: "Talked with Birch — planned the firewood run.", Salience: 4,
-			Subject: 1, Where: &sim.MemoryPlace{X: 7, Y: 12}, Conv: 100})},
+			Agent: sim.Ref(0), Text: "Talked with Birch — planned the firewood run.", Salience: 4,
+			Subject: sim.Ref(1), Where: &sim.MemoryPlace{X: 7, Y: 12}, Conv: 100})},
 	}); err != nil {
 		t.Fatalf("inject situated memories: %v", err)
 	}
@@ -262,7 +262,7 @@ func TestJournalAndSituatedReplayByteIdentical(t *testing.T) {
 	var fill []store.Event
 	for i := 0; i < 4; i++ { // 4×1000 = 4000, exactly full
 		fill = append(fill, store.Event{Type: "journal.entry_written",
-			Payload: mustJSON(t, sim.JournalWrittenPayload{Agent: 1, Text: full})})
+			Payload: mustJSON(t, sim.JournalWrittenPayload{Agent: sim.Ref(1), Text: full})})
 	}
 	if err := loop.InjectSocial(fill); err != nil {
 		t.Fatalf("fill agent 1 journal: %v", err)

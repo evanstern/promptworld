@@ -137,14 +137,14 @@ func TestAxeBreaksOnLastUse(t *testing.T) {
 		case "agent.axe_broke":
 			var p AxeBrokePayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.Agent != 0 {
-				t.Errorf("axe_broke agent = %d, want 0", p.Agent)
+			if p.Agent.ID != 0 {
+				t.Errorf("axe_broke agent = %d, want 0", p.Agent.ID)
 			}
 			brokeIdx = i
 		case "agent.memory_added":
 			var p MemoryAddedPayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.Agent == 0 && p.Salience == salAxeBroke {
+			if p.Agent.ID == 0 && p.Salience == salAxeBroke {
 				memIdx = i
 			}
 		}
@@ -184,7 +184,7 @@ func TestAxeBulkTruncationStillSpends(t *testing.T) {
 	a := &s.Agents[0]
 	// One free bulk (22 wood + 1 axe = 23); axe chop yields 3, truncated to 1.
 	a.Inv = Inventory{Wood: bulkCap - 2, Axes: []int{axeDurability}}
-	e := store.Event{Tick: 1, Type: "agent.chopped", Payload: mustPayload(HarvestPayload{Agent: 0, X: 5, Y: 6})}
+	e := store.Event{Tick: 1, Type: "agent.chopped", Payload: mustPayload(HarvestPayload{Agent: Ref(0), X: 5, Y: 6})}
 	if err := s.Apply(e); err != nil {
 		t.Fatalf("apply chopped: %v", err)
 	}
@@ -215,7 +215,7 @@ func TestAxeStorageRoundTrip(t *testing.T) {
 		a := &s.Agents[0]
 		x, y := a.X, a.Y
 		a.Inv = Inventory{Axes: []int{3, 7}}
-		apply(t, s, "agent.dropped", DroppedPayload{Agent: 0, X: x, Y: y, Kind: "axes", N: 2})
+		apply(t, s, "agent.dropped", DroppedPayload{Agent: Ref(0), X: x, Y: y, Kind: "axes", N: 2})
 		p := s.pileAt(x, y)
 		if p == nil || len(p.Axes) != 2 || p.Axes[0] != 3 || p.Axes[1] != 7 {
 			t.Fatalf("pile axes = %v, want [3 7]", p)
@@ -227,7 +227,7 @@ func TestAxeStorageRoundTrip(t *testing.T) {
 			t.Errorf("inv axes after drop = %v, want empty", a.Inv.Axes)
 		}
 		// Pick both back up: uses preserved, sorted; the drained pile is removed.
-		apply(t, s, "agent.picked_up", PickedUpPayload{Agent: 0, X: x, Y: y, Kind: "axes", N: 2})
+		apply(t, s, "agent.picked_up", PickedUpPayload{Agent: Ref(0), X: x, Y: y, Kind: "axes", N: 2})
 		if len(a.Inv.Axes) != 2 || a.Inv.Axes[0] != 3 || a.Inv.Axes[1] != 7 {
 			t.Errorf("inv axes after pickup = %v, want [3 7]", a.Inv.Axes)
 		}
@@ -242,7 +242,7 @@ func TestAxeStorageRoundTrip(t *testing.T) {
 		x, y := a.X, a.Y
 		a.Inv = Inventory{Axes: []int{5, 9}}
 		s.Structures = append(s.Structures, Structure{Kind: "chest", X: x, Y: y, Owner: 0, Store: &Inventory{}})
-		apply(t, s, "agent.deposited", DepositedPayload{Agent: 0, X: x, Y: y, Kind: "axes", N: 2})
+		apply(t, s, "agent.deposited", DepositedPayload{Agent: Ref(0), X: x, Y: y, Kind: "axes", N: 2})
 		ch := s.chestAt(x, y)
 		if ch == nil || len(ch.Store.Axes) != 2 || ch.Store.Axes[0] != 5 {
 			t.Fatalf("chest axes after deposit = %v, want [5 9]", ch.Store.Axes)
@@ -250,7 +250,7 @@ func TestAxeStorageRoundTrip(t *testing.T) {
 		if len(a.Inv.Axes) != 0 {
 			t.Errorf("inv axes after deposit = %v, want empty", a.Inv.Axes)
 		}
-		apply(t, s, "agent.withdrew", WithdrewPayload{Agent: 0, X: x, Y: y, Kind: "axes", N: 2, Owner: 0})
+		apply(t, s, "agent.withdrew", WithdrewPayload{Agent: Ref(0), X: x, Y: y, Kind: "axes", N: 2, Owner: Ref(0)})
 		if len(a.Inv.Axes) != 2 || a.Inv.Axes[0] != 5 || a.Inv.Axes[1] != 9 {
 			t.Errorf("inv axes after withdraw = %v, want [5 9]", a.Inv.Axes)
 		}
@@ -277,7 +277,7 @@ func TestReplayByteIdentityAxe(t *testing.T) {
 	}
 	setIntent := func(live *State, goal string, tx, ty, rx, ry int) store.Event {
 		return store.Event{Tick: live.Tick, Type: "agent.intent_set", Payload: mustPayload(IntentSetPayload{
-			Agent: 0, Goal: goal, TargetX: tx, TargetY: ty, ResX: rx, ResY: ry, Source: "planner"})}
+			Agent: Ref(0), Goal: goal, TargetX: tx, TargetY: ty, ResX: rx, ResY: ry, Source: "planner"})}
 	}
 
 	live := genesis()

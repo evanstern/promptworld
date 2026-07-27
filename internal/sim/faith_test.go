@@ -201,9 +201,12 @@ func TestFaithSweepDeathInBatch(t *testing.T) {
 		t.Fatal("staged villager did not die")
 	}
 	faith := faithEventsIn(t, log)
-	if len(faith) != 1 || faith[0] != (FaithChangedPayload{Delta: FaithDeltaVillagerDied,
-		Reason: FaithReasonVillagerDied, SourceID: "1"}) {
-		t.Fatalf("death companion = %+v, want one {−6, villager_died, \"1\"}", faith)
+	// Spec 086 (row 73): the death companion carries the additive named ref
+	// beside the frozen string SourceID.
+	if len(faith) != 1 || faith[0].Delta != FaithDeltaVillagerDied ||
+		faith[0].Reason != FaithReasonVillagerDied || faith[0].SourceID != "1" ||
+		faith[0].Agent == nil || *faith[0].Agent != Ref(1) {
+		t.Fatalf("death companion = %+v, want one {−6, villager_died, \"1\", agent ref Birch}", faith)
 	}
 	if got := s.FaithScore(); got != FaithGenesis+FaithDeltaVillagerDied {
 		t.Fatalf("folded score = %d, want %d", got, FaithGenesis+FaithDeltaVillagerDied)
@@ -218,23 +221,29 @@ func TestFaithSweepPileupOrderAndGate(t *testing.T) {
 	s := NewState(42, testMap(42))
 	batch := []store.Event{
 		{Tick: 9, Type: "directive.fulfilled", Payload: mustPayload(DirectiveFulfilledPayload{
-			ID: "dir-a", DesignationID: "dsg-a", Targets: []int{0}, IssuedTick: 1})},
+			ID: "dir-a", DesignationID: "dsg-a", Targets: Refs([]int{0}), IssuedTick: 1})},
 		{Tick: 9, Type: "directive.expired", Payload: mustPayload(OrderIDPayload{ID: "dir-b"})},
-		{Tick: 9, Type: "agent.died", Payload: mustPayload(DiedPayload{Agent: 2, Cause: "starvation"})},
+		{Tick: 9, Type: "agent.died", Payload: mustPayload(DiedPayload{Agent: Ref(2), Cause: "starvation"})},
 	}
 
 	t.Run("one per source, batch order", func(t *testing.T) {
 		got := faithEventsIn(t, faithEvents(s, batch, 9))
+		died := Ref(2)
 		want := []FaithChangedPayload{
 			{Delta: FaithDeltaDirectiveFulfilled, Reason: FaithReasonDirectiveFulfilled, SourceID: "dir-a"},
 			{Delta: FaithDeltaDirectiveExpired, Reason: FaithReasonDirectiveExpired, SourceID: "dir-b"},
-			{Delta: FaithDeltaVillagerDied, Reason: FaithReasonVillagerDied, SourceID: "2"},
+			// Spec 086: villager_died carries the additive named ref.
+			{Delta: FaithDeltaVillagerDied, Reason: FaithReasonVillagerDied, SourceID: "2", Agent: &died},
 		}
 		if len(got) != len(want) {
 			t.Fatalf("emitted %d faith events, want %d: %+v", len(got), len(want), got)
 		}
 		for i := range want {
-			if got[i] != want[i] {
+			same := got[i].Delta == want[i].Delta && got[i].Reason == want[i].Reason &&
+				got[i].SourceID == want[i].SourceID &&
+				((got[i].Agent == nil) == (want[i].Agent == nil)) &&
+				(got[i].Agent == nil || *got[i].Agent == *want[i].Agent)
+			if !same {
 				t.Errorf("event %d = %+v, want %+v (batch order)", i, got[i], want[i])
 			}
 		}
@@ -264,8 +273,8 @@ func TestFaithSweepPileupOrderAndGate(t *testing.T) {
 	t.Run("gate folds this batch's prior emissions", func(t *testing.T) {
 		s.Faith = &FaithState{Score: 4}
 		two := []store.Event{
-			{Tick: 9, Type: "agent.died", Payload: mustPayload(DiedPayload{Agent: 0, Cause: "starvation"})},
-			{Tick: 9, Type: "agent.died", Payload: mustPayload(DiedPayload{Agent: 1, Cause: "starvation"})},
+			{Tick: 9, Type: "agent.died", Payload: mustPayload(DiedPayload{Agent: Ref(0), Cause: "starvation"})},
+			{Tick: 9, Type: "agent.died", Payload: mustPayload(DiedPayload{Agent: Ref(1), Cause: "starvation"})},
 		}
 		got := faithEventsIn(t, faithEvents(s, two, 9))
 		if len(got) != 1 || got[0].SourceID != "0" {
@@ -297,8 +306,8 @@ func TestFaithReplayByteIdentical(t *testing.T) {
 			d.ExpiresTick = 80 + 3*ticksPerGameDay
 			return d
 		}(), 0, 80)},
-		90:  {{Tick: 90, Type: "metatron.item_granted", Payload: mustPayload(ItemGrantedPayload{Agent: 0, Kind: "planks", Qty: 4})}},
-		100: {{Tick: 100, Type: "agent.built", Payload: mustPayload(BuiltPayload{Agent: 0, Kind: "shelter", X: 10, Y: 10})}},
+		90:  {{Tick: 90, Type: "metatron.item_granted", Payload: mustPayload(ItemGrantedPayload{Agent: Ref(0), Kind: "planks", Qty: 4})}},
+		100: {{Tick: 100, Type: "agent.built", Payload: mustPayload(BuiltPayload{Agent: Ref(0), Kind: "shelter", X: 10, Y: 10})}},
 		300: {issuedEvent(func() Directive {
 			d := validDirective("dir-300-0", "dsg-70-0", []int{2}, 300)
 			d.ExpiresTick = 300 + ticksPerGameDay
@@ -541,5 +550,21 @@ func TestFaithInjectionRefused(t *testing.T) {
 	}
 	if !InjectableSocialEvent("prophecy.declared") {
 		t.Error("prophecy.declared must be injectable (the prophesy tool's door)")
+	}
+}
+
+// TestFaithChangedByteShapes (spec 086 T012): non-death reasons marshal
+// byte-identically to spec 085's shape (the additive Agent field is
+// *AgentRef + omitempty, so it only appears for villager_died — where it
+// carries the full named ref beside the frozen string SourceID).
+func TestFaithChangedByteShapes(t *testing.T) {
+	plain := mustPayload(FaithChangedPayload{Delta: 8, Reason: FaithReasonDirectiveFulfilled, SourceID: "dir-1-0"})
+	if want := `{"delta":8,"reason":"directive_fulfilled","source_id":"dir-1-0"}`; string(plain) != want {
+		t.Errorf("non-death faith.changed = %s, want %s (byte-identical to spec 085)", plain, want)
+	}
+	died := Ref(2)
+	withRef := mustPayload(FaithChangedPayload{Delta: -6, Reason: FaithReasonVillagerDied, SourceID: "2", Agent: &died})
+	if want := `{"delta":-6,"reason":"villager_died","source_id":"2","agent":{"id":2,"name":"Cedar"}}`; string(withRef) != want {
+		t.Errorf("villager_died faith.changed = %s, want %s", withRef, want)
 	}
 }

@@ -51,6 +51,24 @@ func txt(s string) seg { return seg{Text: s, Role: segText} }
 func nameOf(names []string, idx int) seg {
 	return seg{Text: agentName(names, idx), Role: segName}
 }
+
+// refSeg is the payload-first name seg (spec 086 FR-007): a post-086 ref
+// carries its name in the payload — render it with NO replica lookup; a
+// legacy row's ref (Name == "") falls back to the replica-derived names
+// slice via agentName, exactly as before. The names parameter survives as
+// the fallback channel, never the primary source.
+func refSeg(names []string, r sim.AgentRef) seg {
+	return seg{Text: refName(names, r), Role: segName}
+}
+
+// refName is refSeg's plain-string twin, for digests that compose names
+// into larger strings.
+func refName(names []string, r sim.AgentRef) string {
+	if r.Name != "" {
+		return r.Name
+	}
+	return agentName(names, r.ID)
+}
 func speech(s string) seg { return seg{Text: fmt.Sprintf("%q", s), Role: segSpeech} }
 func emph(s string) seg   { return seg{Text: s, Role: segEmphasis} }
 func label(kv string) seg { return seg{Text: kv, Role: segLabel} }
@@ -298,7 +316,7 @@ var digestRegistry = map[string]digestFunc{
 		if !ok {
 			return nil, false
 		}
-		out := join([]seg{nameOf(names, p.Agent), txt(" intends "), emph(p.Goal), txt(" (" + p.Source + ")")})
+		out := join([]seg{refSeg(names, p.Agent), txt(" intends "), emph(p.Goal), txt(" (" + p.Source + ")")})
 		// Presence heuristic (implementer decision, no sentinel in the
 		// payload): a nonzero target coordinate is treated as "target set".
 		if p.TargetX != 0 || p.TargetY != 0 {
@@ -311,14 +329,14 @@ var digestRegistry = map[string]digestFunc{
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" set to work")}), true
+		return join([]seg{refSeg(names, p.Agent), txt(" set to work")}), true
 	},
 	"agent.intent_done": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.AgentPayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" finished")}), true
+		return join([]seg{refSeg(names, p.Agent), txt(" finished")}), true
 	},
 	"agent.build_failed": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		// Spec 038: a cancelled build renders as a FAILURE naming the builder,
@@ -329,7 +347,7 @@ var digestRegistry = map[string]digestFunc{
 			return nil, false
 		}
 		return join([]seg{
-			nameOf(names, p.Agent), txt("'s "), emph(p.Goal), txt(" failed — "), emph(p.Reason),
+			refSeg(names, p.Agent), txt("'s "), emph(p.Goal), txt(" failed — "), emph(p.Reason),
 		}), true
 	},
 	"agent.intent_rejected": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
@@ -338,7 +356,7 @@ var digestRegistry = map[string]digestFunc{
 			return nil, false
 		}
 		return join([]seg{
-			nameOf(names, p.Agent), txt("'s "), emph(p.Goal), txt(" refused: "), emph(p.Reason),
+			refSeg(names, p.Agent), txt("'s "), emph(p.Goal), txt(" refused: "), emph(p.Reason),
 			txt(" ("), emphI64(p.StalenessTicks), txt("t stale)"),
 		}), true
 	},
@@ -352,7 +370,7 @@ var digestRegistry = map[string]digestFunc{
 			return nil, false
 		}
 		return join([]seg{
-			nameOf(names, p.Agent), txt("'s "), emph(p.Goal), txt(" stalled — "), emph(p.Need), txt(" not recovering"),
+			refSeg(names, p.Agent), txt("'s "), emph(p.Goal), txt(" stalled — "), emph(p.Need), txt(" not recovering"),
 		}), true
 	},
 	"agent.moved": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
@@ -360,7 +378,7 @@ var digestRegistry = map[string]digestFunc{
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" → "), coord(p.X, p.Y)}), true
+		return join([]seg{refSeg(names, p.Agent), txt(" → "), coord(p.X, p.Y)}), true
 	},
 	// agent.saw (spec 041) summarizes the perception diff by its first
 	// (canonically-ordered) fact plus a count — a full fact list would flood
@@ -371,7 +389,7 @@ var digestRegistry = map[string]digestFunc{
 			return nil, false
 		}
 		f := p.Facts[0]
-		segs := []seg{nameOf(names, p.Agent), txt(" saw "), emph(f.Kind), txt(" at "), coord(f.X, f.Y)}
+		segs := []seg{refSeg(names, p.Agent), txt(" saw "), emph(f.Kind), txt(" at "), coord(f.X, f.Y)}
 		if more := len(p.Facts) - 1; more > 0 {
 			segs = append(segs, txt(" (+"), emphN(more), txt(" more)"))
 		}
@@ -385,7 +403,7 @@ var digestRegistry = map[string]digestFunc{
 			return nil, false
 		}
 		f := p.Facts[0]
-		segs := []seg{nameOf(names, p.From), txt(" told "), nameOf(names, p.To),
+		segs := []seg{refSeg(names, p.From), txt(" told "), refSeg(names, p.To),
 			txt(" of "), emph(f.Kind), txt(" at "), coord(f.X, f.Y)}
 		if more := len(p.Facts) - 1; more > 0 {
 			segs = append(segs, txt(" (+"), emphN(more), txt(" more)"))
@@ -400,7 +418,7 @@ var digestRegistry = map[string]digestFunc{
 			return nil, false
 		}
 		f := p.Gone[0]
-		segs := []seg{nameOf(names, p.Agent), txt(" found "), emph(f.Kind), txt(" at "), coord(f.X, f.Y), txt(" gone")}
+		segs := []seg{refSeg(names, p.Agent), txt(" found "), emph(f.Kind), txt(" at "), coord(f.X, f.Y), txt(" gone")}
 		if more := len(p.Gone) - 1; more > 0 {
 			segs = append(segs, txt(" (+"), emphN(more), txt(" more)"))
 		}
@@ -411,49 +429,49 @@ var digestRegistry = map[string]digestFunc{
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" foraged at "), coord(p.X, p.Y)}), true
+		return join([]seg{refSeg(names, p.Agent), txt(" foraged at "), coord(p.X, p.Y)}), true
 	},
 	"agent.chopped": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.HarvestPayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" chopped wood at "), coord(p.X, p.Y)}), true
+		return join([]seg{refSeg(names, p.Agent), txt(" chopped wood at "), coord(p.X, p.Y)}), true
 	},
 	"agent.hunted": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.HarvestPayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" hunted at "), coord(p.X, p.Y)}), true
+		return join([]seg{refSeg(names, p.Agent), txt(" hunted at "), coord(p.X, p.Y)}), true
 	},
 	"agent.quarried": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.HarvestPayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" quarried stone at "), coord(p.X, p.Y)}), true
+		return join([]seg{refSeg(names, p.Agent), txt(" quarried stone at "), coord(p.X, p.Y)}), true
 	},
 	"agent.collected_water": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.HarvestPayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" drew water at "), coord(p.X, p.Y)}), true
+		return join([]seg{refSeg(names, p.Agent), txt(" drew water at "), coord(p.X, p.Y)}), true
 	},
 	"agent.crafted": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.CraftedPayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" crafted "), emph(p.Kind)}), true
+		return join([]seg{refSeg(names, p.Agent), txt(" crafted "), emph(p.Kind)}), true
 	},
 	"agent.built": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.BuiltPayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" built a "), emph(p.Kind), txt(" at "), coord(p.X, p.Y)}), true
+		return join([]seg{refSeg(names, p.Agent), txt(" built a "), emph(p.Kind), txt(" at "), coord(p.X, p.Y)}), true
 	},
 	// agent.wall_chipped / agent.wall_destroyed / agent.wall_repaired (spec 032
 	// US1) share the {agent, x, y} WallWorkPayload shape — one per
@@ -463,35 +481,35 @@ var digestRegistry = map[string]digestFunc{
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" chipped away at the wall at "), coord(p.X, p.Y)}), true
+		return join([]seg{refSeg(names, p.Agent), txt(" chipped away at the wall at "), coord(p.X, p.Y)}), true
 	},
 	"agent.wall_destroyed": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.WallWorkPayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" tore down the wall at "), coord(p.X, p.Y)}), true
+		return join([]seg{refSeg(names, p.Agent), txt(" tore down the wall at "), coord(p.X, p.Y)}), true
 	},
 	"agent.wall_repaired": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.WallWorkPayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" repaired the wall at "), coord(p.X, p.Y)}), true
+		return join([]seg{refSeg(names, p.Agent), txt(" repaired the wall at "), coord(p.X, p.Y)}), true
 	},
 	"agent.dropped": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.DroppedPayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" dropped "), emphN(p.N), txt(" "), emph(p.Kind), txt(" at "), coord(p.X, p.Y)}), true
+		return join([]seg{refSeg(names, p.Agent), txt(" dropped "), emphN(p.N), txt(" "), emph(p.Kind), txt(" at "), coord(p.X, p.Y)}), true
 	},
 	"agent.picked_up": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.PickedUpPayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" picked up "), emphN(p.N), txt(" "), emph(p.Kind), txt(" at "), coord(p.X, p.Y)}), true
+		return join([]seg{refSeg(names, p.Agent), txt(" picked up "), emphN(p.N), txt(" "), emph(p.Kind), txt(" at "), coord(p.X, p.Y)}), true
 	},
 	"agent.deposited": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.DepositedPayload](e)
@@ -499,7 +517,7 @@ var digestRegistry = map[string]digestFunc{
 			return nil, false
 		}
 		return join([]seg{
-			nameOf(names, p.Agent), txt(" stored "), emphN(p.N), txt(" "), emph(p.Kind),
+			refSeg(names, p.Agent), txt(" stored "), emphN(p.N), txt(" "), emph(p.Kind),
 			txt(" in the chest at "), coord(p.X, p.Y),
 		}), true
 	},
@@ -508,11 +526,11 @@ var digestRegistry = map[string]digestFunc{
 		if !ok {
 			return nil, false
 		}
-		out := join([]seg{nameOf(names, p.Agent), txt(" took "), emphN(p.N), txt(" "), emph(p.Kind), txt(" from ")})
+		out := join([]seg{refSeg(names, p.Agent), txt(" took "), emphN(p.N), txt(" "), emph(p.Kind), txt(" from ")})
 		if p.Owner == p.Agent {
 			out = join(out, []seg{txt("their chest")})
 		} else {
-			out = join(out, []seg{nameOf(names, p.Owner), txt("'s chest")})
+			out = join(out, []seg{refSeg(names, p.Owner), txt("'s chest")})
 		}
 		return out, true
 	},
@@ -522,7 +540,7 @@ var digestRegistry = map[string]digestFunc{
 			return nil, false
 		}
 		return join([]seg{
-			nameOf(names, p.Agent), txt(" cooked "), emphN(p.Produced), txt(" "), emph(p.Kind),
+			refSeg(names, p.Agent), txt(" cooked "), emphN(p.Produced), txt(" "), emph(p.Kind),
 			txt(" at the "), emph(p.Station),
 		}), true
 	},
@@ -532,7 +550,7 @@ var digestRegistry = map[string]digestFunc{
 			return nil, false
 		}
 		return join([]seg{
-			nameOf(names, p.Agent), txt(" bathed · morale "), emphN(p.MoraleAfter),
+			refSeg(names, p.Agent), txt(" bathed · morale "), emphN(p.MoraleAfter),
 			txt(" warmth "), emphN(p.WarmthAfter),
 		}), true
 	},
@@ -541,14 +559,14 @@ var digestRegistry = map[string]digestFunc{
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" refueled the fire at "), coord(p.X, p.Y)}), true
+		return join([]seg{refSeg(names, p.Agent), txt(" refueled the fire at "), coord(p.X, p.Y)}), true
 	},
 	"agent.spear_broke": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.SpearBrokePayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt("'s spear broke")}), true
+		return join([]seg{refSeg(names, p.Agent), txt("'s spear broke")}), true
 	},
 	// agent.axe_broke (spec 032 US2): the SpearBrokePayload clone, co-emitted
 	// alongside a chop/quarry completion when the pre-event carried axe spent
@@ -558,7 +576,7 @@ var digestRegistry = map[string]digestFunc{
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt("'s axe broke")}), true
+		return join([]seg{refSeg(names, p.Agent), txt("'s axe broke")}), true
 	},
 	"agent.ate": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.AtePayload](e)
@@ -579,21 +597,21 @@ var digestRegistry = map[string]digestFunc{
 		if len(parts) > 0 {
 			breakdown = strings.Join(parts, ", ")
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" ate "), emph(breakdown), txt(" → food "), emphN(p.FoodAfter)}), true
+		return join([]seg{refSeg(names, p.Agent), txt(" ate "), emph(breakdown), txt(" → food "), emphN(p.FoodAfter)}), true
 	},
 	"agent.slept": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.AgentPayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" fell asleep")}), true
+		return join([]seg{refSeg(names, p.Agent), txt(" fell asleep")}), true
 	},
 	"agent.woke": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.AgentPayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" woke")}), true
+		return join([]seg{refSeg(names, p.Agent), txt(" woke")}), true
 	},
 	// agent.needs_changed: NeedsPayload's actual fields are health/food/rest/
 	// warmth/morale (no "water" field — the contract's illustrative example
@@ -603,7 +621,7 @@ var digestRegistry = map[string]digestFunc{
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" ")}, labeled(
+		return join([]seg{refSeg(names, p.Agent), txt(" ")}, labeled(
 			fmt.Sprintf("health=%d", p.Health), fmt.Sprintf("food=%d", p.Food),
 			fmt.Sprintf("rest=%d", p.Rest), fmt.Sprintf("warmth=%d", p.Warmth),
 			fmt.Sprintf("morale=%d", p.Morale),
@@ -614,14 +632,14 @@ var digestRegistry = map[string]digestFunc{
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" died: "), emph(p.Cause)}), true
+		return join([]seg{refSeg(names, p.Agent), txt(" died: "), emph(p.Cause)}), true
 	},
 	"agent.talked": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.TalkedPayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.A), txt(" chatted with "), nameOf(names, p.B)}), true
+		return join([]seg{refSeg(names, p.A), txt(" chatted with "), refSeg(names, p.B)}), true
 	},
 
 	// --- agent: mind & plans ---
@@ -631,9 +649,9 @@ var digestRegistry = map[string]digestFunc{
 		if !ok {
 			return nil, false
 		}
-		out := join([]seg{nameOf(names, p.Agent), txt(" remembers: "), speech(p.Text)})
-		if p.Subject >= 0 { // sentinel -1 = no gossip subject (internal/sim/memory.go)
-			out = join(out, []seg{txt(" · about "), nameOf(names, p.Subject)})
+		out := join([]seg{refSeg(names, p.Agent), txt(" remembers: "), speech(p.Text)})
+		if p.Subject.ID >= 0 { // sentinel -1 = no gossip subject (internal/sim/memory.go)
+			out = join(out, []seg{txt(" · about "), refSeg(names, p.Subject)})
 		}
 		return out, true
 	},
@@ -642,7 +660,7 @@ var digestRegistry = map[string]digestFunc{
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" thought: "), speech(p.Text), txt(" (" + p.Source + ")")}), true
+		return join([]seg{refSeg(names, p.Agent), txt(" thought: "), speech(p.Text), txt(" (" + p.Source + ")")}), true
 	},
 	// agent.memory_promoted / agent.memory_faded: the real payload carries
 	// TextHash + MemTick, never the memory's text (internal/sim/consolidate.go)
@@ -653,21 +671,21 @@ var digestRegistry = map[string]digestFunc{
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt("'s memory (t"), emphI64(p.MemTick), txt(") reinforced")}), true
+		return join([]seg{refSeg(names, p.Agent), txt("'s memory (t"), emphI64(p.MemTick), txt(") reinforced")}), true
 	},
 	"agent.memory_faded": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.MemoryFadedPayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" forgot a memory (t"), emphI64(p.MemTick), txt(")")}), true
+		return join([]seg{refSeg(names, p.Agent), txt(" forgot a memory (t"), emphI64(p.MemTick), txt(")")}), true
 	},
 	"agent.belief_revised": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.BeliefRevisedPayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" now believes: "), speech(p.Statement)}), true
+		return join([]seg{refSeg(names, p.Agent), txt(" now believes: "), speech(p.Statement)}), true
 	},
 	// agent.belief_reinforced (spec 030 US2, FR-008): re-anchors a held belief's
 	// decay clock. Whitelisted through the injection door for the future
@@ -680,21 +698,21 @@ var digestRegistry = map[string]digestFunc{
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt("'s belief (#"), emphN(p.BeliefID), txt(") reinforced")}), true
+		return join([]seg{refSeg(names, p.Agent), txt("'s belief (#"), emphN(p.BeliefID), txt(") reinforced")}), true
 	},
 	"agent.narrative_set": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.NarrativeSetPayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt("'s story: "), speech(p.Text)}), true
+		return join([]seg{refSeg(names, p.Agent), txt("'s story: "), speech(p.Text)}), true
 	},
 	"agent.consolidated": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.ConsolidatedPayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" consolidated the night's memories")}), true
+		return join([]seg{refSeg(names, p.Agent), txt(" consolidated the night's memories")}), true
 	},
 	"agent.plan_set": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.PlanSetPayload](e)
@@ -706,7 +724,7 @@ var digestRegistry = map[string]digestFunc{
 			goals[i] = st.Goal
 		}
 		return join([]seg{
-			nameOf(names, p.Agent), txt(" planned "), emphN(len(p.Steps)), txt(" steps: "),
+			refSeg(names, p.Agent), txt(" planned "), emphN(len(p.Steps)), txt(" steps: "),
 			emph(truncateRunes(strings.Join(goals, ", "), 60)),
 		}), true
 	},
@@ -715,14 +733,14 @@ var digestRegistry = map[string]digestFunc{
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" began step "), emph(p.Step)}), true
+		return join([]seg{refSeg(names, p.Agent), txt(" began step "), emph(p.Step)}), true
 	},
 	"agent.plan_expired": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.PlanStepPayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt("'s plan lapsed ("), emph(p.Reason), txt(")")}), true
+		return join([]seg{refSeg(names, p.Agent), txt("'s plan lapsed ("), emph(p.Reason), txt(")")}), true
 	},
 
 	// --- social ---
@@ -732,14 +750,14 @@ var digestRegistry = map[string]digestFunc{
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Speaker), txt("→"), nameOf(names, p.Listener), txt(" "), speech(p.Text)}), true
+		return join([]seg{refSeg(names, p.Speaker), txt("→"), refSeg(names, p.Listener), txt(" "), speech(p.Text)}), true
 	},
 	"social.rumor_told": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) { // speech privilege
 		p, ok := decode[sim.RumorToldPayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.From), txt("→"), nameOf(names, p.To), txt(" rumor: "), speech(p.Text)}), true
+		return join([]seg{refSeg(names, p.From), txt("→"), refSeg(names, p.To), txt(" rumor: "), speech(p.Text)}), true
 	},
 	"social.conversation": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) { // tones elided (detail pane)
 		p, ok := decode[sim.ConversationPayload](e)
@@ -756,7 +774,7 @@ var digestRegistry = map[string]digestFunc{
 			return nil, false
 		}
 		return join([]seg{
-			nameOf(names, p.A), txt("→"), nameOf(names, p.B), txt(" "),
+			refSeg(names, p.A), txt("→"), refSeg(names, p.B), txt(" "),
 			emph(fmt.Sprintf("trust%+d/affection%+d", p.TrustDelta, p.AffectionDelta)),
 			txt(" ("), emph(p.Reason), txt(")"),
 		}), true
@@ -768,7 +786,7 @@ var digestRegistry = map[string]digestFunc{
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.From), txt(" gave "), nameOf(names, p.To), txt(" "), emph(p.Kind)}), true
+		return join([]seg{refSeg(names, p.From), txt(" gave "), refSeg(names, p.To), txt(" "), emph(p.Kind)}), true
 	},
 	// social.promise_broken: PromiseBrokenPayload carries only an ID, no
 	// from/to (internal/sim/social.go) — the contract's "{from} broke a
@@ -785,35 +803,35 @@ var digestRegistry = map[string]digestFunc{
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{txt("a secret took root with "), nameOf(names, p.Agent)}), true
+		return join([]seg{txt("a secret took root with "), refSeg(names, p.Agent)}), true
 	},
 	"social.chest_taken": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) { // alert
 		p, ok := decode[sim.ChestTakenPayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Taker), txt(" raided "), nameOf(names, p.Owner), txt("'s chest at "), coord(p.X, p.Y)}), true
+		return join([]seg{refSeg(names, p.Taker), txt(" raided "), refSeg(names, p.Owner), txt("'s chest at "), coord(p.X, p.Y)}), true
 	},
 	"social.hailed": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.HailedPayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.From), txt(" hailed "), nameOf(names, p.To), txt(" (until t"), emphI64(p.Until), txt(")")}), true
+		return join([]seg{refSeg(names, p.From), txt(" hailed "), refSeg(names, p.To), txt(" (until t"), emphI64(p.Until), txt(")")}), true
 	},
 	"social.hail_met": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.HailMetPayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.From), txt(" met "), nameOf(names, p.To)}), true
+		return join([]seg{refSeg(names, p.From), txt(" met "), refSeg(names, p.To)}), true
 	},
 	"social.hail_expired": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.HailExpiredPayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.From), txt("'s hail to "), nameOf(names, p.To), txt(" lapsed")}), true
+		return join([]seg{refSeg(names, p.From), txt("'s hail to "), refSeg(names, p.To), txt(" lapsed")}), true
 	},
 
 	// --- governance (meeting.* / norm.*) ---
@@ -836,14 +854,14 @@ var digestRegistry = map[string]digestFunc{
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" spoke at the meeting")}), true
+		return join([]seg{refSeg(names, p.Agent), txt(" spoke at the meeting")}), true
 	},
 	"meeting.proposal_tabled": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.ProposalPayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Proposer), txt(" proposed: "), speech(p.Text)}), true
+		return join([]seg{refSeg(names, p.Proposer), txt(" proposed: "), speech(p.Text)}), true
 	},
 	"meeting.proposal_resolved": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.ProposalResolvedPayload](e)
@@ -895,7 +913,7 @@ var digestRegistry = map[string]digestFunc{
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Violator), txt(" violated a norm (#"), emphN(p.NormID), txt(")")}), true
+		return join([]seg{refSeg(names, p.Violator), txt(" violated a norm (#"), emphN(p.NormID), txt(")")}), true
 	},
 
 	// --- gru / chronicle / guardian ---
@@ -919,14 +937,14 @@ var digestRegistry = map[string]digestFunc{
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" sighted the gru")}), true
+		return join([]seg{refSeg(names, p.Agent), txt(" sighted the gru")}), true
 	},
 	"gru.attacked": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) { // alert
 		p, ok := decode[sim.GruAttackedPayload](e)
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{txt("the gru attacked "), nameOf(names, p.Agent), txt(" · health → "), emphN(p.Health)}), true
+		return join([]seg{txt("the gru attacked "), refSeg(names, p.Agent), txt(" · health → "), emphN(p.Health)}), true
 	},
 	"gru.withdrew": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		return []seg{txt("the gru withdrew")}, true
@@ -1003,7 +1021,7 @@ var digestRegistry = map[string]digestFunc{
 		default:
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(peril + p.Need + " "), emphN(p.Level), txt(")")}), true
+		return join([]seg{refSeg(names, p.Agent), txt(peril + p.Need + " "), emphN(p.Level), txt(")")}), true
 	},
 	"chronicle.entry": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.ChronicleEntryPayload](e)
@@ -1030,7 +1048,7 @@ var digestRegistry = map[string]digestFunc{
 			if i > 0 {
 				targets = append(targets, txt(", "))
 			}
-			targets = append(targets, nameOf(names, t))
+			targets = append(targets, refSeg(names, t))
 		}
 		return join([]seg{txt(sk.Name() + " "), emph(sk.FormNoun(p.Form)), txt(" → ")}, targets, []seg{txt(": "), speech(p.Text)}), true
 	},
@@ -1044,7 +1062,7 @@ var digestRegistry = map[string]digestFunc{
 		}
 		f := p.Facts[0]
 		segs := []seg{txt(sk.Name() + " revealed "), emph(f.Kind), txt(" at "), coord(f.X, f.Y),
-			txt(" to "), nameOf(names, p.Agent)}
+			txt(" to "), refSeg(names, p.Agent)}
 		if more := len(p.Facts) - 1; more > 0 {
 			segs = append(segs, txt(" (+"), emphN(more), txt(" more)"))
 		}
@@ -1062,7 +1080,7 @@ var digestRegistry = map[string]digestFunc{
 	// OrderIDPayload), only the order's id, so they reference the watch by
 	// id rather than repeating its condition.
 	"metatron.order_placed": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
-		p, ok := decode[sim.GuardianOrder](e)
+		p, ok := decode[sim.OrderPlacedPayload](e)
 		if !ok {
 			return nil, false
 		}
@@ -1160,7 +1178,7 @@ var digestRegistry = map[string]digestFunc{
 		return join([]seg{txt("the village fulfilled " + sk.Name() + "'s mark ("), emph(p.ID), txt(")")}), true
 	},
 	"directive.issued": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
-		p, ok := decode[sim.Directive](e)
+		p, ok := decode[sim.DirectiveIssuedPayload](e)
 		if !ok {
 			return nil, false
 		}
@@ -1169,7 +1187,7 @@ var digestRegistry = map[string]digestFunc{
 			if i > 0 {
 				segs = append(segs, txt(", "))
 			}
-			segs = append(segs, nameOf(names, tgt))
+			segs = append(segs, refSeg(names, tgt))
 		}
 		segs = append(segs, txt(": "), speech(truncateRunes(p.Text, 80)))
 		return join(segs), true
@@ -1212,7 +1230,7 @@ var digestRegistry = map[string]digestFunc{
 		return join([]seg{txt(phrase + " ("), emph(p.Reason), txt(")")}), true
 	},
 	"prophecy.declared": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
-		p, ok := decode[sim.Prophecy](e)
+		p, ok := decode[sim.ProphecyDeclaredPayload](e)
 		if !ok {
 			return nil, false
 		}
@@ -1240,8 +1258,8 @@ var digestRegistry = map[string]digestFunc{
 			return nil, false
 		}
 		who := []seg{txt("the run")}
-		if p.Agent >= 0 {
-			who = []seg{nameOf(names, p.Agent)}
+		if p.Agent.ID >= 0 {
+			who = []seg{refSeg(names, p.Agent)}
 		}
 		return join([]seg{txt("epilogue for ")}, who, []seg{txt(": "), txt(truncateRunes(p.Text, 80))}), true
 	},
@@ -1267,7 +1285,7 @@ var digestRegistry = map[string]digestFunc{
 			return nil, false
 		}
 		return join([]seg{
-			txt(sk.Name() + " granted "), nameOf(names, p.Agent), txt(" "), emphN(p.Qty), txt(" "), emph(p.Kind),
+			txt(sk.Name() + " granted "), refSeg(names, p.Agent), txt(" "), emphN(p.Qty), txt(" "), emph(p.Kind),
 		}, gratisMark(p.Gratis)), true
 	},
 	// entity_moved: the payload identifies its target by class + source
@@ -1310,7 +1328,7 @@ var digestRegistry = map[string]digestFunc{
 			return nil, false
 		}
 		return labeled(
-			"job="+p.Job, "class="+p.Class, "agent="+agentName(names, p.Agent),
+			"job="+p.Job, "class="+p.Class, "agent="+refName(names, p.Agent),
 			fmt.Sprintf("pts=%d", p.Points), fmt.Sprintf("pred=%dms", p.PredictedWallMs),
 		), true
 	},
@@ -1320,7 +1338,7 @@ var digestRegistry = map[string]digestFunc{
 			return nil, false
 		}
 		pairs := []string{
-			"job=" + p.Job, p.Outcome, "agent=" + agentName(names, p.Agent),
+			"job=" + p.Job, p.Outcome, "agent=" + refName(names, p.Agent),
 			fmt.Sprintf("stale=%dt", p.StalenessTicks), fmt.Sprintf("wall=%dms", p.ActualWallMs),
 		}
 		if p.Kind != "" {
@@ -1375,7 +1393,7 @@ var digestRegistry = map[string]digestFunc{
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" ")}, labeled(
+		return join([]seg{refSeg(names, p.Agent), txt(" ")}, labeled(
 			fmt.Sprintf("memory seq=%d embedded", p.MemSeq),
 			fmt.Sprintf("dims=%d", len(p.Vec)), "model="+p.Model,
 		)), true
@@ -1385,7 +1403,7 @@ var digestRegistry = map[string]digestFunc{
 		if !ok {
 			return nil, false
 		}
-		return join([]seg{nameOf(names, p.Agent), txt(" situation: "), speech(p.Text), txt(" ")},
+		return join([]seg{refSeg(names, p.Agent), txt(" situation: "), speech(p.Text), txt(" ")},
 			labeled(fmt.Sprintf("dims=%d", len(p.Vec)), "model="+p.Model)), true
 	},
 	"cog.memory_divergence": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
@@ -1394,7 +1412,7 @@ var digestRegistry = map[string]digestFunc{
 			return nil, false
 		}
 		return labeled(
-			"agent="+agentName(names, p.Agent), "mode="+p.Mode,
+			"agent="+refName(names, p.Agent), "mode="+p.Mode,
 			fmt.Sprintf("overlap=%d/%d", p.Overlap, len(p.Legacy)),
 			fmt.Sprintf("displaced=%d", p.Displacement),
 			fmt.Sprintf("vectorless=%d", p.Vectorless),
@@ -1487,7 +1505,7 @@ func decodeHarvest(e store.Event) (subjectCandidate, bool) {
 	if !ok {
 		return subjectCandidate{}, false
 	}
-	return actorPosCandidate(p.Agent, p.X, p.Y), true
+	return actorPosCandidate(p.Agent.ID, p.X, p.Y), true
 }
 
 // decodeWallWork is shared by the three wall work-cycle events
@@ -1497,7 +1515,7 @@ func decodeWallWork(e store.Event) (subjectCandidate, bool) {
 	if !ok {
 		return subjectCandidate{}, false
 	}
-	return actorPosCandidate(p.Agent, p.X, p.Y), true
+	return actorPosCandidate(p.Agent.ID, p.X, p.Y), true
 }
 
 // decodeAgentOnly is shared by every plain AgentPayload{Agent} event type
@@ -1507,7 +1525,7 @@ func decodeAgentOnly(e store.Event) (subjectCandidate, bool) {
 	if !ok {
 		return subjectCandidate{}, false
 	}
-	return actorCandidate(p.Agent), true
+	return actorCandidate(p.Agent.ID), true
 }
 
 // placeFactPos extracts the first PlaceFact's position, if any — the shared
@@ -1539,7 +1557,7 @@ var subjectRegistry = map[string]subjectFunc{
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorPosCandidate(p.Agent, p.X, p.Y), true
+		return actorPosCandidate(p.Agent.ID, p.X, p.Y), true
 	},
 	"agent.foraged":         decodeHarvest,
 	"agent.chopped":         decodeHarvest,
@@ -1551,7 +1569,7 @@ var subjectRegistry = map[string]subjectFunc{
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorPosCandidate(p.Agent, p.X, p.Y), true
+		return actorPosCandidate(p.Agent.ID, p.X, p.Y), true
 	},
 	"agent.wall_chipped":   decodeWallWork,
 	"agent.wall_destroyed": decodeWallWork,
@@ -1561,35 +1579,35 @@ var subjectRegistry = map[string]subjectFunc{
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorPosCandidate(p.Agent, p.X, p.Y), true
+		return actorPosCandidate(p.Agent.ID, p.X, p.Y), true
 	},
 	"agent.picked_up": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.PickedUpPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorPosCandidate(p.Agent, p.X, p.Y), true
+		return actorPosCandidate(p.Agent.ID, p.X, p.Y), true
 	},
 	"agent.deposited": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.DepositedPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorPosCandidate(p.Agent, p.X, p.Y), true
+		return actorPosCandidate(p.Agent.ID, p.X, p.Y), true
 	},
 	"agent.withdrew": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.WithdrewPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorPosCandidate(p.Agent, p.X, p.Y), true
+		return actorPosCandidate(p.Agent.ID, p.X, p.Y), true
 	},
 	"agent.refueled": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.RefueledPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorPosCandidate(p.Agent, p.X, p.Y), true
+		return actorPosCandidate(p.Agent.ID, p.X, p.Y), true
 	},
 	// agent.intent_set: TargetX/TargetY is the same "target set" presence
 	// heuristic the digest already applies (nonzero => set) — the recorded
@@ -1600,9 +1618,9 @@ var subjectRegistry = map[string]subjectFunc{
 			return subjectCandidate{}, false
 		}
 		if p.TargetX == 0 && p.TargetY == 0 {
-			return actorCandidate(p.Agent), true
+			return actorCandidate(p.Agent.ID), true
 		}
-		return actorPosCandidate(p.Agent, p.TargetX, p.TargetY), true
+		return actorPosCandidate(p.Agent.ID, p.TargetX, p.TargetY), true
 	},
 
 	// --- perception/place-knowledge: []PlaceFact, first fact is canonical ---
@@ -1612,9 +1630,9 @@ var subjectRegistry = map[string]subjectFunc{
 			return subjectCandidate{}, false
 		}
 		if x, y, has := placeFactPos(p.Facts); has {
-			return actorPosCandidate(p.Agent, x, y), true
+			return actorPosCandidate(p.Agent.ID, x, y), true
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"social.place_told": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.PlaceToldPayload](e)
@@ -1622,9 +1640,9 @@ var subjectRegistry = map[string]subjectFunc{
 			return subjectCandidate{}, false
 		}
 		if x, y, has := placeFactPos(p.Facts); has {
-			return actorPosCandidate(p.From, x, y), true
+			return actorPosCandidate(p.From.ID, x, y), true
 		}
-		return actorCandidate(p.From), true
+		return actorCandidate(p.From.ID), true
 	},
 	"agent.map_corrected": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.MapCorrectedPayload](e)
@@ -1632,9 +1650,9 @@ var subjectRegistry = map[string]subjectFunc{
 			return subjectCandidate{}, false
 		}
 		if x, y, has := placeFactPos(p.Gone); has {
-			return actorPosCandidate(p.Agent, x, y), true
+			return actorPosCandidate(p.Agent.ID, x, y), true
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"metatron.place_revealed": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.PlaceRevealedPayload](e)
@@ -1642,9 +1660,9 @@ var subjectRegistry = map[string]subjectFunc{
 			return subjectCandidate{}, false
 		}
 		if x, y, has := placeFactPos(p.Facts); has {
-			return actorPosCandidate(p.Agent, x, y), true
+			return actorPosCandidate(p.Agent.ID, x, y), true
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 
 	// --- social: the digest's grammatical subject as the jump actor ---
@@ -1653,70 +1671,70 @@ var subjectRegistry = map[string]subjectFunc{
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorPosCandidate(p.Taker, p.X, p.Y), true
+		return actorPosCandidate(p.Taker.ID, p.X, p.Y), true
 	},
 	"social.hailed": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.HailedPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.From), true
+		return actorCandidate(p.From.ID), true
 	},
 	"social.hail_met": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.HailMetPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.From), true
+		return actorCandidate(p.From.ID), true
 	},
 	"social.hail_expired": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.HailExpiredPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.From), true
+		return actorCandidate(p.From.ID), true
 	},
 	"social.conversation_turn": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.ConversationTurnPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Speaker), true
+		return actorCandidate(p.Speaker.ID), true
 	},
 	"social.rumor_told": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.RumorToldPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.From), true
+		return actorCandidate(p.From.ID), true
 	},
 	"social.conversation": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.ConversationPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.A), true
+		return actorCandidate(p.A.ID), true
 	},
 	"social.relation_changed": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.RelationChangedPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.A), true
+		return actorCandidate(p.A.ID), true
 	},
 	"social.gave": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.GavePayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.From), true
+		return actorCandidate(p.From.ID), true
 	},
 	"social.secret_seeded": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.SecretSeededPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 
 	// --- governance ---
@@ -1746,21 +1764,21 @@ var subjectRegistry = map[string]subjectFunc{
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"meeting.proposal_tabled": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.ProposalPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Proposer), true
+		return actorCandidate(p.Proposer.ID), true
 	},
 	"norm.violated": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.NormViolatedPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Violator), true
+		return actorCandidate(p.Violator.ID), true
 	},
 
 	// --- gru ---
@@ -1783,14 +1801,14 @@ var subjectRegistry = map[string]subjectFunc{
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorPosCandidate(p.Agent, p.X, p.Y), true
+		return actorPosCandidate(p.Agent.ID, p.X, p.Y), true
 	},
 	"gru.attacked": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.GruAttackedPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 
 	// --- sim: place-only environmental events ---
@@ -1853,7 +1871,7 @@ var subjectRegistry = map[string]subjectFunc{
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 
 	// --- agent: actor-only (no recorded position anywhere in the payload) ---
@@ -1862,7 +1880,7 @@ var subjectRegistry = map[string]subjectFunc{
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"agent.intent_done": decodeAgentOnly,
 	"agent.slept":       decodeAgentOnly,
@@ -1872,77 +1890,77 @@ var subjectRegistry = map[string]subjectFunc{
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"agent.recovery_stalled": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.RecoveryStalledPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"agent.intent_rejected": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.IntentRejectedPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"agent.crafted": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.CraftedPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"agent.cooked": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.CookedPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"agent.bathed": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.BathedPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"agent.spear_broke": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.SpearBrokePayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"agent.axe_broke": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.AxeBrokePayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"agent.ate": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.AtePayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"agent.needs_changed": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.NeedsPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"agent.talked": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.TalkedPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.A), true
+		return actorCandidate(p.A.ID), true
 	},
 	// agent.memory_added: Where (spec 019) is the memory's recorded location
 	// at emission, when the emitter knew one — a real, if occasional,
@@ -1953,93 +1971,93 @@ var subjectRegistry = map[string]subjectFunc{
 			return subjectCandidate{}, false
 		}
 		if p.Where != nil {
-			return actorPosCandidate(p.Agent, p.Where.X, p.Where.Y), true
+			return actorPosCandidate(p.Agent.ID, p.Where.X, p.Where.Y), true
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"agent.thought": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.ThoughtPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"agent.memory_promoted": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.MemoryPromotedPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"agent.memory_faded": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.MemoryFadedPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"agent.belief_revised": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.BeliefRevisedPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"agent.belief_reinforced": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.BeliefReinforcedPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"agent.narrative_set": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.NarrativeSetPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"agent.consolidated": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.ConsolidatedPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"agent.plan_set": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.PlanSetPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"agent.plan_step_started": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.PlanStepPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"agent.plan_expired": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.PlanStepPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"agent.memory_embedded": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.MemoryEmbeddedPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"agent.situation_embedded": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.SituationEmbeddedPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 
 	// --- cog: telemetry, but Agent is still a known top-level field ---
@@ -2048,21 +2066,21 @@ var subjectRegistry = map[string]subjectFunc{
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"cog.outcome": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.CogOutcomePayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 	"cog.memory_divergence": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.MemoryDivergencePayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 
 	// morgue.epilogue: Agent -1 is the run-end epilogue sentinel (no single
@@ -2072,10 +2090,10 @@ var subjectRegistry = map[string]subjectFunc{
 		if !ok {
 			return subjectCandidate{}, false
 		}
-		if p.Agent < 0 {
+		if p.Agent.ID < 0 {
 			return subjectCandidate{}, false
 		}
-		return actorCandidate(p.Agent), true
+		return actorCandidate(p.Agent.ID), true
 	},
 }
 
@@ -2103,7 +2121,14 @@ func liveAgentPos(replica *sim.State, idx int) (x, y int, alive bool) {
 func (m Model) resolveSubject(e store.Event) (name string, x, y int, ok bool) {
 	fn, known := subjectRegistry[e.Type]
 	if !known {
-		return "", 0, 0, false
+		// Spec 086 FR-008 (the village-lens completion): a registry miss no
+		// longer means unlocatable outright — post-086 payloads carry named
+		// {id,name} ref objects, so when exactly ONE distinct in-roster
+		// agent appears in the payload it is the subject, generically, with
+		// zero per-type registry work. Ambiguity (zero or several distinct
+		// refs) stays unlocatable — the honest-hint doctrine, now detected
+		// structurally instead of by hand-listing.
+		return m.resolveSubjectGeneric(e)
 	}
 	cand, decOK := fn(e)
 	if !decOK {
@@ -2123,4 +2148,62 @@ func (m Model) resolveSubject(e store.Event) (name string, x, y int, ok bool) {
 		return label, cand.x, cand.y, true
 	}
 	return "", 0, 0, false
+}
+
+// resolveSubjectGeneric is the registry-miss fallback (spec 086 FR-008):
+// scan the raw payload for {"id":N,"name":…} ref objects (the post-086
+// AgentRef wire shape); exactly one distinct in-roster id ⇒ that agent is
+// the subject (live position, payload name — a dead or unknown actor stays
+// unlocatable: no generically trustworthy recorded position exists on a
+// registry-miss type). world.migrated stays hard-excluded — its embedded
+// State is never scanned (the deliberate registry absence, FR-011).
+func (m Model) resolveSubjectGeneric(e store.Event) (name string, x, y int, ok bool) {
+	if e.Type == "world.migrated" {
+		return "", 0, 0, false
+	}
+	var v any
+	if err := json.Unmarshal(e.Payload, &v); err != nil {
+		return "", 0, 0, false
+	}
+	ids := map[int]string{}
+	scanRefObjects(v, ids)
+	if len(ids) != 1 {
+		return "", 0, 0, false
+	}
+	for idx, refName := range ids {
+		if lx, ly, alive := liveAgentPos(m.replica, idx); alive {
+			if refName == "" {
+				refName = agentName(m.agentNames(), idx)
+			}
+			return refName, lx, ly, true
+		}
+	}
+	return "", 0, 0, false
+}
+
+// scanRefObjects walks decoded payload JSON collecting AgentRef-shaped
+// objects — maps with exactly the two keys "id" (integral number) and
+// "name" (string). Only in-roster ids are candidates (sentinels are not
+// subjects); distinct ids accumulate so ambiguity is structural.
+func scanRefObjects(v any, out map[int]string) {
+	switch t := v.(type) {
+	case map[string]any:
+		if len(t) == 2 {
+			idv, hasID := t["id"].(float64)
+			namev, hasName := t["name"].(string)
+			if hasID && hasName && idv == float64(int(idv)) {
+				if id := int(idv); id >= 0 && id < sim.AgentCount {
+					out[id] = namev
+				}
+				return
+			}
+		}
+		for _, mv := range t {
+			scanRefObjects(mv, out)
+		}
+	case []any:
+		for _, ev := range t {
+			scanRefObjects(ev, out)
+		}
+	}
 }

@@ -92,7 +92,7 @@ func TestReplayByteIdentityWholeFeature(t *testing.T) {
 	setIntent := func(goal string, tx, ty, rx, ry int) store.Event {
 		t.Helper()
 		e := store.Event{Tick: live.Tick, Type: "agent.intent_set", Payload: mustPayload(IntentSetPayload{
-			Agent: 0, Goal: goal, TargetX: tx, TargetY: ty, ResX: rx, ResY: ry, Source: "planner",
+			Agent: Ref(0), Goal: goal, TargetX: tx, TargetY: ty, ResX: rx, ResY: ry, Source: "planner",
 		})}
 		if err := live.Apply(e); err != nil {
 			t.Fatalf("apply %s: %v", e.Type, err)
@@ -114,7 +114,7 @@ func TestReplayByteIdentityWholeFeature(t *testing.T) {
 	// no Intent/travel of its own (contracts/events.md: "reflex/planner eat
 	// (instant)"), so there is nothing to chain through the executor here.
 	if p, ok := eatOutcome(a); ok {
-		p.Agent = 0
+		p.Agent = Ref(0)
 		e := store.Event{Tick: live.Tick, Type: "agent.ate", Payload: mustPayload(p)}
 		if err := live.Apply(e); err != nil {
 			t.Fatalf("apply agent.ate: %v", err)
@@ -460,24 +460,24 @@ func TestReplayByteIdentityWholeFeatureStorage(t *testing.T) {
 		30: {
 			// Agent 0 builds the live chest C2 (fire-comparable duration).
 			{Tick: 30, Type: "agent.intent_set", Payload: pl(IntentSetPayload{
-				Agent: 0, Goal: "build_chest", TargetX: bx, TargetY: by, Source: "planner"})},
+				Agent: Ref(0), Goal: "build_chest", TargetX: bx, TargetY: by, Source: "planner"})},
 			// Agent 2 drops 4 wood onto its tile → a ground pile.
 			{Tick: 30, Type: "agent.intent_set", Payload: pl(IntentSetPayload{
-				Agent: 2, Goal: "drop", TargetX: t2x, TargetY: t2y, Kind: "wood", Qty: 4, Source: "planner"})},
+				Agent: Ref(2), Goal: "drop", TargetX: t2x, TargetY: t2y, Kind: "wood", Qty: 4, Source: "planner"})},
 			// Agent 1 (non-owner) withdraws from C1 → theft companion batch.
 			{Tick: 30, Type: "agent.intent_set", Payload: pl(IntentSetPayload{
-				Agent: 1, Goal: "withdraw", TargetX: t1x, TargetY: t1y, Kind: "wood", Qty: 3, Source: "planner"})},
+				Agent: Ref(1), Goal: "withdraw", TargetX: t1x, TargetY: t1y, Kind: "wood", Qty: 3, Source: "planner"})},
 		},
 		// Agent 2 picks the wood back up (< 120 ticks after the drop).
 		90: {{Tick: 90, Type: "agent.intent_set", Payload: pl(IntentSetPayload{
-			Agent: 2, Goal: "pick_up", TargetX: t2x, TargetY: t2y, Kind: "wood", Source: "planner"})}},
+			Agent: Ref(2), Goal: "pick_up", TargetX: t2x, TargetY: t2y, Kind: "wood", Source: "planner"})}},
 		// Agent 3 dies with goods → death spill.
-		100: {{Tick: 100, Type: "agent.died", Payload: pl(DiedPayload{Agent: 3, Cause: "starvation"})}},
+		100: {{Tick: 100, Type: "agent.died", Payload: pl(DiedPayload{Agent: Ref(3), Cause: "starvation"})}},
 		// Owner deposits into C2, then fetches from it (own chest → no social).
 		700: {{Tick: 700, Type: "agent.intent_set", Payload: pl(IntentSetPayload{
-			Agent: 0, Goal: "deposit", TargetX: bx, TargetY: by, Kind: "wood", Qty: 3, Source: "planner"})}},
+			Agent: Ref(0), Goal: "deposit", TargetX: bx, TargetY: by, Kind: "wood", Qty: 3, Source: "planner"})}},
 		760: {{Tick: 760, Type: "agent.intent_set", Payload: pl(IntentSetPayload{
-			Agent: 0, Goal: "withdraw", TargetX: bx, TargetY: by, Kind: "wood", Qty: 2, Source: "planner"})}},
+			Agent: Ref(0), Goal: "withdraw", TargetX: bx, TargetY: by, Kind: "wood", Qty: 2, Source: "planner"})}},
 	}
 
 	const ticks = 900
@@ -585,11 +585,11 @@ func TestStorageEventsNoOpUnderUnknownConvention(t *testing.T) {
 		typ     string
 		payload any
 	}{
-		{"agent.dropped", DroppedPayload{Agent: 0, X: x, Y: y, Kind: "wood", N: 3}},
-		{"agent.picked_up", PickedUpPayload{Agent: 0, X: x, Y: y, Kind: "wood", N: 3}},
-		{"agent.deposited", DepositedPayload{Agent: 0, X: x, Y: y, Kind: "wood", N: 3}},
-		{"agent.withdrew", WithdrewPayload{Agent: 0, X: x, Y: y, Kind: "wood", N: 3, Owner: 1}},
-		{"social.chest_taken", ChestTakenPayload{Owner: 1, Taker: 0, X: x, Y: y}},
+		{"agent.dropped", DroppedPayload{Agent: Ref(0), X: x, Y: y, Kind: "wood", N: 3}},
+		{"agent.picked_up", PickedUpPayload{Agent: Ref(0), X: x, Y: y, Kind: "wood", N: 3}},
+		{"agent.deposited", DepositedPayload{Agent: Ref(0), X: x, Y: y, Kind: "wood", N: 3}},
+		{"agent.withdrew", WithdrewPayload{Agent: Ref(0), X: x, Y: y, Kind: "wood", N: 3, Owner: Ref(1)}},
+		{"social.chest_taken", ChestTakenPayload{Owner: Ref(1), Taker: Ref(0), X: x, Y: y}},
 		{"sim.food_rotted", FoodRottedPayload{X: x, Y: y, Kind: "food_raw", N: 3}},
 	}
 	for _, c := range cases {
@@ -658,7 +658,7 @@ func TestReplayByteIdentityWallsAxesPaths(t *testing.T) {
 	}
 	setIntent := func(goal string, tx, ty, rx, ry int) store.Event {
 		e := store.Event{Tick: live.Tick, Type: "agent.intent_set", Payload: mustPayload(IntentSetPayload{
-			Agent: 0, Goal: goal, TargetX: tx, TargetY: ty, ResX: rx, ResY: ry, Source: "planner"})}
+			Agent: Ref(0), Goal: goal, TargetX: tx, TargetY: ty, ResX: rx, ResY: ry, Source: "planner"})}
 		if err := live.Apply(e); err != nil {
 			t.Fatalf("apply intent_set %s: %v", goal, err)
 		}
@@ -745,7 +745,7 @@ func TestReplayByteIdentityWallsAxesPaths(t *testing.T) {
 		}
 		var p MemoryAddedPayload
 		mustUnmarshal(t, e.Payload, &p)
-		if p.Agent == 0 && p.Origin == OriginAction && strings.Contains(p.Text, "never built") {
+		if p.Agent.ID == 0 && p.Origin == OriginAction && strings.Contains(p.Text, "never built") {
 			failMemory = true
 		}
 	}

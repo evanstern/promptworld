@@ -25,7 +25,7 @@ func TestEdgeRules(t *testing.T) {
 	s := NewState(seed, m)
 
 	if err := s.Apply(socialEvent(t, 100, "social.relation_changed",
-		RelationChangedPayload{A: 0, B: 1, TrustDelta: 30, AffectionDelta: 20, Reason: "test"})); err != nil {
+		RelationChangedPayload{A: Ref(0), B: Ref(1), TrustDelta: 30, AffectionDelta: 20, Reason: "test"})); err != nil {
 		t.Fatal(err)
 	}
 	r := s.RelationBetween(0, 1)
@@ -39,7 +39,7 @@ func TestEdgeRules(t *testing.T) {
 	// Clamping.
 	for i := 0; i < 100; i++ {
 		s.Apply(socialEvent(t, 100, "social.relation_changed",
-			RelationChangedPayload{A: 0, B: 1, TrustDelta: 500, AffectionDelta: -500}))
+			RelationChangedPayload{A: Ref(0), B: Ref(1), TrustDelta: 500, AffectionDelta: -500}))
 	}
 	r = s.RelationBetween(0, 1)
 	if r.Trust != relMax || r.Affection != relMin {
@@ -48,7 +48,7 @@ func TestEdgeRules(t *testing.T) {
 
 	// Self/invalid pairs rejected.
 	if err := s.Apply(socialEvent(t, 100, "social.relation_changed",
-		RelationChangedPayload{A: 2, B: 2, TrustDelta: 1})); err == nil {
+		RelationChangedPayload{A: Ref(2), B: Ref(2), TrustDelta: 1})); err == nil {
 		t.Error("self-edge must be rejected")
 	}
 }
@@ -62,7 +62,7 @@ func TestLedgerLifecycle(t *testing.T) {
 	s.Agents[0].Inv.FoodRaw = 3
 
 	// A(0) gives to B(1): debt opens (B owes A).
-	if err := s.Apply(socialEvent(t, 1000, "social.gave", GavePayload{From: 0, To: 1, Kind: "food"})); err != nil {
+	if err := s.Apply(socialEvent(t, 1000, "social.gave", GavePayload{From: Ref(0), To: Ref(1), Kind: "food"})); err != nil {
 		t.Fatal(err)
 	}
 	if len(s.Debts) != 1 || s.Debts[0].Debtor != 1 || s.Debts[0].Creditor != 0 || s.Debts[0].Status != "open" {
@@ -77,7 +77,7 @@ func TestLedgerLifecycle(t *testing.T) {
 
 	// B gives back: settles kept.
 	s.Agents[1].Inv.FoodRaw = 2
-	if err := s.Apply(socialEvent(t, 2000, "social.gave", GavePayload{From: 1, To: 0, Kind: "food"})); err != nil {
+	if err := s.Apply(socialEvent(t, 2000, "social.gave", GavePayload{From: Ref(1), To: Ref(0), Kind: "food"})); err != nil {
 		t.Fatal(err)
 	}
 	if s.Debts[0].Status != "kept" || len(s.Debts) != 1 {
@@ -89,7 +89,7 @@ func TestLedgerLifecycle(t *testing.T) {
 
 	// Another give, left to lapse.
 	s.Agents[0].LastGive = 0
-	if err := s.Apply(socialEvent(t, 3000, "social.gave", GavePayload{From: 0, To: 1, Kind: "food"})); err != nil {
+	if err := s.Apply(socialEvent(t, 3000, "social.gave", GavePayload{From: Ref(0), To: Ref(1), Kind: "food"})); err != nil {
 		t.Fatal(err)
 	}
 	brokenID := s.Debts[1].ID
@@ -130,7 +130,7 @@ func TestExecutorGiveAndDueCheck(t *testing.T) {
 		if e.Type == "social.gave" {
 			var p GavePayload
 			json.Unmarshal(e.Payload, &p)
-			if p.From == 0 && p.To == 1 {
+			if p.From.ID == 0 && p.To.ID == 1 {
 				gave = true
 			}
 		}
@@ -182,7 +182,7 @@ func TestRumorProvenanceChain(t *testing.T) {
 
 	// Birth: A(0) tells B(1) — id assigned by reducer.
 	if err := s.Apply(socialEvent(t, 100, "social.rumor_told", RumorToldPayload{
-		From: 0, To: 1, RumorID: 0, Subject: 3, Tone: -80,
+		From: Ref(0), To: Ref(1), RumorID: 0, Subject: Ref(3), Tone: -80,
 		Text: "Watched Rowan steal from the stores.", Confidence: 80,
 	})); err != nil {
 		t.Fatal(err)
@@ -213,7 +213,7 @@ func TestRumorProvenanceChain(t *testing.T) {
 		t.Errorf("decay: %d", tell.Confidence)
 	}
 	if err := s.Apply(socialEvent(t, 200, "social.rumor_told", RumorToldPayload{
-		From: 1, To: 2, RumorID: id, Subject: 3, Tone: -80,
+		From: Ref(1), To: Ref(2), RumorID: id, Subject: Ref(3), Tone: -80,
 		Text:       "They say Rowan robbed the stores blind.", // mutated
 		Confidence: tell.Confidence,
 	})); err != nil {
@@ -242,7 +242,7 @@ func TestSecretsSeededAndGated(t *testing.T) {
 	s := NewState(seed, m)
 	for i := range s.Agents {
 		if err := s.Apply(socialEvent(t, 0, "social.secret_seeded",
-			SecretSeededPayload{Agent: i, Text: "a dark secret", Tone: -70})); err != nil {
+			SecretSeededPayload{Agent: Ref(i), Text: "a dark secret", Tone: -70})); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -261,7 +261,7 @@ func TestSecretsSeededAndGated(t *testing.T) {
 	// Once a second holder knows it, it stops being a live secret.
 	id := s.Rumors[0].ID
 	s.Apply(socialEvent(t, 100, "social.rumor_told", RumorToldPayload{
-		From: 0, To: 1, RumorID: id, Subject: 0, Tone: -70, Text: "a dark secret", Confidence: 80, Secret: true,
+		From: Ref(0), To: Ref(1), RumorID: id, Subject: Ref(0), Tone: -70, Text: "a dark secret", Confidence: 80, Secret: true,
 	}))
 	if _, _, ok := SecretOf(s, 0); ok {
 		t.Error("shared secret should no longer be private")
@@ -273,11 +273,11 @@ func TestSocialDeterminismAndReplay(t *testing.T) {
 	const seed = 7
 	m := testMap(seed)
 	timeline := map[int64][]store.Event{
-		0: {socialEvent(t, 0, "social.secret_seeded", SecretSeededPayload{Agent: 0, Text: "s", Tone: -70})},
+		0: {socialEvent(t, 0, "social.secret_seeded", SecretSeededPayload{Agent: Ref(0), Text: "s", Tone: -70})},
 		500: {
-			socialEvent(t, 500, "social.conversation", ConversationPayload{Conv: 500, A: 0, B: 1, Gist: "weather", Turns: 6}),
-			socialEvent(t, 500, "social.relation_changed", RelationChangedPayload{A: 0, B: 1, TrustDelta: 24, AffectionDelta: 50, Reason: "conversation"}),
-			socialEvent(t, 500, "social.rumor_told", RumorToldPayload{From: 0, To: 1, RumorID: 0, Subject: 2, Tone: 30, Text: "Cedar builds well.", Confidence: 40}),
+			socialEvent(t, 500, "social.conversation", ConversationPayload{Conv: 500, A: Ref(0), B: Ref(1), Gist: "weather", Turns: 6}),
+			socialEvent(t, 500, "social.relation_changed", RelationChangedPayload{A: Ref(0), B: Ref(1), TrustDelta: 24, AffectionDelta: 50, Reason: "conversation"}),
+			socialEvent(t, 500, "social.rumor_told", RumorToldPayload{From: Ref(0), To: Ref(1), RumorID: 0, Subject: Ref(2), Tone: 30, Text: "Cedar builds well.", Confidence: 40}),
 		},
 	}
 	a, b := NewState(seed, m), NewState(seed, m)

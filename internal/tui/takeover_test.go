@@ -19,7 +19,7 @@ import (
 )
 
 func runEndedEvent(seq, tick int64, finalCause string, deaths []sim.DeathRecord) store.Event {
-	b, _ := json.Marshal(sim.RunEndedPayload{Tick: tick, Deaths: deaths, FinalCause: finalCause})
+	b, _ := json.Marshal(sim.RunEndedPayload{Tick: tick, Deaths: sim.DeathRefs(deaths), FinalCause: finalCause})
 	return store.Event{Seq: seq, Tick: tick, Type: "run.ended", Payload: b}
 }
 

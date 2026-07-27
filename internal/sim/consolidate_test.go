@@ -47,33 +47,33 @@ func TestConsolidationReducer(t *testing.T) {
 
 	// Promote: +3 from 3 → 6; cap at MaxSalience on the second boost.
 	apply(300, "agent.memory_promoted", MemoryPromotedPayload{
-		Agent: 0, MemTick: 100, TextHash: MemoryHash(seed[0].Text), Boost: 3})
+		Agent: Ref(0), MemTick: 100, TextHash: MemoryHash(seed[0].Text), Boost: 3})
 	if m := findMem(t, s, 0, seed[0].Text); m.Salience != 6 {
 		t.Errorf("promoted salience = %d, want 6", m.Salience)
 	}
 	apply(301, "agent.memory_promoted", MemoryPromotedPayload{
-		Agent: 0, MemTick: 100, TextHash: MemoryHash(seed[0].Text), Boost: 9})
+		Agent: Ref(0), MemTick: 100, TextHash: MemoryHash(seed[0].Text), Boost: 9})
 	if m := findMem(t, s, 0, seed[0].Text); m.Salience != MaxSalience {
 		t.Errorf("salience cap = %d, want %d", m.Salience, MaxSalience)
 	}
 
 	// Vanished target (wrong hash): no-op, no error.
-	apply(302, "agent.memory_faded", MemoryFadedPayload{Agent: 0, MemTick: 100, TextHash: "00000000"})
+	apply(302, "agent.memory_faded", MemoryFadedPayload{Agent: Ref(0), MemTick: 100, TextHash: "00000000"})
 	if len(s.Agents[0].Memories) != 2 {
 		t.Fatalf("no-op fade removed something: %d memories", len(s.Agents[0].Memories))
 	}
 
 	// Real fade removes.
 	apply(303, "agent.memory_faded", MemoryFadedPayload{
-		Agent: 0, MemTick: 100, TextHash: MemoryHash(seed[0].Text)})
+		Agent: Ref(0), MemTick: 100, TextHash: MemoryHash(seed[0].Text)})
 	if findMem(t, s, 0, seed[0].Text) != nil {
 		t.Error("faded memory still present")
 	}
 
 	// Belief create (id 0), confidence clamped.
 	apply(400, "agent.belief_revised", BeliefRevisedPayload{
-		Agent: 0, BeliefID: 0, Statement: "Cedar breaks his word.",
-		Confidence: 130, Provenance: ProvenanceWitnessed, Source: -1, Subject: 2})
+		Agent: Ref(0), BeliefID: 0, Statement: "Cedar breaks his word.",
+		Confidence: 130, Provenance: ProvenanceWitnessed, Source: Ref(-1), Subject: Ref(2)})
 	if n := len(s.Agents[0].Beliefs); n != 1 {
 		t.Fatalf("beliefs = %d, want 1", n)
 	}
@@ -84,10 +84,10 @@ func TestConsolidationReducer(t *testing.T) {
 
 	// Revise in place; unknown ID no-ops.
 	apply(500, "agent.belief_revised", BeliefRevisedPayload{
-		Agent: 0, BeliefID: 1, Statement: "Cedar breaks his word.",
-		Confidence: 40, Provenance: ProvenanceWitnessed, Source: -1, Subject: 2})
+		Agent: Ref(0), BeliefID: 1, Statement: "Cedar breaks his word.",
+		Confidence: 40, Provenance: ProvenanceWitnessed, Source: Ref(-1), Subject: Ref(2)})
 	apply(501, "agent.belief_revised", BeliefRevisedPayload{
-		Agent: 0, BeliefID: 99, Statement: "ghost", Confidence: 50, Provenance: ProvenanceInferred, Source: -1, Subject: -1})
+		Agent: Ref(0), BeliefID: 99, Statement: "ghost", Confidence: 50, Provenance: ProvenanceInferred, Source: Ref(-1), Subject: Ref(-1)})
 	if got := s.Agents[0].Beliefs[0].Confidence; got != 40 {
 		t.Errorf("revised confidence = %d, want 40", got)
 	}
@@ -97,27 +97,27 @@ func TestConsolidationReducer(t *testing.T) {
 
 	// Second agent's new belief gets the next monotonic ID.
 	apply(502, "agent.belief_revised", BeliefRevisedPayload{
-		Agent: 1, BeliefID: 0, Statement: "The woods are safe.", Confidence: 60,
-		Provenance: ProvenanceInferred, Source: -1, Subject: -1})
+		Agent: Ref(1), BeliefID: 0, Statement: "The woods are safe.", Confidence: 60,
+		Provenance: ProvenanceInferred, Source: Ref(-1), Subject: Ref(-1)})
 	if id := s.Agents[1].Beliefs[0].ID; id != 2 {
 		t.Errorf("second belief ID = %d, want 2", id)
 	}
 
 	// Narrative replacement.
-	apply(600, "agent.narrative_set", NarrativeSetPayload{Agent: 0, Text: "I am the one who watches."})
+	apply(600, "agent.narrative_set", NarrativeSetPayload{Agent: Ref(0), Text: "I am the one who watches."})
 	if s.Agents[0].Narrative != "I am the one who watches." {
 		t.Errorf("narrative = %q", s.Agents[0].Narrative)
 	}
 
 	// Marker: accepted advances night + up_to; rejected bumps night only.
 	apply(700, "agent.consolidated", ConsolidatedPayload{
-		Agent: 0, Night: 1, UpTo: 650, Outcome: ConsolidationAccepted})
+		Agent: Ref(0), Night: 1, UpTo: 650, Outcome: ConsolidationAccepted})
 	a := &s.Agents[0]
 	if a.LastConsolidatedNight != 1 || a.ConsolidatedUpTo != 650 || a.LastConsolidateMark != 700 {
 		t.Errorf("accepted marker: night=%d upTo=%d mark=%d", a.LastConsolidatedNight, a.ConsolidatedUpTo, a.LastConsolidateMark)
 	}
 	apply(86500, "agent.consolidated", ConsolidatedPayload{
-		Agent: 0, Night: 2, UpTo: 86400, Outcome: ConsolidationRejected, Reason: "drift"})
+		Agent: Ref(0), Night: 2, UpTo: 86400, Outcome: ConsolidationRejected, Reason: "drift"})
 	if a.LastConsolidatedNight != 2 || a.ConsolidatedUpTo != 650 {
 		t.Errorf("rejected marker must not advance up_to: night=%d upTo=%d", a.LastConsolidatedNight, a.ConsolidatedUpTo)
 	}
@@ -139,7 +139,7 @@ func TestConsolidationLedger(t *testing.T) {
 	// Judged night 1 → not due again the same night, due next night only
 	// after the 12-game-hour gap.
 	if err := s.Apply(consolidationEvent(t, 80000, "agent.consolidated", ConsolidatedPayload{
-		Agent: 3, Night: 1, UpTo: 79000, Outcome: ConsolidationAccepted})); err != nil {
+		Agent: Ref(3), Night: 1, UpTo: 79000, Outcome: ConsolidationAccepted})); err != nil {
 		t.Fatal(err)
 	}
 	if a.ConsolidationDue(82000) {
@@ -178,15 +178,15 @@ func TestConsolidationReplayDeterminism(t *testing.T) {
 	live := NewState(seed, m)
 
 	events := []store.Event{
-		consolidationEvent(t, 10, "agent.memory_added", MemoryAddedPayload{Agent: 0, Text: "saw a wolf", Salience: 7, Subject: -1}),
-		consolidationEvent(t, 20, "agent.memory_added", MemoryAddedPayload{Agent: 0, Text: "ate berries", Salience: 2, Subject: -1}),
-		consolidationEvent(t, 30, "agent.memory_promoted", MemoryPromotedPayload{Agent: 0, MemTick: 10, TextHash: MemoryHash("saw a wolf"), Boost: 2}),
-		consolidationEvent(t, 31, "agent.memory_faded", MemoryFadedPayload{Agent: 0, MemTick: 20, TextHash: MemoryHash("ate berries")}),
-		consolidationEvent(t, 32, "agent.memory_added", MemoryAddedPayload{Agent: 0, Text: "A day of wolves and hunger.", Salience: SalDayGist, Subject: -1}),
-		consolidationEvent(t, 33, "agent.belief_revised", BeliefRevisedPayload{Agent: 0, BeliefID: 0, Statement: "Wolves hunt the ridge.", Confidence: 70, Provenance: ProvenanceWitnessed, Source: -1, Subject: -1}),
-		consolidationEvent(t, 34, "agent.narrative_set", NarrativeSetPayload{Agent: 0, Text: "I survive by paying attention."}),
-		consolidationEvent(t, 35, "agent.consolidated", ConsolidatedPayload{Agent: 0, Night: 1, UpTo: 32, Outcome: ConsolidationAccepted, Promoted: 1, Faded: 1, Beliefs: 1}),
-		consolidationEvent(t, 86500, "agent.consolidated", ConsolidatedPayload{Agent: 1, Night: 2, Outcome: ConsolidationSkippedEmpty}),
+		consolidationEvent(t, 10, "agent.memory_added", MemoryAddedPayload{Agent: Ref(0), Text: "saw a wolf", Salience: 7, Subject: Ref(-1)}),
+		consolidationEvent(t, 20, "agent.memory_added", MemoryAddedPayload{Agent: Ref(0), Text: "ate berries", Salience: 2, Subject: Ref(-1)}),
+		consolidationEvent(t, 30, "agent.memory_promoted", MemoryPromotedPayload{Agent: Ref(0), MemTick: 10, TextHash: MemoryHash("saw a wolf"), Boost: 2}),
+		consolidationEvent(t, 31, "agent.memory_faded", MemoryFadedPayload{Agent: Ref(0), MemTick: 20, TextHash: MemoryHash("ate berries")}),
+		consolidationEvent(t, 32, "agent.memory_added", MemoryAddedPayload{Agent: Ref(0), Text: "A day of wolves and hunger.", Salience: SalDayGist, Subject: Ref(-1)}),
+		consolidationEvent(t, 33, "agent.belief_revised", BeliefRevisedPayload{Agent: Ref(0), BeliefID: 0, Statement: "Wolves hunt the ridge.", Confidence: 70, Provenance: ProvenanceWitnessed, Source: Ref(-1), Subject: Ref(-1)}),
+		consolidationEvent(t, 34, "agent.narrative_set", NarrativeSetPayload{Agent: Ref(0), Text: "I survive by paying attention."}),
+		consolidationEvent(t, 35, "agent.consolidated", ConsolidatedPayload{Agent: Ref(0), Night: 1, UpTo: 32, Outcome: ConsolidationAccepted, Promoted: 1, Faded: 1, Beliefs: 1}),
+		consolidationEvent(t, 86500, "agent.consolidated", ConsolidatedPayload{Agent: Ref(1), Night: 2, Outcome: ConsolidationSkippedEmpty}),
 	}
 	for _, e := range events {
 		if err := live.Apply(e); err != nil {

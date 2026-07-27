@@ -23,8 +23,8 @@ func TestBeliefFormationStampsReinforced(t *testing.T) {
 
 	// Formation of a hearsay-only belief still stamps Reinforced = formation tick.
 	if err := s.Apply(consolidationEvent(t, 1000, "agent.belief_revised", BeliefRevisedPayload{
-		Agent: 0, BeliefID: 0, Statement: "Rowan saw tendrils.", Confidence: 50,
-		Provenance: ProvenanceTold, Source: 3, Subject: -1,
+		Agent: Ref(0), BeliefID: 0, Statement: "Rowan saw tendrils.", Confidence: 50,
+		Provenance: ProvenanceTold, Source: Ref(3), Subject: Ref(-1),
 		Evidence: []MemoryRef{{Tick: 100, Hash: "deadbeef"}}, Direct: false,
 	})); err != nil {
 		t.Fatal(err)
@@ -37,8 +37,8 @@ func TestBeliefFormationStampsReinforced(t *testing.T) {
 	// Revision at a later tick leaves Reinforced at the formation value (T005
 	// scope: no revision-time refresh yet).
 	if err := s.Apply(consolidationEvent(t, 90000, "agent.belief_revised", BeliefRevisedPayload{
-		Agent: 0, BeliefID: b.ID, Statement: "Rowan saw tendrils.", Confidence: 40,
-		Provenance: ProvenanceTold, Source: 3, Subject: -1,
+		Agent: Ref(0), BeliefID: b.ID, Statement: "Rowan saw tendrils.", Confidence: 40,
+		Provenance: ProvenanceTold, Source: Ref(3), Subject: Ref(-1),
 	})); err != nil {
 		t.Fatal(err)
 	}
@@ -59,21 +59,21 @@ func TestBeliefEvidenceReplayDeterminism(t *testing.T) {
 	m := testMap(seed)
 
 	events := []store.Event{
-		consolidationEvent(t, 10, "agent.memory_added", MemoryAddedPayload{Agent: 0, Text: "Built a fire.", Salience: 5, Subject: -1, Origin: OriginAction}),
-		consolidationEvent(t, 20, "agent.memory_added", MemoryAddedPayload{Agent: 0, Text: "Rowan claims tendrils.", Salience: 4, Subject: 3, Origin: OriginGist}),
+		consolidationEvent(t, 10, "agent.memory_added", MemoryAddedPayload{Agent: Ref(0), Text: "Built a fire.", Salience: 5, Subject: Ref(-1), Origin: OriginAction}),
+		consolidationEvent(t, 20, "agent.memory_added", MemoryAddedPayload{Agent: Ref(0), Text: "Rowan claims tendrils.", Salience: 4, Subject: Ref(3), Origin: OriginGist}),
 		// A direct-evidence belief keeps witnessed.
 		consolidationEvent(t, 30, "agent.belief_revised", BeliefRevisedPayload{
-			Agent: 0, BeliefID: 0, Statement: "I built a fire on the ridge.", Confidence: 80,
-			Provenance: ProvenanceWitnessed, Source: -1, Subject: -1,
+			Agent: Ref(0), BeliefID: 0, Statement: "I built a fire on the ridge.", Confidence: 80,
+			Provenance: ProvenanceWitnessed, Source: Ref(-1), Subject: Ref(-1),
 			Evidence: []MemoryRef{{Tick: 10, Hash: MemoryHash("Built a fire.")}}, Direct: true,
 		}),
 		// A coerced hearsay belief (was "witnessed", landed "told") citing the gist.
 		consolidationEvent(t, 31, "agent.belief_revised", BeliefRevisedPayload{
-			Agent: 0, BeliefID: 0, Statement: "Tendrils lurk past the ridge.", Confidence: 68,
-			Provenance: ProvenanceTold, Source: 3, Subject: -1,
+			Agent: Ref(0), BeliefID: 0, Statement: "Tendrils lurk past the ridge.", Confidence: 68,
+			Provenance: ProvenanceTold, Source: Ref(3), Subject: Ref(-1),
 			Evidence: []MemoryRef{{Tick: 20, Hash: MemoryHash("Rowan claims tendrils.")}}, Direct: false,
 		}),
-		consolidationEvent(t, 32, "agent.consolidated", ConsolidatedPayload{Agent: 0, Night: 1, UpTo: 20, Outcome: ConsolidationAccepted, Beliefs: 2, Coerced: 1}),
+		consolidationEvent(t, 32, "agent.consolidated", ConsolidatedPayload{Agent: Ref(0), Night: 1, UpTo: 20, Outcome: ConsolidationAccepted, Beliefs: 2, Coerced: 1}),
 	}
 
 	replay := func() *State {
@@ -123,8 +123,8 @@ func TestPre030BeliefByteIdentical(t *testing.T) {
 	m := testMap(42)
 	log := []store.Event{
 		{Tick: 500, Type: "agent.belief_revised", Payload: mustPayload(BeliefRevisedPayload{
-			Agent: 0, BeliefID: 0, Statement: "old belief", Confidence: 50,
-			Provenance: ProvenanceInferred, Source: -1, Subject: -1})},
+			Agent: Ref(0), BeliefID: 0, Statement: "old belief", Confidence: 50,
+			Provenance: ProvenanceInferred, Source: Ref(-1), Subject: Ref(-1)})},
 	}
 	s := NewState(42, m)
 	for _, e := range log {

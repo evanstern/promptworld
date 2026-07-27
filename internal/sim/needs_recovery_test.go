@@ -44,7 +44,7 @@ func warmUpAtFire(t *testing.T, seed uint64, warmth int) (*State, *worldmap.Map,
 func condIntentCmd(a *Agent, goal, need string, until int, source string) map[int64][]store.Event {
 	return map[int64][]store.Event{
 		1: {{Tick: 1, Type: "agent.intent_set", Payload: mustPayload(IntentSetPayload{
-			Agent: 0, Goal: goal, TargetX: a.X, TargetY: a.Y,
+			Agent: Ref(0), Goal: goal, TargetX: a.X, TargetY: a.Y,
 			UntilNeed: need, UntilValue: until, Source: source})}},
 	}
 }
@@ -56,7 +56,7 @@ func intentDoneTick(log []store.Event, agent int) int64 {
 		}
 		var p AgentPayload
 		json.Unmarshal(e.Payload, &p)
-		if p.Agent == agent {
+		if p.Agent.ID == agent {
 			return e.Tick
 		}
 	}
@@ -75,11 +75,11 @@ func TestConditionlessIntentByteIdentical(t *testing.T) {
 			t.Fatalf("conditionless intent leaked %q: %s", key, b)
 		}
 	}
-	ws, _ := json.Marshal(WorkStartedPayload{Agent: 0, Tick: 100})
+	ws, _ := json.Marshal(WorkStartedPayload{Agent: Ref(0), Tick: 100})
 	if strings.Contains(string(ws), "ref") {
 		t.Fatalf("Ref-less work_started leaked \"ref\": %s", ws)
 	}
-	set, _ := json.Marshal(IntentSetPayload{Agent: 0, Goal: "forage", TargetX: 1, TargetY: 2})
+	set, _ := json.Marshal(IntentSetPayload{Agent: Ref(0), Goal: "forage", TargetX: 1, TargetY: 2})
 	for _, key := range []string{"until_need", "until_value"} {
 		if strings.Contains(string(set), key) {
 			t.Fatalf("conditionless intent_set leaked %q: %s", key, set)
@@ -95,7 +95,7 @@ func TestConditionRidesIntentSetPayload(t *testing.T) {
 	s := NewState(42, m)
 	isolateAgents(s)
 	if err := s.Apply(store.Event{Tick: 1, Type: "agent.intent_set", Payload: mustPayload(
-		IntentSetPayload{Agent: 0, Goal: "warm_up", TargetX: 1, TargetY: 2, UntilNeed: "warmth", UntilValue: 800})}); err != nil {
+		IntentSetPayload{Agent: Ref(0), Goal: "warm_up", TargetX: 1, TargetY: 2, UntilNeed: "warmth", UntilValue: 800})}); err != nil {
 		t.Fatal(err)
 	}
 	if in := s.Agents[0].Intent; in == nil || in.UntilNeed != "warmth" || in.UntilValue != 800 {
@@ -103,7 +103,7 @@ func TestConditionRidesIntentSetPayload(t *testing.T) {
 	}
 	// A bogus need is refused at the door — the intent stays arrive-and-done.
 	if err := s.Apply(store.Event{Tick: 2, Type: "agent.intent_set", Payload: mustPayload(
-		IntentSetPayload{Agent: 1, Goal: "warm_up", TargetX: 1, TargetY: 2, UntilNeed: "vibes", UntilValue: 800})}); err != nil {
+		IntentSetPayload{Agent: Ref(1), Goal: "warm_up", TargetX: 1, TargetY: 2, UntilNeed: "vibes", UntilValue: 800})}); err != nil {
 		t.Fatal(err)
 	}
 	if in := s.Agents[1].Intent; in == nil || in.UntilNeed != "" {
@@ -132,7 +132,7 @@ func TestRecoverThenRelease(t *testing.T) {
 		if e.Type == "agent.needs_changed" {
 			var p NeedsPayload
 			json.Unmarshal(e.Payload, &p)
-			if p.Agent == 0 {
+			if p.Agent.ID == 0 {
 				warmthAt = p.Warmth
 			}
 		}
@@ -263,7 +263,7 @@ func TestReflexHoldNoArriveIdleWander(t *testing.T) {
 		}
 		var p IntentSetPayload
 		json.Unmarshal(e.Payload, &p)
-		if p.Agent == 0 && p.Goal == "wander" {
+		if p.Agent.ID == 0 && p.Goal == "wander" {
 			t.Fatalf("agent wandered at tick %d mid-recovery — the arrive-idle-wander vacuum is not dead", e.Tick)
 		}
 	}
@@ -291,7 +291,7 @@ func TestRecoveryAbortsWhenSourceDead(t *testing.T) {
 		if e.Type == "agent.recovery_stalled" {
 			var p RecoveryStalledPayload
 			json.Unmarshal(e.Payload, &p)
-			if p.Agent == 0 && p.Need == "warmth" && p.Goal == "warm_up" {
+			if p.Agent.ID == 0 && p.Need == "warmth" && p.Goal == "warm_up" {
 				stalledTick = e.Tick
 			}
 		}
@@ -360,7 +360,7 @@ func TestHoldingIntentOverriddenLikeAnyActive(t *testing.T) {
 	cmds := condIntentCmd(a, "warm_up", "warmth", 900, "planner")
 	// Mid-hold, the planner injects a different intent.
 	cmds[600] = []store.Event{{Tick: 600, Type: "agent.intent_set", Payload: mustPayload(
-		IntentSetPayload{Agent: 0, Goal: "wander", TargetX: a.X, TargetY: a.Y, Source: "planner"})}}
+		IntentSetPayload{Agent: Ref(0), Goal: "wander", TargetX: a.X, TargetY: a.Y, Source: "planner"})}}
 	log := driveTicks(t, s, m, 605, cmds)
 	// The warm_up was still HOLDING when overridden — no completion before 600.
 	if done := intentDoneTick(log, 0); done >= 0 && done < 600 {
@@ -375,7 +375,7 @@ func TestHoldingIntentOverriddenLikeAnyActive(t *testing.T) {
 		}
 		var p IntentSetPayload
 		json.Unmarshal(e.Payload, &p)
-		if p.Agent == 0 && p.Goal == "wander" {
+		if p.Agent.ID == 0 && p.Goal == "wander" {
 			overrode = true
 		}
 	}
@@ -513,7 +513,7 @@ func TestSageWarmUpHeldToThresholdThenReleased(t *testing.T) {
 	warmthBefore := a.Needs.Warmth
 	cmds := map[int64][]store.Event{
 		1: {{Tick: 1, Type: "agent.intent_set", Payload: mustPayload(IntentSetPayload{
-			Agent: 0, Goal: "warm_up", TargetX: a.X, TargetY: a.Y,
+			Agent: Ref(0), Goal: "warm_up", TargetX: a.X, TargetY: a.Y,
 			UntilNeed: "warmth", UntilValue: warmthRecoverTo, Source: "planner"})}},
 	}
 	log := driveTicks(t, s, m, 8000, cmds)
@@ -536,7 +536,7 @@ func TestSageWarmUpHeldToThresholdThenReleased(t *testing.T) {
 		}
 		var p IntentSetPayload
 		json.Unmarshal(e.Payload, &p)
-		if p.Agent == 0 && isPrepGoal(p.Goal) {
+		if p.Agent.ID == 0 && isPrepGoal(p.Goal) {
 			t.Fatalf("a prep intent %q fired at tick %d mid-recovery — the vacuum is not dead", p.Goal, e.Tick)
 		}
 	}
@@ -547,7 +547,7 @@ func TestSageWarmUpHeldToThresholdThenReleased(t *testing.T) {
 		}
 		var p IntentSetPayload
 		json.Unmarshal(e.Payload, &p)
-		if p.Agent == 0 && p.Goal == "wander" {
+		if p.Agent.ID == 0 && p.Goal == "wander" {
 			t.Fatalf("agent wandered at tick %d mid-recovery", e.Tick)
 		}
 	}

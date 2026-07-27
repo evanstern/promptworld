@@ -1364,13 +1364,13 @@ func intentDuration(goal string) int64 {
 
 type (
 	IntentSetPayload struct {
-		Agent   int    `json:"agent"`
-		Goal    string `json:"goal"`
-		TargetX int    `json:"target_x"`
-		TargetY int    `json:"target_y"`
-		ResX    int    `json:"res_x"`
-		ResY    int    `json:"res_y"`
-		Source  string `json:"source,omitempty"` // "reflex" | "planner"
+		Agent   AgentRef `json:"agent"`
+		Goal    string   `json:"goal"`
+		TargetX int      `json:"target_x"`
+		TargetY int      `json:"target_y"`
+		ResX    int      `json:"res_x"`
+		ResY    int      `json:"res_y"`
+		Source  string   `json:"source,omitempty"` // "reflex" | "planner"
 		// Kind/Qty (spec 013 R4) carry a storage goal's argument onto the intent;
 		// omitempty keeps pre-013 and non-storage intent_set payloads byte-identical.
 		Kind string `json:"kind,omitempty"`
@@ -1401,8 +1401,8 @@ type (
 		UntilValue int    `json:"until_value,omitempty"`
 	}
 	WorkStartedPayload struct {
-		Agent int   `json:"agent"`
-		Tick  int64 `json:"tick"`
+		Agent AgentRef `json:"agent"`
+		Tick  int64    `json:"tick"`
 		// Ref (spec 064 R4) is the need level captured at this hold anchor, for a
 		// conditioned recovery's no-net-gain abort check. omitempty and LAST:
 		// every pre-064 work_started (forage/chop/build) emits Ref 0 and marshals
@@ -1419,20 +1419,20 @@ type (
 	// abort is not intelligence completing). {agent, goal, need} mirrors the
 	// {agent, goal, reason} failure shape so abort consumers see a familiar frame.
 	RecoveryStalledPayload struct {
-		Agent int    `json:"agent"`
-		Goal  string `json:"goal"`
-		Need  string `json:"need"`
+		Agent AgentRef `json:"agent"`
+		Goal  string   `json:"goal"`
+		Need  string   `json:"need"`
 	}
 	HarvestPayload struct { // foraged / chopped / hunted / built site
-		Agent int `json:"agent"`
-		X     int `json:"x"`
-		Y     int `json:"y"`
+		Agent AgentRef `json:"agent"`
+		X     int      `json:"x"`
+		Y     int      `json:"y"`
 	}
 	BuiltPayload struct {
-		Agent int    `json:"agent"`
-		Kind  string `json:"kind"`
-		X     int    `json:"x"`
-		Y     int    `json:"y"`
+		Agent AgentRef `json:"agent"`
+		Kind  string   `json:"kind"`
+		X     int      `json:"x"`
+		Y     int      `json:"y"`
 	}
 	// BuildFailedPayload — agent.build_failed (spec 038): a build intent that
 	// passed landing is cancelled by the executor's mid-work re-validation. Its
@@ -1442,21 +1442,21 @@ type (
 	// consumers see a familiar {agent, goal, reason}. Reducer clears the intent
 	// exactly like intent_done; a paired situated memory rides the same tick.
 	BuildFailedPayload struct {
-		Agent  int    `json:"agent"`
-		Goal   string `json:"goal"`
-		Reason string `json:"reason"`
+		Agent  AgentRef `json:"agent"`
+		Goal   string   `json:"goal"`
+		Reason string   `json:"reason"`
 	}
 	NeedsPayload struct {
-		Agent  int `json:"agent"`
-		Health int `json:"health"`
-		Food   int `json:"food"`
-		Rest   int `json:"rest"`
-		Warmth int `json:"warmth"`
-		Morale int `json:"morale"`
+		Agent  AgentRef `json:"agent"`
+		Health int      `json:"health"`
+		Food   int      `json:"food"`
+		Rest   int      `json:"rest"`
+		Warmth int      `json:"warmth"`
+		Morale int      `json:"morale"`
 	}
 	DiedPayload struct {
-		Agent int    `json:"agent"`
-		Cause string `json:"cause"` // "starvation" | "exposure" | "collapse" | "gru" (spec 044 US3)
+		Agent AgentRef `json:"agent"`
+		Cause string   `json:"cause"` // "starvation" | "exposure" | "collapse" | "gru" (spec 044 US3)
 	}
 	// NeglectDetectedPayload — sim.neglect_detected (spec 083): a survival
 	// need has sat below its danger band for neglectWindowTicks with zero
@@ -1467,24 +1467,24 @@ type (
 	// and Since are for consumers (chronicle, postmortem); the reducer arm
 	// only sets the need's fired latch.
 	NeglectDetectedPayload struct {
-		Agent int    `json:"agent"` // agent index (chronicle name resolution)
-		Need  string `json:"need"`  // "food" | "warmth" | "rest"
-		Level int    `json:"level"` // pre-tick need value at firing
-		Since int64  `json:"since"` // tick the need entered the band
+		Agent AgentRef `json:"agent"` // agent index (chronicle name resolution)
+		Need  string   `json:"need"`  // "food" | "warmth" | "rest"
+		Level int      `json:"level"` // pre-tick need value at firing
+		Since int64    `json:"since"` // tick the need entered the band
 	}
 	TalkedPayload struct {
-		A int `json:"a"`
-		B int `json:"b"`
+		A AgentRef `json:"a"`
+		B AgentRef `json:"b"`
 	}
 	RegrownPayload struct {
 		X int `json:"x"`
 		Y int `json:"y"`
 	}
 	MemoryAddedPayload struct {
-		Agent    int          `json:"agent"`
+		Agent    AgentRef     `json:"agent"`
 		Text     string       `json:"text"`
 		Salience int          `json:"salience"`
-		Subject  int          `json:"subject"`
+		Subject  AgentRef     `json:"subject"`
 		Tone     int          `json:"tone,omitempty"`
 		Where    *MemoryPlace `json:"where,omitempty"`  // spec 019: location at emission
 		Why      string       `json:"why,omitempty"`    // spec 019: driving intent reason, verbatim
@@ -1498,7 +1498,7 @@ type (
 	// target is gone (agent died / memory consolidated away). Emitted ONLY by
 	// the embedder through InjectSocial (whitelisted).
 	MemoryEmbeddedPayload struct {
-		Agent  int       `json:"agent"`
+		Agent  AgentRef  `json:"agent"`
 		MemSeq int64     `json:"mem_seq"`
 		Vec    []float32 `json:"vec"`
 		Model  string    `json:"model"`
@@ -1510,32 +1510,32 @@ type (
 	// the agent's current SitVec* fields. Emitted ONLY by the embedder through
 	// InjectSocial (whitelisted).
 	SituationEmbeddedPayload struct {
-		Agent int       `json:"agent"`
+		Agent AgentRef  `json:"agent"`
 		Tick  int64     `json:"tick"`
 		Text  string    `json:"text"`
 		Vec   []float32 `json:"vec"`
 		Model string    `json:"model"`
 	}
 	ThoughtPayload struct {
-		Agent  int    `json:"agent"`
-		Text   string `json:"text"`
-		Source string `json:"source"` // "planner" (reflex acts without narrating)
+		Agent  AgentRef `json:"agent"`
+		Text   string   `json:"text"`
+		Source string   `json:"source"` // "planner" (reflex acts without narrating)
 	}
 	// Hail lifecycle (TASK-47). from = hailer, to = target — the field names
 	// the chronicle grammar already resolves to agent names, so tail/TUI
 	// visibility lands with no view-layer change.
 	HailedPayload struct {
-		From  int   `json:"from"`
-		To    int   `json:"to"`
-		Until int64 `json:"until"`
+		From  AgentRef `json:"from"`
+		To    AgentRef `json:"to"`
+		Until int64    `json:"until"`
 	}
 	HailMetPayload struct {
-		From int `json:"from"`
-		To   int `json:"to"`
+		From AgentRef `json:"from"`
+		To   AgentRef `json:"to"`
 	}
 	HailExpiredPayload struct {
-		From int `json:"from"`
-		To   int `json:"to"`
+		From AgentRef `json:"from"`
+		To   AgentRef `json:"to"`
 	}
 
 	// --- spec 012 resources/food/crafting v2 payloads ---
@@ -1545,54 +1545,54 @@ type (
 	// CraftedPayload: a completed hand-craft. Kind ∈ planks|refined_stone|spear;
 	// the reducer applies the recipe delta from recipes.go.
 	CraftedPayload struct {
-		Agent int    `json:"agent"`
-		Kind  string `json:"kind"`
+		Agent AgentRef `json:"agent"`
+		Kind  string   `json:"kind"`
 	}
 	// AtePayload replaces the old empty AgentPayload for agent.ate (the format
 	// bump shields old logs): counts consumed per form plus the absolute
 	// post-eat food need. Wired in Phase 4 (T018).
 	AtePayload struct {
-		Agent     int `json:"agent"`
-		Meals     int `json:"meals"`
-		Cooked    int `json:"cooked"`
-		Raw       int `json:"raw"`
-		FoodAfter int `json:"food_after"`
+		Agent     AgentRef `json:"agent"`
+		Meals     int      `json:"meals"`
+		Cooked    int      `json:"cooked"`
+		Raw       int      `json:"raw"`
+		FoodAfter int      `json:"food_after"`
 	}
 	// CookedPayload: a cook batch. Station ∈ fire|oven; Kind ∈
 	// food_cooked|meals. Consumed FoodRaw → Produced of Kind.
 	CookedPayload struct {
-		Agent    int    `json:"agent"`
-		Station  string `json:"station"`
-		Consumed int    `json:"consumed"`
-		Produced int    `json:"produced"`
-		Kind     string `json:"kind"`
+		Agent    AgentRef `json:"agent"`
+		Station  string   `json:"station"`
+		Consumed int      `json:"consumed"`
+		Produced int      `json:"produced"`
+		Kind     string   `json:"kind"`
 	}
 	// BathedPayload: a bath at an oven — absolute post-cap need values
 	// (gru-pattern).
 	BathedPayload struct {
-		Agent       int `json:"agent"`
-		MoraleAfter int `json:"morale_after"`
-		WarmthAfter int `json:"warmth_after"`
+		Agent       AgentRef `json:"agent"`
+		MoraleAfter int      `json:"morale_after"`
+		WarmthAfter int      `json:"warmth_after"`
 	}
 	// RefueledPayload: a fire refuel (planner or reflex). FuelUntil is the
 	// absolute new deadline (already capped by the emitter).
 	RefueledPayload struct {
-		Agent     int   `json:"agent"`
-		X         int   `json:"x"`
-		Y         int   `json:"y"`
-		FuelUntil int64 `json:"fuel_until"`
+		Agent     AgentRef `json:"agent"`
+		X         int      `json:"x"`
+		Y         int      `json:"y"`
+		FuelUntil int64    `json:"fuel_until"`
 	}
 	// SpearBrokePayload: the spear that spent its last use, alongside the hunt
 	// completion; a companion memory rides the same batch.
 	SpearBrokePayload struct {
-		Agent int `json:"agent"`
+		Agent AgentRef `json:"agent"`
 	}
 	// AxeBrokePayload (spec 032 US2): the axe that spent its last harvest use,
 	// co-emitted immediately after the chop/quarry completion when the pre-event
 	// Axes[0] == 1 — the exact SpearBrokePayload clone. A companion memory rides
 	// the same batch.
 	AxeBrokePayload struct {
-		Agent int `json:"agent"`
+		Agent AgentRef `json:"agent"`
 	}
 	// FireBurnedOutPayload: the fuel sweep's once-per-burnout signal. No state
 	// effect (lit-ness is derived from FuelUntil); chronicle/TUI material.
@@ -1607,9 +1607,9 @@ type (
 	// actor, so the reducer can reset that agent's Intent.WorkStart to 0 and
 	// re-arm the executor's work gate for the next demolish/repair cycle (R5).
 	WallWorkPayload struct {
-		Agent int `json:"agent"`
-		X     int `json:"x"`
-		Y     int `json:"y"`
+		Agent AgentRef `json:"agent"`
+		X     int      `json:"x"`
+		Y     int      `json:"y"`
 	}
 
 	// --- spec 013 inventory/storage v1 payloads ---
@@ -1621,40 +1621,40 @@ type (
 	// the tile's pile (food becomes a batch stamped tick + rotWindowTicks;
 	// spears move most-worn-first with their durabilities).
 	DroppedPayload struct {
-		Agent int    `json:"agent"`
-		X     int    `json:"x"`
-		Y     int    `json:"y"`
-		Kind  string `json:"kind"`
-		N     int    `json:"n"`
+		Agent AgentRef `json:"agent"`
+		X     int      `json:"x"`
+		Y     int      `json:"y"`
+		Kind  string   `json:"kind"`
+		N     int      `json:"n"`
 	}
 	// PickedUpPayload: n of kind taken from the tile's pile (food oldest-batch-
 	// first), truncated to free bulk; one event per kind moved in the batch.
 	PickedUpPayload struct {
-		Agent int    `json:"agent"`
-		X     int    `json:"x"`
-		Y     int    `json:"y"`
-		Kind  string `json:"kind"`
-		N     int    `json:"n"`
+		Agent AgentRef `json:"agent"`
+		X     int      `json:"x"`
+		Y     int      `json:"y"`
+		Kind  string   `json:"kind"`
+		N     int      `json:"n"`
 	}
 	// DepositedPayload: n of kind moved from inventory into the chest at (x,y),
 	// truncated to chest free space (chestCap − bulk(*Store)).
 	DepositedPayload struct {
-		Agent int    `json:"agent"`
-		X     int    `json:"x"`
-		Y     int    `json:"y"`
-		Kind  string `json:"kind"`
-		N     int    `json:"n"`
+		Agent AgentRef `json:"agent"`
+		X     int      `json:"x"`
+		Y     int      `json:"y"`
+		Kind  string   `json:"kind"`
+		N     int      `json:"n"`
 	}
 	// WithdrewPayload: n of kind taken from the chest at (x,y) into inventory,
 	// truncated to the taker's free bulk. Owner is the chest's owner index; a
 	// non-owner taker co-emits the theft companion batch (contracts/events.md).
 	WithdrewPayload struct {
-		Agent int    `json:"agent"`
-		X     int    `json:"x"`
-		Y     int    `json:"y"`
-		Kind  string `json:"kind"`
-		N     int    `json:"n"`
-		Owner int    `json:"owner"`
+		Agent AgentRef `json:"agent"`
+		X     int      `json:"x"`
+		Y     int      `json:"y"`
+		Kind  string   `json:"kind"`
+		N     int      `json:"n"`
+		Owner AgentRef `json:"owner"`
 	}
 	// FoodRottedPayload: n of a food kind removed from the pile at (x,y) by the
 	// per-game-minute rot sweep (same-kind batches merged per pile per sweep).

@@ -120,14 +120,14 @@ func hailStep(s *State, nextTick int64) []store.Event {
 			if !h.Dead && !h.Asleep && abs(h.X-a.X)+abs(h.Y-a.Y) <= 1 &&
 				!s.pairCooled(by, i, nextTick) {
 				events = append(events, store.Event{Tick: nextTick, Type: "social.hail_met",
-					Payload: mustPayload(HailMetPayload{From: by, To: i})})
+					Payload: mustPayload(HailMetPayload{From: Ref(by), To: Ref(i)})})
 				events = append(events, talkEvents(s, by, i, nextTick)...)
 				continue
 			}
 		}
 		if nextTick >= a.Hail.Until {
 			events = append(events, store.Event{Tick: nextTick, Type: "social.hail_expired",
-				Payload: mustPayload(HailExpiredPayload{From: by, To: i})})
+				Payload: mustPayload(HailExpiredPayload{From: Ref(by), To: Ref(i)})})
 		}
 	}
 	return events

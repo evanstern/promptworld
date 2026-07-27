@@ -392,7 +392,7 @@ func TestPlanTerminalRevalidation(t *testing.T) {
 	}
 	// directive.fulfilled while the designation is still active: refused.
 	fe := store.Event{Tick: 3, Type: "directive.fulfilled", Payload: mustPayload(DirectiveFulfilledPayload{
-		ID: "dir-2-0", DesignationID: "dsg-1-0", Targets: []int{0}, IssuedTick: 2})}
+		ID: "dir-2-0", DesignationID: "dsg-1-0", Targets: Refs([]int{0}), IssuedTick: 2})}
 	if err := s.Apply(fe); err == nil || !strings.Contains(err.Error(), "not fulfilled") {
 		t.Errorf("directive.fulfilled err = %v", err)
 	}
@@ -471,7 +471,7 @@ func TestPlanSweepOnceOnlyAndLag(t *testing.T) {
 	for _, e := range evs {
 		if e.Type == "directive.fulfilled" {
 			want := string(mustPayload(DirectiveFulfilledPayload{
-				ID: "dir-2-0", DesignationID: "dsg-1-0", Targets: []int{0}, IssuedTick: 2}))
+				ID: "dir-2-0", DesignationID: "dsg-1-0", Targets: Refs([]int{0}), IssuedTick: 2}))
 			if string(e.Payload) != want {
 				t.Errorf("payload = %s, want %s (the TASK-118 seam)", e.Payload, want)
 			}
@@ -622,8 +622,8 @@ func TestPlanLifecycleReplayByteIdentical(t *testing.T) {
 		}(), 0, 80)},
 		// Genesis charge pays for the grant; the built shelter then fulfills
 		// dsg-50-0 at the next boundary and dir-80-0 one tick later.
-		90:  {{Tick: 90, Type: "metatron.item_granted", Payload: pl(ItemGrantedPayload{Agent: 0, Kind: "planks", Qty: 4})}},
-		100: {{Tick: 100, Type: "agent.built", Payload: pl(BuiltPayload{Agent: 0, Kind: "shelter", X: 10, Y: 10})}},
+		90:  {{Tick: 90, Type: "metatron.item_granted", Payload: pl(ItemGrantedPayload{Agent: Ref(0), Kind: "planks", Qty: 4})}},
+		100: {{Tick: 100, Type: "agent.built", Payload: pl(BuiltPayload{Agent: Ref(0), Kind: "shelter", X: 10, Y: 10})}},
 		200: {idEvent("designation.cancelled", "dsg-60-0", 200)},
 		// A second directive against the (unfulfillable, min 12) zone: the
 		// sweep expires it at 300 + 1 game day.

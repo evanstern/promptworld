@@ -50,6 +50,9 @@ func TestEatOrderingSatietyAbsolute(t *testing.T) {
 	}
 
 	// Reducer applies the outcome absolutely: counts decremented, need set.
+	// (eatOutcome leaves Agent unset — the emitter stamps it, spec 086's
+	// mustPayload rail insists on the stamped ref.)
+	p2.Agent = Ref(0)
 	s := &State{Agents: []Agent{{Needs: Needs{Food: 500}, Inv: Inventory{Meals: 1, FoodCooked: 1, FoodRaw: 10}}}}
 	if err := s.Apply(store.Event{Tick: 1, Type: "agent.ate", Payload: mustPayload(p2)}); err != nil {
 		t.Fatalf("apply agent.ate: %v", err)
@@ -206,7 +209,7 @@ func TestRefuelRelightsAndReArms(t *testing.T) {
 		if e.Type == "agent.refueled" {
 			var p RefueledPayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.Agent != 0 || p.X != fx || p.Y != fy {
+			if p.Agent.ID != 0 || p.X != fx || p.Y != fy {
 				t.Errorf("agent.refueled payload = %+v, want agent 0 at (%d,%d)", p, fx, fy)
 			}
 			refueled = true
@@ -349,7 +352,7 @@ func TestColdFireRefusesCook(t *testing.T) {
 		if e.Type == "agent.intent_done" {
 			var p AgentPayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.Agent == 0 {
+			if p.Agent.ID == 0 {
 				done = true
 			}
 		}

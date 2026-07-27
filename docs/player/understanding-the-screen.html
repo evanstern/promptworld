@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@657c770f87404b936a0587db1f6b00e81b9f0ee6">
-<meta name="promptworld-docs:source" content="docs/wiki/takeover-surfaces.md@657c770f87404b936a0587db1f6b00e81b9f0ee6">
-<meta name="promptworld-docs:source" content="docs/wiki/grounded-feedback.md@657c770f87404b936a0587db1f6b00e81b9f0ee6">
-<meta name="promptworld-docs:source" content="docs/wiki/village-lens.md@657c770f87404b936a0587db1f6b00e81b9f0ee6">
-<meta name="promptworld-docs:source" content="docs/wiki/tile-registry.md@657c770f87404b936a0587db1f6b00e81b9f0ee6">
-<meta name="promptworld-docs:source" content="docs/wiki/tui-chronicle-feed.md@657c770f87404b936a0587db1f6b00e81b9f0ee6">
-<meta name="promptworld-docs:source" content="docs/wiki/stage-defaults.md@ad2a6543a9caf51d1cd28af863291f3daa3bd4eb">
+<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@c61cd6c04ddfcd2a976c14a49ba071e8fd768a73">
+<meta name="promptworld-docs:source" content="docs/wiki/takeover-surfaces.md@c61cd6c04ddfcd2a976c14a49ba071e8fd768a73">
+<meta name="promptworld-docs:source" content="docs/wiki/grounded-feedback.md@c61cd6c04ddfcd2a976c14a49ba071e8fd768a73">
+<meta name="promptworld-docs:source" content="docs/wiki/village-lens.md@c61cd6c04ddfcd2a976c14a49ba071e8fd768a73">
+<meta name="promptworld-docs:source" content="docs/wiki/tile-registry.md@c61cd6c04ddfcd2a976c14a49ba071e8fd768a73">
+<meta name="promptworld-docs:source" content="docs/wiki/tui-chronicle-feed.md@c61cd6c04ddfcd2a976c14a49ba071e8fd768a73">
+<meta name="promptworld-docs:source" content="docs/wiki/stage-defaults.md@c61cd6c04ddfcd2a976c14a49ba071e8fd768a73">
 <title>What do all those things on screen mean? — promptworld player docs</title>
 <style>
   :root {
@@ -133,8 +133,11 @@ its own state on your behalf.</p>
 <h2>The villager strip: your whole roster, at a glance</h2>
 <p>One plain line sits right under the header, always on: a count of your
 villagers plus one letter per villager, in the same style the map uses —
-bright for awake, dim for asleep, faint <code>†</code> for dead. It's a
-glanceability shortcut, nothing more — everything it shows is also in the
+bright for awake, dim for asleep, faint <code>†</code> for dead. Clicking a
+letter jumps the map camera straight to that villager (a dead villager's
+grave counts); the keyboard way to do the same jump is <code>J</code> on the
+villagers tab, which lists everyone in the same order. Beyond that one
+shortcut it's a glanceability layer — everything it shows is also in the
 villagers tab in full. If your terminal gets too short to fit it, it folds
 into a quiet <code>[N villagers]</code> badge in the header instead of
 disappearing; it never appears at all in the narrow single-pane layout.</p>

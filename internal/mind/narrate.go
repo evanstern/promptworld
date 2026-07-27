@@ -77,7 +77,7 @@ func (md *Mind) chronicleNote(e store.Event) {
 	case "agent.died":
 		var p sim.DiedPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			line = fmt.Sprintf("%s died of %s.", name(p.Agent), p.Cause)
+			line = fmt.Sprintf("%s died of %s.", name(p.Agent.ID), p.Cause)
 		}
 	case "run.ended":
 		// Spec 044 US1: the run-over declaration closes the story — the
@@ -89,14 +89,14 @@ func (md *Mind) chronicleNote(e store.Event) {
 	case "agent.built":
 		var p sim.BuiltPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			line = fmt.Sprintf("%s built a %s.", name(p.Agent), p.Kind)
+			line = fmt.Sprintf("%s built a %s.", name(p.Agent.ID), p.Kind)
 		}
 	case "gru.emerged":
 		line = "The gru emerged from its den."
 	case "gru.sighted":
 		var p sim.GruSightedPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			line = fmt.Sprintf("%s sighted the gru.", name(p.Agent))
+			line = fmt.Sprintf("%s sighted the gru.", name(p.Agent.ID))
 		}
 	case "gru.attacked":
 		// Spec 044 US3 (R5): an escalated attack that lands at health 0 is a
@@ -105,7 +105,7 @@ func (md *Mind) chronicleNote(e store.Event) {
 		// killing blow rather than falsely claim they were "left wounded".
 		var p sim.GruAttackedPayload
 		if json.Unmarshal(e.Payload, &p) == nil && p.Health > 0 {
-			line = fmt.Sprintf("The gru attacked %s and left them wounded.", name(p.Agent))
+			line = fmt.Sprintf("The gru attacked %s and left them wounded.", name(p.Agent.ID))
 		}
 	case "gru.withdrew":
 		line = "The gru withdrew to its den."
@@ -114,11 +114,11 @@ func (md *Mind) chronicleNote(e store.Event) {
 		if json.Unmarshal(e.Payload, &p) == nil {
 			parts := p.Participants
 			if len(parts) == 0 {
-				parts = []int{p.A, p.B}
+				parts = []sim.AgentRef{p.A, p.B}
 			}
 			names := make([]string, len(parts))
 			for i, a := range parts {
-				names[i] = name(a)
+				names[i] = name(a.ID)
 			}
 			line = fmt.Sprintf("%s talked", strings.Join(names, ", "))
 			if len(p.Topics) > 0 {
@@ -131,13 +131,13 @@ func (md *Mind) chronicleNote(e store.Event) {
 		}
 	case "social.rumor_told":
 		var p sim.RumorToldPayload
-		if json.Unmarshal(e.Payload, &p) == nil && p.To >= 0 {
-			line = fmt.Sprintf("%s told %s a rumor: %q.", name(p.From), name(p.To), p.Text)
+		if json.Unmarshal(e.Payload, &p) == nil && p.To.ID >= 0 {
+			line = fmt.Sprintf("%s told %s a rumor: %q.", name(p.From.ID), name(p.To.ID), p.Text)
 		}
 	case "social.gave":
 		var p sim.GavePayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			line = fmt.Sprintf("%s gave %s %s.", name(p.From), name(p.To), p.Kind)
+			line = fmt.Sprintf("%s gave %s %s.", name(p.From.ID), name(p.To.ID), p.Kind)
 		}
 	case "social.chest_taken":
 		// spec 013 (storage, T034): the theft story — same narrative weight
@@ -145,7 +145,7 @@ func (md *Mind) chronicleNote(e store.Event) {
 		// specifically as chronicle/TUI material (social.go doc comment).
 		var p sim.ChestTakenPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			line = fmt.Sprintf("%s took from %s's chest without asking.", name(p.Taker), name(p.Owner))
+			line = fmt.Sprintf("%s took from %s's chest without asking.", name(p.Taker.ID), name(p.Owner.ID))
 		}
 	case "social.promise_broken":
 		var p sim.PromiseBrokenPayload
@@ -170,7 +170,7 @@ func (md *Mind) chronicleNote(e store.Event) {
 				what = "cache of goods"
 			}
 			line = fmt.Sprintf("%s went looking for the %s at (%d,%d) and found it gone.",
-				name(p.Agent), what, f.X, f.Y)
+				name(p.Agent.ID), what, f.X, f.Y)
 		}
 	case "social.place_told":
 		// Spec 041 (US5, T030): directions change hands — voiced by the first
@@ -179,7 +179,7 @@ func (md *Mind) chronicleNote(e store.Event) {
 		if json.Unmarshal(e.Payload, &p) == nil && len(p.Facts) > 0 {
 			f := p.Facts[0]
 			line = fmt.Sprintf("%s told %s about the %s at (%d,%d).",
-				name(p.From), name(p.To), strings.ReplaceAll(f.Kind, "_", " "), f.X, f.Y)
+				name(p.From.ID), name(p.To.ID), strings.ReplaceAll(f.Kind, "_", " "), f.X, f.Y)
 		}
 	case "metatron.place_revealed":
 		// Spec 041 (FR-014, T032): the divine reveal — voiced by the first
@@ -188,12 +188,12 @@ func (md *Mind) chronicleNote(e store.Event) {
 		if json.Unmarshal(e.Payload, &p) == nil && len(p.Facts) > 0 {
 			f := p.Facts[0]
 			line = fmt.Sprintf("A vision showed %s the %s at (%d,%d).",
-				name(p.Agent), strings.ReplaceAll(f.Kind, "_", " "), f.X, f.Y)
+				name(p.Agent.ID), strings.ReplaceAll(f.Kind, "_", " "), f.X, f.Y)
 		}
 	case "agent.thought":
 		var p sim.ThoughtPayload
 		if json.Unmarshal(e.Payload, &p) == nil && p.Source == "musing" {
-			line = fmt.Sprintf("%s mused: %q.", name(p.Agent), p.Text)
+			line = fmt.Sprintf("%s mused: %q.", name(p.Agent.ID), p.Text)
 		}
 	case "meeting.convention_established":
 		var p sim.MeetingConventionPayload
@@ -212,7 +212,7 @@ func (md *Mind) chronicleNote(e store.Event) {
 			} else {
 				names := make([]string, len(p.Attendees))
 				for i, a := range p.Attendees {
-					names[i] = name(a)
+					names[i] = name(a.ID)
 				}
 				line = fmt.Sprintf("The village assembled for %s: %s.", at, strings.Join(names, ", "))
 			}
@@ -220,12 +220,12 @@ func (md *Mind) chronicleNote(e store.Event) {
 	case "meeting.turn_taken":
 		var p sim.TurnTakenPayload
 		if json.Unmarshal(e.Payload, &p) == nil && p.Raised != "" {
-			line = fmt.Sprintf("%s raised a grievance at the meeting: %q.", name(p.Agent), p.Raised)
+			line = fmt.Sprintf("%s raised a grievance at the meeting: %q.", name(p.Agent.ID), p.Raised)
 		}
 	case "meeting.proposal_tabled":
 		var p sim.ProposalPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			line = fmt.Sprintf("%s put a proposal to the assembly: %q.", name(p.Proposer), p.Text)
+			line = fmt.Sprintf("%s put a proposal to the assembly: %q.", name(p.Proposer.ID), p.Text)
 		}
 	case "meeting.proposal_resolved":
 		var p sim.ProposalResolvedPayload
@@ -233,11 +233,11 @@ func (md *Mind) chronicleNote(e store.Event) {
 			tally := fmt.Sprintf("%d-%d", len(p.Yeas), len(p.Nays))
 			switch {
 			case p.Passed && p.Kind == sim.ProposeExile:
-				line = fmt.Sprintf("The village voted %s to exile %s.", tally, name(p.Target))
+				line = fmt.Sprintf("The village voted %s to exile %s.", tally, name(p.Target.ID))
 			case p.Passed:
-				line = fmt.Sprintf("The village passed %s's proposal %s: %q.", name(p.Proposer), tally, p.Text)
+				line = fmt.Sprintf("The village passed %s's proposal %s: %q.", name(p.Proposer.ID), tally, p.Text)
 			default:
-				line = fmt.Sprintf("The village voted down %s's proposal %s.", name(p.Proposer), tally)
+				line = fmt.Sprintf("The village voted down %s's proposal %s.", name(p.Proposer.ID), tally)
 			}
 		}
 	case "meeting.closed":
@@ -253,7 +253,7 @@ func (md *Mind) chronicleNote(e store.Event) {
 				if n.Kind == sim.NormExile {
 					verb = "was seen defying their exile"
 				}
-				line = fmt.Sprintf("%s %s: %q.", name(p.Violator), verb, n.Text)
+				line = fmt.Sprintf("%s %s: %q.", name(p.Violator.ID), verb, n.Text)
 			}
 		}
 	case "curriculum.exercise_passed":
@@ -399,13 +399,13 @@ func (md *Mind) queueEpilogue(e store.Event) {
 		if json.Unmarshal(e.Payload, &p) != nil {
 			return
 		}
-		agent = p.Agent
+		agent = p.Agent.ID
 		name := "someone"
-		if p.Agent >= 0 && p.Agent < len(md.replica.Agents) {
-			name = md.replica.Agents[p.Agent].Name
+		if p.Agent.ID >= 0 && p.Agent.ID < len(md.replica.Agents) {
+			name = md.replica.Agents[p.Agent.ID].Name
 		}
 		label = fmt.Sprintf("epilogue for %s", name)
-		lines = md.epilogueFacts(p.Agent, p.Cause, e.Tick)
+		lines = md.epilogueFacts(p.Agent.ID, p.Cause, e.Tick)
 	case "run.ended":
 		var p sim.RunEndedPayload
 		if json.Unmarshal(e.Payload, &p) != nil {
@@ -474,8 +474,8 @@ func (md *Mind) runEpilogueFacts(p sim.RunEndedPayload) []string {
 	for _, d := range p.Deaths {
 		dd, _, _, _ := clock.GameTime(d.Tick)
 		name := "someone"
-		if d.Agent >= 0 && d.Agent < len(md.replica.Agents) {
-			name = md.replica.Agents[d.Agent].Name
+		if d.Agent.ID >= 0 && d.Agent.ID < len(md.replica.Agents) {
+			name = md.replica.Agents[d.Agent.ID].Name
 		}
 		lines = append(lines, fmt.Sprintf("%s died of %s on day %d.", name, d.Cause, dd))
 	}
@@ -508,7 +508,7 @@ func (md *Mind) runEpilogue(job narrJob) {
 		log.Printf("mind: %s unusable (empty)", job.label)
 		return
 	}
-	b, _ := json.Marshal(sim.MorgueEpiloguePayload{Agent: job.agent, Text: text})
+	b, _ := json.Marshal(sim.MorgueEpiloguePayload{Agent: sim.Ref(job.agent), Text: text})
 	if err := md.social.InjectSocial([]store.Event{{Type: "morgue.epilogue", Payload: b}}); err != nil {
 		log.Printf("mind: %s injection rejected: %v", job.label, err)
 		return
@@ -586,7 +586,7 @@ func (md *Mind) runNarration(job narrJob) {
 		}
 		b, _ := json.Marshal(sim.ChronicleEntryPayload{
 			Day: job.day, FromTick: job.fromTick, ToTick: job.toTick,
-			Text: en.Text, Thread: en.Thread, Agents: agents,
+			Text: en.Text, Thread: en.Thread, Agents: sim.Refs(agents),
 		})
 		batch = append(batch, store.Event{Type: "chronicle.entry", Payload: b})
 	}

@@ -2,10 +2,12 @@
 title: Panel — villagers (roster, detail, decisions)
 class: panel
 status: shipped
-verified_against: 6e83f579db2b448c9c59b15575bf564b1e9b1852
+verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
 sources:
   - internal/tui/views.go
   - internal/tui/decisions.go
+  - internal/tui/look.go
+  - internal/tui/tui.go
 ---
 
 # Panel: villagers
@@ -124,6 +126,7 @@ the screen.
 | control/region | states | data source | renderer | keys+mouse | introduced-by | skin-token |
 |---|---|---|---|---|---|---|
 | roster row | selected · unselected | `replica.Agents` | `villagerRosterBody` | `j`/`k` select · — | spec 015 | — |
+| reverse-jump | — | `replica.Agents` + `Model.villSelected` | `handleVillagersKey` (`J`) / `handleRosterHitClick` (`rosterHit`, the chronHit pointer pattern) | `J` · click row | spec 086 | — |
 | roster selection jump | first · last | `Model.villSel` | `villagerRosterBody` | `g`/`G` · — | spec 015 | — |
 | open detail | roster → detail | `Model.villDetail` | `villagersBody` | `⏎` · — | spec 015 | — |
 | identity/vitals section | — | `sim.Agent` | `villagerIdentitySection` | — | spec 015 | — |
@@ -136,6 +139,10 @@ the screen.
 | decision chain row | landed · refused · in progress · suppressed | client-side decision-trace projection (`Model.traces`) | `renderDecisionChain`, `decisionOutcomeLine`, `verdictGlossary` | — | spec 020 | — |
 | decisions scroll | — | `Model.villDecisions` scroll offset | `villagerDecisionsBody` | `j`/`k` · — | spec 020 | — |
 
-**Parity rollout**: no control on this page has a mouse target today; tracked
-here rather than omitted (decision 8, formal doctrine in `patterns/keymap.md`,
+**Parity rollout**: the reverse-jump row (spec 086) is this page's first
+mouse target — clicking a roster row selects it AND centers the map camera
+on that villager (the chronicle click-line select+act precedent; in narrow
+the active pane switches to the map so the jump is visible). Dead villagers
+jump to their grave coordinates. Every other control remains keyboard-only;
+tracked here rather than omitted (decision 8, formal doctrine in `patterns/keymap.md`,
 T024).

@@ -22,8 +22,8 @@ import (
 // bounded like chronicle lines (the narrator caps it at emission; the arm
 // refuses an empty one).
 type MorgueEpiloguePayload struct {
-	Agent int    `json:"agent"`
-	Text  string `json:"text"`
+	Agent AgentRef `json:"agent"`
+	Text  string   `json:"text"`
 }
 
 // MorgueEpilogue is one recorded epilogue in the State ring.
@@ -43,13 +43,13 @@ func (s *State) applyMorgueEpilogue(e store.Event) error {
 	if err := json.Unmarshal(e.Payload, &p); err != nil {
 		return fmt.Errorf("apply %s: %w", e.Type, err)
 	}
-	if p.Agent < -1 || p.Agent >= len(s.Agents) {
-		return fmt.Errorf("apply %s: agent %d out of range", e.Type, p.Agent)
+	if p.Agent.ID < -1 || p.Agent.ID >= len(s.Agents) {
+		return fmt.Errorf("apply %s: agent %d out of range", e.Type, p.Agent.ID)
 	}
 	if strings.TrimSpace(p.Text) == "" {
 		return fmt.Errorf("apply %s: empty text", e.Type)
 	}
-	s.MorgueEpilogues = append(s.MorgueEpilogues, MorgueEpilogue{Tick: e.Tick, Agent: p.Agent, Text: p.Text})
+	s.MorgueEpilogues = append(s.MorgueEpilogues, MorgueEpilogue{Tick: e.Tick, Agent: p.Agent.ID, Text: p.Text})
 	if len(s.MorgueEpilogues) > morgueEpilogueCap {
 		s.MorgueEpilogues = append(s.MorgueEpilogues[:0], s.MorgueEpilogues[len(s.MorgueEpilogues)-morgueEpilogueCap:]...)
 	}

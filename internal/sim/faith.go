@@ -79,6 +79,12 @@ type FaithChangedPayload struct {
 	Delta    int    `json:"delta"`
 	Reason   string `json:"reason"`
 	SourceID string `json:"source_id"`
+	// Agent (spec 086, data-model §3 row 73 — ADD): the named ref of the
+	// dead villager, set exactly when Reason is villager_died — the one
+	// payload whose agent reference hid inside a string (SourceID keeps its
+	// FROZEN encoding untouched). *AgentRef + omitempty keeps every other
+	// reason's emission byte-identical to spec 085's shape; LAST field.
+	Agent *AgentRef `json:"agent,omitempty"`
 }
 
 // FaithScore is the nil-safe read path (FR-001): FaithGenesis when no faith
@@ -194,7 +200,7 @@ func (s *State) applyFaith(e store.Event) error {
 func faithEvents(s *State, batch []store.Event, nextTick int64) []store.Event {
 	var events []store.Event
 	running := s.FaithScore()
-	emit := func(reason, sourceID string) {
+	emit := func(reason, sourceID string, agent *AgentRef) {
 		delta := faithDeltaByReason[reason]
 		folded := clampFaith(running + delta)
 		if folded == running {
@@ -202,7 +208,7 @@ func faithEvents(s *State, batch []store.Event, nextTick int64) []store.Event {
 		}
 		running = folded
 		events = append(events, store.Event{Tick: nextTick, Type: "faith.changed",
-			Payload: mustPayload(FaithChangedPayload{Delta: delta, Reason: reason, SourceID: sourceID})})
+			Payload: mustPayload(FaithChangedPayload{Delta: delta, Reason: reason, SourceID: sourceID, Agent: agent})})
 	}
 	for _, e := range batch {
 		switch e.Type {
@@ -211,31 +217,34 @@ func faithEvents(s *State, batch []store.Event, nextTick int64) []store.Event {
 			if err := json.Unmarshal(e.Payload, &p); err != nil {
 				continue // struct-built by the directive sweep; cannot fail
 			}
-			emit(FaithReasonDirectiveFulfilled, p.ID)
+			emit(FaithReasonDirectiveFulfilled, p.ID, nil)
 		case "directive.expired":
 			var p OrderIDPayload
 			if err := json.Unmarshal(e.Payload, &p); err != nil {
 				continue
 			}
-			emit(FaithReasonDirectiveExpired, p.ID)
+			emit(FaithReasonDirectiveExpired, p.ID, nil)
 		case "agent.died":
 			var p DiedPayload
 			if err := json.Unmarshal(e.Payload, &p); err != nil {
 				continue
 			}
-			emit(FaithReasonVillagerDied, fmt.Sprintf("%d", p.Agent))
+			// Spec 086 (row 73): the additive named ref beside the frozen
+			// string SourceID — set only for this reason.
+			ref := Ref(p.Agent.ID)
+			emit(FaithReasonVillagerDied, fmt.Sprintf("%d", p.Agent.ID), &ref)
 		case "prophecy.fulfilled":
 			var p OrderIDPayload
 			if err := json.Unmarshal(e.Payload, &p); err != nil {
 				continue
 			}
-			emit(FaithReasonProphecyFulfilled, p.ID)
+			emit(FaithReasonProphecyFulfilled, p.ID, nil)
 		case "prophecy.failed":
 			var p OrderIDPayload
 			if err := json.Unmarshal(e.Payload, &p); err != nil {
 				continue
 			}
-			emit(FaithReasonProphecyFailed, p.ID)
+			emit(FaithReasonProphecyFailed, p.ID, nil)
 		}
 	}
 	return events

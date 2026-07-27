@@ -32,7 +32,7 @@ func seededSurvivalWatch(mt *Guardian, inj *stateInjector, kind string) sim.Guar
 // needsEvent builds an agent.needs_changed event for one villager at a tick.
 func needsEvent(agent, health, food, warmth int, tick int64) store.Event {
 	e := mustEvent("agent.needs_changed", sim.NeedsPayload{
-		Agent: agent, Health: health, Food: food, Warmth: warmth, Rest: 500, Morale: 500,
+		Agent: sim.Ref(agent), Health: health, Food: food, Warmth: warmth, Rest: 500, Morale: 500,
 	})
 	e.Tick = tick
 	return e

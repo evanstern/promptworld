@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/mind/handlers.go
   - internal/mind/parse.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
 ---
 
 # Villager tool handlers

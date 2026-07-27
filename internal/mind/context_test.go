@@ -536,16 +536,16 @@ func TestPlanEchoClearedAfterExpiry(t *testing.T) {
 			t.Fatalf("apply %s: %v", typ, err)
 		}
 	}
-	apply(1000, "agent.plan_set", sim.PlanSetPayload{Agent: 0, Job: "warm-up",
+	apply(1000, "agent.plan_set", sim.PlanSetPayload{Agent: sim.Ref(0), Job: "warm-up",
 		Steps: []sim.PlanStep{{Job: "warm-up", Goal: "goto_warmth", Until: 2000}}})
-	apply(1000, "agent.intent_set", sim.IntentSetPayload{Agent: 0, Goal: "goto_warmth", Source: "plan"})
+	apply(1000, "agent.intent_set", sim.IntentSetPayload{Agent: sim.Ref(0), Goal: "goto_warmth", Source: "plan"})
 
 	// While the plan stands the echo is present.
 	if got := renderPlanEcho(s, 0); !strings.Contains(got, "next: goto_warmth") {
 		t.Fatalf("active plan not echoed before expiry:\n%s", got)
 	}
 
-	apply(2000, "agent.plan_expired", sim.PlanStepPayload{Agent: 0, Job: "warm-up", Step: "goto_warmth", Reason: "window closed"})
+	apply(2000, "agent.plan_expired", sim.PlanStepPayload{Agent: sim.Ref(0), Job: "warm-up", Step: "goto_warmth", Reason: "window closed"})
 
 	// No stale echo after the plan cleared.
 	if got := renderPlanEcho(s, 0); got != "" {
@@ -569,13 +569,13 @@ func TestPlanEchoClearedAfterCompletion(t *testing.T) {
 			t.Fatalf("apply %s: %v", typ, err)
 		}
 	}
-	apply(1000, "agent.plan_set", sim.PlanSetPayload{Agent: 0, Job: "j",
+	apply(1000, "agent.plan_set", sim.PlanSetPayload{Agent: sim.Ref(0), Job: "j",
 		Steps: []sim.PlanStep{{Job: "j", Goal: "forage"}}})
 	if renderPlanEcho(s, 0) == "" {
 		t.Fatal("one-step plan not echoed before it ran")
 	}
 	// The single step starts and is popped — the plan is now complete/empty.
-	apply(1010, "agent.plan_step_started", sim.PlanStepPayload{Agent: 0, Job: "j", Step: "forage"})
+	apply(1010, "agent.plan_step_started", sim.PlanStepPayload{Agent: sim.Ref(0), Job: "j", Step: "forage"})
 	if got := renderPlanEcho(s, 0); got != "" {
 		t.Errorf("stale plan echo after the plan completed: %q", got)
 	}

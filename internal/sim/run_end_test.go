@@ -48,7 +48,7 @@ func TestRunEndedOnceOrderedLast(t *testing.T) {
 			if err := json.Unmarshal(e.Payload, &p); err != nil {
 				t.Fatal(err)
 			}
-			died = append(died, DeathRecord{Agent: p.Agent, Tick: e.Tick, Cause: p.Cause})
+			died = append(died, DeathRecord{Agent: p.Agent.ID, Tick: e.Tick, Cause: p.Cause})
 		case "run.ended":
 			ends = append(ends, e)
 			endIdx = i
@@ -76,7 +76,7 @@ func TestRunEndedOnceOrderedLast(t *testing.T) {
 		t.Fatalf("payload carries %d deaths, want %d", len(p.Deaths), agentCount)
 	}
 	for i, d := range p.Deaths {
-		if d != died[i] {
+		if (DeathRecord{Agent: d.Agent.ID, Tick: d.Tick, Cause: d.Cause}) != died[i] {
 			t.Errorf("payload death %d = %+v, want %+v (event order)", i, d, died[i])
 		}
 	}
@@ -160,7 +160,7 @@ func TestRunEndOmitemptyStable(t *testing.T) {
 		t.Errorf("pre-044 snapshot did not round-trip byte-identically:\npre:  %s\npost: %s", pre, got)
 	}
 	// An ended world does serialize the posture (it must survive snapshots).
-	end := RunEndedPayload{Tick: 60, Deaths: []DeathRecord{{Agent: 0, Tick: 60, Cause: "starvation"}}, FinalCause: "starvation"}
+	end := RunEndedPayload{Tick: 60, Deaths: DeathRefs([]DeathRecord{{Agent: 0, Tick: 60, Cause: "starvation"}}), FinalCause: "starvation"}
 	if err := s.Apply(store.Event{Tick: 60, Type: "run.ended", Payload: mustPayload(end)}); err != nil {
 		t.Fatal(err)
 	}
@@ -181,7 +181,7 @@ func newEndedHarness(t *testing.T) *Loop {
 	t.Cleanup(func() { st.Close() })
 	m := testMap(7)
 	s := NewState(7, m)
-	end := RunEndedPayload{Tick: 1, Deaths: []DeathRecord{{Agent: 0, Tick: 1, Cause: "starvation"}}, FinalCause: "starvation"}
+	end := RunEndedPayload{Tick: 1, Deaths: DeathRefs([]DeathRecord{{Agent: 0, Tick: 1, Cause: "starvation"}}), FinalCause: "starvation"}
 	if err := s.Apply(store.Event{Tick: 1, Type: "run.ended", Payload: mustPayload(end)}); err != nil {
 		t.Fatal(err)
 	}
@@ -214,7 +214,7 @@ func TestEndedCommandGating(t *testing.T) {
 		{name: "govern", govern: &governArgs{to: clock.Speed16x, debt: 1.0, jobs: 1}},
 		{name: "inject_intent", inject: &InjectArgs{Agent: 0, Goal: "forage", TargetAgent: -1}},
 		{name: "inject_social", social: []store.Event{
-			{Type: "social.rumor_told", Payload: mustPayload(RumorToldPayload{From: 0, To: 1, Text: "x"})},
+			{Type: "social.rumor_told", Payload: mustPayload(RumorToldPayload{From: Ref(0), To: Ref(1), Subject: Ref(2), Text: "x"})},
 		}},
 	}
 	for _, cmd := range refused {

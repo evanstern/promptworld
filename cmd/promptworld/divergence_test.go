@@ -16,14 +16,14 @@ func TestAggregateDivergence(t *testing.T) {
 	day := int64(divTicksPerDay)
 	recs := []sim.MemoryDivergencePayload{
 		// Agent 0, day 0: identical k=2 windows — full overlap, nothing promoted.
-		{Agent: 0, Tick: 100, Mode: "shadow", Legacy: []int64{5, 6}, Augmented: []int64{5, 6}, Overlap: 2, Displacement: 0, Vectorless: 1},
+		{Agent: sim.Ref(0), Tick: 100, Mode: "shadow", Legacy: []int64{5, 6}, Augmented: []int64{5, 6}, Overlap: 2, Displacement: 0, Vectorless: 1},
 		// Agent 0, day 0: one memory promoted (seq 9 absent from legacy), half overlap.
-		{Agent: 0, Tick: 200, Mode: "shadow", Legacy: []int64{5, 6}, Augmented: []int64{5, 9}, Overlap: 1, Displacement: 0, Vectorless: 0},
+		{Agent: sim.Ref(0), Tick: 200, Mode: "shadow", Legacy: []int64{5, 6}, Augmented: []int64{5, 9}, Overlap: 1, Displacement: 0, Vectorless: 0},
 		// Agent 0, day 1: k=5 selection, 4/5 overlap, displaced by 3, and seq 7
 		// promoted (absent from legacy).
-		{Agent: 0, Tick: day + 1, Mode: "shadow", Legacy: []int64{1, 2, 3, 4, 5}, Augmented: []int64{2, 1, 3, 5, 7}, Overlap: 4, Displacement: 3, Vectorless: 2},
+		{Agent: sim.Ref(0), Tick: day + 1, Mode: "shadow", Legacy: []int64{1, 2, 3, 4, 5}, Augmented: []int64{2, 1, 3, 5, 7}, Overlap: 4, Displacement: 3, Vectorless: 2},
 		// Agent 1, day 0: zero seqs (pre-042 memories) never count as promoted.
-		{Agent: 1, Tick: 300, Mode: "shadow", Legacy: []int64{0, 0}, Augmented: []int64{0, 0}, Overlap: 0, Displacement: 0, Vectorless: 2},
+		{Agent: sim.Ref(1), Tick: 300, Mode: "shadow", Legacy: []int64{0, 0}, Augmented: []int64{0, 0}, Overlap: 0, Displacement: 0, Vectorless: 2},
 	}
 	keys, rows, total := aggregateDivergence(recs)
 
@@ -75,7 +75,7 @@ func TestDivergencePayloadArithmetic(t *testing.T) {
 	augmented := []sim.Memory{mem(12, 2), mem(10, 5), mem(0, 3), mem(13, 1)}
 	p := sim.NewMemoryDivergencePayload(2, 999, "shadow", legacy, augmented, 3, 800)
 
-	if p.Agent != 2 || p.Tick != 999 || p.Mode != "shadow" || p.Vectorless != 3 || p.SitTick != 800 {
+	if p.Agent.ID != 2 || p.Tick != 999 || p.Mode != "shadow" || p.Vectorless != 3 || p.SitTick != 800 {
 		t.Errorf("scalar fields wrong: %+v", p)
 	}
 	if len(p.Legacy) != 4 || p.Legacy[2] != 0 || len(p.Augmented) != 4 {

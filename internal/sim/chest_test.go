@@ -25,7 +25,7 @@ func TestBuildChestCostAndOwner(t *testing.T) {
 	a := &s.Agents[0]
 	a.Inv = Inventory{Planks: 8}
 
-	applyEvent(t, s, 50, "agent.built", BuiltPayload{Agent: 0, Kind: "chest", X: a.X, Y: a.Y})
+	applyEvent(t, s, 50, "agent.built", BuiltPayload{Agent: Ref(0), Kind: "chest", X: a.X, Y: a.Y})
 
 	if a.Inv.Planks != 8-chestPlankCost {
 		t.Errorf("builder Planks = %d, want %d (chestPlankCost consumed)", a.Inv.Planks, 8-chestPlankCost)
@@ -46,7 +46,7 @@ func TestBuildChestCostAndOwner(t *testing.T) {
 
 	// Owner is permanent: a builder's death leaves the record untouched (no
 	// transfer, no inheritance in v1).
-	applyEvent(t, s, 60, "agent.died", DiedPayload{Agent: 0, Cause: "starvation"})
+	applyEvent(t, s, 60, "agent.died", DiedPayload{Agent: Ref(0), Cause: "starvation"})
 	ch = s.chestAt(a.X, a.Y)
 	if ch == nil || ch.Owner != 0 {
 		t.Errorf("chest owner changed on the owner's death: %+v", ch)
@@ -247,11 +247,11 @@ func TestReplayByteIdentityChests(t *testing.T) {
 	pl := func(v any) []byte { return mustPayload(v) }
 	commands := map[int64][]store.Event{
 		30: {{Tick: 30, Type: "agent.intent_set", Payload: pl(IntentSetPayload{
-			Agent: 0, Goal: "build_chest", TargetX: bx, TargetY: by, Source: "planner"})}},
+			Agent: Ref(0), Goal: "build_chest", TargetX: bx, TargetY: by, Source: "planner"})}},
 		700: {{Tick: 700, Type: "agent.intent_set", Payload: pl(IntentSetPayload{
-			Agent: 0, Goal: "deposit", TargetX: bx, TargetY: by, Kind: "wood", Qty: 3, Source: "planner"})}},
+			Agent: Ref(0), Goal: "deposit", TargetX: bx, TargetY: by, Kind: "wood", Qty: 3, Source: "planner"})}},
 		760: {{Tick: 760, Type: "agent.intent_set", Payload: pl(IntentSetPayload{
-			Agent: 0, Goal: "withdraw", TargetX: bx, TargetY: by, Kind: "wood", Qty: 2, Source: "planner"})}},
+			Agent: Ref(0), Goal: "withdraw", TargetX: bx, TargetY: by, Kind: "wood", Qty: 2, Source: "planner"})}},
 	}
 
 	const ticks = 820

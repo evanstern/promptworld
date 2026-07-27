@@ -5,7 +5,7 @@ kind: concept
 sources:
   - internal/sim/executor.go
   - internal/sim/terrain.go
-verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
+verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
 ---
 
 # Event types — harvesting & consumption events
@@ -13,6 +13,15 @@ verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
 Back to [[event-types]] for the payload-grammar conventions and the full
 event-domain index.
 
+
+Spec 086 (agent-named payloads): every agent-referencing field in this
+family's payloads is a `sim.AgentRef` — the wire carries
+`{"id":N,"name":"…"}` objects (lists element-wise), the name stamped at
+emission from the fixed roster via `Ref`/`Refs`; sentinels marshal
+`{"id":-1,"name":""}`. Legacy bare-int rows decode through the dual-shape
+unmarshal forever and reducer arms fold `.ID`s only — the conventions and
+the normative back-compat matrix live on [[event-types]] ("Agent
+references are named refs").
 | Type | Payload struct | Emitted by | Reducer effect |
 |---|---|---|---|
 | `agent.foraged` / `agent.chopped` / `agent.hunted` | `HarvestPayload{agent, x, y}` | work completion (spec 013: skipped entirely — no event — when the taker's free bulk is zero, US1-AS1, so depletion never happens with no room to carry the take) | +FoodRaw (forage `forageYieldV2`; hunt `huntYieldBare`, or `huntYieldSpear` + spends `Spears[0]`'s last use if carrying one) / +wood (chop `chopYieldBare` (1) bare-handed, or `chopYieldAxe` (3, spec 032 US2) carrying an axe — re-derived from the same pre-mutation state the emitter checked, spending `Axes[0]`'s last use; a spent-to-zero axe co-emits `agent.axe_broke` in the same batch), each clamped to the taker's pre-event free bulk (`bulkCap − bulk(Inv)`, spec 013 US1-AS2 — the forfeited remainder is lost, not refunded); overlay (harvest/cleared/den cooldown) applies regardless of the clamp, intent cleared. **Spec 081**: a completed `agent.chopped` also removes the `tree` place-fact at `(x,y)` from the actor's mental map and from every awake living in-radius witness's map (`removeHarvestedFact`, [[sim-state-reducer]]), and the executor mints the actor a first-person `agent.memory_added` ("Felled the tree at (x,y).", `salChop`) — see [[mental-map-perception]] |

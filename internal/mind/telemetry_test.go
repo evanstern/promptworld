@@ -295,7 +295,7 @@ func TestPauseConversationLandsAtFrozenTick(t *testing.T) {
 	frozen := st.Tick
 	md.maybeStartConversation(store.Event{
 		Tick: frozen, Type: "agent.talked",
-		Payload: mustJSON(t, sim.TalkedPayload{A: 0, B: 1}),
+		Payload: mustJSON(t, sim.TalkedPayload{A: sim.Ref(0), B: sim.Ref(1)}),
 	}, 0)
 	convs := h.waitEvents(t, 15*time.Second, func(e store.Event) bool {
 		return e.Type == "social.conversation"
@@ -342,7 +342,7 @@ func TestResumeNoBurst(t *testing.T) {
 // (the door's charge/night validation is upstream — spec 040 D1), so it arms
 // every Target regardless of the reducer's form gates.
 func nudgeBatchEvents(seq, tick int64, form, text string, targets ...int) []store.Event {
-	nb, _ := json.Marshal(sim.GuardianNudgedPayload{Form: form, Targets: targets, Text: text})
+	nb, _ := json.Marshal(sim.GuardianNudgedPayload{Form: form, Targets: sim.Refs(targets), Text: text})
 	batch := []store.Event{{Seq: seq, Tick: tick, Type: "metatron.nudged", Payload: nb}}
 	prefix := "You saw a vision: "
 	if form == "omen" {
@@ -350,7 +350,7 @@ func nudgeBatchEvents(seq, tick int64, form, text string, targets ...int) []stor
 	}
 	for i, tgt := range targets {
 		mb, _ := json.Marshal(sim.MemoryAddedPayload{
-			Agent: tgt, Text: prefix + text, Salience: sim.SalDream, Subject: -1, Origin: sim.OriginOmen})
+			Agent: sim.Ref(tgt), Text: prefix + text, Salience: sim.SalDream, Subject: sim.Ref(-1), Origin: sim.OriginOmen})
 		batch = append(batch, store.Event{Seq: seq + int64(i) + 1, Tick: tick, Type: "agent.memory_added", Payload: mb})
 	}
 	return batch
@@ -378,7 +378,7 @@ func unplannedAt(t *testing.T, h *harness, n int) []int {
 		}
 		var p sim.CogThoughtPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			planned[p.Agent] = true
+			planned[p.Agent.ID] = true
 		}
 	}
 	var out []int
@@ -427,7 +427,7 @@ func TestPausedNudgeWakesTargetOnce(t *testing.T) {
 		}
 		var p sim.CogThoughtPayload
 		return json.Unmarshal(e.Payload, &p) == nil && p.Class == "planner" &&
-			p.Agent == target && p.TriggerSeq == nudgeSeq
+			p.Agent.ID == target && p.TriggerSeq == nudgeSeq
 	})
 	if len(thoughts) != 1 {
 		t.Fatalf("nudge produced %d planner thoughts for the target, want exactly 1", len(thoughts))
@@ -502,7 +502,7 @@ func TestPausedOmenArmsOnlyTargets(t *testing.T) {
 				return false
 			}
 			var p sim.CogThoughtPayload
-			return json.Unmarshal(e.Payload, &p) == nil && p.Agent == tgt && p.TriggerSeq == omenSeq
+			return json.Unmarshal(e.Payload, &p) == nil && p.Agent.ID == tgt && p.TriggerSeq == omenSeq
 		})
 		if len(got) != 1 {
 			t.Fatalf("omen target %d got %d thoughts, want exactly 1", tgt, len(got))
@@ -513,7 +513,7 @@ func TestPausedOmenArmsOnlyTargets(t *testing.T) {
 			return false
 		}
 		var p sim.CogThoughtPayload
-		return json.Unmarshal(e.Payload, &p) == nil && p.Agent == control && p.TriggerSeq == omenSeq
+		return json.Unmarshal(e.Payload, &p) == nil && p.Agent.ID == control && p.TriggerSeq == omenSeq
 	}); len(bystander) != 0 {
 		t.Fatalf("untargeted villager %d was armed by the omen (%d thoughts)", control, len(bystander))
 	}
@@ -621,7 +621,7 @@ func TestPausedNudgeThinksAtSuppressingSpeed(t *testing.T) {
 			return false
 		}
 		var p sim.CogThoughtPayload
-		return json.Unmarshal(e.Payload, &p) == nil && p.Agent == target && p.TriggerSeq == nudgeSeq
+		return json.Unmarshal(e.Payload, &p) == nil && p.Agent.ID == target && p.TriggerSeq == nudgeSeq
 	})
 	if len(thoughts) != 1 {
 		t.Fatalf("paused nudge at 32x produced %d thoughts, want exactly 1 (paused routing must allow what set-speed suppresses)", len(thoughts))
@@ -712,7 +712,7 @@ func TestMapCorrectionRearmsMatchingIntent(t *testing.T) {
 	md := &Mind{replica: state}
 
 	corrected := func(agent int, x, y int, seq int64) store.Event {
-		b, _ := json.Marshal(sim.MapCorrectedPayload{Agent: agent, Gone: []sim.PlaceFact{
+		b, _ := json.Marshal(sim.MapCorrectedPayload{Agent: sim.Ref(agent), Gone: []sim.PlaceFact{
 			{Kind: "fire", X: x, Y: y, Seen: 100, Provenance: "witnessed"},
 		}})
 		return store.Event{Seq: seq, Tick: 500, Type: "agent.map_corrected", Payload: b}

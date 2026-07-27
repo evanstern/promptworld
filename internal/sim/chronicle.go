@@ -16,12 +16,12 @@ import (
 
 // ChronicleEntryPayload is the chronicle.entry event payload.
 type ChronicleEntryPayload struct {
-	Day      int64  `json:"day"`
-	FromTick int64  `json:"from_tick"`
-	ToTick   int64  `json:"to_tick"`
-	Text     string `json:"text"`
-	Thread   string `json:"thread,omitempty"`
-	Agents   []int  `json:"agents,omitempty"`
+	Day      int64      `json:"day"`
+	FromTick int64      `json:"from_tick"`
+	ToTick   int64      `json:"to_tick"`
+	Text     string     `json:"text"`
+	Thread   string     `json:"thread,omitempty"`
+	Agents   []AgentRef `json:"agents,omitempty"`
 }
 
 // ChronicleEntry is one narrated entry in the State ring.
@@ -47,7 +47,8 @@ func (s *State) applyChronicle(e store.Event) error {
 	}
 	s.Chronicle = append(s.Chronicle, ChronicleEntry{
 		Tick: e.Tick, Day: p.Day, FromTick: p.FromTick, ToTick: p.ToTick,
-		Text: p.Text, Thread: p.Thread, Agents: p.Agents,
+		// Fold .IDs only (spec 086 R2): ChronicleEntry is state.
+		Text: p.Text, Thread: p.Thread, Agents: refIDs(p.Agents),
 	})
 	if len(s.Chronicle) > chronicleCap {
 		s.Chronicle = append(s.Chronicle[:0], s.Chronicle[len(s.Chronicle)-chronicleCap:]...)

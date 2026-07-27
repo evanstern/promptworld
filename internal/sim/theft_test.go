@@ -93,7 +93,7 @@ func TestNonOwnerWithdrawalTheftBatch(t *testing.T) {
 		if e.Type == "social.chest_taken" {
 			var p ChestTakenPayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.Owner != 0 || p.Taker != 1 || p.X != cx || p.Y != cy {
+			if p.Owner.ID != 0 || p.Taker.ID != 1 || p.X != cx || p.Y != cy {
 				t.Errorf("chest_taken payload = %+v, want owner 0 taker 1 at (%d,%d)", p, cx, cy)
 			}
 			takenN++
@@ -109,7 +109,7 @@ func TestNonOwnerWithdrawalTheftBatch(t *testing.T) {
 		if e.Type == "social.relation_changed" {
 			var p RelationChangedPayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.A != 0 || p.B != 1 || p.Reason != "theft" {
+			if p.A.ID != 0 || p.B.ID != 1 || p.Reason != "theft" {
 				continue
 			}
 			relN++
@@ -207,7 +207,7 @@ func TestDeadOwnerTheftRule(t *testing.T) {
 		if e.Type == "social.relation_changed" {
 			var p RelationChangedPayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.A == 0 && p.B == 1 && p.Reason == "theft" {
+			if p.A.ID == 0 && p.B.ID == 1 && p.Reason == "theft" {
 				sawRel = true
 			}
 		}
@@ -313,7 +313,7 @@ func TestReplayByteIdentityTheft(t *testing.T) {
 	pl := func(v any) []byte { return mustPayload(v) }
 	commands := map[int64][]store.Event{
 		30: {{Tick: 30, Type: "agent.intent_set", Payload: pl(IntentSetPayload{
-			Agent: 1, Goal: "withdraw", TargetX: cx, TargetY: cy, Kind: "wood", Qty: 3, Source: "planner"})}},
+			Agent: Ref(1), Goal: "withdraw", TargetX: cx, TargetY: cy, Kind: "wood", Qty: 3, Source: "planner"})}},
 	}
 
 	const ticks = 120

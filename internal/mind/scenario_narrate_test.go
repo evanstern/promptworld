@@ -39,7 +39,7 @@ func TestScenarioRunEndClosesChapter(t *testing.T) {
 	md, _, _ := narrMind(t)
 	md.SetScenario("first-night")
 	md.chronicleNote(mustEvent(t, 60000, "run.ended",
-		sim.RunEndedPayload{Tick: 60000, Deaths: []sim.DeathRecord{{Agent: 0, Tick: 59000, Cause: "gru"}}, FinalCause: "gru"}))
+		sim.RunEndedPayload{Tick: 60000, Deaths: sim.DeathRefs([]sim.DeathRecord{{Agent: 0, Tick: 59000, Cause: "gru"}}), FinalCause: "gru"}))
 
 	var job narrJob
 	select {
@@ -61,7 +61,7 @@ func TestScenarioRunEndClosesChapter(t *testing.T) {
 func TestAmbientRunEndCadenceUnchanged(t *testing.T) {
 	md, _, _ := narrMind(t)
 	md.chronicleNote(mustEvent(t, 60000, "run.ended",
-		sim.RunEndedPayload{Tick: 60000, Deaths: []sim.DeathRecord{{Agent: 0, Tick: 59000, Cause: "gru"}}, FinalCause: "gru"}))
+		sim.RunEndedPayload{Tick: 60000, Deaths: sim.DeathRefs([]sim.DeathRecord{{Agent: 0, Tick: 59000, Cause: "gru"}}), FinalCause: "gru"}))
 
 	select {
 	case <-md.narrQ:

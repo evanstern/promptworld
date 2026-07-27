@@ -733,6 +733,29 @@ func (l *Loop) handleCommand(cmd command) error {
 				err = fmt.Errorf("event type %q not injectable", batch[i].Type)
 				break
 			}
+			// Live-injection ref rail (spec 086 FR-005): decode the payload
+			// through the catalog and refuse the whole batch on an unnamed
+			// in-roster ref (or a named sentinel) BEFORE the dry-run. This is
+			// the mirror of mustPayload's panic contract for emitters that
+			// marshal their own bytes (mind, guardian, bundle, persona); it
+			// never runs on replay, so legacy rows re-apply untouched (R3).
+			zero, ok := PayloadCatalog[batch[i].Type]
+			if !ok {
+				// Unreachable while TestPayloadCatalogCompleteness holds
+				// (every whitelisted type is cataloged); refuse loudly rather
+				// than skip silently if it ever regresses.
+				err = fmt.Errorf("event type %q has no PayloadCatalog entry — cannot validate its agent refs", batch[i].Type)
+				break
+			}
+			pv := zero()
+			if uerr := json.Unmarshal(batch[i].Payload, pv); uerr != nil {
+				err = fmt.Errorf("social batch rejected: %s payload: %w", batch[i].Type, uerr)
+				break
+			}
+			if verr := validateRefs(pv); verr != nil {
+				err = fmt.Errorf("social batch rejected: %s: %w", batch[i].Type, verr)
+				break
+			}
 			batch[i].Tick = l.state.Tick
 			batch[i].Seq = 0
 			batch[i].WallTime = ""

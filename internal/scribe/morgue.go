@@ -127,12 +127,12 @@ func (s *Scribe) renderMorgue() {
 		case "morgue.epilogue":
 			var p sim.MorgueEpiloguePayload
 			if json.Unmarshal(e.Payload, &p) == nil {
-				epilogues = append(epilogues, morgueEpilogueRec{agent: p.Agent, text: p.Text})
+				epilogues = append(epilogues, morgueEpilogueRec{agent: p.Agent.ID, text: p.Text})
 			}
 		case "agent.memory_added":
 			var p sim.MemoryAddedPayload
 			if json.Unmarshal(e.Payload, &p) == nil && p.Salience >= morgueNotableSalience {
-				lifetime[p.Agent] = append(lifetime[p.Agent], morgueMem{tick: e.Tick, sal: p.Salience, text: p.Text})
+				lifetime[p.Agent.ID] = append(lifetime[p.Agent.ID], morgueMem{tick: e.Tick, sal: p.Salience, text: p.Text})
 			}
 		default:
 			if line, who := morgueDeedNote(st, e); line != "" {
@@ -154,8 +154,8 @@ func (s *Scribe) renderMorgue() {
 					c := timeline[len(timeline)-1]
 					latest = &c
 				}
-				ep := captureEpitaph(st, p.Agent, e.Tick, p.Cause, latest)
-				ep.memories = mergeMemories(ep.memories, lifetime[p.Agent])
+				ep := captureEpitaph(st, p.Agent.ID, e.Tick, p.Cause, latest)
+				ep.memories = mergeMemories(ep.memories, lifetime[p.Agent.ID])
 				epitaphs = append(epitaphs, ep)
 			}
 		case "run.ended":
@@ -446,12 +446,12 @@ func morgueDeedNote(st *sim.State, e store.Event) (string, []int) {
 	case "agent.built":
 		var p sim.BuiltPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			return fmt.Sprintf("%s built a %s.", name(p.Agent), p.Kind), []int{p.Agent}
+			return fmt.Sprintf("%s built a %s.", name(p.Agent.ID), p.Kind), []int{p.Agent.ID}
 		}
 	case "social.gave":
 		var p sim.GavePayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			return fmt.Sprintf("%s gave %s %s.", name(p.From), name(p.To), p.Kind), []int{p.From, p.To}
+			return fmt.Sprintf("%s gave %s %s.", name(p.From.ID), name(p.To.ID), p.Kind), []int{p.From.ID, p.To.ID}
 		}
 	case "social.promise_broken":
 		var p sim.PromiseBrokenPayload
@@ -467,22 +467,22 @@ func morgueDeedNote(st *sim.State, e store.Event) (string, []int) {
 		var p sim.ChestTakenPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
 			return fmt.Sprintf("%s took from %s's chest without asking.",
-				name(p.Taker), name(p.Owner)), []int{p.Taker, p.Owner}
+				name(p.Taker.ID), name(p.Owner.ID)), []int{p.Taker.ID, p.Owner.ID}
 		}
 	case "gru.sighted":
 		var p sim.GruSightedPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			return fmt.Sprintf("%s sighted the gru.", name(p.Agent)), []int{p.Agent}
+			return fmt.Sprintf("%s sighted the gru.", name(p.Agent.ID)), []int{p.Agent.ID}
 		}
 	case "gru.attacked":
 		var p sim.GruAttackedPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			return fmt.Sprintf("The gru attacked %s.", name(p.Agent)), []int{p.Agent}
+			return fmt.Sprintf("The gru attacked %s.", name(p.Agent.ID)), []int{p.Agent.ID}
 		}
 	case "meeting.proposal_tabled":
 		var p sim.ProposalPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			return fmt.Sprintf("%s put a proposal to the assembly: %q.", name(p.Proposer), p.Text), []int{p.Proposer}
+			return fmt.Sprintf("%s put a proposal to the assembly: %q.", name(p.Proposer.ID), p.Text), []int{p.Proposer.ID}
 		}
 	case "meeting.proposal_resolved":
 		var p sim.ProposalResolvedPayload
@@ -490,24 +490,24 @@ func morgueDeedNote(st *sim.State, e store.Event) (string, []int) {
 			tally := fmt.Sprintf("%d-%d", len(p.Yeas), len(p.Nays))
 			switch {
 			case p.Passed && p.Kind == sim.ProposeExile:
-				return fmt.Sprintf("The village voted %s to exile %s.", tally, name(p.Target)),
-					[]int{p.Proposer, p.Target}
+				return fmt.Sprintf("The village voted %s to exile %s.", tally, name(p.Target.ID)),
+					[]int{p.Proposer.ID, p.Target.ID}
 			case p.Passed:
-				return fmt.Sprintf("The village passed %s's proposal %s: %q.", name(p.Proposer), tally, p.Text),
-					[]int{p.Proposer}
+				return fmt.Sprintf("The village passed %s's proposal %s: %q.", name(p.Proposer.ID), tally, p.Text),
+					[]int{p.Proposer.ID}
 			default:
-				return fmt.Sprintf("The village voted down %s's proposal %s.", name(p.Proposer), tally),
-					[]int{p.Proposer}
+				return fmt.Sprintf("The village voted down %s's proposal %s.", name(p.Proposer.ID), tally),
+					[]int{p.Proposer.ID}
 			}
 		}
 	case "norm.violated":
 		var p sim.NormViolatedPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			line := fmt.Sprintf("%s was seen breaking the village's law.", name(p.Violator))
+			line := fmt.Sprintf("%s was seen breaking the village's law.", name(p.Violator.ID))
 			if n := sim.NormByID(st, p.NormID); n != nil {
-				line = fmt.Sprintf("%s was seen breaking the village's law: %q.", name(p.Violator), n.Text)
+				line = fmt.Sprintf("%s was seen breaking the village's law: %q.", name(p.Violator.ID), n.Text)
 			}
-			return line, []int{p.Violator}
+			return line, []int{p.Violator.ID}
 		}
 	}
 	return "", nil

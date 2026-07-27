@@ -4,7 +4,7 @@ description: The conflict engine — directed relation edges, debt ledger with c
 kind: component
 sources:
   - internal/sim/social.go
-verified_against: 30912a9cd5d2334f76425ac8ca5b74a7a7c90876
+verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
 ---
 
 # Social fabric
@@ -132,3 +132,12 @@ Engineering findings baked in: chat-while-working (mutual idleness starved the
 fabric), planner debounce (trigger feedback loop), conversation priority lane +
 worker call cap, float-tolerant tone parsing. Pace at 4x: one conversation ≈ 4
 minutes wall, one at a time.
+
+## Spec 086 — social payloads carry named refs
+
+Every agent field in the social family (`relation_changed` a/b, `gave`
+from/to, `rumor_told` from/to/subject, `secret_seeded`, conversation
+turn/scene incl. `participants []AgentRef`, `chest_taken` owner/taker) is a
+`sim.AgentRef` on the wire; `Tones` stays `[]int` (per-participant
+sentiment, not agents). Arms fold `.ID`s — `ConvoRecord.Participants`
+stays `[]int` on state (R2). Legacy rows decode dual-shape forever.

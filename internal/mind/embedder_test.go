@@ -108,7 +108,7 @@ func (s *eventStream) idle() bool {
 // memAdded builds one committed agent.memory_added event as the notify path
 // delivers it: real store seq, payload carrying agent + text.
 func memAdded(seq int64, agent int, text string) store.Event {
-	b, _ := json.Marshal(sim.MemoryAddedPayload{Agent: agent, Text: text, Salience: 3, Subject: -1})
+	b, _ := json.Marshal(sim.MemoryAddedPayload{Agent: sim.Ref(agent), Text: text, Salience: 3, Subject: sim.Ref(-1)})
 	return store.Event{Seq: seq, Tick: 100, Type: "agent.memory_added", Payload: b}
 }
 
@@ -183,8 +183,8 @@ func TestEmbedderEmissionOrdered(t *testing.T) {
 	}{{0, 10}, {0, 11}, {1, 12}, {0, 14}}
 	for _, want := range wantSeqs {
 		p := nextCompanion(t, stream)
-		if p.Agent != want.agent || p.MemSeq != want.seq {
-			t.Fatalf("companion = agent %d seq %d, want agent %d seq %d (emission order)", p.Agent, p.MemSeq, want.agent, want.seq)
+		if p.Agent.ID != want.agent || p.MemSeq != want.seq {
+			t.Fatalf("companion = agent %d seq %d, want agent %d seq %d (emission order)", p.Agent.ID, p.MemSeq, want.agent, want.seq)
 		}
 		if p.Model != "stub-model" || len(p.Vec) == 0 {
 			t.Errorf("companion missing vector/model: %+v", p)
@@ -324,7 +324,7 @@ func TestEmbedderSituationCadence(t *testing.T) {
 	// expected situation strings are the same deterministic render.
 	m := worldmap.Generate(42, 64, 64)
 	ref := sim.NewState(42, m)
-	moved, _ := json.Marshal(sim.AgentMovedPayload{Agent: 0, X: 3, Y: 4})
+	moved, _ := json.Marshal(sim.AgentMovedPayload{Agent: sim.Ref(0), X: 3, Y: 4})
 	batch := []store.Event{
 		memAdded(4, 1, "Crossed the meadow."),
 		{Seq: 5, Tick: ref.PlannerCadence() + 1, Type: "agent.moved", Payload: moved},
@@ -341,13 +341,13 @@ func TestEmbedderSituationCadence(t *testing.T) {
 	// The batch's memory companion lands first (FIFO), then the bucket's
 	// situations, one per live agent in index order (batch boundaries are the
 	// coalescing worker's business; order and content are the contract).
-	if p := nextCompanion(t, stream); p.Agent != 1 || p.MemSeq != 4 {
+	if p := nextCompanion(t, stream); p.Agent.ID != 1 || p.MemSeq != 4 {
 		t.Fatalf("memory companion = %+v, want agent 1 seq 4 ahead of the bucket's situations", p)
 	}
 	for i := 0; i < sim.AgentCount; i++ {
 		p := nextSituation(t, stream)
-		if p.Agent != i {
-			t.Fatalf("situation companion order: got agent %d at position %d", p.Agent, i)
+		if p.Agent.ID != i {
+			t.Fatalf("situation companion order: got agent %d at position %d", p.Agent.ID, i)
 		}
 		if p.Tick != ref.Tick {
 			t.Errorf("agent %d situation tick = %d, want the render tick %d", i, p.Tick, ref.Tick)
@@ -361,7 +361,7 @@ func TestEmbedderSituationCadence(t *testing.T) {
 	}
 
 	// A later event INSIDE the same bucket fires nothing more.
-	inside, _ := json.Marshal(sim.AgentMovedPayload{Agent: 0, X: 4, Y: 4})
+	inside, _ := json.Marshal(sim.AgentMovedPayload{Agent: sim.Ref(0), X: 4, Y: 4})
 	e.Observe([]store.Event{{Seq: 6, Tick: ref.PlannerCadence() + 500, Type: "agent.moved", Payload: inside}})
 	e.Observe([]store.Event{memAdded(7, 2, "sync marker")})
 	if p := nextCompanion(t, stream); p.MemSeq != 7 {

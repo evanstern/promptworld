@@ -60,7 +60,7 @@ func BuildMiracleBatch(s *sim.State, kind string, p MiracleParams, gratis bool) 
 		text = memSnapped
 	case "give_item":
 		main = store.Event{Type: "metatron.item_granted", Payload: mustJSON(sim.ItemGrantedPayload{
-			Agent: p.Agent, Kind: p.Item, Qty: p.Qty, Gratis: gratis})}
+			Agent: sim.Ref(p.Agent), Kind: p.Item, Qty: p.Qty, Gratis: gratis})}
 		recipients = []int{p.Agent}
 		text = grantMemoryText(p.Qty, p.Item)
 	case "move":
@@ -83,7 +83,7 @@ func BuildMiracleBatch(s *sim.State, kind string, p MiracleParams, gratis bool) 
 	batch := []store.Event{main}
 	for _, r := range recipients {
 		batch = append(batch, store.Event{Type: "agent.memory_added", Payload: mustJSON(sim.MemoryAddedPayload{
-			Agent: r, Text: text, Salience: sim.SalDream, Subject: -1, Origin: sim.OriginOmen})})
+			Agent: sim.Ref(r), Text: text, Salience: sim.SalDream, Subject: sim.Ref(-1), Origin: sim.OriginOmen})})
 	}
 	return batch, nil
 }

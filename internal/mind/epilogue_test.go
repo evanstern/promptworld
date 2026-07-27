@@ -20,7 +20,7 @@ func TestQueueEpilogueOnDeath(t *testing.T) {
 	}
 	md.replica.Relations = []sim.Relation{{From: 0, To: 1, Trust: 40, Affection: 10}}
 
-	md.queueEpilogue(mustEvent(t, 95000, "agent.died", sim.DiedPayload{Agent: 0, Cause: "starvation"}))
+	md.queueEpilogue(mustEvent(t, 95000, "agent.died", sim.DiedPayload{Agent: sim.Ref(0), Cause: "starvation"}))
 
 	var job narrJob
 	select {
@@ -53,10 +53,10 @@ func TestQueueEpilogueOnRunEnd(t *testing.T) {
 	md, _, _ := narrMind(t)
 	md.queueEpilogue(mustEvent(t, 97000, "run.ended", sim.RunEndedPayload{
 		Tick: 97000, FinalCause: "exposure",
-		Deaths: []sim.DeathRecord{
+		Deaths: sim.DeathRefs([]sim.DeathRecord{
 			{Agent: 2, Tick: 50000, Cause: "exposure"},
 			{Agent: 1, Tick: 95000, Cause: "starvation"},
-		}}))
+		})}))
 	var job narrJob
 	select {
 	case job = <-md.narrQ:
@@ -98,7 +98,7 @@ func TestRunEpilogueLands(t *testing.T) {
 	if err := json.Unmarshal(e.Payload, &p); err != nil {
 		t.Fatal(err)
 	}
-	if p.Agent != 0 || p.Text != model.narrReply {
+	if p.Agent.ID != 0 || p.Text != model.narrReply {
 		t.Errorf("payload = %+v", p)
 	}
 }

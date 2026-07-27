@@ -441,11 +441,11 @@ func (mt *Guardian) landVision(target, text string, reveal *placeReveal, charges
 	if reveal != nil {
 		extra = []store.Event{
 			{Type: "metatron.place_revealed", Payload: mustJSON(sim.PlaceRevealedPayload{
-				Agent: idx, Facts: []sim.PlaceFact{{Kind: reveal.Kind, X: reveal.X, Y: reveal.Y,
+				Agent: sim.Ref(idx), Facts: []sim.PlaceFact{{Kind: reveal.Kind, X: reveal.X, Y: reveal.Y,
 					Provenance: sim.ProvenanceRevealed}}})},
 			{Type: "agent.memory_added", Payload: mustJSON(sim.MemoryAddedPayload{
-				Agent: idx, Text: revealMemoryText(reveal), Salience: sim.SalDream,
-				Subject: -1, Origin: sim.OriginOmen})},
+				Agent: sim.Ref(idx), Text: revealMemoryText(reveal), Salience: sim.SalDream,
+				Subject: sim.Ref(-1), Origin: sim.OriginOmen})},
 		}
 	}
 	return mt.landNudgeBatch("vision", []int{idx}, text, extra...)
@@ -611,10 +611,10 @@ func (mt *Guardian) landNudgeBatch(form string, targets []int, text string, extr
 		prefix = "You witnessed an omen: "
 	}
 	batch := []store.Event{{Type: "metatron.nudged", Payload: mustJSON(sim.GuardianNudgedPayload{
-		Form: form, Targets: targets, Text: text})}}
+		Form: form, Targets: sim.Refs(targets), Text: text})}}
 	for _, t := range targets {
 		batch = append(batch, store.Event{Type: "agent.memory_added", Payload: mustJSON(sim.MemoryAddedPayload{
-			Agent: t, Text: prefix + text, Salience: sim.SalDream, Subject: -1, Origin: sim.OriginOmen})})
+			Agent: sim.Ref(t), Text: prefix + text, Salience: sim.SalDream, Subject: sim.Ref(-1), Origin: sim.OriginOmen})})
 	}
 	batch = append(batch, extra...)
 	if err := mt.social.InjectSocial(batch); err != nil {

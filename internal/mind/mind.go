@@ -247,7 +247,7 @@ func (md *Mind) absorb(batch []store.Event) {
 		if e.Type == "agent.talked" {
 			var p sim.TalkedPayload
 			if json.Unmarshal(e.Payload, &p) == nil {
-				priorExchange = md.replica.PairLastTalk(p.A, p.B)
+				priorExchange = md.replica.PairLastTalk(p.A.ID, p.B.ID)
 			}
 		}
 		md.replica.Apply(e)
@@ -258,14 +258,16 @@ func (md *Mind) absorb(batch []store.Event) {
 		case "agent.woke":
 			var p sim.AgentPayload
 			if json.Unmarshal(e.Payload, &p) == nil {
-				md.arm(p.Agent, e.Seq)
+				md.arm(p.Agent.ID, e.Seq)
 			}
 		case "agent.intent_done", "agent.build_failed", "agent.foraged", "agent.hunted", "agent.built":
+			// spec 086: agent fields are {id,name} objects on new rows (bare
+			// ints on legacy rows) — decode through the dual-shape AgentRef.
 			var p struct {
-				Agent int `json:"agent"`
+				Agent sim.AgentRef `json:"agent"`
 			}
 			if json.Unmarshal(e.Payload, &p) == nil {
-				md.arm(p.Agent, e.Seq)
+				md.arm(p.Agent.ID, e.Seq)
 			}
 		case "agent.chopped", "agent.quarried":
 			// Spec 081 (FR-007 / contracts §5): a harvest re-arms its actor (a
@@ -278,9 +280,9 @@ func (md *Mind) absorb(batch []store.Event) {
 			// re-arms later through the ordinary correction, exactly as today.
 			var p sim.HarvestPayload
 			if json.Unmarshal(e.Payload, &p) == nil {
-				md.arm(p.Agent, e.Seq)
+				md.arm(p.Agent.ID, e.Seq)
 				for w := range md.replica.Agents {
-					if w == p.Agent {
+					if w == p.Agent.ID {
 						continue
 					}
 					wa := &md.replica.Agents[w]
@@ -310,7 +312,7 @@ func (md *Mind) absorb(batch []store.Event) {
 				var p sim.GuardianNudgedPayload
 				if json.Unmarshal(e.Payload, &p) == nil {
 					for _, t := range p.Targets {
-						md.arm(t, e.Seq)
+						md.arm(t.ID, e.Seq)
 					}
 				}
 			}
@@ -325,12 +327,12 @@ func (md *Mind) absorb(batch []store.Event) {
 			// into the next scheduled round instead).
 			var p sim.MapCorrectedPayload
 			if json.Unmarshal(e.Payload, &p) == nil &&
-				p.Agent >= 0 && p.Agent < len(md.replica.Agents) {
-				if in := md.replica.Agents[p.Agent].Intent; in != nil {
+				p.Agent.ID >= 0 && p.Agent.ID < len(md.replica.Agents) {
+				if in := md.replica.Agents[p.Agent.ID].Intent; in != nil {
 					for _, f := range p.Gone {
 						if (f.X == in.TargetX && f.Y == in.TargetY) ||
 							(f.X == in.ResX && f.Y == in.ResY) {
-							md.arm(p.Agent, e.Seq)
+							md.arm(p.Agent.ID, e.Seq)
 							break
 						}
 					}
@@ -373,14 +375,14 @@ func (md *Mind) armEncounters(e store.Event) {
 	}
 	a := p.Agent
 	for b := range md.replica.Agents {
-		if b == a || md.replica.Agents[b].Dead {
+		if b == a.ID || md.replica.Agents[b].Dead {
 			continue
 		}
 		if absInt(md.replica.Agents[b].X-p.X)+absInt(md.replica.Agents[b].Y-p.Y) <= encounterRadius {
-			key := [2]int{minInt(a, b), maxInt(a, b)}
+			key := [2]int{minInt(a.ID, b), maxInt(a.ID, b)}
 			if e.Tick-md.pairSeen[key] >= md.replica.EncounterCooldown() {
 				md.pairSeen[key] = e.Tick
-				md.arm(a, e.Seq)
+				md.arm(a.ID, e.Seq)
 				md.arm(b, e.Seq)
 			}
 		}

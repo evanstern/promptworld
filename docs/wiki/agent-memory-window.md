@@ -6,7 +6,7 @@ sources:
   - internal/sim/memory.go
   - internal/mind/prompt.go
   - internal/mind/telemetry.go
-verified_against: fc9566d527941d3950fdd307168556820bd0875b
+verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
 ---
 
 # Agent memory window

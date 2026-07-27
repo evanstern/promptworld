@@ -96,7 +96,7 @@ func TestChargeMirrorAccrualAndCap(t *testing.T) {
 	}
 
 	// A valid nudge decrements the mirror through the same absorb pipeline.
-	payload, err := json.Marshal(sim.GuardianNudgedPayload{Form: "dream", Targets: []int{0}, Text: "a whisper"})
+	payload, err := json.Marshal(sim.GuardianNudgedPayload{Form: "dream", Targets: sim.Refs([]int{0}), Text: "a whisper"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -185,7 +185,7 @@ func TestObserveNeverBlocks(t *testing.T) {
 func TestAbsorbRefreshesMirrors(t *testing.T) {
 	mt, orch, _, _ := newLiveTestAngel(t, "The village endures.")
 
-	died, err := json.Marshal(sim.DiedPayload{Agent: 0, Cause: "starvation"})
+	died, err := json.Marshal(sim.DiedPayload{Agent: sim.Ref(0), Cause: "starvation"})
 	if err != nil {
 		t.Fatal(err)
 	}

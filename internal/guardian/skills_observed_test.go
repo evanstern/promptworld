@@ -132,7 +132,7 @@ func TestSkillsObservationSkippedWhenEnded(t *testing.T) {
 	mt, _, inj, dir := newTestGuardian(t, "over")
 	writeSkill(t, dir, "10-watch.md", "Keep the night watch doctrine.")
 	mt.replica.Apply(store.Event{Tick: 1, Type: "run.ended", Payload: mustJSON(sim.RunEndedPayload{
-		Tick: 1, Deaths: []sim.DeathRecord{{Agent: 0, Tick: 1, Cause: "starvation"}}, FinalCause: "starvation"})})
+		Tick: 1, Deaths: sim.DeathRefs([]sim.DeathRecord{{Agent: 0, Tick: 1, Cause: "starvation"}}), FinalCause: "starvation"})})
 	mt.mirrorState()
 	if _, err := mt.Turn(context.Background(), "what remains?"); err != nil {
 		t.Fatal(err)

@@ -51,9 +51,9 @@ type (
 	// (exactly one living target) or "omen" (every villager alive at
 	// landing, recorded explicitly).
 	GuardianNudgedPayload struct {
-		Form    string `json:"form"`
-		Targets []int  `json:"targets"`
-		Text    string `json:"text"`
+		Form    string     `json:"form"`
+		Targets []AgentRef `json:"targets"`
+		Text    string     `json:"text"`
 	}
 	// ChargeRegeneratedPayload is empty — the event row's tick is the
 	// boundary crossed.
@@ -197,6 +197,47 @@ type GuardianOrder struct {
 	PlacedSeq int64 `json:"placed_seq,omitempty"`
 }
 
+// OrderPlacedPayload is metatron.order_placed's wire mirror (spec 086
+// FR-003, data-model §4): GuardianOrder's fields with a named agent ref on
+// the wire while the state entity above keeps the bare int (−1 = any) — the
+// R2 invariant. Same json tags; legacy rows decode dual-shape and the arm
+// folds .ID only.
+type OrderPlacedPayload struct {
+	ID          string   `json:"id"`
+	Origin      string   `json:"origin"`
+	Condition   string   `json:"condition"`
+	Action      string   `json:"action"`
+	EventTypes  []string `json:"event_types"`
+	Agent       AgentRef `json:"agent"` // −1 = any (sentinel, empty name)
+	Keywords    []string `json:"keywords,omitempty"`
+	Confirm     bool     `json:"confirm,omitempty"`
+	PlacedTick  int64    `json:"placed_tick"`
+	ExpiresTick int64    `json:"expires_tick"`
+	Status      string   `json:"status"`
+	Survival    string   `json:"survival,omitempty"`
+	PlacedSeq   int64    `json:"placed_seq,omitempty"`
+}
+
+// PlacedPayload builds the wire mirror from the entity (emission side).
+func (o GuardianOrder) PlacedPayload() OrderPlacedPayload {
+	return OrderPlacedPayload{
+		ID: o.ID, Origin: o.Origin, Condition: o.Condition, Action: o.Action,
+		EventTypes: o.EventTypes, Agent: Ref(o.Agent), Keywords: o.Keywords,
+		Confirm: o.Confirm, PlacedTick: o.PlacedTick, ExpiresTick: o.ExpiresTick,
+		Status: o.Status, Survival: o.Survival, PlacedSeq: o.PlacedSeq,
+	}
+}
+
+// order folds the mirror back into the int-typed state entity (arm side).
+func (p OrderPlacedPayload) order() GuardianOrder {
+	return GuardianOrder{
+		ID: p.ID, Origin: p.Origin, Condition: p.Condition, Action: p.Action,
+		EventTypes: p.EventTypes, Agent: p.Agent.ID, Keywords: p.Keywords,
+		Confirm: p.Confirm, PlacedTick: p.PlacedTick, ExpiresTick: p.ExpiresTick,
+		Status: p.Status, Survival: p.Survival, PlacedSeq: p.PlacedSeq,
+	}
+}
+
 // OrderTriggeredPayload records a matched order's one-shot consumption (spec
 // 029): the matched event's type + tick ride along for the trail. Injected by
 // the trigger worker (Batch B), NEVER emitted during replay.
@@ -292,11 +333,11 @@ func (s *State) applyGuardian(e store.Event) error {
 			return fmt.Errorf("apply %s: unknown form %q", e.Type, p.Form)
 		}
 		for _, t := range p.Targets {
-			if t < 0 || t >= len(s.Agents) {
-				return fmt.Errorf("apply %s: unknown target %d", e.Type, t)
+			if t.ID < 0 || t.ID >= len(s.Agents) {
+				return fmt.Errorf("apply %s: unknown target %d", e.Type, t.ID)
 			}
-			if s.Agents[t].Dead {
-				return fmt.Errorf("apply %s: target %s is dead", e.Type, s.Agents[t].Name)
+			if s.Agents[t.ID].Dead {
+				return fmt.Errorf("apply %s: target %s is dead", e.Type, s.Agents[t.ID].Name)
 			}
 		}
 		if p.Text == "" || len(p.Text) > NudgeTextMax {
@@ -319,10 +360,10 @@ func (s *State) applyGuardian(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		if p.Agent < 0 || p.Agent >= len(s.Agents) {
-			return fmt.Errorf("apply %s: unknown target %d", e.Type, p.Agent)
+		if p.Agent.ID < 0 || p.Agent.ID >= len(s.Agents) {
+			return fmt.Errorf("apply %s: unknown target %d", e.Type, p.Agent.ID)
 		}
-		a := &s.Agents[p.Agent]
+		a := &s.Agents[p.Agent.ID]
 		if a.Dead {
 			return fmt.Errorf("apply %s: target %s is dead", e.Type, a.Name)
 		}
@@ -339,10 +380,14 @@ func (s *State) applyGuardian(e store.Event) error {
 			}
 		}
 	case "metatron.order_placed":
-		var o GuardianOrder
-		if err := json.Unmarshal(e.Payload, &o); err != nil {
+		// Spec 086: decode the OrderPlacedPayload mirror (named ref,
+		// dual-shape for legacy rows) and fold .ID into the int-typed entity
+		// — names never enter state (R2), no name validation here (R3).
+		var mp OrderPlacedPayload
+		if err := json.Unmarshal(e.Payload, &mp); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
+		o := mp.order()
 		if o.ID == "" {
 			return fmt.Errorf("apply %s: empty order id", e.Type)
 		}

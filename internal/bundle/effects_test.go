@@ -86,7 +86,7 @@ func TestCompileEachKind(t *testing.T) {
 		}
 		var p sim.ItemGrantedPayload
 		mustUnmarshal(t, evs[0].Payload, &p)
-		want := sim.ItemGrantedPayload{Agent: 0, Kind: "bread", Qty: 2}
+		want := sim.ItemGrantedPayload{Agent: sim.Ref(0), Kind: "bread", Qty: 2}
 		if evs[0].Type != "metatron.item_granted" || p != want {
 			t.Errorf("type/payload = %s/%+v", evs[0].Type, p)
 		}
@@ -113,7 +113,7 @@ func TestCompileEachKind(t *testing.T) {
 		}
 		var p sim.MemoryAddedPayload
 		mustUnmarshal(t, evs[0].Payload, &p)
-		if p.Agent != 0 || p.Text != "a poof of smoke" || p.Salience != sim.SalDream || p.Subject != -1 || p.Origin != sim.OriginOmen {
+		if p.Agent.ID != 0 || p.Text != "a poof of smoke" || p.Salience != sim.SalDream || p.Subject.ID != -1 || p.Origin != sim.OriginOmen {
 			t.Errorf("payload = %+v", p)
 		}
 	})
@@ -168,10 +168,10 @@ func TestTargetAddressingCompiles(t *testing.T) {
 			sim.EntityRemovedPayload{Class: "terrain", X: 9, Y: 2}},
 		{"grant villager@", `[{"kind":"grant_item","target":"villager@1,2","item":"wood","qty":3}]`,
 			"metatron.item_granted", "metatron.item_granted",
-			sim.ItemGrantedPayload{Agent: 0, Kind: "wood", Qty: 3}},
+			sim.ItemGrantedPayload{Agent: sim.Ref(0), Kind: "wood", Qty: 3}},
 		{"grant villager: typed name", `[{"kind":"grant_item","target":"villager:bob","item":"wood","qty":3}]`,
 			"metatron.item_granted", "metatron.item_granted",
-			sim.ItemGrantedPayload{Agent: 1, Kind: "wood", Qty: 3}},
+			sim.ItemGrantedPayload{Agent: sim.Ref(1), Kind: "wood", Qty: 3}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -204,8 +204,8 @@ func TestTargetAddressingCompiles(t *testing.T) {
 	}
 	var p sim.ItemGrantedPayload
 	mustUnmarshal(t, evs[0].Payload, &p)
-	if p.Agent != 1 {
-		t.Errorf("villager@5,5 resolved to index %d, want 1 (first living by agent index)", p.Agent)
+	if p.Agent.ID != 1 {
+		t.Errorf("villager@5,5 resolved to index %d, want 1 (first living by agent index)", p.Agent.ID)
 	}
 }
 
@@ -452,7 +452,7 @@ func recipients(t *testing.T, evs []store.Event) []int {
 	for i, e := range evs {
 		var p sim.MemoryAddedPayload
 		mustUnmarshal(t, e.Payload, &p)
-		out[i] = p.Agent
+		out[i] = p.Agent.ID
 	}
 	return out
 }

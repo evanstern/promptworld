@@ -618,7 +618,7 @@ func theLawNormEvent(tick int64) store.Event {
 	return store.Event{Tick: tick, Type: "meeting.proposal_resolved",
 		Payload: mustPayload(ProposalResolvedPayload{
 			ProposalPayload: ProposalPayload{ProposalID: 1, Kind: ProposeCurfew,
-				Target: -1, Proposer: 0, Text: "no one leaves the fires after dusk"},
+				Target: Ref(-1), Proposer: Ref(0), Text: "no one leaves the fires after dusk"},
 			Passed: true,
 		})}
 }

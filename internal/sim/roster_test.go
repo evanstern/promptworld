@@ -68,7 +68,7 @@ func TestGuardianReducerRejectsOutOfRoster(t *testing.T) {
 	for _, form := range []string{"converse", "whisper"} {
 		s := NewState(7, m)
 		before := s.GuardianCharges
-		err := s.Apply(nudgeEvent(t, 50, GuardianNudgedPayload{Form: form, Targets: []int{0}, Text: "x"}))
+		err := s.Apply(nudgeEvent(t, 50, GuardianNudgedPayload{Form: form, Targets: Refs([]int{0}), Text: "x"}))
 		if err == nil {
 			t.Errorf("form %q: reducer accepted an out-of-roster nudge form", form)
 		}

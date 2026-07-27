@@ -41,10 +41,10 @@ func forkParent(t *testing.T, dir string) (w *World, boundaryTick, boundarySeq i
 
 	events := []store.Event{
 		{Tick: 0, Type: "world.created", Payload: forkJSON(t, sim.WorldCreatedPayload{Name: "parent", Seed: seed})},
-		{Tick: 100, Type: "agent.moved", Payload: forkJSON(t, sim.AgentMovedPayload{Agent: 0, X: 3, Y: 4})},
+		{Tick: 100, Type: "agent.moved", Payload: forkJSON(t, sim.AgentMovedPayload{Agent: sim.Ref(0), X: 3, Y: 4})},
 		{Tick: 200, Type: "clock.speed_set", Payload: forkJSON(t, map[string]string{"speed": "4x"})},
 		{Tick: 900, Type: "chronicle.entry", Payload: forkJSON(t, sim.ChronicleEntryPayload{Day: 1, FromTick: 0, ToTick: 900, Text: "the village woke"})},
-		{Tick: 1000, Type: "agent.moved", Payload: forkJSON(t, sim.AgentMovedPayload{Agent: 1, X: 5, Y: 6})},
+		{Tick: 1000, Type: "agent.moved", Payload: forkJSON(t, sim.AgentMovedPayload{Agent: sim.Ref(1), X: 5, Y: 6})},
 	}
 	if err := st.AppendEvents(events); err != nil {
 		t.Fatal(err)
@@ -65,8 +65,8 @@ func forkParent(t *testing.T, dir string) (w *World, boundaryTick, boundarySeq i
 	// An uncovered tail past the boundary — what "truncated to the snapshot
 	// boundary" deliberately leaves behind.
 	tail := []store.Event{
-		{Tick: 1100, Type: "agent.moved", Payload: forkJSON(t, sim.AgentMovedPayload{Agent: 0, X: 7, Y: 8})},
-		{Tick: 1200, Type: "agent.moved", Payload: forkJSON(t, sim.AgentMovedPayload{Agent: 1, X: 9, Y: 9})},
+		{Tick: 1100, Type: "agent.moved", Payload: forkJSON(t, sim.AgentMovedPayload{Agent: sim.Ref(0), X: 7, Y: 8})},
+		{Tick: 1200, Type: "agent.moved", Payload: forkJSON(t, sim.AgentMovedPayload{Agent: sim.Ref(1), X: 9, Y: 9})},
 	}
 	if err := st.AppendEvents(tail); err != nil {
 		t.Fatal(err)

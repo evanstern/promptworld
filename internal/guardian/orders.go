@@ -143,7 +143,7 @@ func (mt *Guardian) placeOrder(origin string, a orderArgs, tick int64, grant gra
 		ExpiresTick: tick + int64(ttl)*ticksPerGameDay,
 		Status:      "active",
 	}
-	batch := []store.Event{{Type: "metatron.order_placed", Payload: mustJSON(order)}}
+	batch := []store.Event{{Type: "metatron.order_placed", Payload: mustJSON(order.PlacedPayload())}}
 	if err := mt.social.InjectSocial(batch); err != nil {
 		log.Printf("guardian: order rejected at the door: %v", err)
 		return nil, orderRefusal(err)
@@ -253,19 +253,19 @@ func (mt *Guardian) matchSurvival(o sim.GuardianOrder, batch []store.Event, pend
 		mt.stateMu.Lock()
 		if rearm {
 			if set := mt.survivalLatch[o.ID]; set != nil {
-				delete(set, p.Agent)
+				delete(set, p.Agent.ID)
 			}
 			mt.stateMu.Unlock()
 			continue
 		}
-		if !inBand || pending || mt.survivalLatch[o.ID][p.Agent] {
+		if !inBand || pending || mt.survivalLatch[o.ID][p.Agent.ID] {
 			mt.stateMu.Unlock()
 			continue
 		}
 		if mt.survivalLatch[o.ID] == nil {
 			mt.survivalLatch[o.ID] = map[int]bool{}
 		}
-		mt.survivalLatch[o.ID][p.Agent] = true
+		mt.survivalLatch[o.ID][p.Agent.ID] = true
 		mt.pendingTrigger[o.ID] = true
 		mt.stateMu.Unlock()
 		pending = true // one survival turn per watch per batch; keep processing re-arm
@@ -275,7 +275,7 @@ func (mt *Guardian) matchSurvival(o sim.GuardianOrder, batch []store.Event, pend
 			log.Printf("guardian: trigger queue full, survival watch %s dropped", o.ID)
 			mt.stateMu.Lock()
 			delete(mt.pendingTrigger, o.ID)
-			delete(mt.survivalLatch[o.ID], p.Agent)
+			delete(mt.survivalLatch[o.ID], p.Agent.ID)
 			mt.stateMu.Unlock()
 			pending = false
 		}
@@ -334,8 +334,10 @@ func eventConcernsAgent(e store.Event, idx int) bool {
 	}
 	for _, field := range []string{"agent", "from", "to"} {
 		if raw, ok := m[field]; ok {
-			var v int
-			if json.Unmarshal(raw, &v) == nil && v == idx {
+			// Dual-shape (spec 086): post-086 rows carry {id,name} objects,
+			// legacy rows bare ints — AgentRef decodes both.
+			var v sim.AgentRef
+			if json.Unmarshal(raw, &v) == nil && v.ID == idx {
 				return true
 			}
 		}
@@ -572,12 +574,12 @@ func describeEvent(e store.Event) string {
 	case "agent.died":
 		var p sim.DiedPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			return fmt.Sprintf("%s died of %s", name(p.Agent), p.Cause)
+			return fmt.Sprintf("%s died of %s", name(p.Agent.ID), p.Cause)
 		}
 	case "agent.memory_added":
 		var p sim.MemoryAddedPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			return fmt.Sprintf("%s gained a memory: %q", name(p.Agent), p.Text)
+			return fmt.Sprintf("%s gained a memory: %q", name(p.Agent.ID), p.Text)
 		}
 	case "agent.intent_set":
 		if a := agentName("agent"); a != "" {
@@ -593,12 +595,12 @@ func describeEvent(e store.Event) string {
 	case "social.rumor_told":
 		var p sim.RumorToldPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			return fmt.Sprintf("%s told %s a rumor: %q", name(p.From), name(p.To), p.Text)
+			return fmt.Sprintf("%s told %s a rumor: %q", name(p.From.ID), name(p.To.ID), p.Text)
 		}
 	case "gru.attacked":
 		var p sim.GruAttackedPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			return fmt.Sprintf("the gru attacked %s", name(p.Agent))
+			return fmt.Sprintf("the gru attacked %s", name(p.Agent.ID))
 		}
 	case "norm.violated":
 		if a := agentName("agent"); a != "" {
@@ -733,7 +735,7 @@ func survivalMatchedAgent(e store.Event) int {
 	if json.Unmarshal(e.Payload, &p) != nil {
 		return -1
 	}
-	return p.Agent
+	return p.Agent.ID
 }
 
 // survivalMoment renders the model-free moment describing a completed survival

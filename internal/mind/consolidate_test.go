@@ -44,7 +44,7 @@ func setupConsol(t *testing.T, model Submitter) (*harness, *Mind) {
 
 func sleptEvent(t *testing.T, tick int64, agent int) store.Event {
 	t.Helper()
-	b, err := json.Marshal(sim.AgentPayload{Agent: agent})
+	b, err := json.Marshal(sim.AgentPayload{Agent: sim.Ref(agent)})
 	if err != nil {
 		t.Fatal(err)
 	}

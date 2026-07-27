@@ -63,7 +63,7 @@ func TestQuarryHappyPath(t *testing.T) {
 		if e.Type == "agent.quarried" {
 			var p HarvestPayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.Agent != 0 || p.X != res.X || p.Y != res.Y {
+			if p.Agent.ID != 0 || p.X != res.X || p.Y != res.Y {
 				t.Errorf("agent.quarried payload = %+v, want agent 0 at (%d,%d)", p, res.X, res.Y)
 			}
 			quarried = true
@@ -125,13 +125,13 @@ func TestContestedQuarry(t *testing.T) {
 			var p HarvestPayload
 			mustUnmarshal(t, e.Payload, &p)
 			quarriedCount++
-			if p.Agent != 0 {
-				t.Errorf("agent.quarried fired for agent %d, want only agent 0", p.Agent)
+			if p.Agent.ID != 0 {
+				t.Errorf("agent.quarried fired for agent %d, want only agent 0", p.Agent.ID)
 			}
 		case "agent.intent_done":
 			var p AgentPayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.Agent == 1 {
+			if p.Agent.ID == 1 {
 				a1DoneWithoutYield = true
 			}
 		}
@@ -211,11 +211,11 @@ func TestReplayDeterminismWithQuarryAndWater(t *testing.T) {
 	commands := map[int64][]store.Event{
 		0: {
 			{Tick: 0, Type: "agent.intent_set", Payload: mustPayload(IntentSetPayload{
-				Agent: 0, Goal: "quarry", TargetX: rockStand.X, TargetY: rockStand.Y,
+				Agent: Ref(0), Goal: "quarry", TargetX: rockStand.X, TargetY: rockStand.Y,
 				ResX: rockRes.X, ResY: rockRes.Y, Source: "planner",
 			})},
 			{Tick: 0, Type: "agent.intent_set", Payload: mustPayload(IntentSetPayload{
-				Agent: 1, Goal: "collect_water", TargetX: waterStand.X, TargetY: waterStand.Y,
+				Agent: Ref(1), Goal: "collect_water", TargetX: waterStand.X, TargetY: waterStand.Y,
 				ResX: waterRes.X, ResY: waterRes.Y, Source: "planner",
 			})},
 		},

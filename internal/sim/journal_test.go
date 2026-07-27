@@ -14,13 +14,13 @@ import (
 func writeJournal(t *testing.T, s *State, tick int64, agent int, text string) error {
 	t.Helper()
 	return s.Apply(store.Event{Tick: tick, Type: "journal.entry_written",
-		Payload: mustPayload(JournalWrittenPayload{Agent: agent, Text: text})})
+		Payload: mustPayload(JournalWrittenPayload{Agent: Ref(agent), Text: text})})
 }
 
 func deleteJournal(t *testing.T, s *State, tick int64, agent, entry int) error {
 	t.Helper()
 	return s.Apply(store.Event{Tick: tick, Type: "journal.entry_deleted",
-		Payload: mustPayload(JournalDeletedPayload{Agent: agent, Entry: entry})})
+		Payload: mustPayload(JournalDeletedPayload{Agent: Ref(agent), Entry: entry})})
 }
 
 // TestJournalIDStabilityAndOrder: ids are reducer-assigned, monotonic, never

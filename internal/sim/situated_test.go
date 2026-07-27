@@ -53,13 +53,13 @@ func TestMemoryReducerCopiesContext(t *testing.T) {
 	// A situated (019) memory.
 	where := &MemoryPlace{X: 7, Y: 12, Desc: "the rock outcrop"}
 	if err := s.Apply(store.Event{Tick: 100, Type: "agent.memory_added",
-		Payload: mustPayload(MemoryAddedPayload{Agent: 0, Text: "Built a fire.", Salience: 5,
-			Subject: -1, Where: where, Why: "keep the Gru away tonight.", Conv: 0})}); err != nil {
+		Payload: mustPayload(MemoryAddedPayload{Agent: Ref(0), Text: "Built a fire.", Salience: 5,
+			Subject: Ref(-1), Where: where, Why: "keep the Gru away tonight.", Conv: 0})}); err != nil {
 		t.Fatal(err)
 	}
 	// A pre-019 memory (no situated fields).
 	if err := s.Apply(store.Event{Tick: 200, Type: "agent.memory_added",
-		Payload: mustPayload(MemoryAddedPayload{Agent: 0, Text: "an old memory", Salience: 3, Subject: -1})}); err != nil {
+		Payload: mustPayload(MemoryAddedPayload{Agent: Ref(0), Text: "an old memory", Salience: 3, Subject: Ref(-1)})}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -91,9 +91,9 @@ func TestPre019RoundTripByteIdentical(t *testing.T) {
 	// A pre-019 event log: bare memories (no where/why/conv) and a bare intent
 	// (no reason) — exactly what a log recorded before this feature carries.
 	log := []store.Event{
-		{Tick: 100, Type: "agent.intent_set", Payload: mustPayload(IntentSetPayload{Agent: 0, Goal: "forage", Source: "reflex"})},
-		{Tick: 200, Type: "agent.memory_added", Payload: mustPayload(MemoryAddedPayload{Agent: 0, Text: "Built a fire.", Salience: 5, Subject: -1})},
-		{Tick: 300, Type: "agent.memory_added", Payload: mustPayload(MemoryAddedPayload{Agent: 1, Text: "Talked with Ash.", Salience: 3, Subject: 0})},
+		{Tick: 100, Type: "agent.intent_set", Payload: mustPayload(IntentSetPayload{Agent: Ref(0), Goal: "forage", Source: "reflex"})},
+		{Tick: 200, Type: "agent.memory_added", Payload: mustPayload(MemoryAddedPayload{Agent: Ref(0), Text: "Built a fire.", Salience: 5, Subject: Ref(-1)})},
+		{Tick: 300, Type: "agent.memory_added", Payload: mustPayload(MemoryAddedPayload{Agent: Ref(1), Text: "Talked with Ash.", Salience: 3, Subject: Ref(0)})},
 	}
 	replay := func() []byte {
 		s := NewState(42, m)
@@ -148,7 +148,7 @@ func TestReasonBakedIntoCompletionMemory(t *testing.T) {
 	s.Agents[0].Needs.Food = 100 // below the 150 starving threshold → forage marks a memory
 	timeline := map[int64][]store.Event{
 		30: {{Tick: 30, Type: "agent.intent_set", Payload: mustPayload(IntentSetPayload{
-			Agent: 0, Goal: intent.Goal, TargetX: intent.TargetX, TargetY: intent.TargetY,
+			Agent: Ref(0), Goal: intent.Goal, TargetX: intent.TargetX, TargetY: intent.TargetY,
 			Source: "planner", Reason: reason})}},
 	}
 	log := driveTicks(t, s, m, 3600, timeline)
@@ -162,7 +162,7 @@ func TestReasonBakedIntoCompletionMemory(t *testing.T) {
 		if json.Unmarshal(e.Payload, &p) != nil {
 			continue
 		}
-		if p.Agent == 0 && p.Why == reason {
+		if p.Agent.ID == 0 && p.Why == reason {
 			found = true
 			if !strings.Contains(p.Text, "— "+reason) {
 				t.Errorf("completion memory text missing the why clause: %q", p.Text)
@@ -184,7 +184,7 @@ func TestIntentReasonSurvivesToState(t *testing.T) {
 	s := NewState(42, m)
 
 	if err := s.Apply(store.Event{Tick: 10, Type: "agent.intent_set",
-		Payload: mustPayload(IntentSetPayload{Agent: 0, Goal: "build_fire", Source: "planner",
+		Payload: mustPayload(IntentSetPayload{Agent: Ref(0), Goal: "build_fire", Source: "planner",
 			Reason: "the night will be cold"})}); err != nil {
 		t.Fatal(err)
 	}
@@ -193,7 +193,7 @@ func TestIntentReasonSurvivesToState(t *testing.T) {
 	}
 
 	if err := s.Apply(store.Event{Tick: 20, Type: "agent.intent_set",
-		Payload: mustPayload(IntentSetPayload{Agent: 1, Goal: "forage", Source: "reflex"})}); err != nil {
+		Payload: mustPayload(IntentSetPayload{Agent: Ref(1), Goal: "forage", Source: "reflex"})}); err != nil {
 		t.Fatal(err)
 	}
 	if got := s.Agents[1].Intent; got == nil || got.Reason != "" {

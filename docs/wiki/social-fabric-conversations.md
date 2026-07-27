@@ -4,7 +4,7 @@ description: How a talked-beat founds a model-driven conversation scene — the 
 kind: component
 sources:
   - internal/mind/convo.go
-verified_against: 30912a9cd5d2334f76425ac8ca5b74a7a7c90876
+verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
 ---
 
 # Social fabric — conversation scenes

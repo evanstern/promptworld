@@ -214,7 +214,7 @@ func (d *villagerDispatch) handleMuse(_ context.Context, call llm.ToolCall) tool
 	if r := []rune(text); len(r) > museCapRunes {
 		text = string(r[:museCapRunes])
 	}
-	payload, err := json.Marshal(sim.ThoughtPayload{Agent: d.job.agent, Text: text, Source: "musing"})
+	payload, err := json.Marshal(sim.ThoughtPayload{Agent: sim.Ref(d.job.agent), Text: text, Source: "musing"})
 	if err != nil {
 		return toolloop.Outcome{Err: err}
 	}
@@ -257,7 +257,7 @@ func (d *villagerDispatch) handleWriteJournal(_ context.Context, call llm.ToolCa
 	if r := []rune(text); len(r) > sim.JournalWriteCapRunes {
 		text = string(r[:sim.JournalWriteCapRunes])
 	}
-	payload, err := json.Marshal(sim.JournalWrittenPayload{Agent: d.job.agent, Text: text})
+	payload, err := json.Marshal(sim.JournalWrittenPayload{Agent: sim.Ref(d.job.agent), Text: text})
 	if err != nil {
 		return toolloop.Outcome{Err: err}
 	}
@@ -276,7 +276,7 @@ func (d *villagerDispatch) handleDeleteJournal(_ context.Context, call llm.ToolC
 	if !ok {
 		return toolloop.Outcome{Verdict: toolloop.VerdictRejectedGate, ResultForModel: "delete_from_journal needs an entry id"}
 	}
-	payload, err := json.Marshal(sim.JournalDeletedPayload{Agent: d.job.agent, Entry: id})
+	payload, err := json.Marshal(sim.JournalDeletedPayload{Agent: sim.Ref(d.job.agent), Entry: id})
 	if err != nil {
 		return toolloop.Outcome{Err: err}
 	}
