@@ -4,7 +4,7 @@ title: Faith-driven charge regeneration (endogenous mana) — spec-first
 status: In Progress
 assignee: []
 created_date: '2026-07-25 04:43'
-updated_date: '2026-07-26 23:55'
+updated_date: '2026-07-27 00:15'
 labels:
   - learning-game
   - metatron
@@ -18,6 +18,8 @@ ordinal: 89000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Learning-game synthesis Wave 3 (operator decision 4, ratified 2026-07-25). Metatron's charge regen becomes a pure reducer function of village faith state, closing the god-game positive feedback loop the corpus documents (power derived from the population of worshipers): better prompting -> truer prophecies -> more faith -> more power. This is the ambient endgame's unscored score. Spec must define: faith as event-sourced state (belief provenance from spec 030 already distinguishes omen-origin beliefs), the prophecy-verification rule (what makes a vision 'true'), and regen as a pure function (replay-safe, same shape as today's clock regen). Known tradeoff to design around: the failure spiral (low faith -> fewer charges -> less ability to rebuild) — genre-authentic and roguelike-appropriate in scenarios, but the ambient world may want a floor. Touches reducer doctrine: constitution spec rigor applies (Spec Kit + spec-bridge:link before implementation). Grounding: Analysis-Learning-Game-Fit rec 3.
+
+Spec: specs/085-faith-regen
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
@@ -26,7 +28,16 @@ Learning-game synthesis Wave 3 (operator decision 4, ratified 2026-07-25). Metat
 - [ ] #2 Faith is event-sourced state with a defined prophecy-verification rule
 - [ ] #3 Regen is a pure reducer function of faith; replay determinism demonstrated
 - [ ] #4 Failure-spiral posture decided explicitly (scenario vs ambient floor)
+- [ ] #5 Spec phase: Setup
+- [ ] #6 Spec phase: Foundational — faith state, fold, curve (blocks all user stories)
+- [ ] #7 Spec phase: US1 — the faith accounting sweep (P1) 🎯 MVP
+- [ ] #8 Spec phase: US2 — regen as a pure function of faith + the posture decision (P1)
+- [ ] #9 Spec phase: US3 — prophecy: declare, verify, judge (P2)
+- [ ] #10 Spec phase: US4 — the visible surface (P2)
+- [ ] #11 Spec phase: Polish, grounding, gates
 <!-- AC:END -->
+
+
 
 ## Implementation Notes
 
