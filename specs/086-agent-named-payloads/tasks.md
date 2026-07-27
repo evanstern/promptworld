@@ -206,7 +206,7 @@ and amended authority pages.
   `internal/store`/`internal/world`; `internal/ipc` untouched; no new
   event types; no emission-order changes; stranger payloads untouched
   (FR-012)
-- [ ] T029 Wiki re-pins in-branch per plan.md's set — the event-types
+- [X] T029 Wiki re-pins in-branch per plan.md's set — the event-types
   family (parent conventions + every domain child with payload rows),
   event-log, sim-state-reducer family, sim-loop-injection-doors,
   tui-chronicle-feed, village-lens, tui-villagers-tab, plus whatever the
@@ -214,7 +214,7 @@ and amended authority pages.
   (`/grounding-wiki:wiki-update`); `docs/player/` regenerated
   (`node .claude/skills/player-docs/scripts/check-freshness.mjs --check`
   green) (constitution IV)
-- [ ] T030 From the worktree: `node scripts/check-merge-drift.mjs pr`
+- [~] T030  (LOCAL gates run and green by the implementer; PR/merge are the orchestrator's)From the worktree: `node scripts/check-merge-drift.mjs pr`
   exits 0; open the ONE PR (body carries: the wire-shape change for
   operator review, the split-law review obligation, the `J` keybinding +
   standing-resolution-1 amendment, the untouched-packages audit); merge
