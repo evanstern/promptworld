@@ -172,22 +172,22 @@ jump-to-source finds measurably more of the feed.
 
 ## Phase 7: US5 — the reverse-jump rider (P3)
 
-- [ ] T024 [US5] `internal/tui`: `stripHit`/`rosterHit` regions
+- [X] T024 [US5] `internal/tui`: `stripHit`/`rosterHit` regions
   (chronHit pointer pattern; frame-top invalidation); renderers record
   geometry (`villagerStripView` glyph columns, `villagerRosterBody` row
   bands); `handleMouse` branches — strip glyph → `centerCameraOn(a.X,
   a.Y)`; roster row → select + jump + narrow pane→map; overflow marker
   and nil replica no-ops; strip standing-resolution comment amended
   (plan D9, FR-009, US5 AS-1/2/4)
-- [ ] T025 [US5] `handleVillagersKey`: `J` (roster + detail) centers on
+- [X] T025 [US5] `handleVillagersKey`: `J` (roster + detail) centers on
   the selected villager; key test incl. dead-villager grave coords (plan
   D9, FR-010, US5 AS-3/4)
-- [ ] T026 [US5] Two `mouseParityOracle` entries
+- [X] T026 [US5] Two `mouseParityOracle` entries
   (`panels/villager-strip.md`/`reverse-jump`/`click glyph`;
   `panels/villagers.md`/`reverse-jump`/`click row`) with real-dispatch
   checks (pan moved; roster also `villSelected` moved); mouse-parity
   sweep green both directions (FR-011, US5 AS-5, SC-005)
-- [ ] T027 [US5] Design pages amended and re-verified:
+- [X] T027 [US5] Design pages amended and re-verified:
   `panels/villager-strip.md` (control cell `— · click glyph`,
   display-only prose + parity note rewritten, keyboard-path note),
   `panels/villagers.md` (roster row cell + new reverse-jump row

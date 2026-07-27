@@ -87,13 +87,18 @@ Unlike inspect mode, this does **not** require the clock to be paused.
 | `g` / `G` | jump to first / last villager | no-op |
 | `⏎` | open detail for the selected villager | no-op |
 | `d` | no-op (falls through to global — no global binding either, so inert) | toggle the decisions sub-view (spec 020, TASK-63) |
+| `J` | center the map camera on the selected villager (reverse jump, spec 086; narrow: the active pane switches to the map) | same — jumps to the selected villager |
 | `esc` | (falls through to global — releases solo/home) | close the decisions sub-view if open, else close detail → back to roster |
 
 `esc` follows "esc always releases" ordering
 ([focus-contract.md](focus-contract.md) rule 3, spec 053 amendment): minibuffer
 → villager detail → **console** → solo → home — each press of `esc` releases
 exactly one layer. With no world state loaded (or an empty roster)
-`j/k/g/G/⏎` are strict no-ops.
+`j/k/g/G/⏎/J` are strict no-ops. `J` (spec 086's reverse jump) is free in
+this mode (`⏎` opens detail; `c` would shadow the global recenter), sits on
+the selection home row beside `j`/`k`, and is also the villager strip's
+keyboard path — strip order == roster order, so jumping from here reaches
+every glyph the strip shows.
 
 ## Mode: look-cursor (`v` toggles it on; spec 074-look-cursor, layered on
 global exactly like inspect/villagers)

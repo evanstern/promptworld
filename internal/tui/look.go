@@ -916,6 +916,15 @@ func (m Model) handleMouse(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 	if mdl, cmd, handled := m.handleMapHitClick(msg); handled {
 		return mdl, cmd
 	}
+	// Reverse jump (spec 086 US5): strip glyph and roster row, after the
+	// map/TILE regions (no overlap — the strip row sits above the map, the
+	// roster inside the dock) and ahead of the chronicle path.
+	if mdl, cmd, handled := m.handleStripHitClick(msg); handled {
+		return mdl, cmd
+	}
+	if mdl, cmd, handled := m.handleRosterHitClick(msg); handled {
+		return mdl, cmd
+	}
 	if !m.inspecting() {
 		return m, nil
 	}
@@ -994,5 +1003,64 @@ func (m Model) handleMapHitClick(msg tea.MouseMsg) (tea.Model, tea.Cmd, bool) {
 	m.lookY = clampInt(y, 0, m.gameMap.H-1)
 	m.lookFocus = lookFocusCursor
 	m.pushCameraToCursor()
+	return m, nil, true
+}
+
+// --- reverse jump (spec 086 US5 — the operator-placed rider) ---
+
+// handleStripHitClick: clicking a villager-strip glyph centers the map
+// camera on that villager (centerCameraOn — pan-based, so `c` recenter, the
+// panned map title, and follow-suspend behave per spec 049). Strip order ==
+// roster order == replica.Agents order, so the glyph index IS the villager
+// index; dead villagers jump to their grave coordinates (agents keep X,Y
+// after death). Clicks on the count text, separators, or the …N overflow
+// marker are no-ops; an empty replica records no region at all.
+func (m Model) handleStripHitClick(msg tea.MouseMsg) (tea.Model, tea.Cmd, bool) {
+	hit := m.stripHit
+	if hit == nil || !hit.valid || msg.Y != hit.originY {
+		return m, nil, false
+	}
+	if m.replica == nil {
+		return m, nil, false
+	}
+	for i, x := range hit.glyphX {
+		if msg.X == x && i < len(m.replica.Agents) {
+			a := m.replica.Agents[i]
+			m.centerCameraOn(a.X, a.Y)
+			return m, nil, true
+		}
+	}
+	return m, nil, false
+}
+
+// handleRosterHitClick: clicking a villagers-tab roster row selects that
+// row AND centers the camera on that villager — the chronicle click-line
+// select+act precedent; in the narrow layout the active pane switches to
+// the map so the jump's effect is visible (the jumpToSource FR-007
+// precedent). Heading/blank lines inside the roster are consumed but jump
+// nothing.
+func (m Model) handleRosterHitClick(msg tea.MouseMsg) (tea.Model, tea.Cmd, bool) {
+	hit := m.rosterHit
+	if hit == nil || !hit.valid {
+		return m, nil, false
+	}
+	row := msg.Y - hit.originY
+	col := msg.X - hit.originX
+	if row < 0 || row >= len(hit.rowAgent) || col < 0 || col >= hit.width {
+		return m, nil, false
+	}
+	idx := hit.rowAgent[row]
+	if idx < 0 {
+		return m, nil, true // heading / band spacer — inside the roster, consumed
+	}
+	if m.replica == nil || idx >= len(m.replica.Agents) {
+		return m, nil, true
+	}
+	m.villSelected = idx
+	a := m.replica.Agents[idx]
+	m.centerCameraOn(a.X, a.Y)
+	if !isWidescreen(m.width) {
+		m.active = paneMap // land where the jump's effect is visible (FR-007 precedent)
+	}
 	return m, nil, true
 }

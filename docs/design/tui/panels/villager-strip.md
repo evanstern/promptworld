@@ -6,6 +6,7 @@ verified_against: 6e83f579db2b448c9c59b15575bf564b1e9b1852
 sources:
   - internal/tui/views.go
   - internal/tui/layout.go
+  - internal/tui/look.go
 ---
 
 # Panel: villager strip
@@ -49,10 +50,19 @@ budget), directly under the header and above the map∥dock body.
   the authority — this page cites it rather than restating a number): R2
   rules this strip default-on across every stage and pre-ladder in
   widescreen; it is not stage-varying the way the lesson row is.
-- **Display-only** — no selection cursor, no drill-down; the villagers tab
-  (`panels/villagers.md`) remains the one place to inspect an individual
-  villager. This strip answers "how is the village doing right now", never
-  "tell me about Ash."
+- **Standing resolution 1, amended by spec 086 (the reverse-jump rider)** —
+  the strip still has no selection cursor and no keys, but gains exactly ONE
+  mouse affordance: clicking a villager's glyph centers the map camera on
+  that villager (`centerCameraOn` — spec 049's pan-based jump, so `c`
+  recenter, the panned map title, and follow-suspend all behave as on any
+  jump). Dead villagers (`†`) jump to their grave coordinates; clicks on the
+  count text, separators, or the `…N` overflow marker are no-ops (only
+  RENDERED glyphs are targets — never a guess at a hidden villager). The
+  keyboard path is the villagers tab's `J` over the SAME ordering (strip
+  order == roster order == `replica.Agents` order,
+  `patterns/keymap.md`). The villagers tab (`panels/villagers.md`) remains
+  the one place to inspect an individual villager — this strip answers "how
+  is the village doing right now" and, now, "take me to them."
 - **Fold behavior** (`patterns/layout.md` ruling a): folds SECOND (after the
   map legend, before the lesson row) under height pressure, to a header
   count badge — `[12 villagers]` — appended to the header row
@@ -74,7 +84,13 @@ layer over facts already surfaced elsewhere.
 |---|---|---|---|---|---|---|
 | villager count | N | `replica.Agents` (length, `Model.villCount`) | `villagerStripView` | — (display-only) | reorient D12, spec 060 | — |
 | villager glyph run | awake · asleep · dead, per agent | `replica.Agents` | `villagerStripGlyph` | — | reorient D12, spec 060 | — |
+| reverse-jump | — | `replica.Agents` (glyph i = villager i) | `villagerStripView` (`stripHit`, the chronHit pointer pattern) / `handleStripHitClick` | `J` (villagers tab) · click glyph | spec 086 | — |
 | fold to header count badge | shown · folded | fold pressure (`patterns/layout.md`) / narrow (never carried) | `Model.villagerCountBadge`, `computeRows.VillagerStrip` (`patterns/layout.md`) | — | reorient D12, spec 060 | — |
 
-**Parity rollout**: this page is display-only end to end — no actionable
-control exists on it, so no parity gap to track.
+**Parity rollout**: spec 086 amends standing resolution 1 — the glyph run
+carries the page's one mouse affordance (click-to-jump, proven by the
+mouse-parity oracle). The strip itself still binds no keys; the keyboard
+path for its one action is the villagers tab's `J` on the shared roster
+ordering, named in the keys+mouse cell above rather than `—` (a mouse-only
+cell is malformed by the parity sweep's own contract — keyboard stays
+primary).

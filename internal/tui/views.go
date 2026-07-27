@@ -75,8 +75,10 @@ var (
 func (m Model) View() string {
 	// Default the chronicle mouse hit region to invalid every frame (spec
 	// 049); chronicleInspectBody re-validates it below, synchronously in
-	// this same call, only when it actually renders this frame.
+	// this same call, only when it actually renders this frame. The
+	// reverse-jump regions (spec 086 US5) follow the same frame-top pattern.
 	m.invalidateChronHit()
+	m.invalidateReverseJumpHits()
 	if m.quitting {
 		if m.fatalErr != "" {
 			return styleErr.Render("detached: "+m.fatalErr) + "\n"
@@ -2611,9 +2613,15 @@ func villagerStripGlyph(a sim.Agent) string {
 // villagerStripView renders the D12 colonist-bar row (panels/villager-
 // strip.md, spec 060 US1): "N villagers" (living + dead, matching the
 // villagers-tab roster) plus one name-initial glyph per villager in stable
-// roster order. Display-only (standing resolution 1: no cursor, no keys, no
-// mouse target) — this is purely a glanceability layer over facts the
-// villagers tab already shows in full (FR-006/D1).
+// roster order. Standing resolution 1, AMENDED by spec 086 US5 (the
+// operator-placed reverse-jump rider): the strip has no cursor and no keys,
+// but gains exactly ONE mouse affordance — clicking a glyph centers the map
+// camera on that villager (centerCameraOn; dead villagers jump to their
+// grave). Its keyboard path is the villagers tab's `J` over the SAME roster
+// ordering (strip order == roster order == replica.Agents order). Otherwise
+// it stays a glanceability layer over facts the villagers tab shows in full
+// (FR-006/D1). Rendered glyph columns are recorded in stripHit (the
+// chronHit pointer pattern); the …N overflow marker is never a target.
 //
 // Width overflow sheds glyphs from the END with a trailing "…N" overflow
 // count — never a mid-glyph truncation (the corpus-wide "shed, never
@@ -2647,7 +2655,19 @@ func (m Model) villagerStripView(width int) string {
 		}
 		return w
 	}
+	countW := lipgloss.Width(count)
+	recordGlyphs := func(k int) {
+		if m.stripHit == nil {
+			return
+		}
+		cols := make([]int, k)
+		for i := 0; i < k; i++ {
+			cols[i] = countW + 1 + 2*i // one column per glyph, one separator space
+		}
+		*m.stripHit = stripHitRegion{valid: true, originY: headerRows, glyphX: cols}
+	}
 	if avail >= 1+runWidth(n) {
+		recordGlyphs(n)
 		return count + " " + strings.Join(glyphs, " ")
 	}
 	for k := n - 1; k >= 0; k-- {
@@ -2660,6 +2680,7 @@ func (m Model) villagerStripView(width int) string {
 			need += runWidth(k) + 1
 		}
 		if need <= avail {
+			recordGlyphs(k) // rendered glyphs only; the overflow marker is a no-op
 			var b strings.Builder
 			b.WriteString(count)
 			if k > 0 {
@@ -3175,6 +3196,11 @@ func (m Model) villagerRosterBody(width, height int) string {
 	sel := clampInt(m.villSelected, 0, len(m.replica.Agents)-1)
 	wide := width >= 40
 	var lines []string
+	// rowAgent mirrors lines 1:1 for the reverse-jump click map (spec 086
+	// US5): each rendered line belongs to the villager whose band it is in
+	// (-1 for the band's trailing blank). The heading + blank above the
+	// body prepend two -1 rows below.
+	var rowAgent []int
 	for i, a := range m.replica.Agents {
 		cursor := "  "
 		if i == sel {
@@ -3216,9 +3242,11 @@ func (m Model) villagerRosterBody(width, height int) string {
 			}
 			lines = append(lines, styleDim.Render("           "+carry))
 			lines = append(lines, "")
+			rowAgent = append(rowAgent, i, i, i, -1) // main + needs + carry rows hit; the spacer doesn't
 		} else {
 			// Narrow dock width: drop goal/position/memory, keep cursor + name + status + health.
 			lines = append(lines, cursor+fmt.Sprintf("%-8s %s health %s", a.Name, status, bar(a.Needs.Health)))
+			rowAgent = append(rowAgent, i)
 		}
 	}
 	// B1/B5: "VILLAGERS" + blank above spend 2 of `height`'s budget;
@@ -3231,9 +3259,48 @@ func (m Model) villagerRosterBody(width, height int) string {
 	}
 	if len(lines) > budget {
 		lines = lines[:budget]
+		rowAgent = rowAgent[:budget]
 	}
+	m.recordRosterHit(rowAgent) // spec 086 US5: this frame's click geometry
 	body := strings.TrimRight(strings.Join(lines, "\n"), "\n")
 	return styleHeader.Render("VILLAGERS") + "\n\n" + body
+}
+
+// villagersRosterHitOrigin computes where the roster's first BODY line (the
+// "VILLAGERS" heading) lands on screen, per the active layout — the
+// tileHitOrigin arithmetic (fixed chrome rows/columns only, research R3).
+func (m Model) villagersRosterHitOrigin() (originX, originY, width int) {
+	if !isWidescreen(m.width) {
+		// narrowView: header(1) + tabs(1) + blank(1) [+ lesson row 2] +
+		// box top border(1); Border+Padding(0,1) puts content 2 columns in.
+		row := 3
+		if m.wantsLessonRow() {
+			row += 2
+		}
+		return 2, row + 1, clampInt(m.width-6, 20, 500)
+	}
+	if m.solo {
+		// soloPanelView: header(1) + box top border(1) + title row(1).
+		return 2, 3, m.width - 4
+	}
+	// dockPanelView beside mapPanelView: box top border(1) + tab row(1) +
+	// divider(1) under the header + villager strip (the tileHitOrigin shape).
+	rows := computeRows(m.height, m.wantsLessonRow())
+	cols := computeColumns(m.width)
+	return cols.MapCols + cols.Gutter + 2, headerRows + rows.VillagerStrip + 3, cols.DockCols
+}
+
+// recordRosterHit stashes this frame's roster row-band → villager geometry
+// (spec 086 US5). rowAgent covers the body lines under the heading + blank,
+// which prepend two non-row entries here so originY can point at the body's
+// first line.
+func (m Model) recordRosterHit(rowAgent []int) {
+	if m.rosterHit == nil {
+		return
+	}
+	originX, originY, width := m.villagersRosterHitOrigin()
+	rows := append([]int{-1, -1}, rowAgent...) // heading + blank line
+	*m.rosterHit = rosterHitRegion{valid: true, originX: originX, originY: originY, width: width, rowAgent: rows}
 }
 
 // villagerDetailBody renders the selected villager within the given
