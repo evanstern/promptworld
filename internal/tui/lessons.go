@@ -228,7 +228,7 @@ var lessonCatalog = []lessonEntry{
 			if e.Type != "metatron.order_placed" {
 				return false
 			}
-			p, ok := decode[sim.GuardianOrder](e)
+			p, ok := decode[sim.OrderPlacedPayload](e)
 			return ok && p.Confirm
 		},
 	},

@@ -112,7 +112,7 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 		}
 		if dsg := s.designationByID(d.DesignationID); dsg != nil && dsg.Status == "fulfilled" {
 			emit("directive.fulfilled", DirectiveFulfilledPayload{
-				ID: d.ID, DesignationID: d.DesignationID, Targets: d.Targets, IssuedTick: d.IssuedTick})
+				ID: d.ID, DesignationID: d.DesignationID, Targets: Refs(d.Targets), IssuedTick: d.IssuedTick})
 			continue
 		}
 		if nextTick >= d.ExpiresTick || directiveTargetsAllDead(s, d) {
@@ -498,7 +498,7 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 			deaths = append(deaths, batch...)
 			emit("run.ended", RunEndedPayload{
 				Tick:       nextTick,
-				Deaths:     deaths,
+				Deaths:     DeathRefs(deaths),
 				FinalCause: deaths[len(deaths)-1].Cause,
 			})
 		}

@@ -432,16 +432,52 @@ type DeathRecord struct {
 	Cause string `json:"cause"`
 }
 
+// DeathRef is DeathRecord's wire mirror (spec 086 FR-003, data-model §4):
+// the same fields with a named agent ref, carried by run.ended's payload
+// while the state death ledger keeps int-typed DeathRecords — the R2
+// invariant. Same json tags; legacy rows decode dual-shape.
+type DeathRef struct {
+	Agent AgentRef `json:"agent"`
+	Tick  int64    `json:"tick"`
+	Cause string   `json:"cause"`
+}
+
+// DeathRefs builds the wire mirrors from the ledger records (emission side).
+func DeathRefs(recs []DeathRecord) []DeathRef {
+	if recs == nil {
+		return nil
+	}
+	out := make([]DeathRef, len(recs))
+	for i, d := range recs {
+		out[i] = DeathRef{Agent: Ref(d.Agent), Tick: d.Tick, Cause: d.Cause}
+	}
+	return out
+}
+
+// deathRecords folds the mirrors back into ledger records (arm side —
+// .IDs only, R2/R3).
+func deathRecords(refs []DeathRef) []DeathRecord {
+	if refs == nil {
+		return nil
+	}
+	out := make([]DeathRecord, len(refs))
+	for i, d := range refs {
+		out[i] = DeathRecord{Agent: d.Agent.ID, Tick: d.Tick, Cause: d.Cause}
+	}
+	return out
+}
+
 // RunEndedPayload declares the run over — emitted by stepEvents in the same
 // batch as the run's final agent.died, ordered after every same-tick death,
 // exactly once per world, ever (contracts/events.md). Outcome-shaped: it
 // carries the whole run's summary so the reducer sets State.RunEnd verbatim
 // and downstream consumers (status, morgue, TASK-119 scenario machinery)
-// need no log scan.
+// need no log scan. Spec 086: Deaths carry named refs on the wire (DeathRef
+// mirrors); the state ledger keeps DeathRecord ints.
 type RunEndedPayload struct {
-	Tick       int64         `json:"tick"`
-	Deaths     []DeathRecord `json:"deaths"`
-	FinalCause string        `json:"final_cause"`
+	Tick       int64      `json:"tick"`
+	Deaths     []DeathRef `json:"deaths"`
+	FinalCause string     `json:"final_cause"`
 }
 
 // livingCount is the number of villagers not yet dead — the governance
@@ -1927,7 +1963,8 @@ func (s *State) Apply(e store.Event) error {
 		// so replay/restart lands back in the ended posture and migration
 		// tooling cannot resurrect a finished run without rewriting history.
 		s.Ended = true
-		s.RunEnd = &RunEnd{Tick: p.Tick, Deaths: p.Deaths, FinalCause: p.FinalCause}
+		// Fold .IDs only (spec 086 R2): the ledger is state.
+		s.RunEnd = &RunEnd{Tick: p.Tick, Deaths: deathRecords(p.Deaths), FinalCause: p.FinalCause}
 
 	case "social.hailed":
 		var p HailedPayload

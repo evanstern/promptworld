@@ -394,7 +394,7 @@ func TestDirectiveWatchComposition(t *testing.T) {
 	}
 	dirFulfilled := []store.Event{{Tick: 301, Type: "directive.fulfilled",
 		Payload: mustJSON(sim.DirectiveFulfilledPayload{
-			ID: dir.ID, DesignationID: "dsg-100-0", Targets: dir.Targets, IssuedTick: dir.IssuedTick})}}
+			ID: dir.ID, DesignationID: "dsg-100-0", Targets: sim.Refs(dir.Targets), IssuedTick: dir.IssuedTick})}}
 	if err := inj.state.Apply(dirFulfilled[0]); err != nil {
 		t.Fatal(err)
 	}

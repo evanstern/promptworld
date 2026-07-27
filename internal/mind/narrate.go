@@ -474,8 +474,8 @@ func (md *Mind) runEpilogueFacts(p sim.RunEndedPayload) []string {
 	for _, d := range p.Deaths {
 		dd, _, _, _ := clock.GameTime(d.Tick)
 		name := "someone"
-		if d.Agent >= 0 && d.Agent < len(md.replica.Agents) {
-			name = md.replica.Agents[d.Agent].Name
+		if d.Agent.ID >= 0 && d.Agent.ID < len(md.replica.Agents) {
+			name = md.replica.Agents[d.Agent.ID].Name
 		}
 		lines = append(lines, fmt.Sprintf("%s died of %s on day %d.", name, d.Cause, dd))
 	}

@@ -153,7 +153,7 @@ func TestCharterObservationEndedStageOneCoexists(t *testing.T) {
 	mt.SetStage("stage-1", "tutor")
 	mt.charterFP = ""
 	mt.replica.Apply(store.Event{Tick: 1, Type: "run.ended", Payload: mustJSON(sim.RunEndedPayload{
-		Tick: 1, Deaths: []sim.DeathRecord{{Agent: 0, Tick: 1, Cause: "starvation"}}, FinalCause: "starvation"})})
+		Tick: 1, Deaths: sim.DeathRefs([]sim.DeathRecord{{Agent: 0, Tick: 1, Cause: "starvation"}}), FinalCause: "starvation"})})
 	mt.mirrorState()
 
 	if _, err := mt.Turn(context.Background(), "what remains?"); err != nil {
@@ -171,7 +171,7 @@ func TestCharterObservationSkippedWhenEnded(t *testing.T) {
 	mt, _, inj, _ := newTestGuardian(t, "It is over.")
 	mt.charterFP = ""
 	mt.replica.Apply(store.Event{Tick: 1, Type: "run.ended", Payload: mustJSON(sim.RunEndedPayload{
-		Tick: 1, Deaths: []sim.DeathRecord{{Agent: 0, Tick: 1, Cause: "starvation"}}, FinalCause: "starvation"})})
+		Tick: 1, Deaths: sim.DeathRefs([]sim.DeathRecord{{Agent: 0, Tick: 1, Cause: "starvation"}}), FinalCause: "starvation"})})
 	mt.mirrorState()
 
 	if _, err := mt.Turn(context.Background(), "what happened?"); err != nil {

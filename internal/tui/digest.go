@@ -1080,7 +1080,7 @@ var digestRegistry = map[string]digestFunc{
 	// OrderIDPayload), only the order's id, so they reference the watch by
 	// id rather than repeating its condition.
 	"metatron.order_placed": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
-		p, ok := decode[sim.GuardianOrder](e)
+		p, ok := decode[sim.OrderPlacedPayload](e)
 		if !ok {
 			return nil, false
 		}
@@ -1178,7 +1178,7 @@ var digestRegistry = map[string]digestFunc{
 		return join([]seg{txt("the village fulfilled " + sk.Name() + "'s mark ("), emph(p.ID), txt(")")}), true
 	},
 	"directive.issued": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
-		p, ok := decode[sim.Directive](e)
+		p, ok := decode[sim.DirectiveIssuedPayload](e)
 		if !ok {
 			return nil, false
 		}
@@ -1187,7 +1187,7 @@ var digestRegistry = map[string]digestFunc{
 			if i > 0 {
 				segs = append(segs, txt(", "))
 			}
-			segs = append(segs, nameOf(names, tgt))
+			segs = append(segs, refSeg(names, tgt))
 		}
 		segs = append(segs, txt(": "), speech(truncateRunes(p.Text, 80)))
 		return join(segs), true
@@ -1230,7 +1230,7 @@ var digestRegistry = map[string]digestFunc{
 		return join([]seg{txt(phrase + " ("), emph(p.Reason), txt(")")}), true
 	},
 	"prophecy.declared": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
-		p, ok := decode[sim.Prophecy](e)
+		p, ok := decode[sim.ProphecyDeclaredPayload](e)
 		if !ok {
 			return nil, false
 		}

@@ -392,7 +392,7 @@ func TestPlanTerminalRevalidation(t *testing.T) {
 	}
 	// directive.fulfilled while the designation is still active: refused.
 	fe := store.Event{Tick: 3, Type: "directive.fulfilled", Payload: mustPayload(DirectiveFulfilledPayload{
-		ID: "dir-2-0", DesignationID: "dsg-1-0", Targets: []int{0}, IssuedTick: 2})}
+		ID: "dir-2-0", DesignationID: "dsg-1-0", Targets: Refs([]int{0}), IssuedTick: 2})}
 	if err := s.Apply(fe); err == nil || !strings.Contains(err.Error(), "not fulfilled") {
 		t.Errorf("directive.fulfilled err = %v", err)
 	}
@@ -471,7 +471,7 @@ func TestPlanSweepOnceOnlyAndLag(t *testing.T) {
 	for _, e := range evs {
 		if e.Type == "directive.fulfilled" {
 			want := string(mustPayload(DirectiveFulfilledPayload{
-				ID: "dir-2-0", DesignationID: "dsg-1-0", Targets: []int{0}, IssuedTick: 2}))
+				ID: "dir-2-0", DesignationID: "dsg-1-0", Targets: Refs([]int{0}), IssuedTick: 2}))
 			if string(e.Payload) != want {
 				t.Errorf("payload = %s, want %s (the TASK-118 seam)", e.Payload, want)
 			}

@@ -90,7 +90,7 @@ cluster tests green.
   nays/witnesses, `gru.go` rows 63–64, `miracles.go` row 70,
   `morgue.go` row 71, `chronicle.go` row 72, `guardian.go` row 60
   nudged targets): fields + sim emission sites + arms (FR-002)
-- [ ] T011 [US1] Batch E — the SPLITS (data-model §4):
+- [X] T011 [US1] Batch E — the SPLITS (data-model §4):
   `DirectiveIssuedPayload`, `OrderPlacedPayload`,
   `ProphecyDeclaredPayload` (+ claim mirror, agent-0-legal),
   `DeathRef` for `RunEndedPayload.Deaths`; arms fold `.ID`s into

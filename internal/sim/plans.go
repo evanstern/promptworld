@@ -108,15 +108,52 @@ type Directive struct {
 	PlacedSeq     int64  `json:"placed_seq,omitempty"` // reducer-stamped (the Designation.PlacedSeq contract)
 }
 
+// DirectiveIssuedPayload is directive.issued's wire mirror (spec 086
+// FR-003, data-model §4): Directive's fields with named agent refs on the
+// wire while the state entity above keeps bare ints — the R2 invariant (no
+// AgentRef reachable from sim.State; state bytes and hashes unchanged).
+// Same json tags, so legacy bare-int rows decode through the dual-shape
+// unmarshal and the arm folds .IDs only.
+type DirectiveIssuedPayload struct {
+	ID            string     `json:"id"`
+	DesignationID string     `json:"designation_id"`
+	Targets       []AgentRef `json:"targets"`
+	Village       bool       `json:"village,omitempty"`
+	Text          string     `json:"text"`
+	IssuedTick    int64      `json:"issued_tick"`
+	ExpiresTick   int64      `json:"expires_tick"`
+	Status        string     `json:"status"`
+	PlacedSeq     int64      `json:"placed_seq,omitempty"`
+}
+
+// IssuedPayload builds the wire mirror from the entity (emission side).
+func (d Directive) IssuedPayload() DirectiveIssuedPayload {
+	return DirectiveIssuedPayload{
+		ID: d.ID, DesignationID: d.DesignationID, Targets: Refs(d.Targets),
+		Village: d.Village, Text: d.Text, IssuedTick: d.IssuedTick,
+		ExpiresTick: d.ExpiresTick, Status: d.Status, PlacedSeq: d.PlacedSeq,
+	}
+}
+
+// directive folds the mirror back into the int-typed state entity (arm side).
+func (p DirectiveIssuedPayload) directive() Directive {
+	return Directive{
+		ID: p.ID, DesignationID: p.DesignationID, Targets: refIDs(p.Targets),
+		Village: p.Village, Text: p.Text, IssuedTick: p.IssuedTick,
+		ExpiresTick: p.ExpiresTick, Status: p.Status, PlacedSeq: p.PlacedSeq,
+	}
+}
+
 // DirectiveFulfilledPayload — directive.fulfilled (contracts/events.md §1):
 // THE TASK-118 faith-accounting seam. id dedupes, designation_id names what
 // was achieved, targets who was bound (credit attribution), issued_tick with
-// e.Tick gives the time-to-fulfil window. FROZEN recorded vocabulary.
+// e.Tick gives the time-to-fulfil window. FROZEN recorded vocabulary (spec
+// 086: targets carry named refs, tags unchanged).
 type DirectiveFulfilledPayload struct {
-	ID            string `json:"id"`
-	DesignationID string `json:"designation_id"`
-	Targets       []int  `json:"targets"`
-	IssuedTick    int64  `json:"issued_tick"`
+	ID            string     `json:"id"`
+	DesignationID string     `json:"designation_id"`
+	Targets       []AgentRef `json:"targets"`
+	IssuedTick    int64      `json:"issued_tick"`
 }
 
 // BuildableStructureKinds returns the structure kinds a villager can build —
@@ -304,10 +341,15 @@ func (s *State) applyPlan(e store.Event) error {
 		}
 		return s.transitionDesignation(e.Type, p.ID, "fulfilled")
 	case "directive.issued":
-		var d Directive
-		if err := json.Unmarshal(e.Payload, &d); err != nil {
+		// Spec 086: the wire carries the DirectiveIssuedPayload mirror (named
+		// refs, dual-shape for legacy rows); the arm folds .IDs into the
+		// int-typed entity — names never enter state (R2), and no name is
+		// ever validated here (R3).
+		var p DirectiveIssuedPayload
+		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
+		d := p.directive()
 		if err := s.validateDirectiveIssued(e.Type, &d); err != nil {
 			return err
 		}

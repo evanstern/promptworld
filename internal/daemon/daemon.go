@@ -637,7 +637,7 @@ func seedSurvivalWatches(w *world.World, st *store.Store, state *sim.State) erro
 	}
 	var events []store.Event
 	for i, o := range sim.SurvivalWatchDefs(state.Tick) {
-		ev := store.Event{Tick: state.Tick, Type: "metatron.order_placed", Payload: mustJSONDaemon(o)}
+		ev := store.Event{Tick: state.Tick, Type: "metatron.order_placed", Payload: mustJSONDaemon(o.PlacedPayload())}
 		// Pre-assign the store seq before applying (the loop's stampSeqs
 		// contract, spec 054): the order_placed reducer arm stamps
 		// GuardianOrder.PlacedSeq from the event envelope, so applying with

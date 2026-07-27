@@ -53,10 +53,10 @@ func TestQueueEpilogueOnRunEnd(t *testing.T) {
 	md, _, _ := narrMind(t)
 	md.queueEpilogue(mustEvent(t, 97000, "run.ended", sim.RunEndedPayload{
 		Tick: 97000, FinalCause: "exposure",
-		Deaths: []sim.DeathRecord{
+		Deaths: sim.DeathRefs([]sim.DeathRecord{
 			{Agent: 2, Tick: 50000, Cause: "exposure"},
 			{Agent: 1, Tick: 95000, Cause: "starvation"},
-		}}))
+		})}))
 	var job narrJob
 	select {
 	case job = <-md.narrQ:

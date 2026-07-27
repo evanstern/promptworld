@@ -218,7 +218,7 @@ func TestFaithSweepPileupOrderAndGate(t *testing.T) {
 	s := NewState(42, testMap(42))
 	batch := []store.Event{
 		{Tick: 9, Type: "directive.fulfilled", Payload: mustPayload(DirectiveFulfilledPayload{
-			ID: "dir-a", DesignationID: "dsg-a", Targets: []int{0}, IssuedTick: 1})},
+			ID: "dir-a", DesignationID: "dsg-a", Targets: Refs([]int{0}), IssuedTick: 1})},
 		{Tick: 9, Type: "directive.expired", Payload: mustPayload(OrderIDPayload{ID: "dir-b"})},
 		{Tick: 9, Type: "agent.died", Payload: mustPayload(DiedPayload{Agent: Ref(2), Cause: "starvation"})},
 	}

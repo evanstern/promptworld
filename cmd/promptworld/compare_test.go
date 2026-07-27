@@ -70,7 +70,7 @@ func deathAndEnd(t *testing.T) []store.Event {
 		{Tick: 40000, Type: "agent.died", Payload: duelJSON(t, map[string]any{"agent": 0, "cause": "gru"})},
 		{Tick: 50000, Type: "agent.died", Payload: duelJSON(t, map[string]any{"agent": 1, "cause": "exposure"})},
 		{Tick: 50000, Type: "run.ended", Payload: duelJSON(t, sim.RunEndedPayload{
-			Tick: 50000, Deaths: deaths, FinalCause: "exposure"})},
+			Tick: 50000, Deaths: sim.DeathRefs(deaths), FinalCause: "exposure"})},
 	}
 }
 

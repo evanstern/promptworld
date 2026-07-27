@@ -31,7 +31,7 @@ func endedHistory(t *testing.T, extra ...store.Event) []store.Event {
 		store.Event{Seq: seq + 1, Tick: 60000, Type: "agent.died",
 			Payload: mustPayloadJSON(t, sim.DiedPayload{Agent: sim.Ref(0), Cause: "gru"})},
 		store.Event{Seq: seq + 2, Tick: 60000, Type: "run.ended",
-			Payload: mustPayloadJSON(t, sim.RunEndedPayload{Tick: 60000, Deaths: deaths, FinalCause: "gru"})},
+			Payload: mustPayloadJSON(t, sim.RunEndedPayload{Tick: 60000, Deaths: sim.DeathRefs(deaths), FinalCause: "gru"})},
 	)
 	return events
 }

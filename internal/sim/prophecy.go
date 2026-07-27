@@ -82,6 +82,71 @@ type ProphecyClaim struct {
 	Agent         int    `json:"agent,omitempty"`
 }
 
+// ProphecyDeclaredPayload is prophecy.declared's wire mirror (spec 086
+// FR-003, data-model §4): Prophecy's fields with named agent refs on the
+// wire while the state entity above keeps bare ints — the R2 invariant.
+// Same json tags; legacy rows decode dual-shape and the arm folds .IDs only.
+type ProphecyDeclaredPayload struct {
+	ID           string           `json:"id"`
+	Targets      []AgentRef       `json:"targets"`
+	Village      bool             `json:"village,omitempty"`
+	Text         string           `json:"text"`
+	Claim        ProphecyClaimRef `json:"claim"`
+	DeclaredTick int64            `json:"declared_tick"`
+	DeadlineTick int64            `json:"deadline_tick"`
+	Status       string           `json:"status"`
+	PlacedSeq    int64            `json:"placed_seq,omitempty"`
+}
+
+// ProphecyClaimRef mirrors ProphecyClaim on the wire. Agent is a *AgentRef
+// so the survives kind carries a FULL ref even for index 0 (a struct is
+// never "empty" — the index-0 hazard the entity's omitempty int had is
+// gone), while every other kind omits the field exactly as the entity's
+// zero/absent contract requires. Claim normalization and equality keep
+// operating on the entity's IDs — the fold below reads .ID only.
+type ProphecyClaimRef struct {
+	Kind          string    `json:"kind"`
+	DesignationID string    `json:"designation_id,omitempty"`
+	StructureKind string    `json:"structure_kind,omitempty"`
+	Min           int       `json:"min,omitempty"`
+	Agent         *AgentRef `json:"agent,omitempty"`
+}
+
+// DeclaredPayload builds the wire mirror from the entity (emission side).
+// The claim's agent ref is carried only for the survives kind — the one
+// kind whose Agent participates (the entity's own contract).
+func (p Prophecy) DeclaredPayload() ProphecyDeclaredPayload {
+	claim := ProphecyClaimRef{
+		Kind: p.Claim.Kind, DesignationID: p.Claim.DesignationID,
+		StructureKind: p.Claim.StructureKind, Min: p.Claim.Min,
+	}
+	if p.Claim.Kind == ProphecySurvives {
+		r := Ref(p.Claim.Agent)
+		claim.Agent = &r
+	}
+	return ProphecyDeclaredPayload{
+		ID: p.ID, Targets: Refs(p.Targets), Village: p.Village, Text: p.Text,
+		Claim: claim, DeclaredTick: p.DeclaredTick, DeadlineTick: p.DeadlineTick,
+		Status: p.Status, PlacedSeq: p.PlacedSeq,
+	}
+}
+
+// prophecy folds the mirror back into the int-typed state entity (arm side).
+func (p ProphecyDeclaredPayload) prophecy() Prophecy {
+	claim := ProphecyClaim{
+		Kind: p.Claim.Kind, DesignationID: p.Claim.DesignationID,
+		StructureKind: p.Claim.StructureKind, Min: p.Claim.Min,
+	}
+	if p.Claim.Agent != nil {
+		claim.Agent = p.Claim.Agent.ID
+	}
+	return Prophecy{
+		ID: p.ID, Targets: refIDs(p.Targets), Village: p.Village, Text: p.Text,
+		Claim: claim, DeclaredTick: p.DeclaredTick, DeadlineTick: p.DeadlineTick,
+		Status: p.Status, PlacedSeq: p.PlacedSeq,
+	}
+}
+
 // prophecyByID returns the prophecy named id, or nil. Linear over the bounded
 // slice (active ≤ 3 + retained 32), matching every other entity scan.
 func (s *State) prophecyByID(id string) *Prophecy {
@@ -209,10 +274,14 @@ func prophecyEvents(s *State, nextTick int64) []store.Event {
 func (s *State) applyProphecy(e store.Event) error {
 	switch e.Type {
 	case "prophecy.declared":
-		var p Prophecy
-		if err := json.Unmarshal(e.Payload, &p); err != nil {
+		// Spec 086: decode the ProphecyDeclaredPayload mirror (named refs,
+		// dual-shape for legacy rows) and fold .IDs into the int-typed
+		// entity — names never enter state (R2), no name validation here (R3).
+		var mp ProphecyDeclaredPayload
+		if err := json.Unmarshal(e.Payload, &mp); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
+		p := mp.prophecy()
 		// The stake (US3 AS-1): a prophecy spends one charge — the
 		// metatron.nudged arm's contract, so the spend is event-sourced (the
 		// declaration IS the spend's record) and replay reproduces the

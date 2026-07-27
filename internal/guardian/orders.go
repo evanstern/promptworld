@@ -143,7 +143,7 @@ func (mt *Guardian) placeOrder(origin string, a orderArgs, tick int64, grant gra
 		ExpiresTick: tick + int64(ttl)*ticksPerGameDay,
 		Status:      "active",
 	}
-	batch := []store.Event{{Type: "metatron.order_placed", Payload: mustJSON(order)}}
+	batch := []store.Event{{Type: "metatron.order_placed", Payload: mustJSON(order.PlacedPayload())}}
 	if err := mt.social.InjectSocial(batch); err != nil {
 		log.Printf("guardian: order rejected at the door: %v", err)
 		return nil, orderRefusal(err)

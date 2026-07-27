@@ -187,7 +187,7 @@ func TestMorgueRunSummary(t *testing.T) {
 	}
 	seq++
 	events = append(events, store.Event{Seq: seq, Tick: 97005, Type: "run.ended",
-		Payload: mustPayloadJSON(t, sim.RunEndedPayload{Tick: 97005, Deaths: deaths, FinalCause: "exposure"})})
+		Payload: mustPayloadJSON(t, sim.RunEndedPayload{Tick: 97005, Deaths: sim.DeathRefs(deaths), FinalCause: "exposure"})})
 
 	_, _, dir := newMorgueScribe(t, events)
 	s := readMorgue(t, dir)
