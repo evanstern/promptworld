@@ -17,11 +17,11 @@ import (
 
 // chopEvent / quarryEvent build a bare harvest event for direct reducer tests.
 func chopEvent(agent, x, y int, tick int64) store.Event {
-	return store.Event{Tick: tick, Type: "agent.chopped", Payload: mustPayload(HarvestPayload{Agent: agent, X: x, Y: y})}
+	return store.Event{Tick: tick, Type: "agent.chopped", Payload: mustPayload(HarvestPayload{Agent: Ref(agent), X: x, Y: y})}
 }
 
 func quarryEvent(agent, x, y int, tick int64) store.Event {
-	return store.Event{Tick: tick, Type: "agent.quarried", Payload: mustPayload(HarvestPayload{Agent: agent, X: x, Y: y})}
+	return store.Event{Tick: tick, Type: "agent.quarried", Payload: mustPayload(HarvestPayload{Agent: Ref(agent), X: x, Y: y})}
 }
 
 // TestHarvestReducerRemovesActorFact (T006, US1): the chop/quarry reducer arms
@@ -122,7 +122,7 @@ func TestHarvestMintsFirstPersonMemory(t *testing.T) {
 
 	setIntent := func(goal string, tx, ty, rx, ry int) {
 		if err := s.Apply(store.Event{Tick: s.Tick, Type: "agent.intent_set",
-			Payload: mustPayload(IntentSetPayload{Agent: 0, Goal: goal, TargetX: tx, TargetY: ty,
+			Payload: mustPayload(IntentSetPayload{Agent: Ref(0), Goal: goal, TargetX: tx, TargetY: ty,
 				ResX: rx, ResY: ry, Source: "planner", Reason: reason})}); err != nil {
 			t.Fatal(err)
 		}
@@ -158,8 +158,8 @@ func assertOneActMemory(t *testing.T, log []store.Event, salience int, reason, s
 			continue
 		}
 		count++
-		if p.Agent != 0 {
-			t.Errorf("act memory %q went to agent %d, not the actor", p.Text, p.Agent)
+		if p.Agent.ID != 0 {
+			t.Errorf("act memory %q went to agent %d, not the actor", p.Text, p.Agent.ID)
 		}
 		if p.Salience != salience {
 			t.Errorf("act memory %q salience = %d, want %d", p.Text, p.Salience, salience)
@@ -189,7 +189,7 @@ func TestNoSelfCorrectionAfterChop(t *testing.T) {
 
 	stand, res := treeStand(t, m, s, a.X, a.Y)
 	applyEvents(t, s, store.Event{Tick: 1, Type: "agent.moved",
-		Payload: mustPayload(AgentMovedPayload{Agent: 0, X: stand.X, Y: stand.Y})})
+		Payload: mustPayload(AgentMovedPayload{Agent: Ref(0), X: stand.X, Y: stand.Y})})
 	applyEvents(t, s, perceptionEvents(s, m, 5)...) // agent 0 beat: tick%5 == 0
 	if _, ok := a.Map.factAt("tree", res.X, res.Y); !ok {
 		t.Skip("tree not witnessed on this seed/stand")
@@ -222,7 +222,7 @@ func TestSameTickSweepNoCorrection(t *testing.T) {
 
 	stand, res := treeStand(t, m, s, a.X, a.Y)
 	applyEvents(t, s, store.Event{Tick: 1, Type: "agent.moved",
-		Payload: mustPayload(AgentMovedPayload{Agent: 0, X: stand.X, Y: stand.Y})})
+		Payload: mustPayload(AgentMovedPayload{Agent: Ref(0), X: stand.X, Y: stand.Y})})
 	applyEvents(t, s, perceptionEvents(s, m, 5)...)
 	if _, ok := a.Map.factAt("tree", res.X, res.Y); !ok {
 		t.Skip("tree not witnessed on this seed/stand")
@@ -261,7 +261,7 @@ func TestReturnDiscoveryStillCorrects(t *testing.T) {
 
 	move := func(i, x, y int, tick int64) {
 		applyEvents(t, s, store.Event{Tick: tick, Type: "agent.moved",
-			Payload: mustPayload(AgentMovedPayload{Agent: i, X: x, Y: y})})
+			Payload: mustPayload(AgentMovedPayload{Agent: Ref(i), X: x, Y: y})})
 	}
 	// All three co-located at the stand, then a full sweep window so each of
 	// agents 0,1,2 hits its beat once and witnesses the tree.
@@ -339,7 +339,7 @@ func TestOnlyAbsentAgentCorrects(t *testing.T) {
 
 	move := func(i, x, y int, tick int64) {
 		applyEvents(t, s, store.Event{Tick: tick, Type: "agent.moved",
-			Payload: mustPayload(AgentMovedPayload{Agent: i, X: x, Y: y})})
+			Payload: mustPayload(AgentMovedPayload{Agent: Ref(i), X: x, Y: y})})
 	}
 	move(0, stand.X, stand.Y, 1)
 	move(1, stand.X, stand.Y, 1) // on-scene witness, stays put
@@ -402,8 +402,8 @@ func TestChopWitnessReplayByteIdentical(t *testing.T) {
 
 	treeFact := PlaceFact{Kind: "tree", X: res.X, Y: res.Y, Seen: 1, Provenance: ProvenanceWitnessed}
 	log := []store.Event{
-		{Tick: 1, Type: "agent.moved", Payload: mustPayload(AgentMovedPayload{Agent: 0, X: stand.X, Y: stand.Y})},
-		{Tick: 1, Type: "agent.moved", Payload: mustPayload(AgentMovedPayload{Agent: 1, X: stand.X, Y: stand.Y})},
+		{Tick: 1, Type: "agent.moved", Payload: mustPayload(AgentMovedPayload{Agent: Ref(0), X: stand.X, Y: stand.Y})},
+		{Tick: 1, Type: "agent.moved", Payload: mustPayload(AgentMovedPayload{Agent: Ref(1), X: stand.X, Y: stand.Y})},
 		{Tick: 2, Type: "agent.saw", Payload: mustPayload(SawPayload{Agent: 0, Facts: []PlaceFact{treeFact}})},
 		{Tick: 2, Type: "agent.saw", Payload: mustPayload(SawPayload{Agent: 1, Facts: []PlaceFact{treeFact}})},
 		chopEvent(0, res.X, res.Y, 3),

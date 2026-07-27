@@ -216,7 +216,7 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 					continue
 				}
 				emit("sim.neglect_detected", NeglectDetectedPayload{
-					Agent: i, Need: need, Level: needValue(a.Needs, need), Since: a.Neglect.Since(need),
+					Agent: Ref(i), Need: need, Level: needValue(a.Needs, need), Since: a.Neglect.Since(need),
 				})
 				events = append(events, situatedMemoryEvent(nextTick, i, salNeglect,
 					PlaceAt(s, a.X, a.Y), "", OriginWitness, "%s", neglectMemoryText(need)))
@@ -230,7 +230,7 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 			n := decayNeeds(a.Needs, a.Asleep, night, warmAt(s, a.X, a.Y, nextTick), s.structureAt("shelter", a.X, a.Y),
 				coldSnapActive(s, nextTick))
 			emit("agent.needs_changed", NeedsPayload{
-				Agent: i, Health: n.Health, Food: n.Food, Rest: n.Rest, Warmth: n.Warmth, Morale: n.Morale,
+				Agent: Ref(i), Health: n.Health, Food: n.Food, Rest: n.Rest, Warmth: n.Warmth, Morale: n.Morale,
 			})
 			// Own near-death is a formative memory, once per collapse (latch).
 			if n.Health < nearDeathBelow && !a.NearDeath && n.Health > 0 {
@@ -254,7 +254,7 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 				case n.Warmth == 0:
 					cause = "exposure"
 				}
-				emit("agent.died", DiedPayload{Agent: i, Cause: cause})
+				emit("agent.died", DiedPayload{Agent: Ref(i), Cause: cause})
 				// Death marks every witness close enough to see it.
 				for w := range s.Agents {
 					if w == i || s.Agents[w].Dead {
@@ -319,7 +319,7 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 
 		if a.Asleep {
 			if wakeReason(s, m, i, night, nextTick) {
-				emit("agent.woke", AgentPayload{Agent: i})
+				emit("agent.woke", AgentPayload{Agent: Ref(i)})
 			}
 			continue
 		}
@@ -331,14 +331,14 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 		if meetingActive(s) && s.MeetingPlace != nil && attendCandidate(s, i) &&
 			(a.Intent == nil || a.Intent.Goal != "attend_meeting") {
 			emit("agent.intent_set", IntentSetPayload{
-				Agent: i, Goal: "attend_meeting",
+				Agent: Ref(i), Goal: "attend_meeting",
 				TargetX: s.MeetingPlace.X, TargetY: s.MeetingPlace.Y,
 				Source: "meeting",
 			})
 			continue
 		}
 		if !meetingActive(s) && a.Intent != nil && a.Intent.Goal == "attend_meeting" {
-			emit("agent.intent_done", AgentPayload{Agent: i})
+			emit("agent.intent_done", AgentPayload{Agent: Ref(i)})
 			continue
 		}
 
@@ -370,12 +370,12 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 				switch {
 				case d.directEvent == "agent.ate":
 					if p, ok := eatOutcome(a); ok {
-						p.Agent = i
+						p.Agent = Ref(i)
 						emit("agent.ate", p)
 					}
 				case d.intent != nil:
 					emit("agent.intent_set", IntentSetPayload{
-						Agent: i, Goal: d.intent.Goal,
+						Agent: Ref(i), Goal: d.intent.Goal,
 						TargetX: d.intent.TargetX, TargetY: d.intent.TargetY,
 						ResX: d.intent.ResX, ResY: d.intent.ResY,
 						Source: "reflex",
@@ -409,10 +409,10 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 		if phase == 0 || (phase == 2 && pathAt(s, a.X, a.Y)) {
 			nx, ny := nextStep(m, s, a.X, a.Y, in.TargetX, in.TargetY)
 			if nx == a.X && ny == a.Y {
-				emit("agent.intent_done", AgentPayload{Agent: i}) // unreachable
+				emit("agent.intent_done", AgentPayload{Agent: Ref(i)}) // unreachable
 				continue
 			}
-			emit("agent.moved", AgentMovedPayload{Agent: i, X: nx, Y: ny})
+			emit("agent.moved", AgentMovedPayload{Agent: Ref(i), X: nx, Y: ny})
 		}
 	}
 
@@ -490,7 +490,7 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 			if err := json.Unmarshal(e.Payload, &p); err != nil {
 				continue // struct-built above; cannot fail
 			}
-			batch = append(batch, DeathRecord{Agent: p.Agent, Tick: e.Tick, Cause: p.Cause})
+			batch = append(batch, DeathRecord{Agent: p.Agent.ID, Tick: e.Tick, Cause: p.Cause})
 		}
 		if len(batch) > 0 && len(batch) == livingCount(s) {
 			deaths := make([]DeathRecord, 0, len(s.Deaths)+len(batch))
@@ -842,7 +842,7 @@ func talkEvents(s *State, i, j int, nextTick int64) []store.Event {
 	a, b := &s.Agents[i], &s.Agents[j]
 	events := []store.Event{
 		{Tick: nextTick, Type: "agent.talked",
-			Payload: mustPayload(TalkedPayload{A: i, B: j})},
+			Payload: mustPayload(TalkedPayload{A: Ref(i), B: Ref(j)})},
 		{Tick: nextTick, Type: "social.relation_changed",
 			Payload: mustPayload(RelationChangedPayload{
 				A: i, B: j, AffectionDelta: talkAffection, Reason: "talked"})},
@@ -970,7 +970,7 @@ func recoveryHoldEvents(s *State, i int, nextTick int64) []store.Event {
 	need := needValue(a.Needs, in.UntilNeed)
 
 	if need >= in.UntilValue {
-		emit("agent.intent_done", AgentPayload{Agent: i})
+		emit("agent.intent_done", AgentPayload{Agent: Ref(i)})
 		return events
 	}
 	// Survival preemption (spec 064 US3 AS2 / FR-004): a recovery for one need
@@ -984,22 +984,22 @@ func recoveryHoldEvents(s *State, i int, nextTick int64) []store.Event {
 	// no-planner world's held villager can starve at a fire (the reflex only runs
 	// on an idle agent). A reflex-sourced completion never arms the 062 window.
 	if preemptsRecovery(a, in.UntilNeed) {
-		emit("agent.intent_done", AgentPayload{Agent: i})
+		emit("agent.intent_done", AgentPayload{Agent: Ref(i)})
 		return events
 	}
 	if in.WorkStart == 0 {
-		emit("agent.work_started", WorkStartedPayload{Agent: i, Tick: nextTick, Ref: need})
+		emit("agent.work_started", WorkStartedPayload{Agent: Ref(i), Tick: nextTick, Ref: need})
 		return events
 	}
 	if nextTick-in.WorkStart >= recoveryStallTicks {
 		if need > in.HoldRef {
 			// Progress across the window — the source is delivering; slide the
 			// anchor forward so a slow-but-steady recovery is never aborted.
-			emit("agent.work_started", WorkStartedPayload{Agent: i, Tick: nextTick, Ref: need})
+			emit("agent.work_started", WorkStartedPayload{Agent: Ref(i), Tick: nextTick, Ref: need})
 		} else {
 			// No net gain across a whole window — the source is dead. Abort with
 			// the distinct outcome; the agent re-decides (reflex or planner).
-			emit("agent.recovery_stalled", RecoveryStalledPayload{Agent: i, Goal: in.Goal, Need: in.UntilNeed})
+			emit("agent.recovery_stalled", RecoveryStalledPayload{Agent: Ref(i), Goal: in.Goal, Need: in.UntilNeed})
 		}
 	}
 	return events
@@ -1029,7 +1029,7 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 	// Instant goals complete on arrival.
 	switch in.Goal {
 	case "sleep":
-		emit("agent.slept", AgentPayload{Agent: i})
+		emit("agent.slept", AgentPayload{Agent: Ref(i)})
 		return events
 	case "wander", "goto_warmth", "seek", "search", "heed_directive":
 		// search (spec 041 US4) is wander-class: instant on arrival — the
@@ -1038,7 +1038,7 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 		// 084 research R13) is the DIRECTIVE rung's walk-to-site leg, the
 		// same completion shape: arrival IS the outcome, and the next idle
 		// decision picks the work leg (or the planner does).
-		emit("agent.intent_done", AgentPayload{Agent: i})
+		emit("agent.intent_done", AgentPayload{Agent: Ref(i)})
 		return events
 	case "refuel_fire":
 		// T020: instant on arrival (like eat/sleep). Re-validate at completion
@@ -1048,7 +1048,7 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 		// and extends nothing) — detected as no gain over the current deadline.
 		st, ok := fireStructAt(s, in.TargetX, in.TargetY)
 		if !ok || a.Inv.Wood < 1 {
-			emit("agent.intent_done", AgentPayload{Agent: i})
+			emit("agent.intent_done", AgentPayload{Agent: Ref(i)})
 			return events
 		}
 		base := st.FuelUntil
@@ -1060,10 +1060,10 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 			deadline = capAt
 		}
 		if deadline <= st.FuelUntil {
-			emit("agent.intent_done", AgentPayload{Agent: i}) // already at the fuel cap
+			emit("agent.intent_done", AgentPayload{Agent: Ref(i)}) // already at the fuel cap
 			return events
 		}
-		emit("agent.refueled", RefueledPayload{Agent: i, X: in.TargetX, Y: in.TargetY, FuelUntil: deadline})
+		emit("agent.refueled", RefueledPayload{Agent: Ref(i), X: in.TargetX, Y: in.TargetY, FuelUntil: deadline})
 		return events
 	case "attend_meeting":
 		// Assembled: stand at the meeting place until it closes (the
@@ -1079,10 +1079,10 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 			n = in.Qty
 		}
 		if in.Kind == "" || n <= 0 {
-			emit("agent.intent_done", AgentPayload{Agent: i})
+			emit("agent.intent_done", AgentPayload{Agent: Ref(i)})
 			return events
 		}
-		emit("agent.dropped", DroppedPayload{Agent: i, X: a.X, Y: a.Y, Kind: in.Kind, N: n})
+		emit("agent.dropped", DroppedPayload{Agent: Ref(i), X: a.X, Y: a.Y, Kind: in.Kind, N: n})
 		return events
 	case "pick_up":
 		// T017 (spec 013 US2): instant on arrival. Re-validate a pile on/
@@ -1092,7 +1092,7 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 		// reducer drains food oldest-batch-first). Nothing moved ⇒ intent_done.
 		pile := s.pileOnOrAdjacent(a.X, a.Y)
 		if pile == nil {
-			emit("agent.intent_done", AgentPayload{Agent: i})
+			emit("agent.intent_done", AgentPayload{Agent: Ref(i)})
 			return events
 		}
 		kinds := []string{in.Kind}
@@ -1115,12 +1115,12 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 			if take <= 0 {
 				continue
 			}
-			emit("agent.picked_up", PickedUpPayload{Agent: i, X: pile.X, Y: pile.Y, Kind: kind, N: take})
+			emit("agent.picked_up", PickedUpPayload{Agent: Ref(i), X: pile.X, Y: pile.Y, Kind: kind, N: take})
 			free -= take
 			moved = true
 		}
 		if !moved {
-			emit("agent.intent_done", AgentPayload{Agent: i})
+			emit("agent.intent_done", AgentPayload{Agent: Ref(i)})
 		}
 		return events
 	case "deposit":
@@ -1131,7 +1131,7 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 		// payload carries the ACTUAL post-clamp count.
 		ch := s.chestAt(in.TargetX, in.TargetY)
 		if ch == nil || ch.Store == nil || in.Kind == "" {
-			emit("agent.intent_done", AgentPayload{Agent: i})
+			emit("agent.intent_done", AgentPayload{Agent: Ref(i)})
 			return events
 		}
 		n := carriedCount(a.Inv, in.Kind)
@@ -1142,10 +1142,10 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 			n = free
 		}
 		if n <= 0 {
-			emit("agent.intent_done", AgentPayload{Agent: i})
+			emit("agent.intent_done", AgentPayload{Agent: Ref(i)})
 			return events
 		}
-		emit("agent.deposited", DepositedPayload{Agent: i, X: in.TargetX, Y: in.TargetY, Kind: in.Kind, N: n})
+		emit("agent.deposited", DepositedPayload{Agent: Ref(i), X: in.TargetX, Y: in.TargetY, Kind: in.Kind, N: n})
 		return events
 	case "withdraw":
 		// T024: instant on arrival. Re-validate the chest, then emit ONE
@@ -1156,7 +1156,7 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 		// Nothing moved ⇒ intent_done only.
 		ch := s.chestAt(in.TargetX, in.TargetY)
 		if ch == nil || ch.Store == nil {
-			emit("agent.intent_done", AgentPayload{Agent: i})
+			emit("agent.intent_done", AgentPayload{Agent: Ref(i)})
 			return events
 		}
 		kinds := []string{in.Kind}
@@ -1179,12 +1179,12 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 			if take <= 0 {
 				continue
 			}
-			emit("agent.withdrew", WithdrewPayload{Agent: i, X: in.TargetX, Y: in.TargetY, Kind: kind, N: take, Owner: ch.Owner})
+			emit("agent.withdrew", WithdrewPayload{Agent: Ref(i), X: in.TargetX, Y: in.TargetY, Kind: kind, N: take, Owner: Ref(ch.Owner)})
 			free -= take
 			moved = true
 		}
 		if !moved {
-			emit("agent.intent_done", AgentPayload{Agent: i})
+			emit("agent.intent_done", AgentPayload{Agent: Ref(i)})
 			return events
 		}
 		// T029 (spec 013 US4): a non-owner withdrawal is theft — never blocked
@@ -1259,12 +1259,12 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 		if isBuildGoal(in.Goal) {
 			return append(events, buildFailedEvents(s, i, a, in, buildFailSiteUnbuildable, nextTick)...)
 		}
-		emit("agent.intent_done", AgentPayload{Agent: i})
+		emit("agent.intent_done", AgentPayload{Agent: Ref(i)})
 		return events
 	}
 
 	if in.WorkStart == 0 {
-		emit("agent.work_started", WorkStartedPayload{Agent: i, Tick: nextTick})
+		emit("agent.work_started", WorkStartedPayload{Agent: Ref(i), Tick: nextTick})
 		return events
 	}
 	if nextTick-in.WorkStart < workDuration(s, a, in) {
@@ -1279,7 +1279,7 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 	switch in.Goal {
 	case "forage", "chop", "hunt", "quarry", "collect_water":
 		if freeBulk(a.Inv) == 0 {
-			emit("agent.intent_done", AgentPayload{Agent: i})
+			emit("agent.intent_done", AgentPayload{Agent: Ref(i)})
 			return events
 		}
 	}
@@ -1297,20 +1297,20 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 	// Judged against pre-mutation state, exactly what the reducer re-derives.
 	axeBrokeIfLast := func() {
 		if len(a.Inv.Axes) > 0 && a.Inv.Axes[0] == 1 {
-			emit("agent.axe_broke", AxeBrokePayload{Agent: i})
+			emit("agent.axe_broke", AxeBrokePayload{Agent: Ref(i)})
 			events = append(events, situatedMemoryEvent(nextTick, i, salAxeBroke, where, "", OriginAction,
 				"My axe broke at the work — I'll need to craft another."))
 		}
 	}
 	switch in.Goal {
 	case "forage":
-		emit("agent.foraged", HarvestPayload{Agent: i, X: in.TargetX, Y: in.TargetY})
+		emit("agent.foraged", HarvestPayload{Agent: Ref(i), X: in.TargetX, Y: in.TargetY})
 		if a.Needs.Food < 150 {
 			events = append(events, situatedMemoryEvent(nextTick, i, salStarvingForage,
 				where, in.Reason, OriginAction, "Found food when I was starving."))
 		}
 	case "chop":
-		emit("agent.chopped", HarvestPayload{Agent: i, X: in.ResX, Y: in.ResY})
+		emit("agent.chopped", HarvestPayload{Agent: Ref(i), X: in.ResX, Y: in.ResY})
 		// Spec 081 (FR-003): the actor's own harvest is a first-person memory in
 		// the salHunt band, riding the same batch as the act (the hunt precedent
 		// above) — replacing the third-party-voiced map_corrected discovery the
@@ -1325,11 +1325,11 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 		// Spent-to-zero breaks it — a companion agent.spear_broke rides the
 		// same batch, immediately after, so apply order matches: the hunt
 		// reducer decrements Spears[0] to 0, then spear_broke removes it.
-		emit("agent.hunted", HarvestPayload{Agent: i, X: in.TargetX, Y: in.TargetY})
+		emit("agent.hunted", HarvestPayload{Agent: Ref(i), X: in.TargetX, Y: in.TargetY})
 		events = append(events, situatedMemoryEvent(nextTick, i, salHunt, where, in.Reason, OriginAction,
 			"Hunted at the den and came back with meat."))
 		if len(a.Inv.Spears) > 0 && a.Inv.Spears[0] == 1 {
-			emit("agent.spear_broke", SpearBrokePayload{Agent: i})
+			emit("agent.spear_broke", SpearBrokePayload{Agent: Ref(i)})
 			// The broken spear is an incidental consequence, not the driven act —
 			// situated by place but carrying no Why (the reason belongs to the hunt
 			// memory above), which also avoids a double em-dash in this base text.
@@ -1337,10 +1337,10 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 				"My spear broke on the hunt — I'll need to craft another."))
 		}
 	case "build_fire":
-		emit("agent.built", BuiltPayload{Agent: i, Kind: "fire", X: in.TargetX, Y: in.TargetY})
+		emit("agent.built", BuiltPayload{Agent: Ref(i), Kind: "fire", X: in.TargetX, Y: in.TargetY})
 		events = append(events, situatedMemoryEvent(nextTick, i, salFire, placeForBuild(s, a.X, a.Y, "fire"), in.Reason, OriginAction, "Built a fire."))
 	case "build_shelter":
-		emit("agent.built", BuiltPayload{Agent: i, Kind: "shelter", X: in.TargetX, Y: in.TargetY})
+		emit("agent.built", BuiltPayload{Agent: Ref(i), Kind: "shelter", X: in.TargetX, Y: in.TargetY})
 		events = append(events, situatedMemoryEvent(nextTick, i, salShelter, placeForBuild(s, a.X, a.Y, "shelter"), in.Reason, OriginAction,
 			"Raised a shelter with my own hands."))
 	case "build_oven":
@@ -1349,7 +1349,7 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 		// this very build lands. Village-visible: nearby living agents get a
 		// witness memory too, same pattern as a witnessed death.
 		first := !s.hasStructure("oven")
-		emit("agent.built", BuiltPayload{Agent: i, Kind: "oven", X: in.TargetX, Y: in.TargetY})
+		emit("agent.built", BuiltPayload{Agent: Ref(i), Kind: "oven", X: in.TargetX, Y: in.TargetY})
 		text := "Raised an oven for the village."
 		if first {
 			text = "Raised the village's first oven — meals and baths, at last."
@@ -1372,7 +1372,7 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 		// memory. "First chest" wording checks the pre-mutation state (this build
 		// hasn't landed yet), matching build_oven.
 		first := !s.hasStructure("chest")
-		emit("agent.built", BuiltPayload{Agent: i, Kind: "chest", X: in.TargetX, Y: in.TargetY})
+		emit("agent.built", BuiltPayload{Agent: Ref(i), Kind: "chest", X: in.TargetX, Y: in.TargetY})
 		text := "Built a chest to keep the village's things."
 		if first {
 			text = "Built the village's first chest — a place to keep things safe."
@@ -1408,14 +1408,14 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 		// (events.md: "wall builds emit a situated builder memory"); the wall is
 		// at Res, so the memory is situated by the builder's own stand tile.
 		r, _ := recipeFor(in.Goal)
-		emit("agent.built", BuiltPayload{Agent: i, Kind: r.Structure, X: in.ResX, Y: in.ResY})
+		emit("agent.built", BuiltPayload{Agent: Ref(i), Kind: r.Structure, X: in.ResX, Y: in.ResY})
 		events = append(events, situatedMemoryEvent(nextTick, i, salShelter, where, in.Reason, OriginAction, "Built a wall."))
 	case "build_path":
 		// Spec 032 US3: the generic reducer arm spends the stone and appends the
 		// path structure (no HP — isWall is false for "path"). Built on the Target
 		// tile (stand-on-target). No builder memory — a path is not formative
 		// (events.md: paths emit none, the forage/chop spam-avoidance precedent).
-		emit("agent.built", BuiltPayload{Agent: i, Kind: "path", X: in.TargetX, Y: in.TargetY})
+		emit("agent.built", BuiltPayload{Agent: Ref(i), Kind: "path", X: in.TargetX, Y: in.TargetY})
 	case "demolish":
 		// Spec 032 US1 (research R5): one chip per completed work cycle. When the
 		// chip would leave the wall standing (HP − chip ≥ 1) emit wall_chipped and
@@ -1424,24 +1424,24 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 		// the intent. Validity above guarantees the wall still stands here. No
 		// memory — a chip is not formative (spam avoidance, forage/chop precedent).
 		if w := wallAt(s, in.ResX, in.ResY); w != nil && w.HP-demolishChipHP >= 1 {
-			emit("agent.wall_chipped", WallWorkPayload{Agent: i, X: in.ResX, Y: in.ResY})
+			emit("agent.wall_chipped", WallWorkPayload{Agent: Ref(i), X: in.ResX, Y: in.ResY})
 		} else {
-			emit("agent.wall_destroyed", WallWorkPayload{Agent: i, X: in.ResX, Y: in.ResY})
+			emit("agent.wall_destroyed", WallWorkPayload{Agent: Ref(i), X: in.ResX, Y: in.ResY})
 		}
 	case "repair":
 		// Spec 032 US1 (research R5): one repair per completed work cycle. The
 		// reducer consumes 1 matching material, clamps HP up to the derived max,
 		// and either re-arms the work gate (still damaged AND material remains) or
 		// clears the intent. Validity above guarantees a damaged wall + material.
-		emit("agent.wall_repaired", WallWorkPayload{Agent: i, X: in.ResX, Y: in.ResY})
+		emit("agent.wall_repaired", WallWorkPayload{Agent: Ref(i), X: in.ResX, Y: in.ResY})
 	case "quarry":
-		emit("agent.quarried", HarvestPayload{Agent: i, X: in.ResX, Y: in.ResY})
+		emit("agent.quarried", HarvestPayload{Agent: Ref(i), X: in.ResX, Y: in.ResY})
 		// Spec 081 (FR-003): quarry parity with the chop memory above.
 		events = append(events, situatedMemoryEvent(nextTick, i, salQuarry, where, in.Reason, OriginAction,
 			quarryMemoryText, in.ResX, in.ResY))
 		axeBrokeIfLast()
 	case "collect_water":
-		emit("agent.collected_water", HarvestPayload{Agent: i, X: in.ResX, Y: in.ResY})
+		emit("agent.collected_water", HarvestPayload{Agent: Ref(i), X: in.ResX, Y: in.ResY})
 	case "craft_planks", "craft_stone", "craft_spear", "craft_axe":
 		// T026: inputs re-validated at completion (contested-resource
 		// pattern) — insufficient inputs resolve via intent_done only, no
@@ -1450,7 +1450,7 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 		// applies uniformly with every other completion.
 		r, _ := recipeFor(in.Goal)
 		if !hasItems(a.Inv, r.Inputs) {
-			emit("agent.intent_done", AgentPayload{Agent: i})
+			emit("agent.intent_done", AgentPayload{Agent: Ref(i)})
 			return events
 		}
 		// US1 (T012): a craft doesn't truncate — it either fits or it doesn't
@@ -1459,10 +1459,10 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 		// net won't fit, no agent.crafted, intent cleared. Only craft_planks
 		// has a positive net (research R2).
 		if craftNetBulk(r) > freeBulk(a.Inv) {
-			emit("agent.intent_done", AgentPayload{Agent: i})
+			emit("agent.intent_done", AgentPayload{Agent: Ref(i)})
 			return events
 		}
-		emit("agent.crafted", CraftedPayload{Agent: i, Kind: craftKindFor(in.Goal)})
+		emit("agent.crafted", CraftedPayload{Agent: Ref(i), Kind: craftKindFor(in.Goal)})
 	case "cook":
 		// T021/T031: convert up to a batch of raw food — fire produces
 		// food_cooked (fuel-free, the fire's own fire burns); an oven
@@ -1471,7 +1471,7 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 		// one, FR-017); nothing to cook (no raw carried) is the same no-op.
 		atOven := s.structureAt("oven", in.TargetX, in.TargetY)
 		if atOven && a.Inv.Wood < 1 {
-			emit("agent.intent_done", AgentPayload{Agent: i})
+			emit("agent.intent_done", AgentPayload{Agent: Ref(i)})
 			return events
 		}
 		consumed := a.Inv.FoodRaw
@@ -1479,28 +1479,28 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 			consumed = ovenBatchSize
 		}
 		if consumed <= 0 {
-			emit("agent.intent_done", AgentPayload{Agent: i})
+			emit("agent.intent_done", AgentPayload{Agent: Ref(i)})
 			return events
 		}
 		if atOven {
 			emit("agent.cooked", CookedPayload{
-				Agent: i, Station: "oven", Consumed: consumed, Produced: consumed, Kind: "meals",
+				Agent: Ref(i), Station: "oven", Consumed: consumed, Produced: consumed, Kind: "meals",
 			})
 		} else {
 			emit("agent.cooked", CookedPayload{
-				Agent: i, Station: "fire", Consumed: consumed, Produced: consumed, Kind: "food_cooked",
+				Agent: Ref(i), Station: "fire", Consumed: consumed, Produced: consumed, Kind: "food_cooked",
 			})
 		}
 	case "bathe":
 		// T032: re-validate carried water + wood at completion — missing
 		// either resolves via intent_done only (water's only v1 consumer).
 		if a.Inv.Water < 1 || a.Inv.Wood < 1 {
-			emit("agent.intent_done", AgentPayload{Agent: i})
+			emit("agent.intent_done", AgentPayload{Agent: Ref(i)})
 			return events
 		}
 		morale := minInt(1000, a.Needs.Morale+bathMorale)
 		warmth := minInt(1000, a.Needs.Warmth+bathWarmth)
-		emit("agent.bathed", BathedPayload{Agent: i, MoraleAfter: morale, WarmthAfter: warmth})
+		emit("agent.bathed", BathedPayload{Agent: Ref(i), MoraleAfter: morale, WarmthAfter: warmth})
 		events = append(events, situatedMemoryToned(nextTick, i, salBath, toneBath, where, in.Reason, OriginAction,
 			"Took a hot bath at the oven — warm, clean, and content."))
 	}
@@ -1561,7 +1561,7 @@ func buildFailureCause(reason string) string {
 // as its Why, matching the wall-built success memory it contradicts.
 func buildFailedEvents(s *State, i int, a *Agent, in *Intent, reason string, nextTick int64) []store.Event {
 	return []store.Event{
-		{Tick: nextTick, Type: "agent.build_failed", Payload: mustPayload(BuildFailedPayload{Agent: i, Goal: in.Goal, Reason: reason})},
+		{Tick: nextTick, Type: "agent.build_failed", Payload: mustPayload(BuildFailedPayload{Agent: Ref(i), Goal: in.Goal, Reason: reason})},
 		situatedMemoryEvent(nextTick, i, salShelter, PlaceAt(s, a.X, a.Y), in.Reason, OriginAction,
 			"My %s was never built: %s.", buildStructureName(in.Goal), buildFailureCause(reason)),
 	}

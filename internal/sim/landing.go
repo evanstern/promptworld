@@ -126,7 +126,7 @@ func (l *Loop) landIntent(in *InjectArgs, emit func(string, any)) error {
 			}
 		}
 		if in.Reason != "" {
-			emit("agent.thought", ThoughtPayload{Agent: in.Agent, Text: in.Reason, Source: "planner"})
+			emit("agent.thought", ThoughtPayload{Agent: Ref(in.Agent), Text: in.Reason, Source: "planner"})
 		}
 		emit("agent.plan_set", PlanSetPayload{Agent: in.Agent, Job: in.JobID, Steps: in.Plan})
 	} else {
@@ -144,16 +144,16 @@ func (l *Loop) landIntent(in *InjectArgs, emit func(string, any)) error {
 			return reject(OutcomeRejectedGuard, rerr.Error())
 		}
 		if in.Reason != "" {
-			emit("agent.thought", ThoughtPayload{Agent: in.Agent, Text: in.Reason, Source: "planner"})
+			emit("agent.thought", ThoughtPayload{Agent: Ref(in.Agent), Text: in.Reason, Source: "planner"})
 		}
 		if direct == "agent.ate" {
 			if p, ok := eatOutcome(&l.state.Agents[in.Agent]); ok {
-				p.Agent = in.Agent
+				p.Agent = Ref(in.Agent)
 				emit("agent.ate", p)
 			}
 		} else if intent != nil {
 			emit("agent.intent_set", IntentSetPayload{
-				Agent: in.Agent, Goal: intent.Goal,
+				Agent: Ref(in.Agent), Goal: intent.Goal,
 				TargetX: intent.TargetX, TargetY: intent.TargetY,
 				ResX: intent.ResX, ResY: intent.ResY,
 				Kind: intent.Kind, Qty: intent.Qty,
@@ -175,7 +175,7 @@ func (l *Loop) landIntent(in *InjectArgs, emit func(string, any)) error {
 		// landing, in- or out-of-radius (FR-001, research D2).
 		if decision.hailTarget >= 0 {
 			emit("social.hailed", HailedPayload{
-				From: in.Agent, To: decision.hailTarget, Until: l.state.Tick + hailWindowTicks})
+				From: Ref(in.Agent), To: Ref(decision.hailTarget), Until: l.state.Tick + hailWindowTicks})
 		}
 	}
 

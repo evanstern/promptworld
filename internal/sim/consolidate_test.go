@@ -178,11 +178,11 @@ func TestConsolidationReplayDeterminism(t *testing.T) {
 	live := NewState(seed, m)
 
 	events := []store.Event{
-		consolidationEvent(t, 10, "agent.memory_added", MemoryAddedPayload{Agent: 0, Text: "saw a wolf", Salience: 7, Subject: -1}),
-		consolidationEvent(t, 20, "agent.memory_added", MemoryAddedPayload{Agent: 0, Text: "ate berries", Salience: 2, Subject: -1}),
+		consolidationEvent(t, 10, "agent.memory_added", MemoryAddedPayload{Agent: Ref(0), Text: "saw a wolf", Salience: 7, Subject: Ref(-1)}),
+		consolidationEvent(t, 20, "agent.memory_added", MemoryAddedPayload{Agent: Ref(0), Text: "ate berries", Salience: 2, Subject: Ref(-1)}),
 		consolidationEvent(t, 30, "agent.memory_promoted", MemoryPromotedPayload{Agent: 0, MemTick: 10, TextHash: MemoryHash("saw a wolf"), Boost: 2}),
 		consolidationEvent(t, 31, "agent.memory_faded", MemoryFadedPayload{Agent: 0, MemTick: 20, TextHash: MemoryHash("ate berries")}),
-		consolidationEvent(t, 32, "agent.memory_added", MemoryAddedPayload{Agent: 0, Text: "A day of wolves and hunger.", Salience: SalDayGist, Subject: -1}),
+		consolidationEvent(t, 32, "agent.memory_added", MemoryAddedPayload{Agent: Ref(0), Text: "A day of wolves and hunger.", Salience: SalDayGist, Subject: Ref(-1)}),
 		consolidationEvent(t, 33, "agent.belief_revised", BeliefRevisedPayload{Agent: 0, BeliefID: 0, Statement: "Wolves hunt the ridge.", Confidence: 70, Provenance: ProvenanceWitnessed, Source: -1, Subject: -1}),
 		consolidationEvent(t, 34, "agent.narrative_set", NarrativeSetPayload{Agent: 0, Text: "I survive by paying attention."}),
 		consolidationEvent(t, 35, "agent.consolidated", ConsolidatedPayload{Agent: 0, Night: 1, UpTo: 32, Outcome: ConsolidationAccepted, Promoted: 1, Faded: 1, Beliefs: 1}),

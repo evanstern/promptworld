@@ -220,7 +220,7 @@ func TestFaithSweepPileupOrderAndGate(t *testing.T) {
 		{Tick: 9, Type: "directive.fulfilled", Payload: mustPayload(DirectiveFulfilledPayload{
 			ID: "dir-a", DesignationID: "dsg-a", Targets: []int{0}, IssuedTick: 1})},
 		{Tick: 9, Type: "directive.expired", Payload: mustPayload(OrderIDPayload{ID: "dir-b"})},
-		{Tick: 9, Type: "agent.died", Payload: mustPayload(DiedPayload{Agent: 2, Cause: "starvation"})},
+		{Tick: 9, Type: "agent.died", Payload: mustPayload(DiedPayload{Agent: Ref(2), Cause: "starvation"})},
 	}
 
 	t.Run("one per source, batch order", func(t *testing.T) {
@@ -264,8 +264,8 @@ func TestFaithSweepPileupOrderAndGate(t *testing.T) {
 	t.Run("gate folds this batch's prior emissions", func(t *testing.T) {
 		s.Faith = &FaithState{Score: 4}
 		two := []store.Event{
-			{Tick: 9, Type: "agent.died", Payload: mustPayload(DiedPayload{Agent: 0, Cause: "starvation"})},
-			{Tick: 9, Type: "agent.died", Payload: mustPayload(DiedPayload{Agent: 1, Cause: "starvation"})},
+			{Tick: 9, Type: "agent.died", Payload: mustPayload(DiedPayload{Agent: Ref(0), Cause: "starvation"})},
+			{Tick: 9, Type: "agent.died", Payload: mustPayload(DiedPayload{Agent: Ref(1), Cause: "starvation"})},
 		}
 		got := faithEventsIn(t, faithEvents(s, two, 9))
 		if len(got) != 1 || got[0].SourceID != "0" {
@@ -298,7 +298,7 @@ func TestFaithReplayByteIdentical(t *testing.T) {
 			return d
 		}(), 0, 80)},
 		90:  {{Tick: 90, Type: "metatron.item_granted", Payload: mustPayload(ItemGrantedPayload{Agent: 0, Kind: "planks", Qty: 4})}},
-		100: {{Tick: 100, Type: "agent.built", Payload: mustPayload(BuiltPayload{Agent: 0, Kind: "shelter", X: 10, Y: 10})}},
+		100: {{Tick: 100, Type: "agent.built", Payload: mustPayload(BuiltPayload{Agent: Ref(0), Kind: "shelter", X: 10, Y: 10})}},
 		300: {issuedEvent(func() Directive {
 			d := validDirective("dir-300-0", "dsg-70-0", []int{2}, 300)
 			d.ExpiresTick = 300 + ticksPerGameDay

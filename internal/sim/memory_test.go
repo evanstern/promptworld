@@ -167,9 +167,9 @@ func TestInjectedPlannerIntent(t *testing.T) {
 
 	timeline := map[int64][]store.Event{
 		30: {
-			{Tick: 30, Type: "agent.thought", Payload: mustPayload(ThoughtPayload{Agent: 0, Text: "The bushes call to me.", Source: "planner"})},
+			{Tick: 30, Type: "agent.thought", Payload: mustPayload(ThoughtPayload{Agent: Ref(0), Text: "The bushes call to me.", Source: "planner"})},
 			{Tick: 30, Type: "agent.intent_set", Payload: mustPayload(IntentSetPayload{
-				Agent: 0, Goal: intent.Goal, TargetX: intent.TargetX, TargetY: intent.TargetY, Source: "planner"})},
+				Agent: Ref(0), Goal: intent.Goal, TargetX: intent.TargetX, TargetY: intent.TargetY, Source: "planner"})},
 		},
 	}
 	logA := driveTicks(t, s, m, 3600, timeline)
@@ -180,7 +180,7 @@ func TestInjectedPlannerIntent(t *testing.T) {
 		if e.Type == "agent.foraged" {
 			var p HarvestPayload
 			json.Unmarshal(e.Payload, &p)
-			if p.Agent == 0 {
+			if p.Agent.ID == 0 {
 				foraged = true
 			}
 		}

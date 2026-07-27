@@ -273,8 +273,8 @@ func TestBuildMiracleBatch(t *testing.T) {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			t.Fatal(err)
 		}
-		if p.Agent != agent {
-			t.Errorf("memory agent = %d, want %d", p.Agent, agent)
+		if p.Agent.ID != agent {
+			t.Errorf("memory agent = %d, want %d", p.Agent.ID, agent)
 		}
 		if p.Salience != sim.SalDream {
 			t.Errorf("memory salience = %d, want SalDream (%d)", p.Salience, sim.SalDream)
@@ -1178,8 +1178,8 @@ func TestCharterFallbacks(t *testing.T) {
 func TestDigestAndMoments(t *testing.T) {
 	mt, _, inj, dir := newTestGuardian(t, "Ash and Birch are circling a feud over firewood.")
 
-	died, _ := json.Marshal(sim.DiedPayload{Agent: 0, Cause: "starvation"})
-	built, _ := json.Marshal(sim.BuiltPayload{Agent: 1, Kind: "fire", X: 1, Y: 1})
+	died, _ := json.Marshal(sim.DiedPayload{Agent: sim.Ref(0), Cause: "starvation"})
+	built, _ := json.Marshal(sim.BuiltPayload{Agent: sim.Ref(1), Kind: "fire", X: 1, Y: 1})
 	mt.observeMoment(store.Event{Tick: 1000, Type: "agent.died", Payload: died})
 	mt.digestNote(store.Event{Tick: 1000, Type: "agent.died", Payload: died})
 	mt.digestNote(store.Event{Tick: 2000, Type: "agent.built", Payload: built})
@@ -1257,7 +1257,7 @@ func TestDigestFailureCarries(t *testing.T) {
 	mt, orch, _, _ := newTestGuardian(t, "")
 	orch.err = llm.ErrTierDown
 	mt.runDigest(digJob{label: "day 1 12:00", lines: []string{"[day 1 07:00] Ash built a fire."}})
-	built, _ := json.Marshal(sim.BuiltPayload{Agent: 1, Kind: "shelter", X: 1, Y: 1})
+	built, _ := json.Marshal(sim.BuiltPayload{Agent: sim.Ref(1), Kind: "shelter", X: 1, Y: 1})
 	// The first boundary crossing closes a window that is empty of fresh
 	// lines but carries the failed digest's — prompt retry, no loss.
 	mt.digestNote(store.Event{Tick: 30000, Type: "agent.built", Payload: built})

@@ -253,7 +253,7 @@ func TestGruWoundsNotExecutes(t *testing.T) {
 	if died == nil {
 		t.Fatal("gru attack on an already-weakened victim did not kill")
 	}
-	if died.Agent != 0 || died.Cause != "gru" {
+	if died.Agent.ID != 0 || died.Cause != "gru" {
 		t.Errorf("agent.died payload = %+v, want agent 0 cause \"gru\"", *died)
 	}
 	if !a.Dead || a.Needs.Health != 0 {
@@ -403,7 +403,7 @@ func TestGruEscalationScenario(t *testing.T) {
 		if err := json.Unmarshal(diedEvt.Payload, &p); err != nil {
 			t.Fatal(err)
 		}
-		if p.Agent != 0 || p.Cause != "gru" {
+		if p.Agent.ID != 0 || p.Cause != "gru" {
 			t.Errorf("agent.died payload = %+v, want agent 0 cause \"gru\"", p)
 		}
 		if !victim.Dead || victim.Needs.Health != 0 {

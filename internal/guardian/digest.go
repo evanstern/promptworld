@@ -46,7 +46,7 @@ func (mt *Guardian) observeMoment(e store.Event) {
 	case "agent.died":
 		var p sim.DiedPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			line = fmt.Sprintf("%s — %s died of %s", clock.Format(e.Tick), name(p.Agent), p.Cause)
+			line = fmt.Sprintf("%s — %s died of %s", clock.Format(e.Tick), name(p.Agent.ID), p.Cause)
 		}
 	case "gru.attacked":
 		var p sim.GruAttackedPayload
@@ -110,12 +110,12 @@ func (mt *Guardian) digestNote(e store.Event) {
 	case "agent.died":
 		var p sim.DiedPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			line = fmt.Sprintf("%s died of %s.", name(p.Agent), p.Cause)
+			line = fmt.Sprintf("%s died of %s.", name(p.Agent.ID), p.Cause)
 		}
 	case "agent.built":
 		var p sim.BuiltPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			line = fmt.Sprintf("%s built a %s.", name(p.Agent), p.Kind)
+			line = fmt.Sprintf("%s built a %s.", name(p.Agent.ID), p.Kind)
 		}
 	case "gru.emerged":
 		line = "The gru emerged."

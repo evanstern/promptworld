@@ -185,7 +185,7 @@ func TestObserveNeverBlocks(t *testing.T) {
 func TestAbsorbRefreshesMirrors(t *testing.T) {
 	mt, orch, _, _ := newLiveTestAngel(t, "The village endures.")
 
-	died, err := json.Marshal(sim.DiedPayload{Agent: 0, Cause: "starvation"})
+	died, err := json.Marshal(sim.DiedPayload{Agent: sim.Ref(0), Cause: "starvation"})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -376,12 +376,12 @@ type (
 		Day int64 `json:"day"`
 	}
 	AgentMovedPayload struct {
-		Agent int `json:"agent"`
-		X     int `json:"x"`
-		Y     int `json:"y"`
+		Agent AgentRef `json:"agent"`
+		X     int      `json:"x"`
+		Y     int      `json:"y"`
 	}
 	AgentPayload struct {
-		Agent int `json:"agent"`
+		Agent AgentRef `json:"agent"`
 	}
 	DaemonStartedPayload struct {
 		Tick       int64 `json:"tick"`
@@ -710,7 +710,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -726,7 +726,7 @@ func (s *State) Apply(e store.Event) error {
 		// seqs before Apply (stampSeqs), and CheckContiguity guarantees replay
 		// sees the identical gapless values.
 		a.Memories = append(a.Memories, Memory{
-			Text: p.Text, Salience: p.Salience, Tick: e.Tick, Subject: p.Subject, Tone: p.Tone,
+			Text: p.Text, Salience: p.Salience, Tick: e.Tick, Subject: p.Subject.ID, Tone: p.Tone,
 			Where: p.Where, Why: p.Why, Conv: p.Conv, Origin: p.Origin, Seq: e.Seq,
 		})
 		// Cognition horizon (TASK-32): a high-salience stimulus bumps the
@@ -748,7 +748,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -770,7 +770,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -903,7 +903,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -938,7 +938,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -962,7 +962,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -974,7 +974,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -1000,7 +1000,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -1017,7 +1017,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -1027,7 +1027,7 @@ func (s *State) Apply(e store.Event) error {
 		// and bystanders record each other's positions. Pure function of
 		// (state, event); no event, no chronicle noise.
 		s.markExplored(a, p.X, p.Y)
-		s.notePresence(p.Agent, e.Tick)
+		s.notePresence(p.Agent.ID, e.Tick)
 
 	case "agent.saw":
 		// Spec 041 (T007): the perception sweep's witnessed facts, fully
@@ -1078,7 +1078,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -1096,7 +1096,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -1122,13 +1122,13 @@ func (s *State) Apply(e store.Event) error {
 		// every awake in-radius witness's map at the act event itself, so the
 		// perception sweep never later "corrects" a chop its owner or an on-scene
 		// witness already knows about. Absent facts are no-ops.
-		s.removeHarvestedFact("tree", p.X, p.Y, p.Agent)
+		s.removeHarvestedFact("tree", p.X, p.Y, p.Agent.ID)
 	case "agent.hunted":
 		var p HarvestPayload
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -1166,7 +1166,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -1190,7 +1190,7 @@ func (s *State) Apply(e store.Event) error {
 			// permanently (no transfer/inheritance in v1), and the chest gets an
 			// empty Store for its contents. The recipe delta above already spent
 			// the chestPlankCost planks (recipes.go stays the single source).
-			st.Owner = p.Agent
+			st.Owner = p.Agent.ID
 			st.Store = &Inventory{}
 		}
 		if isWall(p.Kind) {
@@ -1209,7 +1209,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -1224,7 +1224,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -1245,13 +1245,13 @@ func (s *State) Apply(e store.Event) error {
 		// Spec 081 (FR-002/FR-004): quarry parity with the chop arm — the
 		// quarried-out rock leaves the actor's and every awake in-radius
 		// witness's map at the act event.
-		s.removeHarvestedFact("rock", p.X, p.Y, p.Agent)
+		s.removeHarvestedFact("rock", p.X, p.Y, p.Agent.ID)
 	case "agent.collected_water":
 		var p HarvestPayload
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -1269,7 +1269,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -1303,7 +1303,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -1327,7 +1327,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -1345,7 +1345,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -1368,7 +1368,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -1384,7 +1384,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -1407,7 +1407,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -1429,7 +1429,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -1449,7 +1449,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -1481,7 +1481,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -1547,7 +1547,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -1587,7 +1587,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -1658,7 +1658,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -1763,7 +1763,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -1777,7 +1777,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -1785,14 +1785,14 @@ func (s *State) Apply(e store.Event) error {
 		a.IdleSince = e.Tick
 		// Spec 041 (T013): a waker looks around — sleepers record no
 		// sightings, so waking refreshes who is nearby (derived, D2 class).
-		s.notePresence(p.Agent, e.Tick)
+		s.notePresence(p.Agent.ID, e.Tick)
 
 	case "agent.needs_changed":
 		var p NeedsPayload
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -1844,7 +1844,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -1856,7 +1856,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.Agent)
+		a, err := agent(p.Agent.ID)
 		if err != nil {
 			return err
 		}
@@ -1867,7 +1867,7 @@ func (s *State) Apply(e store.Event) error {
 		// run.ended emission (and later the morgue) can carry the run's full
 		// death history without a log scan. omitempty — pre-044 snapshots
 		// (field absent) stay byte-identical.
-		s.Deaths = append(s.Deaths, DeathRecord{Agent: p.Agent, Tick: e.Tick, Cause: p.Cause})
+		s.Deaths = append(s.Deaths, DeathRecord{Agent: p.Agent.ID, Tick: e.Tick, Cause: p.Cause})
 		// The dead shed any hail (TASK-47); the hailer's seek proceeds or
 		// fails exactly as today.
 		a.Hail = nil
@@ -1934,20 +1934,20 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.To)
+		a, err := agent(p.To.ID)
 		if err != nil {
 			return err
 		}
 		// Emitters never hail an already-hailed target (first-hail-wins); the
 		// reducer applies what the log says — replay fidelity over
 		// re-validation, like every other event.
-		a.Hail = &AgentHail{By: p.From, Until: p.Until}
+		a.Hail = &AgentHail{By: p.From.ID, Until: p.Until}
 	case "social.hail_met":
 		var p HailMetPayload
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.To)
+		a, err := agent(p.To.ID)
 		if err != nil {
 			return err
 		}
@@ -1959,7 +1959,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.To)
+		a, err := agent(p.To.ID)
 		if err != nil {
 			return err
 		}
@@ -2048,11 +2048,11 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		a, err := agent(p.A)
+		a, err := agent(p.A.ID)
 		if err != nil {
 			return err
 		}
-		b, err := agent(p.B)
+		b, err := agent(p.B.ID)
 		if err != nil {
 			return err
 		}
@@ -2063,7 +2063,7 @@ func (s *State) Apply(e store.Event) error {
 		// the conversation loop damper's hail cooldown reads this per-pair record
 		// (the per-agent LastTalk only gates the ambient beat). Both hail-founded
 		// and ambient talks update the one unordered record.
-		s.recordPairTalk(p.A, p.B, e.Tick)
+		s.recordPairTalk(p.A.ID, p.B.ID, e.Tick)
 	}
 	return nil
 }

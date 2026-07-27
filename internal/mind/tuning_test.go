@@ -105,7 +105,7 @@ func TestTunedEncounterCooldownGates(t *testing.T) {
 	}
 
 	moved := func(tick int64) store.Event {
-		p, _ := json.Marshal(sim.AgentMovedPayload{Agent: 0, X: state.Agents[0].X, Y: state.Agents[0].Y})
+		p, _ := json.Marshal(sim.AgentMovedPayload{Agent: sim.Ref(0), X: state.Agents[0].X, Y: state.Agents[0].Y})
 		return store.Event{Tick: tick, Seq: tick, Type: "agent.moved", Payload: p}
 	}
 

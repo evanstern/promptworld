@@ -201,7 +201,7 @@ func (e *Embedder) run() {
 				if json.Unmarshal(ev.Payload, &p) != nil || p.Text == "" {
 					continue
 				}
-				e.enqueue(embedJob{agent: p.Agent, seq: ev.Seq, text: p.Text})
+				e.enqueue(embedJob{agent: p.Agent.ID, seq: ev.Seq, text: p.Text})
 			}
 			// Situation leg (T012, research D5): at each cadence bucket edge,
 			// render each live agent's situation from the replica AS OF the
@@ -386,7 +386,7 @@ func (e *Embedder) runJobs(jobs []embedJob) {
 			// divergence-audit surface.
 			for _, sr := range j.sits {
 				payload, merr := json.Marshal(sim.SituationEmbeddedPayload{
-					Agent: sr.agent, Tick: j.tick, Text: sr.text, Vec: vecs[v], Model: model,
+					Agent: sim.Ref(sr.agent), Tick: j.tick, Text: sr.text, Vec: vecs[v], Model: model,
 				})
 				if merr != nil {
 					log.Printf("mind: embedder payload marshal failed: %v", merr)
@@ -398,7 +398,7 @@ func (e *Embedder) runJobs(jobs []embedJob) {
 			continue
 		}
 		payload, merr := json.Marshal(sim.MemoryEmbeddedPayload{
-			Agent: j.agent, MemSeq: j.seq, Vec: vecs[v], Model: model,
+			Agent: sim.Ref(j.agent), MemSeq: j.seq, Vec: vecs[v], Model: model,
 		})
 		if merr != nil {
 			log.Printf("mind: embedder payload marshal failed: %v", merr)

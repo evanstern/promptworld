@@ -538,7 +538,7 @@ func TestPlanEchoClearedAfterExpiry(t *testing.T) {
 	}
 	apply(1000, "agent.plan_set", sim.PlanSetPayload{Agent: 0, Job: "warm-up",
 		Steps: []sim.PlanStep{{Job: "warm-up", Goal: "goto_warmth", Until: 2000}}})
-	apply(1000, "agent.intent_set", sim.IntentSetPayload{Agent: 0, Goal: "goto_warmth", Source: "plan"})
+	apply(1000, "agent.intent_set", sim.IntentSetPayload{Agent: sim.Ref(0), Goal: "goto_warmth", Source: "plan"})
 
 	// While the plan stands the echo is present.
 	if got := renderPlanEcho(s, 0); !strings.Contains(got, "next: goto_warmth") {

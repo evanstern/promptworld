@@ -83,12 +83,12 @@ func planStepEvents(s *State, m *worldmap.Map, idx int, tick int64) []store.Even
 		Agent: idx, Job: st.Job, Step: st.Goal})}
 	if direct == "agent.ate" {
 		if p, ok := eatOutcome(a); ok {
-			p.Agent = idx
+			p.Agent = Ref(idx)
 			evs = append(evs, ev("agent.ate", p))
 		}
 	} else if intent != nil {
 		evs = append(evs, ev("agent.intent_set", IntentSetPayload{
-			Agent: idx, Goal: intent.Goal,
+			Agent: Ref(idx), Goal: intent.Goal,
 			TargetX: intent.TargetX, TargetY: intent.TargetY,
 			ResX: intent.ResX, ResY: intent.ResY,
 			Kind: intent.Kind, Qty: intent.Qty,
@@ -99,7 +99,7 @@ func planStepEvents(s *State, m *worldmap.Map, idx int, tick int64) []store.Even
 	// the pair meets, exactly as a planner talk_to landing does (FR-001).
 	if st.Goal == "talk_to" && hailable(s, idx, st.Target, tick) {
 		evs = append(evs, ev("social.hailed", HailedPayload{
-			From: idx, To: st.Target, Until: tick + hailWindowTicks}))
+			From: Ref(idx), To: Ref(st.Target), Until: tick + hailWindowTicks}))
 	}
 	return evs
 }

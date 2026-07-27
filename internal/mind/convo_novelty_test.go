@@ -76,7 +76,7 @@ func TestNoveltyShimRefusesWhenNothingNew(t *testing.T) {
 	})
 
 	md.maybeStartConversation(store.Event{Tick: 5000, Type: "agent.talked",
-		Payload: mustJSON(t, sim.TalkedPayload{A: 0, B: 1})}, 1000)
+		Payload: mustJSON(t, sim.TalkedPayload{A: sim.Ref(0), B: sim.Ref(1)})}, 1000)
 
 	outs := h.waitEvents(t, 5*time.Second, func(e store.Event) bool {
 		var p sim.CogOutcomePayload
@@ -114,7 +114,7 @@ func TestNoveltyShimAdmitsWithGistContext(t *testing.T) {
 	})
 
 	md.maybeStartConversation(store.Event{Tick: 5000, Type: "agent.talked",
-		Payload: mustJSON(t, sim.TalkedPayload{A: 0, B: 1})}, 1000)
+		Payload: mustJSON(t, sim.TalkedPayload{A: sim.Ref(0), B: sim.Ref(1)})}, 1000)
 
 	convs := h.waitEvents(t, 10*time.Second, func(e store.Event) bool {
 		return e.Type == "social.conversation"
@@ -145,7 +145,7 @@ func TestNoveltyShimFirstContactFounds(t *testing.T) {
 	h, md := noveltyMind(t, model, nil)
 
 	md.maybeStartConversation(store.Event{Tick: 5000, Type: "agent.talked",
-		Payload: mustJSON(t, sim.TalkedPayload{A: 0, B: 1})}, 0)
+		Payload: mustJSON(t, sim.TalkedPayload{A: sim.Ref(0), B: sim.Ref(1)})}, 0)
 
 	if convs := h.waitEvents(t, 10*time.Second, func(e store.Event) bool {
 		return e.Type == "social.conversation"

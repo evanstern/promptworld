@@ -58,11 +58,11 @@ func (md *Mind) maybeConsolidate(e store.Event) {
 	if json.Unmarshal(e.Payload, &p) != nil {
 		return
 	}
-	if p.Agent < 0 || p.Agent >= sim.AgentCount {
+	if p.Agent.ID < 0 || p.Agent.ID >= sim.AgentCount {
 		return
 	}
-	a := &md.replica.Agents[p.Agent]
-	if !a.ConsolidationDue(e.Tick) || md.consolInFlight[p.Agent].Load() {
+	a := &md.replica.Agents[p.Agent.ID]
+	if !a.ConsolidationDue(e.Tick) || md.consolInFlight[p.Agent.ID].Load() {
 		return
 	}
 	night := sim.NightIndex(e.Tick)
@@ -70,16 +70,16 @@ func (md *Mind) maybeConsolidate(e store.Event) {
 	buffer := a.EpisodicBuffer()
 	if len(buffer) == 0 {
 		// Nothing to digest: close the night with a marker, spend no call.
-		md.consolInFlight[p.Agent].Store(true)
-		md.landMarker(consolJob{agent: p.Agent, name: a.Name, night: night, sleepTick: e.Tick},
+		md.consolInFlight[p.Agent.ID].Store(true)
+		md.landMarker(consolJob{agent: p.Agent.ID, name: a.Name, night: night, sleepTick: e.Tick},
 			sim.ConsolidationSkippedEmpty, "", 0)
 		return
 	}
 
 	job := consolJob{
-		agent:     p.Agent,
+		agent:     p.Agent.ID,
 		name:      a.Name,
-		personaMD: md.personas[p.Agent],
+		personaMD: md.personas[p.Agent.ID],
 		anchor:    persona.Anchors[a.Name],
 		drift:     persona.DriftMarkers[a.Name],
 		night:     night,
@@ -87,7 +87,7 @@ func (md *Mind) maybeConsolidate(e store.Event) {
 		upTo:      buffer[len(buffer)-1].Tick,
 		buffer:    append([]sim.Memory(nil), buffer...),
 		held:      append([]sim.Belief(nil), a.Beliefs...),
-		social:    socialContext(md.replica, p.Agent),
+		social:    socialContext(md.replica, p.Agent.ID),
 		narrative: a.Narrative,
 	}
 	if len(job.buffer) > maxBufferSent {
@@ -97,16 +97,16 @@ func (md *Mind) maybeConsolidate(e store.Event) {
 	// speed today; the gate is doctrine-completeness, and a suppression here
 	// (future faster speeds) skips the night — the next sleep retries.
 	if v := md.routeVerdict("consolidation", llm.KindConsolidation); !v.Allow {
-		md.emitSuppressed("consolidation", p.Agent, e.Tick, v)
+		md.emitSuppressed("consolidation", p.Agent.ID, e.Tick, v)
 		return
 	}
-	md.consolInFlight[p.Agent].Store(true)
+	md.consolInFlight[p.Agent.ID].Store(true)
 	select {
 	case md.consolQ <- job:
 	default:
 		// Queue full (should not happen with cap 8): drop the attempt; the
 		// next sleep retries.
-		md.consolInFlight[p.Agent].Store(false)
+		md.consolInFlight[p.Agent.ID].Store(false)
 	}
 }
 
@@ -222,7 +222,7 @@ func (md *Mind) runConsolidation(job consolJob) {
 			Agent: job.agent, MemTick: m.Tick, TextHash: sim.MemoryHash(m.Text)})
 	}
 	add("agent.memory_added", sim.MemoryAddedPayload{
-		Agent: job.agent, Text: out.Gist, Salience: sim.SalDayGist, Subject: -1, Origin: sim.OriginDigest})
+		Agent: sim.Ref(job.agent), Text: out.Gist, Salience: sim.SalDayGist, Subject: sim.Ref(-1), Origin: sim.OriginDigest})
 	for _, b := range out.Beliefs {
 		add("agent.belief_revised", sim.BeliefRevisedPayload{
 			Agent: job.agent, BeliefID: b.ID, Statement: b.Statement,

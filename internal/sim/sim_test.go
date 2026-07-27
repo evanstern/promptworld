@@ -144,10 +144,10 @@ func TestMultiStepIntentExecution(t *testing.T) {
 	}
 	for _, e := range log {
 		var p struct {
-			Agent int `json:"agent"`
+			Agent AgentRef `json:"agent"` // dual-shape (spec 086)
 		}
 		json.Unmarshal(e.Payload, &p)
-		c := perAgent[p.Agent]
+		c := perAgent[p.Agent.ID]
 		switch {
 		case e.Type == "agent.intent_set":
 			c.intents++
@@ -156,7 +156,7 @@ func TestMultiStepIntentExecution(t *testing.T) {
 		case completionTypes[e.Type]:
 			c.completions++
 		}
-		perAgent[p.Agent] = c
+		perAgent[p.Agent.ID] = c
 	}
 	for i := 0; i < agentCount; i++ {
 		c := perAgent[i]

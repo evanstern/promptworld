@@ -13,7 +13,7 @@ import (
 
 func hailEvent(from, to int, until int64, tick int64) store.Event {
 	return store.Event{Tick: tick, Type: "social.hailed",
-		Payload: mustPayload(HailedPayload{From: from, To: to, Until: until})}
+		Payload: mustPayload(HailedPayload{From: Ref(from), To: Ref(to), Until: until})}
 }
 
 func countType(evs []store.Event, typ string) int {
@@ -40,8 +40,8 @@ func countAgentType(evs []store.Event, typ string, agentField string, idx int) i
 		if !ok {
 			continue
 		}
-		var v int
-		if json.Unmarshal(raw, &v) == nil && v == idx {
+		var v AgentRef // dual-shape: bare int (legacy) or {id,name} (spec 086)
+		if json.Unmarshal(raw, &v) == nil && v.ID == idx {
 			n++
 		}
 	}
@@ -68,10 +68,10 @@ func TestHailReducerLifecycle(t *testing.T) {
 		name string
 		e    store.Event
 	}{
-		{"hail_met", store.Event{Tick: 120, Type: "social.hail_met", Payload: mustPayload(HailMetPayload{From: 0, To: 1})}},
-		{"hail_expired", store.Event{Tick: 120, Type: "social.hail_expired", Payload: mustPayload(HailExpiredPayload{From: 0, To: 1})}},
-		{"died", store.Event{Tick: 120, Type: "agent.died", Payload: mustPayload(DiedPayload{Agent: 1, Cause: "collapse"})}},
-		{"slept", store.Event{Tick: 120, Type: "agent.slept", Payload: mustPayload(AgentPayload{Agent: 1})}},
+		{"hail_met", store.Event{Tick: 120, Type: "social.hail_met", Payload: mustPayload(HailMetPayload{From: Ref(0), To: Ref(1)})}},
+		{"hail_expired", store.Event{Tick: 120, Type: "social.hail_expired", Payload: mustPayload(HailExpiredPayload{From: Ref(0), To: Ref(1)})}},
+		{"died", store.Event{Tick: 120, Type: "agent.died", Payload: mustPayload(DiedPayload{Agent: Ref(1), Cause: "collapse"})}},
+		{"slept", store.Event{Tick: 120, Type: "agent.slept", Payload: mustPayload(AgentPayload{Agent: Ref(1)})}},
 	} {
 		s := NewState(42, testMap(42))
 		apply(s, hailEvent(0, 1, 500, 100))

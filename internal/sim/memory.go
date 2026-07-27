@@ -198,8 +198,8 @@ func situatedMemoryEvent(tick int64, agent, salience int, where *MemoryPlace, wh
 	return store.Event{
 		Tick: tick, Type: "agent.memory_added",
 		Payload: mustPayload(MemoryAddedPayload{
-			Agent: agent, Text: situateText(fmt.Sprintf(format, args...), where, why),
-			Salience: salience, Subject: -1, Where: where, Why: why, Origin: origin,
+			Agent: Ref(agent), Text: situateText(fmt.Sprintf(format, args...), where, why),
+			Salience: salience, Subject: Ref(-1), Where: where, Why: why, Origin: origin,
 		}),
 	}
 }
@@ -210,8 +210,8 @@ func situatedMemoryToned(tick int64, agent, salience, tone int, where *MemoryPla
 	return store.Event{
 		Tick: tick, Type: "agent.memory_added",
 		Payload: mustPayload(MemoryAddedPayload{
-			Agent: agent, Text: situateText(fmt.Sprintf(format, args...), where, why),
-			Salience: salience, Subject: -1, Tone: tone, Where: where, Why: why, Origin: origin,
+			Agent: Ref(agent), Text: situateText(fmt.Sprintf(format, args...), where, why),
+			Salience: salience, Subject: Ref(-1), Tone: tone, Where: where, Why: why, Origin: origin,
 		}),
 	}
 }
@@ -225,8 +225,8 @@ func situatedMemoryAboutEvent(tick int64, agent, subject, tone, salience int, wh
 	return store.Event{
 		Tick: tick, Type: "agent.memory_added",
 		Payload: mustPayload(MemoryAddedPayload{
-			Agent: agent, Text: situateText(fmt.Sprintf(format, args...), where, ""),
-			Salience: salience, Subject: subject, Tone: tone, Where: where, Origin: origin,
+			Agent: Ref(agent), Text: situateText(fmt.Sprintf(format, args...), where, ""),
+			Salience: salience, Subject: Ref(subject), Tone: tone, Where: where, Origin: origin,
 		}),
 	}
 }

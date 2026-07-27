@@ -20,7 +20,7 @@ func TestQueueEpilogueOnDeath(t *testing.T) {
 	}
 	md.replica.Relations = []sim.Relation{{From: 0, To: 1, Trust: 40, Affection: 10}}
 
-	md.queueEpilogue(mustEvent(t, 95000, "agent.died", sim.DiedPayload{Agent: 0, Cause: "starvation"}))
+	md.queueEpilogue(mustEvent(t, 95000, "agent.died", sim.DiedPayload{Agent: sim.Ref(0), Cause: "starvation"}))
 
 	var job narrJob
 	select {

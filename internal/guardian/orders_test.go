@@ -51,7 +51,7 @@ func mustEvent(typ string, v any) store.Event {
 // optional keyword coarse filter — plus the invariant that a non-active order
 // never matches (the replay/consumed guard).
 func TestOrderMatches(t *testing.T) {
-	slept := mustEvent("agent.slept", sim.IntentSetPayload{Agent: 3})
+	slept := mustEvent("agent.slept", sim.IntentSetPayload{Agent: sim.Ref(3)})
 	woke := mustEvent("agent.woke", map[string]any{"agent": 3})
 	sleptOther := mustEvent("agent.slept", map[string]any{"agent": 5})
 	convo := mustEvent("social.conversation", map[string]any{"gist": "Rowan wept by the well tonight"})
@@ -84,13 +84,13 @@ func TestOrderMatches(t *testing.T) {
 // TestEventConcernsAgent (spec 029 T008): the agent probe reads agent / from / to
 // and never false-positives on an agent-less or unknown payload shape.
 func TestEventConcernsAgent(t *testing.T) {
-	if !eventConcernsAgent(mustEvent("agent.died", sim.DiedPayload{Agent: 2}), 2) {
+	if !eventConcernsAgent(mustEvent("agent.died", sim.DiedPayload{Agent: sim.Ref(2)}), 2) {
 		t.Error("agent field not read")
 	}
 	if !eventConcernsAgent(mustEvent("social.rumor_told", map[string]any{"from": 1, "to": 4}), 4) {
 		t.Error("to field not read")
 	}
-	if eventConcernsAgent(mustEvent("agent.died", sim.DiedPayload{Agent: 2}), 5) {
+	if eventConcernsAgent(mustEvent("agent.died", sim.DiedPayload{Agent: sim.Ref(2)}), 5) {
 		t.Error("false positive on the wrong villager")
 	}
 	if eventConcernsAgent(store.Event{Type: "sim.night_started", Payload: []byte(`{}`)}, 0) {

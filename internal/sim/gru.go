@@ -195,7 +195,7 @@ func gruStep(s *State, m *worldmap.Map, night bool, nextTick int64) []store.Even
 		// (reducer Dead flag, inventory spill, grave, chronicle, morgue) runs
 		// unchanged (FR-015), plus the same witness-death memory loop.
 		if health == 0 {
-			emit("agent.died", DiedPayload{Agent: target, Cause: "gru"})
+			emit("agent.died", DiedPayload{Agent: Ref(target), Cause: "gru"})
 			for w := range s.Agents {
 				if w == target || s.Agents[w].Dead {
 					continue

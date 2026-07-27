@@ -145,7 +145,7 @@ func TestReinforcementReplayDeterminism(t *testing.T) {
 	const reinfTick = int64(30) + 50*86400
 
 	events := []store.Event{
-		consolidationEvent(t, 20, "agent.memory_added", MemoryAddedPayload{Agent: 0, Text: "Rowan claims tendrils.", Salience: 4, Subject: 3, Origin: OriginGist}),
+		consolidationEvent(t, 20, "agent.memory_added", MemoryAddedPayload{Agent: Ref(0), Text: "Rowan claims tendrils.", Salience: 4, Subject: Ref(3), Origin: OriginGist}),
 		consolidationEvent(t, 30, "agent.belief_revised", BeliefRevisedPayload{
 			Agent: 0, BeliefID: 0, Statement: "Tendrils lurk past the ridge.", Confidence: 68,
 			Provenance: ProvenanceTold, Source: 3, Subject: -1,

@@ -69,7 +69,7 @@ its emission sites to `Ref`/`Refs`, switch its reducer arms to `.ID`,
 extend the cluster's emission-drive test, `go build ./...` +
 cluster tests green.
 
-- [ ] T007 [US1] Batch A — core agent lifecycle
+- [X] T007 [US1] Batch A — core agent lifecycle
   (`internal/sim/agents.go` rows 1–31 + `state.go` rows 30–31:
   intent/work/recovery/harvest/built/build_failed/needs/died/neglect/
   talked/memory/thought/hail/crafting/consumption/tools/walls/storage/

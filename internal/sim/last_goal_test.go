@@ -13,7 +13,7 @@ import (
 func TestIntentSetWritesLastGoal(t *testing.T) {
 	s := NewState(42, testMap(42))
 	e := store.Event{Tick: 500, Type: "agent.intent_set",
-		Payload: mustPayload(IntentSetPayload{Agent: 2, Goal: "chop", TargetX: 10, TargetY: 12})}
+		Payload: mustPayload(IntentSetPayload{Agent: Ref(2), Goal: "chop", TargetX: 10, TargetY: 12})}
 	if err := s.Apply(e); err != nil {
 		t.Fatalf("apply intent_set: %v", err)
 	}
@@ -37,9 +37,9 @@ func TestIntentDonePreservesLastGoal(t *testing.T) {
 		}
 	}
 	apply(store.Event{Tick: 500, Type: "agent.intent_set",
-		Payload: mustPayload(IntentSetPayload{Agent: 2, Goal: "chop"})})
+		Payload: mustPayload(IntentSetPayload{Agent: Ref(2), Goal: "chop"})})
 	apply(store.Event{Tick: 600, Type: "agent.intent_done",
-		Payload: mustPayload(AgentPayload{Agent: 2})})
+		Payload: mustPayload(AgentPayload{Agent: Ref(2)})})
 
 	a := s.Agents[2]
 	if a.Intent != nil {
@@ -58,7 +58,7 @@ func TestGruAttackedPreservesLastGoal(t *testing.T) {
 		}
 	}
 	apply(store.Event{Tick: 500, Type: "agent.intent_set",
-		Payload: mustPayload(IntentSetPayload{Agent: 2, Goal: "forage"})})
+		Payload: mustPayload(IntentSetPayload{Agent: Ref(2), Goal: "forage"})})
 	apply(store.Event{Tick: 700, Type: "gru.attacked",
 		Payload: mustPayload(GruAttackedPayload{Agent: 2, Health: 300})})
 
@@ -82,19 +82,19 @@ func TestLastGoalSurvivesRepeatedSetDone(t *testing.T) {
 		}
 	}
 	apply(store.Event{Tick: 100, Type: "agent.intent_set",
-		Payload: mustPayload(IntentSetPayload{Agent: 0, Goal: "chop"})})
+		Payload: mustPayload(IntentSetPayload{Agent: Ref(0), Goal: "chop"})})
 	apply(store.Event{Tick: 200, Type: "agent.intent_done",
-		Payload: mustPayload(AgentPayload{Agent: 0})})
+		Payload: mustPayload(AgentPayload{Agent: Ref(0)})})
 	if s.Agents[0].LastGoal != "chop" || s.Agents[0].LastGoalTick != 100 {
 		t.Fatalf("after first set/done: LastGoal=%q LastGoalTick=%d", s.Agents[0].LastGoal, s.Agents[0].LastGoalTick)
 	}
 	apply(store.Event{Tick: 300, Type: "agent.intent_set",
-		Payload: mustPayload(IntentSetPayload{Agent: 0, Goal: "hunt"})})
+		Payload: mustPayload(IntentSetPayload{Agent: Ref(0), Goal: "hunt"})})
 	if s.Agents[0].LastGoal != "hunt" || s.Agents[0].LastGoalTick != 300 {
 		t.Fatalf("after second set: LastGoal=%q LastGoalTick=%d", s.Agents[0].LastGoal, s.Agents[0].LastGoalTick)
 	}
 	apply(store.Event{Tick: 400, Type: "agent.intent_done",
-		Payload: mustPayload(AgentPayload{Agent: 0})})
+		Payload: mustPayload(AgentPayload{Agent: Ref(0)})})
 	if s.Agents[0].LastGoal != "hunt" || s.Agents[0].LastGoalTick != 300 {
 		t.Fatalf("after second done: LastGoal=%q LastGoalTick=%d", s.Agents[0].LastGoal, s.Agents[0].LastGoalTick)
 	}
@@ -132,9 +132,9 @@ func TestLastGoalSnapshotRoundTrip(t *testing.T) {
 		}
 	}
 	apply(store.Event{Tick: 900, Type: "agent.intent_set",
-		Payload: mustPayload(IntentSetPayload{Agent: 5, Goal: "quarry"})})
+		Payload: mustPayload(IntentSetPayload{Agent: Ref(5), Goal: "quarry"})})
 	apply(store.Event{Tick: 1000, Type: "agent.intent_done",
-		Payload: mustPayload(AgentPayload{Agent: 5})})
+		Payload: mustPayload(AgentPayload{Agent: Ref(5)})})
 
 	blob := s.Marshal()
 	if !bytes.Contains(blob, []byte(`"last_goal":"quarry"`)) {
@@ -165,7 +165,7 @@ func TestReplayDeterminismWithLastGoal(t *testing.T) {
 	live := NewState(seed, m)
 	cmds := map[int64][]store.Event{
 		100: {{Tick: 100, Type: "agent.intent_set",
-			Payload: mustPayload(IntentSetPayload{Agent: 1, Goal: "chop", TargetX: live.Agents[1].X, TargetY: live.Agents[1].Y})}},
+			Payload: mustPayload(IntentSetPayload{Agent: Ref(1), Goal: "chop", TargetX: live.Agents[1].X, TargetY: live.Agents[1].Y})}},
 	}
 	log := driveTicks(t, live, m, ticks, cmds)
 	if countType(log, "agent.intent_done") == 0 && countType(log, "agent.chopped") == 0 {

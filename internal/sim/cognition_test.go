@@ -445,20 +445,20 @@ func TestLadderUnmeteredCallersKeepOldContract(t *testing.T) {
 // --- T017 (spec 017): agent.intent_set gains Job on planner-loop landings ---
 
 // TestIntentSetPayloadJobByteStability pins IntentSetPayload's marshaled
-// output without Job to the pre-feature encoding (TASK-32 pattern): Job is
-// the LAST field, omitempty, so every payload that doesn't set it — every
-// payload emitted before spec 017, and every reflex/executor emission after
-// it — marshals byte-identically to today.
+// output without Job to the current encoding (TASK-32 pattern): Job is
+// the LAST field, omitempty, so every payload that doesn't set it marshals
+// byte-identically to today. Spec 086: the agent field is the named
+// {id,name} ref — the ratified post-086 emission shape.
 func TestIntentSetPayloadJobByteStability(t *testing.T) {
 	p := IntentSetPayload{
-		Agent: 1, Goal: "chop", TargetX: 5, TargetY: 6,
+		Agent: Ref(1), Goal: "chop", TargetX: 5, TargetY: 6,
 		ResX: 7, ResY: 8, Source: "planner", Kind: "wood", Qty: 2,
 	}
 	b, err := json.Marshal(p)
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := `{"agent":1,"goal":"chop","target_x":5,"target_y":6,"res_x":7,"res_y":8,"source":"planner","kind":"wood","qty":2}`
+	want := `{"agent":{"id":1,"name":"Birch"},"goal":"chop","target_x":5,"target_y":6,"res_x":7,"res_y":8,"source":"planner","kind":"wood","qty":2}`
 	if string(b) != want {
 		t.Errorf("IntentSetPayload marshal changed:\n got  %s\n want %s", b, want)
 	}
@@ -561,7 +561,7 @@ func TestReflexAndPlanIntentSetOmitJob(t *testing.T) {
 func TestGenerationBumpsOnHighSalience(t *testing.T) {
 	s := NewState(42, testMap(42))
 	add := func(sal int) {
-		b, _ := json.Marshal(MemoryAddedPayload{Agent: 0, Text: "x", Salience: sal, Subject: -1})
+		b, _ := json.Marshal(MemoryAddedPayload{Agent: Ref(0), Text: "x", Salience: sal, Subject: Ref(-1)})
 		if err := s.Apply(store.Event{Type: "agent.memory_added", Tick: 1, Payload: b}); err != nil {
 			t.Fatal(err)
 		}

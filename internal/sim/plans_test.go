@@ -623,7 +623,7 @@ func TestPlanLifecycleReplayByteIdentical(t *testing.T) {
 		// Genesis charge pays for the grant; the built shelter then fulfills
 		// dsg-50-0 at the next boundary and dir-80-0 one tick later.
 		90:  {{Tick: 90, Type: "metatron.item_granted", Payload: pl(ItemGrantedPayload{Agent: 0, Kind: "planks", Qty: 4})}},
-		100: {{Tick: 100, Type: "agent.built", Payload: pl(BuiltPayload{Agent: 0, Kind: "shelter", X: 10, Y: 10})}},
+		100: {{Tick: 100, Type: "agent.built", Payload: pl(BuiltPayload{Agent: Ref(0), Kind: "shelter", X: 10, Y: 10})}},
 		200: {idEvent("designation.cancelled", "dsg-60-0", 200)},
 		// A second directive against the (unfulfillable, min 12) zone: the
 		// sweep expires it at 300 + 1 game day.

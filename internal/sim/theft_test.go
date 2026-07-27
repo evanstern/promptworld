@@ -313,7 +313,7 @@ func TestReplayByteIdentityTheft(t *testing.T) {
 	pl := func(v any) []byte { return mustPayload(v) }
 	commands := map[int64][]store.Event{
 		30: {{Tick: 30, Type: "agent.intent_set", Payload: pl(IntentSetPayload{
-			Agent: 1, Goal: "withdraw", TargetX: cx, TargetY: cy, Kind: "wood", Qty: 3, Source: "planner"})}},
+			Agent: Ref(1), Goal: "withdraw", TargetX: cx, TargetY: cy, Kind: "wood", Qty: 3, Source: "planner"})}},
 	}
 
 	const ticks = 120

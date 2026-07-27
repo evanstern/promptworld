@@ -406,7 +406,7 @@ func TestStrangerTheftWitnessMemory(t *testing.T) {
 			if err := json.Unmarshal(e.Payload, &p); err != nil {
 				t.Fatal(err)
 			}
-			if p.Agent == 0 && p.Origin == OriginWitness {
+			if p.Agent.ID == 0 && p.Origin == OriginWitness {
 				memory = true
 			}
 		}

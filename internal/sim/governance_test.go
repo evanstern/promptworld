@@ -264,7 +264,7 @@ func TestProposeVotePass(t *testing.T) {
 		if e.Type == "agent.memory_added" {
 			var p MemoryAddedPayload
 			json.Unmarshal(e.Payload, &p)
-			if p.Subject == 0 && strings.Contains(p.Text, "proposal") {
+			if p.Subject.ID == 0 && strings.Contains(p.Text, "proposal") {
 				outcomeMemories++
 			}
 		}
@@ -439,7 +439,7 @@ func TestCurfewViolationWitnessed(t *testing.T) {
 	for _, e := range governanceLog(log, "agent.memory_added") {
 		var p MemoryAddedPayload
 		json.Unmarshal(e.Payload, &p)
-		if p.Agent == 1 && p.Subject == 0 && p.Tone == toneViolation && p.Salience >= rumorMinSalience {
+		if p.Agent.ID == 1 && p.Subject.ID == 0 && p.Tone == toneViolation && p.Salience >= rumorMinSalience {
 			seeded = true
 		}
 	}
@@ -556,7 +556,7 @@ func TestExileVoteAndShun(t *testing.T) {
 	for _, e := range governanceLog(events, "agent.memory_added") {
 		var p MemoryAddedPayload
 		json.Unmarshal(e.Payload, &p)
-		if p.Agent == 3 && p.Salience == salExiled {
+		if p.Agent.ID == 3 && p.Salience == salExiled {
 			castOut = true
 		}
 	}

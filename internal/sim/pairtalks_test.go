@@ -17,7 +17,7 @@ import (
 
 func talkedEvent(a, b int, tick int64) store.Event {
 	return store.Event{Tick: tick, Type: "agent.talked",
-		Payload: mustPayload(TalkedPayload{A: a, B: b})}
+		Payload: mustPayload(TalkedPayload{A: Ref(a), B: Ref(b)})}
 }
 
 // TestPairTalkRecordUpdatesOnTalk (US2-AS1): the agent.talked arm records the
@@ -85,7 +85,7 @@ func TestPairTalkRecordsBothHailAndAmbient(t *testing.T) {
 	// hailStep emits) and confirm the same arm records it.
 	hail := NewState(42, m)
 	if err := hail.Apply(store.Event{Tick: 5000, Type: "social.hail_met",
-		Payload: mustPayload(HailMetPayload{From: 0, To: 1})}); err != nil {
+		Payload: mustPayload(HailMetPayload{From: Ref(0), To: Ref(1)})}); err != nil {
 		t.Fatal(err)
 	}
 	if err := hail.Apply(talkedEvent(0, 1, 5000)); err != nil {

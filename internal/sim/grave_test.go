@@ -22,7 +22,7 @@ func TestGravePlacedAtDeathTilePersistsAndReplays(t *testing.T) {
 	a := &live.Agents[0]
 	dx, dy := a.X, a.Y
 
-	applyEvent(t, live, 100, "agent.died", DiedPayload{Agent: 0, Cause: "starvation"})
+	applyEvent(t, live, 100, "agent.died", DiedPayload{Agent: Ref(0), Cause: "starvation"})
 
 	if !live.structureAt("grave", dx, dy) {
 		t.Fatal("no grave structure at the death tile")
@@ -35,7 +35,7 @@ func TestGravePlacedAtDeathTilePersistsAndReplays(t *testing.T) {
 
 	// Replay: reduce the same event onto a fresh genesis state independently.
 	replayed := NewState(seed, m)
-	applyEvent(t, replayed, 100, "agent.died", DiedPayload{Agent: 0, Cause: "starvation"})
+	applyEvent(t, replayed, 100, "agent.died", DiedPayload{Agent: Ref(0), Cause: "starvation"})
 	if !replayed.structureAt("grave", dx, dy) {
 		t.Fatal("replayed state missing the grave")
 	}
@@ -160,7 +160,7 @@ func TestGriefRumorFromWitnessedDeath(t *testing.T) {
 	witness, listener := &s.Agents[1], &s.Agents[2]
 	listener.X, listener.Y = witness.X, witness.Y+1 // adjacent: a founded talk's shape
 
-	applyEvent(t, s, 100, "agent.died", DiedPayload{Agent: 0, Cause: "starvation"})
+	applyEvent(t, s, 100, "agent.died", DiedPayload{Agent: Ref(0), Cause: "starvation"})
 	// The heartbeat death loop's witness-death memory only fires for agents
 	// within witnessRadius of the deceased at the moment of death; stage it
 	// directly (the memory's shape, not its emission site, is what this test

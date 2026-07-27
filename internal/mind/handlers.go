@@ -214,7 +214,7 @@ func (d *villagerDispatch) handleMuse(_ context.Context, call llm.ToolCall) tool
 	if r := []rune(text); len(r) > museCapRunes {
 		text = string(r[:museCapRunes])
 	}
-	payload, err := json.Marshal(sim.ThoughtPayload{Agent: d.job.agent, Text: text, Source: "musing"})
+	payload, err := json.Marshal(sim.ThoughtPayload{Agent: sim.Ref(d.job.agent), Text: text, Source: "musing"})
 	if err != nil {
 		return toolloop.Outcome{Err: err}
 	}

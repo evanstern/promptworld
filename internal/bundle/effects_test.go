@@ -113,7 +113,7 @@ func TestCompileEachKind(t *testing.T) {
 		}
 		var p sim.MemoryAddedPayload
 		mustUnmarshal(t, evs[0].Payload, &p)
-		if p.Agent != 0 || p.Text != "a poof of smoke" || p.Salience != sim.SalDream || p.Subject != -1 || p.Origin != sim.OriginOmen {
+		if p.Agent.ID != 0 || p.Text != "a poof of smoke" || p.Salience != sim.SalDream || p.Subject.ID != -1 || p.Origin != sim.OriginOmen {
 			t.Errorf("payload = %+v", p)
 		}
 	})
@@ -452,7 +452,7 @@ func recipients(t *testing.T, evs []store.Event) []int {
 	for i, e := range evs {
 		var p sim.MemoryAddedPayload
 		mustUnmarshal(t, e.Payload, &p)
-		out[i] = p.Agent
+		out[i] = p.Agent.ID
 	}
 	return out
 }

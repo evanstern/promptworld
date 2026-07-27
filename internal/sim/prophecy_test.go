@@ -232,7 +232,7 @@ func TestProphecySweepFulfilWithCompanions(t *testing.T) {
 		if DirectPerception(mp.Origin) {
 			t.Error("an OriginReport companion classified as direct perception — the provenance gate would launder it")
 		}
-		if mp.Agent == 2 {
+		if mp.Agent.ID == 2 {
 			t.Error("a dead target received a companion memory")
 		}
 	}
@@ -557,7 +557,7 @@ func TestProphecyLifecycleReplayByteIdentical(t *testing.T) {
 			return d
 		}(), 0, 80)},
 		90:  {{Tick: 90, Type: "metatron.item_granted", Payload: mustPayload(ItemGrantedPayload{Agent: 0, Kind: "planks", Qty: 4})}},
-		100: {{Tick: 100, Type: "agent.built", Payload: mustPayload(BuiltPayload{Agent: 0, Kind: "shelter", X: 10, Y: 10})}},
+		100: {{Tick: 100, Type: "agent.built", Payload: mustPayload(BuiltPayload{Agent: Ref(0), Kind: "shelter", X: 10, Y: 10})}},
 		200: {placedEvent(validZone("dsg-200-0", 200, 12), 0, 200)},
 		300: {issuedEvent(func() Directive {
 			d := validDirective("dir-300-0", "dsg-200-0", []int{2}, 300)

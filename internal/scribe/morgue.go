@@ -132,7 +132,7 @@ func (s *Scribe) renderMorgue() {
 		case "agent.memory_added":
 			var p sim.MemoryAddedPayload
 			if json.Unmarshal(e.Payload, &p) == nil && p.Salience >= morgueNotableSalience {
-				lifetime[p.Agent] = append(lifetime[p.Agent], morgueMem{tick: e.Tick, sal: p.Salience, text: p.Text})
+				lifetime[p.Agent.ID] = append(lifetime[p.Agent.ID], morgueMem{tick: e.Tick, sal: p.Salience, text: p.Text})
 			}
 		default:
 			if line, who := morgueDeedNote(st, e); line != "" {
@@ -154,8 +154,8 @@ func (s *Scribe) renderMorgue() {
 					c := timeline[len(timeline)-1]
 					latest = &c
 				}
-				ep := captureEpitaph(st, p.Agent, e.Tick, p.Cause, latest)
-				ep.memories = mergeMemories(ep.memories, lifetime[p.Agent])
+				ep := captureEpitaph(st, p.Agent.ID, e.Tick, p.Cause, latest)
+				ep.memories = mergeMemories(ep.memories, lifetime[p.Agent.ID])
 				epitaphs = append(epitaphs, ep)
 			}
 		case "run.ended":
@@ -446,7 +446,7 @@ func morgueDeedNote(st *sim.State, e store.Event) (string, []int) {
 	case "agent.built":
 		var p sim.BuiltPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			return fmt.Sprintf("%s built a %s.", name(p.Agent), p.Kind), []int{p.Agent}
+			return fmt.Sprintf("%s built a %s.", name(p.Agent.ID), p.Kind), []int{p.Agent.ID}
 		}
 	case "social.gave":
 		var p sim.GavePayload

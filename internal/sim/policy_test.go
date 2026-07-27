@@ -156,7 +156,7 @@ func TestWitnessThenResolve(t *testing.T) {
 		t.Skip("no stand tile near the fire")
 	}
 	if err := s.Apply(store.Event{Tick: 200, Type: "agent.moved",
-		Payload: mustPayload(AgentMovedPayload{Agent: 0, X: stand.X, Y: stand.Y})}); err != nil {
+		Payload: mustPayload(AgentMovedPayload{Agent: Ref(0), X: stand.X, Y: stand.Y})}); err != nil {
 		t.Fatal(err)
 	}
 	const beat = 205 // (205 + 0*3) % moveEveryTicks == 0: agent 0's beat
@@ -313,7 +313,7 @@ func TestSearchGrowsCoverageAndTerminates(t *testing.T) {
 		}
 		tick++
 		if err := s.Apply(store.Event{Tick: tick, Type: "agent.moved",
-			Payload: mustPayload(AgentMovedPayload{Agent: 0, X: in.TargetX, Y: in.TargetY})}); err != nil {
+			Payload: mustPayload(AgentMovedPayload{Agent: Ref(0), X: in.TargetX, Y: in.TargetY})}); err != nil {
 			t.Fatal(err)
 		}
 		cur := coverage()

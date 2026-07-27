@@ -130,10 +130,10 @@ func (s *Scribe) run() {
 					// Spec 019 (US3): a journal mutation re-renders that agent's
 					// journal.md (only) — souls are unaffected.
 					var p struct {
-						Agent int `json:"agent"`
+						Agent sim.AgentRef `json:"agent"` // dual-shape (spec 086)
 					}
 					if json.Unmarshal(e.Payload, &p) == nil {
-						jDirty[p.Agent] = true
+						jDirty[p.Agent.ID] = true
 					}
 				case "chronicle.entry":
 					chronDirty = true
@@ -154,10 +154,10 @@ func (s *Scribe) run() {
 					"agent.belief_revised", "agent.narrative_set",
 					"agent.consolidated":
 					var p struct {
-						Agent int `json:"agent"`
+						Agent sim.AgentRef `json:"agent"` // dual-shape (spec 086)
 					}
 					if json.Unmarshal(e.Payload, &p) == nil {
-						dirty[p.Agent] = true
+						dirty[p.Agent.ID] = true
 					}
 				}
 			}

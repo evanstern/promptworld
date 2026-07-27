@@ -295,7 +295,7 @@ func TestPauseConversationLandsAtFrozenTick(t *testing.T) {
 	frozen := st.Tick
 	md.maybeStartConversation(store.Event{
 		Tick: frozen, Type: "agent.talked",
-		Payload: mustJSON(t, sim.TalkedPayload{A: 0, B: 1}),
+		Payload: mustJSON(t, sim.TalkedPayload{A: sim.Ref(0), B: sim.Ref(1)}),
 	}, 0)
 	convs := h.waitEvents(t, 15*time.Second, func(e store.Event) bool {
 		return e.Type == "social.conversation"
@@ -350,7 +350,7 @@ func nudgeBatchEvents(seq, tick int64, form, text string, targets ...int) []stor
 	}
 	for i, tgt := range targets {
 		mb, _ := json.Marshal(sim.MemoryAddedPayload{
-			Agent: tgt, Text: prefix + text, Salience: sim.SalDream, Subject: -1, Origin: sim.OriginOmen})
+			Agent: sim.Ref(tgt), Text: prefix + text, Salience: sim.SalDream, Subject: sim.Ref(-1), Origin: sim.OriginOmen})
 		batch = append(batch, store.Event{Seq: seq + int64(i) + 1, Tick: tick, Type: "agent.memory_added", Payload: mb})
 	}
 	return batch

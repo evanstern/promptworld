@@ -47,7 +47,7 @@ func TestDropCreatesAndMergesPile(t *testing.T) {
 	a := &s.Agents[0]
 	a.Inv = Inventory{Wood: 5, FoodRaw: 4}
 
-	applyEvent(t, s, 10, "agent.dropped", DroppedPayload{Agent: 0, X: 5, Y: 5, Kind: "wood", N: 3})
+	applyEvent(t, s, 10, "agent.dropped", DroppedPayload{Agent: Ref(0), X: 5, Y: 5, Kind: "wood", N: 3})
 	if len(s.Piles) != 1 || s.Piles[0].Wood != 3 {
 		t.Fatalf("after first drop, Piles = %+v, want one pile with Wood 3", s.Piles)
 	}
@@ -55,7 +55,7 @@ func TestDropCreatesAndMergesPile(t *testing.T) {
 		t.Errorf("agent Wood = %d, want 2 after dropping 3 of 5", a.Inv.Wood)
 	}
 
-	applyEvent(t, s, 10, "agent.dropped", DroppedPayload{Agent: 0, X: 5, Y: 5, Kind: "wood", N: 2})
+	applyEvent(t, s, 10, "agent.dropped", DroppedPayload{Agent: Ref(0), X: 5, Y: 5, Kind: "wood", N: 2})
 	if len(s.Piles) != 1 || s.Piles[0].Wood != 5 {
 		t.Fatalf("after second drop, Piles = %+v, want ONE pile accumulating Wood 5 (one pile per tile)", s.Piles)
 	}
@@ -63,7 +63,7 @@ func TestDropCreatesAndMergesPile(t *testing.T) {
 		t.Errorf("agent Wood = %d, want 0", a.Inv.Wood)
 	}
 
-	applyEvent(t, s, 20, "agent.dropped", DroppedPayload{Agent: 0, X: 5, Y: 5, Kind: "food_raw", N: 4})
+	applyEvent(t, s, 20, "agent.dropped", DroppedPayload{Agent: Ref(0), X: 5, Y: 5, Kind: "food_raw", N: 4})
 	if len(s.Piles) != 1 || len(s.Piles[0].Food) != 1 {
 		t.Fatalf("after food drop, pile = %+v, want one food batch", s.Piles)
 	}
@@ -97,7 +97,7 @@ func TestDropCreatesAndMergesPile(t *testing.T) {
 			if e.Type == "agent.dropped" {
 				var p DroppedPayload
 				mustUnmarshal(t, e.Payload, &p)
-				if p.Agent == 0 {
+				if p.Agent.ID == 0 {
 					got = p.N
 				}
 			}
@@ -207,7 +207,7 @@ func TestDeathSpillWithSpears(t *testing.T) {
 	// A pre-existing pile on the death tile to prove create-or-merge + sorting.
 	s.Piles = []Pile{{X: a.X, Y: a.Y, Spears: []int{2}}}
 
-	applyEvent(t, s, 100, "agent.died", DiedPayload{Agent: 0, Cause: "starvation"})
+	applyEvent(t, s, 100, "agent.died", DiedPayload{Agent: Ref(0), Cause: "starvation"})
 
 	if !a.Dead {
 		t.Fatal("agent not marked dead")
@@ -289,13 +289,13 @@ func TestReplayByteIdentityGroundPiles(t *testing.T) {
 	commands := map[int64][]store.Event{
 		// Agent 0 drops 6 wood onto its (and agent 1's) tile.
 		30: {{Tick: 30, Type: "agent.intent_set", Payload: pl(IntentSetPayload{
-			Agent: 0, Goal: "drop", TargetX: genesis().Agents[0].X, TargetY: genesis().Agents[0].Y,
+			Agent: Ref(0), Goal: "drop", TargetX: genesis().Agents[0].X, TargetY: genesis().Agents[0].Y,
 			Kind: "wood", Qty: 6, Source: "planner"})}},
 		// Agent 2 dies with food + a spear → a spill pile at its tile.
-		40: {{Tick: 40, Type: "agent.died", Payload: pl(DiedPayload{Agent: 2, Cause: "starvation"})}},
+		40: {{Tick: 40, Type: "agent.died", Payload: pl(DiedPayload{Agent: Ref(2), Cause: "starvation"})}},
 		// Agent 1 picks up everything from the shared tile.
 		60: {{Tick: 60, Type: "agent.intent_set", Payload: pl(IntentSetPayload{
-			Agent: 1, Goal: "pick_up", TargetX: genesis().Agents[1].X, TargetY: genesis().Agents[1].Y,
+			Agent: Ref(1), Goal: "pick_up", TargetX: genesis().Agents[1].X, TargetY: genesis().Agents[1].Y,
 			Source: "planner"})}},
 	}
 

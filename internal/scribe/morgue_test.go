@@ -59,7 +59,7 @@ func morgueHistory(t *testing.T) []store.Event {
 		ev(0, "world.created", sim.WorldCreatedPayload{Name: "testworld", Seed: 42}),
 		// Birch's lifetime notable memory (>= the scan threshold).
 		ev(3600, "agent.memory_added", sim.MemoryAddedPayload{
-			Agent: 1, Text: "Watched the gru circle the fire.", Salience: 9, Subject: -1}),
+			Agent: sim.Ref(1), Text: "Watched the gru circle the fire.", Salience: 9, Subject: sim.Ref(-1)}),
 		// Birch matters to and is owed by Ash: a divine grant funds the gift
 		// (gratis — no charge accounting in this scripted history), and the
 		// gave arm opens Ash's debt to Birch.
@@ -68,10 +68,10 @@ func morgueHistory(t *testing.T) []store.Event {
 		ev(4200, "social.relation_changed", sim.RelationChangedPayload{
 			A: 1, B: 0, TrustDelta: 30, AffectionDelta: 5, Reason: "gift"}),
 		// Birch's deed, on the chronicle's curated vocabulary.
-		ev(7200, "agent.built", sim.BuiltPayload{Agent: 1, Kind: "fire", X: 10, Y: 10}),
+		ev(7200, "agent.built", sim.BuiltPayload{Agent: sim.Ref(1), Kind: "fire", X: 10, Y: 10}),
 		// The default charter observed on day 1; Cedar dies under it.
 		ev(10000, "metatron.charter_observed", sim.CharterObservedPayload{Fingerprint: "aaaa11112222", Default: true}),
-		ev(50000, "agent.died", sim.DiedPayload{Agent: 2, Cause: "exposure"}),
+		ev(50000, "agent.died", sim.DiedPayload{Agent: sim.Ref(2), Cause: "exposure"}),
 		// The player edits the charter (observed day 2) and places a watch;
 		// Birch dies under BOTH.
 		ev(90000, "metatron.charter_observed", sim.CharterObservedPayload{Fingerprint: "bbbb33334444", Default: false}),
@@ -80,7 +80,7 @@ func morgueHistory(t *testing.T) []store.Event {
 			Condition: "anyone goes hungry", Action: "send a vision toward food",
 			EventTypes: []string{"agent.needs_changed"}, Agent: 1,
 			PlacedTick: 91000, ExpiresTick: 91000 + 2*86400}),
-		ev(95000, "agent.died", sim.DiedPayload{Agent: 1, Cause: "starvation"}),
+		ev(95000, "agent.died", sim.DiedPayload{Agent: sim.Ref(1), Cause: "starvation"}),
 	}
 }
 
@@ -182,7 +182,7 @@ func TestMorgueRunSummary(t *testing.T) {
 		seq++
 		tick := int64(97000 + i)
 		events = append(events, store.Event{Seq: seq, Tick: tick, Type: "agent.died",
-			Payload: mustPayloadJSON(t, sim.DiedPayload{Agent: a, Cause: "exposure"})})
+			Payload: mustPayloadJSON(t, sim.DiedPayload{Agent: sim.Ref(a), Cause: "exposure"})})
 		deaths = append(deaths, sim.DeathRecord{Agent: a, Tick: tick, Cause: "exposure"})
 	}
 	seq++

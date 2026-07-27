@@ -59,8 +59,8 @@ func TestBeliefEvidenceReplayDeterminism(t *testing.T) {
 	m := testMap(seed)
 
 	events := []store.Event{
-		consolidationEvent(t, 10, "agent.memory_added", MemoryAddedPayload{Agent: 0, Text: "Built a fire.", Salience: 5, Subject: -1, Origin: OriginAction}),
-		consolidationEvent(t, 20, "agent.memory_added", MemoryAddedPayload{Agent: 0, Text: "Rowan claims tendrils.", Salience: 4, Subject: 3, Origin: OriginGist}),
+		consolidationEvent(t, 10, "agent.memory_added", MemoryAddedPayload{Agent: Ref(0), Text: "Built a fire.", Salience: 5, Subject: Ref(-1), Origin: OriginAction}),
+		consolidationEvent(t, 20, "agent.memory_added", MemoryAddedPayload{Agent: Ref(0), Text: "Rowan claims tendrils.", Salience: 4, Subject: Ref(3), Origin: OriginGist}),
 		// A direct-evidence belief keeps witnessed.
 		consolidationEvent(t, 30, "agent.belief_revised", BeliefRevisedPayload{
 			Agent: 0, BeliefID: 0, Statement: "I built a fire on the ridge.", Confidence: 80,

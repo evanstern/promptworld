@@ -77,7 +77,7 @@ func (md *Mind) chronicleNote(e store.Event) {
 	case "agent.died":
 		var p sim.DiedPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			line = fmt.Sprintf("%s died of %s.", name(p.Agent), p.Cause)
+			line = fmt.Sprintf("%s died of %s.", name(p.Agent.ID), p.Cause)
 		}
 	case "run.ended":
 		// Spec 044 US1: the run-over declaration closes the story — the
@@ -89,7 +89,7 @@ func (md *Mind) chronicleNote(e store.Event) {
 	case "agent.built":
 		var p sim.BuiltPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			line = fmt.Sprintf("%s built a %s.", name(p.Agent), p.Kind)
+			line = fmt.Sprintf("%s built a %s.", name(p.Agent.ID), p.Kind)
 		}
 	case "gru.emerged":
 		line = "The gru emerged from its den."
@@ -193,7 +193,7 @@ func (md *Mind) chronicleNote(e store.Event) {
 	case "agent.thought":
 		var p sim.ThoughtPayload
 		if json.Unmarshal(e.Payload, &p) == nil && p.Source == "musing" {
-			line = fmt.Sprintf("%s mused: %q.", name(p.Agent), p.Text)
+			line = fmt.Sprintf("%s mused: %q.", name(p.Agent.ID), p.Text)
 		}
 	case "meeting.convention_established":
 		var p sim.MeetingConventionPayload
@@ -399,13 +399,13 @@ func (md *Mind) queueEpilogue(e store.Event) {
 		if json.Unmarshal(e.Payload, &p) != nil {
 			return
 		}
-		agent = p.Agent
+		agent = p.Agent.ID
 		name := "someone"
-		if p.Agent >= 0 && p.Agent < len(md.replica.Agents) {
-			name = md.replica.Agents[p.Agent].Name
+		if p.Agent.ID >= 0 && p.Agent.ID < len(md.replica.Agents) {
+			name = md.replica.Agents[p.Agent.ID].Name
 		}
 		label = fmt.Sprintf("epilogue for %s", name)
-		lines = md.epilogueFacts(p.Agent, p.Cause, e.Tick)
+		lines = md.epilogueFacts(p.Agent.ID, p.Cause, e.Tick)
 	case "run.ended":
 		var p sim.RunEndedPayload
 		if json.Unmarshal(e.Payload, &p) != nil {

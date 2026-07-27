@@ -22,19 +22,19 @@ import (
 // heartbeat's shape) — the fixture scripts slides with it.
 func neglectNeedsChanged(tick int64, agent int, n Needs) store.Event {
 	return store.Event{Tick: tick, Type: "agent.needs_changed", Payload: mustPayload(NeedsPayload{
-		Agent: agent, Health: n.Health, Food: n.Food, Rest: n.Rest, Warmth: n.Warmth, Morale: n.Morale,
+		Agent: Ref(agent), Health: n.Health, Food: n.Food, Rest: n.Rest, Warmth: n.Warmth, Morale: n.Morale,
 	})}
 }
 
 func neglectIntentSet(tick int64, agent int, goal, source string) store.Event {
 	return store.Event{Tick: tick, Type: "agent.intent_set", Payload: mustPayload(IntentSetPayload{
-		Agent: agent, Goal: goal, TargetX: 1, TargetY: 1, Source: source,
+		Agent: Ref(agent), Goal: goal, TargetX: 1, TargetY: 1, Source: source,
 	})}
 }
 
 func neglectDetected(tick int64, agent int, need string, level int, since int64) store.Event {
 	return store.Event{Tick: tick, Type: "sim.neglect_detected", Payload: mustPayload(NeglectDetectedPayload{
-		Agent: agent, Need: need, Level: level, Since: since,
+		Agent: Ref(agent), Need: need, Level: level, Since: since,
 	})}
 }
 
@@ -263,7 +263,7 @@ func TestNeglectOakShapedFixture(t *testing.T) {
 	if fireTicks[0] != fireAt {
 		t.Errorf("fired at %d, want band-entry+%d = %d", fireTicks[0], neglectWindowTicks, fireAt)
 	}
-	if p.Agent != oak || p.Need != "warmth" || p.Since != bandEntry {
+	if p.Agent.ID != oak || p.Need != "warmth" || p.Since != bandEntry {
 		t.Errorf("payload = %+v, want agent %d / warmth / since %d", p, oak, bandEntry)
 	}
 	if p.Level != 0 {
@@ -394,7 +394,7 @@ func TestNeglectSkipsAsleepFiresOnWake(t *testing.T) {
 	if len(firings) != 0 {
 		t.Fatalf("premature firing")
 	}
-	mustApply(t, s, store.Event{Tick: 7500, Type: "agent.slept", Payload: mustPayload(AgentPayload{Agent: 0})})
+	mustApply(t, s, store.Event{Tick: 7500, Type: "agent.slept", Payload: mustPayload(AgentPayload{Agent: Ref(0)})})
 	// Due at 7800, but asleep: skipped at the beat, predicate false.
 	firings, _ = runNeglectSweep(t, s, 7560, 9000, script)
 	if len(firings) != 0 {
@@ -404,7 +404,7 @@ func TestNeglectSkipsAsleepFiresOnWake(t *testing.T) {
 		t.Error("NeglectDue must be false for a sleeper")
 	}
 	// Wake still critical: the next heartbeat fires.
-	mustApply(t, s, store.Event{Tick: 9030, Type: "agent.woke", Payload: mustPayload(AgentPayload{Agent: 0})})
+	mustApply(t, s, store.Event{Tick: 9030, Type: "agent.woke", Payload: mustPayload(AgentPayload{Agent: Ref(0)})})
 	firings, fireTicks := runNeglectSweep(t, s, 9060, 9240, script)
 	if len(firings) != 1 || fireTicks[0] != 9060 {
 		t.Fatalf("waker firing %v at %v, want exactly one at 9060", firings, fireTicks)
@@ -424,14 +424,14 @@ func neglectReplayTimeline() map[int64][]store.Event {
 		tl[tick] = append(tl[tick], store.Event{Tick: tick, Type: typ, Payload: mustPayload(payload)})
 	}
 	for tick := int64(30); tick <= 7500; tick += 1200 {
-		add(tick, "agent.needs_changed", NeedsPayload{Agent: 0, Health: 1000, Food: 1000, Rest: 1000, Warmth: 200, Morale: 600})
+		add(tick, "agent.needs_changed", NeedsPayload{Agent: Ref(0), Health: 1000, Food: 1000, Rest: 1000, Warmth: 200, Morale: 600})
 	}
 	for i, tick := 0, int64(10); tick <= 7500; i, tick = i+1, tick+100 {
 		x := 2
 		if i%2 == 1 {
 			x = 62
 		}
-		add(tick, "agent.intent_set", IntentSetPayload{Agent: 0, Goal: "wander", TargetX: x, TargetY: 32, Source: "planner"})
+		add(tick, "agent.intent_set", IntentSetPayload{Agent: Ref(0), Goal: "wander", TargetX: x, TargetY: 32, Source: "planner"})
 	}
 	return tl
 }
@@ -455,7 +455,7 @@ func TestNeglectLiveVsReplayByteIdentical(t *testing.T) {
 		case "sim.neglect_detected":
 			var p NeglectDetectedPayload
 			json.Unmarshal(e.Payload, &p)
-			if p.Agent != 0 || p.Need != "warmth" || p.Since != 30 {
+			if p.Agent.ID != 0 || p.Need != "warmth" || p.Since != 30 {
 				t.Fatalf("unexpected firing %+v", p)
 			}
 			fired++
@@ -465,7 +465,7 @@ func TestNeglectLiveVsReplayByteIdentical(t *testing.T) {
 		case "agent.intent_set":
 			var p IntentSetPayload
 			json.Unmarshal(e.Payload, &p)
-			if p.Agent == 0 && needClassOf(p.Goal) == "warmth" {
+			if p.Agent.ID == 0 && needClassOf(p.Goal) == "warmth" {
 				t.Fatalf("agent 0 set a warmth-class intent (%s at %d) — the fixture no longer isolates neglect", p.Goal, e.Tick)
 			}
 		}

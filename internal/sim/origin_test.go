@@ -76,11 +76,11 @@ func TestMemoryOriginReducerCopies(t *testing.T) {
 	s := NewState(42, m)
 
 	if err := s.Apply(store.Event{Tick: 100, Type: "agent.memory_added",
-		Payload: mustPayload(MemoryAddedPayload{Agent: 0, Text: "Built a fire.", Salience: 5, Subject: -1, Origin: OriginAction})}); err != nil {
+		Payload: mustPayload(MemoryAddedPayload{Agent: Ref(0), Text: "Built a fire.", Salience: 5, Subject: Ref(-1), Origin: OriginAction})}); err != nil {
 		t.Fatal(err)
 	}
 	if err := s.Apply(store.Event{Tick: 200, Type: "agent.memory_added",
-		Payload: mustPayload(MemoryAddedPayload{Agent: 0, Text: "an old memory", Salience: 3, Subject: -1})}); err != nil {
+		Payload: mustPayload(MemoryAddedPayload{Agent: Ref(0), Text: "an old memory", Salience: 3, Subject: Ref(-1)})}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -135,8 +135,8 @@ func TestEmittedSimMemoriesCarryOrigin(t *testing.T) {
 func TestPre030MemoryByteIdentical(t *testing.T) {
 	m := testMap(42)
 	log := []store.Event{
-		{Tick: 100, Type: "agent.memory_added", Payload: mustPayload(MemoryAddedPayload{Agent: 0, Text: "Built a fire.", Salience: 5, Subject: -1})},
-		{Tick: 200, Type: "agent.memory_added", Payload: mustPayload(MemoryAddedPayload{Agent: 1, Text: "Talked with Ash.", Salience: 3, Subject: 0})},
+		{Tick: 100, Type: "agent.memory_added", Payload: mustPayload(MemoryAddedPayload{Agent: Ref(0), Text: "Built a fire.", Salience: 5, Subject: Ref(-1)})},
+		{Tick: 200, Type: "agent.memory_added", Payload: mustPayload(MemoryAddedPayload{Agent: Ref(1), Text: "Talked with Ash.", Salience: 3, Subject: Ref(0)})},
 	}
 	replay := func() []byte {
 		s := NewState(42, m)

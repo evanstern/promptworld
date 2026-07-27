@@ -59,7 +59,7 @@ func lessonFixtureEventPayload(t *testing.T, id string) store.Event {
 	case "first-order-expired":
 		return mkEvent("metatron.order_expired", sim.OrderIDPayload{ID: "ord-1"})
 	case "first-death":
-		return mkEvent("agent.died", sim.DiedPayload{Agent: 0, Cause: "starvation"})
+		return mkEvent("agent.died", sim.DiedPayload{Agent: sim.Ref(0), Cause: "starvation"})
 	case "first-rejected-tool-call":
 		return mkEvent("cog.tool_call", sim.CogToolCallPayload{Job: "j1", Tool: "gather", Verdict: "rejected_gate", Reason: "stale"})
 	case "first-custom-charter":

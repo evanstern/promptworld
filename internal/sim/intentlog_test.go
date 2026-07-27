@@ -25,7 +25,7 @@ func applyTo(t *testing.T, s *State, e store.Event) {
 func TestIntentSetAppendsRecord(t *testing.T) {
 	s := NewState(42, testMap(42))
 	applyTo(t, s, store.Event{Tick: 500, Type: "agent.intent_set",
-		Payload: mustPayload(IntentSetPayload{Agent: 2, Goal: "chop", Source: "planner", Reason: "need wood"})})
+		Payload: mustPayload(IntentSetPayload{Agent: Ref(2), Goal: "chop", Source: "planner", Reason: "need wood"})})
 	log := s.Agents[2].IntentLog
 	if len(log) != 1 {
 		t.Fatalf("IntentLog len = %d, want 1", len(log))
@@ -44,9 +44,9 @@ func TestIntentSetAppendsRecord(t *testing.T) {
 func TestIntentDoneStampsNewestOpen(t *testing.T) {
 	s := NewState(42, testMap(42))
 	applyTo(t, s, store.Event{Tick: 100, Type: "agent.intent_set",
-		Payload: mustPayload(IntentSetPayload{Agent: 0, Goal: "forage", Source: "reflex"})})
+		Payload: mustPayload(IntentSetPayload{Agent: Ref(0), Goal: "forage", Source: "reflex"})})
 	applyTo(t, s, store.Event{Tick: 260, Type: "agent.intent_done",
-		Payload: mustPayload(AgentPayload{Agent: 0})})
+		Payload: mustPayload(AgentPayload{Agent: Ref(0)})})
 	r := s.Agents[0].IntentLog[0]
 	if r.Outcome != "done" || r.OutcomeTick != 260 {
 		t.Errorf("record = %+v, want done @ 260", r)
@@ -56,9 +56,9 @@ func TestIntentDoneStampsNewestOpen(t *testing.T) {
 func TestBuildFailedStampsFailed(t *testing.T) {
 	s := NewState(42, testMap(42))
 	applyTo(t, s, store.Event{Tick: 100, Type: "agent.intent_set",
-		Payload: mustPayload(IntentSetPayload{Agent: 0, Goal: "build_fire", Source: "planner"})})
+		Payload: mustPayload(IntentSetPayload{Agent: Ref(0), Goal: "build_fire", Source: "planner"})})
 	applyTo(t, s, store.Event{Tick: 340, Type: "agent.build_failed",
-		Payload: mustPayload(BuildFailedPayload{Agent: 0, Goal: "build_fire", Reason: "no wood"})})
+		Payload: mustPayload(BuildFailedPayload{Agent: Ref(0), Goal: "build_fire", Reason: "no wood"})})
 	r := s.Agents[0].IntentLog[0]
 	if r.Outcome != "failed" || r.OutcomeTick != 340 {
 		t.Errorf("record = %+v, want failed @ 340", r)
@@ -92,7 +92,7 @@ func TestIntentRejectedAppendsClosed(t *testing.T) {
 func TestPlanExpiredStampsOpenStep(t *testing.T) {
 	s := NewState(42, testMap(42))
 	applyTo(t, s, store.Event{Tick: 1000, Type: "agent.intent_set",
-		Payload: mustPayload(IntentSetPayload{Agent: 0, Goal: "goto_warmth", Source: "plan"})})
+		Payload: mustPayload(IntentSetPayload{Agent: Ref(0), Goal: "goto_warmth", Source: "plan"})})
 	applyTo(t, s, store.Event{Tick: 1200, Type: "agent.plan_expired",
 		Payload: mustPayload(PlanStepPayload{Agent: 0, Job: "j", Step: "goto_warmth", Reason: "window closed"})})
 	if n := len(s.Agents[0].IntentLog); n != 1 {
@@ -128,9 +128,9 @@ func TestPlanExpiredAppendsUnfiredStep(t *testing.T) {
 func TestOverrideQuickSuccession(t *testing.T) {
 	s := NewState(42, testMap(42))
 	applyTo(t, s, store.Event{Tick: 100, Type: "agent.intent_set",
-		Payload: mustPayload(IntentSetPayload{Agent: 0, Goal: "forage", Source: "planner"})})
+		Payload: mustPayload(IntentSetPayload{Agent: Ref(0), Goal: "forage", Source: "planner"})})
 	applyTo(t, s, store.Event{Tick: 101, Type: "agent.intent_set",
-		Payload: mustPayload(IntentSetPayload{Agent: 0, Goal: "goto_warmth", Source: "reflex"})})
+		Payload: mustPayload(IntentSetPayload{Agent: Ref(0), Goal: "goto_warmth", Source: "reflex"})})
 	log := s.Agents[0].IntentLog
 	if len(log) != 2 || log[0].Goal != "forage" || log[1].Goal != "goto_warmth" {
 		t.Fatalf("override order not preserved: %+v", log)
@@ -139,7 +139,7 @@ func TestOverrideQuickSuccession(t *testing.T) {
 		t.Fatalf("both records should be open before any close: %+v", log)
 	}
 	applyTo(t, s, store.Event{Tick: 260, Type: "agent.intent_done",
-		Payload: mustPayload(AgentPayload{Agent: 0})})
+		Payload: mustPayload(AgentPayload{Agent: Ref(0)})})
 	log = s.Agents[0].IntentLog
 	if log[1].Outcome != "done" {
 		t.Errorf("newest (override) record should close done: %+v", log[1])
@@ -158,7 +158,7 @@ func TestRingWraparoundAtCap(t *testing.T) {
 	for i := 0; i < total; i++ {
 		goals[i] = "g" + string(rune('A'+i))
 		applyTo(t, s, store.Event{Tick: int64(100 + i), Type: "agent.intent_set",
-			Payload: mustPayload(IntentSetPayload{Agent: 0, Goal: goals[i], Source: "planner"})})
+			Payload: mustPayload(IntentSetPayload{Agent: Ref(0), Goal: goals[i], Source: "planner"})})
 	}
 	log := s.Agents[0].IntentLog
 	if len(log) != intentLogCap {
@@ -182,11 +182,11 @@ func TestIntentLogByteStabilityAndReplay(t *testing.T) {
 		t.Fatal("a fresh state should carry no intent_log key")
 	}
 	applyTo(t, s, store.Event{Tick: 100, Type: "agent.intent_set",
-		Payload: mustPayload(IntentSetPayload{Agent: 1, Goal: "chop", Source: "planner"})})
+		Payload: mustPayload(IntentSetPayload{Agent: Ref(1), Goal: "chop", Source: "planner"})})
 	applyTo(t, s, store.Event{Tick: 200, Type: "agent.intent_done",
-		Payload: mustPayload(AgentPayload{Agent: 1})})
+		Payload: mustPayload(AgentPayload{Agent: Ref(1)})})
 	applyTo(t, s, store.Event{Tick: 300, Type: "agent.intent_set",
-		Payload: mustPayload(IntentSetPayload{Agent: 1, Goal: "hunt", Source: "reflex"})})
+		Payload: mustPayload(IntentSetPayload{Agent: Ref(1), Goal: "hunt", Source: "reflex"})})
 
 	blob := s.Marshal()
 	var back State

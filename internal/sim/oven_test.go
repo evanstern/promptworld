@@ -45,7 +45,7 @@ func TestBuildSiteVanishedFailsLoudOven(t *testing.T) {
 		case "agent.build_failed":
 			var p BuildFailedPayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.Agent == 0 {
+			if p.Agent.ID == 0 {
 				failed++
 				reason, goal, failTick = p.Reason, p.Goal, e.Tick
 			}
@@ -54,13 +54,13 @@ func TestBuildSiteVanishedFailsLoudOven(t *testing.T) {
 		case "agent.intent_done":
 			var p AgentPayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.Agent == 0 {
+			if p.Agent.ID == 0 {
 				done++
 			}
 		case "agent.memory_added":
 			var p MemoryAddedPayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.Agent == 0 && p.Origin == OriginAction && p.Salience == salShelter &&
+			if p.Agent.ID == 0 && p.Origin == OriginAction && p.Salience == salShelter &&
 				strings.Contains(p.Text, "never built") && strings.Contains(p.Text, "oven") {
 				memTick = e.Tick
 			}
@@ -124,7 +124,7 @@ func TestOvenBuildCost(t *testing.T) {
 		if e.Type == "agent.memory_added" {
 			var p MemoryAddedPayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.Agent == 0 && p.Salience == salOvenBuilt {
+			if p.Agent.ID == 0 && p.Salience == salOvenBuilt {
 				memory = true
 			}
 		}
@@ -209,7 +209,7 @@ func TestOvenCookNoFuelNoOp(t *testing.T) {
 		if e.Type == "agent.intent_done" {
 			var p AgentPayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.Agent == 0 {
+			if p.Agent.ID == 0 {
 				done = true
 			}
 		}
@@ -343,7 +343,7 @@ func TestReplayByteIdentityOven(t *testing.T) {
 	setIntent := func(tick int64, goal string, tx, ty int) map[int64][]store.Event {
 		return map[int64][]store.Event{
 			tick: {{Tick: tick, Type: "agent.intent_set", Payload: mustPayload(IntentSetPayload{
-				Agent: 0, Goal: goal, TargetX: tx, TargetY: ty, Source: "planner",
+				Agent: Ref(0), Goal: goal, TargetX: tx, TargetY: ty, Source: "planner",
 			})}},
 		}
 	}

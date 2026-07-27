@@ -76,11 +76,11 @@ func TestSoulRendersSituatedContext(t *testing.T) {
 	scr.Observe([]store.Event{
 		// A fully situated memory (place with desc + why).
 		{Tick: 3600, Type: "agent.memory_added", Payload: mustPayloadJSON(t, sim.MemoryAddedPayload{
-			Agent: 0, Text: "Built a fire at the rock outcrop (23,41) — keep the Gru away.", Salience: 5, Subject: -1,
+			Agent: sim.Ref(0), Text: "Built a fire at the rock outcrop (23,41) — keep the Gru away.", Salience: 5, Subject: sim.Ref(-1),
 			Where: &sim.MemoryPlace{X: 23, Y: 41, Desc: "the rock outcrop"}, Why: "keep the Gru away."})},
 		// A conversation memory (place, no desc + conv ref).
 		{Tick: 3660, Type: "agent.memory_added", Payload: mustPayloadJSON(t, sim.MemoryAddedPayload{
-			Agent: 0, Text: "Talked with Birch — argued about the storm.", Salience: 4, Subject: 1,
+			Agent: sim.Ref(0), Text: "Talked with Birch — argued about the storm.", Salience: 4, Subject: sim.Ref(1),
 			Where: &sim.MemoryPlace{X: 7, Y: 12}, Conv: 3600})},
 		// A pre-019 memory (no situated fields) — must render as before.
 		{Tick: 3720, Type: "agent.memory_added", Payload: mustPayloadJSON(t, map[string]any{
@@ -223,7 +223,7 @@ func TestSoulShowsConsolidatedGrowth(t *testing.T) {
 	night := func(tick int64, gist, narrative, belief string, conf int) []store.Event {
 		return []store.Event{
 			{Tick: tick, Type: "agent.memory_added", Payload: mustPayloadJSON(t,
-				sim.MemoryAddedPayload{Agent: 0, Text: gist, Salience: sim.SalDayGist, Subject: -1})},
+				sim.MemoryAddedPayload{Agent: sim.Ref(0), Text: gist, Salience: sim.SalDayGist, Subject: sim.Ref(-1)})},
 			{Tick: tick, Type: "agent.belief_revised", Payload: mustPayloadJSON(t,
 				sim.BeliefRevisedPayload{Agent: 0, BeliefID: 0, Statement: belief,
 					Confidence: conf, Provenance: sim.ProvenanceWitnessed, Source: -1, Subject: -1})},

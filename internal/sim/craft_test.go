@@ -30,7 +30,7 @@ func TestCraftInsufficientInputsNoOp(t *testing.T) {
 		if e.Type == "agent.intent_done" {
 			var p AgentPayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.Agent == 0 {
+			if p.Agent.ID == 0 {
 				done = true
 			}
 		}
@@ -127,7 +127,7 @@ func TestHuntBareVsSpear(t *testing.T) {
 		if e.Type == "agent.hunted" {
 			var p HarvestPayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.Agent == 1 {
+			if p.Agent.ID == 1 {
 				t.Fatal("bare hunt completed before its full duration elapsed")
 			}
 		}
@@ -145,7 +145,7 @@ func TestHuntBareVsSpear(t *testing.T) {
 		if e.Type == "agent.hunted" {
 			var p HarvestPayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.Agent == 2 {
+			if p.Agent.ID == 2 {
 				speared = true
 			}
 		}
@@ -217,15 +217,15 @@ func TestSpearBreaksAtZeroWithMemory(t *testing.T) {
 		case "agent.spear_broke":
 			var p SpearBrokePayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.Agent != 0 {
-				t.Errorf("spear_broke agent = %d, want 0", p.Agent)
+			if p.Agent.ID != 0 {
+				t.Errorf("spear_broke agent = %d, want 0", p.Agent.ID)
 			}
 			sawBroke = true
 			brokeIdx = idx
 		case "agent.memory_added":
 			var p MemoryAddedPayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.Agent == 0 && p.Salience == salSpearBroke {
+			if p.Agent.ID == 0 && p.Salience == salSpearBroke {
 				sawMemory = true
 			}
 		}
@@ -275,7 +275,7 @@ func TestReplayByteIdentityCraftAndHunt(t *testing.T) {
 	setIntent := func(tick int64, goal string, tx, ty int) map[int64][]store.Event {
 		return map[int64][]store.Event{
 			tick: {{Tick: tick, Type: "agent.intent_set", Payload: mustPayload(IntentSetPayload{
-				Agent: 0, Goal: goal, TargetX: tx, TargetY: ty, Source: "planner",
+				Agent: Ref(0), Goal: goal, TargetX: tx, TargetY: ty, Source: "planner",
 			})}},
 		}
 	}

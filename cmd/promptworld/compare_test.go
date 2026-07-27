@@ -159,7 +159,7 @@ func TestCompareDecidedDuel(t *testing.T) {
 // renders live markers (… pending) and the still-running outcome.
 func TestCompareLiveWorld(t *testing.T) {
 	live := duelWorld(t, "alive", "first-night", []store.Event{
-		{Tick: 1000, Type: "agent.moved", Payload: duelJSON(t, sim.AgentMovedPayload{Agent: 0, X: 1, Y: 1})},
+		{Tick: 1000, Type: "agent.moved", Payload: duelJSON(t, sim.AgentMovedPayload{Agent: sim.Ref(0), X: 1, Y: 1})},
 	})
 	other := duelWorld(t, "other", "first-night", deathAndEnd(t))
 	r, err := buildDuelReport(live, other, -1)
@@ -224,9 +224,9 @@ func TestCompareDifferentExercises(t *testing.T) {
 // TestCompareDivergence is SC-005's placement half: the marker lands on the
 // first differing story event, rendered in game time.
 func TestCompareDivergence(t *testing.T) {
-	shared := store.Event{Tick: 1000, Type: "agent.moved", Payload: duelJSON(t, sim.AgentMovedPayload{Agent: 0, X: 1, Y: 1})}
+	shared := store.Event{Tick: 1000, Type: "agent.moved", Payload: duelJSON(t, sim.AgentMovedPayload{Agent: sim.Ref(0), X: 1, Y: 1})}
 	a := duelWorld(t, "same-a", "", []store.Event{shared,
-		{Tick: 2000, Type: "agent.moved", Payload: duelJSON(t, sim.AgentMovedPayload{Agent: 0, X: 2, Y: 2})},
+		{Tick: 2000, Type: "agent.moved", Payload: duelJSON(t, sim.AgentMovedPayload{Agent: sim.Ref(0), X: 2, Y: 2})},
 	})
 	b := duelWorld(t, "same-b", "", []store.Event{shared,
 		{Tick: 2000, Type: "agent.foraged", Payload: duelJSON(t, map[string]any{"agent": 0, "x": 2, "y": 2})},
@@ -255,7 +255,7 @@ func TestCompareDivergence(t *testing.T) {
 // and chronicle wording renders NO divergence — two runs that told the
 // same story at different wall speeds do not falsely diverge.
 func TestCompareMachineryNeverDiverges(t *testing.T) {
-	story := store.Event{Tick: 1000, Type: "agent.moved", Payload: duelJSON(t, sim.AgentMovedPayload{Agent: 0, X: 1, Y: 1})}
+	story := store.Event{Tick: 1000, Type: "agent.moved", Payload: duelJSON(t, sim.AgentMovedPayload{Agent: sim.Ref(0), X: 1, Y: 1})}
 	a := duelWorld(t, "wall-a", "", []store.Event{story,
 		{Tick: 1100, Type: "daemon.started", Payload: duelJSON(t, sim.DaemonStartedPayload{Tick: 1100, RecoveryMs: 12})},
 		{Tick: 1200, Type: "clock.speed_set", Payload: duelJSON(t, map[string]string{"speed": "4x"})},
@@ -296,7 +296,7 @@ func TestCompareForkPair(t *testing.T) {
 	}
 	if err := st.AppendEvents([]store.Event{
 		{Tick: 0, Type: "world.created", Payload: duelJSON(t, sim.WorldCreatedPayload{Name: "aria", Seed: 5})},
-		{Tick: 1000, Type: "agent.moved", Payload: duelJSON(t, sim.AgentMovedPayload{Agent: 0, X: 1, Y: 1})},
+		{Tick: 1000, Type: "agent.moved", Payload: duelJSON(t, sim.AgentMovedPayload{Agent: sim.Ref(0), X: 1, Y: 1})},
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -358,7 +358,7 @@ func TestCompareInterleaveOrderAndLabels(t *testing.T) {
 	}
 	a := duelWorld(t, "tale-a", "", []store.Event{
 		entry(1000, "first light"),
-		{Tick: 1600, Type: "agent.moved", Payload: duelJSON(t, sim.AgentMovedPayload{Agent: 0, X: 1, Y: 1})},
+		{Tick: 1600, Type: "agent.moved", Payload: duelJSON(t, sim.AgentMovedPayload{Agent: sim.Ref(0), X: 1, Y: 1})},
 		entry(2000, "the gathering"),
 	})
 	b := duelWorld(t, "tale-b", "", []store.Event{

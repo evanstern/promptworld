@@ -223,8 +223,8 @@ func (mt *Guardian) landIssueDirective(designationID, targetsArg, text string, t
 	batch := []store.Event{{Type: "directive.issued", Payload: mustJSON(d)}}
 	for _, t := range targets {
 		batch = append(batch, store.Event{Type: "agent.memory_added", Payload: mustJSON(sim.MemoryAddedPayload{
-			Agent: t, Text: "The Guardian charges you: " + text, Salience: sim.SalDream,
-			Subject: -1, Origin: sim.OriginOmen})})
+			Agent: sim.Ref(t), Text: "The Guardian charges you: " + text, Salience: sim.SalDream,
+			Subject: sim.Ref(-1), Origin: sim.OriginOmen})})
 	}
 	if err := mt.social.InjectSocial(batch); err != nil {
 		log.Printf("guardian: directive rejected at the door: %v", err)

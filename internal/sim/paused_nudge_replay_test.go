@@ -19,8 +19,8 @@ func pausedNudgeTimeline() map[int64][]store.Event {
 			{Tick: 500, Type: "metatron.nudged", Payload: pl(GuardianNudgedPayload{
 				Form: "vision", Targets: []int{0}, Text: "the river is rising"})},
 			{Tick: 500, Type: "agent.memory_added", Payload: pl(MemoryAddedPayload{
-				Agent: 0, Text: "You saw a vision: the river is rising",
-				Salience: SalDream, Subject: -1, Origin: OriginOmen})},
+				Agent: Ref(0), Text: "You saw a vision: the river is rising",
+				Salience: SalDream, Subject: Ref(-1), Origin: OriginOmen})},
 		},
 		1500: {{Tick: 1500, Type: "clock.resumed", Payload: pl(struct{}{})}},
 	}

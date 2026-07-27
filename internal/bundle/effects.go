@@ -419,7 +419,7 @@ func compileOne(idx int, e Effect, in CompileInput) ([]store.Event, error) {
 		out := make([]store.Event, 0, len(recips))
 		for _, r := range recips {
 			out = append(out, event("agent.memory_added", sim.MemoryAddedPayload{
-				Agent: r, Text: e.Text, Salience: sim.SalDream, Subject: -1, Origin: sim.OriginOmen}))
+				Agent: sim.Ref(r), Text: e.Text, Salience: sim.SalDream, Subject: sim.Ref(-1), Origin: sim.OriginOmen}))
 		}
 		return out, nil
 	}

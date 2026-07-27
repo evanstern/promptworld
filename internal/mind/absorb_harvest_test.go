@@ -31,7 +31,7 @@ func TestAbsorbHarvestRearmsWitness(t *testing.T) {
 
 	md := &Mind{replica: state}
 	md.absorb([]store.Event{{Tick: 5000, Seq: 7, Type: "agent.chopped",
-		Payload: mustJSON(t, sim.HarvestPayload{Agent: 0, X: tx, Y: ty})}})
+		Payload: mustJSON(t, sim.HarvestPayload{Agent: sim.Ref(0), X: tx, Y: ty})}})
 
 	if !md.pending[0] {
 		t.Error("actor was not re-armed by its own chop")

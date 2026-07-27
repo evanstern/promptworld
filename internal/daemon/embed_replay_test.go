@@ -120,7 +120,7 @@ func TestEmbeddingReplayByteIdentical(t *testing.T) {
 	// consolidation gist takes). The embedder must converge every one of them
 	// to a recorded vector.
 	memory := func(agent int, text string) store.Event {
-		b, _ := json.Marshal(sim.MemoryAddedPayload{Agent: agent, Text: text, Salience: 4, Subject: -1, Origin: sim.OriginAction})
+		b, _ := json.Marshal(sim.MemoryAddedPayload{Agent: sim.Ref(agent), Text: text, Salience: 4, Subject: sim.Ref(-1), Origin: sim.OriginAction})
 		return store.Event{Type: "agent.memory_added", Payload: b}
 	}
 	if err := loop.InjectSocial([]store.Event{
@@ -341,7 +341,7 @@ func TestOnWorldReplayByteIdentical(t *testing.T) {
 		t.Fatalf("pause: %v", err)
 	}
 	memory := func(agent int, text string) store.Event {
-		b, _ := json.Marshal(sim.MemoryAddedPayload{Agent: agent, Text: text, Salience: 4, Subject: -1, Origin: sim.OriginAction})
+		b, _ := json.Marshal(sim.MemoryAddedPayload{Agent: sim.Ref(agent), Text: text, Salience: 4, Subject: sim.Ref(-1), Origin: sim.OriginAction})
 		return store.Event{Type: "agent.memory_added", Payload: b}
 	}
 	if err := loop.InjectSocial([]store.Event{

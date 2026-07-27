@@ -168,21 +168,21 @@ func (md *Mind) maybeStartConversation(e store.Event, priorExchange int64) {
 	// (and the "already talked about this" prompt framing + noveltySalienceFloor)
 	// and let the sim-side cooldown carry the whole damper. Greppable via
 	// SHIM(TASK-109) (SC-005).
-	if !md.hasNoveltySince(p.A, p.B, priorExchange) {
-		md.emitNothingNew(p.A, e.Tick)
+	if !md.hasNoveltySince(p.A.ID, p.B.ID, priorExchange) {
+		md.emitNothingNew(p.A.ID, e.Tick)
 		return
 	}
 	// Router gate (FR-007): a scene is the tier's most expensive thought
 	// (13 points) — if it can't land inside its budget at this speed, the
 	// encounter stays a primitive talk and the suppression is recorded.
 	if v := md.routeVerdict("conversation", llm.KindConversation); !v.Allow {
-		md.emitSuppressed("conversation", p.A, e.Tick, v)
+		md.emitSuppressed("conversation", p.A.ID, e.Tick, v)
 		return
 	}
 	if !md.convoBusy.CompareAndSwap(false, true) {
 		return // one at a time; this encounter stays a primitive talk
 	}
-	cc := md.snapshotConvo(e.Tick, p.A, p.B)
+	cc := md.snapshotConvo(e.Tick, p.A.ID, p.B.ID)
 	// Pin the scene's provider ONCE, here at scene start (spec 024 US3): every
 	// utterance and the outcome call stamp cc.provider, so a persona keeps one
 	// voice for the whole dialogue even if a preferable candidate frees up
@@ -191,7 +191,7 @@ func (md *Mind) maybeStartConversation(e store.Event, priorExchange int64) {
 	cc.provider = md.sceneProvider()
 	// The scene is one 13-point decision (contracts/registry.md): its
 	// telemetry identity is minted at founding, agent = founding speaker.
-	cc.meta = md.newMeta("conversation", p.A, e.Tick, e.Seq, llm.KindConversation)
+	cc.meta = md.newMeta("conversation", p.A.ID, e.Tick, e.Seq, llm.KindConversation)
 	cc.meta.job = fmt.Sprintf("conversation-%d", cc.conv)
 	log.Printf("mind: conversation %d starting between %s", cc.conv, strings.Join(cc.names, ", "))
 	go func() {
@@ -475,8 +475,8 @@ func (md *Mind) runConversation(cc convoCtx) {
 			// FR-005). The gist text keeps its shape — no where/why clause is
 			// spliced into a conversation memory (the Conv ref is its situating).
 			add("agent.memory_added", sim.MemoryAddedPayload{
-				Agent: cc.idx[i], Text: fmt.Sprintf("Talked with %s%s — %s", cc.names[j], others, out.Gist),
-				Salience: sim.SalConvoGist, Subject: cc.idx[j], Tone: tones[i] * convoMemoryToneScale,
+				Agent: sim.Ref(cc.idx[i]), Text: fmt.Sprintf("Talked with %s%s — %s", cc.names[j], others, out.Gist),
+				Salience: sim.SalConvoGist, Subject: sim.Ref(cc.idx[j]), Tone: tones[i] * convoMemoryToneScale,
 				Where:  sim.PlaceAt(md.replica, md.replica.Agents[cc.idx[i]].X, md.replica.Agents[cc.idx[i]].Y),
 				Conv:   cc.conv,
 				Origin: sim.OriginGist, // spec 030: a conversation summary is secondhand

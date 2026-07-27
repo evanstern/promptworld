@@ -223,7 +223,7 @@ func faithEvents(s *State, batch []store.Event, nextTick int64) []store.Event {
 			if err := json.Unmarshal(e.Payload, &p); err != nil {
 				continue
 			}
-			emit(FaithReasonVillagerDied, fmt.Sprintf("%d", p.Agent))
+			emit(FaithReasonVillagerDied, fmt.Sprintf("%d", p.Agent.ID))
 		case "prophecy.fulfilled":
 			var p OrderIDPayload
 			if err := json.Unmarshal(e.Payload, &p); err != nil {

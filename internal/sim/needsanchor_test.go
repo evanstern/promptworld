@@ -17,7 +17,7 @@ import (
 func needsEvent(t *testing.T, s *State, tick int64, health, food, rest, warmth, morale int) {
 	t.Helper()
 	applyTo(t, s, store.Event{Tick: tick, Type: "agent.needs_changed",
-		Payload: mustPayload(NeedsPayload{Agent: 0,
+		Payload: mustPayload(NeedsPayload{Agent: Ref(0),
 			Health: health, Food: food, Rest: rest, Warmth: warmth, Morale: morale})})
 }
 

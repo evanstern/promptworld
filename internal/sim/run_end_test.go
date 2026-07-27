@@ -48,7 +48,7 @@ func TestRunEndedOnceOrderedLast(t *testing.T) {
 			if err := json.Unmarshal(e.Payload, &p); err != nil {
 				t.Fatal(err)
 			}
-			died = append(died, DeathRecord{Agent: p.Agent, Tick: e.Tick, Cause: p.Cause})
+			died = append(died, DeathRecord{Agent: p.Agent.ID, Tick: e.Tick, Cause: p.Cause})
 		case "run.ended":
 			ends = append(ends, e)
 			endIdx = i
