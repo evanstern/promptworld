@@ -427,7 +427,8 @@ func (s *State) applyItemGranted(e store.Event) error {
 		return fmt.Errorf("apply %s: %s is beyond a grant now", e.Type, s.Agents[p.Agent.ID].Name)
 	}
 	if !grantableKind(p.Kind) {
-		return fmt.Errorf("apply %s: unknown item kind %q", e.Type, p.Kind)
+		return fmt.Errorf("apply %s: unknown item kind %q (grantable: %s)",
+			e.Type, p.Kind, strings.Join(tool.GrantKinds(), ", "))
 	}
 	if p.Qty <= 0 {
 		return fmt.Errorf("apply %s: grant quantity must be positive (got %d)", e.Type, p.Qty)
@@ -465,17 +466,24 @@ func (s *State) applyItemGranted(e store.Event) error {
 	return nil
 }
 
+// grantableKinds is the accepted-set built once from tool.GrantKinds() — the
+// single authoritative grant vocabulary (TASK-163) — rather than a second
+// hand-written literal here. Keyed, never iterated into state.
+var grantableKinds = func() map[string]bool {
+	m := make(map[string]bool, len(tool.GrantKinds()))
+	for _, k := range tool.GrantKinds() {
+		m[k] = true
+	}
+	return m
+}()
+
 // grantableKind reports whether kind is one a grant miracle may deliver: the
 // Inventory key set plus "spear" (singular — a grant unit is one fresh spear;
-// its durability lives in Inventory.Spears, so it has no invField). The set is
-// the data-model.md item vocabulary; keyed, never iterated into state.
+// its durability lives in Inventory.Spears, so it has no invField). Derived
+// from tool.GrantKinds(), work_miracle's declared `item` Enum, so the door's
+// acceptance can never drift from the schema the model is shown.
 func grantableKind(kind string) bool {
-	switch kind {
-	case "wood", "stone", "water", "planks", "refined_stone",
-		"food_raw", "food_cooked", "meals", "spear", "axe":
-		return true
-	}
-	return false
+	return grantableKinds[kind]
 }
 
 // applyEntityMoved relocates a villager, structure, or pile (spec 016 US1,
