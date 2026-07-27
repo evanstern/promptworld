@@ -4,7 +4,7 @@ description: Loop.InjectSocial (the mind's whitelisted conversation/consolidatio
 kind: component
 sources:
   - internal/sim/loop.go
-verified_against: 048259bb42b03cc6ebeb13a49f367c2e3a7d4d37
+verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
 ---
 
 # Sim loop — injection doors
@@ -40,7 +40,13 @@ join the same way (form/bounds/occupancy/caps/TTL/target validation lives in
 the `applyPlan` arms; `directive.issued` rides atomically with per-target
 `agent.memory_added` companions), while `designation.fulfilled`/
 `directive.fulfilled`/`directive.expired` are executor-emitted and
-deliberately absent, the `order_expired` precedent —
+deliberately absent, the `order_expired` precedent — `prophecy.declared`
+(spec 085, [[guardian-faith]]) joins the same way (the `applyProphecy`
+door validates targets/text/TTL/cap/claim and spends the charge stake;
+it rides atomically with per-target `OriginOmen` companions), while
+`prophecy.fulfilled`/`prophecy.failed`/`faith.changed` are
+executor-emitted and deliberately absent — whitelist absence is what
+refuses a forged verdict or faith movement —
 (since spec 036 whitelist membership is also readable from outside the package
 via `InjectableSocialEvent(t)`, the single-source accessor both the tool
 coverage gate and the bundle boot gate ([[bundle-tools]]) enforce against) —

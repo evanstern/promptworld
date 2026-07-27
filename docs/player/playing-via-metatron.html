@@ -4,15 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/wiki/guardian.md@048259bb42b03cc6ebeb13a49f367c2e3a7d4d37">
+<meta name="promptworld-docs:source" content="docs/wiki/guardian.md@657c770f87404b936a0587db1f6b00e81b9f0ee6">
+<meta name="promptworld-docs:source" content="docs/wiki/guardian-faith.md@657c770f87404b936a0587db1f6b00e81b9f0ee6">
 <meta name="promptworld-docs:source" content="docs/wiki/bundle-tools.md@048259bb42b03cc6ebeb13a49f367c2e3a7d4d37">
-<meta name="promptworld-docs:source" content="docs/wiki/guardian-miracles.md@fc9566d527941d3950fdd307168556820bd0875b">
-<meta name="promptworld-docs:source" content="docs/wiki/guardian-orders.md@fc9566d527941d3950fdd307168556820bd0875b">
-<meta name="promptworld-docs:source" content="docs/wiki/curriculum-ladder.md@048259bb42b03cc6ebeb13a49f367c2e3a7d4d37">
+<meta name="promptworld-docs:source" content="docs/wiki/guardian-miracles.md@657c770f87404b936a0587db1f6b00e81b9f0ee6">
+<meta name="promptworld-docs:source" content="docs/wiki/guardian-orders.md@657c770f87404b936a0587db1f6b00e81b9f0ee6">
+<meta name="promptworld-docs:source" content="docs/wiki/curriculum-ladder.md@657c770f87404b936a0587db1f6b00e81b9f0ee6">
 <meta name="promptworld-docs:source" content="docs/wiki/governance.md@e718294e2a9db4053323a4a9e42746ca53fb149c">
-<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@fc9566d527941d3950fdd307168556820bd0875b">
-<meta name="promptworld-docs:source" content="docs/wiki/grounded-feedback.md@fc9566d527941d3950fdd307168556820bd0875b">
-<meta name="promptworld-docs:source" content="docs/wiki/takeover-surfaces.md@048259bb42b03cc6ebeb13a49f367c2e3a7d4d37">
+<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@657c770f87404b936a0587db1f6b00e81b9f0ee6">
+<meta name="promptworld-docs:source" content="docs/wiki/grounded-feedback.md@657c770f87404b936a0587db1f6b00e81b9f0ee6">
+<meta name="promptworld-docs:source" content="docs/wiki/takeover-surfaces.md@657c770f87404b936a0587db1f6b00e81b9f0ee6">
 <title>Playing via Metatron — promptworld player docs</title>
 <style>
   :root {
@@ -312,14 +313,47 @@ appears when there's something new to say — it never repeats itself between
 reports, and if no AI narrator is configured, it simply doesn't show up; the
 rest of the game works exactly the same either way.</p>
 
-<h2>The charge economy</h2>
-<p>You start with 1 charge, the bank caps at 3, and it regenerates by 1 every 6 game
-hours. A landed vision or omen costs 1 charge regardless of who it reaches; most
-workings cost 1 charge too, with snapping time the priciest move at 2 charges. Run
+<h2>The charge economy and the village's faith</h2>
+<p>You start with 1 charge and the bank caps at 3. How fast it refills depends on
+the <strong>village's faith</strong> — a 0-to-100 devotion score the world keeps for
+itself. Every world begins at a steady 50, where a charge returns every 6 game
+hours, exactly the old pace. When faith runs high (75 and up) charges return every
+4 hours; when it wavers (below 40) they slow to every 12; and when the village is
+truly forsaken (below 15), an ordinary free-play world still gets one charge a day
+— slow and painful, never a dead end — while a scenario exercise gets none at all
+until faith recovers: in a scenario, the spiral is allowed to be fatal, and the
+morgue will tell you what happened.</p>
+<p>Faith moves only on real, recorded events — never on vibes: a fulfilled
+directive raises it, a lapsed directive lowers it a little, every villager death
+lowers it more, and prophecies (below) swing it hardest. There is no score screen
+and no badge — you'll see it as a plain <code>faith N</code> number on the strip
+above the composer, and hear it in the story's own words ("the village's faith
+deepens", "faith wavers").</p>
+<p>A landed vision or omen costs 1 charge regardless of who it reaches; most
+workings cost 1 charge too, with snapping time the priciest move at 2 charges;
+declaring a prophecy costs 1 charge — it is a vision with a wager attached. Run
 out, and the guardian will politely decline and explain why — that refusal costs
 nothing, so you can always keep talking even with an empty bank. Placing a standing
 order, and the guardian simply watching for it, are both free; only the eventual landed
-act spends a charge.</p>
+act spends a charge. Designations and directives are free too, which matters:
+even with an empty bank at rock-bottom faith, the guardian can still mark plans
+and charge villagers with them, and their fulfillment is exactly what earns the
+faith that speeds the bank back up.</p>
+
+<h2>Prophecy — staking the guardian's word</h2>
+<p>The guardian can <strong>prophesy</strong>: deliver an omen that carries a
+concrete, checkable claim with a deadline of one to seven days — "a shelter will
+stand within three days", "at least three villagers will be alive", "Ash will
+live to the appointed day", or "the site I marked will be fulfilled". The world
+itself judges the claim, mechanically, from its own recorded state — no AI grades
+it, and vague poetry doesn't count: only the declared claim is judged, free text
+is just counsel. A prophecy that comes true earns the village's faith strongly
+(+12); one that fails costs even more (−15), so scattering cheap prophecies is a
+losing game unless the guardian actually shepherds them true. The word cannot be
+taken back — there is no cancel — and a claim that comes true only after its
+deadline has already failed earns nothing. At most three prophecies can stand at
+once, and restating a claim that's already staked (or prophesying something
+already true) is refused outright.</p>
 
 <h2>The village's own laws (not the guardian's business)</h2>
 <p>Separately from anything you do, the village governs itself: once a day the

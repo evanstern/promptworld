@@ -4,7 +4,7 @@ description: The SHIFT/KEEP taxonomy (rebaseTicks) every tick-anchored int64 sta
 kind: component
 sources:
   - internal/sim/miracles.go
-verified_against: fc9566d527941d3950fdd307168556820bd0875b
+verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
 ---
 
 # Guardian's miracle rebase taxonomy
@@ -36,7 +36,11 @@ classified SHIFT or KEEP in its doc comment:
   `Directive.IssuedTick`/`PlacedSeq` — are history/identity KEEP (a
   designation carries no future deadline at all, and the `designation`
   place facts' `Seen` anchors ride the existing per-agent `PlaceFact.Seen`
-  SHIFT loop with no new code). Spec 041
+  SHIFT loop with no new code); spec 085 ([[guardian-faith]]) adds
+  `Prophecy.DeadlineTick`, the `Directive.ExpiresTick` classification
+  verbatim again (ACTIVE only — a settled prophecy's deadline is a spent
+  artifact), with `Prophecy.DeclaredTick`/`PlacedSeq` history/identity
+  KEEP and `FaithState` untouched entirely (it carries no tick fields). Spec 041
   ([[mental-maps]]) adds `PlaceFact.Seen` and `PeerSighting.Seen`, the mental
   map's freshness anchors (fresh iff `now − Seen < horizon`, the
   `Belief.Reinforced` shape) — shifted unconditionally when non-zero, since a

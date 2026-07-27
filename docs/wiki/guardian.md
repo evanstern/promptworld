@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/guardian/guardian.go
   - internal/skin/skin.go
-verified_against: 048259bb42b03cc6ebeb13a49f367c2e3a7d4d37
+verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
 ---
 
 # Guardian
@@ -79,7 +79,9 @@ discipline, and [[guardian-orders]] for the full standing-order mechanics.
 Every turn stamps the charter revision it actually ran under into an
 event-sourced fingerprint timeline (`metatron.charter_observed`) the
 [[morgue]] aligns deaths against; a charge bank (genesis 1, cap 3, +1 per
-6-game-hour boundary) funds every mediated act; `charter.md`,
+faith-band regen boundary — spec 085: 4h/6h/12h by band, the ambient
+forsaken floor at 24h, stopped in a forsaken scenario world;
+[[guardian-faith]]) funds every mediated act; `charter.md`,
 `metatron/soul.md`, and `metatron/transcript.md` persist state outside the
 event log; and the component surfaces through IPC
 (`metatron_chat`/`metatron_status`), the `promptworld guardian` CLI, and the

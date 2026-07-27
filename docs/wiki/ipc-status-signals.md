@@ -4,7 +4,7 @@ description: How ipc.Server composes optional StatusData signals — set_speed's
 kind: component
 sources:
   - internal/ipc/server.go
-verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
+verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
 ---
 
 # IPC server: StatusData signal composition

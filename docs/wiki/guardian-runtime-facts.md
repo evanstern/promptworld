@@ -6,7 +6,7 @@ sources:
   - internal/guardian/charter.go
   - internal/sim/guardian.go
   - internal/guardian/guardian.go
-verified_against: 048259bb42b03cc6ebeb13a49f367c2e3a7d4d37
+verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
 ---
 
 # Guardian's runtime facts
@@ -53,9 +53,11 @@ scan aligns each death against the most recent observation at or before it.
 Evidence only — the payload carries no scoring fields, by contract.
 
 **Charge economy** (`internal/sim/guardian.go`): `State.GuardianCharges` — genesis
-1, cap 3, +1 per absolute 6-game-hour boundary emitted by the [[executor]]
-(`metatron.charge_regenerated`, a pure function of state + tick), −1 per landed
-omen or vision (a miracle spends its per-kind cost). Fully event-sourced: replay
+1, cap 3, +1 per absolute boundary of the faith-band cadence emitted by the [[executor]]
+(`metatron.charge_regenerated`, a pure function of (faith score, scenario
+presence, tick) since spec 085 — `FaithRegenCadenceTicks`, steady band = the
+old 6 game hours; [[guardian-faith]]), −1 per landed
+omen, vision, or prophecy (a miracle spends its per-kind cost). Fully event-sourced: replay
 reproduces the bank exactly; the field is
 deliberately not `omitempty` so a spent-to-zero bank survives snapshots; pre-TASK-12
 snapshots gain the genesis charge on upgrade.
@@ -99,7 +101,8 @@ the charter-fingerprint revision timeline this note documents; the
 [[guardian-instruction-surface]]'s stage-1 charter lock.
 [[curriculum-ladder]] owns the stage/preset facts (`Manifest.Stage`,
 `Manifest.CharterPreset`) this note's status peek mirrors. [[executor]]
-regenerates the charge bank on the 6-game-hour boundary. [[ipc-protocol]]
+regenerates the charge bank on the faith-band cadence boundary
+([[guardian-faith]]). [[ipc-protocol]]
 freezes the `metatron_chat`/`metatron_status` wire method names;
 [[cli-promptworld]] documents the `promptworld guardian` CLI surface;
 [[tui-client]] hosts the guardian pane. [[skin]] is the boot-frozen display

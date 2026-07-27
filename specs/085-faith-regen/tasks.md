@@ -139,11 +139,11 @@ gate are satisfied.
 
 ## Phase 7: Polish, grounding, gates
 
-- [ ] T022 Full-suite pass: `go test ./...`; scope-guard audit — zero
+- [X] T022 Full-suite pass: `go test ./...`; scope-guard audit — zero
   diffs under `internal/cognition`/`internal/mind`; no tuning.json
   change; no new RNG; no whitelist entries beyond `prophecy.declared`
   (FR-015)
-- [ ] T023 Wiki re-pins in-branch per plan.md's re-pin set
+- [X] T023 Wiki re-pins in-branch per plan.md's re-pin set
   (`/grounding-wiki:wiki-update`; new `guardian-faith` note; event-types
   family rows) + `docs/player/` regenerated
   (`check-freshness.mjs --check` green) (constitution IV)

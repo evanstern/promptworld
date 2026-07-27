@@ -4,7 +4,7 @@ description: In-process IPC integration suite (status/subscribe, idempotent comm
 kind: pattern
 sources:
   - internal/ipc/ipc_test.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
 ---
 
 # IPC integration & e2e harness

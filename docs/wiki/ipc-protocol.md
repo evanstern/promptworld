@@ -5,7 +5,7 @@ kind: concept
 sources:
   - internal/ipc/protocol.go
   - specs/001-world-daemon/contracts/client-protocol.md
-verified_against: 6318cf8b53e407765f0c9793f5355a7af4777ed7
+verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
 ---
 
 # IPC protocol
@@ -76,7 +76,14 @@ additive `omitempty` run-outcome fields on the governor-trio precedent:
 game day of the run end, for human rendering without a state fetch) — zero
 values omit away on living worlds, keeping their status bytes byte-compatible,
 and together with the durable `run.ended` event they are the machine-readable
-fail signal downstream scenario machinery consumes — [[morgue]]), `daemon` (pid, uptime_seconds,
+fail signal downstream scenario machinery consumes — [[morgue]]; and, since
+spec 085, two more additive `omitempty` faith fields: `faith` (`*int` — the
+village faith score, always served by a spec-085 daemon since the sim
+accessor is nil-safe; a nil pointer tells a newer client it is talking to an
+older daemon) and `faith_regen_ticks` (the EFFECTIVE charge-regen cadence
+from `sim.FaithRegenCadenceTicks`, 0 = no regen scheduled — the scenario
+forsaken band), both folded from the loop's coherent snapshot so the daemon
+never re-derives bands — [[guardian-faith]]), `daemon` (pid, uptime_seconds,
 subscribers), `log`
 (last_seq), and — since spec 035, widened by spec 039 — a top-level `Warning`
 string (`json:"warning,omitempty"`) set ONLY on the `set_speed` reply (FR-002,

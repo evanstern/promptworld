@@ -9,7 +9,7 @@ sources:
   - internal/tui/tiles.go
   - internal/tui/look.go
   - internal/worlds/unlocks.go
-verified_against: 048259bb42b03cc6ebeb13a49f367c2e3a7d4d37
+verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
 ---
 
 # TUI input, focus, and help overlay
@@ -102,15 +102,16 @@ init, so the overlay lists every lesson the push half can ever show — the
 placeholder line survives only as a defensive empty-table branch. The push
 half is the lesson row above: `lessonTriggers.ingest` folds the same event
 stream `applyEvent` feeds the decision-trace projection, firing the 12
-static catalog entries (5 mechanics — first suppression/gru
-attack/charge-regen/order-expiry/death; 7 prompting since spec 077's
+static catalog entries (6 mechanics — first suppression/gru
+attack/charge-regen/order-expiry/death, plus spec 085's direction-neutral
+first-faith-event; 7 prompting since spec 077's
 tranche 2 — first rejected `cog.tool_call` (`rejected_*` verdicts only;
 spec 077 narrowed: an explain answer's `read_ok` is not a refusal),
 first custom charter/fuzzy order/explain answer/report card/skill file, and
 the same-refusal-pattern wrong-thing detector — the catalog's ONE stateful
 trigger seam, a bounded session-local `lessonFold` counting rejections per
 identical non-empty reason, third-strike firing, never on mixed reasons;
-`first-faith-event` is deliberately absent, riding TASK-118) at
+`first-faith-event` landed with spec 085 — the TASK-118 rider, closed) at
 most once per player: one active lesson at a time (text line + `→` pointer
 line ending `(? for more · x dismiss)`), dwelling until its done-signal
 event or a global `x` dismiss, with a bounded FIFO queue whose stale

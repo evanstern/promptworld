@@ -4,7 +4,7 @@ description: The ancillary subsystems stepEvents drives each tick beyond agent b
 kind: component
 sources:
   - internal/sim/executor.go
-verified_against: fc9566d527941d3950fdd307168556820bd0875b
+verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
 ---
 
 # Executor — tick subsystems
@@ -15,8 +15,13 @@ evaluation, the gru's turn, the social beat, and the governance layer.
 
 ## How it works
 
-Each tick, `stepEvents` regenerates Guardian's nudge charges (`metatron.charge_regenerated` at absolute 6-game-hour
-tick boundaries while below the cap — [[guardian]]) and, per tick, sweeps
+Each tick, `stepEvents` regenerates Guardian's nudge charges (`metatron.charge_regenerated` at absolute boundaries of the
+faith-band cadence while below the cap — spec 085 replaced the fixed
+6-game-hour constant with `FaithRegenCadenceTicks(FaithScore, scenario)`:
+fervent 4h / steady 6h (the genesis band — a world with no faith events
+keeps the pre-085 schedule byte-identically) / wavering 12h / forsaken
+scenario-stopped-or-ambient-24h-floor — [[guardian-faith]], [[guardian]])
+and, per tick, sweeps
 `State.GuardianOrders` for any active standing order whose `ExpiresTick` the
 new tick has reached, emitting `metatron.order_expired` (spec 029, the
 `charge_regenerated` pattern — a pure function of state + tick, so a
@@ -30,7 +35,16 @@ per active directive fulfilled-before-expired — `directive.fulfilled` when
 the bound designation is fulfilled, else `directive.expired` on TTL elapse
 or when no targeted villager remains alive — so exactly one terminal lands
 per boundary and a designation fulfilled at tick T fulfills its directives
-at T+1 (the documented one-tick lag — [[guardian-designations]]);
+at T+1 (the documented one-tick lag — [[guardian-designations]]). Spec 085
+adds two more sweeps: the prophecy verification sweep (`prophecyEvents`,
+immediately after the directive sweep — per active prophecy, fulfil before
+fail, once, with per-living-target `OriginReport` companion memories) and
+the faith accounting sweep (`faithEvents`, AFTER every faith-source emitter
+and BEFORE the scenario rubric/run-end detection — scans THIS tick's batch
+for `directive.fulfilled`/`directive.expired`/`agent.died`/
+`prophecy.fulfilled`/`prophecy.failed` and emits one `faith.changed` per
+source in batch order, skipping emissions the clamp would swallow —
+[[guardian-faith]]);
 its reflex fires only on agents idle past `reflexGraceTicks` (120). Since spec 054, an armed scenario world's `stepEvents` also consults its
 incident schedule (`scenarioIncidentEvents`) immediately BEFORE `gruStep` —
 a scheduled `gru.emerged` preempts that night's random emergence roll, so

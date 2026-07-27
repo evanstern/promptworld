@@ -15,7 +15,7 @@ sources:
   - internal/world/world.go
   - internal/worlds/unlocks.go
   - cmd/promptworld/stages.go
-verified_against: 048259bb42b03cc6ebeb13a49f367c2e3a7d4d37
+verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
 ---
 
 # Explain tool and tutor guide
@@ -47,8 +47,10 @@ extended to the answer path) — the six fixed topics are:
 - `costs` — every granted tool's price, `work_miracle` per kind, from the
   registry's own `Cost`/`MiracleCost` — same source `GuardianToolGuidance`
   renders, so price can never drift from enforced.
-- `charges` — the charge-economy doctrine (cap 3, genesis 1, +1/6 game
-  hours) — MIRRORED from `internal/sim`'s `GuardianChargeCap`/
+- `charges` — the charge-economy doctrine (cap 3, genesis 1; since spec
+  085 the sheet names the faith-band regen coupling, with the mirrored
+  constant as the STEADY-band cadence — every world's starting pace;
+  [[guardian-faith]]) — MIRRORED from `internal/sim`'s `GuardianChargeCap`/
   `GuardianGenesisCharges`/`GuardianChargeRegenTicks`
   (`TestExplainChargeDoctrineMirrorsSim` pins the copy).
 - `workings` — the `work_miracle` kind vocabulary, per-kind arguments and
