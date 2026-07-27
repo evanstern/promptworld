@@ -10,7 +10,7 @@ synthesis (TASK-118's Wave-3 ratification), and the guardian-directives ideation
 hardness on TASK-157) win. Plan-of-record is the board; this file carries only ordering,
 doctrine, and the log.
 
-**Status:** signed-off · operator sign-off on lanes: 2026-07-26 (operator selected
+**Status:** done (2026-07-27) · operator sign-off on lanes: 2026-07-26 (operator selected
 "Signed off — execute" on the drafted lanes, in-session; drafted by the orchestrator,
 lanes NOT operator-specified verbatim — the sign-off is the authority).
 
@@ -171,6 +171,7 @@ done. TASK-136/137/156/159 untouched by this sweep.
 
 | date | task | PR | merge | notes |
 |------|------|----|-------|-------|
+| 2026-07-27 | TASK-17 | #127 | 79870a5 | Lane C tail complete — sweep done; wire-shape change + J keybinding + standing-res-1 amendment flagged in PR for operator; hit rate 79→86; latent int-decoder hazard class closed |
 | 2026-07-27 | TASK-118 | #126 | beb8de5 | Lane A complete — mana loop closed; FR-005 posture (scenarios spiral, ambient floors 24h) + delta magnitudes + prophecy pricing recorded for operator review; genesis band byte-identical pinned |
 | 2026-07-27 | TASK-133 | #125 | 92df9d9 | Lane B complete; real-log validation corrected two spec assumptions — Oak slept through the window, world.db log starts post-death; digest contract repaired for 077 stranger.took |
 | 2026-07-26 | TASK-157 | #124 | 10f7662 | Lane A core; directive hardness proven by empty interruption diffs + zero matcher changes; charge-free + every-stage assumptions await operator eyeball; unblocks 118 |
