@@ -307,7 +307,7 @@ func TestBulkGaveReducerClampsDefensively(t *testing.T) {
 	giver.Inv = Inventory{FoodRaw: 5}
 	recv.Inv = Inventory{Wood: bulkCap} // already at the cap
 
-	e := store.Event{Tick: 1, Type: "social.gave", Payload: mustPayload(GavePayload{From: 0, To: 1, Kind: "food"})}
+	e := store.Event{Tick: 1, Type: "social.gave", Payload: mustPayload(GavePayload{From: Ref(0), To: Ref(1), Kind: "food"})}
 	if err := s.Apply(e); err != nil {
 		t.Fatalf("apply social.gave: %v", err)
 	}

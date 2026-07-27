@@ -451,7 +451,7 @@ func morgueDeedNote(st *sim.State, e store.Event) (string, []int) {
 	case "social.gave":
 		var p sim.GavePayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			return fmt.Sprintf("%s gave %s %s.", name(p.From), name(p.To), p.Kind), []int{p.From, p.To}
+			return fmt.Sprintf("%s gave %s %s.", name(p.From.ID), name(p.To.ID), p.Kind), []int{p.From.ID, p.To.ID}
 		}
 	case "social.promise_broken":
 		var p sim.PromiseBrokenPayload
@@ -467,7 +467,7 @@ func morgueDeedNote(st *sim.State, e store.Event) (string, []int) {
 		var p sim.ChestTakenPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
 			return fmt.Sprintf("%s took from %s's chest without asking.",
-				name(p.Taker), name(p.Owner)), []int{p.Taker, p.Owner}
+				name(p.Taker.ID), name(p.Owner.ID)), []int{p.Taker.ID, p.Owner.ID}
 		}
 	case "gru.sighted":
 		var p sim.GruSightedPayload

@@ -214,7 +214,7 @@ func TestEndedCommandGating(t *testing.T) {
 		{name: "govern", govern: &governArgs{to: clock.Speed16x, debt: 1.0, jobs: 1}},
 		{name: "inject_intent", inject: &InjectArgs{Agent: 0, Goal: "forage", TargetAgent: -1}},
 		{name: "inject_social", social: []store.Event{
-			{Type: "social.rumor_told", Payload: mustPayload(RumorToldPayload{From: 0, To: 1, Text: "x"})},
+			{Type: "social.rumor_told", Payload: mustPayload(RumorToldPayload{From: Ref(0), To: Ref(1), Subject: Ref(2), Text: "x"})},
 		}},
 	}
 	for _, cmd := range refused {

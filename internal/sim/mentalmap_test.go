@@ -313,7 +313,7 @@ func TestPerceptionSweepWitnessesAndSettles(t *testing.T) {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			t.Fatal(err)
 		}
-		if p.Agent == 0 {
+		if p.Agent.ID == 0 {
 			mine = append(mine, e)
 		}
 	}
@@ -356,7 +356,7 @@ func TestPerceptionSweepWitnessesAndSettles(t *testing.T) {
 	for _, e := range perceptionEvents(s, m, beat+moveEveryTicks) {
 		var q SawPayload
 		json.Unmarshal(e.Payload, &q)
-		if q.Agent == 0 {
+		if q.Agent.ID == 0 {
 			t.Fatalf("settled map re-emitted agent.saw: %s", e.Payload)
 		}
 	}
@@ -367,7 +367,7 @@ func TestPerceptionSweepWitnessesAndSettles(t *testing.T) {
 	for _, e := range perceptionEvents(s, m, beat+2*moveEveryTicks) {
 		var q SawPayload
 		json.Unmarshal(e.Payload, &q)
-		if q.Agent == 0 {
+		if q.Agent.ID == 0 {
 			for _, f := range q.Facts {
 				if f.Kind == "fire" && f.Detail == 20000 {
 					saw = true
@@ -384,7 +384,7 @@ func TestPerceptionSweepWitnessesAndSettles(t *testing.T) {
 	for _, e := range perceptionEvents(s, m, beat+3*moveEveryTicks) {
 		var q SawPayload
 		json.Unmarshal(e.Payload, &q)
-		if q.Agent == 0 {
+		if q.Agent.ID == 0 {
 			t.Fatal("a sleeping agent perceived")
 		}
 	}
@@ -522,7 +522,7 @@ func TestMapCorrectionOnArrival(t *testing.T) {
 		case "agent.map_corrected":
 			var p MapCorrectedPayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.Agent == 0 {
+			if p.Agent.ID == 0 {
 				corrected = &p
 			}
 		case "agent.memory_added":
@@ -703,13 +703,13 @@ func TestPlaceTellTransfer(t *testing.T) {
 		case "social.place_told":
 			var p PlaceToldPayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.From == 0 && p.To == 1 {
+			if p.From.ID == 0 && p.To.ID == 1 {
 				if told != nil {
 					t.Fatal("more than one A→B place_told in a single talk")
 				}
 				q := p
 				told = &q
-			} else if p.From == 1 {
+			} else if p.From.ID == 1 {
 				t.Fatalf("empty-map B told A something: %+v", p)
 			}
 		case "agent.memory_added":
@@ -778,7 +778,7 @@ func TestPlaceTellStalerNeverOverwrites(t *testing.T) {
 	}
 	// Defensive reducer half: a staler payload still never overwrites.
 	e := store.Event{Tick: 1000, Type: "social.place_told", Payload: mustPayload(PlaceToldPayload{
-		From: 0, To: 1, Facts: []PlaceFact{{Kind: "fire", X: 30, Y: 30, Seen: 500, Provenance: ProvenanceTold, Source: 0, Detail: 700}},
+		From: Ref(0), To: Ref(1), Facts: []PlaceFact{{Kind: "fire", X: 30, Y: 30, Seen: 500, Provenance: ProvenanceTold, Source: 0, Detail: 700}},
 	})}
 	if err := s.Apply(e); err != nil {
 		t.Fatal(err)
@@ -827,7 +827,7 @@ func TestPlaceRevealedArm(t *testing.T) {
 
 	reveal := func(agent int, facts []PlaceFact, tick int64) error {
 		return s.Apply(store.Event{Tick: tick, Type: "metatron.place_revealed",
-			Payload: mustPayload(PlaceRevealedPayload{Agent: agent, Facts: facts})})
+			Payload: mustPayload(PlaceRevealedPayload{Agent: Ref(agent), Facts: facts})})
 	}
 
 	// A real place lands with the arm's normative stamps.
@@ -883,7 +883,7 @@ func TestPlaceRevealedThroughDoor(t *testing.T) {
 				Agent: Ref(0), Text: "You saw a vision: Fire, beyond the ridge.",
 				Salience: SalDream, Subject: Ref(-1), Origin: OriginOmen})},
 			{Type: "metatron.place_revealed", Payload: mustPayload(PlaceRevealedPayload{
-				Agent: 0, Facts: []PlaceFact{{Kind: kind, X: x, Y: y, Provenance: ProvenanceRevealed}}})},
+				Agent: Ref(0), Facts: []PlaceFact{{Kind: kind, X: x, Y: y, Provenance: ProvenanceRevealed}}})},
 			{Type: "agent.memory_added", Payload: mustPayload(MemoryAddedPayload{
 				Agent: Ref(0), Text: "The vision showed you the fire at (7,7).",
 				Salience: SalDream, Subject: Ref(-1), Origin: OriginOmen})},

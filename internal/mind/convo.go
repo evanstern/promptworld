@@ -442,13 +442,13 @@ func (md *Mind) runConversation(cc convoCtx) {
 			listener = cc.idx[1-sp]
 		}
 		add("social.conversation_turn", sim.ConversationTurnPayload{
-			Conv: cc.conv, Speaker: cc.idx[sp], Listener: listener,
+			Conv: cc.conv, Speaker: sim.Ref(cc.idx[sp]), Listener: sim.Ref(listener),
 			Text: strings.TrimPrefix(line, cc.names[sp]+": "),
 		})
 	}
 	add("social.conversation", sim.ConversationPayload{
-		Conv: cc.conv, A: cc.idx[0], B: cc.idx[1], Gist: out.Gist, Turns: turns,
-		Participants: cc.idx, Topics: out.Topics, Tones: tones,
+		Conv: cc.conv, A: sim.Ref(cc.idx[0]), B: sim.Ref(cc.idx[1]), Gist: out.Gist, Turns: turns,
+		Participants: sim.Refs(cc.idx), Topics: out.Topics, Tones: tones,
 	})
 	reason := "conversation"
 	if len(out.Topics) > 0 {
@@ -482,7 +482,7 @@ func (md *Mind) runConversation(cc convoCtx) {
 				Origin: sim.OriginGist, // spec 030: a conversation summary is secondhand
 			})
 			add("social.relation_changed", sim.RelationChangedPayload{
-				A: cc.idx[i], B: cc.idx[j],
+				A: sim.Ref(cc.idx[i]), B: sim.Ref(cc.idx[j]),
 				TrustDelta:     tones[i] * sim.ConvoToneTrust,
 				AffectionDelta: tones[i] * sim.ConvoToneAffect,
 				Reason:         reason,
@@ -495,8 +495,8 @@ func (md *Mind) runConversation(cc convoCtx) {
 			text = out.Retold // the cheap paraphrase — mutation on retell
 		}
 		add("social.rumor_told", sim.RumorToldPayload{
-			From: cc.idx[cc.teller], To: cc.idx[1-cc.teller],
-			RumorID: cc.tell.RumorID, Subject: cc.tell.Subject, Tone: cc.tell.Tone,
+			From: sim.Ref(cc.idx[cc.teller]), To: sim.Ref(cc.idx[1-cc.teller]),
+			RumorID: cc.tell.RumorID, Subject: sim.Ref(cc.tell.Subject), Tone: cc.tell.Tone,
 			Text: text, Confidence: cc.tell.Confidence, Secret: cc.secret,
 		})
 	}

@@ -114,11 +114,11 @@ func (md *Mind) chronicleNote(e store.Event) {
 		if json.Unmarshal(e.Payload, &p) == nil {
 			parts := p.Participants
 			if len(parts) == 0 {
-				parts = []int{p.A, p.B}
+				parts = []sim.AgentRef{p.A, p.B}
 			}
 			names := make([]string, len(parts))
 			for i, a := range parts {
-				names[i] = name(a)
+				names[i] = name(a.ID)
 			}
 			line = fmt.Sprintf("%s talked", strings.Join(names, ", "))
 			if len(p.Topics) > 0 {
@@ -131,13 +131,13 @@ func (md *Mind) chronicleNote(e store.Event) {
 		}
 	case "social.rumor_told":
 		var p sim.RumorToldPayload
-		if json.Unmarshal(e.Payload, &p) == nil && p.To >= 0 {
-			line = fmt.Sprintf("%s told %s a rumor: %q.", name(p.From), name(p.To), p.Text)
+		if json.Unmarshal(e.Payload, &p) == nil && p.To.ID >= 0 {
+			line = fmt.Sprintf("%s told %s a rumor: %q.", name(p.From.ID), name(p.To.ID), p.Text)
 		}
 	case "social.gave":
 		var p sim.GavePayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			line = fmt.Sprintf("%s gave %s %s.", name(p.From), name(p.To), p.Kind)
+			line = fmt.Sprintf("%s gave %s %s.", name(p.From.ID), name(p.To.ID), p.Kind)
 		}
 	case "social.chest_taken":
 		// spec 013 (storage, T034): the theft story — same narrative weight
@@ -145,7 +145,7 @@ func (md *Mind) chronicleNote(e store.Event) {
 		// specifically as chronicle/TUI material (social.go doc comment).
 		var p sim.ChestTakenPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			line = fmt.Sprintf("%s took from %s's chest without asking.", name(p.Taker), name(p.Owner))
+			line = fmt.Sprintf("%s took from %s's chest without asking.", name(p.Taker.ID), name(p.Owner.ID))
 		}
 	case "social.promise_broken":
 		var p sim.PromiseBrokenPayload
@@ -170,7 +170,7 @@ func (md *Mind) chronicleNote(e store.Event) {
 				what = "cache of goods"
 			}
 			line = fmt.Sprintf("%s went looking for the %s at (%d,%d) and found it gone.",
-				name(p.Agent), what, f.X, f.Y)
+				name(p.Agent.ID), what, f.X, f.Y)
 		}
 	case "social.place_told":
 		// Spec 041 (US5, T030): directions change hands — voiced by the first
@@ -179,7 +179,7 @@ func (md *Mind) chronicleNote(e store.Event) {
 		if json.Unmarshal(e.Payload, &p) == nil && len(p.Facts) > 0 {
 			f := p.Facts[0]
 			line = fmt.Sprintf("%s told %s about the %s at (%d,%d).",
-				name(p.From), name(p.To), strings.ReplaceAll(f.Kind, "_", " "), f.X, f.Y)
+				name(p.From.ID), name(p.To.ID), strings.ReplaceAll(f.Kind, "_", " "), f.X, f.Y)
 		}
 	case "metatron.place_revealed":
 		// Spec 041 (FR-014, T032): the divine reveal — voiced by the first
@@ -188,7 +188,7 @@ func (md *Mind) chronicleNote(e store.Event) {
 		if json.Unmarshal(e.Payload, &p) == nil && len(p.Facts) > 0 {
 			f := p.Facts[0]
 			line = fmt.Sprintf("A vision showed %s the %s at (%d,%d).",
-				name(p.Agent), strings.ReplaceAll(f.Kind, "_", " "), f.X, f.Y)
+				name(p.Agent.ID), strings.ReplaceAll(f.Kind, "_", " "), f.X, f.Y)
 		}
 	case "agent.thought":
 		var p sim.ThoughtPayload

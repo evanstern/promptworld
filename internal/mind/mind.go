@@ -327,12 +327,12 @@ func (md *Mind) absorb(batch []store.Event) {
 			// into the next scheduled round instead).
 			var p sim.MapCorrectedPayload
 			if json.Unmarshal(e.Payload, &p) == nil &&
-				p.Agent >= 0 && p.Agent < len(md.replica.Agents) {
-				if in := md.replica.Agents[p.Agent].Intent; in != nil {
+				p.Agent.ID >= 0 && p.Agent.ID < len(md.replica.Agents) {
+				if in := md.replica.Agents[p.Agent.ID].Intent; in != nil {
 					for _, f := range p.Gone {
 						if (f.X == in.TargetX && f.Y == in.TargetY) ||
 							(f.X == in.ResX && f.Y == in.ResY) {
-							md.arm(p.Agent, e.Seq)
+							md.arm(p.Agent.ID, e.Seq)
 							break
 						}
 					}

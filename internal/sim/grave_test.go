@@ -81,7 +81,7 @@ func TestPerceptionSweepGrantsGraveFact(t *testing.T) {
 	for _, e := range perceptionEvents(s, m, beat) {
 		var p SawPayload
 		mustUnmarshal(t, e.Payload, &p)
-		if p.Agent != 0 {
+		if p.Agent.ID != 0 {
 			continue
 		}
 		for _, f := range p.Facts {
@@ -122,7 +122,7 @@ func TestPlaceTellSpreadsGraveFact(t *testing.T) {
 		}
 		var p PlaceToldPayload
 		mustUnmarshal(t, e.Payload, &p)
-		if p.From == 0 && p.To == 1 {
+		if p.From.ID == 0 && p.To.ID == 1 {
 			q := p
 			told = &q
 		}
@@ -186,7 +186,7 @@ func TestGriefRumorFromWitnessedDeath(t *testing.T) {
 	if rumor == nil {
 		t.Fatal("a founded talk between witness and listener produced no social.rumor_told")
 	}
-	if rumor.Subject != 0 || rumor.Tone >= 0 {
+	if rumor.Subject.ID != 0 || rumor.Tone >= 0 {
 		t.Errorf("rumor_told = %+v, want subject 0 (the deceased) with a negative (grief) tone", *rumor)
 	}
 }

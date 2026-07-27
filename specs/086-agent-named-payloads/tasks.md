@@ -75,7 +75,7 @@ cluster tests green.
   talked/memory/thought/hail/crafting/consumption/tools/walls/storage/
   moved/AgentPayload): fields + executor emission sites + arms
   (FR-002)
-- [ ] T008 [US1] Batch B — social + mental map
+- [X] T008 [US1] Batch B — social + mental map
   (`internal/sim/social.go` rows 33–39, `mentalmap.go` rows 48–51:
   relation/gave/rumor incl. subject/secret/conversation turn+scene/
   chest_taken/saw/place_told/place_revealed/map_corrected; PlaceFact.

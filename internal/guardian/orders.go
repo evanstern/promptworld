@@ -595,7 +595,7 @@ func describeEvent(e store.Event) string {
 	case "social.rumor_told":
 		var p sim.RumorToldPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
-			return fmt.Sprintf("%s told %s a rumor: %q", name(p.From), name(p.To), p.Text)
+			return fmt.Sprintf("%s told %s a rumor: %q", name(p.From.ID), name(p.To.ID), p.Text)
 		}
 	case "gru.attacked":
 		var p sim.GruAttackedPayload

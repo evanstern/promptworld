@@ -432,7 +432,7 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 						Payload: mustPayload(PromiseBrokenPayload{ID: d.ID})},
 					store.Event{Tick: nextTick, Type: "social.relation_changed",
 						Payload: mustPayload(RelationChangedPayload{
-							A: d.Creditor, B: d.Debtor,
+							A: Ref(d.Creditor), B: Ref(d.Debtor),
 							TrustDelta: brokenTrustPenalty, AffectionDelta: brokenAffectPenalty,
 							Reason: "promise broken"})},
 					situatedMemoryAboutEvent(nextTick, d.Creditor, d.Debtor, toneNeverPaid, salNeverPaid,
@@ -643,7 +643,7 @@ func perceptionEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 		if len(news) > 0 {
 			sortFacts(news)
 			events = append(events, store.Event{Tick: nextTick, Type: "agent.saw",
-				Payload: mustPayload(SawPayload{Agent: i, Facts: news})})
+				Payload: mustPayload(SawPayload{Agent: Ref(i), Facts: news})})
 		}
 
 		// The correction half (spec 041 US3, T019): remembered FRESH facts
@@ -672,7 +672,7 @@ func perceptionEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 		}
 		if len(gone) > 0 {
 			events = append(events, store.Event{Tick: nextTick, Type: "agent.map_corrected",
-				Payload: mustPayload(MapCorrectedPayload{Agent: i, Gone: gone})})
+				Payload: mustPayload(MapCorrectedPayload{Agent: Ref(i), Gone: gone})})
 			// The situated discoveries ride the same batch as companion
 			// memory events, one per gone fact (the buildFailedEvents shape —
 			// memories accrete ONLY via agent.memory_added, TestMemoriesAccrete).
@@ -786,14 +786,14 @@ func socialEvents(s *State, nextTick int64) []store.Event {
 		f, t := &s.Agents[from], &s.Agents[to]
 		events = append(events,
 			store.Event{Tick: nextTick, Type: "social.gave",
-				Payload: mustPayload(GavePayload{From: from, To: to, Kind: "food"})},
+				Payload: mustPayload(GavePayload{From: Ref(from), To: Ref(to), Kind: "food"})},
 			store.Event{Tick: nextTick, Type: "social.relation_changed",
 				Payload: mustPayload(RelationChangedPayload{
-					A: to, B: from, TrustDelta: giveTrustToGiver, AffectionDelta: giveAffectionToGiver,
+					A: Ref(to), B: Ref(from), TrustDelta: giveTrustToGiver, AffectionDelta: giveAffectionToGiver,
 					Reason: "shared food"})},
 			store.Event{Tick: nextTick, Type: "social.relation_changed",
 				Payload: mustPayload(RelationChangedPayload{
-					A: from, B: to, TrustDelta: 0, AffectionDelta: giveAffectionToRecv,
+					A: Ref(from), B: Ref(to), TrustDelta: 0, AffectionDelta: giveAffectionToRecv,
 					Reason: "shared food"})},
 			situatedMemoryAboutEvent(nextTick, to, from, toneSaved, salWasSaved,
 				PlaceAt(s, t.X, t.Y), OriginWitness, "%s gave me food when I needed it.", f.Name),
@@ -845,10 +845,10 @@ func talkEvents(s *State, i, j int, nextTick int64) []store.Event {
 			Payload: mustPayload(TalkedPayload{A: Ref(i), B: Ref(j)})},
 		{Tick: nextTick, Type: "social.relation_changed",
 			Payload: mustPayload(RelationChangedPayload{
-				A: i, B: j, AffectionDelta: talkAffection, Reason: "talked"})},
+				A: Ref(i), B: Ref(j), AffectionDelta: talkAffection, Reason: "talked"})},
 		{Tick: nextTick, Type: "social.relation_changed",
 			Payload: mustPayload(RelationChangedPayload{
-				A: j, B: i, AffectionDelta: talkAffection, Reason: "talked"})},
+				A: Ref(j), B: Ref(i), AffectionDelta: talkAffection, Reason: "talked"})},
 		situatedMemoryEvent(nextTick, i, salTalk, PlaceAt(s, a.X, a.Y), "", OriginAction, "Talked with %s.", b.Name),
 		situatedMemoryEvent(nextTick, j, salTalk, PlaceAt(s, b.X, b.Y), "", OriginAction, "Talked with %s.", a.Name),
 	}
@@ -872,7 +872,7 @@ func talkEvents(s *State, i, j int, nextTick int64) []store.Event {
 		}
 		events = append(events,
 			store.Event{Tick: nextTick, Type: "social.place_told",
-				Payload: mustPayload(PlaceToldPayload{From: from, To: to, Facts: facts})},
+				Payload: mustPayload(PlaceToldPayload{From: Ref(from), To: Ref(to), Facts: facts})},
 			situatedMemoryEvent(nextTick, from, salPlaceTold,
 				PlaceAt(s, s.Agents[from].X, s.Agents[from].Y), "", OriginAction,
 				"%s", placeToldText(s.Agents[to].Name, facts, true)),
@@ -887,7 +887,7 @@ func talkEvents(s *State, i, j int, nextTick int64) []store.Event {
 func rumorTellEvent(tick int64, from, to int, tell Tellable) store.Event {
 	return store.Event{Tick: tick, Type: "social.rumor_told",
 		Payload: mustPayload(RumorToldPayload{
-			From: from, To: to, RumorID: tell.RumorID, Subject: tell.Subject,
+			From: Ref(from), To: Ref(to), RumorID: tell.RumorID, Subject: Ref(tell.Subject),
 			Tone: tell.Tone, Text: tell.Text, Confidence: tell.Confidence,
 		})}
 }

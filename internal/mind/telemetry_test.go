@@ -712,7 +712,7 @@ func TestMapCorrectionRearmsMatchingIntent(t *testing.T) {
 	md := &Mind{replica: state}
 
 	corrected := func(agent int, x, y int, seq int64) store.Event {
-		b, _ := json.Marshal(sim.MapCorrectedPayload{Agent: agent, Gone: []sim.PlaceFact{
+		b, _ := json.Marshal(sim.MapCorrectedPayload{Agent: sim.Ref(agent), Gone: []sim.PlaceFact{
 			{Kind: "fire", X: x, Y: y, Seen: 100, Provenance: "witnessed"},
 		}})
 		return store.Event{Seq: seq, Tick: 500, Type: "agent.map_corrected", Payload: b}

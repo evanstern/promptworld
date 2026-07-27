@@ -131,8 +131,8 @@ func (mt *Guardian) digestNote(e store.Event) {
 		}
 	case "social.rumor_told":
 		var p sim.RumorToldPayload
-		if json.Unmarshal(e.Payload, &p) == nil && p.To >= 0 {
-			line = fmt.Sprintf("%s told %s a rumor: %q.", name(p.From), name(p.To), p.Text)
+		if json.Unmarshal(e.Payload, &p) == nil && p.To.ID >= 0 {
+			line = fmt.Sprintf("%s told %s a rumor: %q.", name(p.From.ID), name(p.To.ID), p.Text)
 		}
 	case "social.promise_broken":
 		line = "A promise was broken."

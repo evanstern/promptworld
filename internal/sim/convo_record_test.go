@@ -14,12 +14,12 @@ func TestConversationRecordRing(t *testing.T) {
 
 	// New scene shape.
 	s.Apply(store.Event{Tick: 100, Type: "social.conversation", Payload: mustPayload(ConversationPayload{
-		Conv: 100, A: 0, B: 1, Gist: "argued about firewood", Turns: 6,
-		Participants: []int{0, 1, 2}, Topics: []string{"firewood"}, Tones: []int{1, -1, 0},
+		Conv: 100, A: Ref(0), B: Ref(1), Gist: "argued about firewood", Turns: 6,
+		Participants: Refs([]int{0, 1, 2}), Topics: []string{"firewood"}, Tones: []int{1, -1, 0},
 	})})
 	// Legacy pair shape (no participants).
 	s.Apply(store.Event{Tick: 200, Type: "social.conversation", Payload: mustPayload(ConversationPayload{
-		Conv: 200, A: 3, B: 4, Gist: "shared a joke", Turns: 4,
+		Conv: 200, A: Ref(3), B: Ref(4), Gist: "shared a joke", Turns: 4,
 	})})
 
 	if len(s.Conversations) != 2 {
@@ -46,7 +46,7 @@ func TestConversationRecordRing(t *testing.T) {
 	// The ring is bounded: oldest records fall off at the cap.
 	for i := 0; i < convoRecordCap+10; i++ {
 		s.Apply(store.Event{Tick: int64(300 + i), Type: "social.conversation", Payload: mustPayload(ConversationPayload{
-			Conv: int64(300 + i), A: 0, B: 1, Gist: "chatter", Turns: 4,
+			Conv: int64(300 + i), A: Ref(0), B: Ref(1), Gist: "chatter", Turns: 4,
 		})})
 	}
 	if len(s.Conversations) != convoRecordCap {

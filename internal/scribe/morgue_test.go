@@ -64,9 +64,9 @@ func morgueHistory(t *testing.T) []store.Event {
 		// (gratis — no charge accounting in this scripted history), and the
 		// gave arm opens Ash's debt to Birch.
 		ev(4000, "metatron.item_granted", sim.ItemGrantedPayload{Agent: 1, Kind: "food_raw", Qty: 1, Gratis: true}),
-		ev(4100, "social.gave", sim.GavePayload{From: 1, To: 0, Kind: "food"}),
+		ev(4100, "social.gave", sim.GavePayload{From: sim.Ref(1), To: sim.Ref(0), Kind: "food"}),
 		ev(4200, "social.relation_changed", sim.RelationChangedPayload{
-			A: 1, B: 0, TrustDelta: 30, AffectionDelta: 5, Reason: "gift"}),
+			A: sim.Ref(1), B: sim.Ref(0), TrustDelta: 30, AffectionDelta: 5, Reason: "gift"}),
 		// Birch's deed, on the chronicle's curated vocabulary.
 		ev(7200, "agent.built", sim.BuiltPayload{Agent: sim.Ref(1), Kind: "fire", X: 10, Y: 10}),
 		// The default charter observed on day 1; Cedar dies under it.

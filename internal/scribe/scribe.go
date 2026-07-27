@@ -143,7 +143,7 @@ func (s *Scribe) run() {
 				case "social.relation_changed":
 					var p sim.RelationChangedPayload
 					if json.Unmarshal(e.Payload, &p) == nil {
-						dirty[p.A] = true
+						dirty[p.A.ID] = true
 					}
 				case "social.gave", "social.promise_broken":
 					for i := range s.replica.Agents {

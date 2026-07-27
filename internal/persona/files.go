@@ -100,7 +100,7 @@ func SecretEvents() ([]store.Event, error) {
 		if !ok {
 			return nil, fmt.Errorf("no authored secret for %q", name)
 		}
-		payload, err := json.Marshal(sim.SecretSeededPayload{Agent: i, Text: text, Tone: -70})
+		payload, err := json.Marshal(sim.SecretSeededPayload{Agent: sim.Ref(i), Text: text, Tone: -70})
 		if err != nil {
 			return nil, err
 		}

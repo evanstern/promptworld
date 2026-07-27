@@ -319,10 +319,10 @@ func (s *State) applyGuardian(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		if p.Agent < 0 || p.Agent >= len(s.Agents) {
-			return fmt.Errorf("apply %s: unknown target %d", e.Type, p.Agent)
+		if p.Agent.ID < 0 || p.Agent.ID >= len(s.Agents) {
+			return fmt.Errorf("apply %s: unknown target %d", e.Type, p.Agent.ID)
 		}
-		a := &s.Agents[p.Agent]
+		a := &s.Agents[p.Agent.ID]
 		if a.Dead {
 			return fmt.Errorf("apply %s: target %s is dead", e.Type, a.Name)
 		}

@@ -304,7 +304,7 @@ func TestReturnDiscoveryStillCorrects(t *testing.T) {
 				mustUnmarshal(t, e.Payload, &p)
 				for _, f := range p.Gone {
 					if f.Kind == "tree" && f.X == res.X && f.Y == res.Y {
-						corr[p.Agent]++
+						corr[p.Agent.ID]++
 					}
 				}
 			}
@@ -373,8 +373,8 @@ func TestOnlyAbsentAgentCorrects(t *testing.T) {
 				for _, f := range p.Gone {
 					if f.Kind == "tree" && f.X == res.X && f.Y == res.Y {
 						corrections++
-						if p.Agent != 2 {
-							t.Errorf("correction for the felled tile named agent %d, want only the absent agent 2", p.Agent)
+						if p.Agent.ID != 2 {
+							t.Errorf("correction for the felled tile named agent %d, want only the absent agent 2", p.Agent.ID)
 						}
 					}
 				}
@@ -404,8 +404,8 @@ func TestChopWitnessReplayByteIdentical(t *testing.T) {
 	log := []store.Event{
 		{Tick: 1, Type: "agent.moved", Payload: mustPayload(AgentMovedPayload{Agent: Ref(0), X: stand.X, Y: stand.Y})},
 		{Tick: 1, Type: "agent.moved", Payload: mustPayload(AgentMovedPayload{Agent: Ref(1), X: stand.X, Y: stand.Y})},
-		{Tick: 2, Type: "agent.saw", Payload: mustPayload(SawPayload{Agent: 0, Facts: []PlaceFact{treeFact}})},
-		{Tick: 2, Type: "agent.saw", Payload: mustPayload(SawPayload{Agent: 1, Facts: []PlaceFact{treeFact}})},
+		{Tick: 2, Type: "agent.saw", Payload: mustPayload(SawPayload{Agent: Ref(0), Facts: []PlaceFact{treeFact}})},
+		{Tick: 2, Type: "agent.saw", Payload: mustPayload(SawPayload{Agent: Ref(1), Facts: []PlaceFact{treeFact}})},
 		chopEvent(0, res.X, res.Y, 3),
 	}
 
@@ -461,7 +461,7 @@ func assertNoCorrection(t *testing.T, e store.Event, agent, x, y int) {
 	}
 	var p MapCorrectedPayload
 	mustUnmarshal(t, e.Payload, &p)
-	if p.Agent != agent {
+	if p.Agent.ID != agent {
 		return
 	}
 	for _, f := range p.Gone {

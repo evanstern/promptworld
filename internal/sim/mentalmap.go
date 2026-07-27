@@ -487,7 +487,7 @@ func (s *State) notePresence(idx int, tick int64) {
 // reducer upserts them verbatim. Digest-only — no chronicle line, not an
 // absorb trigger.
 type SawPayload struct {
-	Agent int         `json:"agent"`
+	Agent AgentRef    `json:"agent"`
 	Facts []PlaceFact `json:"facts"`
 }
 
@@ -499,8 +499,8 @@ type SawPayload struct {
 // verbatim. Canonical (Kind, X, Y) order. The reducer upserts into the
 // receiver's map only where absent-or-staler.
 type PlaceToldPayload struct {
-	From  int         `json:"from"`
-	To    int         `json:"to"`
+	From  AgentRef    `json:"from"`
+	To    AgentRef    `json:"to"`
 	Facts []PlaceFact `json:"facts"`
 }
 
@@ -565,7 +565,7 @@ func tellablePlaces(s *State, teller, listener int, tick int64) []PlaceFact {
 // reveals what is, never what isn't. Companion Origin-omen memories ride the
 // same batch as agent.memory_added events (the map_corrected shape).
 type PlaceRevealedPayload struct {
-	Agent int         `json:"agent"`
+	Agent AgentRef    `json:"agent"`
 	Facts []PlaceFact `json:"facts"`
 }
 
@@ -577,6 +577,6 @@ type PlaceRevealedPayload struct {
 // trigger: the planner re-arms when a removed fact matches the agent's
 // current intent target (mind.go).
 type MapCorrectedPayload struct {
-	Agent int         `json:"agent"`
+	Agent AgentRef    `json:"agent"`
 	Gone  []PlaceFact `json:"gone"`
 }

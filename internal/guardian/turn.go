@@ -441,7 +441,7 @@ func (mt *Guardian) landVision(target, text string, reveal *placeReveal, charges
 	if reveal != nil {
 		extra = []store.Event{
 			{Type: "metatron.place_revealed", Payload: mustJSON(sim.PlaceRevealedPayload{
-				Agent: idx, Facts: []sim.PlaceFact{{Kind: reveal.Kind, X: reveal.X, Y: reveal.Y,
+				Agent: sim.Ref(idx), Facts: []sim.PlaceFact{{Kind: reveal.Kind, X: reveal.X, Y: reveal.Y,
 					Provenance: sim.ProvenanceRevealed}}})},
 			{Type: "agent.memory_added", Payload: mustJSON(sim.MemoryAddedPayload{
 				Agent: sim.Ref(idx), Text: revealMemoryText(reveal), Salience: sim.SalDream,

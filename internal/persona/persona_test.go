@@ -314,8 +314,8 @@ func TestSecretEvents(t *testing.T) {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			t.Fatalf("%s: payload unmarshal: %v", name, err)
 		}
-		if p.Agent != i {
-			t.Errorf("%s: payload Agent = %d, want %d (index-aligned)", name, p.Agent, i)
+		if p.Agent.ID != i {
+			t.Errorf("%s: payload Agent = %d, want %d (index-aligned)", name, p.Agent.ID, i)
 		}
 		if p.Tone != -70 {
 			t.Errorf("%s: payload Tone = %d, want -70", name, p.Tone)

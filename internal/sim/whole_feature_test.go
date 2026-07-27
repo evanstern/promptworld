@@ -589,7 +589,7 @@ func TestStorageEventsNoOpUnderUnknownConvention(t *testing.T) {
 		{"agent.picked_up", PickedUpPayload{Agent: Ref(0), X: x, Y: y, Kind: "wood", N: 3}},
 		{"agent.deposited", DepositedPayload{Agent: Ref(0), X: x, Y: y, Kind: "wood", N: 3}},
 		{"agent.withdrew", WithdrewPayload{Agent: Ref(0), X: x, Y: y, Kind: "wood", N: 3, Owner: Ref(1)}},
-		{"social.chest_taken", ChestTakenPayload{Owner: 1, Taker: 0, X: x, Y: y}},
+		{"social.chest_taken", ChestTakenPayload{Owner: Ref(1), Taker: Ref(0), X: x, Y: y}},
 		{"sim.food_rotted", FoodRottedPayload{X: x, Y: y, Kind: "food_raw", N: 3}},
 	}
 	for _, c := range cases {
