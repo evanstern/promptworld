@@ -4,7 +4,7 @@ title: 'World forking and what-if A/B runs (same village, two prompts, two stori
 status: Done
 assignee: []
 created_date: '2026-07-23 03:28'
-updated_date: '2026-07-26 20:13'
+updated_date: '2026-07-28 09:26'
 labels:
   - review-2026-07-22
   - teaching-game
@@ -58,6 +58,8 @@ Reorient 2026-07-26 decision 3 (docs/design/reorient-2026-07-26-ui.md): promoted
 Sweep claim (runbook docs/design/reorient-2026-07-26-sweep-runbook.md): spec 076-world-fork-duel. Tier: Opus 4.8 — cross-package architectural (world-lifecycle fork, fresh identity, lineage events, determinism harness, compare surface). Dependency satisfied: TASK-149 merged (PR #113, f78358a) — duel scoreboard shares resolveReportCardFacts/reportCardView + sim.EvaluateRubric, comparing true verdicts.
 
 AC5 settled at spec time (research R4): fork INHERITS the wallet — per-world meter architecture (meter.go meta table + per-world llm.json) means no machine-global ceiling exists to share; spend keys copied so forking never mints budget. Deviates with evidence from the runbook's original recommendation; runbook amended, operator surfaced.
+
+Confound bound update (2026-07-28, TASK-163): when the fork-duel scoreboard attributes targeting failures, quote TASK-163's bound, not TASK-136's 80% — on the fixed binary (PR #128) with a sonnet-tier guardian route, model-side tool-call noise is ~0% (36% total rejection, all world-mechanics: carry cap, position races). Hold the guardian model tier fixed across duel arms. Source: docs/design/evidence/task-163/results.md.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
