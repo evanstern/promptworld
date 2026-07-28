@@ -7,7 +7,7 @@ sources:
   - internal/tool/registry.go
   - internal/tool/derive.go
   - internal/tool/roster.go
-verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
+verified_against: 63390f122bdf4e1b7abf518a8be83de725f06230
 ---
 
 # Tool registry — the World/villager tool catalog
@@ -59,7 +59,10 @@ pre-existing World verb, so they fall out of `isLegacyWorldTool`'s discriminator
 for free — planner-only, no `ReflexEligible` — and join `RosterVillager`/
 `LoopRosterVillager` with no separate list to maintain; the storage verbs'
 `itemKinds` vocabulary (`kind` param on `drop`/`pick_up`/`deposit`/`withdraw`)
-gains `"axes"` alongside the pre-existing kinds. Each `Tool` (`tool.go`) carries an `EffectClass`
+gains `"axes"` alongside the pre-existing kinds. (Since TASK-163, this plural
+storage vocabulary is deliberately DISTINCT from `work_miracle give_item`'s
+singular `grantKinds`/`GrantKinds()` — a grant delivers ONE fresh spear/axe at
+a time, never the storage field's many; see [[tool-registry-guardian-tools]].) Each `Tool` (`tool.go`) carries an `EffectClass`
 (`World` → intents, executor-grounded; `Expressive` → immediate whitelisted event
 batches; `Read` → data back into cognition, consumed by [[tool-loop]] — spec 019
 ships the first production Read entries, `search_journal`/`read_journal`),

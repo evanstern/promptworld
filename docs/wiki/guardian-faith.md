@@ -9,7 +9,7 @@ sources:
   - internal/sim/guardian.go
   - internal/guardian/prophecy.go
   - internal/tool/registry.go
-verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
+verified_against: 63390f122bdf4e1b7abf518a8be83de725f06230
 ---
 
 # Guardian faith and prophecy — the endogenous mana loop
