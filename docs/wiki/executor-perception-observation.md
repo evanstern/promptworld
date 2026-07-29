@@ -63,11 +63,14 @@ payload fully baked, additive event type — no format-version bump).
 A companion low-salience situated memory (Origin `observed` — first-person,
 `DirectPerception` true; salience = the `observation_base_salience` dial)
 PRECEDES the event in its batch, so the mind's absorb loop reads it off the
-replica when the observation lands. Repeat observations of an unchanged tile
-inside the `observation_dedup_ticks` dial window collapse entirely —
-both-or-neither, no event and no memory (D4: the working window, the event
-stream, and the reconciliation rate are all bounded by one window). Dedup is
-replay-pure: the `agent.place_observed` reducer arm records
+replica when the observation lands. Repeat observations of an unchanged
+PLACE — within `placeScanRadius` of the last observation (overlapping scan
+discs), identical kind set — inside the `observation_dedup_ticks` dial
+window collapse entirely: both-or-neither, no event and no memory (D4: the
+working window, the event stream, and the reconciliation rate are all
+bounded by one window; a changed place always re-observes because its kind
+set differs, and the anchor never slides on a suppressed observation).
+Dedup is replay-pure: the `agent.place_observed` reducer arm records
 `Agent.LastObs` (`ObservationMark{x, y, kinds, tick}`), and the emission
 site compares the next arrival against that event-sourced anchor.
 

@@ -117,12 +117,18 @@ func observedKinds(s *State, m *worldmap.Map, x, y int) []string {
 }
 
 // observationDeduped reports whether an observation of (x,y) seeing kinds at
-// tick collapses into the agent's last one (D4): same tile, identical kind
-// set, and inside the dedup window. kinds must be canonical (sorted, deduped)
-// — observedKinds' output.
+// tick collapses into the agent's last one (D4): the SAME PLACE — within
+// placeScanRadius of the last observation, where the two scan discs largely
+// overlap — with an identical kind set, inside the dedup window. Radius-based
+// rather than exact-tile: an agent pacing adjacent tiles of one clearing is
+// revisiting an unchanged place, not discovering new ones (the card's flood
+// worry), and a genuinely changed place always re-observes because its kind
+// set differs. The anchor never slides on a suppressed observation (no event,
+// no anchor move), so drift beyond the radius always observes afresh. kinds
+// must be canonical (sorted, deduped) — observedKinds' output.
 func observationDeduped(a *Agent, x, y int, kinds []string, tick, window int64) bool {
 	lo := a.LastObs
-	if lo == nil || lo.X != x || lo.Y != y || tick-lo.Tick >= window {
+	if lo == nil || abs(lo.X-x)+abs(lo.Y-y) > placeScanRadius || tick-lo.Tick >= window {
 		return false
 	}
 	if len(lo.Kinds) != len(kinds) {

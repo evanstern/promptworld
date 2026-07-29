@@ -219,9 +219,29 @@ func TestPlaceObservedDedup(t *testing.T) {
 		t.Errorf("changed place inside the window emitted %d events, want 2", len(evs))
 	}
 	s.Structures = s.Structures[:len(s.Structures)-1]
-	// A different tile inside the window: observes.
-	if evs := placeObservedEvents(s, m, 0, x+1, y, 200); len(evs) != 2 {
-		t.Errorf("different tile inside the window emitted %d events, want 2", len(evs))
+	// An adjacent tile with the identical kind set inside the window: the
+	// same place (scan discs overlap within placeScanRadius) — deduped,
+	// UNLESS the shifted disc genuinely sees different kinds.
+	adjKinds := observedKinds(s, m, x+1, y)
+	adjEvs := placeObservedEvents(s, m, 0, x+1, y, 200)
+	sameKinds := len(adjKinds) == len(a.LastObs.Kinds)
+	if sameKinds {
+		for i := range adjKinds {
+			if adjKinds[i] != a.LastObs.Kinds[i] {
+				sameKinds = false
+				break
+			}
+		}
+	}
+	if sameKinds && len(adjEvs) != 0 {
+		t.Errorf("adjacent tile, identical kinds, inside the window emitted %d events, want 0 (radius dedup)", len(adjEvs))
+	}
+	if !sameKinds && len(adjEvs) != 2 {
+		t.Errorf("adjacent tile with a different kind set emitted %d events, want 2", len(adjEvs))
+	}
+	// Beyond the scan radius inside the window: a different place — observes.
+	if evs := placeObservedEvents(s, m, 0, x+placeScanRadius+1, y, 200); len(evs) != 2 {
+		t.Errorf("beyond-radius tile inside the window emitted %d events, want 2", len(evs))
 	}
 }
 
