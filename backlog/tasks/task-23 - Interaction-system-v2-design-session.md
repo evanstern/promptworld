@@ -4,7 +4,7 @@ title: 'Interaction system v2: design session'
 status: In Progress
 assignee: []
 created_date: '2026-07-19 22:27'
-updated_date: '2026-07-29 19:15'
+updated_date: '2026-07-29 19:17'
 labels:
   - design
 dependencies: []
@@ -15,11 +15,15 @@ ordinal: 9000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 The full agent<=>agent interaction system needs a ground-up design (user, 2026-07-19: 'that's a whole system we need to design'). Socratic/spec session covering: interaction primitives beyond talk (argue, trade, teach, comfort, conspire), scene formation and dissolution for groups, how conversation records become long-term relationship memory (interplay with TASK-9 consolidation), LLM budget shaping across interaction kinds, and what the chronicle (TASK-11) needs from interactions. Output: a spec under specs/ linked to the board via spec-bridge. Builds on evidence from Conversations v1.5.
+
+Spec: specs/093-interactions-v2
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 A grounding/design session produces a spec directory for interactions v2, linked on the board via spec-bridge
+- [ ] #2 Spec phase: Design authoring
+- [ ] #3 Spec phase: Ratification
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -30,4 +34,6 @@ Re-grounding 2026-07-22: reframed onto the tool substrate — new interaction pr
 Reorient 2026-07-26 (board move 12): reframed as the DF-pole drama generator — social incidents are the ambient endgame's retention content (Thornspire cascade proved the substrate); chronicle requirements should include rubric-legibility for future social exercises.
 
 Reordered 2026-07-26 (guardian-directives ideation, operator: 'ok on 23'): the TASK-27 ordering note is obsolete (Metatron v2 is Done). New ordering: AFTER TASK-157 (guardian directives/designations) — the guardian→villager directive channel (durable checkable goals, decision-context block, DIRECTIVE reflex rung) will inform the villager↔villager interaction primitives this design session covers; teach/order-shaped interactions should reuse the directive substrate's completion-predicate vocabulary where applicable.
+
+board-sweep-2026-07-29 lane 5: design session run autonomously per sign-off; spec 093 authored on the tool substrate per the card's re-grounding notes; OQ-1..OQ-5 flagged for the ratification PR review. No implementer dispatch — planning-model authoring.
 <!-- SECTION:NOTES:END -->
