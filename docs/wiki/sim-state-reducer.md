@@ -1,6 +1,6 @@
 ---
 name: sim-state-reducer
-description: sim.State and Apply — the single event-driven mutation path used identically live and in replay; canonical JSON for hashing. Field catalog and per-family Apply-arm detail split across six children; load this note for the whole-state model, Tick handling, and Marshal/Hash — the children for arm-level detail.
+description: sim.State and Apply — the single event-driven mutation path used identically live and in replay; canonical JSON for hashing. Field catalog and per-family Apply-arm detail split across seven children; load this note for the whole-state model, Tick handling, and Marshal/Hash — the children for arm-level detail.
 kind: component
 sources:
   - internal/sim/state.go
@@ -9,7 +9,7 @@ sources:
   - internal/sim/journal.go
   - internal/sim/morgue.go
   - internal/sim/miracles.go
-verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
+verified_against: e63cc89fa4fffe1116a5c8273f3e3f429fb66979
 ---
 
 # Sim state & reducer
@@ -30,7 +30,7 @@ rather than incremental `Apply` calls.
 `NewState(seed, m)` is genesis; `Apply` switches on event type across
 roughly eighty payload shapes ([[event-types]]). Both the full per-agent/
 per-world field catalog and the arm-by-arm `Apply` detail are split into
-six children (summary-style, corpus-spec v2) — read the one your task
+seven children (summary-style, corpus-spec v2) — read the one your task
 needs, not the whole set:
 
 - [[sim-state-agent-fields]] — clock state and the per-agent field catalog:
@@ -55,6 +55,9 @@ needs, not the whole set:
 - [[sim-state-cognition-arms]] — the cognition/telemetry arms: memory
   growth (`memory_added`/`memory_embedded`/`situation_embedded`), the
   journal family, the plan family, and the `cog.*` no-op telemetry types.
+- [[sim-state-reducer-replay-hazards]] — the spec-092 (TASK-75)
+  reducer-constants replay-hazard doctrine and its full audit of every
+  `Apply` arm that re-derives an outcome from a mutable gameplay constant.
 
 ## How it works
 
@@ -90,7 +93,7 @@ The other sibling notes this reducer touches — [[guardian-orders]],
 [[mental-maps]], [[memory-retrieval]], [[decision-context]],
 [[reflex-policy]], [[curriculum-ladder]], [[world-tuning]],
 [[scenario-machinery]], [[grounded-feedback]], [[morgue]] — are linked from
-whichever of the six split-off notes above owns the relevant field or arm;
+whichever of the seven split-off notes above owns the relevant field or arm;
 follow those, not this note, for arm-level detail.
 
 ## Operational notes
@@ -101,25 +104,27 @@ runs stay byte-deterministic. Adding a state field means adding events that
 set it — direct mutation outside `Apply` (except `Tick`) breaks the replay
 contract.
 
-## Replay doctrine: names and re-derivations are versioned (spec 094)
+## Replay doctrine: names and re-derived constants are versioned (spec 094 / spec 092, TASK-134 / TASK-75)
 
-`Apply`'s switch keys on persisted event-type NAMES, and several arms
-RE-DERIVE state from doctrine constants at apply time (the hunt-yield
-derivation from `huntYieldSpear` in `agent.hunted`'s arm is the canonical
-example — spec 092's determinism/emitter-computes doctrine, TASK-75, audits
-this class). Both are replay contracts: renaming a type or retuning a
-re-derived constant changes what replaying an EXISTING log computes.
-Either change REQUIRES bumping `store.LogFormatVersion` ([[event-log]]) and
-shipping a migration — a pure rename TRANSLATES the log (the spec 094
-`metatron.*`→`guardian.*` rename, `sim.LogFormatV1Renames`, is the first);
-a semantic break SNAPSHOT-CUTS ([[world-migration]]'s decision rule).
-`TestGatherTuningMirror` pins the tuning values against the ratified log
-format so a retune must confront the doctrine, and the load gates
+Two things about an `Apply` arm are both replay contracts: the event-type
+NAME the switch keys on, and whether the arm re-derives its outcome from a
+payload field (the safe default — spec 019's `agent.memory_added` precedent,
+"baked at emission, never re-derived," [[sim-state-cognition-arms]]) or from
+a mutable Go constant read fresh at apply time (the hunt-yield derivation
+from `huntYieldSpear` in `agent.hunted`'s arm is the canonical example). The
+latter is a REPLAY HAZARD the moment the constant is retuned: an OLD log
+then computes through the CURRENT build's value, not the one live when it
+was recorded. Renaming a type or retuning a re-derived constant both REQUIRE
+bumping `store.LogFormatVersion` ([[event-log]]) and shipping a migration —
+a pure rename TRANSLATES the log (`sim.LogFormatV1Renames`, the spec-094
+`metatron.*`→`guardian.*` rename is the first); a semantic retune
+SNAPSHOT-CUTS ([[world-migration]]'s decision rule). The load gates
 ([[event-log]], [[world-save-directory]]) make an unmigrated old log
-unreachable by these arms. Persisted reference strings inside preserved
-payloads (`EvidenceRef.Type`) keep old names; readers normalize via
-`sim.CanonicalEventType` — the log's own type column is never aliased at
-read.
+unreachable by these arms; persisted reference strings inside preserved
+payloads (`EvidenceRef.Type`) keep their historical names, normalized at
+read via `sim.CanonicalEventType`. [[sim-state-reducer-replay-hazards]]
+carries the full audit (spec 092, TASK-75) of every re-derive site and the
+spec-048 genesis-tuning-pin's partial, narrower mitigation.
 
 ## Spec 086 — refs fold by ID; names never enter state
 

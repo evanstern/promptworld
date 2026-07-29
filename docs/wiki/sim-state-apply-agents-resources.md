@@ -6,7 +6,7 @@ sources:
   - internal/sim/agents.go
   - internal/sim/recipes.go
   - internal/sim/terrain.go
-verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
+verified_against: 4e160b902dd96a6b4a8f4342ae75cdcbc8048c53
 ---
 
 # Sim state: agent resource, storage, and wall Apply arms
@@ -79,3 +79,11 @@ economy; [[mental-map-perception]] owns the harvested-fact removal these
 chop/quarry arms trigger; [[executor]] owns the work-gate re-arming the
 wall/demolish/repair cycle depends on; [[event-types]] catalogs every
 payload shape here.
+
+Every yield/cost/HP constant re-derived by this note's arms — chop/quarry/
+hunt yields, `recipeFor`'s cost tables, `demolishChipHP`/`repairHPPerUnit`/
+`wallMaxHP` — is audited by [[sim-state-reducer]]'s spec-092 reducer-constants
+replay-hazard doctrine (TASK-75): re-deriving from a constant instead of
+carrying the outcome in the payload is the accumulated EXCEPTION to the
+emitter-computes default, and a retune of any of these requires the
+format-version bump + migration spec 094/TASK-134 is building.

@@ -4,7 +4,7 @@ description: The single-goroutine fixed-timestep loop — tick execution, pacing
 kind: component
 sources:
   - internal/sim/loop.go
-verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
+verified_against: e63cc89fa4fffe1116a5c8273f3e3f429fb66979
 ---
 
 # Sim loop
@@ -82,6 +82,14 @@ Auto-slow (`observeWindow`): every `degradeWindow = 5s` the loop compares achiev
 ticks/sec against the requested rate; sustained shortfall below 90% emits
 `clock.degraded` (with the measured rate), recovery to ≥95% emits `clock.recovered`.
 At max speed whatever is achieved is the contract — no degradation events.
+
+**Determinism scope (spec 092/TASK-75)**: the measured rate `clock.degraded`
+carries (`l.measured`, `windowTicks / elapsed`) is wall-clock, so two
+INDEPENDENT live runs from the same seed can diverge in state hash even
+though every RNG draw agrees ([[deterministic-rng]] has the full scope
+note). It is still payload-carried, never re-derived, so REPLAY of a
+recorded log stays exact — this loop's only non-determinism is per-run,
+never per-replay.
 
 `Loop.Govern(to, debt, jobs)` (spec 028 US2/US3) is the daemon governor sampler's
 door onto the same command channel `set_speed` uses: it lands a
