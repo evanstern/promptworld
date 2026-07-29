@@ -3,10 +3,10 @@ id: TASK-163
 title: >-
   Guardian tool-call competence: raise the privileged-action landing rate above
   the 80% rejection floor
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-27 13:20'
-updated_date: '2026-07-28 09:26'
+updated_date: '2026-07-29 13:59'
 labels:
   - mvls
   - guardian-survival
@@ -41,3 +41,9 @@ PROMPT-SHAPING LEG IMPLEMENTED (2026-07-28 ~00:15): dispatched to spec-implement
 
 RE-MEASUREMENT COMPLETE (2026-07-28 ~13:45) + PR OPEN: combined mitigation measured at 36% rejection (5/14; >=10-attempt bar met at 14) vs 80% baseline — AC#2 satisfied. Taxonomy on the fixed binary: model-side noise ~0% (0/14 vocabulary/grammar/coordinate-hallucination); residue = carry-cap quantity bounds x2 (correct kinds, one repaired-to-landed same turn — the enumerating door teaches) and position-freshness races on move x3 (8x speed artifact). Autonomous strata: 4 attempts/3 landed/0 deaths across both arms (tier-only run: 2 deaths, same seed+dials); probe battery (5 standardized asks per arm through the chat surface, labeled stratum in the evidence doc): 10 attempts/6 landed. Evidence: docs/design/evidence/task-163/results.md (in-branch); TASK-137 evidence doc carries the supersession addendum — AC#3 satisfied, with the TASK-67 clause discharged by planting the bound on TASK-67's card and in the TASK-137 doc the duel will draw from (TASK-67 hasn't run yet; the citation instruction is the durable artifact). PR #128 open (merge-commit only), carrying code + wiki re-pins + player docs + evidence.残り: operator approval + merge, then cleanup/Done.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Two-stage mitigation of the 80% privileged-action rejection floor, measured live at each stage on the TASK-137 recipe (same-seed arm pairs, harsh dials, 3 game-days @ 8x). Stage 1 (model tier, per operator ladder): guardian turn route -> cc/claude-sonnet-5 via 9router — send_vision went 0/3 to 2/2 (coordinate grounding fixed) but headline only 80%->71% because every remaining rejection was one signature: the give_item vocabulary was invisible to any model (bare-Text item field, no guidance, non-enumerating rejection). Stage 2 (prompt shaping, activated by AC#1's recorded condition): grantKinds single-sourced in internal/tool (schema enum + guidance gloss + teaching door message), landed via PR #128 (merge commit 46f55b1) with in-branch wiki re-pins (23 notes) and player-docs refresh. Combined measurement: 36% rejection (5/14, >=10-attempt bar met), model-side noise ~0/14 — the baseline taxonomy is extinct; residue is carry-cap bounds (self-repairing via the teaching door, TASK-167) and 8x position races on move (TASK-166). Fixed run: 0 deaths in 3 harsh-dial days where the pre-fix run lost 2 on the same seed. Confound bound for prompt-attribution superseded on TASK-137's evidence doc and TASK-67's card; TASK-164's competence blocker cleared. Evidence: docs/design/evidence/task-163/results.md; worlds preserved at ~/.promptworld/measure/task-163-{,fixed-}{default,authored}.
+<!-- SECTION:FINAL_SUMMARY:END -->
