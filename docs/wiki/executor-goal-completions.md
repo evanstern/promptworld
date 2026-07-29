@@ -43,8 +43,10 @@ class):
   after, in the same batch, plus a memory ("My spear broke on the hunt…").
 - `craft_planks`/`craft_stone`/`craft_spear`/`craft_axe` (spec 032 US2 adds the
   last: 1 plank + 1 stone → one axe holding `axeDurability` (10) uses) → inputs
-  re-validated against `recipes.go`'s table at completion (`hasItems`);
-  insufficient inputs resolve via `agent.intent_done` only (no craft). A
+  re-validated against `recipes.go`'s table at completion (`hasItems`), and the
+  net bulk delta re-validated against `freeBulk` (US1 T012); either failing
+  resolves LOUDLY via `agent.intent_failed` (spec 096, reason `"contested"` —
+  no craft, no inventory change) instead of the old bare `agent.intent_done`. A
   satisfied craft emits `agent.crafted{Kind}`; the reducer applies the recipe's
   delta, appending to `Inv.Spears`/`Inv.Axes` (sorted ascending) for the two
   durability-slice crafts, or a flat `Inv` field otherwise.
@@ -73,7 +75,8 @@ class):
   memory.
 - `demolish` (spec 032 US1) → one chip per completed work cycle against the
   still-standing wall at `Res` (re-validated; a vanished wall — someone else
-  finished it first — resolves via `agent.intent_done` only): `agent.wall_chipped`
+  finished it first — resolves LOUDLY via `agent.intent_failed`, spec 096,
+  `"target gone"`): `agent.wall_chipped`
   removes `demolishChipHP` (100) and the reducer re-arms the SAME intent
   (`WorkStart` reset to 0) for another cycle when the wall would still stand
   (`HP - chip >= 1`); the cycle that would take it to zero instead emits
@@ -86,7 +89,8 @@ class):
   (100) HP clamped to `wallMaxHP`; `agent.wall_repaired` re-arms the same intent
   for another cycle if the wall is still damaged AND material remains, else
   clears it. Re-validated at completion (wall gone, already mended, or material
-  spent all resolve via `agent.intent_done` only).
+  spent all resolve LOUDLY via `agent.intent_failed`, spec 096, `"target
+  gone"`).
 - `build_path` (spec 032 US3) → `agent.built{Kind: "path"}` landing on the
   intent's own `Target` tile (stand-on-target, like fire/oven/chest), spending
   `pathStoneCost` (1) raw stone; a path carries no `HP` (`isWall` is false for
@@ -95,14 +99,20 @@ class):
   movement bonus described above (`pathAt`), not the build itself.
 - `cook` → up to `ovenBatchSize` FoodRaw converts to `agent.cooked`: at a fire,
   fuel-free, producing `food_cooked`; at an oven, additionally burning 1 carried
-  wood, producing `meals` (mirrors the fire's own fuel — an oven with no carried
-  wood or no raw food resolves via `agent.intent_done` only).
+  wood, producing `meals` (mirrors the fire's own fuel). A cold/gone station
+  fails LOUDLY mid-work via `agent.intent_failed` (spec 096, `"target gone"` —
+  the shared `valid` re-validation switch); an oven with no carried wood or no
+  raw food at completion fails LOUDLY too, but distinctly (`"contested"` — the
+  goal's own no-op recheck).
 - `bathe` (oven only) → re-validates carried water + wood at completion (water's
-  only consumer); emits `agent.bathed` with absolute post-cap Morale/Warmth
-  (`bathMorale`/`bathWarmth` bumps, gru-pattern) and a positive-toned memory.
+  only consumer); missing either fails LOUDLY via `agent.intent_failed` (spec
+  096, `"contested"`). A satisfied bathe emits `agent.bathed` with absolute
+  post-cap Morale/Warmth (`bathMorale`/`bathWarmth` bumps, gru-pattern) and a
+  positive-toned memory.
 - `refuel_fire` → re-validated on arrival (fire still present, wood still carried);
   a refuel that would grant no gain over the current deadline (already at the fuel
-  cap) is a no-op (`agent.intent_done` only).
+  cap) is a no-op (`agent.intent_done` only — refuel_fire is NOT in spec 096's
+  enumerated list, so its no-op stays silent).
 
 ## Connections
 

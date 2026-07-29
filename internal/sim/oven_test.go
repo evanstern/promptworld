@@ -184,8 +184,9 @@ func TestOvenCookBatch(t *testing.T) {
 }
 
 // TestOvenCookNoFuelNoOp is spec 012 US4 AC#4 + FR-017: cooking at an oven
-// with no carried wood resolves without effect (fuel is required from day
-// one) — the contested-resource pattern extended to a missing input.
+// with no carried wood resolves LOUDLY via agent.intent_failed (spec 096,
+// contested — the completion-time no-op recheck) instead of a bare
+// intent_done, with no effect (fuel is required from day one).
 func TestOvenCookNoFuelNoOp(t *testing.T) {
 	const seed = 42
 	m := testMap(seed)
@@ -201,21 +202,28 @@ func TestOvenCookNoFuelNoOp(t *testing.T) {
 	a.Intent = &Intent{Goal: "cook", TargetX: ox, TargetY: oy, WorkStart: 1 - cookOvenTicks}
 
 	log := driveTicks(t, s, m, 5, nil)
-	done := false
+	failed := false
+	var reason string
 	for _, e := range log {
 		if e.Type == "agent.cooked" {
 			t.Fatal("no wood at an oven must not produce agent.cooked")
 		}
 		if e.Type == "agent.intent_done" {
-			var p AgentPayload
+			t.Error("fuel-less oven cook resolved via bare agent.intent_done, want agent.intent_failed")
+		}
+		if e.Type == "agent.intent_failed" {
+			var p IntentFailedPayload
 			mustUnmarshal(t, e.Payload, &p)
 			if p.Agent.ID == 0 {
-				done = true
+				failed, reason = true, p.Reason
 			}
 		}
 	}
-	if !done {
-		t.Error("fuel-less oven cook should resolve via agent.intent_done")
+	if !failed {
+		t.Error("fuel-less oven cook should resolve via agent.intent_failed")
+	}
+	if reason != intentFailContested {
+		t.Errorf("reason = %q, want %q", reason, intentFailContested)
 	}
 	if a.Inv.FoodRaw != 5 || a.Inv.Meals != 0 {
 		t.Errorf("inventory changed on a no-fuel cook: %d raw / %d meals, want 5/0", a.Inv.FoodRaw, a.Inv.Meals)

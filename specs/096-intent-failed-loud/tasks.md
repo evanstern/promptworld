@@ -4,18 +4,18 @@
 
 ## Phase 1: Event + emission
 
-- [ ] T001 Define `agent.intent_failed` (goal, enumerated reason, position;
+- [X] T001 Define `agent.intent_failed` (goal, enumerated reason, position;
   emitter-computes) and emit it at every invalid exit the card enumerates
   (forage/chop/hunt/demolish/repair/quarry/cook/bathe) and every contested no-op
   re-check (craft/cook/bathe/deposit/withdraw) in internal/sim/executor.go
   (FR-001).
-- [ ] T002 Situated failure memory (internal/sim/memory.go, build-failure shape)
+- [X] T002 Situated failure memory (internal/sim/memory.go, build-failure shape)
   + reducer closure through stampIntentOutcome + mind re-arm list entry
   (FR-002/FR-003).
 
 ## Phase 2: Surfaces
 
-- [ ] T003 TUI digest grammar entry + event-types.md documentation; whitelist
+- [X] T003 TUI digest grammar entry + event-types.md documentation; whitelist
   additions if any door requires them; TestCatalogSweep green (FR-004).
 
 ## Phase 3: Tests + grounding

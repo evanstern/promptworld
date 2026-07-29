@@ -1126,13 +1126,18 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 	case "deposit":
 		// T024 (spec 013 US3): instant on arrival at the chest. Re-validate the
 		// chest still stands (contested pattern) and truncate the move to its free
-		// space (chestCap − bulk(*Store)). Kind is required (an empty Kind, an
-		// unheld kind, or a full chest ⇒ intent_done only, no effect event). The
-		// payload carries the ACTUAL post-clamp count.
+		// space (chestCap − bulk(*Store)). Kind is required. Spec 096: a vanished
+		// chest or a full chest resolve LOUDLY (agent.intent_failed, contested —
+		// something else changed the chest out from under the intent); an empty
+		// Kind resolves LOUDLY too but distinctly (invalid — a malformed intent no
+		// chest state could ever satisfy). The payload carries the ACTUAL
+		// post-clamp count.
 		ch := s.chestAt(in.TargetX, in.TargetY)
-		if ch == nil || ch.Store == nil || in.Kind == "" {
-			emit("agent.intent_done", AgentPayload{Agent: Ref(i)})
-			return events
+		if ch == nil || ch.Store == nil {
+			return append(events, intentFailedEvents(s, i, a, in, intentFailContested, nextTick)...)
+		}
+		if in.Kind == "" {
+			return append(events, intentFailedEvents(s, i, a, in, intentFailInvalid, nextTick)...)
 		}
 		n := carriedCount(a.Inv, in.Kind)
 		if in.Qty > 0 && in.Qty < n {
@@ -1142,8 +1147,7 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 			n = free
 		}
 		if n <= 0 {
-			emit("agent.intent_done", AgentPayload{Agent: Ref(i)})
-			return events
+			return append(events, intentFailedEvents(s, i, a, in, intentFailContested, nextTick)...)
 		}
 		emit("agent.deposited", DepositedPayload{Agent: Ref(i), X: in.TargetX, Y: in.TargetY, Kind: in.Kind, N: n})
 		return events
@@ -1153,11 +1157,11 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 		// taker's free bulk and to what the chest holds. A named Kind honors Qty;
 		// Kind "" sweeps every kind in canonical field order. Owner rides the
 		// payload (the theft companion batch is US4, T029 — not emitted here).
-		// Nothing moved ⇒ intent_done only.
+		// Spec 096: a vanished chest or nothing moved resolve LOUDLY
+		// (agent.intent_failed, contested) instead of the old bare intent_done.
 		ch := s.chestAt(in.TargetX, in.TargetY)
 		if ch == nil || ch.Store == nil {
-			emit("agent.intent_done", AgentPayload{Agent: Ref(i)})
-			return events
+			return append(events, intentFailedEvents(s, i, a, in, intentFailContested, nextTick)...)
 		}
 		kinds := []string{in.Kind}
 		if in.Kind == "" {
@@ -1184,8 +1188,7 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 			moved = true
 		}
 		if !moved {
-			emit("agent.intent_done", AgentPayload{Agent: Ref(i)})
-			return events
+			return append(events, intentFailedEvents(s, i, a, in, intentFailContested, nextTick)...)
 		}
 		// T029 (spec 013 US4): a non-owner withdrawal is theft — never blocked
 		// (the transfer above already stands), always marked. In THIS same batch,
@@ -1254,13 +1257,15 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 		// Spec 038: a build goal whose site re-validation fails mid-work resolves
 		// LOUDLY and distinctly — agent.build_failed + a situated failure memory —
 		// so a cancelled build is never mistaken for a finished one (the root of
-		// the phantom-wall belief loop). Every non-build goal keeps the silent
-		// intent_done resolution (out of scope, research D5).
+		// the phantom-wall belief loop). Spec 096 generalizes the same LOUD
+		// resolution to every non-build goal in this switch (forage/chop/hunt/
+		// demolish/repair/quarry/cook/bathe): agent.intent_failed with reason
+		// intentFailTargetGone, instead of the bare intent_done these used to
+		// resolve through silently.
 		if isBuildGoal(in.Goal) {
 			return append(events, buildFailedEvents(s, i, a, in, buildFailSiteUnbuildable, nextTick)...)
 		}
-		emit("agent.intent_done", AgentPayload{Agent: Ref(i)})
-		return events
+		return append(events, intentFailedEvents(s, i, a, in, intentFailTargetGone, nextTick)...)
 	}
 
 	if in.WorkStart == 0 {
@@ -1444,43 +1449,42 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 		emit("agent.collected_water", HarvestPayload{Agent: Ref(i), X: in.ResX, Y: in.ResY})
 	case "craft_planks", "craft_stone", "craft_spear", "craft_axe":
 		// T026: inputs re-validated at completion (contested-resource
-		// pattern) — insufficient inputs resolve via intent_done only, no
-		// agent.crafted. Hand-crafts have no travel window (target = the
-		// agent's own tile), so this is normally a formality, but the rule
-		// applies uniformly with every other completion.
+		// pattern). Hand-crafts have no travel window (target = the agent's
+		// own tile), so this is normally a formality, but the rule applies
+		// uniformly with every other completion. Spec 096: insufficient
+		// inputs resolve LOUDLY (agent.intent_failed, contested), no
+		// agent.crafted.
 		r, _ := recipeFor(in.Goal)
 		if !hasItems(a.Inv, r.Inputs) {
-			emit("agent.intent_done", AgentPayload{Agent: Ref(i)})
-			return events
+			return append(events, intentFailedEvents(s, i, a, in, intentFailContested, nextTick)...)
 		}
 		// US1 (T012): a craft doesn't truncate — it either fits or it doesn't
 		// happen. The completion re-validation extends to the net bulk delta
 		// (outputs − inputs, the inputs freeing their own space first); if the
-		// net won't fit, no agent.crafted, intent cleared. Only craft_planks
+		// net won't fit, no agent.crafted, intent cleared LOUDLY (spec 096,
+		// contested — same reason as insufficient inputs). Only craft_planks
 		// has a positive net (research R2).
 		if craftNetBulk(r) > freeBulk(a.Inv) {
-			emit("agent.intent_done", AgentPayload{Agent: Ref(i)})
-			return events
+			return append(events, intentFailedEvents(s, i, a, in, intentFailContested, nextTick)...)
 		}
 		emit("agent.crafted", CraftedPayload{Agent: Ref(i), Kind: craftKindFor(in.Goal)})
 	case "cook":
 		// T021/T031: convert up to a batch of raw food — fire produces
 		// food_cooked (fuel-free, the fire's own fire burns); an oven
-		// produces meals and additionally burns 1 carried wood fuel. No
-		// carried wood at an oven ⇒ intent_done only (fuel required from day
-		// one, FR-017); nothing to cook (no raw carried) is the same no-op.
+		// produces meals and additionally burns 1 carried wood fuel. Spec 096:
+		// no carried wood at an oven (fuel required from day one, FR-017) or
+		// nothing to cook (no raw carried) resolve LOUDLY (agent.intent_failed,
+		// contested) instead of the old bare intent_done.
 		atOven := s.structureAt("oven", in.TargetX, in.TargetY)
 		if atOven && a.Inv.Wood < 1 {
-			emit("agent.intent_done", AgentPayload{Agent: Ref(i)})
-			return events
+			return append(events, intentFailedEvents(s, i, a, in, intentFailContested, nextTick)...)
 		}
 		consumed := a.Inv.FoodRaw
 		if consumed > ovenBatchSize {
 			consumed = ovenBatchSize
 		}
 		if consumed <= 0 {
-			emit("agent.intent_done", AgentPayload{Agent: Ref(i)})
-			return events
+			return append(events, intentFailedEvents(s, i, a, in, intentFailContested, nextTick)...)
 		}
 		if atOven {
 			emit("agent.cooked", CookedPayload{
@@ -1492,11 +1496,11 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 			})
 		}
 	case "bathe":
-		// T032: re-validate carried water + wood at completion — missing
-		// either resolves via intent_done only (water's only v1 consumer).
+		// T032: re-validate carried water + wood at completion. Spec 096:
+		// missing either resolves LOUDLY (agent.intent_failed, contested —
+		// water's only v1 consumer) instead of the old bare intent_done.
 		if a.Inv.Water < 1 || a.Inv.Wood < 1 {
-			emit("agent.intent_done", AgentPayload{Agent: Ref(i)})
-			return events
+			return append(events, intentFailedEvents(s, i, a, in, intentFailContested, nextTick)...)
 		}
 		morale := minInt(1000, a.Needs.Morale+bathMorale)
 		warmth := minInt(1000, a.Needs.Warmth+bathWarmth)
@@ -1509,7 +1513,8 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 
 // isBuildGoal reports whether goal is one of the seven build_* goals whose
 // mid-work re-validation failures resolve LOUDLY via agent.build_failed (spec
-// 038, research D5). Every other goal keeps the silent intent_done resolution.
+// 038, research D5). Every other goal's invalid/contested resolution is
+// generalized the same way, via agent.intent_failed (spec 096, below).
 func isBuildGoal(goal string) bool {
 	switch goal {
 	case "build_fire", "build_shelter", "build_oven", "build_chest", "build_path",
@@ -1564,6 +1569,92 @@ func buildFailedEvents(s *State, i int, a *Agent, in *Intent, reason string, nex
 		{Tick: nextTick, Type: "agent.build_failed", Payload: mustPayload(BuildFailedPayload{Agent: Ref(i), Goal: in.Goal, Reason: reason})},
 		situatedMemoryEvent(nextTick, i, salShelter, PlaceAt(s, a.X, a.Y), in.Reason, OriginAction,
 			"My %s was never built: %s.", buildStructureName(in.Goal), buildFailureCause(reason)),
+	}
+}
+
+// Stable reason vocabulary for agent.intent_failed (spec 096): the small
+// closed set generalizing agent.build_failed's own two-member set to every
+// non-build goal. intentFailTargetGone is the mid-work re-validation exit
+// shared by forage/chop/hunt/demolish/repair/quarry/cook/bathe — the `valid`
+// switch above found the target/resource/wall/station gone or no longer
+// matching (arrival check, one site per tick). intentFailContested is the
+// completion-time no-op re-check shared by craft/cook/bathe/deposit/withdraw —
+// the materials, the chest's free space, or the chest itself changed out from
+// under the intent between landing and completion. intentFailInvalid is a
+// malformed intent argument that no amount of world-state change could ever
+// satisfy — never something another agent contested (deposit's empty Kind).
+const (
+	intentFailTargetGone = "target gone"
+	intentFailContested  = "contested"
+	intentFailInvalid    = "invalid"
+)
+
+// intentFailGoalNoun is the player-facing noun phrase for a failed non-build
+// goal, for the actor's failure memory ("My hunt came to nothing: …") —
+// mirroring buildStructureName's role for build_failed.
+func intentFailGoalNoun(goal string) string {
+	switch goal {
+	case "forage":
+		return "foraging"
+	case "chop":
+		return "chopping"
+	case "hunt":
+		return "hunt"
+	case "demolish":
+		return "demolition"
+	case "repair":
+		return "repair"
+	case "quarry":
+		return "quarrying"
+	case "cook":
+		return "cooking"
+	case "bathe":
+		return "bath"
+	case "craft_planks", "craft_stone", "craft_spear", "craft_axe":
+		return "crafting"
+	case "deposit":
+		return "delivery"
+	case "withdraw":
+		return "withdrawal"
+	}
+	return "task"
+}
+
+// intentFailureCause renders a stable intent_failed reason as a natural
+// clause for the actor's memory text (no internal em-dash, matching
+// buildFailureCause's convention) — one clause per reason, shared across
+// every goal that reason applies to (the reason IS the semantic content; the
+// goal noun above supplies the specificity).
+func intentFailureCause(reason string) string {
+	switch reason {
+	case intentFailContested:
+		return "it was gone by the time I got there"
+	case intentFailInvalid:
+		return "I never had what it needed"
+	default: // intentFailTargetGone
+		return "the target was gone"
+	}
+}
+
+// intentFailedEvents resolves a non-build goal's invalid-exit or contested
+// no-op LOUDLY (spec 096, generalizing agent.build_failed/spec 038):
+// agent.intent_failed — which clears the intent exactly like intent_done, no
+// yield, no side effect — paired SAME-TICK with a situated first-person
+// failure memory at the build-failure salience tier (salIntentFailed — the
+// card's "same salience shape, no new flooding vector" edge case), so a
+// resolved-without-effect intent is never mistaken for a completed one.
+// Position is the acting agent's own stand tile: intent_failed spans goals
+// with no single shared site-vs-stand-tile convention the way builds do
+// (Target for most, Res for the adjacent-work goals), so the one address
+// every goal shares — where the agent itself is standing, matching where the
+// paired memory is situated — is what the payload carries.
+func intentFailedEvents(s *State, i int, a *Agent, in *Intent, reason string, nextTick int64) []store.Event {
+	return []store.Event{
+		{Tick: nextTick, Type: "agent.intent_failed", Payload: mustPayload(IntentFailedPayload{
+			Agent: Ref(i), Goal: in.Goal, Reason: reason, X: a.X, Y: a.Y,
+		})},
+		situatedMemoryEvent(nextTick, i, salIntentFailed, PlaceAt(s, a.X, a.Y), in.Reason, OriginAction,
+			"My %s came to nothing: %s.", intentFailGoalNoun(in.Goal), intentFailureCause(reason)),
 	}
 }
 

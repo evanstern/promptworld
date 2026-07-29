@@ -94,8 +94,9 @@ func TestQuarryHappyPath(t *testing.T) {
 
 // TestContestedQuarry is spec 012 US1 AC#5: two villagers target the same
 // outcrop; the first to complete depletes it, and the second's completion
-// re-validates, finds it gone, and resolves without yield — matching today's
-// contested-resource pattern (chop/forage/hunt).
+// re-validates, finds it gone, and resolves LOUDLY via agent.intent_failed
+// (spec 096, target gone) with no yield — matching today's contested-resource
+// pattern (chop/forage/hunt).
 func TestContestedQuarry(t *testing.T) {
 	const seed = 42
 	m := testMap(seed)
@@ -118,7 +119,8 @@ func TestContestedQuarry(t *testing.T) {
 	log := driveTicks(t, s, m, 5, nil)
 
 	quarriedCount := 0
-	a1DoneWithoutYield := false
+	a1FailedWithoutYield := false
+	var a1Reason string
 	for _, e := range log {
 		switch e.Type {
 		case "agent.quarried":
@@ -132,15 +134,24 @@ func TestContestedQuarry(t *testing.T) {
 			var p AgentPayload
 			mustUnmarshal(t, e.Payload, &p)
 			if p.Agent.ID == 1 {
-				a1DoneWithoutYield = true
+				t.Error("agent 1's contested quarry resolved via bare agent.intent_done, want agent.intent_failed")
+			}
+		case "agent.intent_failed":
+			var p IntentFailedPayload
+			mustUnmarshal(t, e.Payload, &p)
+			if p.Agent.ID == 1 {
+				a1FailedWithoutYield, a1Reason = true, p.Reason
 			}
 		}
 	}
 	if quarriedCount != 1 {
 		t.Errorf("agent.quarried fired %d times, want exactly 1 (contested outcrop)", quarriedCount)
 	}
-	if !a1DoneWithoutYield {
-		t.Error("agent 1's contested quarry should resolve via agent.intent_done with no yield")
+	if !a1FailedWithoutYield {
+		t.Error("agent 1's contested quarry should resolve via agent.intent_failed with no yield")
+	}
+	if a1Reason != intentFailTargetGone {
+		t.Errorf("agent 1's failure reason = %q, want %q", a1Reason, intentFailTargetGone)
 	}
 	if a1.Inv.Stone != 0 {
 		t.Errorf("agent 1 Inv.Stone = %d, want 0 (lost the race)", a1.Inv.Stone)

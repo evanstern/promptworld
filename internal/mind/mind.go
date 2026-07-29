@@ -260,7 +260,7 @@ func (md *Mind) absorb(batch []store.Event) {
 			if json.Unmarshal(e.Payload, &p) == nil {
 				md.arm(p.Agent.ID, e.Seq)
 			}
-		case "agent.intent_done", "agent.build_failed", "agent.foraged", "agent.hunted", "agent.built":
+		case "agent.intent_done", "agent.build_failed", "agent.intent_failed", "agent.foraged", "agent.hunted", "agent.built":
 			// spec 086: agent fields are {id,name} objects on new rows (bare
 			// ints on legacy rows) — decode through the dual-shape AgentRef.
 			var p struct {

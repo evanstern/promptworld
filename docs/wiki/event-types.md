@@ -28,7 +28,7 @@ event domain — each child inherits this note's `verified_against` pin and
 carries the domain's own format-history prose and catalog rows.
 
 - [[event-types-clock-world]] — Clock/scheduler and world-lifecycle events — pause/resume/speed/governor, day/night, forage regrowth, genesis/migration/forking (`world.forked`, spec 076), daemon lifecycle and LLM-provider warnings.
-- [[event-types-agent-intents]] — Agent intent lifecycle — intent_set/work_started/intent_done/recovery_stalled/build_failed/moved, incl. the spec 062/064 yield-window and needs-conditioned recovery arms.
+- [[event-types-agent-intents]] — Agent intent lifecycle — intent_set/work_started/intent_done/recovery_stalled/build_failed/intent_failed/moved, incl. the spec 062/064 yield-window and needs-conditioned recovery arms, and spec 096's generalized non-build intent failure.
 - [[event-types-agent-vitals]] — Agent vitals and mortality — needs_changed, died (spec 044 death ledger/grave), run.ended, sleep/wake, spec 083's neglect_detected percept.
 - [[event-types-mental-map]] — Perception and mental-map events — moved, saw, map_corrected, place_told, place_revealed (spec 041's spatial knowledge family).
 - [[event-types-harvesting-consumption]] — Harvesting/consumption — forage/chop/hunt/quarry/collect_water yields, food rot, cook/bathe/refuel/eat, spear/axe breakage, fire burnout.

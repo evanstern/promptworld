@@ -350,6 +350,18 @@ var digestRegistry = map[string]digestFunc{
 			refSeg(names, p.Agent), txt("'s "), emph(p.Goal), txt(" failed — "), emph(p.Reason),
 		}), true
 	},
+	"agent.intent_failed": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		// Spec 096: the agent.build_failed pattern generalized to every
+		// non-build goal — a distinct FAILURE naming the actor, the goal, and
+		// the reason, visibly distinct from "finished" (digest.go:341 above).
+		p, ok := decode[sim.IntentFailedPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{
+			refSeg(names, p.Agent), txt("'s "), emph(p.Goal), txt(" failed — "), emph(p.Reason),
+		}), true
+	},
 	"agent.intent_rejected": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.IntentRejectedPayload](e)
 		if !ok {
@@ -1898,6 +1910,16 @@ var subjectRegistry = map[string]subjectFunc{
 			return subjectCandidate{}, false
 		}
 		return actorCandidate(p.Agent.ID), true
+	},
+	"agent.intent_failed": func(e store.Event) (subjectCandidate, bool) {
+		// Unlike agent.build_failed (actor-only), IntentFailedPayload carries
+		// the actor's own position (spec 096 FR-001) — the harvest/wall-work
+		// pattern (actorPosCandidate) applies here instead.
+		p, ok := decode[sim.IntentFailedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorPosCandidate(p.Agent.ID, p.X, p.Y), true
 	},
 	"agent.intent_rejected": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.IntentRejectedPayload](e)

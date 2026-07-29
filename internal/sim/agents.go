@@ -1446,6 +1446,22 @@ type (
 		Goal   string   `json:"goal"`
 		Reason string   `json:"reason"`
 	}
+	// IntentFailedPayload — agent.intent_failed (spec 096): the agent.build_failed
+	// pattern generalized to every non-build goal's invalid-exit or contested
+	// no-op resolution (the card's enumerated list — [[executor]]) — emitted
+	// INSTEAD of a bare agent.intent_done so a resolved-without-effect intent is
+	// never mistaken for a completed one. Reason is emitter-computed from the
+	// small closed vocabulary in executor.go (intentFailTargetGone/
+	// intentFailContested/intentFailInvalid). Position (X/Y) is the acting
+	// agent's own stand tile at resolution — the one addressing convention every
+	// goal shares, matching where the paired situated memory is situated.
+	IntentFailedPayload struct {
+		Agent  AgentRef `json:"agent"`
+		Goal   string   `json:"goal"`
+		Reason string   `json:"reason"`
+		X      int      `json:"x"`
+		Y      int      `json:"y"`
+	}
 	NeedsPayload struct {
 		Agent  AgentRef `json:"agent"`
 		Health int      `json:"health"`
