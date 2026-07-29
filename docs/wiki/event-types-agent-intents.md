@@ -6,7 +6,7 @@ sources:
   - internal/sim/agents.go
   - internal/sim/executor.go
   - internal/sim/landing.go
-verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
+verified_against: b35a7ffec46ba996741cdba4af9652fcfd163b32
 ---
 
 # Event types — agent intent lifecycle
@@ -55,41 +55,18 @@ but stamping the ring `"stalled"` (joining `done`/`failed`/`rejected`/
 `expired`) rather than a completion, so it never arms the spec-062 yield
 window (an abort is not intelligence completing).
 
-Spec 096 (loud failure for non-build goals, TASK-95, follow-up from spec
-038/research D5) generalizes `agent.build_failed`'s pattern to every
-non-build goal: ONE new type, `agent.intent_failed`
-(`IntentFailedPayload{agent, goal, reason, x, y}`), emitted instead of the
-bare `agent.intent_done` these used to resolve through silently, at every
-site the card enumerates — the mid-work `valid` re-validation exit shared by
-`forage`/`chop`/`hunt`/`demolish`/`repair`/`quarry`/`cook`/`bathe`, and the
-completion-time no-op recheck shared by `craft_planks`/`craft_stone`/
-`craft_spear`/`craft_axe`/`cook`/`bathe`/`deposit`/`withdraw`. State effect is
-identical to `agent.build_failed`'s (`Intent = nil`, `IdleSince` stamped,
-`stampIntentOutcome("failed", …)`), and — unlike `agent.build_failed`, which
-carries no position — the payload's `x`/`y` are the acting agent's own stand
-tile, the one addressing convention every one of these goals shares (some
-address by `Target`, the adjacent-work goals by `Res`). `reason` is
-emitter-computed from a small closed vocabulary (`internal/sim/executor.go`):
-`"target gone"` for the mid-work exits, `"contested"` for the no-op
-rechecks' shared-resource cases (a chest destroyed or filled, materials
-spent), and `"invalid"` for a malformed intent argument no world-state
-change could ever satisfy (`deposit` with an empty `Kind`). A paired
-same-tick `agent.memory_added` (`OriginAction`, `salIntentFailed` — the SAME
-tier as `agent.build_failed`'s `salShelter`, so working-memory pressure is
-unchanged) states the goal did not complete and why; the mind's re-arm list
-(`internal/mind/mind.go`) treats it exactly like `agent.intent_done`/
-`agent.build_failed`. Additive event type, no `store.LogFormatVersion` bump
-(spec 094 doctrine: a bump triggers on renames/reducer-re-derivation, neither
-applies to a wholly new type old logs never contain).
+Spec 096 (TASK-95) generalizes `agent.build_failed` to every non-build goal
+— ONE new type, `agent.intent_failed`, row below. Additive, no format bump
+(spec 094: bumps trigger on renames, not new types).
 
 | Type | Payload struct | Emitted by | Reducer effect |
 |---|---|---|---|
 | `agent.intent_set` | `IntentSetPayload{agent, goal, target, res, source, kind?, qty?, job?, reason?, until_need?, until_value?}` | reflex (grace-gated), planner injection, or a plan step firing | intent installed; `source` (`reflex`/`planner`/`plan`/`meeting`) says which mind chose it; stamps `Agent.LastGoal`/`LastGoalTick` (spec 015 — never cleared by any event, the villagers tab's past-objective line, [[tui-client]]); `job` (spec 017, omitempty) is set ONLY at the `inject_intent` landing site from `InjectArgs.JobID` — a planner-loop landing carries its job id, reflex/executor-authored intents carry none; `reason` (spec 019, omitempty) is likewise set ONLY at that landing site from `InjectArgs.Reason` — the planner's free-text reason, copied onto `Intent.Reason` by the reducer so it survives to completion where the executor bakes it into a memory's `why`; `until_need`/`until_value` (spec 064, omitempty, the LAST fields) carry the optional needs-conditioned completion — set by the warm_up resolver and the reflex's conditioned warmth rungs — onto `Intent.UntilNeed`/`UntilValue`, only when `until_need` names a valid closed-set need (`warmth`/`rest`/`food`); every `omitempty` tail stays empty on reflex/executor emissions carrying none, so those marshal byte-identically to pre-feature; spec 043 US1: appends an `IntentRecord{goal, source, reason, tick}` to `Agent.IntentLog` (ring, cap 8) — a previous still-open record stays open, so an override reads as open-then-new ([[decision-context]]) |
 | `agent.work_started` | `WorkStartedPayload{agent, tick, ref?}` | executor at target | `WorkStart` stamped; since spec 064 (omitempty) `ref` also stamps `Intent.HoldRef` — a needs-conditioned hold's anchor need level, inert (0, unread) for an ordinary work goal |
-| `agent.intent_done` | `AgentPayload{agent}` | executor (done/invalid/unreachable) | intent cleared — but since spec 038, a **build** goal (`build_fire`/`build_shelter`/`build_oven`/`build_chest`/`build_path`/`build_wall_plank`/`build_wall_stone`) whose mid-work re-validation fails no longer funnels through here (it emits the distinct `agent.build_failed` below); since spec 064 a needs-conditioned recovery hold with a dead source aborts via the distinct `agent.recovery_stalled` below; and since spec 096 every OTHER goal's invalid-exit/contested-no-op resolution funnels through `agent.intent_failed` below instead. `intent_done` remains the resolution for successful completion (incl. a satisfied or threshold-crossed recovery hold) and the instant/wander-class goals with no re-validation of their own; spec 043 US1: also closes the newest still-open `IntentLog` record `"done"`; spec 062: when the closed record's `Source` `isMindSource` (`planner`/`plan`/`meeting`), also arms `Agent.LastMindIntentDone = e.Tick` — the reflex PREP gate's yield-window anchor ([[reflex-policy]]); a reflex-sourced closure never arms it (a reflex recovery's completion is exempt on the same rule) |
-| `agent.recovery_stalled` (spec 064) | `RecoveryStalledPayload{agent, goal, need}` | executor, a needs-conditioned hold ([[executor]]'s `recoveryHoldEvents`) whose need shows no net gain across a full `recoveryStallTicks` (300) window while holding at its target — dead fire, displaced source, or an unreachable threshold | intent cleared (`Intent = nil`, `IdleSince` stamped) — identical to `agent.intent_done`'s state effect, but the DISTINCT, honest abort outcome: closes the newest still-open `IntentLog` record `"stalled"` (never `"done"`) and — the `agent.build_failed` precedent — never arms `Agent.LastMindIntentDone` (an abort is not intelligence completing) |
-| `agent.build_failed` (spec 038) | `BuildFailedPayload{agent, goal, reason}` | executor, mid-work re-validation of a build goal (the seven `build_*` above) — emitted **instead of** a bare `agent.intent_done` when the build fails: `reason` is `site no longer buildable` (any build goal whose `buildSite` re-check fails) or `site blocked too long` (walls only, once a reserved-tile occupant outlasts `wallOccupancyGraceTicks` past its due tick — [[executor]]) | intent cleared (`Intent = nil`, `IdleSince` stamped) — identical to `agent.intent_done`, so no material spent, no structure stands; a paired same-tick `agent.memory_added` (`OriginAction`, `salShelter`) states the build did NOT complete and why, so the builder can falsify a phantom-structure belief; the builder's mind re-arms its planner as for `agent.intent_done` ([[agent-mind]]). Distinct from `agent.intent_rejected` (up-front landing refusal) — this clears an accepted intent; spec 043 US1: closes the newest still-open `IntentLog` record `"failed"`. TUI digest renders it as a failure line (builder, goal, reason), never "finished" ([[tui-client]]) |
-| `agent.intent_failed` (spec 096) | `IntentFailedPayload{agent, goal, reason, x, y}` | executor, generalizing `agent.build_failed` to every non-build goal — the mid-work `valid` re-validation exit (`forage`/`chop`/`hunt`/`demolish`/`repair`/`quarry`/`cook`/`bathe`, reason `"target gone"`) and the completion-time no-op recheck (`craft_planks`/`craft_stone`/`craft_spear`/`craft_axe`/`cook`/`bathe`/`deposit`/`withdraw`, reason `"contested"` or, for `deposit`'s empty `Kind`, `"invalid"`) — emitted **instead of** a bare `agent.intent_done`; `x`/`y` are the acting agent's own stand tile (unlike `build_failed`, which carries no position — intent_failed spans goals with no shared Target-vs-Res convention) | intent cleared (`Intent = nil`, `IdleSince` stamped) — identical to `agent.build_failed`'s effect, so no yield, no side effect; a paired same-tick `agent.memory_added` (`OriginAction`, `salIntentFailed` — the SAME tier as `salShelter`, no new flooding vector) states the goal did NOT complete and why; the mind re-arms exactly as for `agent.intent_done`/`agent.build_failed` ([[agent-mind]]); spec 043 US1: closes the newest still-open `IntentLog` record `"failed"`. TUI digest renders it as a failure line (actor, goal, reason), never "finished" ([[tui-client]]) |
+| `agent.intent_done` | `AgentPayload{agent}` | executor (successful completion, or an instant/wander-class goal with no re-validation) | intent cleared — build failures (038) use `agent.build_failed` below, dead-source recovery holds (064) use `agent.recovery_stalled` below, every OTHER goal's invalid/contested exit (096) uses `agent.intent_failed` below; `intent_done` no longer covers any of the three; spec 043 US1: closes the newest open `IntentLog` record `"done"`; spec 062: `isMindSource` (`planner`/`plan`/`meeting`) also arms `Agent.LastMindIntentDone = e.Tick` ([[reflex-policy]]'s yield anchor); reflex-sourced closures never arm it |
+| `agent.recovery_stalled` (spec 064) | `RecoveryStalledPayload{agent, goal, need}` | executor, a needs-conditioned hold ([[executor]]'s `recoveryHoldEvents`) whose need shows no net gain across a full `recoveryStallTicks` (300) window at its target — dead fire, displaced source, or unreachable threshold | intent cleared, identical to `intent_done`'s effect, but the DISTINCT honest-abort outcome: closes the `IntentLog` record `"stalled"` (never `"done"`) and — the `build_failed` precedent — never arms `LastMindIntentDone` (an abort isn't intelligence completing) |
+| `agent.build_failed` (spec 038) | `BuildFailedPayload{agent, goal, reason}` | executor, mid-work re-validation of a build goal (the seven `build_*` above) — instead of a bare `agent.intent_done`: `reason` is `site no longer buildable` (`buildSite` re-check fails) or `site blocked too long` (walls only, a reserved-tile occupant outlasting `wallOccupancyGraceTicks` — [[executor]]) | intent cleared (`Intent = nil`, `IdleSince` stamped), identical to `intent_done` — no material spent, no structure stands; a paired same-tick `agent.memory_added` (`OriginAction`, `salShelter`) states the build did NOT complete and why; mind re-arms as for `intent_done` ([[agent-mind]]). Distinct from `agent.intent_rejected` (up-front refusal); closes the `IntentLog` record `"failed"`; TUI digest renders a failure line, never "finished" ([[tui-client]]) |
+| `agent.intent_failed` (spec 096) | `IntentFailedPayload{agent, goal, reason, x, y}` | executor, generalizing `agent.build_failed` — the mid-work `valid` exit (`forage`/`chop`/`hunt`/`demolish`/`repair`/`quarry`/`cook`/`bathe`, `"target gone"`) and the completion-time no-op recheck (`craft_*`/`cook`/`bathe`/`deposit`/`withdraw`, `"contested"`, or `"invalid"` for `deposit`'s empty `Kind`) | intent cleared, identical to `build_failed`'s effect; paired memory (`salIntentFailed` = `salShelter`); mind re-arms the same way; `x`/`y` are the actor's own stand tile (no shared Target-vs-Res convention here); TUI digest renders a failure line |
 
 ## Connections
 

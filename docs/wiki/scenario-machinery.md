@@ -8,7 +8,7 @@ sources:
   - internal/sim/executor.go
   - internal/sim/gru.go
   - internal/sim/state.go
-verified_against: e63cc89fa4fffe1116a5c8273f3e3f429fb66979
+verified_against: b35a7ffec46ba996741cdba4af9652fcfd163b32
 ---
 
 # Scenario machinery (incident schedule + rubric)
