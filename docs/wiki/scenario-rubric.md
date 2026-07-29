@@ -7,7 +7,7 @@ sources:
   - internal/sim/curriculum.go
   - internal/sim/guardian.go
   - internal/sim/state.go
-verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
+verified_against: 1603d5ac22d9be35469ec88bf2355b7d2f9500bc
 ---
 
 # Scenario rubric (pass boundary, evidence, exercise catalog)

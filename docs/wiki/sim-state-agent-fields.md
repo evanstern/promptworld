@@ -6,7 +6,7 @@ sources:
   - internal/sim/state.go
   - internal/sim/agents.go
   - internal/sim/journal.go
-verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
+verified_against: 1603d5ac22d9be35469ec88bf2355b7d2f9500bc
 ---
 
 # Sim state: agent & clock fields

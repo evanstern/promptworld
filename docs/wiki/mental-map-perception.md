@@ -9,7 +9,7 @@ sources:
   - internal/sim/state.go
   - internal/mind/mind.go
   - internal/tool/registry.go
-verified_against: 63390f122bdf4e1b7abf518a8be83de725f06230
+verified_against: 1603d5ac22d9be35469ec88bf2355b7d2f9500bc
 ---
 
 # Mental map perception and resolution
