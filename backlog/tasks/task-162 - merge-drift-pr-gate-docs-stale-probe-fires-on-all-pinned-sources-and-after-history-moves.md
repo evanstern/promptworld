@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-27 00:31'
-updated_date: '2026-07-29 18:52'
+updated_date: '2026-07-29 18:53'
 labels: []
 dependencies: []
 priority: medium
@@ -27,7 +27,14 @@ Spec: specs/088-pr-gate-docs-stale-probe
 - [ ] #2 design-reference pins (docs/design/tui/*) are freshness-gated in pr mode with a blocking finding, not only the warn-level tui-surface notice
 - [ ] #3 the probe also runs after history moves: a branch whose HEAD moved (e.g. merge of main into it) since the last probe is re-checked even when its own diff vs origin/main touches no pinned source
 - [ ] #4 gate behavior covered by the script's existing test/fixture approach (synthetic branch cases for each new trigger)
+- [ ] #5 Spec phase: Foundational (trigger plumbing)
+- [ ] #6 Spec phase: User Story 1 — non-wiki pinned inputs gate (P1)
+- [ ] #7 Spec phase: User Story 3 — history moves re-trigger (P2)
+- [ ] #8 Spec phase: User Story 2 — design-reference pins block (P2)
+- [ ] #9 Spec phase: Polish & verification
 <!-- AC:END -->
+
+
 
 ## Implementation Notes
 
