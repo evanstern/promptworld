@@ -2071,6 +2071,11 @@ func (s *State) Apply(e store.Event) error {
 		"agent.narrative_set", "agent.consolidated", "agent.belief_reinforced":
 		return s.applyConsolidation(e)
 
+	case "agent.salience_revised", "agent.memory_merged":
+		// Private dreams (spec 098): the nightly clustering pass's recorded
+		// habituation/merge outcomes — reducer applies, never re-derives.
+		return s.applyDream(e)
+
 	case "gru.emerged", "gru.moved", "gru.sighted", "gru.attacked", "gru.withdrew":
 		return s.applyGru(e)
 
@@ -2129,6 +2134,13 @@ func (s *State) Apply(e store.Event) error {
 			GruEmergePerMille:      p.GruEmergePerMille,
 			PlannerCadenceTicks:    p.PlannerCadenceTicks,
 			EncounterCooldownTicks: p.EncounterCooldownTicks,
+		}
+		// Dream block (spec 098): a pre-098 recorded event carries none —
+		// keep nil (≡ the default set) so old logs replay byte-identically.
+		// A carried block lands as a FRESH copy, never the payload's pointer.
+		if p.Dream != nil {
+			d := *p.Dream
+			s.Tuning.Dream = &d
 		}
 
 	case "meeting.convention_established", "sim.gathering_observed",

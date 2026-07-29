@@ -969,6 +969,14 @@ func TestRebaseTaxonomyComplete(t *testing.T) {
 		"TuningState.FireBurnPerWood":        keep,
 		"TuningState.PlannerCadenceTicks":    keep,
 		"TuningState.EncounterCooldownTicks": keep,
+		// spec 098 dream dials are per-mille ratios and a per-night count —
+		// no tick anchors anywhere in the block (the TuningState duration
+		// rationale above, one step further from the timeline).
+		"DreamTuning.DensityPerMille":       keep,
+		"DreamTuning.AmbiguousBandPerMille": keep,
+		"DreamTuning.HabituationPerMille":   keep,
+		"DreamTuning.MergeCapPerNight":      keep,
+		"DreamTuning.JitterPerMille":        keep,
 	}
 
 	found := map[string]bool{}

@@ -31,7 +31,7 @@ func TestConsolidateUserPromptHeldBeliefsShowEffectiveConfidence(t *testing.T) {
 	if got := sim.EffectiveConfidence(job.held[0], tick); got != 40 {
 		t.Fatalf("test setup: expected effective 40 at one half-life, got %d", got)
 	}
-	prompt := consolidateUserPrompt(job)
+	prompt := consolidateUserPrompt(job, nil)
 
 	if !strings.Contains(prompt, "- [id 7] (confidence 40, witnessed) The well runs deep.") {
 		t.Errorf("prompt missing the effective-confidence line; got:\n%s", prompt)
@@ -60,7 +60,7 @@ func TestConsolidateUserPromptHeldBeliefsFadedMarkerStaysListed(t *testing.T) {
 	if got := sim.EffectiveConfidence(job.held[0], tick); got >= sim.BeliefConfidenceFloor {
 		t.Fatalf("test setup: expected the held belief below the floor (%d), got effective %d", sim.BeliefConfidenceFloor, got)
 	}
-	prompt := consolidateUserPrompt(job)
+	prompt := consolidateUserPrompt(job, nil)
 
 	// Still listed by ID (revisable) — NOT excluded, unlike other prompts
 	// (contracts/events-and-decay.md: the held-beliefs block is the exception).

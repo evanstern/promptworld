@@ -60,6 +60,42 @@ type consolidationOutput struct {
 	Fade      []string       `json:"fade"`
 	Beliefs   []beliefChange `json:"beliefs"`
 	Narrative string         `json:"narrative"`
+	// Routine (spec 098): group labels ("g1") among the ambiguous dream
+	// clusters this prompt carried that the sleeping mind judges mere routine.
+	// Absent on group-less nights; unknown labels are coerced away, never a
+	// rejection (parseRoutineRefs — the unknown-belief-ID discipline).
+	Routine []string `json:"routine,omitempty"`
+}
+
+// parseRoutineRefs maps the model's routine-group labels ("g1".."gN") to
+// zero-based indexes into the SENT group list, deduplicating repeats and
+// dropping anything unparseable or out of range — mechanical slack absorbed,
+// never a rejected night (spec 098: a dream verdict is low-stakes; the
+// firewall layers judge the night, not the dream). Same shape as parseMemRef
+// with a 'g' sigil.
+func parseRoutineRefs(refs []string, sent int) []int {
+	var out []int
+	seen := map[int]bool{}
+	for _, r := range refs {
+		if len(r) < 2 || (r[0] != 'g' && r[0] != 'G') {
+			continue
+		}
+		n := 0
+		ok := true
+		for _, c := range r[1:] {
+			if c < '0' || c > '9' {
+				ok = false
+				break
+			}
+			n = n*10 + int(c-'0')
+		}
+		if !ok || n < 1 || n > sent || seen[n-1] {
+			continue
+		}
+		seen[n-1] = true
+		out = append(out, n-1)
+	}
+	return out
 }
 
 // Validator caps (contract layer 1).

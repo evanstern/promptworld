@@ -606,11 +606,15 @@ func seedTuning(w *world.World, st *store.Store, state *sim.State) error {
 	for _, warn := range warns {
 		fmt.Printf("daemon: %s\n", warn)
 	}
-	if *parsed == state.EffectiveTuning() {
+	// Equal, not == : spec 098's Dream pointer block compares by resolved
+	// value, so a restart with an unchanged file still appends nothing.
+	if parsed.Equal(state.EffectiveTuning()) {
 		return nil // effective set unchanged — no redundant event on restart
 	}
-	fmt.Printf("daemon: tuning.json applied: refuel_dying_below=%d fire_burn_per_wood=%d gru_emerge_per_mille=%d planner_cadence_ticks=%d encounter_cooldown_ticks=%d\n",
-		parsed.RefuelDyingBelow, parsed.FireBurnPerWood, parsed.GruEmergePerMille, parsed.PlannerCadenceTicks, parsed.EncounterCooldownTicks)
+	dream := parsed.EffectiveDream()
+	fmt.Printf("daemon: tuning.json applied: refuel_dying_below=%d fire_burn_per_wood=%d gru_emerge_per_mille=%d planner_cadence_ticks=%d encounter_cooldown_ticks=%d dream_density_per_mille=%d dream_ambiguous_band_per_mille=%d dream_habituation_per_mille=%d dream_merge_cap_per_night=%d dream_jitter_per_mille=%d\n",
+		parsed.RefuelDyingBelow, parsed.FireBurnPerWood, parsed.GruEmergePerMille, parsed.PlannerCadenceTicks, parsed.EncounterCooldownTicks,
+		dream.DensityPerMille, dream.AmbiguousBandPerMille, dream.HabituationPerMille, dream.MergeCapPerNight, dream.JitterPerMille)
 	ev := sim.NewTuningEvent(state.Tick, *parsed)
 	if err := state.Apply(ev); err != nil {
 		return err

@@ -24,7 +24,7 @@ func TestConsolidationPromptCitesEvidence(t *testing.T) {
 		anchor: persona.Anchors["Ash"],
 		buffer: []sim.Memory{{Text: "Saw a wolf.", Salience: 7, Tick: 100, Subject: -1, Origin: sim.OriginAction}},
 	}
-	p := consolidateUserPrompt(job)
+	p := consolidateUserPrompt(job, nil)
 	for _, want := range []string{`"evidence"`, "witnessed", "directly", "told"} {
 		if !strings.Contains(p, want) {
 			t.Errorf("consolidation prompt missing %q:\n%s", want, p)

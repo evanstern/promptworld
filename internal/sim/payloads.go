@@ -89,6 +89,8 @@ var PayloadCatalog = map[string]func() any{
 	"agent.thought":            func() any { return &ThoughtPayload{} },
 	"agent.memory_promoted":    func() any { return &MemoryPromotedPayload{} },
 	"agent.memory_faded":       func() any { return &MemoryFadedPayload{} },
+	"agent.salience_revised":   func() any { return &SalienceRevisedPayload{} },
+	"agent.memory_merged":      func() any { return &MemoryMergedPayload{} },
 	"agent.belief_revised":     func() any { return &BeliefRevisedPayload{} },
 	"agent.belief_reinforced":  func() any { return &BeliefReinforcedPayload{} },
 	"agent.narrative_set":      func() any { return &NarrativeSetPayload{} },

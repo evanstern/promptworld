@@ -6,7 +6,7 @@ sources:
   - internal/sim/tuning.go
   - internal/daemon/daemon.go
   - internal/world/world.go
-verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
+verified_against: a5df40921577bc194478bb29c42af2b10bf11ea8
 ---
 
 # World tuning manifest
@@ -89,11 +89,24 @@ boot treats as a hard boot error naming the file and the problem
 (fail-closed): clamping handles a merely out-of-range value of a
 correctly-named field, but a typo must never silently run as a no-op.
 
+**The dream dial block (spec 098, [[private-dreams]]).** `TuningState` also
+carries `Dream *DreamTuning` — nil ≡ the default dream set, so every
+pre-098 snapshot and recorded payload stays byte-identical (`omitempty`,
+no format bump). The manifest keys stay
+flat (`dream_density_per_mille`, `dream_ambiguous_band_per_mille`,
+`dream_habituation_per_mille`, `dream_merge_cap_per_night`,
+`dream_jitter_per_mille`; defaults 900/30/500/4/15); any present key
+resolves the FULL block. The pointer takes `TuningState` out of bare-`==`
+comparability — the boot seed compares via `Equal`, and `State.DreamDials()`
+is the nil-safe consumption path.
+
 **The `sim.tuning_applied` event** (`tuning.go`'s `NewTuningEvent`) carries
-the FULL effective five-field set, never a delta, so replay can establish
-tuning state from any single event without scanning history. The reducer arm
-(`state.go`) is a pure, idempotent `s.Tuning = &TuningState{...}` assignment
-— it re-applies cleanly on replay and the boot seed never double-counts.
+the FULL effective set — the five base fields plus the RESOLVED dream block,
+never a delta — so replay can establish tuning state from any single event
+without scanning history (a pre-098 recorded event's absent block decodes
+nil ≡ defaults). The reducer arm (`state.go`) is a pure, idempotent
+`s.Tuning = &TuningState{...}` assignment — it re-applies cleanly on replay
+and the boot seed never double-counts.
 
 **Boot seeding, the genesis pin, and replay independence** split into
 [[world-tuning-boot-seeding]]: how `daemon.go`'s `seedTuning` applies the
