@@ -21,8 +21,11 @@ grammar with a per-type digest registry (`internal/tui/digest.go`) and dropped
 `#seq` from the feed line — selection/inspection now carry `seq` in the detail
 pane instead. The authoritative per-type digest contract lives in
 [`specs/018-chronicle-digest/contracts/digest-grammar.md`](../../../../specs/018-chronicle-digest/contracts/digest-grammar.md)
-(§3, ~83 rows); this doc covers the shape everything renders into, not each
-type's exact wording.
+(§3, ~83 rows at authoring; later specs add rows through the registry +
+catalog-fixture pair — most recently spec 098's `agent.salience_revised` /
+`agent.memory_merged` dream rows, which reference the memory by tick like
+the memory_promoted/faded precedent); this doc covers the shape everything
+renders into, not each type's exact wording.
 
 ## Line format
 
