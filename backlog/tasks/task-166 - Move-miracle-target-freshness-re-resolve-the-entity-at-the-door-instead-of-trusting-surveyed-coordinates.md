@@ -3,10 +3,9 @@ id: TASK-166
 title: >-
   Move-miracle target freshness: re-resolve the entity at the door instead of
   trusting surveyed coordinates
-status: In Progress
+status: To Do
 assignee: []
 created_date: '2026-07-29 13:59'
-updated_date: '2026-07-29 19:03'
 labels:
   - mvls
   - guardian-survival
