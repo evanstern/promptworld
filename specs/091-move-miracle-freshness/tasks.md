@@ -5,12 +5,12 @@ with replay analysis — plan is folded into the spec; single-mechanism change).
 
 ## Phase 1: Door-side name re-resolution
 
-- [ ] T001 Implement FR-001/FR-002/FR-003 in the guardian move path
+- [X] T001 Implement FR-001/FR-002/FR-003 in the guardian move path
   (internal/guardian/turn.go move arg handling + the door validation/emission it
   feeds): class=villager + name ⇒ resolve live position, x/y advisory; refusal
   before charge on unknown/dead name; recorded event carries resolved coords;
   `applyEntityMoved` (internal/sim/miracles.go) untouched.
-- [ ] T002 FR-004: one-line name-preference gloss in the move guidance
+- [X] T002 FR-004: one-line name-preference gloss in the move guidance
   (internal/tool/derive.go) and in the raced-refusal message.
 
 ## Phase 2: Tests

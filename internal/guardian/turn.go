@@ -654,12 +654,52 @@ func (mt *Guardian) landMiracle(mm miracleArgs, charges int, grant grantSet) (*M
 		return nil, fmt.Sprintf("that %s is not granted in this world", mt.sk().WorkingNoun())
 	}
 
+	// Resolve the perception-memory recipients (which villager stands on a move's
+	// source tile) from the absorb-mirrored positions, so the turn worker never
+	// races the replica the absorb goroutine owns; the shared builder reads only
+	// agent positions/liveness. Read BEFORE the kind switch (spec 091 FR-001): a
+	// villager move naming a villager re-resolves its LIVE position from this
+	// SAME mirror, so the door-side resolution below and the recipient lookup
+	// BuildMiracleBatch performs later can never disagree.
+	mt.stateMu.Lock()
+	probe := &sim.State{Agents: make([]sim.Agent, len(mt.agentXY))}
+	for i := range mt.agentXY {
+		probe.Agents[i] = sim.Agent{X: mt.agentXY[i][0], Y: mt.agentXY[i][1], Dead: !mt.alive[i]}
+	}
+	mt.stateMu.Unlock()
+
 	var params MiracleParams
 	var summary string
+	// nameResolved marks a villager move whose source came from live-position
+	// resolution rather than the model's surveyed x/y (spec 091 decision (a)) —
+	// used below to scope the raced-refusal message's name-preference suggestion
+	// to the coordinate-only path it actually targets (FR-004).
+	nameResolved := false
 	switch kind {
 	case "move":
-		params = MiracleParams{Class: strings.ToLower(strings.TrimSpace(mm.Class)), X: mm.X, Y: mm.Y, ToX: mm.ToX, ToY: mm.ToY}
-		summary = fmt.Sprintf("moved the %s at (%d,%d) to (%d,%d)", params.Class, mm.X, mm.Y, mm.ToX, mm.ToY)
+		class := strings.ToLower(strings.TrimSpace(mm.Class))
+		x, y := mm.X, mm.Y
+		// Door-side name re-resolution (spec 091 decision (a), FR-001): a move
+		// naming a living villager resolves that villager's LIVE position at
+		// validation/emission time and moves it — the surveyed x/y become
+		// advisory. Unknown or dead name refuses BEFORE the charge, mirroring
+		// landVision's target resolution (agentIndexByName + alive check).
+		// Coordinate-only villager moves (no name) and every structure/pile move
+		// (class != "villager") take the untouched x/y path, byte-identical to
+		// today (FR-003).
+		if class == "villager" && strings.TrimSpace(mm.Villager) != "" {
+			idx := agentIndexByName(mm.Villager)
+			if idx < 0 {
+				return nil, fmt.Sprintf("no villager named %q", mm.Villager)
+			}
+			if probe.Agents[idx].Dead {
+				return nil, fmt.Sprintf("%s is beyond reach now", sim.AgentNames[idx])
+			}
+			x, y = probe.Agents[idx].X, probe.Agents[idx].Y
+			nameResolved = true
+		}
+		params = MiracleParams{Class: class, X: x, Y: y, ToX: mm.ToX, ToY: mm.ToY}
+		summary = fmt.Sprintf("moved the %s at (%d,%d) to (%d,%d)", params.Class, x, y, mm.ToX, mm.ToY)
 	case "remove":
 		params = MiracleParams{Class: strings.ToLower(strings.TrimSpace(mm.Class)), X: mm.X, Y: mm.Y}
 		summary = fmt.Sprintf("removed the %s at (%d,%d)", params.Class, mm.X, mm.Y)
@@ -682,24 +722,24 @@ func (mt *Guardian) landMiracle(mm miracleArgs, charges int, grant grantSet) (*M
 		return nil, fmt.Sprintf("unknown %s %q", mt.sk().WorkingNoun(), mm.Kind)
 	}
 
-	// Resolve the perception-memory recipients (which villager stands on a move's
-	// source tile) from the absorb-mirrored positions, so the turn worker never
-	// races the replica the absorb goroutine owns; the shared builder reads only
-	// agent positions/liveness.
-	mt.stateMu.Lock()
-	probe := &sim.State{Agents: make([]sim.Agent, len(mt.agentXY))}
-	for i := range mt.agentXY {
-		probe.Agents[i] = sim.Agent{X: mt.agentXY[i][0], Y: mt.agentXY[i][1], Dead: !mt.alive[i]}
-	}
-	mt.stateMu.Unlock()
-
 	batch, err := BuildMiracleBatch(probe, kind, params, false)
 	if err != nil {
 		return nil, err.Error()
 	}
 	if err := mt.social.InjectSocial(batch); err != nil {
 		log.Printf("guardian: working rejected at the door: %v", err)
-		return nil, "the world refused it (" + err.Error() + ")"
+		msg := "the world refused it (" + err.Error() + ")"
+		// FR-004: a coordinate-only villager move that races (the villager left
+		// (x,y) between survey and this call — the reducer's "no living
+		// villager at" refusal) suggests the name-addressed form, which the
+		// door resolves live and so cannot race. Scoped to that exact refusal
+		// so a bad destination or an already name-resolved move never gets the
+		// suggestion appended.
+		if kind == "move" && params.Class == "villager" && !nameResolved &&
+			strings.Contains(err.Error(), "no living villager at") {
+			msg += " — name the villager instead of coordinates and the door will resolve their live position"
+		}
+		return nil, msg
 	}
 	// Fresh soul appends use the skin vocabulary (spec 052 edge case: old
 	// transcripts/soul files are history, never rewritten; only fresh
