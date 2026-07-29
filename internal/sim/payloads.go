@@ -98,6 +98,7 @@ var PayloadCatalog = map[string]func() any{
 	"agent.plan_expired":       func() any { return &PlanStepPayload{} },
 	"agent.saw":                func() any { return &SawPayload{} },
 	"agent.map_corrected":      func() any { return &MapCorrectedPayload{} },
+	"agent.place_observed":     func() any { return &PlaceObservedPayload{} },
 
 	// --- social ---
 	"social.place_told":        func() any { return &PlaceToldPayload{} },

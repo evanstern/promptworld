@@ -298,6 +298,15 @@ type Agent struct {
 	// time snap (see rebaseTicks doctrine, miracles.go).
 	NeedsAnchor     *Needs `json:"needs_anchor,omitempty"`
 	NeedsAnchorTick int64  `json:"needs_anchor_tick,omitempty"`
+	// LastObs (spec 097) is the grounded-observation dedup anchor: the last
+	// agent.place_observed this agent recorded (where, canonical kinds, when).
+	// Written ONLY by that event's reducer arm; the arrival emission site
+	// (observe.go) compares against it so repeat observations of an unchanged
+	// place inside the dedup window collapse (D4). A POINTER with omitempty
+	// (the Journal/Hail/Map precedent) so a pre-097 snapshot (field absent)
+	// round-trips byte-identically. Its Tick is a duration anchor — SHIFT
+	// under rebaseTicks (miracles.go taxonomy).
+	LastObs *ObservationMark `json:"last_obs,omitempty"`
 	// Neglect (spec 083) is the death-by-neglect detector's derived substrate:
 	// per survival need, when it entered its critical band, when a class
 	// intent last landed, and whether this episode already fired. Written

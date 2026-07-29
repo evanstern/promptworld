@@ -109,6 +109,7 @@ func TestEmittedSimMemoriesCarryOrigin(t *testing.T) {
 	valid := map[string]bool{
 		OriginAction: true, OriginWitness: true, OriginReport: true,
 		OriginOmen: true, OriginGist: true, OriginDigest: true,
+		OriginObserved: true, // spec 097: grounded arrival observations
 	}
 	seen := 0
 	for _, e := range log {

@@ -4,10 +4,10 @@
 
 ## Phase 1: Observation channel
 
-- [ ] T001 `agent.place_observed`: executor emission on intent-completing
+- [X] T001 `agent.place_observed`: executor emission on intent-completing
   arrivals, exhaustive within placeScanRadius, deterministic; reducer apply arm;
   event catalog entry (FR-001).
-- [ ] T002 Situated observation memory: low base salience, dedup window,
+- [X] T002 Situated observation memory: low base salience, dedup window,
   "observed" provenance (FR-002); dials in the tuning manifest (FR-004).
 
 ## Phase 2: Belief reconciliation (mind-side)

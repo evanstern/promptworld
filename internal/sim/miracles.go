@@ -314,6 +314,9 @@ func rebaseTicks(s *State, delta int64) {
 		for j := range a.Beliefs {
 			shift(&a.Beliefs[j].Reinforced) // spec 030: decay anchor (elapsed = tick-Reinforced); 0 = grandfather, stays 0
 		}
+		if a.LastObs != nil {
+			shift(&a.LastObs.Tick) // spec 097: observation dedup anchor (elapsed gates the window); never zero once set
+		}
 		if a.Intent != nil {
 			shift(&a.Intent.WorkStart)
 		}

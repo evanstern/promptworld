@@ -47,15 +47,21 @@ const (
 	OriginOmen    = "omen"    // a delivered omen/dream/working (the guardian) — FROZEN payload value (spec 052 ruling 2)
 	OriginGist    = "gist"    // a conversation summary written into memory
 	OriginDigest  = "digest"  // a nightly day-gist
+	// OriginObserved (spec 097): a grounded arrival observation — the agent
+	// stood at the place and took in what was (and by exhaustiveness, what was
+	// NOT) there. First-person direct perception, the strongest class per the
+	// spec-030 hygiene: DirectPerception below returns true for it.
+	OriginObserved = "observed"
 )
 
 // DirectPerception reports whether a memory's recorded origin is a direct
 // perception. Pure function on the stored field (FR-002): OriginAction /
-// OriginWitness / OriginOmen are direct; everything else (report, gist, digest,
-// absent/legacy) is secondhand. The belief validator gates "witnessed" on this.
+// OriginWitness / OriginOmen / OriginObserved (spec 097) are direct;
+// everything else (report, gist, digest, absent/legacy) is secondhand. The
+// belief validator gates "witnessed" on this.
 func DirectPerception(origin string) bool {
 	switch origin {
-	case OriginAction, OriginWitness, OriginOmen:
+	case OriginAction, OriginWitness, OriginOmen, OriginObserved:
 		return true
 	default:
 		return false

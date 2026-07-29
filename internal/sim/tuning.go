@@ -38,6 +38,25 @@ const (
 	defaultGruEmergePerMille      = 600      // per-mille chance the gru emerges per night
 	defaultPlannerCadenceTicks    = 1800     // 30 game-minutes: the mind driver's per-agent baseline
 	defaultEncounterCooldownTicks = 2 * 3600 // 2 game-hours: per-pair encounter cooldown
+
+	// Spec 097 (perception of absence, FR-004): the four grounded-observation
+	// dials. Doctrine defaults, human-tuned only:
+	//   - dedup window 2 game-hours: pacing back and forth over one spot inside
+	//     a working stretch is one observation, but a morning and an evening
+	//     visit are two.
+	//   - base salience 2: below salTalk (3) — background texture that never
+	//     crowds the working window; the mind-side surprise bump (D4) is what
+	//     promotes a disconfirming observation.
+	//   - disconfirm retain 70%: each disconfirming visit keeps 70% of the
+	//     belief's effective confidence — faster than the 8-game-day silence
+	//     half-life but bounded, so a myth survives several visits before
+	//     trending under the confidence floor (dials, not cliffs — D3).
+	//   - confirm boost +10: a confirming visit adds 10 effective-confidence
+	//     points (capped at 100) and re-anchors the decay clock.
+	defaultObservationDedupTicks         = 2 * 3600 // 2 game-hours
+	defaultObservationBaseSalience       = 2
+	defaultBeliefDisconfirmRetainPercent = 70
+	defaultBeliefConfirmBoost            = 10
 )
 
 // Clamp bounds per contracts/tuning.md. Out-of-range values of KNOWN fields
@@ -50,19 +69,33 @@ const (
 	minGruEmergePerMille, maxGruEmergePerMille           = 0, 1000
 	minPlannerCadenceTicks, maxPlannerCadenceTicks       = 60, 86400
 	minEncounterCooldownTicks, maxEncounterCooldownTicks = 0, 86400
+	// Spec 097 dials. Dedup 0 = every arrival observes; salience stays inside
+	// the 1..10 memory band; the two belief dials are percentages/points.
+	minObservationDedupTicks, maxObservationDedupTicks                 = 0, 86400
+	minObservationBaseSalience, maxObservationBaseSalience             = 1, 10
+	minBeliefDisconfirmRetainPercent, maxBeliefDisconfirmRetainPercent = 0, 100
+	minBeliefConfirmBoost, maxBeliefConfirmBoost                       = 0, 100
 )
 
 // TuningState is the fully-resolved effective dial set carried on sim.State
-// (event-sourced). A non-nil TuningState always carries all five fields with
+// (event-sourced). A non-nil TuningState always carries all fields with
 // defaults filled in and clamps applied — never a sparse/partial struct. nil
 // means "all defaults" and is the state of every pre-048 world. This is the
 // shape the sim.tuning_applied payload snapshots and the accessors read.
+// Spec 097 adds the four grounded-observation dials; a pre-097 tuning_applied
+// payload (fields absent) resolves them to the doctrine defaults at Apply
+// (state.go), never to zero.
 type TuningState struct {
 	RefuelDyingBelow       int64  `json:"refuel_dying_below"`
 	FireBurnPerWood        int64  `json:"fire_burn_per_wood"`
 	GruEmergePerMille      uint64 `json:"gru_emerge_per_mille"`
 	PlannerCadenceTicks    int64  `json:"planner_cadence_ticks"`
 	EncounterCooldownTicks int64  `json:"encounter_cooldown_ticks"`
+	// Spec 097 (perception of absence, FR-004).
+	ObservationDedupTicks         int64 `json:"observation_dedup_ticks"`
+	ObservationBaseSalience       int64 `json:"observation_base_salience"`
+	BeliefDisconfirmRetainPercent int64 `json:"belief_disconfirm_retain_percent"`
+	BeliefConfirmBoost            int64 `json:"belief_confirm_boost"`
 }
 
 // defaultTuning returns the fully-resolved default dial set (every field equal
@@ -70,11 +103,15 @@ type TuningState struct {
 // and what nil TuningState is equivalent to.
 func defaultTuning() TuningState {
 	return TuningState{
-		RefuelDyingBelow:       defaultRefuelDyingBelow,
-		FireBurnPerWood:        defaultFireBurnPerWood,
-		GruEmergePerMille:      defaultGruEmergePerMille,
-		PlannerCadenceTicks:    defaultPlannerCadenceTicks,
-		EncounterCooldownTicks: defaultEncounterCooldownTicks,
+		RefuelDyingBelow:              defaultRefuelDyingBelow,
+		FireBurnPerWood:               defaultFireBurnPerWood,
+		GruEmergePerMille:             defaultGruEmergePerMille,
+		PlannerCadenceTicks:           defaultPlannerCadenceTicks,
+		EncounterCooldownTicks:        defaultEncounterCooldownTicks,
+		ObservationDedupTicks:         defaultObservationDedupTicks,
+		ObservationBaseSalience:       defaultObservationBaseSalience,
+		BeliefDisconfirmRetainPercent: defaultBeliefDisconfirmRetainPercent,
+		BeliefConfirmBoost:            defaultBeliefConfirmBoost,
 	}
 }
 
@@ -130,6 +167,45 @@ func (s *State) EncounterCooldown() int64 {
 	return defaultEncounterCooldownTicks
 }
 
+// ObservationDedupTicks is the window (game-seconds) inside which a repeat
+// observation of an unchanged place collapses — no event, no memory (spec 097
+// D4). 0 = every arrival observes.
+func (s *State) ObservationDedupTicks() int64 {
+	if s.Tuning != nil {
+		return s.Tuning.ObservationDedupTicks
+	}
+	return defaultObservationDedupTicks
+}
+
+// ObservationBaseSalience is the salience an arrival-observation memory
+// enters at (spec 097 D4) — low, so grounded texture never crowds the
+// working-memory window.
+func (s *State) ObservationBaseSalience() int64 {
+	if s.Tuning != nil {
+		return s.Tuning.ObservationBaseSalience
+	}
+	return defaultObservationBaseSalience
+}
+
+// BeliefDisconfirmRetainPercent is the share (0–100) of a belief's effective
+// confidence retained per disconfirming observation (spec 097 D3): the
+// mind-side reconciler reads it off its replica. Lower = myths die faster.
+func (s *State) BeliefDisconfirmRetainPercent() int64 {
+	if s.Tuning != nil {
+		return s.Tuning.BeliefDisconfirmRetainPercent
+	}
+	return defaultBeliefDisconfirmRetainPercent
+}
+
+// BeliefConfirmBoost is the effective-confidence points a confirming
+// observation adds to a matching belief, capped at 100 (spec 097 D3).
+func (s *State) BeliefConfirmBoost() int64 {
+	if s.Tuning != nil {
+		return s.Tuning.BeliefConfirmBoost
+	}
+	return defaultBeliefConfirmBoost
+}
+
 // EffectiveTuning returns the full in-effect dial set (tuned values or their
 // defaults); nil Tuning resolves to the default set. The daemon boot seed
 // compares a parsed manifest against this — TuningState is comparable — to
@@ -154,6 +230,11 @@ type tuningManifest struct {
 	GruEmergePerMille      *uint64 `json:"gru_emerge_per_mille"`
 	PlannerCadenceTicks    *int64  `json:"planner_cadence_ticks"`
 	EncounterCooldownTicks *int64  `json:"encounter_cooldown_ticks"`
+	// Spec 097 (perception of absence, FR-004).
+	ObservationDedupTicks         *int64 `json:"observation_dedup_ticks"`
+	ObservationBaseSalience       *int64 `json:"observation_base_salience"`
+	BeliefDisconfirmRetainPercent *int64 `json:"belief_disconfirm_retain_percent"`
+	BeliefConfirmBoost            *int64 `json:"belief_confirm_boost"`
 }
 
 // ParseTuning decodes a sparse tuning.json into a full effective TuningState.
@@ -200,6 +281,10 @@ func ParseTuning(data []byte) (*TuningState, []string, error) {
 	}
 	clampI64("planner_cadence_ticks", m.PlannerCadenceTicks, &t.PlannerCadenceTicks, minPlannerCadenceTicks, maxPlannerCadenceTicks)
 	clampI64("encounter_cooldown_ticks", m.EncounterCooldownTicks, &t.EncounterCooldownTicks, minEncounterCooldownTicks, maxEncounterCooldownTicks)
+	clampI64("observation_dedup_ticks", m.ObservationDedupTicks, &t.ObservationDedupTicks, minObservationDedupTicks, maxObservationDedupTicks)
+	clampI64("observation_base_salience", m.ObservationBaseSalience, &t.ObservationBaseSalience, minObservationBaseSalience, maxObservationBaseSalience)
+	clampI64("belief_disconfirm_retain_percent", m.BeliefDisconfirmRetainPercent, &t.BeliefDisconfirmRetainPercent, minBeliefDisconfirmRetainPercent, maxBeliefDisconfirmRetainPercent)
+	clampI64("belief_confirm_boost", m.BeliefConfirmBoost, &t.BeliefConfirmBoost, minBeliefConfirmBoost, maxBeliefConfirmBoost)
 
 	return &t, warns, nil
 }
@@ -208,13 +293,53 @@ func ParseTuning(data []byte) (*TuningState, []string, error) {
 
 // TuningAppliedPayload is the sim.tuning_applied event body: the full effective
 // dial set (never a delta), so replay can establish tuning from any single
-// event without scanning history.
+// event without scanning history. The spec 097 dials are POINTERS: a pre-097
+// recorded payload (fields absent) decodes to nil, and the Apply arm
+// (state.go) resolves nil to the doctrine default — never to zero — so old
+// worlds replay under the same effective dials new defaults give them (the
+// spec 092 additive-field discipline). New events always carry all fields
+// (NewTuningEvent below).
 type TuningAppliedPayload struct {
 	RefuelDyingBelow       int64  `json:"refuel_dying_below"`
 	FireBurnPerWood        int64  `json:"fire_burn_per_wood"`
 	GruEmergePerMille      uint64 `json:"gru_emerge_per_mille"`
 	PlannerCadenceTicks    int64  `json:"planner_cadence_ticks"`
 	EncounterCooldownTicks int64  `json:"encounter_cooldown_ticks"`
+	// Spec 097 (perception of absence, FR-004).
+	ObservationDedupTicks         *int64 `json:"observation_dedup_ticks,omitempty"`
+	ObservationBaseSalience       *int64 `json:"observation_base_salience,omitempty"`
+	BeliefDisconfirmRetainPercent *int64 `json:"belief_disconfirm_retain_percent,omitempty"`
+	BeliefConfirmBoost            *int64 `json:"belief_confirm_boost,omitempty"`
+}
+
+// resolveTuning turns a decoded tuning_applied payload into the full effective
+// TuningState, resolving absent (nil) spec-097 fields to their doctrine
+// defaults. Shared by the Apply arm and tests.
+func resolveTuning(p TuningAppliedPayload) TuningState {
+	t := TuningState{
+		RefuelDyingBelow:              p.RefuelDyingBelow,
+		FireBurnPerWood:               p.FireBurnPerWood,
+		GruEmergePerMille:             p.GruEmergePerMille,
+		PlannerCadenceTicks:           p.PlannerCadenceTicks,
+		EncounterCooldownTicks:        p.EncounterCooldownTicks,
+		ObservationDedupTicks:         defaultObservationDedupTicks,
+		ObservationBaseSalience:       defaultObservationBaseSalience,
+		BeliefDisconfirmRetainPercent: defaultBeliefDisconfirmRetainPercent,
+		BeliefConfirmBoost:            defaultBeliefConfirmBoost,
+	}
+	if p.ObservationDedupTicks != nil {
+		t.ObservationDedupTicks = *p.ObservationDedupTicks
+	}
+	if p.ObservationBaseSalience != nil {
+		t.ObservationBaseSalience = *p.ObservationBaseSalience
+	}
+	if p.BeliefDisconfirmRetainPercent != nil {
+		t.BeliefDisconfirmRetainPercent = *p.BeliefDisconfirmRetainPercent
+	}
+	if p.BeliefConfirmBoost != nil {
+		t.BeliefConfirmBoost = *p.BeliefConfirmBoost
+	}
+	return t
 }
 
 // GenesisTuningEvent builds the sim.tuning_applied event a world pins at
@@ -236,10 +361,14 @@ func GenesisTuningEvent(tick int64) store.Event {
 func NewTuningEvent(tick int64, t TuningState) store.Event {
 	return store.Event{Tick: tick, Type: "sim.tuning_applied",
 		Payload: mustPayload(TuningAppliedPayload{
-			RefuelDyingBelow:       t.RefuelDyingBelow,
-			FireBurnPerWood:        t.FireBurnPerWood,
-			GruEmergePerMille:      t.GruEmergePerMille,
-			PlannerCadenceTicks:    t.PlannerCadenceTicks,
-			EncounterCooldownTicks: t.EncounterCooldownTicks,
+			RefuelDyingBelow:              t.RefuelDyingBelow,
+			FireBurnPerWood:               t.FireBurnPerWood,
+			GruEmergePerMille:             t.GruEmergePerMille,
+			PlannerCadenceTicks:           t.PlannerCadenceTicks,
+			EncounterCooldownTicks:        t.EncounterCooldownTicks,
+			ObservationDedupTicks:         &t.ObservationDedupTicks,
+			ObservationBaseSalience:       &t.ObservationBaseSalience,
+			BeliefDisconfirmRetainPercent: &t.BeliefDisconfirmRetainPercent,
+			BeliefConfirmBoost:            &t.BeliefConfirmBoost,
 		})}
 }
