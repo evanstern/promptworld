@@ -45,9 +45,9 @@ needs, not the whole set:
   eating/talk/needs/death, the v2 crafting/gather yields, the v3 storage
   events, and the wall demolish/repair family.
 - [[sim-state-intent-lifecycle]] — the intent-ring closure arms
-  (`agent.build_failed`, the spec-043/062/064 completion/rejection/stall
-  stamps), the hail family, and `agent.died`'s spill/`Deaths`/grave/
-  `run.ended` effects.
+  (`agent.build_failed`, its spec-096 generalization `agent.intent_failed`,
+  the spec-043/062/064 completion/rejection/stall stamps), the hail family,
+  and `agent.died`'s spill/`Deaths`/grave/`run.ended` effects.
 - [[sim-state-apply-world]] — the unexported map/scenario fields and the
   world/governance dispatch arms: mental-map knowledge growth, the gru/
   governance/miracle/guardian-order dispatchers, curriculum unlocks,

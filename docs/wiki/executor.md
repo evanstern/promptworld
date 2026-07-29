@@ -31,6 +31,10 @@ funneling through the same silent `agent.intent_done` a completion uses, and
 a wall's reserved-tile occupancy check moved from a mid-work insta-cancel to
 a bounded completion-time deferral — a passerby crossing the tile no longer
 kills the build, only a squatter that outlasts the grace period does (below).
+Spec 096 (TASK-95) generalized that pattern to every non-build goal's own
+invalid-exit/contested resolution — `agent.intent_failed`, the same
+loud-failure shape, now covers the goals `build_failed` never did
+([[executor-goals-and-intents]], [[executor-goal-completions]]).
 
 ## How it works
 

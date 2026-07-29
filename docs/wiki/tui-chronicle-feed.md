@@ -50,7 +50,9 @@ done nothing about it (warmth 0)" / starving / exhausted,
 builder, emphasized goal and reason ("Ash's build_wall_stone failed — site no
 longer buildable") — a failure at a glance without joining the whole-line
 alert tier; a cancelled build previously read as finished, sharing
-`agent.intent_done`'s plain "finished" line. `agent.recovery_stalled` (spec 064; catalog row TASK-140)
+`agent.intent_done`'s plain "finished" line. Spec 096's generalization,
+`agent.intent_failed`, gets the identical treatment for every non-build goal
+("Ash's hunt failed — target gone"). `agent.recovery_stalled` (spec 064; catalog row TASK-140)
 gets the same distinct-from-"finished" treatment for a needs-conditioned
 recovery hold with no net gain across its stall window — "Ash's `warm_up`
 stalled — `warmth` not recovering" (subject/name resolution per
