@@ -5,7 +5,7 @@ not alias; ship the REAL rename here).
 
 ## Phase 1: Log stamp + enforcement
 
-- [ ] T001 Research note (specs/094-event-log-format-version/research.md): stamp's
+- [X] T001 Research note (specs/094-event-log-format-version/research.md): stamp's
   physical shape (header row / meta event / sqlite table-pragma), whether the
   world-manifest FormatVersion bumps alongside, and the exact enumeration of
   affected metatron.* persisted types from the spec-052 freeze annotations —
