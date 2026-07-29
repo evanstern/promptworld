@@ -17,6 +17,6 @@ task will add its own plan/phases when carded.
 
 ## Phase 2: Ratification
 
-- [ ] T003 PR opened from this branch carrying the spec; operator review of the PR
+- [x] T003 PR opened from this branch carrying the spec; operator review of the PR
   is the ratification act (runbook board-sweep-2026-07-29, lane 5 posture:
   autonomous authoring, operator ratifies at PR review).
