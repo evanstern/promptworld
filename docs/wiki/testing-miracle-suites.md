@@ -5,7 +5,7 @@ kind: pattern
 sources:
   - internal/sim/miracles_test.go
   - internal/ipc/ipc_test.go
-verified_against: ac7bf5f75e9b9bb5b63f0f2c4662c440e70776be
+verified_against: 864d2a3bcff4b3113739d596befc72229a84d4b8
 ---
 
 # Miracle pricing & reducer suites

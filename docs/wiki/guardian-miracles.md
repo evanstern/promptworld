@@ -6,7 +6,7 @@ sources:
   - internal/sim/miracles.go
   - cmd/promptworld/work.go
   - internal/ipc/server.go
-verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
+verified_against: 864d2a3bcff4b3113739d596befc72229a84d4b8
 ---
 
 # Guardian's miracles
