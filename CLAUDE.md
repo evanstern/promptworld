@@ -77,6 +77,29 @@ Backlog.md is this project's kanban; the board is the plan of record. Statuses f
   PR, never their own.
 - **Never hand-edit** files under `backlog/` — always the `backlog` CLI, so metadata and
   relationships stay consistent.
+
+### Card format (spec 087)
+
+Every task description opens with a **one-or-two-sentence plain-language gist** of
+the deliverable, before any other content — a reader unfamiliar with the task should
+grasp what it delivers from those sentences alone, no file paths or jargon decoding
+required.
+
+- **Where applicable**, the gist is followed by scene-setting use cases in
+  "As a \<role\>" form. Any accurate scene-setting role is valid — "As a player",
+  "As a user", "As a villager in the game", "As the Gru" — pick whichever role the
+  card's subject actually serves.
+- **Pure infra/bookkeeping cards** (a flaky-test fix, a gate tweak) may omit use
+  cases, but no card may ever omit the opening gist.
+- **The operator's three examples**, with the reason each earns its rating:
+  - Good: "As a player, when the game starts up, I want to see the map on the left
+    and the chronicle on the right."
+  - Less good: "The left side of the screen should be the map and the right side
+    should be the chronicle." — describes the artifact, not the experience.
+  - Bad: "The UI is bad, we should fix it" — or a wall of file/concept references a
+    human can't easily grok.
+- TASK-168's own card is the first conforming example: it opens with a gist, then
+  carries "As a …" use cases for each stakeholder the policy serves.
 <!-- pdlc:peer:backlog END -->
 
 <!-- pdlc:peer:spec-kit BEGIN -->
@@ -91,6 +114,10 @@ Features are specified with GitHub Spec Kit (`specify`) under `specs/NNN-<featur
   prove — produce the artifact, then sync.
 - A spec's linked task is the deliverable: it lands as **one PR**. Spec phases and their
   mirrored criteria are internal breakdown, not PR boundaries.
+- **Specifying from a card you didn't author:** the card's opening gist and its
+  "As a …" use cases (see the Card format subsection above) are the primary
+  statement of intent — reconstruct the ticket's purpose from them before mining
+  file/concept references.
 <!-- pdlc:peer:spec-kit END -->
 <!-- pdlc:grounding END -->
 

@@ -27,7 +27,7 @@ carries the gist rule, use-case rule (any accurate role), applicability rule
 (infra/bookkeeping cards may omit use cases, never the gist), and the good /
 less-good / bad examples with reasons.
 
-- [ ] T001 [US1] Add a compact "Card format" subsection (~20 lines) to the
+- [X] T001 [US1] Add a compact "Card format" subsection (~20 lines) to the
   "## Backlog.md — the board" block in `CLAUDE.md`: (a) every task description
   opens with a 1–2 sentence plain-language gist of the deliverable before any other
   content; (b) where applicable, the gist is followed by scene-setting "As a
@@ -50,7 +50,7 @@ intent for tasks it didn't author.
 **Independent Test**: quickstart.md check 2 — the Spec Kit block names the gist as
 the primary statement of intent.
 
-- [ ] T002 [US2] Add one or two sentences to the "## Spec Kit — specs drive the
+- [X] T002 [US2] Add one or two sentences to the "## Spec Kit — specs drive the
   work" block in `CLAUDE.md`: when specifying from a board task the spec author
   didn't write, the card's opening gist and its "As a …" use cases are the primary
   statement of intent — reconstruct purpose from them before mining file/concept
@@ -58,7 +58,7 @@ the primary statement of intent.
 
 ## Phase 5: Polish & Cross-Cutting
 
-- [ ] T003 Run the quickstart.md validation: checks 1–4 (policy present with
+- [X] T003 Run the quickstart.md validation: checks 1–4 (policy present with
   examples; spec-phase pointer present; `git diff origin/main --stat` scoped to
   `CLAUDE.md` + `specs/087-card-format-policy/**` + `.specify/feature.json`;
   TASK-168 card reads as the first conforming example). Record the results in the
