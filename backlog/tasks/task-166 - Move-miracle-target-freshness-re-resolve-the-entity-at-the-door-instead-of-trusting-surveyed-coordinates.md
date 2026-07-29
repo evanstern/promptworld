@@ -3,10 +3,10 @@ id: TASK-166
 title: >-
   Move-miracle target freshness: re-resolve the entity at the door instead of
   trusting surveyed coordinates
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-29 13:59'
-updated_date: '2026-07-29 19:06'
+updated_date: '2026-07-29 19:45'
 labels:
   - mvls
   - guardian-survival
@@ -26,11 +26,11 @@ Spec: specs/091-move-miracle-freshness
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 Decision recorded on this card: door-side name re-resolution vs freshness token vs guidance-only, with replay/determinism implications analyzed
-- [ ] #2 Implementation + tests: a raced villager-move (entity moved after survey) lands under the chosen mechanism; structure/pile moves unchanged; replay of pre-fix recorded moves still applies cleanly
-- [ ] #3 Probe verification on a live world: name-addressed villager moves land at 8x; evidence appended here
-- [ ] #4 Spec phase: Door-side name re-resolution
-- [ ] #5 Spec phase: Tests
-- [ ] #6 Spec phase: Grounding + probe
+- [x] #2 Implementation + tests: a raced villager-move (entity moved after survey) lands under the chosen mechanism; structure/pile moves unchanged; replay of pre-fix recorded moves still applies cleanly
+- [x] #3 Probe verification on a live world: name-addressed villager moves land at 8x; evidence appended here
+- [x] #4 Spec phase: Door-side name re-resolution
+- [x] #5 Spec phase: Tests
+- [x] #6 Spec phase: Grounding + probe
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -38,3 +38,9 @@ Spec: specs/091-move-miracle-freshness
 <!-- SECTION:NOTES:BEGIN -->
 board-sweep-2026-07-29 lane 2: AC1 decision recorded in spec 091 — (a) door-side name re-resolution, x/y advisory; replay analysis in spec.md (reducer arm untouched, emitter-computes). Tier: Sonnet — narrow door fix, single mechanism; escalation trigger: any change to applyEntityMoved reducer semantics.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Merged via PR #133 (merge commit on main; branch tip 3b26820). Door-side name re-resolution shipped: villager moves naming the villager resolve live position at the door, x/y advisory; reducer untouched, replay byte-identity regression-tested; coordinate/structure/pile paths unchanged. Live probe on preserved measure world (~/.promptworld/measure/task-166-probe): guardian call surveyed (59,20), door resolved (62,18) after 139-tick race, landed. Evidence: docs/design/evidence/task-166/results.md. TASK-163 residual position-freshness class retired to the deliberate coordinate-only remainder.
+<!-- SECTION:FINAL_SUMMARY:END -->
