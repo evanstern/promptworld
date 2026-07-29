@@ -3,10 +3,10 @@ id: TASK-76
 title: >-
   Entity-lookup seam for future spatial indexing (+ store-error posture
   decision)
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-23 06:35'
-updated_date: '2026-07-24 02:42'
+updated_date: '2026-07-29 23:48'
 labels:
   - review-2026-07-22
   - code-quality
