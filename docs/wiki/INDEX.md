@@ -146,6 +146,7 @@ that note (re-pin with `/grounding-wiki:wiki-update`).
 - [[social-fabric]] — relationships, rumors, debts, secrets, conversations
 - [[social-fabric-conversations]] — split from social-fabric: the model-driven conversation scene machinery — novelty SHIM, memory-relevance snapshot, cognition router, atomic inject_social landing, staleness/retry tolerance
 - [[nightly-consolidation]] — sleep-triggered soul digestion behind the persona firewall
+  - [[private-dreams]] — spec-098 clustering + habituation in the nightly slot: geometry-first over recorded vectors, ambiguous-band consult, recorded salience-revision/merge outcomes, seeded zeroable boundary jitter, five dream dials
   - [[nightly-belief-decay]] — Split from [[nightly-consolidation]] — how a belief's confidence decays purely on read (sim.EffectiveConfidence, an 8-game-day half-life since its…
 - [[chronicle]] — the narrated story feed: cloud narrator, snapshot-carried catch-up ring
 - [[morgue]] — the run's legacy document: per-death epitaphs + run-end summary from a deterministic genesis replay fold, narrated epilogues blockquoted, charter/orders evidence alignment, regenerable morgue.md

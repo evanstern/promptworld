@@ -105,6 +105,12 @@ blocks.
 governs fade, the legacy-grandfather case, and the below-floor prompt
 exclusion — split into [[nightly-belief-decay]].
 
+**Private dreams (spec 098)** — the worker also runs a per-agent clustering
+pass over the agent's recorded memory vectors before the call: clear-cut
+dense clusters habituate/merge by geometry alone (events land independently
+of the night's fate), and only the ambiguous band rides this call as labeled
+`[gN]` groups with a `routine` verdict field — split into [[private-dreams]].
+
 ## Connections
 
 [[agent-mind]] owns the replica, personas, and the sleep trigger surface (and
