@@ -85,7 +85,13 @@ intent_set / the new `sim.neglect_detected` — [[sim-state-apply-agents]],
 read by the executor's heartbeat sweep and the exported `NeglectDue`
 predicate ([[executor-needs-survival]]); its six tick anchors are SHIFT
 (only-non-zero) under the rebase taxonomy
-([[guardian-miracle-rebase-taxonomy]]).
+([[guardian-miracle-rebase-taxonomy]]). Spec 097 adds
+`LastObs *ObservationMark` (`omitempty` POINTER, same precedent): the
+grounded-observation dedup anchor — where the agent last looked around, the
+canonical kind set it saw, and when — written ONLY by the
+`agent.place_observed` arm and compared by the arrival emission site
+([[executor-perception-observation]]); its `Tick` is SHIFT under the rebase
+taxonomy.
 
 ## Connections
 

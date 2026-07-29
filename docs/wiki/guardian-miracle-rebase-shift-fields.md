@@ -78,7 +78,11 @@ clause; 0 = never) — all SHIFT only-non-zero, the
 `Belief.Reinforced`/`NeedsAnchorTick` elapsed-anchor shape: left unshifted,
 a snap would age every in-band episode past the window and fire the
 detector the instant it landed. The `*Fired` latches are bools (episode
-state, no tick field, no taxonomy entry).
+state, no tick field, no taxonomy entry). Spec 097
+([[executor-perception-observation]]) adds `ObservationMark.Tick` — the
+grounded-observation dedup anchor on `Agent.LastObs` (elapsed = tick − Tick
+gates the dedup window; never zero once the pointer exists) — SHIFT, the
+`Belief.Reinforced` shape.
 
 ## Connections
 

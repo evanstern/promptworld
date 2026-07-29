@@ -1,6 +1,6 @@
 ---
 name: world-tuning
-description: The spec-048 world tuning manifest (tuning.json) — the promotion path for doctrine constants to per-world dials: the five first-promoted dials (refuel-dying window, fire burn per wood, gru emergence chance, planner cadence, encounter cooldown), TuningState, nil-safe accessors, and the manifest's clamp table; boot seeding, the genesis pin, and replay independence split into [[world-tuning-boot-seeding]]
+description: The spec-048 world tuning manifest (tuning.json) — the promotion path for doctrine constants to per-world dials: the five first-promoted dials (refuel-dying window, fire burn per wood, gru emergence chance, planner cadence, encounter cooldown) plus spec 097's four grounded-observation dials, TuningState, nil-safe accessors, and the manifest's clamp table; boot seeding, the genesis pin, and replay independence split into [[world-tuning-boot-seeding]]
 kind: component
 sources:
   - internal/sim/tuning.go
@@ -35,9 +35,13 @@ all five defaults into `tuning.go` renamed `default*`
 (`defaultRefuelDyingBelow`, `defaultFireBurnPerWood`,
 `defaultGruEmergePerMille`, `defaultPlannerCadenceTicks`,
 `defaultEncounterCooldownTicks`) — the single home for these doctrine values.
+**Spec 097 adds four grounded-observation dials** (born as dials, no retired
+constants — [[executor-perception-observation]]): two executor-read
+(observation dedup window, base salience), two read off the mind's replica
+by the belief reconciler (disconfirm retain, confirm boost) — nine total.
 
 **`TuningState`** (`tuning.go`) is the fully-resolved effective set: a
-non-nil `TuningState` always carries all five fields with defaults filled in
+non-nil `TuningState` always carries all fields with defaults filled in
 and clamps applied — never a sparse struct. `sim.State.Tuning *TuningState`
 (`json:"tuning,omitempty"`) carries it, event-sourced: **nil means the
 default set**, which is what every pre-048 snapshot and world has, and
@@ -46,8 +50,8 @@ bump** (the spec-044 `MorgueEpilogues` precedent). `State.EffectiveTuning()`
 returns the resolved set either way (`*s.Tuning` or `defaultTuning()`).
 
 **Nil-safe accessors** (`RefuelDyingBelow()`, `FireBurnPerWood()`,
-`GruEmergePerMille()`, `PlannerCadence()`, `EncounterCooldown()`, all methods
-on `*State`) are the ONLY consumption path: every reducer call site
+`GruEmergePerMille()`, `PlannerCadence()`, `EncounterCooldown()`, plus one
+per spec-097 dial — all methods on `*State`) are the ONLY consumption path: every reducer call site
 ([[executor]]'s fire-fuel arm, [[reflex-policy]]'s refuel rung, [[gru]]'s
 emergence roll) and every mind-side call site ([[agent-mind]]'s per-agent
 cadence/stagger and encounter-cooldown gate, reading off `md.replica`) go
@@ -78,6 +82,10 @@ clamp warnings and a structural error separately:
 | GruEmergePerMille | `gru_emerge_per_mille` | 600 | [0, 1000] |
 | PlannerCadenceTicks | `planner_cadence_ticks` | 1800 | [60, 86400] |
 | EncounterCooldownTicks | `encounter_cooldown_ticks` | 7200 | [0, 86400] |
+| ObservationDedupTicks | `observation_dedup_ticks` | 7200 | [0, 86400] |
+| ObservationBaseSalience | `observation_base_salience` | 2 | [1, 10] |
+| BeliefDisconfirmRetainPercent | `belief_disconfirm_retain_percent` | 70 | [0, 100] |
+| BeliefConfirmBoost | `belief_confirm_boost` | 10 | [0, 100] |
 
 Out-of-range values of a KNOWN field clamp to the nearest bound with an
 operator-visible warning (`tuning.json <field> <raw> out of range (<bound
@@ -90,10 +98,12 @@ boot treats as a hard boot error naming the file and the problem
 correctly-named field, but a typo must never silently run as a no-op.
 
 **The `sim.tuning_applied` event** (`tuning.go`'s `NewTuningEvent`) carries
-the FULL effective five-field set, never a delta, so replay can establish
-tuning state from any single event without scanning history. The reducer arm
-(`state.go`) is a pure, idempotent `s.Tuning = &TuningState{...}` assignment
-— it re-applies cleanly on replay and the boot seed never double-counts.
+the FULL effective set, never a delta, so replay can establish tuning state
+from any single event without scanning history. The four spec-097 fields
+ride the payload as `omitempty` POINTERS: a pre-097 recorded payload
+resolves them to the doctrine defaults at Apply (`resolveTuning`), never to
+zero. The reducer arm (`state.go`) is a pure, idempotent `s.Tuning = &t`
+assignment — re-applies cleanly on replay, boot seed never double-counts.
 
 **Boot seeding, the genesis pin, and replay independence** split into
 [[world-tuning-boot-seeding]]: how `daemon.go`'s `seedTuning` applies the

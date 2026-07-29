@@ -45,8 +45,9 @@ revision only refreshes the belief's decay anchor when true), and
 the validator downgraded off `"witnessed"` for lack of direct evidence, never a
 rejection). One new whitelisted type, `agent.belief_reinforced`
 (`BeliefReinforcedPayload{agent, belief_id}`), re-anchors a held belief's decay
-clock at the grounded-observation seam — spec 030 ships the consumer (whitelist +
-reducer arm) only, no in-tree emitter yet ([[nightly-consolidation]]).
+clock at the grounded-observation seam ([[nightly-consolidation]]); since spec
+097 its producer exists — the perception-of-absence reconciler — see the row
+below.
 
 Spec 042 ([[memory-retrieval]] — embedding-augmented memory retrieval) is also
 format-stable: `Memory` gains `omitempty` `Seq`/`Vec`/`VecModel` (`Seq` the
@@ -68,7 +69,7 @@ it carries no event of its own.
 | `journal.entry_written` | `JournalWrittenPayload{agent, text}` (`journal.go`) | mind journal tool (`write_journal_entry`, injected via `InjectSocial` — spec 019 US3) | the ONLY journal-growth path: appends a reducer-id'd `JournalEntry{id, tick, text}` to the agent's `Journal` via `appendEntry`, which enforces the per-agent `journalBudgetRunes` (4000) rune budget INSIDE `Apply` — the `InjectSocial` dry-run turns an over-budget append into a door rejection, so no over-budget event lands (SC-005, [[agent-mind]]) |
 | `journal.entry_deleted` | `JournalDeletedPayload{agent, entry}` (`journal.go`) | mind journal tool (`delete_from_journal`, injected) | removes the entry with that id from the agent's `Journal` (survivor order preserved, ids never reused or renumbered so freed runes are immediately reclaimable); a missing id errors at the door |
 | consolidation family: `agent.memory_promoted` / `agent.memory_faded` / `agent.belief_revised` / `agent.narrative_set` / `agent.consolidated` | payload structs in `internal/sim/consolidate.go`; contract in `specs/004-nightly-consolidation/contracts/` (spec 030 additions in `specs/030-epistemic-hygiene/contracts/`) | consolidation driver (injected) | salience boost / memory removal / belief create-or-revise / narrative replace / once-per-night ledger ([[nightly-consolidation]]); all reducer-total (vanished targets no-op); spec 030 threads two payload additions through — `belief_revised`'s `evidence` (the validator's resolved `MemoryRef{tick, hash}` citations) and `direct` (whether any cited evidence is direct perception; only a `direct` revision refreshes the belief's `Reinforced` decay anchor — a myth retold nightly on hearsay alone never re-anchors), and `consolidated`'s `coerced` (telemetry: beliefs the validator downgraded off `"witnessed"` for lack of direct evidence, never a rejection) |
-| `agent.belief_reinforced` (spec 030 US2, FR-008) | `BeliefReinforcedPayload{agent, belief_id}` in `internal/sim/consolidate.go` | whitelisted through `InjectSocial`'s injection door (the grounded-observation seam) — ships as consumer only; no in-tree emitter yet, the perception-of-absence work is the intended future producer | re-anchors the named belief's `Reinforced` decay-clock field to `now` (`e.Tick`); a vanished belief id no-ops, reducer-total like its siblings |
+| `agent.belief_reinforced` (spec 030 US2, FR-008; spec 097 additive `kind`/`confidence`) | `BeliefReinforcedPayload{agent, belief_id, kind?, confidence?}` in `internal/sim/consolidate.go` — `kind` `""` (legacy re-anchor) \| `confirmed` \| `disconfirmed`, `confidence` the emitter-computed new stored value | the spec-097 belief reconciler (`internal/mind/reconcile.go`), injected via `InjectSocial` on an `agent.place_observed` landing ([[executor-perception-observation]]): confirm = effective + `belief_confirm_boost` dial, disconfirm = effective × `belief_disconfirm_retain_percent` dial | re-anchors the named belief's `Reinforced` decay clock to `now` (`e.Tick`); a Kind-stamped payload ALSO copies `confidence` (clamped 0–100) onto the stored value — the mind computes, the reducer copies; a bare pre-097 payload replays byte-identically as the pure re-anchor; a vanished belief id no-ops, reducer-total like its siblings |
 
 ## Connections
 

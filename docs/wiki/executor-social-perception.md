@@ -1,11 +1,12 @@
 ---
 name: executor-social-perception
-description: Guarded plans (timed conditional multi-step intents), hails (talk_to pause/close/found), the per-agent perception sweep populating mental maps, and the situated-memory/origin provenance every emitted memory carries. Load for planner-plan timing, hail/talk mechanics, or memory provenance questions.
+description: Guarded plans (timed conditional multi-step intents), hails (talk_to pause/close/found), and the situated-memory/origin provenance every emitted memory carries; routes to [[executor-perception-observation]] for the perception sweep and spec-097 arrival observations. Load for planner-plan timing, hail/talk mechanics, or memory provenance questions.
 kind: component
 sources:
   - internal/sim/executor.go
   - internal/sim/plan.go
   - internal/sim/memory.go
+  - internal/sim/observe.go
 verified_against: b35a7ffec46ba996741cdba4af9652fcfd163b32
 ---
 
@@ -53,32 +54,15 @@ fresh facts per direction the other party lacks or holds staler
 (`tellablePlaces`), landing one `social.place_told` each way plus a companion
 situated memory on both sides.
 
-**Perception** (spec 041, `perceptionEvents`): each awake living villager,
-on the same staggered per-agent cadence movement uses (a fifth of a full
-per-tick sweep, T034's hot-path relief), diffs ground truth within
-`witnessRadius` against its own `Agent.Map` and emits at most one `agent.saw`
-(new/changed structures, piles, standing trees, unharvested forage, unquarried
-rock, water shoreline, dens) and one `agent.map_corrected` (remembered fresh
-facts whose place has vanished — a chopped tree, a quarried-out outcrop, a
-drained pile, a removed structure; a merely-harvested forage spot or cooling
-den is not gone, only unavailable, so it stays). A correction's
-gone facts each ride a companion situated first-person discovery memory
-(`mapCorrectedText`, `salMapCorrected`) in the same batch — memories accrete
-only via `agent.memory_added`, never appended directly by a reducer arm. Pure
-function of (state, map, tick): `stepEvents` reads, never mutates.
-[[mental-maps]] owns the mental-map subsystem this sweep populates and
-corrects; the executor's role is only the perception beat driving it. Since
-spec 081, an `agent.map_corrected` names only agents who were dead, asleep, or
-outside `witnessRadius` at removal: the `agent.chopped`/`agent.quarried`
-reducer arms remove the felled/quarried fact from the actor's and every awake
-in-radius witness's map at the act event ([[mental-map-perception]],
-[[sim-state-reducer]]), so the sweep finds nothing to correct on-scene. The
-same-tick beat is safe by `stepEvents` ordering below — `perceptionEvents`
-runs before `executeAtTarget`, reading pre-batch state where the tree still
-stands. The chop/quarry emit sites also mint the actor a first-person act
-memory ("Felled the tree at (x,y)." / "Quarried the outcrop at (x,y).",
-`salChop`/`salQuarry`), a companion `agent.memory_added` in the act's batch
-(the hunt precedent) — see Memory emission below.
+**Perception & grounded observations** — split to
+[[executor-perception-observation]] (spec 089 size budget): the spec-041
+perception sweep (`perceptionEvents` — at most one `agent.saw` + one
+`agent.map_corrected` per beat, spec 081's act-time map removals, the
+chop/quarry act memories) and the spec-097 grounded arrival observations
+(`agent.place_observed` on intent-completing arrivals, exhaustive within
+`placeScanRadius`, `Agent.LastObs` dedup window, Origin-`observed` companion
+memory, mind-side belief reconciliation). That child owns the full
+mechanics; this note keeps the memory-provenance vocabulary below.
 
 **Memory emission**: the executor emits `agent.memory_added` events from the
 salience table in `memory.go` ([[agent-mind]]) alongside memorable
@@ -110,10 +94,11 @@ closed vocabulary (`memory.go`): `OriginAction` (an own executed act),
 `OriginReport` (learned of at any distance, e.g. a chest-owner's theft
 notification), `OriginOmen` (a delivered omen/dream/working — the guardian's
 FROZEN payload value, spec 052 ruling 2), `OriginGist` (a conversation
-summary into memory), and `OriginDigest` (a nightly day-gist); an
+summary into memory), `OriginDigest` (a nightly day-gist), and — spec 097 —
+`OriginObserved` (a grounded arrival observation, first-person); an
 absent/legacy origin (`""`, any pre-030 payload) classifies secondhand, the
 conservative direction. `DirectPerception(origin)` is the pure helper —
-true only for `OriginAction`/`OriginWitness`/`OriginOmen` — the belief
+true only for `OriginAction`/`OriginWitness`/`OriginOmen`/`OriginObserved` — the belief
 validator ([[nightly-consolidation]]) reads it to decide whether a memory
 counts as direct perception; it is the ONLY signal used, no text inspection.
 `Memory.Origin` (`omitempty`) rides the same copied-at-Apply, never-re-derived
@@ -122,9 +107,11 @@ Memory (field absent) reduces to `Origin` `""`.
 
 ## Connections
 
-Parent: [[executor]]. [[cognition]] consumes `Agent.Generation` to supersede
-in-flight thoughts; [[mental-maps]] owns the per-agent map this sweep
-populates/corrects and the talk sidecar's place-knowledge exchange;
+Parent: [[executor]]. Child: [[executor-perception-observation]] (the
+perception sweep + spec-097 arrival observations). [[cognition]] consumes
+`Agent.Generation` to supersede in-flight thoughts; [[mental-maps]] owns the
+per-agent map the sweep populates/corrects and the talk sidecar's
+place-knowledge exchange;
 [[agent-mind]]/[[chronicle]] render situated-memory payloads with no
 re-derivation; [[nightly-consolidation]] hosts the belief validator reading
 `Origin`/`DirectPerception` off these memories; [[sim-loop]] is the door

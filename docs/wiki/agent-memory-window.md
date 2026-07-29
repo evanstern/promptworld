@@ -52,14 +52,15 @@ reuses `build_failed`'s tier, not a new one ([[event-types-agent-intents]]).
 
 Since spec 030, every memory also carries an `Origin` — a closed-vocabulary
 provenance class stamped at emission (`OriginAction`/`OriginWitness`/
-`OriginReport`/`OriginOmen`/`OriginGist`/`OriginDigest`), a required parameter
+`OriginReport`/`OriginOmen`/`OriginGist`/`OriginDigest`, spec 097 adding
+`OriginObserved` — [[executor-perception-observation]]), a required parameter
 on every situated constructor so a new, unstamped emission site cannot compile.
-`DirectPerception(origin)` is the pure classifier over it: an own act, a
-witnessed event, or a delivered omen/dream are direct; a chest-owner's report,
+`DirectPerception(origin)` is the pure classifier over it:
+action/witness/omen/observed are direct; a chest-owner's report,
 a conversation gist, a nightly digest, or an absent/legacy origin (`""`) are
-secondhand — the conservative default (hygiene may under-grant "witnessed",
-never over-grant it). This is the ONLY signal [[nightly-consolidation]]'s
-belief validator reads to gate a "witnessed" claim — no text inspection.
+secondhand — the conservative default. This is the ONLY signal
+[[nightly-consolidation]]'s belief validator reads to gate a "witnessed"
+claim — no text inspection.
 `SelectMemories` is the deterministic working
 window: salience halved per game-day of age, top K−2, plus 2 seeded serendipity
 picks from the oldest half (bucketed to `defaultPlannerCadenceTicks` — the
