@@ -14,7 +14,7 @@
 
 ## Phase 2: Split or tighten (mid/large overages)
 
-- [ ] T002 Resolve ipc-protocol.md, chronicle.md, guardian.md,
+- [X] T002 Resolve ipc-protocol.md, chronicle.md, guardian.md,
   sim-state-apply-world.md (385–457 over): tighten if honest, else summary-style
   split per docs/corpus-spec.md.
 - [ ] T003 Split (or justify exemption): reflex-policy.md, sim-state-apply-agents.md,
