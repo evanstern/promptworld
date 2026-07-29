@@ -17,7 +17,7 @@
 - [X] T002 Resolve ipc-protocol.md, chronicle.md, guardian.md,
   sim-state-apply-world.md (385–457 over): tighten if honest, else summary-style
   split per docs/corpus-spec.md.
-- [ ] T003 Split (or justify exemption): reflex-policy.md, sim-state-apply-agents.md,
+- [X] T003 Split (or justify exemption): reflex-policy.md, sim-state-apply-agents.md,
   event-types.md, sim-loop-injection-doors.md, guardian-miracle-rebase-taxonomy.md,
   guardian-designations.md, tool-registry-guardian-tools.md, tui-chronicle-feed.md,
   executor-needs-survival.md, guardian-faith.md — follow the corpus's parent/child

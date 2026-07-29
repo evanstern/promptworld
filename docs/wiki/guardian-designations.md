@@ -1,15 +1,10 @@
 ---
 name: guardian-designations
-description: The guardian's durable plan layer (spec 084) — designations (event-sourced world plan artifacts with structural fulfillment predicates), hard directives (TTL-bounded villager bindings landed through the injection door), the DIRECTIVE reflex rung between SURVIVAL and PREP, the neverDrop directive context block, and the charge-free survey_site read tool. Load when tracing place_designation/issue_directive, the designation./directive. event lifecycle, or why a villager walks to a marked site.
+description: The guardian's durable plan layer (spec 084) — designations (event-sourced world plan artifacts with structural fulfillment predicates) and hard directives (TTL-bounded villager bindings landed through the injection door): the entity model and event vocabulary. Villager response and guardian-turn surfaces split to [[guardian-designations-reception]]. Load when tracing place_designation/issue_directive or the designation./directive. event lifecycle.
 kind: component
 sources:
   - internal/sim/plans.go
-  - internal/sim/policy.go
   - internal/sim/executor.go
-  - internal/guardian/plans.go
-  - internal/guardian/survey.go
-  - internal/tool/registry.go
-  - internal/mind/context.go
 verified_against: 63390f122bdf4e1b7abf518a8be83de725f06230
 ---
 
@@ -96,73 +91,13 @@ lifecycle through the unmodified `matchOrders` path — zero new trigger
 code (AC #7; e.g. a re-issue loop on `directive.expired` is the operator
 ruling's named anti-thrash workaround).
 
-## The announcement grant
+## Reception, villager response, and turn surfaces
 
-The `designation.placed` arm upserts one
-`PlaceFact{Kind:"designation", Provenance: revealed, Seen: e.Tick}` at the
-anchor tile (point tile / line first endpoint / rect min corner) into EVERY
-living villager's mental map — the spec-041 place-grant machinery fanned
-out reducer-side (one event, deterministic; map-less agents skipped, the
-reducer stays total). `"designation"` joins the closed `PlaceFact`
-vocabulary with a 7-game-day horizon (the max directive TTL);
-`placeFactKinds` (send_vision's reveal enum) is NOT extended.
-`renderKnownPlaces` renders the fact as an individually-named landmark
-enriched from `State.Designations` (`designationLandmark`,
-`internal/mind/prompt.go` — `PlaceFact.Detail` is an int64 scalar and
-cannot carry a phrase). Cancellation/fulfillment never retracts the fact —
-remembered history, the burned-out-fire precedent.
-
-## The villager side — hardness (operator ruling, FIRM)
-
-- **DIRECTIVE reflex rung** (`directiveDecision`,
-  `internal/sim/policy.go`): SURVIVAL → **DIRECTIVE** → (prepYields?) PREP
-  → wander. Unconditioned by the yield window and danger bands — survival
-  always preempts (the rung sits after `survivalDecision`), directives
-  preempt prep/wander (before the `prepYields` consult). The rung is
-  STATELESS: it re-derives the oldest active directive addressing the
-  agent from state at every idle decision, so interruption-resume needs
-  zero new code (hails/conversations pause intents through the existing
-  machinery; the rung simply re-resolves afterward). Routing: build at
-  the site when reflex-expressible with materials in hand
-  (`reflexBuildable` — the closed fire/chest/oven set); wall lines build
-  the first gap in enumeration order (adjacent-stand) or walk toward it;
-  zones walk to presence; otherwise walk to the site via the new
-  `heed_directive` goal (instant on arrival, the `search` completion
-  shape, never model-facing) or fall through to the ladder — the planner,
-  reading the block, owns the clever part (no idle-at-site deadlock).
-- **`directive` context block** ([[decision-context]],
-  [[context-block-inventory]]): the eleventh spec-043 block, between
-  `plan_echo` and `known_places`, priority `neverDrop` — ≤2 active
-  directives addressing the agent, oldest first: framing text VERBATIM
-  (recorded event data — the firewall's only prose channel, riding the
-  issue batch's per-target "The Guardian charges you: …" companion
-  memories exactly like visions), the bound designation's
-  kind/site/requirement, plain-words days left. Empty renders `""` — a
-  directive-free prompt is byte-identical to pre-084.
-
-## Guardian-side surfaces
-
-Tool handlers (`internal/guardian/plans.go`) parse the call, mint ids, and
-land through `InjectSocial`, mapping door rejections to repairable
-`rejected_gate` counsel (`planRefusal`); the turn prompt carries active
-designations and directives (`writeDesignations`/`writeDirectives` — id,
-kind, site, days-left, the `writeStandingOrders` shape) so counsel stays
-truthful (FR-015). `survey_site` (`internal/guardian/survey.go`) is Effect
-Read / Gate None — a deterministic site fact sheet (terrain mix, nearest
-water/tree/rock, structures kind+tile, passability incl. wall-blocked
-tiles) built turn-side from the absorb mirrors + static map (the
-`buildTargetingDigest` pattern); out-of-bounds input returns a repairable
-in-fiction miss naming the world bounds, never a hard error; radius clamps
-1..8, default 4. On the TUI map, active designations render through three
-appended [[tile-registry]] rows (`◇` site, `┄` wall-line segment, `◦` zone
-perimeter — interior unmarked) beneath every real entity; consumed marks
-stop rendering.
-
-Time snap: an ACTIVE directive's `ExpiresTick` SHIFTs (the
-`GuardianOrders` classification verbatim); everything else on both
-entities is history/identity KEEP
-([[guardian-miracle-rebase-taxonomy]]).
-
-**Scope guards** (FR-016): no mission machinery (TASK-158), no faith
-accounting (TASK-118 consumes the `directive.fulfilled` contract), no
-bundle grammar/matrix change, no interruption-machinery change.
+Split into [[guardian-designations-reception]]: the mental-map
+announcement grant that reveals a placed designation to every villager,
+the DIRECTIVE reflex rung (between SURVIVAL and PREP) and the `neverDrop`
+directive context block that make a villager act on one, and the
+guardian-side turn surfaces — tool handlers, `survey_site`, TUI rendering,
+miracle rebase treatment, and the spec's scope guards (FR-016: no mission
+machinery, no faith accounting here, no bundle-grammar or
+interruption-machinery change).
