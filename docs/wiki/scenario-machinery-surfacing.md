@@ -16,7 +16,7 @@ sources:
   - cmd/promptworld/commands.go
   - internal/ipc/protocol.go
   - internal/ipc/server.go
-verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
+verified_against: b35a7ffec46ba996741cdba4af9652fcfd163b32
 ---
 
 # Scenario machinery — surfacing, wiring, and the exercise tab

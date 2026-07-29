@@ -328,7 +328,9 @@ func TestCookAtLitFire(t *testing.T) {
 
 // TestColdFireRefusesCook is spec 012 US2 edge case (fire burns out mid-cook)
 // + FR-010: a cold fire cannot cook — the completion re-validates lit-ness,
-// finds it cold, and resolves without effect (the contested-resource pattern).
+// finds it cold, and resolves LOUDLY via agent.intent_failed (spec 096,
+// target gone — the mid-work `valid` re-check, not the completion-time
+// no-op recheck).
 func TestColdFireRefusesCook(t *testing.T) {
 	const seed = 42
 	m := testMap(seed)
@@ -344,21 +346,28 @@ func TestColdFireRefusesCook(t *testing.T) {
 	a.Intent = &Intent{Goal: "cook", TargetX: fx, TargetY: fy, WorkStart: 1 - cookFireTicks}
 
 	log := driveTicks(t, s, m, 5, nil)
-	done := false
+	failed := false
+	var reason string
 	for _, e := range log {
 		if e.Type == "agent.cooked" {
 			t.Error("a cold fire must not produce agent.cooked")
 		}
 		if e.Type == "agent.intent_done" {
-			var p AgentPayload
+			t.Error("cold-fire cook resolved via bare agent.intent_done, want agent.intent_failed")
+		}
+		if e.Type == "agent.intent_failed" {
+			var p IntentFailedPayload
 			mustUnmarshal(t, e.Payload, &p)
 			if p.Agent.ID == 0 {
-				done = true
+				failed, reason = true, p.Reason
 			}
 		}
 	}
-	if !done {
-		t.Error("cook at a cold fire should resolve via agent.intent_done")
+	if !failed {
+		t.Error("cook at a cold fire should resolve via agent.intent_failed")
+	}
+	if reason != intentFailTargetGone {
+		t.Errorf("reason = %q, want %q", reason, intentFailTargetGone)
 	}
 	if a.Inv.FoodRaw != 5 || a.Inv.FoodCooked != 0 {
 		t.Errorf("cold-fire cook changed inventory: %d raw / %d cooked, want 5 / 0", a.Inv.FoodRaw, a.Inv.FoodCooked)

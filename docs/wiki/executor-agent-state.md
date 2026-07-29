@@ -4,7 +4,7 @@ description: The agent body's persisted shape — eight named villagers, integer
 kind: component
 sources:
   - internal/sim/agents.go
-verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
+verified_against: b35a7ffec46ba996741cdba4af9652fcfd163b32
 ---
 
 # Executor — agent state

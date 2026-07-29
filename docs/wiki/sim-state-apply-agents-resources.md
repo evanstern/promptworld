@@ -6,7 +6,7 @@ sources:
   - internal/sim/agents.go
   - internal/sim/recipes.go
   - internal/sim/terrain.go
-verified_against: 4e160b902dd96a6b4a8f4342ae75cdcbc8048c53
+verified_against: b35a7ffec46ba996741cdba4af9652fcfd163b32
 ---
 
 # Sim state: agent resource, storage, and wall Apply arms

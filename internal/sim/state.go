@@ -1048,6 +1048,26 @@ func (s *State) Apply(e store.Event) error {
 		// window (the source is discarded) — only agent.intent_done does.
 		a.stampIntentOutcome("failed", e.Tick)
 
+	case "agent.intent_failed":
+		// Spec 096: the agent.build_failed pattern generalized to every
+		// non-build goal's invalid-exit/contested resolution. State effect is
+		// IDENTICAL to agent.build_failed's (and, in turn, agent.intent_done's):
+		// clear the intent, stamp IdleSince, close the newest still-open
+		// IntentLog record "failed" so the next thought sees the goal did not
+		// finish, and never arm the spec-062 yield window (a failure is not an
+		// intent completion — only agent.intent_done arms it).
+		var p IntentFailedPayload
+		if err := json.Unmarshal(e.Payload, &p); err != nil {
+			return fmt.Errorf("apply %s: %w", e.Type, err)
+		}
+		a, err := agent(p.Agent.ID)
+		if err != nil {
+			return err
+		}
+		a.Intent = nil
+		a.IdleSince = e.Tick
+		a.stampIntentOutcome("failed", e.Tick)
+
 	case "agent.moved":
 		var p AgentMovedPayload
 		if err := json.Unmarshal(e.Payload, &p); err != nil {

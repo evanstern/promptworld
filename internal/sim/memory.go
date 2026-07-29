@@ -280,6 +280,13 @@ const (
 	// unexplained loss by the perception sweep.
 	salChop   = 4
 	salQuarry = 4
+	// salIntentFailed (spec 096): the generalized agent.intent_failed's failure
+	// memory salience — the SAME tier as agent.build_failed's own (salShelter,
+	// spec 038), per the card's "same salience shape as build-failure memories"
+	// edge case (no new flooding vector): reusing the precedent's tier, not
+	// scaling per goal, keeps working-memory pressure identical to what spec 038
+	// already shipped.
+	salIntentFailed = salShelter
 	// salMapCorrected (spec 041 US3): discovering a remembered place gone —
 	// formative enough to enter the working-memory window and reshape plans,
 	// well below the generation-interrupting band (the absorb trigger, not

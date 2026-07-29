@@ -6,7 +6,7 @@ sources:
   - internal/sim/executor.go
   - internal/sim/agents.go
   - internal/sim/recipes.go
-verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
+verified_against: b35a7ffec46ba996741cdba4af9652fcfd163b32
 ---
 
 # Executor — goals and intents
@@ -34,13 +34,24 @@ duration (`workDuration`, below) emit the completion event, which the reducer tu
 into inventory, overlays, structures, or needs. Since spec 038, a build goal
 (`isBuildGoal`: `build_fire`/`build_shelter`/`build_oven`/`build_chest`/
 `build_path`/`build_wall_plank`/`build_wall_stone`) whose mid-work re-validation
-finds the site gone no longer falls through to the bare `agent.intent_done` every
-other contested re-check uses — `buildFailedEvents` emits a distinct
+finds the site gone no longer falls through to the bare `agent.intent_done` — 
+`buildFailedEvents` emits a distinct
 `agent.build_failed{agent, goal, reason: buildFailSiteUnbuildable}` paired
 same-tick with a situated first-person failure memory (`OriginAction`, shelter
 salience, `buildStructureName`/`buildFailureCause` composing "My <structure> was
 never built: <cause>."), so a cancelled build is never mistaken for a finished
-one (the phantom-wall belief loop TASK-91 fixes). Movement itself gets a second,
+one (the phantom-wall belief loop TASK-91 fixes). Spec 096 (TASK-95) then
+generalized this to every OTHER work goal's own contested/invalid re-check:
+`forage`/`chop`/`hunt`/`demolish`/`repair`/`quarry`/`cook`/`bathe`'s mid-work
+site/resource re-validation, and `craft_*`/`cook`/`bathe`/`deposit`/`withdraw`'s
+completion-time no-op recheck, now emit `agent.intent_failed` via
+`intentFailedEvents` — the same shape (position + a paired failure memory at
+the build-failure salience tier), reason drawn from a small closed vocabulary
+(`intentFailTargetGone`/`intentFailContested`/`intentFailInvalid`) —
+INSTEAD of the bare `agent.intent_done` these resolved through before;
+`agent.intent_done` now means an unambiguous success (or an instant/
+wander-class goal with no re-validation of its own — [[event-types-agent-intents]]
+carries the full reason/payload table). Movement itself gets a second,
 conditional cadence slot (spec 032 US3): the staggered phase-0 tick always steps,
 but a phase-2 tick also steps when the agent is standing ON a path tile
 (`pathAt`) — stepping FROM a paved tile doubles effective speed along it, while

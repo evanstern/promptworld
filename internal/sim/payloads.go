@@ -52,6 +52,7 @@ var PayloadCatalog = map[string]func() any{
 	"agent.work_started":     func() any { return &WorkStartedPayload{} },
 	"agent.intent_done":      func() any { return &AgentPayload{} },
 	"agent.build_failed":     func() any { return &BuildFailedPayload{} },
+	"agent.intent_failed":    func() any { return &IntentFailedPayload{} },
 	"agent.intent_rejected":  func() any { return &IntentRejectedPayload{} },
 	"agent.recovery_stalled": func() any { return &RecoveryStalledPayload{} },
 	"agent.moved":            func() any { return &AgentMovedPayload{} },

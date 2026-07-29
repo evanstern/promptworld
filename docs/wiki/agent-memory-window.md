@@ -6,7 +6,7 @@ sources:
   - internal/sim/memory.go
   - internal/mind/prompt.go
   - internal/mind/telemetry.go
-verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
+verified_against: b35a7ffec46ba996741cdba4af9652fcfd163b32
 ---
 
 # Agent memory window
@@ -47,18 +47,19 @@ an explicit tone — `toneBath` (40), `toneOvenBuilt` (30), and spec 013's
 both the owner and nearby witnesses, alongside a trust/affection hit on the owner→taker
 relationship edge — the existing gossip and relation machinery carries a
 chest theft the same way it carries any other trust violation ([[social-fabric]]).
+Spec 096 added `salIntentFailed` = `salShelter` (6): `intent_failed`'s memory
+reuses `build_failed`'s tier, not a new one ([[event-types-agent-intents]]).
 
 Since spec 030, every memory also carries an `Origin` — a closed-vocabulary
 provenance class stamped at emission (`OriginAction`/`OriginWitness`/
 `OriginReport`/`OriginOmen`/`OriginGist`/`OriginDigest`), a required parameter
 on every situated constructor so a new, unstamped emission site cannot compile.
 `DirectPerception(origin)` is the pure classifier over it: an own act, a
-witnessed event, or a delivered omen/dream are direct perception; a
-chest-owner's any-distance report, a conversation gist, a nightly digest, or an
-absent/legacy origin (`""`) are secondhand — the conservative default, since
-hygiene may under-grant "witnessed" but never over-grant it. This is the ONLY
-signal [[nightly-consolidation]]'s belief validator reads to gate a model's
-"witnessed" provenance claim — no text inspection, no heuristics.
+witnessed event, or a delivered omen/dream are direct; a chest-owner's report,
+a conversation gist, a nightly digest, or an absent/legacy origin (`""`) are
+secondhand — the conservative default (hygiene may under-grant "witnessed",
+never over-grant it). This is the ONLY signal [[nightly-consolidation]]'s
+belief validator reads to gate a "witnessed" claim — no text inspection.
 `SelectMemories` is the deterministic working
 window: salience halved per game-day of age, top K−2, plus 2 seeded serendipity
 picks from the oldest half (bucketed to `defaultPlannerCadenceTicks` — the

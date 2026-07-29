@@ -7,9 +7,10 @@ import (
 )
 
 // TestCraftInsufficientInputsNoOp is spec 012 US3 T026/FR-014: a hand-craft
-// whose inputs are missing at completion resolves via agent.intent_done only
-// — no agent.crafted, no inventory change (the contested-resource pattern
-// applied uniformly, even though hand-crafts have no travel window).
+// whose inputs are missing at completion resolves LOUDLY via
+// agent.intent_failed (spec 096, contested) — no agent.crafted, no
+// inventory change (the contested-resource pattern applied uniformly, even
+// though hand-crafts have no travel window).
 func TestCraftInsufficientInputsNoOp(t *testing.T) {
 	const seed = 42
 	m := testMap(seed)
@@ -22,21 +23,28 @@ func TestCraftInsufficientInputsNoOp(t *testing.T) {
 	a.Intent = &Intent{Goal: "craft_planks", TargetX: a.X, TargetY: a.Y, WorkStart: 1 - craftPlanksTicks}
 
 	log := driveTicks(t, s, m, 5, nil)
-	done := false
+	failed := false
+	var reason string
 	for _, e := range log {
 		if e.Type == "agent.crafted" {
 			t.Fatal("craft_planks with no wood must not emit agent.crafted")
 		}
 		if e.Type == "agent.intent_done" {
-			var p AgentPayload
+			t.Error("insufficient-input craft resolved via bare agent.intent_done, want agent.intent_failed")
+		}
+		if e.Type == "agent.intent_failed" {
+			var p IntentFailedPayload
 			mustUnmarshal(t, e.Payload, &p)
 			if p.Agent.ID == 0 {
-				done = true
+				failed, reason = true, p.Reason
 			}
 		}
 	}
-	if !done {
-		t.Error("insufficient-input craft should resolve via agent.intent_done")
+	if !failed {
+		t.Error("insufficient-input craft should resolve via agent.intent_failed")
+	}
+	if reason != intentFailContested {
+		t.Errorf("reason = %q, want %q", reason, intentFailContested)
 	}
 	if a.Inv.Planks != 0 {
 		t.Errorf("Inv.Planks = %d, want 0 (nothing produced)", a.Inv.Planks)

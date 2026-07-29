@@ -87,6 +87,7 @@ var catalogFixture = map[string]digestFixture{
 	"agent.intent_done":      {`{"agent":{"id":2,"name":"Cedar"}}`, `Cedar finished`},
 	"agent.intent_rejected":  {`{"agent":{"id":3,"name":"Rowan"},"goal":"forage","reason":"blocked","staleness_ticks":5}`, `Rowan's forage refused: blocked (5t stale)`},
 	"agent.build_failed":     {`{"agent":{"id":3,"name":"Rowan"},"goal":"build_wall_stone","reason":"site blocked too long"}`, `Rowan's build_wall_stone failed — site blocked too long`},
+	"agent.intent_failed":    {`{"agent":{"id":3,"name":"Rowan"},"goal":"hunt","reason":"target gone","x":5,"y":6}`, `Rowan's hunt failed — target gone`},
 	"agent.recovery_stalled": {`{"agent":{"id":1,"name":"Birch"},"goal":"warm_up","need":"warmth"}`, `Birch's warm_up stalled — warmth not recovering`},
 	"agent.moved":            {`{"agent":{"id":0,"name":"Ash"},"x":1,"y":1}`, `Ash → (1,1)`},
 	"agent.saw": {

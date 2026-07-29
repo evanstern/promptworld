@@ -214,14 +214,27 @@ func TestBulkCraftNoFitClearsIntent(t *testing.T) {
 				t.Fatal("craft_planks emitted agent.crafted with no room for the net bulk delta")
 			}
 		}
-		var sawDone bool
+		// Spec 096: a no-fit craft resolves LOUDLY via agent.intent_failed
+		// (contested), not the old bare agent.intent_done.
+		var sawFailed bool
+		var reason string
 		for _, e := range log {
+			if e.Type == "agent.intent_failed" {
+				var p IntentFailedPayload
+				mustUnmarshal(t, e.Payload, &p)
+				if p.Agent.ID == 0 {
+					sawFailed, reason = true, p.Reason
+				}
+			}
 			if e.Type == "agent.intent_done" {
-				sawDone = true
+				t.Error("a no-fit craft resolved via bare agent.intent_done, want agent.intent_failed")
 			}
 		}
-		if !sawDone {
-			t.Error("a no-fit craft did not resolve via agent.intent_done")
+		if !sawFailed {
+			t.Error("a no-fit craft did not resolve via agent.intent_failed")
+		}
+		if reason != intentFailContested {
+			t.Errorf("reason = %q, want %q", reason, intentFailContested)
 		}
 	})
 
