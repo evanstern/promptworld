@@ -1,8 +1,7 @@
 # TASK-166 move-miracle target freshness — live probe
 
-**Status: RESULTS-PENDING** — the implementer (this file's author) prepared the
-world/dial/route recipe below per spec 091's US3 and T006; the orchestrator
-runs (or supervises) the live probe and fills in the sections below.
+**Status: COMPLETE** — probe run 2026-07-29 by the sweep orchestrator on the
+recipe below; results in the Headline / Raw evidence sections.
 
 ## What the probe must demonstrate (spec 091 US3, SC-001/SC-003)
 
@@ -99,17 +98,43 @@ under "Raw evidence" below, per this repo's worlds-preserved convention
 
 ## Headline
 
-*(orchestrator fills in after the run — attempts, landed, rejected, and
-whether any residual "no living villager at (x,y)" rejection was a
-coordinate-only call, per FR-003's expected residual)*
+**1 name-addressed villager move attempted, 1 landed, 0 rejected — with a
+139-tick survey-to-apply race that the pre-fix door would have refused.**
+
+The guardian's `work_miracle` call (snapshot_tick 2596) supplied
+`{"kind":"move","class":"villager","villager":"Birch","x":59,"y":20,"to_x":47,"to_y":2}`
+— source coordinates from its survey. The recorded `metatron.entity_moved`
+event (tick 2736) carries source **(62,18)**: the door resolved Birch's LIVE
+position by name and used the surveyed (59,20) as advisory only. Verdict:
+`landed`; one charge spent; Birch relocated to (47,2). Under the pre-fix door
+this exact call shape was the TASK-163 residual class ("no living villager at
+(59,20)") — 3 of 5 residual rejections.
+
+No coordinate-only residual was observed in this window (single-attempt probe;
+the coordinate-only path is covered by unit tests as the deliberate legal
+remainder, spec 091 FR-003).
+
+Behavioral note for TASK-158 (easy-mode default charter): the default-charter
+guardian counseled for four consecutive turns before executing a direct order
+— obedience-first is NOT the current default's behavior; recorded here as
+corroborating evidence for TASK-158's default-charter work.
 
 ## Raw evidence
 
-*(orchestrator fills in: world path under `~/.promptworld/measure/`, binary
-commit the run executed against, the ledger rows the query above returns)*
+- World preserved at `~/.promptworld/measure/task-166-probe` (seed 1337,
+  stage-4 --override, harsh dials per recipe; guardian route `niner` =
+  cc/claude-sonnet-5 via 9router localhost:20128, head-only; local villager
+  tier cogito:3b; world stopped, never deleted).
+- Binary: branch `task-166-move-miracle-freshness` @ `bc84cbb` (post
+  merge-of-main reconcile).
+- Ledger row (`cog.tool_call`, tool=work_miracle):
+  `2596|landed|{"kind":"move","class":"villager","villager":"Birch","x":59,"y":20,"to_x":47,"to_y":2}|`
+- Recorded event (`metatron.entity_moved`):
+  `tick 2736 | class=villager | x=62 y=18 | to_x=47 to_y=2` — source differs
+  from the call's x/y: name resolution did the work.
 
 ## Feeds
 
-- **TASK-166 SC-001/SC-003**: pending this probe's outcome.
+- **TASK-166 SC-001/SC-003**: SATISFIED — raced name-addressed move landed live.
 - **Card update**: TASK-163's residual "position-freshness races" class —
   extinct or reduced to the coordinate-only path this probe should confirm.

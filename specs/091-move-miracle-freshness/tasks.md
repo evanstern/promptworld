@@ -26,7 +26,7 @@ with replay analysis — plan is folded into the spec; single-mechanism change).
   (guardian / miracle / tool-registry notes listing turn.go, miracles.go,
   derive.go); regenerate docs/player pages if the probe demands; merge-drift pr
   gate green from the worktree.
-- [ ] T006 Live probe on a seeded MEASURE world (never playtest-1) at 8x per the
+- [x] T006 Live probe on a seeded MEASURE world (never playtest-1) at 8x per the
   TASK-163 recipe: demonstrate a name-addressed raced move landing; write
   docs/design/evidence/task-166/results.md. (Orchestrator runs or supervises the
   probe; the implementer prepares the world/dials command list in the evidence
