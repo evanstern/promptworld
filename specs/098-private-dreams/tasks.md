@@ -28,5 +28,5 @@
 - [X] T006 Seeded-world demonstration (local-only LLM routes, never the
   playtest): duplicate-heavy stream collapses, distinct memory survives;
   evidence at docs/design/evidence/task-99/ (SC-001).
-- [ ] T007 Wiki re-pins (consolidation/memory/embedding notes); player-docs
+- [X] T007 Wiki re-pins (consolidation/memory/embedding notes); player-docs
   probe; merge-drift pr gate exit 0.
