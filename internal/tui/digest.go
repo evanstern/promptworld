@@ -436,6 +436,23 @@ var digestRegistry = map[string]digestFunc{
 		}
 		return join(segs), true
 	},
+	// agent.place_observed (spec 097): the grounded arrival observation —
+	// "went there, this is what IS there". The empty set renders explicitly
+	// ("nothing notable"): the perception of absence is the readable evidence
+	// of why a myth faded (US2).
+	"agent.place_observed": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.PlaceObservedPayload](e)
+		if !ok {
+			return nil, false
+		}
+		segs := []seg{refSeg(names, p.Agent), txt(" looked around "), coord(p.X, p.Y), txt(": ")}
+		if len(p.Kinds) == 0 {
+			segs = append(segs, emph("nothing notable"))
+		} else {
+			segs = append(segs, emph(strings.Join(p.Kinds, ", ")))
+		}
+		return join(segs), true
+	},
 	"agent.foraged": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.HarvestPayload](e)
 		if !ok {
@@ -700,15 +717,23 @@ var digestRegistry = map[string]digestFunc{
 		return join([]seg{refSeg(names, p.Agent), txt(" now believes: "), speech(p.Statement)}), true
 	},
 	// agent.belief_reinforced (spec 030 US2, FR-008): re-anchors a held belief's
-	// decay clock. Whitelisted through the injection door for the future
-	// grounded-observation channel — no in-tree producer yet. The real payload
-	// (internal/sim/consolidate.go) carries only {agent, belief_id}, never the
-	// statement text, so this digest references the belief by id — the same
-	// memory_promoted/memory_faded precedent above.
+	// decay clock. Spec 097's grounded-observation channel is the in-tree
+	// producer: a Kind-stamped payload says which way the observation moved the
+	// belief and carries the new stored confidence — rendered so the myth's
+	// fade is readable from the feed. The payload never carries the statement
+	// text, so this digest references the belief by id — the same
+	// memory_promoted/memory_faded precedent above; the legacy bare shape keeps
+	// its pre-097 line verbatim.
 	"agent.belief_reinforced": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.BeliefReinforcedPayload](e)
 		if !ok {
 			return nil, false
+		}
+		switch p.Kind {
+		case sim.BeliefConfirmed:
+			return join([]seg{refSeg(names, p.Agent), txt("'s belief (#"), emphN(p.BeliefID), txt(") confirmed by observation → "), emphN(p.Confidence)}), true
+		case sim.BeliefDisconfirmed:
+			return join([]seg{refSeg(names, p.Agent), txt("'s belief (#"), emphN(p.BeliefID), txt(") disconfirmed by observation → "), emphN(p.Confidence)}), true
 		}
 		return join([]seg{refSeg(names, p.Agent), txt("'s belief (#"), emphN(p.BeliefID), txt(") reinforced")}), true
 	},
@@ -1675,6 +1700,15 @@ var subjectRegistry = map[string]subjectFunc{
 			return actorPosCandidate(p.Agent.ID, x, y), true
 		}
 		return actorCandidate(p.Agent.ID), true
+	},
+	// agent.place_observed (spec 097): the observer standing at the observed
+	// tile — actor + position, the harvest shape.
+	"agent.place_observed": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.PlaceObservedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorPosCandidate(p.Agent.ID, p.X, p.Y), true
 	},
 
 	// --- social: the digest's grammatical subject as the jump actor ---
