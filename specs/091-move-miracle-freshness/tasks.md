@@ -15,9 +15,9 @@ with replay analysis — plan is folded into the spec; single-mechanism change).
 
 ## Phase 2: Tests
 
-- [ ] T003 Unit tests per FR-005: raced-move-lands, dead/unknown-name pre-charge
+- [X] T003 Unit tests per FR-005: raced-move-lands, dead/unknown-name pre-charge
   refusal, coordinate-only unchanged, structure/pile unchanged.
-- [ ] T004 Replay byte-identity regression over a log containing pre-fix
+- [X] T004 Replay byte-identity regression over a log containing pre-fix
   entity_moved events; `go test -race ./...` green.
 
 ## Phase 3: Grounding + probe
