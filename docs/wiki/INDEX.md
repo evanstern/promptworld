@@ -20,7 +20,8 @@ that note (re-pin with `/grounding-wiki:wiki-update`).
   - [[sim-state-agent-fields]] — clock + per-agent field catalog: needs/intents/inventories/memories, Journal, IntentLog, NeedsAnchor, LastMindIntentDone, Neglect (spec 083)
   - [[sim-state-world-fields]] — shared-world field catalog: structures/piles, social fabric, gru/stranger incident state, chronicle ring, Guardian charges/orders, governance
     - [[sim-state-outcome-fields]] — split from sim-state-world-fields: run-outcome & progression fields — Deaths/RunEnd, charter/skills observation state, morgue epilogues, curriculum passes/unlocks, tuning, report card
-  - [[sim-state-apply-agents]] — genesis + core per-agent Apply arms: movement/eating/talk/needs/death, spec-083 neglect anchors, v2 crafting, v3 storage events, walls
+  - [[sim-state-apply-agents]] — genesis + core per-agent Apply arms: movement/eating/talk/needs/death, spec-083 neglect anchors
+    - [[sim-state-apply-agents-resources]] — split from sim-state-apply-agents: v2 crafting/gather yields, v3 storage events, spec-032 wall demolish/repair HP family
   - [[sim-state-intent-lifecycle]] — intent-ring closure arms (build_failed, stampIntentOutcome, recovery_stalled), hail family, death/run-end effects
   - [[sim-state-apply-world]] — map/scenario fields + world/governance dispatch: mental-maps, gru/governance/miracle, designation/faith/prophecy plan dispatch, world.migrated
     - [[sim-state-apply-guardian-records]] — split from sim-state-apply-world: guardian-facing record arms — standing orders, charter_observed, morgue epilogues, report card, curriculum unlocks, tuning snapshot
