@@ -7,7 +7,7 @@ sources:
   - internal/sim/reportcard.go
   - internal/sim/curriculum.go
   - internal/sim/morgue.go
-verified_against: 8ca8f3393b3050e7e2c5a5879bb2f051843c29e6
+verified_against: 6929bf75a2cd68654ef126518fd727361af99005
 ---
 
 # Sim state: guardian-facing record dispatch arms
