@@ -9,7 +9,11 @@ guardian-directives ideation decisions (recorded on TASK-157/TASK-158 cards),
 TASK-118) win. Plan-of-record is the board; this file carries only ordering, doctrine,
 and the log.
 
-**Status:** draft · operator sign-off on lanes: pending
+**Status:** superseded (2026-07-29) — never signed off. TASK-97/157/118 landed via the
+faith+directives sweep (`docs/design/faith-directives-sweep-runbook.md`, done
+2026-07-27); the remaining scope (TASK-112, TASK-158, TASK-81 tail) and this file's
+still-live operator checkpoints (2, 3, 6) transfer to
+`docs/design/board-sweep-2026-07-29-runbook.md`. Do not execute from this file.
 <!-- Only the OPERATOR flips draft → signed-off (the author never pre-fills it). An
      executing session must refuse a runbook whose status it cannot verify. -->
 
