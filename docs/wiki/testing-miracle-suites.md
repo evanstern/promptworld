@@ -5,7 +5,7 @@ kind: pattern
 sources:
   - internal/sim/miracles_test.go
   - internal/ipc/ipc_test.go
-verified_against: 63390f122bdf4e1b7abf518a8be83de725f06230
+verified_against: c731046f405df65bde01579965f9308e32eaf897
 ---
 
 # Miracle pricing & reducer suites
@@ -65,8 +65,9 @@ event's own seq, an identity like `Memory.Seq`), and
 `GuardianReportCard.Citations` (cited event seqs, identities into recorded
 history like `EvidenceRef.Seq` — [[grounded-feedback]])). Byte-identity replay suites
 (`TestMiracleReplayByteIdentity`, `TestMiracleSnapReplayByteIdentity`,
-`TestMiracleGrantReplayByteIdentity`) prove each miracle type replays to the
-same state hash as live application.
+`TestMiracleGrantReplayByteIdentity`, and — spec 091's door-side move-target
+freshness, [[guardian-miracle-guarantees]] — `TestMoveFreshnessReplayByteIdentical`)
+prove each miracle type replays to the same state hash as live application.
 
 **IPC miracle round trips** (`internal/ipc/ipc_test.go`, spec 016): the
 operator "miracle" command exercised over the real wire on a pure-sim world
