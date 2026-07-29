@@ -1,10 +1,10 @@
 ---
 id: TASK-80
 title: 'Perception of absence: grounded arrival observations make beliefs falsifiable'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-23 17:50'
-updated_date: '2026-07-24 02:42'
+updated_date: '2026-07-29 21:45'
 labels:
   - emergent-lore
   - epistemics
