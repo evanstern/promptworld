@@ -52,57 +52,52 @@ the sim loop, no LLM/angel presence, so it works in a pure-sim world. `StatusDat
 gains an optional `llm` section (tier health, queue depths,
 monthly spend vs budget) when the orchestrator is enabled.
 
-`StatusData` is the shared response shape for status/pause/resume/set_speed, with four
-sections: `world` (name, seed, format_version — plus, since spec 046, two
-additive `omitempty` [[curriculum-ladder]] fields on `WorldStatus`: `stage`,
-the world's curriculum stage, and `stage_overridden`, true when the world was
-created at an unearned stage via `new --override`; both composed straight
-from the manifest by [[ipc-server]] and absent for every pre-046/pre-ladder
-world, so their status bytes are unchanged — plus, since spec 054, two more
-additive `omitempty` [[scenario-machinery]] fields: `scenario_exercise`, the
-armed exercise id, and `scenario_outcome` (`in_progress`\|`passed`\|`failed`),
-both folded from the loop's status snapshot (`cs.ScenarioExercise`/
-`ScenarioOutcome`) so the pair is coherent with `Tick`, absent on an ambient
-world so its status bytes stay unchanged), `clock` (tick, game_time, paused,
-speed, effective_rate, degraded, metatron_charges — the ⚡ bank, so clients need no
-state fetch — plus, since spec 028, three additive `omitempty` adaptive-throttle
-fields: `requested_speed` (the player's ceiling from sim state, empty when
-ungoverned), `governor_debt`/`governor_jobs` (the daemon governor sampler's latest
-staleness-debt reading, folded in exactly like the `llm` section — [[cognition]],
-[[daemon-lifecycle]]); all three are zero/absent for a no-LLM world or an inert
-governor, so pre-028 status bytes are unchanged; and, since spec 044, two more
-additive `omitempty` run-outcome fields on the governor-trio precedent:
-`ended` (mirrors sim `State.Ended` — the run-over latch) and `ended_day` (the
-game day of the run end, for human rendering without a state fetch) — zero
-values omit away on living worlds, keeping their status bytes byte-compatible,
-and together with the durable `run.ended` event they are the machine-readable
-fail signal downstream scenario machinery consumes — [[morgue]]; and, since
-spec 085, two more additive `omitempty` faith fields: `faith` (`*int` — the
-village faith score, always served by a spec-085 daemon since the sim
-accessor is nil-safe; a nil pointer tells a newer client it is talking to an
-older daemon) and `faith_regen_ticks` (the EFFECTIVE charge-regen cadence
-from `sim.FaithRegenCadenceTicks`, 0 = no regen scheduled — the scenario
-forsaken band), both folded from the loop's coherent snapshot so the daemon
-never re-derives bands — [[guardian-faith]]), `daemon` (pid, uptime_seconds,
-subscribers), `log`
-(last_seq), and — since spec 035, widened by spec 039 — a top-level `Warning`
-string (`json:"warning,omitempty"`) set ONLY on the `set_speed` reply (FR-002,
-FR-008), now up to two newline-joined advisory texts: first, the spec 039
-teaching-posture override — on a teaching world whose requested speed exceeds
+`StatusData` is the shared response shape for status/pause/resume/set_speed,
+with four sections, each grown additively (every new field `omitempty`,
+absent/zero on a world too old to have it, so status bytes stay
+byte-compatible): `world` (name, seed, format_version — plus, since spec
+046, [[curriculum-ladder]]'s `stage`/`stage_overridden` on `WorldStatus`
+(the curriculum stage, and whether it was created at an unearned stage via
+`new --override`), both composed straight from the manifest by
+[[ipc-server]]; plus, since spec 054, [[scenario-machinery]]'s
+`scenario_exercise`/`scenario_outcome` (`in_progress`\|`passed`\|`failed`),
+folded from the loop's status snapshot (`cs.ScenarioExercise`/
+`ScenarioOutcome`) so the pair is coherent with `Tick`), `clock` (tick,
+game_time, paused, speed, effective_rate, degraded, metatron_charges — the
+⚡ bank, so clients need no state fetch — plus, since spec 028,
+`requested_speed` (the player's ceiling from sim state, empty when
+ungoverned) and `governor_debt`/`governor_jobs` (the daemon governor
+sampler's latest staleness-debt reading, folded in exactly like the `llm`
+section — [[cognition]], [[daemon-lifecycle]]); plus, since spec 044,
+`ended` (mirrors sim `State.Ended` — the run-over latch) and `ended_day`
+(the game day of the run end, for human rendering without a state fetch) —
+together with the durable `run.ended` event they are the machine-readable
+fail signal downstream scenario machinery consumes ([[morgue]]); plus,
+since spec 085, `faith` (`*int` — the village faith score, always served by
+a spec-085 daemon since the sim accessor is nil-safe; a nil pointer tells a
+newer client it is talking to an older daemon) and `faith_regen_ticks` (the
+EFFECTIVE charge-regen cadence from `sim.FaithRegenCadenceTicks`, 0 = no
+regen scheduled — the scenario forsaken band), both folded from the loop's
+coherent snapshot so the daemon never re-derives bands ([[guardian-faith]])),
+`daemon` (pid, uptime_seconds, subscribers), `log` (last_seq), and — since
+spec 035, widened by spec 039 — a top-level `Warning` string
+(`json:"warning,omitempty"`) set ONLY on the `set_speed` reply (FR-002,
+FR-008), up to two newline-joined advisory texts: the spec 039
+teaching-posture leg — on a teaching world whose requested speed exceeds
 the planner-safe posture rung, the router's per-class horizon arithmetic
-verbatim plus a plain-language degrade consequence, prefixed `above teaching
-posture Nx:` and "; "-joined across every suppressed class ([[ipc-server]]'s
-`postureWarning`) — this leg fires for a CALIBRATED teaching world too, unlike
-the second; then, the spec 035 leg, a bootstrap-seeded provider's watched
-cognition class suppressed under its current estimate ([[ipc-server]]'s
-`uncalibratedWarning`, composing via [[cognition]]'s `SuppressedAt`). Either
-leg may be empty; both empty means the field is omitted. `status`, `pause`,
-and `resume` never set it, so their bytes stay unchanged; the warning is
-purely advisory — the speed change has already applied by the time it's set.
-`set_speed`'s existing refusal of uncapped `max` while an LLM is configured is
-retained unchanged (spec 028 FR-012) — the governor only ever moves
-`speed`/`effective_rate` along the capped ladder these fields describe, never
-`max`, and the posture override never weakens this refusal either.
+plus a plain-language degrade consequence, prefixed `above teaching posture
+Nx:` and "; "-joined across every suppressed class ([[ipc-server]]'s
+`postureWarning`), firing for a CALIBRATED teaching world too, unlike the
+other leg; and the spec 035 leg — a bootstrap-seeded provider's watched
+cognition class suppressed under its current estimate
+(`uncalibratedWarning`, composing via [[cognition]]'s `SuppressedAt`).
+Either leg may be empty; both empty omits the field. `status`/`pause`/
+`resume` never set it; the warning is purely advisory — the speed change
+has already applied by the time it's set. `set_speed`'s existing refusal of
+uncapped `max` while an LLM is configured is retained unchanged (spec 028
+FR-012) — the governor only ever moves `speed`/`effective_rate` along the
+capped ladder these fields describe, never `max`, and the posture override
+never weakens this refusal either.
 
 `StatusData` also gains three additive `omitempty` extension fields, split
 into [[ipc-status-extensions]]: `Posture` (spec 039, teaching-world

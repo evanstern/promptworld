@@ -78,16 +78,12 @@ does). Owner withdrawing from their own chest emits `agent.withdrew` alone, no
 companion batch (FR-011).
 
 **Conversations** (`mind/convo.go`, scenes in TASK-22) — split into
-[[social-fabric-conversations]]: on the executor's `agent.talked` beat, gated
-by the spec-042 memory-relevance mode and the spec-061 novelty SHIM
-(removable, compensating for weak model-side variety), an admitted talk
-founds a **scene** that passes the [[cognition]] router and pins its
-provider at founding. The founding pair plus any nearby awake villager
-round-robin turns; one outcome call returns gist, topic tags, tones, and a
-rumor paraphrase, landing as ONE atomic `inject_social` batch — gist
-memories, tone edges, the record below — unless staleness (TASK-32) or an
-unrecovered TASK-42 parse failure kills it. See the child for the full
-founding-gate, staleness, and retry mechanics.
+[[social-fabric-conversations]]: on the executor's `agent.talked` beat, a
+gated, model-driven **scene** rounds-robins turns among the founding pair
+and nearby awake villagers, landing gist/tone/rumor effects as ONE atomic
+`inject_social` batch unless staleness or a parse failure kills it. See the
+child for the full founding-gate, router/provider-pin, staleness, and retry
+mechanics.
 
 **Place-knowledge sidecar** (spec 041 US5, [[mental-maps]]): every founded
 talk, hail-founded included, ALSO exchanges up to `placeTellCap` fresh facts

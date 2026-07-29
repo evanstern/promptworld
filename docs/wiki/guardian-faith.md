@@ -1,13 +1,11 @@
 ---
 name: guardian-faith
-description: The endogenous mana loop (spec 085) — event-sourced village faith (FaithState, the faith.changed executor sweep over the five-reason delta table), charge regeneration as a pure faith-band function (FaithRegenCadenceTicks, the scenario-spiral/ambient-floor posture fork), and the prophecy channel (the charge-priced prophesy tool, the closed claim predicate vocabulary, the fulfil-before-fail verification sweep). Load when tracing faith movements, the regen cadence, or how a vision becomes provably true or false.
+description: The endogenous mana loop (spec 085) — event-sourced village faith (FaithState, the faith.changed executor sweep over the five-reason delta table) and charge regeneration as a pure faith-band function (FaithRegenCadenceTicks, the scenario-spiral/ambient-floor posture fork). The prophecy channel splits to [[guardian-prophecy]]. Load when tracing faith movements or the regen cadence.
 kind: component
 sources:
   - internal/sim/faith.go
-  - internal/sim/prophecy.go
   - internal/sim/executor.go
   - internal/sim/guardian.go
-  - internal/guardian/prophecy.go
   - internal/tool/registry.go
 verified_against: 63390f122bdf4e1b7abf518a8be83de725f06230
 ---
@@ -18,7 +16,7 @@ Spec 085 (TASK-118) closes the god-game mana loop: power derives from the
 prosperity of the flock. Better prompting → fulfilled directives and true
 prophecies → more faith → faster charge regeneration → more capacity to
 help the village. Faith is a world fact kept strictly in fiction — never a
-badge, streak, or score surface (the overjustification caution; the
+badge, streak, or score surface (overjustification caution; the
 `faith.*` prefix is BANNED from every exercise rubric,
 `TestRubricHygieneNoTutorLaneTerms`).
 
@@ -27,11 +25,11 @@ badge, streak, or score surface (the overjustification caution; the
 `State.Faith *FaithState{Score int}` (`omitempty` — pre-085 snapshots
 round-trip byte-identically, no format bump). **nil means genesis 50**
 (`FaithGenesis`), read ONLY through the nil-safe `s.FaithScore()` — the
-`State.Tuning` nil-means-default precedent; the first fold materializes the
-struct. The `faith.changed` reducer arm (`applyFaith`) is the ONLY writer:
-it validates the reason domain and the delta's SIGN against the doctrine
-table (magnitudes fold as recorded — dial-ready retuning never breaks old
-logs), then folds `Score = clamp(Score+delta, 0, 100)`.
+`State.Tuning` nil-means-default precedent; the first fold materializes
+the struct. The `faith.changed` reducer arm (`applyFaith`) is the ONLY
+writer: it validates the reason domain and delta SIGN against the
+doctrine table (magnitudes fold as recorded — dial-ready retuning never
+breaks old logs), then folds `Score = clamp(Score+delta, 0, 100)`.
 
 `faith.changed{delta, reason, source_id}` is **executor-emitted only** —
 NOT on `injectSocialWhitelist` ([[sim-loop-injection-doors]]): whitelist
@@ -88,58 +86,15 @@ ambient world floors at once per game day, and the charge-free plan verbs
 ([[guardian-designations]]) keep directive-earned faith reachable with an
 empty bank — the endogenous exit. The REVERSAL LEVER is the one band table
 plus the fork argument; the recorded future promotion is `tuning.json
-faith_floor_cadence_ticks` (0 = no floor). `GuardianChargeRegenTicks` stays
-exported as the steady-band value — the TUI's forecast fallback against a
-pre-085 daemon.
+faith_floor_cadence_ticks` (0 = no floor). `GuardianChargeRegenTicks`
+stays exported as the steady-band value — the TUI forecast fallback
+against a pre-085 daemon.
 
-## Prophecy — the staked vision (`internal/sim/prophecy.go`)
+## Prophecy — the staked vision
 
-`prophesy(targets, text, claim_kind, …, deadline_days)` spends **one
-charge** (the `send_vision` price — the `prophecy.declared` arm validates
-and decrements, so the spend is event-sourced) and records a
-machine-checkable CLAIM with a deadline. **The verification rule**: a
-vision is 'true' exactly when its recorded claim — declared before the
-fact, from a CLOSED vocabulary — is satisfied by recorded world state
-within its deadline, judged by pure (state, tick) predicates. Free text is
-counsel, never graded; no model output participates.
-
-`sim.Prophecy` clones the [[guardian-orders]] entity discipline: id
-`pro-<tick>-<seq>` (guardian-minted, no RNG), one-way
-`active → fulfilled | failed`, reducer-stamped `PlacedSeq`, cap **3
-active** (`GuardianProphecyCap`), active + recent-32 prune, text ≤400
-runes (`NudgeTextMax` — the registry `TextCapBytes` single source),
-deadline 1..7 game days (the SHARED `GuardianOrderTTL*` bounds). There is
-**NO cancel verb** (the word, once given, stands) and **no
-all-targets-dead expiry** — the claim is a world fact, judged even if every
-hearer died (companion memories simply skip the dead).
-
-The claim predicate table (`prophecyClaimFulfilled`/`prophecyClaimFailed`,
-shared verbatim by the sweep, the terminal arms' re-validation, and the
-declaration door):
-
-| Kind | Fulfil | Fail |
-|---|---|---|
-| `designation_fulfilled{designation_id}` | the designation's status is `fulfilled` | deadline ∧ ¬fulfil (a cancelled designation needs no special case) |
-| `structure_count{structure_kind, min 1..64}` | count of kind ≥ min | deadline ∧ ¬fulfil |
-| `population_at_least{min}` | living count ≥ min | deadline ∧ ¬fulfil |
-| `survives{agent}` | deadline ∧ alive (the at-deadline kind) | agent dead — **fail-FAST**, no deadline wait |
-
-The declaration door additionally refuses: a claim **already true** at
-declaration (prophesying the past), a **duplicate of an active claim**
-(normalized field equality — faith cannot be farmed by restating one
-truth), kind-foreign claim params, and an empty bank. `prophecy.declared`
-is the ONE whitelisted prophecy type (injected by the tool with per-target
-`OriginOmen` dream-band companion memories, atomically — the vision-memory
-firewall shape); `prophecy.fulfilled`/`prophecy.failed` are
-executor-emitted by the verification sweep (`prophecyEvents`, placed after
-the directive sweep) — **fulfil checked before fail**, exactly one
-terminal ever lands, once (flips-non-active), each with per-living-target
-`OriginReport` companion memories (word spreads, honestly secondhand — the
-spec-030 provenance gate never launders it into witnessed). A claim
-turning true AFTER `failed` latched mints nothing (one-way status). An
-active prophecy's `DeadlineTick` SHIFTs across a time snap; `DeclaredTick`
-and settled prophecies KEEP; `FaithState` carries no ticks
-([[guardian-miracle-rebase-taxonomy]]).
+The charge-priced `prophesy` tool, `sim.Prophecy`'s entity discipline, the
+closed claim-kind predicate table, and the fulfil-before-fail verification
+sweep split into [[guardian-prophecy]].
 
 ## Surfaces
 
@@ -147,10 +102,10 @@ and settled prophecies KEEP; `FaithState` carries no ticks
   claim_kind Enum over the closed vocabulary; kind-conditional params
   handler-refused when partial/foreign — `assembleClaim`,
   `internal/guardian/prophecy.go`). Stage availability follows
-  `send_vision` (joins `stage1CeilingTools`). `prophecy.*` (3) join
-  `observableEventTypes` (enum-only, 16 → 19 — standing orders can watch
-  "when my prophecy fails"); `faith.changed` deliberately does NOT (v1:
-  the strip already surfaces it continuously).
+  `send_vision` (`stage1CeilingTools`). `prophecy.*` (3) join `observableEventTypes` (enum-only,
+  16 → 19 — standing orders can watch "when my prophecy fails");
+  `faith.changed` deliberately does NOT (v1: the strip already surfaces
+  it continuously).
 - **Turn prompt** (FR-013): the faith score in fiction (`faithBandWord`)
   plus active prophecies (id, claim, days left — `writeProphecies`,
   [[guardian-turn-loop]]).
@@ -161,15 +116,14 @@ and settled prophecies KEEP; `FaithState` carries no ticks
   forecast on the wire cadence (`docs/design/tui/panels/guardian-strip.md`
   §4).
 - **Chronicle**: four in-fiction digest rows (devotion/doubt wording,
-  never numbers first); the `first-faith-event` lesson (tier mechanics,
-  direction-neutral copy) closed the spec-077 FR-020 rider
-  ([[tui-input-help]]).
+  never numbers first); the `first-faith-event` lesson (direction-neutral
+  copy) closed the spec-077 FR-020 rider ([[tui-input-help]]).
 
 **Scope guards** (FR-015): no metatron agentization, no mission machinery,
 no faith from tutoring, no faith influence on villager behavior/prompts/
-cognition (`internal/cognition`/`internal/mind` untouched), no rumor-driven
-faith spread (companions are personal, `Subject: -1`), no tuning.json
-promotion, no badge surface.
+cognition (`internal/cognition`/`internal/mind` untouched), no
+rumor-driven faith spread (companions personal, `Subject: -1`), no
+tuning.json promotion, no badge surface.
 
 ## Spec 086 — agent-named payloads
 
@@ -186,3 +140,13 @@ mirror whose `Agent *AgentRef` is set only for the `survives` kind (index 0
 carries a FULL ref — the struct form has no omitempty-zero hazard) — while
 the state `Prophecy`/`ProphecyClaim` keep bare ints; the arm folds `.ID`s
 (`internal/sim/prophecy.go`).
+
+## Connections
+
+[[guardian-prophecy]] is this note's own split-off child — the staked-vision
+channel whose fulfilled/failed outcomes feed the delta table above.
+[[guardian-designations]] shares the TASK-118 seam (`directive.fulfilled`/
+`directive.expired`); [[guardian-orders]] is the entity discipline both
+prophecies and standing orders clone; [[ipc-protocol]]/[[ipc-status-extensions]]
+serve the faith/regen wire fields; [[guardian-turn-loop]] renders the turn
+prompt's faith/prophecy lines.

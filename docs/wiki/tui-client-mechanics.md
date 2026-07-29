@@ -62,30 +62,31 @@ name-sorted affected provider; no condition active renders no badge
 further warn-styled `[suppressed: class, class]` badge whenever ≥1 watched
 class in the polled `StatusData.Horizon` is currently suppressed —
 `suppressedHorizonClasses` filters the wire slice (already in
-`WatchedClasses` order) with no client-side re-derivation; a world with no
-horizon (no-LLM, or nothing suppressed) shows no badge. `debtPercent` (`digest.go`) is the one shared arithmetic behind both
-this suffix and the digest lines below: the measured debt expressed as a
-whole percent of `cognition.ShedThreshold`, rounded to the nearest percent.
-The raw chronicle feed's digest grammar gains two entries for the same
-feature: `clock.governor_shed`/`clock.governor_recovered` each render as
-`"governor shed/recovered <from>→<to> debt=N% jobs=N"`, in the terse
-`clock.degraded`-line style (the `requested` payload field is omitted here —
-the from→to transition already carries the notch delta).
+`WatchedClasses` order) with no client-side re-derivation; no horizon
+(no-LLM, or nothing suppressed) shows no badge. `debtPercent` (`digest.go`)
+is the one shared arithmetic behind this suffix and the digest lines below:
+the measured debt as a whole percent of `cognition.ShedThreshold`, rounded
+to the nearest percent. The chronicle feed's digest grammar gains two
+entries for the same feature: `clock.governor_shed`/`clock.governor_recovered`
+each render as `"governor shed/recovered <from>→<to> debt=N% jobs=N"`, in the
+terse `clock.degraded`-line style (the `requested` field is omitted — the
+from→to transition already carries the notch delta).
 
 ## Resilience
 
-Resilience: errors become `disconnectedMsg` → the header shows the failure and a
+Errors become `disconnectedMsg` → the header shows the failure and a
 2-second retry loop re-dials; a `dropped` push (subscriber overflow) tears the client
 down and reconnects from a fresh state snapshot, because the replica may have missed
 events. One exception is fatal (TASK-19): `ipc.ErrReplyTooLarge` (a reply over the
 protocol's 64 MiB ceiling — reconnecting cannot shrink the state) quits instead of
 retrying, rendering the reason in the final view and exposing it via
-`Model.FatalErr()`, which `cmdUI` turns into a non-zero exit. A 1-second poll refreshes the clock/status line (quiet ticks produce no
-events, so the replica's tick alone would lag).
+`Model.FatalErr()`, which `cmdUI` turns into a non-zero exit. A 1-second poll
+refreshes the clock/status line (quiet ticks produce no events, so the replica's
+tick alone would lag).
 
 ## Layout
 
-Layout (TASK-34; design reference in `docs/design/tui/` — entry points
+TASK-34; design reference in `docs/design/tui/` — entry points
 `INDEX.md`/`anatomy.md`; since TASK-123's v2 taxonomy the dock's per-tab
 content is split across `panels/guardian.md` (fiction layer), `panels/
 systems.md` (telemetry), and `panels/villagers.md`, with `panels/dock.md`

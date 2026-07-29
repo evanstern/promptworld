@@ -10,89 +10,83 @@ verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
 
 # Event types
 
-Every event has a namespaced `type` and a canonical-JSON payload defined as a Go
-struct in `internal/sim` (structs, never maps, so bytes are deterministic; core
-payloads live in `state.go`, families note their own file below).
-This catalog is the contract downstream consumers (chronicle, guardian digests, the
-TUI) will read. [[event-log]] stores every event; [[ipc-protocol]] pushes them to
-subscribers verbatim.
+Every event has a namespaced `type` and a canonical-JSON payload defined
+as a Go struct in `internal/sim` (structs, never maps, so bytes are
+deterministic; core payloads live in `state.go`, families note their own
+file below). This catalog is the contract downstream consumers (chronicle,
+guardian digests, the TUI) read. [[event-log]] stores every event;
+[[ipc-protocol]] pushes them to subscribers verbatim.
 
 ## Event catalog, by domain
 
-The full per-type catalog (93 event types across the format's history, specs
-012 through 083) is split by event domain — each child inherits this note's
-`verified_against` pin, carries the domain's own history-of-format-changes
-prose and catalog rows verbatim, and links back here. Spec 077's seven new
-types: the scenario-incident family — `sim.cold_snap`, `sim.forage_blighted`,
-and the stranger entity's `stranger.arrived` / `stranger.moved` /
-`stranger.took` / `stranger.departed` ([[event-types-scenario-incidents]]) —
-plus the guardian's `guardian.skills_observed` skills observation
-([[event-types-guardian-morgue]], the `guardian.charter_observed` twin).
-Spec 083 adds one: `sim.neglect_detected`, the death-by-neglect percept — a
-survival need below its danger band for a full neglect window with zero
-intents in its class ([[event-types-agent-vitals]]); executor-emitted on the
-needs heartbeat, whole-line alert tier in the chronicle.
+The full per-type catalog (93 event types across the format's history,
+specs 012 through 083) is split by event domain — each child inherits
+this note's `verified_against` pin, carries the domain's own
+history-of-format-changes prose and catalog rows verbatim, and links back
+here.
 
-- [[event-types-clock-world]] — Clock/scheduler and world-lifecycle events — pause/resume/speed/governor, day/night, forage regrowth, world genesis/migration/forking (`world.forked`, spec 076), daemon lifecycle and LLM-provider warnings.
-- [[event-types-agent-intents]] — Agent intent lifecycle — intent_set/work_started/intent_done/recovery_stalled/build_failed/moved, including the spec 062/064 yield-window and needs-conditioned recovery arms.
-- [[event-types-agent-vitals]] — Agent vitals and mortality — needs_changed, died (with the spec 044 death ledger/grave), run.ended, sleep/wake, and the spec 083 neglect_detected percept.
-- [[event-types-mental-map]] — Perception and mental-map events — moved, saw, map_corrected, place_told, place_revealed (spec 041's per-agent spatial knowledge family).
-- [[event-types-harvesting-consumption]] — Harvesting and consumption — forage/chop/hunt/quarry/collect_water yields, food rot, cook/bathe/refuel/eat, spear/axe breakage, fire burnout.
-- [[event-types-crafting-building]] — Crafting, building and goods movement — crafted/built, wall chip/destroy/repair, drop/pick_up/deposit/withdraw, and the spec 012/013/032 format-bump history.
-- [[event-types-social-memory]] — Social and memory-authoring events — talked, memory_added, thought, the social.* family, chest_taken, and the spec 061 PairTalks damper.
-- [[event-types-memory-consolidation]] — Memory embedding and consolidation — memory_embedded/situation_embedded, journal entries, the nightly consolidation family, belief_reinforced.
-- [[event-types-social-protocol]] — Governance and hail-protocol events — meeting/norm families, convention_established, gathering_observed, and the hail family.
-- [[event-types-cognition-telemetry]] — Cognition telemetry and planning — cog.thought/outcome/tool_call/memory_divergence, intent_rejected, plan_set/plan_step_started/plan_expired.
-- [[event-types-curriculum-events]] — Curriculum-ladder events — exercise_passed and stage_unlocked, the spec 046/054 staged-world unlock gates (emission generalized to the nine-exercise catalog by spec 077).
-- [[event-types-scenario-incidents]] — Scenario-incident events (spec 077) — cold snap, forage blight, and the stranger entity family: ambient-indistinguishable authored pressure.
-- [[event-types-guardian-orders]] — Guardian standing-order events — charge_regenerated, nudged, order_placed/triggered/cancelled/expired, and the spec 029/059 survival-watch lifecycle.
-- [[event-types-guardian-morgue]] — Guardian morgue and report-card events — charter_observed (+ spec 077's skills_observed twin), morgue.epilogue, guardian.report_card, chronicle.entry.
-- [[event-types-guardian-actions]] — Guardian miracle actions and gru events — time_snapped/item_granted/entity_moved/entity_removed, and the gru emerged/moved/sighted/attacked/withdrew family.
-- [[event-types-guardian-plans]] — Guardian plan-layer events (spec 084) — `designation.placed`/`designation.cancelled`/`designation.fulfilled` and `directive.issued`/`directive.cancelled`/`directive.fulfilled`/`directive.expired`: injected placement/issue/cancel, executor-emitted fulfillment/expiry, the TASK-118 faith seam payload (consumed by spec 085).
-- [[guardian-faith]] — Faith-economy events (spec 085) — `faith.changed` (executor-emitted only, the five-reason delta table) and the prophecy lifecycle `prophecy.declared` (injected, charge-priced) / `prophecy.fulfilled` / `prophecy.failed` (executor-emitted verification terminals).
+- [[event-types-clock-world]] — Clock/scheduler and world-lifecycle events — pause/resume/speed/governor, day/night, forage regrowth, genesis/migration/forking (`world.forked`, spec 076), daemon lifecycle and LLM-provider warnings.
+- [[event-types-agent-intents]] — Agent intent lifecycle — intent_set/work_started/intent_done/recovery_stalled/build_failed/moved, incl. the spec 062/064 yield-window and needs-conditioned recovery arms.
+- [[event-types-agent-vitals]] — Agent vitals and mortality — needs_changed, died (spec 044 death ledger/grave), run.ended, sleep/wake, spec 083's neglect_detected percept.
+- [[event-types-mental-map]] — Perception and mental-map events — moved, saw, map_corrected, place_told, place_revealed (spec 041's spatial knowledge family).
+- [[event-types-harvesting-consumption]] — Harvesting/consumption — forage/chop/hunt/quarry/collect_water yields, food rot, cook/bathe/refuel/eat, spear/axe breakage, fire burnout.
+- [[event-types-crafting-building]] — Crafting/building/goods movement — crafted/built, wall chip/destroy/repair, drop/pick_up/deposit/withdraw, spec 012/013/032 format-bump history.
+- [[event-types-social-memory]] — Social/memory-authoring events — talked, memory_added, thought, the social.* family, chest_taken, spec 061's PairTalks damper.
+- [[event-types-memory-consolidation]] — Memory embedding/consolidation — memory_embedded/situation_embedded, journal entries, nightly consolidation, belief_reinforced.
+- [[event-types-social-protocol]] — Governance/hail-protocol events — meeting/norm families, convention_established, gathering_observed, the hail family.
+- [[event-types-cognition-telemetry]] — Cognition telemetry/planning — cog.thought/outcome/tool_call/memory_divergence, intent_rejected, plan_set/plan_step_started/plan_expired.
+- [[event-types-curriculum-events]] — Curriculum-ladder events — exercise_passed/stage_unlocked, spec 046/054 staged-world unlock gates (generalized to nine exercises by spec 077).
+- [[event-types-scenario-incidents]] — Scenario-incident events (spec 077) — cold snap, forage blight, the stranger entity family: ambient-indistinguishable authored pressure.
+- [[event-types-guardian-orders]] — Guardian standing-order events — charge_regenerated, nudged, order_placed/triggered/cancelled/expired, spec 029/059 survival-watch lifecycle.
+- [[event-types-guardian-morgue]] — Guardian morgue/report-card events — charter_observed (+ spec 077's skills_observed twin), morgue.epilogue, guardian.report_card, chronicle.entry.
+- [[event-types-guardian-actions]] — Guardian miracle actions and gru events — time_snapped/item_granted/entity_moved/entity_removed, the gru emerged/moved/sighted/attacked/withdrew family.
+- [[event-types-guardian-plans]] — Guardian plan-layer events (spec 084) — `designation.*`/`directive.*`: injected placement/issue/cancel, executor-emitted fulfillment/expiry, the TASK-118 faith seam (consumed by spec 085).
+- [[guardian-faith]] — Faith-economy events (spec 085) — `faith.changed` (executor-emitted, the five-reason delta table) and the prophecy lifecycle `prophecy.declared`/`fulfilled`/`failed`.
 
 ## Conventions
 
-Conventions: `clock.*` are applied player/scheduler commands; `sim.*`, `agent.*`,
-and (spec 044) `run.*` are world happenings (pure functions of state + seed +
-tick — `run.ended` is executor-emitted, never injectable); `morgue.*` (spec 044)
-is injected narrator prose about the run, the chronicle's pattern; `daemon.*` are process
-bookkeeping, wall-time dependent, and excluded from determinism comparisons (as are
-`clock.*` in the binary-level test, since their ticks depend on command timing).
-Payloads record **outcomes** (positions reached, absolute need values), never dice
-rolls, so replay needs no RNG. Unknown types are no-ops in the reducer, so adding
-types is backward-compatible with old replay code. The `cog.*` family
-(TASK-32, [[cognition]]) is recorded observability —
-explicit reducer no-ops whose wall-time fields are recorded input, so no failure
-is silent and thought chains are walkable from the log alone; their payload
-field order is canonical per `specs/007-cognition-horizon/contracts/events.md`.
-`agent.intent_rejected` shares that observability role but since spec 043 is
-no longer a no-op — its ring append (deterministic from the event alone) keeps
-it replay-safe.
-`world.migrated` (spec 012 US6) is the one exception to "payloads are small
-outcomes" — its payload embeds the entire canonical `sim.State`, by design: it is
-the single record standing in for the whole pre-break history, and the reducer's
-`state.Seed` check keeps it total (a mismatched payload no-ops rather than erroring).
+Conventions: `clock.*` are applied player/scheduler commands; `sim.*`,
+`agent.*`, and (spec 044) `run.*` are world happenings (pure functions of
+state + seed + tick — `run.ended` is executor-emitted, never injectable);
+`morgue.*` (spec 044) is injected narrator prose about the run, the
+chronicle's pattern; `daemon.*` are process bookkeeping, wall-time
+dependent, excluded from determinism comparisons (as are `clock.*` in the
+binary-level test, since their ticks depend on command timing). Payloads
+record **outcomes** (positions reached, absolute need values), never dice
+rolls, so replay needs no RNG. Unknown types are no-ops in the reducer, so
+adding types is backward-compatible with old replay code. The `cog.*`
+family (TASK-32, [[cognition]]) is recorded observability — explicit
+reducer no-ops whose wall-time fields are recorded input, so no failure is
+silent and thought chains are walkable from the log alone; field order is
+canonical per `specs/007-cognition-horizon/contracts/events.md`.
+`agent.intent_rejected` shares that role but since spec 043 is no longer a
+no-op — its ring append (deterministic from the event alone) keeps it
+replay-safe. `world.migrated` (spec 012 US6) is the one exception to
+"payloads are small outcomes" — its payload embeds the entire canonical
+`sim.State`, by design: the single record standing in for the whole
+pre-break history, and the reducer's `state.Seed` check keeps it total (a
+mismatched payload no-ops rather than erroring).
 
 ### Agent references are named refs (spec 086)
 
-Every agent-referencing payload field is a `sim.AgentRef` — the wire carries
-`{"id":2,"name":"Cedar"}` objects (and `[{…},{…}]` lists), the name stamped at
-emission from the fixed `AgentNames` roster constant via the `Ref`/`Refs`
-constructors, so the log is self-describing with no replica. Sentinels
-(canonically −1: any/none/personal) marshal `{"id":-1,"name":""}` — a fake
-name on a sentinel is as much a bug as a missing name on an agent. Four
-state-shared entities split into wire mirrors carrying refs while state keeps
-bare ints (`DirectiveIssuedPayload`, `OrderPlacedPayload`,
-`ProphecyDeclaredPayload`, `DeathRef` in `run.ended`) — no `AgentRef` is ever
-reachable from `sim.State` (the hash-stability invariant,
-`TestNoAgentRefInState`). Enforcement is mechanical: the typed ref, append
-validation at both live-emission doors (`mustPayload` panics; `InjectSocial`
-decodes via `sim.PayloadCatalog` and refuses the batch), and the doc-anchored
-`TestPayloadAgentRefSweep` over the catalog (frozen tag vocabulary + frozen
-rationale-carrying allowlist: `PlaceFact.Source`, `CogToolCallPayload.Args`,
-`IntentSetPayload.Source`, `FaithChangedPayload.SourceID`, `PlanStep.Target`,
-`Guard.Target` — the last two state-resident, the PlaceFact class).
+Every agent-referencing payload field is a `sim.AgentRef` — the wire
+carries `{"id":2,"name":"Cedar"}` objects (and `[{…},{…}]` lists), the
+name stamped at emission from the fixed `AgentNames` roster constant via
+the `Ref`/`Refs` constructors, so the log is self-describing with no
+replica. Sentinels (canonically −1: any/none/personal) marshal
+`{"id":-1,"name":""}` — a fake name on a sentinel is as much a bug as a
+missing name on an agent. Four state-shared entities split into wire
+mirrors carrying refs while state keeps bare ints
+(`DirectiveIssuedPayload`, `OrderPlacedPayload`, `ProphecyDeclaredPayload`,
+`DeathRef` in `run.ended`) — no `AgentRef` is ever reachable from
+`sim.State` (`TestNoAgentRefInState`). Enforcement is mechanical: the
+typed ref, append validation at both live-emission doors (`mustPayload`
+panics; `InjectSocial` decodes via `sim.PayloadCatalog` and refuses the
+batch), and `TestPayloadAgentRefSweep` over the catalog (frozen tag
+vocabulary + frozen allowlist: `PlaceFact.Source`,
+`CogToolCallPayload.Args`, `IntentSetPayload.Source`,
+`FaithChangedPayload.SourceID`, `PlanStep.Target`, `Guard.Target` — the
+last two state-resident, the PlaceFact class).
 
 **The back-compat matrix (normative, permanent — spec 086 data-model §6):**
 
@@ -105,12 +99,12 @@ rationale-carrying allowlist: `PlaceFact.Source`, `CogToolCallPayload.Args`,
 | pre-086 log, from-genesis replay | byte-identical `State.Marshal()`/`Hash()` | n/a |
 | live pre-086 world continued | new emissions named from the next event on; old rows keep their bytes | mixed feed: new rows payload-named, old rows fallback |
 
-Name validation NEVER lives in a reducer arm — replay accepts unnamed shapes
-forever; validation exists only at the live-emission choke points, which
-replay never traverses.
+Name validation NEVER lives in a reducer arm — replay accepts unnamed
+shapes forever; validation exists only at the live-emission choke points,
+which replay never traverses.
 
 ## Operational notes
 
-The outcome-payload
-convention ([[deterministic-rng]]) is load-bearing — keep it; `gru.attacked`
-carrying absolute post-wound health (never the wound roll) is the pattern.
+The outcome-payload convention ([[deterministic-rng]]) is load-bearing —
+keep it; `gru.attacked` carrying absolute post-wound health (never the
+wound roll) is the pattern.
