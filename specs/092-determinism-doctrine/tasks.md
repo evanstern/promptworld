@@ -11,7 +11,7 @@ into the spec; minimal code = comments only).
 
 ## Phase 2: Doctrine + docs
 
-- [ ] T002 Per-log-not-per-seed determinism limit in deterministic-rng.md, the
+- [X] T002 Per-log-not-per-seed determinism limit in deterministic-rng.md, the
   EffectiveRate-owning note, and README's determinism paragraph; correct every
   per-seed claim — FR-001.
 - [X] T003 Reducer-constants doctrine (emitter-computes default; re-derive

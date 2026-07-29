@@ -78,7 +78,9 @@ using the shared LLM host?" in one command, with live-proven state (a crashed da
 never shows as running).
 
 Default speed is 4x: 1 game minute per 15 real seconds; the watchable ladder tops at
-32x. `go test -race ./...` covers determinism (same seed → byte-identical history),
+32x. `go test -race ./...` covers replay determinism (a recorded log always replays
+to the same byte-identical history — same seed alone is not a cross-machine
+guarantee, since the wall-clock-measured `EffectiveRate` can differ run to run),
 crash recovery, the client protocol, and the model-output firewalls.
 
 ## Setup & configuration

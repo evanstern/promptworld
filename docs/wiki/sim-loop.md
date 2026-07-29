@@ -83,6 +83,18 @@ ticks/sec against the requested rate; sustained shortfall below 90% emits
 `clock.degraded` (with the measured rate), recovery to ≥95% emits `clock.recovered`.
 At max speed whatever is achieved is the contract — no degradation events.
 
+**Determinism scope (spec 092/TASK-75)**: the measured rate `clock.degraded`
+carries is a wall-clock reading (`l.measured`, `windowTicks / elapsed`) —
+genuinely non-deterministic across machines/load, unlike every other event this
+loop emits. It is still payload-carried (not re-derived on replay), so REPLAY
+of a recorded log reproduces the exact same `EffectiveRate` and the exact same
+`Hash()` every time. What it breaks is the stronger, wrong claim "same seed ⇒
+byte-identical history on any machine": two INDEPENDENT live runs from the same
+seed can measure different rates, land different `clock.degraded`/
+`clock.recovered` events, and diverge in state hash — with every RNG draw
+([[deterministic-rng]]) still agreeing. Replay is exact per-log; per-seed
+cross-machine determinism is not a guarantee this loop makes.
+
 `Loop.Govern(to, debt, jobs)` (spec 028 US2/US3) is the daemon governor sampler's
 door onto the same command channel `set_speed` uses: it lands a
 `clock.governor_shed`/`clock.governor_recovered` event exactly like a player
