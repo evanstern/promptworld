@@ -7,7 +7,7 @@ sources:
   - internal/sim/plan.go
   - internal/sim/memory.go
   - internal/sim/observe.go
-verified_against: 864d2a3bcff4b3113739d596befc72229a84d4b8
+verified_against: 46fe602410a9e93ade64d10256accbac0d2cdb71
 ---
 
 # Executor — guarded plans, hails, perception, and memory provenance

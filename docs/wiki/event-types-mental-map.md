@@ -6,7 +6,7 @@ sources:
   - internal/sim/executor.go
   - internal/sim/agents.go
   - internal/sim/observe.go
-verified_against: 864d2a3bcff4b3113739d596befc72229a84d4b8
+verified_against: 46fe602410a9e93ade64d10256accbac0d2cdb71
 ---
 
 # Event types — perception & mental map events
