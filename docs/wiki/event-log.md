@@ -59,3 +59,11 @@ Event volume at v1 scale is trivial for SQLite (<1M rows per 30-day run). The me
 table (same file) stores `seed`/`format_version` for cross-checking against
 `world.json`. Future features (chronicle narration, Metatron digests) are expected to
 query this table by `tick`/`type` — the indexes exist for them.
+
+The `format_version` cross-check above is the WORLD-manifest granularity (whole-
+state-shape breaks, `internal/world/world.go`'s `FormatVersion`). [[sim-state-reducer]]'s
+spec-092 reducer-constants replay-hazard doctrine (TASK-75) names a narrower,
+same-shape hazard this mechanism does NOT catch — a reducer arm that re-derives
+an outcome from a mutable gameplay constant instead of carrying it in the
+payload — and spec 094/TASK-134 is building the event-log-level format stamp +
+translating migration that hazard class requires.
