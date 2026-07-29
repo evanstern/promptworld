@@ -4,7 +4,7 @@ description: Stateless randomness — every random decision is a PCG seeded from
 kind: pattern
 sources:
   - internal/sim/rng.go
-verified_against: 1e71b77f104dda982aa407b28ad2c994219e90d0
+verified_against: 4e160b902dd96a6b4a8f4342ae75cdcbc8048c53
 ---
 
 # Deterministic RNG
@@ -45,8 +45,23 @@ accessor.
 
 The [[reflex-policy]] draws wander targets through this; [[sim-state-reducer]]'s genesis
 agent placement uses purpose `"genesis"`. The pattern is what makes
-[[sim-loop]]-level determinism (SC-006) cheap: the [[event-log]] plus the seed is a
-complete description of a run.
+[[sim-loop]]-level replay determinism (SC-006) cheap: the [[event-log]] plus the seed is
+a complete description of REPLAYING a run.
+
+## Determinism scope (spec 092/TASK-75) — per-log, not per-seed
+
+The guarantee this pattern buys is **replay of a given log is exact**, not
+"the same seed always produces the same run on any machine." Every random
+decision here is a pure function of (seed, purpose, tick, index), so two
+REPLAYS of the identical log always agree — but a live run's [[event-log]]
+also carries `clock.degraded`'s `EffectiveRate` ([[sim-loop]]), a wall-clock
+measurement of achieved throughput that becomes part of canonical state
+(hashed). Two machines (or two live runs on the same machine under different
+load) started from the same seed can measure different `EffectiveRate` values
+and diverge in `Hash()` even though every RNG draw agreed — the divergence
+enters through the clock, not through this file's randomness. "Same seed ⇒
+byte-identical history" is only true within a single already-recorded log's
+replay, never as a cross-machine or cross-run promise.
 
 ## Operational notes
 

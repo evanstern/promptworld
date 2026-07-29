@@ -11,7 +11,7 @@ sources:
   - internal/guardian/turn.go
   - internal/guardian/toolcalls.go
   - internal/tool/registry.go
-verified_against: 11de2a4aa93d4c901a8dd90369151fa23fd056d0
+verified_against: e63cc89fa4fffe1116a5c8273f3e3f429fb66979
 ---
 
 # Guardian's standing orders

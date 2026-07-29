@@ -1,10 +1,10 @@
 ---
 id: TASK-75
 title: 'Doctrine and docs: determinism scope note + reducer-constants replay hazard'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-23 06:35'
-updated_date: '2026-07-29 19:14'
+updated_date: '2026-07-29 21:39'
 labels:
   - review-2026-07-22
   - code-quality
@@ -28,13 +28,13 @@ Spec: specs/092-determinism-doctrine
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Per-log vs per-seed determinism limit documented in wiki and README
-- [ ] #2 Reducer-constants hazard recorded as doctrine with the emitter-computes default named; existing sites commented
-- [ ] #3 Audit list of reducer-re-derives sites included in the wiki note
-- [ ] #4 Wiki freshness gate passes (notes re-pinned)
-- [ ] #5 Spec phase: Audit
-- [ ] #6 Spec phase: Doctrine + docs
-- [ ] #7 Spec phase: Grounding + gates
+- [x] #1 Per-log vs per-seed determinism limit documented in wiki and README
+- [x] #2 Reducer-constants hazard recorded as doctrine with the emitter-computes default named; existing sites commented
+- [x] #3 Audit list of reducer-re-derives sites included in the wiki note
+- [x] #4 Wiki freshness gate passes (notes re-pinned)
+- [x] #5 Spec phase: Audit
+- [x] #6 Spec phase: Doctrine + docs
+- [x] #7 Spec phase: Grounding + gates
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -48,3 +48,9 @@ POINTER (2026-07-25, team review): the migration machinery this task explicitly 
 
 board-sweep-2026-07-29 lane 1: spec 092 authored + landed; linked. Tier: Sonnet — docs/doctrine + comment-only code (routine slice). Implementation dispatch HELD until TASK-165 (wiki splits) merges — shared docs/wiki + CAPSULES/INDEX conflict surface.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Merged via PR #137. Per-log-not-per-seed determinism limit documented (deterministic-rng.md, sim-loop.md, README); reducer-constants doctrine ratified (emitter-computes default, versioned re-derive exception, spec 094 machinery pointer) with 13-site audit table + hazard comments in sim-state-reducer-replay-hazards.md child note; zero behavior change; spec 092 all tasks done.
+<!-- SECTION:FINAL_SUMMARY:END -->

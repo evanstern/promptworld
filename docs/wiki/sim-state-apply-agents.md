@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/state.go
   - internal/sim/agents.go
-verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
+verified_against: e63cc89fa4fffe1116a5c8273f3e3f429fb66979
 ---
 
 # Sim state: core agent Apply arms
@@ -95,4 +95,8 @@ crafting/gather yields, storage, and the wall HP family.
 to re-place migrated souls; [[executor]] owns the needs/intent/death
 semantics these arms enact; [[event-types]] catalogs every payload shape
 here. [[sim-state-intent-lifecycle]] builds on `agent.intent_set`'s
-completion condition.
+completion condition. `agent.talked`'s `talkMoraleBonus` and
+`agent.needs_changed`'s classification constants (`nearDeathBelow`/
+`nearDeathResetAt`, `trajectoryWindowTicks`, the neglect band) are audited
+by [[sim-state-reducer]]'s spec-092 reducer-constants replay-hazard doctrine
+(TASK-75).

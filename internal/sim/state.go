@@ -1143,6 +1143,11 @@ func (s *State) Apply(e store.Event) error {
 		// forage tile is marked harvested regardless). A full pouch never
 		// reaches here — the executor emits intent_done only at zero space
 		// (T011), so depletion-at-zero-space never occurs.
+		// Replay hazard (spec 092/TASK-75): forageYieldV2 is re-derived from the
+		// current constant, not carried in the payload — retuning it silently
+		// changes old-log replay. Doctrine + audit: docs/wiki/sim-state-reducer.md
+		// (reducer-constants replay-hazard doctrine); a retune requires the
+		// spec-094 store.LogFormatVersion bump + migration (docs/wiki/event-log.md).
 		a.Inv.FoodRaw += minInt(forageYieldV2, freeBulk(a.Inv))
 		a.Intent = nil
 		a.IdleSince = e.Tick
@@ -1163,6 +1168,9 @@ func (s *State) Apply(e store.Event) error {
 		// no bulk mid-event (decrementing a use leaves len(Axes) unchanged), and a
 		// broken axe's removal rides its own companion agent.axe_broke — so free
 		// space is read once, before the wood is added, with the axe still counted.
+		// Replay hazard (spec 092/TASK-75): both yields are re-derived constants —
+		// see docs/wiki/sim-state-reducer.md's reducer-constants doctrine; a retune
+		// requires the spec-094 store.LogFormatVersion bump + migration.
 		yield := chopYieldBare
 		if len(a.Inv.Axes) > 0 {
 			yield = chopYieldAxe
@@ -1195,6 +1203,11 @@ func (s *State) Apply(e store.Event) error {
 		// state-derived, not payload-carried). A companion agent.spear_broke,
 		// if any, applies right after this in the same batch and removes the
 		// now-zero spear.
+		// Replay hazard (spec 092/TASK-75): huntYieldBare/huntYieldSpear below,
+		// and denCooldownSec at the DenUses append further down, are both
+		// re-derived constants — see docs/wiki/sim-state-reducer.md's
+		// reducer-constants doctrine; a retune requires the spec-094
+		// store.LogFormatVersion bump + migration.
 		// US1-AS2 (T010): the food yield truncates to pre-event free bulk; the
 		// spear spend frees no bulk mid-event (decrementing a use leaves
 		// len(Spears) — and thus bulk — unchanged), and the spear's removal on
@@ -1230,6 +1243,10 @@ func (s *State) Apply(e store.Event) error {
 		// its "build_<kind>" goal — shelter (planks, re-costed from wood) and
 		// oven (refined stone + planks) both fall out of this the same way
 		// fire always has.
+		// Replay hazard (spec 092/TASK-75): recipeFor's Inputs table (recipes.go)
+		// is re-derived, not payload-carried — see docs/wiki/sim-state-reducer.md's
+		// reducer-constants doctrine; a retune requires the spec-094
+		// store.LogFormatVersion bump + migration.
 		if r, ok := recipeFor("build_" + p.Kind); ok {
 			addItems(&a.Inv, r.Inputs, -1)
 		}
@@ -1239,6 +1256,10 @@ func (s *State) Apply(e store.Event) error {
 		if p.Kind == "fire" {
 			// T019: a fresh fire (2 wood) burns 2×fireBurnPerWood from now; the
 			// fuel sweep burns it out and refuel pushes FuelUntil forward.
+			// FireBurnPerWood() is a spec-048 tuning dial, not a bare constant —
+			// post-057 worlds pin it at genesis (docs/wiki/world-tuning-boot-seeding.md);
+			// pre-057/migrated worlds still follow compiled defaults (same class
+			// of hazard, narrower scope — see the doctrine note above).
 			st.FuelUntil = e.Tick + 2*s.FireBurnPerWood()
 		}
 		if p.Kind == "chest" {
@@ -1253,6 +1274,8 @@ func (s *State) Apply(e store.Event) error {
 			// T008 (spec 032 US1, research R1): a fresh wall stands at full health,
 			// derived from its kind (never stored as a separate max — fire lit-ness
 			// doctrine). The recipe delta above already spent the wall's material.
+			// Replay hazard (spec 092/TASK-75): wallMaxHP's wallPlankHP/wallStoneHP
+			// are re-derived constants — see docs/wiki/sim-state-reducer.md.
 			st.HP = wallMaxHP(p.Kind)
 		}
 		s.Structures = append(s.Structures, st)
@@ -1287,6 +1310,8 @@ func (s *State) Apply(e store.Event) error {
 		// T014 (spec 032 US2): quarryYieldBare (1) bare / quarryYieldAxe (3) with a
 		// carried axe, same axe-spend and pre-mutation derivation as chop above.
 		// Free-bulk truncation still applies; the outcrop depletes regardless.
+		// Replay hazard (spec 092/TASK-75): both yields are re-derived constants —
+		// see docs/wiki/sim-state-reducer.md's reducer-constants doctrine.
 		yield := quarryYieldBare
 		if len(a.Inv.Axes) > 0 {
 			yield = quarryYieldAxe
@@ -1312,6 +1337,8 @@ func (s *State) Apply(e store.Event) error {
 			return err
 		}
 		// US1-AS2 (T010): yield truncates to free bulk (water sources never deplete).
+		// Replay hazard (spec 092/TASK-75): collectWaterYield is a re-derived
+		// constant — see docs/wiki/sim-state-reducer.md's reducer-constants doctrine.
 		a.Inv.Water += minInt(collectWaterYield, freeBulk(a.Inv))
 		a.Intent = nil
 		a.IdleSince = e.Tick
@@ -1321,6 +1348,10 @@ func (s *State) Apply(e store.Event) error {
 		// here). Spear durability doesn't fit a plain int field: a fresh
 		// spear (spearDurability uses) is appended to Spears, kept sorted
 		// ascending so hunts always spend the most-worn spear first.
+		// Replay hazard (spec 092/TASK-75): the recipes.go table, spearDurability,
+		// and axeDurability below are all re-derived constants — see
+		// docs/wiki/sim-state-reducer.md's reducer-constants doctrine; a retune
+		// requires the spec-094 store.LogFormatVersion bump + migration.
 		var p CraftedPayload
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
@@ -1467,6 +1498,9 @@ func (s *State) Apply(e store.Event) error {
 		if err != nil {
 			return err
 		}
+		// Replay hazard (spec 092/TASK-75): demolishChipHP is a re-derived
+		// constant — see docs/wiki/sim-state-reducer.md's reducer-constants
+		// doctrine.
 		if w := wallAt(s, p.X, p.Y); w != nil {
 			w.HP -= demolishChipHP
 			if w.HP < 1 {
@@ -1509,6 +1543,9 @@ func (s *State) Apply(e store.Event) error {
 		if err != nil {
 			return err
 		}
+		// Replay hazard (spec 092/TASK-75): wallRepairMaterial, wallMaxHP, and
+		// repairHPPerUnit below are all re-derived constants — see
+		// docs/wiki/sim-state-reducer.md's reducer-constants doctrine.
 		if w := wallAt(s, p.X, p.Y); w != nil {
 			mat := wallRepairMaterial(w.Kind)
 			maxHP := wallMaxHP(w.Kind)
@@ -2113,6 +2150,9 @@ func (s *State) Apply(e store.Event) error {
 		if err != nil {
 			return err
 		}
+		// Replay hazard (spec 092/TASK-75): talkMoraleBonus is a re-derived
+		// constant — see docs/wiki/sim-state-reducer.md's reducer-constants
+		// doctrine.
 		a.Needs.Morale = minInt(1000, a.Needs.Morale+talkMoraleBonus)
 		b.Needs.Morale = minInt(1000, b.Needs.Morale+talkMoraleBonus)
 		a.LastTalk, b.LastTalk = e.Tick, e.Tick
