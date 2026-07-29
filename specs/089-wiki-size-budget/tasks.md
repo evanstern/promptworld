@@ -33,10 +33,10 @@
 
 ## Phase 4: Downstream + verification
 
-- [ ] T005 Player docs: run `node .claude/skills/player-docs/scripts/check-freshness.mjs --check`
+- [X] T005 Player docs: run `node .claude/skills/player-docs/scripts/check-freshness.mjs --check`
   in the worktree; regenerate every page the wiki edits staled per the player-docs
   skill; probe exits 0.
-- [ ] T006 Final gates: grounding-wiki freshness exits 0
+- [X] T006 Final gates: grounding-wiki freshness exits 0
   (`node ~/.claude/plugins/cache/praxisflux/grounding-wiki/0.39.0/gates/cli.mjs freshness . docs/wiki`);
   no-fact-lost spot-check recorded in the PR body (pre-change section headings →
   post-change locations for each split note).
