@@ -4,7 +4,7 @@ title: 'Perception of absence: grounded arrival observations make beliefs falsif
 status: In Progress
 assignee: []
 created_date: '2026-07-23 17:50'
-updated_date: '2026-07-29 21:45'
+updated_date: '2026-07-29 21:46'
 labels:
   - emergent-lore
   - epistemics
@@ -30,13 +30,25 @@ Design questions for the spec (this needs Spec Kit, not a surgical fix):
 - Flavor risk: falsifiability shortens myth lifetimes — pairs deliberately with the canonization miracle (TASK-81) so the god can choose to make a myth true before reality debunks it.
 
 Sequencing per plan of record: after TASK-79 (uses its reinforcement seam); runs in parallel with TASK-81.
+
+Spec: specs/097-perception-of-absence
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Spec Kit spec produced and linked via spec-bridge before implementation (constitution rigor)
+- [x] #1 Spec Kit spec produced and linked via spec-bridge before implementation (constitution rigor)
 - [ ] #2 A grounded observation event exists reporting actual local world state on arrival; emission is deterministic and replay-safe
 - [ ] #3 Belief confidence responds to confirming/disconfirming observations through the TASK-79 reinforcement seam; disconfirmation decays faster than silence
 - [ ] #4 Working-memory window is not flooded: observation salience/dedup tuned and demonstrated on a live soak
 - [ ] #5 Chronicle/TUI legibility: grounded observations are visible in the decision trail
+- [ ] #6 Spec phase: Observation channel
+- [ ] #7 Spec phase: Belief reconciliation (mind-side)
+- [ ] #8 Spec phase: Surfaces + tests
+- [ ] #9 Spec phase: Soak + grounding
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+board-sweep-2026-07-29 lane 3: spec 097 landed + linked (AC1 satisfied — full Spec Kit before implementation); design questions resolved as D1-D5 in spec.md. Tier: Opus — cross-package sim+mind, epistemics doctrine-adjacent. Dispatch HELD until TASK-95 merges (shared executor/memory/event-types footprint).
+<!-- SECTION:NOTES:END -->
