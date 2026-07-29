@@ -36,7 +36,12 @@ stamped from the event's store seq by the reducer, pre-stamped in the live loop 
 `stampSeqs` (`internal/sim/loop.go`) because the loop applies events before the store
 assigns sequence numbers. `Observe` never blocks the absorb path (drop-on-overflow), the
 worker is FIFO single-flight with batching/coalescing, and per-agent companion order is
-emission order.
+emission order. Spec 097: memories with Origin `observed` (grounded arrival
+observations, [[executor-perception-observation]]) are skipped by policy —
+their consumer (the belief reconciler) matches deterministically, never via
+vectors, and embedding the deduped texture measurably doubled the SC-005
+game-day embed volume (41→83 calls); a vectorless memory scores the neutral
+relevance term, the designed fallback.
 
 **Situation vectors.** At each `replica.PlannerCadence()` bucket edge — spec 048
 promoted the driver's fixed 1800-tick cadence to a per-world [[world-tuning]]
