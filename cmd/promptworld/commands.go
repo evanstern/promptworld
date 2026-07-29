@@ -268,6 +268,11 @@ func cmdNew(args []string) error {
 	if err != nil {
 		return err
 	}
+	// Log format stamp (spec 094 FR-001): written at genesis, before the
+	// first event lands, so the log is self-describing from birth.
+	if err := st.StampLogFormat(); err != nil {
+		return err
+	}
 	genesis := []store.Event{{Tick: 0, Type: "world.created", Payload: payload}}
 	// Genesis tuning pin (spec 057 / TASK-108 US2): one sim.tuning_applied event
 	// carrying the full current default dial set, so this world's effective
@@ -371,12 +376,12 @@ func cmdMigrate(args []string) error {
 	if err != nil {
 		return err
 	}
-	if res.ManifestOnly {
-		// v4→v5 (spec 068): the format bump only gates old software away from
-		// new-terrain worlds — this world's log, state, and terrain carry
-		// over untouched (terrain_gen stays absent ⇒ legacy terrain).
-		fmt.Printf("migrated %q (seed %d) to format v%d\n  manifest-only upgrade — the event log and terrain carry over unchanged\nstart it with: promptworld start %s\n",
-			res.Name, res.Seed, world.FormatVersion, arg)
+	if res.Translated {
+		// v4/v5→v6 (spec 094): the translating migration — full history
+		// preserved, only the guardian event-type names rewritten.
+		fmt.Printf("migrated %q (seed %d) to format v%d\n  %d events translated in place (every tick and payload preserved); %d villagers resume at tick %d (%s)\n  source database archived as %s\nstart it with: promptworld start %s\n",
+			res.Name, res.Seed, world.FormatVersion, res.SourceEvents, res.AgentsCarried, res.Tick, clock.Format(res.Tick),
+			filepath.Base(res.ArchivePath), arg)
 		return nil
 	}
 	fmt.Printf("migrated %q (seed %d) to format v%d\n  %d villagers carried across the break at tick %d (%s)\n  %d source events archived in %s\nstart it with: promptworld start %s\n",

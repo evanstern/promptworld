@@ -102,7 +102,7 @@ func assembleClaim(a *prophesyArgs) (sim.ProphecyClaim, string) {
 // one companion agent.memory_added per target (OriginOmen, dream band — the
 // directive-companion shape). The charge spend rides the declaration itself:
 // the prophecy.declared reducer arm validates and decrements the bank (the
-// metatron.nudged contract), so the turn-side charges check here is only the
+// guardian.nudged contract), so the turn-side charges check here is only the
 // polite pre-check — the door stays the authority. Returns the declared
 // prophecy or (nil, in-fiction refusal).
 func (mt *Guardian) landProphesy(a *prophesyArgs, charges int, tick int64, alive map[int]bool, grant grantSet) (*sim.Prophecy, string) {

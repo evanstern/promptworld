@@ -117,7 +117,7 @@ func TestLandMiracleMoveNameResolvesLivePosition(t *testing.T) {
 	found := false
 	for _, b := range inj.batches {
 		for _, e := range b {
-			if e.Type != "metatron.entity_moved" {
+			if e.Type != "guardian.entity_moved" {
 				continue
 			}
 			var p sim.EntityMovedPayload
@@ -131,7 +131,7 @@ func TestLandMiracleMoveNameResolvesLivePosition(t *testing.T) {
 		}
 	}
 	if !found {
-		t.Fatal("no metatron.entity_moved event landed")
+		t.Fatal("no guardian.entity_moved event landed")
 	}
 }
 

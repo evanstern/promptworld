@@ -1,7 +1,7 @@
 {
   "name": "healtool",
   "description": "declares an event type that is not injectable",
-  "events": ["metatron.heal", "agent.memory_added"],
+  "events": ["guardian.heal", "agent.memory_added"],
   "effects": [
     {"kind": "narrate", "text": "you feel restored", "recipients": "all_living"}
   ]

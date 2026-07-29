@@ -61,12 +61,12 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 	// never fires.
 	if c := FaithRegenCadenceTicks(s.FaithScore(), s.scenario != nil); c > 0 &&
 		nextTick%c == 0 && s.GuardianCharges < GuardianChargeCap {
-		emit("metatron.charge_regenerated", ChargeRegeneratedPayload{})
+		emit("guardian.charge_regenerated", ChargeRegeneratedPayload{})
 	}
 
 	// Guardian standing-order expiry (spec 029): a pure function of (state, tick),
 	// exactly the charge_regenerated pattern — an active order whose TTL has
-	// elapsed emits metatron.order_expired, which the reducer transitions to
+	// elapsed emits guardian.order_expired, which the reducer transitions to
 	// expired (freeing the player-cap slot). Emitted once: the same event marks
 	// the order non-active, so the next tick no longer sees it active. Replay
 	// reproduces it deterministically without the guardian running — unlike a
@@ -76,7 +76,7 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 		// nature, not a timed order — so the expiry sweep skips it (origin-keyed
 		// TTL exemption, matching the reducer's order_placed arm).
 		if o := &s.GuardianOrders[i]; o.Status == "active" && o.Survival == "" && nextTick >= o.ExpiresTick {
-			emit("metatron.order_expired", OrderIDPayload{ID: o.ID})
+			emit("guardian.order_expired", OrderIDPayload{ID: o.ID})
 		}
 	}
 
@@ -750,7 +750,7 @@ func groundFactPresentIn(s *State, m *worldmap.Map, f PlaceFact, cleared, quarri
 
 // groundFactDetail is the kind-specific Detail scalar as ground truth holds it
 // right now (spec 041 data-model: fires bake their FuelUntil; every other kind
-// 0) — the metatron.place_revealed arm's stamp, mirroring what the perception
+// 0) — the guardian.place_revealed arm's stamp, mirroring what the perception
 // sweep would bake had the agent seen the place itself.
 func groundFactDetail(s *State, f PlaceFact) int64 {
 	if f.Kind != "fire" {

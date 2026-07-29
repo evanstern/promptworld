@@ -54,10 +54,15 @@ const (
 // makes them unskinnable. Stage tokens are appended from defaultStages in
 // init() so the two can never drift.
 var defaultTable = map[string]string{
-	TokenName:                           "Guardian",
-	TokenEpithet:                        "guardian",
-	TokenTabLabel:                       "guardian",
-	TokenFamilyLabel:                    "guardian", // chronicle Type-column alias for the frozen `guardian` event family (FR-013)
+	TokenName:     "Guardian",
+	TokenEpithet:  "guardian",
+	TokenTabLabel: "guardian",
+	// FamilyLabel's original consumer — the chronicle Type-column alias over
+	// the frozen metatron.* family (spec 052 FR-013, TASK-121's interim
+	// shim) — was retired by spec 094: persisted types are guardian.* now
+	// and the chronicle renders them raw. The token remains part of the
+	// skin data contract for skins that voice the guardian family name.
+	TokenFamilyLabel:                    "guardian",
 	"skin.guardian.working_noun":        "working",
 	"skin.guardian.working_noun_plural": "workings",
 	"skin.guardian.notes_label":         "the guardian's notes",

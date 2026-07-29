@@ -141,9 +141,17 @@ func validateTool(bundlesRoot, bundleName, toolDir string) (*BundleTool, *BootIs
 		return nil, &BootIssue{Bundle: bundleName, Tool: toolName, File: rel, Rule: ruleOf(perr), Severity: "error", Message: perr.Error()}
 	}
 
-	// T3: events non-empty and ⊆ the sim injection whitelist.
+	// T3: events non-empty and ⊆ the sim injection whitelist. Declared names
+	// normalize through the log-format rename table first (spec 094 D4's
+	// config-reference posture): a bundle authored against the pre-094
+	// metatron.* vocabulary keeps loading on a migrated world — the manifest
+	// is a REFERENCE to event types, not the log itself, so read-side
+	// normalization here is the same kindness EvidenceRef readers get.
 	if len(m.Events) == 0 {
 		return nil, fail("T3", "tool %q declares no events", toolName)
+	}
+	for i, ev := range m.Events {
+		m.Events[i] = sim.CanonicalEventType(ev)
 	}
 	for _, ev := range m.Events {
 		if !sim.InjectableSocialEvent(ev) {

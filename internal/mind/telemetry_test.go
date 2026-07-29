@@ -343,7 +343,7 @@ func TestResumeNoBurst(t *testing.T) {
 // every Target regardless of the reducer's form gates.
 func nudgeBatchEvents(seq, tick int64, form, text string, targets ...int) []store.Event {
 	nb, _ := json.Marshal(sim.GuardianNudgedPayload{Form: form, Targets: sim.Refs(targets), Text: text})
-	batch := []store.Event{{Seq: seq, Tick: tick, Type: "metatron.nudged", Payload: nb}}
+	batch := []store.Event{{Seq: seq, Tick: tick, Type: "guardian.nudged", Payload: nb}}
 	prefix := "You saw a vision: "
 	if form == "omen" {
 		prefix = "You witnessed an omen: "

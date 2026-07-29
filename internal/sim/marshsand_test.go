@@ -92,7 +92,7 @@ func TestFeatureDescNamesMarshSand(t *testing.T) {
 func TestRemoveTerrainRejectsMarshSand(t *testing.T) {
 	s, mx, my, sx, sy := marshSandFixture(t)
 	for _, c := range [][2]int{{mx, my}, {sx, sy}} {
-		err := applyMiracleErr(s, 40, "metatron.entity_removed",
+		err := applyMiracleErr(s, 40, "guardian.entity_removed",
 			EntityRemovedPayload{Class: "terrain", X: c[0], Y: c[1], Gratis: true})
 		if err == nil {
 			t.Errorf("(%d,%d): removing marsh/sand must refuse", c[0], c[1])

@@ -44,7 +44,7 @@ func TestBundleToolReplayByteIdentity(t *testing.T) {
 		Tick:     0,
 		Args:     map[string]string{"target": "Ash", "x": strconv.Itoa(bx), "y": strconv.Itoa(by)},
 		Invoker:  "the guardian",
-		Declared: map[string]bool{"metatron.entity_moved": true, "agent.memory_added": true},
+		Declared: map[string]bool{"guardian.entity_moved": true, "agent.memory_added": true},
 	}
 	effects, err := ExpandTemplates(templates, in)
 	if err != nil {

@@ -1,6 +1,10 @@
 package store
 
-// DDL is the format_version 1 schema from specs/001-world-daemon/contracts/storage.md.
+// DDL is the store's TABLE-SHAPE schema, unchanged since
+// specs/001-world-daemon/contracts/storage.md. Three versions are distinct
+// here (spec 094 terminology): this DDL (table shape, never yet revised), the
+// world.json format_version (save-directory shape, world.FormatVersion), and
+// the log's own vocabulary stamp (meta key log_format_version, format.go).
 // The events table is append-only, enforced in-schema by triggers.
 const ddl = `
 CREATE TABLE IF NOT EXISTS meta (

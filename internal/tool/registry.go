@@ -141,10 +141,10 @@ var miracleCosts = map[string]int{
 // kind-keyed one. Declared beside miracleKinds so the kind vocabulary and its
 // event mapping stay together. Keyed lookups only.
 var kindToEvent = map[string]string{
-	"move":      "metatron.entity_moved",
-	"remove":    "metatron.entity_removed",
-	"give_item": "metatron.item_granted",
-	"time_snap": "metatron.time_snapped",
+	"move":      "guardian.entity_moved",
+	"remove":    "guardian.entity_removed",
+	"give_item": "guardian.item_granted",
+	"time_snap": "guardian.time_snapped",
 }
 
 // MiracleCost returns the charge price of a miracle kind; ok is false for an
@@ -158,7 +158,7 @@ func MiracleCost(kind string) (int, bool) {
 // MiracleCostsByEvent returns a fresh map from miracle EVENT TYPE to charge
 // price — the shape sim's reducer keys on. Built by walking the ordered kind
 // vocabulary and resolving each kind's event and cost through keyed lookups
-// only, so the result carries exactly the four metatron.* miracle event types
+// only, so the result carries exactly the four guardian.* miracle event types
 // and is deterministic. sim.miracleCost IS this map (spec 021 R7), replacing
 // the literal that used to be sim's own second copy of the table.
 func MiracleCostsByEvent() map[string]int {
@@ -206,7 +206,7 @@ func GrantKinds() []string {
 // every other field is optional because the needed set is per-kind (move:
 // class/x/y/to_x/to_y; remove: class/x/y; give_item: villager/item/qty;
 // time_snap: day/time). The reducer dry-run enforces the per-kind requirements
-// at the door (metatron.landMiracle → BuildMiracleBatch → InjectSocial), and the
+// at the door (guardian.landMiracle → BuildMiracleBatch → InjectSocial), and the
 // loop feeds a rejection back for repair, so a permissive flat schema is exactly
 // right — the door is the semantic authority, this only rejects shapes the model
 // can fix (wrong scalar type, missing kind, unknown kind).
@@ -613,7 +613,7 @@ var guardianTools = []Tool{
 	// send_vision's optional place grant (spec 041 FR-014): the three place_*
 	// params ride together (all or none — the handler refuses a partial
 	// triple) and, when given, the vision also lands one
-	// metatron.place_revealed granting the target knowledge of ONE real
+	// guardian.place_revealed granting the target knowledge of ONE real
 	// place, provenance revealed. The kind enum is the mental map's closed
 	// place-fact vocabulary (sim/mentalmap.go PlaceFact); the reducer dry-run
 	// is the authority that the place actually exists. A vision without the
@@ -634,20 +634,20 @@ var guardianTools = []Tool{
 			{Name: "place_y", Kind: Number,
 				Description: "optional: y of the revealed place"}},
 		Cost:   Cost{Charges: 1, TextCapBytes: 400},
-		Events: []string{"metatron.nudged", "metatron.place_revealed", "agent.memory_added"}},
+		Events: []string{"guardian.nudged", "guardian.place_revealed", "agent.memory_added"}},
 	{Name: "send_omen", Effect: Expressive, Gate: Charge,
 		Params: []Param{
 			{Name: "targets", Kind: Text, Required: true,
 				Description: `comma-separated living villager names, or "everyone"`},
 			{Name: "text", Kind: Text, Required: true, MaxBytes: 400}},
 		Cost:   Cost{Charges: 1, TextCapBytes: 400},
-		Events: []string{"metatron.nudged", "agent.memory_added"}},
+		Events: []string{"guardian.nudged", "agent.memory_added"}},
 	{Name: "monitor_and_act", Effect: Expressive, Gate: None,
 		InputSchemaJSON: monitorAndActSchema(),
-		Events:          []string{"metatron.order_placed"}},
+		Events:          []string{"guardian.order_placed"}},
 	{Name: "cancel_order", Effect: Expressive, Gate: None,
 		Params: []Param{{Name: "id", Kind: Text, Required: true}},
-		Events: []string{"metatron.order_cancelled"}},
+		Events: []string{"guardian.order_cancelled"}},
 	{Name: "pause", Effect: Expressive, Gate: None},
 	{Name: "start", Effect: Expressive, Gate: None,
 		Params: []Param{{Name: "speed", Kind: Enum, Enum: clockSpeeds}}},
@@ -655,7 +655,7 @@ var guardianTools = []Tool{
 		Params: []Param{{Name: "speed", Kind: Enum, Required: true, Enum: clockSpeeds}}},
 	// work_miracle is the guardian's fourth loop tool (spec 017 T019b, R13
 	// amendment): a direct, charge-priced world edit landed through the SAME
-	// InjectSocial door the nudges use (metatron.landMiracle → the shared
+	// InjectSocial door the nudges use (guardian.landMiracle → the shared
 	// BuildMiracleBatch → Loop.InjectSocial). It is Effect EXPRESSIVE, not World,
 	// decided by the same rule that makes the nudges Expressive: it produces an
 	// immediate, bounded batch of whitelisted events through the social door —
@@ -680,8 +680,8 @@ var guardianTools = []Tool{
 	{Name: "work_miracle", Effect: Expressive, Gate: Charge,
 		Params: miracleParams(),
 		Cost:   Cost{Charges: 1},
-		Events: []string{"metatron.time_snapped", "metatron.item_granted",
-			"metatron.entity_moved", "metatron.entity_removed", "agent.memory_added"}},
+		Events: []string{"guardian.time_snapped", "guardian.item_granted",
+			"guardian.entity_moved", "guardian.entity_removed", "agent.memory_added"}},
 	// explain (spec 063 US1, FR-001/FR-002): the guardian's read-only
 	// mechanics-facts tool. Effect READ — the journal-tool precedent: it
 	// returns a deterministic fact sheet into cognition (explain.go), grounds

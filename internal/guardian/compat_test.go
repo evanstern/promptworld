@@ -92,11 +92,11 @@ func TestPrefeatureEventLogReplays(t *testing.T) {
 	startCharges := st.GuardianCharges
 
 	events := []store.Event{
-		{Tick: 10, Type: "metatron.nudged", Payload: json.RawMessage(`{"form":"vision","targets":[0],"text":"wake"}`)},
+		{Tick: 10, Type: "guardian.nudged", Payload: json.RawMessage(`{"form":"vision","targets":[0],"text":"wake"}`)},
 		{Tick: 10, Type: "agent.memory_added", Payload: json.RawMessage(`{"agent":0,"text":"You saw a vision: wake","salience":6,"subject":-1,"origin":"omen"}`)},
-		{Tick: 20, Type: "metatron.charter_observed", Payload: json.RawMessage(`{"fingerprint":"ab12cd34ef56","default":true}`)},
-		{Tick: 30, Type: "metatron.order_placed", Payload: json.RawMessage(`{"id":"ord-30-0","origin":"player","condition":"the fire goes out","action":"relight it","event_types":["sim.night_started"],"agent":-1,"placed_tick":30,"expires_tick":259230,"status":"active"}`)},
-		{Tick: 40, Type: "metatron.charge_regenerated", Payload: json.RawMessage(`{}`)},
+		{Tick: 20, Type: "guardian.charter_observed", Payload: json.RawMessage(`{"fingerprint":"ab12cd34ef56","default":true}`)},
+		{Tick: 30, Type: "guardian.order_placed", Payload: json.RawMessage(`{"id":"ord-30-0","origin":"player","condition":"the fire goes out","action":"relight it","event_types":["sim.night_started"],"agent":-1,"placed_tick":30,"expires_tick":259230,"status":"active"}`)},
+		{Tick: 40, Type: "guardian.charge_regenerated", Payload: json.RawMessage(`{}`)},
 	}
 	for _, e := range events {
 		if err := st.Apply(e); err != nil {

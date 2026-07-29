@@ -9,28 +9,24 @@ import (
 	"github.com/evanstern/promptworld/internal/store"
 )
 
-// TestTypeColumnFamilyAlias (spec 052 FR-013, T010): the chronicle Type
-// column displays the frozen `metatron.*` family through the skin's family
-// label (default `guardian`); the dock short form and the detail pane's
-// verbatim type stay raw; curriculum.* is deliberately raw (inspector-class
-// visibility, spec edge cases).
-func TestTypeColumnFamilyAlias(t *testing.T) {
-	e := store.Event{Seq: 9, Tick: 100, Type: "metatron.nudged",
+// TestTypeColumnRendersRawType (spec 094 US3.3): the chronicle Type column
+// renders guardian.* NATIVELY — TASK-121's display-alias shim (spec 052
+// FR-013's displayEventType) is deleted; persisted types are the display
+// vocabulary on every surface (solo column, dock short form, detail pane).
+func TestTypeColumnRendersRawType(t *testing.T) {
+	e := store.Event{Seq: 9, Tick: 100, Type: "guardian.nudged",
 		Payload: json.RawMessage(`{"form":"vision","targets":[0],"text":"x"}`)}
 	l := formatChronicleLine(e, []string{"Ash"}, nil)
 
-	if l.DisplayType != "guardian.nudged" {
-		t.Errorf("DisplayType = %q, want guardian.nudged", l.DisplayType)
-	}
-	if l.Type != "metatron.nudged" {
+	if l.Type != "guardian.nudged" {
 		t.Errorf("raw Type mutated: %q", l.Type)
 	}
 
-	// Solo column renders the alias…
+	// Solo column renders the persisted type verbatim…
 	cols := computeChronicleColumns([]chronicleLine{l}, false)
 	prefix := chronicleLinePrefix(l, cols)
 	if !strings.Contains(prefix, "guardian.nudged") || strings.Contains(prefix, "metatron") {
-		t.Errorf("solo prefix not aliased: %q", prefix)
+		t.Errorf("solo prefix must carry the raw guardian.* type: %q", prefix)
 	}
 	// …the dock short form is the raw type's last segment (family-free)…
 	dockCols := computeChronicleColumns([]chronicleLine{l}, true)
@@ -38,26 +34,23 @@ func TestTypeColumnFamilyAlias(t *testing.T) {
 		t.Errorf("dock prefix should be the bare short form: %q", p)
 	}
 	// …and the detail pane stays verbatim (FR-020 audience ruling).
-	if insp := formatInspector(e, []string{"Ash"}); !strings.Contains(insp, `"metatron.nudged"`) {
+	if insp := formatInspector(e, []string{"Ash"}); !strings.Contains(insp, `"guardian.nudged"`) {
 		t.Errorf("detail pane must keep the raw type:\n%s", insp)
 	}
 
-	// A custom skin's family label re-aliases the column.
+	// A skin's family label does NOT touch the Type column anymore — the
+	// alias was the interim shim, retired with the real rename.
 	sk, _ := skin.Parse([]byte(`{"strings": {"skin.guardian.family_label": "raven"}}`))
-	if got := displayEventType("metatron.nudged", sk); got != "raven.nudged" {
-		t.Errorf("custom family label = %q, want raven.nudged", got)
-	}
-
-	// curriculum.* stays raw by design.
-	if got := displayEventType("curriculum.stage_unlocked", nil); got != "curriculum.stage_unlocked" {
-		t.Errorf("curriculum must stay raw, got %q", got)
+	skinned := formatChronicleLine(e, []string{"Ash"}, sk)
+	if skinned.Type != "guardian.nudged" {
+		t.Errorf("a skin must not alias the Type column: %q", skinned.Type)
 	}
 }
 
 // TestChronicleSubjectIsSkinName (spec 052 US2 AS-2 / US3 AS-1): the digest
 // grammar's guardian-family subject lines render the skin-resolved name.
 func TestChronicleSubjectIsSkinName(t *testing.T) {
-	e := store.Event{Seq: 1, Tick: 1, Type: "metatron.nudged",
+	e := store.Event{Seq: 1, Tick: 1, Type: "guardian.nudged",
 		Payload: json.RawMessage(`{"form":"vision","targets":[0],"text":"beware"}`)}
 
 	def := formatChronicleLine(e, []string{"Ash"}, nil)

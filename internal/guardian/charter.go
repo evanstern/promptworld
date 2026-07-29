@@ -172,7 +172,7 @@ func charterFingerprint(text string) string {
 // observeCharter lands the charter-revision observation (spec 044 US2,
 // T014): when the effective charter's fingerprint differs from the last
 // recorded one (State.CharterFingerprint, read via the absorb-side mirror),
-// the turn emits metatron.charter_observed through the same InjectSocial
+// the turn emits guardian.charter_observed through the same InjectSocial
 // door every other turn effect rides — fingerprint-at-effect semantics: the
 // timeline records what the guardian actually ran with, at the turns it ran.
 // The first turn of a world always emits (the mirror starts empty). Ended
@@ -202,7 +202,7 @@ func (mt *Guardian) observeCharter(text string) {
 	// stage-2→3 unlock gate (Custom = !default) must not count it as a
 	// player-authored revision after an upgrade.
 	def := text == presetCharter(mt.charterPreset) || isLegacyDefault(text)
-	batch := []store.Event{{Type: "metatron.charter_observed", Payload: mustJSON(sim.CharterObservedPayload{
+	batch := []store.Event{{Type: "guardian.charter_observed", Payload: mustJSON(sim.CharterObservedPayload{
 		Fingerprint: fp, Default: def})}}
 	if err := mt.social.InjectSocial(batch); err != nil {
 		log.Printf("guardian: charter observation rejected at the door: %v", err)
@@ -238,7 +238,7 @@ func skillsFingerprint(skills []skillFile) string {
 // observeCharter twin, stamped at the same point of every turn: when the
 // BOUND skill set's fingerprint differs from the last recorded one
 // (State.SkillsFingerprint, via the absorb-side mirror), the turn emits
-// metatron.skills_observed through the same InjectSocial door. An EMPTY
+// guardian.skills_observed through the same InjectSocial door. An EMPTY
 // bound set never emits — absence is not an observation, and stages 1–2
 // (stageSkills refuses to bind there) are structurally silent, which is what
 // makes SkillsObservedEvidence's Custom-by-construction claim honest: a
@@ -259,7 +259,7 @@ func (mt *Guardian) observeSkills(skills []skillFile) {
 	for i, sf := range skills {
 		names[i] = sf.name
 	}
-	batch := []store.Event{{Type: "metatron.skills_observed", Payload: mustJSON(sim.SkillsObservedPayload{
+	batch := []store.Event{{Type: "guardian.skills_observed", Payload: mustJSON(sim.SkillsObservedPayload{
 		Fingerprint: fp, Names: names})}}
 	if err := mt.social.InjectSocial(batch); err != nil {
 		log.Printf("guardian: skills observation rejected at the door: %v", err)

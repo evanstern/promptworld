@@ -5,7 +5,7 @@
     {"name": "x", "kind": "number", "required": true, "description": "pile column"},
     {"name": "y", "kind": "number", "required": true, "description": "pile row"}
   ],
-  "events": ["metatron.entity_removed"],
+  "events": ["guardian.entity_removed"],
   "charges": 1,
   "script": "tool.star"
 }

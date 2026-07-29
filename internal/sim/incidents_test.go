@@ -397,7 +397,7 @@ func TestCharterObservedStampsCoordinates(t *testing.T) {
 	if !ok {
 		t.Fatal("CharterEvidenceFromState found no coordinates")
 	}
-	want := EvidenceRef{Type: "metatron.charter_observed", Seq: 77, Tick: 500, Custom: true}
+	want := EvidenceRef{Type: "guardian.charter_observed", Seq: 77, Tick: 500, Custom: true}
 	if ref != want {
 		t.Errorf("evidence = %+v, want %+v", ref, want)
 	}
@@ -422,7 +422,7 @@ func TestCharterObservedStampsCoordinates(t *testing.T) {
 // SkillsObservedEvidence derives Custom: true by construction.
 func TestSkillsObservedReducerArm(t *testing.T) {
 	s := NewState(1, testMap(1))
-	ev := store.Event{Tick: 900, Seq: 41, Type: "metatron.skills_observed",
+	ev := store.Event{Tick: 900, Seq: 41, Type: "guardian.skills_observed",
 		Payload: mustPayload(SkillsObservedPayload{Fingerprint: "ab12cd34ef56", Names: []string{"10-watch.md"}})}
 	if err := s.Apply(ev); err != nil {
 		t.Fatal(err)
@@ -435,7 +435,7 @@ func TestSkillsObservedReducerArm(t *testing.T) {
 	if !ok {
 		t.Fatal("SkillsObservedEvidence found no coordinates")
 	}
-	want := EvidenceRef{Type: "metatron.skills_observed", Seq: 41, Tick: 900, Custom: true}
+	want := EvidenceRef{Type: "guardian.skills_observed", Seq: 41, Tick: 900, Custom: true}
 	if ref != want {
 		t.Errorf("evidence = %+v, want %+v", ref, want)
 	}
@@ -448,7 +448,7 @@ func TestSkillsObservedReducerArm(t *testing.T) {
 		"empty fingerprint": {Names: []string{"a.md"}},
 		"empty name list":   {Fingerprint: "ab12cd34ef56"},
 	} {
-		bad := store.Event{Tick: 1, Type: "metatron.skills_observed", Payload: mustPayload(payload)}
+		bad := store.Event{Tick: 1, Type: "guardian.skills_observed", Payload: mustPayload(payload)}
 		if err := NewState(1, testMap(1)).Apply(bad); err == nil {
 			t.Errorf("%s applied cleanly, want a door rejection", name)
 		}

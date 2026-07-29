@@ -164,7 +164,7 @@ func TestScenarioPassEndToEndThroughLoopAndObserver(t *testing.T) {
 		EventTypes: []string{"gru.sighted"}, Agent: -1,
 		PlacedTick: 0, ExpiresTick: 2 * 86400,
 	}
-	if err := loop.InjectSocial([]store.Event{{Type: "metatron.order_placed", Payload: mustJSON(t, order)}}); err != nil {
+	if err := loop.InjectSocial([]store.Event{{Type: "guardian.order_placed", Payload: mustJSON(t, order)}}); err != nil {
 		t.Fatalf("inject watch: %v", err)
 	}
 	if _, err := loop.Do("set_speed", "max"); err != nil {

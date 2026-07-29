@@ -101,7 +101,7 @@ func TestBundleTeleportEndToEnd(t *testing.T) {
 	for _, batch := range inj.batches {
 		for _, e := range batch {
 			switch e.Type {
-			case "metatron.entity_moved", "agent.memory_added", "cog.tool_call":
+			case "guardian.entity_moved", "agent.memory_added", "cog.tool_call":
 				// declared bundle events + the loop's own telemetry batch
 			default:
 				t.Errorf("unexpected event type landed: %q", e.Type)
@@ -132,7 +132,7 @@ func TestBundleBootRejectionReachesRoster(t *testing.T) {
 	}
 	if found.Severity != "error" ||
 		found.File != filepath.Join("demo", "tools", "healtool", "tool.json") ||
-		!strings.Contains(found.Message, "metatron.heal") {
+		!strings.Contains(found.Message, "guardian.heal") {
 		t.Errorf("boot issue = %+v", *found)
 	}
 

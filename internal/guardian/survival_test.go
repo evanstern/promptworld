@@ -184,7 +184,7 @@ func TestSurvivalTurnActsWithoutPlayer(t *testing.T) {
 	// No order_triggered was ever emitted for a survival watch.
 	for _, b := range inj.batches {
 		for _, e := range b {
-			if e.Type == "metatron.order_triggered" {
+			if e.Type == "guardian.order_triggered" {
 				t.Error("a survival watch landed order_triggered (it must never consume)")
 			}
 		}

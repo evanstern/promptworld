@@ -20,7 +20,7 @@ import (
 func openWorldWithMeeting(t *testing.T, meeting string) *world.World {
 	t.Helper()
 	dir := t.TempDir()
-	manifest := `{"name":"w","seed":42,"format_version":5,"tick_game_seconds":1` + meeting + `}`
+	manifest := `{"name":"w","seed":42,"format_version":6,"tick_game_seconds":1` + meeting + `}`
 	if err := os.WriteFile(filepath.Join(dir, world.ManifestName), []byte(manifest), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -343,7 +343,7 @@ func TestSeedSurvivalWatches(t *testing.T) {
 	replayed := sim.NewState(w.Manifest.Seed, w.Map())
 	var placed int
 	if err := st.ReplayEvents(0, func(e store.Event) error {
-		if e.Type == "metatron.order_placed" {
+		if e.Type == "guardian.order_placed" {
 			placed++
 		}
 		return replayed.Apply(e)
@@ -360,7 +360,7 @@ func TestSeedSurvivalWatches(t *testing.T) {
 	}
 	var after int
 	st.ReplayEvents(0, func(e store.Event) error {
-		if e.Type == "metatron.order_placed" {
+		if e.Type == "guardian.order_placed" {
 			after++
 		}
 		return nil

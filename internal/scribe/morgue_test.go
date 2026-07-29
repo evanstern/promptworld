@@ -63,19 +63,19 @@ func morgueHistory(t *testing.T) []store.Event {
 		// Birch matters to and is owed by Ash: a divine grant funds the gift
 		// (gratis — no charge accounting in this scripted history), and the
 		// gave arm opens Ash's debt to Birch.
-		ev(4000, "metatron.item_granted", sim.ItemGrantedPayload{Agent: sim.Ref(1), Kind: "food_raw", Qty: 1, Gratis: true}),
+		ev(4000, "guardian.item_granted", sim.ItemGrantedPayload{Agent: sim.Ref(1), Kind: "food_raw", Qty: 1, Gratis: true}),
 		ev(4100, "social.gave", sim.GavePayload{From: sim.Ref(1), To: sim.Ref(0), Kind: "food"}),
 		ev(4200, "social.relation_changed", sim.RelationChangedPayload{
 			A: sim.Ref(1), B: sim.Ref(0), TrustDelta: 30, AffectionDelta: 5, Reason: "gift"}),
 		// Birch's deed, on the chronicle's curated vocabulary.
 		ev(7200, "agent.built", sim.BuiltPayload{Agent: sim.Ref(1), Kind: "fire", X: 10, Y: 10}),
 		// The default charter observed on day 1; Cedar dies under it.
-		ev(10000, "metatron.charter_observed", sim.CharterObservedPayload{Fingerprint: "aaaa11112222", Default: true}),
+		ev(10000, "guardian.charter_observed", sim.CharterObservedPayload{Fingerprint: "aaaa11112222", Default: true}),
 		ev(50000, "agent.died", sim.DiedPayload{Agent: sim.Ref(2), Cause: "exposure"}),
 		// The player edits the charter (observed day 2) and places a watch;
 		// Birch dies under BOTH.
-		ev(90000, "metatron.charter_observed", sim.CharterObservedPayload{Fingerprint: "bbbb33334444", Default: false}),
-		ev(91000, "metatron.order_placed", sim.GuardianOrder{
+		ev(90000, "guardian.charter_observed", sim.CharterObservedPayload{Fingerprint: "bbbb33334444", Default: false}),
+		ev(91000, "guardian.order_placed", sim.GuardianOrder{
 			ID: "ord-91000-1", Origin: "player",
 			Condition: "anyone goes hungry", Action: "send a vision toward food",
 			EventTypes: []string{"agent.needs_changed"}, Agent: 1,

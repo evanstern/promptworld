@@ -90,18 +90,18 @@ func (s *State) spendMiracleCharge(eventType string, gratis bool) error {
 	return nil
 }
 
-// applyMiracle is the reducer dispatcher for the four metatron.* miracle event
+// applyMiracle is the reducer dispatcher for the four guardian.* miracle event
 // types, routed here from State.Apply. Each arm validates, prices via
 // spendMiracleCharge, and mutates — atomically, or errors with nothing changed.
 func (s *State) applyMiracle(e store.Event) error {
 	switch e.Type {
-	case "metatron.time_snapped":
+	case "guardian.time_snapped":
 		return s.applyTimeSnapped(e)
-	case "metatron.item_granted":
+	case "guardian.item_granted":
 		return s.applyItemGranted(e)
-	case "metatron.entity_moved":
+	case "guardian.entity_moved":
 		return s.applyEntityMoved(e)
-	case "metatron.entity_removed":
+	case "guardian.entity_removed":
 		return s.applyEntityRemoved(e)
 	}
 	return fmt.Errorf("apply %s: unknown working type", e.Type)

@@ -13,8 +13,12 @@ import (
 //   - the `cog.*` observability channel (cog.tool_call is the ONLY event an
 //     explain call produces — FR-002's "standard tool-call telemetry"; the
 //     rest of cog.* is the same recorded-observability class), and
-//   - the `guardian.*` feedback namespace (guardian.report_card — the
-//     feedback layer's own output must never become a scoring input).
+//   - guardian.report_card, the feedback layer's own output — feedback must
+//     never become a scoring input. (Pre-094 this was "the guardian.*
+//     namespace" wholesale; the spec-094 rename moved the 13 world-action
+//     metatron.* types INTO guardian.*, and those — orders, observations,
+//     miracles — are exactly the rubric-eligible player evidence the ladder
+//     grades, so the ban is now the specific feedback type, not the prefix.)
 //
 // This extends the existing catalog-sweep family: internal/tui's
 // TestExerciseRubricTermsAreCatalogedEventTypes pins every term to a REAL
@@ -26,7 +30,7 @@ import (
 // prophecy.* events remain rubric-eligible world events.
 func TestRubricHygieneNoTutorLaneTerms(t *testing.T) {
 	banned := func(term string) bool {
-		return strings.HasPrefix(term, "cog.") || strings.HasPrefix(term, "guardian.") ||
+		return strings.HasPrefix(term, "cog.") || term == "guardian.report_card" ||
 			strings.HasPrefix(term, "faith.")
 	}
 	for _, def := range ScenarioExercises {

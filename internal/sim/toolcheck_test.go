@@ -98,16 +98,16 @@ func TestWhitelistDiffIdentical(t *testing.T) {
 		"agent.belief_reinforced": true,
 		"agent.thought":           true,
 		"chronicle.entry":         true,
-		"metatron.nudged":         true,
+		"guardian.nudged":         true,
 		// Spec 016 (guardian miracles) deliberately widens the isolation
 		// boundary by four recorded miracle event types (contracts §4). They
 		// land through the same InjectSocial door as the nudge; they are NOT
 		// registry-tool events (see the registry-doctrine note below), so they
 		// appear only here in the whitelist, not in any tool's Events set.
-		"metatron.time_snapped":         true,
-		"metatron.item_granted":         true,
-		"metatron.entity_moved":         true,
-		"metatron.entity_removed":       true,
+		"guardian.time_snapped":         true,
+		"guardian.item_granted":         true,
+		"guardian.entity_moved":         true,
+		"guardian.entity_removed":       true,
 		"meeting.proposal_rephrased":    true,
 		"cog.thought":                   true,
 		"cog.outcome":                   true,
@@ -125,13 +125,13 @@ func TestWhitelistDiffIdentical(t *testing.T) {
 		// order_triggered is the trigger worker's injection. order_expired is
 		// EXECUTOR-emitted (like charge_regenerated) and is deliberately never here
 		// — only injected types need the door.
-		"metatron.order_placed":    true,
-		"metatron.order_cancelled": true,
-		"metatron.order_triggered": true,
+		"guardian.order_placed":    true,
+		"guardian.order_cancelled": true,
+		"guardian.order_triggered": true,
 		// Spec 041 (FR-014) widens the boundary by exactly one entry — the
 		// vision's divine place grant, declared in send_vision's Events
 		// (pinned ⊆ this whitelist by ValidateToolCoverage).
-		"metatron.place_revealed": true,
+		"guardian.place_revealed": true,
 		// Spec 042 (embedding memory retrieval) deliberately widens the boundary
 		// by three entries: the embedder driver's two reducer-armed vector
 		// companions, and the shadow-mode rank-divergence telemetry (a cog.*
@@ -144,12 +144,12 @@ func TestWhitelistDiffIdentical(t *testing.T) {
 		// observation (the evidence timeline the morgue aligns deaths against)
 		// and the narrator's recorded morgue epilogue (bounded prose ring; also
 		// one of the two types the ENDED world's narrowed door still accepts).
-		"metatron.charter_observed": true,
+		"guardian.charter_observed": true,
 		"morgue.epilogue":           true,
 		// Spec 077 (exercise catalog) deliberately widens the boundary by
 		// exactly one entry: the turn pipeline's skills observation — the
 		// charter observation's twin, the stage-3 gate's evidence event.
-		"metatron.skills_observed": true,
+		"guardian.skills_observed": true,
 		// Spec 063 US4 (report card) deliberately widens the boundary by
 		// exactly one entry: the stopping-point producer's stored attribution
 		// note (recorded prose, latest-card reducer). The run-end card rides

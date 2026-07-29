@@ -87,8 +87,27 @@ func TestOffWhitelistSkipsTool(t *testing.T) {
 	if iss.File != filepath.Join("demo", "tools", "healtool", "tool.json") {
 		t.Errorf("file = %q", iss.File)
 	}
-	if iss.Severity != "error" || !strings.Contains(iss.Message, "metatron.heal") || !strings.Contains(iss.Message, "not an injectable event type") {
+	if iss.Severity != "error" || !strings.Contains(iss.Message, "guardian.heal") || !strings.Contains(iss.Message, "not an injectable event type") {
 		t.Errorf("message = %q", iss.Message)
+	}
+}
+
+// TestLegacyEventVocabularyNormalizes (spec 094 D4's config-reference
+// posture): a bundle authored against the pre-094 metatron.* vocabulary
+// still loads — declared event names normalize through the log-format
+// rename table before the T3 whitelist check, and the compiled tool carries
+// the CURRENT names.
+func TestLegacyEventVocabularyNormalizes(t *testing.T) {
+	bs := discover(t, "legacyvocab")
+	if got := rosterNames(bs); !reflect.DeepEqual(got, []string{"porter"}) {
+		t.Fatalf("roster = %v, want [porter] (boot report: %+v)", got, bs.BootReport())
+	}
+	if len(bs.BootReport()) != 0 {
+		t.Errorf("boot report = %+v, want empty", bs.BootReport())
+	}
+	porter := bs.Roster()[0]
+	if !reflect.DeepEqual(porter.Events, []string{"guardian.entity_moved", "agent.memory_added"}) {
+		t.Errorf("compiled events = %v, want the normalized current names", porter.Events)
 	}
 }
 

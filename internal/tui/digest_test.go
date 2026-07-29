@@ -192,19 +192,19 @@ var catalogFixture = map[string]digestFixture{
 	"stranger.took":               {`{"x":5,"y":5,"kind":"food_raw","n":2}`, `the stranger took 2 food_raw from the stores at (5,5)`},
 	"stranger.departed":           {`{"day":2}`, `the stranger was gone by dawn of day 2`},
 	"chronicle.entry":             {`{"day":3,"from_tick":100,"to_tick":200,"text":"Ash lit the first fire.","thread":"cold-start","agents":[{"id":0,"name":"Ash"}]}`, `day 3 · cold-start: Ash lit the first fire.`},
-	"metatron.charge_regenerated": {`{}`, `a charge regenerated`},
-	"metatron.nudged":             {`{"form":"dream","targets":[{"id":0,"name":"Ash"}],"text":"beware the cold"}`, `Guardian dream → Ash: "beware the cold"`},
-	"metatron.place_revealed": {
+	"guardian.charge_regenerated": {`{}`, `a charge regenerated`},
+	"guardian.nudged":             {`{"form":"dream","targets":[{"id":0,"name":"Ash"}],"text":"beware the cold"}`, `Guardian dream → Ash: "beware the cold"`},
+	"guardian.place_revealed": {
 		`{"agent":{"id":0,"name":"Ash"},"facts":[{"kind":"fire","x":4,"y":5,"seen":100,"prov":"revealed","detail":9000}]}`,
 		`Guardian revealed fire at (4,5) to Ash`,
 	},
-	"metatron.order_placed": {
+	"guardian.order_placed": {
 		`{"id":"ord-100-1","origin":"player","condition":"the woodpile drops below 5 logs","action":"nudge someone to chop wood","event_types":["sim.forage_regrown"],"agent":-1,"placed_tick":100,"expires_tick":100000,"status":"active"}`,
 		`Guardian set a watch: "the woodpile drops below 5 logs"`,
 	},
-	"metatron.order_triggered": {`{"id":"ord-100-1","matched_type":"sim.forage_regrown","matched_tick":150}`, `Guardian's watch came true (sim.forage_regrown @ t150)`},
-	"metatron.order_cancelled": {`{"id":"ord-100-1"}`, `Guardian released a watch (ord-100-1)`},
-	"metatron.order_expired":   {`{"id":"ord-100-1"}`, `Guardian's watch lapsed (ord-100-1)`},
+	"guardian.order_triggered": {`{"id":"ord-100-1","matched_type":"sim.forage_regrown","matched_tick":150}`, `Guardian's watch came true (sim.forage_regrown @ t150)`},
+	"guardian.order_cancelled": {`{"id":"ord-100-1"}`, `Guardian released a watch (ord-100-1)`},
+	"guardian.order_expired":   {`{"id":"ord-100-1"}`, `Guardian's watch lapsed (ord-100-1)`},
 
 	// --- the plan layer (spec 084 — designations and directives) ---
 	"designation.placed": {
@@ -235,12 +235,12 @@ var catalogFixture = map[string]digestFixture{
 	},
 	"prophecy.fulfilled": {`{"id":"pro-300-0"}`, `Guardian's foretelling came true (pro-300-0)`},
 	"prophecy.failed":    {`{"id":"pro-300-0"}`, `Guardian's word did not come to pass (pro-300-0)`},
-	"metatron.charter_observed": {
+	"guardian.charter_observed": {
 		`{"fingerprint":"ab12cd34ef56","default":false}`,
 		`Guardian ran under charter ab12cd34ef56 (player-authored)`,
 	},
 	// spec 077 FR-006: the skills twin of the charter observation.
-	"metatron.skills_observed": {
+	"guardian.skills_observed": {
 		`{"fingerprint":"ab12cd34ef56","names":["10-watch.md","20-tone.md"]}`,
 		`Guardian ran under 2 skill files ab12cd34ef56`,
 	},
@@ -248,10 +248,10 @@ var catalogFixture = map[string]digestFixture{
 		`{"agent":{"id":0,"name":"Ash"},"text":"Ash kept the fire until the end."}`,
 		`epilogue for Ash: Ash kept the fire until the end.`,
 	},
-	"metatron.time_snapped":   {`{"to_tick":106200,"gratis":false}`, `Guardian snapped time forward to day 2 11:30`},
-	"metatron.item_granted":   {`{"agent":{"id":0,"name":"Ash"},"kind":"food_raw","qty":2,"gratis":false}`, `Guardian granted Ash 2 food_raw`},
-	"metatron.entity_moved":   {`{"class":"pile","x":3,"y":4,"to_x":6,"to_y":7,"gratis":false}`, `Guardian moved the pile at (3,4) to (6,7)`},
-	"metatron.entity_removed": {`{"class":"structure","x":12,"y":8,"gratis":false}`, `Guardian removed the structure at (12,8)`},
+	"guardian.time_snapped":   {`{"to_tick":106200,"gratis":false}`, `Guardian snapped time forward to day 2 11:30`},
+	"guardian.item_granted":   {`{"agent":{"id":0,"name":"Ash"},"kind":"food_raw","qty":2,"gratis":false}`, `Guardian granted Ash 2 food_raw`},
+	"guardian.entity_moved":   {`{"class":"pile","x":3,"y":4,"to_x":6,"to_y":7,"gratis":false}`, `Guardian moved the pile at (3,4) to (6,7)`},
+	"guardian.entity_removed": {`{"class":"structure","x":12,"y":8,"gratis":false}`, `Guardian removed the structure at (12,8)`},
 
 	// --- cog (labeled) ---
 	"cog.thought": {
@@ -500,22 +500,22 @@ func TestDigestMiracleGratisMark(t *testing.T) {
 		want                          string // base summary, sans the gratis suffix
 	}{
 		{
-			"metatron.time_snapped",
+			"guardian.time_snapped",
 			`{"to_tick":106200,"gratis":false}`, `{"to_tick":106200,"gratis":true}`,
 			`Guardian snapped time forward to day 2 11:30`,
 		},
 		{
-			"metatron.item_granted",
+			"guardian.item_granted",
 			`{"agent":0,"kind":"food_raw","qty":2,"gratis":false}`, `{"agent":0,"kind":"food_raw","qty":2,"gratis":true}`,
 			`Guardian granted Ash 2 food_raw`,
 		},
 		{
-			"metatron.entity_moved",
+			"guardian.entity_moved",
 			`{"class":"pile","x":3,"y":4,"to_x":6,"to_y":7,"gratis":false}`, `{"class":"pile","x":3,"y":4,"to_x":6,"to_y":7,"gratis":true}`,
 			`Guardian moved the pile at (3,4) to (6,7)`,
 		},
 		{
-			"metatron.entity_removed",
+			"guardian.entity_removed",
 			`{"class":"structure","x":12,"y":8,"gratis":false}`, `{"class":"structure","x":12,"y":8,"gratis":true}`,
 			`Guardian removed the structure at (12,8)`,
 		},
@@ -549,7 +549,7 @@ func TestDigestEntityMovedRemovedClasses(t *testing.T) {
 		{`{"class":"pile","x":1,"y":1,"to_x":2,"to_y":2,"gratis":false}`, `Guardian moved the pile at (1,1) to (2,2)`},
 	}
 	for _, tc := range moveCases {
-		if got := plainSegs(digestOf(t, "metatron.entity_moved", tc.payload)); got != tc.want {
+		if got := plainSegs(digestOf(t, "guardian.entity_moved", tc.payload)); got != tc.want {
 			t.Errorf("entity_moved %s: plain summary = %q, want %q", tc.payload, got, tc.want)
 		}
 	}
@@ -560,7 +560,7 @@ func TestDigestEntityMovedRemovedClasses(t *testing.T) {
 		{`{"class":"terrain","x":1,"y":1,"gratis":false}`, `Guardian cleared the terrain at (1,1)`},
 	}
 	for _, tc := range removeCases {
-		if got := plainSegs(digestOf(t, "metatron.entity_removed", tc.payload)); got != tc.want {
+		if got := plainSegs(digestOf(t, "guardian.entity_removed", tc.payload)); got != tc.want {
 			t.Errorf("entity_removed %s: plain summary = %q, want %q", tc.payload, got, tc.want)
 		}
 	}

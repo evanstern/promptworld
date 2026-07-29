@@ -150,14 +150,14 @@ type State struct {
 	RunEnd *RunEnd       `json:"run_end,omitempty"`
 	// Charter-revision identity (spec 044 US2, FR-008): the most recent
 	// effective-charter content hash a Guardian turn ran under, set by the
-	// metatron.charter_observed arm. Empty until the guardian's first turn; the
+	// guardian.charter_observed arm. Empty until the guardian's first turn; the
 	// full revision timeline lives in the event log (the morgue's render scan
 	// aligns each death against it). omitempty — pre-044 snapshots stay
 	// byte-identical.
 	CharterFingerprint string `json:"charter_fingerprint,omitempty"`
 	// Charter authorship (spec 072 FR-006): whether the most recently observed
 	// effective charter was player-authored (!CharterObservedPayload.Default),
-	// set ONLY by the same metatron.charter_observed arm — the-law's rubric
+	// set ONLY by the same guardian.charter_observed arm — the-law's rubric
 	// charter conjunct reads it beside the fingerprint. The zero value is
 	// conservative: false = not known player-authored, so a pre-072 snapshot
 	// with a custom charter already in force renders the term pending until
@@ -165,7 +165,7 @@ type State struct {
 	// false ✓. omitempty — existing snapshots stay byte-identical.
 	CharterCustom bool `json:"charter_custom,omitempty"`
 	// Charter-observation coordinates (spec 077 FR-005): the (seq, tick) of
-	// the most recent metatron.charter_observed event, stamped by the same
+	// the most recent guardian.charter_observed event, stamped by the same
 	// reducer arm from the event envelope (the GuardianOrder.PlacedSeq
 	// precedent) — the state-derivable re-location the-law's pass evidence
 	// needs (CharterEvidenceFromState, curriculum.go), removing the spec-072
@@ -178,7 +178,7 @@ type State struct {
 	// Skills observation (spec 077 FR-006): the bound skill-file set the
 	// guardian's most recent turn ran under — fingerprint plus the same
 	// envelope coordinates the charter observation persists, set ONLY by the
-	// metatron.skills_observed arm. Skill files bind only from stage-3 and
+	// guardian.skills_observed arm. Skill files bind only from stage-3 and
 	// only players author them, so SkillsObservedEvidence derives
 	// Custom: true by construction — the stage-3→4 gate's evidence design.
 	// Zero values = never observed; omitempty keeps snapshots byte-identical.
@@ -2026,11 +2026,11 @@ func (s *State) Apply(e store.Event) error {
 	case "chronicle.entry":
 		return s.applyChronicle(e)
 
-	case "metatron.charge_regenerated", "metatron.nudged",
-		"metatron.place_revealed",
-		"metatron.order_placed", "metatron.order_triggered",
-		"metatron.order_cancelled", "metatron.order_expired",
-		"metatron.charter_observed", "metatron.skills_observed":
+	case "guardian.charge_regenerated", "guardian.nudged",
+		"guardian.place_revealed",
+		"guardian.order_placed", "guardian.order_triggered",
+		"guardian.order_cancelled", "guardian.order_expired",
+		"guardian.charter_observed", "guardian.skills_observed":
 		return s.applyGuardian(e)
 
 	case "designation.placed", "designation.cancelled", "designation.fulfilled",
@@ -2050,8 +2050,8 @@ func (s *State) Apply(e store.Event) error {
 	case "guardian.report_card":
 		return s.applyReportCard(e)
 
-	case "metatron.time_snapped", "metatron.item_granted",
-		"metatron.entity_moved", "metatron.entity_removed":
+	case "guardian.time_snapped", "guardian.item_granted",
+		"guardian.entity_moved", "guardian.entity_removed":
 		return s.applyMiracle(e)
 
 	case "curriculum.exercise_passed", "curriculum.stage_unlocked":

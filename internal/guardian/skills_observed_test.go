@@ -22,7 +22,7 @@ func skillsObservations(t *testing.T, inj *stateInjector) []sim.SkillsObservedPa
 	var out []sim.SkillsObservedPayload
 	for _, batch := range inj.batches {
 		for _, e := range batch {
-			if e.Type != "metatron.skills_observed" {
+			if e.Type != "guardian.skills_observed" {
 				continue
 			}
 			var p sim.SkillsObservedPayload

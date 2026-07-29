@@ -603,7 +603,7 @@ func (m Model) postmortemRunEndLine() string {
 // client's own chronicle ring — never a file read (the durable render is
 // scribe's morgue.md; this is a live projection over what the client
 // already holds). Charter is "unknown" when the ring has rotated past the
-// relevant metatron.charter_observed event on a very long run (R3's honesty
+// relevant guardian.charter_observed event on a very long run (R3's honesty
 // rule), never guessed.
 type morgueRow struct {
 	Name, Cause, Charter string
@@ -630,7 +630,7 @@ func (m Model) morgueRows() []morgueRow {
 }
 
 // closestCharterObservation scans the client's chronicle ring (m.events) for
-// the most recent metatron.charter_observed event at or before deathTick —
+// the most recent guardian.charter_observed event at or before deathTick —
 // the same alignment rule morgue.md's render uses (internal/scribe/morgue.go
 // captureEpitaph), but over the bounded client-side ring instead of a full
 // replay: "unknown" is the honest answer once the ring has rotated past it
@@ -639,7 +639,7 @@ func (m Model) closestCharterObservation(deathTick int64) string {
 	var best *sim.CharterObservedPayload
 	var bestTick int64 = -1
 	for _, e := range m.events {
-		if e.Type != "metatron.charter_observed" || e.Tick > deathTick || e.Tick < bestTick {
+		if e.Type != "guardian.charter_observed" || e.Tick > deathTick || e.Tick < bestTick {
 			continue
 		}
 		var p sim.CharterObservedPayload
@@ -753,7 +753,10 @@ func provingPass(replica *sim.State, stage string) (sim.CurriculumPass, bool) {
 			return p, true // stage-1 -> stage-2: any stage-1 pass qualifies
 		case "stage-2":
 			for _, ev := range p.Evidence {
-				if ev.Type == "metatron.charter_observed" && ev.Custom {
+				// Recorded evidence may carry the pre-094 vocabulary
+				// (translation preserves payloads verbatim) — normalize
+				// before comparing, exactly as sim.EvaluateUnlock does.
+				if sim.CanonicalEventType(ev.Type) == "guardian.charter_observed" && ev.Custom {
 					return p, true
 				}
 			}
@@ -2733,13 +2736,13 @@ func (m Model) guardianStripView(width int) string {
 	if charges < sim.GuardianChargeCap && cadence > 0 {
 		// Regen is omitted at a full bank (research R4.1) and when no regen
 		// is scheduled at all (spec 085 — the R4.1 honesty rule generalized):
-		// the executor only fires metatron.charge_regenerated below cap and
+		// the executor only fires guardian.charge_regenerated below cap and
 		// on a live cadence, so forecasting an arrival that isn't scheduled
 		// would be a lie.
 		next := m.status.Clock.Tick + (cadence - m.status.Clock.Tick%cadence)
 		segments = append(segments, fmt.Sprintf("next +1 @ %s", clock.FormatTOD(int(clock.SecondOfDay(next)))))
 	}
-	// Standing orders: the client-side replica mirrors metatron.order_*
+	// Standing orders: the client-side replica mirrors guardian.order_*
 	// events live (m.replica.Apply, tui.go), the same underlying data the
 	// guardian tab's orderStatusLines counts (len(m.consoleOrders), fed
 	// from an on-demand IPC peek) — the replica is used here instead

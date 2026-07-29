@@ -37,17 +37,17 @@ func TestAddressingMiracleByteIdentity(t *testing.T) {
 		params MiracleParams
 	}{
 		{"move villager@", fmt.Sprintf(`{"kind":"move_entity","target":"villager@%d,%d","to_x":5,"to_y":6}`, ax, ay),
-			"metatron.entity_moved", "move", MiracleParams{Class: "villager", X: ax, Y: ay, ToX: 5, ToY: 6}},
+			"guardian.entity_moved", "move", MiracleParams{Class: "villager", X: ax, Y: ay, ToX: 5, ToY: 6}},
 		{"move structure@", `{"kind":"move_entity","target":"structure@12,7","to_x":4,"to_y":4}`,
-			"metatron.entity_moved", "move", MiracleParams{Class: "structure", X: 12, Y: 7, ToX: 4, ToY: 4}},
+			"guardian.entity_moved", "move", MiracleParams{Class: "structure", X: 12, Y: 7, ToX: 4, ToY: 4}},
 		{"move pile@", `{"kind":"move_entity","target":"pile@3,4","to_x":6,"to_y":6}`,
-			"metatron.entity_moved", "move", MiracleParams{Class: "pile", X: 3, Y: 4, ToX: 6, ToY: 6}},
+			"guardian.entity_moved", "move", MiracleParams{Class: "pile", X: 3, Y: 4, ToX: 6, ToY: 6}},
 		{"remove structure@", `{"kind":"remove_entity","target":"structure@12,7"}`,
-			"metatron.entity_removed", "remove", MiracleParams{Class: "structure", X: 12, Y: 7}},
+			"guardian.entity_removed", "remove", MiracleParams{Class: "structure", X: 12, Y: 7}},
 		{"remove pile@", `{"kind":"remove_entity","target":"pile@3,4"}`,
-			"metatron.entity_removed", "remove", MiracleParams{Class: "pile", X: 3, Y: 4}},
+			"guardian.entity_removed", "remove", MiracleParams{Class: "pile", X: 3, Y: 4}},
 		{"remove terrain@", `{"kind":"remove_entity","target":"terrain@9,2"}`,
-			"metatron.entity_removed", "remove", MiracleParams{Class: "terrain", X: 9, Y: 2}},
+			"guardian.entity_removed", "remove", MiracleParams{Class: "terrain", X: 9, Y: 2}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
