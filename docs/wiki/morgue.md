@@ -7,7 +7,7 @@ sources:
   - internal/sim/morgue.go
   - internal/sim/state.go
   - internal/world/world.go
-verified_against: PENDING_MERGE_SHA
+verified_against: e63cc89fa4fffe1116a5c8273f3e3f429fb66979
 ---
 
 # Morgue
