@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/guardian/guardian.go
   - internal/skin/skin.go
-verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
+verified_against: 74fe956813aa6be54e65156ae9bfcb91745cbb8d
 ---
 
 # Guardian

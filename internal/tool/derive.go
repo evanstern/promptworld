@@ -242,7 +242,13 @@ var miracleKindArgs = map[string]string{
 	// used, and only advisory, when villager is omitted.
 	"move":   `class ("villager"|"structure"|"pile"), x, y, to_x, to_y, and for class="villager" also villager (their name — the door resolves their live position, so name a villager instead of coordinates)`,
 	"remove": `class ("structure"|"pile"|"terrain"), x, y`,
-	"give_item": fmt.Sprintf(`villager, item (one of: %s), qty`,
+	// (spec 095 FR-002): the targeting digest above (spec 059) now names each
+	// living villager's carry headroom (carrying used/cap, N free) from the
+	// SAME live snapshot as their position — this line points the model at it
+	// and restates the door's own rule (FR-011): a grant whose qty exceeds the
+	// free amount is refused WHOLE, never partially delivered, so reading the
+	// headroom first avoids the wasted attempt.
+	"give_item": fmt.Sprintf(`villager, item (one of: %s), qty — check the villager's carry headroom in the digest above; a qty that would exceed their free amount is refused whole, not partially delivered`,
 		strings.Join(GrantKinds(), ", ")),
 	"time_snap": `day and time ("HH:MM")`,
 }

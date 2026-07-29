@@ -208,8 +208,13 @@ func orderRefusal(err error) string {
 
 // needMirror is the turn-side snapshot of one villager's survival-relevant needs
 // (spec 059): health/food/warmth, refreshed per absorb batch (mirrorState), read
-// by the targeting digest so the turn worker never races the replica.
-type needMirror struct{ Health, Food, Warmth int }
+// by the targeting digest so the turn worker never races the replica. Bulk (spec
+// 095 FR-001) rides the SAME snapshot: the villager's currently-carried bulk, so
+// the targeting digest can report live carry headroom (free units against
+// sim.BulkCap) alongside position — the give_item guidance gloss (derive.go)
+// points the model here so a grant lands within the cap on the first try instead
+// of bouncing off the door (spec 016 FR-011, untouched).
+type needMirror struct{ Health, Food, Warmth, Bulk int }
 
 // survivalBand reports, for a survival watch kind and a villager's needs, whether
 // the villager is IN the danger band (fire) and whether it has recovered above the
