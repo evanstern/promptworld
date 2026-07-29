@@ -6,7 +6,7 @@
 
 ## Phase 1: Tighten (small overages)
 
-- [ ] T001 Tighten in place, dropping no fact: event-types-cognition-telemetry.md,
+- [X] T001 Tighten in place, dropping no fact: event-types-cognition-telemetry.md,
   tui-client-mechanics.md, tile-registry.md, mental-map-perception.md,
   executor-social-perception.md, explain-tutor-guide.md, village-lens.md,
   event-types-agent-intents.md, curriculum-ladder.md, social-fabric.md (each ≤300
