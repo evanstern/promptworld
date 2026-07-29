@@ -1,6 +1,6 @@
 ---
 name: tool-registry-guardian-tools
-description: Split from [[tool-registry]] (spec 014/021/029) — the spec-029 Guardian agency surface (send_vision/send_omen/monitor_and_act/cancel_order + pause/start/adjust_speed) with its authored array schemas, the authoritative miracle cost table (MiracleCost/MiracleCostsByEvent), RestrictEnum's per-world capability gating, and the derived GuardianToolGuidance/GuardianReadGuidance/GuardianTargetingGuidance prompt prose.
+description: Split from [[tool-registry]] (spec 014/021/029) — the spec-029 Guardian agency surface (send_vision/send_omen/monitor_and_act/cancel_order + pause/start/adjust_speed) with its authored array schemas, the authoritative miracle cost table (MiracleCost/MiracleCostsByEvent), RestrictEnum's per-world capability gating, and the derived GuardianToolGuidance/GuardianReadGuidance/GuardianTargetingGuidance prompt prose. The spec-084/085 plan/faith tools split to [[tool-registry-plan-faith-tools]].
 kind: component
 sources:
   - internal/tool/registry.go
@@ -100,40 +100,16 @@ itself is assembled turn-side (`internal/guardian/turn.go`'s
 `buildTargetingDigest`, [[guardian-orders]]/[[guardian-miracles]]), this
 function is only the fixed prose that introduces it.
 
-Spec 084 ([[guardian-designations]]) appends the five plan-layer tools
-after `explain`, all `Gate: None` (the plan layer is charge-free — recorded
-decision): `place_designation` (`kind` Enum over `designationKinds`,
-`target` Text — a bare spec-082 locus parsed by `target.ParseLocus`,
-`structure_kind` Enum over `buildableStructureKinds` — a hand-carried
-mirror of sim's recipes-derived list, drift-pinned from internal/guardian —
-`min_structures` Number 1..12, `label` Text ≤80; Events
-`designation.placed`), `cancel_designation`/`cancel_directive` (required
-`id`), `issue_directive` (`designation_id`, `targets` — the send_omen
-comma-names/"everyone" vocabulary — `text` ≤400 runes, `ttl_days` 1..7
-default 3; Events `directive.issued` + `agent.memory_added`), and the
-Effect-Read `survey_site` (`x`/`y` required, `radius` clamped 1..8 default
-4 — renders under `GuardianReadGuidance` like explain). All five join
-`RosterGuardian`, `loopGuardianTools`, AND the stage-1 ceiling (the
-`monitor_and_act` every-stage teaching-primitive precedent).
-
-Spec 085 ([[guardian-faith]]) appends `prophesy` last: `Gate: Charge` (1 —
-the send_vision price; the `prophecy.declared` reducer arm spends the
-stake), `targets` (the send_omen vocabulary), `text` ≤400 bytes,
-`claim_kind` Enum over `prophecyClaimKinds` (`designation_fulfilled`/
-`structure_count`/`population_at_least`/`survives` — exported as
-`ProphecyClaimKinds()` and drift-pinned from internal/guardian), the
-kind-conditional claim params (`designation_id`/`structure_kind`/`min`/
-`agent` — partial or foreign sets refused handler-side), and
-`deadline_days` 1..7 default 3; Events `prophecy.declared` +
-`agent.memory_added`. It joins both rosters and the stage-1 ceiling
-(send_vision's profile — the same influence verb with a wager attached),
-and there is deliberately NO cancel verb. `observableEventTypes` grows
-enum-only 16 → 19 with the three `prophecy.*` types (`faith.changed`
-deliberately stays out in v1).
+Spec 084/085 append two more tool families — the durable plan layer
+(`place_designation`/`cancel_designation`/`issue_directive`/
+`cancel_directive`/`survey_site`, charge-free, stage-1 granted) and
+`prophesy` (charge-gated, no cancel verb) — split into
+[[tool-registry-plan-faith-tools]].
 
 ## Connections
 
-Part of [[tool-registry]]'s summary-style split (corpus-spec v2). See
+Part of [[tool-registry]]'s summary-style split (corpus-spec v2).
+[[tool-registry-plan-faith-tools]] is this note's own split-off child. See
 [[tool-registry]] for the registry's overall doctrine and its other split-off
 domains: [[tool-registry-world-catalog]] (the World/villager catalog),
 [[tool-registry-schema-clamping]] (authored schemas and clamp-with-notice), and

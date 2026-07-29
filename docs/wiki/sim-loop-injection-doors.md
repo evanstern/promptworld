@@ -1,6 +1,6 @@
 ---
 name: sim-loop-injection-doors
-description: Loop.InjectSocial (the mind's whitelisted conversation/consolidation/musing/chronicle/nudge/miracle/telemetry door) and Loop.InjectOperator (the daemon's separate operator-event door). Load when tracing which event types a non-InjectIntent caller may durably record, or why a type is whitelist-rejected.
+description: Loop.InjectSocial (the mind's whitelisted conversation/consolidation/musing/chronicle/nudge/miracle door) and Loop.InjectOperator (the daemon's separate operator-event door); the world/social-effecting whitelist half here, the observability/administrative half split to [[sim-loop-injection-doors-telemetry]]. Load when tracing which event types a non-InjectIntent caller may durably record, or why a type is whitelist-rejected.
 kind: component
 sources:
   - internal/sim/loop.go
@@ -49,50 +49,19 @@ executor-emitted and deliberately absent — whitelist absence is what
 refuses a forged verdict or faith movement —
 (since spec 036 whitelist membership is also readable from outside the package
 via `InjectableSocialEvent(t)`, the single-source accessor both the tool
-coverage gate and the bundle boot gate ([[bundle-tools]]) enforce against) —
-`meeting.proposal_rephrased` swaps
-an enacted norm's text and nothing else,
-the `cog.*` telemetry — `cog.thought`, `cog.outcome`,
-`cog.recalibration_recommended`, and (since spec 017) `cog.tool_call` (the
-tool-use loop's per-call trace, [[tool-loop]]) — is whitelisted as reducer
-no-ops so the [[cognition]] layer's observability is recorded, never silent,
-and (since spec 019, US3) `journal.entry_written`/`journal.entry_deleted` —
-the two mind-injectable journal mutations, whose reducer dry-run enforces the
-rune budget (written) and entry existence (deleted) before either lands, and
-(since spec 030 US2, FR-008) `agent.belief_reinforced` — the
-grounded-observation seam that re-anchors a held belief's decay clock; spec 030
-ships the whitelist entry and reducer arm only, no in-tree emitter yet), and
-(since spec 042 US1/US2) three more: `agent.memory_embedded`/
-`agent.situation_embedded` — the mind-side embedder's two vector companions
-([[memory-retrieval]]), state-mutating unlike the `cog.*` telemetry (below) —
-door ordering guarantees a memory's embedding companion never precedes the
-memory itself, since the embedder only observes an `agent.memory_added` AFTER
-it is committed and notified; and `cog.memory_divergence`, the shadow-mode
-selector's rank-divergence record, riding the same reducer-no-op `cog.*`
-isolation class as the telemetry types below), and (since spec 044 US2) two
-more: `metatron.charter_observed` — the Guardian turn pipeline's
-fingerprint-at-effect stamp, the event-sourced charter-revision timeline the
-[[morgue]] aligns deaths against, whose reducer arm (and so the dry-run)
-enforces a non-empty fingerprint — and `morgue.epilogue`, the narrator's
-recorded mourning prose after a death or the run's end, appending only the
-bounded `State.MorgueEpilogues` ring (never simulation state, which is why it
-also survives the ended-world narrowing above)), and (since spec 077 FR-006) `metatron.skills_observed` — the
-skills-observation twin of `charter_observed`: the bound skill-file set a
-turn ran under, emitted on fingerprint change by the same pipeline
-(`observeSkills`), whose reducer arm (and so the dry-run) enforces a
-non-empty fingerprint AND a non-empty name list (an empty bound set is
-never an observation), and (since spec 063,
-[[grounded-feedback]]) `guardian.report_card` — the guardian's report-card
-producer's stored attribution note, recorded prose only, never simulation
-state; a run-ending card rides `morgue.epilogue` instead, so this type
-deliberately does NOT join the ended-world narrowing above:
-an atomic, whitelisted batch of conversation, consolidation, musing, chronicle,
-nudge, miracle, phrasing, or telemetry effects, dry-run on a state copy before
-applying — the dry-run probe is reconstructed from bytes and so carries no
-unexported/unserialized state, so `handleCommand` re-attaches the loop's static
-map (`probe.SetMap(l.m)`) before applying, letting miracle arms validate the
-terrain vocabulary in the dry-run exactly as the real apply and replay will.
-Model output enters
+coverage gate and the bundle boot gate ([[bundle-tools]]) enforce against).
+The observability/administrative half of the whitelist — `cog.*` telemetry,
+journal entries, `belief_reinforced`, the spec-042 memory-embedding
+companions, `charter_observed`/`morgue.epilogue`/`skills_observed`, and
+`guardian.report_card` — splits into
+[[sim-loop-injection-doors-telemetry]]. Every whitelisted type, on either
+half, lands as part of an atomic, whitelisted batch of conversation,
+consolidation, musing, chronicle, nudge, miracle, phrasing, or telemetry
+effects, dry-run on a state copy before applying — the dry-run probe is
+reconstructed from bytes and so carries no unexported/unserialized state,
+so `handleCommand` re-attaches the loop's static map (`probe.SetMap(l.m)`)
+before applying, letting miracle arms validate the terrain vocabulary in
+the dry-run exactly as the real apply and replay will. Model output enters
 the sim only through these two doors, as recorded input. The protocol `Status`
 carries `GuardianCharges` (JSON tag `metatron_charges`, frozen — spec 052 ruling 2)
 so clients render the ⚡ bank without a state fetch.
@@ -115,22 +84,20 @@ letting the daemon's condition hook degrade to a log line only.
 
 ## Connections
 
-Parent note: [[sim-loop]]. [[llm-provider-health]]'s condition hook is
-`InjectOperator`'s sole caller. [[guardian-miracles]]'s four event types ride
-`InjectSocial`'s whitelist, as do [[guardian-orders]]'s three injected
-order-lifecycle types and [[mental-maps]]'s `metatron.place_revealed`.
-[[memory-retrieval]]'s embedder driver injects `agent.memory_embedded`/
-`agent.situation_embedded` through this door and records
-`cog.memory_divergence` alongside the other `cog.*` telemetry.
-[[tool-loop]] is the caller behind both doors' villager/guardian traffic since
-spec 017 — its handlers wrap `InjectIntent` (see [[sim-loop-landing-ladder]])
-and `InjectSocial` (`muse`, and the Guardian's nudges/`work_miracle`), and
-its buffered `CallRecord`s land as the `cog.tool_call` batch through this
-door. [[morgue]] is the consumer of the two spec-044 whitelist types and of
-the narrowed ended-world door (see [[sim-loop]]'s ended gate). [[grounded-feedback]]
-(spec 063) is `guardian.report_card`'s injector, whitelisted here.
-[[bundle-tools]] enforces `InjectableSocialEvent(t)` as the single-source
-whitelist accessor alongside the tool coverage gate.
+Parent note: [[sim-loop]]. [[sim-loop-injection-doors-telemetry]] is this
+note's own split-off child — the observability/administrative whitelist
+half. [[llm-provider-health]]'s condition hook is `InjectOperator`'s sole
+caller. [[guardian-miracles]]'s four event types ride `InjectSocial`'s
+whitelist, as do [[guardian-orders]]'s three injected order-lifecycle
+types and [[mental-maps]]'s `metatron.place_revealed`. [[tool-loop]] is the
+caller behind both doors' villager/guardian traffic since spec 017 — its
+handlers wrap `InjectIntent` (see [[sim-loop-landing-ladder]]) and
+`InjectSocial` (`muse`, and the Guardian's nudges/`work_miracle`), and its
+buffered `CallRecord`s land as the `cog.tool_call` batch through this
+door. [[morgue]] is the consumer of the narrowed ended-world door (see
+[[sim-loop]]'s ended gate). [[bundle-tools]] enforces
+`InjectableSocialEvent(t)` as the single-source whitelist accessor
+alongside the tool coverage gate.
 
 ## Spec 086 — the door validates agent refs before the dry-run
 

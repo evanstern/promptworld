@@ -13,7 +13,6 @@ verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
 Back to [[event-types]] for the payload-grammar conventions and the full
 event-domain index.
 
-
 Spec 086 (agent-named payloads): every agent-referencing field in this
 family's payloads is a `sim.AgentRef` — the wire carries
 `{"id":N,"name":"…"}` objects (lists element-wise), the name stamped at
@@ -60,24 +59,15 @@ verbs unchanged, so historical events of either kind replay exactly.
 | `cog.tool_call` (spec 017, FR-007) | `CogToolCallPayload{job, ordinal, tool, args?, verdict, reason?, tier, snapshot_tick}` in `internal/sim/cognition.go` | mind/metatron (injected), one per tool call a cognition's [[tool-loop]] saw — landed, landed_clamped (spec 058 FR-001/FR-003, `VerdictLandedClamped`, [[tool-loop]]), rejected, read, or unlanded; `{job, ordinal}` is the correlation key (1-based, dense per job, model-emission order) | none — recorded observability, reducer no-op, whitelisted alongside the other `cog.*` types |
 | `cog.memory_divergence` (spec 042 US2) | `MemoryDivergencePayload{agent, tick, mode, legacy, augmented, overlap, displacement, vectorless, sit_tick}` in `internal/sim/cognition.go` | mind driver (injected via `InjectSocial`), one per memory selection while the world's `memory_relevance` flag is `shadow` or `on` — `legacy`/`augmented` are both windows' memory `Seq`s in window order ([[memory-retrieval]]) | none — recorded observability, reducer no-op, whitelisted alongside the other `cog.*` types |
 | `agent.plan_set` | `PlanSetPayload{agent, job, steps}` in `internal/sim/plan.go` | loop, on a guarded plan landing (TASK-32 US4); since spec 058 (US2, FR-003) a submission longer than `PlanStepCap` is truncated to its first `PlanStepCap` steps IN PLACE before this event is built, so `steps` always carries exactly what landed, never the model's oversized submission (`OutcomeClamped` on the landing decision, [[sim-loop]]) | `Agent.Plan` replaced with the steps |
-| `agent.plan_step_started` / `agent.plan_expired` | `PlanStepPayload{agent, job, step, reason?}` in `internal/sim/plan.go` | executor (`planStepEvents`) on an idle agent's head step firing / window closing or resolve failing | head step popped / whole remaining plan cleared (a broken sequence is not resumed); spec 043: `plan_expired` also stamps the expired step into the `IntentLog` ring (`stampOrAppendExpired` — an open record matching the step's goal closes `"expired"`, otherwise a closed record is appended for a step that expired before ever firing) |
+| `agent.plan_step_started` / `agent.plan_expired` | `PlanStepPayload{agent, job, step, reason?}` in `internal/sim/plan.go` | executor (`planStepEvents`) on an idle agent's head step firing / window closing or resolve failing | head step popped / whole plan cleared (a broken sequence is not resumed); spec 043: `plan_expired` also stamps the expired step into the `IntentLog` ring (`stampOrAppendExpired` — an open record matching the step's goal closes `"expired"`, otherwise a closed record is appended for a step that expired before ever firing) |
 
 ## Connections
 
-the mind driver and the loop's
-landing ladder emit the `cog.*` telemetry ([[cognition]]);
-
-[[decision-context]]
-covers the spec 043 ring/anchor surfaces the intent-lifecycle and needs rows
-maintain, and the prompt whose size `cog.thought`'s `prompt_bytes` tail
-records.
-
-[[social-fabric]] owns the mind-side novelty
-SHIM and its `cog.outcome{suppressed}` reason.
-
-[[tool-loop]] owns
-`VerdictLandedClamped` end to end (spec 058);
-
-[[tool-registry]] owns the
-`Clamp`-flagged `Param`s and the dormant-verb roster prune the feature's tool
-surface reflects.
+The mind driver and the loop's landing ladder emit the `cog.*` telemetry
+([[cognition]]); [[decision-context]] covers the spec 043 ring/anchor
+surfaces the intent-lifecycle and needs rows maintain, and the prompt whose
+size `cog.thought`'s `prompt_bytes` tail records; [[social-fabric]] owns the
+mind-side novelty SHIM and its `cog.outcome{suppressed}` reason;
+[[tool-loop]] owns `VerdictLandedClamped` end to end (spec 058);
+[[tool-registry]] owns the `Clamp`-flagged `Param`s and the dormant-verb
+roster prune the feature's tool surface reflects.

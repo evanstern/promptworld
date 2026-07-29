@@ -1,6 +1,6 @@
 ---
 name: tui-chronicle-feed
-description: The chronicle pane's narrated/raw toggle and the digest grammar: a digestRegistry entry per cataloged event type turning payload into a readable feed line, family color-role tints, high-salience whole-line alerts, and the inspect-mode detail pane. Split from [[tui-client]]; read when adding an [[event-types]] catalog entry (TestCatalogSweep enforces coverage) or touching grammar.go/digest.go.
+description: The chronicle pane's narrated/raw toggle and the digest grammar: a digestRegistry entry per cataloged event type turning payload into a readable feed line, color-role tints, whole-line alerts, and the inspect-mode detail pane. Guardian-domain digest entries split to [[tui-chronicle-feed-guardian-digests]]. Split from [[tui-client]]; read when adding an [[event-types]] entry or touching grammar.go/digest.go.
 kind: component
 sources:
   - internal/tui/grammar.go
@@ -67,42 +67,11 @@ elided (384 floats would drown the feed): `agent.memory_embedded`
 plus rendered situation text as speech, then "dims=N model=…"),
 and `cog.memory_divergence` (agent, mode, "overlap=N/N", "displaced=N",
 "vectorless=N" — the rank-divergence telemetry the US2→US3 gate decision
-reads). Since spec 044, three run-outcome/[[morgue]] types get
-entries; `familyByNamespace` (grammar.go) maps their two new namespaces onto
-existing voices — `run` in the world-lifecycle voice, `morgue` in the
-chronicle's narrated-prose voice: `run.ended` ("the run ended · N dead ·
-final cause <cause>" — the postmortem reader's feed-line summary; the full
-ledger stays in the payload/detail pane),
-since spec 084 the seven plan-layer types get entries in the guardian
-family voice (`familyByNamespace` maps the new `designation`/`directive`
-namespaces onto `familyGuardian`): "Guardian marked a structure_site at
-(4,5) (shelter) — «label»", "Guardian charged Ash, Birch: «text»", the
-id-referencing cancelled/lapsed lines, and the world-answers-the-plan
-"the village fulfilled Guardian's mark/charge (id)" terminals
-([[guardian-designations]], `TestCatalogSweep`-covered);
-`morgue.epilogue` ("epilogue for <name>: <text>", `chronicle.entry`-style
-80-rune truncation; agent −1 renders as "the run" — the run-end epilogue),
-and `metatron.charter_observed` ("Guardian ran under charter <fingerprint>
-(default|player-authored)" — the charter-revision stamp the morgue aligns
-deaths against). Since spec 046, two [[curriculum-ladder]] types get
-entries; `familyByNamespace` maps the new `curriculum` namespace onto the
-guardian family voice — the ladder is the guardian's domain, not a distinct
-visual role: `curriculum.exercise_passed` ("the <exercise> exercise
-was passed (<stage>)") and `curriculum.stage_unlocked` ("The guardian's watcher
-earned <stage name> (proven by <exercise>)", display name via
-`skin.StageName`, like the CLI's stage line). Since spec 063,
-`guardian.report_card` ([[grounded-feedback]]) gets its own entry — a new
-`guardian` namespace joins `familyByNamespace`, mapped onto the SAME guardian
-family voice as the FROZEN `metatron.*` namespace (the digest line renders
-the skin's report-card label, the charter fingerprint, and the note's text
-truncated to 80 runes, `morgue.epilogue`-style). Since spec 076, `world.forked` ([[world-forking]]) gets a
-world-lifecycle-voice entry — "forked from `<parent>` at day D, HH:MM", the
-fork's provenance in game time (the digest line is the v1 rendering;
-chronicle narration of the split is a documented unfunded follow-on). The four
-[[guardian-miracles]] types render in the guardian family voice, with a
-trailing emphasized `(forced)` annotation (`gratisMark`) when the
-payload's gratis flag waived the charge — the feed never conflates an
-operator force with a charge-priced miracle. Unregistered
+reads). The guardian-domain families — run-outcome/morgue (spec 044),
+curriculum (046), the report card (063), world-forking (076), and the
+plan layer (084), plus the four guardian-miracle entries and their
+gratis annotation — split into [[tui-chronicle-feed-guardian-digests]].
+Unregistered
 future types fall back to the old grammar's compact resolved-name JSON
 (the agent-index field table — `agentIndexFields`/`agentIndexFieldRe`,
 covering `agent`, `a`, `b`, `from`, `to`, `speaker`, `listener`, `subject`,
@@ -123,9 +92,10 @@ attachment point for future jump-off actions
 
 [[tui-client]] links here for this feed; its Connections
 section lists [[chronicle]] and [[event-types]] as this feed's data sources,
-alongside [[mental-maps]], [[memory-retrieval]], [[morgue]],
-[[curriculum-ladder]], and [[grounded-feedback]] for the per-family digest
-entries added since their specs.
+alongside [[mental-maps]] and [[memory-retrieval]] for the per-family digest
+entries added since their specs. [[tui-chronicle-feed-guardian-digests]] is
+this note's own split-off child, covering the guardian-domain families
+([[morgue]], [[curriculum-ladder]], [[grounded-feedback]] among them).
 
 Since spec 077 ([[event-types-scenario-incidents]]), seven more types get
 entries with NO new family, tier, or channel: `sim.cold_snap` ("a

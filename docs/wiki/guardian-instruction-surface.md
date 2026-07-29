@@ -1,6 +1,6 @@
 ---
 name: guardian-instruction-surface
-description: How the guardian assembles its turn prompt, in composition order — stage-aware charter lock, persona SOUL bundle fragments, the compiled-in tutor guide, player skill files, then the fixed frame (non-negotiables, tool/read guidance, the spec-059 survival-turn carve-out); the user prompt's live-state sections (standing orders, spec-084 designations/directives, moments, chronicle). Split from [[guardian]]; load when tracing prompt-stacking order or the staged instruction-surface unlock (spec 021/046).
+description: How the guardian assembles its turn prompt, in composition order — stage-aware charter lock, persona SOUL bundle fragments, the compiled-in tutor guide, player skill files, then the fixed frame (non-negotiables, tool/read guidance, the spec-059 survival carve-out); the user prompt's live-state sections (standing orders, designations/directives, moments, chronicle). Split from [[guardian]]; load when tracing prompt order or the staged unlock (spec 021/046).
 kind: component
 sources:
   - internal/guardian/turn.go
