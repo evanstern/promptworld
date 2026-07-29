@@ -260,3 +260,4 @@ status above flipped to done.
 
 | date | task | PR | merge | notes |
 |------|------|----|-------|-------|
+| 2026-07-29 | TASK-162 | #131 | 259dd0f | lane 0; Sonnet; 31/31+10/10 tests; gate posture strengthened (probe on all pinned sources, history moves, tui-design blocking) |
