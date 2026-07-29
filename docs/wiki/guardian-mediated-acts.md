@@ -7,7 +7,7 @@ sources:
   - internal/guardian/toolcalls.go
   - internal/guardian/miracle_batch.go
   - internal/sim/guardian.go
-verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
+verified_against: 6a5344a12cdc8858909ca7cf209d55025135e9d5
 ---
 
 # Guardian's mediated acts
@@ -73,8 +73,14 @@ mirror of the same flat surface) keeps that guarantee identically — nothing to
 unmarshal `gratis` into, so a model-driven miracle can never waive its charge.
 `landMiracle` resolves door-neutral `MiracleParams` (villager name → index,
 day/`HH:MM` → tick via [[game-clock]]'s `ParseTimeOfDay`/`TickAt`) from an
-`agentXY` snapshot the absorb goroutine mirrors per batch (so the turn worker
-never races the live replica), then calls the shared `guardian.BuildMiracleBatch`
+`agentXY`/`alive` snapshot the absorb goroutine mirrors per batch (so the turn
+worker never races the live replica). Since spec 091, a `move` call naming a
+villager (`class="villager"` + a `villager` name) resolves that villager's LIVE
+position from the SAME snapshot as the move's source — the surveyed `x`/`y`
+become advisory — refusing before any charge on an unknown or dead name; a
+bare-coordinate villager move and every structure/pile move are unaffected
+(full mechanics and the raced-refusal wording in [[guardian-miracle-doors]]).
+`landMiracle` then calls the shared `guardian.BuildMiracleBatch`
 — the SAME builder the IPC `miracle` door uses — to compose the event and its
 perception-memory companions (each stamped `Origin: sim.OriginOmen`, spec 030,
 identically to a nudge's memories), and lands it through `InjectSocial`. A rejection at

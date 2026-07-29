@@ -260,3 +260,5 @@ status above flipped to done.
 
 | date | task | PR | merge | notes |
 |------|------|----|-------|-------|
+| 2026-07-29 | TASK-162 | #131 | 259dd0f | lane 0; Sonnet; 31/31+10/10 tests; gate posture strengthened (probe on all pinned sources, history moves, tui-design blocking) |
+| 2026-07-29 | TASK-166 | #133 | (merge sha: see PR) | lane 2; Sonnet; door-side name re-resolution; live probe landed raced move (59,20 surveyed vs 62,18 resolved); TASK-158 obedience observation recorded |

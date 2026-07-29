@@ -7,7 +7,7 @@ sources:
   - internal/tool/registry.go
   - internal/tool/derive.go
   - internal/tool/roster.go
-verified_against: 63390f122bdf4e1b7abf518a8be83de725f06230
+verified_against: 6a5344a12cdc8858909ca7cf209d55025135e9d5
 ---
 
 # Tool registry — the World/villager tool catalog

@@ -3,10 +3,10 @@ id: TASK-162
 title: >-
   merge-drift pr gate: docs-stale probe fires on all pinned sources and after
   history moves
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-27 00:31'
-updated_date: '2026-07-29 18:53'
+updated_date: '2026-07-29 19:12'
 labels: []
 dependencies: []
 priority: medium
@@ -23,18 +23,16 @@ Spec: specs/088-pr-gate-docs-stale-probe
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 pr-mode invokes the player-docs freshness checker when the branch touches ANY of the checker's pinned inputs (docs/wiki/, README.md, docs/llm-providers.md, spec 046 quickstart sources), not just docs/wiki/
-- [ ] #2 design-reference pins (docs/design/tui/*) are freshness-gated in pr mode with a blocking finding, not only the warn-level tui-surface notice
-- [ ] #3 the probe also runs after history moves: a branch whose HEAD moved (e.g. merge of main into it) since the last probe is re-checked even when its own diff vs origin/main touches no pinned source
-- [ ] #4 gate behavior covered by the script's existing test/fixture approach (synthetic branch cases for each new trigger)
-- [ ] #5 Spec phase: Foundational (trigger plumbing)
-- [ ] #6 Spec phase: User Story 1 — non-wiki pinned inputs gate (P1)
-- [ ] #7 Spec phase: User Story 3 — history moves re-trigger (P2)
-- [ ] #8 Spec phase: User Story 2 — design-reference pins block (P2)
-- [ ] #9 Spec phase: Polish & verification
+- [x] #1 pr-mode invokes the player-docs freshness checker when the branch touches ANY of the checker's pinned inputs (docs/wiki/, README.md, docs/llm-providers.md, spec 046 quickstart sources), not just docs/wiki/
+- [x] #2 design-reference pins (docs/design/tui/*) are freshness-gated in pr mode with a blocking finding, not only the warn-level tui-surface notice
+- [x] #3 the probe also runs after history moves: a branch whose HEAD moved (e.g. merge of main into it) since the last probe is re-checked even when its own diff vs origin/main touches no pinned source
+- [x] #4 gate behavior covered by the script's existing test/fixture approach (synthetic branch cases for each new trigger)
+- [x] #5 Spec phase: Foundational (trigger plumbing)
+- [x] #6 Spec phase: User Story 1 — non-wiki pinned inputs gate (P1)
+- [x] #7 Spec phase: User Story 3 — history moves re-trigger (P2)
+- [x] #8 Spec phase: User Story 2 — design-reference pins block (P2)
+- [x] #9 Spec phase: Polish & verification
 <!-- AC:END -->
-
-
 
 ## Implementation Notes
 
@@ -43,3 +41,9 @@ Triage on main @ ce41355 (2026-07-27): blind spot is LATENT, not live — node s
 
 board-sweep-2026-07-29 lane 0: spec 088 authored on branch task-162-pr-gate-docs-stale-probe (spec/plan/tasks committed 1d4a26f); linked via spec-bridge. Implementation tier: Sonnet — single-script tooling change with fixture tests (routine slice per constitution Principle V); escalation trigger: none foreseen.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Merged via PR #131 (merge commit 259dd0f). pr-mode docs-stale probe now fires on all player-docs pinned inputs (derived from promptworld-docs:source tags), after history moves (merge in origin/main..tip), and design-reference pin drift blocks via check-tui-design delegation (tui-design-stale/env-error). Fixture matrix F1-F9; 31/31 + 10/10 tests; exit-code contract unchanged. Spec 088 all 8 tasks done (spec-bridge derived Done-eligible).
+<!-- SECTION:FINAL_SUMMARY:END -->
