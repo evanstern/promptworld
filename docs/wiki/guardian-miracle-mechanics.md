@@ -6,7 +6,7 @@ sources:
   - internal/sim/miracles.go
   - internal/tool/registry.go
   - internal/guardian/toolcalls.go
-verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
+verified_against: 63390f122bdf4e1b7abf518a8be83de725f06230
 ---
 
 # Guardian's miracle mechanics
@@ -56,7 +56,15 @@ partial application (validate-not-clamp, reject-whole):
   rejected as a no-op target.
 - **`applyItemGranted`**: validates a living, in-range agent index, a `grantableKind`
   (the `Inventory` key vocabulary plus `"spear"`/`"axe"` singular), and a positive
-  quantity. One bulk per granted unit, exactly like a carried item — a grant of
+  quantity. Since TASK-163, `grantableKind` checks a package-level `grantableKinds`
+  set built once from `tool.GrantKinds()` — the SAME authoritative grant vocabulary
+  `work_miracle`'s `item` param now declares as an `Enum`
+  ([[tool-registry-guardian-tools]]) — rather than a second hand-written switch
+  literal, so the door's acceptance can never drift from the schema the model is
+  shown; the rejection for an unrecognized kind now enumerates that vocabulary
+  (`"unknown item kind %q (grantable: %s)"`) instead of naming only the bad guess
+  (live measurement: a guardian repeatedly guessed `"food"`/`"forage"` against the
+  old bare message). One bulk per granted unit, exactly like a carried item — a grant of
   `qty` items always costs `qty` bulk regardless of kind, so the cap check is
   `bulk(*inv)+qty > bulkCap`. A spear grant appends `qty` fresh `spearDurability`
   entries to `Inv.Spears`, kept sorted ascending (hunts spend the most-worn first);

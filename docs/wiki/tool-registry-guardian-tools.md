@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/tool/registry.go
   - internal/tool/derive.go
-verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
+verified_against: 63390f122bdf4e1b7abf518a8be83de725f06230
 ---
 
 # Tool registry — the Guardian tool surface
@@ -64,7 +64,13 @@ source: `sim.miracleCost` derives from `MiracleCostsByEvent()` (the import
 direction already existed — [[guardian-miracles]]) and the guardian's prompt renders
 costs from `MiracleCost`, so a price edit propagates to enforcement and prose in
 one edit (`work_miracle.Cost.Charges` stays 1 — the Charge gate's minimum, not a
-price). Two new derive.go surfaces serve [[guardian]]'s per-world capability
+price). Since TASK-163, `give_item`'s gloss (`derive.go`'s
+`miracleKindArgs["give_item"]`) also names the FULL grant vocabulary via
+`GrantKinds()`, since `GuardianToolGuidance`'s `work_miracle` rendering only
+ever surfaces the `kind` Enum's values, never a per-kind param's Enum; the
+registry's `item` param is now `Enum` over the same `grantKinds` list
+(`registry.go`), not bare `Text` — schema, gloss, and the door's rejection
+([[guardian-miracle-mechanics]]) all draw from one list. Two new derive.go surfaces serve [[guardian]]'s per-world capability
 gating: `RestrictEnum(t, param, allowed)` returns a copy-on-write `Tool` whose
 named Enum param keeps only the allowed values (registry never mutated; the
 tool's own Enum order preserved; `InputSchema` of the restricted copy declares

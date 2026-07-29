@@ -6,7 +6,7 @@ sources:
   - internal/tool/registry.go
   - internal/tool/tool.go
   - internal/tool/roster.go
-verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
+verified_against: 63390f122bdf4e1b7abf518a8be83de725f06230
 ---
 
 # Tool registry — authored schemas and clamp-with-notice

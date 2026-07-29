@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/evanstern/promptworld/internal/store"
@@ -30,6 +31,27 @@ func TestMiracleCostDerivedFromTool(t *testing.T) {
 	}
 	if !reflect.DeepEqual(miracleCost, want) {
 		t.Errorf("sim.miracleCost = %v, want %v", miracleCost, want)
+	}
+}
+
+// TestGrantKindsMirrorTool (TASK-163 drift guard, the TestMiracleCostDerivedFromTool
+// pattern): grantableKind — the give_item door's accept set — is derived from
+// tool.GrantKinds(), the single authoritative grant vocabulary, not a second
+// hand-written literal here. Accepts every listed kind, rejects the guessed
+// forms a live guardian actually tried ("food", "forage") and the empty string.
+func TestGrantKindsMirrorTool(t *testing.T) {
+	for _, k := range tool.GrantKinds() {
+		if !grantableKind(k) {
+			t.Errorf("tool.GrantKinds() lists %q but grantableKind rejects it", k)
+		}
+	}
+	for _, bad := range []string{"food", "forage", "", "spears", "axes", "gold"} {
+		if grantableKind(bad) {
+			t.Errorf("grantableKind(%q) = true, want false (not in tool.GrantKinds())", bad)
+		}
+	}
+	if len(tool.GrantKinds()) != 10 {
+		t.Errorf("tool.GrantKinds() = %v, want the ten grantable kinds", tool.GrantKinds())
 	}
 }
 
@@ -1178,9 +1200,19 @@ func TestMiracleGrantUnknownKindReject(t *testing.T) {
 	s.GuardianCharges = 3
 	before := s.Marshal()
 
-	if err := applyMiracleErr(s, 40, "metatron.item_granted", ItemGrantedPayload{
-		Agent: Ref(0), Kind: "gold", Qty: 1}); err == nil {
+	err := applyMiracleErr(s, 40, "metatron.item_granted", ItemGrantedPayload{
+		Agent: Ref(0), Kind: "gold", Qty: 1})
+	if err == nil {
 		t.Fatal("unknown item kind should be rejected")
+	}
+	// TASK-163: the door rejection must enumerate the grant vocabulary — the
+	// live-measurement finding was a guardian repeatedly guessing kinds
+	// ("food", "forage") because the rejection named only the bad guess, never
+	// what WOULD have worked.
+	for _, k := range tool.GrantKinds() {
+		if !strings.Contains(err.Error(), k) {
+			t.Errorf("door rejection %q does not enumerate grantable kind %q", err.Error(), k)
+		}
 	}
 	if string(s.Marshal()) != string(before) {
 		t.Error("rejected unknown-kind grant mutated state")

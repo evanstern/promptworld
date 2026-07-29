@@ -87,3 +87,17 @@ tick 178,263 / day 3 07:31, authored 177,807 / day 3 07:23).
 - Re-run suggestions (not carded): sequential arms, stronger model tier for
   `metatron_watch`, and/or a targeting-digest prompt asking the guardian to
   read coordinates from its watch context before granting places.
+
+## Addendum (2026-07-28, TASK-163): confound bound superseded
+
+The 8/10 (80%) mechanical-noise bound quoted above is superseded for any run
+on the fixed binary (`2eef530`+) with a sonnet-tier guardian turn. TASK-163's
+two-stage mitigation (guardian turn route → `cc/claude-sonnet-5`, then the
+`give_item` grant vocabulary surfaced in schema/guidance/rejection) measured
+**36% (5/14)** overall rejection with **~0% model-side noise** — zero
+vocabulary, grammar, or coordinate-hallucination failures; the residue is
+world-mechanics bounds (carry cap, self-repairing in-turn) and 8x
+position-freshness races on `move`. Prompt-attribution comparisons (this
+experiment's successor TASK-164, the TASK-67 fork duel) should quote
+TASK-163's bound and hold the guardian model tier fixed as an experiment
+variable. Full data: [task-163/results.md](../task-163/results.md).

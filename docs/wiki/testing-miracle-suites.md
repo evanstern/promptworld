@@ -5,7 +5,7 @@ kind: pattern
 sources:
   - internal/sim/miracles_test.go
   - internal/ipc/ipc_test.go
-verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
+verified_against: 63390f122bdf4e1b7abf518a8be83de725f06230
 ---
 
 # Miracle pricing & reducer suites
@@ -24,7 +24,14 @@ structure-whole/pile-merge, impassable/absent-source rejection), remove
 qty, spear shape), and time-snap (forward-only, duration-preserving,
 whole-day-no-drift, mints-no-charges-across-skipped-boundaries, while-paused);
 plus charge doctrine (insufficient-charge rejection, gratis waives only the
-charge, gratis is logged visibly), and `TestRebaseTaxonomyComplete` — the build
+charge, gratis is logged visibly). Since TASK-163, `TestGrantKindsMirrorTool`
+cross-checks `grantableKind`'s accept set against `tool.GrantKinds()` — accepts
+every listed kind, rejects the live-measured bad guesses `"food"`/`"forage"`
+plus a few made-up ones, and pins the vocabulary at exactly ten kinds (the
+`TestMiracleCostDerivedFromTool` drift-guard pattern,
+[[tool-registry-guardian-tools]]); `TestMiracleGrantUnknownKindReject` now also
+asserts the door's rejection message enumerates every grantable kind, not just
+the bad guess. `TestRebaseTaxonomyComplete` — the build
 fails if a new tick-anchored `int64` field appears anywhere in the state tree
 without a SHIFT/KEEP classification in `rebaseTicks`, so the taxonomy can never
 silently drift from the state struct (spec 030 extended this to

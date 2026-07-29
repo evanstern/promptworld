@@ -8,7 +8,7 @@ sources:
   - internal/tool/roster.go
   - internal/tool/validate.go
   - internal/sim/toolcheck.go
-verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
+verified_against: 63390f122bdf4e1b7abf518a8be83de725f06230
 ---
 
 # Tool registry — derived surfaces, rosters, and validation

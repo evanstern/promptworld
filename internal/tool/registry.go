@@ -169,6 +169,38 @@ func MiracleCostsByEvent() map[string]int {
 	return out
 }
 
+// grantKinds is work_miracle give_item's grant vocabulary — the item kinds a
+// grant miracle may deliver into a villager's inventory. Declared here as
+// give_item's Enum descriptor (TASK-163): live measurement showed a guardian
+// guessing at this vocabulary ("food", "forage") because it was invisible —
+// the tool schema exposed `item` as bare Text, no guidance line named the
+// accepted kinds, and the door's rejection didn't enumerate them either. This
+// list is THE authoritative grant vocabulary; internal/sim derives its
+// acceptance set from GrantKinds() below (sim already imports tool, spec 021
+// R7) instead of carrying a second hand-written copy, and internal/sim's own
+// drift test pins the two equal.
+//
+// Deliberately DISTINCT from itemKinds (the storage verbs' vocabulary,
+// above): itemKinds carries the plural "spears"/"axes" because a villager's
+// Inventory field is a slice of many; a grant instead delivers ONE fresh
+// item at a time — one new spear, one new axe — so this list uses the
+// singular "spear"/"axe" naming the grant unit, not the storage field. Do not
+// merge the two lists.
+var grantKinds = []string{
+	"wood", "stone", "water", "planks", "refined_stone",
+	"food_raw", "food_cooked", "meals", "spear", "axe",
+}
+
+// GrantKinds returns a copy of work_miracle give_item's grant vocabulary, in
+// the order above. Exported for internal/sim's drift cross-check test (the
+// MiracleKinds/ItemKinds pattern) and for the door rejection message, which
+// enumerates this same list rather than duplicating it as a literal.
+func GrantKinds() []string {
+	out := make([]string, len(grantKinds))
+	copy(out, grantKinds)
+	return out
+}
+
 // miracleParams is work_miracle's flat parameter surface (spec 017 T019b,
 // mirroring spec 016's turn contract). `kind` is the sole required argument;
 // every other field is optional because the needed set is per-kind (move:
@@ -197,7 +229,10 @@ func miracleParams() []Param {
 		{Name: "kind", Kind: Enum, Required: true, Enum: miracleKinds},
 		{Name: "class", Kind: Text},
 		{Name: "villager", Kind: AgentName},
-		{Name: "item", Kind: Text},
+		// item (TASK-163): give_item's grant-kind vocabulary, surfaced as an
+		// Enum (not Required — the needed set is per-kind, exactly as the rest
+		// of this flat surface; only give_item calls ever supply it).
+		{Name: "item", Kind: Enum, Enum: grantKinds},
 		{Name: "qty", Kind: Number, Min: 1},
 		{Name: "day", Kind: Number},
 		{Name: "time", Kind: Text},

@@ -159,6 +159,12 @@ func TestWorkMiracleSchema(t *testing.T) {
 			t.Errorf("property %q type = %q, want string", name, schema.Properties[name].Type)
 		}
 	}
+	// TASK-163: give_item's `item` argument is an Enum of GrantKinds(), not
+	// bare Text — the live measurement that drove this task found a guardian
+	// guessing at an invisible grant vocabulary ("food", "forage").
+	if !reflect.DeepEqual(schema.Properties["item"].Enum, GrantKinds()) {
+		t.Errorf("item enum = %v, want %v", schema.Properties["item"].Enum, GrantKinds())
+	}
 }
 
 // TestSetPlanExcludedFromLegacySurfaces (spec 017 T004 CRITICAL constraint):

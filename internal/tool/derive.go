@@ -228,10 +228,18 @@ var guardianToolDesc = map[string]string{
 // restricted `kind` Enum — ever appear (FR-005). The kind vocabulary and its
 // price derive from the registry (the Enum and MiracleCost); this map only
 // supplies the human argument gloss for a kind that is offered.
+//
+// give_item's hint names its `item` argument's full grant vocabulary
+// (TASK-163): work_miracle's special-cased rendering in GuardianToolGuidance
+// (below) only ever surfaces the `kind` Enum's values, never a param's own
+// Enum — so an item vocabulary invisible everywhere else (live measurement:
+// a guardian guessed "food", "forage") must be spelled out here, from
+// GrantKinds() so it can never drift from the declared schema.
 var miracleKindArgs = map[string]string{
-	"move":      `class ("villager"|"structure"|"pile"), x, y, to_x, to_y`,
-	"remove":    `class ("structure"|"pile"|"terrain"), x, y`,
-	"give_item": `villager, item, qty`,
+	"move":   `class ("villager"|"structure"|"pile"), x, y, to_x, to_y`,
+	"remove": `class ("structure"|"pile"|"terrain"), x, y`,
+	"give_item": fmt.Sprintf(`villager, item (one of: %s), qty`,
+		strings.Join(GrantKinds(), ", ")),
 	"time_snap": `day and time ("HH:MM")`,
 }
 
