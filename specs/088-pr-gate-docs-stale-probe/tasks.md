@@ -12,14 +12,14 @@ within a phase are sequential (same files), not [P].
 
 ## Phase 1: Foundational (trigger plumbing)
 
-- [ ] T001 Extract the probe-trigger computation into a named helper in
+- [X] T001 Extract the probe-trigger computation into a named helper in
   `scripts/check-merge-drift.mjs`: collect `promptworld-docs:source` tags from
   `docs/player/*.html` at the branch tip, union with the `docs/wiki/` prefix rule;
   return the matched trigger reasons for a given `branchFiles` list (research D1;
   FR-001 one-named-place requirement).
-- [ ] T002 Add the history-move predicate (`git rev-list --merges origin/main..<tip>`
+- [X] T002 Add the history-move predicate (`git rev-list --merges origin/main..<tip>`
   non-empty) to the same helper (research D2; FR-003).
-- [ ] T003 Restructure the probe call site (~line 1645) to invoke the player-docs
+- [X] T003 Restructure the probe call site (~line 1645) to invoke the player-docs
   checker at most once when ANY trigger matches, threading trigger reasons into the
   finding message; preserve existing finding rules/severities (FR-004, FR-005).
 
