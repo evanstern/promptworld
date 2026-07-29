@@ -4,7 +4,7 @@ title: 'Policy: every task opens with a brief gist plus ''As a …'' use cases'
 status: In Progress
 assignee: []
 created_date: '2026-07-29 16:09'
-updated_date: '2026-07-29 17:50'
+updated_date: '2026-07-29 17:57'
 labels: []
 dependencies: []
 ordinal: 136000
@@ -29,6 +29,8 @@ Format examples (from the operator):
 Any accurate scene-setting role is valid: "As a player", "As a user", "As a villager in the game", "As the Gru".
 
 Scope: this project only for now — a repo-local policy, not a praxisflux plugin change yet.
+
+Spec: specs/087-card-format-policy
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
