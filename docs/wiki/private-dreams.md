@@ -6,7 +6,7 @@ sources:
   - internal/sim/dream.go
   - internal/mind/consolidate.go
   - internal/sim/tuning.go
-verified_against: PENDING
+verified_against: a5df40921577bc194478bb29c42af2b10bf11ea8
 ---
 
 # Private dreams (consolidation clustering + habituation)

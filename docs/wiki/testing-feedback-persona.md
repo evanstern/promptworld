@@ -16,7 +16,7 @@ sources:
   - internal/sim/reportcard_test.go
   - internal/sim/rubric_hygiene_test.go
   - internal/tui/reportcard_test.go
-verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
+verified_against: a5df40921577bc194478bb29c42af2b10bf11ea8
 ---
 
 # Grounded-feedback & persona suites
