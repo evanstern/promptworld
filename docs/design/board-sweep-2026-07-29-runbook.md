@@ -11,7 +11,13 @@ re-grounding notes), the guardian-directives ideation trail (TASK-112/158 cards 
 review rulings (TASK-134/75/76 cards) win. Plan-of-record is the board; this file
 carries only ordering, doctrine, and the log.
 
-**Status:** draft · operator sign-off on lanes: pending
+**Status:** signed-off — executing · operator sign-off on lanes: 2026-07-29
+(in-session selection "Signed off — execute"; drafted by the orchestrator, the
+sign-off is the authority). Rulings recorded at sign-off: **design sessions
+(23/28/30) run autonomously — orchestrator authors the specs from the cards'
+recorded decisions, operator ratifies at PR review**; **TASK-148 dropped entirely**
+(card untouched this sweep; scope is 17 tasks); **TASK-164 stays after 166/167**;
+TASK-65 exclusion confirmed.
 <!-- Only the OPERATOR flips draft → signed-off (the author never pre-fills it). An
      executing session must refuse a runbook whose status it cannot verify. -->
 
@@ -52,8 +58,9 @@ point here.
 - **Excluded by its own card:** TASK-65 — "DELIBERATELY DEFERRED: do not start until
   the client picks a multiplayer direction." The sweep cannot manufacture that
   decision; the card stays on the board untouched. (Operator confirms at sign-off.)
-- **Queued (this runbook's scope, 18 tasks):** 162, 165, 148, 75, 134, 95, 166, 167,
-  164, 112, 158, 80, 81, 99, 76, 23, 28, 30.
+- **Queued (this runbook's scope, 17 tasks):** 162, 165, 75, 134, 95, 166, 167,
+  164, 112, 158, 80, 81, 99, 76, 23, 28, 30. (TASK-148 dropped at sign-off —
+  card untouched.)
 - Spec numbers: 087 is the highest claimed on origin/main; numbers move fast — always
   take the claim gate's answer, never a remembered number.
 
@@ -73,11 +80,8 @@ worktree after its claim — pipelining costs nothing).
   merges BEFORE the code lanes start carrying re-pins; any branch cut before its
   merge reconciles by merge-in. Not a lane blocker (the pr gate doesn't block on this
   class) but hygiene-first cuts sweep-long noise.
-- **TASK-148 (design decision: orchestrator; praxis-side implementation: Sonnet in
-  ~/neumo/projects/praxis under its own laws)** — reorient run ownership. AC1 (the
-  recorded design decision) is deliverable here; AC2 (praxis TASK-52 implementation +
-  promptworld plugin version bump) is cross-repo and may outlive this sweep —
-  operator decides its in-sweep scope at sign-off.
+- ~~TASK-148~~ — dropped at sign-off (operator ruling 2026-07-29): the cross-repo
+  praxis leg keeps it out of this sweep entirely; card untouched.
 
 **Lane 1 — replay-doctrine spine (serial: 75 → 134 → 95):**
 - **TASK-75 (Sonnet — docs/doctrine, minimal code)** — determinism scope note +
@@ -227,10 +231,9 @@ Record the model tier + rubric justification on each board task at dispatch
 
 ## Operator checkpoints (do not proceed silently past)
 
-1. **Sign-off on these lanes** (now) — including: TASK-65 exclusion; TASK-148's
-   cross-repo leg (in-sweep or decision-only); lane-5 design-session posture
-   (autonomous spec authoring with PR review vs interactive sessions); TASK-164's
-   position after 166/167.
+1. ~~Sign-off on these lanes~~ — RESOLVED 2026-07-29 (see Status): lanes approved,
+   TASK-65 excluded, TASK-148 dropped, design sessions autonomous with PR review,
+   164 after 166/167.
 2. **TASK-164 eval spend approval (AC1)** — resurfaces when lane 2 reaches it; spend
    estimate presented at that point.
 3. **TASK-112 deliberate-incompetence ceiling** (inherited open question: what the
@@ -245,8 +248,7 @@ Record the model tier + rubric justification on each board task at dispatch
 
 ## Done means
 
-All 18 queued tasks Done on the board via their own merged PRs — except: TASK-148 Done
-or explicitly left open on its cross-repo AC2 with the design decision recorded;
+All 17 queued tasks Done on the board via their own merged PRs — except:
 TASK-167 optionally closed on a recorded no-change posture; lane-6 TASK-76 optionally
 dropped with a note here. TASK-65/14/18 untouched. All gates green on main
 (`check-merge-drift.mjs session` verdict pass; TUI design gate clean; wiki pins
