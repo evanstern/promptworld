@@ -413,16 +413,20 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 				continue
 			}
 			emit("agent.moved", AgentMovedPayload{Agent: Ref(i), X: nx, Y: ny})
-			// Spec 097 (D1): the step that lands the walker ON its intent's
-			// chosen destination is the intent-completing arrival — the one
-			// moment the grounded observation channel fires (observe.go).
-			// Never per wander step (this is the target tile only), never for
-			// a zero-distance intent (no walk, no fresh arrival — the ambient
-			// perception sweep covers standing still). Emitted uniformly for
-			// every goal, reflex and planner alike: reason interpretation
-			// stays out of the executor (no LLM in the emission path); the
-			// mind weighs relevance (D3, internal/mind/reconcile.go).
-			events = append(events, placeObservedEvents(s, m, i, nx, ny, nextTick)...)
+			// Spec 097 (D1): ONLY the step that lands the walker ON its
+			// intent's chosen destination is the intent-completing arrival
+			// — the one moment the grounded observation channel fires
+			// (observe.go). Never per wander step (the guard below is the
+			// card's flood worry made code — a mid-walk tile observes
+			// nothing), never for a zero-distance intent (no walk, no fresh
+			// arrival — the ambient perception sweep covers standing
+			// still). Emitted uniformly for every goal, reflex and planner
+			// alike: reason interpretation stays out of the executor (no
+			// LLM in the emission path); the mind weighs relevance (D3,
+			// internal/mind/reconcile.go).
+			if nx == in.TargetX && ny == in.TargetY {
+				events = append(events, placeObservedEvents(s, m, i, nx, ny, nextTick)...)
+			}
 		}
 	}
 

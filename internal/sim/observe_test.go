@@ -17,11 +17,13 @@ import (
 // Replay byte-identity for existing logs is covered by the existing replay
 // suites (the event is additive; recorded logs contain none).
 
-// TestPlaceObservedOnArrival drives a walker to its intent's target and
-// asserts the arrival step emits the companion memory (Origin "observed", the
-// base-salience dial) FIRST and agent.place_observed second, at the arrival
-// tick, positioned on the target tile — and that the whole drive is
-// deterministic (two identical runs, identical canonical logs).
+// TestPlaceObservedOnArrival drives a walker over a MULTI-STEP walk to its
+// intent's target and asserts (a) no mid-walk tile observes anything — the
+// D1 guard, the card's flood worry (the assertion that catches an unguarded
+// per-step emission), (b) the arrival step emits the companion memory
+// (Origin "observed", the base-salience dial) FIRST and agent.place_observed
+// second, on the target tile, and (c) the whole drive is deterministic (two
+// identical runs, identical canonical logs).
 func TestPlaceObservedOnArrival(t *testing.T) {
 	const seed = 42
 	m := testMap(seed)
@@ -31,22 +33,37 @@ func TestPlaceObservedOnArrival(t *testing.T) {
 		isolateAgents(s)
 		a := &s.Agents[0]
 		a.Dead = false
-		// A one-step walk to an adjacent passable tile: adjacency makes BFS
-		// reachability certain, and the landing step IS the arrival, so the
-		// first observation in the log is unambiguously this intent's.
+		// A multi-step walk target, chosen by proving BFS reachability with
+		// nextStep itself: candidates at Manhattan distance 3, kept only when
+		// stepping toward them actually lands within a few hops.
 		tx, ty := a.X, a.Y
-		for _, d := range [][2]int{{1, 0}, {-1, 0}, {0, 1}, {0, -1}} {
-			nx, ny := a.X+d[0], a.Y+d[1]
-			if m.InBounds(nx, ny) && passable(m, s, nx, ny) {
-				tx, ty = nx, ny
-				break
+	pick:
+		for _, d := range [][2]int{{3, 0}, {-3, 0}, {0, 3}, {0, -3}, {2, 1}, {1, 2}, {-2, 1}, {-1, 2}} {
+			cx, cy := a.X+d[0], a.Y+d[1]
+			if !m.InBounds(cx, cy) || !passable(m, s, cx, cy) {
+				continue
+			}
+			px, py := a.X, a.Y
+			for hop := 0; hop < 8; hop++ {
+				nx, ny := nextStep(m, s, px, py, cx, cy)
+				if nx == px && ny == py {
+					continue pick // unreachable from here
+				}
+				px, py = nx, ny
+				if px == cx && py == cy {
+					tx, ty = cx, cy
+					break pick
+				}
 			}
 		}
 		if tx == a.X && ty == a.Y {
-			t.Skip("no passable walk target near agent 0's genesis tile on this seed")
+			t.Skip("no reachable multi-step walk target near agent 0's genesis tile on this seed")
 		}
 		a.Intent = &Intent{Goal: "wander", TargetX: tx, TargetY: ty, Reason: "see what is out there."}
-		log := driveTicks(t, s, m, s.Tick+120, nil)
+		// Drive just past the walk (3 tiles ≈ 15 ticks at the movement
+		// cadence) so every agent-0 observation in the log belongs to THIS
+		// intent — later reflex-issued walks never muddy the assertion.
+		log := driveTicks(t, s, m, s.Tick+40, nil)
 		return log, tx, ty
 	}
 
@@ -58,7 +75,16 @@ func TestPlaceObservedOnArrival(t *testing.T) {
 		if e.Type == "agent.place_observed" {
 			var p PlaceObservedPayload
 			mustUnmarshal(t, e.Payload, &p)
-			if p.Agent.ID == 0 && obs == nil {
+			if p.Agent.ID != 0 {
+				continue
+			}
+			// The D1 guard: EVERY observation this walk produces sits on the
+			// intent's target — a mid-walk (per-step) emission is the flood
+			// bug this test exists to catch.
+			if p.X != tx || p.Y != ty {
+				t.Errorf("mid-walk observation at (%d,%d) — only the arrival tile (%d,%d) may observe (D1)", p.X, p.Y, tx, ty)
+			}
+			if obs == nil {
 				cp := p
 				obs, obsTick, obsIdx = &cp, e.Tick, i
 			}

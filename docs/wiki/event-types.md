@@ -23,7 +23,8 @@ were `metatron.*` in log format 1.
 
 ## Event catalog, by domain
 
-The full per-type catalog (94 types, specs 012 through 097) is split by
+The full per-type catalog (140 `PayloadCatalog` types, specs 012–097) is
+split by
 event domain — each child inherits this note's `verified_against` pin and
 carries the domain's own format-history prose and catalog rows.
 
