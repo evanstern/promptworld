@@ -1271,8 +1271,11 @@ func TestMiracleGrantOverCapWholeReject(t *testing.T) {
 	// Spec 095 T003 door regression: the digest headroom guidance added
 	// turn-side (internal/guardian) and the give_item gloss (internal/tool)
 	// must not have moved this door's own message one byte — applyItemGranted
-	// (internal/sim/miracles.go) is untouched.
-	wantMsg := fmt.Sprintf("apply metatron.item_granted: granting 1 wood to %s would exceed the carry cap (%d/%d already used)",
+	// (internal/sim/miracles.go) is untouched. (The event-type prefix says
+	// guardian.item_granted since spec 094's rename — that is the ONE
+	// sanctioned change to this string, carried by the log-format bump, not
+	// by the spec-095 guidance this pin guards against.)
+	wantMsg := fmt.Sprintf("apply guardian.item_granted: granting 1 wood to %s would exceed the carry cap (%d/%d already used)",
 		AgentNames[0], bulkCap, bulkCap)
 	if err.Error() != wantMsg {
 		t.Errorf("door rejection message changed:\n got:  %q\n want: %q", err.Error(), wantMsg)

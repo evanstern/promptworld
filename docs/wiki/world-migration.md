@@ -11,24 +11,14 @@ verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 # World migration
 
 `promptworld migrate` is the offline driver for BOTH migration modes the
-spec 094 decision rule distinguishes:
-
-- **snapshot-cut** (semantic breaks — the payload's meaning or the
-  reducer's derivation changed): never replays old events under new rules;
-  reads the source's covering snapshot, transforms it, and writes a fresh
-  log whose single `world.migrated` event carries the whole transformed
-  state. History is archived, not carried.
-- **translation** (pure renames — spec 094's `metatron.*`→`guardian.*`
-  rename, the first user): rewrites the log's type column through
-  `sim.LogFormatV1Renames` with EVERY event's seq, tick, payload, and
-  wall_time preserved byte-for-byte, copies snapshots and meta verbatim,
-  stamps the new log format ([[event-log]]), and verifies the translated
-  log replays (snapshot + tail, exactly what boot does) before swapping it
-  in. Proven by the byte-identity harness
-  (`internal/world/migrate_translate_test.go`): replay(source, old
-  semantics) == replay(translated, new semantics) as state-hash sequences,
-  per-event byte identity on disk, and the migrated world running forward
-  on the new binary.
+spec 094 decision rule distinguishes: **snapshot-cut** for semantic breaks
+(never replays old events under new rules — reads the source's covering
+snapshot, transforms it, writes a fresh log whose single `world.migrated`
+event carries the whole transformed state; history archived, not carried)
+and **translation** for pure renames (the log's type column rewritten
+through `sim.LogFormatV1Renames`, every seq/tick/payload/wall_time
+preserved byte-for-byte, snapshots + meta verbatim, the new log format
+stamped — [[event-log]]).
 
 promptworld has broken its save format five times. Spec 012 (resources/food/crafting
 v2) widened `Inventory` from the legacy `{wood, food}` pair to the full v2 resource
@@ -46,11 +36,10 @@ manifest's `terrain_gen` field — a pre-068 build reading that field's absence 
 silently strand agents and structures the daemon actually placed on marsh/sand
 (FR-007), so the break exists purely to make that mismatch refuse loudly instead.
 Spec 094 (**v6**) renamed the 13 persisted `metatron.*` guardian event types to
-`guardian.*` — a v5 log replayed under the renamed reducer arms would silently
-hit no case for half the guardian history, so v6 is the first PURE-RENAME break
-and the first user of the translating mode (with the log's own
-`log_format_version` stamp, [[event-log]], enforcing the same refusal from
-inside the DB).
+`guardian.*` — a v5 log replayed under the renamed arms would silently hit no
+case for half the guardian history — the first pure-rename break, translated
+rather than cut, with the log's own stamp ([[event-log]]) enforcing the same
+refusal from inside the DB.
 Either way, `internal/world.Open`
 refuses any manifest whose `format_version` isn't
 the current one ([[world-save-directory]]). `promptworld migrate <world>`
@@ -93,52 +82,38 @@ The work splits across two packages by concern:
   `sim.State` its mental maps into v4 (`TransformV3State`/`TransformV3Snapshot`).
   None runs on the live reducer path.
 
-**Client-side and offline**: `Migrate(dir)` refuses a running daemon FIRST (a
-pidfile liveness check duplicated from `internal/daemon` rather than imported, to
-avoid an import cycle) — this check runs for every source version, ahead of the
-mode dispatch — then refuses if the source-format archive already exists:
-`world.v1.db` … `world.v5.db` (`archiveDBPath`, keyed to
-`Manifest.FormatVersion`; the already-migrated guard, never overwritten).
-Keying the
-guard to the *source* format means a v2 world produced by an earlier v1→2 migration
-— which still carries a stale `world.v1.db` from that run — remains migratable
-onward: its own guard is the archive of ITS source version, untouched until this
-run. The snapshot-cut modes never
-replay old events under new rules; they read only the source world's **covering
-snapshot** — the clean-shutdown guarantee (`CheckContiguity` +
-`LatestValidSnapshot`). A real daemon appends a `daemon.stopped` bookkeeping event
-after its shutdown snapshot, so a one-event tail of pure `daemon.*` events past the
-snapshot is tolerated (they carry zero sim state — nothing to lose); any
-sim-affecting event past the snapshot means an unclean stop left un-snapshotted
-history, and migration refuses with a remedy: start and stop the world once cleanly
-under its own binary, then retry. The TRANSLATING mode (`migrateTranslate`)
-needs no covering snapshot at all — it carries the whole log — but demands
-contiguity, builds the translated DB at a temp path
-(`world.db.translating`), verifies it replays exactly as boot will
-(latest snapshot + tail through `sim.State.Apply`), and only then archives the
-source and swaps the verified translation into place; the manifest bumps last
-(the same crash posture: archive present + manifest unbumped = restore by
-renaming back).
+**Client-side and offline**: `Migrate(dir)` refuses a running daemon FIRST
+(a pidfile liveness check duplicated from `internal/daemon` to avoid an
+import cycle), ahead of the mode dispatch — then refuses if the
+source-format archive already exists: `world.v1.db` … `world.v5.db`
+(`archiveDBPath`, keyed to the SOURCE `Manifest.FormatVersion`, so a world
+carrying a stale archive from an earlier step remains migratable onward;
+the already-migrated guard, never overwritten). The snapshot-cut modes read
+only the source's **covering snapshot** — the clean-shutdown guarantee
+(`CheckContiguity` + `LatestValidSnapshot`; a pure `daemon.*` tail past the
+snapshot is tolerated and dropped, any sim-affecting tail refuses with the
+start-and-stop-cleanly remedy). The TRANSLATING mode needs no covering
+snapshot — it carries the whole log — but demands contiguity, builds the
+translated DB at `world.db.translating`, verifies it replays exactly as
+boot will, and only then archives the source and swaps the translation in;
+the manifest bumps last (crash posture: archive present + manifest
+unbumped = restore by renaming back). Detail in
+[[world-migration-transforms]].
 
 ## Connections
 
-[[cli-promptworld]]'s `migrate` command is the only caller; [[world-save-directory]]
-defines the format-version gate this bridges and the `world.v1.db` …
-`world.v5.db` archive artifacts; [[event-log]] owns the log-format stamp the
-translation writes and the load gate that refuses an untranslated log;
-[[sim-state-reducer]]'s `Apply` applies `world.migrated` as a
-wholesale state replace (validated by matching `Seed`) and states the
-rename/re-derivation doctrine this driver discharges; [[event-types]] catalogs the
-payload; [[executor]] is what the migrated agents' inventory (and, from v3, the bulk
-cap and death-spill rule) belongs to; [[mental-maps]] is what the v3→v4 step grants
-and owns the `MentalMap`/`PlaceFact` types the transform constructs directly;
-[[worldmap-generation]] is what the spec-068 bump makes an old build refuse to
-mis-generate — the `terrain_gen` field and the marsh/sand pass it gates; [[snapshots]] is the general mechanism the snapshot-cut steps
-borrow (a covering snapshot plus a minimal event tail) to make the migrated log
-replay-provable with zero source-format history — the translating step instead
-carries the source's own latest verified snapshot verbatim.
-[[world-migration-catalog]] and [[world-migration-transforms]]
-carry the per-step detail this note summarizes.
+[[cli-promptworld]]'s `migrate` command is the only caller;
+[[world-save-directory]] defines the format-version gate and the archive
+artifacts; [[event-log]] owns the log-format stamp the translation writes
+and the load gate that refuses an untranslated log; [[sim-state-reducer]]
+applies `world.migrated` as a wholesale replace and states the
+rename/re-derivation doctrine this driver discharges; [[event-types]]
+catalogs the payload; [[mental-maps]] owns what the v3→v4 step grants;
+[[worldmap-generation]] is what the spec-068 bump guards; [[snapshots]] is
+the mechanism the snapshot-cut steps borrow — the translating step instead
+carries the source's latest verified snapshot verbatim.
+[[world-migration-catalog]] and [[world-migration-transforms]] carry the
+per-step detail.
 
 ## Operational notes
 
@@ -149,25 +124,16 @@ from it automatically. A world with no valid covering snapshot (never cleanly
 stopped) cannot take a SNAPSHOT-CUT step — there is no path that migrates live
 event history through a transform — while the translating mode carries the
 whole log and needs no snapshot (one carried over verbatim when present).
-`internal/sim/migrate_test.go` and `internal/world/migrate_test.go`
-exercise all three snapshot-cut transforms and the full command against fixture v1, v2, and v3
-worlds, including a v1 fixture that chains the snapshot-cut steps in one run
-(`TestTransformV3GrantsKnowledge`/`TestTransformV3ChainReducerReplay`,
-`TestMigrateV3HappyPath`/`TestMigrateV3ReplayDeterminism` cover the v3→v4 leg
-specifically, [[testing-strategy]]); `internal/sim/whole_feature_test.go`
-covers the storage-surface event types this migration must also carry correctly.
+`internal/sim/migrate_test.go` + `internal/world/migrate_test.go` exercise
+the snapshot-cut transforms and the full command against fixture v1–v3
+worlds, including a chained v1 run ([[testing-strategy]]).
 `internal/world/migrate_translate_test.go` (spec 094) is the translation
-suite: `TestTranslatingMigrationByteIdentity` (a 13-type v5 fixture —
-refusal, translation, per-event byte identity, state-hash-sequence identity,
-snapshot+tail boot, running forward, idempotence + the crash-posture archive
-guard), `TestTranslatingMigrationRefusesLiveDaemon`,
-`TestTranslatingMigrationV4Source`, and `TestRenameMapMatchesCatalog` (the
-rename table pinned against `sim.PayloadCatalog`).
-`internal/world/terrain_gen_test.go` (spec 068 T012, amended by spec 094)
-keeps the terrain contract on the v4 leg: `TestMigrateV4PreservesTerrain`
-proves a migrated v4 world's regenerated map `Hash()` is unchanged (migrate
-still never sets `terrain_gen`); `TestOpenRejectsV4WithMigrateHint` pins the
-old-format refusal; `TestNewWorldsMarkedWithTerrainGen`/
-`TestOpenRejectsUnknownTerrainGen`/`TestOpenAbsentTerrainGenIsLegacy` cover the
-`terrain_gen` field's write/validate/legacy-default behavior on the `Create`/`Open`
-side ([[world-save-directory]]).
+suite — the byte-identity harness (replay(source, old semantics) ==
+replay(translated, new semantics) as state-hash sequences on a 13-type v5
+fixture, per-event byte identity on disk, snapshot+tail boot, running
+forward) plus the live-daemon/archive/idempotence guards, the v4-source
+leg, and `TestRenameMapMatchesCatalog` pinning the rename table against
+`sim.PayloadCatalog`. `internal/world/terrain_gen_test.go` (spec 068 T012,
+amended by 094) keeps the terrain contract: a migrated v4 world's map
+`Hash()` is unchanged — migrate still never sets `terrain_gen`
+([[world-save-directory]]).

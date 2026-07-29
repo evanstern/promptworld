@@ -60,12 +60,9 @@ is never stored ([[worldmap-generation]]).
   parsed fine, it's just a version this build doesn't support, so the world itself
   may be perfectly healthy. Callers that only need daemon reachability (not content —
   [[daemon-lifecycle]], [[cli-runtime-control]]'s `stop`/`status`) match it with
-  `errors.As` to tell "can't read this world's content" apart from a genuine open
-  failure. Since spec 094 the error text splits by direction: an OLDER world
-  gets the migrate hint, a NEWER one "upgrade promptworld" (a future format
-  must never be mis-opened). The current version is **6** — the guardian
-  rename (`metatron.*`→`guardian.*` persisted event types, log format stamp 2
-  in [[event-log]]).
+  `errors.As`. Since spec 094 the text splits by direction (OLDER ⇒ migrate
+  hint, NEWER ⇒ "upgrade promptworld"); current version **6** — the guardian
+  rename (log stamp 2, [[event-log]]).
 - `SetTeaching(dir, on)` (spec 039) is the offline read-modify-write for the
   `Teaching` marker: `Open`s the manifest, flips the field, rewrites
   `world.json`. A running daemon reads `Teaching` only at boot, so this is a
@@ -103,17 +100,16 @@ covering snapshot, then bump `Manifest.FormatVersion` to
 the current version last — a crash between the archive and the manifest bump
 leaves a recoverable state (restore = rename the archive back, reset the
 manifest). A v4/v5 source takes the TRANSLATION (spec 094,
-[[world-migration]]): the full event history carries over with only the
-guardian event-type names rewritten, verified against a boot-shaped replay
-before the archive/swap, returning `MigrateResult{Translated: true}` —
-spec 068's manifest-only v4→v5 bump is subsumed by it.
+[[world-migration]]): full history carried, only guardian event-type names
+rewritten, boot-shaped replay verified before the archive/swap
+(`MigrateResult{Translated: true}`).
 
 **Forking** (`fork.go`, spec 076 — [[world-forking]] has the full design):
 `Fork(srcDir, destDir, newName)` copies a stopped world at its latest
 snapshot under a fresh identity: parent event prefix into a fresh
-`world.db` (stamped with the current log format at birth — [[event-log]]),
-boundary snapshot verbatim, one `world.forked` lineage event,
-meta + manifest stamped (seed carried). Forks never merge.
+`world.db` (log-format-stamped at birth, [[event-log]]), boundary snapshot
+verbatim, one `world.forked` lineage event, meta + manifest stamped (seed
+carried). Forks never merge.
 
 ## Connections
 

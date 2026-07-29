@@ -107,23 +107,18 @@ the explored bitmaps) then:
   retained" invariant already wants the field present).
 
 **The v4/v5→v6 step** (spec 094, `migrateTranslate` in
-`internal/world/migrate.go` — there is no `sim.TransformV5State`, because
-nothing in `sim.State` changes; the vocabulary of the LOG does): before any
-snapshot-cut ceremony runs, `Migrate` routes any `FormatVersion >= 4`
-source to translation (v4→v5 was spec 068's manifest-only bump, so v4 and
-v5 logs are content-identical — both speak log format 1). The step streams
-every event into a fresh DB built at `world.db.translating` with the type
-column mapped through `sim.LogFormatV1Renames` and seq/tick/payload/
-wall_time verbatim; copies meta rows and the latest verified snapshot;
-stamps `log_format_version` 2; verifies the result replays exactly as boot
-will (snapshot + tail through `sim.State.Apply`); then archives the source
-(`world.v4.db`/`world.v5.db`) and swaps the verified translation into
-place. Returns `MigrateResult{…, SourceEvents, Tick, AgentsCarried,
-ArchivePath, Translated: true}`. The world's `terrain_gen` field stays
-exactly what it was (absent, for every world that predates spec 068) — a
-migrated legacy world keeps generating LEGACY terrain
-([[worldmap-generation]]); only a `promptworld new`-born world gets the
-marsh/sand pass.
+`internal/world/migrate.go` — no `sim.TransformV5State` exists: nothing in
+`sim.State` changes, the LOG's vocabulary does): `Migrate` routes any
+`FormatVersion >= 4` source to translation (v4→v5 was spec 068's
+manifest-only bump, so v4 and v5 logs are content-identical — both speak
+log format 1). It streams every event into a fresh DB at
+`world.db.translating` with the type column mapped through
+`sim.LogFormatV1Renames` and seq/tick/payload/wall_time verbatim; copies
+meta rows and the latest verified snapshot; stamps `log_format_version` 2;
+verifies the result replays exactly as boot will; then archives the source
+(`world.v4.db`/`world.v5.db`) and swaps the translation in, returning
+`MigrateResult{Translated: true}`. `terrain_gen` stays exactly what it was
+(absent for pre-068 worlds ⇒ LEGACY terrain, [[worldmap-generation]]).
 
 
 ## Connections

@@ -36,10 +36,9 @@ row, and every row must resolve to a non-empty, non-path value.
 `skin.guardian.name` (`TokenName`, default `"Guardian"`), `.epithet`
 (`TokenEpithet`, default `"guardian"`), `.tab_label` (`TokenTabLabel`,
 default `"guardian"`), `.family_label` (`TokenFamilyLabel`, default
-`"guardian"` — the guardian family's voiced name; its original consumer,
-spec 052 FR-013's chronicle Type-column alias over the pre-094 `metatron.*`
-namespace, was retired when spec 094 renamed the persisted types to
-`guardian.*` and the chronicle went raw) — plus vocabulary tokens `working_noun`/
+`"guardian"` — the family's voiced name; its consumer, spec 052 FR-013's
+Type-column alias, was retired by the spec-094 rename: the chronicle
+renders types raw) — plus vocabulary tokens `working_noun`/
 `working_noun_plural` (default `"working"`/`"workings"` — the display name
 for the frozen `work_miracle` mechanics family), `notes_label` (default
 `"the guardian's notes"`), and `vision_noun`/`omen_noun` (default
