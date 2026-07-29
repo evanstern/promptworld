@@ -6,7 +6,7 @@ sources:
   - internal/guardian/charter.go
   - internal/sim/guardian.go
   - internal/guardian/guardian.go
-verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
+verified_against: 74fe956813aa6be54e65156ae9bfcb91745cbb8d
 ---
 
 # Guardian's runtime facts

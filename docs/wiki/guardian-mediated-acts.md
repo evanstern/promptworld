@@ -7,7 +7,7 @@ sources:
   - internal/guardian/toolcalls.go
   - internal/guardian/miracle_batch.go
   - internal/sim/guardian.go
-verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
+verified_against: 74fe956813aa6be54e65156ae9bfcb91745cbb8d
 ---
 
 # Guardian's mediated acts
@@ -91,9 +91,10 @@ validation/batch/soul-append logic is likewise UNCHANGED from the pre-loop path 
 only the input moved from `turnReply.Miracle` to `work_miracle`'s tool-call
 arguments. Since spec 059 (US3), any turn whose granted roster offers
 `work_miracle` (`hasWorkMiracle`) additionally carries a token-bounded
-targeting digest in the user prompt — living villagers' positions/conditions
-plus adjacent passable tiles, `turn.go`'s `buildTargetingDigest` fed by the
-same `agentXY` mirror plus a parallel `agentNeeds` mirror, introduced by
+targeting digest in the user prompt — living villagers' positions/conditions/
+carry headroom (spec 095) plus adjacent passable tiles, `turn.go`'s
+`buildTargetingDigest` fed by the same `agentXY` mirror plus a parallel
+`agentNeeds` mirror, introduced by
 `tool.GuardianTargetingGuidance()` ([[tool-registry]]) — so a coordinate-
 bearing miracle (`move`/`remove`) can aim at a tile the door will actually
 accept (world-01 evidence: 3 of 4 miracle attempts door-rejected on invalid

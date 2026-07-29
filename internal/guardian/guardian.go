@@ -428,7 +428,11 @@ func (mt *Guardian) mirrorState() {
 		mt.alive[i] = !mt.replica.Agents[i].Dead
 		mt.agentXY[i] = [2]int{mt.replica.Agents[i].X, mt.replica.Agents[i].Y}
 		n := mt.replica.Agents[i].Needs
-		mt.agentNeeds[i] = needMirror{Health: n.Health, Food: n.Food, Warmth: n.Warmth}
+		// Bulk (spec 095 FR-001) mirrors the same absorb batch as health/food/
+		// warmth — sim.Bulk is the exported derived-value accessor (spec 013),
+		// so this can never drift from the reducer's own bulk() arithmetic.
+		mt.agentNeeds[i] = needMirror{Health: n.Health, Food: n.Food, Warmth: n.Warmth,
+			Bulk: sim.Bulk(mt.replica.Agents[i].Inv)}
 	}
 	// Structure/pile tile mirrors (spec 082): position-only, for the turn
 	// worker's bundle-effect target resolution probe.

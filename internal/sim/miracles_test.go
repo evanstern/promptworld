@@ -487,7 +487,7 @@ func TestMiracleReplayByteIdentity(t *testing.T) {
 
 // TestMoveFreshnessReplayByteIdentical (spec 091 FR-002/SC-002): the guardian
 // door's move-miracle name re-resolution (TASK-166) is an EMITTER-side change —
-// it decides which coordinates a recorded metatron.entity_moved carries, never
+// it decides which coordinates a recorded guardian.entity_moved carries, never
 // how the reducer applies one. A recorded log of coordinate-only entity_moved
 // events — the only shape any pre-fix (or post-fix, coordinate-addressed)
 // recording ever carried, since the emitter always bakes concrete x/y into the
@@ -1267,6 +1267,15 @@ func TestMiracleGrantOverCapWholeReject(t *testing.T) {
 	}
 	if string(s.Marshal()) != string(before) {
 		t.Error("rejected over-cap grant mutated state (partial application or charge spent)")
+	}
+	// Spec 095 T003 door regression: the digest headroom guidance added
+	// turn-side (internal/guardian) and the give_item gloss (internal/tool)
+	// must not have moved this door's own message one byte — applyItemGranted
+	// (internal/sim/miracles.go) is untouched.
+	wantMsg := fmt.Sprintf("apply metatron.item_granted: granting 1 wood to %s would exceed the carry cap (%d/%d already used)",
+		AgentNames[0], bulkCap, bulkCap)
+	if err.Error() != wantMsg {
+		t.Errorf("door rejection message changed:\n got:  %q\n want: %q", err.Error(), wantMsg)
 	}
 }
 

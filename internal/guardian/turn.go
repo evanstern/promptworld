@@ -24,7 +24,7 @@ import (
 // 014 T021; re-pointed at send_vision when spec 029 retired nudge_dream):
 // tool.Lookup("send_vision").Cost.TextCapBytes (400). It matches the sim
 // reducer's NudgeTextMax enforcer — both derive from the same registry entry, so
-// the metatron-side truncation and the door-side enforcement can never diverge.
+// the guardian-side truncation and the door-side enforcement can never diverge.
 var nudgeTextMax = func() int {
 	t, _ := tool.Lookup("send_vision")
 	return t.Cost.TextCapBytes
@@ -275,7 +275,7 @@ func (mt *Guardian) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 	// and capped at load (skin.Load, the bundle-SOUL discipline). The fixed
 	// frame still lands LAST and unconditionally in turnSystemPrompt, so no
 	// skin byte can displace it (spec 021 INV-1; the hostile-skin battery in
-	// metatron_test.go proves it).
+	// guardian_test.go proves it).
 	if v := mt.sk().Voice(); v != "" {
 		souls = append(souls, v)
 	}
@@ -1129,6 +1129,14 @@ const targetingDigestMaxBytes = 1600
 // stays the authority, this is guidance. Token-bounded: villagers are naturally
 // capped at the roster size, adjacency at the four cardinals, and the whole block
 // is truncated at targetingDigestMaxBytes. Empty when no one lives.
+//
+// Carry headroom (spec 095 FR-001) rides the SAME per-villager line, from the
+// SAME needMirror snapshot as health/food/warmth: give_item's carry-cap door
+// (internal/sim/miracles.go applyItemGranted, FR-011) rejects an over-cap grant
+// WHOLE, never clamps — so naming each living villager's free bulk against
+// sim.BulkCap here lets the model pick a quantity that fits BEFORE it calls the
+// tool, instead of bouncing off the door and retrying. Dead villagers carry no
+// line at all (the existing skip above), so this adds nothing for them.
 func buildTargetingDigest(alive map[int]bool, needs []needMirror, xy [][2]int, m *worldmap.Map) string {
 	var b strings.Builder
 	b.WriteString(tool.GuardianTargetingGuidance())
@@ -1143,6 +1151,11 @@ func buildTargetingDigest(alive map[int]bool, needs []needMirror, xy [][2]int, m
 		n := needs[i]
 		fmt.Fprintf(&b, "- %s at (%d,%d) — health %d/1000, food %d/1000, warmth %d/1000%s",
 			name, x, y, n.Health, n.Food, n.Warmth, survivalFlag(n))
+		free := sim.BulkCap - n.Bulk
+		if free < 0 {
+			free = 0 // defensive floor (freeBulk's own doctrine): never a negative
+		}
+		fmt.Fprintf(&b, "; carrying %d/%d, %d free to receive", n.Bulk, sim.BulkCap, free)
 		if m != nil {
 			var tiles []string
 			for _, d := range [][2]int{{0, -1}, {0, 1}, {-1, 0}, {1, 0}} {

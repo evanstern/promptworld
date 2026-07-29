@@ -3,10 +3,10 @@ id: TASK-167
 title: >-
   Carry-cap guidance for give_item: surface the villager's headroom before the
   grant
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-29 13:59'
-updated_date: '2026-07-29 19:48'
+updated_date: '2026-07-29 20:52'
 labels:
   - mvls
   - guardian-survival
@@ -26,10 +26,10 @@ Spec: specs/095-give-item-headroom
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 Decision recorded on this card: digest headroom vs static gloss vs teaching-door-only, honoring FR-011 (no clamping)
-- [ ] #2 If a change ships: implementation + tests, and a probe shows first-try quantities land (or the deliberate no-change posture is recorded with rationale and this card closes on that decision)
-- [ ] #3 Spec phase: Digest + gloss
-- [ ] #4 Spec phase: Tests
-- [ ] #5 Spec phase: Grounding + gates
+- [x] #2 If a change ships: implementation + tests, and a probe shows first-try quantities land (or the deliberate no-change posture is recorded with rationale and this card closes on that decision)
+- [x] #3 Spec phase: Digest + gloss
+- [x] #4 Spec phase: Tests
+- [x] #5 Spec phase: Grounding + gates
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -37,3 +37,9 @@ Spec: specs/095-give-item-headroom
 <!-- SECTION:NOTES:BEGIN -->
 board-sweep-2026-07-29 lane 2: AC1 decision recorded in spec 095 — (a) live headroom in the spec-059 digest + one-line gloss; (c) rejected because first-try landing de-noises TASK-164's outcome attribution; FR-011 honored (door untouched). Tier: Sonnet — single-surface guidance change.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Merged via PR #135. Live carry headroom (carrying U/C, F free) added to each living villager's targeting-digest line from the absorb snapshot; give_item gloss references it; door byte-untouched (FR-011 reject-whole pinned by test). First-try grant landing expected; opportunistic confirmation rides TASK-164's re-run. Spec 095 all tasks done.
+<!-- SECTION:FINAL_SUMMARY:END -->
