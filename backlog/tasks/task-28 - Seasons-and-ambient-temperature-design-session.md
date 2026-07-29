@@ -1,10 +1,10 @@
 ---
 id: TASK-28
 title: 'Seasons and ambient temperature: design session'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-20 19:54'
-updated_date: '2026-07-26 17:58'
+updated_date: '2026-07-29 18:58'
 labels:
   - design
 dependencies: []
