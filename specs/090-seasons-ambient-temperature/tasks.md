@@ -8,10 +8,10 @@ task will add its own plan/phases when carded.
 
 ## Phase 1: Design authoring
 
-- [ ] T001 Author spec.md from the card's pre-session decisions and drift-audited
+- [x] T001 Author spec.md from the card's pre-session decisions and drift-audited
   code anchors: calendar, ambient function, warmth-gap model, seasonal scarcity,
   dial list, edge cases (speed compression, pre-seasons worlds, mid-season tuning).
-- [ ] T002 Record the session's decisions D1–D4 (incidents-not-ambient + storms
+- [x] T002 Record the session's decisions D1–D4 (incidents-not-ambient + storms
   douse fires; fixed night length v1; hot-season compat anchor; no new perception
   channel) with rationale in spec.md.
 
