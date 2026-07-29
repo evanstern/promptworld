@@ -826,7 +826,7 @@ func TestPlaceRevealedArm(t *testing.T) {
 	s.Structures = append(s.Structures, Structure{Kind: "fire", X: fx, Y: fy, FuelUntil: 9000})
 
 	reveal := func(agent int, facts []PlaceFact, tick int64) error {
-		return s.Apply(store.Event{Tick: tick, Type: "metatron.place_revealed",
+		return s.Apply(store.Event{Tick: tick, Type: "guardian.place_revealed",
 			Payload: mustPayload(PlaceRevealedPayload{Agent: Ref(agent), Facts: facts})})
 	}
 
@@ -877,12 +877,12 @@ func TestPlaceRevealedThroughDoor(t *testing.T) {
 
 	visionBatch := func(kind string, x, y int) []store.Event {
 		return []store.Event{
-			{Type: "metatron.nudged", Payload: mustPayload(GuardianNudgedPayload{
+			{Type: "guardian.nudged", Payload: mustPayload(GuardianNudgedPayload{
 				Form: "vision", Targets: Refs([]int{0}), Text: "Fire, beyond the ridge."})},
 			{Type: "agent.memory_added", Payload: mustPayload(MemoryAddedPayload{
 				Agent: Ref(0), Text: "You saw a vision: Fire, beyond the ridge.",
 				Salience: SalDream, Subject: Ref(-1), Origin: OriginOmen})},
-			{Type: "metatron.place_revealed", Payload: mustPayload(PlaceRevealedPayload{
+			{Type: "guardian.place_revealed", Payload: mustPayload(PlaceRevealedPayload{
 				Agent: Ref(0), Facts: []PlaceFact{{Kind: kind, X: x, Y: y, Provenance: ProvenanceRevealed}}})},
 			{Type: "agent.memory_added", Payload: mustPayload(MemoryAddedPayload{
 				Agent: Ref(0), Text: "The vision showed you the fire at (7,7).",

@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/tool/registry.go
   - internal/tool/derive.go
-verified_against: 74fe956813aa6be54e65156ae9bfcb91745cbb8d
+verified_against: 11de2a4aa93d4c901a8dd90369151fa23fd056d0
 ---
 
 # Tool registry — the Guardian tool surface
@@ -18,7 +18,7 @@ and the spec-021 miracle-cost/guidance derivations.
 now declares, in order, `converse`, then `send_vision` (a waking vision for ONE
 living villager at any hour — required `target` AgentName + required `text`,
 `MaxBytes`/`TextCapBytes` 400, `Gate Charge`, `Events`
-`metatron.nudged`/`agent.memory_added` — since spec 041 FR-014 also carrying
+`guardian.nudged`/`agent.memory_added` — since spec 041 FR-014 also carrying
 an OPTIONAL place-grant triple, `place_kind`/`place_x`/`place_y`, all riding
 together (the handler refuses a partial triple); `place_kind` is an `Enum`
 over `placeFactKinds` — [[mental-maps]]'s closed `PlaceFact` vocabulary
@@ -27,7 +27,7 @@ places at a death tile), hand-mirrored here since `tool` must not import
 `sim`, so a drift here can
 only over- or under-offer the model, never land a false fact (the reducer
 dry-run is the semantic authority) — and `Events` gains
-`metatron.place_revealed` between the nudge and the memory), `send_omen` (required `targets` Text —
+`guardian.place_revealed` between the nudge and the memory), `send_omen` (required `targets` Text —
 comma-separated living names or `"everyone"` — + required `text`, same cap/gate/
 events; the night-only gate lives in the reducer, not the tool), then the
 `Gate: None` order and meta tools. `monitor_and_act` is the SECOND authored-
@@ -44,8 +44,8 @@ enum-only, so standing orders watch the guardian's plan layer through the
 unmodified matcher, [[guardian-designations]]),
 an optional `keywords` array (≤6, each ≤40), a `confirm` boolean (marks a fuzzy
 order needing a `metatron_watch` confirm, [[llm-orchestrator]]/[[cognition]]),
-and `ttl_days` (1..7); its declared `Events` is `metatron.order_placed`.
-`cancel_order` takes a required `id` Text, `Events` `metatron.order_cancelled`.
+and `ttl_days` (1..7); its declared `Events` is `guardian.order_placed`.
+`cancel_order` takes a required `id` Text, `Events` `guardian.order_cancelled`.
 The three CHARGE-FREE meta tools `pause`, `start` (optional `speed` Enum), and
 `adjust_speed` (required `speed` Enum) are `Effect Expressive` with EMPTY
 `Events` — the `converse` precedent (acting cardinality applies, but nothing is

@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/tool/registry.go
   - internal/tool/derive.go
-verified_against: e390c70eca7bb13c2cbc14b30b18f20c1c38bec8
+verified_against: 11de2a4aa93d4c901a8dd90369151fa23fd056d0
 ---
 
 # Tool registry — plan-layer and prophecy tools

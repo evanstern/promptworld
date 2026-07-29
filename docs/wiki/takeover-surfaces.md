@@ -7,7 +7,7 @@ sources:
   - internal/tui/views.go
   - internal/tui/help.go
   - internal/skin/skin.go
-verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 ---
 
 # Takeover surfaces (ceremony + postmortem)
@@ -76,7 +76,7 @@ payload's `RunEnd.FinalCause` rather than waiting on the async LLM-narrated
 model-free; the wording mirrors `internal/mind/narrate.go`'s own `run.ended`
 line verbatim), the report card when the world is scored (below), then the
 [[morgue]]'s no-blame evidence rows always: one line per death — name, day,
-cause, and the closest `metatron.charter_observed` fingerprint at or before
+cause, and the closest `guardian.charter_observed` fingerprint at or before
 that death tick, scanned from the client's own bounded chronicle ring
 (`closestCharterObservation`) rather than a file read; "unknown" is the
 honest answer once the ring has rotated past the relevant observation on a
@@ -125,7 +125,7 @@ rubric data on a scenario world (`sim.ExerciseDefinition.RubricTerms`,
 [[curriculum-ladder]] owns `sim.EvaluateUnlock`/`CurriculumPasses`/
 `StagesUnlocked` the ceremony and its replay read; [[morgue]] is the
 postmortem's no-blame evidence vocabulary and the death ledger
-(`State.RunEnd.Deaths`) it projects; [[guardian]]'s `metatron.charter_observed`
+(`State.RunEnd.Deaths`) it projects; [[guardian]]'s `guardian.charter_observed`
 timeline is what `closestCharterObservation` scans; [[event-types]]
 catalogs `run.ended`/`curriculum.stage_unlocked`; [[skin]] supplies
 `CeremonyChapter` and every other fiction string these pages render;

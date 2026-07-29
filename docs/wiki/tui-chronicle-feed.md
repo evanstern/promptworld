@@ -6,7 +6,7 @@ sources:
   - internal/tui/grammar.go
   - internal/tui/digest.go
   - internal/tui/tui.go
-verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 ---
 
 # TUI chronicle feed and digest grammar
@@ -29,14 +29,14 @@ turning payload into a readable per-type summary; a feed line reads
 compact `key=value` fields for telemetry families (`cog.*`, `clock.*`,
 `daemon.*`). Columns align at solo width (tick right-aligned, type padded);
 the narrow dock drops the tick and shortens type to its last segment.
-Since spec 052 (FR-013), the solo Type COLUMN — never the dock short form,
-detail pane, or grammar-miss raw fallback — aliases the FROZEN `metatron.*`
-namespace segment to the active [[skin]]'s family label
-(`displayEventType`/`chronicleLine.DisplayType`, grammar.go:
-`metatron.nudged` renders `guardian.nudged` by default, `raven.nudged` under
-the example skin); `curriculum.*` and every other family render raw by design
-(inspector-class visibility, FR-020) — the ONE skinned display surface; the
-rest of the raw feed and inspector stays honest, unskinned wire vocabulary.
+The Type column renders every type RAW on every surface — solo column, dock
+short form, detail pane, and the grammar-miss fallback alike. Spec 052
+(FR-013) briefly aliased the then-frozen `metatron.*` namespace segment to
+the active [[skin]]'s family label (TASK-121's interim shim,
+`displayEventType`/`chronicleLine.DisplayType`); spec 094 shipped the real
+rename — persisted types are `guardian.*` natively — and deleted the shim,
+so the whole feed and inspector is honest, unskinned wire vocabulary
+(inspector-class visibility, FR-020).
 Families carry color-role tints, key tokens (names, speech, amounts, causes)
 emphasis, and six high-salience types (`agent.died`, `gru.attacked`,
 `social.chest_taken`, `norm.violated`, spec 077's `stranger.took` — beside
@@ -59,7 +59,7 @@ first-fact-plus-count shape (a full list would flood the line; the detail
 pane holds it verbatim): `agent.saw` ("Ash saw fire
 at (x,y) (+N more)"), `social.place_told` ("Ash told Birch of fire at (x,y)
 (+N more)"), `agent.map_corrected` ("Ash found fire at (x,y) gone (+N
-more)"), and `metatron.place_revealed` ("Guardian revealed fire at (x,y) to
+more)"), and `guardian.place_revealed` ("Guardian revealed fire at (x,y) to
 Ash (+N more)", guardian as subject, the nudge convention). Since spec 042,
 three [[memory-retrieval]] event types get entries, the raw vector
 elided (384 floats would drown the feed): `agent.memory_embedded`
@@ -107,7 +107,7 @@ nocturnal entity, not a new visual role): `stranger.arrived` ("a
 stranger slipped in at (x,y)"), `stranger.moved` ("the stranger creeps to
 (x,y)"), `stranger.took` (alert tier, "the stranger took N <kind> from the
 stores at (x,y)"), `stranger.departed` ("the stranger was
-gone by dawn of day N"); and `metatron.skills_observed` ("Guardian ran
+gone by dawn of day N"); and `guardian.skills_observed` ("Guardian ran
 under N skill file(s) <fingerprint>" — the charter observation's twin,
 guardian family/skin-name subject).
 

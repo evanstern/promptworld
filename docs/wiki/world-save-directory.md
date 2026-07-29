@@ -1,12 +1,12 @@
 ---
 name: world-save-directory
-description: One directory = one world run — manifest (world.json), create/open validation, path helpers, clean separability, v1→v2→v3→v4→v5 migration, and the spec-076 fork ceremony (fresh prefix log at the snapshot boundary under a fresh identity); the manifest field-by-field catalog and the path-helper catalog live in two split-off children
+description: One directory = one world run — manifest (world.json), create/open validation, path helpers, clean separability, migration to the current v6 format (snapshot-cut chain + the spec-094 translating mode), and the spec-076 fork ceremony (fresh prefix log at the snapshot boundary under a fresh identity); the manifest field-by-field catalog and the path-helper catalog live in two split-off children
 kind: component
 sources:
   - internal/world/world.go
   - internal/world/migrate.go
   - internal/world/fork.go
-verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 ---
 
 # World save directory
@@ -60,8 +60,9 @@ is never stored ([[worldmap-generation]]).
   parsed fine, it's just a version this build doesn't support, so the world itself
   may be perfectly healthy. Callers that only need daemon reachability (not content —
   [[daemon-lifecycle]], [[cli-runtime-control]]'s `stop`/`status`) match it with
-  `errors.As` to tell "can't read this world's content" apart from a genuine open
-  failure.
+  `errors.As`. Since spec 094 the text splits by direction (OLDER ⇒ migrate
+  hint, NEWER ⇒ "upgrade promptworld"); current version **6** — the guardian
+  rename (log stamp 2, [[event-log]]).
 - `SetTeaching(dir, on)` (spec 039) is the offline read-modify-write for the
   `Teaching` marker: `Open`s the manifest, flips the field, rewrites
   `world.json`. A running daemon reads `Teaching` only at boot, so this is a
@@ -82,34 +83,33 @@ swept by [[daemon-lifecycle]] when stale. The full layout is documented in
 `specs/001-world-daemon/contracts/storage.md`.
 
 **Migration** (`migrate.go`, spec 012 US6 for v1→v2 + spec 013 for v2→v3 +
-spec 041 for v3→v4 + spec 068 for v4→v5 —
+spec 041 for v3→v4 + spec 094 for v4/v5→v6 —
 [[world-migration]] has the full design): `OpenForMigration(dir)` loads a world
-manifest without the current version gate — it admits `format_version` 1 through 4
+manifest without the current version gate — it admits `format_version` 1 through 5
 (the sole purpose is migrating an older world this build otherwise can't `Open`) and
 refuses an already-current world outright; `Migrate(dir)` runs the whole ceremony —
 refuse a live daemon or an already-migrated source (the guard is keyed to the
-*source* format: `V1DBPath()` → `world.v1.db` for a v1 source, `V2DBPath()` →
-`world.v2.db` for a v2 source, `V3DBPath()` → `world.v3.db` for a v3 source),
-read the source world's covering snapshot,
+*source* format: `V1DBPath()` → `world.v1.db` … `V5DBPath()` → `world.v5.db`).
+A v1–v3 source takes the SNAPSHOT-CUT: read the source world's covering snapshot,
 transform it (`internal/sim` — an older source chains every remaining transform
-in one run, e.g. 1→2→3→4), archive the live `world.db` (and any `-wal`/`-shm` sidecars) to that
+in one run), archive the live `world.db` (and any `-wal`/`-shm` sidecars) to that
 source-format archive **before** writing anything new (the archive is never
 overwritten and never deleted), write a fresh log (`world.created` then
-`world.migrated`) plus its covering snapshot, then bump `Manifest.FormatVersion` to
+`world.migrated`, stamped with the current log format — [[event-log]]) plus its
+covering snapshot, then bump `Manifest.FormatVersion` to
 the current version last — a crash between the archive and the manifest bump
 leaves a recoverable state (restore = rename the archive back, reset the
-manifest). The v4→v5 step (spec 068, [[world-migration]]) is different in kind: it
-is manifest-only — no state transform, no snapshot cut, no archive — since a
-carried-forward v4 world's event log, state, and terrain (`terrain_gen` stays
-absent, so it keeps legacy generation) do not change at all; `Migrate` detects a
-v4 source, bumps `Manifest.FormatVersion` to 5, and returns
-`MigrateResult{ManifestOnly: true}`.
+manifest). A v4/v5 source takes the TRANSLATION (spec 094,
+[[world-migration]]): full history carried, only guardian event-type names
+rewritten, boot-shaped replay verified before the archive/swap
+(`MigrateResult{Translated: true}`).
 
 **Forking** (`fork.go`, spec 076 — [[world-forking]] has the full design):
 `Fork(srcDir, destDir, newName)` copies a stopped world at its latest
 snapshot under a fresh identity: parent event prefix into a fresh
-`world.db`, boundary snapshot verbatim, one `world.forked` lineage event,
-meta + manifest stamped (seed carried). Forks never merge.
+`world.db` (log-format-stamped at birth, [[event-log]]), boundary snapshot
+verbatim, one `world.forked` lineage event, meta + manifest stamped (seed
+carried). Forks never merge.
 
 ## Connections
 

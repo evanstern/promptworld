@@ -26,7 +26,7 @@ func TestEventFamilyOf(t *testing.T) {
 		{"norm.violated", familyGovernance},
 		{"gru.emerged", familyGru},
 		{"chronicle.entry", familyChronicle},
-		{"metatron.nudged", familyGuardian},
+		{"guardian.nudged", familyGuardian},
 		{"daemon.started", familyDaemon},
 		{"cog.thought", familyCog},
 		{"future.unknown_type", familyUnknown}, // new namespaces land here until promoted

@@ -290,8 +290,8 @@ func TestBuildMiracleBatch(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if batch[0].Type != "metatron.entity_moved" {
-			t.Fatalf("main event = %s, want metatron.entity_moved", batch[0].Type)
+		if batch[0].Type != "guardian.entity_moved" {
+			t.Fatalf("main event = %s, want guardian.entity_moved", batch[0].Type)
 		}
 		if memCount(batch) != 1 {
 			t.Fatalf("villager move memories = %d, want 1", memCount(batch))
@@ -326,7 +326,7 @@ func TestBuildMiracleBatch(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if batch[0].Type != "metatron.entity_removed" || memCount(batch) != 0 {
+		if batch[0].Type != "guardian.entity_removed" || memCount(batch) != 0 {
 			t.Errorf("remove batch wrong: %s, memories %d", batch[0].Type, memCount(batch))
 		}
 	})
@@ -336,7 +336,7 @@ func TestBuildMiracleBatch(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if batch[0].Type != "metatron.item_granted" || memCount(batch) != 1 {
+		if batch[0].Type != "guardian.item_granted" || memCount(batch) != 1 {
 			t.Fatalf("give batch wrong: %s, memories %d", batch[0].Type, memCount(batch))
 		}
 		assertMem(t, batch[1], 2)
@@ -347,8 +347,8 @@ func TestBuildMiracleBatch(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if batch[0].Type != "metatron.time_snapped" {
-			t.Fatalf("main event = %s, want metatron.time_snapped", batch[0].Type)
+		if batch[0].Type != "guardian.time_snapped" {
+			t.Fatalf("main event = %s, want guardian.time_snapped", batch[0].Type)
 		}
 		if memCount(batch) != len(s.LivingAgents()) || memCount(batch) != sim.AgentCount-1 {
 			t.Errorf("snap memories = %d, want %d living", memCount(batch), sim.AgentCount-1)
@@ -496,7 +496,7 @@ func TestVisionLands(t *testing.T) {
 		t.Fatalf("world batches = %d, want 1 atomic nudge batch", len(lb))
 	}
 	batch := lb[0]
-	if batch[0].Type != "metatron.nudged" || len(batch) != 2 {
+	if batch[0].Type != "guardian.nudged" || len(batch) != 2 {
 		t.Fatalf("batch shape: %v", batch)
 	}
 	if inj.state.GuardianCharges != 0 {
@@ -539,7 +539,7 @@ func TestVisionPlaceRevealLands(t *testing.T) {
 		t.Fatalf("world batches = %d, want 1 atomic batch", len(lb))
 	}
 	batch := lb[0]
-	wantTypes := []string{"metatron.nudged", "agent.memory_added", "metatron.place_revealed", "agent.memory_added"}
+	wantTypes := []string{"guardian.nudged", "agent.memory_added", "guardian.place_revealed", "agent.memory_added"}
 	if len(batch) != len(wantTypes) {
 		t.Fatalf("batch shape: %v", batch)
 	}
@@ -1312,12 +1312,12 @@ func TestMiracleGratisStrippedFromModel(t *testing.T) {
 
 	var snap *store.Event
 	for i := range lb[0] {
-		if lb[0][i].Type == "metatron.time_snapped" {
+		if lb[0][i].Type == "guardian.time_snapped" {
 			snap = &lb[0][i]
 		}
 	}
 	if snap == nil {
-		t.Fatal("no metatron.time_snapped event in the landed batch")
+		t.Fatal("no guardian.time_snapped event in the landed batch")
 	}
 	var p sim.TimeSnappedPayload
 	if err := json.Unmarshal(snap.Payload, &p); err != nil {
@@ -1347,7 +1347,7 @@ func TestWorkMiracleLands(t *testing.T) {
 		t.Fatalf("miracle did not land: %+v", r.Miracle)
 	}
 	lb := landedBatches(inj)
-	if len(lb) != 1 || lb[0][0].Type != "metatron.item_granted" {
+	if len(lb) != 1 || lb[0][0].Type != "guardian.item_granted" {
 		t.Fatalf("miracle batch wrong: %+v", lb)
 	}
 	if inj.state.GuardianCharges != sim.GuardianGenesisCharges-1 {

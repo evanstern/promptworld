@@ -8,7 +8,7 @@ sources:
   - internal/sim/executor.go
   - internal/sim/gru.go
   - internal/sim/state.go
-verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 ---
 
 # Scenario machinery (incident schedule + rubric)
@@ -20,7 +20,7 @@ but nothing emitted them outside fixtures — this feature adds the authored
 incident scheduler landing deterministic pressure into a scenario world,
 plus the rubric evaluator watching the same replica for the exercise's
 pass boundary. Both are the EXECUTOR EMISSION CLASS (the
-`metatron.order_expired`/`charge_regenerated` precedent): pure functions of
+`guardian.order_expired`/`charge_regenerated` precedent): pure functions of
 (state, boot-frozen scenario config, tick), no LLM, no injection door — the
 recorded events are the only latches, so a restart or replay resumes exactly.
 This note covers the incident half; the rubric emitter, its evidence

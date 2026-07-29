@@ -85,7 +85,7 @@ func TestChargeMirrorAccrualAndCap(t *testing.T) {
 	// Genesis starts at GuardianGenesisCharges (1); deliver cap+2 regeneration
 	// events one batch at a time so each is individually mirrored.
 	for i := 0; i < sim.GuardianChargeCap+2; i++ {
-		mt.Observe([]store.Event{{Tick: int64(i + 1), Type: "metatron.charge_regenerated"}})
+		mt.Observe([]store.Event{{Tick: int64(i + 1), Type: "guardian.charge_regenerated"}})
 	}
 	waitFor(t, 2*time.Second, func() bool {
 		return mt.Status().Charges == sim.GuardianChargeCap
@@ -100,7 +100,7 @@ func TestChargeMirrorAccrualAndCap(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	mt.Observe([]store.Event{{Tick: int64(sim.GuardianChargeCap + 3), Type: "metatron.nudged", Payload: payload}})
+	mt.Observe([]store.Event{{Tick: int64(sim.GuardianChargeCap + 3), Type: "guardian.nudged", Payload: payload}})
 	waitFor(t, 2*time.Second, func() bool {
 		return mt.Status().Charges == sim.GuardianChargeCap-1
 	})

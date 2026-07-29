@@ -181,7 +181,7 @@ func (md *Mind) chronicleNote(e store.Event) {
 			line = fmt.Sprintf("%s told %s about the %s at (%d,%d).",
 				name(p.From.ID), name(p.To.ID), strings.ReplaceAll(f.Kind, "_", " "), f.X, f.Y)
 		}
-	case "metatron.place_revealed":
+	case "guardian.place_revealed":
 		// Spec 041 (FR-014, T032): the divine reveal — voiced by the first
 		// fact (canonical order), the correction/telling grammar convention.
 		var p sim.PlaceRevealedPayload

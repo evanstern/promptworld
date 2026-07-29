@@ -7,7 +7,7 @@ sources:
   - internal/mind/prompt.go
   - internal/mind/parse.go
   - internal/mind/telemetry.go
-verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 ---
 
 # Mind driver cadence and prompt content
@@ -34,7 +34,7 @@ re-arms (a chop always did; a quarry now too), and so does any villager within
 in for the `agent.map_corrected` those on-scene witnesses no longer receive
 (the fact was removed silently at the act; [[mental-map-perception]]) — and —
 only while the replica is paused (spec 040, decision-6's paused authoring
-chain) — a landed Guardian nudge (`metatron.nudged`), which arms each targeted
+chain) — a landed Guardian nudge (`guardian.nudged`), which arms each targeted
 villager with the nudge event's seq as the causality edge; the game-time
 debounce cannot reopen while frozen, so one nudge buys at most one round at
 the frozen tick, and a nudge landed while running arms nothing — floored

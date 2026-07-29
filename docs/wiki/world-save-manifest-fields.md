@@ -4,7 +4,7 @@ description: world.json's field-by-field catalog — format_version history, tic
 kind: component
 sources:
   - internal/world/world.go
-verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 ---
 
 # World save manifest: field catalog
@@ -105,7 +105,8 @@ byte-identically.
 
 Back to [[world-save-directory]] for `Create`/`Open`/path-helper mechanics
 and its sibling child [[world-save-path-helpers]]. [[worldmap-generation]]
-is what `terrain_gen` (current format version 5) exists to support;
+is what `terrain_gen` (added at format version 5; current is 6 — the
+spec-094 guardian rename, [[world-migration]]) exists to support;
 [[mental-maps]] is the spec-041 subsystem that bumped it to 4 one break
 earlier; [[curriculum-ladder]] owns `stage`/`stage_overridden`/
 `charter_preset`; [[scenario-machinery]] validates and consumes `scenario`;

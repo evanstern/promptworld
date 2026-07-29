@@ -15,7 +15,15 @@ import (
 
 const (
 	ManifestName = "world.json"
-	// FormatVersion 5 is the terrain-vocabulary break (spec 068): new worlds
+	// FormatVersion 6 is the guardian-rename break (spec 094): the 13
+	// persisted metatron.* event types became guardian.* (log format stamp
+	// 2, store.LogFormatVersion), migrated by TRANSLATION — the log's type
+	// column is rewritten through the rename table with every seq, tick, and
+	// payload preserved byte-for-byte, unlike the snapshot-cut below. A v5
+	// world opened by this build refuses with the migrate hint; a v6 world
+	// opened by a pre-094 build refuses with its own gate — either direction
+	// of mis-replay would silently hit no reducer arm for half the guardian
+	// history. FormatVersion 5 was the terrain-vocabulary break (spec 068): new worlds
 	// generate marsh/sand terrain gated by the manifest's terrain_gen field,
 	// and software predating the field would silently IGNORE it and
 	// regenerate different terrain under the same manifest — agents and
@@ -28,7 +36,7 @@ const (
 	// FormatVersion 3 was the spec 013 inventory/storage break (bulk cap,
 	// yield truncation, death spill); FormatVersion 2 the spec 012
 	// resources/food/crafting break.
-	FormatVersion = 5
+	FormatVersion = 6
 )
 
 type Manifest struct {
@@ -332,6 +340,12 @@ type ErrFormatVersionMismatch struct {
 }
 
 func (e *ErrFormatVersionMismatch) Error() string {
+	// Direction split (spec 094 FR-002): an older world has a remedy this
+	// build ships (migrate); a newer world's only remedy is a newer build —
+	// a future format must never be mis-opened (the TerrainGen posture).
+	if e.Got > e.Want {
+		return fmt.Sprintf("world format_version %d is newer than this build supports (%d); upgrade promptworld to open this world", e.Got, e.Want)
+	}
 	return fmt.Sprintf("world format_version %d unsupported (this build supports %d); run 'promptworld migrate <world>' to upgrade an older world", e.Got, e.Want)
 }
 

@@ -3,6 +3,8 @@ package sim
 import (
 	"reflect"
 	"testing"
+
+	"github.com/evanstern/promptworld/internal/store"
 )
 
 // TestRecipeTableMirror pins recipes.go to the numbers in
@@ -55,7 +57,23 @@ func TestRecipeTableMirror(t *testing.T) {
 // TestGatherTuningMirror pins the gather-side numbers (recipes.md §Gathering
 // and the v2 food yields) that live as tuning constants rather than recipe
 // rows.
+//
+// REPLAY DOCTRINE (spec 094, superseding the bare value pin this test was
+// before): several of these constants — the hunt yields above all (state.go
+// re-derives hunt yield from huntYieldSpear at APPLY time) — are
+// reducer-re-derivation inputs: retuning one changes what replaying an
+// EXISTING log computes, which is a log-format break, not a rebalance. Such
+// a change requires bumping store.LogFormatVersion and shipping a migration
+// (translate for pure renames; snapshot-cut for semantic changes like a
+// retune — see world/migrate.go's decision rule). The version assertion
+// below makes the retune confront the doctrine: these values are ratified
+// for the asserted log format, and moving either side alone fails here.
 func TestGatherTuningMirror(t *testing.T) {
+	if store.LogFormatVersion != 2 {
+		t.Fatalf("store.LogFormatVersion = %d; the tuning pins below were ratified for log format 2 — "+
+			"re-ratify replay-relevant constants (and this pin) with the bump and its migration (spec 094 doctrine)",
+			store.LogFormatVersion)
+	}
 	checks := []struct {
 		name string
 		got  int

@@ -49,7 +49,7 @@ const (
 )
 
 // charterObs is one point on the charter-revision timeline
-// (metatron.charter_observed).
+// (guardian.charter_observed).
 type charterObs struct {
 	tick int64
 	fp   string
@@ -119,7 +119,7 @@ func (s *Scribe) renderMorgue() {
 			if json.Unmarshal(e.Payload, &p) == nil && p.Name != "" {
 				worldName = p.Name
 			}
-		case "metatron.charter_observed":
+		case "guardian.charter_observed":
 			var p sim.CharterObservedPayload
 			if json.Unmarshal(e.Payload, &p) == nil {
 				timeline = append(timeline, charterObs{tick: e.Tick, fp: p.Fingerprint, def: p.Default})

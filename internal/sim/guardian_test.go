@@ -15,10 +15,10 @@ func nudgeEvent(t *testing.T, tick int64, p GuardianNudgedPayload) store.Event {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return store.Event{Tick: tick, Type: "metatron.nudged", Payload: b}
+	return store.Event{Tick: tick, Type: "guardian.nudged", Payload: b}
 }
 
-var regenEvent = store.Event{Type: "metatron.charge_regenerated", Payload: []byte("{}")}
+var regenEvent = store.Event{Type: "guardian.charge_regenerated", Payload: []byte("{}")}
 
 // TestChargeInvariants: genesis 1; regen caps at 3; spends floor via
 // validation (a spend at 0 is a reducer error, not a clamp).
@@ -121,7 +121,7 @@ func TestRegenBoundaries(t *testing.T) {
 	count := func(tick int64) int {
 		n := 0
 		for _, e := range stepEvents(s, m, tick) {
-			if e.Type == "metatron.charge_regenerated" {
+			if e.Type == "guardian.charge_regenerated" {
 				n++
 			}
 		}
@@ -155,7 +155,7 @@ func TestGuardianChargeRegenTicksMatchesExecutor(t *testing.T) {
 
 	fires := func(tick int64) bool {
 		for _, e := range stepEvents(s, m, tick) {
-			if e.Type == "metatron.charge_regenerated" {
+			if e.Type == "guardian.charge_regenerated" {
 				return true
 			}
 		}
@@ -292,7 +292,7 @@ func TestGuardianOrderPlacedRejections(t *testing.T) {
 	}
 	for _, c := range cases {
 		s := NewState(7, m)
-		if err := s.Apply(orderEvent(t, "metatron.order_placed", 0, c.o)); err == nil {
+		if err := s.Apply(orderEvent(t, "guardian.order_placed", 0, c.o)); err == nil {
 			t.Errorf("%s: expected reducer rejection", c.name)
 		}
 		if len(s.GuardianOrders) != 0 {
@@ -302,10 +302,10 @@ func TestGuardianOrderPlacedRejections(t *testing.T) {
 
 	// Duplicate id in any status is rejected.
 	s := NewState(7, m)
-	if err := s.Apply(orderEvent(t, "metatron.order_placed", 0, validOrder("ord-dup", "player", 0))); err != nil {
+	if err := s.Apply(orderEvent(t, "guardian.order_placed", 0, validOrder("ord-dup", "player", 0))); err != nil {
 		t.Fatalf("first placement rejected: %v", err)
 	}
-	if err := s.Apply(orderEvent(t, "metatron.order_placed", 1, validOrder("ord-dup", "player", 1))); err == nil {
+	if err := s.Apply(orderEvent(t, "guardian.order_placed", 1, validOrder("ord-dup", "player", 1))); err == nil {
 		t.Error("duplicate order id must be rejected")
 	}
 }
@@ -327,23 +327,23 @@ func TestGuardianPlayerOrderCap(t *testing.T) {
 	s := NewState(7, m)
 	for i := 0; i < GuardianPlayerOrderCap; i++ {
 		id := "ord-p" + string(rune('0'+i))
-		if err := s.Apply(orderEvent(t, "metatron.order_placed", int64(i), validOrder(id, "player", int64(i)))); err != nil {
+		if err := s.Apply(orderEvent(t, "guardian.order_placed", int64(i), validOrder(id, "player", int64(i)))); err != nil {
 			t.Fatalf("player order %d rejected: %v", i, err)
 		}
 	}
 	// The 4th player order exceeds the cap.
-	if err := s.Apply(orderEvent(t, "metatron.order_placed", 10, validOrder("ord-p3", "player", 10))); err == nil {
+	if err := s.Apply(orderEvent(t, "guardian.order_placed", 10, validOrder("ord-p3", "player", 10))); err == nil {
 		t.Error("4th active player order must be refused (cap 3)")
 	}
 	// A system-origin order is exempt.
-	if err := s.Apply(orderEvent(t, "metatron.order_placed", 11, validOrder("ord-sys", "system", 11))); err != nil {
+	if err := s.Apply(orderEvent(t, "guardian.order_placed", 11, validOrder("ord-sys", "system", 11))); err != nil {
 		t.Errorf("system-origin order must be exempt from the player cap: %v", err)
 	}
 	// Cancelling a player order frees a slot for a new player order.
-	if err := s.Apply(orderEvent(t, "metatron.order_cancelled", 12, OrderIDPayload{ID: "ord-p0"})); err != nil {
+	if err := s.Apply(orderEvent(t, "guardian.order_cancelled", 12, OrderIDPayload{ID: "ord-p0"})); err != nil {
 		t.Fatalf("cancel rejected: %v", err)
 	}
-	if err := s.Apply(orderEvent(t, "metatron.order_placed", 13, validOrder("ord-p3", "player", 13))); err != nil {
+	if err := s.Apply(orderEvent(t, "guardian.order_placed", 13, validOrder("ord-p3", "player", 13))); err != nil {
 		t.Errorf("placement after freeing a slot rejected: %v", err)
 	}
 }
@@ -360,13 +360,13 @@ func TestGuardianOrderLifecycle(t *testing.T) {
 		event store.Event
 		want  string
 	}{
-		{"triggered", orderEvent(t, "metatron.order_triggered", 5, OrderTriggeredPayload{ID: "ord-1", MatchedType: "agent.slept", MatchedTick: 5}), "triggered"},
-		{"cancelled", orderEvent(t, "metatron.order_cancelled", 5, OrderIDPayload{ID: "ord-1"}), "cancelled"},
-		{"expired", orderEvent(t, "metatron.order_expired", 5, OrderIDPayload{ID: "ord-1"}), "expired"},
+		{"triggered", orderEvent(t, "guardian.order_triggered", 5, OrderTriggeredPayload{ID: "ord-1", MatchedType: "agent.slept", MatchedTick: 5}), "triggered"},
+		{"cancelled", orderEvent(t, "guardian.order_cancelled", 5, OrderIDPayload{ID: "ord-1"}), "cancelled"},
+		{"expired", orderEvent(t, "guardian.order_expired", 5, OrderIDPayload{ID: "ord-1"}), "expired"},
 	}
 	for _, tr := range transitions {
 		s := NewState(7, m)
-		if err := s.Apply(orderEvent(t, "metatron.order_placed", 0, validOrder("ord-1", "player", 0))); err != nil {
+		if err := s.Apply(orderEvent(t, "guardian.order_placed", 0, validOrder("ord-1", "player", 0))); err != nil {
 			t.Fatal(err)
 		}
 		if err := s.Apply(tr.event); err != nil {
@@ -376,7 +376,7 @@ func TestGuardianOrderLifecycle(t *testing.T) {
 			t.Errorf("%s: status = %q, want %q", tr.name, s.GuardianOrders[0].Status, tr.want)
 		}
 		// A second terminal on the now-consumed order is refused (one-way).
-		if err := s.Apply(orderEvent(t, "metatron.order_cancelled", 6, OrderIDPayload{ID: "ord-1"})); err == nil {
+		if err := s.Apply(orderEvent(t, "guardian.order_cancelled", 6, OrderIDPayload{ID: "ord-1"})); err == nil {
 			t.Errorf("%s: second terminal on a consumed order must be refused", tr.name)
 		}
 	}
@@ -384,9 +384,9 @@ func TestGuardianOrderLifecycle(t *testing.T) {
 	// An unknown id is refused for every terminal type.
 	s := NewState(7, m)
 	for _, e := range []store.Event{
-		orderEvent(t, "metatron.order_triggered", 1, OrderTriggeredPayload{ID: "ghost"}),
-		orderEvent(t, "metatron.order_cancelled", 1, OrderIDPayload{ID: "ghost"}),
-		orderEvent(t, "metatron.order_expired", 1, OrderIDPayload{ID: "ghost"}),
+		orderEvent(t, "guardian.order_triggered", 1, OrderTriggeredPayload{ID: "ghost"}),
+		orderEvent(t, "guardian.order_cancelled", 1, OrderIDPayload{ID: "ghost"}),
+		orderEvent(t, "guardian.order_expired", 1, OrderIDPayload{ID: "ghost"}),
 	} {
 		if err := s.Apply(e); err == nil {
 			t.Errorf("%s on an unknown id must be refused", e.Type)
@@ -403,19 +403,19 @@ func TestGuardianOrderExpiryExecutor(t *testing.T) {
 	s := NewState(7, m)
 	o := validOrder("ord-exp", "player", 0)
 	o.ExpiresTick = 1 * ticksPerGameDay // 86400
-	if err := s.Apply(orderEvent(t, "metatron.order_placed", 0, o)); err != nil {
+	if err := s.Apply(orderEvent(t, "guardian.order_placed", 0, o)); err != nil {
 		t.Fatal(err)
 	}
-	if got := countType(stepEvents(s, m, o.ExpiresTick-1), "metatron.order_expired"); got != 0 {
+	if got := countType(stepEvents(s, m, o.ExpiresTick-1), "guardian.order_expired"); got != 0 {
 		t.Errorf("pre-expiry tick emitted %d order_expired, want 0", got)
 	}
 	expiryEvents := stepEvents(s, m, o.ExpiresTick)
-	if got := countType(expiryEvents, "metatron.order_expired"); got != 1 {
+	if got := countType(expiryEvents, "guardian.order_expired"); got != 1 {
 		t.Fatalf("expiry tick emitted %d order_expired, want 1", got)
 	}
 	// Apply the expiry (as the loop would) → the order is consumed.
 	for _, e := range expiryEvents {
-		if e.Type == "metatron.order_expired" {
+		if e.Type == "guardian.order_expired" {
 			if err := s.Apply(e); err != nil {
 				t.Fatal(err)
 			}
@@ -425,7 +425,7 @@ func TestGuardianOrderExpiryExecutor(t *testing.T) {
 		t.Errorf("order status = %q, want expired", s.GuardianOrders[0].Status)
 	}
 	// A later tick does not re-emit (the order is no longer active).
-	if got := countType(stepEvents(s, m, o.ExpiresTick+ticksPerGameDay), "metatron.order_expired"); got != 0 {
+	if got := countType(stepEvents(s, m, o.ExpiresTick+ticksPerGameDay), "guardian.order_expired"); got != 0 {
 		t.Errorf("post-expiry tick re-emitted %d order_expired, want 0", got)
 	}
 }
@@ -446,7 +446,7 @@ func TestSurvivalWatchReducer(t *testing.T) {
 		if o.ExpiresTick-o.PlacedTick >= GuardianOrderTTLMinDays*ticksPerGameDay {
 			t.Fatalf("fixture %s is not TTL-illegal; the exemption is not being exercised", o.ID)
 		}
-		if err := s.Apply(orderEvent(t, "metatron.order_placed", 0, o)); err != nil {
+		if err := s.Apply(orderEvent(t, "guardian.order_placed", 0, o)); err != nil {
 			t.Fatalf("survival watch %s refused despite the TTL exemption: %v", o.ID, err)
 		}
 	}
@@ -458,16 +458,16 @@ func TestSurvivalWatchReducer(t *testing.T) {
 	// place a full cap of player orders.
 	for i := 0; i < GuardianPlayerOrderCap; i++ {
 		id := "ord-p" + string(rune('0'+i))
-		if err := s.Apply(orderEvent(t, "metatron.order_placed", int64(100+i), validOrder(id, "player", int64(100+i)))); err != nil {
+		if err := s.Apply(orderEvent(t, "guardian.order_placed", int64(100+i), validOrder(id, "player", int64(100+i)))); err != nil {
 			t.Fatalf("player order %d refused with survival watches standing (cap must count only player orders): %v", i, err)
 		}
 	}
-	if err := s.Apply(orderEvent(t, "metatron.order_placed", 200, validOrder("ord-p3", "player", 200))); err == nil {
+	if err := s.Apply(orderEvent(t, "guardian.order_placed", 200, validOrder("ord-p3", "player", 200))); err == nil {
 		t.Error("a 4th player order was admitted — the cap must still bite on player orders")
 	}
 
 	// (c) Player cancel of a survival watch refuses at the door, in-fiction-worthy.
-	err := s.Apply(orderEvent(t, "metatron.order_cancelled", 300, OrderIDPayload{ID: "sys-watch-" + SurvivalNearDeath}))
+	err := s.Apply(orderEvent(t, "guardian.order_cancelled", 300, OrderIDPayload{ID: "sys-watch-" + SurvivalNearDeath}))
 	if err == nil || !strings.Contains(err.Error(), "survival watch") {
 		t.Errorf("survival watch cancel not refused at the door: %v", err)
 	}
@@ -483,11 +483,11 @@ func TestSurvivalWatchReducer(t *testing.T) {
 	// whose real TTLs would legitimately expire and confound the count).
 	sd := NewState(7, m)
 	for _, o := range SurvivalWatchDefs(0) {
-		if err := sd.Apply(orderEvent(t, "metatron.order_placed", 0, o)); err != nil {
+		if err := sd.Apply(orderEvent(t, "guardian.order_placed", 0, o)); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if got := countType(stepEvents(sd, m, 30*ticksPerGameDay), "metatron.order_expired"); got != 0 {
+	if got := countType(stepEvents(sd, m, 30*ticksPerGameDay), "guardian.order_expired"); got != 0 {
 		t.Errorf("expiry sweep emitted %d order_expired for standing survival watches, want 0", got)
 	}
 	for i := range sd.GuardianOrders {
@@ -499,12 +499,12 @@ func TestSurvivalWatchReducer(t *testing.T) {
 	// Unknown / mis-origin survival discriminator is refused.
 	bad := validOrder("ord-bad", "system", 0)
 	bad.Survival = "boredom"
-	if err := NewState(7, m).Apply(orderEvent(t, "metatron.order_placed", 0, bad)); err == nil {
+	if err := NewState(7, m).Apply(orderEvent(t, "guardian.order_placed", 0, bad)); err == nil {
 		t.Error("an unknown survival kind must be refused")
 	}
 	badOrigin := validOrder("ord-bad2", "player", 0)
 	badOrigin.Survival = SurvivalNearDeath
-	if err := NewState(7, m).Apply(orderEvent(t, "metatron.order_placed", 0, badOrigin)); err == nil {
+	if err := NewState(7, m).Apply(orderEvent(t, "guardian.order_placed", 0, badOrigin)); err == nil {
 		t.Error("a player-origin survival watch must be refused")
 	}
 }
@@ -533,7 +533,7 @@ func TestGuardianOrdersSnapshotUpgrade(t *testing.T) {
 	}
 	// Modern shape with an order round-trips.
 	withOrder := NewState(7, m)
-	if err := withOrder.Apply(orderEvent(t, "metatron.order_placed", 0, validOrder("ord-rt", "player", 0))); err != nil {
+	if err := withOrder.Apply(orderEvent(t, "guardian.order_placed", 0, validOrder("ord-rt", "player", 0))); err != nil {
 		t.Fatal(err)
 	}
 	rt := NewState(7, m)
@@ -552,12 +552,12 @@ func TestGuardianOrdersSnapshotUpgrade(t *testing.T) {
 func TestGuardianOrdersReplayIdentically(t *testing.T) {
 	m := worldmap.Generate(7, 32, 32)
 	events := []store.Event{
-		orderEvent(t, "metatron.order_placed", 0, validOrder("ord-a", "player", 0)),
-		orderEvent(t, "metatron.order_placed", 1, validOrder("ord-b", "player", 1)),
-		orderEvent(t, "metatron.order_placed", 2, validOrder("ord-c", "system", 2)),
-		orderEvent(t, "metatron.order_triggered", 10, OrderTriggeredPayload{ID: "ord-a", MatchedType: "agent.slept", MatchedTick: 10}),
-		orderEvent(t, "metatron.order_cancelled", 11, OrderIDPayload{ID: "ord-b"}),
-		orderEvent(t, "metatron.order_expired", 12, OrderIDPayload{ID: "ord-c"}),
+		orderEvent(t, "guardian.order_placed", 0, validOrder("ord-a", "player", 0)),
+		orderEvent(t, "guardian.order_placed", 1, validOrder("ord-b", "player", 1)),
+		orderEvent(t, "guardian.order_placed", 2, validOrder("ord-c", "system", 2)),
+		orderEvent(t, "guardian.order_triggered", 10, OrderTriggeredPayload{ID: "ord-a", MatchedType: "agent.slept", MatchedTick: 10}),
+		orderEvent(t, "guardian.order_cancelled", 11, OrderIDPayload{ID: "ord-b"}),
+		orderEvent(t, "guardian.order_expired", 12, OrderIDPayload{ID: "ord-c"}),
 	}
 	live := NewState(7, m)
 	replayed := NewState(7, m)

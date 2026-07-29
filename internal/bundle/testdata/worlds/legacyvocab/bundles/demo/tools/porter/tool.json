@@ -1,0 +1,11 @@
+{
+  "name": "porter",
+  "description": "Carry a villager across the map (declares the pre-094 event vocabulary)",
+  "params": [{"name": "target", "kind": "agent_name", "required": true}],
+  "events": ["metatron.entity_moved", "agent.memory_added"],
+  "charges": 1,
+  "effects": [
+    {"kind": "move_entity", "target": "{args.target}", "to_x": 0, "to_y": 0},
+    {"kind": "narrate", "text": "{args.target} was carried across the land", "recipients": "all_living"}
+  ]
+}

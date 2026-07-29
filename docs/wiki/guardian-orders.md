@@ -11,7 +11,7 @@ sources:
   - internal/guardian/turn.go
   - internal/guardian/toolcalls.go
   - internal/tool/registry.go
-verified_against: 74fe956813aa6be54e65156ae9bfcb91745cbb8d
+verified_against: 11de2a4aa93d4c901a8dd90369151fa23fd056d0
 ---
 
 # Guardian's standing orders
@@ -39,7 +39,7 @@ needs the watch confirm), `PlacedTick`, `ExpiresTick`, `Status`
 the reducer at apply time from the event envelope (the `Memory.Seq`
 precedent), never trusted from the payload (like `Status`) — it lets
 [[scenario-machinery]]'s `OrderPlacedEvidence` re-locate a recorded
-`metatron.order_placed` without a log scan.
+`guardian.order_placed` without a log scan.
 
 **Caps and bounds** (`sim` constants): at most `GuardianPlayerOrderCap` (3) ACTIVE
 **player-origin** orders may stand concurrently — system-origin deferral orders are
@@ -55,7 +55,7 @@ without unbounded growth.
 
 ## Event sourcing
 
-Four event types carry the lifecycle — `metatron.order_placed`, `order_triggered`,
+Four event types carry the lifecycle — `guardian.order_placed`, `order_triggered`,
 `order_cancelled`, `order_expired` — dispatched through [[sim-state-reducer]]'s
 `applyGuardian` arm; `transitionGuardianOrder` resolves the cancel/expiry/trigger
 race so exactly one terminal ever lands. See [[guardian-order-events]] for the
@@ -98,7 +98,7 @@ stage-1 grant since the first-night exercise teaches the watch as a stage-1
 primitive — so standing orders are available at every stage, like omens and
 visions ([[guardian]]'s `applyStageCeiling`). The turn prompt carries active orders
 (`writeStandingOrders` — id, condition, days-left, fuzzy/structural — FR-017) so the
-angel's counsel stays truthful to live state, and the model-free `metatron.Status`
+angel's counsel stays truthful to live state, and the model-free `guardian.Status`
 surface lists them (`Status.Orders`, `OrderStatus{id, condition, origin, fuzzy,
 expires_day, status}`, FR-016). The fixed frame's `guardianInitiativeFrame` (a
 compile-time constant appended last, beneath any charter/soul/skill text — spec

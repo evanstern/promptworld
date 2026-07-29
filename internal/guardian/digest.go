@@ -63,7 +63,7 @@ func (mt *Guardian) observeMoment(e store.Event) {
 				}
 			}
 		}
-	case "metatron.order_expired":
+	case "guardian.order_expired":
 		// A standing order lapsed with no trigger (spec 029 US2, FR-007): the
 		// executor emitted this as a pure function of state + tick, so it lands the
 		// same model-free moment here as the other drama triggers. The replica has
@@ -136,7 +136,7 @@ func (mt *Guardian) digestNote(e store.Event) {
 		}
 	case "social.promise_broken":
 		line = "A promise was broken."
-	case "metatron.nudged":
+	case "guardian.nudged":
 		var p sim.GuardianNudgedPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
 			line = fmt.Sprintf("(my own hand) a %s went out: %q.", p.Form, p.Text)

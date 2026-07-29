@@ -7,7 +7,7 @@ sources:
   - internal/sim/morgue.go
   - internal/sim/state.go
   - internal/world/world.go
-verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 ---
 
 # Morgue
@@ -71,7 +71,7 @@ stated, never silent.
 **Charter and orders — the evidence alignment** (FR-008): each epitaph's
 "the guardian's watch at that moment" aligns the death against the
 event-sourced charter-revision timeline: the render collects every
-`metatron.charter_observed` in the fold and pins the MOST RECENT observation
+`guardian.charter_observed` in the fold and pins the MOST RECENT observation
 at or before the death tick — "charter revision `<fingerprint>` (default |
 player-authored), in force since day N", or an explicit "no charter
 observation recorded before this death" ([[guardian]] owns the emission: the
@@ -121,7 +121,7 @@ render, since everything factual folds from the [[event-log]] alone.
 
 [[morgue-epilogues]] holds the narrated prose layer this note splits off.
 [[event-types]] catalogs `run.ended`, `morgue.epilogue`, and
-`metatron.charter_observed`; [[executor]] emits `run.ended` and freezes an
+`guardian.charter_observed`; [[executor]] emits `run.ended` and freezes an
 ended world; [[sim-state-reducer]] holds the `agent.died` death ledger,
 grave placement, and the `run.ended` latch; [[sim-loop]] owns the ended
 posture and `Status.Ended`/`EndedDay`; [[guardian]] emits the

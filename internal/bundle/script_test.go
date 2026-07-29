@@ -175,7 +175,7 @@ func TestUndeclaredEventTypeRejected(t *testing.T) {
 	_, err = CompileEffects(effects, CompileInput{
 		State: s, Tick: 0, Declared: map[string]bool{"agent.memory_added": true}})
 	if err == nil {
-		t.Fatal("expected the compiler to reject the undeclared metatron.entity_moved event")
+		t.Fatal("expected the compiler to reject the undeclared guardian.entity_moved event")
 	}
 	if !strings.Contains(err.Error(), "not in the tool's declared events") {
 		t.Errorf("error = %q, want the declared-events rejection", err.Error())

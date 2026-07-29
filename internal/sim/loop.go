@@ -208,7 +208,7 @@ func (l *Loop) Govern(to clock.Speed, debt float64, jobs int) (Status, error) {
 	}
 }
 
-// FROZEN serialized vocabulary (spec 052 ruling 2): every `metatron.*` and
+// FROZEN serialized vocabulary (spec 052 ruling 2): every `guardian.*` and
 // `curriculum.*` event type listed below is wire/disk vocabulary — recorded
 // logs must replay forever, so these strings NEVER rename (the Go
 // identifiers around them may).
@@ -241,29 +241,29 @@ var injectSocialWhitelist = map[string]bool{
 	"chronicle.entry": true,
 	// Guardian nudges (TASK-12): the spend + record; the dry-run enforces
 	// charges/form/target/text validity before anything lands.
-	"metatron.nudged": true,
+	"guardian.nudged": true,
 	// Spec 041 (FR-014) widens the boundary by one: a vision's divine place
 	// grant, riding the send_vision batch (declared in the tool's Events, so
 	// ValidateToolCoverage pins it ⊆ this whitelist). The dry-run enforces a
 	// living target and a real place before anything lands.
-	"metatron.place_revealed": true,
+	"guardian.place_revealed": true,
 	// Guardian miracles (spec 016): the four charge-priced world edits; the
 	// dry-run's reducer arms enforce presence/destination/charge before
 	// anything lands, and the whitelist is the isolation boundary.
-	"metatron.time_snapped":   true,
-	"metatron.item_granted":   true,
-	"metatron.entity_moved":   true,
-	"metatron.entity_removed": true,
+	"guardian.time_snapped":   true,
+	"guardian.item_granted":   true,
+	"guardian.entity_moved":   true,
+	"guardian.entity_removed": true,
 	// Charter-revision observation (spec 044 US2): the turn pipeline's
 	// fingerprint-at-effect stamp — the event-sourced revision timeline the
 	// morgue aligns deaths against. The dry-run's reducer arm enforces a
 	// non-empty fingerprint before anything lands.
-	"metatron.charter_observed": true,
+	"guardian.charter_observed": true,
 	// Skills observation (spec 077 FR-006): the charter observation's twin —
 	// the bound skill-file set a turn ran under, emitted on fingerprint
 	// change by the same pipeline. The dry-run's reducer arm enforces a
 	// non-empty fingerprint and a non-empty name list before anything lands.
-	"metatron.skills_observed": true,
+	"guardian.skills_observed": true,
 	// Morgue epilogues (spec 044 US2): the narrator's recorded mourning
 	// prose, landed after a death / the run end. Bounded prose ring only —
 	// never simulation state — so it also survives the ended-world narrowing
@@ -282,9 +282,9 @@ var injectSocialWhitelist = map[string]bool{
 	// worker (Batch B). order_expired is EXECUTOR-emitted (a pure function of
 	// state + tick, like charge_regenerated) and so needs no whitelist entry —
 	// only model/worker-injected types pass this door.
-	"metatron.order_placed":    true,
-	"metatron.order_cancelled": true,
-	"metatron.order_triggered": true,
+	"guardian.order_placed":    true,
+	"guardian.order_cancelled": true,
+	"guardian.order_triggered": true,
 	// The guardian's plan layer (spec 084): injected designation placement/
 	// cancellation (place_designation / cancel_designation) and directive
 	// issue/cancellation (issue_directive / cancel_directive — issued rides
@@ -293,7 +293,7 @@ var injectSocialWhitelist = map[string]bool{
 	// form/bounds/occupancy/caps/TTL/targets before anything lands.
 	// designation.fulfilled, directive.fulfilled, and directive.expired need
 	// NO entry — they are executor-emitted, never injected, the
-	// metatron.order_expired / charge_regenerated precedent; whitelist
+	// guardian.order_expired / charge_regenerated precedent; whitelist
 	// absence is what refuses an injected forgery of a structural fact.
 	"designation.placed":    true,
 	"designation.cancelled": true,
@@ -305,7 +305,7 @@ var injectSocialWhitelist = map[string]bool{
 	// (prophecy.go) enforces targets/text/TTL/cap/claim-vocabulary/
 	// already-true/duplicate before anything lands. prophecy.fulfilled,
 	// prophecy.failed, and faith.changed need NO entry — they are
-	// executor-emitted, never injected, the metatron.order_expired /
+	// executor-emitted, never injected, the guardian.order_expired /
 	// charge_regenerated precedent; whitelist absence is what refuses an
 	// injected forgery of a verification verdict or a faith movement (faith
 	// must stay endogenous — a console-injectable score would be a cheat

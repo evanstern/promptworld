@@ -185,7 +185,7 @@ func TestExerciseGaugesTrackReplica(t *testing.T) {
 	m.exBriefingDismissed = true
 	body := m.exerciseBody(100, 20)
 	if !strings.Contains(body, "… a watch set before nightfall") ||
-		!strings.Contains(body, "(metatron.order_placed: 0)") {
+		!strings.Contains(body, "(guardian.order_placed: 0)") {
 		t.Errorf("pending watch gauge missing:\n%s", body)
 	}
 	if !strings.Contains(body, "✓") || !strings.Contains(body, "no villager dies") ||
@@ -200,10 +200,10 @@ func TestExerciseGaugesTrackReplica(t *testing.T) {
 		EventTypes: []string{"gru.sighted"}, Agent: -1,
 		PlacedTick: 100, ExpiresTick: 100 + 2*86400,
 	}
-	m.applyEvent(store.Event{Seq: 1, Tick: 100, Type: "metatron.order_placed", Payload: mustPayload(t, order)})
+	m.applyEvent(store.Event{Seq: 1, Tick: 100, Type: "guardian.order_placed", Payload: mustPayload(t, order)})
 	body = m.exerciseBody(100, 20)
 	if strings.Contains(body, "… a watch set before nightfall") ||
-		!strings.Contains(body, "(metatron.order_placed: 1)") {
+		!strings.Contains(body, "(guardian.order_placed: 1)") {
 		t.Errorf("watch gauge did not flip met:\n%s", body)
 	}
 }
@@ -237,22 +237,22 @@ func TestExerciseGaugesTheLawEvaluateForReal(t *testing.T) {
 	if !strings.Contains(body, "… a village law adopted") ||
 		!strings.Contains(body, "(meeting.proposal_resolved: 0)") ||
 		!strings.Contains(body, "… a player-authored charter in force") ||
-		!strings.Contains(body, "(metatron.charter_observed: 0)") {
+		!strings.Contains(body, "(guardian.charter_observed: 0)") {
 		t.Errorf("genesis gauges should be pending with zero counts:\n%s", body)
 	}
 
 	// The game's own (default) charter is observed: authorship stays pending
 	// — the game's authorship never satisfies the player-authorship term.
-	m.applyEvent(store.Event{Seq: 1, Tick: 100, Type: "metatron.charter_observed",
+	m.applyEvent(store.Event{Seq: 1, Tick: 100, Type: "guardian.charter_observed",
 		Payload: mustPayload(t, sim.CharterObservedPayload{Fingerprint: "aaaa11112222", Default: true})})
 	body = m.exerciseBody(120, 20)
 	if !strings.Contains(body, "… a player-authored charter in force") ||
-		!strings.Contains(body, "(metatron.charter_observed: 1)") {
+		!strings.Contains(body, "(guardian.charter_observed: 1)") {
 		t.Errorf("default charter must leave the authorship gauge pending (count 1):\n%s", body)
 	}
 
 	// A player-authored revision lands: the gauge flips met.
-	m.applyEvent(store.Event{Seq: 2, Tick: 200, Type: "metatron.charter_observed",
+	m.applyEvent(store.Event{Seq: 2, Tick: 200, Type: "guardian.charter_observed",
 		Payload: mustPayload(t, sim.CharterObservedPayload{Fingerprint: "bbbb33334444", Default: false})})
 	body = m.exerciseBody(120, 20)
 	if strings.Contains(body, "… a player-authored charter in force") ||

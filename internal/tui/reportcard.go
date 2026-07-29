@@ -107,7 +107,12 @@ func reportCardFactsFromPass(terms []sim.RubricTerm, evidence []sim.EvidenceRef)
 	for i, term := range terms {
 		backing := fmt.Sprintf("%s: %d", term.Event, term.Count)
 		for _, ev := range evidence {
-			if ev.Type == term.Event {
+			// A migrated world's recorded evidence keeps its pre-094 type
+			// strings (translation preserves payloads verbatim, spec 094
+			// D4) — normalize before matching so old passes still back
+			// their terms; the backing renders the recorded string as-is
+			// (it is the auditable historical reference).
+			if sim.CanonicalEventType(ev.Type) == term.Event {
 				backing = fmt.Sprintf("%s · seq %d", ev.Type, ev.Seq)
 				break
 			}

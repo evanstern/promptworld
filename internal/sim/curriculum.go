@@ -11,7 +11,7 @@ import (
 // exercise passes and stage unlocks, recorded as events so a world's history is
 // the auditable proof of what was earned in it (FR-007/FR-008 — the per-user
 // unlocks record is a projection of these, never an input). Both types are the
-// EXECUTOR emission class (the metatron.order_expired precedent): pure
+// EXECUTOR emission class (the guardian.order_expired precedent): pure
 // functions of (state, tick), never mind- or operator-injected, so NO
 // whitelist entries exist for them. The production emitter is the spec-054
 // scenario rubric machinery (scenario.go, TASK-119): this file ships the
@@ -37,7 +37,7 @@ type EvidenceRef struct {
 	// Custom marks this evidence entry as a PLAYER-AUTHORED/PLAYER-GRANTED
 	// fact, as opposed to the world's default — the single flag both gate
 	// conjuncts above stage-1 read (contracts/unlocks-record.md "Gate
-	// conjuncts"): for a stage-2 pass, Type=="metatron.charter_observed" with
+	// conjuncts"): for a stage-2 pass, Type=="guardian.charter_observed" with
 	// Custom==true means a player-authored charter revision was in force at
 	// pass time; for a stage-3 pass, any evidence entry with Custom==true
 	// names a player-granted tool's contributing act (as opposed to a tool
@@ -174,7 +174,7 @@ func nextLadderStage(stage string) (string, bool) {
 //	           nothing more than attempting it — FR-007).
 //	stage-2 -> stage-3: the pass's evidence must include a player-authored
 //	           charter revision in force at pass time — Type ==
-//	           "metatron.charter_observed" AND Custom == true, where Custom
+//	           "guardian.charter_observed" AND Custom == true, where Custom
 //	           is derived (CharterObservedEvidence) as the inverse of the
 //	           recorded CharterObservedPayload.Default (spec 044 US2).
 //	           SC-004: a default/preset-charter pass must NOT satisfy this —
@@ -186,9 +186,10 @@ func nextLadderStage(stage string) (string, bool) {
 //	           true (a fixed event type isn't pinned by the contract: which
 //	           tool contributed is TASK-119's exercise design).
 //
-// Reconciled with spec 044 US2 (T022): the real metatron.charter_observed
-// event (CharterObservedPayload{Fingerprint, Default} — metatron.go, spec
-// 044 contracts/events.md) landed on main while this feature was in flight.
+// Reconciled with spec 044 US2 (T022): the real charter-observation event
+// (CharterObservedPayload{Fingerprint, Default} — guardian.go, spec 044
+// contracts/events.md; recorded as metatron.charter_observed until the spec
+// 094 rename) landed on main while this feature was in flight.
 // The gate keeps reading EvidenceRef.Custom (the pass payload stays
 // self-contained and replay-pure — no log scan here), and honesty is pushed
 // to construction: CharterObservedEvidence is the only sanctioned way to
@@ -213,7 +214,12 @@ func EvaluateUnlock(s *State, pass ExercisePassedPayload) (stage string, ok bool
 		return next, true
 	case "stage-2":
 		for _, ev := range pass.Evidence {
-			if ev.Type == "metatron.charter_observed" && ev.Custom {
+			// Persisted evidence refs are historical strings preserved
+			// verbatim by the translating migration (spec 094 D4): a
+			// migrated world's recorded passes still say
+			// metatron.charter_observed, so the read normalizes through
+			// the rename table before comparing.
+			if CanonicalEventType(ev.Type) == "guardian.charter_observed" && ev.Custom {
 				return next, true
 			}
 		}
@@ -230,7 +236,7 @@ func EvaluateUnlock(s *State, pass ExercisePassedPayload) (stage string, ok bool
 }
 
 // CharterObservedEvidence derives the gate-facing EvidenceRef from a recorded
-// metatron.charter_observed event (spec 044 US2; reconciled here per 046
+// guardian.charter_observed event (spec 044 US2; reconciled here per 046
 // T022). EvidenceRef.Custom is the honest INVERSE of the payload's Default
 // flag: Default==true means the world's default/preset charter was in force
 // (authored by the game — a stage-1 tutor-preset world records this), so
@@ -242,8 +248,8 @@ func EvaluateUnlock(s *State, pass ExercisePassedPayload) (stage string, ok bool
 // conjunct; test fixtures use it today) — so EvaluateUnlock's conjunct and
 // the recorded payload can never disagree.
 func CharterObservedEvidence(e store.Event) (EvidenceRef, error) {
-	if e.Type != "metatron.charter_observed" {
-		return EvidenceRef{}, fmt.Errorf("charter evidence: %q is not metatron.charter_observed", e.Type)
+	if e.Type != "guardian.charter_observed" {
+		return EvidenceRef{}, fmt.Errorf("charter evidence: %q is not guardian.charter_observed", e.Type)
 	}
 	var p CharterObservedPayload
 	if err := json.Unmarshal(e.Payload, &p); err != nil {
@@ -255,7 +261,7 @@ func CharterObservedEvidence(e store.Event) (EvidenceRef, error) {
 // CharterEvidenceFromState is the STATE-SOURCED charter evidence constructor
 // (spec 077 FR-004/FR-005, research R7) — the third sanctioned EvidenceRef
 // constructor, beside CharterObservedEvidence (event-sourced; fixtures) and
-// OrderPlacedEvidence. It reads the coordinates the metatron.charter_observed
+// OrderPlacedEvidence. It reads the coordinates the guardian.charter_observed
 // reducer arm persists (CharterObservedSeq/Tick — the PlacedSeq apply-time
 // stamp precedent) plus the same-arm authorship flag, so the honesty
 // derivation stays in sanctioned-constructor land: Custom is CharterCustom
@@ -269,14 +275,14 @@ func CharterEvidenceFromState(s *State) (EvidenceRef, bool) {
 	if s.CharterObservedSeq == 0 {
 		return EvidenceRef{}, false
 	}
-	return EvidenceRef{Type: "metatron.charter_observed", Seq: s.CharterObservedSeq,
+	return EvidenceRef{Type: "guardian.charter_observed", Seq: s.CharterObservedSeq,
 		Tick: s.CharterObservedTick, Custom: s.CharterCustom}, true
 }
 
 // SkillsObservedEvidence is the fourth sanctioned EvidenceRef constructor
 // (spec 077 FR-006, research R8): the stage-3 gate's long-deferred
 // "player-granted tool's contributing act" evidence. It reads the
-// coordinates the metatron.skills_observed reducer arm persists. Custom is
+// coordinates the guardian.skills_observed reducer arm persists. Custom is
 // true BY CONSTRUCTION — the honest twin of the charter's derived-inverse
 // rule: no game-shipped skill files exist and stages 1–2 lock binding out
 // entirely (stageSkills), so a bound, observed skill set is player-authored
@@ -286,7 +292,7 @@ func SkillsObservedEvidence(s *State) (EvidenceRef, bool) {
 	if s.SkillsObservedSeq == 0 {
 		return EvidenceRef{}, false
 	}
-	return EvidenceRef{Type: "metatron.skills_observed", Seq: s.SkillsObservedSeq,
+	return EvidenceRef{Type: "guardian.skills_observed", Seq: s.SkillsObservedSeq,
 		Tick: s.SkillsObservedTick, Custom: true}, true
 }
 
@@ -362,7 +368,7 @@ func ExerciseByID(id string) (ExerciseDefinition, bool) {
 // contributed to a pass, from the standing order's state record (spec 054
 // FR-004) — the second sanctioned evidence constructor, beside
 // CharterObservedEvidence above. The (Seq, Tick) coordinates re-locating the
-// metatron.order_placed event come from the reducer's own apply-time stamp
+// guardian.order_placed event come from the reducer's own apply-time stamp
 // (GuardianOrder.PlacedSeq/PlacedTick — the Memory.Seq precedent), so the
 // claim stays independently auditable without a log scan. Custom stays
 // false: a stage-1 watch is placed through a stage-manifest-granted tool
@@ -373,7 +379,7 @@ func OrderPlacedEvidence(o GuardianOrder) (EvidenceRef, error) {
 	if o.PlacedSeq == 0 {
 		return EvidenceRef{}, fmt.Errorf("order evidence: %s carries no recorded placement seq", o.ID)
 	}
-	return EvidenceRef{Type: "metatron.order_placed", Seq: o.PlacedSeq, Tick: o.PlacedTick}, nil
+	return EvidenceRef{Type: "guardian.order_placed", Seq: o.PlacedSeq, Tick: o.PlacedTick}, nil
 }
 
 // FirstNightExercise is the stage-1 shipped exercise (contracts/
@@ -392,8 +398,8 @@ var FirstNightExercise = ExerciseDefinition{
 	RubricTerms: []string{
 		"sim.day_started",       // dawn of day 2 reached, run not ended
 		"agent.died",            // rubric wants ZERO of these before dawn
-		"metatron.nudged",       // a vision/omen landed before nightfall
-		"metatron.order_placed", // OR a watch was set before nightfall (ratified amendment)
+		"guardian.nudged",       // a vision/omen landed before nightfall
+		"guardian.order_placed", // OR a watch was set before nightfall (ratified amendment)
 	},
 	PassSignal:     `curriculum.exercise_passed{exercise: "first-night", stage: "stage-1"}`,
 	ScoreNarrative: "the night's chronicle chapter is the telling — the village's first night under a new watcher",
@@ -423,7 +429,7 @@ var TheLawExercise = ExerciseDefinition{
 	Framing: "a seeded world with a norm-shaped problem (a nighttime curfew vs. fuel gathering) requiring sustained, consistent guardian behavior across several days",
 	RubricTerms: []string{
 		"meeting.proposal_resolved", // the village norm/vote resolves in the instructed direction
-		"metatron.charter_observed", // a player-authored charter revision in force across the window (spec 044 US2; Custom derived via CharterObservedEvidence)
+		"guardian.charter_observed", // a player-authored charter revision in force across the window (spec 044 US2; Custom derived via CharterObservedEvidence)
 	},
 	PassSignal:     `curriculum.exercise_passed{exercise: "the-law", stage: "stage-2"}`,
 	ScoreNarrative: "the governance arc as narrated by the chronicle — the charter as the law behind the law",
@@ -458,7 +464,7 @@ var ColdDawnExercise = ExerciseDefinition{
 	RubricTerms: []string{
 		"sim.day_started",       // dawn of day 2 reached, run not ended
 		"agent.died",            // zero exposure-cause deaths (no villager freezes)
-		"metatron.order_placed", // a watch set before nightfall (the first-night predicate, shared)
+		"guardian.order_placed", // a watch set before nightfall (the first-night predicate, shared)
 	},
 	PassSignal:     `curriculum.exercise_passed{exercise: "cold-dawn", stage: "stage-1"}`,
 	ScoreNarrative: "the chronicle tells the night the cold came early — and who kept the fires fed",
@@ -509,7 +515,7 @@ var BlightedLarderExercise = ExerciseDefinition{
 	Concept:     "policy that outlives the conversation — a charter rule against a slow-burning pressure",
 	Framing:     "a seeded world whose forage belt blights on the second morning — the larder you banked under your charter is what remains",
 	RubricTerms: []string{
-		"metatron.charter_observed", // a player-authored charter in force
+		"guardian.charter_observed", // a player-authored charter in force
 		"agent.died",                // zero starvation-cause deaths
 		"agent.deposited",           // a larder banked (storedFoodTotal >= blightedLarderFoodFloor)
 	},
@@ -533,8 +539,8 @@ var ToolsmithExercise = ExerciseDefinition{
 	Concept: "shaping what the guardian can do — a skill file is capability you author",
 	Framing: "a seeded world with no scripted pressure: the trial is the workshop — bind a skill file, and put the guardian to work under it",
 	RubricTerms: []string{
-		"metatron.skills_observed", // your skill file guides the guardian
-		"metatron.order_placed",    // the guardian acts under it (a player order since the observation)
+		"guardian.skills_observed", // your skill file guides the guardian
+		"guardian.order_placed",    // the guardian acts under it (a player order since the observation)
 		"agent.died",               // zero deaths
 	},
 	PassSignal:     `curriculum.exercise_passed{exercise: "toolsmith", stage: "stage-3"}`,
@@ -554,7 +560,7 @@ var FogWatchExercise = ExerciseDefinition{
 	RubricTerms: []string{
 		"sim.day_started",          // dawn of day 3 reached
 		"agent.died",               // zero deaths
-		"metatron.skills_observed", // a skill file in force before the trials
+		"guardian.skills_observed", // a skill file in force before the trials
 	},
 	PassSignal:     `curriculum.exercise_passed{exercise: "fog-watch", stage: "stage-3"}`,
 	ScoreNarrative: "the chronicle tells two nights weathered blind — the craft, proven in fog",
@@ -602,8 +608,8 @@ var StewardsChargeExercise = ExerciseDefinition{
 	Framing: "a seeded world with no scripted pressure: the trial is governance itself — a law adopted, a charter in force, a skill file guiding, and every villager alive at dawn",
 	RubricTerms: []string{
 		"meeting.proposal_resolved", // a village law adopted
-		"metatron.charter_observed", // a player-authored charter in force
-		"metatron.skills_observed",  // your skill file guides the guardian
+		"guardian.charter_observed", // a player-authored charter in force
+		"guardian.skills_observed",  // your skill file guides the guardian
 		"agent.died",                // zero deaths
 	},
 	PassSignal:     `curriculum.exercise_passed{exercise: "stewards-charge", stage: "stage-4"}`,

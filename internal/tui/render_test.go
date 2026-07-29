@@ -939,7 +939,7 @@ func TestChronicleDetailPaneActionsBarTruncatedWidth(t *testing.T) {
 func TestReportCardThreeSiteEquivalence(t *testing.T) {
 	facts := []reportCardFact{
 		{Term: "village survives to dawn", Met: false, Backing: "agent.died: 2"},
-		{Term: "metatron order placed", Met: true, Backing: "metatron.order_placed: 1"},
+		{Term: "metatron order placed", Met: true, Backing: "guardian.order_placed: 1"},
 	}
 	concluded := reportCardView("first-night", facts, reportCardConcluded, 60)
 	live := reportCardView("first-night", facts, reportCardLive, 60)
@@ -1074,7 +1074,7 @@ func TestPostmortemAmbientScoredBoundary(t *testing.T) {
 func TestMorgueRowsCharterObservationHonesty(t *testing.T) {
 	m := testModel(t)
 	m.replica.Agents = []sim.Agent{{Name: "Ash"}}
-	m.applyEvent(store.Event{Seq: 1, Tick: 50, Type: "metatron.charter_observed",
+	m.applyEvent(store.Event{Seq: 1, Tick: 50, Type: "guardian.charter_observed",
 		Payload: json.RawMessage(`{"fingerprint":"abc123","default":false}`)})
 	m.applyEvent(runEndedEvent(2, 100, "exposure", []sim.DeathRecord{{Agent: 0, Tick: 100, Cause: "exposure"}}))
 	rows := m.morgueRows()
@@ -1104,7 +1104,7 @@ func TestCeremonyReportCardPrefersRecordedEvidence(t *testing.T) {
 	m.replica.CurriculumPasses = []sim.CurriculumPass{
 		{Exercise: "first-night", Stage: "stage-1", Evidence: []sim.EvidenceRef{
 			{Type: "sim.day_started", Seq: 40, Tick: 890},
-			{Type: "metatron.order_placed", Seq: 12, Tick: 200},
+			{Type: "guardian.order_placed", Seq: 12, Tick: 200},
 		}},
 	}
 	m.applyEvent(stageUnlockedEvent(1, 200, "stage-2", "first-night"))
@@ -1115,7 +1115,7 @@ func TestCeremonyReportCardPrefersRecordedEvidence(t *testing.T) {
 	// Evidence-backed rows carry the recorded refs; the recorded pass proves
 	// every term held at pass time, so NO unmet marker may render even
 	// though the replica's own live rubric would still grade terms pending.
-	if !strings.Contains(view, "sim.day_started · seq 40") || !strings.Contains(view, "metatron.order_placed · seq 12") {
+	if !strings.Contains(view, "sim.day_started · seq 40") || !strings.Contains(view, "guardian.order_placed · seq 12") {
 		t.Errorf("ceremony report card should carry the recorded pass's own Evidence refs: %q", view)
 	}
 	if !strings.Contains(view, "✓ village survives to dawn of day 2") || !strings.Contains(view, "✓ no villager dies") {

@@ -597,7 +597,7 @@ func (m Model) tileRows() []tileRow {
 		for _, idx := range m.tileEvents(x, y) {
 			e := m.events[idx]
 			l := formatChronicleLine(e, names, m.sk())
-			label := fmt.Sprintf("%s · %s: %s", l.Time, l.DisplayType, plainSegs(l.Summary))
+			label := fmt.Sprintf("%s · %s: %s", l.Time, l.Type, plainSegs(l.Summary))
 			rows = append(rows, tileRow{band: bandEvents, label: label, drill: lookDrillRef{kind: lookDrillEvent, idx: idx}})
 		}
 	}

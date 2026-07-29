@@ -7,7 +7,7 @@ sources:
   - internal/guardian/charter.go
   - internal/persona/charter.go
   - internal/skin/skin.go
-verified_against: 74fe956813aa6be54e65156ae9bfcb91745cbb8d
+verified_against: 11de2a4aa93d4c901a8dd90369151fa23fd056d0
 ---
 
 # Guardian's instruction surface
@@ -62,7 +62,7 @@ same truncate/skip notice discipline as the charter; since spec 046 behind the
 present-but-unbound `skills/` dir draws one honest notice naming the stage-3
 unlock rather than being silently ignored; since spec 077 FR-006 the bound
 set is also OBSERVED: `observeSkills` — the `observeCharter` twin, stamped
-at bind in `runTurn` — emits `metatron.skills_observed{fingerprint, names}`
+at bind in `runTurn` — emits `guardian.skills_observed{fingerprint, names}`
 through the same `InjectSocial` door when the composed set's fingerprint
 (`skillsFingerprint`: 12 hex chars over names+texts in composition order)
 differs from the absorb-mirrored `State.SkillsFingerprint`; an empty bound

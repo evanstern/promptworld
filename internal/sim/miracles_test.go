@@ -24,10 +24,10 @@ func TestMiracleCostDerivedFromTool(t *testing.T) {
 			miracleCost, tool.MiracleCostsByEvent())
 	}
 	want := map[string]int{
-		"metatron.time_snapped":   2,
-		"metatron.entity_moved":   1,
-		"metatron.entity_removed": 1,
-		"metatron.item_granted":   1,
+		"guardian.time_snapped":   2,
+		"guardian.entity_moved":   1,
+		"guardian.entity_removed": 1,
+		"guardian.item_granted":   1,
 	}
 	if !reflect.DeepEqual(miracleCost, want) {
 		t.Errorf("sim.miracleCost = %v, want %v", miracleCost, want)
@@ -108,7 +108,7 @@ func TestMiracleMoveVillager(t *testing.T) {
 	}
 	a.Intent = &Intent{Goal: "forage", TargetX: 9, TargetY: 9}
 
-	if err := applyMiracleErr(s, 100, "metatron.entity_moved", EntityMovedPayload{
+	if err := applyMiracleErr(s, 100, "guardian.entity_moved", EntityMovedPayload{
 		Class: "villager", X: src.X, Y: src.Y, ToX: dst.X, ToY: dst.Y}); err != nil {
 		t.Fatalf("villager move rejected: %v", err)
 	}
@@ -143,7 +143,7 @@ func TestMiracleMoveStructureWhole(t *testing.T) {
 	}
 	s.Structures = append(s.Structures, Structure{Kind: "fire", X: src.X, Y: src.Y, FuelUntil: 99999})
 
-	if err := applyMiracleErr(s, 50, "metatron.entity_moved", EntityMovedPayload{
+	if err := applyMiracleErr(s, 50, "guardian.entity_moved", EntityMovedPayload{
 		Class: "structure", X: src.X, Y: src.Y, ToX: dst.X, ToY: dst.Y}); err != nil {
 		t.Fatalf("structure move rejected: %v", err)
 	}
@@ -178,7 +178,7 @@ func TestMiracleMovePileMerges(t *testing.T) {
 	dp := s.pileFor(dstT.X, dstT.Y)
 	dp.addNonFood("wood", 2)
 
-	if err := applyMiracleErr(s, 70, "metatron.entity_moved", EntityMovedPayload{
+	if err := applyMiracleErr(s, 70, "guardian.entity_moved", EntityMovedPayload{
 		Class: "pile", X: srcT.X, Y: srcT.Y, ToX: dstT.X, ToY: dstT.Y}); err != nil {
 		t.Fatalf("pile move rejected: %v", err)
 	}
@@ -202,7 +202,7 @@ func TestMiracleMoveRejectsImpassableDestination(t *testing.T) {
 	}
 	a := &s.Agents[0]
 	before := s.Marshal()
-	err := applyMiracleErr(s, 40, "metatron.entity_moved", EntityMovedPayload{
+	err := applyMiracleErr(s, 40, "guardian.entity_moved", EntityMovedPayload{
 		Class: "villager", X: a.X, Y: a.Y, ToX: water.X, ToY: water.Y})
 	if err == nil {
 		t.Fatal("move onto water should be rejected")
@@ -224,7 +224,7 @@ func TestMiracleMoveRejectsAbsentClass(t *testing.T) {
 	}
 	dst, _ := passableTileExcept(m, s, empty)
 	before := s.Marshal()
-	err := applyMiracleErr(s, 40, "metatron.entity_moved", EntityMovedPayload{
+	err := applyMiracleErr(s, 40, "guardian.entity_moved", EntityMovedPayload{
 		Class: "villager", X: empty.X, Y: empty.Y, ToX: dst.X, ToY: dst.Y})
 	if err == nil {
 		t.Fatal("moving a villager from an empty tile should be rejected")
@@ -241,7 +241,7 @@ func TestMiracleRemoveVillagerRejected(t *testing.T) {
 	s.GuardianCharges = 3
 	a := &s.Agents[0]
 	before := s.Marshal()
-	err := applyMiracleErr(s, 40, "metatron.entity_removed", EntityRemovedPayload{
+	err := applyMiracleErr(s, 40, "guardian.entity_removed", EntityRemovedPayload{
 		Class: "villager", X: a.X, Y: a.Y})
 	if err == nil {
 		t.Fatal("removing a villager must be rejected (v1 doctrine)")
@@ -263,7 +263,7 @@ func TestMiracleRemoveChestSpillsContents(t *testing.T) {
 	store := &Inventory{Wood: 5, FoodRaw: 3, Spears: []int{2}}
 	s.Structures = append(s.Structures, Structure{Kind: "chest", X: tile.X, Y: tile.Y, Owner: 0, Store: store})
 
-	if err := applyMiracleErr(s, 200, "metatron.entity_removed", EntityRemovedPayload{
+	if err := applyMiracleErr(s, 200, "guardian.entity_removed", EntityRemovedPayload{
 		Class: "structure", X: tile.X, Y: tile.Y}); err != nil {
 		t.Fatalf("chest remove rejected: %v", err)
 	}
@@ -301,7 +301,7 @@ func TestMiracleRemovePileDestroysContents(t *testing.T) {
 	p := s.pileFor(tile.X, tile.Y)
 	p.addNonFood("stone", 7)
 
-	if err := applyMiracleErr(s, 90, "metatron.entity_removed", EntityRemovedPayload{
+	if err := applyMiracleErr(s, 90, "guardian.entity_removed", EntityRemovedPayload{
 		Class: "pile", X: tile.X, Y: tile.Y}); err != nil {
 		t.Fatalf("pile remove rejected: %v", err)
 	}
@@ -341,7 +341,7 @@ func TestMiracleRemoveTerrainRouting(t *testing.T) {
 			}
 			s := NewState(seed, m)
 			s.GuardianCharges = 3
-			if err := applyMiracleErr(s, 30, "metatron.entity_removed", EntityRemovedPayload{
+			if err := applyMiracleErr(s, 30, "guardian.entity_removed", EntityRemovedPayload{
 				Class: "terrain", X: p.X, Y: p.Y}); err != nil {
 				t.Fatalf("%s remove rejected: %v", c.label, err)
 			}
@@ -350,7 +350,7 @@ func TestMiracleRemoveTerrainRouting(t *testing.T) {
 			}
 			// Removing an already-overlaid tile is a no-op target → rejected.
 			before := s.Marshal()
-			if err := applyMiracleErr(s, 31, "metatron.entity_removed", EntityRemovedPayload{
+			if err := applyMiracleErr(s, 31, "guardian.entity_removed", EntityRemovedPayload{
 				Class: "terrain", X: p.X, Y: p.Y}); err == nil {
 				t.Errorf("already-overlaid %s should be rejected", c.label)
 			}
@@ -372,7 +372,7 @@ func TestMiracleInsufficientChargeRejected(t *testing.T) {
 		t.Skip("no spare passable tile")
 	}
 	before := s.Marshal()
-	err := applyMiracleErr(s, 40, "metatron.entity_moved", EntityMovedPayload{
+	err := applyMiracleErr(s, 40, "guardian.entity_moved", EntityMovedPayload{
 		Class: "villager", X: a.X, Y: a.Y, ToX: dst.X, ToY: dst.Y})
 	if err == nil {
 		t.Fatal("move with an empty bank should be rejected")
@@ -393,7 +393,7 @@ func TestMiracleGratisWaivesChargeOnly(t *testing.T) {
 		t.Skip("no spare passable tile")
 	}
 	// Gratis lands with a zero bank (charge waived) — but validation still runs.
-	if err := applyMiracleErr(s, 40, "metatron.entity_moved", EntityMovedPayload{
+	if err := applyMiracleErr(s, 40, "guardian.entity_moved", EntityMovedPayload{
 		Class: "villager", X: a.X, Y: a.Y, ToX: dst.X, ToY: dst.Y, Gratis: true}); err != nil {
 		t.Fatalf("gratis move with empty bank rejected: %v", err)
 	}
@@ -404,7 +404,7 @@ func TestMiracleGratisWaivesChargeOnly(t *testing.T) {
 	water, ok := firstTileOfKind(m, worldmap.Water)
 	if ok {
 		before := s.Marshal()
-		if err := applyMiracleErr(s, 41, "metatron.entity_moved", EntityMovedPayload{
+		if err := applyMiracleErr(s, 41, "guardian.entity_moved", EntityMovedPayload{
 			Class: "villager", X: a.X, Y: a.Y, ToX: water.X, ToY: water.Y, Gratis: true}); err == nil {
 			t.Error("gratis move onto water should still be rejected")
 		}
@@ -446,9 +446,9 @@ func TestMiracleReplayByteIdentity(t *testing.T) {
 
 	pl := func(v any) []byte { return mustPayload(v) }
 	commands := map[int64][]store.Event{
-		10: {{Tick: 10, Type: "metatron.entity_moved", Payload: pl(EntityMovedPayload{
+		10: {{Tick: 10, Type: "guardian.entity_moved", Payload: pl(EntityMovedPayload{
 			Class: "villager", X: ax, Y: ay, ToX: moveDst.X, ToY: moveDst.Y})}},
-		20: {{Tick: 20, Type: "metatron.entity_removed", Payload: pl(EntityRemovedPayload{
+		20: {{Tick: 20, Type: "guardian.entity_removed", Payload: pl(EntityRemovedPayload{
 			Class: "structure", X: chestTile.X, Y: chestTile.Y})}},
 	}
 
@@ -459,9 +459,9 @@ func TestMiracleReplayByteIdentity(t *testing.T) {
 	var sawMove, sawRemove bool
 	for _, e := range log {
 		switch e.Type {
-		case "metatron.entity_moved":
+		case "guardian.entity_moved":
 			sawMove = true
-		case "metatron.entity_removed":
+		case "guardian.entity_removed":
 			sawRemove = true
 		}
 	}
@@ -487,7 +487,7 @@ func TestMiracleReplayByteIdentity(t *testing.T) {
 
 // TestMoveFreshnessReplayByteIdentical (spec 091 FR-002/SC-002): the guardian
 // door's move-miracle name re-resolution (TASK-166) is an EMITTER-side change —
-// it decides which coordinates a recorded metatron.entity_moved carries, never
+// it decides which coordinates a recorded guardian.entity_moved carries, never
 // how the reducer applies one. A recorded log of coordinate-only entity_moved
 // events — the only shape any pre-fix (or post-fix, coordinate-addressed)
 // recording ever carried, since the emitter always bakes concrete x/y into the
@@ -527,9 +527,9 @@ func TestMoveFreshnessReplayByteIdentical(t *testing.T) {
 		// log recorded before TASK-166 shipped (the emitter always recorded
 		// concrete coordinates; only the door's CHOICE of source coordinates
 		// changed, not the event shape the reducer consumes).
-		10: {{Tick: 10, Type: "metatron.entity_moved", Payload: pl(EntityMovedPayload{
+		10: {{Tick: 10, Type: "guardian.entity_moved", Payload: pl(EntityMovedPayload{
 			Class: "villager", X: ax, Y: ay, ToX: hop1.X, ToY: hop1.Y})}},
-		20: {{Tick: 20, Type: "metatron.entity_moved", Payload: pl(EntityMovedPayload{
+		20: {{Tick: 20, Type: "guardian.entity_moved", Payload: pl(EntityMovedPayload{
 			Class: "villager", X: hop1.X, Y: hop1.Y, ToX: hop2.X, ToY: hop2.Y})}},
 	}
 
@@ -539,7 +539,7 @@ func TestMoveFreshnessReplayByteIdentical(t *testing.T) {
 
 	var moves int
 	for _, e := range log {
-		if e.Type == "metatron.entity_moved" {
+		if e.Type == "guardian.entity_moved" {
 			moves++
 		}
 	}
@@ -598,10 +598,10 @@ func TestGratisValidationSurvives(t *testing.T) {
 		typ   string
 		mk    func(gratis bool) any
 	}{
-		{"move onto water", "metatron.entity_moved", func(g bool) any {
+		{"move onto water", "guardian.entity_moved", func(g bool) any {
 			return EntityMovedPayload{Class: "villager", Gratis: g} // X,Y filled per-state below
 		}},
-		{"remove absent structure", "metatron.entity_removed", func(g bool) any {
+		{"remove absent structure", "guardian.entity_removed", func(g bool) any {
 			return EntityRemovedPayload{Class: "structure", X: empty.X, Y: empty.Y, Gratis: g}
 		}},
 	}
@@ -662,7 +662,7 @@ func TestGratisIsLoggedVisible(t *testing.T) {
 		return s
 	}
 	commands := map[int64][]store.Event{
-		10: {{Tick: 10, Type: "metatron.entity_moved", Payload: mustPayload(EntityMovedPayload{
+		10: {{Tick: 10, Type: "guardian.entity_moved", Payload: mustPayload(EntityMovedPayload{
 			Class: "villager", X: ax, Y: ay, ToX: dst.X, ToY: dst.Y, Gratis: true})}},
 	}
 	live := genesis()
@@ -670,7 +670,7 @@ func TestGratisIsLoggedVisible(t *testing.T) {
 
 	var found bool
 	for _, e := range log {
-		if e.Type != "metatron.entity_moved" {
+		if e.Type != "guardian.entity_moved" {
 			continue
 		}
 		found = true
@@ -715,7 +715,7 @@ func TestSnapForwardOnly(t *testing.T) {
 	s.GuardianCharges = 3
 	for _, to := range []int64{5000, 4999, 0} {
 		before := s.Marshal()
-		if err := applyMiracleErr(s, 5000, "metatron.time_snapped", TimeSnappedPayload{ToTick: to}); err == nil {
+		if err := applyMiracleErr(s, 5000, "guardian.time_snapped", TimeSnappedPayload{ToTick: to}); err == nil {
 			t.Errorf("snap to %d (<= current 5000) should be rejected", to)
 		}
 		if string(s.Marshal()) != string(before) {
@@ -783,7 +783,7 @@ func TestSnapPreservesRemainingDurations(t *testing.T) {
 	s.Norms = []Norm{{ID: 1, Kind: "k", DayPassed: 1, DayRepealed: 2, DayAmended: 3,
 		Violations: []NormViolation{{Agent: 0, Tick: 800}}}}
 
-	if err := applyMiracleErr(s, old, "metatron.time_snapped", TimeSnappedPayload{ToTick: to}); err != nil {
+	if err := applyMiracleErr(s, old, "guardian.time_snapped", TimeSnappedPayload{ToTick: to}); err != nil {
 		t.Fatalf("snap rejected: %v", err)
 	}
 	if s.Tick != to {
@@ -1079,7 +1079,7 @@ func TestSnapWholeDayNoDrift(t *testing.T) {
 
 	control := genesis()
 	snapped := genesis()
-	if err := snapped.Apply(store.Event{Tick: t0, Type: "metatron.time_snapped",
+	if err := snapped.Apply(store.Event{Tick: t0, Type: "guardian.time_snapped",
 		Payload: mustPayload(TimeSnappedPayload{ToTick: t0 + delta, Gratis: true})}); err != nil {
 		t.Fatalf("snap rejected: %v", err)
 	}
@@ -1127,7 +1127,7 @@ func TestSnapMintsNoCharges(t *testing.T) {
 		s := NewState(seed, m)
 		s.Tick = 5000
 		s.GuardianCharges = 3
-		if err := applyMiracleErr(s, 5000, "metatron.time_snapped", TimeSnappedPayload{ToTick: to}); err != nil {
+		if err := applyMiracleErr(s, 5000, "guardian.time_snapped", TimeSnappedPayload{ToTick: to}); err != nil {
 			t.Fatalf("snap rejected: %v", err)
 		}
 		if s.GuardianCharges != 1 {
@@ -1138,7 +1138,7 @@ func TestSnapMintsNoCharges(t *testing.T) {
 		s := NewState(seed, m)
 		s.Tick = 5000
 		s.GuardianCharges = 1
-		if err := applyMiracleErr(s, 5000, "metatron.time_snapped", TimeSnappedPayload{ToTick: to, Gratis: true}); err != nil {
+		if err := applyMiracleErr(s, 5000, "guardian.time_snapped", TimeSnappedPayload{ToTick: to, Gratis: true}); err != nil {
 			t.Fatalf("gratis snap rejected: %v", err)
 		}
 		if s.GuardianCharges != 1 {
@@ -1157,7 +1157,7 @@ func TestSnapWhilePaused(t *testing.T) {
 	s.Tick = 1000
 	s.Paused = true
 	s.GuardianCharges = 3
-	if err := applyMiracleErr(s, 1000, "metatron.time_snapped", TimeSnappedPayload{ToTick: 5000}); err != nil {
+	if err := applyMiracleErr(s, 1000, "guardian.time_snapped", TimeSnappedPayload{ToTick: 5000}); err != nil {
 		t.Fatalf("paused snap rejected: %v", err)
 	}
 	if s.Tick != 5000 {
@@ -1191,7 +1191,7 @@ func TestMiracleSnapReplayByteIdentity(t *testing.T) {
 		return s
 	}
 	commands := map[int64][]store.Event{
-		snapAt: {{Tick: snapAt, Type: "metatron.time_snapped",
+		snapAt: {{Tick: snapAt, Type: "guardian.time_snapped",
 			Payload: mustPayload(TimeSnappedPayload{ToTick: snapTo})}},
 	}
 	live := genesis()
@@ -1199,7 +1199,7 @@ func TestMiracleSnapReplayByteIdentity(t *testing.T) {
 
 	var sawSnap bool
 	for _, e := range log {
-		if e.Type == "metatron.time_snapped" {
+		if e.Type == "guardian.time_snapped" {
 			sawSnap = true
 		}
 	}
@@ -1234,7 +1234,7 @@ func TestMiracleGrantHappy(t *testing.T) {
 	s.GuardianCharges = 3
 	s.Agents[0].Inv = Inventory{} // known-empty pouch for an exact delta
 
-	if err := applyMiracleErr(s, 100, "metatron.item_granted", ItemGrantedPayload{
+	if err := applyMiracleErr(s, 100, "guardian.item_granted", ItemGrantedPayload{
 		Agent: Ref(0), Kind: "food_raw", Qty: 3}); err != nil {
 		t.Fatalf("grant rejected: %v", err)
 	}
@@ -1260,7 +1260,7 @@ func TestMiracleGrantOverCapWholeReject(t *testing.T) {
 	s.Agents[0].Inv = Inventory{Wood: bulkCap} // exactly full
 	before := s.Marshal()
 
-	err := applyMiracleErr(s, 40, "metatron.item_granted", ItemGrantedPayload{
+	err := applyMiracleErr(s, 40, "guardian.item_granted", ItemGrantedPayload{
 		Agent: Ref(0), Kind: "wood", Qty: 1})
 	if err == nil {
 		t.Fatal("over-cap grant should be rejected whole")
@@ -1271,8 +1271,11 @@ func TestMiracleGrantOverCapWholeReject(t *testing.T) {
 	// Spec 095 T003 door regression: the digest headroom guidance added
 	// turn-side (internal/guardian) and the give_item gloss (internal/tool)
 	// must not have moved this door's own message one byte — applyItemGranted
-	// (internal/sim/miracles.go) is untouched.
-	wantMsg := fmt.Sprintf("apply metatron.item_granted: granting 1 wood to %s would exceed the carry cap (%d/%d already used)",
+	// (internal/sim/miracles.go) is untouched. (The event-type prefix says
+	// guardian.item_granted since spec 094's rename — that is the ONE
+	// sanctioned change to this string, carried by the log-format bump, not
+	// by the spec-095 guidance this pin guards against.)
+	wantMsg := fmt.Sprintf("apply guardian.item_granted: granting 1 wood to %s would exceed the carry cap (%d/%d already used)",
 		AgentNames[0], bulkCap, bulkCap)
 	if err.Error() != wantMsg {
 		t.Errorf("door rejection message changed:\n got:  %q\n want: %q", err.Error(), wantMsg)
@@ -1288,7 +1291,7 @@ func TestMiracleGrantUnknownKindReject(t *testing.T) {
 	s.GuardianCharges = 3
 	before := s.Marshal()
 
-	err := applyMiracleErr(s, 40, "metatron.item_granted", ItemGrantedPayload{
+	err := applyMiracleErr(s, 40, "guardian.item_granted", ItemGrantedPayload{
 		Agent: Ref(0), Kind: "gold", Qty: 1})
 	if err == nil {
 		t.Fatal("unknown item kind should be rejected")
@@ -1307,7 +1310,7 @@ func TestMiracleGrantUnknownKindReject(t *testing.T) {
 	}
 	// "spears" (plural, the storage key) is NOT the grant vocabulary — a grant
 	// names one fresh spear as "spear" (singular). The plural form is rejected.
-	if err := applyMiracleErr(s, 41, "metatron.item_granted", ItemGrantedPayload{
+	if err := applyMiracleErr(s, 41, "guardian.item_granted", ItemGrantedPayload{
 		Agent: Ref(0), Kind: "spears", Qty: 1}); err == nil {
 		t.Error(`"spears" (plural) should be rejected — the grant kind is "spear"`)
 	}
@@ -1323,14 +1326,14 @@ func TestMiracleGrantDeadVillagerReject(t *testing.T) {
 	s.Agents[0].Dead = true
 	before := s.Marshal()
 
-	if err := applyMiracleErr(s, 40, "metatron.item_granted", ItemGrantedPayload{
+	if err := applyMiracleErr(s, 40, "guardian.item_granted", ItemGrantedPayload{
 		Agent: Ref(0), Kind: "food_raw", Qty: 1}); err == nil {
 		t.Fatal("grant to a dead villager should be rejected")
 	}
 	if string(s.Marshal()) != string(before) {
 		t.Error("rejected dead-villager grant mutated state")
 	}
-	if err := applyMiracleErr(s, 41, "metatron.item_granted", ItemGrantedPayload{
+	if err := applyMiracleErr(s, 41, "guardian.item_granted", ItemGrantedPayload{
 		Agent: Ref(len(s.Agents)), Kind: "food_raw", Qty: 1}); err == nil {
 		t.Error("grant to an out-of-range agent index should be rejected")
 	}
@@ -1345,7 +1348,7 @@ func TestMiracleGrantNonPositiveQtyReject(t *testing.T) {
 	before := s.Marshal()
 
 	for _, qty := range []int{0, -5} {
-		if err := applyMiracleErr(s, 40, "metatron.item_granted", ItemGrantedPayload{
+		if err := applyMiracleErr(s, 40, "guardian.item_granted", ItemGrantedPayload{
 			Agent: Ref(0), Kind: "food_raw", Qty: qty}); err == nil {
 			t.Errorf("grant of qty %d should be rejected", qty)
 		}
@@ -1365,7 +1368,7 @@ func TestMiracleGrantSpearShape(t *testing.T) {
 	s.GuardianCharges = 3
 	s.Agents[0].Inv = Inventory{Spears: []int{1}} // one worn spear already carried
 
-	if err := applyMiracleErr(s, 100, "metatron.item_granted", ItemGrantedPayload{
+	if err := applyMiracleErr(s, 100, "guardian.item_granted", ItemGrantedPayload{
 		Agent: Ref(0), Kind: "spear", Qty: 2}); err != nil {
 		t.Fatalf("spear grant rejected: %v", err)
 	}
@@ -1384,7 +1387,7 @@ func TestMiracleGrantGratisZeroBank(t *testing.T) {
 	s.GuardianCharges = 0
 	s.Agents[0].Inv = Inventory{}
 
-	if err := applyMiracleErr(s, 40, "metatron.item_granted", ItemGrantedPayload{
+	if err := applyMiracleErr(s, 40, "guardian.item_granted", ItemGrantedPayload{
 		Agent: Ref(0), Kind: "meals", Qty: 2, Gratis: true}); err != nil {
 		t.Fatalf("gratis grant with an empty bank rejected: %v", err)
 	}
@@ -1413,9 +1416,9 @@ func TestMiracleGrantReplayByteIdentity(t *testing.T) {
 		return s
 	}
 	commands := map[int64][]store.Event{
-		10: {{Tick: 10, Type: "metatron.item_granted", Payload: mustPayload(ItemGrantedPayload{
+		10: {{Tick: 10, Type: "guardian.item_granted", Payload: mustPayload(ItemGrantedPayload{
 			Agent: Ref(0), Kind: "food_raw", Qty: 3})}},
-		20: {{Tick: 20, Type: "metatron.item_granted", Payload: mustPayload(ItemGrantedPayload{
+		20: {{Tick: 20, Type: "guardian.item_granted", Payload: mustPayload(ItemGrantedPayload{
 			Agent: Ref(0), Kind: "spear", Qty: 2})}},
 	}
 
@@ -1424,7 +1427,7 @@ func TestMiracleGrantReplayByteIdentity(t *testing.T) {
 
 	var grants int
 	for _, e := range log {
-		if e.Type == "metatron.item_granted" {
+		if e.Type == "guardian.item_granted" {
 			grants++
 		}
 	}

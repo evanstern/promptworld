@@ -54,7 +54,7 @@ func allowedGoOccurrence(lit, word string, start, end int) bool {
 	}
 	switch lower {
 	case "metatron":
-		// Frozen forms: "metatron.*" event types, "metatron_*" wire/JSON/kind
+		// Frozen forms: "guardian.*" event types, "metatron_*" wire/JSON/kind
 		// names, "*-metatron-*" correlation prefixes, "metatron/..." paths,
 		// and the exact bare identifier "metatron" (the grammar family key,
 		// the llm.json kind, the cognition class, the on-disk dir name, and
@@ -99,10 +99,13 @@ var allowlistedDecls = map[string]string{
 
 // allowlistedFuncs are function names whose string literals are exempt: each
 // builds RECORDED payload text (spec 052 ruling 1 — the event log is
-// skin-free; the operator's TASK-134 ruling freezes persisted vocabulary
-// until the format_version migration).
+// skin-free; spec 094 shipped the format_version migration that renamed the
+// metatron.* EVENT TYPES to guardian.*, but recorded payload TEXT and the
+// non-event frozen forms — paths, wire kinds, correlation prefixes — stay
+// frozen, and sim.LogFormatV1Renames is the one sanctioned home of the old
+// dotted names).
 var allowlistedFuncs = map[string]string{
-	"SurvivalWatchDefs": "internal/sim/guardian.go — spec 059 genesis survival watches; Condition/Action land in recorded metatron.order_placed payloads",
+	"SurvivalWatchDefs": "internal/sim/guardian.go — spec 059 genesis survival watches; Condition/Action land in recorded guardian.order_placed payloads (pre-094 logs: metatron.order_placed)",
 }
 
 func TestFictionDenylistGoSources(t *testing.T) {

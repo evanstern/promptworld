@@ -188,8 +188,11 @@ func TestResolveHomeCandidateUnopenableSurfacesOpenError(t *testing.T) {
 	if !errors.As(err, &uo) {
 		t.Fatalf("expected ErrUnopenable, got %v (%T)", err, err)
 	}
-	if !strings.Contains(err.Error(), "format_version") || !strings.Contains(err.Error(), "migrate") {
-		t.Errorf("ErrUnopenable message lost the world.Open migrate hint: %q", err.Error())
+	// The fixture's version is FUTURE, so the remedy is the upgrade posture
+	// (spec 094's direction split); an older world would carry the migrate
+	// hint. Either way the point holds: the real Open error surfaces.
+	if !strings.Contains(err.Error(), "format_version") || !strings.Contains(err.Error(), "upgrade promptworld") {
+		t.Errorf("ErrUnopenable message lost the world.Open remedy text: %q", err.Error())
 	}
 	var nf *ErrNotFound
 	if errors.As(err, &nf) {

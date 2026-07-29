@@ -63,8 +63,8 @@ that note (re-pin with `/grounding-wiki:wiki-update`).
   - [[event-types-curriculum-events]] — Curriculum-ladder event rows split from [[event-types]]: curriculum.exercise_passed, curriculum.stage_unlocked
   - [[event-types-scenario-incidents]] — Scenario-incident event rows split from [[event-types]] (spec 077): sim.cold_snap, sim.forage_blighted, the stranger.* entity family
   - [[event-types-guardian-orders]] — Guardian standing-order event rows split from [[event-types]]:…
-  - [[event-types-guardian-morgue]] — Guardian morgue/report-card event rows split from [[event-types]]: metatron.charter_observed, morgue.epilogue, guardian.report_card, chronicle.entry
-  - [[event-types-guardian-actions]] — Guardian miracle-action and gru event rows split from [[event-types]]: metatron.time_snapped/item_granted/entity_moved/entity_removed, the gru.*…
+  - [[event-types-guardian-morgue]] — Guardian morgue/report-card event rows split from [[event-types]]: guardian.charter_observed, morgue.epilogue, guardian.report_card, chronicle.entry
+  - [[event-types-guardian-actions]] — Guardian miracle-action and gru event rows split from [[event-types]]: guardian.time_snapped/item_granted/entity_moved/entity_removed, the gru.*…
   - [[event-types-guardian-plans]] — Guardian plan-layer event rows split from [[event-types]] (spec 084): designation.placed/cancelled/fulfilled, directive.issued/cancelled/fulfilled/expired
 
 ## Persistence

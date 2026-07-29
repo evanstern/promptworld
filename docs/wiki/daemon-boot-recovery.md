@@ -4,7 +4,7 @@ description: Daemon boot sequence steps 0-5 and 7-8 — tool-registry gates, wor
 kind: pipeline
 sources:
   - internal/daemon/daemon.go
-verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 ---
 
 # Daemon boot: validate, recover, wire-up
@@ -43,7 +43,11 @@ Startup sequence:
    (TASK-43): a best-effort upsert into the advisory known-worlds registry
    ([[instance-manager]]) when the dir lives outside the worlds home — failures are
    logged and never block boot, and worlds inside the home are skipped (scan-owned).
-3. `store.Open` + `validateMeta` — first run stamps `seed`/`format_version` into
+3. `store.Open` + `validateMeta` — FIRST the log's own format gate
+   (`VerifyLogFormat`, spec 094 — an older-vocabulary log refuses with the
+   migrate hint, a newer one with the upgrade posture, before any replay;
+   [[event-log]]); then the manifest mirrors: first run stamps
+   `seed`/`format_version` into
    store meta; later runs must match the manifest exactly, catching save directories
    corrupted or spliced from two runs.
 4. `CheckContiguity` — a holed event log refuses to run ([[event-log]]).
@@ -70,7 +74,7 @@ Startup sequence:
    `st.AppendEvents` shape): if recovered state carries no ACTIVE
    system-origin survival watch yet, the three canonical watches
    (`sim.SurvivalWatchDefs` — near-death, starvation, exposure) land as
-   `metatron.order_placed` events at the recovered tick; a fresh world's
+   `guardian.order_placed` events at the recovered tick; a fresh world's
    first boot seeds them, a pre-059 world's first boot after upgrade
    back-seeds them once, and every later boot finds them already active and
    injects nothing ([[guardian-orders]]). Then, still before the pidfile's

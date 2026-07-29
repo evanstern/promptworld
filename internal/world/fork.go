@@ -140,6 +140,13 @@ func forkInto(src *World, srcStore *store.Store, boundary *store.Snapshot, destD
 	}
 	defer fresh.Close()
 
+	// Log format stamp (spec 094 FR-001): a fork's log is born current — the
+	// parent passed world.Open's gate, so its prefix already speaks this
+	// build's vocabulary.
+	if err := fresh.StampLogFormat(); err != nil {
+		return nil, err
+	}
+
 	// Stream the parent's prefix (seq <= boundary.Seq) in order into the
 	// fresh log. AppendEvents assigns contiguous seqs from lastSeq+1, so an
 	// in-order stream into an empty store reproduces seqs 1..N exactly;

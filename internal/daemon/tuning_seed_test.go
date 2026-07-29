@@ -27,7 +27,7 @@ func TestSeedTuningAgainstGenesisPin(t *testing.T) {
 	newPinnedWorld := func(t *testing.T) (*world.World, *store.Store, *sim.State) {
 		t.Helper()
 		dir := t.TempDir()
-		manifest := `{"name":"w","seed":42,"format_version":5,"tick_game_seconds":1}`
+		manifest := `{"name":"w","seed":42,"format_version":6,"tick_game_seconds":1}`
 		if err := os.WriteFile(filepath.Join(dir, world.ManifestName), []byte(manifest), 0o644); err != nil {
 			t.Fatal(err)
 		}

@@ -17,7 +17,7 @@ func TestCharterObservedArm(t *testing.T) {
 	if s.CharterCustom {
 		t.Error("genesis CharterCustom = true, want the conservative false zero value")
 	}
-	if err := s.Apply(store.Event{Tick: 10, Type: "metatron.charter_observed",
+	if err := s.Apply(store.Event{Tick: 10, Type: "guardian.charter_observed",
 		Payload: mustPayload(CharterObservedPayload{Fingerprint: "aaaa11112222", Default: true})}); err != nil {
 		t.Fatalf("first observation: %v", err)
 	}
@@ -27,7 +27,7 @@ func TestCharterObservedArm(t *testing.T) {
 	if s.CharterCustom {
 		t.Error("CharterCustom = true after a Default observation, want false")
 	}
-	if err := s.Apply(store.Event{Tick: 20, Type: "metatron.charter_observed",
+	if err := s.Apply(store.Event{Tick: 20, Type: "guardian.charter_observed",
 		Payload: mustPayload(CharterObservedPayload{Fingerprint: "bbbb33334444", Default: false})}); err != nil {
 		t.Fatalf("second observation: %v", err)
 	}
@@ -39,14 +39,14 @@ func TestCharterObservedArm(t *testing.T) {
 	}
 	// A revert to the default charter flips authorship back off (latest wins
 	// — spec 072's "in force" reading).
-	if err := s.Apply(store.Event{Tick: 25, Type: "metatron.charter_observed",
+	if err := s.Apply(store.Event{Tick: 25, Type: "guardian.charter_observed",
 		Payload: mustPayload(CharterObservedPayload{Fingerprint: "cccc55556666", Default: true})}); err != nil {
 		t.Fatalf("third observation: %v", err)
 	}
 	if s.CharterCustom {
 		t.Error("CharterCustom = true after reverting to the default charter, want false")
 	}
-	if err := s.Apply(store.Event{Tick: 30, Type: "metatron.charter_observed",
+	if err := s.Apply(store.Event{Tick: 30, Type: "guardian.charter_observed",
 		Payload: mustPayload(CharterObservedPayload{})}); err == nil {
 		t.Error("empty fingerprint applied, want a rejection")
 	}
@@ -119,7 +119,7 @@ func TestEndedDoorAcceptsMorgueEpilogue(t *testing.T) {
 
 	// A non-prose whitelisted type is still refused after run end.
 	res = runCommand(t, l, command{name: "inject_social", social: []store.Event{
-		{Type: "metatron.charter_observed", Payload: mustPayload(CharterObservedPayload{Fingerprint: "aaaa11112222"})},
+		{Type: "guardian.charter_observed", Payload: mustPayload(CharterObservedPayload{Fingerprint: "aaaa11112222"})},
 	}})
 	if res.err == nil || !strings.Contains(res.err.Error(), "run has ended") {
 		t.Errorf("charter_observed on an ended world: err = %v, want a \"run has ended\" refusal", res.err)

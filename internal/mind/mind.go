@@ -300,7 +300,7 @@ func (md *Mind) absorb(batch []store.Event) {
 			for i := range md.replica.Agents {
 				md.arm(i, e.Seq)
 			}
-		case "metatron.nudged":
+		case "guardian.nudged":
 			// Paused authoring chain-completion (spec 040 FR-001/FR-002,
 			// decision-6): while the world is frozen, a landed nudge wakes each
 			// targeted villager for one debounce-bounded round at the frozen tick,

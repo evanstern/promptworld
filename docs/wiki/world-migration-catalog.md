@@ -1,11 +1,11 @@
 ---
 name: world-migration-catalog
-description: The four migration steps' design pins (v1→v2 keep-people-reset-land, v2→v3 carry-everything, v3→v4 grant-knowledge, v4→v5 manifest-only) plus the write-mechanics that commit a migrated world to disk
+description: The migration steps' design pins (v1→v2 keep-people-reset-land, v2→v3 carry-everything, v3→v4 grant-knowledge, v4/v5→v6 translate-the-vocabulary) plus the write-mechanics that commit a migrated world to disk
 kind: component
 sources:
   - internal/sim/migrate.go
   - internal/world/migrate.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 ---
 
 # World migration: step catalog & write mechanics
@@ -34,20 +34,22 @@ The four steps have different design pins because their inputs differ:
   (perception radius) plus witnessed place-facts for every current structure
   and ground pile, all stamped at the migration tick — never a blank map that
   would have to re-discover a village it already lives in.
-- **v4→v5** (spec 068, TASK-143, C11): **manifest-only** — the one step that
-  transforms nothing. A carried-forward v4 world's event log, state, and terrain
-  don't change: its `terrain_gen` stays absent, so it keeps generating LEGACY
-  terrain, bit-identical to what it always has. The version bump exists solely so
-  pre-068 software refuses to open it (rather than silently regenerating terrain
-  under an algorithm the manifest didn't ask for); there is nothing to archive,
-  transform, or cut a fresh snapshot for.
+- **v4/v5→v6** (spec 094): **translation** — history survives whole. The 13
+  persisted `metatron.*` guardian event types were renamed `guardian.*`
+  (log format 2, [[event-log]]), so the step rewrites ONLY the log's type
+  column through `sim.LogFormatV1Renames`; every seq, tick, payload, and
+  wall_time is preserved byte-for-byte, snapshots and meta carry over, and
+  state is untouched. Terrain still doesn't change: a migrated v4-era
+  world's `terrain_gen` stays absent (LEGACY generation, bit-identical) —
+  spec 068's manifest-only v4→v5 bump (which existed solely so pre-068
+  software refuses new-terrain worlds) is subsumed: a v4 and a v5 source
+  carry content-identical logs and take the same translation.
 
 ## Writing the result
 
 **Writing the result**: after the transform succeeds, `archiveDB` renames
 `world.db` (and any `-wal`/`-shm` sidecars) to the source-format archive —
-`world.v1.db` for a v1 source, `world.v2.db` for a v2 source, `world.v3.db`
-for a v3 source — the point of no easy
+`world.v1.db` through `world.v5.db`, keyed to the source — the point of no easy
 return, so every refusal has already run. A fresh `world.db` is opened and gets
 exactly two events, both stamped at the continuation tick: `world.created` (same
 name/seed) then `world.migrated`, whose payload (`WorldMigratedPayload` —
@@ -65,5 +67,7 @@ restore is the same rename-back).
 Back to [[world-migration]] for the ceremony overview and its sibling child
 [[world-migration-transforms]] (the actual per-step transform algorithms
 this catalog summarizes). [[event-types]] catalogs `WorldMigratedPayload`;
-[[snapshots]] is the covering-snapshot mechanism every step but v4→v5
-borrows.
+[[snapshots]] is the covering-snapshot mechanism the snapshot-cut steps
+borrow (the translating step carries the source's own latest verified
+snapshot instead); [[event-log]] owns the log-format stamp the translation
+writes.

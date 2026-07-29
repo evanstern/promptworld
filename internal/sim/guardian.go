@@ -40,7 +40,7 @@ const (
 // (spec 014 T021/R7; re-pointed at send_vision when spec 029 retired the nudges):
 // the influence tools' TextCapBytes (400). The reducer dry-run stays the
 // enforcer; the registry is the single source of the cap, so the enforcer and
-// the metatron-side truncation can never carry divergent literals.
+// the guardian-side truncation can never carry divergent literals.
 var NudgeTextMax = func() int {
 	t, _ := tool.Lookup("send_vision")
 	return t.Cost.TextCapBytes
@@ -133,11 +133,13 @@ func IsSurvivalKind(s string) bool {
 // Condition/Action are the in-fiction standing duty the survival turn narrates
 // under; the specific endangered villager is supplied at trigger time.
 //
-// FROZEN recorded-at-emission text (spec 052 ruling 1; operator TASK-134
-// ruling): these strings land verbatim in recorded metatron.order_placed
-// payloads — persisted vocabulary, never skinned and never reworded until
-// the format_version migration (TASK-134). The fiction-denylist sweep
-// allowlists this function by name.
+// RECORDED-AT-EMISSION text (spec 052 ruling 1; spec 094 doctrine): these
+// strings land verbatim in recorded guardian.order_placed payloads —
+// persisted vocabulary, never skinned. Rewording them is a payload-semantics
+// change: it requires a store.LogFormatVersion bump + migration (and a
+// wording change is NOT a pure rename, so it would snapshot-cut — see
+// world/migrate.go's decision rule). The fiction-denylist sweep allowlists
+// this function by name for the survival prose.
 func SurvivalWatchDefs(tick int64) []GuardianOrder {
 	def := func(kind, cond, act string) GuardianOrder {
 		return GuardianOrder{
@@ -191,13 +193,13 @@ type GuardianOrder struct {
 	// PlacedSeq is the placement event's store seq, stamped by the reducer at
 	// apply time from the event envelope (the Memory.Seq precedent, spec 054):
 	// it lets the scenario rubric's OrderPlacedEvidence re-locate the recorded
-	// metatron.order_placed without a log scan. Ignored on the wire payload
+	// guardian.order_placed without a log scan. Ignored on the wire payload
 	// (like Status); omitempty keeps pre-054 snapshots and every injected
 	// payload byte-identical.
 	PlacedSeq int64 `json:"placed_seq,omitempty"`
 }
 
-// OrderPlacedPayload is metatron.order_placed's wire mirror (spec 086
+// OrderPlacedPayload is guardian.order_placed's wire mirror (spec 086
 // FR-003, data-model §4): GuardianOrder's fields with a named agent ref on
 // the wire while the state entity above keeps the bare int (−1 = any) — the
 // R2 invariant. Same json tags; legacy rows decode dual-shape and the arm
@@ -247,14 +249,14 @@ type OrderTriggeredPayload struct {
 	MatchedTick int64  `json:"matched_tick"`
 }
 
-// OrderIDPayload is the bare-id payload shared by metatron.order_cancelled
-// (injected — cancel_order) and metatron.order_expired (executor-emitted, a pure
+// OrderIDPayload is the bare-id payload shared by guardian.order_cancelled
+// (injected — cancel_order) and guardian.order_expired (executor-emitted, a pure
 // function of state + tick, like charge_regenerated).
 type OrderIDPayload struct {
 	ID string `json:"id"`
 }
 
-// CharterObservedPayload — metatron.charter_observed (spec 044 US2, FR-008):
+// CharterObservedPayload — guardian.charter_observed (spec 044 US2, FR-008):
 // the charter revision a Guardian turn actually ran under, identified by a
 // short content hash of the EFFECTIVE charter text (post-fallback,
 // post-truncation — what loadCharter returned), plus whether that text is
@@ -268,7 +270,7 @@ type CharterObservedPayload struct {
 	Default     bool   `json:"default"`
 }
 
-// SkillsObservedPayload — metatron.skills_observed (spec 077 FR-006): the
+// SkillsObservedPayload — guardian.skills_observed (spec 077 FR-006): the
 // bound skill-file set a Guardian turn actually ran under — charter_observed's
 // twin, emitted by the same turn pipeline through the same inject_social door,
 // only when the fingerprint differs from State.SkillsFingerprint. Names is
@@ -283,17 +285,17 @@ type SkillsObservedPayload struct {
 	Names       []string `json:"names"`
 }
 
-// applyGuardian is the reducer arm for metatron.* events. The nudged arm
+// applyGuardian is the reducer arm for guardian.* events. The nudged arm
 // validates rather than clamps: the InjectSocial dry-run runs this on a
 // state copy, so invalid spends are rejected at the door and recorded
 // events always re-apply cleanly at the same position in replay.
 func (s *State) applyGuardian(e store.Event) error {
 	switch e.Type {
-	case "metatron.charge_regenerated":
+	case "guardian.charge_regenerated":
 		if s.GuardianCharges < GuardianChargeCap {
 			s.GuardianCharges++
 		}
-	case "metatron.nudged":
+	case "guardian.nudged":
 		var p GuardianNudgedPayload
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
@@ -301,7 +303,7 @@ func (s *State) applyGuardian(e store.Event) error {
 		if s.GuardianCharges <= 0 {
 			return fmt.Errorf("apply %s: no charges banked", e.Type)
 		}
-		// Form validation (spec 029): the metatron.nudged form domain is
+		// Form validation (spec 029): the guardian.nudged form domain is
 		// {vision, omen, dream}. A vision reaches exactly one living villager at
 		// any hour; an omen reaches ≥1 living villagers and lands ONLY at night
 		// (State.Night); dream is the RETIRED legacy form, grandfathered here
@@ -344,7 +346,7 @@ func (s *State) applyGuardian(e store.Event) error {
 			return fmt.Errorf("apply %s: text length %d outside 1..%d", e.Type, len(p.Text), NudgeTextMax)
 		}
 		s.GuardianCharges--
-	case "metatron.place_revealed":
+	case "guardian.place_revealed":
 		// Spec 041 (FR-014, T032): a vision's divine place grant. Validates
 		// rather than clamps (the nudged arm's contract — the InjectSocial
 		// dry-run runs this on a state copy, so an invalid reveal is rejected
@@ -379,7 +381,7 @@ func (s *State) applyGuardian(e store.Event) error {
 					Provenance: ProvenanceRevealed, Detail: groundFactDetail(s, f)})
 			}
 		}
-	case "metatron.order_placed":
+	case "guardian.order_placed":
 		// Spec 086: decode the OrderPlacedPayload mirror (named ref,
 		// dual-shape for legacy rows) and fold .ID into the int-typed entity
 		// — names never enter state (R2), no name validation here (R3).
@@ -458,13 +460,13 @@ func (s *State) applyGuardian(e store.Event) error {
 		o.Status = "active"
 		o.PlacedSeq = e.Seq
 		s.GuardianOrders = pruneGuardianOrders(append(s.GuardianOrders, o))
-	case "metatron.order_triggered":
+	case "guardian.order_triggered":
 		var p OrderTriggeredPayload
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
 		return s.transitionGuardianOrder(e.Type, p.ID, "triggered")
-	case "metatron.order_cancelled":
+	case "guardian.order_cancelled":
 		var p OrderIDPayload
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
@@ -479,13 +481,13 @@ func (s *State) applyGuardian(e store.Event) error {
 			}
 		}
 		return s.transitionGuardianOrder(e.Type, p.ID, "cancelled")
-	case "metatron.order_expired":
+	case "guardian.order_expired":
 		var p OrderIDPayload
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
 		return s.transitionGuardianOrder(e.Type, p.ID, "expired")
-	case "metatron.charter_observed":
+	case "guardian.charter_observed":
 		// Spec 044 US2 (FR-008): the charter-revision timeline. State keeps only
 		// the CURRENT fingerprint and its authorship (spec 072 FR-006 — the-law's
 		// rubric charter conjunct); the full timeline lives in the event log,
@@ -508,7 +510,7 @@ func (s *State) applyGuardian(e store.Event) error {
 		// identical live and in replay.
 		s.CharterObservedSeq = e.Seq
 		s.CharterObservedTick = e.Tick
-	case "metatron.skills_observed":
+	case "guardian.skills_observed":
 		// Spec 077 (FR-006): the skills-observation twin of the charter arm
 		// above — latest observation wins, exactly how the charter
 		// fingerprint is kept. The door requires a non-empty fingerprint AND

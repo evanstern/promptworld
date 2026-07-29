@@ -7,7 +7,7 @@ sources:
   - internal/sim/state.go
   - internal/sim/gru.go
   - internal/sim/morgue.go
-verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 ---
 
 # Event types — agent vitals & mortality
@@ -33,7 +33,7 @@ format-stable: `State` gains `omitempty` `Deaths` (the run's death ledger),
 gains a `grave` kind (reducer-placed at a death tile, never player-built).
 THREE new event types land the feature — executor-emitted `run.ended` (never
 injectable: it opens two whole new namespaces, `run.*` and, via the
-whitelisted pair, `morgue.*`) plus whitelisted `metatron.charter_observed` and
+whitelisted pair, `morgue.*`) plus whitelisted `guardian.charter_observed` and
 `morgue.epilogue`, the only two additions `TestWhitelistDiffIdentical` accepts
 against the spec's declared boundary widening. Two existing rows changed
 semantics rather than shape: `agent.died`'s cause domain gains `"gru"` (an

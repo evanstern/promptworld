@@ -4,7 +4,7 @@ description: The runtime skin substrate (spec 052, TASK-121) — the fiction lay
 kind: component
 sources:
   - internal/skin/skin.go
-verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 ---
 
 # Skin
@@ -12,9 +12,9 @@ verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
 `internal/skin` is the fiction-as-data substrate spec 052 (TASK-121) introduced
 alongside the [[guardian]] package rename: the substrate itself knows only
 neutral, mechanical vocabulary (stage ids `stage-1`..`stage-4`, event types
-like `metatron.nudged`, tool ids like `work_miracle`), and every string the
+like `guardian.nudged`, tool ids like `work_miracle`), and every string the
 PLAYER sees for that vocabulary — the guardian's display name, its epithet,
-its tab label, the chronicle's family alias, the vision/omen/working nouns,
+its tab label, the vision/omen/working nouns,
 and each curriculum stage's display identity — is resolved through one
 `*Skin` value at render/prompt-composition time. Two governing rulings hold
 the whole design together: ruling 1 — the event log is skin-free, nothing in
@@ -36,13 +36,14 @@ row, and every row must resolve to a non-empty, non-path value.
 `skin.guardian.name` (`TokenName`, default `"Guardian"`), `.epithet`
 (`TokenEpithet`, default `"guardian"`), `.tab_label` (`TokenTabLabel`,
 default `"guardian"`), `.family_label` (`TokenFamilyLabel`, default
-`"guardian"` — the chronicle's Type-column alias for the FROZEN `metatron.*`
-event namespace, FR-013) — plus vocabulary tokens `working_noun`/
+`"guardian"` — the family's voiced name; its consumer, spec 052 FR-013's
+Type-column alias, was retired by the spec-094 rename: the chronicle
+renders types raw) — plus vocabulary tokens `working_noun`/
 `working_noun_plural` (default `"working"`/`"workings"` — the display name
 for the frozen `work_miracle` mechanics family), `notes_label` (default
 `"the guardian's notes"`), and `vision_noun`/`omen_noun` (default
 `"vision"`/`"omen"` — display nouns for the frozen `send_vision`/`send_omen`
-tool ids and the recorded `metatron.nudged` payload's `form` values `vision`/
+tool ids and the recorded `guardian.nudged` payload's `form` values `vision`/
 `omen`). Stage-identity tokens (`skin.stage.<id>.name`/`.line`) are appended
 from `defaultStages` in `init()` so the two tables can never drift; the
 default stage identities are the client-approved names carried over the
@@ -107,9 +108,9 @@ the same accessors for triggered-turn moment lines and miracle-outcome
 phrasing. [[curriculum-ladder]] reads `Stage`/`StageName` for the ladder's
 display identities in `promptworld stages`/`new`/`status` and the stage lock
 notices (`stageCharter`/`stageSkills`, [[guardian]]'s `charter.go`).
-[[tui-client]] resolves the chronicle Type column's frozen-namespace alias
-through `FamilyLabel` (`internal/tui/grammar.go`'s `displayEventType`) and
-the console pane's tab/labels through the polled status facts.
+[[tui-client]] renders the chronicle Type column raw since spec 094 (the
+FR-013 alias shim is deleted) and resolves the console pane's tab/labels
+through the polled status facts.
 [[cli-promptworld]] renders the same facts offline/online without reading
 `skin.json` directly. [[bundle-tools]]' persona-SOUL-fragment composition is
 the precedent `Voice`'s placement in the prompt stack follows (after bundle

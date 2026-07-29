@@ -7,7 +7,7 @@ sources:
   - internal/guardian/digest.go
   - internal/guardian/guardian.go
   - internal/guardian/toolcalls.go
-verified_against: 74fe956813aa6be54e65156ae9bfcb91745cbb8d
+verified_against: 11de2a4aa93d4c901a8dd90369151fa23fd056d0
 ---
 
 # Guardian's watch and background workers
@@ -39,7 +39,7 @@ mechanics live in [[guardian-orders]]'s own section.
 non-empty window costs one summarization call appended to `metatron/soul.md`
 (skip-empty is free; failures carry lines into the next window). The drama rule v1:
 `agent.died`, `gru.attacked`, `social.promise_broken`, and (since spec 029)
-`metatron.order_expired` append model-free **moment** lines immediately and queue for
+`guardian.order_expired` append model-free **moment** lines immediately and queue for
 the console — the next reply leads with them. Digests and moments themselves never
 construct an act; the guardian acts only when the player asks OR a standing order the
 player placed authorizes it (spec 029 relaxed the old "acts only when told" contract

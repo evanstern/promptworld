@@ -283,7 +283,7 @@ func (s *State) applyProphecy(e store.Event) error {
 		}
 		p := mp.prophecy()
 		// The stake (US3 AS-1): a prophecy spends one charge — the
-		// metatron.nudged arm's contract, so the spend is event-sourced (the
+		// guardian.nudged arm's contract, so the spend is event-sourced (the
 		// declaration IS the spend's record) and replay reproduces the
 		// economy. Validated before anything else lands (validate-not-clamp).
 		if s.GuardianCharges <= 0 {

@@ -6,10 +6,10 @@ package guardian
 // door-landing helpers a console turn's handlers wrap (placeOrder / cancelOrder),
 // and the id assignment (research R7). The reducer dry-run is the door authority
 // for every lifecycle transition — the cap, the ttl bounds, the agent range, and
-// the cancel/expiry/trigger races all resolve there (internal/sim/metatron.go);
+// the cancel/expiry/trigger races all resolve there (internal/sim/guardian.go);
 // these helpers map a door rejection to in-fiction counsel the loop feeds back as
 // a rejected_gate. The trigger pipeline that fires a matched order (the absorb
-// worker + system turn) lives alongside in metatron.go / this file's T013 half.
+// worker + system turn) lives alongside in guardian.go / this file's T013 half.
 
 import (
 	"context"
@@ -30,7 +30,7 @@ import (
 )
 
 // ticksPerGameDay is a game day in ticks (1 tick = 1 game second). MIRRORED from
-// sim's unexported constant (internal/sim/metatron.go) — the reducer validates a
+// sim's unexported constant (internal/sim/guardian.go) — the reducer validates a
 // standing order's ttl in [1..7] game days against the same literal, so the
 // ExpiresTick this package computes and the door-side bound can never diverge.
 const ticksPerGameDay = 24 * 3600
@@ -88,7 +88,7 @@ func (mt *Guardian) nextOrderID(tick int64) string {
 }
 
 // placeOrder compiles a monitor_and_act call into a GuardianOrder and lands it as
-// metatron.order_placed through the InjectSocial door (spec 029 US2, T008). The
+// guardian.order_placed through the InjectSocial door (spec 029 US2, T008). The
 // door's dry-run is the authority (player cap, ttl bounds, agent range, empty
 // event_types); a rejection maps to in-fiction counsel the handler feeds back as a
 // rejected_gate. origin is "player" for a console monitor_and_act (Batch C's
@@ -143,7 +143,7 @@ func (mt *Guardian) placeOrder(origin string, a orderArgs, tick int64, grant gra
 		ExpiresTick: tick + int64(ttl)*ticksPerGameDay,
 		Status:      "active",
 	}
-	batch := []store.Event{{Type: "metatron.order_placed", Payload: mustJSON(order.PlacedPayload())}}
+	batch := []store.Event{{Type: "guardian.order_placed", Payload: mustJSON(order.PlacedPayload())}}
 	if err := mt.social.InjectSocial(batch); err != nil {
 		log.Printf("guardian: order rejected at the door: %v", err)
 		return nil, orderRefusal(err)
@@ -153,7 +153,7 @@ func (mt *Guardian) placeOrder(origin string, a orderArgs, tick int64, grant gra
 	return &order, ""
 }
 
-// cancelOrder lands metatron.order_cancelled for the named id through the door
+// cancelOrder lands guardian.order_cancelled for the named id through the door
 // (spec 029 US2, T008). The reducer rejects an unknown or non-active id — this is
 // where the cancel/expiry/trigger race resolves (exactly one terminal lands).
 // Returns "" on success or an in-fiction refusal the handler feeds back.
@@ -165,7 +165,7 @@ func (mt *Guardian) cancelOrder(id string, grant grantSet) string {
 	if id == "" {
 		return "name the watch you want me to release"
 	}
-	batch := []store.Event{{Type: "metatron.order_cancelled", Payload: mustJSON(sim.OrderIDPayload{ID: id})}}
+	batch := []store.Event{{Type: "guardian.order_cancelled", Payload: mustJSON(sim.OrderIDPayload{ID: id})}}
 	if err := mt.social.InjectSocial(batch); err != nil {
 		msg := err.Error()
 		switch {
@@ -186,7 +186,7 @@ func (mt *Guardian) cancelOrder(id string, grant grantSet) string {
 	return ""
 }
 
-// orderRefusal maps a metatron.order_placed door rejection to in-fiction counsel
+// orderRefusal maps a guardian.order_placed door rejection to in-fiction counsel
 // (spec 029): the reducer's error strings are the source, translated to the
 // guardian's voice so the model hears a repairable reason (rejected_gate) rather than
 // a raw reducer message.
@@ -622,7 +622,7 @@ func describeEvent(e store.Event) string {
 
 // runTrigger fires one matched standing order (spec 029 US3, T013/T014):
 //
-//  1. Land metatron.order_triggered through the door — the dry-run enforces the
+//  1. Land guardian.order_triggered through the door — the dry-run enforces the
 //     order is STILL active, so a cancel/expiry that raced the match wins here and
 //     the trigger is abandoned silently (edge case: exactly one of triggered/
 //     cancelled/expired lands, never both).
@@ -648,7 +648,7 @@ func (mt *Guardian) runTrigger(job triggerJob) {
 		return
 	}
 
-	trig := []store.Event{{Type: "metatron.order_triggered", Payload: mustJSON(sim.OrderTriggeredPayload{
+	trig := []store.Event{{Type: "guardian.order_triggered", Payload: mustJSON(sim.OrderTriggeredPayload{
 		ID: job.order.ID, MatchedType: job.matchedType, MatchedTick: job.matchedTick})}}
 	if err := mt.social.InjectSocial(trig); err != nil {
 		// Cancelled or expired before its trigger landed: the loser abandons

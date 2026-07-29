@@ -20,7 +20,7 @@ func TestParseValidManifest(t *testing.T) {
 	    {"name": "note", "kind": "text", "max_bytes": 120},
 	    {"name": "flavor", "kind": "enum", "enum": ["soft", "blinding"]}
 	  ],
-	  "events": ["metatron.entity_moved", "agent.memory_added"],
+	  "events": ["guardian.entity_moved", "agent.memory_added"],
 	  "charges": 2,
 	  "effects": [
 	    {"kind": "move_entity", "target": "{args.target}", "to_x": "{args.x}", "to_y": 0}

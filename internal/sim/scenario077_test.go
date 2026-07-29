@@ -118,7 +118,7 @@ func TestBoundaryDueVocabulary(t *testing.T) {
 
 // skillsEvent builds a reducer-valid metatron.skills_observed fixture.
 func skillsEvent(tick, seq int64) store.Event {
-	return store.Event{Tick: tick, Seq: seq, Type: "metatron.skills_observed",
+	return store.Event{Tick: tick, Seq: seq, Type: "guardian.skills_observed",
 		Payload: mustPayload(SkillsObservedPayload{Fingerprint: "ab12cd34ef56", Names: []string{"10-watch.md"}})}
 }
 
@@ -393,7 +393,7 @@ func TestTheLawPassEmissionWithCharterEvidence(t *testing.T) {
 	if pass.Exercise != "the-law" || pass.Stage != "stage-2" {
 		t.Errorf("pass payload = %+v", pass)
 	}
-	if len(pass.Evidence) != 1 || pass.Evidence[0].Type != "metatron.charter_observed" ||
+	if len(pass.Evidence) != 1 || pass.Evidence[0].Type != "guardian.charter_observed" ||
 		pass.Evidence[0].Seq != 41 || pass.Evidence[0].Tick != 30_000 || !pass.Evidence[0].Custom {
 		t.Errorf("evidence = %+v, want the charter observation at seq 41 tick 30000, Custom true", pass.Evidence)
 	}
@@ -529,7 +529,7 @@ func TestToolsmithPassUnlocksStageFour(t *testing.T) {
 	}
 	custom := false
 	for _, ev := range pass.Evidence {
-		if ev.Type == "metatron.skills_observed" && ev.Custom && ev.Seq == 41 {
+		if ev.Type == "guardian.skills_observed" && ev.Custom && ev.Seq == 41 {
 			custom = true
 		}
 	}
@@ -682,7 +682,7 @@ func TestColdDawnGenesisPassAndReplay(t *testing.T) {
 			if err := json.Unmarshal(e.Payload, &p); err != nil {
 				t.Fatal(err)
 			}
-			if p.Exercise != "cold-dawn" || len(p.Evidence) != 1 || p.Evidence[0].Type != "metatron.order_placed" {
+			if p.Exercise != "cold-dawn" || len(p.Evidence) != 1 || p.Evidence[0].Type != "guardian.order_placed" {
 				t.Errorf("pass = %+v, want cold-dawn with the watch evidence", p)
 			}
 		}

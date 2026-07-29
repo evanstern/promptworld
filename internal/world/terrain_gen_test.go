@@ -11,21 +11,23 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/evanstern/promptworld/internal/sim"
+	"github.com/evanstern/promptworld/internal/store"
 	"github.com/evanstern/promptworld/internal/worldmap"
 )
 
 // TestNewWorldsMarkedWithTerrainGen (C12): `promptworld new`'s Create writes
-// format_version 5 + terrain_gen 2, the manifest round-trips through Open,
-// and the regenerated map actually carries the new vocabulary.
+// the current format_version + terrain_gen 2, the manifest round-trips
+// through Open, and the regenerated map actually carries the new vocabulary.
 func TestNewWorldsMarkedWithTerrainGen(t *testing.T) {
 	dir := t.TempDir() + "/w"
 	w, err := Create(dir, "fresh", 42)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if w.Manifest.FormatVersion != 5 || w.Manifest.TerrainGen != worldmap.GenMarshSand {
-		t.Fatalf("Create wrote format_version %d, terrain_gen %d — want 5, %d",
-			w.Manifest.FormatVersion, w.Manifest.TerrainGen, worldmap.GenMarshSand)
+	if w.Manifest.FormatVersion != FormatVersion || w.Manifest.TerrainGen != worldmap.GenMarshSand {
+		t.Fatalf("Create wrote format_version %d, terrain_gen %d — want %d, %d",
+			w.Manifest.FormatVersion, w.Manifest.TerrainGen, FormatVersion, worldmap.GenMarshSand)
 	}
 	raw, err := os.ReadFile(filepath.Join(dir, ManifestName))
 	if err != nil {
@@ -53,7 +55,7 @@ func TestNewWorldsMarkedWithTerrainGen(t *testing.T) {
 func TestOpenRejectsUnknownTerrainGen(t *testing.T) {
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, ManifestName),
-		[]byte(`{"name":"x","seed":1,"format_version":5,"tick_game_seconds":1,"terrain_gen":3}`), 0o644); err != nil {
+		[]byte(`{"name":"x","seed":1,"format_version":6,"tick_game_seconds":1,"terrain_gen":3}`), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	_, err := Open(dir)
@@ -70,7 +72,7 @@ func TestOpenRejectsUnknownTerrainGen(t *testing.T) {
 func TestOpenAbsentTerrainGenIsLegacy(t *testing.T) {
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, ManifestName),
-		[]byte(`{"name":"x","seed":42,"format_version":5,"tick_game_seconds":1}`), 0o644); err != nil {
+		[]byte(`{"name":"x","seed":42,"format_version":6,"tick_game_seconds":1}`), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	w, err := Open(dir)
@@ -103,20 +105,26 @@ func TestOpenRejectsV4WithMigrateHint(t *testing.T) {
 	}
 }
 
-// TestMigrateV4ManifestOnlyPreservesTerrain (C11): migrate upgrades a v4
-// world to v5 WITHOUT setting terrain_gen — the regenerated map's Hash is
-// identical before and after, and the event database is untouched.
-func TestMigrateV4ManifestOnlyPreservesTerrain(t *testing.T) {
+// TestMigrateV4PreservesTerrain (C11's surviving guarantee under spec 094):
+// the v4→v6 step is now a LOG TRANSLATION, but the terrain contract is
+// unchanged — migrate must NOT set terrain_gen, so the regenerated map's
+// Hash is identical before and after. (The translation mechanics themselves
+// are covered in migrate_translate_test.go.)
+func TestMigrateV4PreservesTerrain(t *testing.T) {
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, ManifestName),
 		[]byte(`{"name":"carried","seed":42,"format_version":4,"tick_game_seconds":1,"map_width":64,"map_height":64}`), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	// A stand-in database: the manifest-only migration must not touch it.
-	dbPath := filepath.Join(dir, "world.db")
-	if err := os.WriteFile(dbPath, []byte("event log bytes"), 0o644); err != nil {
+	st, err := store.Open(filepath.Join(dir, "world.db"))
+	if err != nil {
 		t.Fatal(err)
 	}
+	payload, _ := json.Marshal(sim.WorldCreatedPayload{Name: "carried", Seed: 42})
+	if err := st.AppendEvents([]store.Event{{Tick: 0, Type: "world.created", Payload: payload}}); err != nil {
+		t.Fatal(err)
+	}
+	st.Close()
 
 	before, err := OpenForMigration(dir)
 	if err != nil {
@@ -128,8 +136,8 @@ func TestMigrateV4ManifestOnlyPreservesTerrain(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !res.ManifestOnly {
-		t.Fatal("a v4 source must take the manifest-only path")
+	if !res.Translated {
+		t.Fatal("a v4 source must take the translation path")
 	}
 
 	after, err := Open(dir)
@@ -151,14 +159,6 @@ func TestMigrateV4ManifestOnlyPreservesTerrain(t *testing.T) {
 	}
 	if strings.Contains(string(raw), "terrain_gen") {
 		t.Errorf("terrain_gen must stay absent from a migrated manifest:\n%s", raw)
-	}
-	db, err := os.ReadFile(dbPath)
-	if err != nil || string(db) != "event log bytes" {
-		t.Error("the manifest-only migration must leave world.db untouched")
-	}
-	// No archive is minted: nothing changed but the manifest.
-	if _, err := os.Stat(filepath.Join(dir, "world.v4.db")); !os.IsNotExist(err) {
-		t.Error("a manifest-only migration must not archive the database")
 	}
 	// Idempotence guard: a second run has nothing to migrate.
 	if _, err := Migrate(dir); err == nil || !strings.Contains(err.Error(), "nothing to migrate") {

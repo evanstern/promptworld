@@ -1,19 +1,19 @@
 ---
 name: world-migration-transforms
-description: The four transform algorithms in detail — sim.TransformV1Snapshot (v1→v2), TransformV2State (v2→v3), TransformV3State (v3→v4), and Migrate's manifest-only v4→v5 branch — what each carries verbatim, resets, or grants
+description: The transform algorithms in detail — sim.TransformV1Snapshot (v1→v2), TransformV2State (v2→v3), TransformV3State (v3→v4), and migrateTranslate's type-column rewrite (v4/v5→v6) — what each carries verbatim, resets, grants, or renames
 kind: component
 sources:
   - internal/sim/migrate.go
   - internal/world/migrate.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 ---
 
 # World migration: the four transforms
 
 Split from [[world-migration]] (summary-style, corpus-spec v2): the actual
 transform algorithms — decoder shapes, what each carries verbatim versus
-resets versus grants, and why the v4→v5 step is different in kind (no
-`sim.TransformV4State` exists at all).
+resets versus grants, and why the v4/v5→v6 step is different in kind (a log
+TRANSLATION — no `sim.TransformV4State`/`TransformV5State` exists at all).
 
 ## The transforms
 
@@ -106,20 +106,19 @@ the explored bitmaps) then:
   recorded for the planning tier — `data-model.md`'s "dead agents: map
   retained" invariant already wants the field present).
 
-**The v4→v5 step** (spec 068 C11, `Migrate`'s own early branch — there is no
-`sim.TransformV4State`, because nothing in `sim.State` changes): before any of the
-snapshot-cut ceremony (see [[world-migration-catalog]]) runs, `Migrate` checks
-`w.Manifest.FormatVersion == 4` and, if so, takes a SEPARATE short path: bump
-`Manifest.FormatVersion` to the current version (5), write the manifest, and return
-`MigrateResult{Name, Seed, ManifestOnly: true}` — every other `MigrateResult` field
-(`AgentsCarried`, `Tick`, `SourceEvents`, `ArchivePath`) stays zero, since none of
-that ceremony ran. No archive is created, no fresh log is written, no covering
-snapshot is cut — cutting one here would imply a state break that does not exist,
-and would demand a covering snapshot for what is otherwise a no-op. The world's
-`terrain_gen` field stays exactly what it was (absent, for every world that predates
-spec 068) — a migrated v5 world therefore keeps generating LEGACY terrain
-([[worldmap-generation]]), the whole point being that only a `promptworld new`-born
-world gets the marsh/sand pass.
+**The v4/v5→v6 step** (spec 094, `migrateTranslate` in
+`internal/world/migrate.go` — no `sim.TransformV5State` exists: nothing in
+`sim.State` changes, the LOG's vocabulary does): `Migrate` routes any
+`FormatVersion >= 4` source to translation (v4→v5 was spec 068's
+manifest-only bump, so v4 and v5 logs are content-identical — both speak
+log format 1). It streams every event into a fresh DB at
+`world.db.translating` with the type column mapped through
+`sim.LogFormatV1Renames` and seq/tick/payload/wall_time verbatim; copies
+meta rows and the latest verified snapshot; stamps `log_format_version` 2;
+verifies the result replays exactly as boot will; then archives the source
+(`world.v4.db`/`world.v5.db`) and swaps the translation in, returning
+`MigrateResult{Translated: true}`. `terrain_gen` stays exactly what it was
+(absent for pre-068 worlds ⇒ LEGACY terrain, [[worldmap-generation]]).
 
 
 ## Connections
@@ -128,4 +127,5 @@ Back to [[world-migration]] and its sibling child [[world-migration-catalog]]
 (design-pin summary + write-to-disk mechanics). [[sim-state-reducer]] applies
 `world.migrated` as a wholesale replace; [[mental-maps]] owns the
 `MentalMap`/`PlaceFact` types v3→v4 constructs; [[worldmap-generation]] is
-what the v4→v5 bump guards.
+what the spec-068 bump guards; [[event-log]] owns the log-format stamp and
+the rename doctrine the v4/v5→v6 translation discharges.

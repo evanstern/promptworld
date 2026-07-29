@@ -8,7 +8,7 @@ sources:
   - internal/guardian/turn.go
   - internal/sim/executor.go
   - internal/daemon/daemon.go
-verified_against: 74fe956813aa6be54e65156ae9bfcb91745cbb8d
+verified_against: 11de2a4aa93d4c901a8dd90369151fa23fd056d0
 ---
 
 # Guardian survival watches
@@ -59,7 +59,7 @@ player configuration:
   per watch per batch, exactly like a structural order.
 - **`runSurvivalTrigger`** (vs. `runTrigger`) differs from an ordinary
   trigger in three ways that follow from a survival watch's nature: (1) it
-  lands NO `metatron.order_triggered` — the watch is non-expiring and
+  lands NO `guardian.order_triggered` — the watch is non-expiring and
   non-consuming, so it never transitions out of `active`, ever; (2) there is
   NO empty-bank precheck — the turn ALWAYS runs (the edge case: "the turn
   still happens… it must not burn the match silently"), so at zero charges

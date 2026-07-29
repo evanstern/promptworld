@@ -39,7 +39,7 @@ type Injector interface {
 
 // LoopControl is the clock-control surface the meta tools drive (spec 029 US5,
 // R10 / data-model §5): the SAME *sim.Loop.Do the IPC server uses, so a
-// metatron-issued pause/start/adjust_speed lands the loop's own clock.paused /
+// guardian-issued pause/start/adjust_speed lands the loop's own clock.paused /
 // clock.resumed / clock.speed_set events and is indistinguishable from a console
 // one. Injected at New — a second interface over the loop the daemon already
 // passes as Injector (the mind.New(loop, loop) precedent); a test seam otherwise.
@@ -145,7 +145,7 @@ type Guardian struct {
 	story      []string // recent chronicle entries (TASK-11), prompt grounding
 	// charterFP / ended mirror State.CharterFingerprint / State.Ended (spec
 	// 044 US2): the turn worker's charter observation (observeCharter) reads
-	// them under stateMu to decide whether a metatron.charter_observed emission
+	// them under stateMu to decide whether a guardian.charter_observed emission
 	// is due, without racing the replica the absorb goroutine owns.
 	// skillsFP is the same mirror for State.SkillsFingerprint (spec 077 —
 	// observeSkills, the charter observation's twin).
@@ -405,7 +405,7 @@ func (mt *Guardian) mirrorState() {
 	mt.night = mt.replica.Night
 	// The charter mirror only ever moves FORWARD to a recorded value: after
 	// observeCharter's optimistic set, batches that predate the just-landed
-	// metatron.charter_observed still absorb with the replica's OLD (possibly
+	// guardian.charter_observed still absorb with the replica's OLD (possibly
 	// empty) fingerprint — overwriting would re-open the emission window for
 	// an already-recorded revision. The landed event is durable by the time
 	// the optimistic set happens, so the replica always catches up.

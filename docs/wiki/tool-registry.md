@@ -8,7 +8,7 @@ sources:
   - internal/tool/derive.go
   - internal/tool/roster.go
   - internal/sim/toolcheck.go
-verified_against: 74fe956813aa6be54e65156ae9bfcb91745cbb8d
+verified_against: 11de2a4aa93d4c901a8dd90369151fa23fd056d0
 ---
 
 # Tool registry

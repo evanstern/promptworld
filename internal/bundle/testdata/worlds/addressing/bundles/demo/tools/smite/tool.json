@@ -4,7 +4,7 @@
   "params": [
     {"name": "target", "kind": "text", "required": true, "description": "a class@X,Y address (structure, pile, or terrain)"}
   ],
-  "events": ["metatron.entity_removed"],
+  "events": ["guardian.entity_removed"],
   "charges": 1,
   "effects": [
     {"kind": "remove_entity", "target": "{args.target}"}

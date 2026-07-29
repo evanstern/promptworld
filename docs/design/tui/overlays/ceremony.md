@@ -2,7 +2,7 @@
 title: Overlay — unlock ceremony
 class: overlay
 status: shipped
-verified_against: 6e83f579db2b448c9c59b15575bf564b1e9b1852
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 sources:
   - internal/tui/tui.go
   - internal/tui/views.go
@@ -26,7 +26,7 @@ interrupt policy, celebrating a milestone the player earned.
 │                                                                        │
 │  ┌─ report card · the-law ──────────────────────────────────────┐    │
 │  │ ✓ a village law adopted (meeting.proposal_resolved · seq 812)   │    │
-│  │ ✓ a player-authored charter in force (metatron.charter_observe…│    │
+│  │ ✓ a player-authored charter in force (guardian.charter_observe…│    │
 │  └────────────────────────────────────────────────────────────────┘   │
 │                                                                        │
 │                              esc dismiss · q — the world keeps running│

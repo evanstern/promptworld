@@ -306,7 +306,7 @@ func TestFaithReplayByteIdentical(t *testing.T) {
 			d.ExpiresTick = 80 + 3*ticksPerGameDay
 			return d
 		}(), 0, 80)},
-		90:  {{Tick: 90, Type: "metatron.item_granted", Payload: mustPayload(ItemGrantedPayload{Agent: Ref(0), Kind: "planks", Qty: 4})}},
+		90:  {{Tick: 90, Type: "guardian.item_granted", Payload: mustPayload(ItemGrantedPayload{Agent: Ref(0), Kind: "planks", Qty: 4})}},
 		100: {{Tick: 100, Type: "agent.built", Payload: mustPayload(BuiltPayload{Agent: Ref(0), Kind: "shelter", X: 10, Y: 10})}},
 		300: {issuedEvent(func() Directive {
 			d := validDirective("dir-300-0", "dsg-70-0", []int{2}, 300)
@@ -407,7 +407,7 @@ func TestFaithRegenCadenceTable(t *testing.T) {
 // pure, non-mutating (the TestGuardianChargeRegenTicksMatchesExecutor shape).
 func regenFires(s *State, tick int64) bool {
 	for _, e := range stepEvents(s, s.m, tick) {
-		if e.Type == "metatron.charge_regenerated" {
+		if e.Type == "guardian.charge_regenerated" {
 			return true
 		}
 	}
@@ -530,7 +530,7 @@ func TestRegenEventShapeUnchanged(t *testing.T) {
 	s := NewState(11, testMap(11))
 	s.GuardianCharges = 1
 	for _, e := range stepEvents(s, s.m, 6*3600) {
-		if e.Type == "metatron.charge_regenerated" {
+		if e.Type == "guardian.charge_regenerated" {
 			if string(e.Payload) != "{}" {
 				t.Fatalf("payload = %s, want empty {}", e.Payload)
 			}

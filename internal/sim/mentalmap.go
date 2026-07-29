@@ -4,7 +4,7 @@ package sim
 // an explored-terrain bitmap plus a list of known place-facts with provenance
 // and last-seen ticks. Reducer-owned world state riding Agent.Map: facts are
 // mutated ONLY by recorded knowledge events (agent.saw and, in later phases,
-// agent.map_corrected / social.place_told / metatron.place_revealed), while
+// agent.map_corrected / social.place_told / guardian.place_revealed), while
 // explored bits are silent derived bookkeeping inside existing reducer arms
 // (research D2 — the relation/idle-stamp precedent). Everything here is a pure
 // function of its inputs so live and replay agree byte-for-byte.
@@ -552,7 +552,7 @@ func tellablePlaces(s *State, teller, listener int, tick int64) []PlaceFact {
 	return out
 }
 
-// PlaceRevealedPayload — metatron.place_revealed (spec 041 FR-014, contracts
+// PlaceRevealedPayload — guardian.place_revealed (spec 041 FR-014, contracts
 // §1): a divine place grant riding a send_vision batch through the
 // InjectSocial door. Facts carries the revealed places in canonical
 // (Kind, X, Y) order; the emitter (the guardian's vision lander) bakes only

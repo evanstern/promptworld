@@ -7,7 +7,7 @@ sources:
   - internal/guardian/guardian_test.go
   - internal/guardian/guardian_gaps_test.go
   - internal/guardian/orders_test.go
-verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 ---
 
 # Guardian behavior & standing-order suites
@@ -31,7 +31,7 @@ converse-never-touches-the-clock guarantee (`TestMetaToolsLandThroughLoopControl
 `TestMetaToolStartSpeedFailureStopsBeforeResume`, `TestConverseTurnNeverTouchesTheClock`,
 `TestMetaToolLoopError`), spec 041's `send_vision` place grant
 (`TestVisionPlaceRevealLands`: the full triple lands one atomic
-nudge+memory+`metatron.place_revealed`+companion-memory batch and the
+nudge+memory+`guardian.place_revealed`+companion-memory batch and the
 target's map gains the revealed fact; `TestVisionPartialPlaceRefused`: a
 partial `place_kind`/`place_x`/`place_y` triple is refused before anything
 lands, charges untouched; `TestVisionFalsePlaceRefused`: the reducer dry-run
@@ -52,7 +52,7 @@ serialized vocabulary, spec 052 ruling 2; the default reproduces 1024). The
 tool-loop retry matrix itself lives in `internal/toolloop/retry_test.go`
 ([[tool-loop]]), with the mind-side twins in `internal/mind/mind_test.go`. `guardian_gaps_test.go` closes what
 that suite left untested: `TestChargeMirrorAccrualAndCap` drives
-`metatron.charge_regenerated`/`metatron.nudged` through `Observe` → `run()` →
+`guardian.charge_regenerated`/`guardian.nudged` through `Observe` → `run()` →
 `mirrorState` and proves the bank accrues and caps at `sim.GuardianChargeCap`
 without a sim executor; `TestTurnBusyConcurrent` runs two real goroutines
 against the `turnBusy` CAS (channel-gated, meaningful under `-race`) to prove
@@ -72,7 +72,7 @@ door validation (duplicate id, bad origin, empty event_types, TTL bounds, agent
 range, over-long condition/action, and the 3-active player cap with system-origin
 exemption); `TestGuardianOrderLifecycle` walks active→terminal transitions and the
 cancel/expiry/trigger race (exactly one terminal lands); `TestGuardianOrderExpiryExecutor`
-proves the executor emits `metatron.order_expired` as a pure function of state+tick;
+proves the executor emits `guardian.order_expired` as a pure function of state+tick;
 `TestGuardianOrdersSnapshotUpgrade` proves a pre-029 snapshot loads with empty order
 state; `TestGuardianOrdersReplayIdentically` proves from-genesis replay reconstructs
 the order set identically; `TestGuardianOrderPrune` pins the retain-32 rule.

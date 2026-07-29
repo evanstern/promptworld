@@ -16,7 +16,7 @@ sources:
   - internal/tui/tui.go
   - internal/tui/digest.go
   - internal/tui/grammar.go
-verified_against: 74fe956813aa6be54e65156ae9bfcb91745cbb8d
+verified_against: 11de2a4aa93d4c901a8dd90369151fa23fd056d0
 ---
 
 # Guardian report card
@@ -34,7 +34,7 @@ stopping-point consumer on the digest worker's own notify-consumer pattern
 (the `digestWorker` shape — `cardQ`, `reportCardWorker`). The absorb
 goroutine collects the guardian's own recorded activity into a bounded
 `cardTrail` ring (`cardTrailMax` 48 — `cog.tool_call` records from guardian
-turns, landed `metatron.*` acts) and fires a bounded card job at three
+turns, landed `guardian.*` acts) and fires a bounded card job at three
 stopping points: `run.ended`, `curriculum.exercise_passed`, and a
 `clock.paused` episode (debounced — at most one card per pause episode via
 `cardPauseSpent`, re-armed on `clock.resumed`). Both trigger scans run on
@@ -111,9 +111,10 @@ event (`guardian.report_card`, `curriculum.exercise_passed`, `run.ended`) —
 a fresh NOTE additionally sets the existing unseen-badge flag
 (`guardianUnseen`) when the guardian pane isn't visible: at most a badge
 between stopping points, never a takeover (FR-006). `guardian.report_card`
-also gets its own [[tui-client]] digest-registry entry and joins a new
-`"guardian"` namespace in `familyByNamespace` (guardian voice, the
-`curriculum` precedent) — the frozen `metatron.*` family is untouched.
+also gets its own [[tui-client]] digest-registry entry in the `"guardian"`
+namespace of `familyByNamespace` (guardian voice, the `curriculum`
+precedent) — a namespace that, since spec 094's rename, also carries the 13
+world-action types formerly under `metatron.*`.
 
 ## Connections
 

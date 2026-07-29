@@ -54,17 +54,17 @@ func BuildMiracleBatch(s *sim.State, kind string, p MiracleParams, gratis bool) 
 
 	switch kind {
 	case "time_snap":
-		main = store.Event{Type: "metatron.time_snapped", Payload: mustJSON(sim.TimeSnappedPayload{
+		main = store.Event{Type: "guardian.time_snapped", Payload: mustJSON(sim.TimeSnappedPayload{
 			ToTick: p.ToTick, Gratis: gratis})}
 		recipients = s.LivingAgents()
 		text = memSnapped
 	case "give_item":
-		main = store.Event{Type: "metatron.item_granted", Payload: mustJSON(sim.ItemGrantedPayload{
+		main = store.Event{Type: "guardian.item_granted", Payload: mustJSON(sim.ItemGrantedPayload{
 			Agent: sim.Ref(p.Agent), Kind: p.Item, Qty: p.Qty, Gratis: gratis})}
 		recipients = []int{p.Agent}
 		text = grantMemoryText(p.Qty, p.Item)
 	case "move":
-		main = store.Event{Type: "metatron.entity_moved", Payload: mustJSON(sim.EntityMovedPayload{
+		main = store.Event{Type: "guardian.entity_moved", Payload: mustJSON(sim.EntityMovedPayload{
 			Class: p.Class, X: p.X, Y: p.Y, ToX: p.ToX, ToY: p.ToY, Gratis: gratis})}
 		if p.Class == "villager" {
 			if idx := s.VillagerAt(p.X, p.Y); idx >= 0 {
@@ -73,7 +73,7 @@ func BuildMiracleBatch(s *sim.State, kind string, p MiracleParams, gratis bool) 
 			}
 		}
 	case "remove":
-		main = store.Event{Type: "metatron.entity_removed", Payload: mustJSON(sim.EntityRemovedPayload{
+		main = store.Event{Type: "guardian.entity_removed", Payload: mustJSON(sim.EntityRemovedPayload{
 			Class: p.Class, X: p.X, Y: p.Y, Gratis: gratis})}
 		// No perception memory in v1 (no villager is directly affected).
 	default:

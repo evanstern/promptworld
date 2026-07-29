@@ -533,7 +533,7 @@ func EvaluateRubric(s *State, def ExerciseDefinition, tick int64) []RubricTerm {
 // firstNightRubric is FR-004's condition set over state facts: the
 // dawn-of-day-2 boundary, the zero-deaths ledger, and a player watch order
 // placed before night one fell (the ratified stage-1 ceiling amendment makes
-// monitor_and_act playable at stage-1). The definition's metatron.nudged
+// monitor_and_act playable at stage-1). The definition's guardian.nudged
 // term has no durable state trace (the nudged reducer arm only spends the
 // charge), so the direction condition reads order evidence alone — exactly
 // the conditions FR-004 pins.
@@ -550,7 +550,7 @@ func firstNightRubric(s *State, tick int64) []RubricTerm {
 			Met: tick >= dawn2 && len(s.Deaths) == 0 && !s.Ended, Count: daysStarted},
 		{Label: "no villager dies", Event: "agent.died",
 			Met: len(s.Deaths) == 0, Count: len(s.Deaths)},
-		{Label: "a watch set before nightfall", Event: "metatron.order_placed",
+		{Label: "a watch set before nightfall", Event: "guardian.order_placed",
 			Met: watch != nil, Count: watchCount},
 	}
 }
@@ -618,7 +618,7 @@ func charterInForce(s *State) RubricTerm {
 	if s.CharterFingerprint != "" {
 		observed = 1
 	}
-	return RubricTerm{Label: "a player-authored charter in force", Event: "metatron.charter_observed",
+	return RubricTerm{Label: "a player-authored charter in force", Event: "guardian.charter_observed",
 		Met: s.CharterFingerprint != "" && s.CharterCustom, Count: observed}
 }
 
@@ -629,7 +629,7 @@ func skillsInForce(s *State, label string) RubricTerm {
 	if s.SkillsFingerprint != "" {
 		observed = 1
 	}
-	return RubricTerm{Label: label, Event: "metatron.skills_observed",
+	return RubricTerm{Label: label, Event: "guardian.skills_observed",
 		Met: s.SkillsFingerprint != "", Count: observed}
 }
 
@@ -691,7 +691,7 @@ func coldDawnRubric(s *State, tick int64) []RubricTerm {
 		surviveToDawn(s, tick, 2),
 		{Label: "no villager freezes", Event: "agent.died",
 			Met: exposure == 0, Count: exposure},
-		{Label: "a watch set before nightfall", Event: "metatron.order_placed",
+		{Label: "a watch set before nightfall", Event: "guardian.order_placed",
 			Met: watch != nil, Count: watchCount},
 	}
 }
@@ -731,7 +731,7 @@ func toolsmithRubric(s *State) []RubricTerm {
 	}
 	return []RubricTerm{
 		skillsInForce(s, "your skill file guides the guardian"),
-		{Label: "the guardian acts under it", Event: "metatron.order_placed",
+		{Label: "the guardian acts under it", Event: "guardian.order_placed",
 			Met: acted != nil, Count: actedCount},
 		noDeaths(s),
 	}
@@ -854,10 +854,10 @@ func boundaryDue(def ExerciseDefinition, nextTick int64) bool {
 // the sanctioned constructors ONLY, keyed by term event type (spec 077
 // FR-004, data-model §4) — no freehand EvidenceRef anywhere:
 //
-//	metatron.order_placed     → OrderPlacedEvidence over the exercise's
+//	guardian.order_placed     → OrderPlacedEvidence over the exercise's
 //	                            qualifying order (evidenceOrder below)
-//	metatron.charter_observed → CharterEvidenceFromState
-//	metatron.skills_observed  → SkillsObservedEvidence
+//	guardian.charter_observed → CharterEvidenceFromState
+//	guardian.skills_observed  → SkillsObservedEvidence
 //
 // ok=false when a satisfied charter/skills term's coordinates are not yet on
 // state (a pre-077 snapshot whose observation predates the Seq/Tick stamp):
@@ -876,19 +876,19 @@ func rubricEvidence(s *State, def ExerciseDefinition, tick int64) ([]EvidenceRef
 		}
 		seen[term.Event] = true
 		switch term.Event {
-		case "metatron.order_placed":
+		case "guardian.order_placed":
 			if o := evidenceOrder(s, def); o != nil {
 				if ref, err := OrderPlacedEvidence(*o); err == nil {
 					evidence = append(evidence, ref)
 				}
 			}
-		case "metatron.charter_observed":
+		case "guardian.charter_observed":
 			ref, ok := CharterEvidenceFromState(s)
 			if !ok {
 				return nil, false
 			}
 			evidence = append(evidence, ref)
-		case "metatron.skills_observed":
+		case "guardian.skills_observed":
 			ref, ok := SkillsObservedEvidence(s)
 			if !ok {
 				return nil, false
