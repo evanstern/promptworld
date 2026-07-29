@@ -3,10 +3,10 @@ id: TASK-134
 title: >-
   Event-log format_version + migration path (prerequisite for the guardian
   rename)
-status: In Progress
+status: To Do
 assignee: []
 created_date: '2026-07-25 19:29'
-updated_date: '2026-07-29 19:18'
+updated_date: '2026-07-25 19:36'
 labels:
   - replay-doctrine
   - review-2026-07-25
