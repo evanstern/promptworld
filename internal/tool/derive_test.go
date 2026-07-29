@@ -361,3 +361,19 @@ func TestGuardianToolGuidanceDrift(t *testing.T) {
 		t.Error("empty roster should render empty guidance")
 	}
 }
+
+// TestGuardianToolGuidanceGiveItemHeadroomGloss (spec 095 FR-002): the give_item
+// argument hint points the model at the targeting digest's carry-headroom field
+// and restates the door's reject-whole rule (FR-011), so the model reads the cap
+// before it picks a quantity instead of learning it only from a bounced attempt.
+func TestGuardianToolGuidanceGiveItemHeadroomGloss(t *testing.T) {
+	wm, _ := Lookup("work_miracle")
+	restricted := []Tool{RestrictEnum(wm, "kind", []string{"give_item"})}
+	g := GuardianToolGuidance(restricted)
+	if !strings.Contains(g, "carry headroom") {
+		t.Errorf("give_item guidance omits a carry-headroom reference: %q", g)
+	}
+	if !strings.Contains(g, "refused whole") {
+		t.Errorf("give_item guidance omits the reject-whole rule (FR-011): %q", g)
+	}
+}
