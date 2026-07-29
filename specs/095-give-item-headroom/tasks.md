@@ -18,5 +18,5 @@
 
 ## Phase 3: Grounding + gates
 
-- [ ] T004 Re-verify + re-pin touched wiki notes; player-docs probe; merge-drift
+- [X] T004 Re-verify + re-pin touched wiki notes; player-docs probe; merge-drift
   pr gate exit 0.
