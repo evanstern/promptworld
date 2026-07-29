@@ -1,10 +1,10 @@
 ---
 id: TASK-168
 title: 'Policy: every task opens with a brief gist plus ''As a …'' use cases'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-29 16:09'
-updated_date: '2026-07-29 16:10'
+updated_date: '2026-07-29 17:50'
 labels: []
 dependencies: []
 ordinal: 136000
@@ -38,3 +38,9 @@ Scope: this project only for now — a repo-local policy, not a praxisflux plugi
 - [ ] #3 The policy is scoped to this repo only — no praxisflux plugin or template changes
 - [ ] #4 spec-phase guidance points at the gist section as the primary statement of intent for a task the spec agent didn't write
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Sweep dispatch (card-format-policy runbook, signed-off 2026-07-29): tier=Sonnet — routine class per constitution Principle V (docs-only policy authoring, no code, single surface). Spec 087-card-format-policy.
+<!-- SECTION:NOTES:END -->
