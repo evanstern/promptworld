@@ -68,7 +68,9 @@ evaluation (`EvaluateUnlock`) happens at emission time, never on re-apply.
 
 **Tuning snapshot** (spec 048, [[world-tuning]]): `sim.tuning_applied`
 joins this validate-not-clamp family: the payload is always the FULL
-effective five-dial set (never a delta, never re-clamped here — clamping
+effective dial set — the five base dials plus, since spec 098, the resolved
+dream block ([[private-dreams]]; a pre-098 event's absent block stays nil ≡
+defaults) — (never a delta, never re-clamped here — clamping
 is `ParseTuning`'s job daemon-side), so the arm is a pure, idempotent
 `s.Tuning = &TuningState{...}` assignment — replay re-applies it
 identically, and the daemon boot seed never double-counts. `State.Tuning

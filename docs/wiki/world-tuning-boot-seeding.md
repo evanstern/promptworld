@@ -30,11 +30,14 @@ values ([[daemon-lifecycle]]). Behavior:
   invariant (FR-001).
 - **Present file**: `ParseTuning` clamps and warns (each warning printed as
   `daemon: <warning>`) or fails boot. The resolved effective set is compared
-  against `state.EffectiveTuning()`; identical sets append nothing (a
-  restart with an unchanged file never grows the log), and a differing set
-  prints one `daemon: tuning.json applied: <all five fields>` line, builds
-  the event via `sim.NewTuningEvent(state.Tick, *parsed)`, applies it, and
-  appends it.
+  against `state.EffectiveTuning()` — via `TuningState.Equal` since spec 098
+  (the dream pointer block resolves by value; bare `==` would re-append on
+  every restart) —; identical sets append nothing (a restart with an
+  unchanged file never grows the log), and a differing set prints one
+  `daemon: tuning.json applied: <the full dial set, dream block included>`
+  line, builds the event via `sim.NewTuningEvent(state.Tick, *parsed)`
+  (which always carries the RESOLVED spec-098 dream block, [[private-dreams]]),
+  applies it, and appends it.
 
 ## The genesis pin
 
@@ -69,5 +72,5 @@ seed, before the loop and `mind.New`. Upstream design record:
 `specs/048-tuning-manifest/` (spec.md, data-model.md, `contracts/tuning.md`),
 and `docs/design/control-surface-and-calibration.md` §6.
 
-Back to [[world-tuning]] for the five promoted dials, `TuningState`, the
+Back to [[world-tuning]] for the promoted dials, `TuningState`, the
 nil-safe accessors, and the manifest file's clamp table.

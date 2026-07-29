@@ -65,7 +65,10 @@ split into its own STATE-MUTATING arm: the refused intent never landed, so
 `Intent`/`IdleSince` stay untouched, but the ring gains the appended-closed
 `"rejected"` record (see [[sim-state-intent-lifecycle]]) — deterministic from the event alone, so
 replay-safe.
-Unknown types — including `daemon.*` and `world.created` — are recorded
+The spec-098 dream arms (`agent.salience_revised`/`agent.memory_merged`,
+dispatched from the same switch to `applyDream`, `internal/sim/dream.go`)
+apply the nightly clustering pass's recorded outcomes — [[private-dreams]]
+owns them. Unknown types — including `daemon.*` and `world.created` — are recorded
 history but state no-ops, so new event types never break old replay.
 
 ## Connections

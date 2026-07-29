@@ -46,7 +46,10 @@ door validates targets/text/TTL/cap/claim and spends the charge stake;
 it rides atomically with per-target `OriginOmen` companions), while
 `prophecy.fulfilled`/`prophecy.failed`/`faith.changed` are
 executor-emitted and deliberately absent — whitelist absence is what
-refuses a forged verdict or faith movement —
+refuses a forged verdict or faith movement — and `agent.salience_revised`/
+`agent.memory_merged` (spec 098, [[private-dreams]]) widen the boundary by
+two: the nightly dream pass's recorded habituation/merge outcomes, injected
+by the consolidation driver, reducer-total like the consolidation family —
 (since spec 036 whitelist membership is also readable from outside the package
 via `InjectableSocialEvent(t)`, the single-source accessor both the tool
 coverage gate and the bundle boot gate ([[bundle-tools]]) enforce against).
