@@ -39,6 +39,6 @@ not alias; ship the REAL rename here).
 - [X] T009 Doctrine in wiki (event-log / sim-state-reducer notes): bump
   requirement, translate-vs-snapshot-cut decision rule, cross-link spec 092;
   definition-site comments (FR-006).
-- [ ] T010 Full gates: go test -race ./..., replay harness, TestCatalogSweep;
+- [X] T010 Full gates: go test -race ./..., replay harness, TestCatalogSweep;
   re-pin all touched wiki notes; player-docs refresh if probed stale; merge-drift
   pr gate exit 0 (FR-007).
