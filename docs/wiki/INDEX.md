@@ -22,7 +22,8 @@ that note (re-pin with `/grounding-wiki:wiki-update`).
     - [[sim-state-outcome-fields]] — split from sim-state-world-fields: run-outcome & progression fields — Deaths/RunEnd, charter/skills observation state, morgue epilogues, curriculum passes/unlocks, tuning, report card
   - [[sim-state-apply-agents]] — genesis + core per-agent Apply arms: movement/eating/talk/needs/death, spec-083 neglect anchors, v2 crafting, v3 storage events, walls
   - [[sim-state-intent-lifecycle]] — intent-ring closure arms (build_failed, stampIntentOutcome, recovery_stalled), hail family, death/run-end effects
-  - [[sim-state-apply-world]] — map/scenario fields + world/governance dispatch: mental-maps, gru/governance/miracle/guardian-order, curriculum, tuning, world.migrated
+  - [[sim-state-apply-world]] — map/scenario fields + world/governance dispatch: mental-maps, gru/governance/miracle, designation/faith/prophecy plan dispatch, world.migrated
+    - [[sim-state-apply-guardian-records]] — split from sim-state-apply-world: guardian-facing record arms — standing orders, charter_observed, morgue epilogues, report card, curriculum unlocks, tuning snapshot
   - [[sim-state-cognition-arms]] — cognition/telemetry arms: memory growth, journal family, plan family, cog.* no-ops
 - [[deterministic-rng]] — per-decision PCG from (seed, purpose, tick, index); no RNG state
 - [[executor]] — agent bodies: needs, intents, death, terrain overlays, walls/axes/paths
