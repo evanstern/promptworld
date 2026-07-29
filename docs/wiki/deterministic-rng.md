@@ -4,7 +4,7 @@ description: Stateless randomness — every random decision is a PCG seeded from
 kind: pattern
 sources:
   - internal/sim/rng.go
-verified_against: 1e71b77f104dda982aa407b28ad2c994219e90d0
+verified_against: 4e160b902dd96a6b4a8f4342ae75cdcbc8048c53
 ---
 
 # Deterministic RNG

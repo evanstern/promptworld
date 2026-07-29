@@ -9,7 +9,7 @@ sources:
   - internal/sim/journal.go
   - internal/sim/morgue.go
   - internal/sim/miracles.go
-verified_against: 63390f122bdf4e1b7abf518a8be83de725f06230
+verified_against: 4e160b902dd96a6b4a8f4342ae75cdcbc8048c53
 ---
 
 # Sim state & reducer

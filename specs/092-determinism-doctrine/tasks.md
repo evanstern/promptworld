@@ -23,6 +23,6 @@ into the spec; minimal code = comments only).
 
 ## Phase 3: Grounding + gates
 
-- [ ] T005 Re-pin all touched wiki notes; regenerate docs/player pages the probe
+- [X] T005 Re-pin all touched wiki notes; regenerate docs/player pages the probe
   flags (README is a pinned input); merge-drift pr gate exits 0 from the
   worktree — FR-005.

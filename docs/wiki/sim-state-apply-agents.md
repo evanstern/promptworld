@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/state.go
   - internal/sim/agents.go
-verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
+verified_against: 4e160b902dd96a6b4a8f4342ae75cdcbc8048c53
 ---
 
 # Sim state: core agent Apply arms
