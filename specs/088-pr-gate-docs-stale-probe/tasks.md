@@ -25,7 +25,7 @@ within a phase are sequential (same files), not [P].
 
 ## Phase 2: User Story 1 — non-wiki pinned inputs gate (P1)
 
-- [ ] T004 [US1] Fixtures F1, F2, F9 in `scripts/check-merge-drift.test.mjs`:
+- [X] T004 [US1] Fixtures F1, F2, F9 in `scripts/check-merge-drift.test.mjs`:
   README-only branch with stale checker blocks (`player-docs-stale`); declared
   spec-046 source with fresh checker passes; checker missing on README-only trigger
   blocks (`player-docs-env-error`). Existing 069/US2 no-trigger test must still pass
@@ -33,25 +33,25 @@ within a phase are sequential (same files), not [P].
 
 ## Phase 3: User Story 3 — history moves re-trigger (P2)
 
-- [ ] T005 [US3] Fixtures F3, F4: branch tip containing a merge of main with no
+- [X] T005 [US3] Fixtures F3, F4: branch tip containing a merge of main with no
   pinned-source diff paths invokes the checker (stale blocks; fresh passes — no
   false blocking).
 
 ## Phase 4: User Story 2 — design-reference pins block (P2)
 
-- [ ] T006 [US2] Add tui-design delegation to pr mode in
+- [X] T006 [US2] Add tui-design delegation to pr mode in
   `scripts/check-merge-drift.mjs`: on the trigger set from data-model.md, run
   `check-tui-design.mjs --changed <range> --json` (env-overridable path
   `CHECK_MERGE_DRIFT_TUI_DESIGN_CHECKER`), map exit 1 → blocking `tui-design-stale`
   (pages named from JSON), exit 2/missing → blocking `tui-design-env-error`; keep
   `tui-surface` warn (research D3; FR-002).
-- [ ] T007 [US2] Fixtures F5, F6, F7: design-pin drift blocks; re-pinned branch
+- [X] T007 [US2] Fixtures F5, F6, F7: design-pin drift blocks; re-pinned branch
   passes with warn-only reminder; combined pinned-input + history-move run emits
   each finding at most once (FR-004).
 
 ## Phase 5: Polish & verification
 
-- [ ] T008 Run the full quickstart validation: `node --test
+- [X] T008 Run the full quickstart validation: `node --test
   scripts/check-merge-drift.test.mjs` green; manual `pr` run from this worktree
   (which itself has a claim + spec commits) behaves per quickstart.md; re-verify +
   re-pin any wiki note listing `scripts/check-merge-drift.mjs` as a source
