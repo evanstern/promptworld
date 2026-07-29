@@ -24,6 +24,6 @@
   both exist; explicit deep coverage for one gather + one station goal per card
   AC#2); replay byte-identity for existing fixtures; go test -race ./... green
   (FR-005/FR-006).
-- [ ] T005 Wiki re-pins (executor*, event-types*, sim-state-intent-lifecycle
+- [X] T005 Wiki re-pins (executor*, event-types*, sim-state-intent-lifecycle
   notes — prose amendments where the failure taxonomy is described); player-docs
   probe; merge-drift pr gate exit 0.
