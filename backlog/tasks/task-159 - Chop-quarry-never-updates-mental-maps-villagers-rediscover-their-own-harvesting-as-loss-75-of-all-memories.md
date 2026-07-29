@@ -6,7 +6,7 @@ title: >-
 status: Done
 assignee: []
 created_date: '2026-07-26 21:02'
-updated_date: '2026-07-27 00:26'
+updated_date: '2026-07-29 18:10'
 labels: []
 dependencies: []
 priority: high
@@ -34,12 +34,12 @@ Spec: specs/081-first-person-harvest-memory
 - [x] #3 agent.map_corrected no longer fires for the actor or for agents who were within witnessRadius of the act when it happened; it still fires for agents who return later
 - [x] #4 Replay determinism holds: a fresh replay of an existing event log reproduces identical state (reducer contract respected)
 - [x] #5 Live verification on a fresh world: share of 'gone when you looked' memories drops to genuine return-discoveries only
-- [ ] #6 Spec phase: Setup
-- [ ] #7 Spec phase: Foundational (blocking prerequisites)
-- [ ] #8 Spec phase: User Story 1 — My own harvest is mine, in the first person (P1) 🎯 MVP
-- [ ] #9 Spec phase: User Story 2 — Watching a neighbor harvest is not a later mystery (P2)
-- [ ] #10 Spec phase: User Story 3 — Genuine return-discovery still works (P3, regression guard)
-- [ ] #11 Spec phase: Polish & Cross-Cutting
+- [x] #6 Spec phase: Setup
+- [x] #7 Spec phase: Foundational (blocking prerequisites)
+- [x] #8 Spec phase: User Story 1 — My own harvest is mine, in the first person (P1) 🎯 MVP
+- [x] #9 Spec phase: User Story 2 — Watching a neighbor harvest is not a later mystery (P2)
+- [x] #10 Spec phase: User Story 3 — Genuine return-discovery still works (P3, regression guard)
+- [x] #11 Spec phase: Polish & Cross-Cutting
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -48,6 +48,8 @@ Spec: specs/081-first-person-harvest-memory
 Spec'd + planned 2026-07-26: specs/081-first-person-harvest-memory (spec, plan, research, data-model, contracts/events.md, quickstart, tasks.md — 21 tasks). Implementation tier: Opus 4.8 per constitution V rubric — doctrine-adjacent behavior change (memory-formation/perception doctrine) + reducer/replay-contract surface spanning internal/sim executor+reducer and internal/mind absorb (research.md D7). Worktree .worktrees/task-159, branch task-159-first-person-harvest-memory (pushed).
 
 Implemented by spec-implementer @ Opus 4.8 (code 8495b34, wiki+player docs 4f5c926) — reducer act-time removal (actor + awake in-radius witnesses, provenance-blind), salChop/salQuarry=4 first-person act memories, mind absorb parity (also fixed latent gap: quarry now arms its actor), 9 new tests, go test ./... green, tui-design no-op, player-docs 13 fresh, merge-drift pr exit 0. 50 wiki notes re-pinned (11 body-updated). T018 live validation (fresh world sc081, seed 42, 9 game days, reflex-only): 98 chops → 98 first-person memories (SC-004 exact); 0 self-corrections (SC-001, baseline 103/103); 0 awake on-scene corrections — 11 in-radius correctors were all asleep at act tick, the designed exception (SC-002); loss memories 28% of all (was 75%), every one a genuine absent/asleep return-discovery (SC-003). SC-006 journal spot-check deferred to next LLM-backed world (scratch run had no LLM → no journals); causal chain fully evidenced mechanically. Quarry act path covered by unit tests (reflex-only run mints no quarry intents).
+
+spec-bridge sync: Setup: 1/1 · Foundational (blocking prerequisites): 2/2 · User Story 1 — My own harvest is mine, in the first person (P1) 🎯 MVP: 5/5 · User Story 2 — Watching a neighbor harvest is not a later mystery (P2): 5/5 · User Story 3 — Genuine return-discovery still works (P3, regression guard): 2/2 · Polish & Cross-Cutting: 6/6
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
