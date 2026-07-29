@@ -20,7 +20,7 @@
 
 ## Phase 3: Tests + grounding
 
-- [ ] T004 Failure test matrix (every enumerated goal × invalid/contested where
+- [X] T004 Failure test matrix (every enumerated goal × invalid/contested where
   both exist; explicit deep coverage for one gather + one station goal per card
   AC#2); replay byte-identity for existing fixtures; go test -race ./... green
   (FR-005/FR-006).
