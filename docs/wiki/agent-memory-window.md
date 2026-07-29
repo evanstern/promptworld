@@ -47,6 +47,11 @@ an explicit tone — `toneBath` (40), `toneOvenBuilt` (30), and spec 013's
 both the owner and nearby witnesses, alongside a trust/affection hit on the owner→taker
 relationship edge — the existing gossip and relation machinery carries a
 chest theft the same way it carries any other trust violation ([[social-fabric]]).
+Spec 096 added `salIntentFailed`, reusing `salShelter`'s own tier (6) rather
+than a fresh value — the generalized `agent.intent_failed` failure memory
+(every non-build goal's invalid-exit/contested resolution) is meant to carry
+the SAME working-memory pressure as `agent.build_failed`'s precedent, not a
+new one ([[executor-goals-and-intents]], [[event-types-agent-intents]]).
 
 Since spec 030, every memory also carries an `Origin` — a closed-vocabulary
 provenance class stamped at emission (`OriginAction`/`OriginWitness`/
