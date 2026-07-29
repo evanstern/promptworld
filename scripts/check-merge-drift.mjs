@@ -524,6 +524,93 @@ function wikiSourcesOverlap(branchFiles, wikiNotes) {
   return hits;
 }
 
+// ---------------------------------------------------------------------------
+// pr-mode docs-stale probe trigger set (spec 088, research D1/D2/D4)
+// ---------------------------------------------------------------------------
+
+// Union of every source a docs/player/ page declares via
+// promptworld-docs:source tags, read at the BRANCH TIP (research D1). This is
+// the "one named place" FR-001 requires: today's pinned inputs (README.md,
+// docs/llm-providers.md, spec 046 quickstart sources) are exactly whatever
+// the pages declare, so a future page gaining a source extends the trigger
+// with no edit here. Same tag grammar as
+// .claude/skills/player-docs/scripts/check-freshness.mjs's SOURCE_RE/
+// SOURCE_CONTENT_RE (path@40hex), parsed independently since this gate never
+// depends on that checker's internals beyond its published --json contract.
+function declaredPlayerDocsSources(tip, cwd) {
+  const sources = new Set();
+  const r = git(['ls-tree', '--name-only', tip, '--', 'docs/player/'], { cwd });
+  if (r.status !== 0) return sources;
+  const htmlPaths = r.stdout.split('\n').filter((l) => l.endsWith('.html'));
+  const sourceTagRe = /<meta\s+name="promptworld-docs:source"\s+content="([^"]*)">/;
+  for (const p of htmlPaths) {
+    const textRes = git(['show', `${tip}:${p}`], { cwd });
+    if (textRes.status !== 0) continue;
+    for (const line of textRes.stdout.split(/\r?\n/)) {
+      const m = line.match(sourceTagRe);
+      if (!m) continue;
+      const at = m[1].lastIndexOf('@');
+      const relPath = at === -1 ? m[1] : m[1].slice(0, at);
+      if (relPath) sources.add(relPath);
+    }
+  }
+  return sources;
+}
+
+// History-move predicate (FR-003, research D2): the branch's own diff vs
+// origin/main can gain no pinned-source paths yet still stale docs/player/ —
+// merging main INTO a pin-carrying branch is the recorded hazard (see
+// merge-main-into-pin-carrying-branches). Stateless and computable from the
+// commit graph alone (no persisted "last probe" timestamp — spec 051's
+// no-daemon design); over-triggering is harmless (a fresh probe just passes).
+function hasHistoryMove(originMainTip, tip, cwd) {
+  const r = git(['rev-list', '--merges', `${originMainTip}..${tip}`], { cwd });
+  return r.status === 0 && r.stdout.trim().length > 0;
+}
+
+// The union of every reason the player-docs freshness probe should run
+// (FR-001/003/004): the existing docs/wiki/ prefix rule, any source a
+// docs/player/ page declares at the branch tip, and a history move. Returns
+// the matched trigger reasons (for the finding message); an empty array means
+// "no trigger", preserving the current no-op behavior (SC-004). The caller
+// invokes the delegated checker AT MOST ONCE regardless of how many reasons
+// are returned here (FR-004 — dedup by construction, one call site).
+function computeDocsStaleTriggers(branchFiles, tip, originMainTip, cwd) {
+  const reasons = [];
+  if (branchFiles.some((f) => f.startsWith('docs/wiki/'))) {
+    reasons.push('branch changes docs/wiki/');
+  }
+  const declared = declaredPlayerDocsSources(tip, cwd);
+  const declaredHits = branchFiles.filter((f) => declared.has(f));
+  if (declaredHits.length) {
+    reasons.push(`branch touches declared docs/player/ source(s): ${declaredHits.join(', ')}`);
+  }
+  if (hasHistoryMove(originMainTip, tip, cwd)) {
+    reasons.push('branch tip contains a history move (merge of main-side history since diverging)');
+  }
+  return reasons;
+}
+
+// Union of every source a docs/design/tui/ page pins via its `sources:`
+// frontmatter list, read at the BRANCH TIP — same frontmatter grammar as the
+// wiki notes (parseFrontmatter, defined below), just a different directory.
+// Used only to widen the tui-design delegation TRIGGER (research D3); the
+// pin-vs-branch predicate itself stays delegated wholesale to
+// check-tui-design.mjs (one authority, not reimplemented here).
+function loadDesignReferenceSources(tip, cwd) {
+  const sources = new Set();
+  const r = git(['ls-tree', '-r', '--name-only', tip, '--', 'docs/design/tui'], { cwd });
+  if (r.status !== 0) return sources;
+  const paths = r.stdout.split('\n').filter((l) => l.endsWith('.md'));
+  for (const p of paths) {
+    const textRes = git(['show', `${tip}:${p}`], { cwd });
+    if (textRes.status !== 0) continue;
+    const fm = parseFrontmatter(textRes.stdout);
+    if (fm) for (const s of fm.sources) sources.add(s);
+  }
+  return sources;
+}
+
 function takenSpecNumbers(originMainTip, cwd) {
   const r = git(['ls-tree', '--name-only', originMainTip, '--', 'specs/'], { cwd });
   const map = new Map(); // number -> dirname (no "specs/" prefix)
@@ -720,6 +807,13 @@ function computeTuiDesignSurface(mainWt) {
     (parsed) => (parsed.checks || []).map((c) => c.file).filter(Boolean)
   );
 }
+
+// Default checker path for pr mode's design-reference delegation (spec 088,
+// FR-002, research D3): consumed as-is through its published CLI contract
+// (--changed [<range>] --json, exit 0/1/2 — specs/047 contracts/check-script.md).
+// Overridable via CHECK_MERGE_DRIFT_TUI_DESIGN_CHECKER, the same
+// dependency-injection seam PLAYER_DOCS_CHECKER already uses.
+const TUI_DESIGN_CHECKER = 'scripts/check-tui-design.mjs';
 
 // ---------------------------------------------------------------------------
 // Root state (§8)
@@ -1638,11 +1732,14 @@ function runPr(flags, cwd) {
     }
   }
 
-  // Player docs ride the same PR (spec 069, FR-003, plan D3): when the branch
-  // modifies docs/wiki/, run the freshness checker in the gated worktree and
-  // map its exit-code contract (spec 026: 0 fresh / 1 stale / 2 env error) to
-  // findings. No docs/wiki change -> the checker is not invoked at all.
-  if (branchFiles.some((f) => f.startsWith('docs/wiki/'))) {
+  // Player docs ride the same PR (spec 069 FR-003, plan D3; widened by spec
+  // 088 FR-001/003/004): run the freshness checker in the gated worktree at
+  // most once when ANY trigger matches — docs/wiki/ touched, a declared
+  // docs/player/ source touched, or a history move — and map its exit-code
+  // contract (spec 026: 0 fresh / 1 stale / 2 env error) to findings. No
+  // trigger matched -> the checker is not invoked at all (SC-004).
+  const docsStaleTriggers = computeDocsStaleTriggers(branchFiles, tip, originMainTip, cwd);
+  if (docsStaleTriggers.length) {
     const checkerRel = process.env.CHECK_MERGE_DRIFT_PLAYER_DOCS_CHECKER || PLAYER_DOCS_CHECKER;
     const checkerCwd = worktreePath || cwd;
     const checkerAbs = isAbsolute(checkerRel) ? checkerRel : join(checkerCwd, checkerRel);
@@ -1652,7 +1749,7 @@ function runPr(flags, cwd) {
           severity: 'block',
           gate: 'pr',
           rule: 'player-docs-env-error',
-          message: `player-docs freshness checker not found at ${checkerAbs} — cannot verify docs/player/ against this branch's docs/wiki/ changes`,
+          message: `player-docs freshness checker not found at ${checkerAbs} — cannot verify docs/player/ against this branch's changes (${docsStaleTriggers.join('; ')})`,
           evidence: [checkerAbs, branchName],
           task,
           key: branchName,
@@ -1679,7 +1776,7 @@ function runPr(flags, cwd) {
             severity: 'block',
             gate: 'pr',
             rule: 'player-docs-stale',
-            message: `branch changes docs/wiki/ but ${which} — regenerate via the player-docs skill in the worktree and commit the pages in this PR`,
+            message: `branch triggers the docs-stale probe (${docsStaleTriggers.join('; ')}) but ${which} — regenerate via the player-docs skill in the worktree and commit the pages in this PR`,
             evidence: [...(stalePages.length ? stalePages : ['docs/player']), branchName],
             task,
             key: branchName,
@@ -1691,7 +1788,7 @@ function runPr(flags, cwd) {
             severity: 'block',
             gate: 'pr',
             rule: 'player-docs-env-error',
-            message: `player-docs freshness checker failed (exit ${r.status}) — environment error; cannot verify docs/player/ against this branch's docs/wiki/ changes`,
+            message: `player-docs freshness checker failed (exit ${r.status}) — environment error; cannot verify docs/player/ against this branch's changes (${docsStaleTriggers.join('; ')})`,
             evidence: [checkerAbs, branchName],
             task,
             key: branchName,
@@ -1715,6 +1812,76 @@ function runPr(flags, cwd) {
         key: branchName,
       })
     );
+  }
+
+  // Design-reference pins become a BLOCKING pr finding (spec 088 FR-002,
+  // research D3): delegate wholesale to check-tui-design.mjs's own
+  // --changed --json same-pr predicate (env-overridable path for fixtures)
+  // instead of reimplementing a second pin-vs-branch checker — one
+  // authority, one implementation. Triggered when the branch touches
+  // internal/tui/, docs/design/tui/, or any source a design-reference page
+  // pins (data-model.md); invoked at most once per run. The warn-level
+  // tui-surface reminder above is kept as-is (edge case: a re-pin-only PR
+  // touching docs/design/tui/ alone must not block — check-tui-design.mjs's
+  // same-pr check only fires when internal/tui/ is touched without a
+  // docs/design/tui/ amendment, so it naturally passes that shape).
+  const designPinnedSources = loadDesignReferenceSources(tip, cwd);
+  const tuiDesignTrigger =
+    tuiFiles.length > 0 ||
+    branchFiles.some((f) => f.startsWith('docs/design/tui/')) ||
+    branchFiles.some((f) => designPinnedSources.has(f));
+  if (tuiDesignTrigger) {
+    const tuiCheckerRel = process.env.CHECK_MERGE_DRIFT_TUI_DESIGN_CHECKER || TUI_DESIGN_CHECKER;
+    const tuiCheckerCwd = worktreePath || cwd;
+    const tuiCheckerAbs = isAbsolute(tuiCheckerRel) ? tuiCheckerRel : join(tuiCheckerCwd, tuiCheckerRel);
+    if (!existsSync(tuiCheckerAbs)) {
+      findings.push(
+        makeFinding({
+          severity: 'block',
+          gate: 'pr',
+          rule: 'tui-design-env-error',
+          message: `tui-design checker not found at ${tuiCheckerAbs} — cannot verify docs/design/tui/ against this branch's changes`,
+          evidence: [tuiCheckerAbs, branchName],
+          task,
+          key: branchName,
+        })
+      );
+    } else {
+      const range = `${originMainTip}...${tip}`;
+      const r = runNode(tuiCheckerAbs, ['--changed', range, '--json'], tuiCheckerCwd);
+      if (r.status === 1) {
+        let failingPages = [];
+        try {
+          failingPages = [...new Set((JSON.parse(r.stdout).checks || []).map((c) => c.file).filter(Boolean))];
+        } catch {
+          failingPages = [];
+        }
+        const which = failingPages.length ? `page(s): ${failingPages.join(', ')}` : 'docs/design/tui/ is stale';
+        findings.push(
+          makeFinding({
+            severity: 'block',
+            gate: 'pr',
+            rule: 'tui-design-stale',
+            message: `branch touches the TUI design-reference surface but ${which} — run node scripts/check-tui-design.mjs --changed and amend docs/design/tui/ in this PR`,
+            evidence: [...(failingPages.length ? failingPages : ['docs/design/tui']), branchName],
+            task,
+            key: branchName,
+          })
+        );
+      } else if (r.status !== 0) {
+        findings.push(
+          makeFinding({
+            severity: 'block',
+            gate: 'pr',
+            rule: 'tui-design-env-error',
+            message: `tui-design checker failed (exit ${r.status}) — environment error; cannot verify docs/design/tui/ against this branch's changes`,
+            evidence: [tuiCheckerAbs, branchName],
+            task,
+            key: branchName,
+          })
+        );
+      }
+    }
   }
 
   const taken = takenSpecNumbers(originMainTip, cwd);

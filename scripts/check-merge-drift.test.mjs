@@ -620,3 +620,194 @@ test('080/worktree+claim: ownership protections stay blocking when the owner is 
   const cf = parseGate69(c).findings.find((x) => x.rule === 'spec-number-collision');
   assert.ok(cf && cf.severity === 'block');
 });
+
+// ---------------------------------------------------------------------------
+// spec 088 (TASK-162) — pr-mode docs-stale probe fires on all pinned
+// sources + after history moves. Reuses the 069 section's clone69/origin69
+// fixture (bare origin + one clone, isolated git config, gate69 spawning the
+// real CLI). Ordering is load-bearing: node:test runs this file's top-level
+// tests sequentially, so the "088 setup" test below — which pushes new
+// docs/player/ pages to origin/main — runs AFTER every 069-section branch
+// has already forked (e.g. task-705-unrelated, whose README.md-only touch
+// must still NOT trigger the probe per SC-004, since its tip predates these
+// pages). Every 088-section branch forks from origin/main AFTER the setup
+// commit, so it inherits the widened trigger surface.
+// ---------------------------------------------------------------------------
+
+const tuiStubExit0 = join(root69, 'tui-stub-exit0.mjs');
+const tuiStubExit1 = join(root69, 'tui-stub-exit1.mjs');
+writeFileSync(tuiStubExit0, '#!/usr/bin/env node\nprocess.stdout.write(JSON.stringify({ ok: true, checks: [] }));\nprocess.exit(0);\n');
+writeFileSync(
+  tuiStubExit1,
+  "#!/usr/bin/env node\nprocess.stdout.write(JSON.stringify({ ok: false, checks: [{ check: 'same-pr', file: 'docs/design/tui/patterns/example.md', message: 'stale' }] }));\nprocess.exit(1);\n"
+);
+
+// gate69 only overrides the player-docs checker; spec 088 also needs the
+// tui-design env-override seam (research D3), so this variant sets both,
+// defaulting the player-docs side to the fresh stub (stubExit0) so it never
+// interferes with a tui-design-only fixture.
+function gate69Full(cwd, branch, { playerChecker = stubExit0, tuiChecker } = {}) {
+  const env = { ...ENV69, CHECK_MERGE_DRIFT_PLAYER_DOCS_CHECKER: playerChecker };
+  if (tuiChecker) env.CHECK_MERGE_DRIFT_TUI_DESIGN_CHECKER = tuiChecker;
+  return run69(process.execPath, [SCRIPT_PATH, 'pr', '--branch', branch, '--json'], { cwd, env });
+}
+
+test('088 setup: seed docs/player/ pages declaring README.md + docs/llm-providers.md as sources', () => {
+  gitIn69(clone69, 'switch', 'main');
+  write69(
+    clone69,
+    'docs/player/getting-started.html',
+    `<meta name="promptworld-docs:generated-by" content="fixture">\n<meta name="promptworld-docs:source" content="README.md@${seedPin}">\n`
+  );
+  write69(
+    clone69,
+    'docs/player/llm-setup-basics.html',
+    `<meta name="promptworld-docs:generated-by" content="fixture">\n<meta name="promptworld-docs:source" content="docs/llm-providers.md@${seedPin}">\n`
+  );
+  write69(clone69, 'docs/llm-providers.md', '# fixture llm providers\n');
+  commitAll69('088 seed: docs/player pages declaring README.md + docs/llm-providers.md');
+  gitIn69(clone69, 'push', 'origin', 'main');
+});
+
+test('088/US1 (F1): branch touches README.md only (a declared docs/player source) + checker stub exit 1 -> player-docs-stale blocks', () => {
+  scenarioBranch69('task-720-readme-declared', () => {
+    write69(clone69, 'README.md', '# fixture, updated for spec 088\n');
+    commitAll69('088: README-only edit');
+  });
+  const r = gate69(clone69, 'task-720-readme-declared', { checker: stubExit1 });
+  assert.equal(r.status, 1, `declared-source staleness must block: ${r.stdout}${r.stderr}`);
+  const f = parseGate69(r).findings.find((x) => x.rule === 'player-docs-stale');
+  assert.ok(f, 'expected a player-docs-stale finding');
+  assert.equal(f.severity, 'block');
+  assert.match(f.message, /README\.md/);
+  assert.match(f.message, /player-docs skill/);
+});
+
+test('088/US1 (F2): branch touches a declared spec-046-style source (docs/llm-providers.md) -> checker is invoked; fresh stub passes', () => {
+  rmSync(sentinelPath, { force: true });
+  scenarioBranch69('task-721-llm-providers', () => {
+    write69(clone69, 'docs/llm-providers.md', '# fixture llm providers, updated\n');
+    commitAll69('088: touch declared docs/llm-providers.md source');
+  });
+  const rSentinel = gate69(clone69, 'task-721-llm-providers', { checker: stubSentinel });
+  assert.equal(rSentinel.status, 0);
+  assert.ok(existsSync(sentinelPath), 'checker must be invoked when a declared non-wiki source is touched');
+
+  const rFresh = gate69(clone69, 'task-721-llm-providers', { checker: stubExit0 });
+  assert.equal(rFresh.status, 0, `fresh declared-source branch must pass: ${rFresh.stdout}${rFresh.stderr}`);
+  const report = parseGate69(rFresh);
+  assert.equal(report.findings.find((x) => x.rule === 'player-docs-stale'), undefined);
+  assert.equal(report.findings.find((x) => x.rule === 'player-docs-env-error'), undefined);
+});
+
+test('088/US1 (F9): checker missing on a README-only trigger -> player-docs-env-error blocks', () => {
+  const missingChecker = join(root69, 'does-not-exist-checker.mjs');
+  const r = gate69(clone69, 'task-720-readme-declared', { checker: missingChecker });
+  assert.equal(r.status, 1, `missing checker on a non-wiki trigger must block: ${r.stdout}${r.stderr}`);
+  const f = parseGate69(r).findings.find((x) => x.rule === 'player-docs-env-error');
+  assert.ok(f, 'expected a player-docs-env-error finding');
+  assert.equal(f.severity, 'block');
+  assert.match(f.message, /not found at/);
+});
+
+test('088/US3 (F3, F4): branch tip contains a merge of main with no pinned-source diff paths -> probe invoked (stale blocks; fresh passes)', () => {
+  const startTip = gitIn69(clone69, 'rev-parse', 'origin/main').stdout.trim();
+  gitIn69(clone69, 'switch', '-c', 'task-722-history-move', startTip);
+  write69(clone69, 'task-722-branch-work.txt', 'branch work\n');
+  commitAll69('088: unrelated branch-work commit before history move');
+  gitIn69(clone69, 'switch', 'main');
+  write69(clone69, 'main-advance-for-history-move.txt', 'main advanced\n');
+  commitAll69('088: advance main for history-move fixture');
+  gitIn69(clone69, 'push', 'origin', 'main');
+  gitIn69(clone69, 'switch', 'task-722-history-move');
+  gitIn69(clone69, 'merge', '--no-ff', 'origin/main', '-m', 'merge main into task-722-history-move');
+  gitIn69(clone69, 'switch', 'main');
+
+  const rStale = gate69(clone69, 'task-722-history-move', { checker: stubExit1 });
+  assert.equal(rStale.status, 1, `history move must trigger the probe: ${rStale.stdout}${rStale.stderr}`);
+  const staleFinding = parseGate69(rStale).findings.find((x) => x.rule === 'player-docs-stale');
+  assert.ok(staleFinding, 'expected a player-docs-stale finding from the history-move trigger');
+  assert.match(staleFinding.message, /history move/);
+
+  const rFresh = gate69(clone69, 'task-722-history-move', { checker: stubExit0 });
+  assert.equal(rFresh.status, 0, `fresh probe after a history move must pass (no false blocking): ${rFresh.stdout}${rFresh.stderr}`);
+  const freshReport = parseGate69(rFresh);
+  assert.equal(freshReport.findings.find((x) => x.rule === 'player-docs-stale'), undefined);
+});
+
+test('088 (F7): combined pinned-input + history-move trigger emits at most one player-docs-stale finding', () => {
+  const startTip = gitIn69(clone69, 'rev-parse', 'origin/main').stdout.trim();
+  gitIn69(clone69, 'switch', '-c', 'task-723-combined', startTip);
+  write69(clone69, 'README.md', '# fixture, updated for combined trigger (088)\n');
+  commitAll69('088: touch declared README.md source (combined fixture)');
+  gitIn69(clone69, 'switch', 'main');
+  write69(clone69, 'main-advance-for-combined.txt', 'main advanced\n');
+  commitAll69('088: advance main for combined fixture');
+  gitIn69(clone69, 'push', 'origin', 'main');
+  gitIn69(clone69, 'switch', 'task-723-combined');
+  gitIn69(clone69, 'merge', '--no-ff', 'origin/main', '-m', 'merge main into task-723-combined');
+  gitIn69(clone69, 'switch', 'main');
+
+  const r = gate69(clone69, 'task-723-combined', { checker: stubExit1 });
+  assert.equal(r.status, 1, `combined trigger must still block: ${r.stdout}${r.stderr}`);
+  const findings = parseGate69(r).findings.filter((x) => x.rule === 'player-docs-stale');
+  assert.equal(findings.length, 1, 'combined pinned-input + history-move trigger must not duplicate the finding');
+  assert.match(findings[0].message, /README\.md/);
+  assert.match(findings[0].message, /history move/);
+});
+
+test('088/US2 (F5): branch touches internal/tui/ + tui-design stub exit 1 -> tui-design-stale blocks (tui-surface warn also present)', () => {
+  scenarioBranch69('task-724-tui-stale', () => {
+    write69(clone69, 'internal/tui/example.go', 'package tui // v1\n');
+    commitAll69('088: touch internal/tui/ source');
+  });
+  const r = gate69Full(clone69, 'task-724-tui-stale', { tuiChecker: tuiStubExit1 });
+  assert.equal(r.status, 1, `tui-design staleness must block: ${r.stdout}${r.stderr}`);
+  const report = parseGate69(r);
+  const stale = report.findings.find((x) => x.rule === 'tui-design-stale');
+  assert.ok(stale, 'expected a tui-design-stale finding');
+  assert.equal(stale.severity, 'block');
+  assert.match(stale.message, /docs\/design\/tui\/patterns\/example\.md/);
+  const warn = report.findings.find((x) => x.rule === 'tui-surface');
+  assert.ok(warn, 'the existing tui-surface warn must remain');
+  assert.equal(warn.severity, 'warn');
+});
+
+test('088/US2 (F6): same branch after re-pin (tui-design stub exit 0) -> passes, warn-only tui-surface reminder', () => {
+  const r = gate69Full(clone69, 'task-724-tui-stale', { tuiChecker: tuiStubExit0 });
+  assert.equal(r.status, 0, `re-pinned tui-design must pass: ${r.stdout}${r.stderr}`);
+  const report = parseGate69(r);
+  assert.equal(report.findings.find((x) => x.rule === 'tui-design-stale'), undefined);
+  assert.equal(report.findings.find((x) => x.rule === 'tui-design-env-error'), undefined);
+  const warn = report.findings.find((x) => x.rule === 'tui-surface');
+  assert.ok(warn && warn.severity === 'warn', 'tui-surface warn stays as a reminder');
+});
+
+test('088/US2: tui-design checker missing -> tui-design-env-error blocks', () => {
+  const missingTuiChecker = join(root69, 'does-not-exist-tui-checker.mjs');
+  const r = gate69Full(clone69, 'task-724-tui-stale', { tuiChecker: missingTuiChecker });
+  assert.equal(r.status, 1, `missing tui-design checker must block: ${r.stdout}${r.stderr}`);
+  const f = parseGate69(r).findings.find((x) => x.rule === 'tui-design-env-error');
+  assert.ok(f, 'expected a tui-design-env-error finding');
+  assert.equal(f.severity, 'block');
+});
+
+test('088/US2 edge: branch touches docs/design/tui/ only (re-pin-only PR) -> no tui-design-stale, no tui-surface warn', () => {
+  scenarioBranch69('task-725-design-repin-only', () => {
+    write69(
+      clone69,
+      'docs/design/tui/patterns/example.md',
+      `---\ntitle: fixture pattern\nclass: pattern\nstatus: shipped\nverified_against: ${seedPin}\nsources:\n  - internal/tui/example.go\n---\n\n# Example\n`
+    );
+    commitAll69('088: re-pin-only docs/design/tui edit');
+  });
+  // The checker is triggered (docs/design/tui/ touched) but a
+  // correctly-behaving check-tui-design.mjs never flags a branch that
+  // touches no internal/tui/ file under its same-pr rule; the exit-0 stub
+  // stands in for that real outcome (spec 088 edge case).
+  const r = gate69Full(clone69, 'task-725-design-repin-only', { tuiChecker: tuiStubExit0 });
+  assert.equal(r.status, 0, `re-pin-only PR must pass: ${r.stdout}${r.stderr}`);
+  const report = parseGate69(r);
+  assert.equal(report.findings.find((x) => x.rule === 'tui-design-stale'), undefined);
+  assert.equal(report.findings.find((x) => x.rule === 'tui-surface'), undefined, 'no internal/tui/ touch -> no tui-surface warn');
+});
