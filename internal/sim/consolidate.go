@@ -223,8 +223,15 @@ type ConsolidatedPayload struct {
 	// Coerced (spec 030) counts beliefs whose provenance the validator downgraded
 	// from "witnessed" for lack of direct-perception evidence — non-fatal
 	// telemetry, never a rejection. omitempty keeps pre-030 markers byte-stable.
-	Coerced int     `json:"coerced,omitempty"`
-	CostUSD float64 `json:"cost_usd,omitempty"`
+	Coerced int `json:"coerced,omitempty"`
+	// DreamFolded / DreamKept (spec 098): how many ambiguous dream clusters
+	// the night's consult folded vs kept distinct — the recorded form of the
+	// slot's keep/fold decision (a kept group changes no state, so the marker
+	// is its only trace). Telemetry on the marker, no reducer effect;
+	// omitempty keeps pre-098 markers byte-stable.
+	DreamFolded int     `json:"dream_folded,omitempty"`
+	DreamKept   int     `json:"dream_kept,omitempty"`
+	CostUSD     float64 `json:"cost_usd,omitempty"`
 }
 
 // applyConsolidation is the reducer arm for the six consolidation event

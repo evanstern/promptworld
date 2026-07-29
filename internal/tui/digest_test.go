@@ -147,6 +147,8 @@ var catalogFixture = map[string]digestFixture{
 	"agent.thought":           {`{"agent":{"id":0,"name":"Ash"},"text":"I should forage","source":"planner"}`, `Ash thought: "I should forage" (planner)`},
 	"agent.memory_promoted":   {`{"agent":{"id":0,"name":"Ash"},"mem_tick":100,"text_hash":"abc","boost":2}`, `Ash's memory (t100) reinforced`},
 	"agent.memory_faded":      {`{"agent":{"id":0,"name":"Ash"},"mem_tick":100,"text_hash":"abc"}`, `Ash forgot a memory (t100)`},
+	"agent.salience_revised":  {`{"agent":{"id":0,"name":"Ash"},"mem_tick":100,"text_hash":"abc","salience":2,"reason":"habituation"}`, `Ash's memory (t100) dulled to 2★ in a dream`},
+	"agent.memory_merged":     {`{"agent":{"id":0,"name":"Ash"},"kept":{"tick":400,"hash":"def"},"merged":[{"tick":100,"hash":"abc"},{"tick":200,"hash":"bcd"}],"salience":4}`, `Ash's dreams folded 2 memories into one (t400)`},
 	"agent.belief_revised":    {`{"agent":{"id":0,"name":"Ash"},"belief_id":0,"statement":"the fire needs tending","confidence":80,"provenance":"observed","source":{"id":0,"name":"Ash"},"subject":{"id":0,"name":"Ash"}}`, `Ash now believes: "the fire needs tending"`},
 	"agent.belief_reinforced": {`{"agent":{"id":0,"name":"Ash"},"belief_id":0}`, `Ash's belief (#0) reinforced`},
 	"agent.narrative_set":     {`{"agent":{"id":0,"name":"Ash"},"text":"a long night"}`, `Ash's story: "a long night"`},
