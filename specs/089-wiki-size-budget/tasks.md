@@ -26,7 +26,7 @@
 
 ## Phase 3: Capsules + index
 
-- [ ] T004 Rewrite the two oversized description capsules (guardian-faith.md,
+- [X] T004 Rewrite the two oversized description capsules (guardian-faith.md,
   guardian-instruction-surface.md) under 500 chars; update INDEX.md with all new
   children; regenerate CAPSULES.md via
   `node ~/.claude/plugins/cache/praxisflux/grounding-wiki/0.39.0/scripts/capsules.mjs . docs/wiki`.
