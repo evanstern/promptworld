@@ -8,7 +8,7 @@ sources:
   - internal/guardian/toolcalls.go
   - cmd/promptworld/work.go
   - internal/ipc/server.go
-verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
+verified_against: 6a5344a12cdc8858909ca7cf209d55025135e9d5
 ---
 
 # Guardian's miracle doors
@@ -67,11 +67,28 @@ dogfood equivalence test pins byte-identical to `BuildMiracleBatch`'s output.)
   ([[guardian]]'s `applyStageCeiling` — intersection-only, so a manifest can
   narrow within the ceiling but never exceed it). The operator CLI/IPC door
   below is stage-blind — the ceiling gates the guardian, not the operator. `handleMiracle` parses the call's
-  arguments into `miracleArgs` and calls `landMiracle`, which resolves
-  `MiracleParams` from an `agentXY` snapshot (`mt.agentXY`, mirrored per batch by
-  the absorb goroutine in `mirrorState`, so the turn worker never races the live
-  replica), builds a probe `sim.State` from it, and calls `BuildMiracleBatch` with
-  `gratis=false`. A reducer rejection becomes a `rejected_gate` outcome the loop
+  arguments into `miracleArgs` and calls `landMiracle`, which builds a probe
+  `sim.State` from the `agentXY`/`alive` snapshot (`mt.agentXY`, mirrored per
+  batch by the absorb goroutine in `mirrorState`, so the turn worker never
+  races the live replica) BEFORE the kind switch, then resolves `MiracleParams`
+  and calls `BuildMiracleBatch` with `gratis=false`. Since spec 091 (door-side
+  move-target freshness), a `move` call with `class="villager"` AND a
+  `villager` name re-resolves that villager's LIVE position from the SAME probe
+  and uses it as the move's source coordinates — the model's surveyed `x`/`y`
+  become advisory once a name is supplied, so a move ordered by name cannot
+  lose a race to the villager's own walking during model latency. An unknown or
+  dead name refuses BEFORE the reducer ever runs (mirroring `landVision`'s "no
+  villager named %q"/"%s is beyond reach now" resolution), spending no charge.
+  A villager move with NO name, and every structure/pile move, takes the
+  untouched coordinate-addressed path — byte-identical to pre-091 behavior,
+  including the residual race a bare coordinate address can still lose; when
+  that race trips the reducer's "no living villager at (x,y)" refusal, the
+  wrapped in-fiction message appends a one-line suggestion to name the
+  villager instead. The recorded `metatron.entity_moved` event always carries
+  whichever coordinates the door actually used (resolved-by-name or surveyed)
+  — emitter-computes, so `applyEntityMoved` ([[guardian-miracle-mechanics]]) is
+  unmodified and replay of any previously-recorded move is unaffected. A
+  reducer rejection becomes a `rejected_gate` outcome the loop
   feeds back to the model within its round cap (the in-fiction wording is
   unchanged, just no longer necessarily turn-ending), exactly like a refused
   omen or vision; a landed miracle appends a soul-file line and is recorded in the

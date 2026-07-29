@@ -6,7 +6,7 @@ sources:
   - internal/guardian/turn.go
   - internal/tool/derive.go
   - internal/sim/miracles.go
-verified_against: 63390f122bdf4e1b7abf518a8be83de725f06230
+verified_against: 6a5344a12cdc8858909ca7cf209d55025135e9d5
 ---
 
 # Guardian's miracle guarantees
@@ -36,7 +36,14 @@ values (a tick, an index, a kind, a coordinate) — never a name or a day/HH:MM 
 prior state always produces the same result. `TestMiracleReplayByteIdentity`,
 `TestMiracleSnapReplayByteIdentity`, and `TestMiracleGrantReplayByteIdentity`
 (`internal/sim/miracles_test.go`) prove each type replays to the same state hash as
-live application. `sim.State.m` (the unexported, unserialized static map attached by
+live application. Spec 091's door-side move-target freshness (villager moves
+naming a target now resolve that villager's LIVE position at the door,
+[[guardian-miracle-doors]]) is exactly this guarantee's doctrine at work: the
+resolved coordinate — never the name — is what the recorded
+`metatron.entity_moved` carries, so `applyEntityMoved` needed no change and
+every previously-recorded move (coordinate-addressed, as all pre-091 moves
+were) replays identically; `TestMoveFreshnessReplayByteIdentical`
+(`internal/sim/miracles_test.go`) pins it. `sim.State.m` (the unexported, unserialized static map attached by
 `SetMap`/`NewState`/`MigrateState` — [[sim-state-reducer]]) makes the terrain
 vocabulary (`passable`/`buildSite`/`effectiveKind`) available identically live, in
 the `InjectSocial` dry-run (`probe.SetMap(l.m)` in [[sim-loop]]'s `handleCommand`),
