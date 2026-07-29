@@ -3,9 +3,10 @@ id: TASK-167
 title: >-
   Carry-cap guidance for give_item: surface the villager's headroom before the
   grant
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-29 13:59'
+updated_date: '2026-07-29 19:46'
 labels:
   - mvls
   - guardian-survival
