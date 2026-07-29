@@ -236,7 +236,11 @@ var guardianToolDesc = map[string]string{
 // a guardian guessed "food", "forage") must be spelled out here, from
 // GrantKinds() so it can never drift from the declared schema.
 var miracleKindArgs = map[string]string{
-	"move":   `class ("villager"|"structure"|"pile"), x, y, to_x, to_y`,
+	// (spec 091 FR-004): for class="villager", supply villager (the target's
+	// name) — the door re-resolves their live position at the door, so a move
+	// ordered by name cannot race the villager's own walking; x, y are only
+	// used, and only advisory, when villager is omitted.
+	"move":   `class ("villager"|"structure"|"pile"), x, y, to_x, to_y, and for class="villager" also villager (their name — the door resolves their live position, so name a villager instead of coordinates)`,
 	"remove": `class ("structure"|"pile"|"terrain"), x, y`,
 	"give_item": fmt.Sprintf(`villager, item (one of: %s), qty`,
 		strings.Join(GrantKinds(), ", ")),

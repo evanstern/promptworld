@@ -485,6 +485,85 @@ func TestMiracleReplayByteIdentity(t *testing.T) {
 	}
 }
 
+// TestMoveFreshnessReplayByteIdentical (spec 091 FR-002/SC-002): the guardian
+// door's move-miracle name re-resolution (TASK-166) is an EMITTER-side change —
+// it decides which coordinates a recorded metatron.entity_moved carries, never
+// how the reducer applies one. A recorded log of coordinate-only entity_moved
+// events — the only shape any pre-fix (or post-fix, coordinate-addressed)
+// recording ever carried, since the emitter always bakes concrete x/y into the
+// event regardless of how it resolved them — must replay to a byte-identical
+// state hash on the fixed binary. This pins applyEntityMoved
+// (miracles.go:497, the "no living villager at (x,y)" arm) as untouched by
+// TASK-166, mirroring TestMiracleReplayByteIdentity's genesis/log/replay
+// skeleton with a two-hop villager move standing in for a short pre-fix
+// history.
+func TestMoveFreshnessReplayByteIdentical(t *testing.T) {
+	const seed = 42
+	m := testMap(seed)
+
+	base := NewState(seed, m)
+	hop1, ok := passableTileExcept(m, base, Point{X: base.Agents[0].X, Y: base.Agents[0].Y})
+	if !ok {
+		t.Skip("no spare passable tile")
+	}
+	hop2, ok := passableTileExcept(m, base, Point{X: base.Agents[0].X, Y: base.Agents[0].Y}, hop1)
+	if !ok {
+		t.Skip("no second spare passable tile")
+	}
+	ax, ay := base.Agents[0].X, base.Agents[0].Y
+
+	genesis := func() *State {
+		s := NewState(seed, m)
+		for i := 1; i < len(s.Agents); i++ {
+			s.Agents[i].Dead = true // lone living villager keeps the run quiet
+		}
+		s.GuardianCharges = 3
+		return s
+	}
+
+	pl := func(v any) []byte { return mustPayload(v) }
+	commands := map[int64][]store.Event{
+		// Two moves in sequence — a coordinate-only history exactly like any
+		// log recorded before TASK-166 shipped (the emitter always recorded
+		// concrete coordinates; only the door's CHOICE of source coordinates
+		// changed, not the event shape the reducer consumes).
+		10: {{Tick: 10, Type: "metatron.entity_moved", Payload: pl(EntityMovedPayload{
+			Class: "villager", X: ax, Y: ay, ToX: hop1.X, ToY: hop1.Y})}},
+		20: {{Tick: 20, Type: "metatron.entity_moved", Payload: pl(EntityMovedPayload{
+			Class: "villager", X: hop1.X, Y: hop1.Y, ToX: hop2.X, ToY: hop2.Y})}},
+	}
+
+	const ticks = 60
+	live := genesis()
+	log := driveTicks(t, live, m, ticks, commands)
+
+	var moves int
+	for _, e := range log {
+		if e.Type == "metatron.entity_moved" {
+			moves++
+		}
+	}
+	if moves != 2 {
+		t.Fatalf("scripted moves missing from the log: got %d, want 2", moves)
+	}
+	if live.Agents[0].X != hop2.X || live.Agents[0].Y != hop2.Y {
+		t.Fatalf("villager did not land at the second hop: at (%d,%d), want (%d,%d)",
+			live.Agents[0].X, live.Agents[0].Y, hop2.X, hop2.Y)
+	}
+
+	replay := genesis()
+	for _, e := range log {
+		if err := replay.Apply(e); err != nil {
+			t.Fatalf("replay apply %s: %v", e.Type, err)
+		}
+		replay.Tick = e.Tick
+	}
+	driveTicks(t, replay, m, ticks, nil)
+	if live.Hash() != replay.Hash() {
+		t.Fatalf("replay diverged:\nlive:     %s\nreplayed: %s", string(live.Marshal()), string(replay.Marshal()))
+	}
+}
+
 // agentPoints is the set of living villager tiles (for "empty tile" searches).
 func agentPoints(s *State) []Point {
 	var pts []Point
