@@ -33,7 +33,7 @@ format-stable: `State` gains `omitempty` `Deaths` (the run's death ledger),
 gains a `grave` kind (reducer-placed at a death tile, never player-built).
 THREE new event types land the feature — executor-emitted `run.ended` (never
 injectable: it opens two whole new namespaces, `run.*` and, via the
-whitelisted pair, `morgue.*`) plus whitelisted `metatron.charter_observed` and
+whitelisted pair, `morgue.*`) plus whitelisted `guardian.charter_observed` and
 `morgue.epilogue`, the only two additions `TestWhitelistDiffIdentical` accepts
 against the spec's declared boundary widening. Two existing rows changed
 semantics rather than shape: `agent.died`'s cause domain gains `"gru"` (an

@@ -49,7 +49,7 @@ malformed or absent need leaves the intent conditionless), and
 conditioned hold's anchor tick; 0 and unread for every ordinary work goal).
 ONE new event type, `agent.recovery_stalled` (`RecoveryStalledPayload{agent,
 goal, need}`), is the executor emission class (no whitelist entry, the
-`metatron.order_expired`/`curriculum.*` pattern): a needs-conditioned hold
+`guardian.order_expired`/`curriculum.*` pattern): a needs-conditioned hold
 whose need shows no net gain across a full `recoveryStallTicks` window
 (dead fire, displaced source, unreachable threshold) aborts with this
 DISTINCT outcome — mirroring `agent.build_failed`'s state effect (`Intent`

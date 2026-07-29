@@ -41,7 +41,7 @@ nudge, charge bank, surfaced moments — a long call, one cloud round-trip) and
 `metatron_status` (no args → the model-free `guardian.Status` peek) — both wire
 command names are FROZEN strings (spec 052 ruling 2: player scripts and old
 clients keep working forever), even though the Go types/package renamed from
-`metatron.*` to `guardian.*` — and `miracle`
+`guardian.*` to `guardian.*` — and `miracle`
 (spec 016, [[guardian-miracles]]): `MiracleArgs{kind, day?, time?, villager?,
 item?, qty?, class?, x?, y?, to_x?, to_y?, gratis?}` where `kind` selects
 `time_snap`/`give_item`/`move`/`remove` and the remaining fields are that kind's

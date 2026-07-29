@@ -31,7 +31,7 @@ Spec 084 adds **no** format bump: `State` gains
 `omitempty` — a pre-084 snapshot unmarshals to nil, the spec-029
 `GuardianOrders` precedent) and SEVEN new event types in two NEW
 namespaces (`designation.*`, `directive.*` — world plan artifacts and
-villager-facing bindings, deliberately not `metatron.*` console
+villager-facing bindings, deliberately not `guardian.*` console
 bookkeeping). The door split is the standing-order one exactly:
 
 | Type | Payload | Door |

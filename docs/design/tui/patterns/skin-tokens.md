@@ -89,7 +89,7 @@ Default values are the shipped secular-mythic **Guardian** skin (spec 052
 ruling 3). This table is the doc twin of `internal/skin`'s compiled default
 table; the token-completeness test asserts the two never drift. Old worlds'
 already-written files and every serialized identifier (event types
-`metatron.*`, tool ids `send_vision`/`send_omen`/`work_miracle`, paths,
+`guardian.*`, tool ids `send_vision`/`send_omen`/`work_miracle`, paths,
 `metatron_*` wire names) are **frozen** and deliberately not in this table.
 
 | Token | Default value | Used by |
@@ -97,7 +97,7 @@ already-written files and every serialized identifier (event types
 | `skin.guardian.name` | `Guardian` | `panels/guardian.md` (pane header `{{skin.guardian.name}} · charges…`, uppercased per rule 4), chronicle narration subject lines (digest grammar), prompt name substitution (digest keeper, watch confirmer) |
 | `skin.guardian.epithet` | `guardian` | `panels/guardian.md` (transcript labels, "the {{skin.guardian.epithet}} is answering…"/"unreachable"/"voice is stilled" copy), `panels/minibuffer.md` (dormant placeholder), help overlay copy, morgue watch line |
 | `skin.guardian.tab_label` | `guardian` | `panels/dock.md` (tab row, case-transformed active/inactive), `patterns/keymap.md` footer hints, narrow-fallback tabs |
-| `skin.guardian.family_label` | `guardian` | chronicle Type-column display alias for the frozen `metatron.*` event family (spec 052 FR-013); dock short-form and the detail pane's verbatim type stay raw |
+| `skin.guardian.family_label` | `guardian` | the guardian family's voiced name in skin data. Its original consumer — the chronicle Type-column display alias over the pre-094 `metatron.*` family (spec 052 FR-013, TASK-121's interim shim) — was retired by spec 094: persisted types are `guardian.*` now and the Type column renders every type raw |
 | `skin.guardian.working_noun` | `working` | transcript/chronicle/CLI display of the frozen `work_miracle` mechanics family; prompt doctrine glosses |
 | `skin.guardian.working_noun_plural` | `workings` | granted-tool console summary, chronicle grant vocabulary |
 | `skin.guardian.notes_label` | `the guardian's notes` | display references to the frozen `metatron/soul.md` path |

@@ -62,7 +62,7 @@ gate** skips any emission whose fold could not move the clamped score
 doctrine delta (the fold clamps). Deliberately excluded sources (research
 R3): a bare `designation.fulfilled` (villager initiative is not the
 guardian's word), ambient accrual, time decay, tutoring (TASK-112 AC #6),
-`metatron.nudged`.
+`guardian.nudged`.
 
 ## Regen as a pure faith-band function (the FR-005 posture decision)
 
@@ -79,7 +79,7 @@ so the wire and the sim can never disagree ([[ipc-protocol]]):
 | forsaken | < 15 | **scenario: 0 — no regen (the authentic spiral)** · **ambient: 24 game hours (the floor)** |
 
 The check keeps the pre-085 shape — `nextTick % cadence == 0 && charges <
-cap`, absolute boundaries, the same `metatron.charge_regenerated` empty
+cap`, absolute boundaries, the same `guardian.charge_regenerated` empty
 payload — so replay determinism is inherited. Cadence 0 short-circuits the
 check entirely. The **posture fork** keys on the boot-frozen
 `s.scenario != nil` (the spec-054 incident-sweep precedent): a run-shaped

@@ -46,7 +46,7 @@ falls through inert.
 │                                                                    │
 │ … village survives to dawn of day 2   (sim.day_started: 0)         │
 │ ✓ no villager dies                    (agent.died: 0)              │
-│ … a watch set before nightfall        (metatron.order_placed: 0)   │
+│ … a watch set before nightfall        (guardian.order_placed: 0)   │
 │                                                                    │
 │ incidents (forecast): the gru emerges ~22:00 (day 1)               │
 └──────────────────────────────────────────────────────────────────┘

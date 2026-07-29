@@ -21,18 +21,18 @@ narrator entries per [[chronicle]], nudges and miracles per [[guardian]] /
 [[guardian-miracles]], standing orders per [[guardian-orders]], proposal rephrasing
 per [[governance]], place-knowledge per [[mental-maps]] — `agent.thought` is
 whitelisted as a reducer no-op, `chronicle.entry` appends the story ring,
-`metatron.nudged` spends a charge with a validating reducer the dry-run enforces,
-`metatron.place_revealed` (spec 041, FR-014) widens the boundary by one — a
+`guardian.nudged` spends a charge with a validating reducer the dry-run enforces,
+`guardian.place_revealed` (spec 041, FR-014) widens the boundary by one — a
 vision's optional place grant, declared in `send_vision`'s `Events` so
 `ValidateToolCoverage` pins it ⊆ this whitelist, whose dry-run enforces a
 living target and a real place before anything lands — the four
-`metatron.time_snapped`/`metatron.item_granted`/`metatron.entity_moved`/
-`metatron.entity_removed` miracle types (spec 016) are whitelisted the same way —
+`guardian.time_snapped`/`guardian.item_granted`/`guardian.entity_moved`/
+`guardian.entity_removed` miracle types (spec 016) are whitelisted the same way —
 their reducer arms enforce presence/destination/charge before anything lands,
-the whitelist is only the isolation boundary — `metatron.order_placed`/
-`metatron.order_cancelled`/`metatron.order_triggered` (spec 029) join the
+the whitelist is only the isolation boundary — `guardian.order_placed`/
+`guardian.order_cancelled`/`guardian.order_triggered` (spec 029) join the
 whitelist the same way (placement/cancellation/trigger-match validation lives
-in the reducer arm); `metatron.order_expired` needs no whitelist entry — it is
+in the reducer arm); `guardian.order_expired` needs no whitelist entry — it is
 executor-emitted, never injected, the `charge_regenerated` precedent — the
 four plan-layer types `designation.placed`/`designation.cancelled`/
 `directive.issued`/`directive.cancelled` (spec 084, [[guardian-designations]])
@@ -70,13 +70,13 @@ memory itself, since the embedder only observes an `agent.memory_added` AFTER
 it is committed and notified; and `cog.memory_divergence`, the shadow-mode
 selector's rank-divergence record, riding the same reducer-no-op `cog.*`
 isolation class as the telemetry types below), and (since spec 044 US2) two
-more: `metatron.charter_observed` — the Guardian turn pipeline's
+more: `guardian.charter_observed` — the Guardian turn pipeline's
 fingerprint-at-effect stamp, the event-sourced charter-revision timeline the
 [[morgue]] aligns deaths against, whose reducer arm (and so the dry-run)
 enforces a non-empty fingerprint — and `morgue.epilogue`, the narrator's
 recorded mourning prose after a death or the run's end, appending only the
 bounded `State.MorgueEpilogues` ring (never simulation state, which is why it
-also survives the ended-world narrowing above)), and (since spec 077 FR-006) `metatron.skills_observed` — the
+also survives the ended-world narrowing above)), and (since spec 077 FR-006) `guardian.skills_observed` — the
 skills-observation twin of `charter_observed`: the bound skill-file set a
 turn ran under, emitted on fingerprint change by the same pipeline
 (`observeSkills`), whose reducer arm (and so the dry-run) enforces a
@@ -118,7 +118,7 @@ letting the daemon's condition hook degrade to a log line only.
 Parent note: [[sim-loop]]. [[llm-provider-health]]'s condition hook is
 `InjectOperator`'s sole caller. [[guardian-miracles]]'s four event types ride
 `InjectSocial`'s whitelist, as do [[guardian-orders]]'s three injected
-order-lifecycle types and [[mental-maps]]'s `metatron.place_revealed`.
+order-lifecycle types and [[mental-maps]]'s `guardian.place_revealed`.
 [[memory-retrieval]]'s embedder driver injects `agent.memory_embedded`/
 `agent.situation_embedded` through this door and records
 `cog.memory_divergence` alongside the other `cog.*` telemetry.

@@ -26,8 +26,8 @@ prose and catalog rows verbatim, and links back here. Spec 077's seven new
 types: the scenario-incident family — `sim.cold_snap`, `sim.forage_blighted`,
 and the stranger entity's `stranger.arrived` / `stranger.moved` /
 `stranger.took` / `stranger.departed` ([[event-types-scenario-incidents]]) —
-plus the guardian's `metatron.skills_observed` skills observation
-([[event-types-guardian-morgue]], the `metatron.charter_observed` twin).
+plus the guardian's `guardian.skills_observed` skills observation
+([[event-types-guardian-morgue]], the `guardian.charter_observed` twin).
 Spec 083 adds one: `sim.neglect_detected`, the death-by-neglect percept — a
 survival need below its danger band for a full neglect window with zero
 intents in its class ([[event-types-agent-vitals]]); executor-emitted on the

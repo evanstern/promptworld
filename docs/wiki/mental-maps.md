@@ -58,7 +58,7 @@ renders `knownPlaces` from it in the prompt — since spec 043 as
 [[decision-context]]'s `known_places` block (`internal/mind/context.go`) —
 and re-arms the planner on a targeted `agent.map_corrected`. [[sim-state-reducer]] carries `Agent.Map` and
 the four knowledge-event Apply arms. [[event-types]] catalogs
-`agent.saw`/`agent.map_corrected`/`social.place_told`/`metatron.place_revealed`.
+`agent.saw`/`agent.map_corrected`/`social.place_told`/`guardian.place_revealed`.
 [[social-fabric]] is where the place-telling sidecar rides, beside rumors and
 gifts. [[guardian]] is the `send_vision` place grant's door, sharing this
 note's closed vocabulary via `internal/tool/registry.go`'s `placeFactKinds`.
@@ -87,7 +87,7 @@ rather than derived from first principles.
 ## Spec 086 — perception payloads carry named refs
 
 `agent.saw`/`agent.map_corrected`'s `agent`, `social.place_told`'s
-`from`/`to`, and `metatron.place_revealed`'s `agent` are `sim.AgentRef` on
+`from`/`to`, and `guardian.place_revealed`'s `agent` are `sim.AgentRef` on
 the wire. `PlaceFact.Source` (`src,omitempty`) deliberately stays a bare
 int — `PlaceFact` is state-resident (mental maps) AND rides four payloads,
 so the R2 no-refs-in-state invariant wins; it is a frozen, rationale-carrying

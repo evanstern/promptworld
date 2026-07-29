@@ -15,7 +15,7 @@ evaluation, the gru's turn, the social beat, and the governance layer.
 
 ## How it works
 
-Each tick, `stepEvents` regenerates Guardian's nudge charges (`metatron.charge_regenerated` at absolute boundaries of the
+Each tick, `stepEvents` regenerates Guardian's nudge charges (`guardian.charge_regenerated` at absolute boundaries of the
 faith-band cadence while below the cap — spec 085 replaced the fixed
 6-game-hour constant with `FaithRegenCadenceTicks(FaithScore, scenario)`:
 fervent 4h / steady 6h (the genesis band — a world with no faith events
@@ -23,7 +23,7 @@ keeps the pre-085 schedule byte-identically) / wavering 12h / forsaken
 scenario-stopped-or-ambient-24h-floor — [[guardian-faith]], [[guardian]])
 and, per tick, sweeps
 `State.GuardianOrders` for any active standing order whose `ExpiresTick` the
-new tick has reached, emitting `metatron.order_expired` (spec 029, the
+new tick has reached, emitting `guardian.order_expired` (spec 029, the
 `charge_regenerated` pattern — a pure function of state + tick, so a
 lapsed watch reproduces on replay with no guardian running — [[guardian-orders]];
 since spec 059 a survival watch is skipped by this sweep entirely — it is

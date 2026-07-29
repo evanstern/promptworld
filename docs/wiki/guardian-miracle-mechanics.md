@@ -18,14 +18,14 @@ event types' reducer semantics and the cost/gratis doctrine.
 
 | Event | Payload | Effect |
 |---|---|---|
-| `metatron.time_snapped` | `TimeSnappedPayload{to_tick, gratis}` | jumps `State.Tick` forward to `to_tick`, forward-only (a target at or before the current tick is rejected whole, before any spend); shifts every relative-duration field via `rebaseTicks` first |
-| `metatron.item_granted` | `ItemGrantedPayload{agent, kind, qty, gratis}` | provisions a living villager with `qty` known items, reject-whole (never clamp) if it would exceed the carry cap |
-| `metatron.entity_moved` | `EntityMovedPayload{class, x, y, to_x, to_y, gratis}` (`class` ∈ villager\|structure\|pile) | relocates the entity from `(x,y)` to `(to_x,to_y)` |
-| `metatron.entity_removed` | `EntityRemovedPayload{class, x, y, gratis}` (`class` ∈ structure\|pile\|terrain; villager is always rejected) | deletes the entity or overlays the terrain |
+| `guardian.time_snapped` | `TimeSnappedPayload{to_tick, gratis}` | jumps `State.Tick` forward to `to_tick`, forward-only (a target at or before the current tick is rejected whole, before any spend); shifts every relative-duration field via `rebaseTicks` first |
+| `guardian.item_granted` | `ItemGrantedPayload{agent, kind, qty, gratis}` | provisions a living villager with `qty` known items, reject-whole (never clamp) if it would exceed the carry cap |
+| `guardian.entity_moved` | `EntityMovedPayload{class, x, y, to_x, to_y, gratis}` (`class` ∈ villager\|structure\|pile) | relocates the entity from `(x,y)` to `(to_x,to_y)` |
+| `guardian.entity_removed` | `EntityRemovedPayload{class, x, y, gratis}` (`class` ∈ structure\|pile\|terrain; villager is always rejected) | deletes the entity or overlays the terrain |
 
 `applyMiracle` in `miracles.go` is the reducer dispatcher `sim.State.Apply` routes
-these four types to (alongside `applyMetatron` for `metatron.charge_regenerated`/
-`metatron.nudged` — [[sim-state-reducer]]). Every arm's validation — presence at the
+these four types to (alongside `applyMetatron` for `guardian.charge_regenerated`/
+`guardian.nudged` — [[sim-state-reducer]]). Every arm's validation — presence at the
 source, the destination's placement rule, item kind/quantity — precedes both the
 charge spend and the mutation, so a rejected miracle spends nothing and leaves no
 partial application (validate-not-clamp, reject-whole):

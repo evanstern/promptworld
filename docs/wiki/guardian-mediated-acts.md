@@ -38,7 +38,7 @@ Since spec 041 (FR-014), `send_vision` also carries an OPTIONAL place grant —
 `place_kind`/`place_x`/`place_y`, all-or-none (`toolcalls.go`'s `parseReveal`
 refuses a partial triple as a `rejected_gate` before anything lands). When
 given, `landVision` (now taking a `*placeReveal` parameter) composes one
-`metatron.place_revealed` event plus a companion `agent.memory_added`
+`guardian.place_revealed` event plus a companion `agent.memory_added`
 ("The vision showed you the <kind> at (x,y).", `SalDream`,
 `Origin: sim.OriginOmen`) as `extra` events riding the SAME atomic
 `landNudgeBatch` call as the vision's own nudge memory — the grant lands with
@@ -50,7 +50,7 @@ arguments behaves exactly as before.
 
 Both landers share `landNudgeBatch` — the text cap, the ONE atomic `InjectSocial`
 batch, and the soul append, VERBATIM the pre-029 `landNudge` body (wrap, don't
-rewrite): `metatron.nudged{form, targets, text}` (validating reducer spends the
+rewrite): `guardian.nudged{form, targets, text}` (validating reducer spends the
 charge and enforces the omen NIGHT gate at the door; `send_omen`'s day path never
 reaches here) + one prefixed (`"You saw a vision: "` / `"You witnessed an omen: "`)
 `agent.memory_added` per target at `SalDream` (8), each stamped `Origin: sim.OriginOmen`
@@ -109,5 +109,5 @@ table, rebase taxonomy, and the two landing doors; [[guardian-orders]] owns
 the daytime-omen deferral this note's `send_omen` night gate hands off to.
 [[mental-maps]] owns the place-fact vocabulary `send_vision`'s optional
 place grant draws on. [[sim-state-reducer]] validates and lands both
-`metatron.nudged` and the four miracle event types. [[event-types]]
+`guardian.nudged` and the four miracle event types. [[event-types]]
 catalogs all of them.

@@ -12,7 +12,7 @@ verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
 `internal/skin` is the fiction-as-data substrate spec 052 (TASK-121) introduced
 alongside the [[guardian]] package rename: the substrate itself knows only
 neutral, mechanical vocabulary (stage ids `stage-1`..`stage-4`, event types
-like `metatron.nudged`, tool ids like `work_miracle`), and every string the
+like `guardian.nudged`, tool ids like `work_miracle`), and every string the
 PLAYER sees for that vocabulary — the guardian's display name, its epithet,
 its tab label, the chronicle's family alias, the vision/omen/working nouns,
 and each curriculum stage's display identity — is resolved through one
@@ -36,13 +36,13 @@ row, and every row must resolve to a non-empty, non-path value.
 `skin.guardian.name` (`TokenName`, default `"Guardian"`), `.epithet`
 (`TokenEpithet`, default `"guardian"`), `.tab_label` (`TokenTabLabel`,
 default `"guardian"`), `.family_label` (`TokenFamilyLabel`, default
-`"guardian"` — the chronicle's Type-column alias for the FROZEN `metatron.*`
+`"guardian"` — the chronicle's Type-column alias for the FROZEN `guardian.*`
 event namespace, FR-013) — plus vocabulary tokens `working_noun`/
 `working_noun_plural` (default `"working"`/`"workings"` — the display name
 for the frozen `work_miracle` mechanics family), `notes_label` (default
 `"the guardian's notes"`), and `vision_noun`/`omen_noun` (default
 `"vision"`/`"omen"` — display nouns for the frozen `send_vision`/`send_omen`
-tool ids and the recorded `metatron.nudged` payload's `form` values `vision`/
+tool ids and the recorded `guardian.nudged` payload's `form` values `vision`/
 `omen`). Stage-identity tokens (`skin.stage.<id>.name`/`.line`) are appended
 from `defaultStages` in `init()` so the two tables can never drift; the
 default stage identities are the client-approved names carried over the

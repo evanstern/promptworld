@@ -43,7 +43,7 @@ a scold.
 │  ┌─ report card · first-night ──────────────────────────────────┐    │
 │  │ ✗ village survives to dawn of day 2 (sim.day_started: 0)       │   │
 │  │ ✗ no villager dies (agent.died: 2)                             │   │
-│  │ ✓ a watch set before nightfall (metatron.order_placed: 1)      │   │
+│  │ ✓ a watch set before nightfall (guardian.order_placed: 1)      │   │
 │  └──────────────────────────────────────────────────────────────┘    │
 │                                                                        │
 │  morgue — no-blame evidence                                           │

@@ -25,7 +25,7 @@ tick, evidence?}`, each `EvidenceRef{type, seq, tick, custom?}` a re-locatable
 pointer into this world's log) and `curriculum.stage_unlocked`
 (`StageUnlockedPayload{stage, exercise, tick}`), are the executor emission
 class — pure functions of (state, tick), no whitelist entries, the
-`metatron.order_expired` pattern; the scenario rubric machinery
+`guardian.order_expired` pattern; the scenario rubric machinery
 (`scenario.go`'s `scenarioRubricEvents`, generalized by spec 077 to
 per-exercise dawn boundaries) is the production emitter for EVERY cataloged
 exercise — see [[scenario-machinery]]; spec 072's the-law emission deferral
@@ -35,14 +35,14 @@ The reducer appends passes to the bounded `State.CurriculumPasses` ring
 once per (world, stage), rejecting duplicates and `stage-1` (the unearned
 floor). `sim.EvaluateUnlock(state, pass)` decides the gate conjuncts at
 emission time: stage-1→2, any stage-1 pass; stage-2→3, the pass's evidence
-must include a `metatron.charter_observed` entry with `Custom == true` —
+must include a `guardian.charter_observed` entry with `Custom == true` —
 where `Custom` is NEVER asserted freehand but derived by
 `sim.CharterObservedEvidence`, the single sanctioned constructor, as the
 inverse of the recorded `CharterObservedPayload.Default` (spec 044 US2), so a
 default/preset charter structurally cannot satisfy the gate (SC-004) —
 stage-3→4, any `Custom` evidence entry — since spec 077 this is
 `SkillsObservedEvidence`, `Custom: true` BY CONSTRUCTION (the long-open
-"which tool" design slot, filled): `metatron.skills_observed` records the
+"which tool" design slot, filled): `guardian.skills_observed` records the
 bound skill-file set a guardian turn ran under, and skill files bind only
 from stage-3 and only players author them, so a recorded observation is a
 player-granted capability by structural necessity. Two further sanctioned
@@ -110,7 +110,7 @@ digest narrates both `curriculum.*` types under the guardian grammar family
 immutability, and guardian ceiling/instruction-lock this chain's stages
 gate. [[sim-state-reducer]] owns the two `curriculum.*` reducer arms and the
 `CurriculumPasses`/`StagesUnlocked` state; [[event-types]] catalogs the
-payload shapes; [[guardian]] emits the `metatron.charter_observed` events
+payload shapes; [[guardian]] emits the `guardian.charter_observed` events
 whose `default` flag the gate derivation inverts; [[daemon-lifecycle]] wires
 the always-on unlock observer; [[scenario-machinery]] is the spec-054
 production emitter for this note's two event types and the consumer of the

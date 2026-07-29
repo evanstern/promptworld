@@ -108,7 +108,7 @@ paragraph describes.
 
 Rendering requires no daemon round trips — map updates come from pushed events, so the
 UI stays smooth at max speed (the chronicle simply scrolls fast). The four spec-029
-standing-order event types (`metatron.order_placed`/`order_triggered`/
+standing-order event types (`guardian.order_placed`/`order_triggered`/
 `order_cancelled`/`order_expired`) carry `digestRegistry` entries (digest.go —
 "Guardian set a watch: …" / "…watch came true/released/lapsed", the placed
 condition truncated to 80 runes and quoted through the same speech helper as

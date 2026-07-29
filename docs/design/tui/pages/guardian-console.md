@@ -53,7 +53,7 @@ additive prose beneath it (spec 063 standing resolution 1).
 │                                                                          │
 │ ┌─ report card · first-night ─────────────────────────────────────┐    │
 │ │ ✓ no villager dies (agent.died: 0)                                │    │
-│ │ … a watch set before nightfall (metatron.order_placed: 0)         │    │
+│ │ … a watch set before nightfall (guardian.order_placed: 0)         │    │
 │ └───────────────────────────────────────────────────────────────┘    │
 └──────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────┐
@@ -96,7 +96,7 @@ classification, reused verbatim, not a second vocabulary.
    provenance (default/player-authored/preset-locked) and binding status,
    plus the skill file count and its own binding status (locked below stage
    3, per [[curriculum-ladder]]) — sourced entirely from the same
-   `metatron.Status` fields the compact tab's header already reads (no
+   `guardian.Status` fields the compact tab's header already reads (no
    client-side file parsing). An `[e] edit ($EDITOR)` hint appears on the
    charter line when it binds; there is **no in-TUI text editor** (decision
    2's explicit ruling). On return from `$EDITOR`, if the file's content
@@ -193,7 +193,7 @@ adds a richer TUI presentation of what already exists.
 | scrollback | tail (0) · scrolled N | `Model.consoleScroll` | `consoleScrollWindow` | `J`/`K` · — | spec 053 | — |
 | card seam (composition point) | empty · composed | `Model.consoleCards` (`consoleCard` interface) | `consoleCardLines` | — | spec 053 (seam); spec 063 (first producer) | — |
 | report-card attribution note | absent · shown (stored note) · badge while unseen | `State.GuardianReportCard` (stored `guardian.report_card` note — re-read, never re-graded) | `noteCard.renderCard`, composed by `rebuildConsoleCards` | — | spec 063 (reorient D5) | `skin.guardian.report_card_label`, `skin.guardian.attribution_label` |
-| charter/skills read surface | default · player-authored · preset-locked; skills bound · locked | `metatron.Status` (`CharterDefault`/`CharterLocked`/`CharterPreset`/`Skills`/`SkillsLocked`) | `charterReadSurfaceLines`/`charterReadSurfaceBox` | — (display-only) | spec 053 | — |
+| charter/skills read surface | default · player-authored · preset-locked; skills bound · locked | `guardian.Status` (`CharterDefault`/`CharterLocked`/`CharterPreset`/`Skills`/`SkillsLocked`) | `charterReadSurfaceLines`/`charterReadSurfaceBox` | — (display-only) | spec 053 | — |
 | `$EDITOR` handoff | idle · shelled-out · returned | on-disk `charter.md` (content hash, pre/post) | `startEditorHandoff` (`tea.ExecProcess`) | `e` · — | spec 053 | — |
 | "charter changed — next turn binds it" confirmation | absent · shown once · error notice | pre/post content-hash comparison (`editorRoundTripMsg`) | `Model.consoleNotice` | — | spec 053 | — |
 | report-card rubric checklist (inline) | absent · shown (stopping point on record) | shared resolver (`resolveReportCardFacts`, spec 072 — exported replica-parametric as `tui.ResolveRubricFacts` by spec 076): recorded `CurriculumPass` else `sim.EvaluateRubric` over the replica — same source as `overlays/postmortem.md`/`overlays/ceremony.md` and the `promptworld compare` duel card | `reportCard` (`consoleCard` wrapper, `internal/tui/views.go`), composed FIRST by `rebuildConsoleCards` | — | reorient D5 / TASK-127; production spec 063; grading spec 072; export spec 076 | — |

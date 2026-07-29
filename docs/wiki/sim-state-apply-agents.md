@@ -121,7 +121,7 @@ never go below 1 — a standing wall never serializes ≤ 0) and resets the
 demolisher's `Intent.WorkStart` to 0, re-arming the executor's work gate for the
 next cycle under the SAME intent (no new scheduling); `agent.wall_destroyed`
 (the final chip) removes the structure — its tile is passable again by
-construction — and clears the intent (`metatron.entity_removed` reaches the
+construction — and clears the intent (`guardian.entity_removed` reaches the
 same end through the miracle path); `agent.wall_repaired` consumes 1 unit of
 `wallRepairMaterial(kind)` (planks for a plank wall, refined stone for a stone
 wall — the same material each was built from) and restores `HP` by

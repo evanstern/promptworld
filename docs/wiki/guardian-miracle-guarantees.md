@@ -40,7 +40,7 @@ live application. Spec 091's door-side move-target freshness (villager moves
 naming a target now resolve that villager's LIVE position at the door,
 [[guardian-miracle-doors]]) is exactly this guarantee's doctrine at work: the
 resolved coordinate — never the name — is what the recorded
-`metatron.entity_moved` carries, so `applyEntityMoved` needed no change and
+`guardian.entity_moved` carries, so `applyEntityMoved` needed no change and
 every previously-recorded move (coordinate-addressed, as all pre-091 moves
 were) replays identically; `TestMoveFreshnessReplayByteIdentical`
 (`internal/sim/miracles_test.go`) pins it. `sim.State.m` (the unexported, unserialized static map attached by

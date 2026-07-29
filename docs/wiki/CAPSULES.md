@@ -124,7 +124,7 @@ hand; regenerate whenever any note's `description:` changes:
   Agent vitals/mortality event rows split from [[event-types]]: agent.needs_changed/died, run.ended, agent.slept/woke, sim.neglect_detected (spec 083). Load when tracing needs decay/anchoring, death causes (starvation/exposure/collapse/gru), the death ledger and grave placement, the neglect percept, or run-ending/postmortem posture.
 
   - [[event-types-mental-map]] — Perception and mental-map event rows split from [[event-types]]: agent.moved, agent.saw, agent.map_corrected, social.place_told…
-  Perception and mental-map event rows split from [[event-types]]: agent.moved, agent.saw, agent.map_corrected, social.place_told, metatron.place_revealed. Load when tracing spec 041's per-agent spatial knowledge — perception sweeps, told directions, corrected/stale facts, and vision-granted places.
+  Perception and mental-map event rows split from [[event-types]]: agent.moved, agent.saw, agent.map_corrected, social.place_told, guardian.place_revealed. Load when tracing spec 041's per-agent spatial knowledge — perception sweeps, told directions, corrected/stale facts, and vision-granted places.
 
   - [[event-types-harvesting-consumption]] — Harvest/consumption event rows split from [[event-types]]: agent.foraged/chopped/hunted/quarried/collected_water, sim.food_rotted…
   Harvest/consumption event rows split from [[event-types]]: agent.foraged/chopped/hunted/quarried/collected_water, sim.food_rotted, agent.cooked/bathed/refueled/ate, agent.spear_broke/axe_broke, sim.fire_burned_out. Load when tracing yield math, tool durability, food rot, cooking, or fire fuel.
@@ -151,13 +151,13 @@ hand; regenerate whenever any note's `description:` changes:
   Scenario-incident event rows split from [[event-types]] (spec 077): sim.cold_snap, sim.forage_blighted, and the stranger entity family (arrived/moved/took/departed). Load when tracing the exercise catalog's authored pressure or the stranger's night arc.
 
   - [[event-types-guardian-orders]] — Guardian standing-order event rows split from [[event-types]]:…
-  Guardian standing-order event rows split from [[event-types]]: metatron.charge_regenerated/nudged/order_placed/order_triggered/order_cancelled/order_expired. Load when tracing charge regen, nudge validation, or the spec 029/059 standing-order and survival-watch lifecycle.
+  Guardian standing-order event rows split from [[event-types]]: guardian.charge_regenerated/nudged/order_placed/order_triggered/order_cancelled/order_expired. Load when tracing charge regen, nudge validation, or the spec 029/059 standing-order and survival-watch lifecycle.
 
-  - [[event-types-guardian-morgue]] — Guardian morgue/report-card event rows split from [[event-types]]: metatron.charter_observed, morgue.epilogue, guardian.report_card, chronicle.entry
-  Guardian morgue/report-card event rows split from [[event-types]]: metatron.charter_observed, metatron.skills_observed (spec 077), morgue.epilogue, guardian.report_card, chronicle.entry. Load when tracing spec 044 charter-fingerprint observation, the spec 077 skills observation, run epilogues, or the spec 063 grounded-feedback report card.
+  - [[event-types-guardian-morgue]] — Guardian morgue/report-card event rows split from [[event-types]]: guardian.charter_observed, morgue.epilogue, guardian.report_card, chronicle.entry
+  Guardian morgue/report-card event rows split from [[event-types]]: guardian.charter_observed, guardian.skills_observed (spec 077), morgue.epilogue, guardian.report_card, chronicle.entry. Load when tracing spec 044 charter-fingerprint observation, the spec 077 skills observation, run epilogues, or the spec 063 grounded-feedback report card.
 
-  - [[event-types-guardian-actions]] — Guardian miracle-action and gru event rows split from [[event-types]]: metatron.time_snapped/item_granted/entity_moved/entity_removed, the gru.*…
-  Guardian miracle-action and gru event rows split from [[event-types]]: metatron.time_snapped/item_granted/entity_moved/entity_removed, the gru.* family. Load when tracing miracle cost/gratis mechanics or the gru antagonist's emergence/attack lifecycle including the spec 044 escalated-kill path.
+  - [[event-types-guardian-actions]] — Guardian miracle-action and gru event rows split from [[event-types]]: guardian.time_snapped/item_granted/entity_moved/entity_removed, the gru.*…
+  Guardian miracle-action and gru event rows split from [[event-types]]: guardian.time_snapped/item_granted/entity_moved/entity_removed, the gru.* family. Load when tracing miracle cost/gratis mechanics or the gru antagonist's emergence/attack lifecycle including the spec 044 escalated-kill path.
 
   - [[event-types-guardian-plans]] — Guardian plan-layer event rows split from [[event-types]] (spec 084): designation.placed/cancelled/fulfilled, directive.issued/cancelled/fulfilled/expired
   Guardian plan-layer event rows split from [[event-types]] (spec 084): designation.placed/cancelled/fulfilled and directive.issued/cancelled/fulfilled/expired. Load when tracing the designation/directive lifecycle, the injected-vs-executor-emitted door split, or the TASK-118 faith seam payload (consumed by spec 085 — [[guardian-faith]]).

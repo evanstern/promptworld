@@ -26,7 +26,7 @@ interrupt policy, celebrating a milestone the player earned.
 │                                                                        │
 │  ┌─ report card · the-law ──────────────────────────────────────┐    │
 │  │ ✓ a village law adopted (meeting.proposal_resolved · seq 812)   │    │
-│  │ ✓ a player-authored charter in force (metatron.charter_observe…│    │
+│  │ ✓ a player-authored charter in force (guardian.charter_observe…│    │
 │  └────────────────────────────────────────────────────────────────┘   │
 │                                                                        │
 │                              esc dismiss · q — the world keeps running│

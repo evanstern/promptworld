@@ -42,7 +42,7 @@ without `State` ever serializing the map.
 (`Map.upsertFact`), `agent.map_corrected` removes facts the sweep found gone
 (`Map.removeFact`) — both no-op on a map-less agent (a pre-041 world mid-
 migration), keeping the reducer total; `social.place_told` (the talk
-sidecar's directions exchange) and `metatron.place_revealed` (a vision's
+sidecar's directions exchange) and `guardian.place_revealed` (a vision's
 optional place grant) route through the `applySocial`/`applyGuardian`
 dispatchers below (since spec 084 the seven `designation.*`/`directive.*`
 types dispatch to `applyPlan` in `plans.go` the same way — validate-not-clamp
@@ -55,7 +55,7 @@ terminals re-validate and transition one-way); [[guardian-faith]]), upserting in
 RECEIVER's map only where the fact is
 absent or its own knowledge staler. Several
 EXISTING arms gained silent DERIVED bookkeeping with no new event: `agent.moved`,
-`agent.woke`, and a `villager`-class `metatron.entity_moved` each call
+`agent.woke`, and a `villager`-class `guardian.entity_moved` each call
 `markExplored`/`notePresence` — a mover's surroundings become explored
 terrain and mover-and-bystanders record each other's positions — a pure
 function of (state, event) with no chronicle noise, so a mind-map-populating
@@ -70,19 +70,19 @@ idempotent on re-apply) and the `stranger.*` family to `applyStranger` in
 the `meeting.*`/`norm.*` families — plus `meeting.convention_established` and
 the `sim.gathering_observed` watch event (TASK-36) — dispatch to
 `applyGovernance` in `governance.go` ([[governance]]); the four miracle types
-`metatron.time_snapped`/`metatron.item_granted`/`metatron.entity_moved`/
-`metatron.entity_removed` (spec 016, [[guardian-miracles]]) dispatch to
-`applyMiracle` in `miracles.go`, alongside `metatron.charge_regenerated`/
-`metatron.nudged`'s `applyGuardian` — which since spec 029 also arms the
-standing-order lifecycle: `metatron.order_placed` validates and appends (id
+`guardian.time_snapped`/`guardian.item_granted`/`guardian.entity_moved`/
+`guardian.entity_removed` (spec 016, [[guardian-miracles]]) dispatch to
+`applyMiracle` in `miracles.go`, alongside `guardian.charge_regenerated`/
+`guardian.nudged`'s `applyGuardian` — which since spec 029 also arms the
+standing-order lifecycle: `guardian.order_placed` validates and appends (id
 uniqueness, origin, non-empty `event_types`, a 1..7-game-day ttl, valid agent
 index, condition/action length caps, and — player-origin only — the 3-order
 active cap) then prunes to the active set plus the most recent 32 non-active;
-`metatron.order_triggered`/`metatron.order_cancelled`/`metatron.order_expired`
+`guardian.order_triggered`/`guardian.order_cancelled`/`guardian.order_expired`
 each transition one order from active to a terminal status via shared
 `transitionGuardianOrder`, rejecting an unknown id or one not active
 ([[guardian-orders]]); since spec 044 (US2) `applyGuardian` also carries
-`metatron.charter_observed`, validating a non-empty fingerprint (so the
+`guardian.charter_observed`, validating a non-empty fingerprint (so the
 `InjectSocial` dry-run refuses a blank one at the door) then sets
 `State.CharterFingerprint` — state keeps only the CURRENT fingerprint, the
 full revision timeline being the log's observation sequence the [[morgue]]

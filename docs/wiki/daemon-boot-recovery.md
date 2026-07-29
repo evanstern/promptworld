@@ -70,7 +70,7 @@ Startup sequence:
    `st.AppendEvents` shape): if recovered state carries no ACTIVE
    system-origin survival watch yet, the three canonical watches
    (`sim.SurvivalWatchDefs` — near-death, starvation, exposure) land as
-   `metatron.order_placed` events at the recovered tick; a fresh world's
+   `guardian.order_placed` events at the recovered tick; a fresh world's
    first boot seeds them, a pre-059 world's first boot after upgrade
    back-seeds them once, and every later boot finds them already active and
    injects nothing ([[guardian-orders]]). Then, still before the pidfile's

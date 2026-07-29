@@ -118,10 +118,10 @@ same class of alarm surfaced while there is still runway) render the
 **whole line** in the alert role regardless of family. No new tier and
 no new channel exists: the spec-077 event vocabulary (`sim.cold_snap`,
 `sim.forage_blighted`, `stranger.arrived/moved/took/departed`,
-`metatron.skills_observed`) enters entirely through existing family voices
+`guardian.skills_observed`) enters entirely through existing family voices
 — `sim.*` rows in the sim voice (the blight uses the agent.saw
 first-fact-plus-count shape for its tile list), `stranger.*` in the
-gru/threat voice, `metatron.skills_observed` mirroring the charter
+gru/threat voice, `guardian.skills_observed` mirroring the charter
 observation's line — and spec 083's `sim.neglect_detected` repeats the
 precedent exactly: one `isAlertType` case plus a sim-voice digest row with
 deterministic per-need wording (*Name* `is dangerously cold and has done

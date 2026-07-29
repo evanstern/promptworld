@@ -59,7 +59,7 @@ player configuration:
   per watch per batch, exactly like a structural order.
 - **`runSurvivalTrigger`** (vs. `runTrigger`) differs from an ordinary
   trigger in three ways that follow from a survival watch's nature: (1) it
-  lands NO `metatron.order_triggered` — the watch is non-expiring and
+  lands NO `guardian.order_triggered` — the watch is non-expiring and
   non-consuming, so it never transitions out of `active`, ever; (2) there is
   NO empty-bank precheck — the turn ALWAYS runs (the edge case: "the turn
   still happens… it must not burn the match silently"), so at zero charges

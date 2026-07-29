@@ -44,7 +44,7 @@ spreading it, and the witnessed-death grief rumor (SC-006).
 full death fallout; a healthy one keeps the survival floor — [[gru]]).
 `internal/sim/toolcheck_test.go`'s `TestWhitelistDiffIdentical` — the
 injection-whitelist tripwire — accepts exactly the two declared boundary
-widenings (`metatron.charter_observed`, `morgue.epilogue`). On the mind side,
+widenings (`guardian.charter_observed`, `morgue.epilogue`). On the mind side,
 `internal/guardian/charter_observed_test.go` proves the first turn emits the
 charter observation, an unchanged fingerprint stays silent, and an ended
 world skips it (the shared fixtures pre-seed `charterFP` so turn tests keep

@@ -84,7 +84,7 @@ dogfood equivalence test pins byte-identical to `BuildMiracleBatch`'s output.)
   including the residual race a bare coordinate address can still lose; when
   that race trips the reducer's "no living villager at (x,y)" refusal, the
   wrapped in-fiction message appends a one-line suggestion to name the
-  villager instead. The recorded `metatron.entity_moved` event always carries
+  villager instead. The recorded `guardian.entity_moved` event always carries
   whichever coordinates the door actually used (resolved-by-name or surveyed)
   — emitter-computes, so `applyEntityMoved` ([[guardian-miracle-mechanics]]) is
   unmodified and replay of any previously-recorded move is unaffected. A

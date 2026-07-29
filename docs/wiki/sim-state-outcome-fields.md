@@ -36,7 +36,7 @@ most recent effective-charter content hash a Guardian turn ran under — the
 full revision timeline lives in the event log) with, since spec 072, its
 authorship twin `CharterCustom bool` (`charter_custom` — whether that most
 recent observation was player-authored, `!CharterObservedPayload.Default`,
-set only by the same `metatron.charter_observed` arm; the conservative
+set only by the same `guardian.charter_observed` arm; the conservative
 false zero value means a pre-072 snapshot with a custom charter in force
 reads "not known player-authored" until the next revision is observed —
 the-law's rubric charter conjunct reads it, [[scenario-rubric]]) and, since
@@ -46,7 +46,7 @@ event envelope — what `CharterEvidenceFromState` re-locates pass evidence
 with; zero = a pre-077 snapshot, the evidence honestly absent until the
 next observation stamps them) plus the skills-observation triple
 `SkillsFingerprint`/`SkillsObservedSeq`/`SkillsObservedTick` (set only by
-the `metatron.skills_observed` arm — the stage-3 evidence substrate,
+the `guardian.skills_observed` arm — the stage-3 evidence substrate,
 [[curriculum-ladder-progression]]).
 
 **Morgue epilogues** (spec 044, [[morgue-epilogues]]): the

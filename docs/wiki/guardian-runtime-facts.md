@@ -24,7 +24,7 @@ after `loadCharter` returns — before anything consumes the text —
 (`charterFingerprint`: the first 12 hex chars of SHA-256 over exactly the
 post-fallback, post-truncation bytes the model executes, so the recorded
 revision can never name a charter the guardian never ran) and, when it differs
-from the last recorded value, emits `metatron.charter_observed{fingerprint,
+from the last recorded value, emits `guardian.charter_observed{fingerprint,
 default}` through the same `InjectSocial` door as every other turn effect —
 fingerprint-at-effect semantics. The `default` flag derives from the same
 effective text (an empty/missing `charter.md` serves and records the default),
@@ -54,7 +54,7 @@ Evidence only — the payload carries no scoring fields, by contract.
 
 **Charge economy** (`internal/sim/guardian.go`): `State.GuardianCharges` — genesis
 1, cap 3, +1 per absolute boundary of the faith-band cadence emitted by the [[executor]]
-(`metatron.charge_regenerated`, a pure function of (faith score, scenario
+(`guardian.charge_regenerated`, a pure function of (faith score, scenario
 presence, tick) since spec 085 — `FaithRegenCadenceTicks`, steady band = the
 old 6 game hours; [[guardian-faith]]), −1 per landed
 omen, vision, or prophecy (a miracle spends its per-kind cost). Fully event-sourced: replay

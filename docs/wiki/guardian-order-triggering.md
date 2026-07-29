@@ -60,7 +60,7 @@ subject to the rate cap.
 
 **`runTrigger`** fires one matched order:
 
-1. Land `metatron.order_triggered` through the door — the dry-run enforces the order is
+1. Land `guardian.order_triggered` through the door — the dry-run enforces the order is
    STILL active, so a cancel/expiry that raced the match wins here and the trigger is
    abandoned silently.
 2. **Empty-bank precheck** (`knownActEmptyBank`): a system-origin (deferral) order's
