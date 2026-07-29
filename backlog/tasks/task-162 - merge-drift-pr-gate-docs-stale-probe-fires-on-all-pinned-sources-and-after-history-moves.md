@@ -3,10 +3,10 @@ id: TASK-162
 title: >-
   merge-drift pr gate: docs-stale probe fires on all pinned sources and after
   history moves
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-27 00:31'
-updated_date: '2026-07-27 00:35'
+updated_date: '2026-07-29 18:45'
 labels: []
 dependencies: []
 priority: medium
