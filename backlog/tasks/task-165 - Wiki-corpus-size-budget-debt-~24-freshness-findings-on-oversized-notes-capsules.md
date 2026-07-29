@@ -3,9 +3,10 @@ id: TASK-165
 title: >-
   Wiki corpus size-budget debt: ~24 freshness findings on oversized
   notes/capsules
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-28 00:34'
+updated_date: '2026-07-29 18:54'
 labels:
   - wiki
   - debt
