@@ -346,6 +346,12 @@ var injectSocialWhitelist = map[string]bool{
 	// observability, reducer no-op — same isolation class as the other cog.*
 	// types above.
 	"cog.memory_divergence": true,
+	// Private dreams (spec 098): the nightly clustering pass's recorded
+	// habituation/merge outcomes, injected by the consolidation driver —
+	// per-agent by construction (the pass reads one agent's store only,
+	// dream.go), reducer-total like the rest of the consolidation family.
+	"agent.salience_revised": true,
+	"agent.memory_merged":    true,
 }
 
 // endedProseWhitelist is the surviving slice of the inject_social door once a

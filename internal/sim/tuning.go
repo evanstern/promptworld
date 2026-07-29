@@ -40,6 +40,27 @@ const (
 	defaultEncounterCooldownTicks = 2 * 3600 // 2 game-hours: per-pair encounter cooldown
 )
 
+// The spec-098 dream dials (private dreams — consolidation clustering +
+// habituation, dream.go). Human-tuned doctrine defaults, recorded with their
+// rationale in specs/098-private-dreams/spec.md (D2/D4):
+//   - density 900‰: cosine 0.90 reads as a near-duplicate neighborhood on the
+//     spec-042 sentence embeddings (identical texts embed at 1.0);
+//   - band 30‰: membership gathers at 0.87 and geometry alone decides only at
+//     0.93+ — between the bars the existing consolidation slot is consulted;
+//   - habituation 500‰: a routine cluster member's salience halves per night
+//     (floor 1), the memory-recency half-life rhyme;
+//   - merge cap 4: at most four absorbed members per agent-night, so a
+//     collapse is gradual and each night's batch stays small;
+//   - jitter 15‰: D4's minimal dream-noise adoption — a ±0.015 boundary
+//     nudge, rngAt-seeded and zeroable (0 = pre-noise outcomes exactly).
+const (
+	defaultDreamDensityPerMille       = 900
+	defaultDreamAmbiguousBandPerMille = 30
+	defaultDreamHabituationPerMille   = 500
+	defaultDreamMergeCapPerNight      = 4
+	defaultDreamJitterPerMille        = 15
+)
+
 // Clamp bounds per contracts/tuning.md. Out-of-range values of KNOWN fields
 // clamp to the nearest bound with an operator-visible warning (the
 // llm/config.go normalizeTokenBudget shape). Structural problems (malformed
@@ -50,6 +71,15 @@ const (
 	minGruEmergePerMille, maxGruEmergePerMille           = 0, 1000
 	minPlannerCadenceTicks, maxPlannerCadenceTicks       = 60, 86400
 	minEncounterCooldownTicks, maxEncounterCooldownTicks = 0, 86400
+	// Dream dials (spec 098): per-mille geometry bounds; the band is capped at
+	// 500 so the membership bar can never go negative against a mid-range
+	// density; the merge cap is bounded well under any plausible store size;
+	// jitter is capped at 200‰ so noise can widen dreams but never dominate.
+	minDreamDensityPerMille, maxDreamDensityPerMille             = 0, 1000
+	minDreamAmbiguousBandPerMille, maxDreamAmbiguousBandPerMille = 0, 500
+	minDreamHabituationPerMille, maxDreamHabituationPerMille     = 0, 1000
+	minDreamMergeCapPerNight, maxDreamMergeCapPerNight           = 0, 64
+	minDreamJitterPerMille, maxDreamJitterPerMille               = 0, 200
 )
 
 // TuningState is the fully-resolved effective dial set carried on sim.State
@@ -63,6 +93,60 @@ type TuningState struct {
 	GruEmergePerMille      uint64 `json:"gru_emerge_per_mille"`
 	PlannerCadenceTicks    int64  `json:"planner_cadence_ticks"`
 	EncounterCooldownTicks int64  `json:"encounter_cooldown_ticks"`
+	// Dream (spec 098) is the private-dream dial block. nil ≡ the default
+	// dream set — exactly the State.Tuning nil convention one level down —
+	// which keeps every pre-098 snapshot and recorded sim.tuning_applied
+	// payload byte-identical (omitempty; the spec-094 additive discipline,
+	// no format-version bump). A non-nil block is always fully resolved.
+	// NOTE: the pointer makes bare == on TuningState compare pointer
+	// identity — dial comparisons go through Equal, never ==.
+	Dream *DreamTuning `json:"dream,omitempty"`
+}
+
+// DreamTuning is the resolved spec-098 dream dial block (dream.go's
+// PlanDream consumes it): the cluster density threshold and ambiguous band
+// (per-mille cosine), the habituation weight factor (per-mille), the
+// per-night merge cap, and the D4 boundary-jitter amplitude (per-mille,
+// zeroable). A non-nil DreamTuning always carries all five fields resolved
+// and clamped, mirroring TuningState's own never-sparse rule.
+type DreamTuning struct {
+	DensityPerMille       int64 `json:"density_per_mille"`
+	AmbiguousBandPerMille int64 `json:"ambiguous_band_per_mille"`
+	HabituationPerMille   int64 `json:"habituation_per_mille"`
+	MergeCapPerNight      int64 `json:"merge_cap_per_night"`
+	JitterPerMille        int64 `json:"jitter_per_mille"`
+}
+
+// defaultDream returns the fully-resolved default dream dial block.
+func defaultDream() DreamTuning {
+	return DreamTuning{
+		DensityPerMille:       defaultDreamDensityPerMille,
+		AmbiguousBandPerMille: defaultDreamAmbiguousBandPerMille,
+		HabituationPerMille:   defaultDreamHabituationPerMille,
+		MergeCapPerNight:      defaultDreamMergeCapPerNight,
+		JitterPerMille:        defaultDreamJitterPerMille,
+	}
+}
+
+// EffectiveDream resolves the dream block: the carried values, or the
+// default set when the block is nil (every pre-098 TuningState).
+func (t TuningState) EffectiveDream() DreamTuning {
+	if t.Dream != nil {
+		return *t.Dream
+	}
+	return defaultDream()
+}
+
+// Equal compares two effective dial sets BY VALUE — the comparison the boot
+// seed uses (daemon seedTuning). Bare == would compare the Dream pointer's
+// identity and re-append a redundant sim.tuning_applied on every restart.
+func (t TuningState) Equal(o TuningState) bool {
+	return t.RefuelDyingBelow == o.RefuelDyingBelow &&
+		t.FireBurnPerWood == o.FireBurnPerWood &&
+		t.GruEmergePerMille == o.GruEmergePerMille &&
+		t.PlannerCadenceTicks == o.PlannerCadenceTicks &&
+		t.EncounterCooldownTicks == o.EncounterCooldownTicks &&
+		t.EffectiveDream() == o.EffectiveDream()
 }
 
 // defaultTuning returns the fully-resolved default dial set (every field equal
@@ -130,11 +214,22 @@ func (s *State) EncounterCooldown() int64 {
 	return defaultEncounterCooldownTicks
 }
 
+// DreamDials is the resolved spec-098 dream dial block (nil-safe): the one
+// consumption path for PlanDream's parameters, read off the mind's replica at
+// consolidation-snapshot time like the other mind-side dials.
+func (s *State) DreamDials() DreamTuning {
+	if s.Tuning != nil {
+		return s.Tuning.EffectiveDream()
+	}
+	return defaultDream()
+}
+
 // EffectiveTuning returns the full in-effect dial set (tuned values or their
 // defaults); nil Tuning resolves to the default set. The daemon boot seed
-// compares a parsed manifest against this — TuningState is comparable — to
-// decide whether the effective set differs from what state already carries and
-// thus whether to append a sim.tuning_applied event (spec 048 FR-004).
+// compares a parsed manifest against this — via Equal, since spec 098's Dream
+// pointer block took TuningState out of bare-==-comparability — to decide
+// whether the effective set differs from what state already carries and thus
+// whether to append a sim.tuning_applied event (spec 048 FR-004).
 func (s *State) EffectiveTuning() TuningState {
 	if s.Tuning != nil {
 		return *s.Tuning
@@ -154,6 +249,14 @@ type tuningManifest struct {
 	GruEmergePerMille      *uint64 `json:"gru_emerge_per_mille"`
 	PlannerCadenceTicks    *int64  `json:"planner_cadence_ticks"`
 	EncounterCooldownTicks *int64  `json:"encounter_cooldown_ticks"`
+	// Dream dials (spec 098): flat keys like every other dial — the manifest
+	// stays one sparse level deep for the operator; the nested resolved block
+	// is a state/payload shape, not an authoring shape.
+	DreamDensityPerMille       *int64 `json:"dream_density_per_mille"`
+	DreamAmbiguousBandPerMille *int64 `json:"dream_ambiguous_band_per_mille"`
+	DreamHabituationPerMille   *int64 `json:"dream_habituation_per_mille"`
+	DreamMergeCapPerNight      *int64 `json:"dream_merge_cap_per_night"`
+	DreamJitterPerMille        *int64 `json:"dream_jitter_per_mille"`
 }
 
 // ParseTuning decodes a sparse tuning.json into a full effective TuningState.
@@ -201,6 +304,22 @@ func ParseTuning(data []byte) (*TuningState, []string, error) {
 	clampI64("planner_cadence_ticks", m.PlannerCadenceTicks, &t.PlannerCadenceTicks, minPlannerCadenceTicks, maxPlannerCadenceTicks)
 	clampI64("encounter_cooldown_ticks", m.EncounterCooldownTicks, &t.EncounterCooldownTicks, minEncounterCooldownTicks, maxEncounterCooldownTicks)
 
+	// Dream dials (spec 098): any present key resolves the FULL dream block
+	// against its defaults (a non-nil block is never sparse); no key present
+	// leaves Dream nil ≡ the default set, so a pre-098 manifest parses to a
+	// set Equal to what a pre-098 world already carries.
+	if m.DreamDensityPerMille != nil || m.DreamAmbiguousBandPerMille != nil ||
+		m.DreamHabituationPerMille != nil || m.DreamMergeCapPerNight != nil ||
+		m.DreamJitterPerMille != nil {
+		d := defaultDream()
+		clampI64("dream_density_per_mille", m.DreamDensityPerMille, &d.DensityPerMille, minDreamDensityPerMille, maxDreamDensityPerMille)
+		clampI64("dream_ambiguous_band_per_mille", m.DreamAmbiguousBandPerMille, &d.AmbiguousBandPerMille, minDreamAmbiguousBandPerMille, maxDreamAmbiguousBandPerMille)
+		clampI64("dream_habituation_per_mille", m.DreamHabituationPerMille, &d.HabituationPerMille, minDreamHabituationPerMille, maxDreamHabituationPerMille)
+		clampI64("dream_merge_cap_per_night", m.DreamMergeCapPerNight, &d.MergeCapPerNight, minDreamMergeCapPerNight, maxDreamMergeCapPerNight)
+		clampI64("dream_jitter_per_mille", m.DreamJitterPerMille, &d.JitterPerMille, minDreamJitterPerMille, maxDreamJitterPerMille)
+		t.Dream = &d
+	}
+
 	return &t, warns, nil
 }
 
@@ -215,6 +334,11 @@ type TuningAppliedPayload struct {
 	GruEmergePerMille      uint64 `json:"gru_emerge_per_mille"`
 	PlannerCadenceTicks    int64  `json:"planner_cadence_ticks"`
 	EncounterCooldownTicks int64  `json:"encounter_cooldown_ticks"`
+	// Dream (spec 098): newly-emitted events always carry the resolved block
+	// (the full-set doctrine); the pointer + omitempty exist for the READ
+	// side — a pre-098 recorded event decodes nil, which the apply arm keeps
+	// nil ≡ defaults, so old logs replay byte-identically with no format bump.
+	Dream *DreamTuning `json:"dream,omitempty"`
 }
 
 // GenesisTuningEvent builds the sim.tuning_applied event a world pins at
@@ -234,6 +358,11 @@ func GenesisTuningEvent(tick int64) store.Event {
 // effective set, for the daemon to seed on boot when it differs from what
 // state already carries (the NewConventionEvent pattern, governance.go:632).
 func NewTuningEvent(tick int64, t TuningState) store.Event {
+	// Full-set doctrine: the emitted payload always carries the RESOLVED
+	// dream block (spec 098), even when t.Dream is nil — a newly-pinned world
+	// fixes its dream doctrine at birth exactly as spec 057 fixed the base
+	// five, and later default* changes never reach back into its live runs.
+	d := t.EffectiveDream()
 	return store.Event{Tick: tick, Type: "sim.tuning_applied",
 		Payload: mustPayload(TuningAppliedPayload{
 			RefuelDyingBelow:       t.RefuelDyingBelow,
@@ -241,5 +370,6 @@ func NewTuningEvent(tick int64, t TuningState) store.Event {
 			GruEmergePerMille:      t.GruEmergePerMille,
 			PlannerCadenceTicks:    t.PlannerCadenceTicks,
 			EncounterCooldownTicks: t.EncounterCooldownTicks,
+			Dream:                  &d,
 		})}
 }
