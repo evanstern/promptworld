@@ -284,6 +284,34 @@ func TestTargetingDigestPresentAndBounded(t *testing.T) {
 	}
 }
 
+// TestTargetingDigestCarryHeadroom (spec 095 FR-001/SC-001): a living villager's
+// digest line carries live carry headroom — used bulk, the cap, and the correct
+// free remainder — computed from a partially-filled inventory, on the SAME
+// snapshot as position/needs. A full villager's line reports 0 free.
+func TestTargetingDigestCarryHeadroom(t *testing.T) {
+	mt, _, _, _ := newTestGuardian(t, "The village holds.")
+
+	// Villager 0: a partially-filled pouch (5 of 24 bulk used ⇒ 19 free).
+	mt.replica.Agents[0].Inv = sim.Inventory{Wood: 5}
+	// Villager 1: exactly full (0 free) — the model must be able to read "no
+	// room" without a door round-trip (spec 095 AC-2).
+	mt.replica.Agents[1].Inv = sim.Inventory{Wood: sim.BulkCap}
+	mt.mirrorState()
+
+	digest := buildTargetingDigest(mt.alive, mt.agentNeeds, mt.agentXY, mt.m)
+
+	wantPartial := fmt.Sprintf("%s at (", sim.AgentNames[0])
+	if !strings.Contains(digest, wantPartial) {
+		t.Fatalf("digest missing villager 0's line: %q", digest)
+	}
+	if !strings.Contains(digest, "carrying 5/24, 19 free") {
+		t.Errorf("digest does not carry villager 0's correct headroom (5 used, 19 free): %q", digest)
+	}
+	if !strings.Contains(digest, sim.AgentNames[1]) || !strings.Contains(digest, "carrying 24/24, 0 free") {
+		t.Errorf("digest does not carry villager 1's full-pouch headroom (0 free): %q", digest)
+	}
+}
+
 // TestTargetingDigestNotOnDreamsOnlyWorld (spec 059 FR-006): a world whose grant
 // withholds work_miracle carries no digest (the prompt stays byte-unchanged for a
 // non-miracle-capable turn).

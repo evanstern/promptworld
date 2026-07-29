@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/tool/registry.go
   - internal/tool/derive.go
-verified_against: 6a5344a12cdc8858909ca7cf209d55025135e9d5
+verified_against: 74fe956813aa6be54e65156ae9bfcb91745cbb8d
 ---
 
 # Tool registry — the Guardian tool surface
@@ -70,7 +70,12 @@ price). Since TASK-163, `give_item`'s gloss (`derive.go`'s
 ever surfaces the `kind` Enum's values, never a per-kind param's Enum; the
 registry's `item` param is now `Enum` over the same `grantKinds` list
 (`registry.go`), not bare `Text` — schema, gloss, and the door's rejection
-([[guardian-miracle-mechanics]]) all draw from one list. Two new derive.go surfaces serve [[guardian]]'s per-world capability
+([[guardian-miracle-mechanics]]) all draw from one list. Since spec 095
+(TASK-167), the same gloss also tells the model to read the targeting
+digest's live carry-headroom field ([[guardian-miracle-guarantees]]) before
+picking a quantity and restates the door's reject-whole rule (FR-011) — a
+static, world-independent addition to the gloss string only; the `item`
+Enum/schema are untouched. Two new derive.go surfaces serve [[guardian]]'s per-world capability
 gating: `RestrictEnum(t, param, allowed)` returns a copy-on-write `Tool` whose
 named Enum param keeps only the allowed values (registry never mutated; the
 tool's own Enum order preserved; `InputSchema` of the restricted copy declares

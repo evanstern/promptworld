@@ -1268,6 +1268,15 @@ func TestMiracleGrantOverCapWholeReject(t *testing.T) {
 	if string(s.Marshal()) != string(before) {
 		t.Error("rejected over-cap grant mutated state (partial application or charge spent)")
 	}
+	// Spec 095 T003 door regression: the digest headroom guidance added
+	// turn-side (internal/guardian) and the give_item gloss (internal/tool)
+	// must not have moved this door's own message one byte — applyItemGranted
+	// (internal/sim/miracles.go) is untouched.
+	wantMsg := fmt.Sprintf("apply metatron.item_granted: granting 1 wood to %s would exceed the carry cap (%d/%d already used)",
+		AgentNames[0], bulkCap, bulkCap)
+	if err.Error() != wantMsg {
+		t.Errorf("door rejection message changed:\n got:  %q\n want: %q", err.Error(), wantMsg)
+	}
 }
 
 // TestMiracleGrantUnknownKindReject is US4-AS3: an unknown item kind is rejected
