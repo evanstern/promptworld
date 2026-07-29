@@ -2,7 +2,7 @@
 title: Pattern — stage-shaped layout defaults
 class: pattern
 status: shipped
-verified_against: 348a100c22f650d27e6fba517ea7f1f1aed1af73
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 sources:
   - internal/tui/stagedefaults.go
   - internal/tui/layout.go

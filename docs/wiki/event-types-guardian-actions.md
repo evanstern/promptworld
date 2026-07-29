@@ -6,7 +6,7 @@ sources:
   - internal/sim/miracles.go
   - internal/sim/gru.go
   - internal/sim/guardian.go
-verified_against: 63390f122bdf4e1b7abf518a8be83de725f06230
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 ---
 
 # Event types — guardian miracle-action & gru events

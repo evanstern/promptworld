@@ -6,7 +6,7 @@ sources:
   - internal/tui/look.go
   - internal/tui/views.go
   - internal/tui/tui.go
-verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 ---
 
 # TUI dock TILE view (look-cursor borrow)

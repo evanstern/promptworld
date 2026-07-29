@@ -6,7 +6,7 @@ sources:
   - internal/store/store.go
   - internal/store/schema.go
   - internal/store/format.go
-verified_against: 0fd2104c59c54be8e8071d319fa4ce192083faf3
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 ---
 
 # Event log

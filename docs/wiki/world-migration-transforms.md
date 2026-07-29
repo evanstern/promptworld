@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/migrate.go
   - internal/world/migrate.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 ---
 
 # World migration: the four transforms

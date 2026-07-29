@@ -5,7 +5,7 @@ kind: concept
 sources:
   - internal/sim/curriculum.go
   - internal/daemon/curriculum.go
-verified_against: b6a20eaa4da1073a69959a5aff69591d931103a9
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 ---
 
 # Event types — curriculum-ladder events
