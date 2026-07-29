@@ -4,22 +4,22 @@
 
 ## Phase 1: Clustering + habituation core
 
-- [ ] T001 Per-agent density clustering over TASK-98 vectors in the nightly
+- [X] T001 Per-agent density clustering over TASK-98 vectors in the nightly
   slot; geometry-first thresholds + ambiguous band routing to the existing
   consolidation LLM slot (FR-001/FR-002).
-- [ ] T002 Habituation/merge outcomes as recorded events (salience-revision /
+- [X] T002 Habituation/merge outcomes as recorded events (salience-revision /
   memory-merge), reducer apply arms, memory-store weight application
   (FR-003).
 
 ## Phase 2: Noise + dials
 
-- [ ] T003 rngAt-seeded boundary jitter (purpose-keyed, zeroable dial) + all
+- [X] T003 rngAt-seeded boundary jitter (purpose-keyed, zeroable dial) + all
   dials in the tuning manifest (FR-004, D4).
 
 ## Phase 3: Surfaces + tests
 
-- [ ] T004 event-types.md + digest entries; TestCatalogSweep green (FR-005).
-- [ ] T005 Tests: privacy perturbation independence, habituation/merge
+- [X] T004 event-types.md + digest entries; TestCatalogSweep green (FR-005).
+- [X] T005 Tests: privacy perturbation independence, habituation/merge
   correctness, routing, replay byte-identity, noise-zeroed equivalence;
   go test -race ./... green (FR-006).
 
