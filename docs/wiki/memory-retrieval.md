@@ -13,7 +13,7 @@ sources:
   - internal/llm/providers.go
   - internal/world/world.go
   - cmd/promptworld/divergence.go
-verified_against: 864d2a3bcff4b3113739d596befc72229a84d4b8
+verified_against: 9d94de3b79641f5791c8a8479c0200c44d366002
 ---
 
 # Memory retrieval (embedding relevance)
@@ -36,12 +36,9 @@ stamped from the event's store seq by the reducer, pre-stamped in the live loop 
 `stampSeqs` (`internal/sim/loop.go`) because the loop applies events before the store
 assigns sequence numbers. `Observe` never blocks the absorb path (drop-on-overflow), the
 worker is FIFO single-flight with batching/coalescing, and per-agent companion order is
-emission order. Spec 097: memories with Origin `observed` (grounded arrival
-observations, [[executor-perception-observation]]) are skipped by policy —
-their consumer (the belief reconciler) matches deterministically, never via
-vectors, and embedding the deduped texture measurably doubled the SC-005
-game-day embed volume (41→83 calls); a vectorless memory scores the neutral
-relevance term, the designed fallback.
+emission order. Spec 097: Origin-`observed` memories skip embedding — their
+reconciler matches without vectors; vectorless scores the neutral term
+([[executor-perception-observation]]).
 
 **Situation vectors.** At each `replica.PlannerCadence()` bucket edge — spec 048
 promoted the driver's fixed 1800-tick cadence to a per-world [[world-tuning]]
@@ -131,8 +128,8 @@ head-of-chain only, so one lineage never mixes model identities.
 - Pin the fully tagged model id (`all-minilm:latest`) — a bare alias embeds fine but
   trips a persistent spurious provider-health `model-missing` warning that embed traffic
   cannot clear (TASK-102).
-- Measured cost (SC-005): +0.4–3.9% wall-clock per game day at max speed post-041-merge
-  (~8–9 coalesced embed calls); the 10% budget holds with headroom.
+- Measured cost (SC-005): 44 coalesced embed calls per max-speed game day
+  post-097 (the observed-origin skip keeps volume near pre-097's 41).
 - Divergence records fire per enqueued plan job — on an uncalibrated rig run ≤16x (or
   calibrate first) or the planner never enqueues and no divergence lands.
 - Replay proof: `TestEmbeddingReplayByteIdentical` / `TestOnWorldReplayByteIdentical`
