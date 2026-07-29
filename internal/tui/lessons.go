@@ -153,7 +153,7 @@ var lessonCatalog = []lessonEntry{
 		Text:    "The {{skin.guardian.epithet}}'s action budget just refilled by one — it recovers on its own.",
 		Pointer: "→ press 3 for the {{skin.guardian.tab_label}} tab to watch the bank",
 		Tier:    lessonTierMechanics,
-		Trigger: func(e store.Event) bool { return e.Type == "metatron.charge_regenerated" },
+		Trigger: func(e store.Event) bool { return e.Type == "guardian.charge_regenerated" },
 	},
 	{
 		ID:    "first-order-expired",
@@ -164,8 +164,8 @@ var lessonCatalog = []lessonEntry{
 		Text:    "A standing order you placed just expired unmet — orders watch for a limited time.",
 		Pointer: "→ press 3, then look for 👁 rows to place another",
 		Tier:    lessonTierMechanics,
-		Trigger: func(e store.Event) bool { return e.Type == "metatron.order_expired" },
-		Done:    func(e store.Event) bool { return e.Type == "metatron.order_placed" },
+		Trigger: func(e store.Event) bool { return e.Type == "guardian.order_expired" },
+		Done:    func(e store.Event) bool { return e.Type == "guardian.order_placed" },
 	},
 	{
 		ID:    "first-death",
@@ -208,7 +208,7 @@ var lessonCatalog = []lessonEntry{
 		Pointer: "→ press 3 for the {{skin.guardian.tab_label}} tab",
 		Tier:    lessonTierPrompting,
 		Trigger: func(e store.Event) bool {
-			if e.Type != "metatron.charter_observed" {
+			if e.Type != "guardian.charter_observed" {
 				return false
 			}
 			p, ok := decode[sim.CharterObservedPayload](e)
@@ -225,7 +225,7 @@ var lessonCatalog = []lessonEntry{
 		Pointer: "→ press 3, look for the ~ mark beside your order",
 		Tier:    lessonTierPrompting,
 		Trigger: func(e store.Event) bool {
-			if e.Type != "metatron.order_placed" {
+			if e.Type != "guardian.order_placed" {
 				return false
 			}
 			p, ok := decode[sim.OrderPlacedPayload](e)
@@ -274,7 +274,7 @@ var lessonCatalog = []lessonEntry{
 		Text:    "A skill file you authored is now in force — it shapes the {{skin.guardian.epithet}}'s every turn.",
 		Pointer: "→ press 3 — your skill file now shapes the {{skin.guardian.epithet}}",
 		Tier:    lessonTierPrompting,
-		Trigger: func(e store.Event) bool { return e.Type == "metatron.skills_observed" },
+		Trigger: func(e store.Event) bool { return e.Type == "guardian.skills_observed" },
 	},
 	{
 		ID:    "same-refusal-pattern",
@@ -493,7 +493,7 @@ func (lt *lessonTriggers) enqueue(entry *lessonEntry, now time.Time) {
 // ingest folds one subscribed event into the projection (contract, mirrors
 // decisionTraces.ingest's calling convention, decisions.go:150): first, an
 // active lesson's own done-signal (if any) clears it — checked before the
-// trigger match below because a single event (e.g. metatron.order_placed)
+// trigger match below because a single event (e.g. guardian.order_placed)
 // can BOTH clear one lesson's dwell (first-order-expired's done-signal) AND
 // separately trigger another (first-fuzzy-order) in the same event. Returns
 // the entry that just surfaced (became active), or nil if nothing did — the

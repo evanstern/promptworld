@@ -4,7 +4,7 @@ description: promptworld CLI runtime control and monitoring commands — daemon/
 kind: component
 sources:
   - cmd/promptworld/commands.go
-verified_against: ad2a6543a9caf51d1cd28af863291f3daa3bd4eb
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 ---
 
 # CLI: runtime control commands

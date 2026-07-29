@@ -44,7 +44,7 @@ const FaithGenesis = 50
 // land in faith.changed payloads. Sources deliberately EXCLUDED (research R3):
 // designation.fulfilled alone (villager initiative is not the guardian's
 // word), ambient accrual, time decay, tutoring (TASK-112 AC #6 — enforced by
-// the rubric-hygiene faith.* ban), and metatron.nudged.
+// the rubric-hygiene faith.* ban), and guardian.nudged.
 const (
 	FaithReasonDirectiveFulfilled = "directive_fulfilled" // the primary endogenous source
 	FaithReasonDirectiveExpired   = "directive_expired"   // the guardian's charge went unachieved

@@ -49,12 +49,12 @@ func TestCompileEachKind(t *testing.T) {
 	st := testState([]string{"Alice", "Bob"}, []int{1, 3}, []int{2, 4})
 
 	t.Run("move_entity", func(t *testing.T) {
-		in := CompileInput{State: st, Args: map[string]string{"target": "Alice"}, Declared: decl("metatron.entity_moved")}
+		in := CompileInput{State: st, Args: map[string]string{"target": "Alice"}, Declared: decl("guardian.entity_moved")}
 		evs, err := compileRaw(t, `[{"kind":"move_entity","target":"{args.target}","to_x":5,"to_y":6}]`, in)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if len(evs) != 1 || evs[0].Type != "metatron.entity_moved" {
+		if len(evs) != 1 || evs[0].Type != "guardian.entity_moved" {
 			t.Fatalf("events = %+v", evs)
 		}
 		var p sim.EntityMovedPayload
@@ -71,7 +71,7 @@ func TestCompileEachKind(t *testing.T) {
 		// removed"), mirrored for a better authoring error. The accepting
 		// forms (structure@/pile@/terrain@) are covered by
 		// TestTargetAddressingCompiles.
-		in := CompileInput{State: st, Args: map[string]string{"target": "Bob"}, Declared: decl("metatron.entity_removed")}
+		in := CompileInput{State: st, Args: map[string]string{"target": "Bob"}, Declared: decl("guardian.entity_removed")}
 		_, err := compileRaw(t, `[{"kind":"remove_entity","target":"Bob"}]`, in)
 		if err == nil || !strings.Contains(err.Error(), "a villager can never be removed") {
 			t.Errorf("err = %v, want villager-removal doctrine error", err)
@@ -79,7 +79,7 @@ func TestCompileEachKind(t *testing.T) {
 	})
 
 	t.Run("grant_item", func(t *testing.T) {
-		in := CompileInput{State: st, Declared: decl("metatron.item_granted")}
+		in := CompileInput{State: st, Declared: decl("guardian.item_granted")}
 		evs, err := compileRaw(t, `[{"kind":"grant_item","target":"Alice","item":"bread","qty":2}]`, in)
 		if err != nil {
 			t.Fatal(err)
@@ -87,20 +87,20 @@ func TestCompileEachKind(t *testing.T) {
 		var p sim.ItemGrantedPayload
 		mustUnmarshal(t, evs[0].Payload, &p)
 		want := sim.ItemGrantedPayload{Agent: sim.Ref(0), Kind: "bread", Qty: 2}
-		if evs[0].Type != "metatron.item_granted" || p != want {
+		if evs[0].Type != "guardian.item_granted" || p != want {
 			t.Errorf("type/payload = %s/%+v", evs[0].Type, p)
 		}
 	})
 
 	t.Run("snap_time", func(t *testing.T) {
-		in := CompileInput{State: st, Declared: decl("metatron.time_snapped")}
+		in := CompileInput{State: st, Declared: decl("guardian.time_snapped")}
 		evs, err := compileRaw(t, `[{"kind":"snap_time","to_tick":9000}]`, in)
 		if err != nil {
 			t.Fatal(err)
 		}
 		var p sim.TimeSnappedPayload
 		mustUnmarshal(t, evs[0].Payload, &p)
-		if evs[0].Type != "metatron.time_snapped" || p.ToTick != 9000 || p.Gratis {
+		if evs[0].Type != "guardian.time_snapped" || p.ToTick != 9000 || p.Gratis {
 			t.Errorf("type/payload = %s/%+v", evs[0].Type, p)
 		}
 	})
@@ -146,31 +146,31 @@ func TestTargetAddressingCompiles(t *testing.T) {
 		want    any
 	}{
 		{"move structure@", `[{"kind":"move_entity","target":"structure@12,7","to_x":4,"to_y":4}]`,
-			"metatron.entity_moved", "metatron.entity_moved",
+			"guardian.entity_moved", "guardian.entity_moved",
 			sim.EntityMovedPayload{Class: "structure", X: 12, Y: 7, ToX: 4, ToY: 4}},
 		{"move pile@", `[{"kind":"move_entity","target":"pile@3,4","to_x":6,"to_y":6}]`,
-			"metatron.entity_moved", "metatron.entity_moved",
+			"guardian.entity_moved", "guardian.entity_moved",
 			sim.EntityMovedPayload{Class: "pile", X: 3, Y: 4, ToX: 6, ToY: 6}},
 		{"move villager@ resolves first-by-index", `[{"kind":"move_entity","target":"villager@5,5","to_x":6,"to_y":6}]`,
-			"metatron.entity_moved", "metatron.entity_moved",
+			"guardian.entity_moved", "guardian.entity_moved",
 			sim.EntityMovedPayload{Class: "villager", X: 5, Y: 5, ToX: 6, ToY: 6}},
 		{"move villager: typed name", `[{"kind":"move_entity","target":"villager:Alice","to_x":6,"to_y":6}]`,
-			"metatron.entity_moved", "metatron.entity_moved",
+			"guardian.entity_moved", "guardian.entity_moved",
 			sim.EntityMovedPayload{Class: "villager", X: 1, Y: 2, ToX: 6, ToY: 6}},
 		{"remove structure@", `[{"kind":"remove_entity","target":"structure@12,7"}]`,
-			"metatron.entity_removed", "metatron.entity_removed",
+			"guardian.entity_removed", "guardian.entity_removed",
 			sim.EntityRemovedPayload{Class: "structure", X: 12, Y: 7}},
 		{"remove pile@", `[{"kind":"remove_entity","target":"pile@3,4"}]`,
-			"metatron.entity_removed", "metatron.entity_removed",
+			"guardian.entity_removed", "guardian.entity_removed",
 			sim.EntityRemovedPayload{Class: "pile", X: 3, Y: 4}},
 		{"remove terrain@ (bounds-only at compile)", `[{"kind":"remove_entity","target":"terrain@9,2"}]`,
-			"metatron.entity_removed", "metatron.entity_removed",
+			"guardian.entity_removed", "guardian.entity_removed",
 			sim.EntityRemovedPayload{Class: "terrain", X: 9, Y: 2}},
 		{"grant villager@", `[{"kind":"grant_item","target":"villager@1,2","item":"wood","qty":3}]`,
-			"metatron.item_granted", "metatron.item_granted",
+			"guardian.item_granted", "guardian.item_granted",
 			sim.ItemGrantedPayload{Agent: sim.Ref(0), Kind: "wood", Qty: 3}},
 		{"grant villager: typed name", `[{"kind":"grant_item","target":"villager:bob","item":"wood","qty":3}]`,
-			"metatron.item_granted", "metatron.item_granted",
+			"guardian.item_granted", "guardian.item_granted",
 			sim.ItemGrantedPayload{Agent: sim.Ref(1), Kind: "wood", Qty: 3}},
 	}
 	for _, tc := range cases {
@@ -197,7 +197,7 @@ func TestTargetAddressingCompiles(t *testing.T) {
 	// choice too (Bob, index 1, not Cara, index 2 — first living by agent
 	// index, the VillagerAt discipline) through grant_item, whose payload
 	// carries the index.
-	in := CompileInput{State: st, Declared: decl("metatron.item_granted")}
+	in := CompileInput{State: st, Declared: decl("guardian.item_granted")}
 	evs, err := compileRaw(t, `[{"kind":"grant_item","target":"villager@5,5","item":"wood","qty":1}]`, in)
 	if err != nil {
 		t.Fatal(err)
@@ -266,7 +266,7 @@ func TestTargetErrorTaxonomy(t *testing.T) {
 			in := CompileInput{
 				State:    st,
 				Args:     map[string]string{"x": "north", "y": "7"},
-				Declared: decl("metatron.entity_moved", "metatron.entity_removed", "metatron.item_granted", "agent.memory_added"),
+				Declared: decl("guardian.entity_moved", "guardian.entity_removed", "guardian.item_granted", "agent.memory_added"),
 			}
 			evs, err := compileRaw(t, tc.raw, in)
 			if err == nil {
@@ -401,7 +401,7 @@ func TestUndeclaredEventRejected(t *testing.T) {
 	st := testState([]string{"Alice"}, []int{1}, []int{2})
 	in := CompileInput{State: st, Args: map[string]string{"target": "Alice"}, Declared: decl("agent.memory_added")}
 	_, err := compileRaw(t, `[{"kind":"move_entity","target":"Alice","to_x":5,"to_y":6}]`, in)
-	if err == nil || !strings.Contains(err.Error(), `"metatron.entity_moved" is not in the tool's declared events`) {
+	if err == nil || !strings.Contains(err.Error(), `"guardian.entity_moved" is not in the tool's declared events`) {
 		t.Errorf("err = %v, want undeclared-event error", err)
 	}
 }
@@ -422,7 +422,7 @@ func TestNumericFieldRules(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			in := CompileInput{State: st, Declared: decl("metatron.entity_moved", "metatron.item_granted")}
+			in := CompileInput{State: st, Declared: decl("guardian.entity_moved", "guardian.item_granted")}
 			_, err := compileRaw(t, tc.raw, in)
 			if err == nil || !strings.Contains(err.Error(), tc.want) {
 				t.Errorf("err = %v, want %q", err, tc.want)

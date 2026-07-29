@@ -210,7 +210,7 @@ func (mt *Guardian) handleMonitor(d *turnDispatch) toolloop.Handler {
 }
 
 // handleCancelOrder wraps cancelOrder (spec 029 T009): cancel_order lands
-// metatron.order_cancelled for the named id. The reducer resolves the
+// guardian.order_cancelled for the named id. The reducer resolves the
 // cancel/expiry/trigger race — an unknown or already-lapsed id refuses with
 // counsel. A landed cancel records the id and ends the turn.
 func (mt *Guardian) handleCancelOrder(d *turnDispatch) toolloop.Handler {

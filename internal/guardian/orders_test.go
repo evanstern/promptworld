@@ -248,7 +248,7 @@ func TestOrderExpiryQueuesMoment(t *testing.T) {
 	o := activePlayerOrder("ord-1-0", 0)
 	o.Condition = "when the gru stirs"
 	mt.replica.GuardianOrders = append(mt.replica.GuardianOrders, o)
-	expired := mustEvent("metatron.order_expired", sim.OrderIDPayload{ID: "ord-1-0"})
+	expired := mustEvent("guardian.order_expired", sim.OrderIDPayload{ID: "ord-1-0"})
 	expired.Tick = 5 * ticksPerGameDay
 	if err := mt.replica.Apply(expired); err != nil {
 		t.Fatalf("apply order_expired: %v", err)
@@ -443,7 +443,7 @@ func TestCancelledOrderRaceResolvesAtDoor(t *testing.T) {
 	o.Action = "send Fern a vision"
 	seedOrder(mt, inj, o)
 	// The cancel wins the race (lands first).
-	if err := inj.state.Apply(mustEvent("metatron.order_cancelled", sim.OrderIDPayload{ID: "ord-1-0"})); err != nil {
+	if err := inj.state.Apply(mustEvent("guardian.order_cancelled", sim.OrderIDPayload{ID: "ord-1-0"})); err != nil {
 		t.Fatal(err)
 	}
 	fired := false
@@ -561,10 +561,10 @@ func TestReplayReconstructsWithoutFiring(t *testing.T) {
 	o := sim.GuardianOrder{ID: "ord-1-0", Origin: "player", Condition: "when someone sleeps",
 		Action: "send a vision", EventTypes: []string{"agent.slept"}, Agent: -1,
 		PlacedTick: 1, ExpiresTick: 1 + 3*ticksPerGameDay, Status: "active"}
-	if err := state.Apply(mustEvent("metatron.order_placed", o)); err != nil {
+	if err := state.Apply(mustEvent("guardian.order_placed", o)); err != nil {
 		t.Fatal(err)
 	}
-	if err := state.Apply(mustEvent("metatron.order_triggered",
+	if err := state.Apply(mustEvent("guardian.order_triggered",
 		sim.OrderTriggeredPayload{ID: "ord-1-0", MatchedType: "agent.slept", MatchedTick: 5000})); err != nil {
 		t.Fatal(err)
 	}
@@ -672,7 +672,7 @@ func TestDeferredOmenCancelledNeverLands(t *testing.T) {
 	inj.state.Night = true
 	o := deferralOmenOrder("ord-1-0", 1)
 	seedOrder(mt, inj, o)
-	if err := inj.state.Apply(mustEvent("metatron.order_cancelled", sim.OrderIDPayload{ID: "ord-1-0"})); err != nil {
+	if err := inj.state.Apply(mustEvent("guardian.order_cancelled", sim.OrderIDPayload{ID: "ord-1-0"})); err != nil {
 		t.Fatal(err)
 	}
 	fired := false

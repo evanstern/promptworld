@@ -11,7 +11,7 @@ sources:
   - internal/daemon/daemon.go
   - cmd/promptworld/commands.go
   - internal/tui/views.go
-verified_against: 1603d5ac22d9be35469ec88bf2355b7d2f9500bc
+verified_against: PENDING_MERGE_SHA
 ---
 
 # LLM provider health (preflight + tool-silence detection)

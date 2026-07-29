@@ -6,7 +6,7 @@ sources:
   - internal/sim/plans.go
   - internal/sim/executor.go
   - internal/sim/loop.go
-verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 ---
 
 # Event types — guardian plan-layer events
@@ -31,7 +31,7 @@ Spec 084 adds **no** format bump: `State` gains
 `omitempty` — a pre-084 snapshot unmarshals to nil, the spec-029
 `GuardianOrders` precedent) and SEVEN new event types in two NEW
 namespaces (`designation.*`, `directive.*` — world plan artifacts and
-villager-facing bindings, deliberately not `metatron.*` console
+villager-facing bindings, deliberately not `guardian.*` console
 bookkeeping). The door split is the standing-order one exactly:
 
 | Type | Payload | Door |
@@ -61,5 +61,7 @@ Sweep ordering (fixed, research R14): designations first, then directives,
 each in slice order, fulfilled-before-expired within a directive; a
 designation fulfilled at tick T yields its bound directives'
 `directive.fulfilled` at T+1 — a documented, deterministic one-tick lag.
-Renaming or shrinking any of the seven after merge is BREAKING (recorded
-vocabulary, the spec-052 frozen-identifier doctrine).
+Renaming or shrinking any of the seven after merge is a log-format break:
+since spec 094 a persisted-name change requires a `store.LogFormatVersion`
+bump plus the translating migration ([[event-log]]'s doctrine — the
+successor to the spec-052 freeze).

@@ -4,7 +4,7 @@ description: Loop.InjectSocial (the mind's whitelisted conversation/consolidatio
 kind: component
 sources:
   - internal/sim/loop.go
-verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 ---
 
 # Sim loop — injection doors
@@ -21,18 +21,18 @@ narrator entries per [[chronicle]], nudges and miracles per [[guardian]] /
 [[guardian-miracles]], standing orders per [[guardian-orders]], proposal rephrasing
 per [[governance]], place-knowledge per [[mental-maps]] — `agent.thought` is
 whitelisted as a reducer no-op, `chronicle.entry` appends the story ring,
-`metatron.nudged` spends a charge with a validating reducer the dry-run enforces,
-`metatron.place_revealed` (spec 041, FR-014) widens the boundary by one — a
+`guardian.nudged` spends a charge with a validating reducer the dry-run enforces,
+`guardian.place_revealed` (spec 041, FR-014) widens the boundary by one — a
 vision's optional place grant, declared in `send_vision`'s `Events` so
 `ValidateToolCoverage` pins it ⊆ this whitelist, whose dry-run enforces a
 living target and a real place before anything lands — the four
-`metatron.time_snapped`/`metatron.item_granted`/`metatron.entity_moved`/
-`metatron.entity_removed` miracle types (spec 016) are whitelisted the same way —
+`guardian.time_snapped`/`guardian.item_granted`/`guardian.entity_moved`/
+`guardian.entity_removed` miracle types (spec 016) are whitelisted the same way —
 their reducer arms enforce presence/destination/charge before anything lands,
-the whitelist is only the isolation boundary — `metatron.order_placed`/
-`metatron.order_cancelled`/`metatron.order_triggered` (spec 029) join the
+the whitelist is only the isolation boundary — `guardian.order_placed`/
+`guardian.order_cancelled`/`guardian.order_triggered` (spec 029) join the
 whitelist the same way (placement/cancellation/trigger-match validation lives
-in the reducer arm); `metatron.order_expired` needs no whitelist entry — it is
+in the reducer arm); `guardian.order_expired` needs no whitelist entry — it is
 executor-emitted, never injected, the `charge_regenerated` precedent — the
 four plan-layer types `designation.placed`/`designation.cancelled`/
 `directive.issued`/`directive.cancelled` (spec 084, [[guardian-designations]])
@@ -89,7 +89,7 @@ note's own split-off child — the observability/administrative whitelist
 half. [[llm-provider-health]]'s condition hook is `InjectOperator`'s sole
 caller. [[guardian-miracles]]'s four event types ride `InjectSocial`'s
 whitelist, as do [[guardian-orders]]'s three injected order-lifecycle
-types and [[mental-maps]]'s `metatron.place_revealed`. [[tool-loop]] is the
+types and [[mental-maps]]'s `guardian.place_revealed`. [[tool-loop]] is the
 caller behind both doors' villager/guardian traffic since spec 017 — its
 handlers wrap `InjectIntent` (see [[sim-loop-landing-ladder]]) and
 `InjectSocial` (`muse`, and the Guardian's nudges/`work_miracle`), and its

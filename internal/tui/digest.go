@@ -1035,10 +1035,10 @@ var digestRegistry = map[string]digestFunc{
 		out = join(out, []seg{txt(": "), txt(truncateRunes(p.Text, 80))})
 		return out, true
 	},
-	"metatron.charge_regenerated": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+	"guardian.charge_regenerated": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		return []seg{txt("a charge regenerated")}, true
 	},
-	"metatron.nudged": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+	"guardian.nudged": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.GuardianNudgedPayload](e)
 		if !ok {
 			return nil, false
@@ -1052,10 +1052,10 @@ var digestRegistry = map[string]digestFunc{
 		}
 		return join([]seg{txt(sk.Name() + " "), emph(sk.FormNoun(p.Form)), txt(" → ")}, targets, []seg{txt(": "), speech(p.Text)}), true
 	},
-	// metatron.place_revealed (spec 041 FR-014): a vision's divine place
+	// guardian.place_revealed (spec 041 FR-014): a vision's divine place
 	// grant — the agent.saw first-fact-plus-count shape, Guardian as subject
 	// (the nudge convention).
-	"metatron.place_revealed": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+	"guardian.place_revealed": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.PlaceRevealedPayload](e)
 		if !ok || len(p.Facts) == 0 {
 			return nil, false
@@ -1068,18 +1068,18 @@ var digestRegistry = map[string]digestFunc{
 		}
 		return join(segs), true
 	},
-	// metatron.order_placed / order_triggered / order_cancelled / order_expired
+	// guardian.order_placed / order_triggered / order_cancelled / order_expired
 	// (spec 029, TASK-27 wiki-sweep gap): the standing-order lifecycle
-	// (internal/sim/metatron.go, [[metatron-orders]]) predates this contract
+	// (internal/sim/guardian.go, [[guardian-orders]]) predates this contract
 	// (specs/018) same as the miracle types below, so voice mirrors
-	// metatron.nudged's — "Guardian" as subject regardless of Origin, since
+	// guardian.nudged's — "Guardian" as subject regardless of Origin, since
 	// monitor_and_act/cancel_order are Guardian's own tools whether a player
 	// or the system asked for the watch (GuardianOrder.Origin distinguishes
 	// who, never how it renders). order_triggered/cancelled/expired carry no
-	// condition text (internal/sim/metatron.go's OrderTriggeredPayload /
+	// condition text (internal/sim/guardian.go's OrderTriggeredPayload /
 	// OrderIDPayload), only the order's id, so they reference the watch by
 	// id rather than repeating its condition.
-	"metatron.order_placed": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+	"guardian.order_placed": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.OrderPlacedPayload](e)
 		if !ok {
 			return nil, false
@@ -1088,7 +1088,7 @@ var digestRegistry = map[string]digestFunc{
 			txt(sk.Name() + " set a watch: "), speech(truncateRunes(p.Condition, 80)),
 		}), true
 	},
-	"metatron.order_triggered": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+	"guardian.order_triggered": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.OrderTriggeredPayload](e)
 		if !ok {
 			return nil, false
@@ -1097,24 +1097,24 @@ var digestRegistry = map[string]digestFunc{
 			txt(sk.Name() + "'s watch came true ("), emph(p.MatchedType), txt(" @ t"), emphI64(p.MatchedTick), txt(")"),
 		}), true
 	},
-	"metatron.order_cancelled": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+	"guardian.order_cancelled": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.OrderIDPayload](e)
 		if !ok {
 			return nil, false
 		}
 		return join([]seg{txt(sk.Name() + " released a watch ("), emph(p.ID), txt(")")}), true
 	},
-	"metatron.order_expired": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+	"guardian.order_expired": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.OrderIDPayload](e)
 		if !ok {
 			return nil, false
 		}
 		return join([]seg{txt(sk.Name() + "'s watch lapsed ("), emph(p.ID), txt(")")}), true
 	},
-	// metatron.charter_observed (spec 044 US2): the charter-revision
+	// guardian.charter_observed (spec 044 US2): the charter-revision
 	// fingerprint stamp a turn ran under — the guardian's evidence timeline the
 	// morgue aligns deaths against.
-	"metatron.charter_observed": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+	"guardian.charter_observed": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.CharterObservedPayload](e)
 		if !ok {
 			return nil, false
@@ -1125,10 +1125,10 @@ var digestRegistry = map[string]digestFunc{
 		}
 		return join([]seg{txt(sk.Name() + " ran under charter "), emph(p.Fingerprint), txt(" (" + prov + ")")}), true
 	},
-	// metatron.skills_observed (spec 077 FR-006): the skills twin of the
+	// guardian.skills_observed (spec 077 FR-006): the skills twin of the
 	// charter observation above — the bound set's size and fingerprint (the
 	// names ride the payload; the inspector shows them verbatim).
-	"metatron.skills_observed": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+	"guardian.skills_observed": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.SkillsObservedPayload](e)
 		if !ok {
 			return nil, false
@@ -1264,13 +1264,13 @@ var digestRegistry = map[string]digestFunc{
 		return join([]seg{txt("epilogue for ")}, who, []seg{txt(": "), txt(truncateRunes(p.Text, 80))}), true
 	},
 
-	// metatron.time_snapped / item_granted / entity_moved / entity_removed
+	// guardian.time_snapped / item_granted / entity_moved / entity_removed
 	// (TASK-59, spec 016) predate this contract (specs/018) — no template
-	// row exists for them, so voice/style mirrors metatron.nudged's (natural
+	// row exists for them, so voice/style mirrors guardian.nudged's (natural
 	// phrase, "Guardian" as subject); gratisMark surfaces the operator force
 	// SC-004 requires be enumerable, never silently indistinguishable from a
 	// charge-priced miracle.
-	"metatron.time_snapped": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+	"guardian.time_snapped": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.TimeSnappedPayload](e)
 		if !ok {
 			return nil, false
@@ -1279,7 +1279,7 @@ var digestRegistry = map[string]digestFunc{
 			txt(sk.Name() + " snapped time forward to "), emph(clock.Format(p.ToTick)),
 		}, gratisMark(p.Gratis)), true
 	},
-	"metatron.item_granted": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+	"guardian.item_granted": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.ItemGrantedPayload](e)
 		if !ok {
 			return nil, false
@@ -1292,7 +1292,7 @@ var digestRegistry = map[string]digestFunc{
 	// coordinates only (internal/sim/miracles.go) — no agent index, so a
 	// moved villager renders by its (pre-move) location rather than a
 	// resolved name.
-	"metatron.entity_moved": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+	"guardian.entity_moved": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.EntityMovedPayload](e)
 		if !ok {
 			return nil, false
@@ -1306,7 +1306,7 @@ var digestRegistry = map[string]digestFunc{
 	// as "the structure", not "the chest". A terrain target is overlaid
 	// (chop/forage/quarry vocabulary), not deleted, so it reads "cleared"
 	// rather than "removed".
-	"metatron.entity_removed": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+	"guardian.entity_removed": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.EntityRemovedPayload](e)
 		if !ok {
 			return nil, false
@@ -1530,7 +1530,7 @@ func decodeAgentOnly(e store.Event) (subjectCandidate, bool) {
 
 // placeFactPos extracts the first PlaceFact's position, if any — the shared
 // shape behind agent.saw/social.place_told/agent.map_corrected/
-// metatron.place_revealed (all carry a []PlaceFact whose first entry is the
+// guardian.place_revealed (all carry a []PlaceFact whose first entry is the
 // canonical one, R4).
 func placeFactPos(facts []sim.PlaceFact) (x, y int, ok bool) {
 	if len(facts) == 0 {
@@ -1545,7 +1545,7 @@ func placeFactPos(facts []sim.PlaceFact) (x, y int, ok bool) {
 // type with no agent/position field the digest already reads, plus
 // world.migrated by deliberate omission — R4/FR-011) simply resolves
 // unlocatable: a registry miss is a legitimate, honest jump-or-hint outcome,
-// not a gap to fill in. Multi-agent/ambiguous-subject types (metatron.nudged's
+// not a gap to fill in. Multi-agent/ambiguous-subject types (guardian.nudged's
 // several targets, chronicle.entry's agent list, meeting.proposal_resolved's
 // unnamed subject) are deliberately left out for the same reason FR-002
 // requires "one deterministic subject" — no field here is a good-enough
@@ -1654,7 +1654,7 @@ var subjectRegistry = map[string]subjectFunc{
 		}
 		return actorCandidate(p.Agent.ID), true
 	},
-	"metatron.place_revealed": func(e store.Event) (subjectCandidate, bool) {
+	"guardian.place_revealed": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.PlaceRevealedPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
@@ -1852,21 +1852,21 @@ var subjectRegistry = map[string]subjectFunc{
 	// entity_moved jumps to the DESTINATION (ToX,ToY) — an implementer
 	// judgment call (the payload records both endpoints; "where it ended up"
 	// reads as more useful post-jump than "where it used to be").
-	"metatron.entity_moved": func(e store.Event) (subjectCandidate, bool) {
+	"guardian.entity_moved": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.EntityMovedPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
 		return placeCandidate("the "+p.Class, p.ToX, p.ToY), true
 	},
-	"metatron.entity_removed": func(e store.Event) (subjectCandidate, bool) {
+	"guardian.entity_removed": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.EntityRemovedPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}
 		return placeCandidate("the "+p.Class, p.X, p.Y), true
 	},
-	"metatron.item_granted": func(e store.Event) (subjectCandidate, bool) {
+	"guardian.item_granted": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.ItemGrantedPayload](e)
 		if !ok {
 			return subjectCandidate{}, false

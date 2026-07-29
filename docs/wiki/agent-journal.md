@@ -8,7 +8,7 @@ sources:
   - internal/sim/loop.go
   - internal/tool/registry.go
   - internal/tool/roster.go
-verified_against: 1603d5ac22d9be35469ec88bf2355b7d2f9500bc
+verified_against: PENDING_MERGE_SHA
 ---
 
 # Agent journal

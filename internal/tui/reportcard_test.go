@@ -154,7 +154,7 @@ func TestReportCardChecklistOnly(t *testing.T) {
 		Exercise: "first-night", Stage: "stage-1", Tick: 900,
 		Evidence: []sim.EvidenceRef{
 			{Type: "sim.day_started", Seq: 40, Tick: 890},
-			{Type: "metatron.order_placed", Seq: 12, Tick: 200},
+			{Type: "guardian.order_placed", Seq: 12, Tick: 200},
 		},
 	}}
 	m.rebuildConsoleCards() // the curriculum.exercise_passed applyEvent site calls this
@@ -171,7 +171,7 @@ func TestReportCardChecklistOnly(t *testing.T) {
 	// The recorded pass proves every term held at pass time: evaluator
 	// labels, all met, evidence-backed where a term's event type matches.
 	if !strings.Contains(rendered, "✓ village survives to dawn of day 2 (sim.day_started · seq 40)") ||
-		!strings.Contains(rendered, "✓ a watch set before nightfall (metatron.order_placed · seq 12)") ||
+		!strings.Contains(rendered, "✓ a watch set before nightfall (guardian.order_placed · seq 12)") ||
 		!strings.Contains(rendered, "✓ no villager dies") {
 		t.Errorf("checklist rows wrong: %q", rendered)
 	}
@@ -197,7 +197,7 @@ func TestReportCardChecklistLiveMarkers(t *testing.T) {
 	rendered := m.consoleCards[0].renderCard(90)
 	if !strings.Contains(rendered, "… village survives to dawn of day 2") ||
 		!strings.Contains(rendered, "✓ no villager dies (agent.died: 0)") ||
-		!strings.Contains(rendered, "… a watch set before nightfall (metatron.order_placed: 0)") {
+		!strings.Contains(rendered, "… a watch set before nightfall (guardian.order_placed: 0)") {
 		t.Errorf("live checklist rows wrong: %q", rendered)
 	}
 	if strings.Contains(rendered, "✗") {

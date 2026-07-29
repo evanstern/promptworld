@@ -1,6 +1,6 @@
 ---
 name: tui-client
-description: The Bubble Tea full-screen client — a widescreen map+dock composite over a live world replica maintained by log shipping; the guardian tab label and chronicle Type-column alias resolve through the boot-frozen [[skin]]. Split into six child notes (corpus-spec v2): [[tui-client-mechanics]] (connection/header/layout), [[tui-map-view]], [[tui-dock-tabs]], [[tui-villagers-tab]], [[tui-chronicle-feed]], [[tui-input-help]].
+description: The Bubble Tea full-screen client — a widescreen map+dock composite over a live world replica maintained by log shipping; the guardian tab label resolves through the boot-frozen [[skin]] (the pre-094 chronicle Type-column alias is retired — types render raw). Split into six child notes (corpus-spec v2): [[tui-client-mechanics]] (connection/header/layout), [[tui-map-view]], [[tui-dock-tabs]], [[tui-villagers-tab]], [[tui-chronicle-feed]], [[tui-input-help]].
 kind: component
 sources:
   - internal/tui/tui.go
@@ -13,7 +13,7 @@ sources:
   - internal/tui/lessons.go
   - internal/tui/reportcard.go
   - internal/tui/tiles.go
-verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 ---
 
 # TUI client
@@ -108,7 +108,7 @@ paragraph describes.
 
 Rendering requires no daemon round trips — map updates come from pushed events, so the
 UI stays smooth at max speed (the chronicle simply scrolls fast). The four spec-029
-standing-order event types (`metatron.order_placed`/`order_triggered`/
+standing-order event types (`guardian.order_placed`/`order_triggered`/
 `order_cancelled`/`order_expired`) carry `digestRegistry` entries (digest.go —
 "Guardian set a watch: …" / "…watch came true/released/lapsed", the placed
 condition truncated to 80 runes and quoted through the same speech helper as

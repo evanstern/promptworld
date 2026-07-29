@@ -32,12 +32,12 @@ const (
 
 // effectEventType maps each effect kind to the single event type it produces.
 // narrate expands to one agent.memory_added per recipient; the others produce
-// exactly one metatron.* event.
+// exactly one guardian.* event.
 var effectEventType = map[string]string{
-	"move_entity":   "metatron.entity_moved",
-	"remove_entity": "metatron.entity_removed",
-	"grant_item":    "metatron.item_granted",
-	"snap_time":     "metatron.time_snapped",
+	"move_entity":   "guardian.entity_moved",
+	"remove_entity": "guardian.entity_removed",
+	"grant_item":    "guardian.item_granted",
+	"snap_time":     "guardian.time_snapped",
 	"narrate":       "agent.memory_added",
 }
 
@@ -386,14 +386,14 @@ func compileOne(idx int, e Effect, in CompileInput) ([]store.Event, error) {
 		if err != nil {
 			return nil, err
 		}
-		return []store.Event{event("metatron.entity_moved", sim.EntityMovedPayload{
+		return []store.Event{event("guardian.entity_moved", sim.EntityMovedPayload{
 			Class: string(a.Class), X: a.X, Y: a.Y, ToX: e.ToX, ToY: e.ToY, Gratis: false})}, nil
 	case "remove_entity":
 		a, err := removeTarget(idx, e.Target, in)
 		if err != nil {
 			return nil, err
 		}
-		return []store.Event{event("metatron.entity_removed", sim.EntityRemovedPayload{
+		return []store.Event{event("guardian.entity_removed", sim.EntityRemovedPayload{
 			Class: string(a.Class), X: a.X, Y: a.Y, Gratis: false})}, nil
 	case "grant_item":
 		i, err := grantTarget(idx, e.Target, in)
@@ -403,10 +403,10 @@ func compileOne(idx int, e Effect, in CompileInput) ([]store.Event, error) {
 		if e.Qty < qtyMin || e.Qty > qtyMax {
 			return nil, ruleErr("T5", "effect %d (grant_item): qty %d out of range %d–%d", idx, e.Qty, qtyMin, qtyMax)
 		}
-		return []store.Event{event("metatron.item_granted", sim.ItemGrantedPayload{
+		return []store.Event{event("guardian.item_granted", sim.ItemGrantedPayload{
 			Agent: sim.Ref(i), Kind: e.Item, Qty: e.Qty, Gratis: false})}, nil
 	case "snap_time":
-		return []store.Event{event("metatron.time_snapped", sim.TimeSnappedPayload{
+		return []store.Event{event("guardian.time_snapped", sim.TimeSnappedPayload{
 			ToTick: e.ToTick, Gratis: false})}, nil
 	case "narrate":
 		if n := len(e.Text); n > narrateMaxBytes {

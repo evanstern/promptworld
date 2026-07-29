@@ -8,7 +8,7 @@ sources:
   - internal/guardian/charter.go
   - cmd/promptworld/stages.go
   - internal/worlds/unlocks.go
-verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 ---
 
 # Curriculum ladder
@@ -98,7 +98,7 @@ files, binding only from stage-3 — present-but-unbound files get one
 notice. Every other stage behaves byte-identically to pre-ladder.
 `observeCharter`'s `default` flag is preset-aware: it compares the
 effective text against the WORLD's preset constant, so a stage-1 tutor-preset
-world's `metatron.charter_observed` records `default: true` — authored by the
+world's `guardian.charter_observed` records `default: true` — authored by the
 game, never the player — so preset text never opens the stage-2→3 gate
 below, and the [[morgue]]'s charter-evidence timeline stays honest.
 
@@ -113,7 +113,7 @@ event/evidence/exercise detail.
 ## Connections
 
 [[guardian]] applies the stage ceiling and the instruction lock in its
-turn/status assembly and emits the `metatron.charter_observed` events whose
+turn/status assembly and emits the `guardian.charter_observed` events whose
 `default` flag the progression child's gate derivation inverts; [[morgue]]
 aligns deaths against the same observation timeline. [[world-save-directory]]
 holds the `stage`/`stage_overridden`/`charter_preset` manifest facts;

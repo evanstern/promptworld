@@ -7,7 +7,7 @@ sources:
   - internal/sim/reportcard.go
   - internal/sim/curriculum.go
   - internal/sim/morgue.go
-verified_against: 6929bf75a2cd68654ef126518fd727361af99005
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 ---
 
 # Sim state: guardian-facing record dispatch arms
@@ -17,23 +17,23 @@ summary-style): the `Apply` arms that record guardian-issued and
 curriculum/tuning state — standing orders, charter observation, morgue
 epilogues, the guardian report card, curriculum unlocks, and the tuning
 snapshot. All route through `applyGuardian`/`applyReportCard`/
-`applyCurriculum`/`applyMorgueEpilogue` alongside `metatron.charge_regenerated`/
-`metatron.nudged`'s own `applyGuardian` arm ([[sim-state-apply-world]]).
+`applyCurriculum`/`applyMorgueEpilogue` alongside `guardian.charge_regenerated`/
+`guardian.nudged`'s own `applyGuardian` arm ([[sim-state-apply-world]]).
 
 ## How it works
 
-**Standing orders** (since spec 029, `applyGuardian`): `metatron.order_placed`
+**Standing orders** (since spec 029, `applyGuardian`): `guardian.order_placed`
 validates and appends (id uniqueness, origin, non-empty `event_types`, a
 1..7-game-day ttl, valid agent index, condition/action length caps, and —
 player-origin only — the 3-order active cap) then prunes to the active set
-plus the most recent 32 non-active; `metatron.order_triggered`/
-`metatron.order_cancelled`/`metatron.order_expired` each transition one
+plus the most recent 32 non-active; `guardian.order_triggered`/
+`guardian.order_cancelled`/`guardian.order_expired` each transition one
 order from active to a terminal status via shared
 `transitionGuardianOrder`, rejecting an unknown id or one not active
 ([[guardian-orders]]).
 
 **Charter observation** (since spec 044 US2, `applyGuardian`):
-`metatron.charter_observed` validates a non-empty fingerprint (so
+`guardian.charter_observed` validates a non-empty fingerprint (so
 `InjectSocial`'s dry-run refuses a blank one at the door) then sets
 `State.CharterFingerprint` — state keeps only the CURRENT fingerprint, the
 full revision timeline being the log's observation sequence the [[morgue]]

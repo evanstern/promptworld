@@ -295,7 +295,7 @@ func (s *State) applyPlan(e store.Event) error {
 		}
 		// Status is IGNORED on the payload — a designation always lands
 		// active; PlacedSeq is reducer-stamped from the event's own store seq
-		// (the metatron.order_placed shape: identical live and in replay; the
+		// (the guardian.order_placed shape: identical live and in replay; the
 		// dry-run probe applies with Seq 0 and is discarded).
 		d.Status = "active"
 		d.PlacedSeq = e.Seq

@@ -5,7 +5,7 @@ kind: concept
 sources:
   - internal/sim/agents.go
   - internal/sim/state.go
-verified_against: 1603d5ac22d9be35469ec88bf2355b7d2f9500bc
+verified_against: PENDING_MERGE_SHA
 ---
 
 # Event types — social & memory-authoring events

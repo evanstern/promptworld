@@ -34,6 +34,15 @@ func loadPre086Events(t *testing.T) []store.Event {
 	if len(evs) == 0 {
 		t.Fatal("empty fixture")
 	}
+	// The fixture is byte-frozen pre-086 history and so speaks log format 1
+	// (metatron.*). Under spec 094 a real log of this era is TRANSLATED
+	// before this build ever replays it, so the loader applies exactly the
+	// migration's type mapping — payloads untouched — before the fold; the
+	// dual-shape AgentRef proofs this file exists for are payload-level and
+	// unaffected.
+	for i := range evs {
+		evs[i].Type = CanonicalEventType(evs[i].Type)
+	}
 	return evs
 }
 

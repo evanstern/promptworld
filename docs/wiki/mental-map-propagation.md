@@ -11,7 +11,7 @@ sources:
   - internal/mind/prompt.go
   - internal/mind/context.go
   - internal/mind/mind.go
-verified_against: 74fe956813aa6be54e65156ae9bfcb91745cbb8d
+verified_against: 11de2a4aa93d4c901a8dd90369151fa23fd056d0
 ---
 
 # Mental map propagation and rendering
@@ -42,7 +42,7 @@ triple as a `rejected_gate` before anything lands. `place_kind`'s Enum is
 vocabulary hand-mirrored, since `tool` must not import `sim`; a drift there
 can only over- or under-offer the model, never land a false fact, since the
 reducer dry-run (`groundFactPresent`) is the semantic authority that the
-place is real. `landVision` composes one `metatron.place_revealed` event plus
+place is real. `landVision` composes one `guardian.place_revealed` event plus
 a companion `agent.memory_added` ("The vision showed you the fire at
 (x,y).", `SalDream`, `Origin: sim.OriginOmen`) as extra events riding the SAME
 atomic `landNudgeBatch` call as the vision's own nudge memory — the grant

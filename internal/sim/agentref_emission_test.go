@@ -129,9 +129,9 @@ func TestEmissionDriveInjectedFamilies(t *testing.T) {
 			Agent: Ref(0), Text: "remembered", Salience: 3, Subject: Ref(-1)})}},
 		{{Type: "social.rumor_told", Payload: mustPayload(RumorToldPayload{
 			From: Ref(0), To: Ref(1), Subject: died, Tone: -10, Text: "about the dead", Confidence: 80})}},
-		{{Type: "metatron.nudged", Payload: mustPayload(GuardianNudgedPayload{
+		{{Type: "guardian.nudged", Payload: mustPayload(GuardianNudgedPayload{
 			Form: "omen", Targets: Refs([]int{0, 1, 2}), Text: "a sign"})}},
-		{{Type: "metatron.order_placed", Payload: mustPayload(GuardianOrder{
+		{{Type: "guardian.order_placed", Payload: mustPayload(GuardianOrder{
 			ID: "ord-1-0", Origin: "player", Condition: "if anyone sleeps", Action: "note it",
 			EventTypes: []string{"agent.slept"}, Agent: -1, PlacedTick: 1, ExpiresTick: 90000, Status: "active",
 		}.PlacedPayload())}},
@@ -144,7 +144,7 @@ func TestEmissionDriveInjectedFamilies(t *testing.T) {
 			Claim:        ProphecyClaim{Kind: ProphecySurvives, Agent: 0},
 			DeclaredTick: 1, DeadlineTick: 90000, Status: "active",
 		}.DeclaredPayload())}},
-		{{Type: "metatron.item_granted", Payload: mustPayload(ItemGrantedPayload{
+		{{Type: "guardian.item_granted", Payload: mustPayload(ItemGrantedPayload{
 			Agent: Ref(2), Kind: "wood", Qty: 2, Gratis: true})}},
 		{{Type: "morgue.epilogue", Payload: mustPayload(MorgueEpiloguePayload{
 			Agent: Ref(3), Text: "they are mourned"})}},
@@ -162,9 +162,9 @@ func TestEmissionDriveInjectedFamilies(t *testing.T) {
 		t.Fatal(err)
 	}
 	seen := assertNamedFromBytes(t, evs)
-	for _, want := range []string{"agent.memory_added", "social.rumor_told", "metatron.nudged",
-		"metatron.order_placed", "directive.issued", "prophecy.declared",
-		"metatron.item_granted", "morgue.epilogue", "chronicle.entry"} {
+	for _, want := range []string{"agent.memory_added", "social.rumor_told", "guardian.nudged",
+		"guardian.order_placed", "directive.issued", "prophecy.declared",
+		"guardian.item_granted", "morgue.epilogue", "chronicle.entry"} {
 		if !seen[want] {
 			t.Errorf("injected family %s missing from the log", want)
 		}
@@ -176,7 +176,7 @@ func TestEmissionDriveInjectedFamilies(t *testing.T) {
 	var sawSentinel, sawPosthumous, sawClaimRef bool
 	for _, e := range evs {
 		raw := string(e.Payload)
-		if e.Type == "metatron.order_placed" && strings.Contains(raw, `"agent":{"id":-1,"name":""}`) {
+		if e.Type == "guardian.order_placed" && strings.Contains(raw, `"agent":{"id":-1,"name":""}`) {
 			sawSentinel = true
 		}
 		if e.Type == "social.rumor_told" && strings.Contains(raw, `"subject":{"id":3,"name":"Rowan"}`) {

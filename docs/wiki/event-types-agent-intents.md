@@ -6,7 +6,7 @@ sources:
   - internal/sim/agents.go
   - internal/sim/executor.go
   - internal/sim/landing.go
-verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 ---
 
 # Event types — agent intent lifecycle
@@ -46,7 +46,7 @@ conditionless), and `WorkStartedPayload` gains `omitempty` `Ref` (the need
 level at a conditioned hold's anchor tick; 0 and unread for an ordinary
 work goal). ONE new event type, `agent.recovery_stalled`
 (`RecoveryStalledPayload{agent, goal, need}`), is the executor emission
-class (no whitelist entry, the `metatron.order_expired`/`curriculum.*`
+class (no whitelist entry, the `guardian.order_expired`/`curriculum.*`
 pattern): a needs-conditioned hold whose need shows no net gain across a
 full `recoveryStallTicks` window (dead fire, displaced source, unreachable
 threshold) aborts with this DISTINCT outcome — mirroring

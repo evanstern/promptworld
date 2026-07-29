@@ -7,7 +7,7 @@ sources:
   - internal/sim/curriculum.go
   - internal/sim/guardian.go
   - internal/sim/state.go
-verified_against: 1603d5ac22d9be35469ec88bf2355b7d2f9500bc
+verified_against: PENDING_MERGE_SHA
 ---
 
 # Scenario rubric (pass boundary, evidence, exercise catalog)
@@ -53,7 +53,7 @@ term over the adopted-ever `State.Norms` ledger; charter term = the shared
 seven spec-077 arms (`coldDawnRubric` … `stewardsChargeRubric`) built from
 shared pure helpers — `surviveToDawn`, `noDeaths`, `deathsByCause` (the
 spec-044 `DeathRecord.Cause` vocabulary), `charterInForce`, `skillsInForce`
-(over the `metatron.skills_observed`-persisted `SkillsFingerprint`),
+(over the `guardian.skills_observed`-persisted `SkillsFingerprint`),
 `nothingTaken` (the zero-wanted `StrangerTakes`-ledger term — Met at
 genesis, an empty ledger IS the claim), `storedFoodTotal` (chest stores +
 pile batches), and `playerOrderSince` (earliest player order at/after a
@@ -63,13 +63,13 @@ default, kept for future non-evaluator content).
 
 **Evidence** (spec 077 FR-004) assembles through the sanctioned
 constructors ONLY, keyed by satisfied term type (`rubricEvidence`):
-`metatron.order_placed` → `OrderPlacedEvidence` over the exercise's
+`guardian.order_placed` → `OrderPlacedEvidence` over the exercise's
 qualifying order (`evidenceOrder`: `firstNightWatch` for the watch-shaped
 exercises, `playerOrderSince(SkillsObservedTick)` for toolsmith);
-`metatron.charter_observed` → `CharterEvidenceFromState` (reads the
+`guardian.charter_observed` → `CharterEvidenceFromState` (reads the
 `CharterObservedSeq/Tick` coordinates the charter arm now persists, plus
 `Custom: CharterCustom` — spec 072 FR-009's blocker removed);
-`metatron.skills_observed` → `SkillsObservedEvidence` (`Custom: true` by
+`guardian.skills_observed` → `SkillsObservedEvidence` (`Custom: true` by
 construction — skill files bind only from stage-3 and only players author
 them; the stage-3→4 gate's long-deferred evidence design). When a
 satisfied charter/skills term's coordinates are not yet on state (a

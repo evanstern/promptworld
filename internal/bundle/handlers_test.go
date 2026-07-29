@@ -92,7 +92,7 @@ func TestHandlerLandsBatch(t *testing.T) {
 	var moves, mems int
 	for _, e := range ci.batches[0] {
 		switch e.Type {
-		case "metatron.entity_moved":
+		case "guardian.entity_moved":
 			moves++
 		case "agent.memory_added":
 			mems++

@@ -3,10 +3,10 @@ id: TASK-134
 title: >-
   Event-log format_version + migration path (prerequisite for the guardian
   rename)
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-25 19:29'
-updated_date: '2026-07-29 19:22'
+updated_date: '2026-07-29 21:15'
 labels:
   - replay-doctrine
   - review-2026-07-25
@@ -34,15 +34,15 @@ Spec: specs/094-event-log-format-version
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Event log carries a format_version (or equivalent schema stamp) written at genesis and on every append-path that needs it
-- [ ] #2 A migration path translates pre-version logs on load; an existing world-01-shaped log replays byte-identically before and after migration
-- [ ] #3 Doctrine recorded: persisted-name changes and reducer-re-derivation changes require a version bump + migration; sites commented
-- [ ] #4 TASK-121's metatron.* -> guardian.* rename is demonstrated end-to-end through the migration on a seeded world
-- [ ] #5 Wiki re-pinned (event-log / sim-state-reducer notes) and freshness gate green
-- [ ] #6 Spec phase: Log stamp + enforcement
-- [ ] #7 Spec phase: Translating migration
-- [ ] #8 Spec phase: The guardian rename
-- [ ] #9 Spec phase: Doctrine + grounding
+- [x] #1 Event log carries a format_version (or equivalent schema stamp) written at genesis and on every append-path that needs it
+- [x] #2 A migration path translates pre-version logs on load; an existing world-01-shaped log replays byte-identically before and after migration
+- [x] #3 Doctrine recorded: persisted-name changes and reducer-re-derivation changes require a version bump + migration; sites commented
+- [x] #4 TASK-121's metatron.* -> guardian.* rename is demonstrated end-to-end through the migration on a seeded world
+- [x] #5 Wiki re-pinned (event-log / sim-state-reducer notes) and freshness gate green
+- [x] #6 Spec phase: Log stamp + enforcement
+- [x] #7 Spec phase: Translating migration
+- [x] #8 Spec phase: The guardian rename
+- [x] #9 Spec phase: Doctrine + grounding
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -52,3 +52,9 @@ Operator ruling (2026-07-25, via UI-sweep orchestrator checkpoint): TASK-121 mer
 
 board-sweep-2026-07-29 lane 1: spec 094 landed + linked. OPERATOR RULING (2026-07-29, in-session checkpoint): ship the REAL metatron.*->guardian.* rename + TASK-121 shim removal through this task, not just a demo. Tier: Opus — card-stated (replay/reducer doctrine, cross-package, migration machinery).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Merged via PR #136 (merge commit c9d30eb6). Log-level format_version (meta-row; Legacy=1, v2=guardian vocab) enforced at load both directions; manifest FormatVersion 6; translating migration mode (v4/v5 sources, every event preserved, replay-verified before swap, archive guards); the REAL metatron.*->guardian.* rename of all 13 persisted types shipped through it per operator rulings, TASK-121 display shim deleted; byte-identity proven (per-event + state-hash-sequence) on seeded fixture; doctrine in event-log.md/sim-state-reducer.md cross-linked with spec 092. Opus tier. Existing worlds migrate only when the operator runs promptworld migrate.
+<!-- SECTION:FINAL_SUMMARY:END -->

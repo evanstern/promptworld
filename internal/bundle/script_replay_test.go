@@ -55,7 +55,7 @@ func TestScriptedReplayByteIdentity(t *testing.T) {
 		t.Fatalf("compileScript: %v", err)
 	}
 
-	declared := map[string]bool{"metatron.time_snapped": true, "agent.memory_added": true}
+	declared := map[string]bool{"guardian.time_snapped": true, "agent.memory_added": true}
 	compile := func() []store.Event {
 		s := genesis()
 		world := newWorldView("randtool", 0, seed, m.W, m.H, agentInfos(s))

@@ -7,7 +7,7 @@ sources:
   - internal/sim/state.go
   - internal/sim/miracles.go
   - internal/sim/migrate.go
-verified_against: 1603d5ac22d9be35469ec88bf2355b7d2f9500bc
+verified_against: PENDING_MERGE_SHA
 ---
 
 # Mental map data model
@@ -82,7 +82,7 @@ predicts burnout from its own knowledge, never a live read).
 **Derived bookkeeping** (research D2): position-changing reducer arms silently
 grow the mover's explored bitmap and update peer sightings — no event, a pure
 function of (state, event): `agent.moved`, `agent.woke`, and a `villager`-class
-`metatron.entity_moved` (a miracle-teleported villager is knowledge-transparent,
+`guardian.entity_moved` (a miracle-teleported villager is knowledge-transparent,
 not a blind teleport) all call `markExplored`/`notePresence`
 (`internal/sim/state.go`, `internal/sim/miracles.go`). `notePresence` records a
 sighting between the arriving agent and every living, AWAKE agent within
@@ -112,7 +112,7 @@ format to **v4** ([[world-save-directory]]).
 payload is fully baked at emission (never re-derived at Apply time), so live
 and replay agree byte-for-byte; `TestDeterminismSameSeedSameTimeline`
 additionally diffs each agent's canonical map bytes across two same-seed
-runs. `metatron.time_snapped`'s `rebaseTicks` (`internal/sim/miracles.go`,
+runs. `guardian.time_snapped`'s `rebaseTicks` (`internal/sim/miracles.go`,
 [[guardian-miracles]]) classifies `PlaceFact.Seen`/`PeerSighting.Seen` as
 SHIFT (the freshness anchor, so a time snap cannot instantly stale every
 villager's knowledge) and `PlaceFact.Detail` as KEEP (a remembered value,

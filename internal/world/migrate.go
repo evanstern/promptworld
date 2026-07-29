@@ -1,16 +1,28 @@
 package world
 
-// The snapshot-cut migration that carries a world's people (spec 012 US6 for
-// v1→v2 while the land resets, research R10; spec 013 for v2→v3 which preserves
-// people AND land, research R3). This is a client-side, offline operation: the
-// daemon must be stopped. It never replays old events under new rules — it reads
-// the source world's covering snapshot, transforms it (internal/sim), and writes
-// a fresh log whose single world.migrated event carries the full transformed
-// state, so the log alone reproduces the migrated world byte-identically. An
-// older world chains every step (1→2→3→4→5) in one run; the archive name is
-// keyed to the source format (world.v1.db, world.v2.db, or world.v3.db).
-// The 4→5 step is manifest-only (spec 068): no state or log change, so a v4
-// source skips the snapshot-cut ceremony entirely.
+// The offline migration driver, in two modes (the spec 094 decision rule):
+//
+//   - SNAPSHOT-CUT (semantic breaks — spec 012 US6 for v1→v2 while the land
+//     resets, research R10; spec 013 for v2→v3 which preserves people AND
+//     land, research R3): never replays old events under new rules — it reads
+//     the source world's covering snapshot, transforms it (internal/sim), and
+//     writes a fresh log whose single world.migrated event carries the full
+//     transformed state, so the log alone reproduces the migrated world
+//     byte-identically. History is archived, not carried.
+//
+//   - TRANSLATION (pure renames — spec 094, the guardian rename): rewrites
+//     the log's type column through sim.LogFormatV1Renames with EVERY event,
+//     tick, and payload preserved byte-for-byte, so the full history
+//     survives. Used for v4/v5 sources (content-identical logs; 4→5 was
+//     manifest-only, spec 068), whose vocabulary is the only thing v6
+//     changed.
+//
+// DOCTRINE: a persisted-name change translates; a semantic break (payload
+// meaning, reducer re-derivation) snapshot-cuts. Both are client-side,
+// offline operations — the daemon must be stopped — and both archive the
+// source DB under its source-format name (world.v1.db … world.v5.db), never
+// overwriting an existing archive. An older world chains snapshot-cut steps
+// to the v4/v5 state shape, then lands on a fresh already-current log.
 
 import (
 	"encoding/json"
@@ -35,16 +47,16 @@ type MigrateResult struct {
 	Tick          int64 // the continuation tick (carried from v1)
 	SourceEvents  int64 // v1 events archived in world.v1.db
 	ArchivePath   string
-	// ManifestOnly marks a v4→v5 upgrade (spec 068): nothing about a v4
-	// world's event log or state changes under v5 — the break exists so
-	// pre-068 software refuses new-terrain worlds — so the migration bumps
-	// the manifest and touches nothing else. The counters above stay zero.
-	ManifestOnly bool
+	// Translated marks the translation mode (spec 094): the log carried over
+	// event-for-event with only type names rewritten — SourceEvents counts
+	// the events preserved (== the translated log's length), and Tick is the
+	// head tick the world resumes at.
+	Translated bool
 }
 
 // OpenForMigration loads a world directory WITHOUT the current version gate,
 // for the sole purpose of migrating it. It admits any older supported source
-// format (v1 through v4) and refuses everything else: an already-current (or future)
+// format (v1 through v5) and refuses everything else: an already-current (or future)
 // world has nothing to migrate, and a corrupt manifest is refused exactly as
 // Open would. Map dimensions are defaulted identically to Open so a regenerated
 // map matches what the daemon will boot.
@@ -75,19 +87,24 @@ func OpenForMigration(dir string) (*World, error) {
 	return &World{Dir: dir, Manifest: m}, nil
 }
 
-// V1DBPath / V2DBPath / V3DBPath are the archived original databases — the
-// archive name is keyed to the SOURCE format so a v1→(2→3→)4 run parks
-// world.v1.db, a v2→(3→)4 run world.v2.db, and a v3→4 run world.v3.db. The
-// archive's existence is the already-migrated guard for that source format,
-// and restoring is "delete world.db, rename this back, reset the manifest to
-// the source version".
+// V1DBPath … V5DBPath are the archived original databases — the archive name
+// is keyed to the SOURCE format so a v1→…→6 run parks world.v1.db, a v5→6 run
+// world.v5.db, and so on. The archive's existence is the already-migrated
+// guard for that source format, and restoring is "delete world.db, rename
+// this back, reset the manifest to the source version".
 func (w *World) V1DBPath() string { return filepath.Join(w.Dir, "world.v1.db") }
 func (w *World) V2DBPath() string { return filepath.Join(w.Dir, "world.v2.db") }
 func (w *World) V3DBPath() string { return filepath.Join(w.Dir, "world.v3.db") }
+func (w *World) V4DBPath() string { return filepath.Join(w.Dir, "world.v4.db") }
+func (w *World) V5DBPath() string { return filepath.Join(w.Dir, "world.v5.db") }
 
 // archiveDBPath is the archive name for this world's SOURCE format version.
 func (w *World) archiveDBPath() string {
 	switch w.Manifest.FormatVersion {
+	case 5:
+		return w.V5DBPath()
+	case 4:
+		return w.V4DBPath()
 	case 3:
 		return w.V3DBPath()
 	case 2:
@@ -114,19 +131,12 @@ func Migrate(dir string) (*MigrateResult, error) {
 		return nil, fmt.Errorf("daemon is running (pid %d) — stop it first: promptworld stop %s", pid, dir)
 	}
 
-	// v4 → v5 is a manifest-only upgrade (spec 068 C11): the version bump
-	// exists so PRE-068 software refuses new-terrain worlds — a carried-
-	// forward v4 world's event log, state, and terrain (terrain_gen stays
-	// absent ⇒ legacy generation, bit-identical) do not change at all, so
-	// there is nothing to archive, transform, or rewrite. Deliberately no
-	// snapshot-cut: cutting a fresh log here would imply a state break that
-	// does not exist, and would demand a covering snapshot for a no-op.
-	if w.Manifest.FormatVersion == 4 {
-		w.Manifest.FormatVersion = FormatVersion
-		if err := writeManifest(w); err != nil {
-			return nil, err
-		}
-		return &MigrateResult{Name: w.Manifest.Name, Seed: w.Manifest.Seed, ManifestOnly: true}, nil
+	// v4/v5 → v6 is the TRANSLATION mode (spec 094): those logs differ from
+	// v6 only in the guardian event-type vocabulary (4→5 was manifest-only,
+	// spec 068, so both speak log format 1). The full history carries over —
+	// no snapshot-cut, no covering-snapshot requirement.
+	if w.Manifest.FormatVersion >= 4 {
+		return migrateTranslate(w)
 	}
 
 	// Already-migrated guard: the archive is never overwritten (FR-025). The
@@ -242,6 +252,13 @@ func Migrate(dir string) (*MigrateResult, error) {
 	}
 	defer fresh.Close()
 
+	// A snapshot-cut's fresh log is born current (spec 094): its only events
+	// (world.created + world.migrated) predate no vocabulary, so it is
+	// stamped with today's log format directly.
+	if err := fresh.StampLogFormat(); err != nil {
+		return nil, err
+	}
+
 	createdPayload, err := json.Marshal(sim.WorldCreatedPayload{Name: w.Manifest.Name, Seed: w.Manifest.Seed})
 	if err != nil {
 		return nil, err
@@ -285,6 +302,198 @@ func Migrate(dir string) (*MigrateResult, error) {
 		Tick:          srcTick,
 		SourceEvents:  maxSeq,
 		ArchivePath:   archivePath,
+	}, nil
+}
+
+// migrateTranslate is the translating migration (spec 094 FR-003): rewrite a
+// v4/v5 log into the current vocabulary — every event's type mapped through
+// sim.LogFormatV1Renames, every seq, tick, payload, and wall_time preserved
+// byte-for-byte — so history survives a pure rename. The translated DB is
+// built at a temp path and only swapped in after the source is archived, so
+// no failure mode leaves a half-written world.db as the live log. Guards
+// (live daemon refused by the caller; archive never overwritten;
+// already-migrated = archive exists) match the snapshot-cut's contract.
+func migrateTranslate(w *World) (*MigrateResult, error) {
+	archivePath := w.archiveDBPath()
+	if _, err := os.Stat(archivePath); err == nil {
+		return nil, fmt.Errorf("this world is already migrated (%s exists); the archive is never overwritten", filepath.Base(archivePath))
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return nil, err
+	}
+
+	src, err := store.Open(w.DBPath())
+	if err != nil {
+		return nil, err
+	}
+	if cerr := src.CheckContiguity(); cerr != nil {
+		src.Close()
+		return nil, cerr
+	}
+	srcEvents := src.LastSeq()
+
+	// Build the translated log at a temp path inside the world dir (same
+	// filesystem, so the final rename is atomic). A leftover from a crashed
+	// earlier run is dead weight — remove it and its WAL sidecars.
+	tmpPath := w.DBPath() + ".translating"
+	for _, p := range []string{tmpPath, tmpPath + "-wal", tmpPath + "-shm"} {
+		if err := os.Remove(p); err != nil && !errors.Is(err, os.ErrNotExist) {
+			src.Close()
+			return nil, err
+		}
+	}
+	fresh, err := store.Open(tmpPath)
+	if err != nil {
+		src.Close()
+		return nil, err
+	}
+	cleanupTmp := func() {
+		fresh.Close()
+		src.Close()
+		os.Remove(tmpPath)
+		os.Remove(tmpPath + "-wal")
+		os.Remove(tmpPath + "-shm")
+	}
+
+	// Meta rows carry over verbatim (the fork ceremony's wallet-inheritance
+	// posture: the seed mirror, llm_spend_* budget truth) — then the
+	// format_version mirror is updated so validateMeta's manifest cross-check
+	// holds at the next boot, and the log format stamp is written LAST so it
+	// wins over any (impossible today) stale log_format_version row copied
+	// from the source.
+	meta, err := src.MetaByPrefix("")
+	if err != nil {
+		cleanupTmp()
+		return nil, err
+	}
+	for k, v := range meta {
+		if err := fresh.SetMeta(k, v); err != nil {
+			cleanupTmp()
+			return nil, err
+		}
+	}
+	if err := fresh.SetMeta("format_version", strconv.Itoa(FormatVersion)); err != nil {
+		cleanupTmp()
+		return nil, err
+	}
+	if err := fresh.StampLogFormat(); err != nil {
+		cleanupTmp()
+		return nil, err
+	}
+
+	// Stream every event across, type mapped, everything else verbatim.
+	// AppendEvents assigns contiguous seqs from 1 and the source is
+	// contiguity-checked, so seqs reproduce exactly; a non-empty WallTime
+	// rides through untouched.
+	const batchSize = 1024
+	batch := make([]store.Event, 0, batchSize)
+	flush := func() error {
+		if len(batch) == 0 {
+			return nil
+		}
+		if err := fresh.AppendEvents(batch); err != nil {
+			return err
+		}
+		batch = batch[:0]
+		return nil
+	}
+	err = src.ReplayEvents(0, func(e store.Event) error {
+		if renamed, ok := sim.LogFormatV1Renames[e.Type]; ok {
+			e.Type = renamed
+		}
+		batch = append(batch, e)
+		if len(batch) == batchSize {
+			return flush()
+		}
+		return nil
+	})
+	if err == nil {
+		err = flush()
+	}
+	if err != nil {
+		cleanupTmp()
+		return nil, err
+	}
+	if fresh.LastSeq() != srcEvents {
+		cleanupTmp()
+		return nil, fmt.Errorf("translation carried %d events, want %d — refusing to continue", fresh.LastSeq(), srcEvents)
+	}
+
+	// Snapshots are derived accelerators: the latest verified one carries
+	// over (SaveSnapshot recomputes the same hash over the same bytes), so
+	// the migrated world boots from exactly the state the source world last
+	// cut; older snapshot rows are regenerable history the archive retains.
+	snap, err := src.LatestValidSnapshot()
+	if err != nil {
+		cleanupTmp()
+		return nil, err
+	}
+	if snap != nil {
+		if err := fresh.SaveSnapshot(snap.Tick, snap.Seq, snap.State); err != nil {
+			cleanupTmp()
+			return nil, err
+		}
+	}
+
+	// Verification before the swap — emulate exactly what daemon boot will
+	// do (recoverState: latest snapshot + tail replay; genesis replay when
+	// no snapshot exists). A translated log the current reducer rejects
+	// must never become the live world.db.
+	state := sim.NewState(w.Manifest.Seed, w.Map())
+	var since int64
+	if snap != nil {
+		if err := json.Unmarshal(snap.State, state); err != nil {
+			cleanupTmp()
+			return nil, fmt.Errorf("translated snapshot unreadable: %w", err)
+		}
+		since = snap.Seq
+	}
+	err = fresh.ReplayEvents(since, func(e store.Event) error {
+		if err := state.Apply(e); err != nil {
+			return fmt.Errorf("translated log fails replay at seq %d (%s): %w", e.Seq, e.Type, err)
+		}
+		if e.Tick > state.Tick {
+			state.Tick = e.Tick
+		}
+		return nil
+	})
+	if err != nil {
+		cleanupTmp()
+		return nil, err
+	}
+
+	if err := fresh.Close(); err != nil {
+		src.Close()
+		return nil, err
+	}
+	if err := src.Close(); err != nil {
+		return nil, err
+	}
+
+	// The swap: archive the source intact (the point of no easy return —
+	// everything that could refuse has already run), then move the verified
+	// translation into place.
+	if err := archiveDB(w.DBPath(), archivePath); err != nil {
+		return nil, err
+	}
+	if err := archiveDB(tmpPath, w.DBPath()); err != nil {
+		return nil, err
+	}
+
+	// Bump the manifest last (the snapshot-cut's crash posture: archive
+	// present + manifest unbumped is recoverable by renaming back).
+	w.Manifest.FormatVersion = FormatVersion
+	if err := writeManifest(w); err != nil {
+		return nil, err
+	}
+
+	return &MigrateResult{
+		Name:          w.Manifest.Name,
+		Seed:          w.Manifest.Seed,
+		AgentsCarried: len(state.Agents),
+		Tick:          state.Tick,
+		SourceEvents:  srcEvents,
+		ArchivePath:   archivePath,
+		Translated:    true,
 	}, nil
 }
 

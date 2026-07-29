@@ -1,6 +1,6 @@
 ---
 name: cli-world-lifecycle
-description: CLI world lifecycle — new (creation/stamping), migrate (v1-v4 upgrade), fork (snapshot-boundary copy under a fresh identity, spec 076), compare (the duel scoreboard), ps (discovery), stages (ladder)
+description: CLI world lifecycle — new (creation/stamping), migrate (v1-v5 upgrade), fork (snapshot-boundary copy under a fresh identity, spec 076), compare (the duel scoreboard), ps (discovery), stages (ladder)
 kind: component
 sources:
   - cmd/promptworld/commands.go
@@ -9,7 +9,7 @@ sources:
   - internal/worlds/unlocks.go
   - cmd/promptworld/fork.go
   - cmd/promptworld/compare.go
-verified_against: a8d2b7f17989321471cff43c4e760e83f58bbd55
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 ---
 
 # CLI: world lifecycle commands
@@ -68,27 +68,27 @@ Split from [[cli-promptworld]]: `new`, `migrate`, `fork`, `compare`, `ps`,
   manifest's `Scenario` block set-after-create via `world.SetScenario` (the
   `SetStage` pattern) and the summary gains a trailing `scenario: <id> —
   <concept>` line naming the exercise panel's key (`6`).
-- `migrate <world>` — the one-time upgrade of an older world (v1 through v4) to the
+- `migrate <world>` — the one-time upgrade of an older world (v1 through v5) to the
   current format (spec 012 US6 for v1→v2, spec 013 for v2→v3, spec 041 for v3→v4,
-  spec 068 for v4→v5 —
+  spec 094 for v4/v5→v6 —
   [[world-migration]]): resolves `<world>` via `resolveWorldForMigrate`, which
   unlike `resolveWorld`/`worlds.Resolve` must reach older-format worlds that this
   build cannot `world.Open` — a path argument passes through verbatim, a bare name
   resolves against the worlds home then the known-worlds registry by manifest
   *presence* alone, never the version gate. Hands the whole
   ceremony to `world.Migrate`
-  ([[world-save-directory]]), which admits a v1-v4 source (an older world chains
-  every remaining step in one run, e.g. 1→2→3→4→5; an already-current world is
+  ([[world-save-directory]]), which admits a v1-v5 source (an older world chains
+  every remaining snapshot-cut step in one run; an already-current world is
   refused outright). For a v1-v3 source it archives the
   original database under a name keyed to the source format (`world.v1.db`,
   `world.v2.db`, or `world.v3.db`) and prints a human summary (seed, villagers
   carried, continuation
   tick, source event count, archive path, and the `start` command to run next). A
-  v4 source instead takes the spec-068 manifest-only path (`MigrateResult.
-  ManifestOnly`, [[world-migration]]) — no archive, no transform, since nothing
-  about the world's log, state, or terrain changes — and `cmdMigrate` prints a
-  distinct summary naming it a manifest-only upgrade whose event log and terrain
-  carry over unchanged.
+  v4/v5 source instead takes the spec-094 TRANSLATING path
+  (`MigrateResult.Translated`, [[world-migration]]) — the full event history
+  carries over with only the guardian event-type names rewritten, archived as
+  `world.v4.db`/`world.v5.db` — and `cmdMigrate` prints a distinct summary
+  naming the events translated in place and the archive.
 - `fork <world> <new-name> [--at latest-snapshot]` / `compare <a> <b>
   [--since TICK]` (`fork.go`/`compare.go`, spec 076) — snapshot-boundary
   copy under a fresh identity via `world.Fork` (`<new-name>` follows `new`'s

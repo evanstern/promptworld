@@ -55,24 +55,24 @@ func lessonFixtureEventPayload(t *testing.T, id string) store.Event {
 	case "first-gru-attack":
 		return mkEvent("gru.attacked", sim.GruAttackedPayload{Agent: sim.Ref(0), Health: 5})
 	case "first-charge-regen":
-		return mkEvent("metatron.charge_regenerated", sim.ChargeRegeneratedPayload{})
+		return mkEvent("guardian.charge_regenerated", sim.ChargeRegeneratedPayload{})
 	case "first-order-expired":
-		return mkEvent("metatron.order_expired", sim.OrderIDPayload{ID: "ord-1"})
+		return mkEvent("guardian.order_expired", sim.OrderIDPayload{ID: "ord-1"})
 	case "first-death":
 		return mkEvent("agent.died", sim.DiedPayload{Agent: sim.Ref(0), Cause: "starvation"})
 	case "first-rejected-tool-call":
 		return mkEvent("cog.tool_call", sim.CogToolCallPayload{Job: "j1", Tool: "gather", Verdict: "rejected_gate", Reason: "stale"})
 	case "first-custom-charter":
-		return mkEvent("metatron.charter_observed", sim.CharterObservedPayload{Fingerprint: "abcd1234", Default: false})
+		return mkEvent("guardian.charter_observed", sim.CharterObservedPayload{Fingerprint: "abcd1234", Default: false})
 	case "first-fuzzy-order":
-		return mkEvent("metatron.order_placed", sim.GuardianOrder{ID: "ord-2", Confirm: true})
+		return mkEvent("guardian.order_placed", sim.GuardianOrder{ID: "ord-2", Confirm: true})
 	// --- tranche 2 (spec 077 US3) ---
 	case "first-explain-answer":
 		return mkEvent("cog.tool_call", sim.CogToolCallPayload{Job: "j1", Tool: "explain", Verdict: "read_ok"})
 	case "first-report-card":
 		return mkEvent("guardian.report_card", sim.GuardianReportCardPayload{Fingerprint: "a1b2c3", Note: "steady work"})
 	case "first-skill-file":
-		return mkEvent("metatron.skills_observed", sim.SkillsObservedPayload{Fingerprint: "ab12cd34ef56", Names: []string{"10-watch.md"}})
+		return mkEvent("guardian.skills_observed", sim.SkillsObservedPayload{Fingerprint: "ab12cd34ef56", Names: []string{"10-watch.md"}})
 	case "same-refusal-pattern":
 		// One same-reason rejection — the FOLD entry needs three of these
 		// (the sweep primes two; the fold tests below drive the arithmetic).
@@ -229,9 +229,9 @@ func TestLessonPromptingTriggersDiscriminate(t *testing.T) {
 		ev   store.Event
 	}{
 		{"non-fuzzy order does not trigger the fuzzy-order lesson",
-			mkEvent("metatron.order_placed", sim.GuardianOrder{ID: "o1", Confirm: false})},
+			mkEvent("guardian.order_placed", sim.GuardianOrder{ID: "o1", Confirm: false})},
 		{"default charter does not trigger the custom-charter lesson",
-			mkEvent("metatron.charter_observed", sim.CharterObservedPayload{Fingerprint: "x", Default: true})},
+			mkEvent("guardian.charter_observed", sim.CharterObservedPayload{Fingerprint: "x", Default: true})},
 		{"a landed tool call does not trigger the rejected-tool-call lesson",
 			mkEvent("cog.tool_call", sim.CogToolCallPayload{Job: "j1", Tool: "gather", Verdict: "landed"})},
 	}
@@ -439,7 +439,7 @@ func TestLessonTriggersDoneSignalClearsAndRecordsSeen(t *testing.T) {
 
 	// A non-fuzzy order placed is the done-signal here — clears the active
 	// lesson but is not itself a new trigger (Confirm is false).
-	placed := mkEvent("metatron.order_placed", sim.GuardianOrder{ID: "o2", Confirm: false})
+	placed := mkEvent("guardian.order_placed", sim.GuardianOrder{ID: "o2", Confirm: false})
 	got := lt.ingest(placed, now.Add(time.Millisecond))
 	if got != nil {
 		t.Errorf("the done-signal event is not itself a new lesson trigger here, got %v", got)
@@ -459,7 +459,7 @@ func TestLessonTriggersDoneSignalAndNewTriggerSameEvent(t *testing.T) {
 	now := time.Now()
 	lt.ingest(lessonFixtureEvent(t, "first-order-expired"), now)
 
-	fuzzyPlaced := mkEvent("metatron.order_placed", sim.GuardianOrder{ID: "o2", Confirm: true})
+	fuzzyPlaced := mkEvent("guardian.order_placed", sim.GuardianOrder{ID: "o2", Confirm: true})
 	surfaced := lt.ingest(fuzzyPlaced, now.Add(time.Millisecond))
 	if surfaced != nil {
 		t.Errorf("expected the fuzzy-order lesson to queue (spacing just started by the same-event clear), got %v", surfaced)

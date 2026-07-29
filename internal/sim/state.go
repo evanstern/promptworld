@@ -150,14 +150,14 @@ type State struct {
 	RunEnd *RunEnd       `json:"run_end,omitempty"`
 	// Charter-revision identity (spec 044 US2, FR-008): the most recent
 	// effective-charter content hash a Guardian turn ran under, set by the
-	// metatron.charter_observed arm. Empty until the guardian's first turn; the
+	// guardian.charter_observed arm. Empty until the guardian's first turn; the
 	// full revision timeline lives in the event log (the morgue's render scan
 	// aligns each death against it). omitempty — pre-044 snapshots stay
 	// byte-identical.
 	CharterFingerprint string `json:"charter_fingerprint,omitempty"`
 	// Charter authorship (spec 072 FR-006): whether the most recently observed
 	// effective charter was player-authored (!CharterObservedPayload.Default),
-	// set ONLY by the same metatron.charter_observed arm — the-law's rubric
+	// set ONLY by the same guardian.charter_observed arm — the-law's rubric
 	// charter conjunct reads it beside the fingerprint. The zero value is
 	// conservative: false = not known player-authored, so a pre-072 snapshot
 	// with a custom charter already in force renders the term pending until
@@ -165,7 +165,7 @@ type State struct {
 	// false ✓. omitempty — existing snapshots stay byte-identical.
 	CharterCustom bool `json:"charter_custom,omitempty"`
 	// Charter-observation coordinates (spec 077 FR-005): the (seq, tick) of
-	// the most recent metatron.charter_observed event, stamped by the same
+	// the most recent guardian.charter_observed event, stamped by the same
 	// reducer arm from the event envelope (the GuardianOrder.PlacedSeq
 	// precedent) — the state-derivable re-location the-law's pass evidence
 	// needs (CharterEvidenceFromState, curriculum.go), removing the spec-072
@@ -178,7 +178,7 @@ type State struct {
 	// Skills observation (spec 077 FR-006): the bound skill-file set the
 	// guardian's most recent turn ran under — fingerprint plus the same
 	// envelope coordinates the charter observation persists, set ONLY by the
-	// metatron.skills_observed arm. Skill files bind only from stage-3 and
+	// guardian.skills_observed arm. Skill files bind only from stage-3 and
 	// only players author them, so SkillsObservedEvidence derives
 	// Custom: true by construction — the stage-3→4 gate's evidence design.
 	// Zero values = never observed; omitempty keeps snapshots byte-identical.
@@ -1126,7 +1126,8 @@ func (s *State) Apply(e store.Event) error {
 		// Replay hazard (spec 092/TASK-75): forageYieldV2 is re-derived from the
 		// current constant, not carried in the payload — retuning it silently
 		// changes old-log replay. Doctrine + audit: docs/wiki/sim-state-reducer.md
-		// (reducer-constants replay-hazard doctrine); migration machinery: spec 094.
+		// (reducer-constants replay-hazard doctrine); a retune requires the
+		// spec-094 store.LogFormatVersion bump + migration (docs/wiki/event-log.md).
 		a.Inv.FoodRaw += minInt(forageYieldV2, freeBulk(a.Inv))
 		a.Intent = nil
 		a.IdleSince = e.Tick
@@ -1148,8 +1149,8 @@ func (s *State) Apply(e store.Event) error {
 		// broken axe's removal rides its own companion agent.axe_broke — so free
 		// space is read once, before the wood is added, with the axe still counted.
 		// Replay hazard (spec 092/TASK-75): both yields are re-derived constants —
-		// see docs/wiki/sim-state-reducer.md's reducer-constants doctrine; spec 094
-		// is the migration machinery a retune would require.
+		// see docs/wiki/sim-state-reducer.md's reducer-constants doctrine; a retune
+		// requires the spec-094 store.LogFormatVersion bump + migration.
 		yield := chopYieldBare
 		if len(a.Inv.Axes) > 0 {
 			yield = chopYieldAxe
@@ -1185,8 +1186,8 @@ func (s *State) Apply(e store.Event) error {
 		// Replay hazard (spec 092/TASK-75): huntYieldBare/huntYieldSpear below,
 		// and denCooldownSec at the DenUses append further down, are both
 		// re-derived constants — see docs/wiki/sim-state-reducer.md's
-		// reducer-constants doctrine; spec 094 is the migration machinery a
-		// retune would require.
+		// reducer-constants doctrine; a retune requires the spec-094
+		// store.LogFormatVersion bump + migration.
 		// US1-AS2 (T010): the food yield truncates to pre-event free bulk; the
 		// spear spend frees no bulk mid-event (decrementing a use leaves
 		// len(Spears) — and thus bulk — unchanged), and the spear's removal on
@@ -1224,8 +1225,8 @@ func (s *State) Apply(e store.Event) error {
 		// fire always has.
 		// Replay hazard (spec 092/TASK-75): recipeFor's Inputs table (recipes.go)
 		// is re-derived, not payload-carried — see docs/wiki/sim-state-reducer.md's
-		// reducer-constants doctrine; spec 094 is the migration machinery a retune
-		// would require.
+		// reducer-constants doctrine; a retune requires the spec-094
+		// store.LogFormatVersion bump + migration.
 		if r, ok := recipeFor("build_" + p.Kind); ok {
 			addItems(&a.Inv, r.Inputs, -1)
 		}
@@ -1329,8 +1330,8 @@ func (s *State) Apply(e store.Event) error {
 		// ascending so hunts always spend the most-worn spear first.
 		// Replay hazard (spec 092/TASK-75): the recipes.go table, spearDurability,
 		// and axeDurability below are all re-derived constants — see
-		// docs/wiki/sim-state-reducer.md's reducer-constants doctrine; spec 094
-		// is the migration machinery a retune would require.
+		// docs/wiki/sim-state-reducer.md's reducer-constants doctrine; a retune
+		// requires the spec-094 store.LogFormatVersion bump + migration.
 		var p CraftedPayload
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
@@ -2062,11 +2063,11 @@ func (s *State) Apply(e store.Event) error {
 	case "chronicle.entry":
 		return s.applyChronicle(e)
 
-	case "metatron.charge_regenerated", "metatron.nudged",
-		"metatron.place_revealed",
-		"metatron.order_placed", "metatron.order_triggered",
-		"metatron.order_cancelled", "metatron.order_expired",
-		"metatron.charter_observed", "metatron.skills_observed":
+	case "guardian.charge_regenerated", "guardian.nudged",
+		"guardian.place_revealed",
+		"guardian.order_placed", "guardian.order_triggered",
+		"guardian.order_cancelled", "guardian.order_expired",
+		"guardian.charter_observed", "guardian.skills_observed":
 		return s.applyGuardian(e)
 
 	case "designation.placed", "designation.cancelled", "designation.fulfilled",
@@ -2086,8 +2087,8 @@ func (s *State) Apply(e store.Event) error {
 	case "guardian.report_card":
 		return s.applyReportCard(e)
 
-	case "metatron.time_snapped", "metatron.item_granted",
-		"metatron.entity_moved", "metatron.entity_removed":
+	case "guardian.time_snapped", "guardian.item_granted",
+		"guardian.entity_moved", "guardian.entity_removed":
 		return s.applyMiracle(e)
 
 	case "curriculum.exercise_passed", "curriculum.stage_unlocked":

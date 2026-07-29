@@ -4,7 +4,7 @@ description: Child of [[guardian-miracle-rebase-taxonomy]] — the full SHIFT ha
 kind: component
 sources:
   - internal/sim/miracles.go
-verified_against: 63390f122bdf4e1b7abf518a8be83de725f06230
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 ---
 
 # Guardian's miracle rebase taxonomy — the SHIFT fields

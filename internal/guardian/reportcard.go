@@ -70,7 +70,7 @@ type cardJob struct {
 // observeCardActivity collects the guardian's own recorded acts into the
 // trail ring (absorb goroutine; replica already reflects e). The trail IS
 // the grading window and the citation vocabulary: cog.tool_call records from
-// guardian turns (the TASK-63 verdict trail) and every landed metatron.*
+// guardian turns (the TASK-63 verdict trail) and every landed guardian.*
 // act. Committed events only — e.Seq is the store's stamp.
 func (mt *Guardian) observeCardActivity(e store.Event) {
 	line := ""
@@ -84,15 +84,15 @@ func (mt *Guardian) observeCardActivity(e store.Event) {
 		if p.Reason != "" {
 			line += " (" + p.Reason + ")"
 		}
-	case "metatron.nudged":
+	case "guardian.nudged":
 		var p sim.GuardianNudgedPayload
 		if json.Unmarshal(e.Payload, &p) == nil {
 			line = fmt.Sprintf("a %s went out to %d villager(s)", p.Form, len(p.Targets))
 		}
-	case "metatron.order_placed", "metatron.order_triggered", "metatron.order_cancelled",
-		"metatron.time_snapped", "metatron.item_granted", "metatron.entity_moved",
-		"metatron.entity_removed", "metatron.charter_observed", "metatron.skills_observed":
-		line = strings.TrimPrefix(e.Type, "metatron.")
+	case "guardian.order_placed", "guardian.order_triggered", "guardian.order_cancelled",
+		"guardian.time_snapped", "guardian.item_granted", "guardian.entity_moved",
+		"guardian.entity_removed", "guardian.charter_observed", "guardian.skills_observed":
+		line = strings.TrimPrefix(e.Type, "guardian.")
 	}
 	if line == "" {
 		return

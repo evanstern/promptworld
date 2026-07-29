@@ -65,7 +65,7 @@ func driveTicksSeq(t *testing.T, s *State, m *worldmap.Map, ticks int64, command
 // watchOrderEvent builds a reducer-valid player metatron.order_placed at
 // tick — the watch the first-night rubric's direction term reads.
 func watchOrderEvent(tick int64) store.Event {
-	return store.Event{Tick: tick, Type: "metatron.order_placed", Payload: mustPayload(GuardianOrder{
+	return store.Event{Tick: tick, Type: "guardian.order_placed", Payload: mustPayload(GuardianOrder{
 		ID: "ord-test-watch", Origin: "player",
 		Condition: "if the gru comes near the fire", Action: "wake the village",
 		EventTypes: []string{"gru.sighted"}, Agent: -1,
@@ -369,7 +369,7 @@ func TestFirstNightPassSameBatchOrdering(t *testing.T) {
 	if pass.Exercise != "first-night" || pass.Stage != "stage-1" || pass.Tick != dawn2 {
 		t.Errorf("pass payload = %+v", pass)
 	}
-	if len(pass.Evidence) != 1 || pass.Evidence[0].Type != "metatron.order_placed" ||
+	if len(pass.Evidence) != 1 || pass.Evidence[0].Type != "guardian.order_placed" ||
 		pass.Evidence[0].Seq != 41 || pass.Evidence[0].Tick != 30_000 || pass.Evidence[0].Custom {
 		t.Errorf("pass evidence = %+v, want the watch placement at seq 41 tick 30000, Custom false", pass.Evidence)
 	}
@@ -607,7 +607,7 @@ func eventTypes(evs []store.Event) []string {
 
 // theLawCharterEvent builds a metatron.charter_observed fixture event.
 func theLawCharterEvent(tick int64, fp string, def bool) store.Event {
-	return store.Event{Tick: tick, Type: "metatron.charter_observed",
+	return store.Event{Tick: tick, Type: "guardian.charter_observed",
 		Payload: mustPayload(CharterObservedPayload{Fingerprint: fp, Default: def})}
 }
 

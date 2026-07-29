@@ -21,7 +21,7 @@ func charterObservations(t *testing.T, inj *stateInjector) []sim.CharterObserved
 	var out []sim.CharterObservedPayload
 	for _, batch := range inj.batches {
 		for _, e := range batch {
-			if e.Type != "metatron.charter_observed" {
+			if e.Type != "guardian.charter_observed" {
 				continue
 			}
 			var p sim.CharterObservedPayload

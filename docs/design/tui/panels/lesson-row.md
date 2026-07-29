@@ -2,7 +2,7 @@
 title: Panel — lesson row
 class: panel
 status: shipped
-verified_against: 6e83f579db2b448c9c59b15575bf564b1e9b1852
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 sources:
   - internal/tui/lessons.go
   - internal/tui/views.go
@@ -121,9 +121,9 @@ spec 077 US3's tranche 2):
     answer lands `read_ok`, which is an answer, not a refusal) — teaches
     that the guardian's grant is real and refusals are informative.
   - first custom charter observed
-    (`metatron.charter_observed{default: false}`) — teaches that editing
+    (`guardian.charter_observed{default: false}`) — teaches that editing
     `charter.md` and returning changes the guardian's voice.
-  - first fuzzy order (`metatron.order_placed` with the order's `Confirm`
+  - first fuzzy order (`guardian.order_placed` with the order's `Confirm`
     field true — the wire's `fuzzy` concept, spec.md's Assumptions: "the
     implementation binds to the actual catalog names at build time") —
     teaches that a vaguely-worded standing order still binds, with its
@@ -133,7 +133,7 @@ spec 077 US3's tranche 2):
     answer is read from recorded facts, never improvised.
   - first report card (spec 077: `guardian.report_card`) — teaches the
     graded-conduct surface and that its citations are checkable.
-  - first skill file (spec 077: `metatron.skills_observed`) — teaches the
+  - first skill file (spec 077: `guardian.skills_observed`) — teaches the
     stage-3 concept: a bound skill file shapes what the guardian can do.
   - same-refusal pattern (spec 077, the first WRONG-THING detector): the
     third `cog.tool_call` rejection carrying the identical non-empty
@@ -207,8 +207,8 @@ returns an empty string.
 
 An `attach`/`tail` client (or any non-TUI observer) never loses lesson
 content outright: every lesson's underlying trigger is itself a cataloged
-event (a rejected `cog.tool_call`, `metatron.charter_observed`,
-`metatron.order_placed`) already on the raw event log/chronicle feed
+event (a rejected `cog.tool_call`, `guardian.charter_observed`,
+`guardian.order_placed`) already on the raw event log/chronicle feed
 ([[event-types]]) — the lesson row is a *TUI-side teaching projection* over
 facts a linear client can already see, never a fact that exists nowhere
 else. The lesson catalog text itself (the plain-language explanation) is

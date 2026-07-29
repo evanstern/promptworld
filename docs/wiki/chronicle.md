@@ -6,7 +6,7 @@ sources:
   - internal/sim/chronicle.go
   - internal/mind/narrate.go
   - internal/scribe/scribe.go
-verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 ---
 
 # Chronicle
@@ -46,7 +46,7 @@ same narrative weight as a broken promise, a trust violation), musings, and
 (spec 041) three [[mental-maps]] beats — a discovery gone stale
 (`agent.map_corrected`, "X went looking for the <kind> at (x,y) and found
 it gone"), directions changing hands (`social.place_told`, "X told Y about
-the <kind> at (x,y)"), and a divine reveal (`metatron.place_revealed`, "A
+the <kind> at (x,y)"), and a divine reveal (`guardian.place_revealed`, "A
 vision showed X the <kind> at (x,y)") — each voiced by the first fact in
 the event's canonical order, and (TASK-13) the whole [[governance]] arc:
 assemblies with attendance named (meeting hours from the TASK-36

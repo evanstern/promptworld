@@ -67,7 +67,7 @@ func TestBootPerfSanity(t *testing.T) {
     {"name": "x", "kind": "number", "required": true},
     {"name": "y", "kind": "number", "required": true}
   ],
-  "events": ["metatron.entity_moved", "agent.memory_added"],
+  "events": ["guardian.entity_moved", "agent.memory_added"],
   "charges": 1,
   "effects": [
     {"kind": "move_entity", "target": "{args.target}", "to_x": "{args.x}", "to_y": "{args.y}"},

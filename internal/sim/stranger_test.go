@@ -432,7 +432,7 @@ func TestAmbientWorldCarriesNoIncidentState(t *testing.T) {
 		"sim.cold_snap": true, "sim.forage_blighted": true,
 		"stranger.arrived": true, "stranger.moved": true,
 		"stranger.took": true, "stranger.departed": true,
-		"metatron.skills_observed": true,
+		"guardian.skills_observed": true,
 	}
 	for _, e := range log {
 		if newTypes[e.Type] {

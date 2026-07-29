@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/guardian/guardian.go
   - internal/skin/skin.go
-verified_against: 74fe956813aa6be54e65156ae9bfcb91745cbb8d
+verified_against: 11de2a4aa93d4c901a8dd90369151fa23fd056d0
 ---
 
 # Guardian
@@ -76,7 +76,7 @@ summary/shutdown discipline, and [[guardian-orders]] for the full
 standing-order mechanics.
 
 Every turn stamps the charter revision it ran under into an event-sourced
-fingerprint timeline (`metatron.charter_observed`) the [[morgue]] aligns
+fingerprint timeline (`guardian.charter_observed`) the [[morgue]] aligns
 deaths against; a charge bank (genesis 1, cap 3, +1 per faith-band regen
 boundary — spec 085: 4h/6h/12h by band, the ambient forsaken floor at 24h,
 stopped in a forsaken scenario world; [[guardian-faith]]) funds every
@@ -100,7 +100,7 @@ reattaches the static map to the `InjectSocial` dry-run probe;
 [[sim-state-reducer]] holds the bank and dispatches the miracle
 ([[guardian-miracles]]) and standing-order ([[guardian-orders]]) reducer
 arms; [[executor]] regenerates the charge bank and emits
-`metatron.order_expired`; [[event-types]] catalogs all three event
+`guardian.order_expired`; [[event-types]] catalogs all three event
 families. [[tool-loop]] is the turn driver since spec 017 (`toolloop.Run`);
 [[tool-registry]] declares the roster (excluding `converse`), derives the
 turn's tool guidance, and holds the single miracle cost source.

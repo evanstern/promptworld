@@ -637,7 +637,7 @@ func seedSurvivalWatches(w *world.World, st *store.Store, state *sim.State) erro
 	}
 	var events []store.Event
 	for i, o := range sim.SurvivalWatchDefs(state.Tick) {
-		ev := store.Event{Tick: state.Tick, Type: "metatron.order_placed", Payload: mustJSONDaemon(o.PlacedPayload())}
+		ev := store.Event{Tick: state.Tick, Type: "guardian.order_placed", Payload: mustJSONDaemon(o.PlacedPayload())}
 		// Pre-assign the store seq before applying (the loop's stampSeqs
 		// contract, spec 054): the order_placed reducer arm stamps
 		// GuardianOrder.PlacedSeq from the event envelope, so applying with
@@ -751,6 +751,14 @@ func replayToTick(seed uint64, m *worldmap.Map, st *store.Store, cutoff int64) (
 }
 
 func validateMeta(w *world.World, st *store.Store) error {
+	// The log's own format stamp (spec 094 FR-002): refused before any
+	// replay when the log speaks an older vocabulary (migrate hint) or a
+	// newer one (upgrade posture). Defense in depth behind world.Open's
+	// manifest gate — a hand-edited manifest cannot smuggle an untranslated
+	// log past the reducer.
+	if err := st.VerifyLogFormat(); err != nil {
+		return err
+	}
 	// First daemon run stamps meta; later runs must match the manifest.
 	for key, want := range map[string]string{
 		"seed":           strconv.FormatUint(w.Manifest.Seed, 10),

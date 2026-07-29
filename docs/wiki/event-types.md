@@ -5,7 +5,7 @@ kind: concept
 sources:
   - internal/sim/state.go
   - internal/sim/gru.go
-verified_against: 1603d5ac22d9be35469ec88bf2355b7d2f9500bc
+verified_against: PENDING_MERGE_SHA
 ---
 
 # Event types
@@ -17,13 +17,15 @@ file below). This catalog is the contract downstream consumers (chronicle,
 guardian digests, the TUI) read. [[event-log]] stores every event;
 [[ipc-protocol]] pushes them to subscribers verbatim.
 
+**Type names are versioned** (spec 094): a rename = `store.LogFormatVersion`
+bump + translating migration ([[event-log]]); `guardian.*` action types
+were `metatron.*` in log format 1.
+
 ## Event catalog, by domain
 
-The full per-type catalog (93 event types across the format's history,
-specs 012 through 083) is split by event domain — each child inherits
-this note's `verified_against` pin, carries the domain's own
-history-of-format-changes prose and catalog rows verbatim, and links back
-here.
+The full per-type catalog (93 types, specs 012 through 083) is split by
+event domain — each child inherits this note's `verified_against` pin and
+carries the domain's own format-history prose and catalog rows.
 
 - [[event-types-clock-world]] — Clock/scheduler and world-lifecycle events — pause/resume/speed/governor, day/night, forage regrowth, genesis/migration/forking (`world.forked`, spec 076), daemon lifecycle and LLM-provider warnings.
 - [[event-types-agent-intents]] — Agent intent lifecycle — intent_set/work_started/intent_done/recovery_stalled/build_failed/moved, incl. the spec 062/064 yield-window and needs-conditioned recovery arms.

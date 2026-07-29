@@ -19,7 +19,7 @@ func curriculumEvent(t *testing.T, typ string, tick int64, payload any) store.Ev
 
 func passPayload(exercise, stage string, tick int64) ExercisePassedPayload {
 	return ExercisePassedPayload{Exercise: exercise, Stage: stage, Tick: tick,
-		Evidence: []EvidenceRef{{Type: "metatron.nudged", Seq: 41, Tick: tick - 5}}}
+		Evidence: []EvidenceRef{{Type: "guardian.nudged", Seq: 41, Tick: tick - 5}}}
 }
 
 // TestExercisePassedRecordsPass (spec 046 T004): a pass event lands on state
@@ -38,7 +38,7 @@ func TestExercisePassedRecordsPass(t *testing.T) {
 	if p.Exercise != "first-night" || p.Stage != "stage-1" || p.Tick != 100 {
 		t.Errorf("recorded pass = %+v", p)
 	}
-	if len(p.Evidence) != 1 || p.Evidence[0].Seq != 41 || p.Evidence[0].Type != "metatron.nudged" {
+	if len(p.Evidence) != 1 || p.Evidence[0].Seq != 41 || p.Evidence[0].Type != "guardian.nudged" {
 		t.Errorf("evidence pointers lost: %+v", p.Evidence)
 	}
 
@@ -155,13 +155,13 @@ func TestEvaluateUnlockGateConjuncts(t *testing.T) {
 		{
 			name: "stage-2 pass WITH a custom charter fingerprint unlocks stage-3",
 			pass: ExercisePassedPayload{Exercise: "the-law", Stage: "stage-2", Tick: 100,
-				Evidence: []EvidenceRef{{Type: "metatron.charter_observed", Seq: 5, Tick: 90, Custom: true}}},
+				Evidence: []EvidenceRef{{Type: "guardian.charter_observed", Seq: 5, Tick: 90, Custom: true}}},
 			wantStage: "stage-3", wantOK: true,
 		},
 		{
 			name: "stage-2 pass with a DEFAULT charter fingerprint does NOT unlock stage-3 (SC-004)",
 			pass: ExercisePassedPayload{Exercise: "the-law", Stage: "stage-2", Tick: 100,
-				Evidence: []EvidenceRef{{Type: "metatron.charter_observed", Seq: 5, Tick: 90, Custom: false}}},
+				Evidence: []EvidenceRef{{Type: "guardian.charter_observed", Seq: 5, Tick: 90, Custom: false}}},
 			wantOK: false,
 		},
 		{
@@ -178,7 +178,7 @@ func TestEvaluateUnlockGateConjuncts(t *testing.T) {
 		{
 			name: "stage-3 pass with any custom evidence unlocks stage-4",
 			pass: ExercisePassedPayload{Exercise: "the-craft", Stage: "stage-3", Tick: 100,
-				Evidence: []EvidenceRef{{Type: "metatron.item_granted", Seq: 9, Tick: 90, Custom: true}}},
+				Evidence: []EvidenceRef{{Type: "guardian.item_granted", Seq: 9, Tick: 90, Custom: true}}},
 			wantStage: "stage-4", wantOK: true,
 		},
 		{
@@ -220,7 +220,7 @@ func TestEvaluateUnlockGateConjuncts(t *testing.T) {
 // (Default==false) opens it.
 func TestCharterObservedEvidence(t *testing.T) {
 	mk := func(seq, tick int64, def bool) store.Event {
-		e := curriculumEvent(t, "metatron.charter_observed", tick,
+		e := curriculumEvent(t, "guardian.charter_observed", tick,
 			CharterObservedPayload{Fingerprint: "abcdef123456", Default: def})
 		e.Seq = seq
 		return e
@@ -239,7 +239,7 @@ func TestCharterObservedEvidence(t *testing.T) {
 		if ref.Custom != c.wantCustom {
 			t.Errorf("Default=%v derived Custom=%v, want %v (Custom must be !Default)", c.def, ref.Custom, c.wantCustom)
 		}
-		if ref.Type != "metatron.charter_observed" || ref.Seq != 5 || ref.Tick != 90 {
+		if ref.Type != "guardian.charter_observed" || ref.Seq != 5 || ref.Tick != 90 {
 			t.Errorf("derived ref = %+v, want the event's (type, seq, tick) audit pointer", ref)
 		}
 
@@ -261,7 +261,7 @@ func TestCharterObservedEvidence(t *testing.T) {
 	if _, err := CharterObservedEvidence(curriculumEvent(t, "sim.day_started", 90, struct{}{})); err == nil {
 		t.Error("a non-charter event must not derive charter evidence")
 	}
-	if _, err := CharterObservedEvidence(store.Event{Type: "metatron.charter_observed", Payload: []byte("{")}); err == nil {
+	if _, err := CharterObservedEvidence(store.Event{Type: "guardian.charter_observed", Payload: []byte("{")}); err == nil {
 		t.Error("a malformed payload must not derive charter evidence")
 	}
 }
@@ -357,12 +357,12 @@ func TestExerciseDefinitionsParse(t *testing.T) {
 	// to read.
 	found := false
 	for _, term := range TheLawExercise.RubricTerms {
-		if term == "metatron.charter_observed" {
+		if term == "guardian.charter_observed" {
 			found = true
 		}
 	}
 	if !found {
-		t.Error("the-law's rubric must reference metatron.charter_observed (SC-004's gate conjunct)")
+		t.Error("the-law's rubric must reference guardian.charter_observed (SC-004's gate conjunct)")
 	}
 }
 

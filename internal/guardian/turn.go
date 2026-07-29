@@ -24,7 +24,7 @@ import (
 // 014 T021; re-pointed at send_vision when spec 029 retired nudge_dream):
 // tool.Lookup("send_vision").Cost.TextCapBytes (400). It matches the sim
 // reducer's NudgeTextMax enforcer — both derive from the same registry entry, so
-// the metatron-side truncation and the door-side enforcement can never diverge.
+// the guardian-side truncation and the door-side enforcement can never diverge.
 var nudgeTextMax = func() int {
 	t, _ := tool.Lookup("send_vision")
 	return t.Cost.TextCapBytes
@@ -275,7 +275,7 @@ func (mt *Guardian) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 	// and capped at load (skin.Load, the bundle-SOUL discipline). The fixed
 	// frame still lands LAST and unconditionally in turnSystemPrompt, so no
 	// skin byte can displace it (spec 021 INV-1; the hostile-skin battery in
-	// metatron_test.go proves it).
+	// guardian_test.go proves it).
 	if v := mt.sk().Voice(); v != "" {
 		souls = append(souls, v)
 	}
@@ -431,7 +431,7 @@ func (mt *Guardian) landVision(target, text string, reveal *placeReveal, charges
 		return nil, fmt.Sprintf("%s is beyond reach now", sim.AgentNames[idx])
 	}
 	// The optional place grant (spec 041 FR-014): the vision batch gains one
-	// metatron.place_revealed plus its companion Origin-omen memory, riding
+	// guardian.place_revealed plus its companion Origin-omen memory, riding
 	// the SAME atomic batch — the grant lands with the vision or not at all.
 	// Composition only, the BuildMiracleBatch contract: the sim reducer arm
 	// (dry-run enforced) is the authority that the place is real and the
@@ -440,7 +440,7 @@ func (mt *Guardian) landVision(target, text string, reveal *placeReveal, charges
 	var extra []store.Event
 	if reveal != nil {
 		extra = []store.Event{
-			{Type: "metatron.place_revealed", Payload: mustJSON(sim.PlaceRevealedPayload{
+			{Type: "guardian.place_revealed", Payload: mustJSON(sim.PlaceRevealedPayload{
 				Agent: sim.Ref(idx), Facts: []sim.PlaceFact{{Kind: reveal.Kind, X: reveal.X, Y: reveal.Y,
 					Provenance: sim.ProvenanceRevealed}}})},
 			{Type: "agent.memory_added", Payload: mustJSON(sim.MemoryAddedPayload{
@@ -586,7 +586,7 @@ func resolveOmenTargets(arg string, alive map[int]bool) ([]int, string) {
 }
 
 // landNudgeBatch is the shared landing tail for landVision / landOmen (spec 029
-// T005): the text cap, the ONE atomic InjectSocial batch (metatron.nudged + one
+// T005): the text cap, the ONE atomic InjectSocial batch (guardian.nudged + one
 // prefixed agent.memory_added per target at SalDream), and the soul append —
 // VERBATIM the pre-029 landNudge body (wrap, don't rewrite). form fixes the memory
 // prefix and the recorded form; the reducer dry-run is the door authority (charge
@@ -610,7 +610,7 @@ func (mt *Guardian) landNudgeBatch(form string, targets []int, text string, extr
 	if form == "omen" {
 		prefix = "You witnessed an omen: "
 	}
-	batch := []store.Event{{Type: "metatron.nudged", Payload: mustJSON(sim.GuardianNudgedPayload{
+	batch := []store.Event{{Type: "guardian.nudged", Payload: mustJSON(sim.GuardianNudgedPayload{
 		Form: form, Targets: sim.Refs(targets), Text: text})}}
 	for _, t := range targets {
 		batch = append(batch, store.Event{Type: "agent.memory_added", Payload: mustJSON(sim.MemoryAddedPayload{

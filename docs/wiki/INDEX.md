@@ -17,7 +17,7 @@ that note (re-pin with `/grounding-wiki:wiki-update`).
   - [[sim-loop-landing-ladder]] — How a metered InjectIntent lands — Loop.Do/InjectIntent/InjectArgs, the six-rung landing ladder…
   - [[sim-loop-injection-doors]] — Loop.InjectSocial (the mind's whitelisted conversation/consolidation/musing/chronicle/nudge/miracle/telemetry door) and Loop.InjectOperator (the…
     - [[sim-loop-injection-doors-telemetry]] — split from sim-loop-injection-doors: the observability/administrative whitelist half — cog.* telemetry, journal, belief_reinforced, memory-embedding companions, charter_observed/morgue.epilogue/skills_observed, report card
-- [[sim-state-reducer]] — State + Apply: the single mutation path, live and replay; split into six child notes below
+- [[sim-state-reducer]] — State + Apply: the single mutation path, live and replay; split into seven child notes below
   - [[sim-state-agent-fields]] — clock + per-agent field catalog: needs/intents/inventories/memories, Journal, IntentLog, NeedsAnchor, LastMindIntentDone, Neglect (spec 083)
   - [[sim-state-world-fields]] — shared-world field catalog: structures/piles, social fabric, gru/stranger incident state, chronicle ring, Guardian charges/orders, governance
     - [[sim-state-outcome-fields]] — split from sim-state-world-fields: run-outcome & progression fields — Deaths/RunEnd, charter/skills observation state, morgue epilogues, curriculum passes/unlocks, tuning, report card
@@ -27,6 +27,7 @@ that note (re-pin with `/grounding-wiki:wiki-update`).
   - [[sim-state-apply-world]] — map/scenario fields + world/governance dispatch: mental-maps, gru/governance/miracle, designation/faith/prophecy plan dispatch, world.migrated
     - [[sim-state-apply-guardian-records]] — split from sim-state-apply-world: guardian-facing record arms — standing orders, charter_observed, morgue epilogues, report card, curriculum unlocks, tuning snapshot
   - [[sim-state-cognition-arms]] — cognition/telemetry arms: memory growth, journal family, plan family, cog.* no-ops
+  - [[sim-state-reducer-replay-hazards]] — spec-092 (TASK-75) reducer-constants replay-hazard doctrine + full audit of Apply arms that re-derive from mutable gameplay constants
 - [[deterministic-rng]] — per-decision PCG from (seed, purpose, tick, index); no RNG state
 - [[executor]] — agent bodies: needs, intents, death, terrain overlays, walls/axes/paths
   - [[executor-agent-state]] — The agent body's persisted shape — eight named villagers, integer Needs/Inventory, the mental-map/vector/intent-log/needs-anchor pointer fields…
@@ -63,8 +64,8 @@ that note (re-pin with `/grounding-wiki:wiki-update`).
   - [[event-types-curriculum-events]] — Curriculum-ladder event rows split from [[event-types]]: curriculum.exercise_passed, curriculum.stage_unlocked
   - [[event-types-scenario-incidents]] — Scenario-incident event rows split from [[event-types]] (spec 077): sim.cold_snap, sim.forage_blighted, the stranger.* entity family
   - [[event-types-guardian-orders]] — Guardian standing-order event rows split from [[event-types]]:…
-  - [[event-types-guardian-morgue]] — Guardian morgue/report-card event rows split from [[event-types]]: metatron.charter_observed, morgue.epilogue, guardian.report_card, chronicle.entry
-  - [[event-types-guardian-actions]] — Guardian miracle-action and gru event rows split from [[event-types]]: metatron.time_snapped/item_granted/entity_moved/entity_removed, the gru.*…
+  - [[event-types-guardian-morgue]] — Guardian morgue/report-card event rows split from [[event-types]]: guardian.charter_observed, morgue.epilogue, guardian.report_card, chronicle.entry
+  - [[event-types-guardian-actions]] — Guardian miracle-action and gru event rows split from [[event-types]]: guardian.time_snapped/item_granted/entity_moved/entity_removed, the gru.*…
   - [[event-types-guardian-plans]] — Guardian plan-layer event rows split from [[event-types]] (spec 084): designation.placed/cancelled/fulfilled, directive.issued/cancelled/fulfilled/expired
 
 ## Persistence

@@ -2,7 +2,7 @@
 title: Panel — guardian (fiction-layer tab content)
 class: panel
 status: shipped
-verified_against: 6e83f579db2b448c9c59b15575bf564b1e9b1852
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 sources:
   - internal/tui/views.go
   - internal/tui/tui.go
@@ -110,12 +110,12 @@ shows in its own header line.
 | control/region | states | data source | renderer | keys+mouse | introduced-by | skin-token |
 |---|---|---|---|---|---|---|
 | pane header — name + charge bank | 0–3 charges filled | `Status.Clock.GuardianCharges`, `sim.GuardianChargeCap` | `guardianHeaderLine` (shared verbatim with the console page, spec 053) | — (display-only) | TASK-12 | `skin.guardian.name` |
-| instruction/capability provenance segment | quiet (full grant) · skill count · tools summary · `tools: none` | `metatron.Status` (`ManifestDefault`, `GrantedTools`) | `consoleToolsSummary` | — | spec 021 | — |
+| instruction/capability provenance segment | quiet (full grant) · skill count · tools summary · `tools: none` | `guardian.Status` (`ManifestDefault`, `GrantedTools`) | `consoleToolsSummary` | — | spec 021 | — |
 | stage segment | present (locked) · present (unlocked) · absent (pre-ladder) | `Status.Stage`/`CharterLocked`/`CharterPreset` | `consoleStageSummary` | — | spec 046 | — |
 | transcript row — you | text | player input history | `transcriptRowLines`/`classifyTranscriptLine` | — | TASK-34 | — |
 | transcript row — guardian reply | text · `⋮ thinking…` (busy) | `Model.transcript`, `Model.mbBusy` | `transcriptRowLines`/`classifyTranscriptLine` | — | TASK-34 | `skin.guardian.epithet` |
-| transcript row — omen/vision (`⚡`) | landed | landed `metatron.nudged` | `tui.go` transcript append | — | spec 029 | — |
-| transcript row — watch set/released (`👁`) | placed · released | `metatron.order_placed`/`order_cancelled` | `tui.go` transcript append | — | spec 029 | — |
+| transcript row — omen/vision (`⚡`) | landed | landed `guardian.nudged` | `tui.go` transcript append | — | spec 029 | — |
+| transcript row — watch set/released (`👁`) | placed · released | `guardian.order_placed`/`order_cancelled` | `tui.go` transcript append | — | spec 029 | — |
 | transcript row — clock (`⏲`) | landed | landed `pause`/`start`/`adjust_speed` | `tui.go` transcript append | — | spec 029 | — |
 | transcript row — inline verdict (`»`) | landed · refused | `cog.tool_call` (turn-scoped) | `guardianVerdictRow`, `callLine`, `verdictGlossary` | — | spec 016/020 | — |
 | unreachable notice | shown · hidden | `Model.mbErr` | `guardianView` | — | TASK-34 | `skin.guardian.epithet` |

@@ -78,10 +78,10 @@ func deathAndEnd(t *testing.T) []store.Event {
 func passEvents(t *testing.T) []store.Event {
 	t.Helper()
 	return []store.Event{
-		{Tick: 30000, Type: "metatron.order_placed", Payload: duelJSON(t, map[string]any{})},
+		{Tick: 30000, Type: "guardian.order_placed", Payload: duelJSON(t, map[string]any{})},
 		{Tick: 86400, Type: "curriculum.exercise_passed", Payload: duelJSON(t, sim.ExercisePassedPayload{
 			Exercise: "first-night", Stage: "stage-1", Tick: 86400,
-			Evidence: []sim.EvidenceRef{{Type: "metatron.order_placed", Seq: 2, Tick: 30000}},
+			Evidence: []sim.EvidenceRef{{Type: "guardian.order_placed", Seq: 2, Tick: 30000}},
 		})},
 	}
 }
@@ -112,7 +112,7 @@ func TestCompareDecidedDuel(t *testing.T) {
 	if !strings.Contains(out, "champ — passed") {
 		t.Errorf("winner outcome line missing:\n%s", out)
 	}
-	if !strings.Contains(out, "metatron.order_placed · seq 2") {
+	if !strings.Contains(out, "guardian.order_placed · seq 2") {
 		t.Errorf("pass evidence backing missing:\n%s", out)
 	}
 

@@ -6,7 +6,7 @@ sources:
   - internal/sim/miracles.go
   - cmd/promptworld/work.go
   - internal/ipc/server.go
-verified_against: 63390f122bdf4e1b7abf518a8be83de725f06230
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 ---
 
 # Guardian's miracles
@@ -21,7 +21,7 @@ re-applies cleanly in replay (spec 016 R1). No new persistent entities exist —
 miracles only mutate fields already in `sim.State`.
 
 Terminology (spec 052, TASK-121): "miracle" is the frozen mechanics name — the
-`work_miracle` tool id, the four `metatron.*` event types, the `miracle` IPC/CLI
+`work_miracle` tool id, the four `guardian.*` event types, the `miracle` IPC/CLI
 command, and this note's own name all keep it, unchanged. The PLAYER-FACING word is
 now "working" — the default [[skin]]'s `WorkingNoun()`/`WorkingNounPlural()`
 (`"working"`/`"workings"`) resolve wherever the guardian's turn or moment text
@@ -31,7 +31,7 @@ id, event vocabulary, and cost/validation mechanics below can never move.
 
 ## How it works
 
-The four event types (`metatron.time_snapped`/`item_granted`/`entity_moved`/
+The four event types (`guardian.time_snapped`/`item_granted`/`entity_moved`/
 `entity_removed`) are dispatched by `applyMiracle` (`miracles.go`); each arm
 validates before spending a charge or mutating state — reject-whole, never
 clamp — so a rejected miracle spends nothing and a recorded one always

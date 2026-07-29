@@ -294,17 +294,17 @@ func TestMiracleCostTable(t *testing.T) {
 	// MiracleCostsByEvent covers exactly the four miracle event types.
 	byEvent := MiracleCostsByEvent()
 	wantEvents := map[string]int{
-		"metatron.entity_moved":   1,
-		"metatron.entity_removed": 1,
-		"metatron.item_granted":   1,
-		"metatron.time_snapped":   2,
+		"guardian.entity_moved":   1,
+		"guardian.entity_removed": 1,
+		"guardian.item_granted":   1,
+		"guardian.time_snapped":   2,
 	}
 	if !reflect.DeepEqual(byEvent, wantEvents) {
 		t.Errorf("MiracleCostsByEvent() = %v, want %v", byEvent, wantEvents)
 	}
 	// Fresh map per call (a mutation must not bleed into the next caller).
-	byEvent["metatron.time_snapped"] = 99
-	if again := MiracleCostsByEvent(); again["metatron.time_snapped"] != 2 {
+	byEvent["guardian.time_snapped"] = 99
+	if again := MiracleCostsByEvent(); again["guardian.time_snapped"] != 2 {
 		t.Error("MiracleCostsByEvent() is not a fresh map per call")
 	}
 }

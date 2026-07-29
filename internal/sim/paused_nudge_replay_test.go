@@ -16,7 +16,7 @@ func pausedNudgeTimeline() map[int64][]store.Event {
 	return map[int64][]store.Event{
 		500: {
 			{Tick: 500, Type: "clock.paused", Payload: pl(struct{}{})},
-			{Tick: 500, Type: "metatron.nudged", Payload: pl(GuardianNudgedPayload{
+			{Tick: 500, Type: "guardian.nudged", Payload: pl(GuardianNudgedPayload{
 				Form: "vision", Targets: Refs([]int{0}), Text: "the river is rising"})},
 			{Tick: 500, Type: "agent.memory_added", Payload: pl(MemoryAddedPayload{
 				Agent: Ref(0), Text: "You saw a vision: the river is rising",
@@ -46,7 +46,7 @@ func TestPausedNudgeReplayByteIdentical(t *testing.T) {
 		switch e.Type {
 		case "clock.paused":
 			paused++
-		case "metatron.nudged":
+		case "guardian.nudged":
 			nudged++
 		case "clock.resumed":
 			resumed++

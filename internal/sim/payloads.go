@@ -143,20 +143,25 @@ var PayloadCatalog = map[string]func() any{
 	"chronicle.entry": func() any { return &ChronicleEntryPayload{} },
 	"morgue.epilogue": func() any { return &MorgueEpiloguePayload{} },
 
-	// --- guardian (metatron) ---
-	"metatron.charge_regenerated": func() any { return &ChargeRegeneratedPayload{} },
-	"metatron.nudged":             func() any { return &GuardianNudgedPayload{} },
-	"metatron.place_revealed":     func() any { return &PlaceRevealedPayload{} },
-	"metatron.order_placed":       func() any { return &OrderPlacedPayload{} },
-	"metatron.order_triggered":    func() any { return &OrderTriggeredPayload{} },
-	"metatron.order_cancelled":    func() any { return &OrderIDPayload{} },
-	"metatron.order_expired":      func() any { return &OrderIDPayload{} },
-	"metatron.charter_observed":   func() any { return &CharterObservedPayload{} },
-	"metatron.skills_observed":    func() any { return &SkillsObservedPayload{} },
-	"metatron.time_snapped":       func() any { return &TimeSnappedPayload{} },
-	"metatron.item_granted":       func() any { return &ItemGrantedPayload{} },
-	"metatron.entity_moved":       func() any { return &EntityMovedPayload{} },
-	"metatron.entity_removed":     func() any { return &EntityRemovedPayload{} },
+	// --- guardian ---
+	// The 13 world-action types below were metatron.* until spec 094 renamed
+	// them (log format 2, logformat.go). DOCTRINE: renaming ANY key in this
+	// catalog is a log-format break — bump store.LogFormatVersion, extend
+	// LogFormatV1Renames' successor table, and ship the translating
+	// migration; never alias at read.
+	"guardian.charge_regenerated": func() any { return &ChargeRegeneratedPayload{} },
+	"guardian.nudged":             func() any { return &GuardianNudgedPayload{} },
+	"guardian.place_revealed":     func() any { return &PlaceRevealedPayload{} },
+	"guardian.order_placed":       func() any { return &OrderPlacedPayload{} },
+	"guardian.order_triggered":    func() any { return &OrderTriggeredPayload{} },
+	"guardian.order_cancelled":    func() any { return &OrderIDPayload{} },
+	"guardian.order_expired":      func() any { return &OrderIDPayload{} },
+	"guardian.charter_observed":   func() any { return &CharterObservedPayload{} },
+	"guardian.skills_observed":    func() any { return &SkillsObservedPayload{} },
+	"guardian.time_snapped":       func() any { return &TimeSnappedPayload{} },
+	"guardian.item_granted":       func() any { return &ItemGrantedPayload{} },
+	"guardian.entity_moved":       func() any { return &EntityMovedPayload{} },
+	"guardian.entity_removed":     func() any { return &EntityRemovedPayload{} },
 	"guardian.report_card":        func() any { return &GuardianReportCardPayload{} },
 
 	// --- designations / directives / faith / prophecy (specs 078, 084, 085) ---

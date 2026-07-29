@@ -89,7 +89,6 @@ var familyByNamespace = map[string]eventFamily{
 	"stranger":  familyGru,
 	"chronicle": familyChronicle,
 	"morgue":    familyChronicle, // morgue.epilogue (spec 044): narrated prose, chronicle voice
-	"metatron":  familyGuardian,  // FROZEN namespace key (spec 052 ruling 2); display-aliased per FR-013
 	"daemon":    familyDaemon,
 	"cog":       familyCog,
 	// curriculum (spec 046 — exercise passes/stage unlocks) rides the
@@ -97,9 +96,10 @@ var familyByNamespace = map[string]eventFamily{
 	// player's guardian is who watches, teaches, and reports the unlock), not a
 	// distinct visual role.
 	"curriculum": familyGuardian,
-	// guardian (spec 063 — guardian.report_card, NEW vocabulary; the frozen
-	// metatron.* family above is untouched): the feedback layer's own
-	// namespace, guardian voice like curriculum.
+	// guardian: the guardian's own namespace — the report card (spec 063)
+	// plus the 13 world-action types renamed from the retired metatron
+	// namespace (spec 094; old logs reach the chronicle only after the
+	// translating migration, so no metatron.* row can appear here).
 	"guardian": familyGuardian,
 	// The plan layer (spec 084 — designations and directives): the guardian's
 	// own plan-making verbs and their world-answered terminals, guardian
@@ -179,37 +179,14 @@ type chronicleLine struct {
 	Seq  int64
 	Tick int64
 	Time string
-	Type string
-	// DisplayType is the Type column's rendered form (spec 052 FR-013): the
-	// frozen `guardian` family segment displays through the skin's family
-	// label (default `guardian`); every other type — and every verbatim
-	// inspector surface (the detail pane, the grammar-miss raw fallback) —
-	// stays the raw Type. The dock's short form (shortType, last segment)
-	// never carries the family segment, so it is unaffected by construction.
-	DisplayType string
-	Family      eventFamily
-	Summary     []seg
-}
-
-// displayType is DisplayType with a defensive raw-Type fallback for
-// hand-built lines (tests, future callers) that never went through
-// formatChronicleLine.
-func (l chronicleLine) displayType() string {
-	if l.DisplayType != "" {
-		return l.DisplayType
-	}
-	return l.Type
-}
-
-// displayEventType aliases the frozen `metatron.*` family segment to the
-// skin's family label for the Type COLUMN only (FR-013). curriculum.* and
-// every other family render raw — inspector-class visibility is deliberate
-// (spec edge cases, FR-020 audience ruling).
-func displayEventType(t string, sk *skin.Skin) string {
-	if rest, ok := strings.CutPrefix(t, "metatron."); ok {
-		return sk.FamilyLabel() + "." + rest
-	}
-	return t
+	// Type renders raw in every column (spec 094 US3.3): the guardian
+	// rename retired TASK-121's Type-column display alias (spec 052
+	// FR-013's displayEventType shim) — persisted types now ARE the display
+	// vocabulary, and the chronicle shows guardian.* natively. The dock's
+	// short form (shortType, last segment) is unchanged.
+	Type    string
+	Family  eventFamily
+	Summary []seg
 }
 
 // formatChronicleLine implements the digest-grammar contract's "Line
@@ -219,12 +196,11 @@ func displayEventType(t string, sk *skin.Skin) string {
 // FR-002/FR-003, never blank, never a panic.
 func formatChronicleLine(e store.Event, names []string, sk *skin.Skin) chronicleLine {
 	l := chronicleLine{
-		Seq:         e.Seq,
-		Tick:        e.Tick,
-		Time:        clock.FormatTOD(int(clock.SecondOfDay(e.Tick))),
-		Type:        e.Type,
-		DisplayType: displayEventType(e.Type, sk),
-		Family:      eventFamilyOf(e.Type),
+		Seq:    e.Seq,
+		Tick:   e.Tick,
+		Time:   clock.FormatTOD(int(clock.SecondOfDay(e.Tick))),
+		Type:   e.Type,
+		Family: eventFamilyOf(e.Type),
 	}
 	if fn, ok := digestRegistry[e.Type]; ok {
 		if segs, ok := fn(e, names, sk); ok {
@@ -274,9 +250,9 @@ func computeChronicleColumns(lines []chronicleLine, dock bool) chronicleColumns 
 		if w := len(strconv.FormatInt(l.Tick, 10)); w > cols.TickWidth {
 			cols.TickWidth = w
 		}
-		// Solo measures the DISPLAYED type (family-aliased, FR-013); the dock
-		// short form derives from the raw type's last segment.
-		t := l.displayType()
+		// Solo measures the full raw type; the dock short form derives
+		// from its last segment.
+		t := l.Type
 		if dock {
 			t = shortType(l.Type)
 		}
@@ -293,10 +269,10 @@ func computeChronicleColumns(lines []chronicleLine, dock bool) chronicleColumns 
 
 // padType left-justifies a line's rendered type to the window's computed
 // column width, truncating with "…" past the family cap (R5). Solo shows the
-// DisplayType (skin family alias, FR-013); the dock's short form is the raw
-// type's last segment — family-segment-free by construction.
+// raw type (spec 094 — no display aliasing); the dock's short form is the
+// raw type's last segment.
 func padType(l chronicleLine, cols chronicleColumns) string {
-	t := l.displayType()
+	t := l.Type
 	cap := typeColumnCapSolo
 	if cols.Dock {
 		t = shortType(l.Type)

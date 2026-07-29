@@ -6,7 +6,7 @@ sources:
   - internal/sim/state.go
   - internal/sim/agents.go
   - internal/sim/miracles.go
-verified_against: 1603d5ac22d9be35469ec88bf2355b7d2f9500bc
+verified_against: PENDING_MERGE_SHA
 ---
 
 # Sim state: world & governance dispatch arms
@@ -39,7 +39,7 @@ prompt renderer ([[agent-mind]]) can size a mental-map bitmap read without
 (`Map.upsertFact`), `agent.map_corrected` removes facts the sweep found gone
 (`Map.removeFact`) — both no-op on a map-less agent (a pre-041 world
 mid-migration), keeping the reducer total; `social.place_told` (the talk sidecar's directions exchange) and
-`metatron.place_revealed` (a vision's optional place grant) route through
+`guardian.place_revealed` (a vision's optional place grant) route through
 the `applySocial`/`applyGuardian` dispatchers below — upserting into the
 RECEIVER's map only where the fact is absent or its own knowledge staler.
 Since spec 084 the seven `designation.*`/`directive.*` types dispatch to
@@ -51,7 +51,7 @@ the three `prophecy.*` types to `applyProphecy` in `prophecy.go` (the
 declaration door spends the charge stake; terminals re-validate and
 transition one-way); [[guardian-faith]]. Several EXISTING arms gained
 silent DERIVED bookkeeping with no new event: `agent.moved`, `agent.woke`,
-and a `villager`-class `metatron.entity_moved` each call
+and a `villager`-class `guardian.entity_moved` each call
 `markExplored`/`notePresence` — a mover's surroundings become explored
 terrain and mover/bystanders record each other's positions — a pure
 function of (state, event) with no chronicle noise, so map-populating never
@@ -65,10 +65,10 @@ on re-apply) and the `stranger.*` family to `applyStranger` in
 plus `meeting.convention_established` and the `sim.gathering_observed`
 watch event (TASK-36) — dispatch to `applyGovernance` in `governance.go`
 ([[governance]]); the four miracle types
-`metatron.time_snapped`/`metatron.item_granted`/`metatron.entity_moved`/
-`metatron.entity_removed` (spec 016, [[guardian-miracles]]) dispatch to
-`applyMiracle` in `miracles.go`, alongside `metatron.charge_regenerated`/
-`metatron.nudged`'s `applyGuardian`. `applyGuardian` and its neighbors also
+`guardian.time_snapped`/`guardian.item_granted`/`guardian.entity_moved`/
+`guardian.entity_removed` (spec 016, [[guardian-miracles]]) dispatch to
+`applyMiracle` in `miracles.go`, alongside `guardian.charge_regenerated`/
+`guardian.nudged`'s `applyGuardian`. `applyGuardian` and its neighbors also
 own the standing-order lifecycle, charter observation, morgue epilogues,
 the guardian report card, curriculum unlocks, and the tuning-dial snapshot
 — split into [[sim-state-apply-guardian-records]]. `world.migrated` (spec

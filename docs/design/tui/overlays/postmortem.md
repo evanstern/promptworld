@@ -2,7 +2,7 @@
 title: Overlay — postmortem
 class: overlay
 status: shipped
-verified_against: 6e83f579db2b448c9c59b15575bf564b1e9b1852
+verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
 sources:
   - internal/tui/tui.go
   - internal/tui/views.go
@@ -43,7 +43,7 @@ a scold.
 │  ┌─ report card · first-night ──────────────────────────────────┐    │
 │  │ ✗ village survives to dawn of day 2 (sim.day_started: 0)       │   │
 │  │ ✗ no villager dies (agent.died: 2)                             │   │
-│  │ ✓ a watch set before nightfall (metatron.order_placed: 1)      │   │
+│  │ ✓ a watch set before nightfall (guardian.order_placed: 1)      │   │
 │  └──────────────────────────────────────────────────────────────┘    │
 │                                                                        │
 │  morgue — no-blame evidence                                           │
