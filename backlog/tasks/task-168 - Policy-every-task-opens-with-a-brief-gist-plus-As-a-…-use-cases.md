@@ -1,10 +1,10 @@
 ---
 id: TASK-168
 title: 'Policy: every task opens with a brief gist plus ''As a …'' use cases'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-29 16:09'
-updated_date: '2026-07-29 17:59'
+updated_date: '2026-07-29 18:03'
 labels: []
 dependencies: []
 ordinal: 136000
@@ -35,14 +35,20 @@ Spec: specs/087-card-format-policy
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The policy (gist-first, then 'As a <role>' use cases, with the good/less-good/bad examples) is written into a durable tracked home that card authors and the spec agent load when creating tasks or specs (e.g., the Backlog.md block of the project CLAUDE.md, or a doc it references)
-- [ ] #2 The policy states when use cases apply vs. may be skipped (pure infra/bookkeeping cards may omit use cases, but never the opening gist)
-- [ ] #3 The policy is scoped to this repo only — no praxisflux plugin or template changes
-- [ ] #4 spec-phase guidance points at the gist section as the primary statement of intent for a task the spec agent didn't write
-- [ ] #5 Spec phase: User Story 1 + 3 — Policy in its durable home (P1 + P2)
-- [ ] #6 Spec phase: User Story 2 — Spec-phase pointer (P2)
-- [ ] #7 Spec phase: Polish & Cross-Cutting
+- [x] #1 The policy (gist-first, then 'As a <role>' use cases, with the good/less-good/bad examples) is written into a durable tracked home that card authors and the spec agent load when creating tasks or specs (e.g., the Backlog.md block of the project CLAUDE.md, or a doc it references)
+- [x] #2 The policy states when use cases apply vs. may be skipped (pure infra/bookkeeping cards may omit use cases, but never the opening gist)
+- [x] #3 The policy is scoped to this repo only — no praxisflux plugin or template changes
+- [x] #4 spec-phase guidance points at the gist section as the primary statement of intent for a task the spec agent didn't write
+- [x] #5 Spec phase: User Story 1 + 3 — Policy in its durable home (P1 + P2)
+- [x] #6 Spec phase: User Story 2 — Spec-phase pointer (P2)
+- [x] #7 Spec phase: Polish & Cross-Cutting
 <!-- AC:END -->
+
+
+
+
+
+
 
 
 
@@ -50,4 +56,12 @@ Spec: specs/087-card-format-policy
 
 <!-- SECTION:NOTES:BEGIN -->
 Sweep dispatch (card-format-policy runbook, signed-off 2026-07-29): tier=Sonnet — routine class per constitution Principle V (docs-only policy authoring, no code, single surface). Spec 087-card-format-policy.
+
+spec-bridge sync: User Story 1 + 3 — Policy in its durable home (P1 + P2): 1/1 · User Story 2 — Spec-phase pointer (P2): 1/1 · Polish & Cross-Cutting: 1/1 — status In Progress → Done
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+All spec tasks complete (User Story 1 + 3 — Policy in its durable home (P1 + P2): 1/1 · User Story 2 — Spec-phase pointer (P2): 1/1 · Polish & Cross-Cutting: 1/1). Derived Done by spec-bridge sync.
+<!-- SECTION:FINAL_SUMMARY:END -->
