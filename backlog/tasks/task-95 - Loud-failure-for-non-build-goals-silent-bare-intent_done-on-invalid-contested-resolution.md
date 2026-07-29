@@ -3,10 +3,10 @@ id: TASK-95
 title: >-
   Loud failure for non-build goals: silent bare intent_done on invalid/contested
   resolution
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-24 18:27'
-updated_date: '2026-07-25 03:10'
+updated_date: '2026-07-29 21:16'
 labels:
   - enhancement
 dependencies: []
