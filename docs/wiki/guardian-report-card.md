@@ -111,9 +111,10 @@ event (`guardian.report_card`, `curriculum.exercise_passed`, `run.ended`) —
 a fresh NOTE additionally sets the existing unseen-badge flag
 (`guardianUnseen`) when the guardian pane isn't visible: at most a badge
 between stopping points, never a takeover (FR-006). `guardian.report_card`
-also gets its own [[tui-client]] digest-registry entry and joins a new
-`"guardian"` namespace in `familyByNamespace` (guardian voice, the
-`curriculum` precedent) — the frozen `guardian.*` family is untouched.
+also gets its own [[tui-client]] digest-registry entry in the `"guardian"`
+namespace of `familyByNamespace` (guardian voice, the `curriculum`
+precedent) — a namespace that, since spec 094's rename, also carries the 13
+world-action types formerly under `metatron.*`.
 
 ## Connections
 

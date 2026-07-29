@@ -61,5 +61,7 @@ Sweep ordering (fixed, research R14): designations first, then directives,
 each in slice order, fulfilled-before-expired within a directive; a
 designation fulfilled at tick T yields its bound directives'
 `directive.fulfilled` at T+1 — a documented, deterministic one-tick lag.
-Renaming or shrinking any of the seven after merge is BREAKING (recorded
-vocabulary, the spec-052 frozen-identifier doctrine).
+Renaming or shrinking any of the seven after merge is a log-format break:
+since spec 094 a persisted-name change requires a `store.LogFormatVersion`
+bump plus the translating migration ([[event-log]]'s doctrine — the
+successor to the spec-052 freeze).

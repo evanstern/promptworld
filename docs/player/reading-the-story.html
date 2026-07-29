@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/wiki/chronicle.md@c61cd6c04ddfcd2a976c14a49ba071e8fd768a73">
-<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@c61cd6c04ddfcd2a976c14a49ba071e8fd768a73">
-<meta name="promptworld-docs:source" content="docs/wiki/morgue.md@c61cd6c04ddfcd2a976c14a49ba071e8fd768a73">
-<meta name="promptworld-docs:source" content="docs/wiki/grounded-feedback.md@6a5344a12cdc8858909ca7cf209d55025135e9d5">
-<meta name="promptworld-docs:source" content="docs/wiki/event-log.md@0fd2104c59c54be8e8071d319fa4ce192083faf3">
+<meta name="promptworld-docs:source" content="docs/wiki/chronicle.md@72f82f41f7aa2e345572105894cd0fb7c02fc0aa">
+<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@72f82f41f7aa2e345572105894cd0fb7c02fc0aa">
+<meta name="promptworld-docs:source" content="docs/wiki/morgue.md@72f82f41f7aa2e345572105894cd0fb7c02fc0aa">
+<meta name="promptworld-docs:source" content="docs/wiki/grounded-feedback.md@72f82f41f7aa2e345572105894cd0fb7c02fc0aa">
+<meta name="promptworld-docs:source" content="docs/wiki/event-log.md@72f82f41f7aa2e345572105894cd0fb7c02fc0aa">
 <meta name="promptworld-docs:source" content="docs/wiki/nightly-consolidation.md@c61cd6c04ddfcd2a976c14a49ba071e8fd768a73">
 <title>Reading the story — promptworld player docs</title>
 <style>
@@ -95,6 +95,13 @@ it covers, so the story reads
 in order.</p>
 <p>A day or night that has nothing notable in it costs nothing and gets no filler
 entry — you only get chapters when something actually happened.</p>
+<p>Your world's history also knows what "language" it was written in: each
+save carries a small version stamp alongside the story. If you upgrade the
+game across one of its rare format changes, an older world politely refuses
+to open and tells you to run <code>promptworld migrate &lt;world&gt;</code>
+once — the upgrade keeps every moment of the story (nothing is cut or
+summarized away), and the original is archived in the save folder untouched,
+just in case.</p>
 <p>The chronicle travels with your world's save data, so the moment you reattach — no
 matter how long you were gone — the recent story is already there waiting, with no
 separate step needed to fetch it. If the narrator ever has a hiccup, the unwritten
