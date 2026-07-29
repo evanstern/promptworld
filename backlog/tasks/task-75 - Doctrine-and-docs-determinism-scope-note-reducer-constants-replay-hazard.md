@@ -1,10 +1,10 @@
 ---
 id: TASK-75
 title: 'Doctrine and docs: determinism scope note + reducer-constants replay hazard'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-23 06:35'
-updated_date: '2026-07-25 19:31'
+updated_date: '2026-07-29 19:13'
 labels:
   - review-2026-07-22
   - code-quality
