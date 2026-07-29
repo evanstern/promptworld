@@ -41,7 +41,7 @@ one living target, any hour) / `omen` (≥1 living targets, night-only,
 `State.Night`) / `dream` (legacy, grandfathered: accepted on replay for
 historical events, but no live tool can produce a new one).
 
-Spec 059 (metatron survival autonomy — [[guardian-orders]], [[guardian]]) is
+Spec 059 (guardian survival autonomy — [[guardian-orders]], [[guardian]]) is
 also format-stable: `GuardianOrder` gains `omitempty` `Survival` (`""` = an
 ordinary structural order, the pre-059 shape; `near_death`/`starvation`/
 `exposure` names one of the three canonical system-origin survival watches),

@@ -101,6 +101,26 @@ runs stay byte-deterministic. Adding a state field means adding events that
 set it — direct mutation outside `Apply` (except `Tick`) breaks the replay
 contract.
 
+## Replay doctrine: names and re-derivations are versioned (spec 094)
+
+`Apply`'s switch keys on persisted event-type NAMES, and several arms
+RE-DERIVE state from doctrine constants at apply time (the hunt-yield
+derivation from `huntYieldSpear` in `agent.hunted`'s arm is the canonical
+example — spec 092's determinism/emitter-computes doctrine, TASK-75, audits
+this class). Both are replay contracts: renaming a type or retuning a
+re-derived constant changes what replaying an EXISTING log computes.
+Either change REQUIRES bumping `store.LogFormatVersion` ([[event-log]]) and
+shipping a migration — a pure rename TRANSLATES the log (the spec 094
+`metatron.*`→`guardian.*` rename, `sim.LogFormatV1Renames`, is the first);
+a semantic break SNAPSHOT-CUTS ([[world-migration]]'s decision rule).
+`TestGatherTuningMirror` pins the tuning values against the ratified log
+format so a retune must confront the doctrine, and the load gates
+([[event-log]], [[world-save-directory]]) make an unmigrated old log
+unreachable by these arms. Persisted reference strings inside preserved
+payloads (`EvidenceRef.Type`) keep old names; readers normalize via
+`sim.CanonicalEventType` — the log's own type column is never aliased at
+read.
+
 ## Spec 086 — refs fold by ID; names never enter state
 
 Every agent-referencing payload field is a `sim.AgentRef` (`{id,name}` on

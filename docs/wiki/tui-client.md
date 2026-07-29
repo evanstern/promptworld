@@ -1,6 +1,6 @@
 ---
 name: tui-client
-description: The Bubble Tea full-screen client — a widescreen map+dock composite over a live world replica maintained by log shipping; the guardian tab label and chronicle Type-column alias resolve through the boot-frozen [[skin]]. Split into six child notes (corpus-spec v2): [[tui-client-mechanics]] (connection/header/layout), [[tui-map-view]], [[tui-dock-tabs]], [[tui-villagers-tab]], [[tui-chronicle-feed]], [[tui-input-help]].
+description: The Bubble Tea full-screen client — a widescreen map+dock composite over a live world replica maintained by log shipping; the guardian tab label resolves through the boot-frozen [[skin]] (the pre-094 chronicle Type-column alias is retired — types render raw). Split into six child notes (corpus-spec v2): [[tui-client-mechanics]] (connection/header/layout), [[tui-map-view]], [[tui-dock-tabs]], [[tui-villagers-tab]], [[tui-chronicle-feed]], [[tui-input-help]].
 kind: component
 sources:
   - internal/tui/tui.go

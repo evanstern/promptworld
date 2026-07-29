@@ -229,7 +229,7 @@ hand; regenerate whenever any note's `description:` changes:
   Attach-side protocol client — dial with fast failure, request/response correlation by id, push demux channel
 
 - [[tui-client]] — Bubble Tea four-pane client over a live log-shipped replica; split into six child notes below
-  The Bubble Tea full-screen client — a widescreen map+dock composite over a live world replica maintained by log shipping; the guardian tab label and chronicle Type-column alias resolve through the boot-frozen [[skin]]. Split into six child notes (corpus-spec v2): [[tui-client-mechanics]] (connection/header/layout), [[tui-map-view]], [[tui-dock-tabs]], [[tui-villagers-tab]], [[tui-chronicle-feed]], [[tui-input-help]].
+  The Bubble Tea full-screen client — a widescreen map+dock composite over a live world replica maintained by log shipping; the guardian tab label resolves through the boot-frozen [[skin]] (the pre-094 chronicle Type-column alias is retired — types render raw). Split into six child notes (corpus-spec v2): [[tui-client-mechanics]] (connection/header/layout), [[tui-map-view]], [[tui-dock-tabs]], [[tui-villagers-tab]], [[tui-chronicle-feed]], [[tui-input-help]].
 
   - [[tui-client-mechanics]] — connection/replica lifecycle, header postmortem/governed-speed readouts, reconnect resilience, and the widescreen/narrow layout's fold cascade
   How the TUI client connects to the daemon and maintains its live world replica by log shipping, the header's postmortem/governed-speed/LLM-badge/suppressed-horizon readouts, reconnect resilience, and the widescreen/narrow layout's three-step fold cascade (villager strip -> lesson row -> guardian strip). Split from [[tui-client]]; read when touching tui.go, views.go (headerView), layout.go, or digest.go's debtPercent.

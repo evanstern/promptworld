@@ -37,14 +37,14 @@ only observes an `agent.memory_added` AFTER it is committed and notified;
 and `cog.memory_divergence`, the shadow-mode selector's rank-divergence
 record, riding the same reducer-no-op `cog.*` isolation class as the
 telemetry types above; and (since spec 044 US2) two more:
-`metatron.charter_observed` — the Guardian turn pipeline's
+`guardian.charter_observed` — the Guardian turn pipeline's
 fingerprint-at-effect stamp, the event-sourced charter-revision timeline
 the [[morgue]] aligns deaths against, whose reducer arm (and so the
 dry-run) enforces a non-empty fingerprint — and `morgue.epilogue`, the
 narrator's recorded mourning prose after a death or the run's end,
 appending only the bounded `State.MorgueEpilogues` ring (never simulation
 state, which is why it also survives the ended-world narrowing the parent
-describes); and (since spec 077 FR-006) `metatron.skills_observed` — the
+describes); and (since spec 077 FR-006) `guardian.skills_observed` — the
 skills-observation twin of `charter_observed`: the bound skill-file set a
 turn ran under, emitted on fingerprint change by the same pipeline
 (`observeSkills`), whose reducer arm (and so the dry-run) enforces a

@@ -32,7 +32,7 @@ world-answers-the-plan "the village fulfilled Guardian's mark/charge (id)"
 terminals ([[guardian-designations]], `TestCatalogSweep`-covered);
 `morgue.epilogue` ("epilogue for <name>: <text>", `chronicle.entry`-style
 80-rune truncation; agent −1 renders as "the run" — the run-end epilogue),
-and `metatron.charter_observed` ("Guardian ran under charter <fingerprint>
+and `guardian.charter_observed` ("Guardian ran under charter <fingerprint>
 (default|player-authored)" — the charter-revision stamp the morgue aligns
 deaths against). Since spec 046, two [[curriculum-ladder]] types get
 entries; `familyByNamespace` maps the new `curriculum` namespace onto the
@@ -41,9 +41,10 @@ visual role: `curriculum.exercise_passed` ("the <exercise> exercise
 was passed (<stage>)") and `curriculum.stage_unlocked` ("The guardian's watcher
 earned <stage name> (proven by <exercise>)", display name via
 `skin.StageName`, like the CLI's stage line). Since spec 063,
-`guardian.report_card` ([[grounded-feedback]]) gets its own entry — a new
-`guardian` namespace joins `familyByNamespace`, mapped onto the SAME guardian
-family voice as the FROZEN `metatron.*` namespace (the digest line renders
+`guardian.report_card` ([[grounded-feedback]]) gets its own entry in the
+`guardian` namespace (which since spec 094 also carries the 13 renamed
+world-action types — the retired `metatron` namespace key left
+`familyByNamespace` with the rename; the digest line renders
 the skin's report-card label, the charter fingerprint, and the note's text
 truncated to 80 runes, `morgue.epilogue`-style). Since spec 076, `world.forked` ([[world-forking]]) gets a
 world-lifecycle-voice entry — "forked from `<parent>` at day D, HH:MM", the

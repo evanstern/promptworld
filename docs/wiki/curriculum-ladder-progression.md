@@ -102,7 +102,7 @@ Surfacing: `ipc.WorldStatus.Stage`/`StageOverridden` ride status, `promptworld
 status` renders a skin-named stage line (plus, on a scenario world, an
 `exercise: <id> — <outcome>` line, [[scenario-machinery]]), and the TUI
 digest narrates both `curriculum.*` types under the guardian grammar family
-(the FROZEN `metatron` namespace's family-namespace mapping, [[tui-client]]).
+(the same family tint as the `guardian.*` namespace, [[tui-client]]).
 
 ## Connections
 

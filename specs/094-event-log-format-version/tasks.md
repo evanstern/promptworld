@@ -36,7 +36,7 @@ not alias; ship the REAL rename here).
 
 ## Phase 4: Doctrine + grounding
 
-- [ ] T009 Doctrine in wiki (event-log / sim-state-reducer notes): bump
+- [X] T009 Doctrine in wiki (event-log / sim-state-reducer notes): bump
   requirement, translate-vs-snapshot-cut decision rule, cross-link spec 092;
   definition-site comments (FR-006).
 - [ ] T010 Full gates: go test -race ./..., replay harness, TestCatalogSweep;

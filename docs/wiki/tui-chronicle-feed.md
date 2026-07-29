@@ -29,14 +29,14 @@ turning payload into a readable per-type summary; a feed line reads
 compact `key=value` fields for telemetry families (`cog.*`, `clock.*`,
 `daemon.*`). Columns align at solo width (tick right-aligned, type padded);
 the narrow dock drops the tick and shortens type to its last segment.
-Since spec 052 (FR-013), the solo Type COLUMN — never the dock short form,
-detail pane, or grammar-miss raw fallback — aliases the FROZEN `guardian.*`
-namespace segment to the active [[skin]]'s family label
-(`displayEventType`/`chronicleLine.DisplayType`, grammar.go:
-`guardian.nudged` renders `guardian.nudged` by default, `raven.nudged` under
-the example skin); `curriculum.*` and every other family render raw by design
-(inspector-class visibility, FR-020) — the ONE skinned display surface; the
-rest of the raw feed and inspector stays honest, unskinned wire vocabulary.
+The Type column renders every type RAW on every surface — solo column, dock
+short form, detail pane, and the grammar-miss fallback alike. Spec 052
+(FR-013) briefly aliased the then-frozen `metatron.*` namespace segment to
+the active [[skin]]'s family label (TASK-121's interim shim,
+`displayEventType`/`chronicleLine.DisplayType`); spec 094 shipped the real
+rename — persisted types are `guardian.*` natively — and deleted the shim,
+so the whole feed and inspector is honest, unskinned wire vocabulary
+(inspector-class visibility, FR-020).
 Families carry color-role tints, key tokens (names, speech, amounts, causes)
 emphasis, and six high-salience types (`agent.died`, `gru.attacked`,
 `social.chest_taken`, `norm.violated`, spec 077's `stranger.took` — beside

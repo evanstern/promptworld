@@ -105,7 +105,8 @@ byte-identically.
 
 Back to [[world-save-directory]] for `Create`/`Open`/path-helper mechanics
 and its sibling child [[world-save-path-helpers]]. [[worldmap-generation]]
-is what `terrain_gen` (current format version 5) exists to support;
+is what `terrain_gen` (added at format version 5; current is 6 — the
+spec-094 guardian rename, [[world-migration]]) exists to support;
 [[mental-maps]] is the spec-041 subsystem that bumped it to 4 one break
 earlier; [[curriculum-ladder]] owns `stage`/`stage_overridden`/
 `charter_preset`; [[scenario-machinery]] validates and consumes `scenario`;

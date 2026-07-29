@@ -17,6 +17,13 @@ file below). This catalog is the contract downstream consumers (chronicle,
 guardian digests, the TUI) read. [[event-log]] stores every event;
 [[ipc-protocol]] pushes them to subscribers verbatim.
 
+**Type names are versioned vocabulary** (spec 094): renaming any persisted
+type requires a `store.LogFormatVersion` bump plus a translating migration
+([[event-log]]'s doctrine, [[world-migration]]'s decision rule). The 13
+`guardian.*` world-action types below were `metatron.*` through log format
+1; `sim.LogFormatV1Renames` is the sanctioned inventory of that rename, and
+`promptworld migrate` translates old logs — no reader ever aliases.
+
 ## Event catalog, by domain
 
 The full per-type catalog (93 event types across the format's history,

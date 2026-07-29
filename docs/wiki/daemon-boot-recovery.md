@@ -43,7 +43,11 @@ Startup sequence:
    (TASK-43): a best-effort upsert into the advisory known-worlds registry
    ([[instance-manager]]) when the dir lives outside the worlds home — failures are
    logged and never block boot, and worlds inside the home are skipped (scan-owned).
-3. `store.Open` + `validateMeta` — first run stamps `seed`/`format_version` into
+3. `store.Open` + `validateMeta` — FIRST the log's own format gate
+   (`VerifyLogFormat`, spec 094 — an older-vocabulary log refuses with the
+   migrate hint, a newer one with the upgrade posture, before any replay;
+   [[event-log]]); then the manifest mirrors: first run stamps
+   `seed`/`format_version` into
    store meta; later runs must match the manifest exactly, catching save directories
    corrupted or spliced from two runs.
 4. `CheckContiguity` — a holed event log refuses to run ([[event-log]]).

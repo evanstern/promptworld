@@ -36,7 +36,10 @@ snapshot boundary" is built, not carved. Steps:
    only (`--at latest-snapshot` is the sole accepted value).
 3. Destination must be empty/absent (the `Create` posture); on any later
    error the partial destination is best-effort removed.
-4. Fresh `world.db`: the parent's events with `seq <= boundary.seq` are
+4. Fresh `world.db`: the log-format stamp is written first (spec 094,
+   [[event-log]] — a fork's log is born current; the parent passed the Open
+   gate so its prefix already speaks this build's vocabulary), then the
+   parent's events with `seq <= boundary.seq` are
    streamed in order into `AppendEvents` (contiguous seqs 1..N reproduce by
    construction), the boundary snapshot is written verbatim (hash
    re-verified against the parent's `state_hash`), one `world.forked`

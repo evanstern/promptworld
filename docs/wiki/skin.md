@@ -14,7 +14,7 @@ alongside the [[guardian]] package rename: the substrate itself knows only
 neutral, mechanical vocabulary (stage ids `stage-1`..`stage-4`, event types
 like `guardian.nudged`, tool ids like `work_miracle`), and every string the
 PLAYER sees for that vocabulary — the guardian's display name, its epithet,
-its tab label, the chronicle's family alias, the vision/omen/working nouns,
+its tab label, the vision/omen/working nouns,
 and each curriculum stage's display identity — is resolved through one
 `*Skin` value at render/prompt-composition time. Two governing rulings hold
 the whole design together: ruling 1 — the event log is skin-free, nothing in
@@ -36,8 +36,10 @@ row, and every row must resolve to a non-empty, non-path value.
 `skin.guardian.name` (`TokenName`, default `"Guardian"`), `.epithet`
 (`TokenEpithet`, default `"guardian"`), `.tab_label` (`TokenTabLabel`,
 default `"guardian"`), `.family_label` (`TokenFamilyLabel`, default
-`"guardian"` — the chronicle's Type-column alias for the FROZEN `guardian.*`
-event namespace, FR-013) — plus vocabulary tokens `working_noun`/
+`"guardian"` — the guardian family's voiced name; its original consumer,
+spec 052 FR-013's chronicle Type-column alias over the pre-094 `metatron.*`
+namespace, was retired when spec 094 renamed the persisted types to
+`guardian.*` and the chronicle went raw) — plus vocabulary tokens `working_noun`/
 `working_noun_plural` (default `"working"`/`"workings"` — the display name
 for the frozen `work_miracle` mechanics family), `notes_label` (default
 `"the guardian's notes"`), and `vision_noun`/`omen_noun` (default
@@ -107,9 +109,9 @@ the same accessors for triggered-turn moment lines and miracle-outcome
 phrasing. [[curriculum-ladder]] reads `Stage`/`StageName` for the ladder's
 display identities in `promptworld stages`/`new`/`status` and the stage lock
 notices (`stageCharter`/`stageSkills`, [[guardian]]'s `charter.go`).
-[[tui-client]] resolves the chronicle Type column's frozen-namespace alias
-through `FamilyLabel` (`internal/tui/grammar.go`'s `displayEventType`) and
-the console pane's tab/labels through the polled status facts.
+[[tui-client]] renders the chronicle Type column raw since spec 094 (the
+FR-013 alias shim is deleted) and resolves the console pane's tab/labels
+through the polled status facts.
 [[cli-promptworld]] renders the same facts offline/online without reading
 `skin.json` directly. [[bundle-tools]]' persona-SOUL-fragment composition is
 the precedent `Voice`'s placement in the prompt stack follows (after bundle
