@@ -22,7 +22,7 @@ with replay analysis — plan is folded into the spec; single-mechanism change).
 
 ## Phase 3: Grounding + probe
 
-- [ ] T005 Re-verify + re-pin wiki notes whose sources this branch touches
+- [X] T005 Re-verify + re-pin wiki notes whose sources this branch touches
   (guardian / miracle / tool-registry notes listing turn.go, miracles.go,
   derive.go); regenerate docs/player pages if the probe demands; merge-drift pr
   gate green from the worktree.
