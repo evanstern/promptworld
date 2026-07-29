@@ -3,9 +3,10 @@ id: TASK-164
 title: >-
   Charter-delta outcome re-run: survival outcome delta at n>1 once guardian tool
   competence lands
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-27 13:20'
+updated_date: '2026-07-29 21:37'
 labels:
   - mvls
   - guardian-survival
@@ -23,7 +24,13 @@ Carded from TASK-137's results (2026-07-27, docs/design/evidence/task-137/result
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 OPERATOR CHECKPOINT: eval spend approved before dispatch (the TASK-122/TASK-137 treatment)
+- [x] #1 OPERATOR CHECKPOINT: eval spend approved before dispatch (the TASK-122/TASK-137 treatment)
 - [ ] #2 Both arms re-run after the TASK-163 competence fix, same-seed pairing, n>=2 seeds or an operator-approved design; survival outcome delta measured
 - [ ] #3 Results doc recorded under docs/design/evidence/; TASK-111 AC#5 outcome-delta caveat updated with the new evidence
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+board-sweep-2026-07-29 lane 2: AC1 OPERATOR CHECKPOINT resolved in-session — approved design: n=1 same-seed pair (1337), 3 game-days per arm at 8x, sequential arms, TASK-137 recipe on current main (post 163/166/167 door fixes + 134 rename); n>=2 traded for in-sweep evidence, recorded as the operator-approved design. Eval is orchestrator-run (no implementer, no spec dir — TASK-137/136 measurement precedent); deliverable = results doc under docs/design/evidence/task-164/ via its own PR.
+<!-- SECTION:NOTES:END -->
