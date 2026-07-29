@@ -1,10 +1,10 @@
 ---
 id: TASK-75
 title: 'Doctrine and docs: determinism scope note + reducer-constants replay hazard'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-23 06:35'
-updated_date: '2026-07-25 19:31'
+updated_date: '2026-07-29 19:14'
 labels:
   - review-2026-07-22
   - code-quality
@@ -22,6 +22,8 @@ From the 2026-07-22 team review (improvements 5 and the replay-hazard removal no
 (a) Determinism scope: determinism is PER-LOG, not per-seed across machines — EffectiveRate is wall-clock-measured (loop.go ~658), lands in clock.degraded events, and is baked into the canonical state hash. Replay of a given log is exact; two machines on the same seed diverge. Nothing documents this limit; someone will eventually try to build a cross-machine determinism check on the stronger claim. State it explicitly in docs/wiki (deterministic-rng and/or sim-loop, plus the README determinism paragraph).
 
 (b) Reducer-constants replay hazard: the pattern of the reducer re-deriving outcomes from mutable gameplay constants during replay (e.g. hunt spear yield, state.go ~504-511) means changing a constant silently breaks old-log replay unless format_version is bumped. Record it as doctrine: emitter-computes / payload-carries-the-outcome is the default; reducer-re-derives is the exception requiring an explicit format_version note. Add the doctrine to the wiki (event-log or sim-state-reducer note) and a code comment at the existing sites. Optionally: audit the reducer for other instances and list them in the note (audit only — migrating them is future work, not this task).
+
+Spec: specs/092-determinism-doctrine
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
@@ -30,6 +32,9 @@ From the 2026-07-22 team review (improvements 5 and the replay-hazard removal no
 - [ ] #2 Reducer-constants hazard recorded as doctrine with the emitter-computes default named; existing sites commented
 - [ ] #3 Audit list of reducer-re-derives sites included in the wiki note
 - [ ] #4 Wiki freshness gate passes (notes re-pinned)
+- [ ] #5 Spec phase: Audit
+- [ ] #6 Spec phase: Doctrine + docs
+- [ ] #7 Spec phase: Grounding + gates
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -40,4 +45,6 @@ Drift audit 2026-07-23: substance verified, pins moved. EffectiveRate measured a
 Pointer (spec 057 / TASK-108, 2026-07-25): the reducer-constants replay hazard this task documents now has a durable §6 note in docs/design/control-surface-and-calibration.md AND a structural mitigation for new worlds — the genesis tuning pin (promptworld new seeds sim.tuning_applied with the birth default set). Residual hazard scope: pre-057 and migrated worlds only.
 
 POINTER (2026-07-25, team review): the migration machinery this task explicitly scopes out ('migrating them is future work, not this task') is now carded as TASK-134 — event-log format_version + migration path, driven by the operator decision that the metatron.* event names get MIGRATED rather than aliased. Land this task's doctrine note first or alongside; 134 supplies the machinery this note points at. Review re-confirmed both hazards: no format_version exists anywhere in the repo, and README.md:80 plus deterministic-rng.md:50 still claim per-seed determinism.
+
+board-sweep-2026-07-29 lane 1: spec 092 authored + landed; linked. Tier: Sonnet — docs/doctrine + comment-only code (routine slice). Implementation dispatch HELD until TASK-165 (wiki splits) merges — shared docs/wiki + CAPSULES/INDEX conflict surface.
 <!-- SECTION:NOTES:END -->
