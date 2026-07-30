@@ -1,13 +1,13 @@
 ---
 name: tool-use-dispatch
-description: The cognition-horizon gate that suppresses a thought before enqueue, the per-job immutable snapshot and thoughtMeta identity, and how runPlan drives the bounded tool-use loop against the villager roster — replacing the retired free-text reply contract with tool schemas. Split from [[agent-mind]] (The mind driver, dispatch half).
+description: The cognition-horizon gate that suppresses a thought before enqueue, the spec-106 sleep gate and in-flight cancel that stop a queued or running thought whose agent slept or died, the per-job immutable snapshot and thoughtMeta identity, and how runPlan drives the bounded tool-use loop against the villager roster — replacing the retired free-text reply contract with tool schemas. Split from [[agent-mind]] (The mind driver, dispatch half).
 kind: component
 sources:
   - internal/mind/mind.go
   - internal/mind/prompt.go
   - internal/mind/context.go
   - internal/mind/telemetry.go
-verified_against: 1fae0d8536eb43e43eaa7b747aaeaf0b6e05ac83
+verified_against: cb0eb0c0b00c7ecef9d0a6a88d49c3ee994953b4
 ---
 
 # Cognition gate and tool-use loop dispatch
@@ -83,7 +83,28 @@ and the golden-prompt fixture (`prompt_golden_test.go`) that pinned it — is
 gone: the goal vocabulary, storage kind/qty validation, and the guarded-plan
 step cap now live as tool schemas ([[tool-registry]]'s `InputSchema`,
 `set_plan`'s authored override) the loop driver itself validates before
-dispatch, not a parser the mind ran after the call returned. `systemPrompt`
+dispatch, not a parser the mind ran after the call returned. Since spec 106
+two sleep-gating layers sit around the loop, closing the post-enqueue windows
+playtest-1 measured (905 "is asleep" landing rejections — thoughts spent on
+villagers who reflex-slept while the job waited or ran): at the TOP of
+`runPlan`, before `cog.thought` or any model call, a **dequeue gate** consults
+the mind's atomic per-agent unavailability mirror (`unavail`, asleep|dead —
+absorb refreshes it at batch end beside the `md.tick`/`md.tickRate` mirrors
+and `New` seeds it from the snapshot; derived from replica state, so
+`gru.attacked`'s eventless wake is covered) and an unavailable agent's job
+terminates in one `cog.outcome{suppressed}` with a dequeue reason ("asleep at
+dequeue" / "dead at dequeue" — dead first, mirroring `rungUnavailable`'s
+ordering) — deliberately WITHOUT the `RecordSuppression` bump, so the spec-037
+`SuppressedCount` keeps meaning "router suppressed", and without re-arm (the
+wake trigger owns resumption; [[mind-driver-triggers]]). Second, an
+**in-flight cancel**: `runPlan` registers its call context's cancel in a
+per-agent race-safe slot (`planCancel`, registered before the loop, cleared
+after) which absorb fires on `agent.slept`/`agent.died` — the running call
+aborts instead of finishing a dead-on-arrival thought. Planner slot only;
+consolidation, narrator, meeting, reconcile, and scene workers are untouched,
+and the enqueue-time `plan()` skip plus the sim's landing ladder
+(`rungUnavailable`, the authoritative backstop for mirror lag) are
+byte-unchanged. `systemPrompt`
 (prompt.go) no longer renders the goal line/gloss block or the JSON reply
 shape — it only frames the choice; the tools themselves carry the vocabulary
 via their declared name/description/schema. Since spec 027 (TASK-73) that

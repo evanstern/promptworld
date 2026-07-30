@@ -85,12 +85,31 @@ type Mind struct {
 	// pre-abort scales its budget by the event-sourced speed (spec 067
 	// FR-001) without reading the absorb-owned replica.
 	tickRate atomic.Uint64
+	// unavail mirrors per-agent unavailability (asleep OR dead) for worker
+	// goroutines (spec 106 FR-001), exactly as tick/tickRate mirror the
+	// replica: absorb refreshes it after each applied batch and runPlan's
+	// dequeue gate reads it, so workers never touch the absorb-owned replica.
+	// One atomic word — bit i = agent i asleep, bit AgentCount+i = agent i
+	// dead — so a gate read is a single load and the recorded skip reason can
+	// name which state blocked it (mirroring rungUnavailable's vocabulary).
+	// Derived from replica STATE, never from event edges, so an eventless
+	// wake (gru.attacked's direct Asleep=false reducer arm) is covered.
+	unavail atomic.Uint64
 
 	// Planner calls run on their own single-flight worker (TASK-9 fix): a
 	// model call must never block the absorb loop, or the events channel
 	// overflows at high speed and edge triggers (sleeps!) are dropped.
 	planQ        chan planJob
 	planInFlight [sim.AgentCount]atomic.Bool
+	// planCancel is the per-agent in-flight PLANNER cancel slot (spec 106
+	// FR-004): runPlan registers its call context's cancel before the loop
+	// and clears it after; absorb fires it on agent.slept / agent.died so a
+	// call whose output would be dead on arrival at the landing ladder stops
+	// spending wall time. Planner slot ONLY — consolidation, narrator,
+	// meeting, reconcile, and scene workers are untouched. Each slot value is
+	// per-cognition, so a fire racing runPlan's clear can only re-cancel an
+	// already-finished context, never the agent's next cognition.
+	planCancel [sim.AgentCount]atomic.Pointer[planCancelSlot]
 
 	// runLoop drives one villager tool-use loop (spec 017, TASK-52). Production
 	// wires it to toolloop.Run against the orchestrator; tests that stub the
@@ -206,6 +225,10 @@ func New(orch Submitter, loop Injector, social SocialInjector, m *worldmap.Map, 
 	// so a scene founded before the first absorb batch still sees the
 	// event-sourced speed (spec 067); absorb keeps it current thereafter.
 	md.tickRate.Store(math.Float64bits(replica.Speed.TicksPerSecond()))
+	// Seed the unavailability mirror the same way (spec 106 FR-001): a job
+	// dequeued before the first absorb batch must see the snapshot's truth
+	// (an agent saved asleep stays gated until it wakes).
+	md.storeUnavail()
 	for i := range md.nextDue {
 		md.nextDue[i] = replica.Tick + int64(i+1)*(replica.PlannerCadence()/sim.AgentCount)
 	}
@@ -368,6 +391,13 @@ func (md *Mind) absorb(batch []store.Event) {
 		case "agent.talked":
 			md.maybeStartConversation(e, priorExchange)
 		case "agent.slept":
+			// In-flight cancel (spec 106 FR-004) fires FIRST: the planner
+			// slot aborts promptly, while the consolidation this same event
+			// triggers is untouched — sleeping villagers still dream.
+			var p sim.AgentPayload
+			if json.Unmarshal(e.Payload, &p) == nil {
+				md.cancelInFlightPlan(p.Agent.ID, "cancelled in flight: agent slept")
+			}
 			md.maybeConsolidate(e)
 		case "agent.consolidated":
 			// Spec 105 (US2): tally the night's outcome for the per-night
@@ -382,6 +412,14 @@ func (md *Mind) absorb(batch []store.Event) {
 			// Spec 044 US2 (T017): a death / the run's end also queues a
 			// morgue epilogue on the narrator worker; the chronicle line for
 			// the same event still lands via chronicleNote below.
+			// A death also aborts the victim's in-flight planner call (spec
+			// 106 FR-004 — unavailability parity with the sleep cancel).
+			if e.Type == "agent.died" {
+				var p sim.DiedPayload
+				if json.Unmarshal(e.Payload, &p) == nil {
+					md.cancelInFlightPlan(p.Agent.ID, "cancelled in flight: agent died")
+				}
+			}
 			md.queueEpilogue(e)
 		}
 		md.chronicleNote(e)
@@ -407,6 +445,65 @@ func (md *Mind) absorb(batch []store.Event) {
 	}
 	md.tick.Store(md.replica.Tick)
 	md.tickRate.Store(math.Float64bits(md.replica.Speed.TicksPerSecond()))
+	md.storeUnavail()
+}
+
+// planCancelSlot pairs one in-flight planner call's context cancel with the
+// reason absorb recorded when it fired (nil until then; CAS'd once so the
+// FIRST cause wins). runPlan reads the reason after the loop returns to make
+// the terminal outcome sleep/death-attributable, distinct from a plain
+// callTimeout (spec 106 FR-004).
+type planCancelSlot struct {
+	cancel context.CancelFunc
+	reason atomic.Pointer[string]
+}
+
+// storeUnavail refreshes the worker-facing unavailability mirror from the
+// replica (spec 106 FR-001): absorb calls it at batch end beside the tick
+// mirrors; New seeds it from the freshly unmarshaled replica (the tickRate
+// precedent) so a job dequeued before the first batch still sees boot truth.
+// Absorb goroutine (or pre-goroutine New) only — it reads the replica.
+func (md *Mind) storeUnavail() {
+	var mask uint64
+	for i := range md.replica.Agents {
+		if md.replica.Agents[i].Asleep {
+			mask |= 1 << uint(i)
+		}
+		if md.replica.Agents[i].Dead {
+			mask |= 1 << uint(sim.AgentCount+i)
+		}
+	}
+	md.unavail.Store(mask)
+}
+
+// unavailReason reads the unavailability mirror for one agent (any
+// goroutine): the recorded skip reason — dead checked before asleep,
+// mirroring rungUnavailable's frozen ordering — or "" when the agent can act.
+func (md *Mind) unavailReason(agent int) string {
+	mask := md.unavail.Load()
+	switch {
+	case mask&(1<<uint(sim.AgentCount+agent)) != 0:
+		return "dead at dequeue"
+	case mask&(1<<uint(agent)) != 0:
+		return "asleep at dequeue"
+	}
+	return ""
+}
+
+// cancelInFlightPlan fires an agent's planner cancel slot (spec 106 FR-004):
+// absorb calls it on agent.slept / agent.died so an in-flight planner call
+// stops spending wall time on a thought the landing ladder would reject
+// anyway. A nil slot (no call in flight) is a no-op; a stale fire racing
+// runPlan's clear re-cancels a finished context (harmless, idempotent). The
+// reason lands once (first cause wins) for the terminal outcome's record.
+func (md *Mind) cancelInFlightPlan(agent int, reason string) {
+	if agent < 0 || agent >= sim.AgentCount {
+		return
+	}
+	if s := md.planCancel[agent].Load(); s != nil {
+		s.reason.CompareAndSwap(nil, &reason)
+		s.cancel()
+	}
 }
 
 // arm marks an agent due for a planner thought; seq is the arming stimulus
@@ -599,12 +696,36 @@ func (md *Mind) planWorker() {
 func (md *Mind) runPlan(job planJob) {
 	defer md.planInFlight[job.agent].Store(false)
 
+	// Pre-submit gate (spec 106 FR-002/FR-003): consult the unavailability
+	// mirror at dequeue — the last moment before the model call is spent. A
+	// job enqueued awake can sit in planQ behind the single-flight worker
+	// long enough for its agent to reflex-sleep (or die); its output would be
+	// dead on arrival at the landing ladder's untouched rungUnavailable
+	// backstop. The skip terminates in one cog.outcome{suppressed} whose
+	// reason names the cause (no matching cog.thought — the router-suppression
+	// precedent), keeping the trail countable (FR-015). It deliberately does
+	// NOT bump the spec-037 RecordSuppression counters: SuppressedCount keeps
+	// meaning "router suppressed". No re-arm — the agent.woke trigger owns
+	// resumption; planInFlight is released by the defer above.
+	if reason := md.unavailReason(job.agent); reason != "" {
+		md.emitCog(md.cogOutcomeEvent(job.meta, sim.OutcomeSuppressed, reason, 0))
+		return
+	}
+
 	md.emitCog(cogThoughtEvent(job.meta))
 	start := time.Now()
 	d := &villagerDispatch{md: md, job: job, start: start}
 	handlers := md.villagerHandlers(d)
 
 	ctx, cancel := context.WithTimeout(context.Background(), callTimeout)
+	// In-flight cancel slot (spec 106 FR-004), registered BEFORE the loop so
+	// an agent.slept / agent.died absorbed mid-call aborts this call. It also
+	// precedes any re-read of the mirror, so a sleep whose batch lands in the
+	// gate→loop window still finds the slot (the loop then terminates ctx_done
+	// on entry). Cleared after the loop; the residual mirror-lag window stays
+	// with the authoritative ladder rung.
+	slot := &planCancelSlot{cancel: cancel}
+	md.planCancel[job.agent].Store(slot)
 	res, err := md.runLoop(ctx, toolloop.Job{
 		JobID:     job.meta.job,
 		Kind:      llm.KindPlanner,
@@ -616,6 +737,7 @@ func (md *Mind) runPlan(job planJob) {
 		MaxTokens: md.plannerTokens, // llm.json max_tokens.planner (spec 025 US2), default 512
 		Record:    d.record,
 	})
+	md.planCancel[job.agent].Store(nil)
 	cancel()
 
 	// Land every buffered CallRecord as a cog.tool_call event (spec 017
@@ -661,7 +783,16 @@ func (md *Mind) runPlan(job planJob) {
 		if err != nil {
 			log.Printf("mind: %s loop failed (%s): %v", job.name, res.Term, err)
 		}
-		md.emitCog(md.cogOutcomeEvent(job.meta, sim.OutcomeUnusable, loopFailReason(res, err), res.TotalMillis))
+		reason := loopFailReason(res, err)
+		// Sleep/death-cancel attribution (spec 106 FR-004): a ctx_done the
+		// absorb goroutine caused carries its recorded cause, distinct from
+		// a plain callTimeout's "loop: context ended".
+		if res.Term == toolloop.TermCtxDone {
+			if r := slot.reason.Load(); r != nil {
+				reason = *r
+			}
+		}
+		md.emitCog(md.cogOutcomeEvent(job.meta, sim.OutcomeUnusable, reason, res.TotalMillis))
 	}
 }
 
