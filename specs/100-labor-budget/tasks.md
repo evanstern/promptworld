@@ -12,5 +12,5 @@
 
 ## Phase 2: Ratification
 
-- [ ] T003 PR opened carrying the spec; operator review ratifies (board-sweep
+- [x] T003 PR opened carrying the spec; operator review ratifies (board-sweep
   2026-07-29 lane-5 posture).
