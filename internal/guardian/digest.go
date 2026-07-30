@@ -141,6 +141,11 @@ func (mt *Guardian) digestNote(e store.Event) {
 		if json.Unmarshal(e.Payload, &p) == nil {
 			line = fmt.Sprintf("(my own hand) a %s went out: %q.", p.Form, p.Text)
 		}
+	case "guardian.region_named":
+		var p sim.RegionNamedPayload
+		if json.Unmarshal(e.Payload, &p) == nil {
+			line = fmt.Sprintf("(my own hand) I named %q real.", p.Name)
+		}
 	}
 	if line == "" {
 		return

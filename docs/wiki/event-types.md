@@ -42,7 +42,7 @@ carries the domain's own format-history prose and catalog rows.
 - [[event-types-scenario-incidents]] — Scenario-incident events (spec 077) — cold snap, forage blight, the stranger entity family: ambient-indistinguishable authored pressure.
 - [[event-types-guardian-orders]] — Guardian standing-order events — charge_regenerated, nudged, order_placed/triggered/cancelled/expired, spec 029/059 survival-watch lifecycle.
 - [[event-types-guardian-morgue]] — Guardian morgue/report-card events — charter_observed (+ spec 077's skills_observed twin), morgue.epilogue, guardian.report_card, chronicle.entry.
-- [[event-types-guardian-actions]] — Guardian miracle actions and gru events — time_snapped/item_granted/entity_moved/entity_removed, the gru emerged/moved/sighted/attacked/withdrew family.
+- [[event-types-guardian-actions]] — Guardian miracle actions and gru events — time_snapped/item_granted/entity_moved/entity_removed, `guardian.region_named` (spec 101, the canonization miracle), the gru emerged/moved/sighted/attacked/withdrew family.
 - [[event-types-guardian-plans]] — Guardian plan-layer events (spec 084) — `designation.*`/`directive.*`: injected placement/issue/cancel, executor-emitted fulfillment/expiry, the TASK-118 faith seam (consumed by spec 085).
 - [[guardian-faith]] — Faith-economy events (spec 085) — `faith.changed` (executor-emitted, the five-reason delta table) and the prophecy lifecycle `prophecy.declared`/`fulfilled`/`failed`.
 

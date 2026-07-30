@@ -11,13 +11,13 @@
 
 ## Phase 2: Perception + briefing
 
-- [ ] T003 Spec-097 confirm path verified (no new machinery); omen unchanged
+- [X] T003 Spec-097 confirm path verified (no new machinery); omen unchanged
   (FR-003). Read-only myth briefing surface (FR-004).
 
 ## Phase 3: Surfaces + tests
 
-- [ ] T004 Digest, event-types.md, tool gloss; TestCatalogSweep (FR-005).
-- [ ] T005 Tests per FR-006; go test -race ./... green.
+- [X] T004 Digest, event-types.md, tool gloss; TestCatalogSweep (FR-005).
+- [X] T005 Tests per FR-006; go test -race ./... green.
 
 ## Phase 4: Demo + grounding
 

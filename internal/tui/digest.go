@@ -1376,6 +1376,25 @@ var digestRegistry = map[string]digestFunc{
 			txt(sk.Name() + " " + verb + " the "), emph(p.Class), txt(" at "), coord(p.X, p.Y),
 		}, gratisMark(p.Gratis)), true
 	},
+	// guardian.region_named (spec 101, the canonization miracle): christens a
+	// named region and optionally raises one feature within it. Voice/style
+	// mirrors the four rows above (guardian.time_snapped's precedent — no
+	// contracts/018 template row exists for the miracle family); gratisMark
+	// surfaces the operator-forced free case (SC-004's enumerability story).
+	"guardian.region_named": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.RegionNamedPayload](e)
+		if !ok {
+			return nil, false
+		}
+		segs := []seg{
+			txt(sk.Name() + " named "), speech(p.Name), txt(" at "), coord(p.X, p.Y),
+			txt(" (radius "), emphN(p.Radius), txt(")"),
+		}
+		if p.FeatureKind != "" {
+			segs = append(segs, txt(", raising a "), emph(p.FeatureKind), txt(" at "), coord(p.FeatureX, p.FeatureY))
+		}
+		return join(segs, gratisMark(p.Gratis)), true
+	},
 
 	// --- cog (labeled) ---
 
