@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/evanstern/promptworld/internal/sim"
 	"github.com/evanstern/promptworld/internal/store"
@@ -185,22 +186,32 @@ func TestAngelSuppressedAtSpeed(t *testing.T) {
 	if mt.angelDue != 2200 {
 		t.Fatalf("suppression did not advance due (got %d, want 2200)", mt.angelDue)
 	}
+	// The suppression record detaches from the absorb goroutine (the mind's
+	// `go emitCog` discipline) — poll briefly for the landed batch.
 	var found bool
-	for _, b := range inj.batches {
-		for _, e := range b {
-			if e.Type != "cog.outcome" {
-				continue
-			}
-			var p sim.CogOutcomePayload
-			if err := json.Unmarshal(e.Payload, &p); err != nil {
-				t.Fatal(err)
-			}
-			if p.Class == "angel" && p.Outcome == sim.OutcomeSuppressed {
-				found = true
-				if !strings.Contains(p.Reason, "budget") {
-					t.Fatalf("suppression reason lacks the arithmetic: %q", p.Reason)
+	for wait := 0; wait < 200 && !found; wait++ {
+		inj.mu.Lock()
+		batches := append([][]store.Event(nil), inj.batches...)
+		inj.mu.Unlock()
+		for _, b := range batches {
+			for _, e := range b {
+				if e.Type != "cog.outcome" {
+					continue
+				}
+				var p sim.CogOutcomePayload
+				if err := json.Unmarshal(e.Payload, &p); err != nil {
+					t.Fatal(err)
+				}
+				if p.Class == "angel" && p.Outcome == sim.OutcomeSuppressed {
+					found = true
+					if !strings.Contains(p.Reason, "budget") {
+						t.Fatalf("suppression reason lacks the arithmetic: %q", p.Reason)
+					}
 				}
 			}
+		}
+		if !found {
+			time.Sleep(5 * time.Millisecond)
 		}
 	}
 	if !found {

@@ -223,14 +223,17 @@ func joinNames(names []string) string {
 
 // emitAngelSuppressed records a router suppression of the scheduled lane —
 // the single terminal record of a turn never attempted (the mind's
-// emitSuppressed shape, through the guardian's own social door).
+// emitSuppressed shape). Fired from the ABSORB goroutine, so the injection
+// DETACHES (the mind's `go emitCog` discipline): telemetry must never stall
+// the absorb loop on the door's tick boundary.
 func (mt *Guardian) emitAngelSuppressed(tick int64, v cognition.Verdict) {
-	mt.emitAngelOutcomePayload(sim.CogOutcomePayload{
+	p := sim.CogOutcomePayload{
 		Job:   fmt.Sprintf("angel-metatron-%d", tick),
 		Class: angelClass, Agent: sim.Ref(-1),
 		Outcome: sim.OutcomeSuppressed, SnapshotTick: tick,
 		PredictedWallMs: v.PredictedWallMs, Reason: v.Arithmetic,
-	})
+	}
+	go mt.emitAngelOutcomePayload(p)
 }
 
 // emitAngelOutcome records a scheduled turn's terminal outcome.
