@@ -103,7 +103,7 @@ prove, in the same task. Tier: Opus 4.8 (card-recorded).
 - [X] T017 `docs/player/` regenerated (player-docs skill; freshness probe
   green) and `docs/design/tui/` chronicle pages re-verified + re-pinned
   (`node scripts/check-tui-design.mjs --changed` clean).
-- [ ] T018 Gate sweep before PR: `node scripts/check-merge-drift.mjs pr` exit
+- [X] T018 Gate sweep before PR: `node scripts/check-merge-drift.mjs pr` exit
   0 (wiki-repin-missing / player-docs-stale clean); spec-bridge sync after
   merge is orchestrator-owned bookkeeping, not this branch.
 
