@@ -1,10 +1,10 @@
 ---
 id: TASK-28
 title: 'Seasons and ambient temperature: design session'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-20 19:54'
-updated_date: '2026-07-29 19:02'
+updated_date: '2026-07-30 00:40'
 labels:
   - design
 dependencies: []
@@ -21,9 +21,9 @@ Spec: specs/090-seasons-ambient-temperature
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A grounding/design session produces a spec directory for seasons and ambient temperature, linked on the board via spec-bridge
-- [ ] #2 Spec phase: Design authoring
-- [ ] #3 Spec phase: Ratification
+- [x] #1 A grounding/design session produces a spec directory for seasons and ambient temperature, linked on the board via spec-bridge
+- [x] #2 Spec phase: Design authoring
+- [x] #3 Spec phase: Ratification
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -39,3 +39,9 @@ Reorient 2026-07-26 (board move 11): reframed dual-duty — seasons are ambient-
 
 board-sweep-2026-07-29 lane 5: design session run autonomously per operator sign-off (2026-07-29); spec 090 authored from the card's pre-session decisions, landed f139c94; decisions D1-D4 recorded in spec.md (storms=incidents+fire dousing; fixed night v1; hot-season compat anchor; no new perception channel). No implementer dispatch — planning-model spec authoring per Principle V. Ratification = operator review of the PR.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Design ratified: PR #130 merged by operator (29a715517). Spec 090 delivers the seasons/ambient-temperature design — two-season calendar (10-day default; 30-day runs cross 3 transitions), deterministic ambient curve, warmth-gap model, seasonal scarcity, dials in the spec 048 manifest; decisions D1-D4 (storms as incidents + fire dousing YES; fixed night v1; hot-season compat anchor; no new perception channel). Implementation is future work scoped from this spec.
+<!-- SECTION:FINAL_SUMMARY:END -->
