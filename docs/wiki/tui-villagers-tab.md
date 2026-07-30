@@ -6,7 +6,7 @@ sources:
   - internal/tui/views.go
   - internal/tui/decisions.go
   - internal/tui/tui.go
-verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
+verified_against: 04ff15001bd8a74f7c2965889c0d318fc0dc03a9
 ---
 
 # TUI villagers tab
@@ -55,8 +55,12 @@ resolved once at thought-ingest from the chronicle ring in the digest voice
 (a pre-connect trigger degrades to a neutral `stimulus #N` reference,
 trigger 0 to a cadence phrase) and the stored chain survives the ring's
 500-event eviction. Attribution: the thought/outcome payload's agent, else a
-villager job-ID parse for fragments; `turn-metatron-*` jobs go to a sentinel
-and `conversation-*` jobs are never ingested. `ingestOutcome` also skips the
+villager job-ID parse for fragments; guardian jobs go to a sentinel — since
+spec 102 matched by the FROZEN `-metatron-` correlation infix
+(`isGuardianJob`), so console `turn-*`, triggered `watch-*`, and the
+scheduled `steward-*` chains ([[guardian-agentization]]) all land on the
+Guardian trail (console transcript verdict rows stay `turn-metatron-*`-only)
+— and `conversation-*` jobs are never ingested. `ingestOutcome` also skips the
 NON-terminal `sim.OutcomeRetried` marker (spec 025, TASK-72): the tool-loop
 consumers emit it AFTER a landed run's door already recorded the real terminal
 outcome, so folding it in would overwrite `landed` with `retried` — the marker

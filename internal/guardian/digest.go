@@ -227,6 +227,20 @@ func (mt *Guardian) runDigest(job digJob) {
 	if text == "" {
 		return // unusable output: a gap, never a stall
 	}
+	// Agentized worlds (spec 102 D5): the digest's note lines become
+	// STRUCTURED MEMORY — one guardian.memory_added per line, consolidated
+	// nightly like everything else in the store — and soul.md stays the
+	// persona seed, not the memory log. Non-agentized worlds keep the
+	// pre-102 soul append byte-identically (FR-007).
+	if mt.agentized() {
+		for _, line := range strings.Split(text, "\n") {
+			if line = strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(line), "-")); line != "" {
+				mt.recordMemory(line, salGuardianDigest)
+			}
+		}
+		log.Printf("guardian: digest landed as memories (up to %s, $%.4f)", job.label, resp.CostUSD)
+		return
+	}
 	mt.appendFile(mt.soulPath(), fmt.Sprintf("\n## Digest — up to %s\n\n%s\n", job.label, text))
 	log.Printf("guardian: digest landed (up to %s, $%.4f)", job.label, resp.CostUSD)
 }

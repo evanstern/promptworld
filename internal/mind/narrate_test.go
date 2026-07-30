@@ -2,10 +2,12 @@ package mind
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/evanstern/promptworld/internal/llm"
 	"github.com/evanstern/promptworld/internal/sim"
 	"github.com/evanstern/promptworld/internal/store"
 	"github.com/evanstern/promptworld/internal/worldmap"
@@ -292,5 +294,128 @@ func TestChronicleLandsThroughTheDoor(t *testing.T) {
 	}
 	if len(state.Chronicle) == 0 {
 		t.Fatal("replayed state has an empty chronicle ring")
+	}
+}
+
+// --- spec 105 (TASK-172): narrator truncation ladder (FR-008, SC-004) ---
+
+// respMind builds a bare Mind driven by a full-Response scripted submitter
+// (Stop/OutputTokens included) for the truncation-ladder narrator tests.
+func respMind(t *testing.T, model Submitter) (*Mind, *fakeSocial) {
+	t.Helper()
+	m := worldmap.Generate(42, 64, 64)
+	social := &fakeSocial{}
+	md := &Mind{
+		orch:      model,
+		social:    social,
+		replica:   sim.NewState(42, m),
+		m:         m,
+		narrQ:     make(chan narrJob, 8),
+		narrRetry: make(chan narrCarry, 1),
+	}
+	return md, social
+}
+
+// narrEntriesGood is a valid chapter reply.
+const narrEntriesGood = `{"entries":[{"text":"Ash kept the fire through the long night.","thread":"the-fire","agents":["Ash"]}]}`
+
+// TestNarrationTruncatedChapterRetries is SC-004: the day-29 "unterminated
+// JSON object" death — a chapter reply cut at 800 tokens retries at 1600 and
+// lands, with a cog.outcome{retried} record naming the escalation.
+func TestNarrationTruncatedChapterRetries(t *testing.T) {
+	model := &respModel{replies: []llm.Response{
+		{Text: narrEntriesGood[:len(narrEntriesGood)/2], Stop: llm.StopMaxTokens, OutputTokens: 800, CostUSD: 0.01},
+		{Text: narrEntriesGood, Stop: llm.StopEndTurn, OutputTokens: 900, CostUSD: 0.01},
+	}}
+	md, social := respMind(t, model)
+
+	md.runNarration(narrJob{day: 29, label: "day 29", fromTick: 1000, toTick: 57600,
+		lines: []string{"[day 29 06:16] Ash kept the fire."}})
+
+	if want := []int64{800, 1600}; fmt.Sprint(model.budgets()) != fmt.Sprint(want) {
+		t.Errorf("requested budgets = %v, want %v", model.budgets(), want)
+	}
+	// Two injections: the retried telemetry record, then the atomic chapter.
+	if len(social.batches) != 2 {
+		t.Fatalf("batches = %d, want 2 (retried record + chapter)", len(social.batches))
+	}
+	var op sim.CogOutcomePayload
+	if social.batches[0][0].Type != "cog.outcome" ||
+		json.Unmarshal(social.batches[0][0].Payload, &op) != nil {
+		t.Fatalf("first injection = %s, want cog.outcome", social.batches[0][0].Type)
+	}
+	if op.Outcome != sim.OutcomeRetried || op.Class != "chronicle" ||
+		!strings.Contains(op.Reason, "800") || !strings.Contains(op.Reason, "1600") {
+		t.Errorf("retried record = %+v, want chronicle-class 800→1600", op)
+	}
+	if social.batches[1][0].Type != "chronicle.entry" {
+		t.Errorf("second injection = %s, want chronicle.entry", social.batches[1][0].Type)
+	}
+	select {
+	case <-md.narrRetry:
+		t.Fatal("accepted retry must not carry")
+	default:
+	}
+}
+
+// TestNarrationLadderExhaustedIsGap: still truncated at the ladder's top —
+// the chapter's existing bad-output semantics apply after the ladder: a gap,
+// never a carry (carrying unusable model output would loop forever) and never
+// a stall.
+func TestNarrationLadderExhaustedIsGap(t *testing.T) {
+	cut := llm.Response{Text: `{"entries":[{"te`, Stop: llm.StopMaxTokens, OutputTokens: 800}
+	model := &respModel{replies: []llm.Response{cut, cut, cut}}
+	md, social := respMind(t, model)
+
+	md.runNarration(narrJob{day: 29, label: "day 29", fromTick: 1000, toTick: 57600,
+		lines: []string{"[day 29 06:16] Ash kept the fire."}})
+
+	if want := []int64{800, 1600, 3200}; fmt.Sprint(model.budgets()) != fmt.Sprint(want) {
+		t.Errorf("requested budgets = %v, want %v", model.budgets(), want)
+	}
+	for _, batch := range social.batches {
+		for _, e := range batch {
+			if e.Type == "chronicle.entry" {
+				t.Fatal("exhausted ladder must not land entries")
+			}
+		}
+	}
+	select {
+	case <-md.narrRetry:
+		t.Fatal("unusable output must not carry (it would loop forever)")
+	default:
+	}
+}
+
+// TestEpilogueTruncatedRetries: the morgue epilogue rides the same ladder —
+// a truncated first attempt retries at 1600 and the prose lands.
+func TestEpilogueTruncatedRetries(t *testing.T) {
+	model := &respModel{replies: []llm.Response{
+		{Text: "", Stop: llm.StopMaxTokens, OutputTokens: 800},
+		{Text: "Ash tended the fire to the end, and the village stayed warm.", Stop: llm.StopEndTurn, OutputTokens: 30},
+	}}
+	md, social := respMind(t, model)
+
+	md.runNarration(narrJob{epilogue: true, agent: 0, label: "epilogue for Ash", toTick: 57600,
+		lines: []string{"Ash died of starvation on day 29."}})
+
+	if want := []int64{800, 1600}; fmt.Sprint(model.budgets()) != fmt.Sprint(want) {
+		t.Errorf("requested budgets = %v, want %v", model.budgets(), want)
+	}
+	var landed *store.Event
+	for _, batch := range social.batches {
+		for i := range batch {
+			if batch[i].Type == "morgue.epilogue" {
+				landed = &batch[i]
+			}
+		}
+	}
+	if landed == nil {
+		t.Fatal("epilogue did not land after the retry")
+	}
+	var p sim.MorgueEpiloguePayload
+	json.Unmarshal(landed.Payload, &p)
+	if p.Agent.ID != 0 || !strings.Contains(p.Text, "tended the fire") {
+		t.Errorf("epilogue payload = %+v", p)
 	}
 }

@@ -5,7 +5,7 @@ kind: concept
 sources:
   - internal/sim/guardian.go
   - internal/daemon/daemon.go
-verified_against: a5df40921577bc194478bb29c42af2b10bf11ea8
+verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
 ---
 
 # Event types — guardian standing-order events

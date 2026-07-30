@@ -215,3 +215,16 @@ Record the model tier + rubric justification on each board task at dispatch
 
 | date | task | PR | merge | notes |
 |------|------|----|-------|-------|
+| 2026-07-30 | TASK-174 | — | b84c3130 | claimed: board In Progress (tier Sonnet), spec 103 stub on main, branch pushed |
+| 2026-07-30 | TASK-176 | — | 4f56ae9a | claimed: board In Progress (tier Opus 4.8), spec 104 stub on main, branch pushed |
+| 2026-07-30 | TASK-172 | — | 5e6a0862 | claimed: board In Progress (tier Opus 4.8), spec 105 stub on main, branch pushed |
+| 2026-07-30 | TASK-175 | — | d178c905 | claimed: board In Progress (tier Opus 4.8), spec 106 stub on main, branch pushed |
+| 2026-07-30 | TASK-173 | — | 36faaac1 | measurement soak started: task-173-measure-1 (cold-dawn, seed 46103, 16x, main@ef115a6a binary); scope checkpoint pending |
+| 2026-07-30 | (all) | — | — | spec authoring dispatched: 103/105/106 full spec+plan+tasks, 104 spec.md-only (design-fork checkpoint) — planning tier |
+| 2026-07-30 | TASK-174/172/175/176 | — | ac6ec32e | specs 103/105/106 (full) + 104 (spec.md, fork analysis) landed on main; bridge links + phase ACs planted (71e89bbc); bridge gate green |
+| 2026-07-30 | TASK-176 | — | a41cb1d9 | OPERATOR CHECKPOINT RESOLVED: Arm A adopted (exact per-step sightings, interval+crossing needs, no format bump, old-world relief out of scope); plan/tasks authoring dispatched |
+| 2026-07-30 | TASK-174/172/175 | — | — | implementation dispatched: 174→Sonnet, 172/175→Opus 4.8 (spec-implementer agents, parallel worktrees); Lane 2 PRs held pending TASK-112 |
+| 2026-07-30 | TASK-176 | — | 6cecc7e3 | spec 104 plan/tasks landed (Arm A resolved, derived-progress engine design); phase ACs mirrored (16a1c649); implementation dispatched → Opus 4.8 |
+| 2026-07-30 | TASK-175 | held | — | implementation complete @ d62fb2fe (suite+race green, sim diff empty, wiki re-pinned); open: T007 live soak (post-merge), T008 post-112 reconcile |
+| 2026-07-30 | TASK-172 | held | — | implementation complete @ ada23d09 (race suite green, parse.go zero-diff, 21 notes re-pinned); open: T009 post-112 merge-in clause |
+| 2026-07-30 | TASK-174 | #144 | merged | Lane 1 first merge: constrained decoding restored; T006 soak remains open (tasks.md tick corrected [~]→[ ] — bridge parser treats [~] as absent) |

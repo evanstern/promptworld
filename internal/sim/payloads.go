@@ -56,6 +56,8 @@ var PayloadCatalog = map[string]func() any{
 	"agent.intent_rejected":  func() any { return &IntentRejectedPayload{} },
 	"agent.recovery_stalled": func() any { return &RecoveryStalledPayload{} },
 	"agent.moved":            func() any { return &AgentMovedPayload{} },
+	"agent.path_started":     func() any { return &PathStartedPayload{} },
+	"agent.path_truncated":   func() any { return &PathTruncatedPayload{} },
 	"agent.foraged":          func() any { return &HarvestPayload{} },
 	"agent.chopped":          func() any { return &HarvestPayload{} },
 	"agent.hunted":           func() any { return &HarvestPayload{} },
@@ -170,6 +172,15 @@ var PayloadCatalog = map[string]func() any{
 	// The canonization miracle (spec 101): christens a named region and
 	// optionally raises one existing-kind feature within it.
 	"guardian.region_named": func() any { return &RegionNamedPayload{} },
+	// The guardian's own memory store (spec 102): the agent.* consolidation
+	// family's guardian-side twins (guardian_memory.go).
+	"guardian.memory_added":     func() any { return &GuardianMemoryPayload{} },
+	"guardian.memory_embedded":  func() any { return &GuardianMemoryEmbeddedPayload{} },
+	"guardian.memory_promoted":  func() any { return &GuardianMemoryPromotedPayload{} },
+	"guardian.memory_faded":     func() any { return &GuardianMemoryFadedPayload{} },
+	"guardian.salience_revised": func() any { return &GuardianSalienceRevisedPayload{} },
+	"guardian.memory_merged":    func() any { return &GuardianMemoryMergedPayload{} },
+	"guardian.consolidated":     func() any { return &GuardianConsolidatedPayload{} },
 
 	// --- designations / directives / faith / prophecy (specs 078, 084, 085) ---
 	"designation.placed":    func() any { return &Designation{} },

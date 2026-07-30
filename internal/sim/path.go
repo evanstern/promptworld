@@ -71,6 +71,35 @@ func nextStep(m *worldmap.Map, s *State, fromX, fromY, toX, toY int) (int, int) 
 	return cur.X, cur.Y
 }
 
+// fullPath returns the whole shortest path from (fromX, fromY) to (toX, toY)
+// — the tiles stepped onto, in order, ending on the target — or nil when the
+// target is unreachable or already reached. Same bfs/neighbor order as
+// nextStep, so the departure route a spec-104 path_started payload bakes is
+// exactly the route the per-step walker's first beat would have begun.
+func fullPath(m *worldmap.Map, s *State, fromX, fromY, toX, toY int) []Point {
+	if fromX == toX && fromY == toY {
+		return nil
+	}
+	_, _, cameFrom, found := bfs(m, s, fromX, fromY, func(x, y int) bool {
+		return x == toX && y == toY
+	})
+	if !found {
+		return nil
+	}
+	var rev []Point
+	cur := Point{X: toX, Y: toY}
+	start := Point{X: fromX, Y: fromY}
+	for cur != start {
+		rev = append(rev, cur)
+		cur = cameFrom[cur]
+	}
+	out := make([]Point, len(rev))
+	for i := range rev {
+		out[i] = rev[len(rev)-1-i]
+	}
+	return out
+}
+
 // nearest finds the closest reachable tile satisfying match, in BFS order.
 func nearest(m *worldmap.Map, s *State, fromX, fromY int, match func(x, y int) bool) (Point, bool) {
 	x, y, _, found := bfs(m, s, fromX, fromY, match)

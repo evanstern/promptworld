@@ -220,6 +220,27 @@ type Guardian struct {
 	digQ     chan digJob
 	digCarry chan []string
 
+	// The scheduled cognition lane (spec 102, angel.go) — inert unless the
+	// world opted in via tuning.json angel_cadence_ticks (FR-007). angelDue is
+	// absorb-owned (0 = not yet armed); angelInFlight is the single-flight
+	// guard (one scheduled turn at a time, the planInFlight shape); angelQ
+	// feeds the dedicated worker. angelOn / memWin are stateMu-guarded
+	// mirrors: the agentization flag and the guardian's working-memory window
+	// (sim.SelectMemories over the replica's GuardianMemories, refreshed per
+	// batch) the turn worker reads without racing the replica.
+	angelDue      int64
+	angelInFlight atomic.Bool
+	angelQ        chan angelJob
+	angelOn       bool
+	memWin        []string
+
+	// The guardian's nightly consolidation (spec 102 D5, consolidate.go):
+	// single-flight, one night per index, the mind's consolQ shape.
+	// lastConsolNight is absorb-owned.
+	consolInFlight  atomic.Bool
+	lastConsolNight int64
+	consolQ         chan guardianConsolJob
+
 	// Report-card producer (spec 063 US4, reportcard.go). cardTrail is the
 	// bounded activity ring the grader cites (absorb-appended, stateMu-
 	// guarded); cardDoneSeq is the graded high-water mark (the activity
@@ -235,12 +256,13 @@ type Guardian struct {
 	events chan []store.Event
 	done   chan struct{}
 
-	// wg joins the four goroutines New starts (run, digestWorker,
-	// triggerWorker, reportCardWorker): Close closes done then waits on wg,
-	// so a caller that drives a queue right after Close (every fixture's
-	// newTestGuardian pattern) can never race a worker still parking in its
-	// select — wg.Add(1) sits immediately before each go statement below,
-	// keeping the add-site obvious for any future fifth worker.
+	// wg joins the six goroutines New starts (run, digestWorker,
+	// triggerWorker, reportCardWorker, angelWorker, consolidateWorker):
+	// Close closes done then
+	// waits on wg, so a caller that drives a queue right after Close (every
+	// fixture's newTestGuardian pattern) can never race a worker still
+	// parking in its select — wg.Add(1) sits immediately before each go
+	// statement below, keeping the add-site obvious for any future worker.
 	wg sync.WaitGroup
 }
 
@@ -273,6 +295,8 @@ func New(orch Submitter, social Injector, loop LoopControl, m *worldmap.Map, see
 		digQ:            make(chan digJob, 4),
 		digCarry:        make(chan []string, 1),
 		cardQ:           make(chan cardJob, 4),
+		angelQ:          make(chan angelJob, 1),
+		consolQ:         make(chan guardianConsolJob, 1),
 		events:          make(chan []store.Event, 256),
 		triggerQ:        make(chan triggerJob, 64),
 		pendingTrigger:  map[string]bool{},
@@ -317,6 +341,10 @@ func New(orch Submitter, social Injector, loop LoopControl, m *worldmap.Map, see
 	go mt.triggerWorker()
 	mt.wg.Add(1)
 	go mt.reportCardWorker()
+	mt.wg.Add(1)
+	go mt.angelWorker()
+	mt.wg.Add(1)
+	go mt.consolidateWorker()
 	return mt, nil
 }
 
@@ -386,6 +414,11 @@ func (mt *Guardian) run() {
 				mt.observeMoment(e)
 				mt.digestNote(e)
 				mt.observeCardActivity(e)
+				// The guardian's nightly consolidation (spec 102 D5): armed
+				// at the nightly boundary — inert unless agentized (FR-007).
+				if e.Type == "sim.night_started" {
+					mt.maybeConsolidateNight(e)
+				}
 			}
 			mt.mirrorState()
 			// Standing-order matching runs HERE — after the replica applies the
@@ -401,6 +434,12 @@ func (mt *Guardian) run() {
 			for _, e := range batch {
 				mt.observeCardTrigger(e)
 			}
+			// The scheduled cognition lane (spec 102, angel.go): armed/fired
+			// HERE, after apply + mirror + matchOrders, so it is live-only by
+			// the same construction as order matching — replay runs no
+			// guardian, so a scheduled turn can never fire during
+			// reconstruction. Inert unless the world opted in (FR-007).
+			mt.scheduleAngel()
 		}
 	}
 }
@@ -475,6 +514,19 @@ func (mt *Guardian) mirrorState() {
 	// from) so brief_myths never races the absorb goroutine's unlocked
 	// mt.replica.Apply calls.
 	mt.myths = mt.replica.DominantPlaceMyths(mythBriefingTopN)
+	// Agentization mirrors (spec 102): the opt-in flag and the guardian's
+	// working-memory window — the SHARED deterministic top-K selector
+	// (sim.SelectMemories, SC-004) over the replica's own store, rendered
+	// here per batch so the turn worker reads strings under stateMu and
+	// never races the replica. A non-agentized world mirrors nothing.
+	mt.angelOn = mt.replica.StewardCadence() > 0
+	mt.memWin = mt.memWin[:0]
+	if mt.angelOn && len(mt.replica.GuardianMemories) > 0 {
+		scratch := sim.Agent{Memories: mt.replica.GuardianMemories}
+		for _, m := range sim.SelectMemories(&scratch, mt.seed, sim.GuardianSeat, mt.replica.Tick, sim.WindowK) {
+			mt.memWin = append(mt.memWin, fmt.Sprintf("%s — %s", clock.Format(m.Tick), m.Text))
+		}
+	}
 	// The narrated chronicle (TASK-11) is the village's own story — the
 	// guardian reads its tail so conversation is grounded even before its
 	// soul has accreted (fresh reigns, upgraded worlds).

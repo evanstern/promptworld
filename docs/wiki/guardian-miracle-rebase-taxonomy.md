@@ -4,7 +4,7 @@ description: The SHIFT/KEEP taxonomy (rebaseTicks) every tick-anchored int64 sta
 kind: component
 sources:
   - internal/sim/miracles.go
-verified_against: 376afd4cee54839a545bc88409f3c485c2f5149d
+verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
 ---
 
 # Guardian's miracle rebase taxonomy
@@ -59,10 +59,21 @@ classified SHIFT or KEEP in its doc comment:
   `OutcomeTick` (KEEP) and `Agent.NeedsAnchorTick` (SHIFT), spec 061's
   `PairTalk.Tick` (SHIFT), spec 062's `Agent.LastMindIntentDone` (SHIFT,
   only-non-zero), spec 063's `GuardianReportCard.Tick`/`Seq`/`Citations`
-  (KEEP), and spec 083's six `NeglectState` anchors (SHIFT, only-non-zero)
+  (KEEP), spec 083's six `NeglectState` anchors (SHIFT, only-non-zero), and
+  spec 104's `Agent.NeedsSyncTick` (SHIFT, only-non-zero — the
+  derived-decay watermark) and `Gru.Done` (SHIFT, only-non-zero — the
+  derived-motion watermark)
   as new tick-anchored
   `int64` fields requiring classification, confirming the taxonomy guard holds
   across features outside miracles' own spec.
+
+**A third class — CLEAR** (spec 104): `Agent.Path` is neither SHIFT nor
+KEEP — a time snap CLEARS the in-flight walk segment outright rather than
+shifting or preserving it, because its beat schedule
+(`(tick+Phase)%MoveEvery`) is absolute-tick arithmetic a delta would
+re-phase; the villager simply re-plans from its standing tile on the next
+tick. `Agent.NeedsEmitted` needs no taxonomy entry at all — it holds need
+VALUES, not ticks, KEEP by construction.
 
 `TestRebaseTaxonomyComplete` (`internal/sim/miracles_test.go`) is the taxonomy guard:
 it fails the build when a new tick-anchored `int64` field appears in the state

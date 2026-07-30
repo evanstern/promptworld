@@ -9,7 +9,7 @@ sources:
   - internal/guardian/plans.go
   - internal/guardian/survey.go
   - internal/mind/context.go
-verified_against: cf65debb44c1e17b54c0f3421d11e1e8cc28576c
+verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
 ---
 
 # Guardian designations — reception, villager response, and turn surfaces

@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/executor.go
   - internal/sim/agents.go
-verified_against: 376afd4cee54839a545bc88409f3c485c2f5149d
+verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
 ---
 
 # Executor
@@ -34,7 +34,22 @@ kills the build, only a squatter that outlasts the grace period does (below).
 Spec 096 (TASK-95) generalized that pattern to every non-build goal's own
 invalid-exit/contested resolution — `agent.intent_failed`, the same
 loud-failure shape, now covers the goals `build_failed` never did
-([[executor-goals-and-intents]], [[executor-goal-completions]]).
+([[executor-goals-and-intents]], [[executor-goal-completions]]). Spec 104
+(ambient event coalescing) thins two of the executor's loudest emission
+paths on a per-world opt-in (`AmbientCoalescing()`, a new spec-048 tuning
+dial): a walk becomes one `agent.path_started` instead of dozens of
+`agent.moved` rows, and the per-minute needs heartbeat emits only on a
+checkpoint grid or a danger/near-death/zero crossing instead of every
+minute — a new derived-progress engine (`internal/sim/advance.go`) executes
+the thinned-out steps and decay ticks behind the scenes with the SAME
+per-step/per-minute fidelity, so the executor's own behavior is unchanged
+and only its event volume drops; legacy worlds keep the old per-step/
+per-minute emission byte-for-byte. A walk still emits `agent.path_truncated`
+when a wall built mid-segment blocks it (every other interruption is
+recorded by the interrupting event's own arm instead), and the spec-097
+arrival observation is PREDICTED from the walk's segment and still emitted
+at the arrival step's own tick, not deferred to the walk's end. See each
+child note's own section for the regime split's local detail.
 
 ## How it works
 

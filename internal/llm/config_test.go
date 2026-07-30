@@ -65,10 +65,11 @@ func TestLegacyShapeDerivesRegistry(t *testing.T) {
 			t.Errorf("kind %q has no derived route", kind)
 			continue
 		}
-		// The watch kind (spec 029) and the report-card kind (spec 063) are
-		// the multi-entry default chains: cheap-first local with a reliable
-		// cloud fallback (contracts/routing.md).
-		if kind == KindGuardianWatch || kind == KindReportCard {
+		// The watch kind (spec 029), the report-card kind (spec 063), and the
+		// steward kind (spec 102) are the multi-entry default chains:
+		// cheap-first local with a reliable cloud fallback
+		// (contracts/routing.md).
+		if kind == KindGuardianWatch || kind == KindReportCard || kind == KindSteward {
 			if rc.NoFallback || !reflect.DeepEqual(rc.Chain, []string{"local", "cloud"}) {
 				t.Errorf("route %q = %+v, want a [local cloud] fallback chain", kind, rc)
 			}

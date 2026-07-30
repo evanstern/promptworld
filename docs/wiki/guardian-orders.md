@@ -11,10 +11,15 @@ sources:
   - internal/guardian/turn.go
   - internal/guardian/toolcalls.go
   - internal/tool/registry.go
-verified_against: cf65debb44c1e17b54c0f3421d11e1e8cc28576c
+verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
 ---
 
 # Guardian's standing orders
+
+Spec 102 ([[guardian-agentization]]) leaves these contracts untouched (D6:
+the order door is the ONE trigger arbiter — the scheduled lane never fires
+an order's action); agentized worlds add only a `guardian.memory_added`
+note per placement/release/moment.
 
 A standing order is a pre-authorized watch-and-act instruction (spec 029, TASK-27):
 the player tells the guardian "when Rowan next falls asleep, send her a comforting

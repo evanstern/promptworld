@@ -15,6 +15,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/evanstern/promptworld/internal/cognition"
 	"github.com/evanstern/promptworld/internal/llm"
 	"github.com/evanstern/promptworld/internal/sim"
 	"github.com/evanstern/promptworld/internal/store"
@@ -67,8 +68,12 @@ type Mind struct {
 	nextDue     [sim.AgentCount]int64
 	lastPlanned [sim.AgentCount]int64
 	pairSeen    map[[2]int]int64
-	pending     [sim.AgentCount]bool  // trigger armed before nextDue
-	pendingSeq  [sim.AgentCount]int64 // event seq of the arming stimulus (0 = cadence)
+	// pairAdjacent (spec 104) is the standing adjacency set the coalesced-
+	// regime encounter sweep detects transitions against — mind-local, like
+	// pairSeen.
+	pairAdjacent map[[2]int]bool
+	pending      [sim.AgentCount]bool  // trigger armed before nextDue
+	pendingSeq   [sim.AgentCount]int64 // event seq of the arming stimulus (0 = cadence)
 
 	// tick mirrors the replica's tick for worker goroutines (the replica
 	// itself is absorb-owned). Telemetry landing ticks read this; the loop's
@@ -139,6 +144,10 @@ type Mind struct {
 	// Nightly consolidation (TASK-9): FIFO queue + per-agent in-flight guard.
 	consolQ        chan consolJob
 	consolInFlight [sim.AgentCount]atomic.Bool
+	// nightRep (spec 105 US2): per-night consolidation acceptance counters fed
+	// from live-absorbed markers, flushed as one summary log line per closed
+	// night (nightreport.go). Absorb-owned, in-memory only.
+	nightRep nightReport
 
 	// Chronicle narrator (TASK-11): absorb-owned chapter buffer + FIFO queue
 	// to the single-flight cloud worker; narrRetry (cap 1) carries a failed
@@ -178,23 +187,24 @@ func New(orch Submitter, loop Injector, social SocialInjector, m *worldmap.Map, 
 		return nil, err
 	}
 	md := &Mind{
-		orch:      orch,
-		loop:      loop,
-		social:    social,
-		replica:   replica,
-		m:         m,
-		personas:  personas,
-		k:         sim.WindowK,
-		pairSeen:  map[[2]int]int64{},
-		planQ:     make(chan planJob, sim.AgentCount),
-		consolQ:   make(chan consolJob, sim.AgentCount),
-		narrQ:     make(chan narrJob, 8),
-		narrRetry: make(chan narrCarry, 1),
-		meetQ:     make(chan meetingJob, 4),
-		rearm:     make(chan int, sim.AgentCount),
-		reconQ:    make(chan []store.Event, 16),
-		events:    make(chan []store.Event, 256),
-		done:      make(chan struct{}),
+		orch:         orch,
+		loop:         loop,
+		social:       social,
+		replica:      replica,
+		m:            m,
+		personas:     personas,
+		k:            sim.WindowK,
+		pairSeen:     map[[2]int]int64{},
+		pairAdjacent: map[[2]int]bool{},
+		planQ:        make(chan planJob, sim.AgentCount),
+		consolQ:      make(chan consolJob, sim.AgentCount),
+		narrQ:        make(chan narrJob, 8),
+		narrRetry:    make(chan narrCarry, 1),
+		meetQ:        make(chan meetingJob, 4),
+		rearm:        make(chan int, sim.AgentCount),
+		reconQ:       make(chan []store.Event, 16),
+		events:       make(chan []store.Event, 256),
+		done:         make(chan struct{}),
 	}
 	md.loopRounds = loopRounds
 	md.plannerTokens = plannerTokens
@@ -389,6 +399,13 @@ func (md *Mind) absorb(batch []store.Event) {
 				md.cancelInFlightPlan(p.Agent.ID, "cancelled in flight: agent slept")
 			}
 			md.maybeConsolidate(e)
+		case "agent.consolidated":
+			// Spec 105 (US2): tally the night's outcome for the per-night
+			// acceptance summary; the flush below closes past nights.
+			var p sim.ConsolidatedPayload
+			if json.Unmarshal(e.Payload, &p) == nil {
+				md.nightRep.record(p)
+			}
 		case "meeting.proposal_resolved":
 			md.maybePhraseProposal(e)
 		case "agent.died", "run.ended":
@@ -406,6 +423,25 @@ func (md *Mind) absorb(batch []store.Event) {
 			md.queueEpilogue(e)
 		}
 		md.chronicleNote(e)
+	}
+	// Spec 104: walk derived progress (in-flight segments, needs decay, gru
+	// motion) up to the batch's tick — the same strictly-before posture the
+	// daemon holds — then sweep first adjacencies over the advanced replica:
+	// under the coalescing regime steps are derived, so the per-event
+	// agent.moved hook above never fires for new walks and the encounter
+	// stimulus becomes this sweep (plan D5 — same adjacency moments in live
+	// flow, same pair cooldown; a mind-side heuristic, outside replay scope).
+	md.replica.AdvanceTo(md.replica.Tick)
+	if md.replica.AmbientCoalescing() && len(batch) > 0 {
+		md.sweepEncounters(md.replica.Tick, batch[len(batch)-1].Seq)
+	}
+	// Spec 105 (FR-006/FR-007): any tick or marker from a later night closes
+	// the tracked earlier nights — one summary line each, escalated to a
+	// WARNING: while consecutive attempted nights keep accepting nothing.
+	// Live absorb only: boot seeds the replica from a snapshot, never a log
+	// replay through here, so history produces no summary spew.
+	for _, line := range md.nightRep.flushBefore(sim.NightIndex(md.replica.Tick)) {
+		log.Print(line)
 	}
 	md.tick.Store(md.replica.Tick)
 	md.tickRate.Store(math.Float64bits(md.replica.Speed.TicksPerSecond()))
@@ -476,6 +512,29 @@ func (md *Mind) arm(idx int, seq int64) {
 	if idx >= 0 && idx < sim.AgentCount {
 		md.pending[idx] = true
 		md.pendingSeq[idx] = seq
+	}
+}
+
+// sweepEncounters is armEncounters' coalesced-regime twin (spec 104): a
+// first-adjacency sweep over the advanced replica — a pair arms when it
+// TRANSITIONS into adjacency (pairAdjacent tracks the standing set, so
+// lingering side-by-side pairs re-arm no more than the per-step shape did)
+// under the same per-pair cooldown. seq is the batch's closing event — the
+// stimulus that advanced the replica — recorded as the causality edge.
+func (md *Mind) sweepEncounters(tick, seq int64) {
+	for a := 0; a < len(md.replica.Agents); a++ {
+		for b := a + 1; b < len(md.replica.Agents); b++ {
+			key := [2]int{a, b}
+			adj := !md.replica.Agents[a].Dead && !md.replica.Agents[b].Dead &&
+				absInt(md.replica.Agents[a].X-md.replica.Agents[b].X)+
+					absInt(md.replica.Agents[a].Y-md.replica.Agents[b].Y) <= encounterRadius
+			if adj && !md.pairAdjacent[key] && tick-md.pairSeen[key] >= md.replica.EncounterCooldown() {
+				md.pairSeen[key] = tick
+				md.arm(a, seq)
+				md.arm(b, seq)
+			}
+			md.pairAdjacent[key] = adj
+		}
 	}
 }
 
@@ -768,21 +827,13 @@ func loopFailReason(res toolloop.Result, err error) string {
 	}
 }
 
-// nextPhasePreservingDue advances an overdue schedule to the next tick
-// strictly after tick, stepping in whole cadence multiples from its own due
-// — never from tick. This is the TASK-44 fix: re-arming "from now" instead
-// of from the agent's own due collapses every agent a shared stall left
-// overdue onto the identical due, locking the whole village into lockstep
-// the next time cadence comes around. Preserving due's phase (due mod
-// cadence) keeps each agent's boot offset intact forever, regardless of how
-// many cadences it had to skip. Arithmetic equivalent of:
-//
-//	for due <= tick { due += cadence }
+// nextPhasePreservingDue is the TASK-44 phase-preserving due advance. The
+// arithmetic moved to cognition.NextPhasePreservingDue (spec 102 SC-004) so
+// the guardian's angel cadence and the villagers' planner cadence share ONE
+// schedule implementation; this thin name keeps every mind call site and the
+// TASK-44 commentary anchored where the fix was born.
 func nextPhasePreservingDue(due, tick, cadence int64) int64 {
-	if cadence <= 0 || due > tick {
-		return due
-	}
-	return due + (tick-due)/cadence*cadence + cadence
+	return cognition.NextPhasePreservingDue(due, tick, cadence)
 }
 
 func (md *Mind) agentIndexByName(name string) int {

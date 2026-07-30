@@ -6,7 +6,7 @@ sources:
   - internal/sim/dream.go
   - internal/mind/consolidate.go
   - internal/sim/tuning.go
-verified_against: a761a45cb3b437613b808408c6c7f30d11bd9eb9
+verified_against: 1fae0d8536eb43e43eaa7b747aaeaf0b6e05ac83
 ---
 
 # Private dreams (consolidation clustering + habituation)

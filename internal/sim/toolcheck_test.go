@@ -185,6 +185,18 @@ func TestWhitelistDiffIdentical(t *testing.T) {
 		// designation.fulfilled precedent notwithstanding, because a region
 		// carries no lifecycle beyond its christening in v1.
 		"guardian.region_named": true,
+		// Spec 102 (guardian agentization) deliberately widens the boundary
+		// by the seven guardian memory-store types: worker/embedder-injected,
+		// reducer-total, the agent.* consolidation family's guardian-side
+		// twins (guardian_memory.go). A non-agentized world's guardian never
+		// emits any of them.
+		"guardian.memory_added":     true,
+		"guardian.memory_embedded":  true,
+		"guardian.memory_promoted":  true,
+		"guardian.memory_faded":     true,
+		"guardian.salience_revised": true,
+		"guardian.memory_merged":    true,
+		"guardian.consolidated":     true,
 	}
 	for typ := range want {
 		if !injectSocialWhitelist[typ] {

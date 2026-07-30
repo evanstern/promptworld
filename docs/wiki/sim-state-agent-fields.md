@@ -6,7 +6,7 @@ sources:
   - internal/sim/state.go
   - internal/sim/agents.go
   - internal/sim/journal.go
-verified_against: cf65debb44c1e17b54c0f3421d11e1e8cc28576c
+verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
 ---
 
 # Sim state: agent & clock fields
@@ -91,7 +91,20 @@ grounded-observation dedup anchor — where the agent last looked around, the
 canonical kind set it saw, and when — written ONLY by the
 `agent.place_observed` arm and compared by the arrival emission site
 ([[executor-perception-observation]]); its `Tick` is SHIFT under the rebase
-taxonomy.
+taxonomy. Spec 104 (ambient event coalescing) adds three more, all
+`omitempty` on the same pointer precedent (nil/zero for every legacy world —
+byte-identical round-trip): `Path *PathSegment` — the in-flight walk segment
+the coalescing regime's `agent.path_started` arm installs, then the
+derived-progress engine (`advance.go`) advances step by step at EXACT
+per-step fidelity ([[sim-state-apply-agents]]); and the needs-thinning pair
+`NeedsSyncTick int64`/`NeedsEmitted *Needs`, written ONLY while
+`AmbientCoalescing()` holds — `NeedsSyncTick` is the derived-decay
+watermark (game-minutes folded through this tick, the double-decay guard),
+`NeedsEmitted` the last-EMITTED absolutes the executor's crossing detector
+diffs mid-window jumps against. `Path` is cleared (never shifted) and
+`NeedsSyncTick` is SHIFT under the rebase taxonomy
+([[guardian-miracle-rebase-taxonomy]]); `NeedsEmitted` holds values, not
+ticks, so it needs no entry.
 
 ## Connections
 

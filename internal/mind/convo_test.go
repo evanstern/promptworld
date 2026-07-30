@@ -887,3 +887,70 @@ func TestScenePinnedProviderDeathAbsorbed(t *testing.T) {
 		}
 	}
 }
+
+// schemaCapturingModel is a scripted conversation model that also records
+// every submitted Request (spec 103/TASK-174), so a test can prove which
+// Submit sites carry a ResponseSchema and which don't.
+type schemaCapturingModel struct {
+	mu       sync.Mutex
+	replies  []string
+	calls    int
+	requests []llm.Request
+}
+
+func (m *schemaCapturingModel) Submit(_ context.Context, req llm.Request) (llm.Response, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.requests = append(m.requests, req)
+	if m.calls >= len(m.replies) {
+		return llm.Response{}, context.DeadlineExceeded
+	}
+	r := m.replies[m.calls]
+	m.calls++
+	return llm.Response{Text: r, Tier: llm.TierLocal}, nil
+}
+
+// TestConvoSubmitsCarryStructuredOutputSchemas (spec 103/TASK-174 FR-002-004,
+// FR-006): every utterance Submit in a scene carries sayReplySchema (name
+// "say") and the outcome Submit carries convoOutcomeSchema (name
+// "conversation_outcome") — the structured-output envelope that constrains
+// the local tier's sampler to the reply shape. All requests are
+// llm.KindConversation; the ladder/prompt behavior is unaffected by this
+// test (covered elsewhere).
+func TestConvoSubmitsCarryStructuredOutputSchemas(t *testing.T) {
+	model := &schemaCapturingModel{replies: convoScript(
+		`{"gist": "planned firewood", "topics": ["fire"], "tones": [1, 1], "retold": null}`)}
+	h, md := setupConvo(t, model)
+	startConvo(t, h, md)
+
+	h.waitEvents(t, 10*time.Second, func(e store.Event) bool {
+		return e.Type == "social.conversation"
+	})
+
+	model.mu.Lock()
+	defer model.mu.Unlock()
+	if len(model.requests) != 2*sim.ConvoTurnsPerSide+1 {
+		t.Fatalf("captured %d requests, want %d utterances + 1 outcome", len(model.requests), 2*sim.ConvoTurnsPerSide+1)
+	}
+	for i, req := range model.requests[:2*sim.ConvoTurnsPerSide] {
+		if req.Kind != llm.KindConversation {
+			t.Errorf("utterance %d Kind = %q, want KindConversation", i, req.Kind)
+		}
+		if string(req.ResponseSchema) != string(sayReplySchema) {
+			t.Errorf("utterance %d ResponseSchema = %s, want sayReplySchema", i, req.ResponseSchema)
+		}
+		if req.SchemaName != "say" {
+			t.Errorf("utterance %d SchemaName = %q, want say", i, req.SchemaName)
+		}
+	}
+	outReq := model.requests[2*sim.ConvoTurnsPerSide]
+	if outReq.Kind != llm.KindConversation {
+		t.Errorf("outcome Kind = %q, want KindConversation", outReq.Kind)
+	}
+	if string(outReq.ResponseSchema) != string(convoOutcomeSchema) {
+		t.Errorf("outcome ResponseSchema = %s, want convoOutcomeSchema", outReq.ResponseSchema)
+	}
+	if outReq.SchemaName != "conversation_outcome" {
+		t.Errorf("outcome SchemaName = %q, want conversation_outcome", outReq.SchemaName)
+	}
+}

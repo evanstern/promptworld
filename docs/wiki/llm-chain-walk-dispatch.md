@@ -6,7 +6,7 @@ sources:
   - internal/llm/llm.go
   - internal/llm/providers.go
   - internal/llm/config.go
-verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
+verified_against: 1fae0d8536eb43e43eaa7b747aaeaf0b6e05ac83
 ---
 
 # LLM orchestrator — chain-walk dispatch & tool-loop wire
@@ -66,10 +66,16 @@ thought class, never the provider — spec 024 R9): `Config.LoopMaxRounds`
 `PlannerTokens()`/`GuardianTurnTokens()`/`ConsolidationTokens()` (absent/0 → default,
 1–4096 verbatim, clamp with warning; a POINTER so `omitempty` genuinely suppresses
 the object and pre-025 configs round-trip byte-for-byte — preserved by the
-shape-aware v2 `Config.MarshalJSON`). The daemon resolves all three at boot and
+shape-aware v2 `Config.MarshalJSON`). The shared upper clamp is the exported
+`llm.MaxTokenBudget` (4096; spec 105 exported the former unexported
+`maxTokenBudget`, value unchanged) — it bounds both the knob normalization here
+and `internal/mind`'s truncation-retry ladder ceiling
+([[nightly-consolidation]]), one source so they can never drift. The daemon
+resolves all three at boot and
 threads them into `mind.New`/`guardian.New`; conversation (128/224), meeting (72),
 narrator (800), and guardian digest (400) budgets are deliberately NOT governed by
-these knobs.
+these knobs (though since spec 105 the consolidation and narrator budgets are the
+STARTS of that ladder, escalating on detected truncation up to the clamp).
 
 **Whole-loop latency feed** (`ObserveCognition(kind, provider, totalMillis)`,
 TASK-52/spec 024): the tool-use loop's per-round `Submit`s each ride `SkipObserve`;

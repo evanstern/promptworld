@@ -5,7 +5,7 @@ kind: concept
 sources:
   - internal/sim/state.go
   - internal/sim/gru.go
-verified_against: cf65debb44c1e17b54c0f3421d11e1e8cc28576c
+verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
 ---
 
 # Event types
@@ -23,14 +23,14 @@ were `metatron.*` in log format 1.
 
 ## Event catalog, by domain
 
-The full per-type catalog (142 `PayloadCatalog` types, specs 012–101) is
+The full per-type catalog (145 `PayloadCatalog` types, specs 012–104) is
 split by event domain — each child inherits this note's `verified_against`
 pin and carries the domain's own format-history prose and catalog rows.
 
 - [[event-types-clock-world]] — Clock/scheduler and world-lifecycle events — pause/resume/speed/governor, day/night, forage regrowth, genesis/migration/forking (`world.forked`, spec 076), daemon lifecycle and LLM-provider warnings.
 - [[event-types-agent-intents]] — Agent intent lifecycle — intent_set/work_started/intent_done/recovery_stalled/build_failed/intent_failed/moved, incl. spec 062/064's yield-window and recovery arms.
 - [[event-types-agent-vitals]] — Agent vitals and mortality — needs_changed, died (spec 044 death ledger/grave), run.ended, sleep/wake, spec 083's neglect_detected percept.
-- [[event-types-mental-map]] — Perception and mental-map events — moved, saw, map_corrected, place_told, place_revealed, place_observed (specs 041/097).
+- [[event-types-mental-map]] — Perception and mental-map events — moved, saw, map_corrected, place_told, place_revealed, place_observed (specs 041/097); spec 104's coalesced walks `path_started`/`path_truncated` (per-step `agent.moved` retired for new worlds — the retained-arm/legacy-emission split lives there).
 - [[event-types-harvesting-consumption]] — Harvesting/consumption — forage/chop/hunt/quarry/collect_water yields, food rot, cook/bathe/refuel/eat, spear/axe breakage, fire burnout.
 - [[event-types-crafting-building]] — Crafting/building/goods movement — crafted/built, wall chip/destroy/repair, drop/pick_up/deposit/withdraw, spec 012/013/032 format-bump history.
 - [[event-types-social-memory]] — Social/memory-authoring events — talked, memory_added, thought, the social.* family, chest_taken, spec 061's PairTalks damper.
@@ -43,6 +43,7 @@ pin and carries the domain's own format-history prose and catalog rows.
 - [[event-types-guardian-morgue]] — Guardian morgue/report-card events — charter_observed (+ spec 077's skills_observed twin), morgue.epilogue, guardian.report_card, chronicle.entry.
 - [[event-types-guardian-actions]] — Guardian miracle actions and gru events — time_snapped/item_granted/entity_moved/entity_removed, `guardian.region_named` (spec 101), the gru emerged/moved/sighted/attacked/withdrew family.
 - [[event-types-guardian-plans]] — Guardian plan-layer events (spec 084) — `designation.*`/`directive.*`: injected placement/issue/cancel, executor-emitted fulfillment/expiry, the TASK-118 faith seam (consumed by spec 085).
+- [[event-types-guardian-memory]] — Guardian memory-store events (spec 102) — `guardian.memory_added/embedded/promoted/faded`, `guardian.salience_revised`, `guardian.memory_merged`, `guardian.consolidated`: the agentized guardian's own store and nightly consolidation.
 - [[guardian-faith]] — Faith-economy events (spec 085) — `faith.changed` (executor-emitted, the five-reason delta table) and the prophecy lifecycle `prophecy.declared`/`fulfilled`/`failed`.
 
 ## Conventions

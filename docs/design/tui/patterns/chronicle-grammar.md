@@ -2,7 +2,7 @@
 title: Pattern — chronicle grammar
 class: pattern
 status: shipped
-verified_against: 250c811bce7eeea7138dd8b028e800ecd1e54173
+verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
 sources:
   - internal/tui/digest.go
   - internal/tui/grammar.go
@@ -27,8 +27,13 @@ catalog-fixture pair — most recently spec 101's `guardian.region_named` row
 (`guardian.time_snapped` et al. — no contracts/018 template row exists for
 either), including the `gratisMark` suffix; before that, spec 098's
 `agent.salience_revised` / `agent.memory_merged` dream rows, which reference
-the memory by tick like the memory_promoted/faded precedent); this doc
-covers the shape everything renders into, not each type's exact wording.
+the memory by tick like the memory_promoted/faded precedent; and spec 102's
+seven guardian memory-store rows (`guardian.memory_added/embedded/promoted/
+faded`, `guardian.salience_revised`, `guardian.memory_merged`,
+`guardian.consolidated`) — the `agent.*` consolidation family's wording
+re-voiced under the skin's guardian display name, vectors elided per the
+spec-042 reasoning); this doc covers the shape everything renders into, not
+each type's exact wording.
 
 ## Line format
 
@@ -136,6 +141,16 @@ observation's line — and spec 083's `sim.neglect_detected` repeats the
 precedent exactly: one `isAlertType` case plus a sim-voice digest row with
 deterministic per-need wording (*Name* `is dangerously cold and has done
 nothing about it (warmth 0)`; starving/exhausted for food/rest).
+
+Spec 104 (ambient coalescing) adds two agent-family natural-phrase rows —
+`agent.path_started` (`Ash sets out for (3,1) (3 tiles)`: the walk's
+destination plus tile count, replacing the per-step `Ash → (x,y)` stream a
+coalesced world no longer emits) and `agent.path_truncated`
+(`Ash's walk cut short at (2,1)`). The historic `agent.moved` and
+`gru.moved` rows are KEPT verbatim — legacy logs still render — and both
+new types carry subjectRegistry rows (walker at the declared destination /
+at the recorded stop). No new tier, no new voice; `TestCatalogSweep`
+covers the additions.
 
 Several digest rows render slightly differently than a naive reading of
 their contract row would suggest, because the real payload struct doesn't

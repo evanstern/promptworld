@@ -90,6 +90,11 @@ var catalogFixture = map[string]digestFixture{
 	"agent.intent_failed":    {`{"agent":{"id":3,"name":"Rowan"},"goal":"hunt","reason":"target gone","x":5,"y":6}`, `Rowan's hunt failed — target gone`},
 	"agent.recovery_stalled": {`{"agent":{"id":1,"name":"Birch"},"goal":"warm_up","need":"warmth"}`, `Birch's warm_up stalled — warmth not recovering`},
 	"agent.moved":            {`{"agent":{"id":0,"name":"Ash"},"x":1,"y":1}`, `Ash → (1,1)`},
+	"agent.path_started": {
+		`{"agent":{"id":0,"name":"Ash"},"path":[{"x":1,"y":1},{"x":2,"y":1},{"x":3,"y":1}],"move_every":5,"phase":0}`,
+		`Ash sets out for (3,1) (3 tiles)`,
+	},
+	"agent.path_truncated": {`{"agent":{"id":0,"name":"Ash"},"x":2,"y":1}`, `Ash's walk cut short at (2,1)`},
 	"agent.saw": {
 		`{"agent":{"id":0,"name":"Ash"},"facts":[{"kind":"fire","x":4,"y":5,"seen":100,"prov":"witnessed","detail":9000},{"kind":"tree","x":6,"y":5,"seen":100,"prov":"witnessed"}]}`,
 		`Ash saw fire at (4,5) (+1 more)`,
@@ -253,6 +258,36 @@ var catalogFixture = map[string]digestFixture{
 	"guardian.skills_observed": {
 		`{"fingerprint":"ab12cd34ef56","names":["10-watch.md","20-tone.md"]}`,
 		`Guardian ran under 2 skill files ab12cd34ef56`,
+	},
+	// spec 102: the guardian's own memory store — the agent.* consolidation
+	// family's guardian-side twins.
+	"guardian.memory_added": {
+		`{"text":"Ash nearly starved at dusk","salience":7}`,
+		`Guardian remembers: "Ash nearly starved at dusk"`,
+	},
+	"guardian.memory_embedded": {
+		`{"mem_seq":41,"vec":[0.1,0.2,0.3],"model":"all-minilm"}`,
+		`Guardian memory seq=41 embedded dims=3 model=all-minilm`,
+	},
+	"guardian.memory_promoted": {
+		`{"mem_tick":100,"text_hash":"abc","boost":3}`,
+		`Guardian's memory (t100) sharpened +3`,
+	},
+	"guardian.memory_faded": {
+		`{"mem_tick":100,"text_hash":"abc"}`,
+		`Guardian let a memory go (t100)`,
+	},
+	"guardian.salience_revised": {
+		`{"mem_tick":100,"text_hash":"abc","salience":2,"reason":"habituation"}`,
+		`Guardian's memory (t100) dulled to 2★ in a dream`,
+	},
+	"guardian.memory_merged": {
+		`{"kept":{"tick":400,"hash":"def"},"merged":[{"tick":100,"hash":"abc"},{"tick":200,"hash":"bcd"}],"salience":4}`,
+		`Guardian's dreams folded 2 memories into one (t400)`,
+	},
+	"guardian.consolidated": {
+		`{"night":3,"up_to":240,"outcome":"accepted","promoted":1,"faded":1}`,
+		`Guardian consolidated the watch (night 3, accepted)`,
 	},
 	"morgue.epilogue": {
 		`{"agent":{"id":0,"name":"Ash"},"text":"Ash kept the fire until the end."}`,
