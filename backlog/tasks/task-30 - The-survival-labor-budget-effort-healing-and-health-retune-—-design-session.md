@@ -1,10 +1,10 @@
 ---
 id: TASK-30
 title: 'The survival labor budget: effort, healing, and health retune — design session'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-20 19:54'
-updated_date: '2026-07-30 00:43'
+updated_date: '2026-07-30 03:55'
 labels:
   - design
   - learning-game
@@ -23,10 +23,10 @@ Spec: specs/100-labor-budget
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A grounding/design session produces a spec directory for the survival labor budget retune, linked on the board via spec-bridge
-- [ ] #2 The spec includes a calibration worksheet demonstrating solo ~8h/day break-even and cooperative surplus per decision-3
-- [ ] #3 Spec phase: Design authoring
-- [ ] #4 Spec phase: Ratification
+- [x] #1 A grounding/design session produces a spec directory for the survival labor budget retune, linked on the board via spec-bridge
+- [x] #2 The spec includes a calibration worksheet demonstrating solo ~8h/day break-even and cooperative surplus per decision-3
+- [x] #3 Spec phase: Design authoring
+- [x] #4 Spec phase: Ratification
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -49,3 +49,9 @@ created: 2026-07-25 04:42
 Relabeled per learning-game synthesis (2026-07-25): not survival tuning — a learning-game PREREQUISITE (stakes are what make the grade real; rubrics mean nothing until failure is reachable). Design constraint added: reconcile the ~8h/day break-even against scenario session lengths — a lesson cannot take a real-time week at 4x (classroom-mode coordination per TASK-66/78).
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Design ratified: PR #140 merged by operator (fc6ecf4f). Spec 100 delivers the labor-budget retune design: invariants I1-I5 from the 2026-07-20 pre-decisions, decisions D1-D5 (spec-012 units kept with pts/hour re-basing; hunt EV below forage with overfeed variance; cooperative construction; sleep-only healing; classroom bends time never prices), and the solved calibration worksheet proving solo 8h break-even, village 4-5h/agent-day surplus, and cold-season solo structural deficit (card AC2). Implementation is future work (FR-005 allows combining with spec 090's).
+<!-- SECTION:FINAL_SUMMARY:END -->
