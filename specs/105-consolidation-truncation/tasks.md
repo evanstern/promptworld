@@ -42,7 +42,7 @@
 
 ## Phase 3: Narrator generalization
 
-- [ ] T006 `internal/mind/narrate.go`: chapter + morgue-epilogue Submits adopt
+- [X] T006 `internal/mind/narrate.go`: chapter + morgue-epilogue Submits adopt
   the helper (ladder 800→1600→3200); existing carry/gap semantics apply only
   after the ladder. Tests in `internal/mind/narrate_test.go`: truncated chapter
   retried and landed; truncated epilogue retried; ladder-exhausted chapter falls
