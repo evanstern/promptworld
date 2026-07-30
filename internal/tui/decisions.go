@@ -33,7 +33,20 @@ const (
 
 	conversationJobPrefix = "conversation-" // shared two-agent scenes — no single-agent attribution (spec Assumptions); never ingested
 	guardianJobPrefix     = "turn-metatron-"
+	// guardianJobInfix is the FROZEN correlation infix every guardian-origin
+	// job id carries (spec 052 ruling 2; internal/guardian/turn.go mints
+	// "<prefix>-metatron-<tick>"): console turns ("turn-"), triggered system
+	// turns ("watch-"), and — spec 102 FR-008 — the scheduled cadence lane
+	// ("angel-"). Chain attribution matches the infix so every guardian
+	// origin lands on the Guardian's decision trail.
+	guardianJobInfix = "-metatron-"
 )
+
+// isGuardianJob reports whether a cog.* job id belongs to the Guardian —
+// the frozen "-metatron-" correlation infix (spec 102 widened attribution
+// from the console-only prefix so watch/angel chains surface too). The
+// villager job shape (`<class>-<agentIndex>-<tick>`) can never contain it.
+func isGuardianJob(job string) bool { return strings.Contains(job, guardianJobInfix) }
 
 // decisionChain is one cognition's causal record for display (data-model.md),
 // keyed by job ID and attributed to one villager (or Guardian). attributed/
@@ -171,7 +184,7 @@ func (dt *decisionTraces) ingestThought(e store.Event, names []string, ring []st
 	c.TriggerSeq = p.TriggerSeq
 	c.Stimulus = resolveStimulus(p.TriggerSeq, ring, names, sk)
 	c.HasThought = true
-	if strings.HasPrefix(p.Job, guardianJobPrefix) {
+	if isGuardianJob(p.Job) {
 		dt.attribute(c, guardianAgent, true)
 	} else {
 		dt.attribute(c, p.Agent.ID, true)
@@ -191,7 +204,7 @@ func (dt *decisionTraces) ingestToolCall(e store.Event) {
 	c.Calls = insertOrdinal(c.Calls, decisionCall{
 		Ordinal: p.Ordinal, Tool: p.Tool, Verdict: p.Verdict, Reason: p.Reason, Args: compactArgs(p.Args),
 	})
-	if strings.HasPrefix(p.Job, guardianJobPrefix) {
+	if isGuardianJob(p.Job) {
 		dt.attribute(c, guardianAgent, true)
 	} else if agent, ok := parseVillagerJobAgent(p.Job); ok {
 		// Fragment rescue (research D2, FR-008): this cognition's cog.thought
@@ -231,7 +244,7 @@ func (dt *decisionTraces) ingestOutcome(e store.Event) {
 	// for the job (mind/telemetry.go emitSuppressed). Any calls already
 	// ingested (fragment) rule it out.
 	c.Suppressed = !c.HasThought && len(c.Calls) == 0
-	if strings.HasPrefix(p.Job, guardianJobPrefix) {
+	if isGuardianJob(p.Job) {
 		dt.attribute(c, guardianAgent, true)
 	} else {
 		dt.attribute(c, p.Agent.ID, true)

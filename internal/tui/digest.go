@@ -1533,6 +1533,68 @@ var digestRegistry = map[string]digestFunc{
 			txt(": "), txt(truncateRunes(p.Note, 80)),
 		}), true
 	},
+
+	// --- spec 102 (guardian agentization): the guardian's own memory store ---
+	// The agent.* consolidation family's guardian-side twins: memory entry,
+	// embedding companion (vectors elided, the spec-042 reasoning), the
+	// nightly promote/fade/dream outcomes, and the night marker. Payloads
+	// carry (tick, hash) identities like their villager twins.
+
+	"guardian.memory_added": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.GuardianMemoryPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{txt(sk.Name() + " remembers: "), speech(truncateRunes(p.Text, 80))}), true
+	},
+	"guardian.memory_embedded": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.GuardianMemoryEmbeddedPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{txt(sk.Name() + " ")}, labeled(
+			fmt.Sprintf("memory seq=%d embedded", p.MemSeq),
+			fmt.Sprintf("dims=%d", len(p.Vec)), "model="+p.Model,
+		)), true
+	},
+	"guardian.memory_promoted": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.GuardianMemoryPromotedPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{txt(sk.Name() + "'s memory (t"), emphI64(p.MemTick), txt(") sharpened +"), emphN(p.Boost)}), true
+	},
+	"guardian.memory_faded": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.GuardianMemoryFadedPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{txt(sk.Name() + " let a memory go (t"), emphI64(p.MemTick), txt(")")}), true
+	},
+	"guardian.salience_revised": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.GuardianSalienceRevisedPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{txt(sk.Name() + "'s memory (t"), emphI64(p.MemTick),
+			txt(") dulled to "), emphN(p.Salience), txt("★ in a dream")}), true
+	},
+	"guardian.memory_merged": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.GuardianMemoryMergedPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{txt(sk.Name() + "'s dreams folded "), emphN(len(p.Merged)),
+			txt(" memories into one (t"), emphI64(p.Kept.Tick), txt(")")}), true
+	},
+	"guardian.consolidated": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.GuardianConsolidatedPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{txt(sk.Name() + " consolidated the watch (night "), emphI64(p.Night),
+			txt(", "), emph(p.Outcome), txt(")")}), true
+	},
 }
 
 // --- jump-to-source subject resolution (spec 049, contract §2/FR-002) ---
