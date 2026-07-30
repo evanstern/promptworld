@@ -178,6 +178,13 @@ func TestWhitelistDiffIdentical(t *testing.T) {
 		// (dream.go — per-agent single-store inputs by construction).
 		"agent.salience_revised": true,
 		"agent.memory_merged":    true,
+		// Spec 101 (canonization miracle) deliberately widens the boundary by
+		// exactly one entry: the canonize_region tool's injected christening
+		// (pinned ⊆ this whitelist by ValidateToolCoverage). There is no
+		// executor-emitted terminal for a region — no entry to omit here, the
+		// designation.fulfilled precedent notwithstanding, because a region
+		// carries no lifecycle beyond its christening in v1.
+		"guardian.region_named": true,
 	}
 	for typ := range want {
 		if !injectSocialWhitelist[typ] {

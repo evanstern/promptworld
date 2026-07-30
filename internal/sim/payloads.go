@@ -167,6 +167,9 @@ var PayloadCatalog = map[string]func() any{
 	"guardian.entity_moved":       func() any { return &EntityMovedPayload{} },
 	"guardian.entity_removed":     func() any { return &EntityRemovedPayload{} },
 	"guardian.report_card":        func() any { return &GuardianReportCardPayload{} },
+	// The canonization miracle (spec 101): christens a named region and
+	// optionally raises one existing-kind feature within it.
+	"guardian.region_named": func() any { return &RegionNamedPayload{} },
 
 	// --- designations / directives / faith / prophecy (specs 078, 084, 085) ---
 	"designation.placed":    func() any { return &Designation{} },

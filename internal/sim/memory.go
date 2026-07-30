@@ -114,6 +114,15 @@ func featureDesc(s *State, x, y int, excludeKind string) string {
 	if s.m == nil || x < 0 || y < 0 || x >= s.m.W || y >= s.m.H {
 		return ""
 	}
+	// Named regions (spec 101 D1): a villager-coined toponym is the strongest
+	// place identity there is — checked FIRST, ahead of structures/terrain, so
+	// a tile inside a canonized region always situates by its name ("at
+	// Thornspire (x,y)") rather than the generic terrain phrase underneath it.
+	// Overlap is refused at the door (regions.go), so at most one region can
+	// ever claim a given tile.
+	if r := regionAt(s, x, y); r != nil {
+		return r.Name
+	}
 	for _, st := range s.Structures {
 		if st.X == x && st.Y == y && st.Kind != excludeKind {
 			switch st.Kind {
