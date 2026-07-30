@@ -29,5 +29,5 @@
   bounded observation-memory counts + unchanged survival behavior; evidence at
   docs/design/evidence/task-80/ (US3, SC-002). Implementer prepares + runs with
   local-only LLM routes (no paid spend); orchestrator reviews evidence.
-- [ ] T007 Wiki re-pins (prose amendments where perception/memory behavior is
+- [X] T007 Wiki re-pins (prose amendments where perception/memory behavior is
   described); player-docs probe; merge-drift pr gate exit 0.
