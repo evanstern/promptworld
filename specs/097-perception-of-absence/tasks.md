@@ -20,7 +20,7 @@
 
 - [X] T004 Digest grammar entry + event-types.md; TestCatalogSweep green
   (FR-005).
-- [ ] T005 Tests: emission determinism, replay byte-identity on existing
+- [X] T005 Tests: emission determinism, replay byte-identity on existing
   fixtures, dedup, all three belief paths (FR-006); go test -race ./... green.
 
 ## Phase 4: Soak + grounding
