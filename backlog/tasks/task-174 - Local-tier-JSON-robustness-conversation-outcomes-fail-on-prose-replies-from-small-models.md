@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-30 16:42'
-updated_date: '2026-07-30 19:20'
+updated_date: '2026-07-30 20:28'
 labels: []
 dependencies: []
 ordinal: 142000
@@ -40,4 +40,6 @@ Spec: specs/103-conversation-outcome-json
 sweep dispatch (runbook playtest-1-findings-sweep): tier Sonnet — routine single-subsystem robustness following TASK-58's established structured-outputs pattern (constitution P.V: single-package feature, no concurrency/doctrine surface). Spec 103-conversation-outcome-json.
 
 spec-bridge sync post-merge (PR #144, merged 2026-07-30): Transport 2/2, Conversation schemas 3/3, Grounding 1/1 — phases ticked. Card AC#1 satisfied (constrained decoding shipped, no cloud fallback per spec-024 pin doctrine). OPEN: Measurement + soak 0/1 (T006) — card AC#2 needs the live soak vs playtest-1 baseline; queries committed at docs/design/evidence/task-174/queries.sql; run when the shared ollama host is uncontended. Task stays In Progress until soak evidence lands.
+
+Shared-machine coordination (relayed from the TASK-112/164 sibling session, 2026-07-30): TASK-164 arm B runs at 8x until ~tomorrow morning (matched 6.76-game-day horizon, holding 8.0 ticks/s); arm B's effective rate dropping below ~8 is the first starvation symptom on the shared local model host. T006 evidence soak therefore DEFERRED until arm B completes — it was exactly this contention that starved the first soak attempt. Sequence: run T006 after ~tomorrow morning, then sync the soak phase.
 <!-- SECTION:NOTES:END -->
