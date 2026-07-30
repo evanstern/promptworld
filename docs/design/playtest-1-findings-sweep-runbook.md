@@ -221,3 +221,6 @@ Record the model tier + rubric justification on each board task at dispatch
 | 2026-07-30 | TASK-175 | — | d178c905 | claimed: board In Progress (tier Opus 4.8), spec 106 stub on main, branch pushed |
 | 2026-07-30 | TASK-173 | — | 36faaac1 | measurement soak started: task-173-measure-1 (cold-dawn, seed 46103, 16x, main@ef115a6a binary); scope checkpoint pending |
 | 2026-07-30 | (all) | — | — | spec authoring dispatched: 103/105/106 full spec+plan+tasks, 104 spec.md-only (design-fork checkpoint) — planning tier |
+| 2026-07-30 | TASK-174/172/175/176 | — | ac6ec32e | specs 103/105/106 (full) + 104 (spec.md, fork analysis) landed on main; bridge links + phase ACs planted (71e89bbc); bridge gate green |
+| 2026-07-30 | TASK-176 | — | a41cb1d9 | OPERATOR CHECKPOINT RESOLVED: Arm A adopted (exact per-step sightings, interval+crossing needs, no format bump, old-world relief out of scope); plan/tasks authoring dispatched |
+| 2026-07-30 | TASK-174/172/175 | — | — | implementation dispatched: 174→Sonnet, 172/175→Opus 4.8 (spec-implementer agents, parallel worktrees); Lane 2 PRs held pending TASK-112 |
