@@ -944,6 +944,8 @@ func TestRebaseTaxonomyComplete(t *testing.T) {
 		"Designation.PlacedSeq":            keep, // spec 084: the placement event's store seq — an identity (the GuardianOrder.PlacedSeq shape)
 		"Directive.IssuedTick":             keep, // spec 084: when the directive was issued (history)
 		"Directive.PlacedSeq":              keep, // spec 084: the issue event's store seq — an identity
+		"Region.PlacedTick":                keep, // spec 101: when the region was christened (history) — no future deadline exists on a region (no terminal event in v1)
+		"Region.PlacedSeq":                 keep, // spec 101: the christening event's store seq — an identity (the Designation.PlacedSeq shape)
 		"Prophecy.DeclaredTick":            keep, // spec 085: when the word was given (history, Directive.IssuedTick shape)
 		"Prophecy.PlacedSeq":               keep, // spec 085: the declaration event's store seq — an identity
 		"PlaceFact.Detail":                 keep, // spec 041: remembered value baked at emission, never re-derived (see rebaseTicks)

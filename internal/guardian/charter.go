@@ -699,8 +699,14 @@ func intersectGrant(g grantSet, gd *bundle.GrantDoc) grantSet {
 // wager attached; spec 085 Assumptions, flagged for operator review there):
 // charge-priced like the nudges, not world-shaping, so the stage-1 posture
 // is still unchanged.
+// brief_myths (spec 101) joins the ceiling too, following survey_site/
+// explain's stage profile: a read-only lookup over the existing belief
+// corpus, never world-shaping, so it widens no acting capability.
+// canonize_region is DELIBERATELY excluded — a world-shaping act, the
+// work_miracle precedent (no miracle kind is granted at stage-1/2), not the
+// charge-free plan layer's every-stage grant.
 var stage1CeilingTools = []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "explain",
-	"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site", "prophesy"}
+	"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site", "prophesy", "brief_myths"}
 
 // stageCeiling returns the stage's capability ceiling as a narrowing doc —
 // the same shape a persona bundle's grant uses, so intersectGrant applies it

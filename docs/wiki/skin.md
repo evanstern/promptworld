@@ -4,7 +4,7 @@ description: The runtime skin substrate (spec 052, TASK-121) — the fiction lay
 kind: component
 sources:
   - internal/skin/skin.go
-verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
+verified_against: cf65debb44c1e17b54c0f3421d11e1e8cc28576c
 ---
 
 # Skin

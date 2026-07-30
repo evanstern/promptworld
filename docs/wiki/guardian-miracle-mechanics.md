@@ -6,7 +6,7 @@ sources:
   - internal/sim/miracles.go
   - internal/tool/registry.go
   - internal/guardian/toolcalls.go
-verified_against: 376afd4cee54839a545bc88409f3c485c2f5149d
+verified_against: cf65debb44c1e17b54c0f3421d11e1e8cc28576c
 ---
 
 # Guardian's miracle mechanics
@@ -105,6 +105,10 @@ builder with `gratis` hardcoded `false`, so a model-driven miracle
 is unconditionally charged (contracts §1, FR-007/SC-005).
 
 ## Connections
+
+[[guardian-canonization]] (spec 101) clones this no-gratis-param guarantee
+for `canonize_region`, a SEPARATE tool outside this four-kind family, priced
+outside `miracleCost`.
 
 [[guardian-miracles]] is the parent — see there for the two landing doors
 and the shift-semantics re-base taxonomy a time snap triggers.

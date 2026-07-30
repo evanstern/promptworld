@@ -262,6 +262,10 @@ var catalogFixture = map[string]digestFixture{
 	"guardian.item_granted":   {`{"agent":{"id":0,"name":"Ash"},"kind":"food_raw","qty":2,"gratis":false}`, `Guardian granted Ash 2 food_raw`},
 	"guardian.entity_moved":   {`{"class":"pile","x":3,"y":4,"to_x":6,"to_y":7,"gratis":false}`, `Guardian moved the pile at (3,4) to (6,7)`},
 	"guardian.entity_removed": {`{"class":"structure","x":12,"y":8,"gratis":false}`, `Guardian removed the structure at (12,8)`},
+	"guardian.region_named": {
+		`{"id":"reg-100-0","x":10,"y":12,"radius":6,"name":"Thornspire","feature_kind":"wall_stone","feature_x":10,"feature_y":12,"gratis":false}`,
+		`Guardian named "Thornspire" at (10,12) (radius 6), raising a wall_stone at (10,12)`,
+	},
 
 	// --- cog (labeled) ---
 	"cog.thought": {

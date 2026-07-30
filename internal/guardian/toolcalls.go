@@ -124,6 +124,15 @@ func (mt *Guardian) turnHandlers(d *turnDispatch) map[string]toolloop.Handler {
 	if d.grant.allows("prophesy") {
 		h["prophesy"] = mt.handleProphesy(d)
 	}
+	// The canonization miracle (spec 101): canonize_region (charge-priced,
+	// world-shaping) and its read-only myth-briefing companion, brief_myths —
+	// grant-gated like every other tool.
+	if d.grant.allows("canonize_region") {
+		h["canonize_region"] = mt.handleCanonizeRegion(d)
+	}
+	if d.grant.allows("brief_myths") {
+		h["brief_myths"] = mt.handleBriefMyths(d)
+	}
 	return h
 }
 

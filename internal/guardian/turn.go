@@ -42,15 +42,16 @@ var ErrTurnBusy = errors.New("the guardian is attending another matter")
 
 // TurnResult is the console-facing outcome of one turn.
 type TurnResult struct {
-	Reply     string       `json:"reply"`
-	Nudge     *Nudge       `json:"nudge,omitempty"`
-	Miracle   *Miracle     `json:"miracle,omitempty"`   // FROZEN JSON tag (spec 052 ruling 2): IPC clients decode it
-	Order     *OrderReport `json:"order,omitempty"`     // a placed standing order (spec 029 US2)
-	Plan      *PlanReport  `json:"plan,omitempty"`      // a landed plan act (spec 084): placed/cancelled designation, issued/cancelled directive
-	Cancelled []string     `json:"cancelled,omitempty"` // released order ids (cancel_order)
-	Clock     string       `json:"clock,omitempty"`     // a landed meta act's human line (spec 029 US5)
-	Charges   int          `json:"charges"`
-	Moments   []string     `json:"moments,omitempty"`
+	Reply     string        `json:"reply"`
+	Nudge     *Nudge        `json:"nudge,omitempty"`
+	Miracle   *Miracle      `json:"miracle,omitempty"`   // FROZEN JSON tag (spec 052 ruling 2): IPC clients decode it
+	Order     *OrderReport  `json:"order,omitempty"`     // a placed standing order (spec 029 US2)
+	Plan      *PlanReport   `json:"plan,omitempty"`      // a landed plan act (spec 084): placed/cancelled designation, issued/cancelled directive
+	Region    *RegionReport `json:"region,omitempty"`    // a landed canonization (spec 101): christened region + optional feature
+	Cancelled []string      `json:"cancelled,omitempty"` // released order ids (cancel_order)
+	Clock     string        `json:"clock,omitempty"`     // a landed meta act's human line (spec 029 US5)
+	Charges   int           `json:"charges"`
+	Moments   []string      `json:"moments,omitempty"`
 }
 
 // OrderReport is the console-facing summary of a placed standing order (spec 029

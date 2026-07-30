@@ -2,7 +2,7 @@
 title: Pattern — chronicle grammar
 class: pattern
 status: shipped
-verified_against: a761a45cb3b437613b808408c6c7f30d11bd9eb9
+verified_against: 250c811bce7eeea7138dd8b028e800ecd1e54173
 sources:
   - internal/tui/digest.go
   - internal/tui/grammar.go
@@ -22,10 +22,13 @@ grammar with a per-type digest registry (`internal/tui/digest.go`) and dropped
 pane instead. The authoritative per-type digest contract lives in
 [`specs/018-chronicle-digest/contracts/digest-grammar.md`](../../../../specs/018-chronicle-digest/contracts/digest-grammar.md)
 (§3, ~83 rows at authoring; later specs add rows through the registry +
-catalog-fixture pair — most recently spec 098's `agent.salience_revised` /
-`agent.memory_merged` dream rows, which reference the memory by tick like
-the memory_promoted/faded precedent); this doc covers the shape everything
-renders into, not each type's exact wording.
+catalog-fixture pair — most recently spec 101's `guardian.region_named` row
+(the canonization working), voiced like the pre-018 `work_miracle` family
+(`guardian.time_snapped` et al. — no contracts/018 template row exists for
+either), including the `gratisMark` suffix; before that, spec 098's
+`agent.salience_revised` / `agent.memory_merged` dream rows, which reference
+the memory by tick like the memory_promoted/faded precedent); this doc
+covers the shape everything renders into, not each type's exact wording.
 
 ## Line format
 

@@ -8,7 +8,7 @@ sources:
   - internal/tool/roster.go
   - internal/tool/validate.go
   - internal/sim/toolcheck.go
-verified_against: 11de2a4aa93d4c901a8dd90369151fa23fd056d0
+verified_against: cf65debb44c1e17b54c0f3421d11e1e8cc28576c
 ---
 
 # Tool registry — derived surfaces, rosters, and validation
@@ -39,9 +39,10 @@ property-name keys, which `encoding/json` sorts lexicographically.
 registration order — `set_plan` excluded) + `say`/`muse`/`gist`; `RosterGuardian`
 = `converse` plus every acting tool the guardian may use (spec 029:
 `send_omen`/`send_vision`/`monitor_and_act`/`cancel_order`/`work_miracle`/
-`pause`/`start`/`adjust_speed` — plus, since spec 063, `explain`
-([[grounded-feedback]]) appended last) — it mirrors `LoopRosterGuardian`'s names plus
-`converse`, so `work_miracle` IS now on this set (it wasn't pre-029). Since spec
+`pause`/`start`/`adjust_speed`; `explain` (spec 063,
+[[grounded-feedback]]); specs 084/085/101 append the plan-layer tools,
+`prophesy`, and `canonize_region`/`brief_myths` — [[guardian-canonization]])
+— it mirrors `LoopRosterGuardian`'s names plus `converse`. Since spec
 029 the guardian's nudge/send form is validated against the reducer's explicit
 form set, not this roster ([[guardian-orders]]), so `RosterGuardian`'s only live
 consumer is the boot-time name-resolution check in `Validate` — kept in step to
@@ -68,10 +69,11 @@ sim executor still honors both verbs so a historical world's `collect_water`/
 `bathe` events replay exactly, and reintroduction to the model-facing surfaces
 is a roster/gloss edit, not a rebuild;
 `LoopRosterGuardian()` = `send_omen`, `send_vision`, `monitor_and_act`,
-`cancel_order`, `work_miracle`, then the meta tools `pause`, `start`,
-`adjust_speed` (spec 029 order), then — since spec 063 — `explain`
-appended last (the read-only mechanics-facts tool, [[grounded-feedback]]) —
-deliberately NOT `RosterGuardian`, because `converse` is excluded: it is the
+`cancel_order`, `work_miracle`, the meta tools `pause`/`start`/
+`adjust_speed` (spec 029 order), `explain` (spec 063,
+[[grounded-feedback]]), the plan-layer tools + `prophesy` (084/085), and
+`canonize_region`/`brief_myths` last (spec 101, [[guardian-canonization]])
+— deliberately NOT `RosterGuardian`, because `converse` is excluded: it is the
 guardian's final-answer channel (the loop's `Result.Final`), not a callable tool,
 and declaring it would trap a `converse` call as `rejected_unknown` (the guardian
 installs no `converse` handler by design). The journal tools are villager-only

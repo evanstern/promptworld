@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/tool/registry.go
   - internal/tool/derive.go
-verified_against: 11de2a4aa93d4c901a8dd90369151fa23fd056d0
+verified_against: cf65debb44c1e17b54c0f3421d11e1e8cc28576c
 ---
 
 # Tool registry — the Guardian tool surface
@@ -57,14 +57,14 @@ import `clock`); `ClockSpeeds()` exports a copy and `internal/guardian`'s
 drift guard, same pattern as the sim-duration mirror.
 
 **The miracle cost source and the spec-021 derivations** (`registry.go`,
-`derive.go`; TASK-64): the per-kind miracle cost table is declared HERE, beside
+`derive.go`; TASK-64): the per-kind cost table is declared HERE, beside
 `miracleKinds` — `MiracleCost(kind) (int, bool)` and `MiracleCostsByEvent()`
 (kind↔event-type mapping, fresh map per call) are the ONE authoritative price
 source: `sim.miracleCost` derives from `MiracleCostsByEvent()` (the import
-direction already existed — [[guardian-miracles]]) and the guardian's prompt renders
-costs from `MiracleCost`, so a price edit propagates to enforcement and prose in
-one edit (`work_miracle.Cost.Charges` stays 1 — the Charge gate's minimum, not a
-price). Since TASK-163, `give_item`'s gloss (`derive.go`'s
+direction already existed — [[guardian-miracles]]) and the guardian's prompt
+renders costs from `MiracleCost`, so a price edit propagates to enforcement
+and prose in one edit (`work_miracle.Cost.Charges` stays 1 — the gate
+minimum, not a price). Since TASK-163, `give_item`'s gloss (`derive.go`'s
 `miracleKindArgs["give_item"]`) also names the FULL grant vocabulary via
 `GrantKinds()`, since `GuardianToolGuidance`'s `work_miracle` rendering only
 ever surfaces the `kind` Enum's values, never a per-kind param's Enum; the
@@ -105,11 +105,12 @@ itself is assembled turn-side (`internal/guardian/turn.go`'s
 `buildTargetingDigest`, [[guardian-orders]]/[[guardian-miracles]]), this
 function is only the fixed prose that introduces it.
 
-Spec 084/085 append two more tool families — the durable plan layer
+Spec 084/085 append two tool families — the durable plan layer
 (`place_designation`/`cancel_designation`/`issue_directive`/
-`cancel_directive`/`survey_site`, charge-free, stage-1 granted) and
-`prophesy` (charge-gated, no cancel verb) — split into
-[[tool-registry-plan-faith-tools]].
+`cancel_directive`/`survey_site`, charge-free, stage-1) and `prophesy`
+(charge-gated, no cancel verb) — split into
+[[tool-registry-plan-faith-tools]]. Spec 101 appends `canonize_region` (priced outside `miracleCosts`) and
+`brief_myths` (Read) — [[guardian-canonization]].
 
 ## Connections
 

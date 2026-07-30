@@ -101,3 +101,9 @@ guardian-side turn surfaces — tool handlers, `survey_site`, TUI rendering,
 miracle rebase treatment, and the spec's scope guards (FR-016: no mission
 machinery, no faith accounting here, no bundle-grammar or
 interruption-machinery change).
+
+Spec 101's canonization miracle ([[guardian-canonization]]) clones this
+entity discipline for `sim.Region` — deterministic id, reducer-stamped
+`PlacedSeq`, the same `prunePlanEntities` reuse — but with no terminal
+event in v1: a region has no fulfilled/cancelled door, so its `Status` is
+always `"active"`.

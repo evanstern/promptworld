@@ -7,7 +7,7 @@ sources:
   - internal/guardian/digest.go
   - internal/guardian/guardian.go
   - internal/guardian/toolcalls.go
-verified_against: 11de2a4aa93d4c901a8dd90369151fa23fd056d0
+verified_against: cf65debb44c1e17b54c0f3421d11e1e8cc28576c
 ---
 
 # Guardian's watch and background workers

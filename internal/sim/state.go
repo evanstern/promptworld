@@ -114,6 +114,13 @@ type State struct {
 	// upgrade-free — no format bump (the spec-029 precedent).
 	Designations []Designation `json:"designations,omitempty"`
 	Directives   []Directive   `json:"directives,omitempty"`
+	// Named regions (spec 101): the canonization miracle's durable artifact —
+	// the guardian's christening of a villager-coined toponym, event-sourced
+	// under the Designations discipline verbatim, but with no terminal event
+	// in v1 (every region is permanently "active" — see regions.go). omitempty:
+	// a pre-101 snapshot (field absent) unmarshals to nil, upgrade-free — no
+	// format bump (the spec-084 precedent).
+	Regions []Region `json:"regions,omitempty"`
 	// Faith (spec 085) — the village's event-sourced devotion score, folded
 	// EXCLUSIVELY from executor-emitted faith.changed events (faith.go). nil
 	// means the genesis default (FaithGenesis, read through the nil-safe
@@ -2121,6 +2128,9 @@ func (s *State) Apply(e store.Event) error {
 		"directive.issued", "directive.cancelled", "directive.fulfilled",
 		"directive.expired":
 		return s.applyPlan(e)
+
+	case "guardian.region_named":
+		return s.applyRegion(e)
 
 	case "faith.changed":
 		return s.applyFaith(e)

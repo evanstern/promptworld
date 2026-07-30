@@ -254,6 +254,11 @@ var injectSocialWhitelist = map[string]bool{
 	"guardian.item_granted":   true,
 	"guardian.entity_moved":   true,
 	"guardian.entity_removed": true,
+	// The canonization miracle (spec 101): the guardian christens a named
+	// region and, optionally, raises one existing-kind feature within it.
+	// The dry-run's reducer arm (regions.go) enforces bounds/overlap/cap/
+	// feature-site validity and the premium charge before anything lands.
+	"guardian.region_named": true,
 	// Charter-revision observation (spec 044 US2): the turn pipeline's
 	// fingerprint-at-effect stamp — the event-sourced revision timeline the
 	// morgue aligns deaths against. The dry-run's reducer arm enforces a
