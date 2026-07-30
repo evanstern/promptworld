@@ -4,7 +4,7 @@ title: 'Event-log volume: coalesce ambient movement and needs ticks'
 status: In Progress
 assignee: []
 created_date: '2026-07-30 16:42'
-updated_date: '2026-07-30 18:23'
+updated_date: '2026-07-30 18:36'
 labels: []
 dependencies: []
 ordinal: 144000
@@ -19,6 +19,8 @@ As a player, I want a month-old world to stay snappy to open, compare, and migra
 As an operator mining a playtest, I want the event log dominated by meaningful events, not movement ticks I have to filter past.
 
 Evidence (playtest-1, 29 game-days): 1,011,063 events, 230MB world.db. agent.needs_changed (332,752) + agent.moved (332,525) + gru.moved (122,382) = 78% of all events. Candidate approaches: coalesce runs of steps into path segments, emit needs on threshold crossings rather than every delta, sample ambient-mover positions. Constraint: replay/determinism doctrine (TASK-75) — any coalescing must preserve whatever the reducer needs for byte-identical replay, so this may land as emission-shape change, not lossy compaction.
+
+Spec: specs/104-ambient-event-coalescing
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
