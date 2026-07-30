@@ -96,6 +96,10 @@ type embedJob struct {
 	seq   int64       // memory leg: agent.memory_added store seq
 	sits  []sitRender // situation leg (T012): the bucket's renders, agent order
 	tick  int64       // situation leg: the tick the texts were rendered at
+	// guardian marks a guardian-store memory (spec 102 D5): the SAME driver,
+	// call, and coalescing serve the agentized guardian's store — the
+	// companion just lands as guardian.memory_embedded instead.
+	guardian bool
 }
 
 // sitRender is one agent's rendered situation string within a bucket batch.
@@ -193,6 +197,16 @@ func (e *Embedder) run() {
 				e.replica.Apply(ev)
 				if ev.Tick > e.replica.Tick {
 					e.replica.Tick = ev.Tick
+				}
+				// The guardian's store (spec 102 D5): guardian.memory_added
+				// rides the SAME embedding driver — one queue, one call shape,
+				// one coalesced injection; only the companion type differs.
+				if ev.Type == "guardian.memory_added" {
+					var gp sim.GuardianMemoryPayload
+					if json.Unmarshal(ev.Payload, &gp) == nil && gp.Text != "" {
+						e.enqueue(embedJob{guardian: true, seq: ev.Seq, text: gp.Text})
+					}
+					continue
 				}
 				if ev.Type != "agent.memory_added" {
 					continue
@@ -407,6 +421,18 @@ func (e *Embedder) runJobs(jobs []embedJob) {
 				batch = append(batch, store.Event{Type: "agent.situation_embedded", Payload: payload})
 				v++
 			}
+			continue
+		}
+		if j.guardian {
+			payload, merr := json.Marshal(sim.GuardianMemoryEmbeddedPayload{
+				MemSeq: j.seq, Vec: vecs[v], Model: model,
+			})
+			if merr != nil {
+				log.Printf("mind: embedder payload marshal failed: %v", merr)
+				return
+			}
+			batch = append(batch, store.Event{Type: "guardian.memory_embedded", Payload: payload})
+			v++
 			continue
 		}
 		payload, merr := json.Marshal(sim.MemoryEmbeddedPayload{

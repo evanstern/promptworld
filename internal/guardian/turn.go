@@ -113,6 +113,15 @@ type turnOrigin struct {
 	// it — a console turn and an ordinary (deferral) system turn both leave it
 	// false and keep today's restrictive initiative frame verbatim (FR-004/FR-005).
 	survival bool
+	// angel marks a SCHEDULED cadence turn (spec 102, angel.go): system-framed
+	// (no player-text sink), the incompetence-ceiling roster intersection (D3,
+	// ceiling.go) and the angel initiative frame apply, and the directive is
+	// the guardian's own standing cadence instruction. Only runAngel sets it.
+	angel bool
+	// jobID, when non-empty, overrides the minted correlation id so the
+	// cog.thought the caller already opened (runAngel) and the loop's
+	// cog.tool_call records share one chain (FR-008). Empty = mint as today.
+	jobID string
 }
 
 // Turn runs one mediated CONSOLE turn through the bounded tool-use loop (spec 017
@@ -210,6 +219,10 @@ func (mt *Guardian) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 	directives := append([]sim.Directive(nil), mt.directives...)
 	prophecies := append([]sim.Prophecy(nil), mt.prophecies...)
 	faith := mt.faith
+	// The guardian's working-memory window (spec 102 D1): mirrored per batch
+	// from the shared selector; empty (and prompt-inert) on a non-agentized
+	// world, so pre-102 prompts stay byte-identical (FR-007).
+	memories := append([]string(nil), mt.memWin...)
 	mt.stateMu.Unlock()
 
 	// Bundle tools (spec 036 T014): merge the granted bundle surface into all
@@ -288,12 +301,18 @@ func (mt *Guardian) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 	// rides recorded cog.tool_call payloads and the TUI's decision-trace
 	// attribution (tui/decisions.go) matches it verbatim.
 	jobID := fmt.Sprintf("%s-metatron-%d", o.jobPrefix, tick)
+	if o.jobID != "" {
+		jobID = o.jobID // the caller opened the chain (runAngel) — share it
+	}
 
-	// The trailing directive: the player's words (console) or the order's
-	// pre-authorized action (system). A system turn has no player-text sink — the
-	// seed is the guardian's OWN recorded instruction, so recording it is safe.
+	// The trailing directive: the player's words (console), the order's
+	// pre-authorized action (system), or the guardian's own cadence
+	// instruction (angel — spec 102, no player-text sink either way).
 	directive := "The player says:\n" + o.seed
-	if o.system {
+	switch {
+	case o.angel:
+		directive = o.seed
+	case o.system:
 		directive = "A standing order you placed has come due. Carry out its " +
 			"pre-authorized action now, in a single act if it calls for one:\n" + o.seed
 	}
@@ -339,7 +358,7 @@ func (mt *Guardian) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 		JobID:     jobID,
 		Kind:      llm.KindGuardian,
 		System:    buildTurnSystemPrompt(o.survival, charter, guide, skills, roster, souls...),
-		Seed:      turnUserPrompt(tick, charges, faith, alive, orders, designations, directives, prophecies, moments, story, mt.soulTail(), mt.transcriptTail(), digest, directive),
+		Seed:      turnUserPrompt(tick, charges, faith, alive, orders, designations, directives, prophecies, moments, story, memories, mt.soulTail(), mt.transcriptTail(), digest, directive),
 		Roster:    roster,
 		Handlers:  handlers,
 		MaxRounds: mt.loopRounds,
@@ -628,6 +647,9 @@ func (mt *Guardian) landNudgeBatch(form string, targets []int, text string, extr
 	}
 	mt.appendFile(mt.soulPath(), fmt.Sprintf("\n- %s — I sent a %s to %s: %q\n",
 		clock.Format(mt.replicaTickSafe()), form, strings.Join(names, ", "), text))
+	// Agentized memory (spec 102 D5): the act enters the guardian's own store
+	// too — fixed mechanics vocabulary (the event log is skin-free, ruling 1).
+	mt.recordMemory(fmt.Sprintf("I sent a %s to %s: %q", form, strings.Join(names, ", "), text), salGuardianAct)
 	return &Nudge{Form: form, Targets: names, Text: text}, ""
 }
 
@@ -747,6 +769,9 @@ func (mt *Guardian) landMiracle(mm miracleArgs, charges int, grant grantSet) (*M
 	// appends re-voice).
 	mt.appendFile(mt.soulPath(), fmt.Sprintf("\n- %s — I worked a %s: %s\n",
 		clock.Format(mt.replicaTickSafe()), mt.sk().WorkingNoun(), summary))
+	// Agentized memory (spec 102 D5): fixed vocabulary — a recorded payload
+	// never carries skin bytes (ruling 1), so the default "working" stands.
+	mt.recordMemory("I worked a working: "+summary, salGuardianAct)
 	return &Miracle{Kind: kind, Summary: summary}, ""
 }
 
@@ -761,10 +786,14 @@ func (mt *Guardian) recordTurn(tick int64, o turnOrigin, r TurnResult) {
 	if o.system {
 		// A survival-watch turn is marked distinctly (spec 059 FR-007): the
 		// durable transcript attributes the acting authority to the survival duty,
-		// not an ordinary player-placed watch.
+		// not an ordinary player-placed watch. A scheduled cadence turn (spec
+		// 102) marks its own origin the same way.
 		marker := "[watch]"
 		if o.survival {
 			marker = "[survival watch]"
+		}
+		if o.angel {
+			marker = "[cadence]"
 		}
 		fmt.Fprintf(&b, "\n[%s] %s\n%s\n\n%s: %s\n", clock.Format(tick), marker, o.seed, mt.sk().Epithet(), r.Reply)
 	} else {
@@ -786,6 +815,16 @@ func (mt *Guardian) recordTurn(tick int64, o turnOrigin, r TurnResult) {
 		fmt.Fprintf(&b, "⏲ %s\n", r.Clock)
 	}
 	mt.appendFile(mt.transcriptPath(), b.String())
+	// Agentized memory (spec 102 D5, "player exchanges"): a CONSOLE exchange
+	// enters the store as the guardian's OWN words — never the player's text,
+	// whose one sink stays the prompt (the persona-firewall non-negotiable).
+	if !o.system && r.Reply != "" {
+		reply := r.Reply
+		if ridx := strings.IndexByte(reply, '\n'); ridx > 0 {
+			reply = reply[:ridx] // first line — the memory is a note, not a transcript
+		}
+		mt.recordMemory("The player sought me; I said: "+reply, salGuardianTalk)
+	}
 }
 
 // Status is the model-free peek: charges, charter provenance, soul tail, and
@@ -1208,7 +1247,7 @@ func survivalFlag(n needMirror) string {
 // verbatim. runTurn is the sole author of the origin-appropriate label: the label
 // lives in exactly one place, so a console turn carries it once and a system turn
 // never pretends its directive came from the player this turn (spec 029 R6).
-func turnUserPrompt(tick int64, charges, faith int, alive map[int]bool, orders []sim.GuardianOrder, designations []sim.Designation, directives []sim.Directive, prophecies []sim.Prophecy, moments, story []string, soulTail, transcriptTail, digest, directive string) string {
+func turnUserPrompt(tick int64, charges, faith int, alive map[int]bool, orders []sim.GuardianOrder, designations []sim.Designation, directives []sim.Directive, prophecies []sim.Prophecy, moments, story, memories []string, soulTail, transcriptTail, digest, directive string) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "World clock: %s. Charges banked: %d of %d.\n", clock.Format(tick), charges, sim.GuardianChargeCap)
 	// The village's faith (spec 085 FR-013): in-fiction wording, always
@@ -1250,6 +1289,15 @@ func turnUserPrompt(tick int64, charges, faith int, alive map[int]bool, orders [
 		b.WriteString("\nThe village chronicle (recent entries):\n")
 		for _, s := range story {
 			b.WriteString("- " + s + "\n")
+		}
+	}
+	// The working-memory window (spec 102 D1): the agentized guardian's own
+	// remembered moments, selected by the shared deterministic top-K window.
+	// Empty on a non-agentized world, so pre-102 prompts are byte-unchanged.
+	if len(memories) > 0 {
+		b.WriteString("\nYour remembered moments (your own store, most recent first):\n")
+		for _, m := range memories {
+			b.WriteString("- " + m + "\n")
 		}
 	}
 	if soulTail != "" {

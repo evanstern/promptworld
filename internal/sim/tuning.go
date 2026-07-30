@@ -57,6 +57,15 @@ const (
 	defaultObservationBaseSalience       = 2
 	defaultBeliefDisconfirmRetainPercent = 70
 	defaultBeliefConfirmBoost            = 10
+
+	// Spec 102 (guardian agentization): the angel cadence dial — how often
+	// (game-seconds) the agentized guardian's scheduled cognition lane comes
+	// due. 0 is the OFF switch and the DEFAULT: agentization is opt-in per
+	// world (FR-007), so an absent dial leaves every pre-102 world's guardian
+	// purely event-driven, byte-identical to before. A nonzero value opts the
+	// world in and sets the cadence (clamped to [min,max] below — never
+	// hotter than 10 game-minutes).
+	defaultAngelCadenceTicks = 0
 )
 
 // The spec-098 dream dials (private dreams — consolidation clustering +
@@ -105,6 +114,12 @@ const (
 	minDreamHabituationPerMille, maxDreamHabituationPerMille     = 0, 1000
 	minDreamMergeCapPerNight, maxDreamMergeCapPerNight           = 0, 64
 	minDreamJitterPerMille, maxDreamJitterPerMille               = 0, 200
+	// Angel cadence (spec 102): 0 = off (the opt-in switch); a NONZERO value
+	// clamps to this band — floor 600 (10 game-minutes; hotter would let one
+	// guardian outdraw the whole village's planner budget), ceiling one game
+	// day. The 0-vs-band split is enforced by a dedicated clamp in
+	// ParseTuning, not clampI64.
+	minAngelCadenceTicks, maxAngelCadenceTicks = 600, 86400
 )
 
 // TuningState is the fully-resolved effective dial set carried on sim.State
@@ -126,6 +141,12 @@ type TuningState struct {
 	ObservationBaseSalience       int64 `json:"observation_base_salience"`
 	BeliefDisconfirmRetainPercent int64 `json:"belief_disconfirm_retain_percent"`
 	BeliefConfirmBoost            int64 `json:"belief_confirm_boost"`
+	// AngelCadenceTicks (spec 102) is the guardian-agentization opt-in dial:
+	// 0 = off (the default — every pre-102 world), nonzero = the scheduled
+	// angel lane's cadence in game-seconds. omitempty keeps every pre-102
+	// snapshot and recorded payload byte-identical (the spec-094 additive
+	// discipline, no format bump).
+	AngelCadenceTicks int64 `json:"angel_cadence_ticks,omitempty"`
 	// Dream (spec 098) is the private-dream dial block. nil ≡ the default
 	// dream set — exactly the State.Tuning nil convention one level down —
 	// which keeps every pre-098 snapshot and recorded sim.tuning_applied
@@ -185,6 +206,8 @@ func (t TuningState) Equal(o TuningState) bool {
 		t.ObservationBaseSalience == o.ObservationBaseSalience &&
 		t.BeliefDisconfirmRetainPercent == o.BeliefDisconfirmRetainPercent &&
 		t.BeliefConfirmBoost == o.BeliefConfirmBoost &&
+		// Spec 102: the angel cadence compares by value like the base five.
+		t.AngelCadenceTicks == o.AngelCadenceTicks &&
 		t.EffectiveDream() == o.EffectiveDream()
 }
 
@@ -296,6 +319,17 @@ func (s *State) BeliefConfirmBoost() int64 {
 	return defaultBeliefConfirmBoost
 }
 
+// AngelCadence is the guardian-agentization opt-in dial (spec 102): the
+// scheduled angel lane's cadence in game-seconds, 0 = the lane is OFF (the
+// default, and every pre-102 world). Read by the guardian off its replica —
+// the mind-side dial discipline.
+func (s *State) AngelCadence() int64 {
+	if s.Tuning != nil {
+		return s.Tuning.AngelCadenceTicks
+	}
+	return defaultAngelCadenceTicks
+}
+
 // DreamDials is the resolved spec-098 dream dial block (nil-safe): the one
 // consumption path for PlanDream's parameters, read off the mind's replica at
 // consolidation-snapshot time like the other mind-side dials.
@@ -336,6 +370,8 @@ type tuningManifest struct {
 	ObservationBaseSalience       *int64 `json:"observation_base_salience"`
 	BeliefDisconfirmRetainPercent *int64 `json:"belief_disconfirm_retain_percent"`
 	BeliefConfirmBoost            *int64 `json:"belief_confirm_boost"`
+	// Angel cadence (spec 102): the guardian-agentization opt-in dial.
+	AngelCadenceTicks *int64 `json:"angel_cadence_ticks"`
 	// Dream dials (spec 098): flat keys like every other dial — the manifest
 	// stays one sparse level deep for the operator; the nested resolved block
 	// is a state/payload shape, not an authoring shape.
@@ -395,6 +431,28 @@ func ParseTuning(data []byte) (*TuningState, []string, error) {
 	clampI64("belief_disconfirm_retain_percent", m.BeliefDisconfirmRetainPercent, &t.BeliefDisconfirmRetainPercent, minBeliefDisconfirmRetainPercent, maxBeliefDisconfirmRetainPercent)
 	clampI64("belief_confirm_boost", m.BeliefConfirmBoost, &t.BeliefConfirmBoost, minBeliefConfirmBoost, maxBeliefConfirmBoost)
 
+	// Angel cadence (spec 102): 0 is the off switch and passes untouched; a
+	// nonzero value clamps to the [min,max] band with the standard warning.
+	if m.AngelCadenceTicks != nil {
+		v := *m.AngelCadenceTicks
+		switch {
+		case v == 0:
+			// explicit off — the default; nothing to clamp
+		case v < 0:
+			// A negative is nonsense: fail toward OFF, never toward opting a
+			// world into agentization it did not ask for.
+			warns = append(warns, fmt.Sprintf("tuning.json angel_cadence_ticks %d is negative — clamped to 0 (off)", v))
+			v = 0
+		case v < minAngelCadenceTicks:
+			warns = append(warns, fmt.Sprintf("tuning.json angel_cadence_ticks %d out of range (min %d; 0 = off) — clamped to %d", v, int64(minAngelCadenceTicks), int64(minAngelCadenceTicks)))
+			v = minAngelCadenceTicks
+		case v > maxAngelCadenceTicks:
+			warns = append(warns, fmt.Sprintf("tuning.json angel_cadence_ticks %d out of range (max %d) — clamped to %d", v, int64(maxAngelCadenceTicks), int64(maxAngelCadenceTicks)))
+			v = maxAngelCadenceTicks
+		}
+		t.AngelCadenceTicks = v
+	}
+
 	// Dream dials (spec 098): any present key resolves the FULL dream block
 	// against its defaults (a non-nil block is never sparse); no key present
 	// leaves Dream nil ≡ the default set, so a pre-098 manifest parses to a
@@ -435,6 +493,11 @@ type TuningAppliedPayload struct {
 	ObservationBaseSalience       *int64 `json:"observation_base_salience,omitempty"`
 	BeliefDisconfirmRetainPercent *int64 `json:"belief_disconfirm_retain_percent,omitempty"`
 	BeliefConfirmBoost            *int64 `json:"belief_confirm_boost,omitempty"`
+	// Angel cadence (spec 102): pointer + omitempty for the READ side — a
+	// pre-102 recorded payload decodes nil, resolved to 0 (off) at Apply, so
+	// old logs replay byte-identically with no format bump. New events always
+	// carry the field (NewTuningEvent).
+	AngelCadenceTicks *int64 `json:"angel_cadence_ticks,omitempty"`
 	// Dream (spec 098): newly-emitted events always carry the resolved block
 	// (the full-set doctrine); the pointer + omitempty exist for the READ
 	// side — a pre-098 recorded event decodes nil, which the apply arm keeps
@@ -468,6 +531,10 @@ func resolveTuning(p TuningAppliedPayload) TuningState {
 	}
 	if p.BeliefConfirmBoost != nil {
 		t.BeliefConfirmBoost = *p.BeliefConfirmBoost
+	}
+	// Angel cadence (spec 102): absent resolves to 0 — off, the pre-102 world.
+	if p.AngelCadenceTicks != nil {
+		t.AngelCadenceTicks = *p.AngelCadenceTicks
 	}
 	// Dream (spec 098): a decoded nil stays nil ≡ defaults; a carried block
 	// lands as a FRESH copy, never the payload's pointer (the apply-arm
@@ -512,6 +579,7 @@ func NewTuningEvent(tick int64, t TuningState) store.Event {
 			ObservationBaseSalience:       &t.ObservationBaseSalience,
 			BeliefDisconfirmRetainPercent: &t.BeliefDisconfirmRetainPercent,
 			BeliefConfirmBoost:            &t.BeliefConfirmBoost,
+			AngelCadenceTicks:             &t.AngelCadenceTicks,
 			Dream:                         &d,
 		})}
 }

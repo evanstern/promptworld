@@ -5,13 +5,13 @@ ratified there). Dispatch gated on TASK-164 evidence (runbook checkpoint).
 
 ## Phase 1: Angel class + scheduled lane
 
-- [ ] T001 Angel cognition-registry class (cadence, points/staleness budget,
+- [X] T001 Angel cognition-registry class (cadence, points/staleness budget,
   governor/horizon gating, shed-order below villager survival); scheduled
   guardian turns beside unchanged event triggers (FR-001, D2).
 
 ## Phase 2: Shared construct
 
-- [ ] T002 Guardian mind loop on the shared agent machinery; memory store +
+- [X] T002 Guardian mind loop on the shared agent machinery; memory store +
   nightly consolidation incl. spec 098 dream phase; soul.md = persona seed
   (FR-002, D1/D5). Reuse checklist satisfied (SC-004).
 - [ ] T003 Charter/skills/capabilities → persona compilation; DEFAULT
