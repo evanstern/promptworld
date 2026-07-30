@@ -75,7 +75,7 @@ prove, in the same task. Tier: Opus 4.8 (card-recorded).
 
 ## Phase 6: Whole-system proofs + measurement
 
-- [ ] T013 Full determinism battery: `TestDeterminismSameSeedSameTimeline`
+- [X] T013 Full determinism battery: `TestDeterminismSameSeedSameTimeline`
   (incl. per-agent canonical map bytes), kill-9 recovery equivalence with a
   mid-segment/mid-needs-window snapshot + tail, pre-change seeded fixture
   world replays green; `go test -race ./...` green (FR-002/FR-007).

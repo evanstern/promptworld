@@ -14,7 +14,11 @@ sources:
 The event feed. Same component everywhere it appears — dock tab, solo view,
 narrow-fallback pane — differing only in width. Line formatting is governed by
 [../patterns/chronicle-grammar.md](../patterns/chronicle-grammar.md); this doc
-covers the panel's modes.
+covers the panel's modes. Since spec 104, a coalesced world's feed shows a
+walk as ONE `agent.path_started` line (and needs rows only at checkpoints/
+crossings) instead of dozens of per-step rows — the running feed reads as
+story by construction; the live map stays per-step smooth via the replica's
+derived advancement, not via feed rows ([map](map.md)).
 
 ## Mode 1 — running (clock unpaused)
 

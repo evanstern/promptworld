@@ -137,6 +137,16 @@ precedent exactly: one `isAlertType` case plus a sim-voice digest row with
 deterministic per-need wording (*Name* `is dangerously cold and has done
 nothing about it (warmth 0)`; starving/exhausted for food/rest).
 
+Spec 104 (ambient coalescing) adds two agent-family natural-phrase rows —
+`agent.path_started` (`Ash sets out for (3,1) (3 tiles)`: the walk's
+destination plus tile count, replacing the per-step `Ash → (x,y)` stream a
+coalesced world no longer emits) and `agent.path_truncated`
+(`Ash's walk cut short at (2,1)`). The historic `agent.moved` and
+`gru.moved` rows are KEPT verbatim — legacy logs still render — and both
+new types carry subjectRegistry rows (walker at the declared destination /
+at the recorded stop). No new tier, no new voice; `TestCatalogSweep`
+covers the additions.
+
 Several digest rows render slightly differently than a naive reading of
 their contract row would suggest, because the real payload struct doesn't
 carry every field the template names — each such row is called out with a

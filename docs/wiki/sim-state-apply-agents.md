@@ -59,7 +59,19 @@ goal registry, [[reflex-policy]]) stamps that need's `*Intent = tick` on
 `Agent.Neglect`, source-agnostic on purpose: any scheduled class intent
 proves the mind engaged, whatever the outcome
 ([[executor-needs-survival]])),
-movement, work
+movement — since spec 104, under the coalescing regime (`AmbientCoalescing()`)
+the executor emits one `agent.path_started` per walk instead of per-step
+`agent.moved`; the arm installs the in-flight segment via `applyPathStarted`
+(`advance.go`), which the derived-progress engine then advances step by
+step at exactly `agent.moved`'s own per-step fidelity (position, explored
+bits, peer sightings); a blocked mid-walk path (a wall built under the
+segment) emits `agent.path_truncated` instead, whose arm records the actual
+stopping tile and clears the segment via the shared `truncateWalk`
+primitive — the same primitive every walk-invalidating arm elsewhere now
+calls (the intent-lifecycle closures in [[sim-state-intent-lifecycle]],
+`agent.slept`, `agent.died` below, plus the miracle/gru arms in their own
+files), so a legacy world with no segment ever installed pays `truncateWalk`
+as a byte-inert nil-check — work
 products (inventory + overlays + structures), eating (`agent.ate`'s `AtePayload`
 sets the absolute post-eat food need and decrements each carried food form by its
 consumed count — no reducer-side arithmetic), sleep, talk (since spec 061
