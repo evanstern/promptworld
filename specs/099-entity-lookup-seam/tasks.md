@@ -12,7 +12,7 @@
 
 ## Phase 2: Proof + decision
 
-- [ ] T003 Determinism: bit-identical replay of existing fixtures;
+- [X] T003 Determinism: bit-identical replay of existing fixtures;
   go test -race ./... green (FR-003).
 - [X] T004 D2 store-error decision note (wiki operational note + loop.go site
   comment; no retry code) (FR-004).
