@@ -12,9 +12,13 @@ package mind
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/evanstern/promptworld/internal/llm"
+	"github.com/evanstern/promptworld/internal/sim"
+	"github.com/evanstern/promptworld/internal/store"
 )
 
 // maxTruncationRetries bounds the ladder: at most 2 retries (3 attempts),
@@ -100,4 +104,24 @@ func (md *Mind) submitWithTruncationRetry(timeout time.Duration, req llm.Request
 		}
 		req.MaxTokens = next
 	}
+}
+
+// emitTruncationRetry records one consumed truncation retry as a NON-TERMINAL
+// cog.outcome carrying the existing sim.OutcomeRetried vocabulary (FR-004,
+// the TASK-42 conversation-retry precedent): the reason names the truncation
+// and the escalated budget, and the job id follows the emitSuppressed
+// synthetic shape. Called from the single-flight WORKER goroutines (never the
+// absorb loop), so the injection is synchronous — the worker already blocks
+// on the door for its own batches. No new event type; consumers that sum job
+// completions already filter retried markers out (contracts/telemetry.md
+// rule 1).
+func (md *Mind) emitTruncationRetry(class string, agent int, snapshotTick int64, retry int, from, to int64) {
+	b, _ := json.Marshal(sim.CogOutcomePayload{
+		Job:   fmt.Sprintf("%s-%d-%d", class, agent, snapshotTick),
+		Class: class, Agent: sim.Ref(agent),
+		Outcome: sim.OutcomeRetried, SnapshotTick: snapshotTick,
+		Reason:  fmt.Sprintf("truncated at %d tokens; retry %d at %d", from, retry, to),
+		Retried: true,
+	})
+	md.emitCog(store.Event{Type: "cog.outcome", Payload: b})
 }

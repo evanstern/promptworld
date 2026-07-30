@@ -21,18 +21,18 @@
 
 ## Phase 2: Consolidation integration
 
-- [ ] T003 `internal/sim/consolidate.go`: additive `omitempty`
+- [X] T003 `internal/sim/consolidate.go`: additive `omitempty`
   `ConsolidatedPayload.Retries int` + `ConsolidationReasonTruncated` const;
   reducer arm untouched. Round-trip + old-payload byte-compat test in
   `internal/sim/consolidate_test.go` (FR-003, FR-005).
-- [ ] T004 `internal/mind/consolidate.go`: `runConsolidation` drives the T002
+- [X] T004 `internal/mind/consolidate.go`: `runConsolidation` drives the T002
   helper (same job snapshot and prompt on every attempt — dream geometry never
   re-run); accepted nights stamp `Retries` and accrued `CostUSD` on the marker;
   terminal truncation lands `ConsolidationReasonTruncated` (buffer intact);
   non-truncation parse failure still lands `unparseable`; each consumed retry
   emits `cog.outcome{retried}` (class `consolidation`, `emitSuppressed`
   synthetic-job shape, detached injection) (FR-002–FR-005, FR-009).
-- [ ] T005 Regression tests in `internal/mind/consolidate_test.go` with the
+- [X] T005 Regression tests in `internal/mind/consolidate_test.go` with the
   scripted submitter: (a) the LATE-WORLD fixture — buffer > `maxBufferSent`,
   12+ held beliefs including below-floor faded ones, model truncates at 1024
   and completes at 2048 → accepted marker with `Retries: 1` and both attempts'

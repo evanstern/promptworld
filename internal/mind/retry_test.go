@@ -33,6 +33,18 @@ func (m *respModel) Submit(_ context.Context, req llm.Request) (llm.Response, er
 	return m.replies[len(m.requested)-1], nil
 }
 
+func (m *respModel) attempts() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return len(m.requested)
+}
+
+func (m *respModel) budgets() []int64 {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return append([]int64(nil), m.requested...)
+}
+
 // parseWant fails until it sees the given text.
 func parseWant(want string) func(string) error {
 	return func(text string) error {
