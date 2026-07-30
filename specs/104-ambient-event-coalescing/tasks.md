@@ -6,13 +6,13 @@ prove, in the same task. Tier: Opus 4.8 (card-recorded).
 
 ## Phase 1: Contracts + the derived-progress engine (D1)
 
-- [ ] T001 Research note (`specs/104-ambient-event-coalescing/research.md`):
+- [X] T001 Research note (`specs/104-ambient-event-coalescing/research.md`):
   pin the within-tick ordering contract (needs minutes → agent steps by index
   → gru beat, matched to today's stepEvents emission order), the
   `PathSegment`/`NeedsSyncTick` field shapes and omitempty sentinels
   (spec-083 Neglect precedent cited), and the K-dial name/default/clamp —
   decisions + rationale before any code.
-- [ ] T002 `internal/sim/advance.go`: `State.AdvanceTo(tick)` engine —
+- [X] T002 `internal/sim/advance.go`: `State.AdvanceTo(tick)` engine —
   strictly-before semantics, fixed processing order, per-item watermarks,
   idempotence; `Apply` calls it before dispatch. Unit tests for ordering,
   idempotence, monotonicity, and no-op on a state with no pending derived
@@ -20,20 +20,20 @@ prove, in the same task. Tier: Opus 4.8 (card-recorded).
 
 ## Phase 2: Movement at exact per-step fidelity (D2 — the hard slice)
 
-- [ ] T003 Payloads + arms: `agent.path_started{agent, path, move_every,
+- [X] T003 Payloads + arms: `agent.path_started{agent, path, move_every,
   phase}` and `agent.path_truncated{agent, x, y}` in payloads.go/state.go —
   segment install and truncate-with-position arms; `Agent.Path *PathSegment`
   (omitempty; pre-change snapshot round-trip byte-identity test).
-- [ ] T004 Advancement steps: scheduled step execution — position update +
+- [X] T004 Advancement steps: scheduled step execution — position update +
   `markExplored` + `notePresence` at each step's tick, path-tile 2x rule
   evaluated against state at that tick, cadence numbers read from the payload
   never the constant (FR-006); interleaving across agents' segments.
-- [ ] T005 Emission rewire (executor.go): walks emit `path_started` instead of
+- [X] T005 Emission rewire (executor.go): walks emit `path_started` instead of
   per-step `agent.moved`; the FULL truncation set emits `path_truncated` —
   re-decision, absorb re-arm, hail pause, death, teleport, world pause
   (truncate-all), unreachable; spec-097 arrival observation still fires at
   the arrival tick, exactly once (test).
-- [ ] T006 **Sighting equivalence harness (the ruling-2 / FR-004 proof)**:
+- [X] T006 **Sighting equivalence harness (the ruling-2 / FR-004 proof)**:
   paired synthetic logs (per-step vs coalesced) for single walk, crossing
   walks with mutual sightings, path-tile speedup, mid-walk truncation,
   sleeper/waker bystander, pause mid-walk — `State.Marshal()` bytes equal at
@@ -42,14 +42,14 @@ prove, in the same task. Tier: Opus 4.8 (card-recorded).
 
 ## Phase 3: Needs thinning (D3)
 
-- [ ] T007 K dial: `needs_checkpoint_minutes` in tuning.go (spec 048 pattern —
+- [X] T007 K dial: `needs_checkpoint_minutes` in tuning.go (spec 048 pattern —
   clamp [1,60], default 10, genesis-pinned per spec 057); dial tests.
-- [ ] T008 Derived per-minute decay in advancement (trajectory anchor +
+- [X] T008 Derived per-minute decay in advancement (trajectory anchor +
   neglect band anchors move with it); `NeedsSyncTick` watermark set by the
   `agent.needs_changed` arm; double-decay guard proven: an old log (per-minute
   events) replays with advancement contributing nothing (byte-identity test
   vs the pre-change arm's fold).
-- [ ] T009 Emission rewire (executor.go): checkpoint every K game-minutes +
+- [X] T009 Emission rewire (executor.go): checkpoint every K game-minutes +
   immediate band/near-death/zero crossing emission with absolutes; death path
   unchanged. Tests: K=1 reproduces today's emission byte-for-byte; K=10
   derived minute values equal K=1 folded values; crossings emitted at the
@@ -58,17 +58,17 @@ prove, in the same task. Tier: Opus 4.8 (card-recorded).
 
 ## Phase 4: Gru derived motion (D4)
 
-- [ ] T010 Move stalk/prowl into advancement (shared decision function; RNG
+- [X] T010 Move stalk/prowl into advancement (shared decision function; RNG
   purpose "gru-prowl" preserved); retire `gru.moved` emission; arm retained —
   old-log gru replay byte-identity test; executor attack/sighting emission
   over advanced positions (ordering test: gru beat after agent steps).
 
 ## Phase 5: Consumers (D5)
 
-- [ ] T011 TUI: replica `AdvanceTo` on tick pushes (map positions per-step
+- [X] T011 TUI: replica `AdvanceTo` on tick pushes (map positions per-step
   smooth); digest rows for `path_started`/`path_truncated`; historic
   `agent.moved`/`gru.moved` rows kept; `TestCatalogSweep` green.
-- [ ] T012 Mind: replica `AdvanceTo` per absorb batch; `armEncounters` becomes
+- [X] T012 Mind: replica `AdvanceTo` per absorb batch; `armEncounters` becomes
   the first-adjacency sweep over the advanced replica (same adjacency
   moments, pair cooldown preserved — test against a scripted crossing-walk
   scenario).
