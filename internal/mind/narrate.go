@@ -1,7 +1,6 @@
 package mind
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -488,32 +487,43 @@ func (md *Mind) runEpilogueFacts(p sim.RunEndedPayload) []string {
 // (endedProseWhitelist). Chronicle failure doctrine applies: every error path
 // is a logged gap — no retry carry, no stall.
 func (md *Mind) runEpilogue(job narrJob) {
-	ctx, cancel := context.WithTimeout(context.Background(), narrateCallTimeout)
-	resp, err := md.orch.Submit(ctx, llm.Request{
+	// Truncation-aware ladder (spec 105 FR-008): the same detection and
+	// doubling as consolidation (800→1600→3200 from narrMaxTokens); the
+	// chronicle's failure doctrine — every terminal error path a logged gap —
+	// applies only after it.
+	var text string
+	res, err := md.submitWithTruncationRetry(narrateCallTimeout, llm.Request{
 		Kind:      llm.KindNarrator,
 		System:    epilogueSystemPrompt(),
 		Prompt:    epilogueUserPrompt(job),
 		MaxTokens: narrMaxTokens,
+	}, func(raw string) error {
+		text = strings.TrimSpace(raw)
+		if text == "" {
+			return fmt.Errorf("empty")
+		}
+		return nil
+	}, func(retry int, from, to int64) {
+		log.Printf("mind: %s truncated at %d tokens; retry %d at %d", job.label, from, retry, to)
+		md.emitTruncationRetry("chronicle", job.agent, job.toTick, retry, from, to)
 	})
-	cancel()
 	if err != nil {
 		log.Printf("mind: %s skipped: %v", job.label, err)
 		return
 	}
-	text := strings.TrimSpace(resp.Text)
-	if r := []rune(text); len(r) > narrMaxText {
-		text = string(r[:narrMaxText])
-	}
-	if text == "" {
+	if res.ParseErr != nil {
 		log.Printf("mind: %s unusable (empty)", job.label)
 		return
+	}
+	if r := []rune(text); len(r) > narrMaxText {
+		text = string(r[:narrMaxText])
 	}
 	b, _ := json.Marshal(sim.MorgueEpiloguePayload{Agent: sim.Ref(job.agent), Text: text})
 	if err := md.social.InjectSocial([]store.Event{{Type: "morgue.epilogue", Payload: b}}); err != nil {
 		log.Printf("mind: %s injection rejected: %v", job.label, err)
 		return
 	}
-	log.Printf("mind: %s landed ($%.4f)", job.label, resp.CostUSD)
+	log.Printf("mind: %s landed ($%.4f)", job.label, res.CostUSD)
 }
 
 func epilogueSystemPrompt() string {
@@ -541,16 +551,27 @@ func (md *Mind) runNarration(job narrJob) {
 		md.runEpilogue(job)
 		return
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), narrateCallTimeout)
-	resp, err := md.orch.Submit(ctx, llm.Request{
+	// Truncation-aware ladder (spec 105 FR-008): a cut reply — the day-29
+	// "unterminated JSON object" death — is retried at a doubled budget
+	// (800→1600→3200) before the chapter's existing failure semantics apply:
+	// transport failure still carries, bad output is still a gap.
+	var entries []narrEntry
+	res, err := md.submitWithTruncationRetry(narrateCallTimeout, llm.Request{
 		Kind:      llm.KindNarrator,
 		System:    narrateSystemPrompt(),
 		Prompt:    narrateUserPrompt(job),
 		MaxTokens: narrMaxTokens,
+	}, func(text string) error {
+		var perr error
+		entries, perr = parseNarration(text)
+		return perr
+	}, func(retry int, from, to int64) {
+		log.Printf("mind: narration %q truncated at %d tokens; retry %d at %d", job.label, from, retry, to)
+		md.emitTruncationRetry("chronicle", -1, job.toTick, retry, from, to)
 	})
-	cancel()
 	if err != nil {
-		// Transport/tier failure: the lines carry into the next chapter.
+		// Transport/tier failure (any attempt): the lines carry into the next
+		// chapter.
 		log.Printf("mind: narration %q deferred: %v", job.label, err)
 		carry := narrCarry{fromTick: job.fromTick, lines: job.lines}
 		select {
@@ -567,11 +588,11 @@ func (md *Mind) runNarration(job narrJob) {
 		md.narrRetry <- carry
 		return
 	}
-
-	entries, err := parseNarration(resp.Text)
-	if err != nil {
-		// Bad output is a gap in the story, never a stall or a retry loop.
-		log.Printf("mind: narration %q unusable: %v", job.label, err)
+	if res.ParseErr != nil {
+		// Bad output is a gap in the story, never a stall or a retry loop —
+		// including a ladder still truncated at its top (the reply is model
+		// output, not transport failure; carrying it would loop forever).
+		log.Printf("mind: narration %q unusable: %v", job.label, res.ParseErr)
 		return
 	}
 	var batch []store.Event
@@ -594,7 +615,7 @@ func (md *Mind) runNarration(job narrJob) {
 		log.Printf("mind: narration %q injection rejected: %v", job.label, err)
 		return
 	}
-	log.Printf("mind: chronicle %q landed (%d entries, $%.4f)", job.label, len(batch), resp.CostUSD)
+	log.Printf("mind: chronicle %q landed (%d entries, $%.4f)", job.label, len(batch), res.CostUSD)
 }
 
 // narrEntry is one validated story entry.

@@ -1,7 +1,6 @@
 package mind
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -83,7 +82,7 @@ func (md *Mind) maybeConsolidate(e store.Event) {
 		// Nothing to digest: close the night with a marker, spend no call.
 		md.consolInFlight[p.Agent.ID].Store(true)
 		md.landMarker(consolJob{agent: p.Agent.ID, name: a.Name, night: night, sleepTick: e.Tick},
-			sim.ConsolidationSkippedEmpty, "", 0)
+			sim.ConsolidationSkippedEmpty, "", 0, 0)
 		return
 	}
 
@@ -158,24 +157,43 @@ func (md *Mind) runConsolidation(job consolJob) {
 		groups = groups[:maxDreamGroupsSent]
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), consolidateCallTimeout)
-	resp, err := md.orch.Submit(ctx, llm.Request{
+	// Truncation-aware submit ladder (spec 105): the SAME prompt every attempt
+	// — the dream geometry pass ran once above and its batch already landed; a
+	// retry re-sends the identical snapshot-built request at a doubled budget,
+	// never re-plans dreams and never re-snapshots the replica. Each consumed
+	// retry is recorded as cog.outcome{retried} (FR-004).
+	var out consolidationOutput
+	res, err := md.submitWithTruncationRetry(consolidateCallTimeout, llm.Request{
 		Kind:      llm.KindConsolidation,
 		System:    consolidateSystemPrompt(job),
 		Prompt:    consolidateUserPrompt(job, groups),
-		MaxTokens: md.consolidationTokens, // llm.json max_tokens.consolidation (spec 025 US2), default 1024
+		MaxTokens: md.consolidationTokens, // llm.json max_tokens.consolidation (spec 025 US2), default 1024 — the ladder's start
+	}, func(text string) error {
+		var perr error
+		out, perr = parseConsolidation(text)
+		return perr
+	}, func(retry int, from, to int64) {
+		log.Printf("mind: consolidation %s night %d truncated at %d tokens; retry %d at %d",
+			job.name, job.night, from, retry, to)
+		md.emitTruncationRetry("consolidation", job.agent, job.sleepTick, retry, from, to)
 	})
-	cancel()
 	if err != nil {
-		// Transport/tier failure: NO marker — the attempt never happened as
-		// far as the ledger cares; the next sleep retries (FR-002).
+		// Transport/tier failure (any attempt): NO marker — the attempt never
+		// happened as far as the ledger cares; the next sleep retries (FR-002).
 		log.Printf("mind: consolidation %s night %d deferred: %v", job.name, job.night, err)
 		return
 	}
-
-	out, err := parseConsolidation(resp.Text)
-	if err != nil {
-		md.landMarker(job, sim.ConsolidationRejected, "unparseable", resp.CostUSD)
+	resp := res.Resp
+	if res.ParseErr != nil {
+		// A ladder exhausted while still truncated is a budget failure, not a
+		// garbage reply — the distinct reason keeps the durable record
+		// actionable (FR-003). The buffer stays intact; the next sleep retries
+		// from the ladder's start.
+		reason := "unparseable"
+		if res.Truncated {
+			reason = sim.ConsolidationReasonTruncated
+		}
+		md.landMarker(job, sim.ConsolidationRejected, reason, res.CostUSD, res.Retries)
 		return
 	}
 	// Models routinely invent an ID for a belief they mean as new (live
@@ -220,7 +238,7 @@ func (md *Mind) runConsolidation(job consolJob) {
 			snippet = snippet[:180]
 		}
 		log.Printf("mind: consolidation %s night %d invalid output: %q", job.name, job.night, snippet)
-		md.landMarker(job, sim.ConsolidationRejected, verr.Error(), resp.CostUSD)
+		md.landMarker(job, sim.ConsolidationRejected, verr.Error(), res.CostUSD, res.Retries)
 		return
 	}
 
@@ -291,22 +309,26 @@ func (md *Mind) runConsolidation(job consolJob) {
 		Outcome:  sim.ConsolidationAccepted,
 		Promoted: len(out.Promote), Faded: len(out.Fade), Beliefs: len(out.Beliefs),
 		Coerced: coerced, DreamFolded: len(routine), DreamKept: len(groups) - len(routine),
-		CostUSD: resp.CostUSD})
+		// Cost accrues across every ladder attempt; Retries makes a night that
+		// survived truncation visible on its marker (spec 105 FR-005).
+		CostUSD: res.CostUSD, Retries: res.Retries})
 
 	if err := md.social.InjectSocial(batch); err != nil {
 		log.Printf("mind: consolidation %s night %d injection rejected: %v", job.name, job.night, err)
 		return
 	}
 	log.Printf("mind: consolidation %s night %d accepted (%d promoted, %d faded, %d beliefs, $%.4f)",
-		job.name, job.night, len(out.Promote), len(out.Fade), len(out.Beliefs), resp.CostUSD)
+		job.name, job.night, len(out.Promote), len(out.Fade), len(out.Beliefs), res.CostUSD)
 }
 
 // landMarker records a non-accepted outcome (rejected / skipped_empty) as a
-// single-event batch. The buffer stays intact for the next night.
-func (md *Mind) landMarker(job consolJob, outcome, reason string, cost float64) {
+// single-event batch. The buffer stays intact for the next night. retries is
+// the night's consumed truncation retries (spec 105 FR-005) — 0 everywhere
+// but a rejected ladder night, and omitempty keeps that byte-identical.
+func (md *Mind) landMarker(job consolJob, outcome, reason string, cost float64, retries int) {
 	defer md.consolInFlight[job.agent].Store(false)
 	b, _ := json.Marshal(sim.ConsolidatedPayload{
-		Agent: sim.Ref(job.agent), Night: job.night, Outcome: outcome, Reason: reason, CostUSD: cost})
+		Agent: sim.Ref(job.agent), Night: job.night, Outcome: outcome, Reason: reason, CostUSD: cost, Retries: retries})
 	if err := md.social.InjectSocial([]store.Event{{Type: "agent.consolidated", Payload: b}}); err != nil {
 		log.Printf("mind: consolidation %s night %d marker rejected: %v", job.name, job.night, err)
 		return

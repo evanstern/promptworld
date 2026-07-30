@@ -125,6 +125,10 @@ type Mind struct {
 	// Nightly consolidation (TASK-9): FIFO queue + per-agent in-flight guard.
 	consolQ        chan consolJob
 	consolInFlight [sim.AgentCount]atomic.Bool
+	// nightRep (spec 105 US2): per-night consolidation acceptance counters fed
+	// from live-absorbed markers, flushed as one summary log line per closed
+	// night (nightreport.go). Absorb-owned, in-memory only.
+	nightRep nightReport
 
 	// Chronicle narrator (TASK-11): absorb-owned chapter buffer + FIFO queue
 	// to the single-flight cloud worker; narrRetry (cap 1) carries a failed
@@ -365,6 +369,13 @@ func (md *Mind) absorb(batch []store.Event) {
 			md.maybeStartConversation(e, priorExchange)
 		case "agent.slept":
 			md.maybeConsolidate(e)
+		case "agent.consolidated":
+			// Spec 105 (US2): tally the night's outcome for the per-night
+			// acceptance summary; the flush below closes past nights.
+			var p sim.ConsolidatedPayload
+			if json.Unmarshal(e.Payload, &p) == nil {
+				md.nightRep.record(p)
+			}
 		case "meeting.proposal_resolved":
 			md.maybePhraseProposal(e)
 		case "agent.died", "run.ended":
@@ -385,6 +396,14 @@ func (md *Mind) absorb(batch []store.Event) {
 	md.replica.AdvanceTo(md.replica.Tick)
 	if md.replica.AmbientCoalescing() && len(batch) > 0 {
 		md.sweepEncounters(md.replica.Tick, batch[len(batch)-1].Seq)
+	}
+	// Spec 105 (FR-006/FR-007): any tick or marker from a later night closes
+	// the tracked earlier nights — one summary line each, escalated to a
+	// WARNING: while consecutive attempted nights keep accepting nothing.
+	// Live absorb only: boot seeds the replica from a snapshot, never a log
+	// replay through here, so history produces no summary spew.
+	for _, line := range md.nightRep.flushBefore(sim.NightIndex(md.replica.Tick)) {
+		log.Print(line)
 	}
 	md.tick.Store(md.replica.Tick)
 	md.tickRate.Store(math.Float64bits(md.replica.Speed.TicksPerSecond()))

@@ -4,15 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/wiki/agent-mind.md@9b4ed5aef5bfea50b67fac10f8e2153f065a814d">
+<meta name="promptworld-docs:source" content="docs/wiki/agent-mind.md@1fae0d8536eb43e43eaa7b747aaeaf0b6e05ac83">
 <meta name="promptworld-docs:source" content="docs/wiki/cognition.md@04ff15001bd8a74f7c2965889c0d318fc0dc03a9">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-orchestrator.md@04ff15001bd8a74f7c2965889c0d318fc0dc03a9">
-<meta name="promptworld-docs:source" content="docs/wiki/nightly-consolidation.md@d0645811c9783d1248dc65ed0fcf0b37524dd8fd">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-orchestrator.md@1fae0d8536eb43e43eaa7b747aaeaf0b6e05ac83">
+<meta name="promptworld-docs:source" content="docs/wiki/nightly-consolidation.md@1fae0d8536eb43e43eaa7b747aaeaf0b6e05ac83">
 <meta name="promptworld-docs:source" content="docs/wiki/social-fabric.md@c61cd6c04ddfcd2a976c14a49ba071e8fd768a73">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@9b4ed5aef5bfea50b67fac10f8e2153f065a814d">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@1fae0d8536eb43e43eaa7b747aaeaf0b6e05ac83">
 <meta name="promptworld-docs:source" content="docs/wiki/mental-maps.md@cf65debb44c1e17b54c0f3421d11e1e8cc28576c">
 <meta name="promptworld-docs:source" content="docs/wiki/memory-retrieval.md@d0645811c9783d1248dc65ed0fcf0b37524dd8fd">
-<meta name="promptworld-docs:source" content="docs/wiki/decision-context.md@9b4ed5aef5bfea50b67fac10f8e2153f065a814d">
+<meta name="promptworld-docs:source" content="docs/wiki/decision-context.md@1fae0d8536eb43e43eaa7b747aaeaf0b6e05ac83">
 <title>The AI behind the village — promptworld player docs</title>
 <style>
   :root {
@@ -256,16 +256,6 @@ has lost since the daemon started. It's a plain, ongoing answer to "how much has
 going this fast actually cost me," not just a one-time warning when you first
 change speed — see the <a href="time-and-speed.html">time & speed page</a> for
 where to find it.</p>
-<p>On worlds configured to let the guardian think on its own schedule (an
-opt-in dial — see the <a href="playing-via-metatron.html">guardian page</a>), those
-self-scheduled guardian thoughts live under the same speed budget as everyone
-else's — with one deliberate bias: when the game is running too fast for all the
-thinking to keep up, the guardian's own rounds are the <em>first</em> to be
-skipped, always before any villager's survival thinking. The caretaker yields to
-the villagers, never the other way around. And on those same worlds the guardian
-also keeps memories of its own — its notable moments enter a private store that
-gets the same nightly tidy-up villagers get, so the caretaker's recollection ages
-and consolidates just like theirs.</p>
 
 <h2>Paused doesn't mean unreachable</h2>
 <p>Pausing freezes the villagers' world, but it doesn't hang up on the guardian: you can
@@ -352,6 +342,17 @@ allowed to touch the villager's underlying nature: a separate, purely mechanical
 throws out any digestion attempt that starts drifting the villager's fundamental
 temperament. The nightly digest can only grow the soul; it can never rewrite the
 nature underneath it.</p>
+<p>Older villages have bigger nights to digest — a few weeks in, a villager can carry
+far more memories and beliefs into their sleep than a day-one villager does. If the
+AI's overnight reply gets cut off mid-sentence because it ran out of room, the game
+notices the cut and simply asks again with more room to answer (doubling it, up to a
+fixed cap), so long-running villagers keep forming long-term memories instead of
+quietly stalling. If even the biggest allowance isn't enough, that night is set aside
+with nothing lost — the villager's un-digested memories stay put and the next sleep
+tries again — and the game keeps a nightly tally in its own log, complaining loudly
+if every villager's digestion keeps failing night after night. The narrated story
+feed gets the same safety net: a cut-off storyteller reply is re-asked with more
+room before the game gives up on that chapter.</p>
 <p>The same night also works like a private dream. Before the AI call runs, the
 sleeping mind quietly looks over its own memories for repetitive routine — forty
 nearly-identical trips to the same berry patch, say — and lets that mass blur

@@ -6,7 +6,7 @@ sources:
   - internal/sim/chronicle.go
   - internal/mind/narrate.go
   - internal/scribe/scribe.go
-verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
+verified_against: 3590f2e0d78d3c4b4ced3edd97a49e5512ab2743
 ---
 
 # Chronicle
@@ -96,15 +96,31 @@ lands the prose as a recorded `morgue.epilogue` event through
 `InjectSocial` — one of the two prose types an ENDED world's door still
 accepts (run-end epilogue lands AFTER `run.ended`). Failure discipline is
 the chronicle's own: a suppressed verdict, a full queue, a transport
-error, or empty output is a logged GAP in the morgue's prose, never a
-stall or retry — [[morgue]]'s factual record never waits on it.
+error, or (after the spec-105 ladder below) empty output is a logged GAP
+in the morgue's prose, never a stall — [[morgue]]'s factual record never
+waits on it.
 
-**Failure honesty**: a transport/tier failure carries the chapter's lines
-into the next boundary via a 1-slot retry buffer (merged oldest-first,
-capped at `narrMaxLines` = 120, oldest dropped); unusable model output is
-dropped — a gap, never a stall or retry loop; a full chapter queue (8)
-drops with a log line. No llm.json → no narrator; the world just has no
-narrated story.
+**Truncation-aware retry ladder** (spec 105, TASK-172): the chapter call
+was the sibling failure site of the consolidation blackout — playtest-1's
+day-29 narration died "unterminated JSON object" against the fixed
+800-token budget. Both `runNarration` and `runEpilogue` now drive
+[[nightly-consolidation]]'s shared `submitWithTruncationRetry` helper
+(`internal/mind/retry.go`): a reply that fails its parse AND is detected
+cut (`Stop == llm.StopMaxTokens`, or output tokens at the requested
+budget) is re-submitted with the budget doubled from `narrMaxTokens` —
+800→1600→3200, ≤2 retries, clamped at `llm.MaxTokenBudget` — before any
+failure handling applies. Each consumed retry emits a non-terminal
+`cog.outcome{retried}` (class `chronicle`; the chapter's agent is −1, an
+epilogue's its mourned villager). The existing failure semantics apply
+only AFTER the ladder, per failure type (next block).
+
+**Failure honesty**: a transport/tier failure (any ladder attempt) carries
+the chapter's lines into the next boundary via a 1-slot retry buffer
+(merged oldest-first, capped at `narrMaxLines` = 120, oldest dropped);
+unusable model output — including a ladder still truncated at its top — is
+dropped: a gap, never a stall or retry loop (carrying unusable output
+would loop forever); a full chapter queue (8) drops with a log line. No
+llm.json → no narrator; the world just has no narrated story.
 
 **Views**: the [[tui-client]] chronicle pane renders the replica's ring with
 agent/thread filters and a raw-feed fallback; the [[agent-mind]] scribe

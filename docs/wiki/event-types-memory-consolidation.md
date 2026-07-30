@@ -6,7 +6,7 @@ sources:
   - internal/sim/agents.go
   - internal/sim/journal.go
   - internal/sim/consolidate.go
-verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
+verified_against: 1fae0d8536eb43e43eaa7b747aaeaf0b6e05ac83
 ---
 
 # Event types — memory embedding & consolidation events
@@ -65,7 +65,7 @@ it carries no event of its own.
 | `agent.situation_embedded` (spec 042 US1) | `SituationEmbeddedPayload{agent, tick, text, vec, model}` in `internal/sim/agents.go` | the mind-side embedder driver, injected via `InjectSocial` at planner cadence ([[memory-retrieval]]) | overwrites `Agent.SitVec`/`SitVecModel`/`SitVecTick` with `vec`/`model`/`tick` — later events simply replace earlier ones, no history kept; `text` (the rendered situation template) rides the payload as an audit surface only, stored nowhere in state |
 | `journal.entry_written` | `JournalWrittenPayload{agent, text}` (`journal.go`) | mind journal tool (`write_journal_entry`, injected via `InjectSocial` — spec 019 US3) | the ONLY journal-growth path: appends a reducer-id'd `JournalEntry{id, tick, text}` to the agent's `Journal` via `appendEntry`, which enforces the per-agent `journalBudgetRunes` (4000) rune budget INSIDE `Apply` — the `InjectSocial` dry-run turns an over-budget append into a door rejection, so no over-budget event lands (SC-005, [[agent-mind]]) |
 | `journal.entry_deleted` | `JournalDeletedPayload{agent, entry}` (`journal.go`) | mind journal tool (`delete_from_journal`, injected) | removes the entry with that id from the agent's `Journal` (survivor order preserved, ids never reused or renumbered so freed runes are immediately reclaimable); a missing id errors at the door |
-| consolidation family: `agent.memory_promoted` / `agent.memory_faded` / `agent.belief_revised` / `agent.narrative_set` / `agent.consolidated` | payload structs in `internal/sim/consolidate.go`; contract in `specs/004-nightly-consolidation/contracts/` (spec 030 additions in `specs/030-epistemic-hygiene/contracts/`) | consolidation driver (injected) | salience boost / memory removal / belief create-or-revise / narrative replace / once-per-night ledger ([[nightly-consolidation]]); all reducer-total (vanished targets no-op); spec 030 threads two payload additions through — `belief_revised`'s `evidence` (the validator's resolved `MemoryRef{tick, hash}` citations) and `direct` (whether any cited evidence is direct perception; only a `direct` revision refreshes the belief's `Reinforced` decay anchor — a myth retold nightly on hearsay alone never re-anchors), and `consolidated`'s `coerced` (telemetry: beliefs the validator downgraded off `"witnessed"` for lack of direct evidence, never a rejection) |
+| consolidation family: `agent.memory_promoted` / `agent.memory_faded` / `agent.belief_revised` / `agent.narrative_set` / `agent.consolidated` | payload structs in `internal/sim/consolidate.go`; contract in `specs/004-nightly-consolidation/contracts/` (spec 030 additions in `specs/030-epistemic-hygiene/contracts/`) | consolidation driver (injected) | salience boost / memory removal / belief create-or-revise / narrative replace / once-per-night ledger ([[nightly-consolidation]]); all reducer-total (vanished targets no-op); spec 030 threads two payload additions through — `belief_revised`'s `evidence` (the validator's resolved `MemoryRef{tick, hash}` citations) and `direct` (whether any cited evidence is direct perception; only a `direct` revision refreshes the belief's `Reinforced` decay anchor — a myth retold nightly on hearsay alone never re-anchors), and `consolidated`'s `coerced` (telemetry: beliefs the validator downgraded off `"witnessed"` for lack of direct evidence, never a rejection); spec 105 adds `consolidated`'s `retries` (`omitempty`, telemetry: consumed truncation retries that night, accepted or rejected — `cost_usd` accrues across all ladder attempts) and the distinct rejected-marker reason `truncated` (`ConsolidationReasonTruncated`: the retry ladder exhausted while the reply was still detected cut — a budget failure, unlike `unparseable`'s garbage reply; no reducer change, the marker still closes the night without advancing `ConsolidatedUpTo`) |
 | `agent.belief_reinforced` (spec 030 FR-008; spec 097 `kind`/`confidence`) | `BeliefReinforcedPayload{agent, belief_id, kind?, confidence?}` (`consolidate.go`) — `kind` `""` legacy \| `confirmed` \| `disconfirmed` | the spec-097 reconciler (`internal/mind/reconcile.go`), injected on an `agent.place_observed` landing ([[executor-perception-observation]]): confirm = effective + boost dial, disconfirm = effective × retain dial | re-anchors `Reinforced` to `e.Tick`; a Kind-stamped payload also copies `confidence` (clamped 0–100) — mind computes, reducer copies; a bare pre-097 payload stays the pure re-anchor; a vanished id no-ops |
 | `agent.salience_revised` (spec 098) | `SalienceRevisedPayload{agent, mem_tick, text_hash, salience, reason}` (`dream.go`) | the private-dream pass (injected): habituation of a cluster member | sets the `(tick, hash)` memory's salience to the recorded value (clamped 1..`MaxSalience`); vanished target no-ops |
 | `agent.memory_merged` (spec 098) | `MemoryMergedPayload{agent, kept, merged, salience}` (`dream.go`) | the private-dream pass (injected): a cluster folded into its representative | removes each `merged` `(tick, hash)` member, sets `kept`'s salience to the recorded value; vanished targets no-op |
@@ -73,6 +73,15 @@ it carries no event of its own.
 Spec 098 (private dreams, [[nightly-consolidation]]) is format-stable: the
 two whitelisted rows above carry the dream pass's recorded outcomes, and
 `ConsolidatedPayload` gains `omitempty` `dream_folded`/`dream_kept`.
+
+Spec 105 (truncation-aware retry, [[nightly-consolidation]]) is likewise
+format-stable: `ConsolidatedPayload` gains `omitempty` `retries` (LAST, so a
+zero-retry marker marshals byte-identically to a pre-105 one), `truncated`
+joins the free-form rejected-marker reason vocabulary, and each consumed
+retry rides the EXISTING `cog.outcome{retried}` record
+([[cognition-horizon-telemetry]]) with class `consolidation` (the narrator's
+ladder uses class `chronicle`) — no new event type, no whitelist change, no
+format-version bump.
 
 ## Connections
 

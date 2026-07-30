@@ -7,7 +7,7 @@ sources:
   - internal/mind/prompt.go
   - internal/mind/parse.go
   - internal/mind/telemetry.go
-verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
+verified_against: 1fae0d8536eb43e43eaa7b747aaeaf0b6e05ac83
 ---
 
 # Mind driver cadence and prompt content
@@ -18,21 +18,11 @@ promotes the cadence to a per-world [[world-tuning]] dial, the default living
 in `internal/sim/tuning.go` as `defaultPlannerCadenceTicks` — staggered by
 index; since TASK-44 the stagger is
 phase-preserving — every re-arm steps in whole cadence multiples from the agent's
-own due via `nextPhasePreservingDue` (since spec 102 a thin wrapper over the
-shared `cognition.NextPhasePreservingDue`, which the guardian's steward cadence
-also drives — [[guardian-agentization]]), never from the current tick, so a shared
+own due via `nextPhasePreservingDue`, never from the current tick, so a shared
 stall cannot collapse agents into lockstep) plus triggers — wake, completion
 idle, nightfall, first-adjacency encounters (`md.replica.EncounterCooldown()`,
 2-game-hour pair cooldown by default — the same spec-048 dial family,
-`defaultEncounterCooldownTicks` — since spec 104, on a coalescing-regime
-world the per-event `armEncounters` hook never fires for a coalesced walk,
-since the replica's own `AdvanceTo` call after every absorb batch derives
-the steps with no `agent.moved`; `sweepEncounters` is its regime twin, a
-first-adjacency sweep over the just-advanced replica tracking the standing
-pair-adjacency set (`pairAdjacent`) so a lingering side-by-side pair re-arms
-no more than the per-step shape did, under the SAME per-pair cooldown — a
-mind-side heuristic outside the replay-determinism harness's scope, not a
-sim-reducer effect), a
+`defaultEncounterCooldownTicks`), a
 mental-map correction that invalidates the agent's own current intent target
 (spec 041 US3: `absorb`'s `agent.map_corrected` case arms the agent only when
 one of the payload's gone facts matches the live intent's target or resolved

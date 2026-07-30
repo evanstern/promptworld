@@ -6,7 +6,7 @@ sources:
   - internal/llm/llm.go
   - internal/llm/config.go
   - internal/llm/providers.go
-verified_against: 04ff15001bd8a74f7c2965889c0d318fc0dc03a9
+verified_against: 1fae0d8536eb43e43eaa7b747aaeaf0b6e05ac83
 ---
 
 # LLM orchestrator — provider registry, embedding route & transports
@@ -41,12 +41,8 @@ local for the yes/no, cloud fallback), and it maps to [[cognition]]'s existing
 063 ([[grounded-feedback]]) adds `KindReportCard` (`"report_card"`, frozen
 from birth) on the identical shape — cheap-first `local→cloud`, mapped to
 the same `metatron` decision class — for the guardian's report-card
-critique: one bounded call per stopping point, never a tool loop. Spec 102
-([[guardian-agentization]]) adds `KindSteward` (`"steward"`, frozen from birth — the spec's "angel" design vocabulary, serialized spelling de-themed by the operator rename ruling)
-on the same cheap-first `local→cloud` shape — the guardian's SCHEDULED
-cadence turns, mapped to the NEW `steward` decision class (budgeted below
-planner so the lane sheds first). All three post-format
-kinds are in `defaultBackfillKinds`, so a pre-102/pre-063/pre-029 `llm.json`
+critique: one bounded call per stopping point, never a tool loop. Both new
+kinds are in `defaultBackfillKinds`, so a pre-063/pre-029 `llm.json`
 backfills the route from `defaultRoutes()` with a boot log line rather than
 failing to load.
 
@@ -89,12 +85,8 @@ hidden chain-of-thought — live diagnosis measured 2–6 s calls inflated to 60
 `"none"`, priced absent (and explicit `""` anywhere) sends nothing. `anthropic` uses
 `anthropic-sdk-go` against the Messages API with `cache_control` on system blocks so
 stable prompts (souls, charters) bill at cache-read rates. `newProviderCaller` builds
-the right caller per declared transport. A TASK-58 `ResponseSchema`/`SchemaName`
-structured-output path (deleted as dead code in TASK-71) is back, restored by spec
-103/TASK-174 for the conversation route: `callNative` attaches `response_format
-{type: json_schema}` iff `Request.ResponseSchema` is set and the request carries
-no `Tools` (payload byte-identical otherwise); `anthropicCaller` never reads either
-field. [[social-fabric-conversations]] stamps the two conversation-scene schemas.
+the right caller per declared transport. (A TASK-58 `ResponseSchema` structured-output
+path was deleted as dead code in TASK-71; git history has it.)
 
 **Config** (`config.go`): `llm.json` in the save directory, written v2 by
 `promptworld new`; deleting the file disables the orchestrator entirely. Hosted keys
