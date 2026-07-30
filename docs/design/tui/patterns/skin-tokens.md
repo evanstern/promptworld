@@ -2,7 +2,7 @@
 title: Pattern — skin tokens (doc conventions + the runtime contract)
 class: pattern
 status: shipped
-verified_against: 6e83f579db2b448c9c59b15575bf564b1e9b1852
+verified_against: 250c811bce7eeea7138dd8b028e800ecd1e54173
 ---
 
 # Pattern: skin tokens
