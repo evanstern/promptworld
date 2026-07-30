@@ -93,14 +93,14 @@ prove, in the same task. Tier: Opus 4.8 (card-recorded).
 
 ## Phase 7: Grounding (spec 069 in-branch; spec 047 TUI gate)
 
-- [ ] T016 Wiki re-pins per plan.md's owed list (event-log, event-types
+- [X] T016 Wiki re-pins per plan.md's owed list (event-log, event-types
   family, sim-state-reducer family + replay-hazards audit, mental-maps
   family, executor family, gru, deterministic-rng, world-tuning family,
   snapshots, tui-chronicle-feed, tui-client/map-view, agent-mind/
   mind-driver-triggers, testing notes) — the event-type catalog notes gain
   the two new rows and the retired-emission annotations; rulings 1-5 mirrored
   into the event-log/reducer doctrine notes (FR-005, SC-004).
-- [ ] T017 `docs/player/` regenerated (player-docs skill; freshness probe
+- [X] T017 `docs/player/` regenerated (player-docs skill; freshness probe
   green) and `docs/design/tui/` chronicle pages re-verified + re-pinned
   (`node scripts/check-tui-design.mjs --changed` clean).
 - [ ] T018 Gate sweep before PR: `node scripts/check-merge-drift.mjs pr` exit
