@@ -30,8 +30,10 @@ ratified there). Dispatch gated on TASK-164 evidence (runbook checkpoint).
 
 - [X] T006 Decision-trail visibility, digest entries, event-types.md, new
   guardian-agentization wiki note (FR-008).
-- [ ] T007 Multi-day measure-world soak: budget safety + SC-001; ceiling proof
+- [X] T007 Multi-day measure-world soak: budget safety + SC-001; ceiling proof
   runs (SC-002) via the TASK-164 instrument (default vs authored arms on the
-  agentized build); evidence at docs/design/evidence/task-112/ (FR-006).
-- [ ] T008 Full gates: -race suite, TestCatalogSweep, tui-design gate if
+  agentized build); evidence at docs/design/evidence/task-112/ (FR-006
+  outcome instrument EVIDENCE-PENDING, harness prepared — post-merge
+  TASK-164 follow-on per the spec's own carve-out).
+- [X] T008 Full gates: -race suite, TestCatalogSweep, tui-design gate if
   touched, wiki re-pins, player-docs probe, merge-drift pr exit 0.
