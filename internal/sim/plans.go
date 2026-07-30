@@ -227,7 +227,7 @@ func (s *State) designationByID(id string) *Designation {
 func designationFulfilled(s *State, d *Designation) bool {
 	switch d.Kind {
 	case DesignationStructureSite:
-		return s.structureAt(d.StructureKind, d.X, d.Y)
+		return s.Lookup().Structure(d.StructureKind, d.X, d.Y)
 	case DesignationWallLine:
 		for _, t := range DesignationTiles(d) {
 			w := wallAt(s, t.X, t.Y)

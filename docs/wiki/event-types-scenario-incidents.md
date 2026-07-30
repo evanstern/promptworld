@@ -5,7 +5,7 @@ kind: concept
 sources:
   - internal/sim/scenario.go
   - internal/sim/stranger.go
-verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
+verified_against: 376afd4cee54839a545bc88409f3c485c2f5149d
 ---
 
 # Event types — scenario incidents (spec 077)

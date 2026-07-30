@@ -180,14 +180,14 @@ func strangerStoreUnattended(s *State, x, y int) bool {
 // the tile's ground pile first, else its chest. (0 when the tile holds no
 // takeable goods.) Deterministic: fixed kind order, fixed store precedence.
 func strangerLootAt(s *State, x, y int) (string, int) {
-	if pile := s.pileAt(x, y); pile != nil {
+	if pile := s.Lookup().Pile(x, y); pile != nil {
 		for _, kind := range strangerLootKinds {
 			if a := pile.avail(kind); a > 0 {
 				return kind, minInt(a, strangerTakeMax)
 			}
 		}
 	}
-	if ch := s.chestAt(x, y); ch != nil && ch.Store != nil {
+	if ch := s.Lookup().Chest(x, y); ch != nil && ch.Store != nil {
 		for _, kind := range strangerLootKinds {
 			if a := carriedCount(*ch.Store, kind); a > 0 {
 				return kind, minInt(a, strangerTakeMax)
@@ -283,14 +283,14 @@ func (s *State) applyStranger(e store.Event) error {
 		}
 		// Goods leave through the same state shapes agent withdrawal uses:
 		// pile first, else chest — clamped to what is actually there.
-		if pile := s.pileAt(p.X, p.Y); pile != nil {
+		if pile := s.Lookup().Pile(p.X, p.Y); pile != nil {
 			if isFoodKind(p.Kind) {
 				pile.takeFood(p.Kind, p.N)
 			} else {
 				pile.takeNonFood(p.Kind, p.N)
 			}
 			s.removeEmptyPileAt(p.X, p.Y)
-		} else if ch := s.chestAt(p.X, p.Y); ch != nil && ch.Store != nil {
+		} else if ch := s.Lookup().Chest(p.X, p.Y); ch != nil && ch.Store != nil {
 			n := p.N
 			if c := carriedCount(*ch.Store, p.Kind); n > c {
 				n = c

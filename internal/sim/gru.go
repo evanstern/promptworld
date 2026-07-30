@@ -91,7 +91,7 @@ func litAt(s *State, x, y int) bool {
 // gruProtected: light and shelter are safety — the gru neither sees agents
 // here nor sets foot on these tiles.
 func gruProtected(s *State, x, y int) bool {
-	return litAt(s, x, y) || s.structureAt("shelter", x, y)
+	return litAt(s, x, y) || s.Lookup().Structure("shelter", x, y)
 }
 
 // gruStep is the predator's whole turn, called from stepEvents: emergence at
