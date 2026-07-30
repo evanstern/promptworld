@@ -5,7 +5,7 @@ kind: concept
 sources:
   - internal/sim/guardian_memory.go
   - internal/sim/loop.go
-verified_against: 04ff15001bd8a74f7c2965889c0d318fc0dc03a9
+verified_against: fc4352f3a4c29b81f548988f6435bcc70af46d1e
 ---
 
 # Event types — guardian memory-store events (spec 102)
