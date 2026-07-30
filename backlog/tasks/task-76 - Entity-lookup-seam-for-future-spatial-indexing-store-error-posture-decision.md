@@ -3,10 +3,10 @@ id: TASK-76
 title: >-
   Entity-lookup seam for future spatial indexing (+ store-error posture
   decision)
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-23 06:35'
-updated_date: '2026-07-29 23:49'
+updated_date: '2026-07-30 02:58'
 labels:
   - review-2026-07-22
   - code-quality
@@ -29,13 +29,13 @@ Spec: specs/099-entity-lookup-seam
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 All positional entity lookups routed through one accessor seam; zero raw slice scans at former call sites
-- [ ] #2 Determinism harness proves bit-identical replay across the seam refactor
-- [ ] #3 Store-error posture decision recorded durably; bounded retry implemented only if chosen
-- [ ] #4 go test -race ./... passes; affected wiki notes re-pinned
-- [ ] #5 Spec phase: Seam
-- [ ] #6 Spec phase: Proof + decision
-- [ ] #7 Spec phase: Grounding
+- [x] #1 All positional entity lookups routed through one accessor seam; zero raw slice scans at former call sites
+- [x] #2 Determinism harness proves bit-identical replay across the seam refactor
+- [x] #3 Store-error posture decision recorded durably; bounded retry implemented only if chosen
+- [x] #4 go test -race ./... passes; affected wiki notes re-pinned
+- [x] #5 Spec phase: Seam
+- [x] #6 Spec phase: Proof + decision
+- [x] #7 Spec phase: Grounding
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -45,3 +45,9 @@ Drift audit 2026-07-23: substance verified, pins moved. pileAt at state.go:240; 
 
 board-sweep-2026-07-29 lane 6 (tail): spec 099 landed + linked. D2 decided in-spec: store-error fatal-by-doctrine STANDS with recorded re-open triggers (no retry code). Tier: Sonnet — mechanical seam refactor. Dispatch HELD until 80/81 merge (merges last among sim-touching PRs per runbook); droppable.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Merged via PR #142. All positional entity lookups (26 sites + rot sweep — full re-audit superseded the card's stale 7) routed through the new EntityLookup accessor (internal/sim/lookup.go); v1 wraps existing scans tie-break-identically; grid index = one-line swap (SC-002). Replay fixtures byte-identical; -race green. Store-error posture RATIFIED: fatal-by-doctrine stands, re-open triggers recorded in sim-loop.md + site comments; no retry code. Sonnet tier; spec 099 all tasks done.
+<!-- SECTION:FINAL_SUMMARY:END -->
