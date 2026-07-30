@@ -3,6 +3,9 @@
 **Branch**: `task-112-guardian-agentization` | **Date**: 2026-07-30 | **Spec**: [spec.md](spec.md)
 
 ## Summary
+(Operator rename ruling 2026-07-30: serialized spellings are "steward" —
+class/kind `steward`, dial `steward_cadence_ticks`, prefix
+`steward-metatron-`; see spec.md. "Angel" below is design vocabulary.)
 Move the guardian onto the shared agent construct: angel cognition-registry
 class (cadence, budget, governor/horizon-gated) adding a scheduled lane beside
 the unchanged event triggers; shared memory/consolidation (incl. spec 098);

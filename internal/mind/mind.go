@@ -15,6 +15,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/evanstern/promptworld/internal/cognition"
 	"github.com/evanstern/promptworld/internal/llm"
 	"github.com/evanstern/promptworld/internal/sim"
 	"github.com/evanstern/promptworld/internal/store"
@@ -676,21 +677,13 @@ func loopFailReason(res toolloop.Result, err error) string {
 	}
 }
 
-// nextPhasePreservingDue advances an overdue schedule to the next tick
-// strictly after tick, stepping in whole cadence multiples from its own due
-// — never from tick. This is the TASK-44 fix: re-arming "from now" instead
-// of from the agent's own due collapses every agent a shared stall left
-// overdue onto the identical due, locking the whole village into lockstep
-// the next time cadence comes around. Preserving due's phase (due mod
-// cadence) keeps each agent's boot offset intact forever, regardless of how
-// many cadences it had to skip. Arithmetic equivalent of:
-//
-//	for due <= tick { due += cadence }
+// nextPhasePreservingDue is the TASK-44 phase-preserving due advance. The
+// arithmetic moved to cognition.NextPhasePreservingDue (spec 102 SC-004) so
+// the guardian's angel cadence and the villagers' planner cadence share ONE
+// schedule implementation; this thin name keeps every mind call site and the
+// TASK-44 commentary anchored where the fix was born.
 func nextPhasePreservingDue(due, tick, cadence int64) int64 {
-	if cadence <= 0 || due > tick {
-		return due
-	}
-	return due + (tick-due)/cadence*cadence + cadence
+	return cognition.NextPhasePreservingDue(due, tick, cadence)
 }
 
 func (md *Mind) agentIndexByName(name string) int {

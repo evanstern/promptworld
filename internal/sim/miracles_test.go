@@ -972,6 +972,11 @@ func TestRebaseTaxonomyComplete(t *testing.T) {
 		"TuningState.FireBurnPerWood":        keep,
 		"TuningState.PlannerCadenceTicks":    keep,
 		"TuningState.EncounterCooldownTicks": keep,
+		// spec 102: the steward cadence is a DURATION dial like the four above.
+		"TuningState.StewardCadenceTicks": keep,
+		// spec 102: the guardian store's accepted-consolidation high-water
+		// mark — history, the Agent.ConsolidatedUpTo shape.
+		"State.GuardianMemUpTo": keep,
 		// Spec 097 dials: durations/points, not clock anchors — KEEP like the
 		// other TuningState fields.
 		"TuningState.ObservationDedupTicks":         keep,

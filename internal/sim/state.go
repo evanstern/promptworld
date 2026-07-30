@@ -114,6 +114,15 @@ type State struct {
 	// upgrade-free — no format bump (the spec-029 precedent).
 	Designations []Designation `json:"designations,omitempty"`
 	Directives   []Directive   `json:"directives,omitempty"`
+	// The guardian's own memory store (spec 102, D5): the agentized
+	// guardian's structured memories — the shared Memory model, fed by
+	// guardian.memory_added, consolidated nightly through the same machinery
+	// villagers use (guardian_memory.go). GuardianMemUpTo is the accepted-
+	// consolidation high-water mark (the Agent.ConsolidatedUpTo shape).
+	// omitempty both: a pre-102 snapshot (fields absent) unmarshals to
+	// nil/zero, upgrade-free — no format bump (the spec-084 precedent).
+	GuardianMemories []Memory `json:"guardian_memories,omitempty"`
+	GuardianMemUpTo  int64    `json:"guardian_mem_up_to,omitempty"`
 	// Named regions (spec 101): the canonization miracle's durable artifact —
 	// the guardian's christening of a villager-coined toponym, event-sourced
 	// under the Designations discipline verbatim, but with no terminal event
@@ -2210,6 +2219,14 @@ func (s *State) Apply(e store.Event) error {
 
 	case "guardian.region_named":
 		return s.applyRegion(e)
+
+	case "guardian.memory_added", "guardian.memory_embedded",
+		"guardian.memory_promoted", "guardian.memory_faded",
+		"guardian.salience_revised", "guardian.memory_merged",
+		"guardian.consolidated":
+		// The guardian's own memory store (spec 102): the shared Memory
+		// model's guardian-side arm family (guardian_memory.go).
+		return s.applyGuardianMemory(e)
 
 	case "faith.changed":
 		return s.applyFaith(e)

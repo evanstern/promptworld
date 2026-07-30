@@ -4,7 +4,7 @@ description: The single-goroutine fixed-timestep loop — tick execution, pacing
 kind: component
 sources:
   - internal/sim/loop.go
-verified_against: 0af53ec6d211c71e298072c045c67ccbbd13b61d
+verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
 size_budget_exempt: pre-existing overage (predates spec 101's one-line injectSocialWhitelist addition, the only touch this pass made) — a full pacing/degradation vs. command-handling summary-style split is a dedicated future pass, not this task's scope
 ---
 

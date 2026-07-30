@@ -24,6 +24,17 @@ post-redesign (AC#4): the existing guardrail test suites must pass unmodified
 (or with mechanical-only updates), and the spec's own review checklist walks
 each guardrail to its enforcing test.
 
+## Operator rename ruling (2026-07-30, in-branch, pre-merge)
+
+The "angel" DESIGN vocabulary below stands, but every SERIALIZED spelling is
+de-themed to **"steward"** before first merge (the spec-052 posture: no new
+fiction vocabulary in recorded/display strings): the cognition class and
+llm.json route kind are `"steward"`, the tuning dial is
+`steward_cadence_ticks`, and the correlation prefix is `steward-metatron-`
+(the pre-existing frozen `-metatron-` infix unchanged). Nothing had merged,
+so there is no migration — no recorded log ever carried the old spelling.
+Unserialized Go identifiers may keep the descriptive "angel" names.
+
 ## Design decisions
 
 - **D1 — Same construct, different dress.** The guardian runs the villager

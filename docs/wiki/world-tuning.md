@@ -6,7 +6,7 @@ sources:
   - internal/sim/tuning.go
   - internal/daemon/daemon.go
   - internal/world/world.go
-verified_against: 0af53ec6d211c71e298072c045c67ccbbd13b61d
+verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
 ---
 
 # World tuning manifest
@@ -36,6 +36,11 @@ these doctrine values.
 constants — [[executor-perception-observation]]): two executor-read
 (observation dedup window, base salience), two read off the mind's replica
 by the belief reconciler (disconfirm retain, confirm boost) — nine total.
+**Spec 102 adds `steward_cadence_ticks`** ([[guardian-agentization]]): the
+guardian-agentization OPT-IN switch and cadence — 0 = off = default,
+nonzero clamps to 600..86400, negatives clamp to 0 (never opting a world in
+by accident); `omitempty` on state and payload keeps pre-102 bytes
+identical; read via `State.StewardCadence()`.
 **Spec 104 adds `needs_checkpoint_minutes`** (K, default 10, clamp [1,60]):
 the needs-checkpoint cadence — `agent.needs_changed` emits every K
 game-minutes plus immediately on any danger-band/near-death/zero crossing;

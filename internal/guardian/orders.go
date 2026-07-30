@@ -150,6 +150,8 @@ func (mt *Guardian) placeOrder(origin string, a orderArgs, tick int64, grant gra
 	}
 	mt.appendFile(mt.soulPath(), fmt.Sprintf("\n- %s — I set a watch (%s): %q → %q\n",
 		clock.Format(mt.replicaTickSafe()), order.ID, order.Condition, order.Action))
+	// Agentized memory (spec 102 D5): the placement enters the store too.
+	mt.recordMemory(fmt.Sprintf("I set a watch (%s): %q", order.ID, order.Condition), salGuardianAct-2)
 	return &order, ""
 }
 
@@ -813,6 +815,9 @@ func (mt *Guardian) queueMoment(line string) {
 	mt.stateMu.Lock()
 	mt.moments = append(mt.moments, line)
 	mt.stateMu.Unlock()
+	// Agentized memory (spec 102 D5, "watch fires"): a moment worth telling
+	// the player is a moment worth remembering.
+	mt.recordMemory(line, salGuardianAct)
 }
 
 // triggeredMoment renders the model-free moment describing a COMPLETED triggered

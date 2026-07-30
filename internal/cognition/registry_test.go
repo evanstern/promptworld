@@ -26,6 +26,10 @@ func TestRegistryContractValues(t *testing.T) {
 		"consolidation": {5, 28800, DegradeSkip, false},
 		"chronicle":     {5, 86400, DegradeSkip, false},
 		"metatron":      {5, 86400, DegradeSkip, false},
+		// spec 102 (guardian agentization): the scheduled ("steward") lane — budget
+		// BELOW planner's so the angel sheds first (contract registry.md,
+		// amended in-branch with the spec-102 row).
+		"steward": {5, 900, DegradeSkip, false},
 	}
 	if len(registry) != len(want) {
 		t.Fatalf("registry has %d classes, contract has %d", len(registry), len(want))

@@ -10,7 +10,7 @@ sources:
   - internal/llm/providers.go
   - internal/llm/lease.go
   - internal/llm/pending.go
-verified_against: fc76d2ed3e6995779d392f794f889346704d0aca
+verified_against: 04ff15001bd8a74f7c2965889c0d318fc0dc03a9
 ---
 
 # LLM orchestrator

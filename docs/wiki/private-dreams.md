@@ -6,7 +6,7 @@ sources:
   - internal/sim/dream.go
   - internal/mind/consolidate.go
   - internal/sim/tuning.go
-verified_against: 0af53ec6d211c71e298072c045c67ccbbd13b61d
+verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
 ---
 
 # Private dreams (consolidation clustering + habituation)
@@ -69,7 +69,12 @@ off the mind's replica at snapshot time.
 ## Connections
 
 [[nightly-consolidation]] owns the slot, trigger, and firewall this pass
-rides; [[memory-retrieval]] records the vectors it clusters (no vectors — no
+rides; since spec 102 the agentized guardian's night runs the SAME
+`PlanDream` over its own store (seat `sim.GuardianSeat`, outcomes landing
+as `guardian.salience_revised`/`guardian.memory_merged` via
+`GuardianDreamEvents` — [[guardian-agentization]]; single-store privacy
+holds trivially there);
+[[memory-retrieval]] records the vectors it clusters (no vectors — no
 embedding route or `memory_relevance` off — means the pass finds nothing);
 [[world-tuning]] carries the dials; [[deterministic-rng]] the jitter
 pattern; [[sim-loop]]'s InjectSocial door whitelists the two event types;
