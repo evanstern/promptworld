@@ -752,6 +752,13 @@ type Point struct {
 
 const (
 	// Per-game-minute needs deltas.
+	//
+	// Replay hazard (spec 092/104): under the spec-104 coalescing regime the
+	// derived-advancement engine (advance.go) re-derives non-emitted minutes
+	// from these constants at APPLY time — they are replay-load-bearing for
+	// coalesced logs, exactly the forageYieldV2 class. A retune requires the
+	// spec-094 store.LogFormatVersion bump + migration; see
+	// docs/wiki/sim-state-reducer-replay-hazards.md.
 	foodDecay      = 1 // full → empty in ~16.6 game-hours
 	restDecayAwake = 1
 	restRegenSleep = 4 // full recharge in ~4 game-hours
@@ -791,6 +798,12 @@ const (
 	// The mind driver's per-agent baseline cadence is spec-048-promoted: the
 	// default lives in tuning.go as defaultPlannerCadenceTicks and reads go
 	// through State.PlannerCadence() (nil-safe accessor).
+	//
+	// witnessRadius replay hazard (spec 092, grandfathered spec-041 D2
+	// class; spec 104 widens the exposure): reducer arms (markExplored,
+	// notePresence) AND the derived-advancement steps (advance.go) read it
+	// at apply time — a retune changes what old logs replay to and requires
+	// the spec-094 format machinery.
 	witnessRadius = 8
 	// WitnessRadius exports witnessRadius (spec 081) for internal/mind's absorb
 	// parity — the SAME one perceptual reality the sweep and the harvest arms

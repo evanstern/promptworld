@@ -45,8 +45,12 @@ type Gru struct {
 }
 
 const (
-	gruSightRadius    = 8   // Manhattan; how far the gru sees and is seen
-	gruLightRadius    = 3   // fire light: strictly wider than fireWarmRadius
+	gruSightRadius = 8 // Manhattan; how far the gru sees and is seen
+	gruLightRadius = 3 // fire light: strictly wider than fireWarmRadius
+	// Replay hazard (spec 092/104): under the coalescing regime the derived
+	// gru beat (advance.go) reads this cadence at APPLY time — replay-load-
+	// bearing for coalesced logs, like the "gru-prowl" RNG purpose string in
+	// gruMoveDecision. A retune requires the spec-094 format machinery.
 	gruMoveEveryTicks = 4   // slightly faster than agents' 5
 	gruWound          = 250 // health torn off per attack
 	gruWoundFloor     = 1   // healthy targets: the gru wounds, it does not execute

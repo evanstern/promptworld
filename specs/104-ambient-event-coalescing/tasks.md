@@ -79,11 +79,11 @@ prove, in the same task. Tier: Opus 4.8 (card-recorded).
   (incl. per-agent canonical map bytes), kill-9 recovery equivalence with a
   mid-segment/mid-needs-window snapshot + tail, pre-change seeded fixture
   world replays green; `go test -race ./...` green (FR-002/FR-007).
-- [ ] T014 Spec-092 audit + doctrine bookkeeping: audit-note rows for every
+- [X] T014 Spec-092 audit + doctrine bookkeeping: audit-note rows for every
   advancement-read constant (decay constants, witnessRadius class, gru
   cadence + RNG purpose), definition-site "retune requires format bump"
   comments (spec 094 pattern) (FR-005/FR-006).
-- [ ] T015 **Volume measurement (the SC-001 proof)**: paired seed-1337
+- [X] T015 **Volume measurement (the SC-001 proof)**: paired seed-1337
   baseline-vs-fixed synthetic runs at playtest-1-class dials, month-scale
   (29+ game-days, accelerated); record rows/game-day per family, total
   events, and db size projection in
