@@ -590,6 +590,26 @@ func BuildableStructureKinds() []string {
 	return out
 }
 
+// canonizeFeatureKinds mirrors sim's canonize working feature vocabulary
+// (sim.CanonizeFeatureKinds) — a NARROWER subset of buildableStructureKinds
+// (spec 101 D2): fire and chest carry per-agent-linked lifecycle (fuel
+// tracking, ownership) a divine act has no natural owner for, so canonize_region
+// offers only the five kinds with no such entanglement. MIRRORED, not
+// imported (internal/tool is a leaf, research R1); internal/guardian's drift
+// test pins it equal to sim's derived list (the DesignationKinds pattern),
+// and the reducer dry-run's own canonizeFeatureKind check stays the semantic
+// authority — a drift here can only over- or under-offer, never land an
+// ineligible kind.
+var canonizeFeatureKinds = []string{"shelter", "oven", "wall_plank", "wall_stone", "path"}
+
+// CanonizeFeatureKinds returns a copy of canonize_region's feature-kind Enum,
+// in the order above. Exported for internal/guardian's drift cross-check test.
+func CanonizeFeatureKinds() []string {
+	out := make([]string, len(canonizeFeatureKinds))
+	copy(out, canonizeFeatureKinds)
+	return out
+}
+
 // guardianTools are the guardian roster's tools. converse produces a
 // transcript reply and lands NO world events. It is the guardian's
 // expressive speech channel, so it is Effect Expressive with an empty Events
@@ -785,6 +805,45 @@ var guardianTools = []Tool{
 				Description: "game days before the claim is judged (default 3)"}},
 		Cost:   Cost{Charges: 1, TextCapBytes: 400},
 		Events: []string{"prophecy.declared", "agent.memory_added"}},
+	// canonize_region (spec 101, the canonization miracle): the guardian
+	// christens a villager-coined toponym as durable world state and,
+	// optionally, raises ONE feature of an existing placeable kind within it
+	// (D2). Gate Charge, premium-priced: Cost.Charges is 1 (the gate's
+	// minimum, the work_miracle convention — NOT the real price), the actual
+	// price being sim.GuardianRegionCharge (2 flat, the D4 charge-shape
+	// decision recorded in internal/sim/regions.go — the send_vision/
+	// prophesy cross-reference-by-comment precedent, since this is not one
+	// of the four FROZEN work_miracle kinds tool.miracleCosts prices).
+	// Deliberately NO gratis param — the guardian can never waive a charge
+	// (work_miracle's structural-absence guarantee, spec 016 SC-005).
+	// Deliberately absent from stage1CeilingTools (internal/guardian/
+	// charter.go): a world-shaping act, the work_miracle precedent, not the
+	// charge-free plan layer's every-stage grant.
+	{Name: "canonize_region", Effect: Expressive, Gate: Charge,
+		Params: []Param{
+			{Name: "x", Kind: Number, Required: true, Description: "the region's center, x"},
+			{Name: "y", Kind: Number, Required: true, Description: "the region's center, y"},
+			{Name: "radius", Kind: Number, Required: true, Min: 2, Max: 24,
+				Description: "how far the name reaches, in tiles"},
+			{Name: "name", Kind: Text, Required: true, MaxRunes: 80,
+				Description: "the villager-coined toponym to make real"},
+			{Name: "feature_kind", Kind: Enum, Enum: canonizeFeatureKinds,
+				Description: "optionally, one feature to raise within the region — requires feature_x and feature_y"},
+			{Name: "feature_x", Kind: Number, Description: "the feature's site, x"},
+			{Name: "feature_y", Kind: Number, Description: "the feature's site, y"}},
+		Cost:   Cost{Charges: 1},
+		Events: []string{"guardian.region_named"}},
+	// brief_myths (spec 101 D5, FR-004): the guardian's read-only myth
+	// briefing — dominant candidate place-myths derived on demand from the
+	// existing belief corpus (sim.DominantPlaceMyths), the survey_site/
+	// explain precedent (Effect Read, Gate None, never the turn's one
+	// mediated act, no event ever lands). Granted at every stage — a
+	// read-only lookup widens no acting capability, the survey_site/explain
+	// stage-1 posture.
+	{Name: "brief_myths", Effect: Read, Gate: None,
+		Params: []Param{{Name: "limit", Kind: Number, Min: 1, Max: 20,
+			Description: "how many candidate myths to return (default 5)"}},
+		PromptGloss: `brief_myths lists the dominant candidate place-myths the village currently believes — derived read-only from what villagers already hold, ranked by how many hold it and how strongly. Free, unlimited, never your act — a canonization is never counted as evidence for or against a myth.`},
 }
 
 // journalTools are the villager-only journal capabilities (spec 019, US3): two
