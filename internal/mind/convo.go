@@ -564,6 +564,11 @@ Reply with ONLY {"say": "<one or two short sentences in your voice>"}`,
 		Prompt:    user.String(),
 		MaxTokens: 128,
 		Provider:  cc.provider, // the scene's pinned voice (spec 024 US3)
+		// Constrain the local tier's sampler to the say shape (spec 103/
+		// TASK-174, restoring TASK-58); parseSay stays the final gate and
+		// the Anthropic transport ignores this.
+		ResponseSchema: sayReplySchema,
+		SchemaName:     "say",
 	})
 	if err != nil {
 		return "", "", transportError{err}
@@ -607,6 +612,11 @@ Note %s may pass on: %q`,
 	resp, err := md.orch.Submit(ctx, llm.Request{
 		Kind: llm.KindConversation, Prompt: prompt, MaxTokens: 224,
 		Provider: cc.provider, // same pinned voice as every utterance (spec 024 US3)
+		// Constrain the local tier's sampler to the outcome shape (spec 103/
+		// TASK-174, restoring TASK-58); parseOutcome stays the final gate and
+		// the Anthropic transport ignores this.
+		ResponseSchema: convoOutcomeSchema,
+		SchemaName:     "conversation_outcome",
 	})
 	if err != nil {
 		return convoOutcome{}, "", transportError{err}
