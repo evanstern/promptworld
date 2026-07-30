@@ -7,7 +7,7 @@ sources:
   - internal/guardian/charter.go
   - internal/persona/charter.go
   - internal/skin/skin.go
-verified_against: cf65debb44c1e17b54c0f3421d11e1e8cc28576c
+verified_against: d0645811c9783d1248dc65ed0fcf0b37524dd8fd
 ---
 
 # Guardian's instruction surface
@@ -76,10 +76,17 @@ frame pins the two `guardianNonNegotiables` invariants beneath ANY editable text
 since spec 029, the `guardianInitiativeFrame` (T019) that binds clock control and
 standing orders to player-requested or pre-authorized action only — never the
 guardian's own initiative, with the door-side grant gate backing it independently.
-Since spec 059 (US2) that doctrine gets exactly ONE carve-out, keyed on the
+Since spec 059 (US2) that doctrine gets a carve-out keyed on the
 turn's origin rather than any tool: `buildTurnSystemPrompt(survival, …)` (the
 origin-selecting composer `turnSystemPrompt` now wraps, pinning `survival=false`
-for every pre-059 call site) swaps ONLY the initiative frame —
+for every pre-059 call site; spec 102 extracted the frame-parametric
+`composeTurnSystemPrompt` beneath it so the two ANGEL frames —
+`guardianAngelModestFrame` under the default-charter ceiling,
+`guardianAngelLiftedFrame` under an authored charter, both compile-time
+INV-1 constants — compose through the same body on scheduled turns; a
+scheduled turn's user prompt also gains the guardian's working-memory
+window, and an agentized world's every turn does — see
+[[guardian-agentization]]) swaps ONLY the initiative frame —
 `guardianSurvivalFrame` in place of `guardianInitiativeFrame` when `runTurn`'s
 origin is a survival-watch trigger (`turnOrigin.survival`, [[guardian-orders]]) —
 leaving the non-negotiables, the tool guidance, and every other byte of the

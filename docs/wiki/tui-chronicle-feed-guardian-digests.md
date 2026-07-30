@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/tui/grammar.go
   - internal/tui/digest.go
-verified_against: cf65debb44c1e17b54c0f3421d11e1e8cc28576c
+verified_against: d0645811c9783d1248dc65ed0fcf0b37524dd8fd
 ---
 
 # TUI chronicle feed — guardian-domain digest entries
@@ -53,7 +53,13 @@ chronicle narration of the split is a documented unfunded follow-on). The four
 [[guardian-miracles]] types render in the guardian family voice, with a
 trailing emphasized `(forced)` annotation (`gratisMark`) when the
 payload's gratis flag waived the charge — the feed never conflates an
-operator force with a charge-priced miracle.
+operator force with a charge-priced miracle. Spec 102
+([[guardian-agentization]], [[event-types-guardian-memory]]) adds seven
+guardian memory-store rows — `guardian.memory_added/embedded/promoted/
+faded`, `guardian.salience_revised`, `guardian.memory_merged`,
+`guardian.consolidated` — the `agent.*` consolidation family's wording
+re-voiced under the skin's guardian display name (vectors elided, the
+spec-042 reasoning).
 
 ## Connections
 

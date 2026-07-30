@@ -7,7 +7,7 @@ sources:
   - internal/mind/prompt.go
   - internal/mind/parse.go
   - internal/mind/telemetry.go
-verified_against: a761a45cb3b437613b808408c6c7f30d11bd9eb9
+verified_against: d0645811c9783d1248dc65ed0fcf0b37524dd8fd
 ---
 
 # Mind driver cadence and prompt content
@@ -18,7 +18,9 @@ promotes the cadence to a per-world [[world-tuning]] dial, the default living
 in `internal/sim/tuning.go` as `defaultPlannerCadenceTicks` — staggered by
 index; since TASK-44 the stagger is
 phase-preserving — every re-arm steps in whole cadence multiples from the agent's
-own due via `nextPhasePreservingDue`, never from the current tick, so a shared
+own due via `nextPhasePreservingDue` (since spec 102 a thin wrapper over the
+shared `cognition.NextPhasePreservingDue`, which the guardian's angel cadence
+also drives — [[guardian-agentization]]), never from the current tick, so a shared
 stall cannot collapse agents into lockstep) plus triggers — wake, completion
 idle, nightfall, first-adjacency encounters (`md.replica.EncounterCooldown()`,
 2-game-hour pair cooldown by default — the same spec-048 dial family,

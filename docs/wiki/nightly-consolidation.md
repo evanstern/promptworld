@@ -7,7 +7,7 @@ sources:
   - internal/mind/consolidate.go
   - internal/mind/validate.go
   - internal/persona/personas.go
-verified_against: a761a45cb3b437613b808408c6c7f30d11bd9eb9
+verified_against: d0645811c9783d1248dc65ed0fcf0b37524dd8fd
 ---
 
 # Nightly consolidation + persona firewall
@@ -113,6 +113,13 @@ of the night's fate), and only the ambiguous band rides this call as labeled
 
 ## Connections
 
+Since spec 102 the machinery has a second driver: the AGENTIZED guardian's
+nightly boundary consolidates its own store through the same shape
+(`internal/guardian/consolidate.go` — shared `sim.ParseMemLabel`/
+`ParseRoutineLabels`/`FirstJSONObject` label plumbing, the same
+`KindConsolidation` route and `consolidation` decision class, the same
+marker vocabulary; villager-only parts — beliefs, nature anchor, narrative —
+simply have no guardian counterpart; [[guardian-agentization]]).
 [[agent-mind]] owns the replica, personas, and the sleep trigger surface (and
 stamps the `Origin` every memory carries — the sole input to this note's
 provenance gate); [[llm-orchestrator]] routes `consolidation` to the cloud tier

@@ -4,7 +4,7 @@ description: Loop.InjectSocial (the mind's whitelisted conversation/consolidatio
 kind: component
 sources:
   - internal/sim/loop.go
-verified_against: cf65debb44c1e17b54c0f3421d11e1e8cc28576c
+verified_against: d0645811c9783d1248dc65ed0fcf0b37524dd8fd
 ---
 
 # Sim loop — injection doors
@@ -46,10 +46,17 @@ door validates targets/text/TTL/cap/claim and spends the charge stake;
 it rides atomically with per-target `OriginOmen` companions), while
 `prophecy.fulfilled`/`prophecy.failed`/`faith.changed` are
 executor-emitted and deliberately absent — whitelist absence is what
-refuses a forged verdict or faith movement — and `agent.salience_revised`/
+refuses a forged verdict or faith movement — `agent.salience_revised`/
 `agent.memory_merged` (spec 098, [[private-dreams]]) widen the boundary by
 two: the nightly dream pass's recorded habituation/merge outcomes, injected
 by the consolidation driver, reducer-total like the consolidation family —
+and the seven guardian memory-store types (spec 102,
+[[guardian-agentization]] / [[event-types-guardian-memory]]) —
+`guardian.memory_added`/`memory_embedded`/`memory_promoted`/`memory_faded`/
+`salience_revised`/`memory_merged`/`consolidated` — join the same way:
+worker/embedder-injected, reducer-total, the `agent.*` consolidation
+family's guardian-side twins; a non-agentized world's guardian never emits
+them —
 (since spec 036 whitelist membership is also readable from outside the package
 via `InjectableSocialEvent(t)`, the single-source accessor both the tool
 coverage gate and the bundle boot gate ([[bundle-tools]]) enforce against).

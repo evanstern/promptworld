@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/guardian/guardian.go
   - internal/skin/skin.go
-verified_against: cf65debb44c1e17b54c0f3421d11e1e8cc28576c
+verified_against: d0645811c9783d1248dc65ed0fcf0b37524dd8fd
 ---
 
 # Guardian
@@ -29,8 +29,11 @@ byte-identical to before.
 ## How it works
 
 **Turns** (`turn.go`): one directive drives one `Turn` through [[tool-loop]]'s
-bounded loop (spec 017), console-originated or system-authored via a
-triggered standing order (see [[guardian-watch-workers]]); both run the
+bounded loop (spec 017), console-originated, system-authored via a
+triggered standing order (see [[guardian-watch-workers]]), or — spec 102,
+on an opted-in world — SCHEDULED on the guardian's own cadence
+([[guardian-agentization]]: the angel lane, ceiling-gated per the compiled
+charter); all run the
 identical body — same single-flight guard, roster/handler/gate composition,
 telemetry — differing only in framing. Before any tool call, the turn
 stacks its prompt in a strict, byte-pinned order — the stage-aware

@@ -6,7 +6,7 @@ sources:
   - internal/llm/llm.go
   - internal/llm/config.go
   - internal/llm/providers.go
-verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
+verified_against: d0645811c9783d1248dc65ed0fcf0b37524dd8fd
 ---
 
 # LLM orchestrator — provider registry, embedding route & transports
@@ -41,8 +41,12 @@ local for the yes/no, cloud fallback), and it maps to [[cognition]]'s existing
 063 ([[grounded-feedback]]) adds `KindReportCard` (`"report_card"`, frozen
 from birth) on the identical shape — cheap-first `local→cloud`, mapped to
 the same `metatron` decision class — for the guardian's report-card
-critique: one bounded call per stopping point, never a tool loop. Both new
-kinds are in `defaultBackfillKinds`, so a pre-063/pre-029 `llm.json`
+critique: one bounded call per stopping point, never a tool loop. Spec 102
+([[guardian-agentization]]) adds `KindAngel` (`"angel"`, frozen from birth)
+on the same cheap-first `local→cloud` shape — the guardian's SCHEDULED
+cadence turns, mapped to the NEW `angel` decision class (budgeted below
+planner so the lane sheds first). All three post-format
+kinds are in `defaultBackfillKinds`, so a pre-102/pre-063/pre-029 `llm.json`
 backfills the route from `defaultRoutes()` with a boot log line rather than
 failing to load.
 
