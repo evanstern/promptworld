@@ -1,10 +1,10 @@
 ---
 id: TASK-30
 title: 'The survival labor budget: effort, healing, and health retune — design session'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-20 19:54'
-updated_date: '2026-07-25 04:42'
+updated_date: '2026-07-30 00:41'
 labels:
   - design
   - learning-game
