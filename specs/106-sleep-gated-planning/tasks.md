@@ -52,7 +52,7 @@ there: pre-submit gate + in-flight cancel, mind-side, ladder untouched).
 
 ## Phase 5: Reconcile with spec 102 + grounding + gates
 
-- [ ] T008 After TASK-112's PR lands (operator ruling: this PR merges only
+- [X] T008 After TASK-112's PR lands (operator ruling: this PR merges only
   after it): merge main INTO this branch (never rebase), re-run
   `go test -race ./...`, re-verify the absorb/runPlan seams.
 - [X] T009 Re-verify + re-pin touched wiki notes (behavior-review:
