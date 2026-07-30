@@ -71,6 +71,26 @@ func allowedGoOccurrence(lit, word string, start, end int) bool {
 			return true
 		}
 		return false
+	case "angel", "angels":
+		// Spec 102 (guardian agentization) ratified "angel" as MECHANICS
+		// vocabulary for the scheduled cognition lane, frozen from birth
+		// (ruling 2): the exact "angel" identifier (the cognition class, the
+		// llm.json route kind, the turnOrigin jobPrefix), "angel_*" wire/JSON
+		// keys (the angel_cadence_ticks dial), and the "angel-metatron-"
+		// correlation prefix riding recorded cog.* payloads. Display prose
+		// still de-themes — no other spelling passes.
+		if word != "angel" {
+			return false
+		}
+		switch {
+		case lit == "angel":
+			return true
+		case after == '_':
+			return true
+		case strings.HasPrefix(lit[start:], "angel-metatron-"):
+			return true
+		}
+		return false
 	case "miracle", "miracles":
 		// Frozen forms: the work_miracle tool id, the miracle_kinds manifest
 		// key, a frozen JSON struct tag, and the exact "miracle" literal (the

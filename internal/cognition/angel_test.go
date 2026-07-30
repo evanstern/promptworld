@@ -64,11 +64,11 @@ func TestAngelShedsBeforeVillagerSurvival(t *testing.T) {
 // semantics, now exported here.
 func TestNextPhasePreservingDueShared(t *testing.T) {
 	cases := []struct{ due, tick, cadence, want int64 }{
-		{100, 50, 30, 100},   // not overdue: untouched
-		{100, 100, 30, 130},  // due == tick advances one cadence
-		{100, 250, 30, 280},  // multiple cadences skipped, phase kept (100 mod 30 == 280 mod 30)
-		{100, 250, 0, 100},   // degenerate cadence: untouched
-		{100, 99999, 30, 100029}, // long stall, phase preserved
+		{100, 50, 30, 100},       // not overdue: untouched
+		{100, 100, 30, 130},      // due == tick advances one cadence
+		{100, 250, 30, 280},      // multiple cadences skipped, phase kept (100 mod 30 == 280 mod 30)
+		{100, 250, 0, 100},       // degenerate cadence: untouched
+		{100, 99999, 30, 100000}, // long stall, phase preserved (100000 mod 30 == 100 mod 30 == 10)
 	}
 	for _, c := range cases {
 		if got := NextPhasePreservingDue(c.due, c.tick, c.cadence); got != c.want {

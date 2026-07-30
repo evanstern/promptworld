@@ -166,7 +166,7 @@ func (mt *Guardian) runAngel(job angelJob) {
 	wallMs := time.Since(start).Milliseconds()
 
 	if err != nil {
-		mt.emitAngelOutcome(jobID, job.tick, sim.OutcomeUnusable, "angel turn failed: "+err.Error(), wallMs)
+		mt.emitAngelOutcome(jobID, job.tick, sim.OutcomeUnusable, "scheduled turn failed: "+err.Error(), wallMs)
 		return
 	}
 	// Terminal outcome: landed when an act reached a door this turn; adapted
@@ -253,6 +253,6 @@ func (mt *Guardian) emitAngelCog(events ...store.Event) {
 		return
 	}
 	if err := mt.social.InjectSocial(events); err != nil {
-		log.Printf("guardian: angel telemetry rejected: %v", err)
+		log.Printf("guardian: cadence telemetry rejected: %v", err)
 	}
 }

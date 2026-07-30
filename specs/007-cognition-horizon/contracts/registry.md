@@ -12,6 +12,17 @@ Changing a value is a reviewed code change, never runtime tuning (decision-4).
 | `consolidation` | consolidation | 5 | 8 h (the night) | 28800 | skip | no |
 | `chronicle` | narrator, drama | 5 | 1 day | 86400 | skip | no |
 | `metatron` | metatron | 5 | 1 day | 86400 | skip | no |
+| `angel` | angel | 5 | 15 min | 900 | skip | no |
+
+**`angel` (spec 102, guardian agentization):** the guardian's SCHEDULED
+cognition lane — the agentized guardian's own-cadence turns (the event-driven
+console/order doors keep the `metatron` class above). Points 5: a full
+guardian turn shape. Budget 900, deliberately BELOW planner's 1200: under
+saturation the angel is the FIRST class the router sheds — villager survival
+cognition must always outlive the caretaker's ambient turns (spec 102 D2; the
+`internal/cognition` registry test pins the inequality both as MaxSafeSpeed
+ordering and pointwise across the ladder). DegradeSkip: a suppressed angel
+turn simply doesn't happen; the event doors still answer.
 
 **Routing arithmetic** (pure): `predictedWallSec = Points × secondsPerPoint(tier)`;
 `predictedDriftTicks = predictedWallSec × Speed.TicksPerSecond()`; route to model iff
