@@ -4,7 +4,7 @@ title: 'Event-log volume: coalesce ambient movement and needs ticks'
 status: In Progress
 assignee: []
 created_date: '2026-07-30 16:42'
-updated_date: '2026-07-30 18:42'
+updated_date: '2026-07-30 18:52'
 labels: []
 dependencies: []
 ordinal: 144000
@@ -27,7 +27,16 @@ Spec: specs/104-ambient-event-coalescing
 <!-- AC:BEGIN -->
 - [ ] #1 A month-scale world's event volume is reduced several-fold for ambient movement/needs families without breaking replay byte-identity or downstream consumers (chronicle, digest, TUI)
 - [ ] #2 The chosen approach is recorded as a design decision (emission shape vs compaction) with the determinism doctrine explicitly addressed
+- [ ] #3 Spec phase: Contracts + the derived-progress engine (D1)
+- [ ] #4 Spec phase: Movement at exact per-step fidelity (D2 — the hard slice)
+- [ ] #5 Spec phase: Needs thinning (D3)
+- [ ] #6 Spec phase: Gru derived motion (D4)
+- [ ] #7 Spec phase: Consumers (D5)
+- [ ] #8 Spec phase: Whole-system proofs + measurement
+- [ ] #9 Spec phase: Grounding (spec 069 in-branch; spec 047 TUI gate)
 <!-- AC:END -->
+
+
 
 ## Implementation Notes
 
