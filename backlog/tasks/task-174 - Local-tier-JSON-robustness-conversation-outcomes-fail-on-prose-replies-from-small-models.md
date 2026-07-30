@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-30 16:42'
-updated_date: '2026-07-30 18:35'
+updated_date: '2026-07-30 19:20'
 labels: []
 dependencies: []
 ordinal: 142000
@@ -26,18 +26,18 @@ Spec: specs/103-conversation-outcome-json
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Conversation-outcome calls on the local tier use constrained/JSON-mode decoding (as TASK-58 did for the planner) or fall back to cloud on parse failure
+- [x] #1 Conversation-outcome calls on the local tier use constrained/JSON-mode decoding (as TASK-58 did for the planner) or fall back to cloud on parse failure
 - [ ] #2 Outcome parse-failure rate is measurable, and a soak on a small local model shows abandoned-outcome rate materially reduced from playtest-1's baseline (22 failed outcomes / 21% scenes abandoned)
-- [ ] #3 Spec phase: Transport — restore structured outputs (internal/llm)
-- [ ] #4 Spec phase: Conversation schemas (internal/mind)
+- [x] #3 Spec phase: Transport — restore structured outputs (internal/llm)
+- [x] #4 Spec phase: Conversation schemas (internal/mind)
 - [ ] #5 Spec phase: Measurement + soak
-- [ ] #6 Spec phase: Grounding
+- [x] #6 Spec phase: Grounding
 <!-- AC:END -->
-
-
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 sweep dispatch (runbook playtest-1-findings-sweep): tier Sonnet — routine single-subsystem robustness following TASK-58's established structured-outputs pattern (constitution P.V: single-package feature, no concurrency/doctrine surface). Spec 103-conversation-outcome-json.
+
+spec-bridge sync post-merge (PR #144, merged 2026-07-30): Transport 2/2, Conversation schemas 3/3, Grounding 1/1 — phases ticked. Card AC#1 satisfied (constrained decoding shipped, no cloud fallback per spec-024 pin doctrine). OPEN: Measurement + soak 0/1 (T006) — card AC#2 needs the live soak vs playtest-1 baseline; queries committed at docs/design/evidence/task-174/queries.sql; run when the shared ollama host is uncontended. Task stays In Progress until soak evidence lands.
 <!-- SECTION:NOTES:END -->
