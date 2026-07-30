@@ -62,6 +62,22 @@ var registry = map[string]DecisionClass{
 	// The "metatron" class/kind strings are FROZEN (spec 052 ruling 2):
 	// recorded cog.* payloads carry the class, and llm.json routes the kind.
 	"metatron": {Class: "metatron", Points: 5, BudgetTicks: 86400, Degrade: DegradeSkip},
+	// The "steward" class (spec 102, D2/FR-001; operator rename ruling
+	// 2026-07-30 de-themed the serialized spelling from the spec's "angel"
+	// design vocabulary before first merge — no recorded log ever carried
+	// the old string): the guardian's SCHEDULED
+	// cognition lane — the agentized guardian observing and acting on its own
+	// cadence, beside (never replacing) the event-driven doors that keep the
+	// "metatron" class above. Points 5: a full guardian turn prompt (charter +
+	// skills + replica digests + tool loop), the metatron shape. BudgetTicks
+	// 900 (15 game-minutes at 1x): deliberately BELOW planner's 1200 so the
+	// angel is the FIRST class the router sheds as speed rises — villager
+	// survival cognition (planner, reflex-floored) must always outlive the
+	// caretaker's ambient turns under saturation (D2's shed order; the
+	// registry_test pin holds the inequality). DegradeSkip: a suppressed
+	// angel turn simply doesn't happen — the event doors still answer, and
+	// the world never waits on the caretaker.
+	"steward": {Class: "steward", Points: 5, BudgetTicks: 900, Degrade: DegradeSkip},
 }
 
 // kindToClass maps every llm call kind (as a string, keeping this package
@@ -88,6 +104,10 @@ var kindToClass = map[string]string{
 	// stand alone — nothing runs), event-triggered at stopping points, never
 	// cadence-scheduled.
 	"report_card": "metatron",
+	// The steward's scheduled turns (spec 102): its OWN kind and class, so the
+	// router, governor debt, and horizon surfaces budget the cadence lane
+	// separately from the event-driven "metatron" doors it rides beside.
+	"steward": "steward",
 }
 
 // ClassFor returns the registered class by name.

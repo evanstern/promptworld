@@ -12,7 +12,7 @@ sources:
   - internal/sim/agents.go
   - internal/sim/memory.go
   - internal/sim/journal.go
-verified_against: 0af53ec6d211c71e298072c045c67ccbbd13b61d
+verified_against: cb0eb0c0b00c7ecef9d0a6a88d49c3ee994953b4
 ---
 
 # Decision context (per-turn context grounding)

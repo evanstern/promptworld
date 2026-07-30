@@ -7,7 +7,7 @@ sources:
   - internal/mind/prompt.go
   - internal/mind/parse.go
   - internal/mind/telemetry.go
-verified_against: 0af53ec6d211c71e298072c045c67ccbbd13b61d
+verified_against: cb0eb0c0b00c7ecef9d0a6a88d49c3ee994953b4
 ---
 
 # Mind driver cadence and prompt content
@@ -22,15 +22,7 @@ own due via `nextPhasePreservingDue`, never from the current tick, so a shared
 stall cannot collapse agents into lockstep) plus triggers — wake, completion
 idle, nightfall, first-adjacency encounters (`md.replica.EncounterCooldown()`,
 2-game-hour pair cooldown by default — the same spec-048 dial family,
-`defaultEncounterCooldownTicks` — since spec 104, on a coalescing-regime
-world the per-event `armEncounters` hook never fires for a coalesced walk,
-since the replica's own `AdvanceTo` call after every absorb batch derives
-the steps with no `agent.moved`; `sweepEncounters` is its regime twin, a
-first-adjacency sweep over the just-advanced replica tracking the standing
-pair-adjacency set (`pairAdjacent`) so a lingering side-by-side pair re-arms
-no more than the per-step shape did, under the SAME per-pair cooldown — a
-mind-side heuristic outside the replay-determinism harness's scope, not a
-sim-reducer effect), a
+`defaultEncounterCooldownTicks`), a
 mental-map correction that invalidates the agent's own current intent target
 (spec 041 US3: `absorb`'s `agent.map_corrected` case arms the agent only when
 one of the payload's gone facts matches the live intent's target or resolved
@@ -76,6 +68,16 @@ the nearby-agent line itself now walks the map's peer sightings, so a peer who
 slipped away unseen still renders where last seen rather than its live
 position. Two villagers with different histories now see different worlds in
 their own prompts ([[mental-maps]] owns the map subsystem this renders from).
+Since spec 106 absorb also does two sleep-gating jobs alongside its arming
+work: at batch end it refreshes the worker-facing per-agent unavailability
+mirror (asleep|dead, one atomic word beside the `md.tick`/`md.tickRate`
+mirrors) that [[tool-use-dispatch]]'s dequeue gate reads, and per event it
+fires the agent's in-flight planner cancel slot on `agent.slept`/`agent.died`
+(planner slot only — the consolidation that same `agent.slept` triggers is
+untouched). The wake trigger is the gate's resumption path: `agent.woke` arms
+the planner AND the same batch flips the mirror awake, so a villager whose
+queued thought was skipped asleep re-thinks at the next `plan()` pass,
+debounce permitting.
 The driver also runs conversations (see
 [[social-fabric]]). Villagers convened to the daily meeting are planner-suppressed
 (`sim.AtMeeting`, checked in `plan()`) until close, their pending triggers left

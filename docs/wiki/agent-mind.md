@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/mind/mind.go
   - internal/mind/handlers.go
-verified_against: 0af53ec6d211c71e298072c045c67ccbbd13b61d
+verified_against: cb0eb0c0b00c7ecef9d0a6a88d49c3ee994953b4
 ---
 
 # Agent mind
@@ -35,18 +35,16 @@ planner cadence with a phase-preserving stagger, the trigger set that arms a
 due thought (wake, completion, nightfall, encounters, mental-map corrections,
 on-scene harvest acts re-arming intent-matched witnesses (spec 081), paused
 Guardian nudges), and the social-law/known-places/village-law blocks a
-villager's own history and mental map render into its own prompt. Since
-spec 104, `absorb` also walks the replica's own derived progress
-(`AdvanceTo`) after each batch and, on a coalescing-regime world, sweeps for
-newly-adjacent pairs itself — the per-event `agent.moved` encounter trigger
-never fires for a coalesced walk.
+villager's own history and mental map render into its own prompt.
 
 **The cognition gate and tool-use loop dispatch** ([[tool-use-dispatch]]): the
 cognition-horizon gate that suppresses a thought whose predicted drift would
-already be stale on arrival, the immutable per-job snapshot and `thoughtMeta`
-identity, and how `runPlan` drives the bounded tool-use loop against the
-villager roster — the retired free-text reply contract now lives as tool
-schemas the loop driver validates before dispatch.
+already be stale on arrival, the spec-106 sleep gate (a dequeue-time
+unavailability check plus an in-flight cancel on `agent.slept`/`agent.died`,
+so planner throughput is never spent on sleepers), the immutable per-job
+snapshot and `thoughtMeta` identity, and how `runPlan` drives the bounded
+tool-use loop against the villager roster — the retired free-text reply
+contract now lives as tool schemas the loop driver validates before dispatch.
 
 **Villager tool handlers** ([[villager-tool-handlers]]): every acting tool
 (world verbs, `set_plan`, `muse`, the journal writes) wraps an existing

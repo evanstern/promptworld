@@ -6,7 +6,7 @@ sources:
   - internal/sim/morgue.go
   - internal/mind/narrate.go
   - internal/sim/state.go
-verified_against: 0af53ec6d211c71e298072c045c67ccbbd13b61d
+verified_against: 1fae0d8536eb43e43eaa7b747aaeaf0b6e05ac83
 ---
 
 # Morgue narrated epilogues
@@ -34,6 +34,11 @@ construction. The render blockquotes each epilogue after its section's facts
 and epilogues are collected in the same fold but EXCLUDED from the
 byte-identity requirement — a suppressed, dropped, or failed epilogue is a
 gap in the prose, never a stall of the factual record (FR-010). Since spec
+105 the epilogue call rides [[chronicle]]'s truncation-aware retry ladder
+(800→1600→3200 from `narrMaxTokens`, ≤2 retries) before that gap
+discipline applies — a detected-cut empty reply is re-asked at a doubled
+budget; each consumed retry emits `cog.outcome{retried}` (class
+`chronicle`, the mourned villager's agent id). Since spec
 063 ([[grounded-feedback]]), a run-ending guardian report card ALSO lands on
 this same `morgue.epilogue` channel — `agent -1`, beside the narrator's own
 run-end epilogue, prefixed "Report card (under charter `<fingerprint>`):

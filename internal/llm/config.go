@@ -77,7 +77,12 @@ const (
 	defaultPlannerTokens       = 512
 	defaultGuardianTurnTokens  = 1024
 	defaultConsolidationTokens = 1024
-	maxTokenBudget             = 4096
+	// MaxTokenBudget is the shared upper clamp on every per-kind response
+	// budget — and, since spec 105, the single source for the truncation-retry
+	// ladder's ceiling (internal/mind escalates a truncated call's budget up to
+	// this bound and no further). Exported so the ladder and the config
+	// normalization can never drift apart; the value is unchanged (4096).
+	MaxTokenBudget = 4096
 )
 
 // normalizeTokenBudget clamps one max_tokens field into an effective request
@@ -95,8 +100,8 @@ func normalizeTokenBudget(key string, raw, def int64) (n int64, warn string) {
 		return def, ""
 	case raw < 0:
 		return def, fmt.Sprintf("llm.json max_tokens.%s %d out of range (min 1) — using %d", key, raw, def)
-	case raw > maxTokenBudget:
-		return maxTokenBudget, fmt.Sprintf("llm.json max_tokens.%s %d out of range (max %d) — clamped to %d", key, raw, maxTokenBudget, maxTokenBudget)
+	case raw > MaxTokenBudget:
+		return MaxTokenBudget, fmt.Sprintf("llm.json max_tokens.%s %d out of range (max %d) — clamped to %d", key, raw, MaxTokenBudget, MaxTokenBudget)
 	default:
 		return raw, ""
 	}
@@ -486,6 +491,11 @@ func defaultRoutes() map[string]RouteConfig {
 		// shape: a few grounded sentences per stopping point, local first,
 		// cloud fallback — never premium by default.
 		string(KindReportCard): {Chain: []string{"local", "cloud"}},
+		// The steward's scheduled turns (spec 102) ride the same cheap-first
+		// shape: ambient own-cadence cognition, potentially many turns per
+		// game-day on an opted-in world — local first, cloud fallback, never
+		// premium by default. Operators re-route it like any kind.
+		string(KindSteward): {Chain: []string{"local", "cloud"}},
 	}
 }
 
@@ -501,6 +511,9 @@ var defaultBackfillKinds = map[Kind]struct{}{
 	// report_card (spec 063): post-format kind — a pre-063 llm.json keeps
 	// booting, its route backfilled from defaultRoutes with a boot log line.
 	KindReportCard: {},
+	// steward (spec 102): post-format kind — a pre-102 llm.json keeps booting,
+	// its route backfilled from defaultRoutes with a boot log line.
+	KindSteward: {},
 }
 
 // configWarnf surfaces a config boot log line (warn-not-error), mirroring

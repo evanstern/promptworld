@@ -6,7 +6,7 @@ sources:
   - internal/tui/look.go
   - internal/tui/views.go
   - internal/tui/tui.go
-verified_against: 0af53ec6d211c71e298072c045c67ccbbd13b61d
+verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
 ---
 
 # TUI look-cursor mode (map side)

@@ -217,3 +217,65 @@ func TestConsolidationReplayDeterminism(t *testing.T) {
 		t.Error("snapshot round-trip changed state")
 	}
 }
+
+// TestConsolidatedPayloadRetries is spec 105 T003: the additive Retries field
+// round-trips, a zero-retry marker marshals byte-identically to a pre-105 one
+// (omitempty), and an old payload without the field decodes as Retries 0.
+func TestConsolidatedPayloadRetries(t *testing.T) {
+	// Round-trip: the field survives marshal → unmarshal, on accepted and
+	// rejected (reason "truncated") markers alike.
+	for _, p := range []ConsolidatedPayload{
+		{Agent: Ref(0), Night: 3, UpTo: 900, Outcome: ConsolidationAccepted, Promoted: 2, CostUSD: 0.04, Retries: 1},
+		{Agent: Ref(1), Night: 3, Outcome: ConsolidationRejected, Reason: ConsolidationReasonTruncated, CostUSD: 0.09, Retries: 2},
+	} {
+		b, err := json.Marshal(p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var got ConsolidatedPayload
+		if err := json.Unmarshal(b, &got); err != nil {
+			t.Fatal(err)
+		}
+		if got != p {
+			t.Errorf("round-trip: got %+v, want %+v", got, p)
+		}
+	}
+
+	// Byte-compat: a marker with zero retries marshals to the same bytes as
+	// the identical pre-105 payload shape (no "retries" key at all).
+	p := ConsolidatedPayload{Agent: Ref(0), Night: 1, UpTo: 32, Outcome: ConsolidationAccepted, Promoted: 1}
+	b, err := json.Marshal(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bytes.Contains(b, []byte("retries")) {
+		t.Errorf("zero-retry marker leaked a retries key: %s", b)
+	}
+
+	// Old-payload compat: a pre-105 marker (field absent) decodes with
+	// Retries 0 and still applies through the reducer unchanged.
+	old := []byte(`{"agent":{"id":0,"name":"Ash"},"night":1,"up_to":32,"outcome":"accepted","promoted":1}`)
+	var got ConsolidatedPayload
+	if err := json.Unmarshal(old, &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.Retries != 0 {
+		t.Errorf("pre-105 payload decoded Retries = %d, want 0", got.Retries)
+	}
+
+	// Reducer arm untouched: a truncated-rejected marker closes the night and
+	// stamps the mark, but never advances ConsolidatedUpTo (buffer intact).
+	s := NewState(1, testMap(1))
+	e := consolidationEvent(t, 90000, "agent.consolidated", ConsolidatedPayload{
+		Agent: Ref(0), Night: 2, Outcome: ConsolidationRejected,
+		Reason: ConsolidationReasonTruncated, Retries: 2, CostUSD: 0.09})
+	if err := s.Apply(e); err != nil {
+		t.Fatal(err)
+	}
+	if s.Agents[0].LastConsolidatedNight != 2 || s.Agents[0].LastConsolidateMark != 90000 {
+		t.Errorf("marker did not close the night: %+v", s.Agents[0])
+	}
+	if s.Agents[0].ConsolidatedUpTo != 0 {
+		t.Errorf("rejected truncated marker advanced ConsolidatedUpTo = %d, want 0", s.Agents[0].ConsolidatedUpTo)
+	}
+}

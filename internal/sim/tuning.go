@@ -58,6 +58,15 @@ const (
 	defaultBeliefDisconfirmRetainPercent = 70
 	defaultBeliefConfirmBoost            = 10
 
+	// Spec 102 (guardian agentization): the steward cadence dial — how often
+	// (game-seconds) the agentized guardian's scheduled cognition lane comes
+	// due. 0 is the OFF switch and the DEFAULT: agentization is opt-in per
+	// world (FR-007), so an absent dial leaves every pre-102 world's guardian
+	// purely event-driven, byte-identical to before. A nonzero value opts the
+	// world in and sets the cadence (clamped to [min,max] below — never
+	// hotter than 10 game-minutes).
+	defaultStewardCadenceTicks = 0
+
 	// Spec 104 (ambient event coalescing, FR-008): the needs-checkpoint
 	// cadence — agent.needs_changed emits every K game-minutes per living
 	// agent plus immediately on any danger-band/near-death/zero crossing.
@@ -122,6 +131,12 @@ const (
 	minDreamHabituationPerMille, maxDreamHabituationPerMille     = 0, 1000
 	minDreamMergeCapPerNight, maxDreamMergeCapPerNight           = 0, 64
 	minDreamJitterPerMille, maxDreamJitterPerMille               = 0, 200
+	// Steward cadence (spec 102): 0 = off (the opt-in switch); a NONZERO value
+	// clamps to this band — floor 600 (10 game-minutes; hotter would let one
+	// guardian outdraw the whole village's planner budget), ceiling one game
+	// day. The 0-vs-band split is enforced by a dedicated clamp in
+	// ParseTuning, not clampI64.
+	minStewardCadenceTicks, maxStewardCadenceTicks = 600, 86400
 )
 
 // TuningState is the fully-resolved effective dial set carried on sim.State
@@ -143,6 +158,12 @@ type TuningState struct {
 	ObservationBaseSalience       int64 `json:"observation_base_salience"`
 	BeliefDisconfirmRetainPercent int64 `json:"belief_disconfirm_retain_percent"`
 	BeliefConfirmBoost            int64 `json:"belief_confirm_boost"`
+	// StewardCadenceTicks (spec 102) is the guardian-agentization opt-in dial:
+	// 0 = off (the default — every pre-102 world), nonzero = the scheduled
+	// angel lane's cadence in game-seconds. omitempty keeps every pre-102
+	// snapshot and recorded payload byte-identical (the spec-094 additive
+	// discipline, no format bump).
+	StewardCadenceTicks int64 `json:"steward_cadence_ticks,omitempty"`
 	// NeedsCheckpointMinutes (spec 104, FR-008): the needs-checkpoint cadence
 	// K, doubling as the coalescing-regime marker — 0 means LEGACY (a pre-104
 	// recorded payload; per-step/per-minute emission, advancement inert),
@@ -208,6 +229,8 @@ func (t TuningState) Equal(o TuningState) bool {
 		t.ObservationBaseSalience == o.ObservationBaseSalience &&
 		t.BeliefDisconfirmRetainPercent == o.BeliefDisconfirmRetainPercent &&
 		t.BeliefConfirmBoost == o.BeliefConfirmBoost &&
+		// Spec 102: the angel cadence compares by value like the base five.
+		t.StewardCadenceTicks == o.StewardCadenceTicks &&
 		t.NeedsCheckpointMinutes == o.NeedsCheckpointMinutes &&
 		t.EffectiveDream() == o.EffectiveDream()
 }
@@ -321,6 +344,17 @@ func (s *State) BeliefConfirmBoost() int64 {
 	return defaultBeliefConfirmBoost
 }
 
+// StewardCadence is the guardian-agentization opt-in dial (spec 102): the
+// scheduled angel lane's cadence in game-seconds, 0 = the lane is OFF (the
+// default, and every pre-102 world). Read by the guardian off its replica —
+// the mind-side dial discipline.
+func (s *State) StewardCadence() int64 {
+	if s.Tuning != nil {
+		return s.Tuning.StewardCadenceTicks
+	}
+	return defaultStewardCadenceTicks
+}
+
 // AmbientCoalescing reports whether the spec-104 coalescing regime is ON for
 // this world: movement rides agent.path_started segments, needs thin to
 // checkpoints + crossings, gru motion is derived. OFF (legacy) for nil Tuning
@@ -383,6 +417,8 @@ type tuningManifest struct {
 	ObservationBaseSalience       *int64 `json:"observation_base_salience"`
 	BeliefDisconfirmRetainPercent *int64 `json:"belief_disconfirm_retain_percent"`
 	BeliefConfirmBoost            *int64 `json:"belief_confirm_boost"`
+	// Steward cadence (spec 102): the guardian-agentization opt-in dial.
+	StewardCadenceTicks *int64 `json:"steward_cadence_ticks"`
 	// Spec 104: the needs-checkpoint cadence / coalescing-regime dial. Like
 	// every dial, an absent key resolves to the doctrine default (10) — so
 	// ANY tuning.json turns the regime on at next boot (a deterministic,
@@ -449,6 +485,28 @@ func ParseTuning(data []byte) (*TuningState, []string, error) {
 	clampI64("belief_confirm_boost", m.BeliefConfirmBoost, &t.BeliefConfirmBoost, minBeliefConfirmBoost, maxBeliefConfirmBoost)
 	clampI64("needs_checkpoint_minutes", m.NeedsCheckpointMinutes, &t.NeedsCheckpointMinutes, minNeedsCheckpointMinutes, maxNeedsCheckpointMinutes)
 
+	// Steward cadence (spec 102): 0 is the off switch and passes untouched; a
+	// nonzero value clamps to the [min,max] band with the standard warning.
+	if m.StewardCadenceTicks != nil {
+		v := *m.StewardCadenceTicks
+		switch {
+		case v == 0:
+			// explicit off — the default; nothing to clamp
+		case v < 0:
+			// A negative is nonsense: fail toward OFF, never toward opting a
+			// world into agentization it did not ask for.
+			warns = append(warns, fmt.Sprintf("tuning.json steward_cadence_ticks %d is negative — clamped to 0 (off)", v))
+			v = 0
+		case v < minStewardCadenceTicks:
+			warns = append(warns, fmt.Sprintf("tuning.json steward_cadence_ticks %d out of range (min %d; 0 = off) — clamped to %d", v, int64(minStewardCadenceTicks), int64(minStewardCadenceTicks)))
+			v = minStewardCadenceTicks
+		case v > maxStewardCadenceTicks:
+			warns = append(warns, fmt.Sprintf("tuning.json steward_cadence_ticks %d out of range (max %d) — clamped to %d", v, int64(maxStewardCadenceTicks), int64(maxStewardCadenceTicks)))
+			v = maxStewardCadenceTicks
+		}
+		t.StewardCadenceTicks = v
+	}
+
 	// Dream dials (spec 098): any present key resolves the FULL dream block
 	// against its defaults (a non-nil block is never sparse); no key present
 	// leaves Dream nil ≡ the default set, so a pre-098 manifest parses to a
@@ -489,6 +547,11 @@ type TuningAppliedPayload struct {
 	ObservationBaseSalience       *int64 `json:"observation_base_salience,omitempty"`
 	BeliefDisconfirmRetainPercent *int64 `json:"belief_disconfirm_retain_percent,omitempty"`
 	BeliefConfirmBoost            *int64 `json:"belief_confirm_boost,omitempty"`
+	// Steward cadence (spec 102): pointer + omitempty for the READ side — a
+	// pre-102 recorded payload decodes nil, resolved to 0 (off) at Apply, so
+	// old logs replay byte-identically with no format bump. New events always
+	// carry the field (NewTuningEvent).
+	StewardCadenceTicks *int64 `json:"steward_cadence_ticks,omitempty"`
 	// Spec 104: the needs-checkpoint / coalescing-regime dial. Pointer +
 	// omitempty for the READ side: a pre-104 recorded payload decodes nil,
 	// which resolveTuning keeps as 0 = LEGACY — deliberately NOT the doctrine
@@ -529,6 +592,10 @@ func resolveTuning(p TuningAppliedPayload) TuningState {
 	}
 	if p.BeliefConfirmBoost != nil {
 		t.BeliefConfirmBoost = *p.BeliefConfirmBoost
+	}
+	// Steward cadence (spec 102): absent resolves to 0 — off, the pre-102 world.
+	if p.StewardCadenceTicks != nil {
+		t.StewardCadenceTicks = *p.StewardCadenceTicks
 	}
 	// Spec 104: absent resolves to 0 = legacy (the regime marker), never to
 	// the doctrine default — see the payload field's comment.
@@ -580,6 +647,7 @@ func NewTuningEvent(tick int64, t TuningState) store.Event {
 			ObservationBaseSalience:       &t.ObservationBaseSalience,
 			BeliefDisconfirmRetainPercent: &t.BeliefDisconfirmRetainPercent,
 			BeliefConfirmBoost:            &t.BeliefConfirmBoost,
+			StewardCadenceTicks:           &t.StewardCadenceTicks,
 			NeedsCheckpointMinutes:        &t.NeedsCheckpointMinutes,
 			Dream:                         &d,
 		})}

@@ -6,7 +6,7 @@ sources:
   - internal/sim/miracles.go
   - internal/tool/registry.go
   - internal/guardian/toolcalls.go
-verified_against: 0af53ec6d211c71e298072c045c67ccbbd13b61d
+verified_against: d0645811c9783d1248dc65ed0fcf0b37524dd8fd
 ---
 
 # Guardian's miracle mechanics

@@ -4,15 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/wiki/agent-mind.md@0af53ec6d211c71e298072c045c67ccbbd13b61d">
-<meta name="promptworld-docs:source" content="docs/wiki/cognition.md@30912a9cd5d2334f76425ac8ca5b74a7a7c90876">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-orchestrator.md@fc76d2ed3e6995779d392f794f889346704d0aca">
-<meta name="promptworld-docs:source" content="docs/wiki/nightly-consolidation.md@a761a45cb3b437613b808408c6c7f30d11bd9eb9">
+<meta name="promptworld-docs:source" content="docs/wiki/agent-mind.md@cb0eb0c0b00c7ecef9d0a6a88d49c3ee994953b4">
+<meta name="promptworld-docs:source" content="docs/wiki/cognition.md@04ff15001bd8a74f7c2965889c0d318fc0dc03a9">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-orchestrator.md@1fae0d8536eb43e43eaa7b747aaeaf0b6e05ac83">
+<meta name="promptworld-docs:source" content="docs/wiki/nightly-consolidation.md@1fae0d8536eb43e43eaa7b747aaeaf0b6e05ac83">
 <meta name="promptworld-docs:source" content="docs/wiki/social-fabric.md@c61cd6c04ddfcd2a976c14a49ba071e8fd768a73">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@755089ff2801646359f8a787d74617b0d781e639">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@1fae0d8536eb43e43eaa7b747aaeaf0b6e05ac83">
 <meta name="promptworld-docs:source" content="docs/wiki/mental-maps.md@cf65debb44c1e17b54c0f3421d11e1e8cc28576c">
-<meta name="promptworld-docs:source" content="docs/wiki/memory-retrieval.md@fc76d2ed3e6995779d392f794f889346704d0aca">
-<meta name="promptworld-docs:source" content="docs/wiki/decision-context.md@0af53ec6d211c71e298072c045c67ccbbd13b61d">
+<meta name="promptworld-docs:source" content="docs/wiki/memory-retrieval.md@d0645811c9783d1248dc65ed0fcf0b37524dd8fd">
+<meta name="promptworld-docs:source" content="docs/wiki/decision-context.md@cb0eb0c0b00c7ecef9d0a6a88d49c3ee994953b4">
 <title>The AI behind the village — promptworld player docs</title>
 <style>
   :root {
@@ -101,6 +101,27 @@ works it); and only then ordinary upkeep and free time. When the AI model does t
 for a directed villager, the guardian's exact words — and what the plan requires —
 are placed in front of it too, marked as something never to be dropped, so instinct
 and intelligence pull in the same direction.</p>
+<p>Sleep is respected the same way: a villager who's asleep doesn't burn AI thinking.
+If a villager falls asleep while their turn to think was still waiting in line, that
+turn is quietly skipped rather than spent on a decision they could never act on — and
+if they fall asleep (or die) while the AI is <em>mid-thought</em> for them, the game
+cuts that call short instead of letting it finish for nothing. On a slow local model,
+where every thought takes real seconds, this matters a lot at night: the model's
+limited attention goes to whoever is actually awake. Waking a villager promptly puts
+them back in line for a fresh thought, and the nightly memory digestion described
+further down is untouched — sleeping is exactly when that runs.</p>
+
+<p>Older villages have bigger nights to digest — a few weeks in, a villager can carry
+far more memories and beliefs into their sleep than a day-one villager does. If the
+AI's overnight reply gets cut off mid-sentence because it ran out of room, the game
+notices the cut and simply asks again with more room to answer (doubling it, up to a
+fixed cap), so long-running villagers keep forming long-term memories instead of
+quietly stalling. If even the biggest allowance isn't enough, that night is set aside
+with nothing lost — the villager's un-digested memories stay put and the next sleep
+tries again — and the game keeps a nightly tally in its own log, complaining loudly
+if every villager's digestion keeps failing night after night. The narrated story
+feed gets the same safety net: a cut-off storyteller reply is re-asked with more
+room before the game gives up on that chapter.</p>
 
 <h2>Each villager only knows what they've actually seen</h2>
 <p>Villagers aren't born knowing the map. Each one carries their own private

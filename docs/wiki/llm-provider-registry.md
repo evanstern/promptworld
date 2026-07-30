@@ -6,7 +6,7 @@ sources:
   - internal/llm/llm.go
   - internal/llm/config.go
   - internal/llm/providers.go
-verified_against: fc76d2ed3e6995779d392f794f889346704d0aca
+verified_against: 1fae0d8536eb43e43eaa7b747aaeaf0b6e05ac83
 ---
 
 # LLM orchestrator — provider registry, embedding route & transports
@@ -85,12 +85,8 @@ hidden chain-of-thought — live diagnosis measured 2–6 s calls inflated to 60
 `"none"`, priced absent (and explicit `""` anywhere) sends nothing. `anthropic` uses
 `anthropic-sdk-go` against the Messages API with `cache_control` on system blocks so
 stable prompts (souls, charters) bill at cache-read rates. `newProviderCaller` builds
-the right caller per declared transport. A TASK-58 `ResponseSchema`/`SchemaName`
-structured-output path (deleted as dead code in TASK-71) is back, restored by spec
-103/TASK-174 for the conversation route: `callNative` attaches `response_format
-{type: json_schema}` iff `Request.ResponseSchema` is set and the request carries
-no `Tools` (payload byte-identical otherwise); `anthropicCaller` never reads either
-field. [[social-fabric-conversations]] stamps the two conversation-scene schemas.
+the right caller per declared transport. (A TASK-58 `ResponseSchema` structured-output
+path was deleted as dead code in TASK-71; git history has it.)
 
 **Config** (`config.go`): `llm.json` in the save directory, written v2 by
 `promptworld new`; deleting the file disables the orchestrator entirely. Hosted keys

@@ -121,6 +121,15 @@ const (
 	ConsolidationSkippedEmpty = "skipped_empty"
 )
 
+// ConsolidationReasonTruncated is the rejected marker's reason when the
+// truncation-retry ladder was exhausted while the reply was STILL detected
+// cut (spec 105, FR-003) — distinct from "unparseable" (a genuine garbage
+// reply) so a terminally-truncated night is diagnosable from the durable
+// record: the remedy is a bigger max_tokens.consolidation, not a better
+// model. A new value in the existing free-form reason field — no new event
+// type, no format-version bump.
+const ConsolidationReasonTruncated = "truncated"
+
 // NightIndex is the 1-based game night a tick belongs to (day 1 = night 1);
 // 0 in LastConsolidatedNight therefore means "never consolidated", which
 // keeps genesis and pre-TASK-9 snapshots (field absent → 0) correct.
@@ -246,6 +255,12 @@ type ConsolidatedPayload struct {
 	DreamFolded int     `json:"dream_folded,omitempty"`
 	DreamKept   int     `json:"dream_kept,omitempty"`
 	CostUSD     float64 `json:"cost_usd,omitempty"`
+	// Retries (spec 105) counts the night's consumed truncation retries —
+	// same-prompt re-submissions at an escalated budget — on accepted and
+	// rejected markers alike; CostUSD accrues across every attempt. Telemetry
+	// only (no reducer effect); additive and omitempty, LAST, so pre-105
+	// markers and zero-retry nights marshal byte-identically.
+	Retries int `json:"retries,omitempty"`
 }
 
 // applyConsolidation is the reducer arm for the six consolidation event

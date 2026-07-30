@@ -7,7 +7,7 @@ sources:
   - internal/guardian/toolcalls.go
   - internal/guardian/charter.go
   - internal/guardian/guardian.go
-verified_against: cf65debb44c1e17b54c0f3421d11e1e8cc28576c
+verified_against: 04ff15001bd8a74f7c2965889c0d318fc0dc03a9
 ---
 
 # Guardian's turn loop
@@ -39,7 +39,12 @@ ceiling into the grant immediately after `loadManifest` and before
 `grantedRoster`, using the same `intersectGrant` a persona bundle's narrowing
 uses — intersection-only, so a manifest may narrow within the ceiling but never
 exceed the stage, and a beyond-stage tool is structurally absent from
-declaration, prose, and handlers alike. The stage-1/-2 ceiling
+declaration, prose, and handlers alike. Spec 102's SCHEDULED (angel) turns
+add one more intersection at the same seam — `applyAngelCeiling`
+(`ceiling.go`): default charter → the modest read/counsel set, authored →
+all but the clock triple — and ride `Kind "steward"` with a caller-minted
+`steward-metatron-<tick>` job id; console/triggered turns never pass the
+ceiling ([[guardian-agentization]]). The stage-1/-2 ceiling
 (`stage1CeilingTools`) is `send_omen`/`send_vision`/`monitor_and_act`/
 `cancel_order` with NO miracle kinds and no bundle tools (a ratified TASK-119
 amendment added the two standing-order tools, since the first-night exercise
