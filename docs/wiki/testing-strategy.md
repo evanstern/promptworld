@@ -28,7 +28,7 @@ sources:
   - internal/sim/rubric_hygiene_test.go
   - internal/tui/reportcard_test.go
   - internal/tui/help_guardian_test.go
-verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
+verified_against: 0af53ec6d211c71e298072c045c67ccbbd13b61d
 ---
 
 # Testing strategy
@@ -45,7 +45,7 @@ Test suites are grounded here by layer/subsystem (corpus-spec v2 split,
 carries the full suite-level detail moved out of this note verbatim; every
 child links back here.
 
-**Unit determinism & replay harness** ([[testing-unit-harness]]): The package-level determinism harness (`internal/sim/sim_test.go`'s `driveTicks`, spec 041's mental-map diffing) proven over the full [[executor]] behavior suites and the spec-012/013/032 world-migration fixture chains (v1→v4), plus the loop-era live-vs-replay proof (`internal/mind/replay_test.go`) through a real `Loop`+`loopMind`.
+**Unit determinism & replay harness** ([[testing-unit-harness]]): The package-level determinism harness (`internal/sim/sim_test.go`'s `driveTicks`, spec 041's mental-map diffing — since spec 104 also calling `AdvanceTo` at the start of each driven tick, the live loop's own convention) proven over the full [[executor]] behavior suites and the spec-012/013/032 world-migration fixture chains (v1→v4), plus the loop-era live-vs-replay proof (`internal/mind/replay_test.go`) through a real `Loop`+`loopMind`. Spec 104 adds its own equivalence/determinism battery (`internal/sim/advance_test.go`) and an env-gated multi-day measurement driver (`internal/sim/measure_test.go`).
 
 **IPC integration & e2e harness** ([[testing-integration-e2e]]): The in-process IPC integration suite (`internal/ipc/ipc_test.go`: status round trip, subscribe-from-zero, idempotent commands, the governor/calibration/horizon status-fold coverage, large-reply handling) and the binary-level `e2e/` suite (hermetic `PROMPTWORLD_HOME`, the always-on/pause/crash-resume/detach quickstart scenarios).
 

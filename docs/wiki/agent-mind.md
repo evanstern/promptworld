@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/mind/mind.go
   - internal/mind/handlers.go
-verified_against: a761a45cb3b437613b808408c6c7f30d11bd9eb9
+verified_against: 0af53ec6d211c71e298072c045c67ccbbd13b61d
 ---
 
 # Agent mind
@@ -35,7 +35,11 @@ planner cadence with a phase-preserving stagger, the trigger set that arms a
 due thought (wake, completion, nightfall, encounters, mental-map corrections,
 on-scene harvest acts re-arming intent-matched witnesses (spec 081), paused
 Guardian nudges), and the social-law/known-places/village-law blocks a
-villager's own history and mental map render into its own prompt.
+villager's own history and mental map render into its own prompt. Since
+spec 104, `absorb` also walks the replica's own derived progress
+(`AdvanceTo`) after each batch and, on a coalescing-regime world, sweeps for
+newly-adjacent pairs itself — the per-event `agent.moved` encounter trigger
+never fires for a coalesced walk.
 
 **The cognition gate and tool-use loop dispatch** ([[tool-use-dispatch]]): the
 cognition-horizon gate that suppresses a thought whose predicted drift would

@@ -4,7 +4,7 @@ description: The single-goroutine fixed-timestep loop — tick execution, pacing
 kind: component
 sources:
   - internal/sim/loop.go
-verified_against: cf65debb44c1e17b54c0f3421d11e1e8cc28576c
+verified_against: 0af53ec6d211c71e298072c045c67ccbbd13b61d
 size_budget_exempt: pre-existing overage (predates spec 101's one-line injectSocialWhitelist addition, the only touch this pass made) — a full pacing/degradation vs. command-handling summary-style split is a dedicated future pass, not this task's scope
 ---
 
@@ -33,9 +33,18 @@ as an event. That makes the [[event-log]] the complete input record of a run.
 - **Max speed** (interval 0): spin ticks back-to-back with a non-blocking command
   check and a `runtime.Gosched()` every 1024 ticks.
 
-`runTick`: compute `stepEvents(state, map, nextTick)` (pure), advance `state.Tick`,
+`runTick`: since spec 104, opens with `l.state.AdvanceTo(nextTick)` — the
+derived-progress engine (in-flight walk segments, needs decay, gru motion,
+[[sim-state-agent-fields]]) runs everything scheduled STRICTLY BEFORE
+`nextTick`, i.e. everything due at the PREVIOUS tick, so it executes after
+every event this loop (or a command-door injection landing between
+`runTick` calls) recorded at that tick and before `stepEvents` reads state
+for the new tick — then compute `stepEvents(state, map, nextTick)` (pure), advance `state.Tick`,
 pre-assign the batch's store seqs (`stampSeqs`, spec 042 — below), apply
-each event through the reducer, `AppendEvents` in one transaction, then `notify`
+each event through the reducer (`Apply` itself opens with the same
+`AdvanceTo(e.Tick)` hook, so every fold path — recovery, `replayToTick`,
+the mind/TUI replicas — gets the identical strictly-before interleaving for
+free with no per-consumer wiring), `AppendEvents` in one transaction, then `notify`
 (the [[ipc-server]] broadcast — must never block). Every `SnapshotEveryTicks = 3600`
 ticks it snapshots and prunes.
 

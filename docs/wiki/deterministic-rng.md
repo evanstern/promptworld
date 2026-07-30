@@ -4,7 +4,7 @@ description: Stateless randomness — every random decision is a PCG seeded from
 kind: pattern
 sources:
   - internal/sim/rng.go
-verified_against: 4e160b902dd96a6b4a8f4342ae75cdcbc8048c53
+verified_against: 0af53ec6d211c71e298072c045c67ccbbd13b61d
 ---
 
 # Deterministic RNG
@@ -40,6 +40,22 @@ Starlark tools ([[bundle-tools]]) draw replay-identical randomness from their
 coordinates alone. The `"bundle:<tool>:<purpose>"` namespacing lives in the
 caller (`internal/bundle/worldview.go`); the wrapper stays a generic seeded
 accessor.
+
+## Spec 104 — a purpose string becomes replay-load-bearing
+
+Ambient event coalescing (spec 104) is the first feature to make a
+`purpose` string matter at REPLAY time, not just at live-emission time: on
+a coalescing-regime world `gru.moved` is never recorded, so the gru's
+stalk/prowl roll (`rngAt(seed, "gru-prowl", t, 0)`, [[gru]]) is re-derived
+from scratch by the derived-progress engine (`internal/sim/advance.go`)
+inside `Apply` itself, at whatever tick a replay or a live tick currently
+folds — the SAME purpose string, tick, and index the retired per-beat
+emitter used, so the re-roll reproduces the identical draw either way. That
+makes `"gru-prowl"` (and the neighbor order it feeds) a replay hazard on
+the spec-092 audit ([[sim-state-reducer]]'s reducer-constants doctrine): a
+retune requires the spec-094 log-format-version machinery, never a bare
+edit, because a coalesced log's replay depends on drawing it identically
+forever, not just on the tick it was first drawn.
 
 ## Connections
 

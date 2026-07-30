@@ -4,7 +4,7 @@ description: Child of [[reflex-policy]] — path.go's BFS geometry (fixed N/E/S/
 kind: component
 sources:
   - internal/sim/path.go
-verified_against: 9e8fb36e750dda15a633ba3ff8c44141f02debf2
+verified_against: 0af53ec6d211c71e298072c045c67ccbbd13b61d
 ---
 
 # Reflex pathfinding
@@ -35,6 +35,13 @@ EXPLORED that 4-neighbors at least one UNEXPLORED in-bounds tile, decoding
 the agent's `Explored` bitmap once per search — [[mental-maps]] owns the
 bitmap and fact-freshness semantics these wrappers read. The escape clause
 lets an agent standing on impassable terrain (pre-terrain saves) step out.
+Spec 104 (ambient event coalescing) adds `fullPath`: the SAME BFS/neighbor
+order as `nextStep`, but reconstructing the WHOLE shortest route (every tile
+stepped onto, in order, ending on the target) rather than just the first
+hop — the departure-time route a coalescing-regime walk's one
+`agent.path_started` payload bakes in full, since the executor no longer
+re-derives a step per tick under the regime. `nextStep`'s own per-hop
+contract (and every legacy per-step caller) is unchanged.
 
 ## Connections
 

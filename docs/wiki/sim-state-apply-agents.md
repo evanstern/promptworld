@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/state.go
   - internal/sim/agents.go
-verified_against: cf65debb44c1e17b54c0f3421d11e1e8cc28576c
+verified_against: 0af53ec6d211c71e298072c045c67ccbbd13b61d
 ---
 
 # Sim state: core agent Apply arms
@@ -93,7 +93,18 @@ downward crossing), and a value at/above the band clears the anchor AND the
 episode's fired latch together (episode over, detector re-armed); a third
 NEW arm, `sim.neglect_detected`, sets exactly the payload need's fired latch
 (one injection per episode — the executor sweep's emission,
-[[executor-needs-survival]]), nothing else), and death. The v2
+[[executor-needs-survival]]), nothing else) — since spec 104 this whole
+absolute fold (values, near-death latch, trajectory anchor, neglect
+anchors) is factored into `foldNeedsAbsolutes` (`state.go`), ONE home the
+`agent.needs_changed` arm shares VERBATIM with the derived per-minute
+advancement (`advance.go`) so a recorded minute and a derived minute can
+never drift; while `AmbientCoalescing()` holds, the same arm additionally
+stamps `Agent.NeedsSyncTick = e.Tick` and snapshots `Agent.NeedsEmitted` —
+the decay watermark and the crossing-detector baseline the executor's
+thinned heartbeat reads ([[executor-needs-survival]]); the `sim.tuning_applied`
+arm's legacy→coalescing transition stamps both fields (plus `Gru.Done`) to
+its own tick for every living agent, so the derived engine's floor never
+re-decays or re-moves the regime-flip's own covered past — and death. The v2
 resource/crafting events, the v3 storage economy, and the spec-032 wall
 demolish/repair HP family split into
 [[sim-state-apply-agents-resources]].

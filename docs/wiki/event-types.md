@@ -5,7 +5,7 @@ kind: concept
 sources:
   - internal/sim/state.go
   - internal/sim/gru.go
-verified_against: cf65debb44c1e17b54c0f3421d11e1e8cc28576c
+verified_against: 0af53ec6d211c71e298072c045c67ccbbd13b61d
 ---
 
 # Event types
@@ -23,7 +23,7 @@ were `metatron.*` in log format 1.
 
 ## Event catalog, by domain
 
-The full per-type catalog (144 `PayloadCatalog` types, specs 012–104) is
+The full per-type catalog (145 `PayloadCatalog` types, specs 012–104) is
 split by event domain — each child inherits this note's `verified_against`
 pin and carries the domain's own format-history prose and catalog rows.
 

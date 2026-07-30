@@ -4,7 +4,7 @@ description: Child of [[guardian-miracle-rebase-taxonomy]] — the full SHIFT ha
 kind: component
 sources:
   - internal/sim/miracles.go
-verified_against: 376afd4cee54839a545bc88409f3c485c2f5149d
+verified_against: 0af53ec6d211c71e298072c045c67ccbbd13b61d
 ---
 
 # Guardian's miracle rebase taxonomy — the SHIFT fields
@@ -82,7 +82,19 @@ state, no tick field, no taxonomy entry). Spec 097
 ([[executor-perception-observation]]) adds `ObservationMark.Tick` — the
 grounded-observation dedup anchor on `Agent.LastObs` (elapsed = tick − Tick
 gates the dedup window; never zero once the pointer exists) — SHIFT, the
-`Belief.Reinforced` shape.
+`Belief.Reinforced` shape. Spec 104 ([[executor-needs-survival]],
+[[sim-state-agent-fields]]) adds `Agent.NeedsSyncTick` — the derived-decay
+watermark (game-minutes folded through this tick; elapsed-from-watermark is
+what the derived engine schedules against) — and `Gru.Done` — the
+derived-motion watermark (beats processed through this tick) — both SHIFT
+only-non-zero, the `Belief.Reinforced`/`NeedsAnchorTick` elapsed-anchor
+shape: left unshifted, a snap would let the derived engine re-decay or
+re-move the jump's own now-covered past on its very next tick.
+`Agent.Path` is the one field this spec adds that is NEITHER SHIFT NOR
+KEEP: a snap CLEARS the in-flight walk segment outright (parent note),
+since its beat phase arithmetic is absolute-tick-based and a shift would
+re-phase it; the villager re-plans from wherever it stands. `NeedsEmitted`
+holds need values, not ticks, so it carries no entry.
 
 ## Connections
 

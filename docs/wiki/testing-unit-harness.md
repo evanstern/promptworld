@@ -8,14 +8,18 @@ sources:
   - internal/sim/whole_feature_test.go
   - internal/world/migrate_test.go
   - internal/mind/replay_test.go
-verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
+verified_against: 0af53ec6d211c71e298072c045c67ccbbd13b61d
 ---
 
 # Unit determinism & replay harness
 
 **Unit determinism harness** (`internal/sim/sim_test.go`): `driveTicks` replicates
 the loop's semantics minus the real-time scheduler — commands injected at exact tick
-boundaries, terrain threaded through exactly as the live loop does. Now proven over
+boundaries, terrain threaded through exactly as the live loop does. Since spec 104,
+`driveTicks`/`driveTicksSeq` also call `s.AdvanceTo(next)` at the start of
+each driven tick, mirroring `runTick`'s own opening call
+([[sim-loop]]) — so every harness-driven suite gets the identical
+strictly-before derived-progress interleaving a live run holds. Now proven over
 the full [[executor]]: 30k–40k-tick determinism and replay harnesses, plus behavior
 suites — multi-step intent chains with zero input (AC#1), needs decay + self-feeding
 and starvation death with recorded cause (AC#2), night warmth mechanics and exposure
@@ -104,6 +108,21 @@ over-budget write that the gate refuses (landing nothing but a rejected
 byte-identical rendered `soul.md`/`journal.md` over both live and replayed
 state, with the model seam invoked exactly once per live cognition and zero
 times during replay.
+
+**Spec 104's own suites** (`internal/sim/advance_test.go`): an equivalence
+harness proving paired per-step-vs-coalesced logs byte-equal at every tick
+boundary, including per-agent mental-map bytes; a coalesced-world
+determinism/replay battery (the `driveTicks` precedent, over a
+coalescing-regime world instead of a legacy one); needs-heartbeat parity
+suites (K=1 reproduces per-minute emission byte-for-byte, K=10 proves the
+minute-equality claim, a double-decay guard, and crossing-latency proof);
+gru derived-vs-legacy decision equality and beat-after-steps within-tick
+ordering; the new emission types' own tests; and a mid-segment
+snapshot/recovery round-trip. `internal/sim/measure_test.go` is a separate,
+env-gated (`PROMPTWORLD_MEASURE=1`) 29-game-day paired measurement run —
+not part of the default suite — that recorded the ambient-row reduction
+this spec targeted (ambient rows 7.7x down, from 72% to 25% of total
+events).
 
 ## Connections
 

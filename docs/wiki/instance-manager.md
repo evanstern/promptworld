@@ -9,7 +9,7 @@ sources:
   - internal/worlds/discover.go
   - internal/worlds/probe.go
   - cmd/promptworld/ps.go
-verified_against: 0fd2104c59c54be8e8071d319fa4ce192083faf3
+verified_against: 0af53ec6d211c71e298072c045c67ccbbd13b61d
 ---
 
 # Instance manager
