@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-30 16:42'
-updated_date: '2026-07-30 18:22'
+updated_date: '2026-07-30 19:20'
 labels: []
 dependencies: []
 ordinal: 142000
@@ -20,16 +20,24 @@ Small local models sometimes answer the conversation-outcome call with plain pro
 As a player running the village on a home machine, I want conversations between villagers to reliably leave their mark (relationship shifts, memories), even when my local model is a small one.
 
 Evidence (playtest-1, conversation routed to local gemma4:12b via ollama): 22 conversation outcomes failed on bad JSON — replies opening with prose ("invalid character 'F' looking for beginning of value", "no JSON object in reply"); 62 of 293 conversations abandoned (21%); 83 cog.outcome=unusable. Related prior art: TASK-58 fixed the same failure shape for the local planner with JSON-schema structured outputs; the conversation-outcome (and meeting) routes never got that treatment. Cost note: cloud fallback for outcome parsing alone is trivial — the entire 29-day run spent $3.25 of a $100 budget.
+
+Spec: specs/103-conversation-outcome-json
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Conversation-outcome calls on the local tier use constrained/JSON-mode decoding (as TASK-58 did for the planner) or fall back to cloud on parse failure
+- [x] #1 Conversation-outcome calls on the local tier use constrained/JSON-mode decoding (as TASK-58 did for the planner) or fall back to cloud on parse failure
 - [ ] #2 Outcome parse-failure rate is measurable, and a soak on a small local model shows abandoned-outcome rate materially reduced from playtest-1's baseline (22 failed outcomes / 21% scenes abandoned)
+- [x] #3 Spec phase: Transport — restore structured outputs (internal/llm)
+- [x] #4 Spec phase: Conversation schemas (internal/mind)
+- [ ] #5 Spec phase: Measurement + soak
+- [x] #6 Spec phase: Grounding
 <!-- AC:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 sweep dispatch (runbook playtest-1-findings-sweep): tier Sonnet — routine single-subsystem robustness following TASK-58's established structured-outputs pattern (constitution P.V: single-package feature, no concurrency/doctrine surface). Spec 103-conversation-outcome-json.
+
+spec-bridge sync post-merge (PR #144, merged 2026-07-30): Transport 2/2, Conversation schemas 3/3, Grounding 1/1 — phases ticked. Card AC#1 satisfied (constrained decoding shipped, no cloud fallback per spec-024 pin doctrine). OPEN: Measurement + soak 0/1 (T006) — card AC#2 needs the live soak vs playtest-1 baseline; queries committed at docs/design/evidence/task-174/queries.sql; run when the shared ollama host is uncontended. Task stays In Progress until soak evidence lands.
 <!-- SECTION:NOTES:END -->

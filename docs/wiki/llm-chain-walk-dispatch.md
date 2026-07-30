@@ -6,7 +6,7 @@ sources:
   - internal/llm/llm.go
   - internal/llm/providers.go
   - internal/llm/config.go
-verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
+verified_against: fc76d2ed3e6995779d392f794f889346704d0aca
 ---
 
 # LLM orchestrator — chain-walk dispatch & tool-loop wire

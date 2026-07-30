@@ -159,6 +159,25 @@ func (o *openaiCompat) callNative(ctx context.Context, req Request) (callResult,
 		}
 		payload["tools"] = tools
 	}
+	// Structured outputs (TASK-58, restored spec 103/TASK-174): a caller-set
+	// schema constrains the reply at the sampler level via response_format.
+	// Not attached beside Tools — the tool envelope already owns
+	// response_format for its own purposes, and no tool-carrying request sets
+	// a schema today. Absent a schema the payload is byte-identical to
+	// before.
+	if len(req.ResponseSchema) > 0 && len(req.Tools) == 0 {
+		name := req.SchemaName
+		if name == "" {
+			name = "reply"
+		}
+		payload["response_format"] = map[string]any{
+			"type": "json_schema",
+			"json_schema": map[string]any{
+				"name":   name,
+				"schema": req.ResponseSchema,
+			},
+		}
+	}
 
 	out, err := o.do(ctx, payload)
 	if err != nil {
