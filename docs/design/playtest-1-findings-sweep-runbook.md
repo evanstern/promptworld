@@ -215,3 +215,9 @@ Record the model tier + rubric justification on each board task at dispatch
 
 | date | task | PR | merge | notes |
 |------|------|----|-------|-------|
+| 2026-07-30 | TASK-174 | — | b84c3130 | claimed: board In Progress (tier Sonnet), spec 103 stub on main, branch pushed |
+| 2026-07-30 | TASK-176 | — | 4f56ae9a | claimed: board In Progress (tier Opus 4.8), spec 104 stub on main, branch pushed |
+| 2026-07-30 | TASK-172 | — | 5e6a0862 | claimed: board In Progress (tier Opus 4.8), spec 105 stub on main, branch pushed |
+| 2026-07-30 | TASK-175 | — | d178c905 | claimed: board In Progress (tier Opus 4.8), spec 106 stub on main, branch pushed |
+| 2026-07-30 | TASK-173 | — | 36faaac1 | measurement soak started: task-173-measure-1 (cold-dawn, seed 46103, 16x, main@ef115a6a binary); scope checkpoint pending |
+| 2026-07-30 | (all) | — | — | spec authoring dispatched: 103/105/106 full spec+plan+tasks, 104 spec.md-only (design-fork checkpoint) — planning tier |
