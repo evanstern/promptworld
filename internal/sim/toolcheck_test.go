@@ -172,6 +172,12 @@ func TestWhitelistDiffIdentical(t *testing.T) {
 		// deliberately never here — the order_expired precedent; absence is
 		// what refuses a forged verdict or faith movement.
 		"prophecy.declared": true,
+		// Spec 098 (private dreams) deliberately widens the boundary by
+		// exactly two entries: the nightly clustering pass's recorded
+		// habituation/merge outcomes, injected by the consolidation driver
+		// (dream.go — per-agent single-store inputs by construction).
+		"agent.salience_revised": true,
+		"agent.memory_merged":    true,
 	}
 	for typ := range want {
 		if !injectSocialWhitelist[typ] {

@@ -7,7 +7,7 @@ sources:
   - internal/sim/agents.go
   - internal/sim/recipes.go
   - internal/sim/terrain.go
-verified_against: 864d2a3bcff4b3113739d596befc72229a84d4b8
+verified_against: a5df40921577bc194478bb29c42af2b10bf11ea8
 ---
 
 # Reducer-constants replay-hazard audit (spec 092 / TASK-75)

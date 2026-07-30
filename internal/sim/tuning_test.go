@@ -209,7 +209,7 @@ func TestTuningAppliedReducer(t *testing.T) {
 	if err := s.Apply(ev); err != nil {
 		t.Fatalf("re-apply: %v", err)
 	}
-	if *s.Tuning != set {
+	if !s.Tuning.Equal(set) { // Equal: spec 098's Dream block resolves by value
 		t.Fatalf("re-apply changed state: %+v", *s.Tuning)
 	}
 
@@ -222,7 +222,7 @@ func TestTuningAppliedReducer(t *testing.T) {
 	if err := json.Unmarshal(b, back); err != nil {
 		t.Fatalf("unmarshal: %v", err)
 	}
-	if back.Tuning == nil || *back.Tuning != set {
+	if back.Tuning == nil || !back.Tuning.Equal(set) {
 		t.Fatalf("round-trip Tuning = %+v, want %+v", back.Tuning, set)
 	}
 }
@@ -293,7 +293,7 @@ func TestTuningReplayDeterminism(t *testing.T) {
 			replay.Tick = e.Tick
 		}
 	}
-	if replay.Tuning == nil || *replay.Tuning != tuned {
+	if replay.Tuning == nil || !replay.Tuning.Equal(tuned) {
 		t.Fatalf("replay Tuning = %+v, want the logged set %+v (must come from the event)", replay.Tuning, tuned)
 	}
 	// Catch replay's tick up over any trailing event-free ticks (the codebase
@@ -560,7 +560,7 @@ func TestGenesisPinReplayIndependentOfCompiledDefault(t *testing.T) {
 	}
 	// The pin won: replay carries the recorded genesis set, not the wrong one.
 	want := defaultTuning() // == the genesis pin's payload
-	if replay.Tuning == nil || *replay.Tuning != want {
+	if replay.Tuning == nil || !replay.Tuning.Equal(want) {
 		t.Fatalf("replay Tuning = %+v, want the pinned genesis set %+v (the pin must win over the binary default)", replay.Tuning, want)
 	}
 	driveTicks(t, replay, m, live.Tick, nil) // re-live the quiet tail, as recovery does

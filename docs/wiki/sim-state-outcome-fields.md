@@ -8,7 +8,7 @@ sources:
   - internal/sim/curriculum.go
   - internal/sim/tuning.go
   - internal/sim/reportcard.go
-verified_against: 864d2a3bcff4b3113739d596befc72229a84d4b8
+verified_against: a5df40921577bc194478bb29c42af2b10bf11ea8
 ---
 
 # Sim state: run-outcome & progression fields
@@ -64,9 +64,10 @@ a PROJECTION of these events, this state being the replayable authority.
 
 **World tuning** (spec 048, [[world-tuning]]): the effective world-tuning
 dial set, `Tuning *TuningState` (the Journal/Hail/Map pointer precedent —
-nil means the five promoted doctrine defaults, set only by the
-`sim.tuning_applied` arm (see [[sim-state-apply-world]]), no
-`format_version` bump).
+nil means the promoted doctrine defaults; since spec 098 the struct nests a
+`Dream *DreamTuning` block under the same nil≡default convention,
+[[private-dreams]]), set only by the `sim.tuning_applied` arm (see
+[[sim-state-apply-world]]), no `format_version` bump.
 
 **Report card** (spec 063, [[grounded-feedback]]): the guardian's latest
 attribution note, `GuardianReportCard *GuardianReportCard` (`{Tick, Seq,

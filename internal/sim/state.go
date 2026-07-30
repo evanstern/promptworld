@@ -2093,6 +2093,11 @@ func (s *State) Apply(e store.Event) error {
 		"agent.narrative_set", "agent.consolidated", "agent.belief_reinforced":
 		return s.applyConsolidation(e)
 
+	case "agent.salience_revised", "agent.memory_merged":
+		// Private dreams (spec 098): the nightly clustering pass's recorded
+		// habituation/merge outcomes — reducer applies, never re-derives.
+		return s.applyDream(e)
+
 	case "gru.emerged", "gru.moved", "gru.sighted", "gru.attacked", "gru.withdrew":
 		return s.applyGru(e)
 
@@ -2146,7 +2151,9 @@ func (s *State) Apply(e store.Event) error {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
 		// Spec 097: absent (pre-097) dial fields resolve to their doctrine
-		// defaults, never to zero (resolveTuning, tuning.go).
+		// defaults, never to zero; the spec-098 Dream block stays nil for a
+		// pre-098 event (≡ defaults) and lands as a fresh copy otherwise —
+		// both in resolveTuning (tuning.go).
 		t := resolveTuning(p)
 		s.Tuning = &t
 

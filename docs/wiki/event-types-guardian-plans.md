@@ -6,7 +6,7 @@ sources:
   - internal/sim/plans.go
   - internal/sim/executor.go
   - internal/sim/loop.go
-verified_against: 864d2a3bcff4b3113739d596befc72229a84d4b8
+verified_against: a5df40921577bc194478bb29c42af2b10bf11ea8
 ---
 
 # Event types — guardian plan-layer events

@@ -7,7 +7,7 @@ sources:
   - internal/mind/consolidate.go
   - internal/mind/validate.go
   - internal/persona/personas.go
-verified_against: 864d2a3bcff4b3113739d596befc72229a84d4b8
+verified_against: a5df40921577bc194478bb29c42af2b10bf11ea8
 ---
 
 # Nightly consolidation + persona firewall
@@ -104,6 +104,12 @@ blocks.
 **Belief confidence decay** — how a landed revision's `Reinforced` anchor
 governs fade, the legacy-grandfather case, and the below-floor prompt
 exclusion — split into [[nightly-belief-decay]].
+
+**Private dreams (spec 098)** — the worker also runs a per-agent clustering
+pass over the agent's recorded memory vectors before the call: clear-cut
+dense clusters habituate/merge by geometry alone (events land independently
+of the night's fate), and only the ambiguous band rides this call as labeled
+`[gN]` groups with a `routine` verdict field — split into [[private-dreams]].
 
 ## Connections
 

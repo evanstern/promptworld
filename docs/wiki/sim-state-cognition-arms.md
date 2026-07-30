@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/state.go
   - internal/sim/journal.go
-verified_against: 864d2a3bcff4b3113739d596befc72229a84d4b8
+verified_against: a5df40921577bc194478bb29c42af2b10bf11ea8
 ---
 
 # Sim state: cognition & telemetry arms
@@ -65,7 +65,10 @@ split into its own STATE-MUTATING arm: the refused intent never landed, so
 `Intent`/`IdleSince` stay untouched, but the ring gains the appended-closed
 `"rejected"` record (see [[sim-state-intent-lifecycle]]) — deterministic from the event alone, so
 replay-safe.
-Unknown types — including `daemon.*` and `world.created` — are recorded
+The spec-098 dream arms (`agent.salience_revised`/`agent.memory_merged`,
+dispatched from the same switch to `applyDream`, `internal/sim/dream.go`)
+apply the nightly clustering pass's recorded outcomes — [[private-dreams]]
+owns them. Unknown types — including `daemon.*` and `world.created` — are recorded
 history but state no-ops, so new event types never break old replay.
 
 ## Connections

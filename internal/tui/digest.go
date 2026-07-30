@@ -709,6 +709,26 @@ var digestRegistry = map[string]digestFunc{
 		}
 		return join([]seg{refSeg(names, p.Agent), txt(" forgot a memory (t"), emphI64(p.MemTick), txt(")")}), true
 	},
+	// agent.salience_revised / agent.memory_merged (spec 098, private dreams):
+	// the nightly clustering pass's recorded habituation/merge outcomes. Like
+	// memory_promoted/faded, the payloads carry (tick, hash) identities, never
+	// the memory text — digests reference the memory by tick.
+	"agent.salience_revised": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.SalienceRevisedPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{refSeg(names, p.Agent), txt("'s memory (t"), emphI64(p.MemTick),
+			txt(") dulled to "), emphN(p.Salience), txt("★ in a dream")}), true
+	},
+	"agent.memory_merged": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.MemoryMergedPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{refSeg(names, p.Agent), txt("'s dreams folded "), emphN(len(p.Merged)),
+			txt(" memories into one (t"), emphI64(p.Kept.Tick), txt(")")}), true
+	},
 	"agent.belief_revised": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
 		p, ok := decode[sim.BeliefRevisedPayload](e)
 		if !ok {
@@ -2047,6 +2067,20 @@ var subjectRegistry = map[string]subjectFunc{
 	},
 	"agent.memory_faded": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.MemoryFadedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent.ID), true
+	},
+	"agent.salience_revised": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.SalienceRevisedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent.ID), true
+	},
+	"agent.memory_merged": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.MemoryMergedPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}

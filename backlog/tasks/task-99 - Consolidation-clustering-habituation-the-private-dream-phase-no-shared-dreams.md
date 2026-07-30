@@ -3,10 +3,10 @@ id: TASK-99
 title: >-
   Consolidation clustering + habituation: the private dream phase (no shared
   dreams)
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-24 19:45'
-updated_date: '2026-07-29 21:48'
+updated_date: '2026-07-29 23:48'
 labels:
   - memory
   - embeddings
@@ -31,15 +31,15 @@ Spec: specs/098-private-dreams
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Clustering and habituation operate strictly within one agent's memory store; no cross-agent bleed is possible by construction, and a test proves two agents with overlapping experiences never influence each other's consolidation
-- [ ] #2 Habituation: dense clusters of near-duplicate memories are detected via embedding geometry and down-weighted/merged at consolidation; outcomes land as recorded events (salience-revision / merge events), replay-safe
-- [ ] #3 Cheap-geometry-first economics: clear-cut cluster/no-cluster cases resolved by geometry alone; LLM judgment reserved for the ambiguous band (SAGE routing pattern)
+- [x] #1 Clustering and habituation operate strictly within one agent's memory store; no cross-agent bleed is possible by construction, and a test proves two agents with overlapping experiences never influence each other's consolidation
+- [x] #2 Habituation: dense clusters of near-duplicate memories are detected via embedding geometry and down-weighted/merged at consolidation; outcomes land as recorded events (salience-revision / merge events), replay-safe
+- [x] #3 Cheap-geometry-first economics: clear-cut cluster/no-cluster cases resolved by geometry alone; LLM judgment reserved for the ambiguous band (SAGE routing pattern)
 - [x] #4 Noise exploration (design decision recorded in spec): whether/how to inject seeded noise (rngAt) into the clustering pass for dream-like variance — decided, justified, and documented even if the answer is no
 - [x] #5 Spec rigor: full Spec Kit with spec-bridge:link BEFORE implementation; builds on TASK-98's recorded-vector infrastructure
-- [ ] #6 Spec phase: Clustering + habituation core
-- [ ] #7 Spec phase: Noise + dials
-- [ ] #8 Spec phase: Surfaces + tests
-- [ ] #9 Spec phase: Evidence + grounding
+- [x] #6 Spec phase: Clustering + habituation core
+- [x] #7 Spec phase: Noise + dials
+- [x] #8 Spec phase: Surfaces + tests
+- [x] #9 Spec phase: Evidence + grounding
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -47,3 +47,9 @@ Spec: specs/098-private-dreams
 <!-- SECTION:NOTES:BEGIN -->
 board-sweep-2026-07-29 lane 4: spec 098 landed + linked (AC5 spec rigor satisfied); AC4 noise decision RECORDED in spec D4 — adopted minimally, rngAt-seeded zeroable boundary jitter. Tier: Opus — internal/mind consolidation orchestration + replay-doctrine surface. Dispatch after TASK-95 merges (shared memory/event surfaces); may run parallel with TASK-80, merges serial.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Merged via PR #139. Per-agent dream phase in nightly consolidation: single-store density clustering (privacy proven by byte-identical perturbation test), geometry-first with ambiguous-band consult in the existing LLM slot, recorded salience_revised/memory_merged events (no re-derivation, additive types), rngAt-seeded zeroable boundary jitter per the recorded AC4 decision, five manifest dials with genesis pin. Live demo evidence at docs/design/evidence/task-99/results.md (world preserved). Opus tier; spec 098 all tasks done.
+<!-- SECTION:FINAL_SUMMARY:END -->
