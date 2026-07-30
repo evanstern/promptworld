@@ -1,0 +1,31 @@
+---
+id: TASK-172
+title: >-
+  Consolidation truncation: nightly memory consolidation silently collapses as
+  worlds age
+status: To Do
+assignee: []
+created_date: '2026-07-30 16:41'
+labels: []
+dependencies: []
+priority: high
+ordinal: 140000
+---
+
+## Description
+
+<!-- SECTION:DESCRIPTION:BEGIN -->
+Villagers stop forming long-term memories as their world grows older: the nightly consolidation call outgrows its fixed output budget, comes back as truncated JSON, and is silently rejected — night after night, with nothing surfacing the failure.
+
+As a player, I want my villagers to keep remembering and growing over a long run, so a 30-day world feels like week one but deeper.
+As an operator, I want a loud signal when a background cognitive pipeline starts failing every night, instead of discovering a ten-day blackout in the daemon log after the fact.
+
+Evidence (playtest-1, v5, 29 game-days, consolidation routed to cloud Sonnet): acceptance degrades monotonically — night 2: 7/9 accepted; night 11: 3/13; night 17: 1/15; nights 20–29: 0/8 every night (ten straight nights, all 8 villagers). Logged invalid sample is JSON cut mid-field; day-29 narration also died with "unterminated JSON object". Root cause still live on main: internal/mind/consolidate.go:166 defaults max_tokens.consolidation to 1024 with no truncation-aware retry. Only 232 agent.consolidated events landed all run.
+<!-- SECTION:DESCRIPTION:END -->
+
+## Acceptance Criteria
+<!-- AC:BEGIN -->
+- [ ] #1 Consolidation output truncation is detected and retried with a larger budget (or input is bounded so output fits) — a 30-day-old villager's nightly consolidation succeeds
+- [ ] #2 Per-night consolidation acceptance is observable (telemetry/log summary), and sustained failure is loud, not silent
+- [ ] #3 A regression test covers consolidation at large memory volume (late-world shape), not just day-1 shape
+<!-- AC:END -->
