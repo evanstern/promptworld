@@ -6,7 +6,7 @@
 
 - [X] T001 Named-region artifacts (084 discipline) + guardian.region_named
   apply arm + place-text/chronicle integration (FR-001).
-- [ ] T002 Canonize working: validation pre-charge, premium charge (record the
+- [X] T002 Canonize working: validation pre-charge, premium charge (record the
   chosen shape), optional existing-kind feature placement (FR-002).
 
 ## Phase 2: Perception + briefing

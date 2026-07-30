@@ -65,6 +65,11 @@ func (mt *Guardian) nextPlanID(prefix string, tick int64) string {
 		for i := range mt.prophecies {
 			bump(mt.prophecies[i].ID)
 		}
+	case "reg":
+		// Named regions (spec 101): the same discipline over the region mirror.
+		for i := range mt.regions {
+			bump(mt.regions[i].ID)
+		}
 	}
 	if mt.planMintTick[prefix] == tick && mt.planMintSeq[prefix] >= seq {
 		seq = mt.planMintSeq[prefix] + 1

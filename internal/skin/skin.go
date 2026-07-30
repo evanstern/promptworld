@@ -100,6 +100,10 @@ var defaultTable = map[string]string{
 	"skin.guardian.example_ask.survey_site":        `"survey the ground around 10,10"`,
 	// Prophecy (spec 085): the staked vision, same frozen-tool-id keying.
 	"skin.guardian.example_ask.prophesy": `"prophesy to everyone: the shelter I marked will stand within three days"`,
+	// The canonization miracle (spec 101): christening a named region, and
+	// its read-only myth-briefing companion, same frozen-tool-id keying.
+	"skin.guardian.example_ask.canonize_region": `"canonize Thornspire at 20,20, radius 6"`,
+	"skin.guardian.example_ask.brief_myths":     `"what myths do the villagers already believe?"`,
 }
 
 func init() {

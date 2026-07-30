@@ -179,6 +179,16 @@ type Guardian struct {
 	// FR-013 faith line. faith is the nil-safe FaithScore projection.
 	prophecies []sim.Prophecy
 	faith      int
+	// Region mirror + myth-briefing cache (spec 101, the plan-mirror
+	// discipline): the replica's Regions is the authority; the turn worker
+	// reads this copy for id minting ("reg" prefix) and the prompt's region
+	// section. myths is the read-only myth-briefing derivation
+	// (sim.DominantPlaceMyths), recomputed alongside the mirror on every
+	// absorbed batch so the brief_myths tool never touches the replica
+	// directly — the same stateMu-guarded-copy discipline as every other
+	// turn-worker read.
+	regions []sim.Region
+	myths   []sim.PlaceMythBriefing
 
 	// Trigger pipeline (spec 029 US3, data-model §5): the absorb goroutine matches
 	// live events against active orders and enqueues onto triggerQ; a dedicated
@@ -457,6 +467,14 @@ func (mt *Guardian) mirrorState() {
 	// turn prompt's faith line and prophecy section read these copies.
 	mt.prophecies = append(mt.prophecies[:0], mt.replica.Prophecies...)
 	mt.faith = mt.replica.FaithScore()
+	// Named regions (spec 101): same discipline again.
+	mt.regions = append(mt.regions[:0], mt.replica.Regions...)
+	// The myth briefing (spec 101 D5) is DERIVED, not mirrored verbatim: a
+	// pure read over the replica's belief corpus, recomputed here (under the
+	// SAME lock that guards every other replica read a turn may later copy
+	// from) so brief_myths never races the absorb goroutine's unlocked
+	// mt.replica.Apply calls.
+	mt.myths = mt.replica.DominantPlaceMyths(mythBriefingTopN)
 	// The narrated chronicle (TASK-11) is the village's own story — the
 	// guardian reads its tail so conversation is grounded even before its
 	// soul has accreted (fresh reigns, upgraded worlds).
