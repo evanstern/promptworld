@@ -20,7 +20,7 @@ ratified there). Dispatch gated on TASK-164 evidence (runbook checkpoint).
 
 ## Phase 3: Doctrine enforcement
 
-- [ ] T004 Structural tutor/world channel split: tutor path cannot reach world
+- [X] T004 Structural tutor/world channel split: tutor path cannot reach world
   doors/charges/faith/rubrics; isolation test (FR-004, D4).
 - [ ] T005 Guardrail suite: all five guardrails + TASK-111 order-machinery
   contracts green (FR-005, D6); opt-in config + replay byte-identity

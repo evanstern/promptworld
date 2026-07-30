@@ -339,11 +339,13 @@ func (mt *Guardian) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 
 	result := TurnResult{}
 	d := &turnDispatch{mt: mt, charges: charges, alive: alive, night: night, tick: tick, result: &result, grant: grant,
-		// The explain scope (spec 063 US1): the SAME final roster this turn
-		// declares (granted subset, bundle tools included, work_miracle's
-		// kind enum already narrowed) plus the grant-independent catalog and
-		// the stage id — fact sheets describe exactly this turn's world.
-		scope: tool.ExplainScope{Granted: roster, Catalog: tool.LoopRosterGuardian(), Stage: mt.stage}}
+		// The tutor channel (spec 102 D4, tutor.go) wraps the explain scope
+		// (spec 063 US1): the SAME final roster this turn declares (granted
+		// subset, bundle tools included, work_miracle's kind enum already
+		// narrowed) plus the grant-independent catalog and the stage id —
+		// fact sheets describe exactly this turn's world, through a surface
+		// that is structurally unable to reach any world door.
+		tutor: tutorSurface{scope: tool.ExplainScope{Granted: roster, Catalog: tool.LoopRosterGuardian(), Stage: mt.stage}}}
 
 	// Built-in handlers first, then the grant-filtered bundle handlers layered on
 	// top (no name overlap survives boot — C1 skips a bundle tool that collides
