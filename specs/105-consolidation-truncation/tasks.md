@@ -61,15 +61,21 @@
 
 ## Phase 5: Docs + grounding
 
-- [ ] T008 `docs/event-types.md`: `agent.consolidated` `retries` field +
+- [X] T008 `docs/event-types.md`: `agent.consolidated` `retries` field +
   `truncated` reason; `cog.outcome` retried-reason note for the consolidation/
   narrator classes. Full-suite `go test -race ./...` green; existing replay
   fixtures byte-identical; confirm zero `internal/mind/parse.go` diff (FR-009,
-  SC-005).
+  SC-005). NOTE: `docs/event-types.md` does not exist in-tree — the event-type
+  doc surface is the `docs/wiki/event-types-*.md` family, amended instead
+  (memory-consolidation row + spec-105 compat block, cognition-telemetry
+  retried row).
 - [ ] T009 Wiki re-pins in-branch for every note whose sources this branch
   touches (expected: nightly-consolidation, chronicle, morgue-epilogues,
   event-types-memory-consolidation, event-types-cognition-telemetry prose if
   amended, llm-orchestrator child covering token budgets, plus any
   mind.go/telemetry.go-sourced notes); regenerate `docs/player/`; merge
   `origin/main` in AFTER TASK-112 lands (plan Risks) and re-verify; merge-drift
-  pr gate exit 0.
+  pr gate exit 0. STATUS: re-pins (21 notes) + player-docs regen done in-branch
+  and pr gate exits 0 (stale-base warning only); the task stays UNTICKED solely
+  for the post-TASK-112 merge + re-verify step, which is held per the operator's
+  merge-ordering ruling (TASK-112 has not landed).
