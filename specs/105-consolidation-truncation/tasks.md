@@ -4,10 +4,10 @@
 
 ## Phase 1: Detection + ladder helper
 
-- [ ] T001 Export the token-budget clamp in `internal/llm/config.go`
+- [X] T001 Export the token-budget clamp in `internal/llm/config.go`
   (`maxTokenBudget` → `llm.MaxTokenBudget`, value 4096, all internal uses
   updated; behavior byte-identical) (FR-002).
-- [ ] T002 `internal/mind/retry.go` (new): truncation-aware submit helper —
+- [X] T002 `internal/mind/retry.go` (new): truncation-aware submit helper —
   Submit loop with caller-supplied parse closure; detection per FR-001
   (parse-first; `Stop == llm.StopMaxTokens` primary, `OutputTokens >= requested
   budget` router guard); doubling ladder from the caller's start budget clamped
