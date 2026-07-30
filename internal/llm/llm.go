@@ -180,6 +180,18 @@ type Request struct {
 	// observation via Orchestrator.ObserveCognition instead). Metering,
 	// admission, and the circuit breaker are unaffected.
 	SkipObserve bool `json:"skip_observe,omitempty"`
+	// ResponseSchema, when set, constrains the reply to this JSON Schema at
+	// the sampler level via the OpenAI-compat response_format {type:
+	// json_schema} envelope (Ollama honors it; TASK-58, restored for
+	// conversation calls by spec 103/TASK-174). SchemaName names the schema in
+	// that envelope. NOT attached when the request also carries Tools — a
+	// tools-carrying request already owns response_format for its json-mode
+	// envelope (callJSON); conversation calls never carry tools, so this is a
+	// doctrine guard, not a live path. The Anthropic transport ignores both
+	// fields — the caller's parser remains the final gate, so a request never
+	// fails for carrying a schema on a tier that can't use it.
+	ResponseSchema json.RawMessage `json:"response_schema,omitempty"`
+	SchemaName     string          `json:"schema_name,omitempty"`
 }
 
 type Response struct {
