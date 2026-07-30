@@ -227,3 +227,4 @@ Record the model tier + rubric justification on each board task at dispatch
 | 2026-07-30 | TASK-176 | — | 6cecc7e3 | spec 104 plan/tasks landed (Arm A resolved, derived-progress engine design); phase ACs mirrored (16a1c649); implementation dispatched → Opus 4.8 |
 | 2026-07-30 | TASK-175 | held | — | implementation complete @ d62fb2fe (suite+race green, sim diff empty, wiki re-pinned); open: T007 live soak (post-merge), T008 post-112 reconcile |
 | 2026-07-30 | TASK-172 | held | — | implementation complete @ ada23d09 (race suite green, parse.go zero-diff, 21 notes re-pinned); open: T009 post-112 merge-in clause |
+| 2026-07-30 | TASK-174 | #144 | merged | Lane 1 first merge: constrained decoding restored; T006 soak remains open (tasks.md tick corrected [~]→[ ] — bridge parser treats [~] as absent) |

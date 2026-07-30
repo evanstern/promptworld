@@ -36,7 +36,7 @@
 
 ## Phase 3: Measurement + soak
 
-- [~] T006 PARTIAL — see `docs/design/evidence/task-174/results.md`. Soak per
+- [ ] T006 PARTIAL (queries done, live soak remaining) — see `docs/design/evidence/task-174/results.md`. Soak per
   the measurement-run recipe: seeded MEASURE world (never the playtest
   world), conversation kind routed to gemma4:12b via Ollama, local-only
   routes (no paid spend), run until ≥ 20 scenes founded. Compute the D6
