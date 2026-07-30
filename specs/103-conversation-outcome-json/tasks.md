@@ -17,17 +17,17 @@
 
 ## Phase 2: Conversation schemas (internal/mind)
 
-- [ ] T003 NEW `internal/mind/convo_schema.go`: `convoOutcomeSchema` built
+- [X] T003 NEW `internal/mind/convo_schema.go`: `convoOutcomeSchema` built
   once from the registry gist cap, topic bounds (≤3, 40), and `sceneCap` —
   flat object, required `["gist","topics","tones","retold"]`, no `anyOf`, no
   integer min/max (parser keeps clamping values); `sayReplySchema` from the
   registry say cap, required `["say"]` (FR-002, FR-003, D3–D5).
-- [ ] T004 Stamp the schemas: `Mind.outcome` Submit carries
+- [X] T004 Stamp the schemas: `Mind.outcome` Submit carries
   `convoOutcomeSchema` (name `conversation_outcome`), `Mind.utterance` Submit
   carries `sayReplySchema` (name `say`); prompts and the TASK-42
   retry/abandon ladder byte-for-byte unchanged (FR-002–FR-004). Zero
   `parse.go` diff (SC-003).
-- [ ] T005 Tests alongside: `convo_schema_test.go` (valid JSON round-trip;
+- [X] T005 Tests alongside: `convo_schema_test.go` (valid JSON round-trip;
   caps equal the registry caps; tones `maxItems == sceneCap`; no `anyOf`);
   `convo_test.go` Request-capture via the existing `Submitter` fakes proves
   both Submit sites carry their schema and non-conversation kinds carry none;
