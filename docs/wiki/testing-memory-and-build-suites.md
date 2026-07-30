@@ -12,7 +12,7 @@ sources:
   - internal/sim/path_speed_test.go
   - internal/mind/provenance_test.go
   - internal/mind/belief_read_sites_test.go
-verified_against: a5df40921577bc194478bb29c42af2b10bf11ea8
+verified_against: a761a45cb3b437613b808408c6c7f30d11bd9eb9
 ---
 
 # Memory-provenance & build-verb suites

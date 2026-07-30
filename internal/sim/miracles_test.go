@@ -908,6 +908,7 @@ func TestRebaseTaxonomyComplete(t *testing.T) {
 		"NeglectState.WarmthIntent": shift, // spec 083: last-class-intent stamp, 0 = never
 		"NeglectState.RestIntent":   shift, // spec 083: last-class-intent stamp, 0 = never
 		"Prophecy.DeadlineTick":     shift, // spec 085: a prophecy's future judgment deadline — the Directive.ExpiresTick classification verbatim (ACTIVE only)
+		"ObservationMark.Tick":      shift, // spec 097: observation dedup anchor (elapsed gates the window — Belief.Reinforced shape), never zero once set
 		// KEEP — history / identity / counters.
 		"Agent.Generation":                 keep,
 		"Agent.LastConsolidatedNight":      keep,
@@ -969,6 +970,12 @@ func TestRebaseTaxonomyComplete(t *testing.T) {
 		"TuningState.FireBurnPerWood":        keep,
 		"TuningState.PlannerCadenceTicks":    keep,
 		"TuningState.EncounterCooldownTicks": keep,
+		// Spec 097 dials: durations/points, not clock anchors — KEEP like the
+		// other TuningState fields.
+		"TuningState.ObservationDedupTicks":         keep,
+		"TuningState.ObservationBaseSalience":       keep,
+		"TuningState.BeliefDisconfirmRetainPercent": keep,
+		"TuningState.BeliefConfirmBoost":            keep,
 		// spec 098 dream dials are per-mille ratios and a per-night count —
 		// no tick anchors anywhere in the block (the TuningState duration
 		// rationale above, one step further from the timeline).

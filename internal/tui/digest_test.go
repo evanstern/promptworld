@@ -98,6 +98,13 @@ var catalogFixture = map[string]digestFixture{
 		`{"agent":{"id":1,"name":"Birch"},"gone":[{"kind":"fire","x":4,"y":5,"seen":100,"prov":"witnessed","detail":9000}]}`,
 		`Birch found fire at (4,5) gone`,
 	},
+	// spec 097: the grounded arrival observation — exhaustive kinds within the
+	// scan radius; an empty set renders "nothing notable" (perception of
+	// absence), asserted by TestPlaceObservedDigestVariants.
+	"agent.place_observed": {
+		`{"agent":{"id":0,"name":"Ash"},"x":20,"y":21,"radius":2,"kinds":["fire","tree"]}`,
+		`Ash looked around (20,21): fire, tree`,
+	},
 	"social.place_told": {
 		`{"from":{"id":0,"name":"Ash"},"to":{"id":1,"name":"Birch"},"facts":[{"kind":"fire","x":4,"y":5,"seen":100,"prov":"told","detail":9000},{"kind":"tree","x":6,"y":5,"seen":100,"prov":"told"}]}`,
 		`Ash told Birch of fire at (4,5) (+1 more)`,
@@ -457,6 +464,25 @@ func TestDigestMemoryAddedNoSubject(t *testing.T) {
 	segs := digestOf(t, "agent.memory_added", `{"agent":0,"text":"the wind is picking up","salience":3,"subject":-1,"tone":0}`)
 	if want := `Ash remembers: "the wind is picking up"`; plainSegs(segs) != want {
 		t.Errorf("plain summary = %q, want %q", plainSegs(segs), want)
+	}
+}
+
+// TestPlaceObservedDigestVariants (spec 097): the empty kind set renders the
+// perception of absence explicitly, and the two belief-movement flavors of
+// agent.belief_reinforced render direction + new confidence (the legacy bare
+// shape's line is pinned by its catalogFixture row, unchanged).
+func TestPlaceObservedDigestVariants(t *testing.T) {
+	segs := digestOf(t, "agent.place_observed", `{"agent":{"id":0,"name":"Ash"},"x":20,"y":21,"radius":2,"kinds":[]}`)
+	if want := "Ash looked around (20,21): nothing notable"; plainSegs(segs) != want {
+		t.Errorf("empty-kinds plain summary = %q, want %q", plainSegs(segs), want)
+	}
+	segs = digestOf(t, "agent.belief_reinforced", `{"agent":{"id":1,"name":"Birch"},"belief_id":3,"kind":"confirmed","confidence":90}`)
+	if want := "Birch's belief (#3) confirmed by observation → 90"; plainSegs(segs) != want {
+		t.Errorf("confirmed plain summary = %q, want %q", plainSegs(segs), want)
+	}
+	segs = digestOf(t, "agent.belief_reinforced", `{"agent":{"id":1,"name":"Birch"},"belief_id":3,"kind":"disconfirmed","confidence":56}`)
+	if want := "Birch's belief (#3) disconfirmed by observation → 56"; plainSegs(segs) != want {
+		t.Errorf("disconfirmed plain summary = %q, want %q", plainSegs(segs), want)
 	}
 }
 

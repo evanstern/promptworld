@@ -138,6 +138,11 @@ type Mind struct {
 	// still applies, so a rejected agent re-thinks promptly, never hotly.
 	rearm chan int
 
+	// Belief reconciliation (spec 097 D3): absorb-computed belief-movement
+	// batches queued to a worker that lands them through the injection door
+	// (reconcile.go) — the absorb goroutine never blocks on the door.
+	reconQ chan []store.Event
+
 	events chan []store.Event
 	done   chan struct{}
 }
@@ -168,6 +173,7 @@ func New(orch Submitter, loop Injector, social SocialInjector, m *worldmap.Map, 
 		narrRetry: make(chan narrCarry, 1),
 		meetQ:     make(chan meetingJob, 4),
 		rearm:     make(chan int, sim.AgentCount),
+		reconQ:    make(chan []store.Event, 16),
 		events:    make(chan []store.Event, 256),
 		done:      make(chan struct{}),
 	}
@@ -198,6 +204,7 @@ func New(orch Submitter, loop Injector, social SocialInjector, m *worldmap.Map, 
 	go md.consolidateWorker()
 	go md.narrateWorker()
 	go md.meetingWorker()
+	go md.reconcileWorker()
 	return md, nil
 }
 
@@ -338,6 +345,14 @@ func (md *Mind) absorb(batch []store.Event) {
 					}
 				}
 			}
+		case "agent.place_observed":
+			// Spec 097 (D3): a grounded arrival observation reconciles the
+			// observer's place-beliefs — confirmation boost / bounded
+			// disconfirmation decay through the TASK-79 seam (reconcile.go).
+			// The replica has already applied the event AND its companion
+			// observation memory (emitted before it in the same batch), so
+			// the matcher and the surprise bump read settled state.
+			md.reconcilePlace(e)
 		case "agent.moved":
 			md.armEncounters(e)
 		case "agent.talked":

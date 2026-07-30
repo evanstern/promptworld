@@ -13,7 +13,7 @@ sources:
   - internal/llm/providers.go
   - internal/world/world.go
   - cmd/promptworld/divergence.go
-verified_against: b35a7ffec46ba996741cdba4af9652fcfd163b32
+verified_against: a761a45cb3b437613b808408c6c7f30d11bd9eb9
 ---
 
 # Memory retrieval (embedding relevance)
@@ -36,7 +36,9 @@ stamped from the event's store seq by the reducer, pre-stamped in the live loop 
 `stampSeqs` (`internal/sim/loop.go`) because the loop applies events before the store
 assigns sequence numbers. `Observe` never blocks the absorb path (drop-on-overflow), the
 worker is FIFO single-flight with batching/coalescing, and per-agent companion order is
-emission order.
+emission order. Spec 097: Origin-`observed` memories skip embedding — their
+reconciler matches without vectors; vectorless scores the neutral term
+([[executor-perception-observation]]).
 
 **Situation vectors.** At each `replica.PlannerCadence()` bucket edge — spec 048
 promoted the driver's fixed 1800-tick cadence to a per-world [[world-tuning]]
@@ -126,8 +128,8 @@ head-of-chain only, so one lineage never mixes model identities.
 - Pin the fully tagged model id (`all-minilm:latest`) — a bare alias embeds fine but
   trips a persistent spurious provider-health `model-missing` warning that embed traffic
   cannot clear (TASK-102).
-- Measured cost (SC-005): +0.4–3.9% wall-clock per game day at max speed post-041-merge
-  (~8–9 coalesced embed calls); the 10% budget holds with headroom.
+- Measured cost (SC-005): 44 coalesced embed calls per max-speed game day
+  post-097 (the observed-origin skip keeps volume near pre-097's 41).
 - Divergence records fire per enqueued plan job — on an uncalibrated rig run ≤16x (or
   calibrate first) or the planner never enqueues and no divergence lands.
 - Replay proof: `TestEmbeddingReplayByteIdentical` / `TestOnWorldReplayByteIdentical`

@@ -252,16 +252,21 @@ func TestChronicleLandsThroughTheDoor(t *testing.T) {
 	h.model.narrReply = `{"entries":[{"text":"The village wandered and mused while the light lasted.","thread":"first-days","agents":["Ash"]}]}`
 	h.model.mu.Unlock()
 
-	// 240s: the max-speed loop must simulate to the narration window in wall
-	// time. The budget was 30s pre-041; per-agent mental maps (spec 041)
-	// legitimately grew both the per-tick work (perception sweep, knowledge-
-	// gated reflex resolution) and — dominant here — the state bytes the
-	// InjectSocial dry-run round-trips per injection (Marshal/Unmarshal of a
-	// probe now carrying every agent's fact list), which this max-speed
-	// mock-LLM harness hammers at a cadence no live world reaches. Under
-	// -race the run lands around 150s (plain runs stay ~10s); a cheaper
-	// dry-run clone is the flagged follow-up if this budget creeps again.
-	entries := h.waitEvents(t, 240*time.Second, func(e store.Event) bool {
+	// 420s: the max-speed loop must simulate to the narration window in wall
+	// time. The budget was 30s pre-041 and 240s pre-097; per-agent mental
+	// maps (spec 041) legitimately grew both the per-tick work (perception
+	// sweep, knowledge-gated reflex resolution) and — dominant here — the
+	// state bytes the InjectSocial dry-run round-trips per injection
+	// (Marshal/Unmarshal of a probe carrying every agent's fact list), which
+	// this max-speed mock-LLM harness hammers at a cadence no live world
+	// reaches. Spec 097's grounded arrival observations grew the same term
+	// again (a low-salience situated memory per un-deduped arrival — at max
+	// speed the 2-game-hour dedup window recycles in wall-seconds), pushing
+	// the -race run past 240s (main landed ~161s; plain runs stay ~10s). The
+	// budget creep the previous sentence of this comment flagged has now
+	// happened: the cheaper dry-run clone is DUE as a follow-up — raising
+	// this budget a third time is not an acceptable next step.
+	entries := h.waitEvents(t, 420*time.Second, func(e store.Event) bool {
 		return e.Type == "chronicle.entry"
 	})
 	if len(entries) == 0 {

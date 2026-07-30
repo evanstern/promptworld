@@ -2,7 +2,7 @@
 title: Pattern — chronicle grammar
 class: pattern
 status: shipped
-verified_against: a5df40921577bc194478bb29c42af2b10bf11ea8
+verified_against: a761a45cb3b437613b808408c6c7f30d11bd9eb9
 sources:
   - internal/tui/digest.go
   - internal/tui/grammar.go
@@ -56,7 +56,11 @@ catalog sweep test (`internal/tui/digest_test.go`, contract §7) fails the
 build if any cataloged type has no entry, if a fixture type falls back to
 raw JSON, or if a registry key isn't in the fixture — so a new event type
 forces a deliberate digest (or fixture) change rather than silently landing
-as JSON.
+as JSON. Spec 097 exercises exactly that path: `agent.place_observed`
+("looked around (x,y): fire, tree" — an empty kind set renders "nothing
+notable"), and `agent.belief_reinforced` grows confirmed/disconfirmed
+flavors ("belief (#N) confirmed/disconfirmed by observation → NN") while a
+bare payload keeps its legacy "reinforced" line.
 
 ## Suppression/remedy rows in the raw feed (specs 028/031/033/035)
 

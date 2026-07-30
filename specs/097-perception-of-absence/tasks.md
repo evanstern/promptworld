@@ -4,30 +4,30 @@
 
 ## Phase 1: Observation channel
 
-- [ ] T001 `agent.place_observed`: executor emission on intent-completing
+- [X] T001 `agent.place_observed`: executor emission on intent-completing
   arrivals, exhaustive within placeScanRadius, deterministic; reducer apply arm;
   event catalog entry (FR-001).
-- [ ] T002 Situated observation memory: low base salience, dedup window,
+- [X] T002 Situated observation memory: low base salience, dedup window,
   "observed" provenance (FR-002); dials in the tuning manifest (FR-004).
 
 ## Phase 2: Belief reconciliation (mind-side)
 
-- [ ] T003 TASK-79-seam reconciliation: confirmation boost, bounded
+- [X] T003 TASK-79-seam reconciliation: confirmation boost, bounded
   disconfirmation decay (faster than silence), silence unchanged; matching in
   internal/mind only (FR-003).
 
 ## Phase 3: Surfaces + tests
 
-- [ ] T004 Digest grammar entry + event-types.md; TestCatalogSweep green
+- [X] T004 Digest grammar entry + event-types.md; TestCatalogSweep green
   (FR-005).
-- [ ] T005 Tests: emission determinism, replay byte-identity on existing
+- [X] T005 Tests: emission determinism, replay byte-identity on existing
   fixtures, dedup, all three belief paths (FR-006); go test -race ./... green.
 
 ## Phase 4: Soak + grounding
 
-- [ ] T006 One-game-day soak at 8x on a seeded MEASURE world (never playtest):
+- [X] T006 One-game-day soak at 8x on a seeded MEASURE world (never playtest):
   bounded observation-memory counts + unchanged survival behavior; evidence at
   docs/design/evidence/task-80/ (US3, SC-002). Implementer prepares + runs with
   local-only LLM routes (no paid spend); orchestrator reviews evidence.
-- [ ] T007 Wiki re-pins (prose amendments where perception/memory behavior is
+- [X] T007 Wiki re-pins (prose amendments where perception/memory behavior is
   described); player-docs probe; merge-drift pr gate exit 0.

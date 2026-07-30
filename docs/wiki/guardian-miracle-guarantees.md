@@ -6,7 +6,7 @@ sources:
   - internal/guardian/turn.go
   - internal/tool/derive.go
   - internal/sim/miracles.go
-verified_against: 11de2a4aa93d4c901a8dd90369151fa23fd056d0
+verified_against: a761a45cb3b437613b808408c6c7f30d11bd9eb9
 ---
 
 # Guardian's miracle guarantees

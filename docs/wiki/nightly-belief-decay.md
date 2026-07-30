@@ -4,7 +4,7 @@ description: Split from [[nightly-consolidation]] — how a belief's confidence 
 kind: component
 sources:
   - internal/sim/consolidate.go
-verified_against: a5df40921577bc194478bb29c42af2b10bf11ea8
+verified_against: a761a45cb3b437613b808408c6c7f30d11bd9eb9
 ---
 
 # Nightly consolidation: belief confidence decay
@@ -36,10 +36,20 @@ model-facing prompts (`sim.PromptBeliefs` is the shared exclusion helper; the
 nightly held-beliefs prompt on [[nightly-consolidation]] is the one documented
 exception, marking rather than dropping so faded beliefs stay revisable) and
 the scribe renders it hedged rather than as a live conviction ([[agent-mind]]).
-A separate, currently producer-less event, `agent.belief_reinforced`
-(`BeliefReinforcedPayload{Agent, BeliefID}`), re-anchors a held belief's clock
-to now — the reducer arm and its tests ship in spec 030 as the seam for a
-future grounded-observation channel; nothing in-tree emits it yet.
+**The reinforcement seam has its producer** (spec 097): `agent.belief_reinforced`
+(`BeliefReinforcedPayload{Agent, BeliefID, Kind?, Confidence?}`) re-anchors a
+held belief's clock to now, and — since spec 097's additive `Kind`/`Confidence`
+fields — also copies an emitter-computed new stored confidence when `Kind` is
+`confirmed` or `disconfirmed` (clamped 0–100; the legacy bare shape stays the
+pure re-anchor, replaying byte-identically). The producer is the
+perception-of-absence channel ([[executor-perception-observation]]):
+`internal/mind/reconcile.go` judges each `agent.place_observed` against the
+observer's place-beliefs — CONFIRMED (feature present) sets confidence to
+effective + the `belief_confirm_boost` dial; DISCONFIRMED (place observed,
+feature absent from the exhaustive scan) sets it to effective ×
+`belief_disconfirm_retain_percent` — faster than this note's silence half-life
+but bounded, so a myth survives several visits before trending under the floor.
+Silence (never visiting) keeps exactly the decay described above.
 
 ## Connections
 
@@ -47,7 +57,9 @@ future grounded-observation channel; nothing in-tree emits it yet.
 computes each revision's `Direct` flag (`enforceProvenance`), the input this
 note's re-anchoring rule reads; [[agent-mind]] renders effective (decayed)
 confidence into soul.md's Beliefs section; [[event-types]] catalogs
-`agent.belief_reinforced`'s payload shape.
+`agent.belief_reinforced`'s payload shape;
+[[executor-perception-observation]] owns the spec-097 observation channel
+that produces the reinforcements.
 
 Back to [[nightly-consolidation]] for the trigger/ledger, the consolidation
 call, the firewall validator, the provenance gate, and landing.

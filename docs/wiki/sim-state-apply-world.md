@@ -6,7 +6,7 @@ sources:
   - internal/sim/state.go
   - internal/sim/agents.go
   - internal/sim/miracles.go
-verified_against: a5df40921577bc194478bb29c42af2b10bf11ea8
+verified_against: a761a45cb3b437613b808408c6c7f30d11bd9eb9
 ---
 
 # Sim state: world & governance dispatch arms
@@ -38,7 +38,10 @@ prompt renderer ([[agent-mind]]) can size a mental-map bitmap read without
 `agent.saw` upserts the perception sweep's fully-baked facts verbatim
 (`Map.upsertFact`), `agent.map_corrected` removes facts the sweep found gone
 (`Map.removeFact`) — both no-op on a map-less agent (a pre-041 world
-mid-migration), keeping the reducer total; `social.place_told` (the talk sidecar's directions exchange) and
+mid-migration), keeping the reducer total; the spec-097 `agent.place_observed`
+arm records only the agent's `LastObs` dedup anchor
+(`ObservationMark{x, y, kinds, tick}` — [[executor-perception-observation]]),
+never touching map or beliefs; `social.place_told` (the talk sidecar's directions exchange) and
 `guardian.place_revealed` (a vision's optional place grant) route through
 the `applySocial`/`applyGuardian` dispatchers below — upserting into the
 RECEIVER's map only where the fact is absent or its own knowledge staler.

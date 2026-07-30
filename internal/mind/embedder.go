@@ -201,6 +201,18 @@ func (e *Embedder) run() {
 				if json.Unmarshal(ev.Payload, &p) != nil || p.Text == "" {
 					continue
 				}
+				// Spec 097: grounded arrival observations stay VECTORLESS by
+				// policy — they are deduped low-salience texture whose one
+				// systematic consumer (the belief reconciler, reconcile.go)
+				// matches deterministically, never via vectors, and a
+				// vectorless memory is a legal designed state (relevance
+				// scoring falls back to the neutral 0.5 term). Embedding them
+				// would roughly double a reflex day's embed volume (measured:
+				// 41 → 83 calls on the SC-005 game-day bench) — real API
+				// spend on live worlds for no retrieval gain.
+				if p.Origin == sim.OriginObserved {
+					continue
+				}
 				e.enqueue(embedJob{agent: p.Agent.ID, seq: ev.Seq, text: p.Text})
 			}
 			// Situation leg (T012, research D5): at each cadence bucket edge,

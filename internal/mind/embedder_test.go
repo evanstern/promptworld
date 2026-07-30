@@ -192,6 +192,36 @@ func TestEmbedderEmissionOrdered(t *testing.T) {
 	}
 }
 
+// TestEmbedderSkipsObservedMemories (spec 097): a grounded arrival
+// observation's memory stays vectorless by policy — its consumer (the belief
+// reconciler) matches deterministically, and embedding the deduped texture
+// would double a reflex day's embed volume (the SC-005 bench). Companions
+// keep flowing for every other origin around it.
+func TestEmbedderSkipsObservedMemories(t *testing.T) {
+	client := &stubEmbedClient{}
+	inj := &recordingInjector{ch: make(chan []store.Event, 16)}
+	stream := &eventStream{ch: inj.ch}
+	e := newTestEmbedder(t, client, inj, nil)
+
+	observed, _ := json.Marshal(sim.MemoryAddedPayload{
+		Agent: sim.Ref(0), Text: "Looked around: nothing of note here.",
+		Salience: 2, Subject: sim.Ref(-1), Origin: sim.OriginObserved,
+	})
+	e.Observe([]store.Event{
+		memAdded(10, 0, "Foraged by the river."),
+		{Seq: 11, Tick: 100, Type: "agent.memory_added", Payload: observed},
+		memAdded(12, 0, "Saw Birch there."),
+	})
+
+	// Exactly two companions, for seqs 10 and 12 — seq 11 never embeds.
+	for _, want := range []int64{10, 12} {
+		p := nextCompanion(t, stream)
+		if p.MemSeq != want {
+			t.Fatalf("companion seq = %d, want %d (observed memory must not embed)", p.MemSeq, want)
+		}
+	}
+}
+
 // TestEmbedderFailureDebounce (spec 042 T010, research D8): a failure EPISODE
 // warns exactly once no matter how many memories it swallows; a success closes
 // the episode and the next episode warns once again.

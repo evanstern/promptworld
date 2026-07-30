@@ -197,13 +197,27 @@ type BeliefRevisedPayload struct {
 	Direct   bool        `json:"direct,omitempty"`
 }
 
+// Belief-movement kinds for BeliefReinforcedPayload.Kind (spec 097 D3): the
+// grounded-observation producer stamps which way the observation moved the
+// belief. "" is the legacy spec-030 shape — a bare decay-clock re-anchor.
+const (
+	BeliefConfirmed    = "confirmed"    // the believed feature was present at the observed place
+	BeliefDisconfirmed = "disconfirmed" // the place was observed and the feature was absent
+)
+
 // BeliefReinforcedPayload re-anchors a held belief's decay clock (spec 030 US2,
-// FR-008). The grounded-observation seam: whitelisted through the injection door
-// and reduced here, but no in-tree producer exists yet — the perception-of-
-// absence task is the intended one. 030 ships consumer + tests only.
+// FR-008). Spec 097 makes the perception-of-absence channel its in-tree
+// producer (internal/mind/reconcile.go) and extends it ADDITIVELY: Kind names
+// the movement direction and Confidence carries the emitter-computed new
+// stored confidence (D3/spec 092 doctrine — the mind computes, the reducer
+// copies; replay never re-derives). Both omitempty, and the arm below applies
+// Confidence only when Kind is non-empty, so a pre-097 payload (fields
+// absent) replays byte-identically as the pure re-anchor it always was.
 type BeliefReinforcedPayload struct {
-	Agent    AgentRef `json:"agent"`
-	BeliefID int      `json:"belief_id"`
+	Agent      AgentRef `json:"agent"`
+	BeliefID   int      `json:"belief_id"`
+	Kind       string   `json:"kind,omitempty"`
+	Confidence int      `json:"confidence,omitempty"`
 }
 
 type NarrativeSetPayload struct {
@@ -345,11 +359,24 @@ func (s *State) applyConsolidation(e store.Event) error {
 		// The grounded-observation seam (spec 030 US2, FR-008): re-anchor the named
 		// belief's decay clock to now. Total, like the other consolidation arms — a
 		// vanished belief (ID no longer held) degrades to a no-op, never an error.
-		// The intended future PRODUCER is the perception-of-absence channel; 030
-		// ships this consumer arm + tests only, no producer.
+		// Spec 097 wires the perception-of-absence channel as the producer
+		// (internal/mind/reconcile.go): a Kind-stamped payload ALSO copies the
+		// emitter-computed stored confidence (confirmation boost or bounded
+		// disconfirmation cut — the mind's arithmetic, never re-derived here);
+		// the legacy Kind=="" shape stays the pure re-anchor.
 		for i := range a.Beliefs {
 			if a.Beliefs[i].ID == p.BeliefID {
 				a.Beliefs[i].Reinforced = e.Tick
+				if p.Kind != "" {
+					conf := p.Confidence
+					if conf < 0 {
+						conf = 0
+					}
+					if conf > 100 {
+						conf = 100
+					}
+					a.Beliefs[i].Confidence = conf
+				}
 				break
 			}
 		} // vanished target: no-op

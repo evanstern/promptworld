@@ -1129,6 +1129,28 @@ func (s *State) Apply(e store.Event) error {
 			}
 		}
 
+	case "agent.place_observed":
+		// Spec 097 (T001): a grounded arrival observation — record the dedup
+		// anchor (where, canonical kinds, when) the emission site compares the
+		// next arrival against (observe.go, D4). The companion situated memory
+		// rides the SAME batch as its own agent.memory_added (the
+		// memories-accrete-via-events invariant, TestMemoriesAccrete); the
+		// mind-side belief reconciliation consumes this event off its replica
+		// — this arm never touches beliefs.
+		var p PlaceObservedPayload
+		if err := json.Unmarshal(e.Payload, &p); err != nil {
+			return fmt.Errorf("apply %s: %w", e.Type, err)
+		}
+		a, err := agent(p.Agent.ID)
+		if err != nil {
+			return err
+		}
+		a.LastObs = &ObservationMark{
+			X: p.X, Y: p.Y,
+			Kinds: append([]string(nil), p.Kinds...),
+			Tick:  e.Tick,
+		}
+
 	case "agent.foraged":
 		var p HarvestPayload
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
@@ -2128,20 +2150,12 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		s.Tuning = &TuningState{
-			RefuelDyingBelow:       p.RefuelDyingBelow,
-			FireBurnPerWood:        p.FireBurnPerWood,
-			GruEmergePerMille:      p.GruEmergePerMille,
-			PlannerCadenceTicks:    p.PlannerCadenceTicks,
-			EncounterCooldownTicks: p.EncounterCooldownTicks,
-		}
-		// Dream block (spec 098): a pre-098 recorded event carries none —
-		// keep nil (≡ the default set) so old logs replay byte-identically.
-		// A carried block lands as a FRESH copy, never the payload's pointer.
-		if p.Dream != nil {
-			d := *p.Dream
-			s.Tuning.Dream = &d
-		}
+		// Spec 097: absent (pre-097) dial fields resolve to their doctrine
+		// defaults, never to zero; the spec-098 Dream block stays nil for a
+		// pre-098 event (≡ defaults) and lands as a fresh copy otherwise —
+		// both in resolveTuning (tuning.go).
+		t := resolveTuning(p)
+		s.Tuning = &t
 
 	case "meeting.convention_established", "sim.gathering_observed",
 		"meeting.place_designated", "meeting.convened", "meeting.opened",

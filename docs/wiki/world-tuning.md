@@ -1,12 +1,12 @@
 ---
 name: world-tuning
-description: The spec-048 world tuning manifest (tuning.json) — the promotion path for doctrine constants to per-world dials: the five first-promoted dials (refuel-dying window, fire burn per wood, gru emergence chance, planner cadence, encounter cooldown), TuningState, nil-safe accessors, and the manifest's clamp table; boot seeding, the genesis pin, and replay independence split into [[world-tuning-boot-seeding]]
+description: The spec-048 world tuning manifest (tuning.json) — the promotion path for doctrine constants to per-world dials: the five first-promoted dials (refuel-dying window, fire burn per wood, gru emergence chance, planner cadence, encounter cooldown) plus spec 097's four grounded-observation dials, TuningState, nil-safe accessors, and the manifest's clamp table; boot seeding, the genesis pin, and replay independence split into [[world-tuning-boot-seeding]]
 kind: component
 sources:
   - internal/sim/tuning.go
   - internal/daemon/daemon.go
   - internal/world/world.go
-verified_against: a5df40921577bc194478bb29c42af2b10bf11ea8
+verified_against: a761a45cb3b437613b808408c6c7f30d11bd9eb9
 ---
 
 # World tuning manifest
@@ -15,9 +15,8 @@ Spec 048 (TASK-107, `docs/design/control-surface-and-calibration.md` §6) is
 the promotion path from "hand-edit a constant and rebuild" to "edit a
 per-world manifest and restart": an optional, operator-authored `tuning.json`
 in the world directory that moves a small, named set of doctrine constants
-onto per-world dials. Every dial defaults to exactly its old constant, so an
-absent file is byte-for-byte the pre-048 world — the mechanism is additive,
-never a behavior change by itself.
+onto per-world dials. Every dial defaults to exactly its old constant — an
+absent file is byte-for-byte the pre-048 world.
 
 ## How it works
 
@@ -31,13 +30,15 @@ per-pair encounter cooldown). Each was previously a
 bare package constant (`refuelDyingBelow`/`fireBurnPerWood` in `agents.go`,
 `gruEmergePerMille` in `gru.go`, the exported `sim.PlannerCadenceTicks` in
 `agents.go`, `encounterCooldownTicks` in `mind/mind.go`); spec 048 relocates
-all five defaults into `tuning.go` renamed `default*`
-(`defaultRefuelDyingBelow`, `defaultFireBurnPerWood`,
-`defaultGruEmergePerMille`, `defaultPlannerCadenceTicks`,
-`defaultEncounterCooldownTicks`) — the single home for these doctrine values.
+all five defaults into `tuning.go` renamed `default*` — the single home for
+these doctrine values.
+**Spec 097 adds four grounded-observation dials** (born as dials, no retired
+constants — [[executor-perception-observation]]): two executor-read
+(observation dedup window, base salience), two read off the mind's replica
+by the belief reconciler (disconfirm retain, confirm boost) — nine total.
 
 **`TuningState`** (`tuning.go`) is the fully-resolved effective set: a
-non-nil `TuningState` always carries all five fields with defaults filled in
+non-nil `TuningState` always carries all fields with defaults filled in
 and clamps applied — never a sparse struct. `sim.State.Tuning *TuningState`
 (`json:"tuning,omitempty"`) carries it, event-sourced: **nil means the
 default set**, which is what every pre-048 snapshot and world has, and
@@ -46,19 +47,17 @@ bump** (the spec-044 `MorgueEpilogues` precedent). `State.EffectiveTuning()`
 returns the resolved set either way (`*s.Tuning` or `defaultTuning()`).
 
 **Nil-safe accessors** (`RefuelDyingBelow()`, `FireBurnPerWood()`,
-`GruEmergePerMille()`, `PlannerCadence()`, `EncounterCooldown()`, all methods
-on `*State`) are the ONLY consumption path: every reducer call site
+`GruEmergePerMille()`, `PlannerCadence()`, `EncounterCooldown()`, plus one
+per spec-097 dial — all methods on `*State`) are the ONLY consumption path: every reducer call site
 ([[executor]]'s fire-fuel arm, [[reflex-policy]]'s refuel rung, [[gru]]'s
 emergence roll) and every mind-side call site ([[agent-mind]]'s per-agent
 cadence/stagger and encounter-cooldown gate, reading off `md.replica`) go
 through these instead of the retired raw constants — "absent tuning.json ==
 current constants" is structurally true, not a convention to remember. Two
-RNG-bucketing reuses of the cadence period are a deliberate exception:
-`internal/sim/memory.go`'s serendipity-tail seeding and `social.go`'s
-`SecretShareRoll` both bucket on `tick/defaultPlannerCadenceTicks` — the
-tuning-manifest DEFAULT constant, never the tuned `PlannerCadence()` dial —
-so a tuned world's cadence moves the mind driver's schedule without also
-reshuffling these two unrelated seeded picks. `fireFuelCap` (the fuel
+RNG-bucketing reuses (serendipity-tail seeding in `memory.go`,
+`SecretShareRoll` in `social.go`) deliberately bucket on
+`tick/defaultPlannerCadenceTicks` — the DEFAULT constant, never the tuned
+dial — so a tuned cadence never reshuffles those seeded picks. `fireFuelCap` (the fuel
 ceiling a refuel is truncated to) is deliberately NOT promoted (research R6)
 and stays a plain constant beside the promoted `FireBurnPerWood`.
 
@@ -78,35 +77,35 @@ clamp warnings and a structural error separately:
 | GruEmergePerMille | `gru_emerge_per_mille` | 600 | [0, 1000] |
 | PlannerCadenceTicks | `planner_cadence_ticks` | 1800 | [60, 86400] |
 | EncounterCooldownTicks | `encounter_cooldown_ticks` | 7200 | [0, 86400] |
+| ObservationDedupTicks | `observation_dedup_ticks` | 7200 | [0, 86400] |
+| ObservationBaseSalience | `observation_base_salience` | 2 | [1, 10] |
+| BeliefDisconfirmRetainPercent | `belief_disconfirm_retain_percent` | 70 | [0, 100] |
+| BeliefConfirmBoost | `belief_confirm_boost` | 10 | [0, 100] |
 
 Out-of-range values of a KNOWN field clamp to the nearest bound with an
-operator-visible warning (`tuning.json <field> <raw> out of range (<bound
-kind> <bound>) — clamped to <bound>`, the `llm/config.go`
-`normalizeTokenBudget` style) — the clamped value is what applies and gets
-recorded. Structural problems — malformed JSON, a wrong-typed value, or an
-unrecognized field name — fail `ParseTuning` outright, which the daemon
-boot treats as a hard boot error naming the file and the problem
-(fail-closed): clamping handles a merely out-of-range value of a
-correctly-named field, but a typo must never silently run as a no-op.
+operator-visible warning (the `llm/config.go` `normalizeTokenBudget` style)
+— the clamped value applies and gets recorded. Structural problems
+(malformed JSON, wrong types, unrecognized field names) fail `ParseTuning`
+outright — a hard boot error naming file and problem (fail-closed): a typo
+must never silently run as a no-op.
 
 **The dream dial block (spec 098, [[private-dreams]]).** `TuningState` also
 carries `Dream *DreamTuning` — nil ≡ the default dream set, so every
 pre-098 snapshot and recorded payload stays byte-identical (`omitempty`,
-no format bump). The manifest keys stay
-flat (`dream_density_per_mille`, `dream_ambiguous_band_per_mille`,
-`dream_habituation_per_mille`, `dream_merge_cap_per_night`,
-`dream_jitter_per_mille`; defaults 900/30/500/4/15); any present key
-resolves the FULL block. The pointer takes `TuningState` out of bare-`==`
+no format bump). The manifest keys stay flat
+(`dream_*_per_mille`/`dream_merge_cap_per_night`; defaults 900/30/500/4/15);
+any present key resolves the FULL block. The pointer takes `TuningState` out of bare-`==`
 comparability — the boot seed compares via `Equal`, and `State.DreamDials()`
 is the nil-safe consumption path.
 
 **The `sim.tuning_applied` event** (`tuning.go`'s `NewTuningEvent`) carries
-the FULL effective set — the five base fields plus the RESOLVED dream block,
-never a delta — so replay can establish tuning state from any single event
-without scanning history (a pre-098 recorded event's absent block decodes
-nil ≡ defaults). The reducer arm (`state.go`) is a pure, idempotent
-`s.Tuning = &TuningState{...}` assignment — it re-applies cleanly on replay
-and the boot seed never double-counts.
+the FULL effective set — base fields, the four spec-097 pointer fields, and
+the RESOLVED dream block — never a delta, so replay can establish tuning
+state from any single event without scanning history. Absent spec-097
+fields resolve to the doctrine defaults at Apply (`resolveTuning`), never
+to zero; a pre-098 event's absent dream block stays nil ≡ defaults. The
+reducer arm (`state.go`) is a pure, idempotent `s.Tuning = &t` assignment —
+re-applies cleanly on replay, boot seed never double-counts.
 
 **Boot seeding, the genesis pin, and replay independence** split into
 [[world-tuning-boot-seeding]]: how `daemon.go`'s `seedTuning` applies the
