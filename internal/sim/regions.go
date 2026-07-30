@@ -261,7 +261,12 @@ func (s *State) validateRegionNamed(eventType string, p *RegionNamedPayload) err
 	}
 	if p.FeatureKind != "" {
 		if !canonizeFeatureKind(p.FeatureKind) {
-			return fmt.Errorf("apply %s: %q is not a feature the canonize working can raise", eventType, p.FeatureKind)
+			// TASK-163 pattern (grantableKind's rejection, miracles.go): the
+			// door's refusal enumerates the full accepted vocabulary rather
+			// than naming only the bad guess, so a model can self-correct
+			// without guessing again.
+			return fmt.Errorf("apply %s: unknown feature kind %q (the canonize working can raise: %s)",
+				eventType, p.FeatureKind, strings.Join(canonizeFeatureKinds, ", "))
 		}
 		if s.m != nil && !s.m.InBounds(p.FeatureX, p.FeatureY) {
 			return fmt.Errorf("apply %s: feature site (%d,%d) lies outside the world", eventType, p.FeatureX, p.FeatureY)

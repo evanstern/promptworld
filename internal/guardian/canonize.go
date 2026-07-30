@@ -96,7 +96,7 @@ func canonizeRefusal(err error) string {
 		return "that site lies beyond the world's edge, or beyond the region I would name"
 	case strings.Contains(msg, "is not a valid build site"):
 		return "something already stands there, or the ground will not bear it"
-	case strings.Contains(msg, "is not a feature the canonize working can raise"):
+	case strings.Contains(msg, "unknown feature kind"):
 		return "I cannot raise that there — ask for a feature within my power"
 	case strings.Contains(msg, "name length"):
 		return "give it a shorter name and I will make it real"
