@@ -1,9 +1,10 @@
 ---
 id: TASK-176
 title: 'Event-log volume: coalesce ambient movement and needs ticks'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-30 16:42'
+updated_date: '2026-07-30 18:23'
 labels: []
 dependencies: []
 ordinal: 144000
@@ -25,3 +26,9 @@ Evidence (playtest-1, 29 game-days): 1,011,063 events, 230MB world.db. agent.nee
 - [ ] #1 A month-scale world's event volume is reduced several-fold for ambient movement/needs families without breaking replay byte-identity or downstream consumers (chronicle, digest, TUI)
 - [ ] #2 The chosen approach is recorded as a design decision (emission shape vs compaction) with the determinism doctrine explicitly addressed
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+sweep dispatch (runbook playtest-1-findings-sweep): tier Opus 4.8 — replay-determinism doctrine (spec 092/TASK-75) + architectural emission-shape change with cross-package consumers (sim reducer, TUI digest grammar, event-catalog wiki notes) per constitution P.V hard-slice rubric. Spec 104-ambient-event-coalescing. Design-fork operator checkpoint recorded in runbook.
+<!-- SECTION:NOTES:END -->
