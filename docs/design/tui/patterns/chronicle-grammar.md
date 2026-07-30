@@ -23,7 +23,7 @@ pane instead. The authoritative per-type digest contract lives in
 [`specs/018-chronicle-digest/contracts/digest-grammar.md`](../../../../specs/018-chronicle-digest/contracts/digest-grammar.md)
 (§3, ~83 rows at authoring; later specs add rows through the registry +
 catalog-fixture pair — most recently spec 101's `guardian.region_named` row
-(the canonization miracle), voiced like the pre-018 miracle family
+(the canonization working), voiced like the pre-018 `work_miracle` family
 (`guardian.time_snapped` et al. — no contracts/018 template row exists for
 either), including the `gratisMark` suffix; before that, spec 098's
 `agent.salience_revised` / `agent.memory_merged` dream rows, which reference
