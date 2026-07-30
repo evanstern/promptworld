@@ -273,3 +273,4 @@ status above flipped to done.
 | 2026-07-29 | TASK-28 | #130 | 29a715517 | lane 5; design ratified by operator; seasons/ambient design (D1-D4) |
 | 2026-07-29 | TASK-23 | #132 | 714f8a08e | lane 5; design ratified by operator; interactions v2 on tool substrate (OQ-1..5 recorded) |
 | 2026-07-29 | TASK-30 | #140 | fc6ecf4f | lane 5; design ratified by operator; labor-budget invariants + calibration worksheet |
+| 2026-07-30 | TASK-81 | #143 | 3fa33a6b | lane 3; Sonnet; canonization miracle (084 artifacts + 097 discovery, live Thornspire demo); charge shape 2-flat recorded |
