@@ -32,7 +32,7 @@ byte-identical to before.
 bounded loop (spec 017), console-originated, system-authored via a
 triggered standing order (see [[guardian-watch-workers]]), or — spec 102,
 on an opted-in world — SCHEDULED on the guardian's own cadence
-([[guardian-agentization]]: the angel lane, ceiling-gated per the compiled
+([[guardian-agentization]]: the steward lane, ceiling-gated per the compiled
 charter); all run the
 identical body — same single-flight guard, roster/handler/gate composition,
 telemetry — differing only in framing. Before any tool call, the turn

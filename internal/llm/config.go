@@ -486,11 +486,11 @@ func defaultRoutes() map[string]RouteConfig {
 		// shape: a few grounded sentences per stopping point, local first,
 		// cloud fallback — never premium by default.
 		string(KindReportCard): {Chain: []string{"local", "cloud"}},
-		// The angel's scheduled turns (spec 102) ride the same cheap-first
+		// The steward's scheduled turns (spec 102) ride the same cheap-first
 		// shape: ambient own-cadence cognition, potentially many turns per
 		// game-day on an opted-in world — local first, cloud fallback, never
 		// premium by default. Operators re-route it like any kind.
-		string(KindAngel): {Chain: []string{"local", "cloud"}},
+		string(KindSteward): {Chain: []string{"local", "cloud"}},
 	}
 }
 
@@ -506,9 +506,9 @@ var defaultBackfillKinds = map[Kind]struct{}{
 	// report_card (spec 063): post-format kind — a pre-063 llm.json keeps
 	// booting, its route backfilled from defaultRoutes with a boot log line.
 	KindReportCard: {},
-	// angel (spec 102): post-format kind — a pre-102 llm.json keeps booting,
+	// steward (spec 102): post-format kind — a pre-102 llm.json keeps booting,
 	// its route backfilled from defaultRoutes with a boot log line.
-	KindAngel: {},
+	KindSteward: {},
 }
 
 // configWarnf surfaces a config boot log line (warn-not-error), mirroring

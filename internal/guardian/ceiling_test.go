@@ -75,8 +75,8 @@ func TestDefaultCharterCeilingCapsScheduledRoster(t *testing.T) {
 	if !strings.Contains(j.System, "you act with your full skill") {
 		t.Fatal("modest frame lost the compliance-is-full sentence")
 	}
-	if j.Kind != llm.KindAngel {
-		t.Fatalf("scheduled turn kind = %q, want %q", j.Kind, llm.KindAngel)
+	if j.Kind != llm.KindSteward {
+		t.Fatalf("scheduled turn kind = %q, want %q", j.Kind, llm.KindSteward)
 	}
 }
 

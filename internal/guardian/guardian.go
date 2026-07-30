@@ -519,7 +519,7 @@ func (mt *Guardian) mirrorState() {
 	// (sim.SelectMemories, SC-004) over the replica's own store, rendered
 	// here per batch so the turn worker reads strings under stateMu and
 	// never races the replica. A non-agentized world mirrors nothing.
-	mt.angelOn = mt.replica.AngelCadence() > 0
+	mt.angelOn = mt.replica.StewardCadence() > 0
 	mt.memWin = mt.memWin[:0]
 	if mt.angelOn && len(mt.replica.GuardianMemories) > 0 {
 		scratch := sim.Agent{Memories: mt.replica.GuardianMemories}

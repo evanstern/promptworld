@@ -39,9 +39,9 @@ judged the same at every capped speed instead of dying rejected-stale above
 registered (`planner` 3pt/1200t degrading to reflex, `conversation`
 13pt/7200t, `meeting` 2pt/3600t degrading to a template, `consolidation`
 5pt/28800t, `chronicle` 5pt/86400t, `metatron` 5pt/86400t, and — spec 102,
-[[guardian-agentization]] — `angel` 5pt/900t `DegradeSkip`, the guardian's
+[[guardian-agentization]] — `steward` 5pt/900t `DegradeSkip`, the guardian's
 scheduled lane, budgeted BELOW planner so the caretaker sheds first; the
-`"angel"` kind maps onto it); values are
+`"steward"` kind maps onto it); values are
 doctrine — changing one is a reviewed code change, never runtime tuning.
 `schedule.go` exports `NextPhasePreservingDue` — the TASK-44 cadence
 advance, moved from `internal/mind` so both scheduled lanes share it.

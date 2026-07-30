@@ -104,7 +104,7 @@ func (mt *Guardian) recordMemory(text string, salience int) {
 // single-flight, empty buffers close quietly (no marker spam for a guardian
 // with nothing to remember).
 func (mt *Guardian) maybeConsolidateNight(e store.Event) {
-	if mt.social == nil || mt.replica.AngelCadence() <= 0 || mt.replica.Ended {
+	if mt.social == nil || mt.replica.StewardCadence() <= 0 || mt.replica.Ended {
 		return
 	}
 	night := sim.NightIndex(e.Tick)

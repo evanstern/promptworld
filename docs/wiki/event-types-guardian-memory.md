@@ -15,7 +15,7 @@ event-domain index; [[guardian-agentization]] is the feature note.
 
 All seven types are ADDITIVE vocabulary (spec 094 discipline — no format
 bump): pre-102 logs never carried them, and a non-agentized world's guardian
-never emits them (tuning `angel_cadence_ticks` 0 = off). All are injected
+never emits them (tuning `steward_cadence_ticks` 0 = off). All are injected
 through the `InjectSocial` door (whitelisted in `internal/sim/loop.go`) and
 reduced by `applyGuardianMemory` (`internal/sim/guardian_memory.go`) —
 emitter computes, reducer applies, vanished targets no-op (spec 092). None

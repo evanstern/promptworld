@@ -42,9 +42,9 @@ local for the yes/no, cloud fallback), and it maps to [[cognition]]'s existing
 from birth) on the identical shape — cheap-first `local→cloud`, mapped to
 the same `metatron` decision class — for the guardian's report-card
 critique: one bounded call per stopping point, never a tool loop. Spec 102
-([[guardian-agentization]]) adds `KindAngel` (`"angel"`, frozen from birth)
+([[guardian-agentization]]) adds `KindSteward` (`"steward"`, frozen from birth — the spec's "angel" design vocabulary, serialized spelling de-themed by the operator rename ruling)
 on the same cheap-first `local→cloud` shape — the guardian's SCHEDULED
-cadence turns, mapped to the NEW `angel` decision class (budgeted below
+cadence turns, mapped to the NEW `steward` decision class (budgeted below
 planner so the lane sheds first). All three post-format
 kinds are in `defaultBackfillKinds`, so a pre-102/pre-063/pre-029 `llm.json`
 backfills the route from `defaultRoutes()` with a boot log line rather than

@@ -63,15 +63,17 @@ const (
 	// "report_card" is an llm.json route kind: frozen from birth (spec 052
 	// ruling 2 applies to every serialized kind) — it never renames.
 	KindReportCard Kind = "report_card"
-	// KindAngel is the guardian's SCHEDULED cognition lane (spec 102): the
-	// agentized guardian's own-cadence turns, budgeted under the "angel"
+	// KindSteward is the guardian's SCHEDULED cognition lane (spec 102): the
+	// agentized guardian's own-cadence turns, budgeted under the "steward"
 	// decision class — separate from KindGuardian so the event-driven console/
 	// order doors and the ambient cadence lane route, estimate, and shed
 	// independently. Cheap-first by default (local → cloud, the
 	// KindGuardianWatch precedent): scheduled ambient volume must not ride
-	// the premium chain unasked. "angel" is an llm.json route kind: frozen
-	// from birth (spec 052 ruling 2) — it never renames.
-	KindAngel Kind = "angel"
+	// the premium chain unasked. "steward" is an llm.json route kind: frozen
+	// from birth (spec 052 ruling 2; de-themed from "angel" by the operator
+	// rename ruling 2026-07-30, pre-merge — no config ever carried the old
+	// spelling) — it never renames.
+	KindSteward Kind = "steward"
 	// KindEmbedding is the vector-producing kind (spec 042): the mind-side
 	// embedder driver's route to a local embedding model. Deliberately NOT in
 	// acceptedKinds — it never dispatches through Submit's chat machinery or
@@ -112,7 +114,7 @@ var acceptedKinds = map[Kind]struct{}{
 	KindMeeting:       {},
 	KindGuardianWatch: {},
 	KindReportCard:    {},
-	KindAngel:         {},
+	KindSteward:       {},
 }
 
 // Kinds returns every call kind the orchestrator accepts, sorted — the

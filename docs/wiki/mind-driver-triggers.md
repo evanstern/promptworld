@@ -19,7 +19,7 @@ in `internal/sim/tuning.go` as `defaultPlannerCadenceTicks` — staggered by
 index; since TASK-44 the stagger is
 phase-preserving — every re-arm steps in whole cadence multiples from the agent's
 own due via `nextPhasePreservingDue` (since spec 102 a thin wrapper over the
-shared `cognition.NextPhasePreservingDue`, which the guardian's angel cadence
+shared `cognition.NextPhasePreservingDue`, which the guardian's steward cadence
 also drives — [[guardian-agentization]]), never from the current tick, so a shared
 stall cannot collapse agents into lockstep) plus triggers — wake, completion
 idle, nightfall, first-adjacency encounters (`md.replica.EncounterCooldown()`,

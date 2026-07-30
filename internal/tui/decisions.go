@@ -37,7 +37,7 @@ const (
 	// job id carries (spec 052 ruling 2; internal/guardian/turn.go mints
 	// "<prefix>-metatron-<tick>"): console turns ("turn-"), triggered system
 	// turns ("watch-"), and — spec 102 FR-008 — the scheduled cadence lane
-	// ("angel-"). Chain attribution matches the infix so every guardian
+	// ("steward-"). Chain attribution matches the infix so every guardian
 	// origin lands on the Guardian's decision trail.
 	guardianJobInfix = "-metatron-"
 )

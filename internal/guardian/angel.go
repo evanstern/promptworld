@@ -8,7 +8,7 @@ package guardian
 // pre-102 worlds behave byte-identically.
 //
 // Doctrine carried here:
-//   - D2: the "angel" decision class gates every scheduled turn through the
+//   - D2: the "steward" decision class gates every scheduled turn through the
 //     SAME router (cognition.Route/RoutePaused) villager classes ride, with a
 //     budget registered BELOW planner's so the angel sheds first under
 //     saturation; suppressions are recorded cog.outcome events, exactly the
@@ -36,8 +36,11 @@ import (
 )
 
 // angelClass is the scheduled lane's decision class (registered in
-// internal/cognition/registry.go beside "metatron", spec 102 D2).
-const angelClass = "angel"
+// internal/cognition/registry.go beside "metatron", spec 102 D2). The
+// SERIALIZED spelling is "steward" (operator rename ruling 2026-07-30,
+// de-themed pre-merge); the Go identifiers keep the spec's "angel" design
+// vocabulary — unserialized names stay descriptive.
+const angelClass = "steward"
 
 // angelSeed is the scheduled turn's trailing directive — the guardian's OWN
 // standing instruction, no player-text sink (the system-turn discipline).
@@ -64,7 +67,7 @@ type angelJob struct {
 // mirror refreshed, the matchOrders position. The lane is inert (returns
 // immediately) unless the world opted in via tuning.
 func (mt *Guardian) scheduleAngel() {
-	cadence := mt.replica.AngelCadence()
+	cadence := mt.replica.StewardCadence()
 	if cadence <= 0 || mt.replica.Ended {
 		return
 	}
@@ -85,7 +88,7 @@ func (mt *Guardian) scheduleAngel() {
 	if !ok {
 		return // unregistered class: a code bug ValidateKinds would have caught at boot
 	}
-	spp := mt.secondsPerPoint(llm.KindAngel)
+	spp := mt.secondsPerPoint(llm.KindSteward)
 	var v cognition.Verdict
 	switch {
 	case mt.replica.Paused:
@@ -149,7 +152,7 @@ func (mt *Guardian) angelWorker() {
 // turns, so the order door is never raced (D6).
 func (mt *Guardian) runAngel(job angelJob) {
 	defer mt.angelInFlight.Store(false)
-	jobID := fmt.Sprintf("angel-metatron-%d", job.tick)
+	jobID := fmt.Sprintf("steward-metatron-%d", job.tick)
 	mt.emitAngelCog(store.Event{Type: "cog.thought", Payload: mustJSON(sim.CogThoughtPayload{
 		Job: jobID, Class: angelClass, Agent: sim.Ref(-1),
 		SnapshotTick: job.tick, Points: angelPoints(),
@@ -161,7 +164,7 @@ func (mt *Guardian) runAngel(job angelJob) {
 		return
 	}
 	start := time.Now()
-	res, err := mt.runTurn(context.Background(), turnOrigin{system: true, angel: true, jobPrefix: "angel", jobID: jobID, seed: angelSeed})
+	res, err := mt.runTurn(context.Background(), turnOrigin{system: true, angel: true, jobPrefix: "steward", jobID: jobID, seed: angelSeed})
 	mt.turnBusy.Store(false)
 	wallMs := time.Since(start).Milliseconds()
 
@@ -228,7 +231,7 @@ func joinNames(names []string) string {
 // the absorb loop on the door's tick boundary.
 func (mt *Guardian) emitAngelSuppressed(tick int64, v cognition.Verdict) {
 	p := sim.CogOutcomePayload{
-		Job:   fmt.Sprintf("angel-metatron-%d", tick),
+		Job:   fmt.Sprintf("steward-metatron-%d", tick),
 		Class: angelClass, Agent: sim.Ref(-1),
 		Outcome: sim.OutcomeSuppressed, SnapshotTick: tick,
 		PredictedWallMs: v.PredictedWallMs, Reason: v.Arithmetic,

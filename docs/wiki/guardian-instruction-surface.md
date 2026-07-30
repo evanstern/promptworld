@@ -80,7 +80,7 @@ Since spec 059 (US2) that doctrine gets a carve-out keyed on the
 turn's origin rather than any tool: `buildTurnSystemPrompt(survival, …)` (the
 origin-selecting composer `turnSystemPrompt` now wraps, pinning `survival=false`
 for every pre-059 call site; spec 102 extracted the frame-parametric
-`composeTurnSystemPrompt` beneath it so the two ANGEL frames —
+`composeTurnSystemPrompt` beneath it so the two SCHEDULED-lane (steward) frames —
 `guardianAngelModestFrame` under the default-charter ceiling,
 `guardianAngelLiftedFrame` under an authored charter, both compile-time
 INV-1 constants — compose through the same body on scheduled turns; a

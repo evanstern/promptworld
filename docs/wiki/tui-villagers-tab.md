@@ -58,7 +58,7 @@ trigger 0 to a cadence phrase) and the stored chain survives the ring's
 villager job-ID parse for fragments; guardian jobs go to a sentinel — since
 spec 102 matched by the FROZEN `-metatron-` correlation infix
 (`isGuardianJob`), so console `turn-*`, triggered `watch-*`, and the
-scheduled `angel-*` chains ([[guardian-agentization]]) all land on the
+scheduled `steward-*` chains ([[guardian-agentization]]) all land on the
 Guardian trail (console transcript verdict rows stay `turn-metatron-*`-only)
 — and `conversation-*` jobs are never ingested. `ingestOutcome` also skips the
 NON-terminal `sim.OutcomeRetried` marker (spec 025, TASK-72): the tool-loop

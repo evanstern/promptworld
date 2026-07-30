@@ -36,11 +36,11 @@ these doctrine values.
 constants — [[executor-perception-observation]]): two executor-read
 (observation dedup window, base salience), two read off the mind's replica
 by the belief reconciler (disconfirm retain, confirm boost) — nine total.
-**Spec 102 adds `angel_cadence_ticks`** ([[guardian-agentization]]): the
+**Spec 102 adds `steward_cadence_ticks`** ([[guardian-agentization]]): the
 guardian-agentization OPT-IN switch and cadence — 0 = off = default,
 nonzero clamps to 600..86400, negatives clamp to 0 (never opting a world in
 by accident); `omitempty` on state and payload keeps pre-102 bytes
-identical; read via `State.AngelCadence()`.
+identical; read via `State.StewardCadence()`.
 
 **`TuningState`** (`tuning.go`) is the fully-resolved effective set: a
 non-nil `TuningState` always carries all fields with defaults filled in

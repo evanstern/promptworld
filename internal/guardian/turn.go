@@ -384,7 +384,7 @@ func (mt *Guardian) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 	// premium console kind.
 	kind := llm.KindGuardian
 	if o.angel {
-		kind = llm.KindAngel
+		kind = llm.KindSteward
 	}
 
 	callCtx, cancel := context.WithTimeout(ctx, turnTimeout)

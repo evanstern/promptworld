@@ -16,7 +16,7 @@ import (
 // never diverge.
 func TestGuardianMemoryReplayByteIdentity(t *testing.T) {
 	tuned := defaultTuning()
-	tuned.AngelCadenceTicks = 3600
+	tuned.StewardCadenceTicks = 3600
 	events := []store.Event{
 		NewTuningEvent(0, tuned),
 		gmEvent(t, "guardian.memory_added", 100, 11, GuardianMemoryPayload{Text: "Ash nearly starved", Salience: 7}),
@@ -48,7 +48,7 @@ func TestGuardianMemoryReplayByteIdentity(t *testing.T) {
 func TestPre102StateMarshalUnchanged(t *testing.T) {
 	s := NewState(9, worldmap.Generate(9, 32, 32))
 	b := string(s.Marshal())
-	for _, field := range []string{"guardian_memories", "guardian_mem_up_to", "angel_cadence_ticks"} {
+	for _, field := range []string{"guardian_memories", "guardian_mem_up_to", "steward_cadence_ticks"} {
 		if contains := (len(b) > 0 && (stringIndex(b, field) >= 0)); contains {
 			t.Errorf("pre-102 marshal carries %q — additive-field discipline broken", field)
 		}

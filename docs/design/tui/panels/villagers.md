@@ -122,7 +122,7 @@ the screen.
 - Guardian chain attribution (spec 102): the projection attributes to the
   Guardian sentinel by the FROZEN `-metatron-` correlation infix
   (`isGuardianJob`), so console (`turn-`), triggered (`watch-`), and the
-  scheduled cadence lane's (`angel-`) chains all land on the Guardian trail —
+  scheduled cadence lane's (`steward-`) chains all land on the Guardian trail —
   previously only `turn-metatron-` did. Console transcript verdict rows
   (`guardianVerdictRow`) remain `turn-metatron-`-only by design: a scheduled
   turn is not a console exchange.

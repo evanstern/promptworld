@@ -65,6 +65,11 @@ func applyAngelCeiling(g grantSet, lifted bool) grantSet {
 	}
 	// Lifted: strip only the clock triple. Copy-on-write — the maps feed
 	// three gating layers this turn; never mutate a shared view in place.
+	// PLANNING-TIER RULING (2026-07-30): bundle tools stay EXCLUDED from the
+	// scheduled lane's roster at ANY ceiling — the modest arm excludes them
+	// via intersectGrant's named-list semantics above, and the lifted arm
+	// inherits the same posture (bundle tools remain console/order-driven);
+	// revisit via a future card, never silently here.
 	tools := make(map[string]bool, len(g.tools))
 	for n := range g.tools {
 		tools[n] = true

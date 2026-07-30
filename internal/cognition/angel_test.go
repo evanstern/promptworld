@@ -8,16 +8,16 @@ import "testing"
 // class exists, the "angel" llm kind resolves to it, and the registry still
 // validates whole.
 func TestAngelClassRegistered(t *testing.T) {
-	dc, ok := ClassFor("angel")
+	dc, ok := ClassFor("steward")
 	if !ok {
 		t.Fatal("angel class not registered")
 	}
 	if dc.Points != 5 || dc.BudgetTicks != 900 || dc.Degrade != DegradeSkip {
 		t.Fatalf("angel class values drifted: %+v", dc)
 	}
-	kdc, ok := ClassForKind("angel")
-	if !ok || kdc.Class != "angel" {
-		t.Fatalf("kind %q resolved to %+v (ok=%v), want the angel class", "angel", kdc, ok)
+	kdc, ok := ClassForKind("steward")
+	if !ok || kdc.Class != "steward" {
+		t.Fatalf("kind %q resolved to %+v (ok=%v), want the angel class", "steward", kdc, ok)
 	}
 	if err := Validate(); err != nil {
 		t.Fatalf("registry invalid with angel class: %v", err)
@@ -35,11 +35,11 @@ func TestAngelClassRegistered(t *testing.T) {
 //     planner routes too — there is no operating point where the caretaker
 //     thinks while villager survival cognition is shed.
 func TestAngelShedsBeforeVillagerSurvival(t *testing.T) {
-	angel, _ := ClassFor("angel")
+	angel, _ := ClassFor("steward")
 	planner, _ := ClassFor("planner")
 	spps := []float64{0.5, 1, 2, 5, 10, 20, 60}
 	for _, spp := range spps {
-		if a, p := MaxSafeSpeed("angel", spp), MaxSafeSpeed("planner", spp); a > p {
+		if a, p := MaxSafeSpeed("steward", spp), MaxSafeSpeed("planner", spp); a > p {
 			t.Errorf("at %.1fs/pt: angel safe to %gx but planner only %gx — the angel must shed first", spp, a, p)
 		}
 		for _, tps := range []float64{1, 4, 8, 16, 32} {

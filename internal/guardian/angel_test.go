@@ -25,7 +25,7 @@ func optIn(t *testing.T, mt *Guardian, inj *stateInjector, cadence int64) {
 		t.Fatal(err)
 	}
 	tuned = *parsed
-	tuned.AngelCadenceTicks = cadence
+	tuned.StewardCadenceTicks = cadence
 	ev := sim.NewTuningEvent(mt.replica.Tick, tuned)
 	if err := mt.replica.Apply(ev); err != nil {
 		t.Fatal(err)
@@ -135,7 +135,7 @@ func TestAngelLaneSchedulesAndRuns(t *testing.T) {
 				if err := json.Unmarshal(e.Payload, &p); err != nil {
 					t.Fatal(err)
 				}
-				if p.Class == "angel" {
+				if p.Class == "steward" {
 					thoughtJobs = append(thoughtJobs, p.Job)
 					thoughts = append(thoughts, sim.CogOutcomePayload{Job: p.Job})
 				}
@@ -144,7 +144,7 @@ func TestAngelLaneSchedulesAndRuns(t *testing.T) {
 				if err := json.Unmarshal(e.Payload, &p); err != nil {
 					t.Fatal(err)
 				}
-				if p.Class == "angel" {
+				if p.Class == "steward" {
 					outcomes = append(outcomes, p)
 				}
 			}
@@ -153,7 +153,7 @@ func TestAngelLaneSchedulesAndRuns(t *testing.T) {
 	if len(thoughts) != 1 || len(outcomes) != 1 {
 		t.Fatalf("want 1 angel thought + 1 outcome, got %d/%d", len(thoughts), len(outcomes))
 	}
-	if outcomes[0].Job != thoughtJobs[0] || !strings.HasPrefix(outcomes[0].Job, "angel-metatron-") {
+	if outcomes[0].Job != thoughtJobs[0] || !strings.HasPrefix(outcomes[0].Job, "steward-metatron-") {
 		t.Fatalf("chain broken: thought %q vs outcome %q", thoughtJobs[0], outcomes[0].Job)
 	}
 	if outcomes[0].Outcome != sim.OutcomeAdapted {
@@ -202,7 +202,7 @@ func TestAngelSuppressedAtSpeed(t *testing.T) {
 				if err := json.Unmarshal(e.Payload, &p); err != nil {
 					t.Fatal(err)
 				}
-				if p.Class == "angel" && p.Outcome == sim.OutcomeSuppressed {
+				if p.Class == "steward" && p.Outcome == sim.OutcomeSuppressed {
 					found = true
 					if !strings.Contains(p.Reason, "budget") {
 						t.Fatalf("suppression reason lacks the arithmetic: %q", p.Reason)

@@ -42,8 +42,8 @@ exceed the stage, and a beyond-stage tool is structurally absent from
 declaration, prose, and handlers alike. Spec 102's SCHEDULED (angel) turns
 add one more intersection at the same seam — `applyAngelCeiling`
 (`ceiling.go`): default charter → the modest read/counsel set, authored →
-all but the clock triple — and ride `Kind "angel"` with a caller-minted
-`angel-metatron-<tick>` job id; console/triggered turns never pass the
+all but the clock triple — and ride `Kind "steward"` with a caller-minted
+`steward-metatron-<tick>` job id; console/triggered turns never pass the
 ceiling ([[guardian-agentization]]). The stage-1/-2 ceiling
 (`stage1CeilingTools`) is `send_omen`/`send_vision`/`monitor_and_act`/
 `cancel_order` with NO miracle kinds and no bundle tools (a ratified TASK-119
