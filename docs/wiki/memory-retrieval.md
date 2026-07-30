@@ -13,7 +13,7 @@ sources:
   - internal/llm/providers.go
   - internal/world/world.go
   - cmd/promptworld/divergence.go
-verified_against: c5e66ee92fa75c00e2b480811e0ca727d5c1a1e1
+verified_against: d0645811c9783d1248dc65ed0fcf0b37524dd8fd
 ---
 
 # Memory retrieval (embedding relevance)
@@ -29,7 +29,11 @@ functions of recorded data, so replay stays byte-identical with zero model calls
 **Vectors at emission (async, recorded).** The `Embedder` driver
 (`internal/mind/embedder.go`) watches absorbed `agent.memory_added` events, embeds each
 memory's exact recorded text (fixed-byte cap `embedTextCapBytes`), and injects
-`agent.memory_embedded {agent, mem_seq, vec, model}` through the `InjectSocial` door. The
+`agent.memory_embedded {agent, mem_seq, vec, model}` through the `InjectSocial` door.
+Since spec 102 ([[guardian-agentization]]) the SAME driver also watches
+`guardian.memory_added` and lands the companion as
+`guardian.memory_embedded {mem_seq, vec, model}` — one queue, one call
+shape, one coalesced injection serving both stores. The
 reducer attaches `Vec`/`VecModel` to the memory whose `Seq` matches — copy-verbatim,
 no-op if absent, and a zero `mem_seq` (pre-042 memory) never matches. `Memory.Seq` is
 stamped from the event's store seq by the reducer, pre-stamped in the live loop by

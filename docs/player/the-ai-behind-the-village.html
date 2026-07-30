@@ -4,15 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/wiki/agent-mind.md@c5e66ee92fa75c00e2b480811e0ca727d5c1a1e1">
-<meta name="promptworld-docs:source" content="docs/wiki/cognition.md@c5e66ee92fa75c00e2b480811e0ca727d5c1a1e1">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-orchestrator.md@31c893e0406653197e467a89b2fdb96f0bcf2ee0">
-<meta name="promptworld-docs:source" content="docs/wiki/nightly-consolidation.md@a761a45cb3b437613b808408c6c7f30d11bd9eb9">
+<meta name="promptworld-docs:source" content="docs/wiki/agent-mind.md@cb0eb0c0b00c7ecef9d0a6a88d49c3ee994953b4">
+<meta name="promptworld-docs:source" content="docs/wiki/cognition.md@04ff15001bd8a74f7c2965889c0d318fc0dc03a9">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-orchestrator.md@1fae0d8536eb43e43eaa7b747aaeaf0b6e05ac83">
+<meta name="promptworld-docs:source" content="docs/wiki/nightly-consolidation.md@1fae0d8536eb43e43eaa7b747aaeaf0b6e05ac83">
 <meta name="promptworld-docs:source" content="docs/wiki/social-fabric.md@c61cd6c04ddfcd2a976c14a49ba071e8fd768a73">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@cf65debb44c1e17b54c0f3421d11e1e8cc28576c">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@1fae0d8536eb43e43eaa7b747aaeaf0b6e05ac83">
 <meta name="promptworld-docs:source" content="docs/wiki/mental-maps.md@cf65debb44c1e17b54c0f3421d11e1e8cc28576c">
-<meta name="promptworld-docs:source" content="docs/wiki/memory-retrieval.md@c5e66ee92fa75c00e2b480811e0ca727d5c1a1e1">
-<meta name="promptworld-docs:source" content="docs/wiki/decision-context.md@c5e66ee92fa75c00e2b480811e0ca727d5c1a1e1">
+<meta name="promptworld-docs:source" content="docs/wiki/memory-retrieval.md@d0645811c9783d1248dc65ed0fcf0b37524dd8fd">
+<meta name="promptworld-docs:source" content="docs/wiki/decision-context.md@cb0eb0c0b00c7ecef9d0a6a88d49c3ee994953b4">
 <title>The AI behind the village — promptworld player docs</title>
 <style>
   :root {
@@ -110,6 +110,18 @@ where every thought takes real seconds, this matters a lot at night: the model's
 limited attention goes to whoever is actually awake. Waking a villager promptly puts
 them back in line for a fresh thought, and the nightly memory digestion described
 further down is untouched — sleeping is exactly when that runs.</p>
+
+<p>Older villages have bigger nights to digest — a few weeks in, a villager can carry
+far more memories and beliefs into their sleep than a day-one villager does. If the
+AI's overnight reply gets cut off mid-sentence because it ran out of room, the game
+notices the cut and simply asks again with more room to answer (doubling it, up to a
+fixed cap), so long-running villagers keep forming long-term memories instead of
+quietly stalling. If even the biggest allowance isn't enough, that night is set aside
+with nothing lost — the villager's un-digested memories stay put and the next sleep
+tries again — and the game keeps a nightly tally in its own log, complaining loudly
+if every villager's digestion keeps failing night after night. The narrated story
+feed gets the same safety net: a cut-off storyteller reply is re-asked with more
+room before the game gives up on that chapter.</p>
 
 <h2>Each villager only knows what they've actually seen</h2>
 <p>Villagers aren't born knowing the map. Each one carries their own private
