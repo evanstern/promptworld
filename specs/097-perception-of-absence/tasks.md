@@ -25,7 +25,7 @@
 
 ## Phase 4: Soak + grounding
 
-- [ ] T006 One-game-day soak at 8x on a seeded MEASURE world (never playtest):
+- [X] T006 One-game-day soak at 8x on a seeded MEASURE world (never playtest):
   bounded observation-memory counts + unchanged survival behavior; evidence at
   docs/design/evidence/task-80/ (US3, SC-002). Implementer prepares + runs with
   local-only LLM routes (no paid spend); orchestrator reviews evidence.
