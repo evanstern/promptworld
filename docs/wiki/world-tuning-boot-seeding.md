@@ -39,6 +39,21 @@ values ([[daemon-lifecycle]]). Behavior:
   (which always carries the RESOLVED spec-098 dream block, [[private-dreams]]),
   applies it, and appends it.
 
+**Spec 104's coalescing dial** (`NeedsCheckpointMinutes`, clamp [1,60],
+default 10): joins the genesis pin like every other dial — a post-057
+world's effective value is fixed at birth. `resolveTuning` treats an ABSENT
+field in a sparse manifest as the doctrine default (10), never 0, so a
+sparse `tuning.json` written before spec 104 existed still resolves to the
+coalescing regime once the daemon upgrades; a pre-057 or migrated world
+with no genesis pin at all keeps compiled defaults, the same documented
+determinism hazard every other un-pinned dial carries. Applying ANY
+`tuning.json` on an old, still-legacy world (`NeedsCheckpointMinutes`
+previously 0) flips it into the regime at that boot: the `sim.tuning_applied`
+arm's legacy→coalescing branch ([[sim-state-apply-agents]]) stamps every
+living agent's `NeedsSyncTick`/`NeedsEmitted` and `Gru.Done` to the seed
+event's own tick at the same moment, so the derived engine's floor starts
+exactly at the flip with the past already covered by recorded events.
+
 ## The genesis pin
 
 **The genesis pin** (spec 057 / TASK-108): `promptworld new` seeds one

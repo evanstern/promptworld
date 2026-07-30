@@ -5,7 +5,7 @@ kind: concept
 sources:
   - internal/sim/executor.go
   - internal/sim/terrain.go
-verified_against: 376afd4cee54839a545bc88409f3c485c2f5149d
+verified_against: 0af53ec6d211c71e298072c045c67ccbbd13b61d
 ---
 
 # Event types — harvesting & consumption events

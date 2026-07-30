@@ -388,3 +388,53 @@ func TestMiracleFromDigestCoordinatesPassesDoor(t *testing.T) {
 			inj.state.Agents[vi].X, inj.state.Agents[vi].Y, tx, ty)
 	}
 }
+
+// TestSurvivalWatchLatencyUnderThinnedStream (spec 104 T009): the coalesced
+// needs shape emits checkpoints every K game-minutes PLUS an immediate event
+// on every band crossing — this test feeds the matcher exactly that thinned
+// stream and asserts the watch fires at the crossing event (today's
+// latency), stays latched across sparse in-band checkpoints, re-arms on the
+// recovery-crossing event, and re-fires on relapse. The matcher itself is
+// untouched by spec 104; the emission contract (crossings always emitted,
+// both directions — sim.TestNeedsCrossingEmitsAtTheMinute) is what keeps its
+// latency identical.
+func TestSurvivalWatchLatencyUnderThinnedStream(t *testing.T) {
+	mt, _, inj, _ := newTestGuardian(t, "ok")
+	seededSurvivalWatch(mt, inj, sim.SurvivalStarvation)
+
+	fire := func(agent, food int, tick int64) bool {
+		mt.matchOrders([]store.Event{needsEvent(agent, 800, food, 800, tick)})
+		return dequeued(mt.triggerQ)
+	}
+	clearPending := func() {
+		mt.stateMu.Lock()
+		delete(mt.pendingTrigger, "sys-watch-"+sim.SurvivalStarvation)
+		mt.stateMu.Unlock()
+	}
+
+	// K=10 world: checkpoint at minute 10 (fed) — no fire.
+	if fire(2, 500, 600) {
+		t.Fatal("a fed checkpoint fired the starvation watch")
+	}
+	// Crossing event at minute 14 (the very minute food hit the band —
+	// emitted immediately under FR-008, no checkpoint wait): fires NOW.
+	if !fire(2, 0, 840) {
+		t.Fatal("the crossing event did not fire the watch at its own minute")
+	}
+	clearPending()
+	// Sparse in-band checkpoints (minutes 20, 30): the latch suppresses.
+	if fire(2, 0, 1200) || fire(2, 0, 1800) {
+		t.Fatal("the watch re-fired on in-band checkpoints (latch failed)")
+	}
+	clearPending()
+	// Recovery CROSSING at minute 33 (eating mid-window — emitted
+	// immediately because the band was re-crossed upward): re-arms.
+	if fire(2, sim.SurvivalStarvingRearm, 1980) {
+		t.Fatal("a recovery crossing fired the watch")
+	}
+	clearPending()
+	// Relapse crossing at minute 41: fires again at its own minute.
+	if !fire(2, 0, 2460) {
+		t.Fatal("the watch did not re-fire on the relapse crossing")
+	}
+}

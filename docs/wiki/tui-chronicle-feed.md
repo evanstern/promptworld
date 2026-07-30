@@ -62,7 +62,13 @@ pane holds it verbatim): `agent.saw` ("Ash saw fire
 at (x,y) (+N more)"), `social.place_told` ("Ash told Birch of fire at (x,y)
 (+N more)"), `agent.map_corrected` ("Ash found fire at (x,y) gone (+N
 more)"), and `guardian.place_revealed` ("Guardian revealed fire at (x,y) to
-Ash (+N more)", guardian as subject, the nudge convention). Since spec 042,
+Ash (+N more)", guardian as subject, the nudge convention). Since spec 104
+(ambient event coalescing), two more digest rows cover the coalesced-walk
+pair: `agent.path_started` ("Ash sets out for (3,1) (3 tiles)", destination
+plus tile count — the story dozens of per-step rows used to spread over)
+and `agent.path_truncated` ("Ash's walk cut short at (2,1)"); the historic
+`agent.moved`/`gru.moved` rows are KEPT unchanged, since a legacy world's
+log still carries them. Since spec 042,
 three [[memory-retrieval]] event types get entries, the raw vector
 elided (384 floats would drown the feed): `agent.memory_embedded`
 ("memory seq=N embedded dims=N model=…"), `agent.situation_embedded` (agent

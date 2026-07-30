@@ -66,6 +66,19 @@ const (
 	// world in and sets the cadence (clamped to [min,max] below — never
 	// hotter than 10 game-minutes).
 	defaultStewardCadenceTicks = 0
+
+	// Spec 104 (ambient event coalescing, FR-008): the needs-checkpoint
+	// cadence — agent.needs_changed emits every K game-minutes per living
+	// agent plus immediately on any danger-band/near-death/zero crossing.
+	// K=1 reproduces today's per-minute emission byte-for-byte (the escape
+	// hatch). The field doubles as the COALESCING REGIME marker: a recorded
+	// sim.tuning_applied payload that lacks it resolves to 0 = legacy — the
+	// executor keeps per-step agent.moved / per-minute needs / gru.moved
+	// emission and the derived-advancement engine (advance.go) stays
+	// structurally inert, so pre-104 logs and snapshots fold to
+	// hash-identical state. New worlds pin K in their genesis tuning event
+	// (defaultTuning below, spec 057), turning the regime on from tick 0.
+	defaultNeedsCheckpointMinutes = 10
 )
 
 // The spec-098 dream dials (private dreams — consolidation clustering +
@@ -105,6 +118,10 @@ const (
 	minObservationBaseSalience, maxObservationBaseSalience             = 1, 10
 	minBeliefDisconfirmRetainPercent, maxBeliefDisconfirmRetainPercent = 0, 100
 	minBeliefConfirmBoost, maxBeliefConfirmBoost                       = 0, 100
+	// Spec 104: the manifest can never author the 0 legacy sentinel — the
+	// floor is 1 (per-minute), so "legacy" is reachable only from pre-104
+	// recorded payloads.
+	minNeedsCheckpointMinutes, maxNeedsCheckpointMinutes = 1, 60
 	// Dream dials (spec 098): per-mille geometry bounds; the band is capped at
 	// 500 so the membership bar can never go negative against a mid-range
 	// density; the merge cap is bounded well under any plausible store size;
@@ -147,6 +164,12 @@ type TuningState struct {
 	// snapshot and recorded payload byte-identical (the spec-094 additive
 	// discipline, no format bump).
 	StewardCadenceTicks int64 `json:"steward_cadence_ticks,omitempty"`
+	// NeedsCheckpointMinutes (spec 104, FR-008): the needs-checkpoint cadence
+	// K, doubling as the coalescing-regime marker — 0 means LEGACY (a pre-104
+	// recorded payload; per-step/per-minute emission, advancement inert),
+	// never authorable from a manifest (clamp floor 1). omitempty keeps a
+	// legacy TuningState's canonical bytes identical to pre-104.
+	NeedsCheckpointMinutes int64 `json:"needs_checkpoint_minutes,omitempty"`
 	// Dream (spec 098) is the private-dream dial block. nil ≡ the default
 	// dream set — exactly the State.Tuning nil convention one level down —
 	// which keeps every pre-098 snapshot and recorded sim.tuning_applied
@@ -208,6 +231,7 @@ func (t TuningState) Equal(o TuningState) bool {
 		t.BeliefConfirmBoost == o.BeliefConfirmBoost &&
 		// Spec 102: the angel cadence compares by value like the base five.
 		t.StewardCadenceTicks == o.StewardCadenceTicks &&
+		t.NeedsCheckpointMinutes == o.NeedsCheckpointMinutes &&
 		t.EffectiveDream() == o.EffectiveDream()
 }
 
@@ -225,6 +249,7 @@ func defaultTuning() TuningState {
 		ObservationBaseSalience:       defaultObservationBaseSalience,
 		BeliefDisconfirmRetainPercent: defaultBeliefDisconfirmRetainPercent,
 		BeliefConfirmBoost:            defaultBeliefConfirmBoost,
+		NeedsCheckpointMinutes:        defaultNeedsCheckpointMinutes,
 	}
 }
 
@@ -330,6 +355,28 @@ func (s *State) StewardCadence() int64 {
 	return defaultStewardCadenceTicks
 }
 
+// AmbientCoalescing reports whether the spec-104 coalescing regime is ON for
+// this world: movement rides agent.path_started segments, needs thin to
+// checkpoints + crossings, gru motion is derived. OFF (legacy) for nil Tuning
+// and for every pre-104 recorded tuning payload (field absent ⇒ 0), so old
+// worlds keep the old emission shape and the advancement engine stays inert
+// on their folds (research.md §3 — the double-fold guard).
+func (s *State) AmbientCoalescing() bool {
+	return s.Tuning != nil && s.Tuning.NeedsCheckpointMinutes > 0
+}
+
+// NeedsCheckpointK is the needs-checkpoint cadence K in game-minutes (spec
+// 104 FR-008): agent.needs_changed emits on the K-minute grid plus on band
+// crossings. 1 (today's per-minute cadence) while the regime is off — legacy
+// worlds emit every minute through the retained heartbeat path, so this
+// accessor is only ever consulted under AmbientCoalescing().
+func (s *State) NeedsCheckpointK() int64 {
+	if s.Tuning != nil && s.Tuning.NeedsCheckpointMinutes > 0 {
+		return s.Tuning.NeedsCheckpointMinutes
+	}
+	return 1
+}
+
 // DreamDials is the resolved spec-098 dream dial block (nil-safe): the one
 // consumption path for PlanDream's parameters, read off the mind's replica at
 // consolidation-snapshot time like the other mind-side dials.
@@ -372,6 +419,12 @@ type tuningManifest struct {
 	BeliefConfirmBoost            *int64 `json:"belief_confirm_boost"`
 	// Steward cadence (spec 102): the guardian-agentization opt-in dial.
 	StewardCadenceTicks *int64 `json:"steward_cadence_ticks"`
+	// Spec 104: the needs-checkpoint cadence / coalescing-regime dial. Like
+	// every dial, an absent key resolves to the doctrine default (10) — so
+	// ANY tuning.json turns the regime on at next boot (a deterministic,
+	// event-recorded, forward-only change; the flip transition stamps the
+	// advancement watermarks, state.go).
+	NeedsCheckpointMinutes *int64 `json:"needs_checkpoint_minutes"`
 	// Dream dials (spec 098): flat keys like every other dial — the manifest
 	// stays one sparse level deep for the operator; the nested resolved block
 	// is a state/payload shape, not an authoring shape.
@@ -430,6 +483,7 @@ func ParseTuning(data []byte) (*TuningState, []string, error) {
 	clampI64("observation_base_salience", m.ObservationBaseSalience, &t.ObservationBaseSalience, minObservationBaseSalience, maxObservationBaseSalience)
 	clampI64("belief_disconfirm_retain_percent", m.BeliefDisconfirmRetainPercent, &t.BeliefDisconfirmRetainPercent, minBeliefDisconfirmRetainPercent, maxBeliefDisconfirmRetainPercent)
 	clampI64("belief_confirm_boost", m.BeliefConfirmBoost, &t.BeliefConfirmBoost, minBeliefConfirmBoost, maxBeliefConfirmBoost)
+	clampI64("needs_checkpoint_minutes", m.NeedsCheckpointMinutes, &t.NeedsCheckpointMinutes, minNeedsCheckpointMinutes, maxNeedsCheckpointMinutes)
 
 	// Steward cadence (spec 102): 0 is the off switch and passes untouched; a
 	// nonzero value clamps to the [min,max] band with the standard warning.
@@ -498,6 +552,13 @@ type TuningAppliedPayload struct {
 	// old logs replay byte-identically with no format bump. New events always
 	// carry the field (NewTuningEvent).
 	StewardCadenceTicks *int64 `json:"steward_cadence_ticks,omitempty"`
+	// Spec 104: the needs-checkpoint / coalescing-regime dial. Pointer +
+	// omitempty for the READ side: a pre-104 recorded payload decodes nil,
+	// which resolveTuning keeps as 0 = LEGACY — deliberately NOT the doctrine
+	// default, unlike the spec-097 dials, because the field is the regime
+	// marker and a pre-104 world must fold to the legacy emission shape
+	// (research.md §3).
+	NeedsCheckpointMinutes *int64 `json:"needs_checkpoint_minutes,omitempty"`
 	// Dream (spec 098): newly-emitted events always carry the resolved block
 	// (the full-set doctrine); the pointer + omitempty exist for the READ
 	// side — a pre-098 recorded event decodes nil, which the apply arm keeps
@@ -535,6 +596,13 @@ func resolveTuning(p TuningAppliedPayload) TuningState {
 	// Steward cadence (spec 102): absent resolves to 0 — off, the pre-102 world.
 	if p.StewardCadenceTicks != nil {
 		t.StewardCadenceTicks = *p.StewardCadenceTicks
+	}
+	// Spec 104: absent resolves to 0 = legacy (the regime marker), never to
+	// the doctrine default — see the payload field's comment.
+	if p.NeedsCheckpointMinutes != nil {
+		t.NeedsCheckpointMinutes = *p.NeedsCheckpointMinutes
+	} else {
+		t.NeedsCheckpointMinutes = 0
 	}
 	// Dream (spec 098): a decoded nil stays nil ≡ defaults; a carried block
 	// lands as a FRESH copy, never the payload's pointer (the apply-arm
@@ -580,6 +648,7 @@ func NewTuningEvent(tick int64, t TuningState) store.Event {
 			BeliefDisconfirmRetainPercent: &t.BeliefDisconfirmRetainPercent,
 			BeliefConfirmBoost:            &t.BeliefConfirmBoost,
 			StewardCadenceTicks:           &t.StewardCadenceTicks,
+			NeedsCheckpointMinutes:        &t.NeedsCheckpointMinutes,
 			Dream:                         &d,
 		})}
 }

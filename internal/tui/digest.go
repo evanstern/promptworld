@@ -392,6 +392,29 @@ var digestRegistry = map[string]digestFunc{
 		}
 		return join([]seg{refSeg(names, p.Agent), txt(" → "), coord(p.X, p.Y)}), true
 	},
+	// agent.path_started / agent.path_truncated (spec 104): one coalesced
+	// walk per row — the destination plus the tile count tells the story a
+	// per-step feed used to spread over dozens of rows. The historic
+	// agent.moved / gru.moved rows above and below are KEPT: legacy logs
+	// still render.
+	"agent.path_started": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.PathStartedPayload](e)
+		if !ok || len(p.Path) == 0 {
+			return nil, false
+		}
+		dest := p.Path[len(p.Path)-1]
+		return join([]seg{
+			refSeg(names, p.Agent), txt(" sets out for "), coord(dest.X, dest.Y),
+			txt(fmt.Sprintf(" (%d tiles)", len(p.Path))),
+		}), true
+	},
+	"agent.path_truncated": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.PathTruncatedPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{refSeg(names, p.Agent), txt("'s walk cut short at "), coord(p.X, p.Y)}), true
+	},
 	// agent.saw (spec 041) summarizes the perception diff by its first
 	// (canonically-ordered) fact plus a count — a full fact list would flood
 	// the feed line; the detail pane holds the payload.
@@ -1692,6 +1715,24 @@ var subjectRegistry = map[string]subjectFunc{
 	// --- sim: agent acts with a recorded position ---
 	"agent.moved": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.AgentMovedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorPosCandidate(p.Agent.ID, p.X, p.Y), true
+	},
+	// Spec 104: a coalesced walk's subject is its walker — at the declared
+	// destination for path_started (where the story is headed), at the
+	// recorded stop for path_truncated.
+	"agent.path_started": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.PathStartedPayload](e)
+		if !ok || len(p.Path) == 0 {
+			return subjectCandidate{}, false
+		}
+		dest := p.Path[len(p.Path)-1]
+		return actorPosCandidate(p.Agent.ID, dest.X, dest.Y), true
+	},
+	"agent.path_truncated": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.PathTruncatedPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}

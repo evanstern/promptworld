@@ -751,6 +751,11 @@ func replayToTick(seed uint64, m *worldmap.Map, st *store.Store, cutoff int64) (
 	if err != nil {
 		return nil, nil, fmt.Errorf("replay to tick %d: %w", cutoff, err)
 	}
+	// Spec 104: walk derived progress (in-flight segments, needs decay, gru
+	// motion) through the quiet stretch between the last replayed event and
+	// the cutoff — the same posture the live loop holds at the cutoff tick
+	// (items scheduled AT the cutoff stay pending, exactly as live).
+	state.AdvanceTo(cutoff)
 	return state, skipped, nil
 }
 

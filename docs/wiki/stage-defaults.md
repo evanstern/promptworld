@@ -6,7 +6,7 @@ sources:
   - internal/tui/stagedefaults.go
   - internal/tui/layout.go
   - internal/tui/tui.go
-verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
+verified_against: 0af53ec6d211c71e298072c045c67ccbbd13b61d
 ---
 
 # Stage-shaped TUI layout defaults

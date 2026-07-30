@@ -638,6 +638,12 @@ func (l *Loop) stampSeqs(events []store.Event) {
 // then published.
 func (l *Loop) runTick() error {
 	nextTick := l.state.Tick + 1
+	// Spec 104: derived progress runs strictly-before — items scheduled at
+	// the PREVIOUS tick execute now, after every event of that tick
+	// (including command-door injections, which land between runTicks), and
+	// before this tick's emission reads the state. Replay reproduces the
+	// same order through Apply's own AdvanceTo hook (research.md §1).
+	l.state.AdvanceTo(nextTick)
 	events := stepEvents(l.state, l.m, nextTick)
 	l.state.Tick = nextTick
 	l.stampSeqs(events)

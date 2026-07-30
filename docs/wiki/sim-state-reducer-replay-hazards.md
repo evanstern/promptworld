@@ -86,6 +86,24 @@ radius is narrower:
 | `agent.needs_changed` | state.go:1901 | `recoveryDangerBand`/neglect band constants |
 | `agent.memory_added` | [[sim-state-cognition-arms]] | `GenerationBumpSalience` (9, the generation-bump threshold) |
 
+**Spec 104 — the derived-advancement class (new audit rows).** The
+coalescing engine (`internal/sim/advance.go`, [[sim-state-reducer]]) is a
+second sanctioned derived channel: on COALESCED logs (worlds whose pinned
+`needs_checkpoint_minutes` dial is non-zero, [[world-tuning]]) it re-derives
+non-emitted progress from constants at APPLY time. These are
+replay-load-bearing for coalesced logs exactly as the table above is for
+all logs; each definition site carries the "retune requires format bump"
+comment (spec 094 pattern). Legacy logs never enter this class (the regime
+marker gates it structurally).
+
+| Advancement path | Site | Re-derived from | Value(s) |
+|---|---|---|---|
+| segment step beat | advance.go (`pathSpeedSlot`, `runDerivedTick`) | `pathSpeedSlot` (the spec-032 2x slot; `MoveEvery`/`Phase` ride the payload) | 2 |
+| segment step bookkeeping | advance.go → mentalmap.go | `witnessRadius` (grandfathered spec-041 D2 class, exposure widened) | 8 |
+| derived needs minute | advance.go (`advanceNeedsMinute`) → executor.go `decayNeeds` | `foodDecay`/`restDecayAwake`/`restRegenSleep`/`restRegenShelter`/`warmthLossCold`/`warmthLossColdSnap`/`warmthGainFire`/`warmthGainDay`/`healthLoss`/`healthRegen` + morale rules | agents.go block |
+| derived needs minute (fold) | state.go `foldNeedsAbsolutes` | `nearDeathBelow`/`nearDeathResetAt`, `trajectoryWindowTicks`, `recoveryDangerBand` — the SAME lower-tier rows above, now also driven derivedly | — |
+| derived gru beat | advance.go (`advanceGruBeat`) → gru.go `gruMoveDecision` | `gruMoveEveryTicks`, the `"gru-prowl"` RNG purpose string, `gruSightRadius`/`gruLightRadius` (target/protection geometry), `neighborOrder` | 4; "gru-prowl"; 8/3; N,E,S,W |
+
 Not audited here: `clock.degraded`'s `EffectiveRate` is payload-carried
 (the loop measures it once and the reducer copies it verbatim) — it is the
 DETERMINISM-SCOPE hazard ([[deterministic-rng]], [[sim-loop]]: replay is
@@ -101,7 +119,11 @@ because a memory's phrasing is expensive to re-derive and cheap to carry
 once ([[sim-state-cognition-arms]]); this doctrine generalizes that choice
 into the DEFAULT posture for every new `Apply` arm, and treats the audited
 table above as the accumulated exception set — grandfathered, not a
-pattern to keep extending.
+pattern to keep extending. Spec 104 honors it on the emission side (path,
+cadence, and phase ride the `agent.path_started` payload; needs events
+carry absolutes) and CONFINES its new derived reads to the audited
+advancement class above, gated behind the regime marker so no pre-104 log
+is ever exposed to them.
 
 ## Connections
 

@@ -55,6 +55,7 @@ func driveTicksSeq(t *testing.T, s *State, m *worldmap.Map, ticks int64, command
 	for s.Tick < ticks {
 		apply(commands[s.Tick])
 		next := s.Tick + 1
+		s.AdvanceTo(next) // spec 104: the loop's start-of-tick derived advancement
 		evs := stepEvents(s, m, next)
 		s.Tick = next
 		apply(evs)

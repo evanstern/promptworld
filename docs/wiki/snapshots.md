@@ -37,6 +37,15 @@ Recovery in `daemon.recoverState`: unmarshal the chosen snapshot into the state,
 replay events with `seq > snapshot.seq` through the same `Apply` reducer the live loop
 uses, bumping `state.Tick` to the highest event tick seen.
 
+Spec 104: derived progress (in-flight walk segments, needs decay watermarks,
+the gru beat watermark — [[sim-state-reducer]] advancement) is ordinary
+marshaled state, so it rides every snapshot; recovery needs NO extra step —
+items scheduled at the resume tick are pending in the snapshot exactly as
+they were pending live (the strictly-before convention), and the first
+`runTick` after boot advances them identically. `replayToTick` gained one
+trailing `AdvanceTo(cutoff)` to walk derived progress through a quiet
+stretch between the last event and the cutoff.
+
 `daemon.replayToTick(seed, m, store, cutoff)` (spec 043's replay-determinism
 harness) is the sibling that deliberately does NOT use snapshots: it rebuilds
 state as of an arbitrary tick cutoff by replaying the whole log from genesis
