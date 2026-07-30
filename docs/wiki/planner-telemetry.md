@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/mind/mind.go
   - internal/mind/telemetry.go
-verified_against: a761a45cb3b437613b808408c6c7f30d11bd9eb9
+verified_against: 3590f2e0d78d3c4b4ced3edd97a49e5512ab2743
 ---
 
 # Planner outcome telemetry

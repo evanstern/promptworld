@@ -6,8 +6,10 @@ sources:
   - internal/sim/consolidate.go
   - internal/mind/consolidate.go
   - internal/mind/validate.go
+  - internal/mind/retry.go
+  - internal/mind/nightreport.go
   - internal/persona/personas.go
-verified_against: a761a45cb3b437613b808408c6c7f30d11bd9eb9
+verified_against: 3590f2e0d78d3c4b4ced3edd97a49e5512ab2743
 ---
 
 # Nightly consolidation + persona firewall
@@ -55,7 +57,48 @@ conversation, "inferred" for a reasoned conclusion. Output contract
 `evidence` — up to `maxBeliefEvidence` (4) ordinal labels, best-first),
 `narrative`. The call's response budget is `md.consolidationTokens` (spec 025,
 TASK-72: `llm.json` `max_tokens.consolidation`, threaded through `mind.New`;
-default 1024, the former hardcode).
+default 1024, the former hardcode) — since spec 105 the START of a
+truncation-retry ladder, not a hard ceiling (next block).
+
+**Truncation-aware retry ladder** (spec 105, TASK-172;
+`internal/mind/retry.go` `submitWithTruncationRetry`): playtest-1 showed a
+late world's digest outgrowing 1024 tokens — the cut JSON parsed as
+"unparseable" and every night was rejected, silently, from day 20 on. The
+worker now detects a cut reply mechanically, parse-first (detection is
+consulted ONLY after `parseConsolidation` fails): `Response.Stop ==
+llm.StopMaxTokens` (primary), or `OutputTokens >=` the attempt's requested
+budget (the router-honesty guard for OpenAI-compatible routers that surface
+an unmapped finish reason). On detection the SAME prompt is re-submitted —
+the spec-098 dream pass is never re-run, the job snapshot never re-taken —
+with the budget doubled and clamped at the shared `llm.MaxTokenBudget`
+(4096, exported from `internal/llm/config.go` by spec 105), at most 2
+retries: 1024→2048→4096 at the default. Each attempt gets its own
+`consolidateCallTimeout`; each consumed retry is recorded as a non-terminal
+`cog.outcome{retried}` (class `consolidation`, reason naming both budgets —
+existing vocabulary, no new event type). A reply that PARSES never consumes
+a retry (a complete object that hit `max_tokens` on trailing junk is judged
+on content exactly as before), and a parse failure without a truncation
+signal still rejects `unparseable`. A ladder exhausted while still truncated
+lands the rejected marker with the DISTINCT reason `truncated`
+(`sim.ConsolidationReasonTruncated`) — buffer intact, next sleep retries
+from the ladder's start. The marker gains an additive `omitempty`
+`Retries` field (consumed retries, accepted or rejected) and `CostUSD`
+accrues across all attempts; transport failure on ANY attempt still lands
+no marker at all.
+
+**Per-night acceptance summary** (spec 105 US2, `internal/mind/nightreport.go`):
+the mind tallies live-absorbed `agent.consolidated` markers per
+`sim.NightIndex` and, when a tick or marker from a later night is absorbed,
+logs ONE summary line for each closed night — accepted / rejected by reason /
+skipped-empty. Two or more CONSECUTIVE nights with ≥1 attempted
+(non-empty-skip) consolidation and zero acceptances escalate the line to a
+`WARNING:` naming the streak and the remedy (raise
+`max_tokens.consolidation`, check the serving provider), repeating each
+further failed night until a night accepts; an all-empty night neither
+extends nor resets the streak. In-memory, absorb-owned, no new event, no
+timer; boot is silent because the replica seeds from a snapshot, never a log
+replay through absorb — a mid-blackout restart delays the WARNING by up to
+the threshold (accepted trade, spec 105 edge cases).
 
 **The firewall validator** (`internal/mind/validate.go`), deterministic and
 mechanical — no second model call, so rejection is a testable 100% guarantee.
@@ -97,9 +140,10 @@ injection door ([[sim-loop]]): promotes, fades, day-gist (`agent.memory_added`,
 `agent.belief_revised` now also carrying the resolved `Evidence` refs and the
 `Direct` flag `enforceProvenance` computed — narrative replacement, marker.
 Reducer cases (`internal/sim/consolidate.go`) are total — vanished targets
-no-op. Transport/tier failure (circuit open, budget, timeout) lands **no
-marker**: the attempt never happened, the next sleep retries, the world never
-blocks.
+no-op. The accepted marker carries `Retries` and ladder-accrued `CostUSD`
+(spec 105, above). Transport/tier failure (circuit open, budget, timeout)
+lands **no marker**: the attempt never happened, the next sleep retries, the
+world never blocks.
 
 **Belief confidence decay** — how a landed revision's `Reinforced` anchor
 governs fade, the legacy-grandfather case, and the below-floor prompt
@@ -129,7 +173,12 @@ transparently.
 Proven by tests: reducer table + replay determinism (`internal/sim/consolidate_test.go`),
 driver atomicity/dedupe/deferral with a scripted model and a persona-bytes canary
 (`internal/mind/consolidate_test.go`), validator fixture table incl. every authored
-drift marker for every villager (`internal/mind/validate_test.go`). Cost: ≈8 cloud
+drift marker for every villager (`internal/mind/validate_test.go`), the spec-105
+detection matrix + ladder arithmetic (`internal/mind/retry_test.go`), the
+late-world truncation fixture (buffer > `maxBufferSent`, 14 held beliefs,
+truncates at 1024 / completes at 2048) with ladder-exhaustion, byte-compat, and
+mid-ladder-transport cases (`internal/mind/consolidate_test.go`), and the
+night-report summary/WARNING streak (`internal/mind/nightreport_test.go`). Cost: ≈8 cloud
 calls per game night (≈32/real day at 4x) — negligible against the $100 ceiling;
 $0 marginal on the operator's LAN router. Honest limit, on the record: the lexicon
 catches *stated* drift; subtle drift needs the parked model-judged validator.

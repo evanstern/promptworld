@@ -6,7 +6,7 @@ sources:
   - internal/llm/llm.go
   - internal/llm/config.go
   - internal/llm/providers.go
-verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
+verified_against: 3590f2e0d78d3c4b4ced3edd97a49e5512ab2743
 ---
 
 # LLM orchestrator — provider registry, embedding route & transports
