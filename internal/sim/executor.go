@@ -227,7 +227,7 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 			if a.Dead {
 				continue
 			}
-			n := decayNeeds(a.Needs, a.Asleep, night, warmAt(s, a.X, a.Y, nextTick), s.structureAt("shelter", a.X, a.Y),
+			n := decayNeeds(a.Needs, a.Asleep, night, warmAt(s, a.X, a.Y, nextTick), s.Lookup().Structure("shelter", a.X, a.Y),
 				coldSnapActive(s, nextTick))
 			emit("agent.needs_changed", NeedsPayload{
 				Agent: Ref(i), Health: n.Health, Food: n.Food, Rest: n.Rest, Warmth: n.Warmth, Morale: n.Morale,
@@ -274,17 +274,20 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 	// deadline has arrived (SpoilAt <= tick) are removed as a visible,
 	// event-sourced happening. A pure function of (state, tick) — the fuel-sweep
 	// pattern: no bookkeeping state, the reducer's batch removal itself re-arms
-	// the sweep. Pile iteration is State.Piles slice order; per pile, same-kind
-	// spoiled batches merge into ONE sim.food_rotted, and kinds are walked in the
-	// fixed canonical food order — both fixed orders keep replay byte-identical.
-	// A world with no piles emits nothing (degraded-mode safe); chest food
-	// carries no deadlines and never reaches here (FR-010). Placed among the
-	// world sweeps (regrowth, burnout, needs) before per-agent execution, so a
+	// the sweep. Pile iteration walks the entity-lookup accessor's Piles(),
+	// which is State.Piles slice order (spec 099 D1 — the accessor's v1 wraps
+	// the existing scan unchanged); per pile, same-kind spoiled batches merge
+	// into ONE sim.food_rotted, and kinds are walked in the fixed canonical
+	// food order — both fixed orders keep replay byte-identical. A world with
+	// no piles emits nothing (degraded-mode safe); chest food carries no
+	// deadlines and never reaches here (FR-010). Placed among the world
+	// sweeps (regrowth, burnout, needs) before per-agent execution, so a
 	// pickup completing this same tick lands after the rot events in the batch
 	// and the reducer's clamp resolves the contest (spec edge "Rot mid-pickup").
 	if nextTick%60 == 0 {
-		for pi := range s.Piles {
-			pile := &s.Piles[pi]
+		piles := s.Lookup().Piles()
+		for pi := range piles {
+			pile := &piles[pi]
 			for _, kind := range foodKinds {
 				n := 0
 				for _, b := range pile.Food {
@@ -757,9 +760,9 @@ func groundFactPresentIn(s *State, m *worldmap.Map, f PlaceFact, cleared, quarri
 		}
 		return false
 	case "pile":
-		return s.pileAt(f.X, f.Y) != nil
+		return s.Lookup().Pile(f.X, f.Y) != nil
 	}
-	return s.structureAt(f.Kind, f.X, f.Y)
+	return s.Lookup().Structure(f.Kind, f.X, f.Y)
 }
 
 // groundFactDetail is the kind-specific Detail scalar as ground truth holds it
@@ -1146,7 +1149,7 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 		// Kind resolves LOUDLY too but distinctly (invalid — a malformed intent no
 		// chest state could ever satisfy). The payload carries the ACTUAL
 		// post-clamp count.
-		ch := s.chestAt(in.TargetX, in.TargetY)
+		ch := s.Lookup().Chest(in.TargetX, in.TargetY)
 		if ch == nil || ch.Store == nil {
 			return append(events, intentFailedEvents(s, i, a, in, intentFailContested, nextTick)...)
 		}
@@ -1173,7 +1176,7 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 		// payload (the theft companion batch is US4, T029 — not emitted here).
 		// Spec 096: a vanished chest or nothing moved resolve LOUDLY
 		// (agent.intent_failed, contested) instead of the old bare intent_done.
-		ch := s.chestAt(in.TargetX, in.TargetY)
+		ch := s.Lookup().Chest(in.TargetX, in.TargetY)
 		if ch == nil || ch.Store == nil {
 			return append(events, intentFailedEvents(s, i, a, in, intentFailContested, nextTick)...)
 		}
@@ -1261,11 +1264,11 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 		// no fuel window of their own) — a fire that went cold while walking
 		// over (or during the work) yields no cooked food (edge case: fire
 		// burns out mid-cook). Re-validated every tick.
-		valid = litFireAt(s, in.TargetX, in.TargetY, nextTick) || s.structureAt("oven", in.TargetX, in.TargetY)
+		valid = litFireAt(s, in.TargetX, in.TargetY, nextTick) || s.Lookup().Structure("oven", in.TargetX, in.TargetY)
 	case "bathe":
 		// T032: the oven itself must still be there (it never goes cold —
 		// only carried water/wood, checked at completion).
-		valid = s.structureAt("oven", in.TargetX, in.TargetY)
+		valid = s.Lookup().Structure("oven", in.TargetX, in.TargetY)
 	}
 	if !valid {
 		// Spec 038: a build goal whose site re-validation fails mid-work resolves
@@ -1489,7 +1492,7 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 		// no carried wood at an oven (fuel required from day one, FR-017) or
 		// nothing to cook (no raw carried) resolve LOUDLY (agent.intent_failed,
 		// contested) instead of the old bare intent_done.
-		atOven := s.structureAt("oven", in.TargetX, in.TargetY)
+		atOven := s.Lookup().Structure("oven", in.TargetX, in.TargetY)
 		if atOven && a.Inv.Wood < 1 {
 			return append(events, intentFailedEvents(s, i, a, in, intentFailContested, nextTick)...)
 		}
@@ -1686,7 +1689,7 @@ func workDuration(s *State, a *Agent, in *Intent) int64 {
 			return huntTicksSpear
 		}
 	case "cook":
-		if s.structureAt("oven", in.TargetX, in.TargetY) {
+		if s.Lookup().Structure("oven", in.TargetX, in.TargetY) {
 			return cookOvenTicks
 		}
 	}

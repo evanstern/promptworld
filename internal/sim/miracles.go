@@ -540,7 +540,7 @@ func (s *State) applyEntityMoved(e store.Event) error {
 		// The struct moves whole — FuelUntil/Owner/Store ride along in the value.
 		s.Structures[i].X, s.Structures[i].Y = p.ToX, p.ToY
 	case "pile":
-		if s.pileAt(p.X, p.Y) == nil {
+		if s.Lookup().Pile(p.X, p.Y) == nil {
 			return fmt.Errorf("apply %s: no pile at (%d,%d)", e.Type, p.X, p.Y)
 		}
 		if !passable(s.m, s, p.ToX, p.ToY) {
@@ -586,7 +586,7 @@ func (s *State) applyEntityRemoved(e store.Event) error {
 		}
 		s.removeStructureAt(i)
 	case "pile":
-		if s.pileAt(p.X, p.Y) == nil {
+		if s.Lookup().Pile(p.X, p.Y) == nil {
 			return fmt.Errorf("apply %s: no pile at (%d,%d)", e.Type, p.X, p.Y)
 		}
 		if err := s.spendMiracleCharge(e.Type, p.Gratis); err != nil {
@@ -686,7 +686,7 @@ func (s *State) removePileAt(x, y int) {
 // by value before the source slice is mutated, so the merge is pointer-safe even
 // when the destination append reallocates the pile slice.
 func (s *State) movePile(fromX, fromY, toX, toY int) {
-	src := s.pileAt(fromX, fromY)
+	src := s.Lookup().Pile(fromX, fromY)
 	if src == nil {
 		return
 	}
@@ -768,7 +768,7 @@ func (s *State) HasStructureAt(x, y int) bool { return s.structureIndexAt(x, y) 
 // (the reducer invariant pileAt documents). Exported for the bundle effect
 // compiler's class+tile target resolution (spec 082), mirroring
 // HasStructureAt. Read-only, deterministic, map-free.
-func (s *State) HasPileAt(x, y int) bool { return s.pileAt(x, y) != nil }
+func (s *State) HasPileAt(x, y int) bool { return s.Lookup().Pile(x, y) != nil }
 
 // AgentIndexByName resolves a villager name (case-insensitive, trimmed) to its
 // roster index, or -1 when no villager bears it. Exported for the IPC miracle
