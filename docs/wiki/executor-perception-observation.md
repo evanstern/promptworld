@@ -6,7 +6,7 @@ sources:
   - internal/sim/executor.go
   - internal/sim/observe.go
   - internal/sim/memory.go
-verified_against: 46fe602410a9e93ade64d10256accbac0d2cdb71
+verified_against: a761a45cb3b437613b808408c6c7f30d11bd9eb9
 ---
 
 # Executor — the perception sweep and grounded arrival observations

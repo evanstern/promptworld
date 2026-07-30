@@ -4,7 +4,7 @@ description: Split from [[nightly-consolidation]] — how a belief's confidence 
 kind: component
 sources:
   - internal/sim/consolidate.go
-verified_against: 864d2a3bcff4b3113739d596befc72229a84d4b8
+verified_against: a761a45cb3b437613b808408c6c7f30d11bd9eb9
 ---
 
 # Nightly consolidation: belief confidence decay

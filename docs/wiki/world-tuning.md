@@ -6,7 +6,7 @@ sources:
   - internal/sim/tuning.go
   - internal/daemon/daemon.go
   - internal/world/world.go
-verified_against: 864d2a3bcff4b3113739d596befc72229a84d4b8
+verified_against: a761a45cb3b437613b808408c6c7f30d11bd9eb9
 ---
 
 # World tuning manifest
@@ -15,9 +15,8 @@ Spec 048 (TASK-107, `docs/design/control-surface-and-calibration.md` §6) is
 the promotion path from "hand-edit a constant and rebuild" to "edit a
 per-world manifest and restart": an optional, operator-authored `tuning.json`
 in the world directory that moves a small, named set of doctrine constants
-onto per-world dials. Every dial defaults to exactly its old constant, so an
-absent file is byte-for-byte the pre-048 world — the mechanism is additive,
-never a behavior change by itself.
+onto per-world dials. Every dial defaults to exactly its old constant — an
+absent file is byte-for-byte the pre-048 world.
 
 ## How it works
 
@@ -31,10 +30,8 @@ per-pair encounter cooldown). Each was previously a
 bare package constant (`refuelDyingBelow`/`fireBurnPerWood` in `agents.go`,
 `gruEmergePerMille` in `gru.go`, the exported `sim.PlannerCadenceTicks` in
 `agents.go`, `encounterCooldownTicks` in `mind/mind.go`); spec 048 relocates
-all five defaults into `tuning.go` renamed `default*`
-(`defaultRefuelDyingBelow`, `defaultFireBurnPerWood`,
-`defaultGruEmergePerMille`, `defaultPlannerCadenceTicks`,
-`defaultEncounterCooldownTicks`) — the single home for these doctrine values.
+all five defaults into `tuning.go` renamed `default*` — the single home for
+these doctrine values.
 **Spec 097 adds four grounded-observation dials** (born as dials, no retired
 constants — [[executor-perception-observation]]): two executor-read
 (observation dedup window, base salience), two read off the mind's replica
@@ -57,12 +54,10 @@ emergence roll) and every mind-side call site ([[agent-mind]]'s per-agent
 cadence/stagger and encounter-cooldown gate, reading off `md.replica`) go
 through these instead of the retired raw constants — "absent tuning.json ==
 current constants" is structurally true, not a convention to remember. Two
-RNG-bucketing reuses of the cadence period are a deliberate exception:
-`internal/sim/memory.go`'s serendipity-tail seeding and `social.go`'s
-`SecretShareRoll` both bucket on `tick/defaultPlannerCadenceTicks` — the
-tuning-manifest DEFAULT constant, never the tuned `PlannerCadence()` dial —
-so a tuned world's cadence moves the mind driver's schedule without also
-reshuffling these two unrelated seeded picks. `fireFuelCap` (the fuel
+RNG-bucketing reuses (serendipity-tail seeding in `memory.go`,
+`SecretShareRoll` in `social.go`) deliberately bucket on
+`tick/defaultPlannerCadenceTicks` — the DEFAULT constant, never the tuned
+dial — so a tuned cadence never reshuffles those seeded picks. `fireFuelCap` (the fuel
 ceiling a refuel is truncated to) is deliberately NOT promoted (research R6)
 and stays a plain constant beside the promoted `FireBurnPerWood`.
 
@@ -88,23 +83,18 @@ clamp warnings and a structural error separately:
 | BeliefConfirmBoost | `belief_confirm_boost` | 10 | [0, 100] |
 
 Out-of-range values of a KNOWN field clamp to the nearest bound with an
-operator-visible warning (`tuning.json <field> <raw> out of range (<bound
-kind> <bound>) — clamped to <bound>`, the `llm/config.go`
-`normalizeTokenBudget` style) — the clamped value is what applies and gets
-recorded. Structural problems — malformed JSON, a wrong-typed value, or an
-unrecognized field name — fail `ParseTuning` outright, which the daemon
-boot treats as a hard boot error naming the file and the problem
-(fail-closed): clamping handles a merely out-of-range value of a
-correctly-named field, but a typo must never silently run as a no-op.
+operator-visible warning (the `llm/config.go` `normalizeTokenBudget` style)
+— the clamped value applies and gets recorded. Structural problems
+(malformed JSON, wrong types, unrecognized field names) fail `ParseTuning`
+outright — a hard boot error naming file and problem (fail-closed): a typo
+must never silently run as a no-op.
 
 **The dream dial block (spec 098, [[private-dreams]]).** `TuningState` also
 carries `Dream *DreamTuning` — nil ≡ the default dream set, so every
 pre-098 snapshot and recorded payload stays byte-identical (`omitempty`,
-no format bump). The manifest keys stay
-flat (`dream_density_per_mille`, `dream_ambiguous_band_per_mille`,
-`dream_habituation_per_mille`, `dream_merge_cap_per_night`,
-`dream_jitter_per_mille`; defaults 900/30/500/4/15); any present key
-resolves the FULL block. The pointer takes `TuningState` out of bare-`==`
+no format bump). The manifest keys stay flat
+(`dream_*_per_mille`/`dream_merge_cap_per_night`; defaults 900/30/500/4/15);
+any present key resolves the FULL block. The pointer takes `TuningState` out of bare-`==`
 comparability — the boot seed compares via `Equal`, and `State.DreamDials()`
 is the nil-safe consumption path.
 
