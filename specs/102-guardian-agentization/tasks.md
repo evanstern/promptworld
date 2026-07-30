@@ -14,7 +14,7 @@ ratified there). Dispatch gated on TASK-164 evidence (runbook checkpoint).
 - [X] T002 Guardian mind loop on the shared agent machinery; memory store +
   nightly consolidation incl. spec 098 dream phase; soul.md = persona seed
   (FR-002, D1/D5). Reuse checklist satisfied (SC-004).
-- [ ] T003 Charter/skills/capabilities → persona compilation; DEFAULT
+- [X] T003 Charter/skills/capabilities → persona compilation; DEFAULT
   compilation enforces the incompetence ceiling as data; authored charters
   lift it; ceiling semantics test-enforced (FR-003, D3).
 

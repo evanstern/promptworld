@@ -3,6 +3,7 @@ package guardian
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -210,9 +211,15 @@ func TestAngelSuppressedAtSpeed(t *testing.T) {
 // TestAngelNeverTouchesOrderDoor is the D6 pin: a scheduled turn — even one
 // that lands an act — emits NO guardian.order_triggered; order firing has one
 // arbiter (matchOrders → triggerWorker), and the cadence lane cannot forge or
-// race it.
+// race it. The charter is AUTHORED here (T003): only a lifted ceiling grants
+// the scheduled lane an acting tool at all.
 func TestAngelNeverTouchesOrderDoor(t *testing.T) {
-	mt, _, inj, _ := newTestGuardian(t, "I send comfort.")
+	mt, _, inj, dir := newTestGuardian(t, "I send comfort.")
+	if err := os.WriteFile(filepath.Join(dir, "charter.md"),
+		[]byte("You are a bold shepherd; comfort the frightened without being asked."), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	mt.charterFP = "" // fresh revision observes cleanly
 	optIn(t, mt, inj, 600)
 	mt.replica.GuardianCharges = 3
 	mt.runLoop = actLoop(mt, "send_vision", `{"target":"Ash","text":"Rest easy; the fire holds."}`)

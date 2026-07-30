@@ -187,6 +187,17 @@ func (mt *Guardian) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 	// (work_miracle's kind enum), the derived guidance, and (via `grant` on
 	// turnDispatch below) the door itself.
 	grant = narrowGrantForBundles(grant, mt.bundles)
+	// The deliberate-incompetence ceiling (spec 102 D3, ceiling.go): a
+	// SCHEDULED turn's grant narrows by the ceiling compiled from the
+	// EFFECTIVE charter this turn runs under — default text caps initiative
+	// to the modest read/counsel set; an authored charter lifts it (minus
+	// the clock triple). Console and triggered turns skip this entirely:
+	// compliance and tutor quality are full at any ceiling.
+	angelLifted := false
+	if o.angel {
+		angelLifted = angelCharterLifted(charter, mt.charterPreset)
+		grant = applyAngelCeiling(grant, angelLifted)
+	}
 	var notices []string
 	if charterNotice != "" {
 		notices = append(notices, charterNotice)
@@ -353,11 +364,32 @@ func (mt *Guardian) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 		guide = persona.TutorGuide
 	}
 
+	// The initiative frame per origin (INV-1: always a compile-time constant
+	// appended last): survival carve-out, the two angel frames (D3), or the
+	// restrictive default.
+	frame := guardianInitiativeFrame
+	switch {
+	case o.angel && angelLifted:
+		frame = guardianAngelLiftedFrame
+	case o.angel:
+		frame = guardianAngelModestFrame
+	case o.survival:
+		frame = guardianSurvivalFrame
+	}
+
+	// A scheduled turn rides its OWN llm kind (spec 102 D2): the angel route,
+	// estimator, and governor debt attribute to the cadence lane, never the
+	// premium console kind.
+	kind := llm.KindGuardian
+	if o.angel {
+		kind = llm.KindAngel
+	}
+
 	callCtx, cancel := context.WithTimeout(ctx, turnTimeout)
 	res, err := mt.runLoop(callCtx, toolloop.Job{
 		JobID:     jobID,
-		Kind:      llm.KindGuardian,
-		System:    buildTurnSystemPrompt(o.survival, charter, guide, skills, roster, souls...),
+		Kind:      kind,
+		System:    composeTurnSystemPrompt(frame, charter, guide, skills, roster, souls...),
 		Seed:      turnUserPrompt(tick, charges, faith, alive, orders, designations, directives, prophecies, moments, story, memories, mt.soulTail(), mt.transcriptTail(), digest, directive),
 		Roster:    roster,
 		Handlers:  handlers,
@@ -1088,6 +1120,18 @@ func turnSystemPrompt(charter string, skills []skillFile, roster []tool.Tool, so
 // every path (spec 021 INV-1); an empty guide composes byte-identically to
 // pre-063 (the non-tutor byte-identity guarantee, SC-003).
 func buildTurnSystemPrompt(survival bool, charter, guide string, skills []skillFile, roster []tool.Tool, souls ...string) string {
+	initiative := guardianInitiativeFrame
+	if survival {
+		initiative = guardianSurvivalFrame
+	}
+	return composeTurnSystemPrompt(initiative, charter, guide, skills, roster, souls...)
+}
+
+// composeTurnSystemPrompt is the frame-parametric composer beneath
+// buildTurnSystemPrompt (spec 102): the initiative frame became a parameter
+// so the two angel frames (ceiling.go) compose through the SAME body — every
+// other byte, and the frame-lands-LAST invariant (spec 021 INV-1), unchanged.
+func composeTurnSystemPrompt(initiative, charter, guide string, skills []skillFile, roster []tool.Tool, souls ...string) string {
 	var b strings.Builder
 	b.WriteString(charter)
 	for _, s := range souls {
@@ -1098,10 +1142,6 @@ func buildTurnSystemPrompt(survival bool, charter, guide string, skills []skillF
 	}
 	for _, s := range skills {
 		fmt.Fprintf(&b, "\n\n--- skill: %s ---\n%s", s.name, s.text)
-	}
-	initiative := guardianInitiativeFrame
-	if survival {
-		initiative = guardianSurvivalFrame
 	}
 	fmt.Fprintf(&b, "\n\n--- (fixed frame, beneath the charter and skills) ---\n"+
 		"You are the intermediary between the player and the village of eight: %s.\n%s\n%s\n\n",
