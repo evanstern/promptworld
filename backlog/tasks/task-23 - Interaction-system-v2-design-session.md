@@ -1,10 +1,10 @@
 ---
 id: TASK-23
 title: 'Interaction system v2: design session'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-19 22:27'
-updated_date: '2026-07-29 19:17'
+updated_date: '2026-07-30 00:40'
 labels:
   - design
 dependencies: []
@@ -21,9 +21,9 @@ Spec: specs/093-interactions-v2
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A grounding/design session produces a spec directory for interactions v2, linked on the board via spec-bridge
-- [ ] #2 Spec phase: Design authoring
-- [ ] #3 Spec phase: Ratification
+- [x] #1 A grounding/design session produces a spec directory for interactions v2, linked on the board via spec-bridge
+- [x] #2 Spec phase: Design authoring
+- [x] #3 Spec phase: Ratification
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -37,3 +37,9 @@ Reordered 2026-07-26 (guardian-directives ideation, operator: 'ok on 23'): the T
 
 board-sweep-2026-07-29 lane 5: design session run autonomously per sign-off; spec 093 authored on the tool substrate per the card's re-grounding notes; OQ-1..OQ-5 flagged for the ratification PR review. No implementer dispatch — planning-model authoring.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Design ratified: PR #132 merged by operator (714f8a08e). Spec 093 delivers interactions v2 on the tool substrate — five primitives (argue/trade/teach/comfort/conspire) as registry entries, scenes generalizing hails, typed relationship deltas into consolidation, cognition-registry budgeting, rubric-legible chronicle entries; OQ-1..OQ-5 recorded (operator ratified at review; unresolved OQs carry to implementation slicing). Implementation is future work.
+<!-- SECTION:FINAL_SUMMARY:END -->
