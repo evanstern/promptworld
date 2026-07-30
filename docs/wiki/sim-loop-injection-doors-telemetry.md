@@ -4,7 +4,7 @@ description: Child of [[sim-loop-injection-doors]] — the observability/adminis
 kind: component
 sources:
   - internal/sim/loop.go
-verified_against: d0645811c9783d1248dc65ed0fcf0b37524dd8fd
+verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
 ---
 
 # Sim loop — injection doors, the observability/administrative whitelist

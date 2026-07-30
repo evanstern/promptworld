@@ -7,7 +7,7 @@ sources:
   - internal/sim/loop.go
   - internal/sim/state.go
   - internal/sim/executor.go
-verified_against: d0645811c9783d1248dc65ed0fcf0b37524dd8fd
+verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
 ---
 
 # Guardian order events
