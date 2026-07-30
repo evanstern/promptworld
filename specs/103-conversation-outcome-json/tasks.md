@@ -36,14 +36,26 @@
 
 ## Phase 3: Measurement + soak
 
-- [ ] T006 Soak per the measurement-run recipe: seeded MEASURE world (never
-  the playtest world), conversation kind routed to gemma4:12b via Ollama,
-  local-only routes (no paid spend), run until ≥ 20 scenes founded. Compute
-  the D6 metrics (outcome parse-failure count; abandoned-scene rate) from
+- [~] T006 PARTIAL — see `docs/design/evidence/task-174/results.md`. Soak per
+  the measurement-run recipe: seeded MEASURE world (never the playtest
+  world), conversation kind routed to gemma4:12b via Ollama, local-only
+  routes (no paid spend), run until ≥ 20 scenes founded. Compute the D6
+  metrics (outcome parse-failure count; abandoned-scene rate) from
   `cog.outcome` events; record queries + counts + playtest-1 baseline (22
   outcome parse failures, 83 unusable, 62/293 = 21% abandoned) under
   `docs/design/evidence/task-174/` (FR-005, SC-001). Implementer prepares +
   runs; orchestrator reviews evidence.
+  DONE: `docs/design/evidence/task-174/queries.sql` (the reusable D6 query
+  file, verified against a live world.db) is committed. A real soak ran
+  ~25 min against this branch's own binary in a scratchpad-only world
+  (never `~/.promptworld/`); it reached 1 founded scene (a transport
+  timeout, not a parse failure) before the operator-set bounded window
+  elapsed. NOT DONE: the ≥20-scene target — the shared local-model host
+  was under heavy contention from other concurrent sweep lanes for the
+  whole window. Per instruction the soak's daemon and world were stopped
+  and deleted (nothing left running, nothing under `~/.promptworld/`
+  touched). Remaining: re-run with a longer/less-contended window and
+  record the final comparison table.
 
 ## Phase 4: Grounding
 
