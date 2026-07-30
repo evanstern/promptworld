@@ -19,4 +19,4 @@
 
 ## Phase 3: Grounding
 
-- [ ] T005 Wiki re-pins; player-docs probe; merge-drift pr gate exit 0 (FR-005).
+- [X] T005 Wiki re-pins; player-docs probe; merge-drift pr gate exit 0 (FR-005).
