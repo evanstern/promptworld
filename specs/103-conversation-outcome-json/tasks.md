@@ -4,13 +4,13 @@
 
 ## Phase 1: Transport — restore structured outputs (internal/llm)
 
-- [ ] T001 Restore additive `Request.ResponseSchema` (`json.RawMessage`) +
+- [X] T001 Restore additive `Request.ResponseSchema` (`json.RawMessage`) +
   `SchemaName` (`string`), both omitempty, documented (Anthropic ignores; not
   attached beside Tools); `openai_compat.callNative` attaches
   `response_format {type: json_schema, json_schema: {name, schema}}` iff a
   schema is set and `len(req.Tools) == 0` — TASK-58's `f6bd31ae` shape
   (FR-001).
-- [ ] T002 Provider tests in `internal/llm/providers_test.go`: envelope
+- [X] T002 Provider tests in `internal/llm/providers_test.go`: envelope
   present and well-formed iff schema set; payload byte-identical (no
   `response_format` key) when unset; no attach when Tools ride the same
   request (FR-001, FR-006).
