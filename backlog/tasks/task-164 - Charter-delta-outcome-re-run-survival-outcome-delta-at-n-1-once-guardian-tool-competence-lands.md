@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-27 13:20'
-updated_date: '2026-07-29 21:37'
+updated_date: '2026-07-30 15:01'
 labels:
   - mvls
   - guardian-survival
@@ -33,4 +33,6 @@ Carded from TASK-137's results (2026-07-27, docs/design/evidence/task-137/result
 
 <!-- SECTION:NOTES:BEGIN -->
 board-sweep-2026-07-29 lane 2: AC1 OPERATOR CHECKPOINT resolved in-session — approved design: n=1 same-seed pair (1337), 3 game-days per arm at 8x, sequential arms, TASK-137 recipe on current main (post 163/166/167 door fixes + 134 rename); n>=2 traded for in-sweep evidence, recorded as the operator-approved design. Eval is orchestrator-run (no implementer, no spec dir — TASK-137/136 measurement precedent); deliverable = results doc under docs/design/evidence/task-164/ via its own PR.
+
+Design amendment (2026-07-30, recorded): arm A over-ran to tick 498,187 (~6.76 game-days) while the session was idle. The strict 3-day window is vacuous under the harsh dials (0 privileged attempts, 0 deaths before tick 259,200 — all activity day 3+). Adopting the evidence doc's own alternative: LONGER HORIZON — arm B runs same-seed to tick >= 498,187 so the pair stays matched at arm A's actual horizon. Arm A within-horizon: 4 work_miracle landed / 0 rejected, 10 survey_site, 1 starvation death (tick 411,180).
 <!-- SECTION:NOTES:END -->
