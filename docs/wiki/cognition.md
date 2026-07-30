@@ -6,7 +6,7 @@ sources:
   - internal/cognition/doc.go
   - internal/cognition/registry.go
   - internal/cognition/route.go
-verified_against: 30912a9cd5d2334f76425ac8ca5b74a7a7c90876
+verified_against: c5e66ee92fa75c00e2b480811e0ca727d5c1a1e1
 ---
 
 # Cognition horizon

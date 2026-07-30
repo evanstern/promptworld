@@ -7,7 +7,7 @@ sources:
   - internal/mind/handlers.go
   - internal/scribe/scribe.go
   - internal/persona/files.go
-verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
+verified_against: c5e66ee92fa75c00e2b480811e0ca727d5c1a1e1
 ---
 
 # Journal tool integration

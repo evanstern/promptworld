@@ -55,7 +55,7 @@ there: pre-submit gate + in-flight cancel, mind-side, ladder untouched).
 - [ ] T008 After TASK-112's PR lands (operator ruling: this PR merges only
   after it): merge main INTO this branch (never rebase), re-run
   `go test -race ./...`, re-verify the absorb/runPlan seams.
-- [ ] T009 Re-verify + re-pin touched wiki notes (behavior-review:
+- [X] T009 Re-verify + re-pin touched wiki notes (behavior-review:
   mind-driver-triggers, tool-use-dispatch, planner-telemetry; computed
   re-verifies for the other mind.go/telemetry.go-sourced notes); regenerate
   `docs/player/` if wiki changed; `node scripts/check-merge-drift.mjs pr`

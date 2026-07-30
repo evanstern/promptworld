@@ -4,15 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/wiki/agent-mind.md@a761a45cb3b437613b808408c6c7f30d11bd9eb9">
-<meta name="promptworld-docs:source" content="docs/wiki/cognition.md@30912a9cd5d2334f76425ac8ca5b74a7a7c90876">
+<meta name="promptworld-docs:source" content="docs/wiki/agent-mind.md@c5e66ee92fa75c00e2b480811e0ca727d5c1a1e1">
+<meta name="promptworld-docs:source" content="docs/wiki/cognition.md@c5e66ee92fa75c00e2b480811e0ca727d5c1a1e1">
 <meta name="promptworld-docs:source" content="docs/wiki/llm-orchestrator.md@31c893e0406653197e467a89b2fdb96f0bcf2ee0">
 <meta name="promptworld-docs:source" content="docs/wiki/nightly-consolidation.md@a761a45cb3b437613b808408c6c7f30d11bd9eb9">
 <meta name="promptworld-docs:source" content="docs/wiki/social-fabric.md@c61cd6c04ddfcd2a976c14a49ba071e8fd768a73">
 <meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@cf65debb44c1e17b54c0f3421d11e1e8cc28576c">
 <meta name="promptworld-docs:source" content="docs/wiki/mental-maps.md@cf65debb44c1e17b54c0f3421d11e1e8cc28576c">
-<meta name="promptworld-docs:source" content="docs/wiki/memory-retrieval.md@cf65debb44c1e17b54c0f3421d11e1e8cc28576c">
-<meta name="promptworld-docs:source" content="docs/wiki/decision-context.md@cf65debb44c1e17b54c0f3421d11e1e8cc28576c">
+<meta name="promptworld-docs:source" content="docs/wiki/memory-retrieval.md@c5e66ee92fa75c00e2b480811e0ca727d5c1a1e1">
+<meta name="promptworld-docs:source" content="docs/wiki/decision-context.md@c5e66ee92fa75c00e2b480811e0ca727d5c1a1e1">
 <title>The AI behind the village — promptworld player docs</title>
 <style>
   :root {
@@ -101,6 +101,15 @@ works it); and only then ordinary upkeep and free time. When the AI model does t
 for a directed villager, the guardian's exact words — and what the plan requires —
 are placed in front of it too, marked as something never to be dropped, so instinct
 and intelligence pull in the same direction.</p>
+<p>Sleep is respected the same way: a villager who's asleep doesn't burn AI thinking.
+If a villager falls asleep while their turn to think was still waiting in line, that
+turn is quietly skipped rather than spent on a decision they could never act on — and
+if they fall asleep (or die) while the AI is <em>mid-thought</em> for them, the game
+cuts that call short instead of letting it finish for nothing. On a slow local model,
+where every thought takes real seconds, this matters a lot at night: the model's
+limited attention goes to whoever is actually awake. Waking a villager promptly puts
+them back in line for a fresh thought, and the nightly memory digestion described
+further down is untouched — sleeping is exactly when that runs.</p>
 
 <h2>Each villager only knows what they've actually seen</h2>
 <p>Villagers aren't born knowing the map. Each one carries their own private

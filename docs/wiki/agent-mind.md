@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/mind/mind.go
   - internal/mind/handlers.go
-verified_against: a761a45cb3b437613b808408c6c7f30d11bd9eb9
+verified_against: c5e66ee92fa75c00e2b480811e0ca727d5c1a1e1
 ---
 
 # Agent mind
@@ -39,10 +39,12 @@ villager's own history and mental map render into its own prompt.
 
 **The cognition gate and tool-use loop dispatch** ([[tool-use-dispatch]]): the
 cognition-horizon gate that suppresses a thought whose predicted drift would
-already be stale on arrival, the immutable per-job snapshot and `thoughtMeta`
-identity, and how `runPlan` drives the bounded tool-use loop against the
-villager roster — the retired free-text reply contract now lives as tool
-schemas the loop driver validates before dispatch.
+already be stale on arrival, the spec-106 sleep gate (a dequeue-time
+unavailability check plus an in-flight cancel on `agent.slept`/`agent.died`,
+so planner throughput is never spent on sleepers), the immutable per-job
+snapshot and `thoughtMeta` identity, and how `runPlan` drives the bounded
+tool-use loop against the villager roster — the retired free-text reply
+contract now lives as tool schemas the loop driver validates before dispatch.
 
 **Villager tool handlers** ([[villager-tool-handlers]]): every acting tool
 (world verbs, `set_plan`, `muse`, the journal writes) wraps an existing

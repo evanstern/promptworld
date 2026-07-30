@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/mind/mind.go
   - internal/mind/telemetry.go
-verified_against: a761a45cb3b437613b808408c6c7f30d11bd9eb9
+verified_against: c5e66ee92fa75c00e2b480811e0ca727d5c1a1e1
 ---
 
 # Planner outcome telemetry
@@ -54,7 +54,18 @@ error — `TermModelDone`/`TermCapExhausted`/`TermAdmissionRefused`/`TermCtxDone
 emits the terminal `cog.outcome{unusable}` itself, with `loopFailReason(res,
 err)` naming which termination caused it (FR-015: no failure is silent) — the
 reflex grace (120 ticks idle) remains the floor under every gap, and the
-permanent degraded mode. The daemon also installs `RecalibrateSignal` as the
+permanent degraded mode. Since spec 106 two sleep-gate records join this
+vocabulary without any new event type or outcome word: a job skipped at
+dequeue (agent asleep/dead per the mind's mirror — [[tool-use-dispatch]])
+terminates in one `cog.outcome{suppressed}` with a dequeue reason and NO
+matching `cog.thought` (the router-suppression shape), and a `TermCtxDone`
+whose context absorb cancelled on `agent.slept`/`agent.died` swaps
+`loopFailReason`'s generic "loop: context ended" for the slot's recorded
+attribution ("cancelled in flight: agent slept"/"… agent died") — so a
+sleep-cancel is countable from the trail, distinct from a plain
+`callTimeout`, and the soak arithmetic (spec 106 SC-003) derives from the
+log alone. A cancelled run also never feeds the estimator or the transport
+retry: [[tool-loop]]'s ctx_done family observes nothing and never retries. The daemon also installs `RecalibrateSignal` as the
 orchestrator's drift hook: an estimator spike-rate breach — which since spec
 031 also adopts the window median as the new estimate — lands as
 `cog.recalibration_recommended`, the payload carrying the adoption arithmetic

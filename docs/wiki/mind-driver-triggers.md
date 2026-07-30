@@ -7,7 +7,7 @@ sources:
   - internal/mind/prompt.go
   - internal/mind/parse.go
   - internal/mind/telemetry.go
-verified_against: a761a45cb3b437613b808408c6c7f30d11bd9eb9
+verified_against: c5e66ee92fa75c00e2b480811e0ca727d5c1a1e1
 ---
 
 # Mind driver cadence and prompt content
@@ -68,6 +68,16 @@ the nearby-agent line itself now walks the map's peer sightings, so a peer who
 slipped away unseen still renders where last seen rather than its live
 position. Two villagers with different histories now see different worlds in
 their own prompts ([[mental-maps]] owns the map subsystem this renders from).
+Since spec 106 absorb also does two sleep-gating jobs alongside its arming
+work: at batch end it refreshes the worker-facing per-agent unavailability
+mirror (asleep|dead, one atomic word beside the `md.tick`/`md.tickRate`
+mirrors) that [[tool-use-dispatch]]'s dequeue gate reads, and per event it
+fires the agent's in-flight planner cancel slot on `agent.slept`/`agent.died`
+(planner slot only — the consolidation that same `agent.slept` triggers is
+untouched). The wake trigger is the gate's resumption path: `agent.woke` arms
+the planner AND the same batch flips the mirror awake, so a villager whose
+queued thought was skipped asleep re-thinks at the next `plan()` pass,
+debounce permitting.
 The driver also runs conversations (see
 [[social-fabric]]). Villagers convened to the daily meeting are planner-suppressed
 (`sim.AtMeeting`, checked in `plan()`) until close, their pending triggers left
