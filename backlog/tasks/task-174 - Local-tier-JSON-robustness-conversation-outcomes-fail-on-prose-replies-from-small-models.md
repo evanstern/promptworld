@@ -3,9 +3,10 @@ id: TASK-174
 title: >-
   Local-tier JSON robustness: conversation outcomes fail on prose replies from
   small models
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-30 16:42'
+updated_date: '2026-07-30 18:22'
 labels: []
 dependencies: []
 ordinal: 142000
@@ -26,3 +27,9 @@ Evidence (playtest-1, conversation routed to local gemma4:12b via ollama): 22 co
 - [ ] #1 Conversation-outcome calls on the local tier use constrained/JSON-mode decoding (as TASK-58 did for the planner) or fall back to cloud on parse failure
 - [ ] #2 Outcome parse-failure rate is measurable, and a soak on a small local model shows abandoned-outcome rate materially reduced from playtest-1's baseline (22 failed outcomes / 21% scenes abandoned)
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+sweep dispatch (runbook playtest-1-findings-sweep): tier Sonnet — routine single-subsystem robustness following TASK-58's established structured-outputs pattern (constitution P.V: single-package feature, no concurrency/doctrine surface). Spec 103-conversation-outcome-json.
+<!-- SECTION:NOTES:END -->
