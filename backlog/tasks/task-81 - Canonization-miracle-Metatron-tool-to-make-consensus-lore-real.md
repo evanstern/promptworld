@@ -4,7 +4,7 @@ title: 'Canonization miracle: Metatron tool to make consensus lore real'
 status: In Progress
 assignee: []
 created_date: '2026-07-23 17:50'
-updated_date: '2026-07-30 02:39'
+updated_date: '2026-07-30 02:40'
 labels:
   - emergent-lore
   - metatron
@@ -29,19 +29,27 @@ Scope questions for the spec:
 - Player surface: how the player sees candidate lore worth canonizing (the rumor/belief corpus already carries it — 271 Thornspire events; maybe Metatron briefs on dominant myths).
 
 Sequencing per plan of record: after TASK-79; runs in parallel with TASK-80, and its perception story composes with TASK-80's observation channel.
+
+Spec: specs/101-canonization-miracle
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Spec Kit spec produced and linked via spec-bridge before implementation (constitution rigor)
+- [x] #1 Spec Kit spec produced and linked via spec-bridge before implementation (constitution rigor)
 - [ ] #2 Named regions exist as replay-deterministic world state and flow into situated-memory place descriptions and the chronicle
 - [ ] #3 A Metatron miracle canonizes a named region and/or places a real feature, charged per doctrine, landing as events through the normal door
 - [ ] #4 Villagers perceive the canonization in-world (arrival discovery and/or omen); demonstrated live on world-01's Thornspire as the acceptance scenario
 - [ ] #5 Metatron can brief the player on dominant village myths as canonization candidates
+- [ ] #6 Spec phase: Regions + working
+- [ ] #7 Spec phase: Perception + briefing
+- [ ] #8 Spec phase: Surfaces + tests
+- [ ] #9 Spec phase: Demo + grounding
 <!-- AC:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 Realigned 2026-07-26 (guardian-directives ideation): sibling of the designation family — canonization is another guardian-authored durable world artifact. Order AFTER TASK-157 (guardian directives/designations) and reuse its entity machinery (event-sourced guardian artifacts with deterministic IDs, one-way status, prune discipline) rather than minting a parallel scheme. Priority stays medium; not on the directives critical path.
+
+board-sweep-2026-07-29 lane 3: spec 101 landed + linked (AC1 spec rigor satisfied); D1-D5 recorded (084 artifact reuse, minimal instantiation, 097-channel discovery, premium charge, read-only briefing). AC4's world-01 wording superseded by playtest freeze — demo on a seeded measure world with implanted myth. Tier: Sonnet per the guardian-directives tier call; escalation trigger: worldmap/state restructuring.
 <!-- SECTION:NOTES:END -->
