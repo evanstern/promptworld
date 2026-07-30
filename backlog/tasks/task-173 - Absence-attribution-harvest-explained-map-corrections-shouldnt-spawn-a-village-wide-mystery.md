@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-07-30 16:41'
+updated_date: '2026-07-30 18:21'
 labels: []
 dependencies: []
 ordinal: 141000
@@ -30,3 +31,9 @@ Scope note: spec 097 (perception of absence — dedup, disconfirmation decay) me
 - [ ] #2 A map correction explainable by known harvest activity (witnessed or rumored) is attributed as mundane and does not earn mystery-grade narrative weight
 - [ ] #3 Genuinely unexplained absences still surface as noteworthy (the guardian's real mysteries are not suppressed)
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+sweep (runbook docs/design/playtest-1-findings-sweep-runbook.md): measurement soak started 2026-07-30 — world ~/.promptworld/measure/task-173-measure-1 (scenario cold-dawn, seed 46103 pinned by the exercise, teaching+tutor, llm.json mirrored from playtest-1), current main binary (ef115a6a), 16x. Measures what spec 097 absorbs: map-correction rate + share of chronicle entries narrating absence, vs playtest-1 baseline (2,932 corrections/29 days, dominant storyline). Scope checkpoint follows measurement.
+<!-- SECTION:NOTES:END -->
