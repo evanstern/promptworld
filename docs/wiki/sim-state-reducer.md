@@ -9,7 +9,7 @@ sources:
   - internal/sim/journal.go
   - internal/sim/morgue.go
   - internal/sim/miracles.go
-verified_against: cf65debb44c1e17b54c0f3421d11e1e8cc28576c
+verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
 ---
 
 # Sim state & reducer
@@ -65,6 +65,30 @@ needs, not the whole set:
 the clock without a log row. The live loop mutates `state.Tick` directly;
 recovery sets it to `max(snapshot tick, last event tick)` and re-lives any
 quiet tail deterministically.
+
+**Derived advancement (spec 104)** is the second sanctioned eventless
+channel, generalizing spec 041's D2 bookkeeping (markExplored/notePresence
+as pure functions of (state, event)) to pure functions of (state, tick
+range): `State.AdvanceTo(target)` (`internal/sim/advance.go`) executes
+every pending derived item — in-flight walk-segment steps, per-minute needs
+decay behind the `NeedsSyncTick` watermark, gru motion — scheduled STRICTLY
+BEFORE `target`, in a fixed order (needs minutes → agent steps by index →
+gru beat). `Apply` calls it before dispatching each event, so every fold
+path (live loop, recovery, replayToTick, morgue fold, mind/TUI replicas)
+advances identically with zero per-consumer wiring, and an event at tick t
+always observes derived state through t−1. Idempotent + monotone via
+marshaled per-item watermarks (segment cursor, `NeedsSyncTick`, `Gru.Done`),
+so snapshots and kill-9 recovery reproduce mid-walk/mid-window progress
+exactly. The whole channel is gated on the coalescing-regime marker (the
+genesis-pinned `needs_checkpoint_minutes` dial, [[world-tuning]]): legacy
+worlds' folds never enter it, so every pre-104 log replays hash-identically.
+Every arm that invalidates a walk's premise (`agent.intent_set`,
+`intent_done`/`intent_failed`/`build_failed`/`recovery_stalled`,
+`agent.slept`/`died`, `gru.attacked`, `social.hailed`,
+`guardian.entity_moved`, `clock.paused`, `guardian.time_snapped`) clears
+the segment in its own arm — the interrupting event IS the closing record;
+`agent.path_truncated` exists only for the blocked-path re-route nothing
+else records ([[event-types-mental-map]]).
 
 Canonical bytes: `Marshal()` uses `encoding/json` over structs only (fixed
 field order — payload shapes like `AgentMovedPayload` are structs, never

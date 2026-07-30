@@ -18,21 +18,11 @@ import (
 // and referenced back the same way — models transcribe short ordinals
 // reliably where they mangle hashes. parseMemRef maps a label to its
 // buffer index, or -1.
+// The parsing itself moved to sim.ParseMemLabel (spec 102 SC-004): the
+// guardian's nightly consolidation references its buffer with the SAME
+// ordinal vocabulary, so one parser serves both drivers.
 func parseMemRef(ref string, bufferLen int) int {
-	if len(ref) < 2 || (ref[0] != 'm' && ref[0] != 'M') {
-		return -1
-	}
-	n := 0
-	for _, c := range ref[1:] {
-		if c < '0' || c > '9' {
-			return -1
-		}
-		n = n*10 + int(c-'0')
-	}
-	if n < 1 || n > bufferLen {
-		return -1
-	}
-	return n - 1
+	return sim.ParseMemLabel(ref, bufferLen)
 }
 
 type beliefChange struct {
@@ -73,29 +63,10 @@ type consolidationOutput struct {
 // never a rejected night (spec 098: a dream verdict is low-stakes; the
 // firewall layers judge the night, not the dream). Same shape as parseMemRef
 // with a 'g' sigil.
+// The parsing itself moved to sim.ParseRoutineLabels (spec 102 SC-004): one
+// group-label parser serves both consolidation drivers.
 func parseRoutineRefs(refs []string, sent int) []int {
-	var out []int
-	seen := map[int]bool{}
-	for _, r := range refs {
-		if len(r) < 2 || (r[0] != 'g' && r[0] != 'G') {
-			continue
-		}
-		n := 0
-		ok := true
-		for _, c := range r[1:] {
-			if c < '0' || c > '9' {
-				ok = false
-				break
-			}
-			n = n*10 + int(c-'0')
-		}
-		if !ok || n < 1 || n > sent || seen[n-1] {
-			continue
-		}
-		seen[n-1] = true
-		out = append(out, n-1)
-	}
-	return out
+	return sim.ParseRoutineLabels(refs, sent)
 }
 
 // Validator caps (contract layer 1).

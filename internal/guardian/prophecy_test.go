@@ -247,7 +247,7 @@ func TestProphecyWatchComposition(t *testing.T) {
 // id/claim/days-left; settled ones do not.
 func TestProphecyPromptSections(t *testing.T) {
 	alive := map[int]bool{0: true}
-	base := turnUserPrompt(100, 1, 62, alive, nil, nil, nil, nil, nil, nil, "", "", "", "The player says:\nhello")
+	base := turnUserPrompt(100, 1, 62, alive, nil, nil, nil, nil, nil, nil, nil, "", "", "", "The player says:\nhello")
 	if !strings.Contains(base, "faith in you stands at 62 of 100") {
 		t.Errorf("prompt missing the faith line:\n%s", base)
 	}
@@ -263,7 +263,7 @@ func TestProphecyPromptSections(t *testing.T) {
 			Claim:        sim.ProphecyClaim{Kind: sim.ProphecyPopulationAtLeast, Min: 4},
 			DeclaredTick: 1, DeadlineTick: 2, Status: "failed"}, // settled — must not render
 	}
-	got := turnUserPrompt(100, 1, 62, alive, nil, nil, nil, prophecies, nil, nil, "", "", "", "The player says:\nhello")
+	got := turnUserPrompt(100, 1, 62, alive, nil, nil, nil, prophecies, nil, nil, nil, "", "", "", "The player says:\nhello")
 	for _, want := range []string{
 		"Prophecies you have staked (the word, once given, stands):",
 		`- pro-1-0: "A shelter will stand." — judged by at least 1 shelter standing (2 day(s) left)`,

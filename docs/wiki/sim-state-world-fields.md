@@ -6,7 +6,7 @@ sources:
   - internal/sim/state.go
   - internal/sim/agents.go
   - internal/sim/stranger.go
-verified_against: cf65debb44c1e17b54c0f3421d11e1e8cc28576c
+verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
 ---
 
 # Sim state: world & social fields
@@ -72,6 +72,10 @@ pre-029 snapshot with the field absent unmarshals to nil; [[guardian-orders]])
 `Directives []Directive`, spec 084, both `omitempty` on the same precedent —
 pre-084 snapshots load byte-identical, no format bump;
 [[guardian-designations]])
+— the guardian's own memory store (`GuardianMemories []Memory` +
+`GuardianMemUpTo int64`, spec 102, both `omitempty` on the same precedent —
+the shared `Memory` model fed by `guardian.memory_added`, consolidated
+nightly; [[guardian-agentization]], [[event-types-guardian-memory]])
 — the faith economy (`Faith *FaithState`, spec 085, `omitempty`, nil =
 genesis 50 read only through the nil-safe `FaithScore()` accessor — the
 `Tuning` nil-means-default shape; and `Prophecies []Prophecy`, the

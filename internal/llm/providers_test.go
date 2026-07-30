@@ -88,4 +88,74 @@ func TestOpenAICompatReasoningEffort(t *testing.T) {
 	}
 }
 
+// TestOpenAICompatResponseFormat (spec 103/TASK-174, restoring TASK-58): a
+// Request.ResponseSchema rides the wire as a well-formed response_format
+// {type: json_schema} envelope when set; no response_format key appears at
+// all when unset (the byte-identical baseline every non-conversation kind
+// relies on); and it is NOT attached when the request also carries Tools —
+// the tool-call envelope already owns response_format for its own purposes.
+func TestOpenAICompatResponseFormat(t *testing.T) {
+	schema := json.RawMessage(`{"type":"object","properties":{"gist":{"type":"string"}},"required":["gist"]}`)
+
+	t.Run("schema set", func(t *testing.T) {
+		var got map[string]any
+		srv := captureServer(t, &got)
+		o := newOpenAICompat(srv.URL, "m", "", "", "")
+		if _, err := o.call(context.Background(),
+			Request{Prompt: "x", ResponseSchema: schema, SchemaName: "conversation_outcome"}); err != nil {
+			t.Fatal(err)
+		}
+		rf, ok := got["response_format"].(map[string]any)
+		if !ok {
+			t.Fatalf("response_format missing or wrong type: %v", got["response_format"])
+		}
+		if rf["type"] != "json_schema" {
+			t.Errorf("response_format.type = %v, want json_schema", rf["type"])
+		}
+		js, ok := rf["json_schema"].(map[string]any)
+		if !ok {
+			t.Fatalf("json_schema missing or wrong type: %v", rf["json_schema"])
+		}
+		if js["name"] != "conversation_outcome" {
+			t.Errorf("json_schema.name = %v, want conversation_outcome", js["name"])
+		}
+		sch, ok := js["schema"].(map[string]any)
+		if !ok {
+			t.Fatalf("json_schema.schema missing or not an object: %v", js["schema"])
+		}
+		if sch["type"] != "object" {
+			t.Errorf("schema round-trip mangled: schema.type = %v, want object", sch["type"])
+		}
+	})
+
+	t.Run("schema unset", func(t *testing.T) {
+		var got map[string]any
+		srv := captureServer(t, &got)
+		o := newOpenAICompat(srv.URL, "m", "", "", "")
+		if _, err := o.call(context.Background(), Request{Prompt: "x"}); err != nil {
+			t.Fatal(err)
+		}
+		if _, ok := got["response_format"]; ok {
+			t.Errorf("response_format present with no ResponseSchema: %v", got["response_format"])
+		}
+	})
+
+	t.Run("schema with Tools not attached", func(t *testing.T) {
+		var got map[string]any
+		srv := captureServer(t, &got)
+		o := newOpenAICompat(srv.URL, "m", "", "", "")
+		if _, err := o.call(context.Background(), Request{
+			Prompt:         "x",
+			ResponseSchema: schema,
+			SchemaName:     "conversation_outcome",
+			Tools:          []ToolDecl{{Name: "noop", Description: "d", InputSchema: json.RawMessage(`{"type":"object"}`)}},
+		}); err != nil {
+			t.Fatal(err)
+		}
+		if _, ok := got["response_format"]; ok {
+			t.Errorf("response_format present alongside Tools: %v", got["response_format"])
+		}
+	})
+}
+
 func strPtr(s string) *string { return &s }

@@ -2,7 +2,7 @@
 title: Panel — chronicle (event feed)
 class: panel
 status: shipped
-verified_against: a761a45cb3b437613b808408c6c7f30d11bd9eb9
+verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
 sources:
   - internal/tui/views.go
   - internal/tui/digest.go
@@ -14,7 +14,11 @@ sources:
 The event feed. Same component everywhere it appears — dock tab, solo view,
 narrow-fallback pane — differing only in width. Line formatting is governed by
 [../patterns/chronicle-grammar.md](../patterns/chronicle-grammar.md); this doc
-covers the panel's modes.
+covers the panel's modes. Since spec 104, a coalesced world's feed shows a
+walk as ONE `agent.path_started` line (and needs rows only at checkpoints/
+crossings) instead of dozens of per-step rows — the running feed reads as
+story by construction; the live map stays per-step smooth via the replica's
+derived advancement, not via feed rows ([map](map.md)).
 
 ## Mode 1 — running (clock unpaused)
 

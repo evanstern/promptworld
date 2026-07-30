@@ -7,7 +7,7 @@ sources:
   - internal/guardian/digest.go
   - internal/guardian/guardian.go
   - internal/guardian/toolcalls.go
-verified_against: cf65debb44c1e17b54c0f3421d11e1e8cc28576c
+verified_against: 04ff15001bd8a74f7c2965889c0d318fc0dc03a9
 ---
 
 # Guardian's watch and background workers
@@ -37,7 +37,10 @@ mechanics live in [[guardian-orders]]'s own section.
 
 **Watching** (`digest.go`): notable events collect per 6-game-hour window; each
 non-empty window costs one summarization call appended to `metatron/soul.md`
-(skip-empty is free; failures carry lines into the next window). The drama rule v1:
+(skip-empty is free; failures carry lines into the next window). On an
+AGENTIZED world (spec 102, [[guardian-agentization]]) the digest's note lines
+land as structured `guardian.memory_added` memories instead of the soul
+append — soul.md stays the persona seed, and the store consolidates nightly. The drama rule v1:
 `agent.died`, `gru.attacked`, `social.promise_broken`, and (since spec 029)
 `guardian.order_expired` append model-free **moment** lines immediately and queue for
 the console — the next reply leads with them. Digests and moments themselves never
@@ -52,11 +55,13 @@ triggers, the cheap-chain critique, citation validation) and
 [[takeover-surfaces]] for the shared rubric-checklist renderer the console
 card seam and the postmortem/ceremony takeovers compose it beside.
 
-**Shutdown** (`guardian.go`): `New` starts four background goroutines — the absorb
-loop (`run`), `digestWorker`, `triggerWorker`, and `reportCardWorker` — each
+**Shutdown** (`guardian.go`): `New` starts six background goroutines — the absorb
+loop (`run`), `digestWorker`, `triggerWorker`, `reportCardWorker`, and (spec
+102, [[guardian-agentization]]) `angelWorker` + `consolidateWorker` (both
+inert on a non-agentized world) — each
 counted into a `sync.WaitGroup` at its spawn site. `Close` closes the shared
 `done` channel the workers select on, then waits on that WaitGroup, so `Close`
-cannot return until every one of the four has exited; a `Close` racing an
+cannot return until every one has exited; a `Close` racing an
 in-flight job blocks until that job's current iteration finishes (no timeout —
 shutdown correctness over speed). This is why a caller (production, or a test
 fixture) that drives `cardQ`/`digQ`/`triggerQ` right after `Close` never races a

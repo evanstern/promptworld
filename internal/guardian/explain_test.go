@@ -68,7 +68,7 @@ func TestExplainHandlerServesFactSheets(t *testing.T) {
 	mt, _, _, _ := newTestGuardian(t, "so it is written")
 	d := &turnDispatch{mt: mt, charges: 3, alive: map[int]bool{0: true}, tick: 1, result: &TurnResult{},
 		grant: fullGrant(),
-		scope: tool.ExplainScope{Granted: tool.LoopRosterGuardian(), Catalog: tool.LoopRosterGuardian()}}
+		tutor: tutorSurface{scope: tool.ExplainScope{Granted: tool.LoopRosterGuardian(), Catalog: tool.LoopRosterGuardian()}}}
 	h := mt.turnHandlers(d)
 	eh, ok := h["explain"]
 	if !ok {
@@ -79,7 +79,7 @@ func TestExplainHandlerServesFactSheets(t *testing.T) {
 	if out.Verdict != toolloop.VerdictReadOK {
 		t.Fatalf("explain verdict = %s, want read_ok", out.Verdict)
 	}
-	if want := tool.ExplainSheet("charges", d.scope); out.ResultForModel != want {
+	if want := tool.ExplainSheet("charges", d.tutor.scope); out.ResultForModel != want {
 		t.Errorf("handler sheet diverges from the tool-side composition:\ngot  %q\nwant %q", out.ResultForModel, want)
 	}
 

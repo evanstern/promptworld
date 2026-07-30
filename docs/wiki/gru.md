@@ -4,7 +4,7 @@ description: The nocturnal sight-triggered predator — an event-sourced entity 
 kind: component
 sources:
   - internal/sim/gru.go
-verified_against: 376afd4cee54839a545bc88409f3c485c2f5149d
+verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
 ---
 
 # The gru
@@ -55,11 +55,25 @@ decomposition lives in [[executor-world-state]] (`terrain.go`'s
 `warmthSource`). A pure read-side export; neither reducer nor tuning
 behavior changed.
 
-**Movement** (`gru.moved{x, y}`, one tile per `gruMoveEveryTicks = 4`, slightly
-faster than agents' 5): greedy chase toward the nearest visible agent (ties to
-the lowest index), seeded prowl when nobody is visible. Deliberately greedy
-rather than BFS — a monster that can be baffled by water and firelight is the
-right monster.
+**Movement** (one tile per `gruMoveEveryTicks = 4`, slightly faster than
+agents' 5): greedy chase toward the nearest visible agent (ties to the
+lowest index), seeded prowl (`rngAt(seed, "gru-prowl", tick, 0)`) when
+nobody is visible. Deliberately greedy rather than BFS — a monster that can
+be baffled by water and firelight is the right monster. The decision lives
+in ONE home, `gruMoveDecision` (gru.go), shared by two shapes since spec
+104 (ruling 4): **legacy worlds** emit `gru.moved{x, y}` per beat exactly
+as always (arm retained forever — old logs replay unchanged); under the
+**coalescing regime** ([[world-tuning]]'s `needs_checkpoint_minutes`
+marker) NO `gru.moved` is emitted at all — the derived-advancement engine
+([[sim-state-reducer]], `advance.go`) runs the same decision at each beat
+tick over the advanced state (agent steps first within the tick, then the
+gru — an attack recorded at the beat tick precludes the move, exactly the
+emitter's exclusivity), behind the marshaled `Gru.Done` watermark. The
+cadence, the "gru-prowl" purpose string, and the stalk/protection geometry
+are therefore replay-load-bearing for coalesced logs
+([[sim-state-reducer-replay-hazards]]) — a retune requires the spec-094
+format machinery. `gru.emerged`/`withdrew`/`sighted`/`attacked` remain
+events either way (rare, story-bearing).
 
 **Attack** (`gru.attacked{agent, health}`): adjacent + visible + a
 10-game-minute cooldown (`gruAttackCooldown = 600`). The payload carries the

@@ -8,7 +8,7 @@ sources:
   - internal/tui/digest.go
   - internal/tui/tui.go
   - internal/tui/look.go
-verified_against: cf65debb44c1e17b54c0f3421d11e1e8cc28576c
+verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
 ---
 
 # TUI map view
@@ -76,6 +76,12 @@ rather than a per-tile literal: `views.go`'s old style-literal block is gone,
 `tile()` now calls `tileKey(...).render(state)`, and the named styles are
 token-derived aliases kept for direct call sites — the glyphs, colors, and
 priority described here are unchanged bytes, only their home moved.
+Since spec 104, an agent's rendered tile tracks its DERIVED position on a
+coalescing-regime world: the status poll's `replica.AdvanceTo` ([[tui-client]])
+walks any in-flight walk segment step by step between pushed events, so the
+map shows the same per-step smooth motion a legacy per-step `agent.moved`
+stream always rendered, never a jump-on-arrival.
+
 The camera follows the living agents' centroid, arrow keys pan, `c` recenters.
 Since spec 049 (TASK-124, reorient D3) the camera gains one computed writer:
 **jump-to-source** — in inspect mode, `⏎` (or a mouse click on a chronicle

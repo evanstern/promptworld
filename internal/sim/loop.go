@@ -357,6 +357,19 @@ var injectSocialWhitelist = map[string]bool{
 	// dream.go), reducer-total like the rest of the consolidation family.
 	"agent.salience_revised": true,
 	"agent.memory_merged":    true,
+	// The guardian's own memory store (spec 102, D5): the agentized
+	// guardian's memory-entry, embedding-companion, consolidation, and dream
+	// events — the agent.* consolidation family's guardian-side twins
+	// (guardian_memory.go), injected by the guardian's workers and the
+	// embedder driver. Reducer-total; a pre-102 (non-opted) world's guardian
+	// simply never emits them.
+	"guardian.memory_added":     true,
+	"guardian.memory_embedded":  true,
+	"guardian.memory_promoted":  true,
+	"guardian.memory_faded":     true,
+	"guardian.salience_revised": true,
+	"guardian.memory_merged":    true,
+	"guardian.consolidated":     true,
 }
 
 // endedProseWhitelist is the surviving slice of the inject_social door once a
@@ -625,6 +638,12 @@ func (l *Loop) stampSeqs(events []store.Event) {
 // then published.
 func (l *Loop) runTick() error {
 	nextTick := l.state.Tick + 1
+	// Spec 104: derived progress runs strictly-before — items scheduled at
+	// the PREVIOUS tick execute now, after every event of that tick
+	// (including command-door injections, which land between runTicks), and
+	// before this tick's emission reads the state. Replay reproduces the
+	// same order through Apply's own AdvanceTo hook (research.md §1).
+	l.state.AdvanceTo(nextTick)
 	events := stepEvents(l.state, l.m, nextTick)
 	l.state.Tick = nextTick
 	l.stampSeqs(events)

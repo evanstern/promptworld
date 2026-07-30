@@ -4,7 +4,7 @@ description: Process lifecycle overview — daemon.Run's validate/recover/wire/t
 kind: pipeline
 sources:
   - internal/daemon/daemon.go
-verified_against: a5df40921577bc194478bb29c42af2b10bf11ea8
+verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
 ---
 
 # Daemon lifecycle
@@ -61,7 +61,14 @@ type, rather than aborting on, events the current reducer rejects, so a
 legacy-format save whose manifest `world.Open` would refuse can still be
 reconstructed from just its seed + map. Its consumer is the spec-043
 replay-determinism harness (`internal/daemon/context_replay_test.go`,
-[[decision-context]] / [[testing-strategy]]).
+[[decision-context]] / [[testing-strategy]]). Since spec 104, it ends with
+a trailing `state.AdvanceTo(cutoff)` — the per-event `Apply` replay only
+folds derived progress through each event's own tick, so the quiet stretch
+between the last replayed event and the arbitrary `cutoff` needs one more
+explicit call to reach the same posture the live loop holds at that tick
+(in-flight walk segments, needs decay, gru motion all walked forward);
+`recoverState` needs no equivalent call, since it always replays to head
+and `Tick` already lands exactly at the last event ([[daemon-boot-recovery]]).
 
 ## Connections
 

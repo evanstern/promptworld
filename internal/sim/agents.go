@@ -317,6 +317,58 @@ type Agent struct {
 	// byte-identically. Its tick anchors are SHIFT under rebaseTicks
 	// (miracles.go taxonomy).
 	Neglect *NeglectState `json:"neglect,omitempty"`
+	// Path (spec 104) is the in-flight walk segment installed by the
+	// agent.path_started reducer arm and advanced derivedly, step by exact
+	// per-step step, by the advancement engine (advance.go) — position,
+	// markExplored, and notePresence at each step's scheduled tick, byte-
+	// identical to the retired per-step agent.moved fold (ruling 2). A
+	// POINTER with omitempty (the Journal/Map precedent) so pre-104
+	// snapshots round-trip byte-identically; nil for every legacy world
+	// (legacy emission never installs one). Cleared by the arrival step, by
+	// agent.path_truncated, and by every arm that invalidates the walk's
+	// premise (research.md §4's truncation resolution). Under a
+	// guardian.time_snapped rebase the segment is CLEARED, not shifted —
+	// its beat phase arithmetic is absolute-tick-based (miracles.go).
+	Path *PathSegment `json:"path,omitempty"`
+	// NeedsSyncTick/NeedsEmitted (spec 104) are the needs-thinning
+	// substrate, written ONLY while the coalescing regime is on
+	// (AmbientCoalescing — legacy folds never touch them, so pre-104 logs
+	// replay to hash-identical state): NeedsSyncTick is the advancement
+	// watermark (game-minute decay applied through this tick — the
+	// double-decay guard: the agent.needs_changed arm stamps it, so a
+	// recorded minute is never re-decayed derivedly), and NeedsEmitted is
+	// the last-EMITTED absolutes the executor's crossing detector compares
+	// against (catching mid-window jumps — eating — at today's per-minute
+	// hysteresis latency). NeedsSyncTick is SHIFT under rebaseTicks;
+	// NeedsEmitted is KEEP (values, not ticks). Both omitempty (pre-104
+	// snapshot byte-identity; the spec-083 Neglect precedent).
+	NeedsSyncTick int64  `json:"needs_sync_tick,omitempty"`
+	NeedsEmitted  *Needs `json:"needs_emitted,omitempty"`
+}
+
+// PathSegment is one in-flight walk (spec 104): the departure-time BFS path
+// (tiles stepped onto, in order, ending on the intent target), the cadence
+// numbers baked from the agent.path_started payload (spec 092: advancement
+// never reads the compiled moveEveryTicks), the step cursor, and the
+// advancement watermark. The step rule is code (advance.go): a step fires at
+// tick t when (t+Phase)%MoveEvery == 0, or == pathSpeedSlot while the agent
+// stands on a path structure — the spec-032 2x rule evaluated against the
+// advanced state at t, exactly as the retired per-step emitter evaluated it.
+type PathSegment struct {
+	Path []Point `json:"path"`
+	// Next is the cursor: the index in Path of the next tile to step onto.
+	Next int `json:"next"`
+	// MoveEvery/Phase are the payload-baked cadence numbers (ticks between
+	// beats; the agent's stagger offset). KEEP under rebaseTicks (cadence
+	// numbers, not tick anchors) — moot in practice, since a time snap
+	// clears the whole segment.
+	MoveEvery int64 `json:"move_every"`
+	Phase     int64 `json:"phase"`
+	// Done is the advancement watermark: derived steps processed through
+	// this tick (steps fire strictly after it). Installed at the
+	// path_started event's tick, so the first step lands on the first beat
+	// after departure.
+	Done int64 `json:"done"`
 }
 
 // AgentHail is the courtesy pause a talk_to landing lays on its target: who
@@ -700,6 +752,13 @@ type Point struct {
 
 const (
 	// Per-game-minute needs deltas.
+	//
+	// Replay hazard (spec 092/104): under the spec-104 coalescing regime the
+	// derived-advancement engine (advance.go) re-derives non-emitted minutes
+	// from these constants at APPLY time — they are replay-load-bearing for
+	// coalesced logs, exactly the forageYieldV2 class. A retune requires the
+	// spec-094 store.LogFormatVersion bump + migration; see
+	// docs/wiki/sim-state-reducer-replay-hazards.md.
 	foodDecay      = 1 // full → empty in ~16.6 game-hours
 	restDecayAwake = 1
 	restRegenSleep = 4 // full recharge in ~4 game-hours
@@ -739,6 +798,12 @@ const (
 	// The mind driver's per-agent baseline cadence is spec-048-promoted: the
 	// default lives in tuning.go as defaultPlannerCadenceTicks and reads go
 	// through State.PlannerCadence() (nil-safe accessor).
+	//
+	// witnessRadius replay hazard (spec 092, grandfathered spec-041 D2
+	// class; spec 104 widens the exposure): reducer arms (markExplored,
+	// notePresence) AND the derived-advancement steps (advance.go) read it
+	// at apply time — a retune changes what old logs replay to and requires
+	// the spec-094 format machinery.
 	witnessRadius = 8
 	// WitnessRadius exports witnessRadius (spec 081) for internal/mind's absorb
 	// parity — the SAME one perceptual reality the sweep and the harvest arms

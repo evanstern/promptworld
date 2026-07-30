@@ -6,6 +6,7 @@ import (
 	"math"
 	"strings"
 
+	"github.com/evanstern/promptworld/internal/sim"
 	"github.com/evanstern/promptworld/internal/tool"
 	"github.com/evanstern/promptworld/internal/toolloop"
 )
@@ -61,25 +62,12 @@ func parseMusing(text string) (string, error) {
 	return t, nil
 }
 
-// firstJSON extracts the first balanced JSON object from model output.
+// firstJSON extracts the first balanced JSON object from model output. The
+// extraction itself moved to sim.FirstJSONObject (spec 102 SC-004): the
+// guardian's nightly consolidation parses the same reply shape, so one
+// extractor serves both drivers.
 func firstJSON(text string) (string, error) {
-	start := strings.IndexByte(text, '{')
-	if start < 0 {
-		return "", fmt.Errorf("no JSON object in reply")
-	}
-	depth := 0
-	for i := start; i < len(text); i++ {
-		switch text[i] {
-		case '{':
-			depth++
-		case '}':
-			depth--
-			if depth == 0 {
-				return text[start : i+1], nil
-			}
-		}
-	}
-	return "", fmt.Errorf("unterminated JSON object")
+	return sim.FirstJSONObject(text)
 }
 
 // parseSay extracts a conversation utterance.

@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/state.go
   - internal/sim/agents.go
-verified_against: cf65debb44c1e17b54c0f3421d11e1e8cc28576c
+verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
 ---
 
 # Sim state: core agent Apply arms
@@ -59,7 +59,19 @@ goal registry, [[reflex-policy]]) stamps that need's `*Intent = tick` on
 `Agent.Neglect`, source-agnostic on purpose: any scheduled class intent
 proves the mind engaged, whatever the outcome
 ([[executor-needs-survival]])),
-movement, work
+movement — since spec 104, under the coalescing regime (`AmbientCoalescing()`)
+the executor emits one `agent.path_started` per walk instead of per-step
+`agent.moved`; the arm installs the in-flight segment via `applyPathStarted`
+(`advance.go`), which the derived-progress engine then advances step by
+step at exactly `agent.moved`'s own per-step fidelity (position, explored
+bits, peer sightings); a blocked mid-walk path (a wall built under the
+segment) emits `agent.path_truncated` instead, whose arm records the actual
+stopping tile and clears the segment via the shared `truncateWalk`
+primitive — the same primitive every walk-invalidating arm elsewhere now
+calls (the intent-lifecycle closures in [[sim-state-intent-lifecycle]],
+`agent.slept`, `agent.died` below, plus the miracle/gru arms in their own
+files), so a legacy world with no segment ever installed pays `truncateWalk`
+as a byte-inert nil-check — work
 products (inventory + overlays + structures), eating (`agent.ate`'s `AtePayload`
 sets the absolute post-eat food need and decrements each carried food form by its
 consumed count — no reducer-side arithmetic), sleep, talk (since spec 061
@@ -81,7 +93,18 @@ downward crossing), and a value at/above the band clears the anchor AND the
 episode's fired latch together (episode over, detector re-armed); a third
 NEW arm, `sim.neglect_detected`, sets exactly the payload need's fired latch
 (one injection per episode — the executor sweep's emission,
-[[executor-needs-survival]]), nothing else), and death. The v2
+[[executor-needs-survival]]), nothing else) — since spec 104 this whole
+absolute fold (values, near-death latch, trajectory anchor, neglect
+anchors) is factored into `foldNeedsAbsolutes` (`state.go`), ONE home the
+`agent.needs_changed` arm shares VERBATIM with the derived per-minute
+advancement (`advance.go`) so a recorded minute and a derived minute can
+never drift; while `AmbientCoalescing()` holds, the same arm additionally
+stamps `Agent.NeedsSyncTick = e.Tick` and snapshots `Agent.NeedsEmitted` —
+the decay watermark and the crossing-detector baseline the executor's
+thinned heartbeat reads ([[executor-needs-survival]]); the `sim.tuning_applied`
+arm's legacy→coalescing transition stamps both fields (plus `Gru.Done`) to
+its own tick for every living agent, so the derived engine's floor never
+re-decays or re-moves the regime-flip's own covered past — and death. The v2
 resource/crafting events, the v3 storage economy, and the spec-032 wall
 demolish/repair HP family split into
 [[sim-state-apply-agents-resources]].

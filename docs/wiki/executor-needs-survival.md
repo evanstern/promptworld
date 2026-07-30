@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/executor.go
   - internal/sim/agents.go
-verified_against: 376afd4cee54839a545bc88409f3c485c2f5149d
+verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
 ---
 
 # Executor — needs, survival, and run end
@@ -34,7 +34,20 @@ when an escalated attack kills an already-weakened villager, with its own
 inline witness-death memory loop — gru attacks land off the %60 heartbeat
 where the executor's witness-death block runs; [[gru]].) New values land
 as one absolute `agent.needs_changed` event per agent per minute (absolute =
-replay-safe).
+replay-safe) — EXCEPT under the spec-104 coalescing regime
+(`AmbientCoalescing()`, a new spec-048 tuning dial), where `needsEmitDue`
+(`executor.go`) records the event only on the K-minute checkpoint grid
+(`(tick/60)%K == 0`) or when a danger-band/near-death/zero boundary crossed
+vs. the last-EMITTED values, in either direction (`needsBoundaryCrossed`) —
+non-emitted minutes still decay, derivedly, behind the `NeedsSyncTick`
+watermark (`advanceNeedsMinute`, `internal/sim/advance.go`), sharing the
+SAME `foldNeedsAbsolutes` fold the recorded arm uses, so guardian survival
+watches and standing-order hysteresis fire AND re-arm at the same one-minute
+latency either way; K=1 reproduces every-minute emission byte-for-byte, and
+a legacy world (no tuning dial, or the dial resolved to 0) always emits
+every minute. Death detection and the near-death memory below still run
+EVERY minute regardless of the regime — a death or near-death entry is
+itself a crossing, so its needs event always rides the same batch.
 
 **Fire fuel** (T019/T020): `build_fire` (still 2 wood) lights a fire for
 `2×s.FireBurnPerWood()` (4 game-hours per wood by default, so 8 hours).

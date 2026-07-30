@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/llm/preflight.go
   - internal/llm/llm.go
-verified_against: d304e8adb64fdf40e24bfeca3ca3420e8a840a35
+verified_against: 04ff15001bd8a74f7c2965889c0d318fc0dc03a9
 ---
 
 # LLM provider health — preflight probe & embedding interaction

@@ -13,7 +13,7 @@ sources:
   - internal/tui/lessons.go
   - internal/tui/reportcard.go
   - internal/tui/tiles.go
-verified_against: cf65debb44c1e17b54c0f3421d11e1e8cc28576c
+verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
 ---
 
 # TUI client
@@ -22,7 +22,14 @@ verified_against: cf65debb44c1e17b54c0f3421d11e1e8cc28576c
 Bubble Tea + Lipgloss. Its core idea: the map renders from a **live replica** of
 `sim.State` that the client maintains by log shipping — fetch the state snapshot, then
 apply every pushed event through the exact `Apply` reducer the daemon runs. The TUI is
-a read replica of the world.
+a read replica of the world. Since spec 104, the 1-second status poll also calls
+`m.replica.AdvanceTo(m.status.Clock.Tick)` — walking the replica's derived
+progress (in-flight walk segments, needs decay, gru motion) up to the
+daemon's own reported tick between pushed events, so the live map stays
+per-step smooth on a coalescing-regime world rather than jumping at each
+`agent.path_started`'s arrival; `AdvanceTo(T)` only ever reaches the
+daemon's own posture at T (items scheduled strictly before T), so the
+replica can never lead the daemon's fold.
 
 ## Surfaces
 

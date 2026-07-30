@@ -24,7 +24,6 @@ import (
 	"github.com/evanstern/promptworld/internal/llm"
 	"github.com/evanstern/promptworld/internal/sim"
 	"github.com/evanstern/promptworld/internal/store"
-	"github.com/evanstern/promptworld/internal/tool"
 	"github.com/evanstern/promptworld/internal/toolloop"
 )
 
@@ -41,11 +40,13 @@ type turnDispatch struct {
 	tick    int64
 	result  *TurnResult
 	grant   grantSet // this world's capability grant (spec 021 US2): gates handlers + land
-	// scope is the explain tool's world slice (spec 063 US1): the SAME
-	// effective granted roster the turn declared (three-layer coherence), the
-	// full catalog, and the stage id — so a fact sheet can never disagree
-	// with what this turn actually offers.
-	scope tool.ExplainScope
+	// tutor is the tutor channel's whole capability surface (spec 102 D4,
+	// tutor.go): the explain tool's world slice (spec 063 US1) wrapped in a
+	// type that is STRUCTURALLY unable to reach a world door — inert
+	// descriptor data in, strings out. The scope inside is the SAME effective
+	// granted roster the turn declared (three-layer coherence), so a fact
+	// sheet can never disagree with what this turn actually offers.
+	tutor tutorSurface
 
 	records []toolloop.CallRecord
 }
@@ -148,7 +149,10 @@ func (mt *Guardian) turnHandlers(d *turnDispatch) map[string]toolloop.Handler {
 func (mt *Guardian) handleExplain(d *turnDispatch) toolloop.Handler {
 	return func(_ context.Context, call llm.ToolCall) toolloop.Outcome {
 		topic := argString(call.Args, "topic")
-		return toolloop.Outcome{Verdict: toolloop.VerdictReadOK, ResultForModel: tool.ExplainSheet(topic, d.scope)}
+		// The TUTOR channel (spec 102 D4): the sheet composes through the
+		// structurally-inert tutorSurface — no door, no charge, no faith, no
+		// rubric is reachable from this path by type construction (tutor.go).
+		return toolloop.Outcome{Verdict: toolloop.VerdictReadOK, ResultForModel: d.tutor.sheet(topic)}
 	}
 }
 

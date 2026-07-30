@@ -6,7 +6,7 @@ sources:
   - internal/llm/llm.go
   - internal/llm/lease.go
   - internal/llm/pending.go
-verified_against: 31c893e0406653197e467a89b2fdb96f0bcf2ee0
+verified_against: 04ff15001bd8a74f7c2965889c0d318fc0dc03a9
 ---
 
 # LLM orchestrator — concurrency, priority lanes & leases

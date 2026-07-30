@@ -4,7 +4,7 @@ description: The ancillary subsystems stepEvents drives each tick beyond agent b
 kind: component
 sources:
   - internal/sim/executor.go
-verified_against: 376afd4cee54839a545bc88409f3c485c2f5149d
+verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
 ---
 
 # Executor — tick subsystems
@@ -57,7 +57,14 @@ world (no scenario armed) enters neither branch, byte-identical to pre-054
 kinds by spec 077, with the rubric emitter generalized to per-exercise dawn
 boundaries). `stepEvents` also runs the
 [[gru]]'s whole turn (`gruStep`) each tick, and the heartbeat's near-death memory
-names "the gru" as the cause when the last wound was recent. Immediately
+names "the gru" as the cause when the last wound was recent. Since spec 104,
+`gruStep`'s movement half is gated on `AmbientCoalescing()`: under the
+regime it emits no `gru.moved` at all — the shared `gruMoveDecision` runs
+instead inside the derived-progress engine's own per-beat sweep
+(`advanceGruBeat`, `internal/sim/advance.go`), behind a `Gru.Done`
+watermark stamped by the `gru.emerged` arm — while a legacy world keeps the
+per-beat `gru.moved` emission byte-identically; the attack half (and its
+inline witness-death handling above) is untouched either way. Immediately
 AFTER `gruStep` and before the governance/social beats, spec 077 adds the
 stranger's turn (`strangerStep`, `internal/sim/stranger.go` — order pinned
 by test): nil-check first, so an ambient world where no `stranger.arrived`

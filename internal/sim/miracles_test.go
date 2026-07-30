@@ -972,6 +972,11 @@ func TestRebaseTaxonomyComplete(t *testing.T) {
 		"TuningState.FireBurnPerWood":        keep,
 		"TuningState.PlannerCadenceTicks":    keep,
 		"TuningState.EncounterCooldownTicks": keep,
+		// spec 102: the steward cadence is a DURATION dial like the four above.
+		"TuningState.StewardCadenceTicks": keep,
+		// spec 102: the guardian store's accepted-consolidation high-water
+		// mark — history, the Agent.ConsolidatedUpTo shape.
+		"State.GuardianMemUpTo": keep,
 		// Spec 097 dials: durations/points, not clock anchors — KEEP like the
 		// other TuningState fields.
 		"TuningState.ObservationDedupTicks":         keep,
@@ -981,6 +986,24 @@ func TestRebaseTaxonomyComplete(t *testing.T) {
 		// spec 098 dream dials are per-mille ratios and a per-night count —
 		// no tick anchors anywhere in the block (the TuningState duration
 		// rationale above, one step further from the timeline).
+		// Spec 104: the needs-checkpoint cadence is a duration (game-minute
+		// span) doubling as the coalescing-regime marker — KEEP like every
+		// other dial.
+		"TuningState.NeedsCheckpointMinutes": keep,
+		// Spec 104 advancement watermarks: decayed-through / beats-processed
+		// anchors measured against the live clock — SHIFT, zero = pre-regime
+		// sentinel stays zero.
+		"Agent.NeedsSyncTick": shift,
+		"Gru.Done":            shift,
+		// Spec 104 in-flight walk segments are CLEARED by the rebase arm —
+		// their beat schedule ((tick+Phase)%MoveEvery) is absolute-tick
+		// arithmetic a delta would re-phase, so the snap truncates the walk
+		// and the villager re-plans (research.md §7). MoveEvery/Phase are
+		// cadence numbers, Done dies with the segment: all KEEP-class for
+		// the walk's remaining lifetime of zero.
+		"PathSegment.MoveEvery":             keep,
+		"PathSegment.Phase":                 keep,
+		"PathSegment.Done":                  keep,
 		"DreamTuning.DensityPerMille":       keep,
 		"DreamTuning.AmbiguousBandPerMille": keep,
 		"DreamTuning.HabituationPerMille":   keep,
