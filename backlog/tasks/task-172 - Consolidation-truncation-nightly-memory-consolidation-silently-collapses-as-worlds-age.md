@@ -3,9 +3,10 @@ id: TASK-172
 title: >-
   Consolidation truncation: nightly memory consolidation silently collapses as
   worlds age
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-30 16:41'
+updated_date: '2026-07-30 18:24'
 labels: []
 dependencies: []
 priority: high
@@ -29,3 +30,9 @@ Evidence (playtest-1, v5, 29 game-days, consolidation routed to cloud Sonnet): a
 - [ ] #2 Per-night consolidation acceptance is observable (telemetry/log summary), and sustained failure is loud, not silent
 - [ ] #3 A regression test covers consolidation at large memory volume (late-world shape), not just day-1 shape
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+sweep dispatch (runbook playtest-1-findings-sweep): tier Opus 4.8 — cross-package (internal/mind consolidate worker + internal/llm token-budget seam), failure-handling in async mind orchestration per constitution P.V hard-slice rubric. Spec 105-consolidation-truncation. LANE 2: PR merges only after TASK-112's PR lands (operator ruling).
+<!-- SECTION:NOTES:END -->
