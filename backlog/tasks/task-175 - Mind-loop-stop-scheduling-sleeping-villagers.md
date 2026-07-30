@@ -4,7 +4,7 @@ title: 'Mind loop: stop scheduling sleeping villagers'
 status: In Progress
 assignee: []
 created_date: '2026-07-30 16:42'
-updated_date: '2026-07-30 19:08'
+updated_date: '2026-07-30 21:02'
 labels: []
 dependencies: []
 ordinal: 143000
@@ -24,13 +24,13 @@ Spec: specs/106-sleep-gated-planning
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Sleeping villagers do not consume planner calls (mind gates on sleep state or scheduler skips until agent.woke)
+- [x] #1 Sleeping villagers do not consume planner calls (mind gates on sleep state or scheduler skips until agent.woke)
 - [ ] #2 A soak shows 'is asleep' intent rejections reduced to near zero from playtest-1's baseline of 905/29 days
-- [ ] #3 Spec phase: Unavailability mirror + pre-submit gate (US1 layer 1)
-- [ ] #4 Spec phase: In-flight cancel (US1 layer 2)
-- [ ] #5 Spec phase: Wake resumption + regression (US2)
+- [x] #3 Spec phase: Unavailability mirror + pre-submit gate (US1 layer 1)
+- [x] #4 Spec phase: In-flight cancel (US1 layer 2)
+- [x] #5 Spec phase: Wake resumption + regression (US2)
 - [ ] #6 Spec phase: Soak evidence (card AC #2)
-- [ ] #7 Spec phase: Reconcile with spec 102 + grounding + gates
+- [x] #7 Spec phase: Reconcile with spec 102 + grounding + gates
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -39,4 +39,6 @@ Spec: specs/106-sleep-gated-planning
 sweep dispatch (runbook playtest-1-findings-sweep): tier Opus 4.8 — scheduling logic in internal/mind orchestration, named explicitly by constitution P.V's Opus rubric; small diff but edits the mind driver TASK-112's branch also touches. Spec 106-sleep-gated-planning. LANE 2: PR merges only after TASK-112's PR lands (operator ruling), after TASK-172.
 
 Implementation complete on branch task-175-sleep-gated-planning @ d62fb2fe (Opus 4.8, gated by orchestrator): T001-T006+T009 done — unavailability mirror + dequeue gate + in-flight cancel, all in internal/mind/mind.go (+132/-1), 401-line test file; full suite 23 pkgs green, -race green, internal/sim diff EMPTY (SC-004), 12 wiki notes re-pinned, player docs regenerated, pr gate exit 0. OPEN: T007 live soak (queries+recipe in specs/106-sleep-gated-planning/soak.md, runs post-merge before Done), T008 post-112 reconcile. PR held per operator ruling.
+
+spec-bridge sync post-merge (PR #148, merged 2026-07-30): mirror+gate 3/3, in-flight cancel 2/2, wake resumption 1/1, reconcile+grounding 2/2 — phases ticked; card AC#1 satisfied (both post-enqueue windows closed, sim ladder byte-unchanged). OPEN: Soak evidence 0/1 (T007) — live ≥3-game-day soak vs the 905/29-day baseline, recipe+queries in specs/106-sleep-gated-planning/soak.md; deferred until TASK-164 arm B frees the shared local host (~2026-07-31 morning). Task stays In Progress until soak evidence lands.
 <!-- SECTION:NOTES:END -->
