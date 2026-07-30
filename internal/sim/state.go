@@ -670,7 +670,57 @@ func (s *State) removeHarvestedFact(kind string, x, y, actor int) {
 	}
 }
 
+// foldNeedsAbsolutes applies absolute needs values to an agent at tick: the
+// values themselves, the near-death latch, the spec-043 trajectory-anchor
+// window roll, and the spec-083 neglect band anchors. ONE home shared
+// verbatim by the agent.needs_changed reducer arm and the spec-104 derived
+// per-minute advancement (advance.go), so a recorded minute and a derived
+// minute fold identically by construction.
+//
+// Trajectory anchor (spec 043 US2): a window-edge snapshot of the current
+// needs, refreshed once a full trajectoryWindowTicks of game time has
+// elapsed since it was taken. NeedsAnchorTick == 0 (nil anchor) is the unset
+// sentinel: on a fresh world the first window carries no anchor until the
+// window's worth of time has passed, so the first thought renders steady —
+// a loaded/snapped world whose tick already exceeds the window establishes
+// the anchor on its first needs change. Reducer-derived ⇒ replay-safe.
+//
+// Neglect anchors (spec 083 FR-001): set on the downward band crossing,
+// cleared with the episode's fired latch on recovery to/above the band —
+// same band constants as the sweep and the PREP gate (one home). Allocation
+// is lazy: an agent whose needs never dip keeps a nil Neglect (pre-083
+// snapshot byte-identity).
+func (s *State) foldNeedsAbsolutes(a *Agent, n Needs, tick int64) {
+	a.Needs = n
+	if n.Health < nearDeathBelow {
+		a.NearDeath = true
+	} else if n.Health >= nearDeathResetAt {
+		a.NearDeath = false
+	}
+	if tick-a.NeedsAnchorTick >= trajectoryWindowTicks {
+		snap := a.Needs
+		a.NeedsAnchor = &snap
+		a.NeedsAnchorTick = tick
+	}
+	for _, need := range neglectNeedOrder {
+		switch {
+		case needValue(a.Needs, need) < recoveryDangerBand(need):
+			if a.Neglect.Since(need) == 0 {
+				a.neglect().setSince(need, tick)
+			}
+		case a.Neglect != nil:
+			a.Neglect.setSince(need, 0)
+			a.Neglect.setFired(need, false)
+		}
+	}
+}
+
 func (s *State) Apply(e store.Event) error {
+	// Spec 104: derived progress advances strictly before each event's tick
+	// (advance.go) — every fold path (live loop, recovery, replayToTick,
+	// morgue fold, mind/TUI replicas) gets exact interleaved advancement for
+	// free, so an event at tick t always observes derived state through t-1.
+	s.AdvanceTo(e.Tick)
 	agent := func(p int) (*Agent, error) {
 		if p < 0 || p >= len(s.Agents) {
 			return nil, fmt.Errorf("apply %s: agent %d out of range", e.Type, p)
@@ -691,6 +741,13 @@ func (s *State) Apply(e store.Event) error {
 
 	case "clock.paused":
 		s.Paused = true
+		// Spec 104: a world pause truncates every in-flight walk segment
+		// (plan D2) — advancement is tick-driven and stays unconditional, so
+		// the pause event itself is the closing record; walkers stand where
+		// advancement actually got them and re-plan on resume.
+		for i := range s.Agents {
+			truncateWalk(&s.Agents[i])
+		}
 	case "clock.resumed":
 		s.Paused = false
 	case "clock.speed_set":
@@ -951,6 +1008,10 @@ func (s *State) Apply(e store.Event) error {
 			return err
 		}
 		a.Intent = &Intent{Goal: p.Goal, TargetX: p.TargetX, TargetY: p.TargetY, ResX: p.ResX, ResY: p.ResY, Kind: p.Kind, Qty: p.Qty, Reason: p.Reason}
+		// Spec 104: a re-decision voids any in-flight walk — this event is
+		// the closing record (research.md §4); the executor plans a fresh
+		// segment toward the new target on its next tick.
+		truncateWalk(a)
 		// Spec 064 R1: carry the optional completion condition onto the intent, but
 		// only for a valid closed-set need (the door — a malformed UntilNeed drops
 		// the condition, leaving today's arrive-and-done rather than a stuck hold on
@@ -1011,6 +1072,7 @@ func (s *State) Apply(e store.Event) error {
 		}
 		a.Intent = nil
 		a.IdleSince = e.Tick
+		truncateWalk(a) // spec 104: the intent is gone, so is its walk
 		a.stampIntentOutcome("stalled", e.Tick)
 	case "agent.intent_done":
 		var p AgentPayload
@@ -1023,6 +1085,7 @@ func (s *State) Apply(e store.Event) error {
 		}
 		a.Intent = nil
 		a.IdleSince = e.Tick
+		truncateWalk(a) // spec 104: the intent is gone, so is its walk
 		// Spec 043 US1: the current intent completed — close its ring record.
 		// Spec 062 US1 (FR-003): if the completing intent was non-reflex-sourced
 		// (planner/plan/meeting = "intelligence"), arm the yield window so the
@@ -1049,6 +1112,7 @@ func (s *State) Apply(e store.Event) error {
 		}
 		a.Intent = nil
 		a.IdleSince = e.Tick
+		truncateWalk(a) // spec 104: the intent is gone, so is its walk
 		// Spec 043 US1: a build cancelled mid-work — close its ring record
 		// "failed" so the next thought sees the build did not finish. Spec 062:
 		// a FAILED build is not an intent completion, so it never arms the yield
@@ -1073,6 +1137,7 @@ func (s *State) Apply(e store.Event) error {
 		}
 		a.Intent = nil
 		a.IdleSince = e.Tick
+		truncateWalk(a) // spec 104: the intent is gone, so is its walk
 		a.stampIntentOutcome("failed", e.Tick)
 
 	case "agent.moved":
@@ -1091,6 +1156,36 @@ func (s *State) Apply(e store.Event) error {
 		// (state, event); no event, no chronicle noise.
 		s.markExplored(a, p.X, p.Y)
 		s.notePresence(p.Agent.ID, e.Tick)
+
+	case "agent.path_started":
+		// Spec 104: one intent walk, coalesced — install the in-flight
+		// segment; the advancement engine (advance.go) executes each step at
+		// its scheduled tick with exactly the per-step arm's bookkeeping
+		// (ruling 2). Cadence numbers ride the payload (spec 092).
+		var p PathStartedPayload
+		if err := json.Unmarshal(e.Payload, &p); err != nil {
+			return fmt.Errorf("apply %s: %w", e.Type, err)
+		}
+		a, err := agent(p.Agent.ID)
+		if err != nil {
+			return err
+		}
+		s.applyPathStarted(a, p, e.Tick)
+
+	case "agent.path_truncated":
+		// Spec 104: the walk stopped short (blocked path) — position is the
+		// payload's recorded outcome, the segment retires. Never recomputes
+		// where the walk "would have" been.
+		var p PathTruncatedPayload
+		if err := json.Unmarshal(e.Payload, &p); err != nil {
+			return fmt.Errorf("apply %s: %w", e.Type, err)
+		}
+		a, err := agent(p.Agent.ID)
+		if err != nil {
+			return err
+		}
+		a.X, a.Y = p.X, p.Y
+		truncateWalk(a)
 
 	case "agent.saw":
 		// Spec 041 (T007): the perception sweep's witnessed facts, fully
@@ -1891,6 +1986,7 @@ func (s *State) Apply(e store.Event) error {
 		}
 		a.Asleep = true
 		a.Intent = nil
+		truncateWalk(a) // spec 104: a sleeper walks nowhere
 		// A sleeper sheds any hail (TASK-47): un-interruptible, and leaving
 		// the pointer set would silently freeze it on waking.
 		a.Hail = nil
@@ -1918,43 +2014,21 @@ func (s *State) Apply(e store.Event) error {
 		if err != nil {
 			return err
 		}
-		a.Needs = Needs{Health: p.Health, Food: p.Food, Rest: p.Rest, Warmth: p.Warmth, Morale: p.Morale}
-		if p.Health < nearDeathBelow {
-			a.NearDeath = true
-		} else if p.Health >= nearDeathResetAt {
-			a.NearDeath = false
-		}
-		// Spec 043 US2 (T014, FR-004): roll the trajectory anchor at each window
-		// edge so the decision prompt can render each need's direction (current −
-		// anchor). The anchor is a window-edge snapshot of the current needs,
-		// refreshed once a full trajectoryWindowTicks of game time has elapsed
-		// since it was taken. NeedsAnchorTick == 0 (nil anchor) is the unset
-		// sentinel: on a fresh world the first window carries no anchor until the
-		// window's worth of time has passed, so the first thought renders steady
-		// (edge case 1) — a loaded/snapped world whose tick already exceeds the
-		// window establishes the anchor on its first needs change. Reducer-derived
-		// ⇒ replay-safe.
-		if e.Tick-a.NeedsAnchorTick >= trajectoryWindowTicks {
-			snap := a.Needs
-			a.NeedsAnchor = &snap
-			a.NeedsAnchorTick = e.Tick
-		}
-		// Spec 083 (FR-001): maintain the neglect band-entry anchors from the
-		// folded absolute values — set on the downward crossing, cleared with
-		// the episode's fired latch on recovery to/above the band. Same band
-		// constants as the sweep and the PREP gate (one home). Allocation is
-		// lazy: an agent whose needs never dip keeps a nil Neglect (pre-083
-		// snapshot byte-identity).
-		for _, need := range neglectNeedOrder {
-			switch {
-			case needValue(a.Needs, need) < recoveryDangerBand(need):
-				if a.Neglect.Since(need) == 0 {
-					a.neglect().setSince(need, e.Tick)
-				}
-			case a.Neglect != nil:
-				a.Neglect.setSince(need, 0)
-				a.Neglect.setFired(need, false)
-			}
+		// The absolute fold — needs values, near-death latch, spec-043
+		// trajectory anchor, spec-083 neglect anchors — lives in
+		// foldNeedsAbsolutes, shared verbatim with the spec-104 derived
+		// per-minute advancement (advance.go) so the arm and the derived
+		// minute can never drift.
+		s.foldNeedsAbsolutes(a, Needs{Health: p.Health, Food: p.Food, Rest: p.Rest, Warmth: p.Warmth, Morale: p.Morale}, e.Tick)
+		// Spec 104: while the coalescing regime is on, a recorded needs event
+		// is BOTH the decay watermark (the double-decay guard — advancement
+		// never re-decays a recorded minute) and the crossing detector's
+		// last-emitted baseline. Legacy worlds never enter this branch, so
+		// pre-104 logs fold to hash-identical state (research.md §3).
+		if s.AmbientCoalescing() {
+			a.NeedsSyncTick = e.Tick
+			emitted := a.Needs
+			a.NeedsEmitted = &emitted
 		}
 	case "sim.neglect_detected":
 		// Spec 083 (FR-001): the detector's own event latches the episode —
@@ -1985,6 +2059,7 @@ func (s *State) Apply(e store.Event) error {
 		a.Dead = true
 		a.Asleep = false
 		a.Intent = nil
+		truncateWalk(a) // spec 104: the dead walk nowhere
 		// Death ledger (spec 044): application order == event order, so the
 		// run.ended emission (and later the morgue) can carry the run's full
 		// death history without a log scan. omitempty — pre-044 snapshots
@@ -2065,6 +2140,10 @@ func (s *State) Apply(e store.Event) error {
 		// reducer applies what the log says — replay fidelity over
 		// re-validation, like every other event.
 		a.Hail = &AgentHail{By: p.From.ID, Until: p.Until}
+		// Spec 104: a hail freezes the target in place — the hail event is
+		// the walk's closing record (research.md §4); when the pause lifts,
+		// the executor plans a fresh segment from the standing tile.
+		truncateWalk(a)
 	case "social.hail_met":
 		var p HailMetPayload
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
@@ -2164,8 +2243,30 @@ func (s *State) Apply(e store.Event) error {
 		// defaults, never to zero; the spec-098 Dream block stays nil for a
 		// pre-098 event (≡ defaults) and lands as a fresh copy otherwise —
 		// both in resolveTuning (tuning.go).
+		wasCoalescing := s.AmbientCoalescing()
 		t := resolveTuning(p)
 		s.Tuning = &t
+		// Spec 104 (research.md §3): on the legacy→coalescing transition,
+		// stamp every advancement watermark to THIS event's tick — a pure
+		// fold effect, so the flip replays exactly and the derived engine
+		// never re-decays (or re-moves) the event-covered past. Genesis-
+		// pinned worlds flip at tick 0 (the natural genesis floor); an old
+		// world flipping mid-log starts derived progress from the flip, its
+		// past covered by its recorded per-minute/per-step events.
+		if !wasCoalescing && s.AmbientCoalescing() {
+			for i := range s.Agents {
+				a := &s.Agents[i]
+				if a.Dead {
+					continue
+				}
+				a.NeedsSyncTick = e.Tick
+				emitted := a.Needs
+				a.NeedsEmitted = &emitted
+			}
+			if s.Gru != nil {
+				s.Gru.Done = e.Tick
+			}
+		}
 
 	case "meeting.convention_established", "sim.gathering_observed",
 		"meeting.place_designated", "meeting.convened", "meeting.opened",

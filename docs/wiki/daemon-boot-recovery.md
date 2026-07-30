@@ -4,7 +4,7 @@ description: Daemon boot sequence steps 0-5 and 7-8 — tool-registry gates, wor
 kind: pipeline
 sources:
   - internal/daemon/daemon.go
-verified_against: a5df40921577bc194478bb29c42af2b10bf11ea8
+verified_against: 0af53ec6d211c71e298072c045c67ccbbd13b61d
 ---
 
 # Daemon boot: validate, recover, wire-up
@@ -55,7 +55,13 @@ Startup sequence:
    `sim.NewState(seed, w.Map())` (genesis derives terrain-valid agent positions
    from [[worldmap-generation]]), then `ReplayEvents(seq > snapshot.seq)` through the
    reducer, bumping `Tick` to the highest event tick ([[snapshots]]). Recovery
-   duration is measured and recorded. Then `seedMeetingConvention` (TASK-36):
+   duration is measured and recorded. Spec 104 (ambient event coalescing)
+   needed no change here: each replayed event's own `Apply` call already
+   opens with `AdvanceTo(e.Tick)` ([[sim-state-agent-fields]]), and
+   `state.Tick` lands exactly at the last event's tick with nothing pending
+   beyond it — no trailing `AdvanceTo` call is needed the way the separate
+   `replayToTick` reconstruction primitive ([[daemon-lifecycle]]) needs one
+   for its arbitrary tick cutoff. Then `seedMeetingConvention` (TASK-36):
    if the manifest declares a `meeting` block and recovered state carries no
    convention yet, a `meeting.convention_established` event (source `config`)
    is applied and appended at the recovered tick — landing in the log like

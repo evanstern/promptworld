@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/policy.go
   - internal/sim/path.go
-verified_against: 376afd4cee54839a545bc88409f3c485c2f5149d
+verified_against: 0af53ec6d211c71e298072c045c67ccbbd13b61d
 ---
 
 # Reflex policy & pathfinding

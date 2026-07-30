@@ -5,7 +5,7 @@ kind: concept
 sources:
   - internal/sim/loop.go
   - internal/sim/landing.go
-verified_against: cf65debb44c1e17b54c0f3421d11e1e8cc28576c
+verified_against: 0af53ec6d211c71e298072c045c67ccbbd13b61d
 ---
 
 # Event types — cognition telemetry & planning events

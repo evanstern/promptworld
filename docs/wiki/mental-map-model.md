@@ -7,7 +7,7 @@ sources:
   - internal/sim/state.go
   - internal/sim/miracles.go
   - internal/sim/migrate.go
-verified_against: cf65debb44c1e17b54c0f3421d11e1e8cc28576c
+verified_against: 0af53ec6d211c71e298072c045c67ccbbd13b61d
 ---
 
 # Mental map data model
@@ -84,7 +84,17 @@ grow the mover's explored bitmap and update peer sightings — no event, a pure
 function of (state, event): `agent.moved`, `agent.woke`, and a `villager`-class
 `guardian.entity_moved` (a miracle-teleported villager is knowledge-transparent,
 not a blind teleport) all call `markExplored`/`notePresence`
-(`internal/sim/state.go`, `internal/sim/miracles.go`). `notePresence` records a
+(`internal/sim/state.go`, `internal/sim/miracles.go`). Spec 104 (ambient
+event coalescing) generalizes the D2 class from a pure function of (state,
+event) to a pure function of (state, tick range): under the coalescing
+regime a walk's steps are no longer individually evented (one
+`agent.path_started` covers the whole route), so the derived-progress
+engine (`internal/sim/advance.go`) calls the SAME `markExplored`/
+`notePresence` at each step's scheduled tick, off the advanced state at
+that tick — EXACT per-step fidelity, not an end-of-walk summary; the
+equivalence harness (`internal/sim/advance_test.go`) proves paired
+per-step-vs-coalesced runs produce byte-identical per-agent mental-map
+bytes at every tick boundary. `notePresence` records a
 sighting between the arriving agent and every living, AWAKE agent within
 `witnessRadius` — mutual, since villagers cross each other's sight constantly
 and event-carrying every sighting would flood the log the way per-step

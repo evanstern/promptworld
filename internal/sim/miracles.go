@@ -299,6 +299,15 @@ func rebaseTicks(s *State, delta int64) {
 		shift(&a.LastGive)
 		shift(&a.LastMindIntentDone) // spec 062 US1: yield-window anchor (Belief.Reinforced shape); 0 = never mind-driven, stays 0
 		shift(&a.NeedsAnchorTick)    // spec 043 US2: trajectory-window edge anchor; 0 = unset, stays 0
+		shift(&a.NeedsSyncTick)      // spec 104: derived-decay watermark (decayed-through anchor); 0 = pre-regime, stays 0
+		// Spec 104: an in-flight walk segment is CLEARED, not shifted — its
+		// beat schedule ((tick+Phase)%MoveEvery) is absolute-tick arithmetic
+		// a delta would re-phase; the villager re-plans from its standing
+		// tile on the next tick (research.md §7). PathSegment.MoveEvery/
+		// Phase are cadence numbers (KEEP class) and Done dies with the
+		// segment, so no PathSegment field is ever shifted. Agent.NeedsEmitted
+		// carries need VALUES, not ticks — KEEP by construction.
+		truncateWalk(a)
 		if a.Neglect != nil {
 			// Spec 083: the six neglect anchors are duration anchors (elapsed
 			// against the live clock gates the window) — SHIFT, zero=never/
@@ -388,6 +397,7 @@ func rebaseTicks(s *State, delta int64) {
 		}
 	}
 	if s.Gru != nil {
+		shift(&s.Gru.Done) // spec 104: derived-motion watermark (beats-processed anchor); 0 = pre-regime, stays 0
 		shift(&s.Gru.LastAttack)
 	}
 	// Spec 077: the snap's remaining window and the stranger's cadence
@@ -521,6 +531,7 @@ func (s *State) applyEntityMoved(e store.Event) error {
 		// other intent-clearing path.
 		a.Intent = nil
 		a.IdleSince = e.Tick
+		truncateWalk(a) // spec 104: the teleport ends the walk (research.md §4)
 		// Spec 041 (research D2): a teleported villager knows where it landed —
 		// the same derived explored-bit and peer-sighting bookkeeping as a
 		// walked step.

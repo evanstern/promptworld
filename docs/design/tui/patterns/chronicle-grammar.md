@@ -2,7 +2,7 @@
 title: Pattern — chronicle grammar
 class: pattern
 status: shipped
-verified_against: 250c811bce7eeea7138dd8b028e800ecd1e54173
+verified_against: 0af53ec6d211c71e298072c045c67ccbbd13b61d
 sources:
   - internal/tui/digest.go
   - internal/tui/grammar.go
@@ -136,6 +136,16 @@ observation's line — and spec 083's `sim.neglect_detected` repeats the
 precedent exactly: one `isAlertType` case plus a sim-voice digest row with
 deterministic per-need wording (*Name* `is dangerously cold and has done
 nothing about it (warmth 0)`; starving/exhausted for food/rest).
+
+Spec 104 (ambient coalescing) adds two agent-family natural-phrase rows —
+`agent.path_started` (`Ash sets out for (3,1) (3 tiles)`: the walk's
+destination plus tile count, replacing the per-step `Ash → (x,y)` stream a
+coalesced world no longer emits) and `agent.path_truncated`
+(`Ash's walk cut short at (2,1)`). The historic `agent.moved` and
+`gru.moved` rows are KEPT verbatim — legacy logs still render — and both
+new types carry subjectRegistry rows (walker at the declared destination /
+at the recorded stop). No new tier, no new voice; `TestCatalogSweep`
+covers the additions.
 
 Several digest rows render slightly differently than a naive reading of
 their contract row would suggest, because the real payload struct doesn't

@@ -214,6 +214,10 @@ func OfflineState(w *world.World) (*sim.State, int64, error) {
 	if lastTick, terr := st.LastEventTick(); terr == nil && lastTick > state.Tick {
 		state.Tick = lastTick
 	}
+	// Spec 104: bring derived progress to the same posture a live daemon at
+	// this tick holds (items scheduled AT the tick stay pending, exactly as
+	// the loop's start-of-tick advancement leaves them).
+	state.AdvanceTo(state.Tick)
 	return state, st.LastSeq(), nil
 }
 

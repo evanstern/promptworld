@@ -90,6 +90,11 @@ var catalogFixture = map[string]digestFixture{
 	"agent.intent_failed":    {`{"agent":{"id":3,"name":"Rowan"},"goal":"hunt","reason":"target gone","x":5,"y":6}`, `Rowan's hunt failed — target gone`},
 	"agent.recovery_stalled": {`{"agent":{"id":1,"name":"Birch"},"goal":"warm_up","need":"warmth"}`, `Birch's warm_up stalled — warmth not recovering`},
 	"agent.moved":            {`{"agent":{"id":0,"name":"Ash"},"x":1,"y":1}`, `Ash → (1,1)`},
+	"agent.path_started": {
+		`{"agent":{"id":0,"name":"Ash"},"path":[{"x":1,"y":1},{"x":2,"y":1},{"x":3,"y":1}],"move_every":5,"phase":0}`,
+		`Ash sets out for (3,1) (3 tiles)`,
+	},
+	"agent.path_truncated": {`{"agent":{"id":0,"name":"Ash"},"x":2,"y":1}`, `Ash's walk cut short at (2,1)`},
 	"agent.saw": {
 		`{"agent":{"id":0,"name":"Ash"},"facts":[{"kind":"fire","x":4,"y":5,"seen":100,"prov":"witnessed","detail":9000},{"kind":"tree","x":6,"y":5,"seen":100,"prov":"witnessed"}]}`,
 		`Ash saw fire at (4,5) (+1 more)`,

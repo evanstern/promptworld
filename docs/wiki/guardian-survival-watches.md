@@ -8,7 +8,7 @@ sources:
   - internal/guardian/turn.go
   - internal/sim/executor.go
   - internal/daemon/daemon.go
-verified_against: cf65debb44c1e17b54c0f3421d11e1e8cc28576c
+verified_against: 0af53ec6d211c71e298072c045c67ccbbd13b61d
 ---
 
 # Guardian survival watches
@@ -57,6 +57,20 @@ player configuration:
   the villager recovers past the re-arm threshold (clearing the latch) and
   later relapses. `pendingTrigger` still gates one in-flight survival turn
   per watch per batch, exactly like a structural order.
+- **Composition with spec 104's needs coalescing** (ambient event
+  coalescing): `matchSurvival` itself is untouched — it still evaluates
+  every `agent.needs_changed` payload the live absorb batch actually sees.
+  What changed is how often that payload arrives: under the coalescing
+  regime the executor's thinned heartbeat (`needsEmitDue`) still emits
+  UNCONDITIONALLY on any danger-band/near-death/zero crossing, in EITHER
+  direction, at the same one-minute latency a legacy world's every-minute
+  stream gives — only the non-crossing minutes in between go quiet. A
+  survival watch's fire latency (entry into band) and re-arm latency
+  (recovery past the band) are both crossings, so neither moves under
+  thinning; `TestSurvivalWatchLatencyUnderThinnedStream`
+  (`internal/guardian/survival_test.go`) pins exactly this — a thinned
+  stream still fires and re-arms a watch at the same tick a per-minute
+  stream would.
 - **`runSurvivalTrigger`** (vs. `runTrigger`) differs from an ordinary
   trigger in three ways that follow from a survival watch's nature: (1) it
   lands NO `guardian.order_triggered` — the watch is non-expiring and

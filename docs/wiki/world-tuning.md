@@ -6,7 +6,7 @@ sources:
   - internal/sim/tuning.go
   - internal/daemon/daemon.go
   - internal/world/world.go
-verified_against: a761a45cb3b437613b808408c6c7f30d11bd9eb9
+verified_against: 0af53ec6d211c71e298072c045c67ccbbd13b61d
 ---
 
 # World tuning manifest
@@ -36,6 +36,22 @@ these doctrine values.
 constants — [[executor-perception-observation]]): two executor-read
 (observation dedup window, base salience), two read off the mind's replica
 by the belief reconciler (disconfirm retain, confirm boost) — nine total.
+**Spec 104 adds `needs_checkpoint_minutes`** (K, default 10, clamp [1,60]):
+the needs-checkpoint cadence — `agent.needs_changed` emits every K
+game-minutes plus immediately on any danger-band/near-death/zero crossing;
+K=1 reproduces the per-minute heartbeat byte-for-byte. The field DOUBLES as
+the coalescing-REGIME marker: a pre-104 recorded `sim.tuning_applied`
+payload (field absent) resolves to 0 = LEGACY — deliberately NOT the
+doctrine default, unlike the spec-097 dials — so old worlds keep per-step
+`agent.moved` / per-minute needs / `gru.moved` emission and the derived
+advancement engine stays structurally inert on their folds
+([[sim-state-reducer]]). Because a sparse manifest resolves the absent key
+to the default 10, ANY `tuning.json` flips an old world to the regime at
+its next boot — deterministic and event-recorded; the `sim.tuning_applied`
+arm stamps every advancement watermark (`NeedsSyncTick`, `NeedsEmitted`,
+`Gru.Done`) at the flip tick so no event-covered past is ever re-derived.
+Accessors: `AmbientCoalescing()` (the regime predicate) and
+`NeedsCheckpointK()`.
 
 **`TuningState`** (`tuning.go`) is the fully-resolved effective set: a
 non-nil `TuningState` always carries all fields with defaults filled in
@@ -81,6 +97,7 @@ clamp warnings and a structural error separately:
 | ObservationBaseSalience | `observation_base_salience` | 2 | [1, 10] |
 | BeliefDisconfirmRetainPercent | `belief_disconfirm_retain_percent` | 70 | [0, 100] |
 | BeliefConfirmBoost | `belief_confirm_boost` | 10 | [0, 100] |
+| NeedsCheckpointMinutes | `needs_checkpoint_minutes` | 10 | [1, 60] (0 = legacy, unreachable from a manifest) |
 
 Out-of-range values of a KNOWN field clamp to the nearest bound with an
 operator-visible warning (the `llm/config.go` `normalizeTokenBudget` style)
