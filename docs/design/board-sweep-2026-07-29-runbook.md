@@ -269,3 +269,4 @@ status above flipped to done.
 | 2026-07-29 | TASK-95 | #138 | b9003230 | lane 1; Sonnet; agent.intent_failed for all non-build goals; reason taxonomy target-gone/contested/invalid; additive type |
 | 2026-07-29 | TASK-99 | #139 | 804de10e | lane 4; Opus; private dream phase — single-store clustering (privacy perturbation-proven), recorded habituation/merge events, seeded zeroable jitter; demo evidence preserved |
 | 2026-07-29 | TASK-80 | #141 | c2e8a89b | lane 3; Opus; place_observed arrival channel + belief reconciliation; soak caught flood + embed-spend defects pre-ship; follow-ups carded 169-171 |
+| 2026-07-29 | TASK-76 | #142 | df015072 | lane 6 tail; Sonnet; EntityLookup accessor seam (26 sites + rot sweep), store-error fatal RATIFIED; AMENDMENT: tail merged before TASK-81 code existed (zero-conflict; 81 reconciles once) |
