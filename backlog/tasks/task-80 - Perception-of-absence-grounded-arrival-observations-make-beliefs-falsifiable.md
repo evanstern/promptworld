@@ -1,10 +1,10 @@
 ---
 id: TASK-80
 title: 'Perception of absence: grounded arrival observations make beliefs falsifiable'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-23 17:50'
-updated_date: '2026-07-29 21:46'
+updated_date: '2026-07-30 02:37'
 labels:
   - emergent-lore
   - epistemics
@@ -37,10 +37,10 @@ Spec: specs/097-perception-of-absence
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 Spec Kit spec produced and linked via spec-bridge before implementation (constitution rigor)
-- [ ] #2 A grounded observation event exists reporting actual local world state on arrival; emission is deterministic and replay-safe
-- [ ] #3 Belief confidence responds to confirming/disconfirming observations through the TASK-79 reinforcement seam; disconfirmation decays faster than silence
-- [ ] #4 Working-memory window is not flooded: observation salience/dedup tuned and demonstrated on a live soak
-- [ ] #5 Chronicle/TUI legibility: grounded observations are visible in the decision trail
+- [x] #2 A grounded observation event exists reporting actual local world state on arrival; emission is deterministic and replay-safe
+- [x] #3 Belief confidence responds to confirming/disconfirming observations through the TASK-79 reinforcement seam; disconfirmation decays faster than silence
+- [x] #4 Working-memory window is not flooded: observation salience/dedup tuned and demonstrated on a live soak
+- [x] #5 Chronicle/TUI legibility: grounded observations are visible in the decision trail
 - [ ] #6 Spec phase: Observation channel
 - [ ] #7 Spec phase: Belief reconciliation (mind-side)
 - [ ] #8 Spec phase: Surfaces + tests
@@ -52,3 +52,9 @@ Spec: specs/097-perception-of-absence
 <!-- SECTION:NOTES:BEGIN -->
 board-sweep-2026-07-29 lane 3: spec 097 landed + linked (AC1 satisfied — full Spec Kit before implementation); design questions resolved as D1-D5 in spec.md. Tier: Opus — cross-package sim+mind, epistemics doctrine-adjacent. Dispatch HELD until TASK-95 merges (shared executor/memory/event-types footprint).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Merged via PR #141. agent.place_observed on intent-completing arrivals (exhaustive within scan radius, deterministic, additive); low-salience radius-deduped observation memories (OriginObserved provenance); belief confirm/disconfirm through the spec-030 seam with dial-bounded slow myth death; 4 manifest dials; digest + decision-trail visibility. Soak evidence preserved (task-80-soak): flood contained to 17% of moves, 1959==1959 event/memory pairing, survival unchanged. Three follow-ups carded separately. Opus tier; spec 097 all tasks done.
+<!-- SECTION:FINAL_SUMMARY:END -->
