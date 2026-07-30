@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-30 16:41'
-updated_date: '2026-07-30 18:36'
+updated_date: '2026-07-30 19:13'
 labels: []
 dependencies: []
 priority: high
@@ -38,10 +38,10 @@ Spec: specs/105-consolidation-truncation
 - [ ] #8 Spec phase: Docs + grounding
 <!-- AC:END -->
 
-
-
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 sweep dispatch (runbook playtest-1-findings-sweep): tier Opus 4.8 — cross-package (internal/mind consolidate worker + internal/llm token-budget seam), failure-handling in async mind orchestration per constitution P.V hard-slice rubric. Spec 105-consolidation-truncation. LANE 2: PR merges only after TASK-112's PR lands (operator ruling).
+
+Implementation complete on branch task-172-consolidation-truncation @ ada23d09 (Opus 4.8, gated by orchestrator): T001-T008 done — truncation ladder (parse-first detection, 1024→2048→4096 clamp llm.MaxTokenBudget, ≤2 retries), late-world day-29 regression fixture (AC#3), narrator generalization (800→1600→3200), per-night acceptance summary + ≥2-night WARNING escalation; race suite green (2 e2e daemon-start flakes re-verified PASS in isolation — load starvation, not branch defect), parse.go zero-diff, 21 wiki notes re-pinned, 4 player pages regenerated, pr gate exit 0. OPEN: T009's post-112 merge-in clause. PR held per operator ruling. Deviations recorded in-branch: synchronous retried-record injection, exhausted-ladder chapter lands as gap per spec FR-008, docs/event-types.md path corrected to wiki event-type notes.
 <!-- SECTION:NOTES:END -->
