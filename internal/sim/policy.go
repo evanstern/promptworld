@@ -821,7 +821,7 @@ func buildGoalResolvers() map[string]goalResolver {
 				return nil, "", fmt.Errorf("you know of no piles")
 			}
 			if p, ok := nearestKnown(m, s, a, "pile", tick, func(x, y int) bool {
-				return s.pileAt(x, y) != nil
+				return s.Lookup().Pile(x, y) != nil
 			}); ok {
 				return &Intent{Goal: "pick_up", TargetX: p.X, TargetY: p.Y, Kind: kind, Qty: qty}, "", nil
 			}
@@ -852,7 +852,7 @@ func buildGoalResolvers() map[string]goalResolver {
 				return nil, "", fmt.Errorf("you know of no chests")
 			}
 			if p, ok := nearestKnown(m, s, a, "chest", tick, func(x, y int) bool {
-				ch := s.chestAt(x, y)
+				ch := s.Lookup().Chest(x, y)
 				if ch == nil || ch.Store == nil {
 					return false
 				}

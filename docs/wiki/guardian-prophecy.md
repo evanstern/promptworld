@@ -6,7 +6,7 @@ sources:
   - internal/sim/prophecy.go
   - internal/sim/executor.go
   - internal/guardian/prophecy.go
-verified_against: a761a45cb3b437613b808408c6c7f30d11bd9eb9
+verified_against: 376afd4cee54839a545bc88409f3c485c2f5149d
 ---
 
 # Guardian prophecy — the staked vision

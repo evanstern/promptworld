@@ -629,6 +629,11 @@ func (l *Loop) runTick() error {
 		}
 	}
 	if len(events) > 0 {
+		// A store-write failure here is FATAL BY DOCTRINE (spec 099 D2,
+		// [[sim-loop]] Operational notes): returned up through Run to the
+		// daemon's caller, ending the process rather than continuing with
+		// state the log can no longer corroborate. Re-open triggers only: a
+		// real transient-write incident, or multi-world hosting. No retry.
 		if err := l.st.AppendEvents(events); err != nil {
 			return fmt.Errorf("tick %d append: %w", nextTick, err)
 		}
@@ -835,6 +840,8 @@ func (l *Loop) handleCommand(cmd command) error {
 			}
 		}
 		if len(events) > 0 {
+			// Same fatal-by-doctrine posture as runTick's AppendEvents (spec
+			// 099 D2, [[sim-loop]] Operational notes) — no retry here either.
 			if aerr := l.st.AppendEvents(events); aerr != nil {
 				return aerr
 			}
@@ -895,6 +902,8 @@ func (l *Loop) observeWindow(interval time.Duration) error {
 		}
 	}
 	if len(events) > 0 {
+		// Same fatal-by-doctrine posture as runTick's AppendEvents (spec 099
+		// D2, [[sim-loop]] Operational notes) — no retry here either.
 		if err := l.st.AppendEvents(events); err != nil {
 			return err
 		}

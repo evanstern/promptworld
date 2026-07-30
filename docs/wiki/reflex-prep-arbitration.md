@@ -4,7 +4,7 @@ description: Child of [[reflex-policy]] — the PREP yield gate (spec 062, "inst
 kind: component
 sources:
   - internal/sim/policy.go
-verified_against: fc9566d527941d3950fdd307168556820bd0875b
+verified_against: 376afd4cee54839a545bc88409f3c485c2f5149d
 ---
 
 # Reflex PREP arbitration and wander

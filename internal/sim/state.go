@@ -529,11 +529,11 @@ func (s *State) pileAt(x, y int) *Pile {
 // Manhattan-adjacent tile (neighbor order fixed for determinism) — the pile a
 // pick_up completion may access (spec US2-AS3: on/adjacent). nil when none.
 func (s *State) pileOnOrAdjacent(x, y int) *Pile {
-	if p := s.pileAt(x, y); p != nil {
+	if p := s.Lookup().Pile(x, y); p != nil {
 		return p
 	}
 	for _, d := range neighborOrder {
-		if p := s.pileAt(x+d[0], y+d[1]); p != nil {
+		if p := s.Lookup().Pile(x+d[0], y+d[1]); p != nil {
 			return p
 		}
 	}
@@ -544,7 +544,7 @@ func (s *State) pileOnOrAdjacent(x, y int) *Pile {
 // (slice append) when the tile has none — the create-or-merge target of a drop
 // or a death spill.
 func (s *State) pileFor(x, y int) *Pile {
-	if p := s.pileAt(x, y); p != nil {
+	if p := s.Lookup().Pile(x, y); p != nil {
 		return p
 	}
 	s.Piles = append(s.Piles, Pile{X: x, Y: y})
@@ -555,7 +555,7 @@ func (s *State) pileFor(x, y int) *Pile {
 // preserving the creation order of the survivors (the forage-regrown filter
 // pattern). A no-op when the tile has no pile or a non-empty one.
 func (s *State) removeEmptyPileAt(x, y int) {
-	p := s.pileAt(x, y)
+	p := s.Lookup().Pile(x, y)
 	if p == nil || !p.empty() {
 		return
 	}
@@ -1666,7 +1666,7 @@ func (s *State) Apply(e store.Event) error {
 		if err != nil {
 			return err
 		}
-		if pile := s.pileAt(p.X, p.Y); pile != nil {
+		if pile := s.Lookup().Pile(p.X, p.Y); pile != nil {
 			n := p.N
 			if f := freeBulk(a.Inv); n > f {
 				n = f
@@ -1706,7 +1706,7 @@ func (s *State) Apply(e store.Event) error {
 		if err != nil {
 			return err
 		}
-		if ch := s.chestAt(p.X, p.Y); ch != nil && ch.Store != nil {
+		if ch := s.Lookup().Chest(p.X, p.Y); ch != nil && ch.Store != nil {
 			free := chestCap - bulk(*ch.Store)
 			if p.Kind == "spears" {
 				n := p.N
@@ -1777,7 +1777,7 @@ func (s *State) Apply(e store.Event) error {
 		if err != nil {
 			return err
 		}
-		if ch := s.chestAt(p.X, p.Y); ch != nil && ch.Store != nil {
+		if ch := s.Lookup().Chest(p.X, p.Y); ch != nil && ch.Store != nil {
 			n := p.N
 			if f := freeBulk(a.Inv); n > f {
 				n = f
@@ -1838,7 +1838,7 @@ func (s *State) Apply(e store.Event) error {
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
-		if pile := s.pileAt(p.X, p.Y); pile != nil {
+		if pile := s.Lookup().Pile(p.X, p.Y); pile != nil {
 			pile.takeSpoiled(p.Kind, p.N, e.Tick)
 			s.removeEmptyPileAt(p.X, p.Y)
 		}
