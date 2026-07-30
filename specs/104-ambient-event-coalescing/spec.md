@@ -4,9 +4,9 @@
 
 **Created**: 2026-07-30
 
-**Status**: Draft — **plan gated on an operator checkpoint** (the emission-shape
-vs compaction fork below is presented, costed, and recommended, but deliberately
-NOT resolved here; the sweep runbook records the checkpoint)
+**Status**: Draft — **design fork RESOLVED** (operator rulings 2026-07-30,
+recorded below and on the TASK-176 board card; the fork analysis is kept intact
+as the decision record per card AC#2)
 
 **Input**: TASK-176 + playtest-1 evidence (29 game-days): 1,011,063 events,
 230 MB world.db; `agent.needs_changed` (332,752) + `agent.moved` (332,525) +
@@ -69,12 +69,30 @@ their own reducer arms:
   ride event seqs — any scheme that renumbers or removes historical rows
   breaks recorded references, not just row counts.
 
-## THE DESIGN FORK — **OPERATOR DECISION REQUIRED**
+## THE DESIGN FORK — **RESOLVED (operator rulings, 2026-07-30)**
 
-Two mutually exclusive architectures deliver AC#1. Both are costed here; the
-recommendation follows. **Neither is adopted by this spec** — plan.md waits on
-the operator's ruling, recorded per AC#2 as a design decision with the
-determinism doctrine explicitly addressed.
+Two mutually exclusive architectures could deliver AC#1. Both were costed below
+and presented at the sweep's operator checkpoint. **The operator ruled; the
+rulings are binding** (also recorded on the TASK-176 board card), and the
+analysis below is retained verbatim as the decision record per card AC#2:
+
+1. **Arm A (emission-shape change) ADOPTED.** Arm B rejected — it inverts the
+   log-is-truth doctrine, and seq renumbering is near-disqualifying.
+2. **Movement sighting fidelity (sub-fork 1): EXACT per-step.** Deterministic
+   segment advancement or baked sighting payloads — mental-map explored-bitmap
+   growth, mutual tick-stamped peer sightings, and `talk_to`/`seek`/encounter
+   behavior must be byte-identical to today's per-step emission. This is the
+   hard sub-problem; design effort concentrates here (plan.md).
+3. **Needs depth (sub-fork 2): interval + crossings.** Emit every K
+   game-minutes plus immediately on band crossings (guardian survival watches
+   and standing-order hysteresis see crossings at today's latency).
+   Needs-as-curve rejected. K becomes a world-tuning dial (spec 048 pattern) —
+   decided: `needs_checkpoint_minutes`, genesis-pinned per spec 057, K=1
+   reproducing today's emission as the escape hatch (recorded in plan.md D3).
+4. **Log-format stamp (sub-fork 3): NO bump** — additive vocabulary per the
+   spec-097 `place_observed` precedent.
+5. **Old-world relief (sub-fork 4): OUT of scope** — the existing snapshot-cut
+   migrate covers it. Recorded as an explicit non-goal below.
 
 ### Arm A — emission-shape change (coalesce at the source)
 
@@ -176,7 +194,7 @@ Arm B's sliding-window in-place compaction), Arm B's remaining unique value is
 keeping full-fidelity recent history INSIDE one continuously-running world —
 worth naming, because it substantially changes the arms' relative cost/benefit.
 
-### Recommendation (non-binding — operator decides)
+### Recommendation (as presented at the checkpoint — adopted by ruling 1)
 
 **Arm A**, sub-scoped as: A-needs variant (i) (bounded-interval thinning with
 immediate band-crossing emission — the cheap 80% of the needs win with no
@@ -191,7 +209,7 @@ migration. The card's own constraint framing ("this may land as
 emission-shape change, not lossy compaction") points the same way. Cost
 accepted: Arm A is the harder implementation and gives no retroactive shrink.
 
-### Additional forks discovered (also need the operator)
+### Additional forks discovered (all resolved by rulings 2-5 above)
 
 1. **A-move sighting fidelity:** exact per-step equivalence (segments advanced
    deterministically / sightings baked into closing payloads) vs deliberate
@@ -279,16 +297,18 @@ bookkeeping must not blind anyone.
 **Acceptance Scenarios**:
 
 1. **Given** an agent walking under the new shape, **When** the walk completes,
-   **Then** its explored bitmap and peer sightings match the ruled-on fidelity
-   contract (exact per-step, or the operator-accepted coarsening), and the
-   spec-097 intent-completing arrival observation still fires exactly once.
+   **Then** its explored bitmap and peer sightings (positions AND `Seen`
+   ticks) are byte-identical to what today's per-step emission would have
+   produced (ruling 2: exact), and the spec-097 intent-completing arrival
+   observation still fires exactly once.
 2. **Given** a villager's need crossing a danger band, **When** the crossing
-   occurs, **Then** the guardian's survival watches and standing orders
-   trigger with no worse latency than today (crossings always emit
-   immediately under Arm A variant (i); Arm B changes nothing live).
+   occurs, **Then** an `agent.needs_changed` event is emitted at that very
+   minute beat (ruling 3), so the guardian's survival watches and standing
+   orders trigger with no worse latency than today.
 3. **Given** two agents becoming first-adjacent mid-walk, **When** the
-   encounter-arming path evaluates, **Then** conversation arming behaves per
-   the ruled-on fidelity contract.
+   encounter-arming path evaluates, **Then** conversation arming fires for
+   the same adjacency moments per-step emission would have armed (pair
+   cooldown preserved).
 
 ### Edge Cases
 
@@ -310,7 +330,17 @@ bookkeeping must not blind anyone.
 
 ## Requirements *(mandatory)*
 
-### Functional Requirements (fork-independent)
+### Non-goals (explicit, per ruling 5)
+
+- **Old-world relief is OUT of scope.** This feature changes emission going
+  forward only; existing bloated worlds (playtest-1's 230 MB) are served by
+  the EXISTING snapshot-cut migration (archive-and-fresh-log) whenever the
+  operator chooses to invoke it. No compaction, no automatic migration, no
+  touching of existing world databases ships in this task.
+- No offline compaction machinery of any kind (Arm B rejected, ruling 1).
+- No log-format-version bump and no new migration mode (ruling 4).
+
+### Functional Requirements
 
 - **FR-001**: Ambient event volume for the movement/needs/gru families is
   reduced several-fold per game-day at playtest-1 dials, measured on a
@@ -322,13 +352,14 @@ bookkeeping must not blind anyone.
   digest grammar (rows for any new types; `TestCatalogSweep`), TUI live map
   and inspect mode, guardian survival watches and standing-order matching,
   the mind's encounter arming and arrival-observation reconciliation.
-- **FR-004**: The mental-map contract is preserved or explicitly re-ruled:
-  explored-bitmap growth, peer-sighting recording, and the spec-097 arrival
-  observation each get a stated fidelity contract in the adopted design, with
-  paired-seed evidence for any deliberate coarsening.
-- **FR-005**: The chosen arm is recorded as a design decision (this spec's
-  fork section resolved by the operator, then mirrored into the wiki's
-  event-log/reducer notes), explicitly addressing the spec-092
+- **FR-004**: The mental-map contract is preserved EXACTLY (ruling 2):
+  explored-bitmap growth, mutual peer sightings (positions and `Seen` ticks),
+  and the spec-097 arrival observation are byte-identical to per-step
+  emission, proven by an equivalence harness comparing per-step vs coalesced
+  logs of the same walks at every tick boundary.
+- **FR-005**: The adopted design (Arm A, rulings 1-5) is recorded as a design
+  decision — this spec's resolved fork section, mirrored into the wiki's
+  event-log/reducer doctrine notes — explicitly addressing the spec-092
   emitter-computes doctrine and the spec-094 format doctrine (card AC#2).
 - **FR-006**: Whatever new payloads exist are fully baked at emission
   (emitter-computes): no reducer arm may re-derive a coalesced outcome from a
@@ -336,6 +367,15 @@ bookkeeping must not blind anyone.
   are forbidden — they ride the payload).
 - **FR-007**: `go test -race ./...` green; the wiki notes whose pinned sources
   this touches are re-pinned in-branch per the wiki-in-PR lifecycle.
+- **FR-008**: Needs emission follows ruling 3: an `agent.needs_changed` event
+  (existing type, existing absolute-value payload) every K game-minutes per
+  living agent AND immediately on any band/threshold crossing (spec-062
+  danger bands, near-death, zero). K is a spec-048 world-tuning dial
+  (`needs_checkpoint_minutes`), clamp-validated, genesis-pinned per spec 057,
+  with K=1 reproducing today's per-minute emission exactly.
+- **FR-009**: `gru.moved` emission is retired for new worlds (gru motion
+  becomes derived, deterministic from seed + state + tick); its reducer arm
+  is retained forever so old logs replay unchanged.
 
 ### Key Entities
 
@@ -366,7 +406,8 @@ bookkeeping must not blind anyone.
   is a pure function of (state, tick) — the [[mental-map-model]] D2 discipline
   extended — and that replay-to-cutoff (`daemon.replayToTick`) lands the same
   derived values live execution held at that tick.
-- Arm B must instead AMEND the doctrine: byte-identity guaranteed at and
+- Arm B (REJECTED, ruling 1 — retained for the record) would instead have
+  AMENDED the doctrine: byte-identity guaranteed at and
   beyond compaction boundaries (provable as fold(original span) == spliced
   state at the boundary), explicitly forfeited within compacted spans — a
   doctrine change the operator must ratify, not a detail.
@@ -379,10 +420,10 @@ bookkeeping must not blind anyone.
   spec-094 decision rule NO translating migration and NO snapshot-cut is
   required: old logs load and replay unchanged. The card's question ("check
   whether additive new types + retired emission of old types avoids a format
-  bump") resolves YES on current doctrine, with one flagged sub-decision:
-  whether to bump `store.LogFormatVersion` anyway so old binaries REFUSE new
-  logs instead of silently no-opping load-bearing movement (fork #3 above;
-  a bump makes old logs take a cheap stamp-only translation).
+  bump") resolves YES on current doctrine. **RULED (ruling 4): no
+  `store.LogFormatVersion` bump** — the spec-097 `place_observed` precedent
+  governs (downgrade-replay remains unguarded for additive vocabulary, as it
+  already is today).
 - **Arm B requires format surface either way**: a compacted log must declare
   itself (stamp or manifest marker) so tools know spans are compacted; the
   rebuild rides the translating-mode swap pattern (build at
@@ -395,9 +436,9 @@ bookkeeping must not blind anyone.
   the world-manifest `format_version` need not bump for the state additions
   alone; if the chosen sub-scope cannot satisfy that, the manifest bump +
   snapshot-cut chain is the fallback and must be called out in plan.md.
-- **Existing worlds**: neither arm silently touches them. Old-world relief is
-  fork #4 — an operator-invoked archive-and-fresh-log pass using existing
-  machinery, or Arm B's in-place compaction; never automatic.
+- **Existing worlds**: never silently touched. Old-world relief is a
+  NON-GOAL (ruling 5) — the operator-invoked archive-and-fresh-log pass
+  using existing snapshot-cut machinery covers it, outside this task.
 
 ## Success Criteria *(mandatory)*
 
@@ -408,18 +449,18 @@ bookkeeping must not blind anyone.
 - **SC-002**: A pre-change log replays on the fixed build to state hashes
   byte-identical to the pre-change build's replay; determinism, recovery,
   and replay-to-cutoff suites green.
-- **SC-003**: `TestCatalogSweep` green with any new types; chronicle, TUI map,
-  guardian watch, and encounter-arming behavior verified per the ruled
-  fidelity contracts (FR-003/FR-004).
-- **SC-004**: The operator's fork resolution (arm + sub-forks 1–4) is recorded
-  in this spec dir and mirrored into the wiki doctrine notes, explicitly
-  addressing determinism and migration (card AC#2).
+- **SC-003**: `TestCatalogSweep` green with the new types; chronicle, TUI map,
+  guardian watch, and encounter-arming behavior verified per the exact
+  fidelity contract (FR-003/FR-004); the sighting equivalence harness green.
+- **SC-004**: The operator's fork resolution (rulings 1-5, recorded above) is
+  mirrored into the wiki doctrine notes, explicitly addressing determinism
+  and migration (card AC#2).
 
 ## Assumptions
 
-- The operator checkpoint resolves the main fork AND sub-forks 1–4 before
-  plan.md is authored; this spec's fork section is then amended in place to
-  record the ruling (the 094 "Input" precedent: rulings named at the top).
+- The operator checkpoint is RESOLVED (rulings 1-5, 2026-07-30, recorded in
+  the fork section above and on the board card); plan.md and tasks.md are
+  authored against those rulings, which are binding.
 - Volume arithmetic grounding the several-fold claim: needs at 8 agents ×
   1,440 min/day ≈ 11,520/day (thinning at K=10 with crossings ⇒ ~10×);
   movement at ~1,434 steps/agent/day with typical walks of 10–30 tiles
