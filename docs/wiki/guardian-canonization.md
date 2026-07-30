@@ -6,7 +6,7 @@ sources:
   - internal/sim/regions.go
   - internal/sim/myths.go
   - internal/guardian/canonize.go
-verified_against: cf65debb44c1e17b54c0f3421d11e1e8cc28576c
+verified_against: a5ecd73c50f9bc91627e2b123442f4dadb666e65
 ---
 
 # Guardian canonization — the guardian makes consensus lore real
