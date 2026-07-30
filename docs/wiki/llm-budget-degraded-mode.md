@@ -6,7 +6,7 @@ sources:
   - internal/llm/meter.go
   - internal/llm/health.go
   - internal/llm/llm.go
-verified_against: 0fd2104c59c54be8e8071d319fa4ce192083faf3
+verified_against: fc76d2ed3e6995779d392f794f889346704d0aca
 ---
 
 # LLM orchestrator — budget, degraded mode & estimation

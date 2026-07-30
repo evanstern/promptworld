@@ -4,7 +4,7 @@ description: How a talked-beat founds a model-driven conversation scene — the 
 kind: component
 sources:
   - internal/mind/convo.go
-verified_against: c61cd6c04ddfcd2a976c14a49ba071e8fd768a73
+verified_against: fc76d2ed3e6995779d392f794f889346704d0aca
 ---
 
 # Social fabric — conversation scenes
@@ -89,7 +89,20 @@ scaled through `cognition.EffectiveBudgetTicks` by the event-sourced
 effective speed, read from a worker-facing atomic tick-rate mirror the
 absorb loop keeps current (the same pattern as the mind's `tick` mirror) —
 so the mind-side pre-check can never disagree with the reducer gate it
-fronts, and the reason carries the scaled-budget derivation. Since TASK-42
+fronts, and the reason carries the scaled-budget derivation. Since spec 103 (TASK-174) both call sites carry a constrained-decoding layer
+ABOVE the TASK-42 tolerance below: `Mind.utterance` and `Mind.outcome` stamp
+`Request.ResponseSchema`/`SchemaName` (`sayReplySchema`/`convoOutcomeSchema`,
+built in `internal/mind/convo_schema.go` from the same registry caps and
+`sceneCap` the parser already uses) so an `openai_compat` provider's sampler
+is constrained to the reply SHAPE at the wire (`response_format {type:
+json_schema}`, TASK-58's mechanism, dropped as dead code by TASK-71 and
+restored here for the conversation route — playtest-1 saw 22 outcome parse
+failures and 62/293 scenes abandoned from prose-opening replies). The
+Anthropic transport ignores both fields; `parseSay`/`parseOutcome` remain the
+final gate and still clamp VALUES (tone range, byte caps) the schema only
+bounds the SHAPE of. No cloud fallback — the scene's provider pin above is
+unmoved; a request that still fails to parse falls through to the ladder
+below exactly as before. Since TASK-42
 (specs/011-conversation-robustness) a scene tolerates one bad reply per site
 rather than dying on the first: a parse-failed utterance gets one same-speaker
 retry (one utterance retry TOTAL per scene — retry-not-skip, preserving the
