@@ -69,7 +69,7 @@
   doc surface is the `docs/wiki/event-types-*.md` family, amended instead
   (memory-consolidation row + spec-105 compat block, cognition-telemetry
   retried row).
-- [ ] T009 Wiki re-pins in-branch for every note whose sources this branch
+- [X] T009 Wiki re-pins in-branch for every note whose sources this branch
   touches (expected: nightly-consolidation, chronicle, morgue-epilogues,
   event-types-memory-consolidation, event-types-cognition-telemetry prose if
   amended, llm-orchestrator child covering token budgets, plus any
