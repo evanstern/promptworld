@@ -4,7 +4,7 @@ title: 'Event-log volume: coalesce ambient movement and needs ticks'
 status: In Progress
 assignee: []
 created_date: '2026-07-30 16:42'
-updated_date: '2026-07-30 18:36'
+updated_date: '2026-07-30 18:42'
 labels: []
 dependencies: []
 ordinal: 144000
@@ -33,4 +33,6 @@ Spec: specs/104-ambient-event-coalescing
 
 <!-- SECTION:NOTES:BEGIN -->
 sweep dispatch (runbook playtest-1-findings-sweep): tier Opus 4.8 — replay-determinism doctrine (spec 092/TASK-75) + architectural emission-shape change with cross-package consumers (sim reducer, TUI digest grammar, event-catalog wiki notes) per constitution P.V hard-slice rubric. Spec 104-ambient-event-coalescing. Design-fork operator checkpoint recorded in runbook.
+
+OPERATOR RULING 2026-07-30 (spec 104 design fork, sweep checkpoint): Arm A emission-shape change ADOPTED — path-segment movement with EXACT per-step sighting fidelity (deterministic segment advancement or baked sighting payloads; encounter/seek behavior byte-identical), needs emission at bounded interval + immediate band-crossing emission, gru position sampling. NO log-format bump (spec 097 place_observed precedent). Old-world relief (one-time archive-and-fresh-log for existing worlds) OUT of spec 104 scope — existing snapshot-cut migrate covers it. Arm B (offline compaction) rejected: inverts log-is-truth doctrine, seq renumbering near-disqualifying.
 <!-- SECTION:NOTES:END -->
