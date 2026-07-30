@@ -21,7 +21,7 @@
 
 ## Phase 4: Demo + grounding
 
-- [ ] T006 Seeded measure-world demo (implant myth → brief → canonize → arrival
+- [X] T006 Seeded measure-world demo (implant myth → brief → canonize → arrival
   confirms), local-only routes; evidence at docs/design/evidence/task-81/
   (FR-007, SC-001).
-- [ ] T007 Wiki re-pins; player-docs probe; merge-drift pr gate exit 0.
+- [X] T007 Wiki re-pins; player-docs probe; merge-drift pr gate exit 0.
