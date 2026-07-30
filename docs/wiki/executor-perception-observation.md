@@ -6,7 +6,7 @@ sources:
   - internal/sim/executor.go
   - internal/sim/observe.go
   - internal/sim/memory.go
-verified_against: 376afd4cee54839a545bc88409f3c485c2f5149d
+verified_against: cf65debb44c1e17b54c0f3421d11e1e8cc28576c
 ---
 
 # Executor — the perception sweep and grounded arrival observations
@@ -83,13 +83,19 @@ disconfirming observation's memory gets one `agent.memory_promoted` surprise
 bump. Matching (deterministic coordinate + feature-vocabulary today; D3
 permits an LLM there) never runs sim-side.
 
+Spec 101's canonization miracle ([[guardian-canonization]]) deliberately
+adds NOTHING here: a guardian-raised feature is just another `Structure`
+`observedKinds` already scans, so a myth naming it confirms through this
+UNMODIFIED channel the moment ground truth backs the name.
+
 ## Connections
 
 Parent: [[executor-social-perception]] (guarded plans, hails, situated-memory
 constructors, origin provenance). [[mental-maps]] owns the map the sweep
 feeds; [[event-types-mental-map]] carries the payload rows;
 [[nightly-consolidation]] hosts the belief substrate the reconciliation
-moves; [[world-tuning]] carries the four spec-097 dials.
+moves; [[world-tuning]] carries the four spec-097 dials; [[guardian-canonization]]
+is the spec-101 consumer that rides this channel unmodified.
 
 ## Operational notes
 

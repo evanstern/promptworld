@@ -8,7 +8,7 @@ sources:
   - internal/guardian/charter.go
   - cmd/promptworld/stages.go
   - internal/worlds/unlocks.go
-verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
+verified_against: cf65debb44c1e17b54c0f3421d11e1e8cc28576c
 ---
 
 # Curriculum ladder
@@ -75,9 +75,12 @@ five charge-free plan-layer tools (`place_designation`/`cancel_designation`/
 `issue_directive`/`cancel_directive`/`survey_site` — the plan loop is a
 teaching primitive, the monitor_and_act precedent; [[guardian-designations]]),
 plus, since spec 085, `prophesy` (send_vision's stage profile — the same
-influence verb with a wager; [[guardian-faith]]), with no miracle kinds and
-the empty-intersection effect shutting out bundle tools; stage-3, stage-4,
-and pre-ladder worlds have no ceiling. `guardian.StageCeilingVerbs(stage)`
+influence verb with a wager; [[guardian-faith]]), plus, since spec 101,
+`brief_myths` (a read-only lookup, the `survey_site`/`explain` profile —
+`canonize_region` stays OUT, the `work_miracle` precedent —
+[[guardian-canonization]]), with no miracle kinds and the empty-intersection
+effect shutting out bundle tools; stage-3, stage-4, and pre-ladder worlds
+have no ceiling. `guardian.StageCeilingVerbs(stage)`
 exports a stage's granted loop-tool names in registry order — the SAME
 intersection applied here — for the TUI help overlay's D9 guardian section
 to teach from, not a second hand-maintained list. A player's

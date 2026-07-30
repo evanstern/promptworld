@@ -5,7 +5,7 @@ kind: concept
 sources:
   - internal/sim/state.go
   - internal/sim/gru.go
-verified_against: 376afd4cee54839a545bc88409f3c485c2f5149d
+verified_against: cf65debb44c1e17b54c0f3421d11e1e8cc28576c
 ---
 
 # Event types
@@ -23,10 +23,9 @@ were `metatron.*` in log format 1.
 
 ## Event catalog, by domain
 
-The full per-type catalog (142 `PayloadCatalog` types, specs 012–098) is
-split by
-event domain — each child inherits this note's `verified_against` pin and
-carries the domain's own format-history prose and catalog rows.
+The full per-type catalog (142 `PayloadCatalog` types, specs 012–101) is
+split by event domain — each child inherits this note's `verified_against`
+pin and carries the domain's own format-history prose and catalog rows.
 
 - [[event-types-clock-world]] — Clock/scheduler and world-lifecycle events — pause/resume/speed/governor, day/night, forage regrowth, genesis/migration/forking (`world.forked`, spec 076), daemon lifecycle and LLM-provider warnings.
 - [[event-types-agent-intents]] — Agent intent lifecycle — intent_set/work_started/intent_done/recovery_stalled/build_failed/intent_failed/moved, incl. spec 062/064's yield-window and recovery arms.
@@ -42,7 +41,7 @@ carries the domain's own format-history prose and catalog rows.
 - [[event-types-scenario-incidents]] — Scenario-incident events (spec 077) — cold snap, forage blight, the stranger entity family: ambient-indistinguishable authored pressure.
 - [[event-types-guardian-orders]] — Guardian standing-order events — charge_regenerated, nudged, order_placed/triggered/cancelled/expired, spec 029/059 survival-watch lifecycle.
 - [[event-types-guardian-morgue]] — Guardian morgue/report-card events — charter_observed (+ spec 077's skills_observed twin), morgue.epilogue, guardian.report_card, chronicle.entry.
-- [[event-types-guardian-actions]] — Guardian miracle actions and gru events — time_snapped/item_granted/entity_moved/entity_removed, `guardian.region_named` (spec 101, the canonization miracle), the gru emerged/moved/sighted/attacked/withdrew family.
+- [[event-types-guardian-actions]] — Guardian miracle actions and gru events — time_snapped/item_granted/entity_moved/entity_removed, `guardian.region_named` (spec 101), the gru emerged/moved/sighted/attacked/withdrew family.
 - [[event-types-guardian-plans]] — Guardian plan-layer events (spec 084) — `designation.*`/`directive.*`: injected placement/issue/cancel, executor-emitted fulfillment/expiry, the TASK-118 faith seam (consumed by spec 085).
 - [[guardian-faith]] — Faith-economy events (spec 085) — `faith.changed` (executor-emitted, the five-reason delta table) and the prophecy lifecycle `prophecy.declared`/`fulfilled`/`failed`.
 
@@ -66,9 +65,8 @@ canonical per `specs/007-cognition-horizon/contracts/events.md`.
 no-op — its ring append (deterministic from the event alone) keeps it
 replay-safe. `world.migrated` (spec 012 US6) is the one exception to
 "payloads are small outcomes" — its payload embeds the entire canonical
-`sim.State`, by design: the single record standing in for the whole
-pre-break history, and the reducer's `state.Seed` check keeps it total (a
-mismatched payload no-ops rather than erroring).
+`sim.State`; the reducer's `state.Seed` check keeps it total (a mismatched
+payload no-ops rather than erroring).
 
 ### Agent references are named refs (spec 086)
 
