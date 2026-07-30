@@ -47,7 +47,7 @@
 
 ## Phase 4: Grounding
 
-- [ ] T007 Wiki re-pins in-branch: `social-fabric-conversations` prose
+- [X] T007 Wiki re-pins in-branch: `social-fabric-conversations` prose
   amendment (constrained-decoding layer above the TASK-42 tolerance) +
   source-touched re-verifies for the llm-family notes pinning
   `llm.go`/`providers.go`/`convo.go` (plan lists them); player-docs freshness
