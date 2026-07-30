@@ -34,6 +34,14 @@ type Gru struct {
 	LastAttack int64 `json:"last_attack,omitempty"`
 	LastVictim int   `json:"last_victim,omitempty"`
 	Seen       uint8 `json:"seen,omitempty"`
+	// Done (spec 104) is the derived-motion watermark: movement beats
+	// processed through this tick by the advancement engine (advance.go).
+	// Written ONLY under the coalescing regime (the gru.emerged arm when
+	// coalescing, derived beats, and the regime-flip stamp) — the gru.moved
+	// arm is byte-for-byte untouched, so legacy logs fold to hash-identical
+	// state. SHIFT under rebaseTicks (a beats-processed anchor). omitempty
+	// keeps pre-104 snapshots byte-identical.
+	Done int64 `json:"done,omitempty"`
 }
 
 const (
@@ -94,6 +102,71 @@ func gruProtected(s *State, x, y int) bool {
 	return litAt(s, x, y) || s.Lookup().Structure("shelter", x, y)
 }
 
+// gruTarget picks the gru's prey: the nearest visible (unprotected) living
+// agent, ties to the lowest index — extracted from gruStep (spec 104) so the
+// attack emission and the shared movement decision read one selector.
+func gruTarget(s *State) (target, targetDist int) {
+	g := s.Gru
+	target, targetDist = -1, gruSightRadius+1
+	for i := range s.Agents {
+		a := &s.Agents[i]
+		if a.Dead || gruProtected(s, a.X, a.Y) {
+			continue
+		}
+		if d := abs(a.X-g.X) + abs(a.Y-g.Y); d < targetDist {
+			target, targetDist = i, d
+		}
+	}
+	return target, targetDist
+}
+
+// gruMoveDecision is the gru's movement choice for a beat at tick t: stalk
+// the neighbor that closes the gap to its prey (greedy, never a protected
+// tile — a monster that can be baffled by water and firelight is the right
+// monster), else seeded prowl via rngAt(seed, "gru-prowl", t, 0). ONE home
+// (spec 104) shared verbatim by the legacy gru.moved emission and the
+// derived advancement beat (advance.go), so the two shapes can never drift.
+// ok=false means the gru stands still this beat.
+//
+// Replay hazard (spec 092/104): under the coalescing regime this decision —
+// including the "gru-prowl" RNG purpose string and the neighbor order — is
+// re-derived at apply time and is replay-load-bearing for coalesced logs; a
+// retune requires the spec-094 store.LogFormatVersion bump + migration.
+func gruMoveDecision(s *State, m *worldmap.Map, t int64) (x, y int, ok bool) {
+	g := s.Gru
+	if target, targetDist := gruTarget(s); target >= 0 && targetDist > 1 {
+		a := &s.Agents[target]
+		bx, by, best := g.X, g.Y, targetDist
+		for _, d := range neighborOrder {
+			nx, ny := g.X+d[0], g.Y+d[1]
+			if !passable(m, s, nx, ny) || gruProtected(s, nx, ny) {
+				continue
+			}
+			if nd := abs(a.X-nx) + abs(a.Y-ny); nd < best {
+				bx, by, best = nx, ny, nd
+			}
+		}
+		if bx != g.X || by != g.Y {
+			return bx, by, true
+		}
+	}
+	// Prowl: seeded drift through the dark.
+	var open [4][2]int
+	n := 0
+	for _, d := range neighborOrder {
+		nx, ny := g.X+d[0], g.Y+d[1]
+		if passable(m, s, nx, ny) && !gruProtected(s, nx, ny) {
+			open[n] = [2]int{nx, ny}
+			n++
+		}
+	}
+	if n > 0 {
+		p := open[rngAt(s.Seed, "gru-prowl", t, 0).Uint64N(uint64(n))]
+		return p[0], p[1], true
+	}
+	return 0, 0, false
+}
+
 // gruStep is the predator's whole turn, called from stepEvents: emergence at
 // nightfall, withdrawal at dawn, and while abroad — sightings, one attack,
 // or one move. Pure over (pre-tick state, map, next tick) like everything
@@ -146,16 +219,7 @@ func gruStep(s *State, m *worldmap.Map, night bool, nextTick int64) []store.Even
 	}
 
 	// Prey: nearest visible (unprotected) agent, ties to the lowest index.
-	target, targetDist := -1, gruSightRadius+1
-	for i := range s.Agents {
-		a := &s.Agents[i]
-		if a.Dead || gruProtected(s, a.X, a.Y) {
-			continue
-		}
-		if d := abs(a.X-g.X) + abs(a.Y-g.Y); d < targetDist {
-			target, targetDist = i, d
-		}
-	}
+	target, targetDist := gruTarget(s)
 
 	// Adjacent prey, claws ready: wound (absolute post-wound health, floored)
 	// — UNLESS the victim was already weakened below the near-death band
@@ -209,42 +273,20 @@ func gruStep(s *State, m *worldmap.Map, night bool, nextTick int64) []store.Even
 		return events
 	}
 
+	// Movement. Spec 104 (ruling 4): under the coalescing regime gru motion
+	// is fully derived — the advancement engine runs the SAME decision
+	// (gruMoveDecision) at each beat tick (advance.go), so no gru.moved is
+	// emitted at all; legacy worlds keep the recorded per-beat emission
+	// byte-identically. The gru.moved reducer arm is retained forever either
+	// way, so old logs replay unchanged.
+	if s.AmbientCoalescing() {
+		return events
+	}
 	if nextTick%gruMoveEveryTicks != 0 {
 		return events
 	}
-	if target >= 0 && targetDist > 1 {
-		// Stalk: the neighbor that closes the gap, never a protected tile.
-		// Greedy, not BFS — a monster that can be baffled by water and
-		// firelight is the right monster.
-		a := &s.Agents[target]
-		bx, by, best := g.X, g.Y, targetDist
-		for _, d := range neighborOrder {
-			nx, ny := g.X+d[0], g.Y+d[1]
-			if !passable(m, s, nx, ny) || gruProtected(s, nx, ny) {
-				continue
-			}
-			if nd := abs(a.X-nx) + abs(a.Y-ny); nd < best {
-				bx, by, best = nx, ny, nd
-			}
-		}
-		if bx != g.X || by != g.Y {
-			emit("gru.moved", GruMovedPayload{X: bx, Y: by})
-			return events
-		}
-	}
-	// Prowl: seeded drift through the dark.
-	var open [4][2]int
-	n := 0
-	for _, d := range neighborOrder {
-		nx, ny := g.X+d[0], g.Y+d[1]
-		if passable(m, s, nx, ny) && !gruProtected(s, nx, ny) {
-			open[n] = [2]int{nx, ny}
-			n++
-		}
-	}
-	if n > 0 {
-		p := open[rngAt(s.Seed, "gru-prowl", nextTick, 0).Uint64N(uint64(n))]
-		emit("gru.moved", GruMovedPayload{X: p[0], Y: p[1]})
+	if x, y, ok := gruMoveDecision(s, m, nextTick); ok {
+		emit("gru.moved", GruMovedPayload{X: x, Y: y})
 	}
 	return events
 }
@@ -315,6 +357,13 @@ func (s *State) applyGru(e store.Event) error {
 			return fmt.Errorf("apply %s: %w", e.Type, err)
 		}
 		s.Gru = &Gru{X: p.X, Y: p.Y}
+		// Spec 104: under the coalescing regime the emergence tick is the
+		// derived-motion floor — no same-tick move, exactly the legacy
+		// emitter's return-after-emergence. Legacy folds never set Done, so
+		// pre-104 replay bytes are untouched.
+		if s.AmbientCoalescing() {
+			s.Gru.Done = e.Tick
+		}
 	case "gru.moved":
 		var p GruMovedPayload
 		if err := json.Unmarshal(e.Payload, &p); err != nil {
@@ -344,6 +393,7 @@ func (s *State) applyGru(e store.Event) error {
 		a.Asleep = false
 		a.Intent = nil
 		a.IdleSince = e.Tick
+		truncateWalk(a) // spec 104: the mauling ends the walk (research.md §4)
 		if s.Gru != nil {
 			s.Gru.LastAttack = e.Tick
 			s.Gru.LastVictim = p.Agent.ID

@@ -56,6 +56,8 @@ var PayloadCatalog = map[string]func() any{
 	"agent.intent_rejected":  func() any { return &IntentRejectedPayload{} },
 	"agent.recovery_stalled": func() any { return &RecoveryStalledPayload{} },
 	"agent.moved":            func() any { return &AgentMovedPayload{} },
+	"agent.path_started":     func() any { return &PathStartedPayload{} },
+	"agent.path_truncated":   func() any { return &PathTruncatedPayload{} },
 	"agent.foraged":          func() any { return &HarvestPayload{} },
 	"agent.chopped":          func() any { return &HarvestPayload{} },
 	"agent.hunted":           func() any { return &HarvestPayload{} },

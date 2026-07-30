@@ -713,6 +713,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		prevStage := m.currentStage()
 		m.status = msg.status
 		m.worldSkin = skinFromStatus(msg.status) // spec 052: boot-frozen, but a daemon restart re-skins
+		// Spec 104: the status poll is the replica's tick driver between
+		// events — walk derived progress (in-flight walk segments, needs
+		// decay, gru motion) up to the daemon's reported tick so the live
+		// map stays per-step smooth (plan D5: exact, not interpolated).
+		// AdvanceTo(T) is the daemon's own posture at tick T (items ≤ T−1),
+		// so the replica can never lead the daemon's fold.
+		if m.replica != nil && m.status != nil {
+			m.replica.AdvanceTo(m.status.Clock.Tick)
+		}
 		nowPaused := m.status != nil && m.status.Clock.Paused
 		if wasPaused && !nowPaused {
 			// Resume: collapse everything, snap back to tail-follow

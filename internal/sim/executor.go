@@ -229,9 +229,23 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 			}
 			n := decayNeeds(a.Needs, a.Asleep, night, warmAt(s, a.X, a.Y, nextTick), s.Lookup().Structure("shelter", a.X, a.Y),
 				coldSnapActive(s, nextTick))
-			emit("agent.needs_changed", NeedsPayload{
-				Agent: Ref(i), Health: n.Health, Food: n.Food, Rest: n.Rest, Warmth: n.Warmth, Morale: n.Morale,
-			})
+			// Spec 104 (ruling 3, FR-008): under the coalescing regime the
+			// per-minute heartbeat emits only on the K-minute checkpoint
+			// grid or on a band/near-death/zero crossing vs the last-EMITTED
+			// values — crossings at today's per-minute latency, in both
+			// directions, so guardian survival watches and standing-order
+			// hysteresis fire AND re-arm exactly as before. Non-emitted
+			// minutes fold derivedly behind the NeedsSyncTick watermark
+			// (advance.go). Legacy worlds emit every minute, byte-for-byte
+			// as before — as does a regime world pinned at K=1 (the escape
+			// hatch). Death detection and the near-death memory below run
+			// every minute regardless (a death or near-death entry is a
+			// crossing, so its needs event always rides the same batch).
+			if !s.AmbientCoalescing() || needsEmitDue(s, a, n, nextTick) {
+				emit("agent.needs_changed", NeedsPayload{
+					Agent: Ref(i), Health: n.Health, Food: n.Food, Rest: n.Rest, Warmth: n.Warmth, Morale: n.Morale,
+				})
+			}
 			// Own near-death is a formative memory, once per collapse (latch).
 			if n.Health < nearDeathBelow && !a.NearDeath && n.Health > 0 {
 				cause := "cold and hunger"
@@ -402,8 +416,50 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 			continue // frozen in place: no stepping toward the target
 		}
 
-		// En route: one tile per moveEveryTicks, staggered like decisions. Spec 032
-		// US3 (research R3): a second stateless cadence slot at phase 2 fires only
+		// En route. Spec 104 (ruling 2): under the coalescing regime a walk
+		// is ONE agent.path_started event — the full departure BFS path plus
+		// the cadence numbers baked in the payload — and the advancement
+		// engine executes each step at its scheduled tick with exactly the
+		// per-step arm's bookkeeping (advance.go). Legacy worlds keep the
+		// per-step emission below, byte-identically.
+		if s.AmbientCoalescing() {
+			if seg := a.Path; seg != nil {
+				// Blocked path (a wall built mid-segment): the one walk
+				// deviation no other event records — truncate at the actual
+				// position; the next tick re-plans (fresh path_started) or
+				// resolves unreachable (research.md §4).
+				if seg.Next < len(seg.Path) && !passable(m, s, seg.Path[seg.Next].X, seg.Path[seg.Next].Y) {
+					emit("agent.path_truncated", PathTruncatedPayload{Agent: Ref(i), X: a.X, Y: a.Y})
+					continue
+				}
+				// Spec 097 (D1) arrival observation, predicted from the
+				// segment: the step scheduled at THIS tick is the final one
+				// and lands ON the intent target — emit the observation at
+				// the arrival step's own tick from pre-step state, exactly
+				// the tick and inputs the retired co-emission used.
+				if seg.Next == len(seg.Path)-1 && segStepFiresAt(s, a, seg, nextTick) {
+					last := seg.Path[len(seg.Path)-1]
+					if last.X == in.TargetX && last.Y == in.TargetY {
+						events = append(events, placeObservedEvents(s, m, i, last.X, last.Y, nextTick)...)
+					}
+				}
+				continue
+			}
+			path := fullPath(m, s, a.X, a.Y, in.TargetX, in.TargetY)
+			if len(path) == 0 {
+				emit("agent.intent_done", AgentPayload{Agent: Ref(i)}) // unreachable
+				continue
+			}
+			emit("agent.path_started", PathStartedPayload{
+				Agent: Ref(i), Path: path,
+				MoveEvery: moveEveryTicks, Phase: (int64(i) * 3) % moveEveryTicks,
+			})
+			continue
+		}
+
+		// LEGACY (pre-104 worlds): one tile per moveEveryTicks, staggered
+		// like decisions. Spec 032 US3 (research R3): a second stateless
+		// cadence slot at phase 2 fires only
 		// when the agent is standing ON a path tile, so stepping FROM a path moves
 		// at exactly 2x (two steps per 5-tick window) — the tile stepped from
 		// decides, matching the spec. Phase 0 always steps (baseline speed intact);
@@ -1694,6 +1750,44 @@ func workDuration(s *State, a *Agent, in *Intent) int64 {
 		}
 	}
 	return intentDuration(in.Goal)
+}
+
+// needsEmitDue decides whether this minute's decayed values are recorded as
+// an agent.needs_changed event under the coalescing regime (spec 104
+// FR-008): on the K-minute checkpoint grid, always; otherwise only when a
+// boundary crossed vs the agent's last-emitted values (nil = never emitted
+// under the regime ⇒ emit a baseline). Comparing against last-EMITTED — not
+// the previous minute — catches mid-window jumps (eating, an attack) so the
+// guardian's hysteresis re-arm sees recovery at the same one-minute latency
+// danger crossings get.
+func needsEmitDue(s *State, a *Agent, n Needs, tick int64) bool {
+	if (tick/60)%s.NeedsCheckpointK() == 0 {
+		return true
+	}
+	if a.NeedsEmitted == nil {
+		return true
+	}
+	return needsBoundaryCrossed(*a.NeedsEmitted, n)
+}
+
+// needsBoundaryCrossed reports whether any watched boundary sits between the
+// two value sets, in either direction: the spec-062 danger bands
+// (food/warmth/rest — recoveryDangerBand, the one home), near-death
+// (health < nearDeathBelow), and zero for all five needs (ruling 3's
+// "danger bands, near-death, zero").
+func needsBoundaryCrossed(o, n Needs) bool {
+	below := func(a, b, bound int) bool { return (a < bound) != (b < bound) }
+	if below(o.Health, n.Health, nearDeathBelow) {
+		return true
+	}
+	for _, need := range neglectNeedOrder {
+		if below(needValue(o, need), needValue(n, need), recoveryDangerBand(need)) {
+			return true
+		}
+	}
+	zero := func(a, b int) bool { return (a == 0) != (b == 0) }
+	return zero(o.Health, n.Health) || zero(o.Food, n.Food) || zero(o.Rest, n.Rest) ||
+		zero(o.Warmth, n.Warmth) || zero(o.Morale, n.Morale)
 }
 
 func decayNeeds(n Needs, asleep, night, warm, onShelter, coldSnap bool) Needs {
