@@ -7,7 +7,7 @@ conflicts as routine. Direction is decided; do not re-litigate it: the five boar
 TASK-172..176 (each carries its playtest-1 evidence inline) win. Plan-of-record is the
 board; this file carries only ordering, doctrine, and the log.
 
-**Status:** draft · operator sign-off on lanes: pending
+**Status:** executing · operator sign-off on lanes: 2026-07-30 (lanes as drafted; TASK-173 measurement soak approved to start immediately)
 <!-- Only the OPERATOR flips draft → signed-off (the author never pre-fills it). An
      executing session must refuse a runbook whose status it cannot verify. -->
 
