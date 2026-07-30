@@ -50,7 +50,7 @@
 
 ## Phase 4: Per-night observability
 
-- [ ] T007 `internal/mind/nightreport.go` (new) + absorb hook: per-night outcome
+- [X] T007 `internal/mind/nightreport.go` (new) + absorb hook: per-night outcome
   counters keyed by `sim.NightIndex`, fed from live-absorbed
   `agent.consolidated` markers; flush one summary log line when a later night is
   observed; consecutive attempted-none-accepted streak ≥2 escalates to a
