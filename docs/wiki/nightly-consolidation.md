@@ -9,7 +9,7 @@ sources:
   - internal/mind/retry.go
   - internal/mind/nightreport.go
   - internal/persona/personas.go
-verified_against: 3590f2e0d78d3c4b4ced3edd97a49e5512ab2743
+verified_against: 1fae0d8536eb43e43eaa7b747aaeaf0b6e05ac83
 ---
 
 # Nightly consolidation + persona firewall

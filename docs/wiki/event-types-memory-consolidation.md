@@ -6,7 +6,7 @@ sources:
   - internal/sim/agents.go
   - internal/sim/journal.go
   - internal/sim/consolidate.go
-verified_against: 3590f2e0d78d3c4b4ced3edd97a49e5512ab2743
+verified_against: 1fae0d8536eb43e43eaa7b747aaeaf0b6e05ac83
 ---
 
 # Event types — memory embedding & consolidation events
