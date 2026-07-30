@@ -2,7 +2,7 @@
 title: Panel — villagers (roster, detail, decisions)
 class: panel
 status: shipped
-verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
+verified_against: d0645811c9783d1248dc65ed0fcf0b37524dd8fd
 sources:
   - internal/tui/views.go
   - internal/tui/decisions.go
@@ -119,6 +119,13 @@ the screen.
   render straight from the replica each frame; the decision-trace projection
   is client-side (`decisions.go`), bounded (`decisionChainCap` 20 chains per
   agent), and resets on reconnect like the replica.
+- Guardian chain attribution (spec 102): the projection attributes to the
+  Guardian sentinel by the FROZEN `-metatron-` correlation infix
+  (`isGuardianJob`), so console (`turn-`), triggered (`watch-`), and the
+  scheduled cadence lane's (`angel-`) chains all land on the Guardian trail —
+  previously only `turn-metatron-` did. Console transcript verdict rows
+  (`guardianVerdictRow`) remain `turn-metatron-`-only by design: a scheduled
+  turn is not a console exchange.
 - Selection state survives tab switches and is clamped on reconnect.
 
 ## Control table

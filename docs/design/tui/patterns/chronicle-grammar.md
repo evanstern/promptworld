@@ -2,7 +2,7 @@
 title: Pattern — chronicle grammar
 class: pattern
 status: shipped
-verified_against: 250c811bce7eeea7138dd8b028e800ecd1e54173
+verified_against: d0645811c9783d1248dc65ed0fcf0b37524dd8fd
 sources:
   - internal/tui/digest.go
   - internal/tui/grammar.go
@@ -27,8 +27,13 @@ catalog-fixture pair — most recently spec 101's `guardian.region_named` row
 (`guardian.time_snapped` et al. — no contracts/018 template row exists for
 either), including the `gratisMark` suffix; before that, spec 098's
 `agent.salience_revised` / `agent.memory_merged` dream rows, which reference
-the memory by tick like the memory_promoted/faded precedent); this doc
-covers the shape everything renders into, not each type's exact wording.
+the memory by tick like the memory_promoted/faded precedent; and spec 102's
+seven guardian memory-store rows (`guardian.memory_added/embedded/promoted/
+faded`, `guardian.salience_revised`, `guardian.memory_merged`,
+`guardian.consolidated`) — the `agent.*` consolidation family's wording
+re-voiced under the skin's guardian display name, vectors elided per the
+spec-042 reasoning); this doc covers the shape everything renders into, not
+each type's exact wording.
 
 ## Line format
 

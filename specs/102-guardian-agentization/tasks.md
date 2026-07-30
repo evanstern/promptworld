@@ -28,7 +28,7 @@ ratified there). Dispatch gated on TASK-164 evidence (runbook checkpoint).
 
 ## Phase 4: Surfaces + evidence
 
-- [ ] T006 Decision-trail visibility, digest entries, event-types.md, new
+- [X] T006 Decision-trail visibility, digest entries, event-types.md, new
   guardian-agentization wiki note (FR-008).
 - [ ] T007 Multi-day measure-world soak: budget safety + SC-001; ceiling proof
   runs (SC-002) via the TASK-164 instrument (default vs authored arms on the
