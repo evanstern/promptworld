@@ -224,3 +224,4 @@ Record the model tier + rubric justification on each board task at dispatch
 | 2026-07-30 | TASK-174/172/175/176 | — | ac6ec32e | specs 103/105/106 (full) + 104 (spec.md, fork analysis) landed on main; bridge links + phase ACs planted (71e89bbc); bridge gate green |
 | 2026-07-30 | TASK-176 | — | a41cb1d9 | OPERATOR CHECKPOINT RESOLVED: Arm A adopted (exact per-step sightings, interval+crossing needs, no format bump, old-world relief out of scope); plan/tasks authoring dispatched |
 | 2026-07-30 | TASK-174/172/175 | — | — | implementation dispatched: 174→Sonnet, 172/175→Opus 4.8 (spec-implementer agents, parallel worktrees); Lane 2 PRs held pending TASK-112 |
+| 2026-07-30 | TASK-176 | — | 6cecc7e3 | spec 104 plan/tasks landed (Arm A resolved, derived-progress engine design); phase ACs mirrored (16a1c649); implementation dispatched → Opus 4.8 |
