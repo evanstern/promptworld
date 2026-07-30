@@ -133,3 +133,17 @@ Measured throughput at max speed on the target machine: ~1.65M ticks/sec, measur
 the TASK-2-era placeholder sim before the village systems landed (the full village does
 more work per tick). Store errors inside the loop are fatal (the daemon exits) — an
 unwritable log must never silently diverge from state.
+
+**Store-error posture is a ratified decision, not an accident (spec 099 D2, TASK-76).**
+Every `AppendEvents` call inside the loop (`runTick`, `handleCommand`,
+`observeWindow`) returns its error straight up through `Run` to the daemon's
+caller with NO retry — the daemon process exits rather than continuing on
+in-memory state the log can no longer corroborate. Rationale: a bounded-retry
+seam would trade a clean, loud failure for a liveness/consistency tradeoff
+(retry-and-hope vs. give up cleanly) that nobody has needed at this repo's
+current scale — there is no observed transient-write incident on record.
+Fatal-by-doctrine STANDS as of spec 099; re-open only on one of two named
+triggers: (1) a real-world transient-write incident actually observed on this
+repo, or (2) multi-world hosting (concurrent worlds sharing infrastructure
+change the failure-mode calculus enough to revisit). Until then, no retry code
+ships. Site comments at all three `AppendEvents` call sites point back here.
