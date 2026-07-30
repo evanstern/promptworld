@@ -4,7 +4,7 @@ title: 'Metatron agentization: the angel as a first-class autonomous agent'
 status: In Progress
 assignee: []
 created_date: '2026-07-25 03:00'
-updated_date: '2026-07-30 14:59'
+updated_date: '2026-07-30 15:28'
 labels:
   - learning-game
 dependencies:
@@ -39,6 +39,8 @@ Spec: specs/102-guardian-agentization
 
 <!-- SECTION:NOTES:BEGIN -->
 board-sweep-2026-07-29 lane 2: spec 102 landed + linked (AC1 satisfied). OPERATOR RULING (2026-07-30, in-session checkpoint): deliberate-incompetence ceiling ADOPTED — world-acting initiative only, never tutor facts, never order compliance; encoded as D3 (default charter compiles the cap as data). Tier: Opus (card-stated, cross-package). DISPATCH GATED on TASK-164 evidence per the inherited runbook checkpoint (arm A ~75%).
+
+OPERATOR RULING (2026-07-30): dispatch NOW in parallel with 164 arm B — the A/B delta is the measurement instrument (FR-006, runs on the agentized build post-merge), not a design input; arm A already validates the door under the default charter. Checkpoint satisfied visibly, not silently.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
