@@ -1,9 +1,10 @@
 ---
 id: TASK-175
 title: 'Mind loop: stop scheduling sleeping villagers'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-30 16:42'
+updated_date: '2026-07-30 18:25'
 labels: []
 dependencies: []
 ordinal: 143000
@@ -24,3 +25,9 @@ Evidence (playtest-1): 905 of 1,486 agent.intent_rejected events were "X is asle
 - [ ] #1 Sleeping villagers do not consume planner calls (mind gates on sleep state or scheduler skips until agent.woke)
 - [ ] #2 A soak shows 'is asleep' intent rejections reduced to near zero from playtest-1's baseline of 905/29 days
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+sweep dispatch (runbook playtest-1-findings-sweep): tier Opus 4.8 — scheduling logic in internal/mind orchestration, named explicitly by constitution P.V's Opus rubric; small diff but edits the mind driver TASK-112's branch also touches. Spec 106-sleep-gated-planning. LANE 2: PR merges only after TASK-112's PR lands (operator ruling), after TASK-172.
+<!-- SECTION:NOTES:END -->
