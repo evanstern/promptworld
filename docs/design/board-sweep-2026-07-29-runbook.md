@@ -11,7 +11,7 @@ re-grounding notes), the guardian-directives ideation trail (TASK-112/158 cards 
 review rulings (TASK-134/75/76 cards) win. Plan-of-record is the board; this file
 carries only ordering, doctrine, and the log.
 
-**Status:** signed-off — executing · operator sign-off on lanes: 2026-07-29
+**Status:** done (2026-07-31) — was: signed-off — executing · operator sign-off on lanes: 2026-07-29
 (in-session selection "Signed off — execute"; drafted by the orchestrator, the
 sign-off is the authority). Rulings recorded at sign-off: **design sessions
 (23/28/30) run autonomously — orchestrator authors the specs from the cards'
@@ -276,3 +276,4 @@ status above flipped to done.
 | 2026-07-30 | TASK-81 | #143 | 3fa33a6b | lane 3; Sonnet; canonization miracle (084 artifacts + 097 discovery, live Thornspire demo); charge shape 2-flat recorded |
 | 2026-07-30 | TASK-112 | #146 | (merge on main) | lane 2; Opus; guardian agentization — steward class (de-themed per ruling), ceiling adopted + soak-proven, structural tutor split; reconciled across both sweeps |
 | 2026-07-30 | TASK-158 | #149 | 4453b0fc | lane 2 final; Opus; guardian missions (084 artifacts, pre-authorization doctrine, EASY-mode default behind passing obedience eval); follow-up carded 177 |
+| 2026-07-31 | TASK-164 | #150 | (merge on main) | lane 2; orchestrator-run eval; behavior delta confirmed, outcome delta NEGATIVE at n=1 (1 vs 4 deaths), door floor fixed 7/8; horizon amendment recorded |
