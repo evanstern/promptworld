@@ -1162,14 +1162,15 @@ func TestCharterFallbacks(t *testing.T) {
 	// is CharterMaxChars+5000 (the frame documents four miracle families plus the
 	// spec-029 agency surface — meta tools + the initiative sentence; spec 084
 	// adds the five plan-layer tools' guidance bullets + read lines; spec 101
-	// adds canonize_region + brief_myths's guidance, ~4.8 KB measured), leaving
+	// adds canonize_region + brief_myths, and spec 107 the three mission verbs'
+	// guidance bullets (~5.3 KB measured), leaving
 	// comfortable margin over the capped total and well under the untruncated.
 	os.WriteFile(charterPath, []byte(strings.Repeat("x", persona.CharterMaxChars*2)), 0o644)
 	r, _ = mt.Turn(context.Background(), "verbose?")
 	if !strings.Contains(r.Reply, "cap") {
 		t.Errorf("oversize notice absent: %q", r.Reply)
 	}
-	if reqs := orch.requests(); len(reqs[len(reqs)-1].System) > persona.CharterMaxChars+5000 {
+	if reqs := orch.requests(); len(reqs[len(reqs)-1].System) > persona.CharterMaxChars+6000 {
 		t.Error("oversized charter not truncated in prompt")
 	}
 }
@@ -2046,7 +2047,8 @@ func TestStatusProvenance(t *testing.T) {
 		t.Error("no manifest ⇒ ManifestDefault true")
 	}
 	if !reflect.DeepEqual(s.GrantedTools, []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed", "explain",
-		"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site", "prophesy", "canonize_region", "brief_myths"}) {
+		"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site", "prophesy", "canonize_region", "brief_myths",
+		"accept_mission", "note_mission_progress", "cancel_mission"}) {
 		t.Errorf("default granted tools = %v", s.GrantedTools)
 	}
 

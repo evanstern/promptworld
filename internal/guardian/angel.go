@@ -206,6 +206,11 @@ func angelActLine(r TurnResult) (bool, string) {
 		return true, "I laid a plan: " + r.Plan.Summary
 	case r.Region != nil:
 		return true, "I named a region: " + r.Region.Summary
+	case r.Mission != nil:
+		// Mission bookkeeping (spec 107): a progress note/link landed as the
+		// scheduled turn's act — named so the trail and the player's moment
+		// can tell pursuit from a quiet turn.
+		return true, "Mission work: " + r.Mission.Summary
 	case len(r.Cancelled) > 0:
 		return true, fmt.Sprintf("I released %d watch(es).", len(r.Cancelled))
 	default:

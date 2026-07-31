@@ -70,6 +70,11 @@ func (mt *Guardian) nextPlanID(prefix string, tick int64) string {
 		for i := range mt.regions {
 			bump(mt.regions[i].ID)
 		}
+	case "msn":
+		// Missions (spec 107): the same discipline over the mission mirror.
+		for i := range mt.missions {
+			bump(mt.missions[i].ID)
+		}
 	}
 	if mt.planMintTick[prefix] == tick && mt.planMintSeq[prefix] >= seq {
 		seq = mt.planMintSeq[prefix] + 1
@@ -103,7 +108,13 @@ var designationFormHint = map[string]string{
 // caller omitted it; structure_site requires structure_kind HERE (the
 // parseReveal partial-args shape). Returns the placed designation or
 // (nil, in-fiction refusal).
-func (mt *Guardian) landPlaceDesignation(kind, targetArg, structureKind string, minStructures int, hasMin bool, label string, tick int64, grant grantSet) (*sim.Designation, string) {
+//
+// missionID (spec 107 D2) is the ONE additive mission hook: when non-empty,
+// a guardian.mission_progressed linking the just-minted designation rides
+// the SAME atomic batch — the whole placement lands linked or not at all
+// (the reducer applies in batch order, so the link's existence check sees
+// the placement), and pursuit never costs a second act.
+func (mt *Guardian) landPlaceDesignation(kind, targetArg, structureKind string, minStructures int, hasMin bool, label, missionID string, tick int64, grant grantSet) (*sim.Designation, string) {
 	if !grant.allows("place_designation") {
 		return nil, "that power is not granted in this world"
 	}
@@ -144,6 +155,10 @@ func (mt *Guardian) landPlaceDesignation(kind, targetArg, structureKind string, 
 		}
 	}
 	batch := []store.Event{{Type: "designation.placed", Payload: mustJSON(d)}}
+	if missionID = strings.TrimSpace(missionID); missionID != "" {
+		batch = append(batch, store.Event{Type: "guardian.mission_progressed",
+			Payload: mustJSON(sim.MissionProgressedPayload{ID: missionID, DesignationID: d.ID})})
+	}
 	if err := mt.social.InjectSocial(batch); err != nil {
 		log.Printf("guardian: designation rejected at the door: %v", err)
 		return nil, planRefusal(err)
@@ -187,8 +202,10 @@ func (mt *Guardian) landCancelDesignation(id string, grant grantSet) string {
 // target (spec 084 FR-009 — the vision-memory shape, so the prompt firewall
 // holds exactly as for visions: guardian prose enters the sim only as recorded
 // event data). The whole batch lands or nothing does. Returns the issued
-// directive or (nil, in-fiction refusal).
-func (mt *Guardian) landIssueDirective(designationID, targetsArg, text string, ttlDays int, tick int64, alive map[int]bool, grant grantSet) (*sim.Directive, string) {
+// directive or (nil, in-fiction refusal). missionID (spec 107 D2) is the
+// landPlaceDesignation hook's twin: a linking mission_progressed rides the
+// same atomic batch when named.
+func (mt *Guardian) landIssueDirective(designationID, targetsArg, text string, ttlDays int, missionID string, tick int64, alive map[int]bool, grant grantSet) (*sim.Directive, string) {
 	if !grant.allows("issue_directive") {
 		return nil, "that power is not granted in this world"
 	}
@@ -230,6 +247,10 @@ func (mt *Guardian) landIssueDirective(designationID, targetsArg, text string, t
 		batch = append(batch, store.Event{Type: "agent.memory_added", Payload: mustJSON(sim.MemoryAddedPayload{
 			Agent: sim.Ref(t), Text: "The Guardian charges you: " + text, Salience: sim.SalDream,
 			Subject: sim.Ref(-1), Origin: sim.OriginOmen})})
+	}
+	if missionID = strings.TrimSpace(missionID); missionID != "" {
+		batch = append(batch, store.Event{Type: "guardian.mission_progressed",
+			Payload: mustJSON(sim.MissionProgressedPayload{ID: missionID, DirectiveID: d.ID})})
 	}
 	if err := mt.social.InjectSocial(batch); err != nil {
 		log.Printf("guardian: directive rejected at the door: %v", err)
@@ -288,6 +309,15 @@ func planRefusal(err error) string {
 		return "something that is not a wall stands on that line — it can never be walled whole"
 	case strings.Contains(msg, "unknown designation"):
 		return "I keep no designation by that name"
+	// The mission link (spec 107) resolves BEFORE the generic not-active arm:
+	// a bad mission_id refuses the WHOLE atomic batch — the placement/issue
+	// never lands half-linked.
+	case strings.Contains(msg, "unknown mission"):
+		return "I keep no mission by that name — place the mark without mission_id, or name a mission I hold"
+	case strings.Contains(msg, "mission") && strings.Contains(msg, "not active"):
+		return "that mission has already run its course — place the mark without mission_id"
+	case strings.Contains(msg, "already linked"):
+		return "that work is already counted toward the mission"
 	case strings.Contains(msg, "is not active"):
 		return "that designation has already run its course"
 	case strings.Contains(msg, "is dead"):
@@ -327,7 +357,7 @@ func (mt *Guardian) handlePlaceDesignation(d *turnDispatch) toolloop.Handler {
 		dsg, why := mt.landPlaceDesignation(
 			argString(call.Args, "kind"), argString(call.Args, "target"),
 			argString(call.Args, "structure_kind"), minStructures, hasMin,
-			argString(call.Args, "label"), d.tick, d.grant)
+			argString(call.Args, "label"), argString(call.Args, "mission_id"), d.tick, d.grant)
 		if dsg == nil {
 			return toolloop.Outcome{Verdict: toolloop.VerdictRejectedGate, ResultForModel: refusal(why)}
 		}
@@ -356,7 +386,7 @@ func (mt *Guardian) handleIssueDirective(d *turnDispatch) toolloop.Handler {
 		ttl, _ := argInt(call.Args, "ttl_days")
 		dir, why := mt.landIssueDirective(
 			argString(call.Args, "designation_id"), argString(call.Args, "targets"),
-			argString(call.Args, "text"), ttl, d.tick, d.alive, d.grant)
+			argString(call.Args, "text"), ttl, argString(call.Args, "mission_id"), d.tick, d.alive, d.grant)
 		if dir == nil {
 			return toolloop.Outcome{Verdict: toolloop.VerdictRejectedGate, ResultForModel: refusal(why)}
 		}

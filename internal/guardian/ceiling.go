@@ -91,6 +91,64 @@ func applyAngelCeiling(g grantSet, lifted bool) grantSet {
 	return g
 }
 
+// missionPursuitTools is the mission-pursuit surface (spec 107 D4): the
+// EXISTING verbs a mission decomposes into (D2 — survey, designations,
+// directives, workings) plus the progress recorder. Deliberately NOT on the
+// list: accept_mission (acceptance is the player's chat, never the lane's),
+// cancel_mission (the stand-down is the player's), monitor_and_act /
+// cancel_order (the order door keeps its ONE arbiter — a mission may cause
+// orders only through a console/order turn's normal door), the clock triple
+// (the player's at any ceiling), and every bundle tool (the planning-tier
+// ruling above stands on this lane at any ceiling).
+var missionPursuitTools = []string{"survey_site", "place_designation", "cancel_designation",
+	"issue_directive", "cancel_directive", "work_miracle", "note_mission_progress"}
+
+// applyMissionPursuitGrant composes the mission pre-authorization into a
+// SCHEDULED turn's ceilinged grant (spec 107 doctrine, ratified): a mission
+// is the player's explicit standing instruction — the standing order's legal
+// shape — so pursuit runs at FULL competence at any ceiling; the ceiling
+// keeps capping only what the guardian takes up alone. Implementation is a
+// grant layer BESIDE applyAngelCeiling, union-adding exactly the pursuit
+// tools the WORLD grant (pre-ceiling: stage/manifest/bundle-narrowed)
+// already offered — the layer can re-open what the ceiling closed, never
+// widen past the world's own doors — and restoring the world's miracle-kind
+// grant (the modest ceiling's empty kind set would otherwise cap
+// work_miracle's competence). No active mission ⇒ identity: a mission-free
+// scheduled turn is byte-identical to spec 102. Console and triggered turns
+// never pass through here at all (full competence already).
+func applyMissionPursuitGrant(g, world grantSet, activeMission bool) grantSet {
+	if !activeMission {
+		return g
+	}
+	// Copy-on-write, the applyAngelCeiling discipline: the maps feed three
+	// gating layers this turn.
+	tools := make(map[string]bool, len(g.tools)+len(missionPursuitTools))
+	for n := range g.tools {
+		tools[n] = true
+	}
+	for _, n := range missionPursuitTools {
+		if world.tools[n] {
+			tools[n] = true
+		}
+	}
+	g.tools = tools
+	g.kinds, g.kindsRestricted = world.kinds, world.kindsRestricted
+	return g
+}
+
+// guardianAngelMissionFrame is the DEFAULT-ceiling scheduled turn's
+// initiative frame while a MISSION stands (spec 107 D4): the modest frame's
+// honesty with the pre-authorization carve-out — mission pursuit is the
+// player's own standing instruction carried out at full skill; everything
+// the guardian would take up ALONE stays capped exactly as the modest frame
+// caps it. Compile-time constant appended last (spec 021 INV-1).
+const guardianAngelMissionFrame = `This turn is your own scheduled watch — no player message, no order due. Your charter grants ` +
+	`you no initiative beyond watchfulness, but a MISSION the player charged you with still stands, and pursuing it is ` +
+	`carrying out the player's own instruction, not initiative: for the mission alone you act at your full skill — survey, ` +
+	`mark designations, bind directives, and (where granted) work workings that serve its goal, one act at most, as ever. ` +
+	`Beyond the mission's pursuit you spend nothing and command nothing on your own cadence — no unrelated workings, no ` +
+	`watches, no clock; hold your counsel for the player's next visit, and when the player asks, you act with your full skill.`
+
 // guardianAngelModestFrame is the DEFAULT-ceiling scheduled turn's
 // initiative frame (D3): a compile-time constant appended last beneath all
 // editable content (spec 021 INV-1), so no charter or skill byte can

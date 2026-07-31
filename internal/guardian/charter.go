@@ -705,8 +705,15 @@ func intersectGrant(g grantSet, gd *bundle.GrantDoc) grantSet {
 // canonize_region is DELIBERATELY excluded — a world-shaping act, the
 // work_miracle precedent (no miracle kind is granted at stage-1/2), not the
 // charge-free plan layer's every-stage grant.
+// The mission layer (spec 107) joins the stage-1 ceiling too, following the
+// plan layer's every-stage profile (flagged for operator review, the spec
+// 084/085 precedent): all three verbs are charge-free artifact bookkeeping —
+// a mission only records the player's standing instruction and its derived
+// progress; the acting still happens through the already-gated verbs, so
+// the stage-1 "no miracles, no clock control" posture is unchanged.
 var stage1CeilingTools = []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "explain",
-	"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site", "prophesy", "brief_myths"}
+	"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site", "prophesy", "brief_myths",
+	"accept_mission", "note_mission_progress", "cancel_mission"}
 
 // stageCeiling returns the stage's capability ceiling as a narrowing doc —
 // the same shape a persona bundle's grant uses, so intersectGrant applies it

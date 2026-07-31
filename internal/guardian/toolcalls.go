@@ -134,6 +134,19 @@ func (mt *Guardian) turnHandlers(d *turnDispatch) map[string]toolloop.Handler {
 	if d.grant.allows("brief_myths") {
 		h["brief_myths"] = mt.handleBriefMyths(d)
 	}
+	// The mission layer (spec 107): three charge-free artifact verbs —
+	// accept (console: the player's standing instruction made durable),
+	// note-progress (linking pursuit work / recording obstacles), and
+	// cancel (the player's stand-down) — grant-gated like every other.
+	if d.grant.allows("accept_mission") {
+		h["accept_mission"] = mt.handleAcceptMission(d)
+	}
+	if d.grant.allows("note_mission_progress") {
+		h["note_mission_progress"] = mt.handleNoteMissionProgress(d)
+	}
+	if d.grant.allows("cancel_mission") {
+		h["cancel_mission"] = mt.handleCancelMission(d)
+	}
 	return h
 }
 

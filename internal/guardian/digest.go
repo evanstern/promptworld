@@ -82,6 +82,24 @@ func (mt *Guardian) observeMoment(e store.Event) {
 			}
 			line = fmt.Sprintf("%s — a watch lapsed unfulfilled: %q", clock.Format(e.Tick), cond)
 		}
+	// Mission outcomes (spec 107 US1): the derived terminals are the
+	// "report back when done or honestly stuck" channel — model-free
+	// moments the next console reply leads with, citing the recorded
+	// evidence (linked designations / the frozen failure reason).
+	case "guardian.mission_completed":
+		var p sim.MissionCompletedPayload
+		if json.Unmarshal(e.Payload, &p) == nil {
+			line = fmt.Sprintf("%s — the mission %s is complete: %s fulfilled", clock.Format(e.Tick), p.ID, strings.Join(p.Designations, ", "))
+		}
+	case "guardian.mission_failed":
+		var p sim.MissionFailedPayload
+		if json.Unmarshal(e.Payload, &p) == nil {
+			why := "its deadline passed with the goal unmet"
+			if p.Reason == sim.MissionFailNeverPursued {
+				why = "no pursuit was ever recorded for it"
+			}
+			line = fmt.Sprintf("%s — the mission %s failed honestly: %s", clock.Format(e.Tick), p.ID, why)
+		}
 	}
 	if line == "" {
 		return

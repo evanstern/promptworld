@@ -189,6 +189,11 @@ type Guardian struct {
 	// turn-worker read.
 	regions []sim.Region
 	myths   []sim.PlaceMythBriefing
+	// Mission mirror (spec 107, the plan-mirror discipline): the replica's
+	// Missions is the authority; the turn worker reads this copy for id
+	// minting ("msn" prefix), the prompt's mission section, and the
+	// scheduled lane's pursuit-grant composition (ceiling.go).
+	missions []sim.Mission
 
 	// Trigger pipeline (spec 029 US3, data-model §5): the absorb goroutine matches
 	// live events against active orders and enqueues onto triggerQ; a dedicated
@@ -508,6 +513,8 @@ func (mt *Guardian) mirrorState() {
 	mt.faith = mt.replica.FaithScore()
 	// Named regions (spec 101): same discipline again.
 	mt.regions = append(mt.regions[:0], mt.replica.Regions...)
+	// Missions (spec 107): same discipline again.
+	mt.missions = append(mt.missions[:0], mt.replica.Missions...)
 	// The myth briefing (spec 101 D5) is DERIVED, not mirrored verbatim: a
 	// pure read over the replica's belief corpus, recomputed here (under the
 	// SAME lock that guards every other replica read a turn may later copy

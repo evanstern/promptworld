@@ -52,14 +52,14 @@ func planFixture(t *testing.T) (*Guardian, *stateInjector, grantSet) {
 func TestPlaceDesignationLands(t *testing.T) {
 	mt, inj, grant := planFixture(t)
 
-	site, why := mt.landPlaceDesignation("structure_site", "4,5", "shelter", 0, false, "north shelter", 100, grant)
+	site, why := mt.landPlaceDesignation("structure_site", "4,5", "shelter", 0, false, "north shelter", "", 100, grant)
 	if why != "" {
 		t.Fatalf("site placement refused: %q", why)
 	}
 	if site.ID != "dsg-100-0" || site.X != 4 || site.Y != 5 || site.X2 != 4 || site.Y2 != 5 {
 		t.Errorf("site = %+v, want dsg-100-0 at (4,5)", site)
 	}
-	line, why := mt.landPlaceDesignation("wall_line", "2,9 -> 2,2", "", 0, false, "", 100, grant)
+	line, why := mt.landPlaceDesignation("wall_line", "2,9 -> 2,2", "", 0, false, "", "", 100, grant)
 	if why != "" {
 		t.Fatalf("line placement refused: %q", why)
 	}
@@ -67,7 +67,7 @@ func TestPlaceDesignationLands(t *testing.T) {
 	if line.ID != "dsg-100-1" || line.X != 2 || line.Y != 9 || line.X2 != 2 || line.Y2 != 2 {
 		t.Errorf("line = %+v, want dsg-100-1 (2,9)->(2,2)", line)
 	}
-	zone, why := mt.landPlaceDesignation("settlement_zone", "8,8..1,1", "", 0, false, "", 100, grant)
+	zone, why := mt.landPlaceDesignation("settlement_zone", "8,8..1,1", "", 0, false, "", "", 100, grant)
 	if why != "" {
 		t.Fatalf("zone placement refused: %q", why)
 	}
@@ -124,7 +124,7 @@ func TestPlaceDesignationRefusals(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			before := len(inj.batches)
-			d, why := mt.landPlaceDesignation(tc.kind, tc.target, tc.sk, tc.min, tc.hasMin, "", 200, grant)
+			d, why := mt.landPlaceDesignation(tc.kind, tc.target, tc.sk, tc.min, tc.hasMin, "", "", 200, grant)
 			if d != nil || !strings.Contains(why, tc.wantWhy) {
 				t.Errorf("got (%v, %q), want refusal containing %q", d, why, tc.wantWhy)
 			}
@@ -138,7 +138,7 @@ func TestPlaceDesignationRefusals(t *testing.T) {
 	}
 
 	// Ungranted: structural refusal.
-	if _, why := mt.landPlaceDesignation("structure_site", "4,5", "shelter", 0, false, "", 200, grantSet{}); !strings.Contains(why, "not granted") {
+	if _, why := mt.landPlaceDesignation("structure_site", "4,5", "shelter", 0, false, "", "", 200, grantSet{}); !strings.Contains(why, "not granted") {
 		t.Errorf("ungranted why = %q", why)
 	}
 }
@@ -147,7 +147,7 @@ func TestPlaceDesignationRefusals(t *testing.T) {
 // unknown id come back as counsel (the one-way door surfaces in-fiction).
 func TestCancelDesignationRaces(t *testing.T) {
 	mt, _, grant := planFixture(t)
-	d, why := mt.landPlaceDesignation("structure_site", "4,5", "shelter", 0, false, "", 100, grant)
+	d, why := mt.landPlaceDesignation("structure_site", "4,5", "shelter", 0, false, "", "", 100, grant)
 	if why != "" {
 		t.Fatal(why)
 	}
@@ -168,7 +168,7 @@ func TestCancelDesignationRaces(t *testing.T) {
 // reach villagers as recorded event data and nothing else.
 func TestIssueDirectiveAtomicBatch(t *testing.T) {
 	mt, inj, grant := planFixture(t)
-	if _, why := mt.landPlaceDesignation("structure_site", "4,5", "shelter", 0, false, "", 100, grant); why != "" {
+	if _, why := mt.landPlaceDesignation("structure_site", "4,5", "shelter", 0, false, "", "", 100, grant); why != "" {
 		t.Fatal(why)
 	}
 	alive := map[int]bool{}
@@ -177,7 +177,7 @@ func TestIssueDirectiveAtomicBatch(t *testing.T) {
 	}
 	// Name targets in REVERSE index order — the payload must land ascending.
 	targets := sim.AgentNames[1] + ", " + sim.AgentNames[0]
-	dir, why := mt.landIssueDirective("dsg-100-0", targets, "Raise the shelter I have marked.", 0, 200, alive, grant)
+	dir, why := mt.landIssueDirective("dsg-100-0", targets, "Raise the shelter I have marked.", 0, "", 200, alive, grant)
 	if why != "" {
 		t.Fatalf("issue refused: %q", why)
 	}
@@ -204,7 +204,7 @@ func TestIssueDirectiveAtomicBatch(t *testing.T) {
 	}
 
 	// "everyone" resolves to all living, ascending, and marks Village.
-	all, why := mt.landIssueDirective("dsg-100-0", "everyone", "All of you: build.", 0, 201, alive, grant)
+	all, why := mt.landIssueDirective("dsg-100-0", "everyone", "All of you: build.", 0, "", 201, alive, grant)
 	if why != "" {
 		t.Fatalf("everyone refused: %q", why)
 	}
@@ -218,7 +218,7 @@ func TestIssueDirectiveAtomicBatch(t *testing.T) {
 // (nothing lands) with repairable counsel.
 func TestIssueDirectiveRejections(t *testing.T) {
 	mt, inj, grant := planFixture(t)
-	if _, why := mt.landPlaceDesignation("structure_site", "4,5", "shelter", 0, false, "", 100, grant); why != "" {
+	if _, why := mt.landPlaceDesignation("structure_site", "4,5", "shelter", 0, false, "", "", 100, grant); why != "" {
 		t.Fatal(why)
 	}
 	alive := map[int]bool{}
@@ -243,7 +243,7 @@ func TestIssueDirectiveRejections(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			d, why := mt.landIssueDirective(tc.dsg, tc.targets, tc.text, tc.ttl, 300, alive, grant)
+			d, why := mt.landIssueDirective(tc.dsg, tc.targets, tc.text, tc.ttl, "", 300, alive, grant)
 			if d != nil || !strings.Contains(why, tc.wantWhy) {
 				t.Errorf("got (%v, %q), want refusal containing %q", d, why, tc.wantWhy)
 			}
@@ -257,7 +257,7 @@ func TestIssueDirectiveRejections(t *testing.T) {
 	if why := mt.landCancelDesignation("dsg-100-0", grant); why != "" {
 		t.Fatal(why)
 	}
-	if d, why := mt.landIssueDirective("dsg-100-0", sim.AgentNames[0], "go", 0, 301, alive, grant); d != nil ||
+	if d, why := mt.landIssueDirective("dsg-100-0", sim.AgentNames[0], "go", 0, "", 301, alive, grant); d != nil ||
 		!strings.Contains(why, "run its course") {
 		t.Errorf("non-active designation issue = (%v, %q)", d, why)
 	}
@@ -266,14 +266,14 @@ func TestIssueDirectiveRejections(t *testing.T) {
 // TestCancelDirective: the cancel path and its counsel.
 func TestCancelDirective(t *testing.T) {
 	mt, inj, grant := planFixture(t)
-	if _, why := mt.landPlaceDesignation("structure_site", "4,5", "shelter", 0, false, "", 100, grant); why != "" {
+	if _, why := mt.landPlaceDesignation("structure_site", "4,5", "shelter", 0, false, "", "", 100, grant); why != "" {
 		t.Fatal(why)
 	}
 	alive := map[int]bool{}
 	for i := range inj.state.Agents {
 		alive[i] = true
 	}
-	d, why := mt.landIssueDirective("dsg-100-0", sim.AgentNames[0], "go", 0, 200, alive, grant)
+	d, why := mt.landIssueDirective("dsg-100-0", sim.AgentNames[0], "go", 0, "", 200, alive, grant)
 	if why != "" {
 		t.Fatal(why)
 	}
@@ -312,7 +312,7 @@ func TestPlanIDMintingDeterministic(t *testing.T) {
 // byte-identical to a pre-084 one (empty sections render nothing).
 func TestPlanPromptSections(t *testing.T) {
 	alive := map[int]bool{0: true}
-	base := turnUserPrompt(100, 1, sim.FaithGenesis, alive, nil, nil, nil, nil, nil, nil, nil, "", "", "", "The player says:\nhello")
+	base := turnUserPrompt(100, 1, sim.FaithGenesis, alive, nil, nil, nil, nil, nil, nil, nil, nil, "", "", "", "The player says:\nhello")
 	if strings.Contains(base, "Designations") || strings.Contains(base, "Directives") {
 		t.Error("plan-free prompt carries plan sections")
 	}
@@ -327,7 +327,7 @@ func TestPlanPromptSections(t *testing.T) {
 		{ID: "dir-2-0", DesignationID: "dsg-1-0", Targets: []int{0}, Text: "Raise it.",
 			IssuedTick: 100, ExpiresTick: 100 + 2*24*3600, Status: "active"},
 	}
-	got := turnUserPrompt(100, 1, sim.FaithGenesis, alive, nil, designations, directives, nil, nil, nil, nil, "", "", "", "The player says:\nhello")
+	got := turnUserPrompt(100, 1, sim.FaithGenesis, alive, nil, designations, directives, nil, nil, nil, nil, nil, "", "", "", "The player says:\nhello")
 	for _, want := range []string{
 		"Designations you have marked on the world:",
 		`- dsg-1-0: structure_site at (4,5) (shelter) — "north shelter"`,
@@ -376,14 +376,14 @@ func TestDirectiveWatchComposition(t *testing.T) {
 	// order and payload (the sweep's provenance is pinned sim-side by
 	// TestPlanSweepOnceOnlyAndLag; this test feeds the recorded batch to the
 	// live matcher exactly as the absorb path would).
-	if _, why := mt.landPlaceDesignation("structure_site", "4,5", "shelter", 0, false, "", 100, grant); why != "" {
+	if _, why := mt.landPlaceDesignation("structure_site", "4,5", "shelter", 0, false, "", "", 100, grant); why != "" {
 		t.Fatal(why)
 	}
 	alive := map[int]bool{}
 	for i := range inj.state.Agents {
 		alive[i] = true
 	}
-	dir, why := mt.landIssueDirective("dsg-100-0", sim.AgentNames[0], "Raise it.", 0, 200, alive, grant)
+	dir, why := mt.landIssueDirective("dsg-100-0", sim.AgentNames[0], "Raise it.", 0, "", 200, alive, grant)
 	if why != "" {
 		t.Fatal(why)
 	}
