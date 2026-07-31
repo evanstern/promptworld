@@ -1,6 +1,6 @@
 ---
 name: guardian-missions
-description: Guardian missions (spec 107) — the player's plain-words standing instruction as a durable spec-084-shaped artifact: accept_mission/note_mission_progress/cancel_mission, the atomic mission_id link on the plan verbs, derived completion/failure from linked-designation predicates (never self-graded), scheduled-lane pursuit at FULL competence at any ceiling (missions are pre-authorization), and the D5 EASY-mode default-charter obedience clause. Load when tracing guardian.mission_* or the pursuit grant.
+description: Guardian missions (spec 107) — the player's plain-words standing instruction as a durable spec-084-shaped artifact: accept_mission/note_mission_progress/cancel_mission, the atomic mission_id link on the plan verbs, derived completion/failure from linked-designation predicates (never self-graded), scheduled-lane pursuit at FULL competence at any ceiling (missions are pre-authorization), and the D5 EASY-mode default-charter obedience clause. Load when tracing guardian.mission_* or the pursuit.
 kind: component
 sources:
   - internal/sim/missions.go

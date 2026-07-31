@@ -1,6 +1,6 @@
 ---
 name: world-tuning
-description: The spec-048 world tuning manifest (tuning.json) — the promotion path for doctrine constants to per-world dials: the five first-promoted dials (refuel-dying window, fire burn per wood, gru emergence chance, planner cadence, encounter cooldown) plus spec 097's four grounded-observation dials, TuningState, nil-safe accessors, and the manifest's clamp table; boot seeding, the genesis pin, and replay independence split into [[world-tuning-boot-seeding]]
+description: The spec-048 world tuning manifest (tuning.json) — the promotion path from doctrine constants to per-world dials: TuningState, nil-safe accessors, fail-closed parse rules. Per-dial catalog (specs 048/097/098/102/104) split into [[world-tuning-dial-catalog]]; boot seeding, genesis pin, and replay independence into [[world-tuning-boot-seeding]].
 kind: component
 sources:
   - internal/sim/tuning.go
@@ -20,43 +20,14 @@ absent file is byte-for-byte the pre-048 world.
 
 ## How it works
 
-**The five promoted dials** (`internal/sim/tuning.go`, defaults and clamp
-bounds in the table below): `RefuelDyingBelow` (the reflex's
-fire-refuel-dying window — raised from 3600 by spec 057 / TASK-108 on
-world-01 burnout evidence), `FireBurnPerWood` (fuel added per wood),
-`GruEmergePerMille` (nightly emergence chance), `PlannerCadenceTicks` (the
-mind driver's per-agent baseline cadence), and `EncounterCooldownTicks` (the
-per-pair encounter cooldown). Each was previously a
-bare package constant (`refuelDyingBelow`/`fireBurnPerWood` in `agents.go`,
-`gruEmergePerMille` in `gru.go`, the exported `sim.PlannerCadenceTicks` in
-`agents.go`, `encounterCooldownTicks` in `mind/mind.go`); spec 048 relocates
-all five defaults into `tuning.go` renamed `default*` — the single home for
-these doctrine values.
-**Spec 097 adds four grounded-observation dials** (born as dials, no retired
-constants — [[executor-perception-observation]]): two executor-read
-(observation dedup window, base salience), two read off the mind's replica
-by the belief reconciler (disconfirm retain, confirm boost) — nine total.
-**Spec 102 adds `steward_cadence_ticks`** ([[guardian-agentization]]): the
-guardian-agentization OPT-IN switch and cadence — 0 = off = default,
-nonzero clamps to 600..86400, negatives clamp to 0 (never opting a world in
-by accident); `omitempty` on state and payload keeps pre-102 bytes
-identical; read via `State.StewardCadence()`.
-**Spec 104 adds `needs_checkpoint_minutes`** (K, default 10, clamp [1,60]):
-the needs-checkpoint cadence — `agent.needs_changed` emits every K
-game-minutes plus immediately on any danger-band/near-death/zero crossing;
-K=1 reproduces the per-minute heartbeat byte-for-byte. The field DOUBLES as
-the coalescing-REGIME marker: a pre-104 recorded `sim.tuning_applied`
-payload (field absent) resolves to 0 = LEGACY — deliberately NOT the
-doctrine default, unlike the spec-097 dials — so old worlds keep per-step
-`agent.moved` / per-minute needs / `gru.moved` emission and the derived
-advancement engine stays structurally inert on their folds
-([[sim-state-reducer]]). Because a sparse manifest resolves the absent key
-to the default 10, ANY `tuning.json` flips an old world to the regime at
-its next boot — deterministic and event-recorded; the `sim.tuning_applied`
-arm stamps every advancement watermark (`NeedsSyncTick`, `NeedsEmitted`,
-`Gru.Done`) at the flip tick so no event-covered past is ever re-derived.
-Accessors: `AmbientCoalescing()` (the regime predicate) and
-`NeedsCheckpointK()`.
+**The dial catalog** — every dial (the five spec-048 promotions, spec 097's
+four observation dials, spec 102's `steward_cadence_ticks`, spec 104's
+`needs_checkpoint_minutes` regime marker, the spec-098 dream block) with
+JSON keys, defaults, and clamp bounds lives in
+[[world-tuning-dial-catalog]]. Highlights the model below depends on:
+`needs_checkpoint_minutes` doubles as the coalescing-regime marker
+(absent-in-recorded-payload resolves to 0 = legacy, deliberately not the
+doctrine default), and the dream block rides a nil≡default pointer.
 
 **`TuningState`** (`tuning.go`) is the fully-resolved effective set: a
 non-nil `TuningState` always carries all fields with defaults filled in
@@ -90,35 +61,6 @@ new`. `ParseTuning(data)` (`tuning.go`) decodes it with
 no-opping — a typo'd dial must never look like it moved) into a full
 effective `TuningState` resolved against the defaults, returning per-field
 clamp warnings and a structural error separately:
-
-| Field | JSON key | Default | Clamp bounds |
-|---|---|---|---|
-| RefuelDyingBelow | `refuel_dying_below` | 10800 | [0, 86400] |
-| FireBurnPerWood | `fire_burn_per_wood` | 14400 | [600, 86400] |
-| GruEmergePerMille | `gru_emerge_per_mille` | 600 | [0, 1000] |
-| PlannerCadenceTicks | `planner_cadence_ticks` | 1800 | [60, 86400] |
-| EncounterCooldownTicks | `encounter_cooldown_ticks` | 7200 | [0, 86400] |
-| ObservationDedupTicks | `observation_dedup_ticks` | 7200 | [0, 86400] |
-| ObservationBaseSalience | `observation_base_salience` | 2 | [1, 10] |
-| BeliefDisconfirmRetainPercent | `belief_disconfirm_retain_percent` | 70 | [0, 100] |
-| BeliefConfirmBoost | `belief_confirm_boost` | 10 | [0, 100] |
-| NeedsCheckpointMinutes | `needs_checkpoint_minutes` | 10 | [1, 60] (0 = legacy, unreachable from a manifest) |
-
-Out-of-range values of a KNOWN field clamp to the nearest bound with an
-operator-visible warning (the `llm/config.go` `normalizeTokenBudget` style)
-— the clamped value applies and gets recorded. Structural problems
-(malformed JSON, wrong types, unrecognized field names) fail `ParseTuning`
-outright — a hard boot error naming file and problem (fail-closed): a typo
-must never silently run as a no-op.
-
-**The dream dial block (spec 098, [[private-dreams]]).** `TuningState` also
-carries `Dream *DreamTuning` — nil ≡ the default dream set, so every
-pre-098 snapshot and recorded payload stays byte-identical (`omitempty`,
-no format bump). The manifest keys stay flat
-(`dream_*_per_mille`/`dream_merge_cap_per_night`; defaults 900/30/500/4/15);
-any present key resolves the FULL block. The pointer takes `TuningState` out of bare-`==`
-comparability — the boot seed compares via `Equal`, and `State.DreamDials()`
-is the nil-safe consumption path.
 
 **The `sim.tuning_applied` event** (`tuning.go`'s `NewTuningEvent`) carries
 the FULL effective set — base fields, the four spec-097 pointer fields, and

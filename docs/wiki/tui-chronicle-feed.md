@@ -110,27 +110,20 @@ entries with NO new family, tier, or channel: `sim.cold_snap` ("a
 cold snap grips night N (until tT)") and `sim.forage_blighted` ("blight
 struck the forage at (x,y) (+N more tiles)" — the first-fact-plus-count
 shape) in the sim voice; the `stranger.*` namespace mapped onto the
-gru/threat family voice (`familyByNamespace["stranger"]` — a second
-nocturnal entity, not a new visual role): `stranger.arrived` ("a
+gru/threat family voice (`familyByNamespace["stranger"]` — second nocturnal entity, same visual role): `stranger.arrived` ("a
 stranger slipped in at (x,y)"), `stranger.moved` ("the stranger creeps to
 (x,y)"), `stranger.took` (alert tier, "the stranger took N <kind> from the
-stores at (x,y)"), `stranger.departed` ("the stranger was
-gone by dawn of day N"); and `guardian.skills_observed` ("Guardian ran
-under N skill file(s) <fingerprint>" — the charter observation's twin,
-guardian family/skin-name subject).
+stores at (x,y)"), `stranger.departed` ("the stranger was gone by day N"); and `guardian.skills_observed` ("Guardian ran
+under N skill file(s) <fingerprint>" — the charter observation's twin).
 
 ## Spec 086 — payload-first naming and the generic subject fallback
 
 Agent-bearing digests now read the payload ref's name first (`refSeg`/
 `refName`, `internal/tui/digest.go`): a post-086 row renders with NO
-replica lookup — proven by `TestCatalogSweep`'s `names = nil`
-identical-output assertion over every agent-bearing fixture. The replica
-`names` slice and the `resolvePayloadNames` regex rewriter survive as the
-historic-row fallback layer (legacy rows carry `Name == ""`), shrunk but
-never removed. `resolveSubject` gained a registry-miss generic pass: scan
+replica lookup — proven by `TestCatalogSweep`'s `names = nil` identical-output assertion. The replica `names` slice and `resolvePayloadNames` survive as the
+historic-row fallback (legacy rows carry `Name == ""`). `resolveSubject` gained a registry-miss generic pass: scan
 the payload for `{"id":N,"name":…}` ref objects; exactly one distinct
-in-roster id is the subject (live position, payload name), zero or several
-stay unlocatable — the honest-hint doctrine detected structurally.
+in-roster id is the subject (live position, payload name), zero or several stay unlocatable (honest-hint doctrine).
 `world.migrated` stays hard-excluded. Hit rate: 79 registry-only vs 86
 registry+fallback locatable fixture rows (`TestResolveSubjectHitRate`),
 with `journal.entry_written`/`journal.entry_deleted` and
