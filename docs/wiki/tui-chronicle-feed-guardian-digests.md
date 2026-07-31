@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/tui/grammar.go
   - internal/tui/digest.go
-verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
+verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
 ---
 
 # TUI chronicle feed — guardian-domain digest entries
@@ -59,7 +59,12 @@ guardian memory-store rows — `guardian.memory_added/embedded/promoted/
 faded`, `guardian.salience_revised`, `guardian.memory_merged`,
 `guardian.consolidated` — the `agent.*` consolidation family's wording
 re-voiced under the skin's guardian display name (vectors elided, the
-spec-042 reasoning).
+spec-042 reasoning). Spec 107 ([[guardian-missions]]) adds the five
+mission rows in the plan-layer voice: the guardian accepts/advances/stands
+down (`guardian.mission_accepted/progressed/cancelled`), and the world
+answers (`guardian.mission_completed` naming the fulfilled linked
+designations, `guardian.mission_failed` naming the frozen reason) — the
+derived terminals cite recorded evidence, never prose grading.
 
 ## Connections
 

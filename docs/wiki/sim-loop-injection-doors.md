@@ -4,7 +4,7 @@ description: Loop.InjectSocial (the mind's whitelisted conversation/consolidatio
 kind: component
 sources:
   - internal/sim/loop.go
-verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
+verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
 ---
 
 # Sim loop — injection doors
@@ -46,7 +46,12 @@ door validates targets/text/TTL/cap/claim and spends the charge stake;
 it rides atomically with per-target `OriginOmen` companions), while
 `prophecy.fulfilled`/`prophecy.failed`/`faith.changed` are
 executor-emitted and deliberately absent — whitelist absence is what
-refuses a forged verdict or faith movement — `agent.salience_revised`/
+refuses a forged verdict or faith movement — the three injectable mission
+types `guardian.mission_accepted`/`mission_progressed`/`mission_cancelled`
+(spec 107, [[guardian-missions]]) join the same way (the `applyMission`
+arms validate goal/TTL/cap/link existence), while
+`guardian.mission_completed`/`guardian.mission_failed` are executor-emitted
+and deliberately absent (derived outcomes, never self-graded) — `agent.salience_revised`/
 `agent.memory_merged` (spec 098, [[private-dreams]]) widen the boundary by
 two: the nightly dream pass's recorded habituation/merge outcomes, injected
 by the consolidation driver, reducer-total like the consolidation family —

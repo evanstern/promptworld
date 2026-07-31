@@ -129,6 +129,15 @@ func stepEvents(s *State, m *worldmap.Map, nextTick int64) []store.Event {
 	// directly at T+1's sweep — no extra lag rule needed, only this fixed slot.
 	events = append(events, prophecyEvents(s, nextTick)...)
 
+	// Mission outcome sweep (spec 107 FR-003): active missions judged against
+	// the derived completion predicate (all linked designations fulfilled) and
+	// the deadline — completed before failed, once, pure over (pre-tick state,
+	// tick), the designation/directive sweep idiom. Placed AFTER the prophecy
+	// sweep at a FIXED position: a designation fulfilled at T flips status at
+	// apply, so a dependent mission completes at T+1's sweep (the documented
+	// one-tick lag), never an order-dependent same-tick race.
+	events = append(events, missionEvents(s, nextTick)...)
+
 	// Scenario incidents (spec 054 US2): due authored emissions from the
 	// boot-frozen incident source (scenario.go) — the executor emission
 	// class, exactly the charge-regen idiom above: pure over (state, config,

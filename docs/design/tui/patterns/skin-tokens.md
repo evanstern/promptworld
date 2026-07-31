@@ -122,6 +122,9 @@ already-written files and every serialized identifier (event types
 | `skin.guardian.example_ask.prophesy` | `"prophesy to everyone: the shelter I marked will stand within three days"` | help guardian section (spec 085: the staked vision, same frozen-tool-id keying) |
 | `skin.guardian.example_ask.canonize_region` | `"canonize Thornspire at 20,20, radius 6"` | help guardian section (spec 101: the canonization working) |
 | `skin.guardian.example_ask.brief_myths` | `"what myths do the villagers already believe?"` | help guardian section (spec 101: the read-only myth-briefing companion) |
+| `skin.guardian.example_ask.accept_mission` | `"get a second fire built near the west huts and keep it fueled"` | help guardian section (spec 107: the player's standing mission) |
+| `skin.guardian.example_ask.note_mission_progress` | `"how is my mission coming along? note where it stands"` | help guardian section (spec 107: mission progress bookkeeping) |
+| `skin.guardian.example_ask.cancel_mission` | `"stand down from the fire mission"` | help guardian section (spec 107: the player's stand-down) |
 | `skin.stage.stage-1.name` … `skin.stage.stage-4.name` | The Voice / The Written Word / The Craft / The Stewardship | stage display identities (`internal/skin` StageIdentity; spec 046 surfaces) |
 | `skin.stage.stage-1.line` … `skin.stage.stage-4.line` | "you speak, it acts" / "your law outlives the conversation" / "you shape what it can do" / "a world in your care" | one-line stage identity descriptions |
 | `skin.stage.stage-2.ceremony_chapter` | "Your play proved The Written Word: a law that outlives the conversation, written once and honored by every turn since." | `overlays/ceremony.md`'s D6 authorship-voice narrated chapter (spec 056) — stage-1 has no entry (never unlocked, `sim.EvaluateUnlock` never returns it) |

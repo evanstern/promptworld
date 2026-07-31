@@ -42,16 +42,17 @@ var ErrTurnBusy = errors.New("the guardian is attending another matter")
 
 // TurnResult is the console-facing outcome of one turn.
 type TurnResult struct {
-	Reply     string        `json:"reply"`
-	Nudge     *Nudge        `json:"nudge,omitempty"`
-	Miracle   *Miracle      `json:"miracle,omitempty"`   // FROZEN JSON tag (spec 052 ruling 2): IPC clients decode it
-	Order     *OrderReport  `json:"order,omitempty"`     // a placed standing order (spec 029 US2)
-	Plan      *PlanReport   `json:"plan,omitempty"`      // a landed plan act (spec 084): placed/cancelled designation, issued/cancelled directive
-	Region    *RegionReport `json:"region,omitempty"`    // a landed canonization (spec 101): christened region + optional feature
-	Cancelled []string      `json:"cancelled,omitempty"` // released order ids (cancel_order)
-	Clock     string        `json:"clock,omitempty"`     // a landed meta act's human line (spec 029 US5)
-	Charges   int           `json:"charges"`
-	Moments   []string      `json:"moments,omitempty"`
+	Reply     string         `json:"reply"`
+	Nudge     *Nudge         `json:"nudge,omitempty"`
+	Miracle   *Miracle       `json:"miracle,omitempty"`   // FROZEN JSON tag (spec 052 ruling 2): IPC clients decode it
+	Order     *OrderReport   `json:"order,omitempty"`     // a placed standing order (spec 029 US2)
+	Plan      *PlanReport    `json:"plan,omitempty"`      // a landed plan act (spec 084): placed/cancelled designation, issued/cancelled directive
+	Region    *RegionReport  `json:"region,omitempty"`    // a landed canonization (spec 101): christened region + optional feature
+	Mission   *MissionReport `json:"mission,omitempty"`   // a landed mission act (spec 107): accepted/progressed/cancelled mission
+	Cancelled []string       `json:"cancelled,omitempty"` // released order ids (cancel_order)
+	Clock     string         `json:"clock,omitempty"`     // a landed meta act's human line (spec 029 US5)
+	Charges   int            `json:"charges"`
+	Moments   []string       `json:"moments,omitempty"`
 }
 
 // OrderReport is the console-facing summary of a placed standing order (spec 029
@@ -187,16 +188,37 @@ func (mt *Guardian) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 	// (work_miracle's kind enum), the derived guidance, and (via `grant` on
 	// turnDispatch below) the door itself.
 	grant = narrowGrantForBundles(grant, mt.bundles)
+	// The mission mirror is read EARLY (before the ceiling composition below
+	// needs it); the remaining mirrors copy under the same lock further down.
+	// activeMissions gates both the pursuit grant and the pursuit framing —
+	// zero on every mission-free world, so those paths stay byte-identical.
+	mt.stateMu.Lock()
+	missions := append([]sim.Mission(nil), mt.missions...)
+	mt.stateMu.Unlock()
+	activeMissions := 0
+	for i := range missions {
+		if missions[i].Status == "active" {
+			activeMissions++
+		}
+	}
 	// The deliberate-incompetence ceiling (spec 102 D3, ceiling.go): a
 	// SCHEDULED turn's grant narrows by the ceiling compiled from the
 	// EFFECTIVE charter this turn runs under — default text caps initiative
 	// to the modest read/counsel set; an authored charter lifts it (minus
 	// the clock triple). Console and triggered turns skip this entirely:
 	// compliance and tutor quality are full at any ceiling.
+	//
+	// The mission pursuit grant (spec 107 D4) composes BESIDE the ceiling:
+	// an active mission is the player's standing pre-authorization, so the
+	// pursuit verbs the WORLD grants rejoin the scheduled roster at full
+	// competence — at any ceiling — while everything initiative-shaped stays
+	// exactly as the ceiling left it.
 	angelLifted := false
 	if o.angel {
+		worldGrant := grant // pre-ceiling: the stage/manifest/bundle-narrowed world grant
 		angelLifted = angelCharterLifted(charter, mt.charterPreset)
 		grant = applyAngelCeiling(grant, angelLifted)
+		grant = applyMissionPursuitGrant(grant, worldGrant, activeMissions > 0)
 	}
 	var notices []string
 	if charterNotice != "" {
@@ -318,11 +340,16 @@ func (mt *Guardian) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 
 	// The trailing directive: the player's words (console), the order's
 	// pre-authorized action (system), or the guardian's own cadence
-	// instruction (angel — spec 102, no player-text sink either way).
+	// instruction (angel — spec 102, no player-text sink either way). A
+	// scheduled turn with an active mission gains the pursuit addendum
+	// (spec 107 D4) — mission-free scheduled directives are byte-identical.
 	directive := "The player says:\n" + o.seed
 	switch {
 	case o.angel:
 		directive = o.seed
+		if activeMissions > 0 {
+			directive += guardianMissionPursuitDirective
+		}
 	case o.system:
 		directive = "A standing order you placed has come due. Carry out its " +
 			"pre-authorized action now, in a single act if it calls for one:\n" + o.seed
@@ -367,12 +394,15 @@ func (mt *Guardian) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 	}
 
 	// The initiative frame per origin (INV-1: always a compile-time constant
-	// appended last): survival carve-out, the two angel frames (D3), or the
-	// restrictive default.
+	// appended last): survival carve-out, the angel frames (D3; the mission
+	// variant carries spec 107's pre-authorization carve-out when a mission
+	// stands under the default ceiling), or the restrictive default.
 	frame := guardianInitiativeFrame
 	switch {
 	case o.angel && angelLifted:
 		frame = guardianAngelLiftedFrame
+	case o.angel && activeMissions > 0:
+		frame = guardianAngelMissionFrame
 	case o.angel:
 		frame = guardianAngelModestFrame
 	case o.survival:
@@ -392,7 +422,7 @@ func (mt *Guardian) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 		JobID:     jobID,
 		Kind:      kind,
 		System:    composeTurnSystemPrompt(frame, charter, guide, skills, roster, souls...),
-		Seed:      turnUserPrompt(tick, charges, faith, alive, orders, designations, directives, prophecies, moments, story, memories, mt.soulTail(), mt.transcriptTail(), digest, directive),
+		Seed:      turnUserPrompt(tick, charges, faith, alive, orders, designations, directives, prophecies, missions, moments, story, memories, mt.soulTail(), mt.transcriptTail(), digest, directive),
 		Roster:    roster,
 		Handlers:  handlers,
 		MaxRounds: mt.loopRounds,
@@ -431,7 +461,7 @@ func (mt *Guardian) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 	// error) — the old scattered-thoughts fallback maps onto exactly these.
 	reply := strings.TrimSpace(res.Final)
 	if reply == "" && result.Nudge == nil && result.Miracle == nil && result.Order == nil &&
-		result.Plan == nil && len(result.Cancelled) == 0 && result.Clock == "" {
+		result.Plan == nil && result.Mission == nil && len(result.Cancelled) == 0 && result.Clock == "" {
 		reply = "Forgive me — my thoughts scattered and I could not complete that. " +
 			"Nothing was done and nothing was spent. Ask again."
 	}
@@ -841,6 +871,9 @@ func (mt *Guardian) recordTurn(tick int64, o turnOrigin, r TurnResult) {
 	}
 	if r.Order != nil {
 		fmt.Fprintf(&b, "👁 watch set (%s): %q\n", r.Order.ID, r.Order.Condition)
+	}
+	if r.Mission != nil {
+		fmt.Fprintf(&b, "🎯 mission (%s): %s\n", r.Mission.ID, r.Mission.Summary)
 	}
 	for _, id := range r.Cancelled {
 		fmt.Fprintf(&b, "👁 watch released: %s\n", id)
@@ -1289,7 +1322,7 @@ func survivalFlag(n needMirror) string {
 // verbatim. runTurn is the sole author of the origin-appropriate label: the label
 // lives in exactly one place, so a console turn carries it once and a system turn
 // never pretends its directive came from the player this turn (spec 029 R6).
-func turnUserPrompt(tick int64, charges, faith int, alive map[int]bool, orders []sim.GuardianOrder, designations []sim.Designation, directives []sim.Directive, prophecies []sim.Prophecy, moments, story, memories []string, soulTail, transcriptTail, digest, directive string) string {
+func turnUserPrompt(tick int64, charges, faith int, alive map[int]bool, orders []sim.GuardianOrder, designations []sim.Designation, directives []sim.Directive, prophecies []sim.Prophecy, missions []sim.Mission, moments, story, memories []string, soulTail, transcriptTail, digest, directive string) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "World clock: %s. Charges banked: %d of %d.\n", clock.Format(tick), charges, sim.GuardianChargeCap)
 	// The village's faith (spec 085 FR-013): in-fiction wording, always
@@ -1321,6 +1354,10 @@ func turnUserPrompt(tick int64, charges, faith int, alive map[int]bool, orders [
 	// writeStandingOrders shape; empty when none stand, so a prophecy-free
 	// world's prompt gains only the faith line above.
 	writeProphecies(&b, tick, prophecies)
+	// Active missions (spec 107 FR-002): id, goal, days left, linked-entity
+	// statuses — the writeStandingOrders shape; empty when none stand, so a
+	// mission-free world's prompt is byte-unchanged.
+	writeMissions(&b, tick, missions, designations, directives)
 	if len(moments) > 0 {
 		b.WriteString("\nMoments you have not yet reported (lead with these):\n")
 		for _, m := range moments {

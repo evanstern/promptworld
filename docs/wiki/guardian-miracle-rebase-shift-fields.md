@@ -4,7 +4,7 @@ description: Child of [[guardian-miracle-rebase-taxonomy]] — the full SHIFT ha
 kind: component
 sources:
   - internal/sim/miracles.go
-verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
+verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
 ---
 
 # Guardian's miracle rebase taxonomy — the SHIFT fields
@@ -39,7 +39,9 @@ SHIFT loop with no new code); spec 085 ([[guardian-faith]]) adds
 `Prophecy.DeadlineTick`, the `Directive.ExpiresTick` classification
 verbatim again (ACTIVE only — a settled prophecy's deadline is a spent
 artifact), with `Prophecy.DeclaredTick`/`PlacedSeq` history/identity
-KEEP and `FaithState` untouched entirely (it carries no tick fields). Spec 041
+KEEP and `FaithState` untouched entirely (it carries no tick fields); spec
+107 ([[guardian-missions]]) adds `Mission.DeadlineTick`, the same ACTIVE-only
+SHIFT again, with `Mission.AcceptedTick`/`PlacedSeq` history/identity KEEP. Spec 041
 ([[mental-maps]]) adds `PlaceFact.Seen` and `PeerSighting.Seen`, the mental
 map's freshness anchors (fresh iff `now − Seen < horizon`, the
 `Belief.Reinforced` shape) — shifted unconditionally when non-zero, since a

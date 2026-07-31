@@ -93,6 +93,41 @@ func (mt *Guardian) observeCardActivity(e store.Event) {
 		"guardian.time_snapped", "guardian.item_granted", "guardian.entity_moved",
 		"guardian.entity_removed", "guardian.charter_observed", "guardian.skills_observed":
 		line = strings.TrimPrefix(e.Type, "guardian.")
+	// The mission lifecycle (spec 107 D3): every mission event joins the
+	// citable trail with its recorded facts — the report card attributes
+	// mission outcomes to charter text by citing THESE seqs, never grading
+	// on prose.
+	case "guardian.mission_accepted":
+		var p sim.Mission
+		if json.Unmarshal(e.Payload, &p) == nil {
+			line = fmt.Sprintf("mission accepted (%s): %q", p.ID, p.Goal)
+		}
+	case "guardian.mission_progressed":
+		var p sim.MissionProgressedPayload
+		if json.Unmarshal(e.Payload, &p) == nil {
+			line = "mission progress (" + p.ID + ")"
+			if p.DesignationID != "" {
+				line += " linked " + p.DesignationID
+			}
+			if p.DirectiveID != "" {
+				line += " linked " + p.DirectiveID
+			}
+			if p.Note != "" {
+				line += " — " + p.Note
+			}
+		}
+	case "guardian.mission_completed":
+		var p sim.MissionCompletedPayload
+		if json.Unmarshal(e.Payload, &p) == nil {
+			line = fmt.Sprintf("mission completed (%s): designations %s fulfilled", p.ID, strings.Join(p.Designations, ", "))
+		}
+	case "guardian.mission_failed":
+		var p sim.MissionFailedPayload
+		if json.Unmarshal(e.Payload, &p) == nil {
+			line = fmt.Sprintf("mission failed (%s): %s", p.ID, p.Reason)
+		}
+	case "guardian.mission_cancelled":
+		line = strings.TrimPrefix(e.Type, "guardian.")
 	}
 	if line == "" {
 		return

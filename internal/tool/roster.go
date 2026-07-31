@@ -80,8 +80,13 @@ var RosterVillager = func() []string {
 // canonize_region / brief_myths (spec 101) append last, so no existing
 // tool's registration position shifts: the canonization miracle (premium
 // charge-priced) and its read-only myth-briefing companion.
+// The mission layer (spec 107) appends last again: accept_mission /
+// note_mission_progress / cancel_mission — charge-free artifact verbs (the
+// plan-layer posture; a mission records intent, the priced verbs still do
+// all the acting).
 var RosterGuardian = []string{"converse", "send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed", "explain",
-	"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site", "prophesy", "canonize_region", "brief_myths"}
+	"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site", "prophesy", "canonize_region", "brief_myths",
+	"accept_mission", "note_mission_progress", "cancel_mission"}
 
 // OnRoster reports whether name is on roster — the door membership check.
 func OnRoster(roster []string, name string) bool {
@@ -146,8 +151,11 @@ func LoopRosterVillager() []Tool {
 // discipline: place/cancel_designation, issue/cancel_directive (acting), and
 // survey_site (Read — the explain dispatch class). prophesy (spec 085)
 // appends last, so no existing tool's declared position shifts.
+// The mission layer (spec 107) appends last again, the same discipline:
+// three charge-free artifact verbs, no existing declared position shifts.
 var loopGuardianTools = []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed", "explain",
-	"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site", "prophesy", "canonize_region", "brief_myths"}
+	"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site", "prophesy", "canonize_region", "brief_myths",
+	"accept_mission", "note_mission_progress", "cancel_mission"}
 
 // LoopRosterGuardian returns the ordered declared-tool list the guardian
 // tool-use loop presents to the model (loopGuardianTools), resolved to full

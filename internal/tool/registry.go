@@ -739,8 +739,14 @@ var guardianTools = []Tool{
 			{Name: "min_structures", Kind: Number, Min: 1, Max: 12,
 				Description: "settlement_zone only: structures required before the zone counts as settled (default 3)"},
 			{Name: "label", Kind: Text, MaxRunes: 80,
-				Description: "optionally, your name for this designation"}},
-		Events: []string{"designation.placed"}},
+				Description: "optionally, your name for this designation"},
+			// mission_id (spec 107 D2): the ONE additive mission hook on an
+			// existing verb — a placement made in a mission's pursuit links
+			// itself atomically (designation.placed + mission_progressed ride
+			// one batch), so pursuit costs no second act.
+			{Name: "mission_id", Kind: Text,
+				Description: "optionally, the active mission this placement pursues — links it so the mission's completion can derive from it"}},
+		Events: []string{"designation.placed", "guardian.mission_progressed"}},
 	{Name: "cancel_designation", Effect: Expressive, Gate: None,
 		Params: []Param{{Name: "id", Kind: Text, Required: true}},
 		Events: []string{"designation.cancelled"}},
@@ -755,8 +761,11 @@ var guardianTools = []Tool{
 				Description: `comma-separated living villager names, or "everyone"`},
 			{Name: "text", Kind: Text, Required: true, MaxRunes: 400},
 			{Name: "ttl_days", Kind: Number, Min: 1, Max: 7,
-				Description: "game days before the directive lapses (default 3)"}},
-		Events: []string{"directive.issued", "agent.memory_added"}},
+				Description: "game days before the directive lapses (default 3)"},
+			// mission_id (spec 107 D2): the place_designation hook's twin.
+			{Name: "mission_id", Kind: Text,
+				Description: "optionally, the active mission this directive pursues — links it to the mission's progress record"}},
+		Events: []string{"directive.issued", "agent.memory_added", "guardian.mission_progressed"}},
 	{Name: "cancel_directive", Effect: Expressive, Gate: None,
 		Params: []Param{{Name: "id", Kind: Text, Required: true}},
 		Events: []string{"directive.cancelled"}},
@@ -844,6 +853,38 @@ var guardianTools = []Tool{
 		Params: []Param{{Name: "limit", Kind: Number, Min: 1, Max: 20,
 			Description: "how many candidate myths to return (default 5)"}},
 		PromptGloss: `brief_myths lists the dominant candidate place-myths the village currently believes — derived read-only from what villagers already hold, ranked by how many hold it and how strongly. Free, unlimited, never your act — a canonization is never counted as evidence for or against a myth.`},
+	// The guardian's mission layer (spec 107): a MISSION is the player's
+	// plain-words standing instruction made durable (D1) — accepted through
+	// guardian chat, decomposed and pursued via the EXISTING verbs (D2:
+	// designations, directives, surveys, and — grant permitting — workings
+	// stay the whole acting vocabulary; a mission only records intent), its
+	// completion/failure DERIVED from the spec-084 fulfillment predicates
+	// over linked designations (D3 — never self-graded). All three verbs are
+	// Effect Expressive with Gate None — the plan-layer posture: a mission
+	// artifact edits nothing physical, and the acts it decomposes into are
+	// already priced at their own doors. Tool ids are FROZEN serialized
+	// identifiers (spec 052 ruling 2). Appended last so no existing tool's
+	// registration position shifts.
+	{Name: "accept_mission", Effect: Expressive, Gate: None,
+		Params: []Param{
+			{Name: "goal", Kind: Text, Required: true, MaxRunes: 400,
+				Description: `the mission's goal IN YOUR OWN WORDS, stated so completion is checkable — name sites, structure kinds, and counts where you can (completion derives from designations you link fulfilling)`},
+			{Name: "ttl_days", Kind: Number, Min: 1, Max: 14,
+				Description: "game days before an unfinished mission fails honestly (default 7)"}},
+		Events: []string{"guardian.mission_accepted"}},
+	{Name: "note_mission_progress", Effect: Expressive, Gate: None,
+		Params: []Param{
+			{Name: "id", Kind: Text, Required: true},
+			{Name: "designation_id", Kind: Text,
+				Description: "link an existing designation to this mission — completion derives from every linked designation fulfilling"},
+			{Name: "directive_id", Kind: Text,
+				Description: "link an existing directive issued in this mission's pursuit"},
+			{Name: "note", Kind: Text, MaxRunes: 400,
+				Description: "optionally, a recorded note on the step taken or the obstacle met"}},
+		Events: []string{"guardian.mission_progressed"}},
+	{Name: "cancel_mission", Effect: Expressive, Gate: None,
+		Params: []Param{{Name: "id", Kind: Text, Required: true}},
+		Events: []string{"guardian.mission_cancelled"}},
 }
 
 // journalTools are the villager-only journal capabilities (spec 019, US3): two

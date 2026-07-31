@@ -4,7 +4,7 @@ description: The ancillary subsystems stepEvents drives each tick beyond agent b
 kind: component
 sources:
   - internal/sim/executor.go
-verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
+verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
 ---
 
 # Executor — tick subsystems
@@ -44,7 +44,11 @@ and BEFORE the scenario rubric/run-end detection — scans THIS tick's batch
 for `directive.fulfilled`/`directive.expired`/`agent.died`/
 `prophecy.fulfilled`/`prophecy.failed` and emits one `faith.changed` per
 source in batch order, skipping emissions the clamp would swallow —
-[[guardian-faith]]);
+[[guardian-faith]]); spec 107 adds the mission outcome sweep
+(`missionEvents`, immediately after the prophecy sweep — per active
+mission, completed before failed, once: `guardian.mission_completed` when
+every linked designation is fulfilled, `guardian.mission_failed` with
+per-link status evidence at the deadline — [[guardian-missions]]);
 its reflex fires only on agents idle past `reflexGraceTicks` (120). Since spec 054, an armed scenario world's `stepEvents` also consults its
 incident schedule (`scenarioIncidentEvents`) immediately BEFORE `gruStep` —
 a scheduled `gru.emerged` preempts that night's random emergence roll, so

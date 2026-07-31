@@ -6,7 +6,7 @@ sources:
   - internal/sim/state.go
   - internal/sim/agents.go
   - internal/sim/stranger.go
-verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
+verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
 ---
 
 # Sim state: world & social fields
@@ -81,6 +81,9 @@ genesis 50 read only through the nil-safe `FaithScore()` accessor — the
 `Tuning` nil-means-default shape; and `Prophecies []Prophecy`, the
 guardian's declared machine-checkable claims, `omitempty` on the plan-layer
 precedent; [[guardian-faith]])
+— the mission layer (`Missions []Mission`, spec 107, `omitempty` on the
+same precedent — the player's standing instructions with links to the
+designations/directives pursuing them; [[guardian-missions]])
 — and the village's
 law ([[governance]], TASK-13): `MeetingPlace` (set once), the `Meeting`
 lifecycle (including the TASK-36 emergent-gathering watch fields

@@ -142,6 +142,13 @@ type State struct {
 	// terminals; active + most recent 32 retained). omitempty: a pre-085
 	// snapshot unmarshals to nil, upgrade-free.
 	Prophecies []Prophecy `json:"prophecies,omitempty"`
+	// Missions (spec 107) — the player's plain-words standing instructions
+	// made durable (missions.go), event-sourced under the Designations
+	// discipline (injected acceptance/progress/cancel; executor-emitted
+	// completed/failed terminals derived from the spec-084 predicates;
+	// active + most recent 32 retained). omitempty: a pre-107 snapshot
+	// unmarshals to nil, upgrade-free — no format bump.
+	Missions []Mission `json:"missions,omitempty"`
 	// Norms and votes (TASK-13) — all event-sourced. Pre-TASK-13 snapshots
 	// unmarshal to zero values: no meeting place yet, no law, no meeting.
 	MeetingPlace *Point       `json:"meeting_place,omitempty"`
@@ -2219,6 +2226,13 @@ func (s *State) Apply(e store.Event) error {
 
 	case "guardian.region_named":
 		return s.applyRegion(e)
+
+	case "guardian.mission_accepted", "guardian.mission_progressed",
+		"guardian.mission_completed", "guardian.mission_failed",
+		"guardian.mission_cancelled":
+		// The guardian's mission layer (spec 107): standing player
+		// instructions, pursued via existing verbs (missions.go).
+		return s.applyMission(e)
 
 	case "guardian.memory_added", "guardian.memory_embedded",
 		"guardian.memory_promoted", "guardian.memory_faded",

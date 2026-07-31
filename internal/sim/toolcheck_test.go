@@ -197,6 +197,17 @@ func TestWhitelistDiffIdentical(t *testing.T) {
 		"guardian.salience_revised": true,
 		"guardian.memory_merged":    true,
 		"guardian.consolidated":     true,
+		// Spec 107 (guardian missions) deliberately widens the boundary by
+		// exactly three entries: acceptance (accept_mission), a recorded
+		// pursuit step (note_mission_progress), and the player's cancel
+		// (cancel_mission) — all pinned ⊆ this whitelist by
+		// ValidateToolCoverage. guardian.mission_completed and
+		// guardian.mission_failed are deliberately OMITTED: executor-emitted
+		// derived outcomes, never injectable (D3 — forgery refusal at the
+		// door, the designation.fulfilled precedent).
+		"guardian.mission_accepted":   true,
+		"guardian.mission_progressed": true,
+		"guardian.mission_cancelled":  true,
 	}
 	for typ := range want {
 		if !injectSocialWhitelist[typ] {

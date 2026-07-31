@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/plans.go
   - internal/sim/executor.go
-verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
+verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
 ---
 
 # Guardian designations and directives — the durable plan layer
@@ -107,3 +107,11 @@ entity discipline for `sim.Region` — deterministic id, reducer-stamped
 `PlacedSeq`, the same `prunePlanEntities` reuse — but with no terminal
 event in v1: a region has no fulfilled/cancelled door, so its `Status` is
 always `"active"`.
+
+Spec 107's missions ([[guardian-missions]]) clone the discipline once
+more AND consume this layer as their acting vocabulary: a mission's
+derived completion reads the designation fulfillment predicates over its
+linked designations, and `place_designation`/`issue_directive` gained the
+optional `mission_id` param whose linking `guardian.mission_progressed`
+rides the placement batch atomically — FR-016's "no mission machinery"
+scope guard was spec 084's boundary, discharged by spec 107.

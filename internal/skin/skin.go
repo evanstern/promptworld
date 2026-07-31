@@ -104,6 +104,11 @@ var defaultTable = map[string]string{
 	// its read-only myth-briefing companion, same frozen-tool-id keying.
 	"skin.guardian.example_ask.canonize_region": `"canonize Thornspire at 20,20, radius 6"`,
 	"skin.guardian.example_ask.brief_myths":     `"what myths do the villagers already believe?"`,
+	// The mission layer (spec 107): the player's standing instruction and
+	// its bookkeeping verbs, same frozen-tool-id keying.
+	"skin.guardian.example_ask.accept_mission":        `"get a second fire built near the west huts and keep it fueled"`,
+	"skin.guardian.example_ask.note_mission_progress": `"how is my mission coming along? note where it stands"`,
+	"skin.guardian.example_ask.cancel_mission":        `"stand down from the fire mission"`,
 }
 
 func init() {

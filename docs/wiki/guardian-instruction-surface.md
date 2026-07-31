@@ -7,7 +7,7 @@ sources:
   - internal/guardian/charter.go
   - internal/persona/charter.go
   - internal/skin/skin.go
-verified_against: 04ff15001bd8a74f7c2965889c0d318fc0dc03a9
+verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
 ---
 
 # Guardian's instruction surface
@@ -96,7 +96,15 @@ guardian's own initiative to save a life, for that one peril alone — clock con
 and every OTHER standing order remain player-authority in a survival turn
 exactly as in any other (FR-004); `DefaultCharter`
 (`internal/persona/charter.go`) states the same carve-out in-fiction so the
-guardian's own narration stays honest about what it may do unprompted. The
+guardian's own narration stays honest about what it may do unprompted.
+Since spec 107 (D5, the EASY-mode ruling) `DefaultCharter` also carries
+the obedience clause — direct orders execute at once, plain-words
+missions are accepted and pursued, no editorializing, counsel free WHEN
+ASKED, and the one sanctioned refusal names an impossible-as-stated
+order's exact blocking fact; the retired counsel-first seed lives on as
+`persona.LegacyDefaultCharterCounsel` beside the two older legacy seeds
+in `isLegacyDefault`, so an untouched pre-107 `charter.md` keeps reading
+as game-authored on upgrade ([[guardian-missions]]). The
 frame also carries the acting-tool guidance DERIVED from the registry
 (`tool.GuardianToolGuidance` over the world's granted roster, [[tool-registry]]) —
 the old hand-written prose tool list is gone, so described ≡ declared by

@@ -194,6 +194,13 @@ var PayloadCatalog = map[string]func() any{
 	"prophecy.declared":     func() any { return &ProphecyDeclaredPayload{} },
 	"prophecy.fulfilled":    func() any { return &OrderIDPayload{} },
 	"prophecy.failed":       func() any { return &OrderIDPayload{} },
+	// The guardian's mission layer (spec 107): standing player instructions
+	// with derived completion/failure (missions.go).
+	"guardian.mission_accepted":   func() any { return &Mission{} },
+	"guardian.mission_progressed": func() any { return &MissionProgressedPayload{} },
+	"guardian.mission_completed":  func() any { return &MissionCompletedPayload{} },
+	"guardian.mission_failed":     func() any { return &MissionFailedPayload{} },
+	"guardian.mission_cancelled":  func() any { return &OrderIDPayload{} },
 
 	// --- cognition telemetry ---
 	"cog.thought":                   func() any { return &CogThoughtPayload{} },

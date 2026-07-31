@@ -95,6 +95,7 @@ func allowedGoOccurrence(lit, word string, start, end int) bool {
 var allowlistedDecls = map[string]string{
 	"LegacyDefaultCharter":         "internal/persona/charter.go — the pre-052 seed kept only for default-charter recognition (SC-003)",
 	"LegacyDefaultCharterSurvival": "internal/persona/charter.go — the brief post-059/pre-052 seed variant, same recognition duty",
+	"LegacyDefaultCharterCounsel":  "internal/persona/charter.go — the pre-107 counsel-first guardian seed (spec 107 D5 obedience edit), same recognition duty",
 }
 
 // allowlistedFuncs are function names whose string literals are exempt: each

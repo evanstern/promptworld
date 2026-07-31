@@ -316,6 +316,18 @@ var injectSocialWhitelist = map[string]bool{
 	// must stay endogenous — a console-injectable score would be a cheat
 	// surface and break "no model judgment").
 	"prophecy.declared": true,
+	// The guardian's mission layer (spec 107): the three injectable mission
+	// types — acceptance (accept_mission), a recorded pursuit step
+	// (note_mission_progress), and the player's cancel (cancel_mission).
+	// The dry-run's validating arms (missions.go) enforce goal/TTL/cap/
+	// link-existence before anything lands. guardian.mission_completed and
+	// guardian.mission_failed need NO entry — they are executor-emitted,
+	// never injected, the designation.fulfilled precedent; whitelist absence
+	// is what refuses an injected forgery of a derived outcome (D3: never
+	// self-graded).
+	"guardian.mission_accepted":   true,
+	"guardian.mission_progressed": true,
+	"guardian.mission_cancelled":  true,
 	// Governance flavor (TASK-13): the ONLY injectable governance type —
 	// re-texts an enacted norm in the proposer's voice; outcomes stay
 	// executor-deterministic. The dry-run enforces norm existence + text cap.

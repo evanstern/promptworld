@@ -37,7 +37,8 @@ var wantExpressive = []string{"say", "gist", "muse"}
 // converse plus the agency acting tools; nudge_dream/nudge_omen retired). Order-
 // insensitive — TestRostersResolve sorts before comparing.
 var wantGuardian = []string{"converse", "send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed", "explain",
-	"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site", "prophesy", "canonize_region", "brief_myths"}
+	"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site", "prophesy", "canonize_region", "brief_myths",
+	"accept_mission", "note_mission_progress", "cancel_mission"}
 
 // wantGuardianCatalog is the guardian tools' catalog membership in REGISTRATION
 // order (spec 029): converse, then the two influence forms (send_vision/
@@ -50,8 +51,11 @@ var wantGuardian = []string{"converse", "send_omen", "send_vision", "monitor_and
 // prophesy (spec 085) appends last again: the charge-priced declared claim.
 // canonize_region / brief_myths (spec 101) append last of all: the
 // canonization miracle and its read-only myth-briefing companion.
+// The mission layer (spec 107) appends last again: three charge-free
+// artifact verbs (accept/note-progress/cancel).
 var wantGuardianCatalog = []string{"converse", "send_vision", "send_omen", "monitor_and_act", "cancel_order", "pause", "start", "adjust_speed", "work_miracle", "explain",
-	"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site", "prophesy", "canonize_region", "brief_myths"}
+	"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site", "prophesy", "canonize_region", "brief_myths",
+	"accept_mission", "note_mission_progress", "cancel_mission"}
 var wantVillagerExpressiveTail = []string{"say", "muse", "gist"}
 
 // wantJournal is the four villager journal tools (spec 019, US3): two Expressive

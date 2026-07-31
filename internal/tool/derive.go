@@ -221,6 +221,14 @@ var guardianToolDesc = map[string]string{
 	// prophesy (spec 085): the staked vision — the world itself judges the
 	// declared claim at its deadline, and faith rises or falls on the outcome.
 	"prophesy": "declare a prophecy: an omen carrying a machine-checkable claim the world will judge by its deadline — fulfilled earns the village's faith, failed costs more; it cannot be cancelled",
+	// The mission layer (spec 107): the player's standing instruction as a
+	// durable artifact. The accept gloss carries the D5 refusal doctrine's
+	// mechanics half — accept what is workable; an impossible-as-stated
+	// mission is the ONE case where counsel comes before compliance, and the
+	// refusal must name the blocking fact.
+	"accept_mission":        "accept the player's plain-words mission as a durable standing instruction you pursue across your own watches until done, failed, or cancelled — accept it unless it is IMPOSSIBLE as stated, and then refuse by naming the exact blocking fact",
+	"note_mission_progress": "record a mission's pursuit: link a designation or directive serving it (completion derives from linked designations fulfilling), or note an obstacle",
+	"cancel_mission":        "cancel a mission by its id — the player's call to stand down",
 }
 
 // miracleKindArgs is the per-kind argument hint rendered under work_miracle,
