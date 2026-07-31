@@ -91,11 +91,15 @@ func charterIsDefault(worldDir string, preset ...string) bool {
 }
 
 // isLegacyDefault reports whether text is one of the retired game-authored
-// default charters (spec 052 SC-003): the long-lived pre-059 legacy seed, or
-// the brief post-059/pre-052 variant carrying the survival paragraph. Either
-// way it is game-authored text — never reclassified player-authored.
+// default charters (spec 052 SC-003): the long-lived pre-059 legacy seed,
+// the brief post-059/pre-052 variant carrying the survival paragraph, or the
+// pre-107 counsel-first guardian seed (spec 107 D5 replaced its counsel duty
+// with the obedience clause). Any of them is game-authored text — never
+// reclassified player-authored, so an untouched pre-107 world's charter.md
+// keeps the spec-102 ceiling ON and its unlock gates honest after upgrade.
 func isLegacyDefault(text string) bool {
-	return text == persona.LegacyDefaultCharter || text == persona.LegacyDefaultCharterSurvival
+	return text == persona.LegacyDefaultCharter || text == persona.LegacyDefaultCharterSurvival ||
+		text == persona.LegacyDefaultCharterCounsel
 }
 
 // Instruction-surface gating by stage (spec 046 FR-005, the ladder): stage-1
