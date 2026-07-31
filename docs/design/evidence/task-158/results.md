@@ -78,13 +78,57 @@ landed the act on its first completed turn.
 ## Part 2 — live demo (FR-007, SC-001)
 
 World `task-158-demo` (seed 1337, stage-4 `--override`), tuning
-`steward_cadence_ticks: 900`, ALL routes local (`gemma` =
-mbpro-m1.local:11434 gemma4:12b-mlx — metatron, steward, villagers), 8x.
-Player issues ONE plain-words mission and leaves the loop.
+`steward_cadence_ticks: 900`, LOCAL routes only (no cloud spend): guardian
++ steward → `gemma` (mbpro-m1.local:11434, gemma4:12b-mlx), villagers →
+`cogito:3b` (localhost:11434), 8x. Preserved (stopped, never deleted) at
+`~/.promptworld/measure/task-158-demo`. The player issues ONE plain-words
+mission and leaves the loop:
 
-TO BE FILLED — acceptance, decomposition, ≥2 scheduled pursuit turns,
-derived completion, all from the recorded ledger.
+> "Guardian, make this your mission: see a second shelter raised close to
+> the village, and pursue it on your own watches — I will be away and will
+> not ask again."
+
+Recorded loop (world.db ledger; every row an event, no prose):
+
+| Tick | Event | What it proves |
+|---|---|---|
+| 374 | `guardian.mission_accepted` `msn-127-0` (seq 101; `cog.tool_call accept_mission` landed, seq 104, tier gemma) | plain words became a durable mission, same-turn, on the LOCAL default charter |
+| 903, 1863 | `steward-metatron-{903,1863}` `cog.outcome unusable` (120s turn deadline) | honest telemetry: with villagers and guardian sharing ONE gemma endpoint the scheduled turns starved — fixed by re-tiering villagers to local cogito:3b (the task-166 recipe); recorded, not hidden |
+| 3933→4147 | scheduled turn `steward-metatron-3933` LANDED (26.8s): `survey_site` then `place_designation{structure_site, shelter, (53,10), mission_id: msn-127-0}` → `designation.placed dsg-3933-0` + `guardian.mission_progressed` (seqs 1090-1091, one atomic batch) | **pursuit turn 1**, no player in the loop: decomposition through an existing verb, linked atomically |
+| 4831→5052 | scheduled turn `steward-metatron-4831` LANDED (27.7s): `issue_directive{dsg-3933-0, targets: everyone, mission_id: msn-127-0}` → `directive.issued dir-4831-0` (+ 8 companion memories) + `guardian.mission_progressed` (seqs 1431-1440) | **pursuit turn 2**: the village bound to the mission's designation, linked atomically |
+| PENDING | `agent.built{shelter,53,10}` → `designation.fulfilled dsg-3933-0` → `guardian.mission_completed msn-127-0` (executor sweep, one-tick lag) | derived completion from the spec-084 predicate + recorded events — never self-graded |
 
 ## Part 3 — the 164-instrument mission scenario (US3, prepared recipe)
 
-TO BE FILLED alongside Part 2.
+The TASK-164 instrument (charter-delta → outcome delta; operator-approved
+design on TASK-164's card: n=1 same-seed pair, seed 1337, 3 game-days per
+arm at 8x, sequential arms, TASK-137 recipe, orchestrator-run, results
+under `docs/design/evidence/task-164/`) extends with a MISSION scenario as
+follows — recorded here as the prepared harness; the run may land as the
+instrument's next scheduled pass post-merge:
+
+1. **Arms.** Same-seed pair (1337), stage-4 `--override`, harsh dials
+   (`fire_burn_per_wood=3600`, `gru_emerge_per_mille=1000`),
+   `steward_cadence_ticks: 900`, guardian+steward routes via the
+   measurement proxy (niner head-only), villagers local (cogito:3b) — the
+   task-166/158 tiering. Arm A: DEFAULT charter (the spec-107 obedience
+   default). Arm B: the AUTHORED charter TASK-164's design names
+   (task-137 recipe).
+2. **The scripted mission** (identical in both arms, issued once at world
+   start, then hands off): `promptworld guardian <world> "Guardian, make
+   this your mission: see a second shelter raised close to the village,
+   and pursue it on your own watches — I will be away."` No further
+   player turns.
+3. **Run** 3 game-days per arm at 8x, sequential.
+4. **Anti-self-grading guard (card AC#6):** score ONLY from recorded
+   events, never transcripts/prose — per arm: `guardian.mission_accepted`
+   tick; count + ticks of `guardian.mission_progressed` links; the
+   designation/directive lifecycle of every linked id;
+   `guardian.mission_completed` tick (or `guardian.mission_failed` reason)
+   from the executor sweep; villager `agent.built` at the designated
+   site. The sqlite pulls in Part 2's evidence section are the exact
+   queries.
+5. **Delta.** Mission outcome (completed / failed-with-reason /
+   still-active), time-to-completion, and pursuit-turn count
+   (steward-metatron cog.outcome landed vs adapted) per arm, tabulated
+   beside TASK-164's survival-outcome columns.

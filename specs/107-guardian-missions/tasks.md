@@ -20,11 +20,11 @@
 ## Phase 3: Surfaces + tests
 
 - [X] T005 Digest, event-types.md, decision trail; TestCatalogSweep (FR-005).
-- [ ] T006 FR-006 test suite; go test -race ./... green; replay byte-identity.
+- [X] T006 FR-006 test suite; go test -race ./... green; replay byte-identity.
 
 ## Phase 4: Evidence + grounding
 
-- [ ] T007 In-branch obedience eval (FR-008): old vs new default, scripted
+- [X] T007 In-branch obedience eval (FR-008): old vs new default, scripted
   direct-mission prompts via the measurement proxy; results in evidence doc.
 - [ ] T008 Live demo (FR-007, SC-001) on a seeded measure world; evidence doc
   complete; 164-instrument mission-scenario harness prepared (US3).
