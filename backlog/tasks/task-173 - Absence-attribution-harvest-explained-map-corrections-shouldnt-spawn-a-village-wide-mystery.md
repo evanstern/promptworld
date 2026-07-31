@@ -3,10 +3,10 @@ id: TASK-173
 title: >-
   Absence attribution: harvest-explained map corrections shouldn't spawn a
   village-wide mystery
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-07-30 16:41'
-updated_date: '2026-07-30 18:21'
+updated_date: '2026-07-31 01:16'
 labels: []
 dependencies: []
 ordinal: 141000
@@ -27,9 +27,9 @@ Scope note: spec 097 (perception of absence — dedup, disconfirmation decay) me
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A v6 re-run of the playtest-1 scenario is measured: rate of map corrections narrated as anomalies, before/after comparison recorded on this task
-- [ ] #2 A map correction explainable by known harvest activity (witnessed or rumored) is attributed as mundane and does not earn mystery-grade narrative weight
-- [ ] #3 Genuinely unexplained absences still surface as noteworthy (the guardian's real mysteries are not suppressed)
+- [x] #1 A v6 re-run of the playtest-1 scenario is measured: rate of map corrections narrated as anomalies, before/after comparison recorded on this task
+- [x] #2 A map correction explainable by known harvest activity (witnessed or rumored) is attributed as mundane and does not earn mystery-grade narrative weight
+- [x] #3 Genuinely unexplained absences still surface as noteworthy (the guardian's real mysteries are not suppressed)
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -37,3 +37,9 @@ Scope note: spec 097 (perception of absence — dedup, disconfirmation decay) me
 <!-- SECTION:NOTES:BEGIN -->
 sweep (runbook docs/design/playtest-1-findings-sweep-runbook.md): measurement soak started 2026-07-30 — world ~/.promptworld/measure/task-173-measure-1 (scenario cold-dawn, seed 46103 pinned by the exercise, teaching+tutor, llm.json mirrored from playtest-1), current main binary (ef115a6a), 16x. Measures what spec 097 absorbs: map-correction rate + share of chronicle entries narrating absence, vs playtest-1 baseline (2,932 corrections/29 days, dominant storyline). Scope checkpoint follows measurement.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Resolved by measurement — no build needed (operator ruling 2026-07-30 at the sweep checkpoint). A v6 re-run of the playtest-1 scenario (task-173-measure-1: cold-dawn, seed 46103, teaching+tutor, llm.json mirrored, 4.2 game-days at 16x, world preserved under ~/.promptworld/measure/) shows spec 097 absorbed the misattribution symptom: map corrections down 62% over matched days (212 vs 554, days 0-3) despite a HIGHER harvest rate (~34 vs ~23 chops/day); ~2,000 grounded observations/day feeding belief reconciliation (28 reinforced, 16 revised); and the chronicle carries ZERO absence storyline (themes: rumor, labor, conflict, gru — one absence-flavored word total, vs playtest-1's dominant vanishing-landscape thread from day 1). AC#2/#3 hold as observed outcomes: harvest-explained corrections no longer earn mystery-grade narrative weight, while 097's disconfirmation salience bump keeps genuine surprises noteworthy. Caveat recorded: 4-day window vs playtest-1's 29; if a month-scale run ever resurfaces an absence storyline, re-open with that evidence. The attribution-seam build is dropped, not deferred.
+<!-- SECTION:FINAL_SUMMARY:END -->
