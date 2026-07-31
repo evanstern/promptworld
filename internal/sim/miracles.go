@@ -396,6 +396,16 @@ func rebaseTicks(s *State, delta int64) {
 			shift(&s.Prophecies[i].DeadlineTick)
 		}
 	}
+	for i := range s.Missions {
+		// Spec 107: an ACTIVE mission's DeadlineTick is a future deadline —
+		// the Prophecy.DeadlineTick arm's clone: shift it so the remaining
+		// pursuit window survives the jump. AcceptedTick is history (KEEP);
+		// PlacedSeq is an identity; a settled mission's ticks are spent
+		// artifacts (KEEP).
+		if s.Missions[i].Status == "active" {
+			shift(&s.Missions[i].DeadlineTick)
+		}
+	}
 	if s.Gru != nil {
 		shift(&s.Gru.Done) // spec 104: derived-motion watermark (beats-processed anchor); 0 = pre-regime, stays 0
 		shift(&s.Gru.LastAttack)

@@ -908,6 +908,7 @@ func TestRebaseTaxonomyComplete(t *testing.T) {
 		"NeglectState.WarmthIntent": shift, // spec 083: last-class-intent stamp, 0 = never
 		"NeglectState.RestIntent":   shift, // spec 083: last-class-intent stamp, 0 = never
 		"Prophecy.DeadlineTick":     shift, // spec 085: a prophecy's future judgment deadline — the Directive.ExpiresTick classification verbatim (ACTIVE only)
+		"Mission.DeadlineTick":      shift, // spec 107: a mission's pursuit deadline — the Prophecy.DeadlineTick classification verbatim (ACTIVE only)
 		"ObservationMark.Tick":      shift, // spec 097: observation dedup anchor (elapsed gates the window — Belief.Reinforced shape), never zero once set
 		// KEEP — history / identity / counters.
 		"Agent.Generation":                 keep,
@@ -948,6 +949,8 @@ func TestRebaseTaxonomyComplete(t *testing.T) {
 		"Region.PlacedSeq":                 keep, // spec 101: the christening event's store seq — an identity (the Designation.PlacedSeq shape)
 		"Prophecy.DeclaredTick":            keep, // spec 085: when the word was given (history, Directive.IssuedTick shape)
 		"Prophecy.PlacedSeq":               keep, // spec 085: the declaration event's store seq — an identity
+		"Mission.AcceptedTick":             keep, // spec 107: when the mission was accepted (history, Directive.IssuedTick shape)
+		"Mission.PlacedSeq":                keep, // spec 107: the acceptance event's store seq — an identity
 		"PlaceFact.Detail":                 keep, // spec 041: remembered value baked at emission, never re-derived (see rebaseTicks)
 		"RunEnd.Tick":                      keep, // spec 044: when the run ended (history; the world never ticks again)
 		"DeathRecord.Tick":                 keep, // spec 044: when the death happened (history, like NormViolation.Tick)
