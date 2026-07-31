@@ -6,7 +6,7 @@ title: >-
 status: Done
 assignee: []
 created_date: '2026-07-25 03:00'
-updated_date: '2026-07-27 13:20'
+updated_date: '2026-07-31 08:48'
 labels:
   - learning-game
   - guardian-survival
@@ -68,6 +68,8 @@ Operator decision (2026-07-26): close on mechanism per spec-bridge derivation. T
 AC5 resolved via TASK-137 experiment (2026-07-27, docs/design/evidence/task-137/results.md): charter quality measurably changes autonomous guardian BEHAVIOR on a seeded world (default 0 landed interventions / 3 attempts vs authored 2 landed / 7 attempts, both arms same seed + harsh dials) — the charter surface is not self-grading decoration. Survival OUTCOME delta unproven at n=1 (1 starvation death each, same villager); the binding constraint was targeting competence (8/10 privileged attempts gate-rejected), which is AC#3/TASK-136 territory, not charter territory.
 
 AC#3 resolved via TASK-136 (2026-07-27, docs/design/evidence/task-137/results.md): live rejection rate measured at 80% (8/10 privileged attempts; 3/3 default arm, 5/7 authored arm) vs pre-059 baseline 3/4 — the ~0 hypothesis is refuted. The digest mechanism shipped and functions; every rejection was model-side tool-call incompetence (missing args, hallucinated coords, wrong kinds). AC#3 amended per operator decision on TASK-136 (record the data, not a ~0 gate) and checked. Follow-ups carded: guardian tool-call competence (the binding constraint) and a charter-delta outcome re-run at n>1.
+
+TASK-164 re-run (2026-07-31, PR #150): AC5 outcome-delta caveat updated — behavior delta proven twice (137, 164) on a fixed door (7/8 landed); survival OUTCOME delta remains unproven either direction at n=1, 164 sample directionally against the authored arm (gru-variance dominated). Next instrument per evidence doc: n>=3, agentized build, mission scoring.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

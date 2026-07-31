@@ -3,10 +3,10 @@ id: TASK-164
 title: >-
   Charter-delta outcome re-run: survival outcome delta at n>1 once guardian tool
   competence lands
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-27 13:20'
-updated_date: '2026-07-30 15:01'
+updated_date: '2026-07-31 08:48'
 labels:
   - mvls
   - guardian-survival
@@ -25,8 +25,8 @@ Carded from TASK-137's results (2026-07-27, docs/design/evidence/task-137/result
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 OPERATOR CHECKPOINT: eval spend approved before dispatch (the TASK-122/TASK-137 treatment)
-- [ ] #2 Both arms re-run after the TASK-163 competence fix, same-seed pairing, n>=2 seeds or an operator-approved design; survival outcome delta measured
-- [ ] #3 Results doc recorded under docs/design/evidence/; TASK-111 AC#5 outcome-delta caveat updated with the new evidence
+- [x] #2 Both arms re-run after the TASK-163 competence fix, same-seed pairing, n>=2 seeds or an operator-approved design; survival outcome delta measured
+- [x] #3 Results doc recorded under docs/design/evidence/; TASK-111 AC#5 outcome-delta caveat updated with the new evidence
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -36,3 +36,9 @@ board-sweep-2026-07-29 lane 2: AC1 OPERATOR CHECKPOINT resolved in-session — a
 
 Design amendment (2026-07-30, recorded): arm A over-ran to tick 498,187 (~6.76 game-days) while the session was idle. The strict 3-day window is vacuous under the harsh dials (0 privileged attempts, 0 deaths before tick 259,200 — all activity day 3+). Adopting the evidence doc's own alternative: LONGER HORIZON — arm B runs same-seed to tick >= 498,187 so the pair stays matched at arm A's actual horizon. Arm A within-horizon: 4 work_miracle landed / 0 rejected, 10 survey_site, 1 starvation death (tick 411,180).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Merged via PR #150. Both arms re-run post-163 on the approved n=1 same-seed design with the recorded horizon amendment (matched 6.76 game-days). Tool floor FIXED at horizon (7/8 landed; 166/167 classes extinct in-sample); behavior delta confirmed 4x; survival outcome delta NEGATIVE at n=1 (default 1 death vs authored 4 — gru-variance dominated, no causal claim). TASK-111 AC5 caveat updated: outcome delta unproven either direction; next instrument n>=3 on the agentized build with mission scoring (feeds 112 FR-006/107 US3). Evidence: docs/design/evidence/task-164/results.md; both worlds preserved.
+<!-- SECTION:FINAL_SUMMARY:END -->
