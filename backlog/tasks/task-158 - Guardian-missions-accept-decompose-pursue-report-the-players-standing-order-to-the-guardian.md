@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-26 20:25'
-updated_date: '2026-07-31 01:14'
+updated_date: '2026-07-31 01:16'
 labels:
   - learning-game
 dependencies:
@@ -26,14 +26,26 @@ Doctrine: a mission is durable pre-authorization — the same legal shape as a s
 EASY-MODE DEFAULT (operator decision, 2026-07-26): the default guardian does what the player asks without question — obedience lives in the compiled default charter ('execute the player's missions without editorializing'); personality, refusals, and counsel-first behavior are skinned-guardian data (TASK-121 substrate), never the default. Anti-self-grading guard carries over from TASK-111/112: charter quality must measurably change mission outcomes.
 
 Grounding: docs/wiki/guardian-watch-workers.md (monitor machinery), docs/wiki/guardian-report-card.md (evidence-cited reporting), docs/design/learning-game-synthesis.md (three-lane initiative frame; missions extend the ambition lane's pre-authorization contract). Feature ideation session 2026-07-26.
+
+Spec: specs/107-guardian-missions
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 spec exists under specs/ and is linked to this task via spec-bridge before implementation starts
+- [x] #1 spec exists under specs/ and is linked to this task via spec-bridge before implementation starts
 - [ ] #2 mission artifact is durable and event-sourced; completion derives from designation/directive fulfillment predicates, not model prose
 - [ ] #3 guardian decomposes and pursues a mission across multiple turns with no player in the loop (rides TASK-112 scheduled cognition)
 - [ ] #4 failure is honestly reported with recorded-event evidence via the report-card path
 - [ ] #5 default charter executes missions without editorializing; refusal/personality demonstrably arrives only via skinned charters
 - [ ] #6 anti-self-grading guard: charter quality measurably changes mission outcomes on a seeded world
+- [ ] #7 Spec phase: Mission substrate
+- [ ] #8 Spec phase: Pursuit + doctrine
+- [ ] #9 Spec phase: Surfaces + tests
+- [ ] #10 Spec phase: Evidence + grounding
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+board-sweep-2026-07-29 lane 2 final: spec 107 landed + linked (AC1 satisfied). Rulings encoded: EASY-mode default (2026-07-26 firm); IN-BRANCH obedience eval gate (operator, 2026-07-30, TASK-73 precedent — old default must reproduce the TASK-166-observed counsel-loop, new default must execute directly). Doctrine: missions are pre-authorization — full competence at any spec-102 ceiling. Tier: Opus (initiative-frame doctrine, cross-package; draft-runbook A5 call carried).
+<!-- SECTION:NOTES:END -->
