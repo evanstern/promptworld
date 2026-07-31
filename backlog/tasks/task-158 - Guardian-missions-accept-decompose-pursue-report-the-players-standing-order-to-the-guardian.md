@@ -3,9 +3,10 @@ id: TASK-158
 title: >-
   Guardian missions: accept, decompose, pursue, report (the player's standing
   order to the guardian)
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-26 20:25'
+updated_date: '2026-07-31 01:14'
 labels:
   - learning-game
 dependencies:
