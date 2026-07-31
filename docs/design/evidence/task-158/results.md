@@ -1,7 +1,9 @@
 # TASK-158 guardian missions — obedience eval (FR-008) + live demo (FR-007)
 
-**Status: IN PROGRESS** — obedience eval complete (tables below); live demo
-running, evidence section fills as the world records it.
+**Status: COMPLETE** — obedience eval passed both directions (Part 1);
+live demo ran the full loop through derived completion (Part 2); the
+164-instrument mission-scenario harness is recorded (Part 3). All three
+worlds preserved, stopped, never deleted.
 
 ## Part 1 — the in-branch obedience eval (FR-008, operator ruling 2026-07-30)
 
@@ -96,7 +98,36 @@ Recorded loop (world.db ledger; every row an event, no prose):
 | 903, 1863 | `steward-metatron-{903,1863}` `cog.outcome unusable` (120s turn deadline) | honest telemetry: with villagers and guardian sharing ONE gemma endpoint the scheduled turns starved — fixed by re-tiering villagers to local cogito:3b (the task-166 recipe); recorded, not hidden |
 | 3933→4147 | scheduled turn `steward-metatron-3933` LANDED (26.8s): `survey_site` then `place_designation{structure_site, shelter, (53,10), mission_id: msn-127-0}` → `designation.placed dsg-3933-0` + `guardian.mission_progressed` (seqs 1090-1091, one atomic batch) | **pursuit turn 1**, no player in the loop: decomposition through an existing verb, linked atomically |
 | 4831→5052 | scheduled turn `steward-metatron-4831` LANDED (27.7s): `issue_directive{dsg-3933-0, targets: everyone, mission_id: msn-127-0}` → `directive.issued dir-4831-0` (+ 8 companion memories) + `guardian.mission_progressed` (seqs 1431-1440) | **pursuit turn 2**: the village bound to the mission's designation, linked atomically |
-| PENDING | `agent.built{shelter,53,10}` → `designation.fulfilled dsg-3933-0` → `guardian.mission_completed msn-127-0` (executor sweep, one-tick lag) | derived completion from the spec-084 predicate + recorded events — never self-graded |
+| 6773-11159 | villagers repeatedly take `heed_directive → (53,10)` reflex intents (the spec-084 DIRECTIVE rung) | the bound village physically mobilizes to the mission's site with no model in the loop |
+| 9567 | `guardian.mission_accepted` `msn-9567-0` ("maintain a fire in the center of the village") — a second plain-words mission, accepted same-turn | mission cap economy live (2 of 3 slots held) |
+| 10231→10499 | scheduled turn `steward-metatron-10231` LANDED: `place_designation{fire, (53,10), mission_id: msn-9567-0}` → `dsg-10231-0` + link | **pursuit turn 3** |
+| 11524 | `guardian.mission_accepted` `msn-11524-0` ("Ensure a fire exists at (54,34) and is maintained" — the site where Oak's recorded `agent.built{fire}` at tick 1639 stands) | third mission, accepted same-turn (cap 3 reached) |
+| 12031→12666 | scheduled turn `steward-metatron-12031` LANDED (no player): `survey_site(54,34)` then `place_designation{fire, (54,34), mission_id: msn-11524-0}` → `dsg-12031-0` + `guardian.mission_progressed` (seqs 4206-4207, atomic) | **pursuit turn 4**: the consecration path — the guardian marks what the village already raised |
+| 12667 | `designation.fulfilled dsg-12031-0` (executor sweep — the spec-084 structural predicate holds: a fire stands at (54,34)) | seq 4212 |
+| **12668** | **`guardian.mission_completed msn-11524-0`** `{"accepted_tick":11524,"designations":["dsg-12031-0"]}` (executor sweep, one-tick lag; seq 4214) | **derived completion with the evidence trail — never self-graded, never injectable (whitelist absence)** |
+
+Steward-lane outcome tally for the whole run (cog.outcome, class steward):
+**4 landed** (the four pursuit turns above), 5 adapted (quiet watches — a
+designed outcome), 2 unusable (the pre-retier endpoint starvation), 1
+suppressed (the router shed the lane at 16x — the cognition-horizon gate
+doing its job). Missions `msn-127-0` (second shelter; blocked on the
+villager plank economy — 8 planks in one villager's hands, cogito:3b
+planners mostly `unusable`) and `msn-9567-0` (central hearth) remain
+ACTIVE in the preserved world; their 7-day deadlines will judge them
+honestly by the recorded predicates whenever the world runs again —
+exactly the degraded-but-honest posture the spec documents.
+
+### Reading (SC-001)
+
+The full FR-007 arc is on the ledger for `msn-11524-0`: plain-words
+acceptance (one console turn) → decomposition and pursuit on SCHEDULED
+turns with no player in the loop (survey → designation with the atomic
+`mission_id` link) → `designation.fulfilled` by the spec-084 structural
+predicate → `guardian.mission_completed` citing the fulfilled linked
+designation. The longer `msn-127-0` arc additionally proves multi-turn
+decomposition (designation THEN directive, pursuit turns 1-2) and the
+directive rung physically mobilizing the village. Both derived terminals
+came from the executor sweep — the two forgery-proof types.
 
 ## Part 3 — the 164-instrument mission scenario (US3, prepared recipe)
 

@@ -26,7 +26,7 @@
 
 - [X] T007 In-branch obedience eval (FR-008): old vs new default, scripted
   direct-mission prompts via the measurement proxy; results in evidence doc.
-- [ ] T008 Live demo (FR-007, SC-001) on a seeded measure world; evidence doc
+- [X] T008 Live demo (FR-007, SC-001) on a seeded measure world; evidence doc
   complete; 164-instrument mission-scenario harness prepared (US3).
-- [ ] T009 Wiki re-pins (+ new guardian-missions.md), player-docs probe,
+- [X] T009 Wiki re-pins (+ new guardian-missions.md), player-docs probe,
   merge-drift pr gate exit 0.
