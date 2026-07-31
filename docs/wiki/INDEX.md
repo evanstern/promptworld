@@ -83,6 +83,7 @@ that note (re-pin with `/grounding-wiki:wiki-update`).
 - [[snapshots]] — hash-verified recovery accelerator; cadence and fallback chain
 - [[world-tuning]] — spec-048 world tuning manifest (tuning.json): five promoted doctrine dials, clamp-validated at boot, event-logged as sim.tuning_applied, replay file-independent
   - [[world-tuning-boot-seeding]] — Split from [[world-tuning]] — how tuning.json is seeded into the event log at daemon boot (absent/present-file behavior, clamp warnings), the…
+- [[world-tuning-dial-catalog]] — child of [[world-tuning]]: the per-dial catalog (specs 048/097/098/102/104) with keys, defaults, clamps
 
 ## Interface
 

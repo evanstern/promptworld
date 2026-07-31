@@ -1,6 +1,6 @@
 ---
 name: tool-registry-plan-faith-tools
-description: Child of [[tool-registry-guardian-tools]] — the spec-084 durable plan-layer tools (place_designation/cancel_designation/issue_directive/cancel_directive/survey_site, all Gate None/charge-free, stage-1 granted), the spec-085 prophesy tool (Gate Charge, claim-kind-conditional params, no cancel verb), and spec 107's mission_id pursuit-link param on place_designation/issue_directive (the mission verbs themselves live on [[guardian-missions]]). Load for these tools' exact schemas and event declarations.
+description: Child of [[tool-registry-guardian-tools]] — the spec-084 durable plan-layer tools (place_designation/cancel_designation/issue_directive/cancel_directive/survey_site, Gate None, stage-1), the spec-085 prophesy tool (Gate Charge, claim-kind-conditional params, no cancel verb), and spec 107's mission_id pursuit-link param on place_designation/issue_directive (the mission verbs themselves live on [[guardian-missions]]). Load for these tools' exact schemas and event declarations.
 kind: component
 sources:
   - internal/tool/registry.go
