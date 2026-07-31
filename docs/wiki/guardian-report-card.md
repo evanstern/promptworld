@@ -43,7 +43,11 @@ the ABSORB goroutine, after the replica applies the batch (the
 fire during replay, since no guardian runs during reconstruction.
 `enqueueCard` is activity-gated: with no new guardian activity since the
 last card (tracked via `cardDoneSeq`, the graded high-water mark), nothing
-is queued — the deterministic checklist half stands alone.
+is queued — the deterministic checklist half stands alone. Since spec 107
+the trail also collects the mission lifecycle (`guardian.mission_*` —
+acceptance with its goal, progress links, the derived completed/failed
+terminals with their evidence), so mission outcomes are graded by citing
+recorded seqs, never prose ([[guardian-missions]] D3).
 
 `produceCard` runs ONE cheap-chain call (`llm.KindReportCard`, below) per
 job: the system prompt casts the model as the guardian "writing a brief

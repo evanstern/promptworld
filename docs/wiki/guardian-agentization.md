@@ -109,6 +109,15 @@ not part of the scheduled lane's roster at ANY ceiling (planning-tier
 ruling 2026-07-30) — they remain console/order-driven; revisit via a
 future card. Two compile-time
 initiative frames (INV-1 appended-last) carry the doctrine into the prompt.
+Spec 107 composes ONE layer beside the ceiling: with an active MISSION
+(the player's standing pre-authorization, [[guardian-missions]]),
+`applyMissionPursuitGrant` union-adds the world-granted pursuit verbs
+(survey, the plan verbs, `work_miracle` at the world's full kind grant,
+`note_mission_progress`) back into the scheduled roster at ANY ceiling —
+initiative stays capped exactly as above (clock, orders, nudges,
+accept/cancel_mission all still absent), and a third frame
+(`guardianAngelMissionFrame`) carries the carve-out; mission-free
+scheduled turns are byte-identical to spec 102.
 
 ## The structural tutor/world split (`internal/guardian/tutor.go`)
 

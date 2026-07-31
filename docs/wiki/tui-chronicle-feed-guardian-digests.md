@@ -59,7 +59,12 @@ guardian memory-store rows — `guardian.memory_added/embedded/promoted/
 faded`, `guardian.salience_revised`, `guardian.memory_merged`,
 `guardian.consolidated` — the `agent.*` consolidation family's wording
 re-voiced under the skin's guardian display name (vectors elided, the
-spec-042 reasoning).
+spec-042 reasoning). Spec 107 ([[guardian-missions]]) adds the five
+mission rows in the plan-layer voice: the guardian accepts/advances/stands
+down (`guardian.mission_accepted/progressed/cancelled`), and the world
+answers (`guardian.mission_completed` naming the fulfilled linked
+designations, `guardian.mission_failed` naming the frozen reason) — the
+derived terminals cite recorded evidence, never prose grading.
 
 ## Connections
 

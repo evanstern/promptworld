@@ -62,7 +62,9 @@ family, one `skin.guardian.example_ask.<tool-id>` row per shipped guardian
 loop tool (e.g. `.send_vision` → `"show Ash a vision of the fire dying"`;
 spec 084 adds the five plan-layer rows, `.place_designation` through
 `.survey_site` — [[guardian-designations]]; spec 085 adds `.prophesy` —
-[[guardian-faith]]) —
+[[guardian-faith]]; spec 107 adds the three mission rows,
+`.accept_mission`/`.note_mission_progress`/`.cancel_mission` —
+[[guardian-missions]]) —
 the help overlay's D9 guardian section teaches asking from these.
 
 **`Skin` and its typed accessors**: a `*Skin` holds string-token overrides

@@ -81,6 +81,9 @@ genesis 50 read only through the nil-safe `FaithScore()` accessor — the
 `Tuning` nil-means-default shape; and `Prophecies []Prophecy`, the
 guardian's declared machine-checkable claims, `omitempty` on the plan-layer
 precedent; [[guardian-faith]])
+— the mission layer (`Missions []Mission`, spec 107, `omitempty` on the
+same precedent — the player's standing instructions with links to the
+designations/directives pursuing them; [[guardian-missions]])
 — and the village's
 law ([[governance]], TASK-13): `MeetingPlace` (set once), the `Meeting`
 lifecycle (including the TASK-36 emergent-gathering watch fields

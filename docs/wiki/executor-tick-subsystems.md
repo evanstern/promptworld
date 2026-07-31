@@ -44,7 +44,11 @@ and BEFORE the scenario rubric/run-end detection — scans THIS tick's batch
 for `directive.fulfilled`/`directive.expired`/`agent.died`/
 `prophecy.fulfilled`/`prophecy.failed` and emits one `faith.changed` per
 source in batch order, skipping emissions the clamp would swallow —
-[[guardian-faith]]);
+[[guardian-faith]]); spec 107 adds the mission outcome sweep
+(`missionEvents`, immediately after the prophecy sweep — per active
+mission, completed before failed, once: `guardian.mission_completed` when
+every linked designation is fulfilled, `guardian.mission_failed` with
+per-link status evidence at the deadline — [[guardian-missions]]);
 its reflex fires only on agents idle past `reflexGraceTicks` (120). Since spec 054, an armed scenario world's `stepEvents` also consults its
 incident schedule (`scenarioIncidentEvents`) immediately BEFORE `gruStep` —
 a scheduled `gru.emerged` preempts that night's random emergence roll, so

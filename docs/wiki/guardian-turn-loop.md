@@ -44,7 +44,13 @@ add one more intersection at the same seam — `applyAngelCeiling`
 (`ceiling.go`): default charter → the modest read/counsel set, authored →
 all but the clock triple — and ride `Kind "steward"` with a caller-minted
 `steward-metatron-<tick>` job id; console/triggered turns never pass the
-ceiling ([[guardian-agentization]]). The stage-1/-2 ceiling
+ceiling ([[guardian-agentization]]). Spec 107 composes
+`applyMissionPursuitGrant` beside it: an ACTIVE mission (the player's
+standing pre-authorization) re-opens the world-granted pursuit verbs on
+the scheduled roster at any ceiling, the user prompt gains the
+active-mission section (`writeMissions`), and the cadence directive gains
+the pursuit addendum — mission-free turns byte-identical
+([[guardian-missions]]). The stage-1/-2 ceiling
 (`stage1CeilingTools`) is `send_omen`/`send_vision`/`monitor_and_act`/
 `cancel_order` with NO miracle kinds and no bundle tools (a ratified TASK-119
 amendment added the two standing-order tools, since the first-night exercise

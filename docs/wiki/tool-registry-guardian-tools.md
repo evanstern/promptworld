@@ -110,7 +110,13 @@ Spec 084/085 append two tool families — the durable plan layer
 `cancel_directive`/`survey_site`, charge-free, stage-1) and `prophesy`
 (charge-gated, no cancel verb) — split into
 [[tool-registry-plan-faith-tools]]. Spec 101 appends `canonize_region` (priced outside `miracleCosts`) and
-`brief_myths` (Read) — [[guardian-canonization]].
+`brief_myths` (Read) — [[guardian-canonization]]. Spec 107 appends the
+mission layer last (`accept_mission`/`note_mission_progress`/
+`cancel_mission`, all Expressive/Gate None — charge-free artifact
+bookkeeping, stage-1 granted on the plan-layer profile) and adds the
+optional `mission_id` param to `place_designation`/`issue_directive` (the
+atomic pursuit link; their `Events` gain `guardian.mission_progressed`) —
+[[guardian-missions]].
 
 ## Connections
 
