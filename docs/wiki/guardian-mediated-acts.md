@@ -7,7 +7,7 @@ sources:
   - internal/guardian/toolcalls.go
   - internal/guardian/miracle_batch.go
   - internal/sim/guardian.go
-verified_against: 04ff15001bd8a74f7c2965889c0d318fc0dc03a9
+verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
 ---
 
 # Guardian's mediated acts

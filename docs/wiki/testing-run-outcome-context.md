@@ -16,7 +16,7 @@ sources:
   - internal/daemon/context_replay_test.go
   - internal/guardian/charter_observed_test.go
   - internal/mind/epilogue_test.go
-verified_against: d0645811c9783d1248dc65ed0fcf0b37524dd8fd
+verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
 ---
 
 # Run-outcome & decision-context suites

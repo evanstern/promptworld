@@ -7,7 +7,7 @@ sources:
   - internal/guardian/missions.go
   - internal/guardian/ceiling.go
   - internal/persona/charter.go
-verified_against: PIN-PENDING
+verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
 ---
 
 # Guardian missions — accept, decompose, pursue, report

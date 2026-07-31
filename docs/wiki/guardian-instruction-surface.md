@@ -7,7 +7,7 @@ sources:
   - internal/guardian/charter.go
   - internal/persona/charter.go
   - internal/skin/skin.go
-verified_against: 04ff15001bd8a74f7c2965889c0d318fc0dc03a9
+verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
 ---
 
 # Guardian's instruction surface

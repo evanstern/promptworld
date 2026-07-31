@@ -11,7 +11,7 @@ sources:
   - internal/sim/tuning.go
   - internal/cognition/registry.go
   - internal/cognition/schedule.go
-verified_against: bd13e84095eb7dd15d2911e524dd0ca0d467bda8
+verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
 ---
 
 # Guardian agentization — the caretaker on the villager construct
