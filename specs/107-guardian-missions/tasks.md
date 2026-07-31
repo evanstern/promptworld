@@ -4,22 +4,22 @@
 
 ## Phase 1: Mission substrate
 
-- [ ] T001 Mission artifacts (084 discipline): guardian.mission_* events,
+- [X] T001 Mission artifacts (084 discipline): guardian.mission_* events,
   reducer arms, door-validated acceptance, one-way terminals, prune (FR-001).
-- [ ] T002 Derived completion/failure from spec-084 predicates + recorded
+- [X] T002 Derived completion/failure from spec-084 predicates + recorded
   events; report-card integration (FR-003).
 
 ## Phase 2: Pursuit + doctrine
 
-- [ ] T003 Scheduled-lane pursuit: mission context in steward prompts;
+- [X] T003 Scheduled-lane pursuit: mission context in steward prompts;
   full-competence pursuit at any ceiling scoped to the active mission;
   order-door single-arbiter preserved (FR-002, SC-003).
-- [ ] T004 EASY-mode default charter clause; skinned-refusal separation
+- [X] T004 EASY-mode default charter clause; skinned-refusal separation
   (FR-004).
 
 ## Phase 3: Surfaces + tests
 
-- [ ] T005 Digest, event-types.md, decision trail; TestCatalogSweep (FR-005).
+- [X] T005 Digest, event-types.md, decision trail; TestCatalogSweep (FR-005).
 - [ ] T006 FR-006 test suite; go test -race ./... green; replay byte-identity.
 
 ## Phase 4: Evidence + grounding

@@ -239,6 +239,25 @@ var catalogFixture = map[string]digestFixture{
 	},
 	"directive.expired": {`{"id":"dir-200-0"}`, `Guardian's charge lapsed (dir-200-0)`},
 
+	// --- the mission layer (spec 107 — standing player instructions) ---
+	"guardian.mission_accepted": {
+		`{"id":"msn-100-0","goal":"A second fire structure stands near (12,8) and stays fueled.","accepted_tick":100,"deadline_tick":604900,"status":"active"}`,
+		`Guardian accepted a mission (msn-100-0): "A second fire structure stands near (12,8) and stays fueled."`,
+	},
+	"guardian.mission_progressed": {
+		`{"id":"msn-100-0","designation_id":"dsg-200-0","note":"the site is marked"}`,
+		`Guardian advanced the mission (msn-100-0) — linked dsg-200-0: "the site is marked"`,
+	},
+	"guardian.mission_completed": {
+		`{"id":"msn-100-0","accepted_tick":100,"designations":["dsg-200-0"]}`,
+		`the village completed Guardian's mission (msn-100-0) — dsg-200-0 fulfilled`,
+	},
+	"guardian.mission_failed": {
+		`{"id":"msn-100-0","reason":"deadline_unmet","accepted_tick":100,"deadline_tick":604900,"designations":[{"id":"dsg-200-0","status":"active"}]}`,
+		`Guardian's mission failed (msn-100-0, deadline_unmet)`,
+	},
+	"guardian.mission_cancelled": {`{"id":"msn-100-0"}`, `Guardian stood down from a mission (msn-100-0)`},
+
 	// --- the faith economy (spec 085 — faith movements and prophecies) ---
 	"faith.changed": {
 		`{"delta":8,"reason":"directive_fulfilled","source_id":"dir-200-0"}`,

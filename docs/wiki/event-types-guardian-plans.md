@@ -1,9 +1,10 @@
 ---
 name: event-types-guardian-plans
-description: "Guardian plan-layer event rows split from [[event-types]] (spec 084): designation.placed/cancelled/fulfilled and directive.issued/cancelled/fulfilled/expired. Load when tracing the designation/directive lifecycle, the injected-vs-executor-emitted door split, or the TASK-118 faith seam payload (consumed by spec 085 — [[guardian-faith]])."
+description: "Guardian plan-layer event rows split from [[event-types]] (specs 084/107): designation.placed/cancelled/fulfilled, directive.issued/cancelled/fulfilled/expired, and the mission family guardian.mission_accepted/progressed/completed/failed/cancelled. Load when tracing the designation/directive/mission lifecycle, the injected-vs-executor-emitted door split, or the TASK-118 faith seam payload (consumed by spec 085 — [[guardian-faith]])."
 kind: concept
 sources:
   - internal/sim/plans.go
+  - internal/sim/missions.go
   - internal/sim/executor.go
   - internal/sim/loop.go
 verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
@@ -65,3 +66,25 @@ Renaming or shrinking any of the seven after merge is a log-format break:
 since spec 094 a persisted-name change requires a `store.LogFormatVersion`
 bump plus the translating migration ([[event-log]]'s doctrine — the
 successor to the spec-052 freeze).
+
+## The mission family (spec 107)
+
+Missions ([[guardian-missions]] is the subsystem story) clone the door
+split verbatim: FIVE `guardian.mission_*` types
+(`internal/sim/missions.go`), no format bump (`State.Missions []Mission`,
+`omitempty`).
+
+| Type | Payload | Door |
+|---|---|---|
+| `guardian.mission_accepted` | the full `sim.Mission` entity (`Status`/`PlacedSeq` reducer-stamped; link lists must be EMPTY on the wire) | injected (`accept_mission`); the arm validates id/1..400-rune goal/1..14-day TTL/cap 3 |
+| `guardian.mission_progressed` | `{id, designation_id?, directive_id?, note?}` — at least one present | injected (`note_mission_progress`, or riding a plan verb's batch via its `mission_id` arg); linked ids must exist in state, dupes refused; links append to the entity, a note-only step mutates nothing (the event is the note's home) |
+| `guardian.mission_completed` | `{id, accepted_tick, designations}` — the fulfilled linked ids, the report card's evidence trail | EXECUTOR-emitted when `missionFulfilled` holds (≥1 linked designation, ALL linked `fulfilled`); the arm re-validates the predicate |
+| `guardian.mission_failed` | `{id, reason, accepted_tick, deadline_tick, designations[], directives[]}` — reason is frozen (`deadline_unmet` \| `never_pursued`), entity lists carry per-link status evidence | EXECUTOR-emitted at `tick >= DeadlineTick` with the predicate unmet; the arm re-validates both |
+| `guardian.mission_cancelled` | `{id}` | injected (`cancel_mission`, the player's stand-down); one-way |
+
+Whitelist delta: the three injected types join `injectSocialWhitelist`;
+the two derived terminals get NO entry — completion is derived, never
+self-graded (D3), and whitelist absence refuses a forged outcome. Sweep
+position is fixed AFTER the prophecy sweep; completion checked before
+failure per mission, and the designation-status read gives the same
+documented one-tick lag as directives.

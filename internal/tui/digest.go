@@ -1294,6 +1294,69 @@ var digestRegistry = map[string]digestFunc{
 		}
 		return join([]seg{txt(sk.Name() + "'s charge lapsed ("), emph(p.ID), txt(")")}), true
 	},
+	// guardian.mission_* (spec 107): the player's standing instruction — the
+	// guardian accepts and pursues; the executor-emitted terminals
+	// (completed/failed) read as the world answering the mission, citing the
+	// recorded evidence (linked designations / the frozen failure reason) —
+	// never prose grading (D3). Voice mirrors the plan-layer rows above.
+	"guardian.mission_accepted": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.Mission](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{txt(sk.Name() + " accepted a mission ("), emph(p.ID), txt("): "),
+			speech(truncateRunes(p.Goal, 80))}), true
+	},
+	"guardian.mission_progressed": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.MissionProgressedPayload](e)
+		if !ok {
+			return nil, false
+		}
+		segs := []seg{txt(sk.Name() + " advanced the mission ("), emph(p.ID), txt(")")}
+		if p.DesignationID != "" {
+			segs = append(segs, txt(" — linked "), emph(p.DesignationID))
+		}
+		if p.DirectiveID != "" {
+			segs = append(segs, txt(" — linked "), emph(p.DirectiveID))
+		}
+		if p.Note != "" {
+			segs = append(segs, txt(": "), speech(truncateRunes(p.Note, 60)))
+		}
+		return join(segs), true
+	},
+	"guardian.mission_completed": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.MissionCompletedPayload](e)
+		if !ok {
+			return nil, false
+		}
+		segs := []seg{txt("the village completed " + sk.Name() + "'s mission ("), emph(p.ID), txt(")")}
+		for i, id := range p.Designations {
+			if i == 0 {
+				segs = append(segs, txt(" — "))
+			} else {
+				segs = append(segs, txt(", "))
+			}
+			segs = append(segs, emph(id))
+		}
+		if len(p.Designations) > 0 {
+			segs = append(segs, txt(" fulfilled"))
+		}
+		return join(segs), true
+	},
+	"guardian.mission_failed": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.MissionFailedPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{txt(sk.Name() + "'s mission failed ("), emph(p.ID), txt(", "), emph(p.Reason), txt(")")}), true
+	},
+	"guardian.mission_cancelled": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.OrderIDPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{txt(sk.Name() + " stood down from a mission ("), emph(p.ID), txt(")")}), true
+	},
 	// faith.changed / prophecy.* (spec 085): the faith economy — devotion and
 	// doubt, never points or numbers first (the overjustification caution);
 	// the reason rides as the mechanical footnote. Prophecy rows mirror the

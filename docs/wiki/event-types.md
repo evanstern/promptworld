@@ -23,7 +23,7 @@ were `metatron.*` in log format 1.
 
 ## Event catalog, by domain
 
-The full per-type catalog (145 `PayloadCatalog` types, specs 012–104) is
+The full per-type catalog (157 `PayloadCatalog` types, specs 012–107) is
 split by event domain — each child inherits this note's `verified_against`
 pin and carries the domain's own format-history prose and catalog rows.
 
@@ -42,7 +42,7 @@ pin and carries the domain's own format-history prose and catalog rows.
 - [[event-types-guardian-orders]] — Guardian standing-order events — charge_regenerated, nudged, order_placed/triggered/cancelled/expired, spec 029/059 survival-watch lifecycle.
 - [[event-types-guardian-morgue]] — Guardian morgue/report-card events — charter_observed (+ spec 077's skills_observed twin), morgue.epilogue, guardian.report_card, chronicle.entry.
 - [[event-types-guardian-actions]] — Guardian miracle actions and gru events — time_snapped/item_granted/entity_moved/entity_removed, `guardian.region_named` (spec 101), the gru emerged/moved/sighted/attacked/withdrew family.
-- [[event-types-guardian-plans]] — Guardian plan-layer events (spec 084) — `designation.*`/`directive.*`: injected placement/issue/cancel, executor-emitted fulfillment/expiry, the TASK-118 faith seam (consumed by spec 085).
+- [[event-types-guardian-plans]] — Guardian plan-layer events (specs 084/107) — `designation.*`/`directive.*`: injected placement/issue/cancel, executor-emitted fulfillment/expiry, the TASK-118 faith seam (consumed by spec 085); plus the mission family `guardian.mission_accepted`/`guardian.mission_progressed`/`guardian.mission_completed`/`guardian.mission_failed`/`guardian.mission_cancelled` (spec 107 — injected acceptance/progress/cancel, executor-emitted derived terminals).
 - [[event-types-guardian-memory]] — Guardian memory-store events (spec 102) — `guardian.memory_added/embedded/promoted/faded`, `guardian.salience_revised`, `guardian.memory_merged`, `guardian.consolidated`: the agentized guardian's own store and nightly consolidation.
 - [[guardian-faith]] — Faith-economy events (spec 085) — `faith.changed` (executor-emitted, the five-reason delta table) and the prophecy lifecycle `prophecy.declared`/`fulfilled`/`failed`.
 
