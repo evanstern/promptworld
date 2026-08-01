@@ -195,16 +195,20 @@ ID — a bare tier name resolves to nothing at dispatch time:
   changes; concurrency/scheduling/governor logic (`internal/llm`, `internal/cognition`,
   `internal/mind` orchestration); doctrine-adjacent behavior changes; any slice whose
   prior Sonnet attempt failed gates or shipped live defects; adversarial verification
-  passes on request. Same model as the planning tier, but still a delegated
-  `spec-implementer` subagent — select via the Agent tool's `model` param (`opus`), never
-  inline in the planning session.
+  passes on request. Same model as the planning tier, but still a delegated subagent —
+  dispatch `.claude/agents/spec-implementer-opus.md`, never inline in the planning
+  session.
 - **Sonnet (`claude-sonnet-5`) implements the routine slices (default):** single-package
-  features, view/rendering code, tests alongside code, doc reconciliation.
+  features, view/rendering code, tests alongside code, doc reconciliation — the
+  `.claude/agents/spec-implementer.md` definition.
 
-The escalation rubric lives in `.claude/agents/spec-implementer.md`; escalation is
-one-way Sonnet → Opus 5, and the tier choice + rubric justification is recorded on the
-board task. Dispatches always state the tier's model explicitly rather than inheriting
-the orchestrator's session model.
+The pin is the agent definition's frontmatter model ID, and escalation means dispatching
+the OTHER definition — not passing a `model` parameter, which has been observed to be
+silently ignored (praxis field case 2026-07-31), leaving the subagent on the
+orchestrator's session model at the orchestrator's price. The escalation rubric lives in
+`.claude/agents/spec-implementer.md`; escalation is one-way Sonnet → Opus 5, and the tier
+choice, rubric justification, and model that actually served are recorded on the board
+task.
 
 **Spec rigor (constitution, Development Workflow):** every non-trivial TASK runs full
 Spec Kit (specify → clarify where ambiguous → plan → tasks → implement) with the spec

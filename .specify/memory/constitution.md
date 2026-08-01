@@ -24,7 +24,12 @@ Sync Impact Report
   - ✅ CLAUDE.md — Model-tiered workflow block rewritten on the same branch
     (task-179-opus5-planning-tier); version reference bumped to v1.3.0
   - ✅ .claude/agents/spec-implementer.md — description + escalation rubric restated for
-    Opus 5 on the same branch; `model: sonnet` frontmatter unchanged (correct default)
+    Opus 5 on the same branch; frontmatter pin made an explicit ID (`sonnet` →
+    `claude-sonnet-5`), still the default implementation tier
+  - ✅ .claude/agents/spec-implementer-opus.md — ADDED on the same branch: the senior
+    tier as its own definition pinned `model: claude-opus-5`, because the Agent tool's
+    `model` parameter was observed to be silently ignored (praxis field case 2026-07-31);
+    frontmatter pinning is the mechanism that actually holds
 - Note: `specs/*/plan.md` files naming Fable 5 are historical records of what planned
   each spec and are intentionally left as-is
 - Previous report (1.1.0 → 1.2.0): Principle IV materially expanded — pr gate named as
@@ -114,14 +119,16 @@ tier name has no mechanical resolution at dispatch time.
   routine and mechanical slices — single-package features, view/rendering code, tests
   alongside code, doc reconciliation.
 
-Implementation MUST execute in subagents pinned to the implementing model — the
-`.claude/agents/spec-implementer.md` agent definition, which carries the escalation
-rubric — never inline on the planning model. Every dispatch MUST state the tier's model
-explicitly (the Agent tool's `model` parameter, via the alias that resolves to the tier's
-ID in the running harness) rather than relying on session-model inheritance: an unpinned
-dispatch silently inherits whatever the orchestrator is running. Tier escalation is
-one-way (Sonnet → Opus 5); the orchestrator records the tier choice and its rubric
-justification on the board task.
+Implementation MUST execute in subagents pinned to the implementing model, never inline
+on the planning model. **The pin lives in the agent definition's frontmatter as an
+explicit model ID** — `.claude/agents/spec-implementer.md` (`claude-sonnet-5`, default,
+carrying the escalation rubric) and `.claude/agents/spec-implementer-opus.md`
+(`claude-opus-5`, senior). Tier escalation is one-way (Sonnet → Opus 5) and is expressed
+by dispatching the other agent definition, NOT by a `model` parameter on the dispatch
+call: that parameter has been observed to be silently ignored, leaving the subagent on
+the orchestrator's session model at the orchestrator's price. The orchestrator records
+the tier choice, its rubric justification, and the model that actually served on the
+board task.
 
 **Rationale:** the highest-capability tier is spent where judgment concentrates (specs,
 plans, decomposition, gating) and on the implementation slices where a mistake is
