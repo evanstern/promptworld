@@ -3,10 +3,10 @@ id: TASK-179
 title: >-
   Model tiers: Opus 5 plans, gates, and is the escalation target — retire Fable
   5 from the rubric
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-08-01 04:19'
-updated_date: '2026-08-01 04:30'
+updated_date: '2026-08-01 04:41'
 labels:
   - doctrine
 dependencies: []
@@ -38,7 +38,7 @@ Out of scope: specs/*/plan.md Fable references are historical records of what pl
 - [x] #1 Constitution Principle V names Claude Opus 5 (claude-opus-5) as the planning/gating tier and as the senior-implementation escalation target, with Sonnet retained as the default implementation tier; amended via speckit-constitution with the Sync Impact Report updated and the version bumped from 1.2.0
 - [x] #2 CLAUDE.md's Model-tiered workflow block mirrors the amended principle and cites the new constitution version
 - [x] #3 rg --hidden 'Fable|Opus 4\.8' over CLAUDE.md, .specify/, and .claude/ returns no hits
-- [ ] #4 Lands as one PR merged with gh pr merge --merge; no wiki note pins the three files (verified), so no re-pin rides the PR
+- [x] #4 Lands as one PR merged with gh pr merge --merge; no wiki note pins the three files (verified), so no re-pin rides the PR
 - [x] #5 Implementation tiers are pinned by explicit model ID in agent-definition frontmatter: .claude/agents/spec-implementer.md carries claude-sonnet-5 as the default tier, and a new .claude/agents/spec-implementer-opus.md carries claude-opus-5 as the escalation target
 <!-- AC:END -->
 
@@ -73,3 +73,17 @@ Also corrected in the PR body: praxis ships no agent definitions IN ITS PLUGIN P
 
 Branch freshened from origin/main by merge (baseLag 2 -> 0); pr gate re-run after both changes: verdict=pass, no findings.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Constitution v1.3.0 ratified and merged as PR #152, merge commit fe1a110e — a true merge, two parents, so no pins were rewritten.
+
+Principle V now reads: planning and gating run on Claude Opus 5 [claude-opus-5], and so does every non-implementation verb of the lifecycle — sweep orchestration, reorientation, refactor triage, grounding, review. High-complexity implementation slices escalate to Opus 5 as well; routine slices stay on Sonnet [claude-sonnet-5]. Fable 5 and Opus 4.8 are retired from the rubric, surviving only in the Sync Impact Report as the record of what changed and in specs/*/plan.md as historical records of what planned each spec.
+
+The mechanism matters more than the names. Tiers are pinned by explicit model ID in agent-definition frontmatter: .claude/agents/spec-implementer.md carries claude-sonnet-5, and the new .claude/agents/spec-implementer-opus.md carries claude-opus-5. Escalation means dispatching the other definition, NOT passing a model parameter — praxis field evidence from 2026-07-31 records that parameter being silently ignored, with three dispatches running on the orchestrator's model before being killed. That evidence arrived mid-PR and changed the design; the deviation from the original AC3 was recorded and the AC replaced rather than ticked past.
+
+Gates: check-merge-drift pr passed with no findings, branch freshened from main by merge. No wiki note pins any of the four files, so no re-pin or player-docs regen was required.
+
+Follow-on filed: TASK-180 here for two root-guard board-sync defects hit while claiming this task, and praxis TASK-91 for pdlc:bootstrap planting no model-tier rubric while pdlc:sweep requires one.
+<!-- SECTION:FINAL_SUMMARY:END -->
