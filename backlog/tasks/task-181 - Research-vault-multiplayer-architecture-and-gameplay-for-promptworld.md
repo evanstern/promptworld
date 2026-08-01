@@ -4,7 +4,7 @@ title: 'Research vault: multiplayer architecture and gameplay for promptworld'
 status: In Progress
 assignee: []
 created_date: '2026-08-01 19:41'
-updated_date: '2026-08-01 19:41'
+updated_date: '2026-08-01 19:44'
 labels:
   - research
   - multiplayer
@@ -40,4 +40,6 @@ Directly feeds TASK-65 AC #1 (multiplayer shape decision: parallel villages vs s
 
 <!-- SECTION:NOTES:BEGIN -->
 Branch research-multiplayer-vault (worktree .worktrees/research-multiplayer): research/Game-Multiplayer/ created with _grounding.md (web-search fan-out — 12 searches + 4 primary-source fetches, 2026-08-01) plus 11 neutral notes. Research branch gate passes ("OK: branch 'Game-Multiplayer' well-formed and analyzable"). EMBED phase only — no verdict authored; research:analyze-vault is the follow-on that would answer TASK-65 AC #1.
+
+PR 153 opened (draft): https://github.com/evanstern/promptworld/pull/153 — branch research-multiplayer-vault. 13 files under research/Game-Multiplayer/ (MOC + _grounding + 11 notes). Branch gate OK; check-merge-drift pr = pass, no findings; all wikilinks resolve in-branch; Home.md indexes the branch.
 <!-- SECTION:NOTES:END -->
