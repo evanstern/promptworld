@@ -1,6 +1,6 @@
 ---
 name: "player-docs"
-description: "Generates and refreshes docs/player/ — thirteen self-contained HTML pages that project the code-grounded wiki (docs/wiki/), README.md, docs/llm-providers.md, and (for the curriculum-ladder quickstarts) the spec 046 spec/contracts into plain-language documentation for players (non-engineers). Runs standalone; the recommended follow-on after /grounding-wiki:wiki-update re-pins wiki notes. Check freshness first: node .claude/skills/player-docs/scripts/check-freshness.mjs --check"
+description: "Generates and refreshes docs/player/ — sixteen self-contained HTML pages that project the code-grounded wiki (docs/wiki/), README.md, docs/llm-providers.md, and (for the curriculum-ladder quickstarts) the spec 046 spec/contracts into plain-language documentation for players (non-engineers). Runs standalone; the recommended follow-on after /grounding-wiki:wiki-update re-pins wiki notes. Check freshness first: node .claude/skills/player-docs/scripts/check-freshness.mjs --check"
 metadata:
   author: "promptworld"
 user-invocable: true
@@ -58,7 +58,7 @@ the check has run and named it stale or missing.
 
 ## The expected page set
 
-`index.html` (nav hub, no sources) plus twelve topic pages:
+`index.html` (nav hub, no sources) plus fifteen topic pages:
 
 - `getting-started.html`
 - `playing-via-metatron.html`
@@ -72,6 +72,9 @@ the check has run and named it stale or missing.
 - `stage-2-the-written-word.html`
 - `stage-3-the-craft.html`
 - `stage-4-the-stewardship.html`
+- `command-reference.html`
+- `world-files-reference.html`
+- `troubleshooting.html`
 
 ## Page → source mapping
 
@@ -82,7 +85,7 @@ source not listed here, add it — and add the matching meta tag in the same cha
 |------|---------|
 | `index.html` | none (nav only) |
 | `getting-started.html` | `README.md`, `docs/wiki/cli-promptworld.md`, `docs/wiki/daemon-lifecycle.md`, `docs/wiki/tui-client.md`, `docs/wiki/llm-provider-health.md`, `docs/wiki/chronicle.md`, `docs/wiki/morgue.md`, `docs/wiki/gru.md`, `docs/wiki/curriculum-ladder.md`, `docs/wiki/takeover-surfaces.md`, `docs/wiki/grounded-feedback.md`, `docs/wiki/village-lens.md`, `docs/wiki/skin.md` |
-| `playing-via-metatron.html` | `docs/wiki/metatron.md`, `docs/wiki/metatron-miracles.md`, `docs/wiki/governance.md` |
+| `playing-via-metatron.html` | `docs/wiki/guardian.md`, `docs/wiki/guardian-faith.md`, `docs/wiki/bundle-tools.md`, `docs/wiki/guardian-miracles.md`, `docs/wiki/guardian-miracle-mechanics.md`, `docs/wiki/guardian-orders.md`, `docs/wiki/guardian-missions.md`, `docs/wiki/curriculum-ladder.md`, `docs/wiki/governance.md`, `docs/wiki/tui-client.md`, `docs/wiki/grounded-feedback.md`, `docs/wiki/takeover-surfaces.md` |
 | `time-and-speed.html` | `docs/wiki/game-clock.md`, `docs/wiki/sim-loop.md`, `docs/wiki/cli-promptworld.md` |
 | `reading-the-story.html` | `docs/wiki/chronicle.md`, `docs/wiki/tui-client.md`, `docs/wiki/event-log.md` |
 | `the-ai-behind-the-village.html` | `docs/wiki/agent-mind.md`, `docs/wiki/cognition.md`, `docs/wiki/llm-orchestrator.md`, `docs/wiki/nightly-consolidation.md`, `docs/wiki/social-fabric.md` |
@@ -93,6 +96,9 @@ source not listed here, add it — and add the matching meta tag in the same cha
 | `stage-2-the-written-word.html` | `specs/046-curriculum-ladder/spec.md`, `specs/046-curriculum-ladder/contracts/stage-gating.md`, `specs/046-curriculum-ladder/contracts/exercises.md`, `specs/046-curriculum-ladder/contracts/unlocks-record.md` |
 | `stage-3-the-craft.html` | `specs/046-curriculum-ladder/spec.md`, `specs/046-curriculum-ladder/contracts/stage-gating.md`, `specs/046-curriculum-ladder/contracts/unlocks-record.md` |
 | `stage-4-the-stewardship.html` | `specs/046-curriculum-ladder/spec.md`, `specs/046-curriculum-ladder/contracts/stage-gating.md` |
+| `command-reference.html` | `docs/wiki/cli-promptworld.md`, `docs/wiki/cli-world-lifecycle.md`, `docs/wiki/cli-runtime-control.md`, `docs/wiki/cli-guardian-ops.md`, `docs/wiki/instance-manager.md`, `docs/wiki/world-forking.md`, `docs/wiki/daemon-lifecycle.md`, `docs/wiki/curriculum-ladder.md`, `docs/wiki/cognition-estimator-calibration.md` |
+| `world-files-reference.html` | `docs/wiki/world-save-directory.md`, `docs/wiki/world-save-manifest-fields.md`, `docs/wiki/world-tuning.md`, `docs/wiki/world-tuning-dial-catalog.md`, `docs/wiki/skin.md`, `docs/wiki/guardian-instruction-surface.md`, `docs/wiki/governance.md`, `docs/wiki/bundle-tools.md`, `docs/wiki/event-log.md`, `docs/wiki/snapshots.md`, `docs/llm-providers.md` |
+| `troubleshooting.html` | `docs/wiki/daemon-lifecycle.md`, `docs/wiki/daemon-boot-recovery.md`, `docs/wiki/instance-manager.md`, `docs/wiki/llm-preflight-detection.md`, `docs/wiki/llm-provider-health.md`, `docs/wiki/cognition-horizon-telemetry.md`, `docs/wiki/world-migration.md`, `docs/wiki/tui-client.md`, `docs/llm-providers.md` |
 
 `llm-setup-basics.html` stays at "get it working" depth (the minimum `llm.json` a
 non-engineer needs) and defers registry-reference/migration depth to
@@ -116,6 +122,30 @@ files rather than `docs/wiki/` notes (the spec is the source of truth for the
 ladder's client-approved names/table), so — the `keys-reference.html` precedent
 above — their source pins are plain-file `git log` pins, not `verified_against`
 frontmatter pins.
+
+`command-reference.html`, `world-files-reference.html`, and `troubleshooting.html`
+(spec 108, TASK-182) are a reference trio, distinct in kind from every page above:
+where the teaching pages narrate a first session, these three are pure lookup —
+tables and terse symptom rows, cross-linked to each other and to the teaching pages
+they complement (`command-reference` ↔ `getting-started`; `world-files-reference` ↔
+`llm-setup-basics`; `troubleshooting` ↔ `the-ai-behind-the-village` and
+`time-and-speed`), never the reverse — the teaching pages stay byte-identical, this
+addition is additive nav only (`index.html`'s Reference section). Reference density
+(tables, terse rows) is licensed here in a way it isn't on the teaching pages, but
+the vocabulary rule doesn't relax: plain language for a non-engineer throughout, no
+identifier or package path, only what the player types or opens. `world-files-reference.html`
+follows the standing `llm-setup-basics.html` precedent (D4): it states what
+`llm.json`/`bundles/` are and what a player touches, then defers registry-reference
+and bundle-authoring depth to `docs/llm-providers.md`/`docs/bundles.md` by link
+rather than duplicating that depth here — a future regeneration keeps deferring
+rather than absorbing that content inline. `troubleshooting.html`'s rows never name
+a diagnostic surface that isn't real and observable in a declared source (a `promptworld
+status` field, a `ps` STATE value, a daemon-log WARNING line, a TUI badge) — a future
+regeneration that can no longer ground a row's "what to check" step drops or rewrites
+that row rather than keeping an invented one. `command-reference.html` documents
+`metatron`/`miracle` as retired-but-working aliases for `guardian`/`work` (spec 052
+FR-008) without un-hiding them from the built-in usage text — a future regeneration
+keeps naming them, since a player can still meet one in an old script.
 
 `getting-started.html` carries a first-prompt step (spec 079, TASK-153): a numbered
 "Ask your guardian one thing" section, positioned after the watch-it-live step and

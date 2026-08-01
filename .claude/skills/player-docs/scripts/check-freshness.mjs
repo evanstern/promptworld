@@ -55,7 +55,8 @@ function resolveRepoRoot() {
 }
 
 // The nine slugs from plan.md's Project Structure (plus TASK-114's pair), plus
-// spec 046's four per-stage curriculum-ladder quickstarts (nine -> thirteen).
+// spec 046's four per-stage curriculum-ladder quickstarts (nine -> thirteen),
+// plus spec 108's three reference pages (thirteen -> sixteen).
 // Adding a page means adding its slug here — a one-line, reviewed change
 // (data-model.md).
 const EXPECTED_PAGES = [
@@ -72,6 +73,9 @@ const EXPECTED_PAGES = [
   'stage-2-the-written-word.html',
   'stage-3-the-craft.html',
   'stage-4-the-stewardship.html',
+  'command-reference.html',
+  'world-files-reference.html',
+  'troubleshooting.html',
 ];
 
 const GENERATED_BY_RE =
