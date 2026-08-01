@@ -180,25 +180,31 @@ PR; the pr gate enforces it, and step 7 is bookkeeping only.
   content (wiki notes, player docs, design references) always rides the PR, never a
   post-merge commit.
 
-## Model-tiered workflow (constitution Principle V, v1.2.0)
+## Model-tiered workflow (constitution Principle V, v1.3.0)
 
-Three tiers, enforced by delegation (`.specify/memory/constitution.md`, Principle V):
+Three tiers resolving to two models, enforced by delegation
+(`.specify/memory/constitution.md`, Principle V). Every tier carries its explicit model
+ID — a bare tier name resolves to nothing at dispatch time:
 
-- **Fable 5 plans and gates:** specs (`speckit-specify`), clarify, plans (`speckit-plan`),
-  task generation (`speckit-tasks`), analysis, board/task creation, and review/gating of
-  implementer reports stay on the main session's planning model. Never implements inline.
-- **Opus 4.8 implements the hard slices:** cross-package/architectural changes;
-  concurrency/scheduling/governor logic (`internal/llm`, `internal/cognition`,
+- **Opus 5 (`claude-opus-5`) plans and gates:** specs (`speckit-specify`), clarify, plans
+  (`speckit-plan`), task generation (`speckit-tasks`), analysis, board/task creation, and
+  review/gating of implementer reports stay on the main session's planning model — as
+  does every other non-implementation verb of the lifecycle (sweep orchestration,
+  reorientation, refactor triage, grounding, review). Never implements inline.
+- **Opus 5 (`claude-opus-5`) implements the hard slices:** cross-package/architectural
+  changes; concurrency/scheduling/governor logic (`internal/llm`, `internal/cognition`,
   `internal/mind` orchestration); doctrine-adjacent behavior changes; any slice whose
   prior Sonnet attempt failed gates or shipped live defects; adversarial verification
-  passes on request. Select via the Agent tool's `model` param on the
-  `spec-implementer` agent.
-- **Sonnet implements the routine slices (default):** single-package features,
-  view/rendering code, tests alongside code, doc reconciliation.
+  passes on request. Same model as the planning tier, but still a delegated
+  `spec-implementer` subagent — select via the Agent tool's `model` param (`opus`), never
+  inline in the planning session.
+- **Sonnet (`claude-sonnet-5`) implements the routine slices (default):** single-package
+  features, view/rendering code, tests alongside code, doc reconciliation.
 
 The escalation rubric lives in `.claude/agents/spec-implementer.md`; escalation is
-one-way Sonnet → Opus, and the tier choice + rubric justification is recorded on the
-board task.
+one-way Sonnet → Opus 5, and the tier choice + rubric justification is recorded on the
+board task. Dispatches always state the tier's model explicitly rather than inheriting
+the orchestrator's session model.
 
 **Spec rigor (constitution, Development Workflow):** every non-trivial TASK runs full
 Spec Kit (specify → clarify where ambiguous → plan → tasks → implement) with the spec

@@ -2,10 +2,10 @@
 name: spec-implementer
 description: >
   Implements Spec Kit specs and build:implement SPECs on the implementing model tiers
-  (constitution Principle V v1.1.0 — Model-Tiered Workflow). Use PROACTIVELY whenever
+  (constitution Principle V v1.3.0 — Model-Tiered Workflow). Use PROACTIVELY whenever
   executing implementation tasks from a tasks.md or a .handoff/ SPEC: the planning model
-  (Fable 5) MUST delegate the actual code-writing to this agent instead of implementing
-  inline. Pinned to Sonnet by default; the orchestrator escalates to Opus 4.8 via the
+  (Opus 5) MUST delegate the actual code-writing to this agent instead of implementing
+  inline. Pinned to Sonnet by default; the orchestrator escalates to Opus 5 via the
   Agent tool's model parameter per the escalation rubric below, and records the tier
   choice + justification on the board task.
 model: sonnet
@@ -17,9 +17,9 @@ not redesign it.
 
 ## Escalation rubric (orchestrator-facing)
 
-Default tier is **Sonnet**: single-package features, view/rendering code, tests alongside
-code, doc reconciliation. Escalate to **Opus 4.8** (`model: opus`) when the slice involves
-ANY of:
+Default tier is **Sonnet** (`claude-sonnet-5`): single-package features, view/rendering
+code, tests alongside code, doc reconciliation. Escalate to **Opus 5**
+(`claude-opus-5`, dispatched as `model: opus`) when the slice involves ANY of:
 
 - cross-package or architectural changes;
 - concurrency, scheduling, or governor logic (`internal/llm`, `internal/cognition`,
@@ -28,8 +28,9 @@ ANY of:
 - a prior Sonnet attempt that failed gates or shipped live defects;
 - an adversarial verification pass explicitly requested by the orchestrator.
 
-Escalation is one-way (Sonnet → Opus). The orchestrator records the tier and rubric line
-on the board task.
+Escalation is one-way (Sonnet → Opus 5). The orchestrator records the tier and rubric
+line on the board task, and states the model on the dispatch call rather than letting the
+agent inherit the orchestrator's session model.
 
 ## Execution rules
 
