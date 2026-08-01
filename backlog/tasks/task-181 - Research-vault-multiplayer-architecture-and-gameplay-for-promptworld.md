@@ -1,10 +1,10 @@
 ---
 id: TASK-181
 title: 'Research vault: multiplayer architecture and gameplay for promptworld'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-08-01 19:41'
-updated_date: '2026-08-01 19:44'
+updated_date: '2026-08-01 23:21'
 labels:
   - research
   - multiplayer
@@ -43,3 +43,9 @@ Branch research-multiplayer-vault (worktree .worktrees/research-multiplayer): re
 
 PR 153 opened (draft): https://github.com/evanstern/promptworld/pull/153 — branch research-multiplayer-vault. 13 files under research/Game-Multiplayer/ (MOC + _grounding + 11 notes). Branch gate OK; check-merge-drift pr = pass, no findings; all wikilinks resolve in-branch; Home.md indexes the branch.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Delivered research/Game-Multiplayer/ — a gate-passing vault branch (MOC + _grounding + 11 neutral notes) grounding how multiplayer works in this game's family. Evidence pass: 12 web searches + 4 primary-source fetches covering DF (no MP, architectural reason, plus its civ/caravan/diplomacy model), RimWorld's two opposed MP mods (Zetrith lockstep on one colony vs RimWorld Together's separate colonies at separate pace on a shared planet), Factorio, Minecraft, Terraria, Valheim, Project Zomboid, SS13, Eco, Haven & Hearth, Screeps, god games, LLM-agent sims and inference economics, interest management, determinism hazards, and promptworld's own architecture pinned at 1de512d9. Key findings: desync is a lockstep-specific problem that vanishes under single authority; every surveyed game sacrifices speed not consistency under load (promptworld already does this via the cognition governor); published LLM-NPC round-trips of 3-7s make model latency the responsiveness floor, not network latency; player ceilings are set by the replication scheme not the design (Valheim's 10 is documented as 'a networking decision, not a game design one'); god-game MP means competing deities over separate populations, with cooperative pantheons and asynchronous divine play both unattested; and more players does not imply a bigger map — Eco's ceiling falls as world size rises, and the family adds settlements via an abstract world-map layer rather than more tactical tiles. EMBED phase only, no verdict: research:analyze-vault is the follow-on that would answer TASK-65 AC #1 (the shape decision that card says 'gates everything else'). Merged in PR 153 as merge commit c604484c.
+<!-- SECTION:FINAL_SUMMARY:END -->
