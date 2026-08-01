@@ -1,24 +1,40 @@
 <!--
 Sync Impact Report
-- Version change: 1.1.0 → 1.2.0 (MINOR: Principle IV materially expanded — enforcement
-  choke point named; in-PR grounding, merge-commit-only, and derived-state-only
-  post-merge boundary added per spec 069 / TASK-145, operator direction 2026-07-26)
+- Version change: 1.2.0 → 1.3.0 (MINOR: Principle V materially revised — tier identities
+  restated as explicit model IDs; planning and senior implementation now resolve to the
+  same model, per operator direction 2026-08-01 / TASK-179. MINOR rather than MAJOR: the
+  principle's structure — delegation-enforced tiers, one-way escalation, no inline
+  implementation on the planning model — is unchanged, and no previously compliant work
+  becomes non-compliant.)
 - Modified principles:
-  - IV. Grounding Freshness — re-verification moved from an unanchored "before done"
-    obligation to the merge-drift pr gate as the blocking choke point: wiki re-pins and
-    player-docs regeneration ride the task branch (wiki-repin-missing /
-    player-docs-stale, no bypass); merge-commit-only doctrine; post-merge main commits
-    bounded to derived state (spec 065 claim protocol + pdlc:sweep re-ground)
+  - V. Model-Tiered Workflow — planning/gating tier moved from Claude Fable 5 to Claude
+    Opus 5 (`claude-opus-5`); senior implementation tier moved from Claude Opus 4.8 to
+    Claude Opus 5 (same ID as planning); implementation tier unchanged (Claude Sonnet,
+    `claude-sonnet-5`, default). Each tier now carries its explicit model ID, the
+    planning tier's scope names the non-implementation lifecycle verbs it covers, and
+    dispatches MUST state the tier's model rather than inheriting the session model.
 - Added sections: none
 - Removed sections: none
 - Templates:
-  - ✅ .specify/templates/plan-template.md — Constitution Check gate is generic; unaffected
+  - ✅ .specify/templates/plan-template.md — Constitution Check gate is generic; no tier
+    or version references; unaffected
   - ✅ .specify/templates/spec-template.md — no constitution references; unaffected
   - ✅ .specify/templates/tasks-template.md — no constitution references; unaffected
   - ✅ .specify/templates/checklist-template.md — no constitution references; unaffected
-  - ✅ CLAUDE.md — Wiki-in-PR lifecycle block (spec 069) + loop diagram + grounding rules
-    rewritten on the same branch (task-145-wiki-in-pr-gate); Principle V version
-    reference bumped to v1.2.0
+  - ✅ CLAUDE.md — Model-tiered workflow block rewritten on the same branch
+    (task-179-opus5-planning-tier); version reference bumped to v1.3.0
+  - ✅ .claude/agents/spec-implementer.md — description + escalation rubric restated for
+    Opus 5 on the same branch; frontmatter pin made an explicit ID (`sonnet` →
+    `claude-sonnet-5`), still the default implementation tier
+  - ✅ .claude/agents/spec-implementer-opus.md — ADDED on the same branch: the senior
+    tier as its own definition pinned `model: claude-opus-5`, because the Agent tool's
+    `model` parameter was observed to be silently ignored (praxis field case 2026-07-31);
+    frontmatter pinning is the mechanism that actually holds
+- Note: `specs/*/plan.md` files naming Fable 5 are historical records of what planned
+  each spec and are intentionally left as-is
+- Previous report (1.1.0 → 1.2.0): Principle IV materially expanded — pr gate named as
+  the enforcement choke point; in-PR grounding, merge-commit-only, and derived-state-only
+  post-merge boundary added per spec 069 / TASK-145 (see git history)
 - Previous report (1.0.1 → 1.1.0): Principle V expanded to three tiers with escalation
   rubric; spec-rigor rule added to Development Workflow (see git history)
 - Follow-up TODOs: none
@@ -82,31 +98,46 @@ post-merge tail as the motivating case).
 
 ### V. Model-Tiered Workflow
 
-Work runs on three model tiers, and the split is enforced by delegation, not discipline:
+Work runs on three tiers resolving to two models, and the split is enforced by
+delegation, not discipline. Every tier names the explicit model ID it resolves to: a bare
+tier name has no mechanical resolution at dispatch time.
 
-- **Planning tier — Claude Fable 5** (Mythos-class): writing specs (`speckit-specify`),
+- **Planning tier — Claude Opus 5** (`claude-opus-5`): writing specs (`speckit-specify`),
   clarification (`speckit-clarify`), plans (`speckit-plan`), task generation
   (`speckit-tasks`), analysis, board/task creation, gating, and review of implementer
-  reports. The planning tier NEVER writes implementation code inline.
-- **Senior implementation tier — Claude Opus 4.8**: implements high-complexity slices —
-  cross-package or architectural changes; concurrency, scheduling, or governor logic
-  (`internal/llm`, `internal/cognition`, `internal/mind` orchestration); doctrine-adjacent
-  behavior changes; and any slice whose prior Sonnet attempt failed gates or shipped live
-  defects. Also runs adversarial verification passes when the orchestrator requests them.
-- **Implementation tier — Claude Sonnet** (default): implements routine and mechanical
-  slices — single-package features, view/rendering code, tests alongside code, doc
-  reconciliation.
+  reports — and, by extension, every non-implementation verb of the lifecycle
+  (orchestrating sweeps, reorientation, triage, grounding, and review). The planning tier
+  NEVER writes implementation code inline.
+- **Senior implementation tier — Claude Opus 5** (`claude-opus-5`): implements
+  high-complexity slices — cross-package or architectural changes; concurrency,
+  scheduling, or governor logic (`internal/llm`, `internal/cognition`, `internal/mind`
+  orchestration); doctrine-adjacent behavior changes; and any slice whose prior Sonnet
+  attempt failed gates or shipped live defects. Also runs adversarial verification passes
+  when the orchestrator requests them. Same model as the planning tier, different role:
+  it still executes in a delegated subagent, never inline in the planning session.
+- **Implementation tier — Claude Sonnet** (`claude-sonnet-5`, default): implements
+  routine and mechanical slices — single-package features, view/rendering code, tests
+  alongside code, doc reconciliation.
 
-Implementation MUST execute in subagents pinned to the implementing model — the
-`.claude/agents/spec-implementer.md` agent definition, which carries the escalation
-rubric — never inline on the planning model. Tier escalation is one-way (Sonnet → Opus,
-via the Agent tool's `model` parameter); the orchestrator records the tier choice and its
-rubric justification on the board task.
+Implementation MUST execute in subagents pinned to the implementing model, never inline
+on the planning model. **The pin lives in the agent definition's frontmatter as an
+explicit model ID** — `.claude/agents/spec-implementer.md` (`claude-sonnet-5`, default,
+carrying the escalation rubric) and `.claude/agents/spec-implementer-opus.md`
+(`claude-opus-5`, senior). Tier escalation is one-way (Sonnet → Opus 5) and is expressed
+by dispatching the other agent definition, NOT by a `model` parameter on the dispatch
+call: that parameter has been observed to be silently ignored, leaving the subagent on
+the orchestrator's session model at the orchestrator's price. The orchestrator records
+the tier choice, its rubric justification, and the model that actually served on the
+board task.
 
 **Rationale:** the highest-capability tier is spent where judgment concentrates (specs,
-plans, decomposition, gating); execution is matched to slice complexity so quality-risk
-concentrates on the senior tier and cost concentrates on the routine tier. Pinning models
-in the agent definition makes the split mechanical rather than aspirational.
+plans, decomposition, gating) and on the implementation slices where a mistake is
+expensive; routine execution is matched to the cheaper tier. Planning and senior
+implementation deliberately resolve to the SAME model ID — the line that carries weight
+is judgment-and-complexity versus routine execution, not two grades of Opus, and one ID
+makes tier→ID resolution unambiguous for anything that must pin a model at dispatch.
+Pinning models in the agent definition makes the split mechanical rather than
+aspirational.
 
 ## Additional Constraints
 
@@ -152,4 +183,4 @@ PATCH for clarifications. Every plan's Constitution Check MUST verify compliance
 the version named in its footer; runtime development guidance lives in `CLAUDE.md` and
 MUST stay consistent with this document.
 
-**Version**: 1.2.0 | **Ratified**: 2026-07-20 | **Last Amended**: 2026-07-26
+**Version**: 1.3.0 | **Ratified**: 2026-07-20 | **Last Amended**: 2026-08-01
