@@ -79,7 +79,7 @@ single PR.
 - [x] **T017** Editorial pass for FR-016: read all three pages as a non-engineer. Any
   identifier, package path, or engineering term that is not something the player types
   or opens gets rewritten or cut.
-- [ ] **T018** `node scripts/check-merge-drift.mjs pr` from the worktree exits 0.
+- [x] **T018** `node scripts/check-merge-drift.mjs pr` from the worktree exits 0.
   Satisfies SC-005.
 
 ## Notes for the implementer
