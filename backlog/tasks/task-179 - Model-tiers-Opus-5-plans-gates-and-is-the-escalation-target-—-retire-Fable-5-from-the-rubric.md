@@ -3,9 +3,10 @@ id: TASK-179
 title: >-
   Model tiers: Opus 5 plans, gates, and is the escalation target — retire Fable
   5 from the rubric
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-08-01 04:19'
+updated_date: '2026-08-01 04:21'
 labels:
   - doctrine
 dependencies: []
