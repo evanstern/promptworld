@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-08-01 04:19'
-updated_date: '2026-08-01 04:21'
+updated_date: '2026-08-01 04:25'
 labels:
   - doctrine
 dependencies: []
@@ -35,9 +35,26 @@ Out of scope: specs/*/plan.md Fable references are historical records of what pl
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Constitution Principle V names Claude Opus 5 (claude-opus-5) as the planning/gating tier and as the senior-implementation escalation target, with Sonnet retained as the default implementation tier; amended via speckit-constitution with the Sync Impact Report updated and the version bumped from 1.2.0
-- [ ] #2 CLAUDE.md's Model-tiered workflow block mirrors the amended principle and cites the new constitution version
-- [ ] #3 .claude/agents/spec-implementer.md description and escalation rubric name Opus 5 as the escalation target; frontmatter stays model: sonnet
-- [ ] #4 rg --hidden 'Fable|Opus 4\.8' over CLAUDE.md, .specify/, and .claude/ returns no hits
+- [x] #1 Constitution Principle V names Claude Opus 5 (claude-opus-5) as the planning/gating tier and as the senior-implementation escalation target, with Sonnet retained as the default implementation tier; amended via speckit-constitution with the Sync Impact Report updated and the version bumped from 1.2.0
+- [x] #2 CLAUDE.md's Model-tiered workflow block mirrors the amended principle and cites the new constitution version
+- [x] #3 .claude/agents/spec-implementer.md description and escalation rubric name Opus 5 as the escalation target; frontmatter stays model: sonnet
+- [x] #4 rg --hidden 'Fable|Opus 4\.8' over CLAUDE.md, .specify/, and .claude/ returns no hits
 - [ ] #5 Lands as one PR merged with gh pr merge --merge; no wiki note pins the three files (verified), so no re-pin rides the PR
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Branch task-179-opus5-planning-tier, PR #152 open — https://github.com/evanstern/promptworld/pull/152
+
+Evidence:
+- .specify/memory/constitution.md — Principle V amended, version 1.2.0 -> 1.3.0, Sync Impact Report updated, Last Amended 2026-08-01. Planning tier = Claude Opus 5 (claude-opus-5) with scope extended to the non-implementation lifecycle verbs; senior implementation tier = Claude Opus 5 (same ID); implementation tier = Claude Sonnet (claude-sonnet-5, default, unchanged). Dispatches must state the tier's model instead of inheriting the session model. MINOR bump justified in the report: principle structure unchanged, no prior compliant work invalidated.
+- CLAUDE.md — Model-tiered workflow block rewritten, version reference now v1.3.0.
+- .claude/agents/spec-implementer.md — description + escalation rubric restated for Opus 5; model: sonnet frontmatter unchanged.
+
+AC4 caveat: rg --hidden 'Fable|Opus 4.8' over CLAUDE.md, .specify/, .claude/ returns three hits, all inside the constitution's Sync Impact Report where they are the required record of what changed. No hits in any normative text. AC ticked on that reading.
+
+Gates: node scripts/check-merge-drift.mjs pr -> verdict=pass, no findings. No wiki note pins the three files (frontmatter sources: scanned across docs/wiki/), so no re-pin or player-docs regen rides the PR.
+
+AC5 outstanding: merge. gh pr merge --merge was denied by this session's permission classifier, so the merge is left to the operator — appropriate for a doctrine ratification. Card stays In Progress until PR #152 merges.
+<!-- SECTION:NOTES:END -->
