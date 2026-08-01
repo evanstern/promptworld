@@ -3,9 +3,10 @@ id: TASK-182
 title: >-
   User manual: reference pages for players (commands, world files,
   troubleshooting)
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-08-01 23:17'
+updated_date: '2026-08-01 23:18'
 labels: []
 dependencies: []
 priority: medium
