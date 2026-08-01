@@ -34,7 +34,7 @@ single PR.
 
 - [x] **T006** Create `docs/player/command-reference.html`: canonical skeleton + verbatim
   `<style>`, `generated-by` tag, one `source` tag per T001/T002 source on its own line.
-  Content: shared world-argument rule, one-screen summary table of all 21 subcommands,
+  Content: shared world-argument rule, one-screen summary table of all 22 subcommands,
   then intent-grouped detail sections, then the retired-alias note. Satisfies
   FR-001..FR-005.
 - [x] **T007** Create `docs/player/world-files-reference.html` from T003: one entry per
