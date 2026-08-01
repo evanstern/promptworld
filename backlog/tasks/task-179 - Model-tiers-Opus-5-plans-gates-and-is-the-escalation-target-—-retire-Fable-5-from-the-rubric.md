@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-08-01 04:19'
-updated_date: '2026-08-01 04:25'
+updated_date: '2026-08-01 04:30'
 labels:
   - doctrine
 dependencies: []
@@ -37,9 +37,9 @@ Out of scope: specs/*/plan.md Fable references are historical records of what pl
 <!-- AC:BEGIN -->
 - [x] #1 Constitution Principle V names Claude Opus 5 (claude-opus-5) as the planning/gating tier and as the senior-implementation escalation target, with Sonnet retained as the default implementation tier; amended via speckit-constitution with the Sync Impact Report updated and the version bumped from 1.2.0
 - [x] #2 CLAUDE.md's Model-tiered workflow block mirrors the amended principle and cites the new constitution version
-- [x] #3 .claude/agents/spec-implementer.md description and escalation rubric name Opus 5 as the escalation target; frontmatter stays model: sonnet
-- [x] #4 rg --hidden 'Fable|Opus 4\.8' over CLAUDE.md, .specify/, and .claude/ returns no hits
-- [ ] #5 Lands as one PR merged with gh pr merge --merge; no wiki note pins the three files (verified), so no re-pin rides the PR
+- [x] #3 rg --hidden 'Fable|Opus 4\.8' over CLAUDE.md, .specify/, and .claude/ returns no hits
+- [ ] #4 Lands as one PR merged with gh pr merge --merge; no wiki note pins the three files (verified), so no re-pin rides the PR
+- [x] #5 Implementation tiers are pinned by explicit model ID in agent-definition frontmatter: .claude/agents/spec-implementer.md carries claude-sonnet-5 as the default tier, and a new .claude/agents/spec-implementer-opus.md carries claude-opus-5 as the escalation target
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -57,4 +57,19 @@ AC4 caveat: rg --hidden 'Fable|Opus 4.8' over CLAUDE.md, .specify/, .claude/ ret
 Gates: node scripts/check-merge-drift.mjs pr -> verdict=pass, no findings. No wiki note pins the three files (frontmatter sources: scanned across docs/wiki/), so no re-pin or player-docs regen rides the PR.
 
 AC5 outstanding: merge. gh pr merge --merge was denied by this session's permission classifier, so the merge is left to the operator — appropriate for a doctrine ratification. Card stays In Progress until PR #152 merges.
+
+Scope amendment during the PR, recorded before merge.
+
+While filing the praxis-side card I read praxis's own field logs and found the mechanism I had just written into Principle V is unreliable: docs/design/board-cost-test-runbook.md:339 in praxis records 'Agent tool model param silently ignored (3 fable dispatches killed early); pinned via .claude/agents/opus-implementer.md, actual model verified from transcript'. praxis fixed it by pinning explicit model IDs in agent-definition frontmatter, which is why that repo carries opus-implementer.md and sonnet-implementer.md.
+
+So commit 12df6090 moves promptworld's pin to the same place:
+- .claude/agents/spec-implementer-opus.md ADDED — senior tier as its own definition, model: claude-opus-5. Escalation now means dispatching this agent instead of passing a model param.
+- .claude/agents/spec-implementer.md — frontmatter alias 'sonnet' replaced with explicit claude-sonnet-5; rubric points at the opus definition and cites the field case.
+- Principle V and CLAUDE.md restated to match: the pin is the frontmatter model ID, escalation is choosing the other definition.
+
+This deviates from AC3 as originally written ('frontmatter stays model: sonnet'). Same model, more explicit ID — AC3 replaced with the accurate criterion rather than ticked on a technicality.
+
+Also corrected in the PR body: praxis ships no agent definitions IN ITS PLUGIN PAYLOAD, but the praxis repo itself does carry implementer agent defs for its own development. The original wording was too broad.
+
+Branch freshened from origin/main by merge (baseLag 2 -> 0); pr gate re-run after both changes: verdict=pass, no findings.
 <!-- SECTION:NOTES:END -->
