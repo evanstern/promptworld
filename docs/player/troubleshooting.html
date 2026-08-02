@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="promptworld-docs:generated-by" content="player-docs">
+<meta name="promptworld-docs:source" content="docs/wiki/daemon-lifecycle.md@9b4ed5aef5bfea50b67fac10f8e2153f065a814d">
+<meta name="promptworld-docs:source" content="docs/wiki/daemon-boot-recovery.md@9b4ed5aef5bfea50b67fac10f8e2153f065a814d">
+<meta name="promptworld-docs:source" content="docs/wiki/instance-manager.md@9b4ed5aef5bfea50b67fac10f8e2153f065a814d">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-preflight-detection.md@04ff15001bd8a74f7c2965889c0d318fc0dc03a9">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@fc1a8314f3f71a33c5e2145c914d5cbb511d9196">
+<meta name="promptworld-docs:source" content="docs/wiki/cognition-horizon-telemetry.md@c61cd6c04ddfcd2a976c14a49ba071e8fd768a73">
+<meta name="promptworld-docs:source" content="docs/wiki/world-migration.md@72f82f41f7aa2e345572105894cd0fb7c02fc0aa">
+<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@fc1a8314f3f71a33c5e2145c914d5cbb511d9196">
+<meta name="promptworld-docs:source" content="docs/llm-providers.md@598098640fecce348792f0a78689b7af48d4f842">
+<title>Troubleshooting — promptworld player docs</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #55606a;
+    --accent: #0b5fff;
+    --border: #d8dee4;
+    --code-bg: #f3f5f7;
+    --card-bg: #f8f9fb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --fg: #e6e9ec;
+      --muted: #9aa4ae;
+      --accent: #6ea8ff;
+      --border: #333a42;
+      --code-bg: #1d2024;
+      --card-bg: #1a1d21;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+      Arial, sans-serif;
+    line-height: 1.6;
+    max-width: 70ch;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 4rem;
+  }
+  h1, h2, h3 { line-height: 1.25; }
+  h1 { font-size: 1.9rem; margin-top: 0; }
+  h2 { font-size: 1.35rem; margin-top: 2.25rem; border-bottom: 1px solid var(--border);
+    padding-bottom: .3rem; }
+  h3 { font-size: 1.1rem; margin-top: 1.5rem; }
+  p, ul, ol { margin: .9rem 0; }
+  a { color: var(--accent); }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: .15em .4em; border-radius: .3em;
+    font-size: .92em; }
+  pre { background: var(--code-bg); padding: 1rem; border-radius: .5em;
+    overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  blockquote { border-left: 3px solid var(--accent); margin: 1rem 0; padding: .2rem 1rem;
+    color: var(--muted); }
+  .lede { color: var(--muted); font-size: 1.05rem; }
+  .card { background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: .6rem; padding: 1rem 1.25rem; margin: 1rem 0; }
+  .nav-grid { display: block; padding: 0; margin: 0; list-style: none; }
+  .nav-grid li { margin: .6rem 0; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+  th, td { border: 1px solid var(--border); padding: .5rem .6rem; text-align: left; }
+  footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border);
+    color: var(--muted); font-size: .85rem; }
+</style>
+</head>
+<body>
+<h1>Troubleshooting</h1>
+<p class="lede">Seven things that actually go wrong, in your own words — what's probably
+happening, what to check, and what to do about it.</p>
+
+<h2>"I tried to start my world and it refused."</h2>
+<p><strong>What's probably happening:</strong> either a copy of this world is already
+running somewhere, or its save has a problem serious enough that the game won't risk
+running past it.</p>
+<p><strong>What to check:</strong> run <code>promptworld ps</code> (see the
+<a href="command-reference.html">command reference</a>) to see if this world is already
+listed as running. If it isn't, look in the world's own folder for a file called
+<code>daemon.log</code> — that's exactly where a background <code>start</code>'s own
+output goes, and it will say plainly what refused.</p>
+<p><strong>What to do:</strong> if the world is already running elsewhere, connect to
+that instead of starting a second copy — <code>promptworld ui</code>,
+<code>attach</code>, or <code>status</code> all work against an already-running world.
+If <code>daemon.log</code> instead points at a problem with the save itself, that's
+real damage to the save's history, not something the game can repair on its own — your
+only way forward is an earlier backup of the world's folder, if you kept one.</p>
+
+<h2>"The world shows as running, but nothing responds."</h2>
+<p><strong>What's probably happening:</strong> the world's background process is still
+alive, but it's stopped actually answering — wedged rather than working.</p>
+<p><strong>What to check:</strong> <code>promptworld ps</code> reports this state
+honestly rather than trusting the process alone: a world only shows as
+<code>running</code> or <code>paused</code> if it actually answers a status check; a
+process that's alive but silent shows as <code>unresponsive</code> instead.</p>
+<p><strong>What to do:</strong> an unresponsive world isn't usable as-is. Stop it —
+<code>promptworld stop</code> will fall back to forcing it closed if it can't reach it
+politely — and start it again.</p>
+
+<h2>"My villagers only do basic survival things and never seem to think."</h2>
+<p><strong>What's probably happening:</strong> either no AI model is configured for
+this world at all, so it's running on reflexes alone by design, or one is configured
+but isn't actually working right now, or your world's current speed is asking your
+configured model to think faster than it can. See the next two entries for how to tell
+which.</p>
+
+<h2>"No model is configured — or one is, but it isn't working."</h2>
+<p><strong>What to check:</strong> first, does this world's folder have an
+<code>llm.json</code> file at all? If it's missing (or you deleted it), the game is
+running entirely on reflexes by design — there's no AI thinking to check on. If
+<code>llm.json</code> exists, look for a <code>daemon: WARNING llm provider "&lt;name&gt;":
+...</code> line in the daemon's log, or — if you're in the on-screen view — a red
+<code>[llm: ...]</code> badge in the header along with a detail line under that
+provider in the systems tab. Both name the exact problem and a remedy.</p>
+<p><strong>What to do:</strong> if there's no <code>llm.json</code>, see
+<a href="llm-setup-basics.html">AI setup basics</a> and the
+<a href="world-files-reference.html">world files reference</a> to add one. If a warning
+names a specific provider, its own remedy text tells you what to fix — commonly, the
+model your <code>llm.json</code> names isn't actually being served at that provider's
+address (check it's really running there), or the endpoint itself isn't reachable, or
+the model answers but never uses tools (in which case switching that provider to the
+JSON tool-calling mode, or trying a different model, is the fix).</p>
+
+<h2>"My AI is configured, but it seems too slow for how fast I've set the world."</h2>
+<p><strong>What to check:</strong> in the on-screen view, look for a
+<code>[suppressed: ...]</code> badge in the header, or a horizon line in the guardian
+pane — both mean some kind of thinking (planning, conversation, or meetings) is being
+skipped at your current speed because your model can't keep up with it.</p>
+<p><strong>What to do:</strong> the game measures "how fast can my model think" through
+<code>promptworld calibrate</code> (see the <a href="command-reference.html">command
+reference</a>) — running it gives the game an accurate, hardware-proven measurement
+instead of a cautious guess, which can raise the speed a given kind of thinking can
+survive at. If it's still too slow even calibrated, the honest fix is to run the world
+at a lower <code>promptworld speed</code> instead.</p>
+
+<h2>"The game says my save is too old (or too new) and won't open."</h2>
+<p><strong>What's probably happening:</strong> this world's save was written by an
+older (or newer) version of promptworld than the one you're running now, and the
+format has changed since.</p>
+<p><strong>What to check:</strong> <code>promptworld ps</code> will still list a world
+like this rather than pretending it doesn't exist — it just can't be opened normally.
+Commands that only need to reach an already-running daemon, like <code>stop</code> and
+<code>status</code>, work on a version-mismatched world even though opening its save
+directly doesn't — so you're never stuck unable to even check on or stop one.</p>
+<p><strong>What to do:</strong> if your save is <em>older</em> than what this build
+understands, <code>promptworld migrate &lt;world&gt;</code> is the one-time upgrade —
+point it at the world and it brings the save up to the current format, keeping an
+archived copy of the original alongside it. If instead your save is <em>newer</em>
+than what this build understands, migrating can't help — that direction means your
+own copy of promptworld needs upgrading.</p>
+
+<h2>"The world is running, but nothing new is showing up in the feed."</h2>
+<p><strong>What's probably happening:</strong> most often, the world is simply paused —
+a paused world has nothing new to report, so its feed sits still, which looks alarming
+but is completely normal. Less commonly, the on-screen view's connection to the world
+has dropped and hasn't caught back up yet.</p>
+<p><strong>What to check:</strong> run <code>promptworld ps</code> and look at the
+STATE column for this world — it distinguishes <code>paused</code> from
+<code>running</code> plainly.</p>
+<p><strong>What to do:</strong> if it says <code>paused</code>, resume it (the space
+bar in the on-screen view, or <code>promptworld resume</code>) and the feed picks back
+up immediately. If it says <code>running</code> and the feed is still stuck, close and
+reopen your viewer — it reconnects and catches back up on its own.</p>
+
+<footer><a href="index.html">&larr; Back to player docs index</a> ·
+<a href="command-reference.html">Command reference</a> ·
+<a href="the-ai-behind-the-village.html">The AI behind the village</a> ·
+<a href="time-and-speed.html">Time and speed</a></footer>
+</body>
+</html>

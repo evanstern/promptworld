@@ -18,7 +18,8 @@ that walk a new player through a first session, explain the screen, narrate how 
 behind the village works, and hand out one quickstart per curriculum stage. It has no
 *reference* half. Concretely, measured on this repo at the time of writing:
 
-- The binary dispatches **21 subcommands** (`cmd/promptworld/main.go`). `divergence`
+- The binary dispatches **22 subcommands** (`cmd/promptworld/main.go`), plus two hidden
+  compatibility aliases. `divergence`
   and `daemon` appear on **zero** player pages; `migrate`, `fork`, `compare`, `ps`,
   `tail`, `pause`, `resume`, `speed` and `llm` appear on exactly **one** each, always
   mid-narrative. No page lists a flag. A player asking "what can I type?" has only
@@ -64,7 +65,7 @@ cannot look anything up.
   combined page would be long, would mix a stable command table with volatile
   troubleshooting prose, and would force a single source-tag set spanning everything —
   so any source change would restale the whole manual. Three pages fail independently.
-- **D2 — The command reference is the spine.** It documents all 21 dispatched
+- **D2 — The command reference is the spine.** It documents all 22 dispatched
   subcommands from the CLI wiki notes' pins, grouped by what a player is trying to do
   (make a world / run it / watch it / play it / tune the AI / compare runs), not
   alphabetically and not in dispatch order.

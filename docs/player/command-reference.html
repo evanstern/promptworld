@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="promptworld-docs:generated-by" content="player-docs">
+<meta name="promptworld-docs:source" content="docs/wiki/cli-promptworld.md@72f82f41f7aa2e345572105894cd0fb7c02fc0aa">
+<meta name="promptworld-docs:source" content="docs/wiki/cli-world-lifecycle.md@72f82f41f7aa2e345572105894cd0fb7c02fc0aa">
+<meta name="promptworld-docs:source" content="docs/wiki/cli-runtime-control.md@72f82f41f7aa2e345572105894cd0fb7c02fc0aa">
+<meta name="promptworld-docs:source" content="docs/wiki/cli-guardian-ops.md@72f82f41f7aa2e345572105894cd0fb7c02fc0aa">
+<meta name="promptworld-docs:source" content="docs/wiki/instance-manager.md@9b4ed5aef5bfea50b67fac10f8e2153f065a814d">
+<meta name="promptworld-docs:source" content="docs/wiki/world-forking.md@fc1a8314f3f71a33c5e2145c914d5cbb511d9196">
+<meta name="promptworld-docs:source" content="docs/wiki/daemon-lifecycle.md@9b4ed5aef5bfea50b67fac10f8e2153f065a814d">
+<meta name="promptworld-docs:source" content="docs/wiki/curriculum-ladder.md@fc1a8314f3f71a33c5e2145c914d5cbb511d9196">
+<meta name="promptworld-docs:source" content="docs/wiki/cognition-estimator-calibration.md@30912a9cd5d2334f76425ac8ca5b74a7a7c90876">
+<title>Command reference — promptworld player docs</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #55606a;
+    --accent: #0b5fff;
+    --border: #d8dee4;
+    --code-bg: #f3f5f7;
+    --card-bg: #f8f9fb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --fg: #e6e9ec;
+      --muted: #9aa4ae;
+      --accent: #6ea8ff;
+      --border: #333a42;
+      --code-bg: #1d2024;
+      --card-bg: #1a1d21;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+      Arial, sans-serif;
+    line-height: 1.6;
+    max-width: 70ch;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 4rem;
+  }
+  h1, h2, h3 { line-height: 1.25; }
+  h1 { font-size: 1.9rem; margin-top: 0; }
+  h2 { font-size: 1.35rem; margin-top: 2.25rem; border-bottom: 1px solid var(--border);
+    padding-bottom: .3rem; }
+  h3 { font-size: 1.1rem; margin-top: 1.5rem; }
+  p, ul, ol { margin: .9rem 0; }
+  a { color: var(--accent); }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: .15em .4em; border-radius: .3em;
+    font-size: .92em; }
+  pre { background: var(--code-bg); padding: 1rem; border-radius: .5em;
+    overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  blockquote { border-left: 3px solid var(--accent); margin: 1rem 0; padding: .2rem 1rem;
+    color: var(--muted); }
+  .lede { color: var(--muted); font-size: 1.05rem; }
+  .card { background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: .6rem; padding: 1rem 1.25rem; margin: 1rem 0; }
+  .nav-grid { display: block; padding: 0; margin: 0; list-style: none; }
+  .nav-grid li { margin: .6rem 0; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+  th, td { border: 1px solid var(--border); padding: .5rem .6rem; text-align: left; }
+  footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border);
+    color: var(--muted); font-size: .85rem; }
+</style>
+</head>
+<body>
+<h1>Command reference</h1>
+<p class="lede">Every command the <code>promptworld</code> program accepts, grouped by
+what you're trying to do. For a guided first run instead of a lookup table, see
+<a href="getting-started.html">getting started</a>.</p>
+
+<h2>The one rule every command shares</h2>
+<p>Almost every command below takes a <strong>world</strong> as its first argument —
+either the world's <strong>name</strong> (if you created it the normal way) or a
+<strong>path</strong> to its folder directly. Anything containing a <code>/</code>, or
+starting with <code>.</code> or <code>~</code>, is treated as a path; anything else is
+treated as a name. A bare name is looked up first among the worlds you've created the
+normal way, then among any worlds you registered elsewhere with <code>new --at</code> —
+an unknown name fails with a clear error, and a name that matches two different worlds
+refuses rather than guessing.</p>
+<p>By default your worlds — and this lookup list — live under
+<code>~/.promptworld</code>. Setting the environment variable
+<code>PROMPTWORLD_HOME</code> moves that whole home elsewhere, and every command below
+honors it.</p>
+
+<h2>Every command at a glance</h2>
+<table>
+<tr><th>Command</th><th>What it's for</th></tr>
+<tr><td><code>new</code></td><td>Create a brand-new world</td></tr>
+<tr><td><code>migrate</code></td><td>Upgrade an older world's save so you can keep playing it</td></tr>
+<tr><td><code>stages</code></td><td>See the curriculum ladder and what you've earned</td></tr>
+<tr><td><code>daemon</code></td><td>Run a world in this terminal window (foreground)</td></tr>
+<tr><td><code>start</code></td><td>Start a world running in the background</td></tr>
+<tr><td><code>stop</code></td><td>Stop a running world cleanly</td></tr>
+<tr><td><code>status</code></td><td>Print a world's current state and any warnings</td></tr>
+<tr><td><code>ps</code></td><td>List every world on this machine and whether it's really running</td></tr>
+<tr><td><code>ui</code></td><td>Open the full on-screen view of a running world</td></tr>
+<tr><td><code>attach</code></td><td>A simpler line-by-line live view, from any terminal</td></tr>
+<tr><td><code>tail</code></td><td>Print recent history from a world's save, running or not</td></tr>
+<tr><td><code>guardian</code></td><td>Talk to your world's guardian</td></tr>
+<tr><td><code>work</code></td><td>The direct door to the guardian's own workings, no conversation needed</td></tr>
+<tr><td><code>pause</code></td><td>Pause a running world's clock</td></tr>
+<tr><td><code>resume</code></td><td>Resume a paused world</td></tr>
+<tr><td><code>speed</code></td><td>Change how fast time passes</td></tr>
+<tr><td><code>teaching</code></td><td>Check or change whether a world is marked "teaching"</td></tr>
+<tr><td><code>llm</code></td><td>Send a one-off message straight to a configured model</td></tr>
+<tr><td><code>calibrate</code></td><td>Benchmark your AI providers on your own machine</td></tr>
+<tr><td><code>divergence</code></td><td>See recorded evidence for a memory-selection change</td></tr>
+<tr><td><code>fork</code></td><td>Copy a stopped world into a fresh, independent one</td></tr>
+<tr><td><code>compare</code></td><td>Compare two worlds side by side</td></tr>
+</table>
+
+<h2>Making a world</h2>
+
+<h3><code>new &lt;name&gt;</code></h3>
+<p>Creates a brand-new world. Give it a plain name and it's created in your default
+worlds folder; give it a path instead and it's created exactly there. Either way you get
+a fresh village, seeded with its eight starting villagers and a guardian charter ready to
+read.</p>
+<table>
+<tr><th>Flag</th><th>What it does</th></tr>
+<tr><td><code>--at DIR</code></td><td>Create the world at a specific folder instead of
+the default worlds folder, and remember it under its name for later</td></tr>
+<tr><td><code>--seed</code></td><td>Pick a specific starting seed instead of a random one</td></tr>
+<tr><td><code>--teaching</code></td><td>Mark this as a teaching world — the game will
+default it to the fastest speed your machine can safely think at, every time it
+starts</td></tr>
+<tr><td><code>--stage stage-1..stage-4</code></td><td>Choose which curriculum stage to
+start at (defaults to the highest stage you've already earned)</td></tr>
+<tr><td><code>--override</code></td><td>Start at a stage you haven't earned yet — the
+game records this honestly rather than pretending you earned it</td></tr>
+<tr><td><code>--charter-preset default|tutor</code></td><td>Choose the starting guardian
+instructions; a fresh stage-1 world uses the friendlier <code>tutor</code> preset unless
+you opt out</td></tr>
+<tr><td><code>--scenario &lt;exercise-id&gt;</code></td><td>Start inside one of the
+game's structured teaching exercises instead of an open-ended village</td></tr>
+</table>
+
+<h3><code>migrate &lt;world&gt;</code></h3>
+<p>Upgrades an older world's save files to the current version, so a world you haven't
+opened in a while keeps working. No flags — point it at the world and it does the whole
+upgrade in one run, keeping an archived copy of the old save alongside the new one.</p>
+
+<h3><code>stages [--json]</code></h3>
+<p>Shows all four curriculum stages — what each one teaches, what it lets your guardian
+do, and what earns the next one — plus which ones you've already earned. Always shows
+all four, never just the ones you've unlocked. <code>--json</code> prints the same
+information in a machine-readable form.</p>
+
+<h2>Running it</h2>
+
+<h3><code>start &lt;world&gt;</code></h3>
+<p>Starts a world running in the background, so it keeps going after you close the
+terminal. This is the one most players want.</p>
+
+<h3><code>daemon &lt;world&gt;</code></h3>
+<p>Runs a world in the foreground, right in this terminal window — useful when you want
+to watch its own output directly, or want it to stop the moment you close the window.
+No flags.</p>
+
+<h3><code>stop &lt;world&gt;</code></h3>
+<p>Stops a running world cleanly. Safe to run even if the world isn't running — it just
+says so and does nothing.</p>
+
+<h3><code>status &lt;world&gt; [--json]</code></h3>
+<p>Prints a world's current state: what tick and game time it's at, whether it's paused,
+your AI providers' health, whether they're calibrated, and any warnings that need your
+attention. Works even when the world isn't running, by reconstructing its last known
+state from the save. <code>--json</code> prints the same facts machine-readably.</p>
+
+<h3><code>ps [--all] [--json]</code></h3>
+<p>Lists every world <code>promptworld</code> knows about on this machine, and — this is
+the useful part — whether each one is <em>really</em> running: a world only counts as
+running if it actually answers when asked, not just because its process looks alive.
+By default only running/paused worlds show; <code>--all</code> adds stopped ones too.
+<code>--json</code> prints the same table machine-readably.</p>
+
+<h2>Watching it</h2>
+
+<h3><code>ui &lt;world&gt;</code></h3>
+<p>Opens the full interactive on-screen view for a running world — the map, the story
+feed, the guardian conversation, and your villagers, all at once. See
+<a href="understanding-the-screen.html">what do all those things on screen mean</a> and
+<a href="keys-reference.html">the keys reference</a> for how to use it. No flags.</p>
+
+<h3><code>attach &lt;world&gt;</code></h3>
+<p>A simpler, line-by-line live view from any terminal: a status header, a stream of
+events as they happen, and typed commands (<code>pause</code>, <code>resume</code>,
+<code>speed &lt;v&gt;</code>, <code>status</code>, <code>quit</code>). Quitting just
+detaches — the world keeps running. No flags.</p>
+
+<h3><code>tail &lt;world&gt; [--since SEQ] [--follow]</code></h3>
+<p>Prints recent history from a world's save — the last 20 entries by default — and
+works even when the world isn't currently running. <code>--since SEQ</code> only shows
+entries after a given position; <code>--follow</code> keeps streaming new entries live
+(this needs the world actually running).</p>
+
+<h2>Playing it</h2>
+
+<h3><code>guardian &lt;world&gt; [message...]</code></h3>
+<p>Talk to your world's guardian — the voice you play through. Send it a message for one
+mediated turn, and it prints what happened: any surfaced moments, its reply, any vision
+or omen that landed, and your remaining charges. Run it with no message instead for a
+quick status peek: your charges, where your charter came from, and any standing orders
+you've placed.</p>
+
+<h3><code>work &lt;world&gt; &lt;snap-time|give|move|remove&gt; ...</code></h3>
+<p>The direct, no-conversation door to the guardian's own workings — for when you want
+to act immediately rather than ask: jump time (<code>snap-time &lt;day&gt;
+&lt;HH:MM&gt;</code>), give a villager an item (<code>give &lt;villager&gt; &lt;item&gt;
+&lt;qty&gt;</code>), move something (<code>move &lt;class&gt; &lt;x,y&gt;
+&lt;x1,y1&gt;</code>), or remove a structure, pile, or terrain tile
+(<code>remove &lt;class&gt; &lt;x,y&gt;</code> — villagers can't be removed this way).</p>
+<table>
+<tr><th>Flag</th><th>What it does</th></tr>
+<tr><td><code>--force</code></td><td>Skip the normal charge cost for this one working</td></tr>
+</table>
+
+<h3><code>pause &lt;world&gt;</code> / <code>resume &lt;world&gt;</code></h3>
+<p>Pause or resume a running world's clock. No flags.</p>
+
+<h3><code>speed &lt;world&gt; &lt;value&gt;</code></h3>
+<p>Changes how fast time passes in a running world, printing the resulting clock line.
+If your AI can't keep up at the speed you ask for, you'll see a warning right after —
+see <a href="troubleshooting.html">troubleshooting</a> for what that means and what to
+do about it.</p>
+
+<h3><code>teaching &lt;world&gt; [on|off]</code></h3>
+<p>With no argument, reports whether a world is currently marked as a teaching world.
+With <code>on</code> or <code>off</code>, changes the marker — the change applies the
+next time the world starts, not while it's already running.</p>
+
+<h2>The AI</h2>
+<p>See also <a href="the-ai-behind-the-village.html">the AI behind the village</a> and
+<a href="llm-setup-basics.html">AI setup basics</a> for what these commands are talking
+to.</p>
+
+<h3><code>llm &lt;world&gt; &lt;kind&gt; &lt;prompt...&gt;</code></h3>
+<p>Sends a one-off message straight to one of your configured models yourself, bypassing
+the guardian entirely — useful for checking your setup actually works. Prints which
+provider answered, the model, tokens, cost, and how long it took.</p>
+<table>
+<tr><th>Flag</th><th>What it does</th></tr>
+<tr><td><code>--system</code></td><td>Add an extra system-level instruction to the call</td></tr>
+<tr><td><code>--max-tokens</code></td><td>Cap how long the reply is allowed to be</td></tr>
+</table>
+
+<h3><code>calibrate &lt;world&gt; [--provider &lt;name&gt;] [--samples N]</code></h3>
+<p>Benchmarks your configured AI providers on your own hardware, so the game knows how
+fast they really are and which speeds it can safely think at. Writes what it learns to
+this world's save so future runs remember it, and prints the fastest speed each kind of
+thinking can run at ("planner suppressed above 16x", for example).</p>
+<table>
+<tr><th>Flag</th><th>What it does</th></tr>
+<tr><td><code>--provider &lt;name&gt;</code></td><td>Only benchmark one named provider
+instead of every configured one</td></tr>
+<tr><td><code>--samples N</code></td><td>How many timing samples to take (default
+5)</td></tr>
+<tr><td><code>--tier local|cloud|all</code></td><td>An older way to pick which providers
+to benchmark — still works, but is a deprecated stand-in for <code>--provider</code></td></tr>
+</table>
+
+<h3><code>divergence &lt;world&gt; [--json]</code></h3>
+<p>Prints recorded evidence for how much a newer, relevance-aware way of picking which
+memories matter would have changed what your villagers recalled, compared to today's
+behavior. Read-only evidence for a decision — running this command never changes
+anything by itself. <code>--json</code> prints the same rows machine-readably.</p>
+
+<h2>Comparing runs</h2>
+
+<h3><code>fork &lt;world&gt; &lt;new-name&gt;</code></h3>
+<p>Copies a stopped world, at its latest save point, into a brand-new world under a
+fresh name — the original is left completely untouched. The two worlds share the same
+history up to the copy, then run forward independently, so trying a different charter
+(or anything else) on the fork is a controlled experiment against the original.</p>
+<table>
+<tr><th>Flag</th><th>What it does</th></tr>
+<tr><td><code>--at latest-snapshot</code></td><td>The point the copy is taken from —
+today this is also the only value accepted, so it's already the default</td></tr>
+</table>
+
+<h3><code>compare &lt;a&gt; &lt;b&gt; [--since TICK]</code></h3>
+<p>Compares two worlds side by side — the natural next step right after
+<code>fork</code>, to see how the copy and the original turned out differently. Works
+whether either world is running or stopped. <code>--since TICK</code> narrows the
+comparison to only what happened after a given point instead of the whole shared
+history.</p>
+
+<h2>Two names you might see in old scripts</h2>
+<p><code>metatron</code> and <code>miracle</code> were promptworld's original names for
+what are now called <code>guardian</code> and <code>work</code>. They still work exactly
+the same as their current names — nothing about them was removed — but they no longer
+appear in the program's own built-in help text, so if you're starting fresh, use
+<code>guardian</code> and <code>work</code> instead. If you run across one of the old
+names in an older script or note, now you know what it means.</p>
+
+<footer><a href="index.html">&larr; Back to player docs index</a></footer>
+</body>
+</html>

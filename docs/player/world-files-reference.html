@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="promptworld-docs:generated-by" content="player-docs">
+<meta name="promptworld-docs:source" content="docs/wiki/world-save-directory.md@72f82f41f7aa2e345572105894cd0fb7c02fc0aa">
+<meta name="promptworld-docs:source" content="docs/wiki/world-save-manifest-fields.md@72f82f41f7aa2e345572105894cd0fb7c02fc0aa">
+<meta name="promptworld-docs:source" content="docs/wiki/world-tuning.md@9b4ed5aef5bfea50b67fac10f8e2153f065a814d">
+<meta name="promptworld-docs:source" content="docs/wiki/world-tuning-dial-catalog.md@9b4ed5aef5bfea50b67fac10f8e2153f065a814d">
+<meta name="promptworld-docs:source" content="docs/wiki/skin.md@fc1a8314f3f71a33c5e2145c914d5cbb511d9196">
+<meta name="promptworld-docs:source" content="docs/wiki/guardian-instruction-surface.md@fc1a8314f3f71a33c5e2145c914d5cbb511d9196">
+<meta name="promptworld-docs:source" content="docs/wiki/governance.md@c61cd6c04ddfcd2a976c14a49ba071e8fd768a73">
+<meta name="promptworld-docs:source" content="docs/wiki/bundle-tools.md@72f82f41f7aa2e345572105894cd0fb7c02fc0aa">
+<meta name="promptworld-docs:source" content="docs/wiki/event-log.md@9b4ed5aef5bfea50b67fac10f8e2153f065a814d">
+<meta name="promptworld-docs:source" content="docs/wiki/snapshots.md@fc1a8314f3f71a33c5e2145c914d5cbb511d9196">
+<meta name="promptworld-docs:source" content="docs/llm-providers.md@598098640fecce348792f0a78689b7af48d4f842">
+<title>World files reference — promptworld player docs</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #55606a;
+    --accent: #0b5fff;
+    --border: #d8dee4;
+    --code-bg: #f3f5f7;
+    --card-bg: #f8f9fb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --fg: #e6e9ec;
+      --muted: #9aa4ae;
+      --accent: #6ea8ff;
+      --border: #333a42;
+      --code-bg: #1d2024;
+      --card-bg: #1a1d21;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+      Arial, sans-serif;
+    line-height: 1.6;
+    max-width: 70ch;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 4rem;
+  }
+  h1, h2, h3 { line-height: 1.25; }
+  h1 { font-size: 1.9rem; margin-top: 0; }
+  h2 { font-size: 1.35rem; margin-top: 2.25rem; border-bottom: 1px solid var(--border);
+    padding-bottom: .3rem; }
+  h3 { font-size: 1.1rem; margin-top: 1.5rem; }
+  p, ul, ol { margin: .9rem 0; }
+  a { color: var(--accent); }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: .15em .4em; border-radius: .3em;
+    font-size: .92em; }
+  pre { background: var(--code-bg); padding: 1rem; border-radius: .5em;
+    overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  blockquote { border-left: 3px solid var(--accent); margin: 1rem 0; padding: .2rem 1rem;
+    color: var(--muted); }
+  .lede { color: var(--muted); font-size: 1.05rem; }
+  .card { background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: .6rem; padding: 1rem 1.25rem; margin: 1rem 0; }
+  .nav-grid { display: block; padding: 0; margin: 0; list-style: none; }
+  .nav-grid li { margin: .6rem 0; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+  th, td { border: 1px solid var(--border); padding: .5rem .6rem; text-align: left; }
+  footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border);
+    color: var(--muted); font-size: .85rem; }
+</style>
+</head>
+<body>
+<h1>World files reference</h1>
+<p class="lede">Every world you create lives in its own folder — one folder, one world,
+nothing shared between them. Here's what's in it, and for each file, whether it's
+yours to edit.</p>
+
+<p>Every entry below carries one of three labels:</p>
+<ul>
+<li><strong>yours to edit</strong> — this is how you influence the game; edit it freely</li>
+<li><strong>read it, don't edit it</strong> — useful to look at, but the game writes it
+for itself and your edits won't stick, or won't mean what you'd expect</li>
+<li><strong>leave it alone</strong> — internal machine state; editing it by hand can
+corrupt your world</li>
+</ul>
+
+<h2><code>charter.md</code> — <em>yours to edit</em></h2>
+<p>Your guardian's standing instructions — the closest thing this game has to "how I
+want to play." The guardian re-reads this file fresh on every single turn, so an edit
+takes effect immediately, on your very next message. If the file goes missing, it's
+quietly restored to its starting text. If you edit it while playing at the very first
+curriculum stage, the game tells you plainly that written instructions don't bind yet
+at that stage — it still runs your starting charter until you reach the stage where
+authored instructions unlock.</p>
+
+<h2><code>llm.json</code> — <em>yours to edit</em></h2>
+<p>Which AI models your guardian and villagers think with, and how spending against
+them is capped. This is the one file every player eventually touches — a fresh world
+is written with a working local-model default, but you'll edit this to add your own
+providers, change the monthly budget, or point a call kind at a different model. Editing
+it takes effect the next time the world's daemon starts (stop it, edit, start it
+again). Deleting it entirely is legal too — the game just runs on reflexes alone, with
+no AI thinking at all.</p>
+<p>The full field-by-field reference — every provider setting, the routing rules, and
+the money/budget rules — lives in <a href="../llm-providers.md">the AI providers
+guide</a>; this page only tells you it exists and that it's yours to edit. See also
+<a href="llm-setup-basics.html">AI setup basics</a> for the minimum you need to get
+started.</p>
+
+<h2><code>skin.json</code> — <em>yours to edit</em></h2>
+<p>An optional file that lets you re-voice how the guardian and the curriculum stages
+are named and described on screen — a purely cosmetic override. If the file is absent,
+the game's own default identity ("Guardian" and the four default stage names) is used;
+nothing about the game's rules or mechanics ever changes based on this file, only the
+words you see. Like <code>llm.json</code>, an edit takes effect the next time the
+world's daemon starts.</p>
+
+<h2><code>tuning.json</code> — <em>yours to edit (advanced, optional)</em></h2>
+<p>An optional file that moves a small, named set of the game's numeric doctrine —
+things like how quickly a fire needs refueling, or how often a gru might emerge at
+night — from a fixed setting onto a per-world dial you can adjust. It's sparse: you
+only need to set the dials you actually want to move, and an absent file behaves
+exactly like the game's original, unmoved defaults. Values outside the accepted range
+are automatically pulled back to the nearest allowed bound, with a warning; a genuinely
+malformed file refuses to start rather than silently doing something you didn't ask
+for. This is an advanced file — most players will never need it, and every dial it can
+move already has a sensible default.</p>
+
+<h2><code>calibration.json</code> — <em>leave it alone</em></h2>
+<p>The recorded results of benchmarking your AI providers — how many seconds each one
+takes per unit of thinking, on your own hardware. This file is written only by the
+<code>promptworld calibrate</code> command (see the
+<a href="command-reference.html">command reference</a>); the running game itself never
+writes to it. If it's missing or unreadable, the game just falls back to cautious
+built-in defaults rather than failing — so there's never a need to hand-edit this file
+yourself; run <code>calibrate</code> again instead if the numbers need refreshing.</p>
+
+<h2><code>village_charter.md</code> — <em>read it, don't edit it</em></h2>
+<p>Not to be confused with your own <code>charter.md</code> above — this is the
+village's <em>own</em> self-legislated law, written entirely by the villagers
+themselves through their daily meetings and votes, and rewritten by the game every
+time a rule is proposed, amended, repealed, or a villager is exiled. It's a great
+read for catching up on what your village has decided for itself, but there's no
+mechanism for you to edit it — the game regenerates it from the recorded history of
+your village's own governance.</p>
+
+<h2>The world manifest (<code>world.json</code>) — <em>leave it alone</em></h2>
+<p>The file that identifies your world: its name, its random seed, its map size, and a
+handful of settings fixed permanently at the moment you created it (like which
+curriculum stage it started at). Most of what's in here is meant to be set once, at
+creation, by <code>promptworld new</code>'s own flags — not hand-edited afterward. A
+couple of fields do change over the world's life, but always through their own
+dedicated command rather than a text edit — for example, <code>promptworld teaching
+&lt;world&gt; on|off</code> is how you flip the teaching marker, not editing this file
+directly.</p>
+
+<h2>The event log and snapshots (<code>world.db</code>) — <em>leave it alone</em></h2>
+<p>The actual history of your world — every single thing that has ever happened in it,
+recorded permanently and in order, plus periodic saved snapshots of the full state so
+the game doesn't have to replay that entire history from scratch every time it starts.
+This is the closest thing your world has to its soul; there's no supported way to
+hand-edit it, and doing so risks corrupting your save beyond repair. If you want a
+backup of a world, the whole folder — this file included — is what you'd want to keep
+safe.</p>
+
+<h2><code>bundles/</code> — <em>yours to edit</em></h2>
+<p>An optional folder where you can drop in extra tools for your guardian to use — small,
+self-contained packages that add new things it can do, beyond what the game ships with
+out of the box. An empty or absent <code>bundles/</code> folder changes nothing; a
+badly-formed bundle inside it is skipped with a note in the daemon's log rather than
+stopping your world from starting. Authoring your own bundle — the file format, the
+available building blocks, worked examples — is documented separately in
+<a href="../bundles.md">the bundle authoring guide</a>; this page only tells you the
+folder exists and it's yours to add to. Changes here take effect the next time the
+world's daemon starts (bundles load once, at boot).</p>
+
+<footer><a href="index.html">&larr; Back to player docs index</a> ·
+<a href="command-reference.html">Command reference</a> ·
+<a href="troubleshooting.html">Troubleshooting</a></footer>
+</body>
+</html>
