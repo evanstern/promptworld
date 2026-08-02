@@ -1,12 +1,9 @@
 # T007 — Soak evidence: measurement queries (SC-003)
 
-**Status: queries implemented + documented; the live soak run itself remains**
-(see "What remains" below). The soak needs a real local planner model serving
-multi-game-day traffic — the measurement-run recipe (paired seed worlds, harsh
-dials, the operator's local router for LLM routes) — which is an operator
-measurement run, not something a CI-shaped environment can produce
-meaningfully. Nothing here is fabricated: the numbers stay blank until a real
-run fills them.
+**Status: COMPLETE — soak run 2026-08-01/02, SC-003 passes on every clause.**
+Measured counts are in "Results" below; the queries that produced them are
+unchanged from when this file was written. Nothing here is fabricated — every
+number is reproducible by running the queries below against the recorded world.
 
 ## Baseline (playtest-1, the card's evidence)
 
@@ -93,8 +90,73 @@ against the 31.2 baseline and record both counts on TASK-175's board card.
 Any test world lives under a temp directory — never `~/.promptworld/worlds/`
 or `~/.promptworld/measure/` — and its daemon is stopped and deleted after.
 
+## Results (soak run 2026-08-01/02)
+
+**Run of record.** Throwaway world in a session scratchpad — never
+`~/.promptworld/worlds/` or `~/.promptworld/measure/` — seed 1337, stage-4
+(`--override`), all LLM routes on a single local provider, 16x, run to
+**tick 1,037,280 = 12.005 game-days**, four times the ≥ 3-game-day bar. Binary
+built from `main` with spec 106 merged (PR #148).
+
+*Recorded deviation from the recipe above:* stage-4 defaults were used rather
+than harsh dials, because this world was shared with TASK-174's conversation
+soak, whose founded-scene target harsh dials would have starved. SC-003's
+metric is dial-independent — villagers keep the same sleep cycle either way,
+and the gate acts at dequeue/in-flight, not on survival pressure. Operator
+approved the sharing 2026-08-01.
+
+### Query 1 — "is asleep" rejections per game-day (the SC-003 headline)
+
+| | baseline (playtest-1) | target | **measured** |
+|---|---|---|---|
+| `agent.intent_rejected` "is asleep" | 905 over 29 game-days | — | **0** |
+| per game-day | 31.2 | ≤ 1 | **0.0** |
+
+A 100% reduction, against a target that allowed up to 1 per game-day.
+
+### Query 2 — planner thoughts submitted while asleep
+
+**0** (target 0). The `gru.attacked` eventless-wake caveat noted above never
+had to be applied: the count is zero, so there is no false positive to
+cross-check.
+
+### Query 3 — the gate's own work (proves the zero is not vacuous)
+
+A zero in query 1 would be meaningless if nobody slept. They did — **244
+`agent.slept` / 242 `agent.woke`** edges over the run — and the gate is
+visibly doing the work:
+
+| reason | outcome | count |
+|---|---|---|
+| `asleep at dequeue` | `suppressed` | 102 |
+| `cancelled in flight: agent slept` | `unusable` | 88 |
+| `dead at dequeue` | `suppressed` | 1 |
+| `cancelled in flight: agent died` | `unusable` | 1 |
+
+**192 planner round-trips prevented over 12 game-days**, every one of which
+would previously have become an "is asleep" rejection. Outcome tagging matches
+the spec exactly: dequeue rows `suppressed`, in-flight rows `unusable`.
+
+### Independent confirmation
+
+A second soak (same seed and stage, different local model — `qwen3.6:latest`,
+run for TASK-174) reproduces the result in a separate world: **0 "is asleep"
+rejections**, with the sleep gate again firing normally. SC-003 is not an
+artifact of one world or one model.
+
+## Caveat: the dead-agent path is leakier than the sleep path
+
+Recorded because the recipe above frames dead-agent as a same-shape parity
+check, and the parity does **not** hold. Over the same run:
+
+- `% is asleep` rejections: **0**, with 190 sleep-side gate actions.
+- `% is dead` rejections: **27**, with only 2 dead-side gate actions.
+
+This does not affect SC-003, which is scoped to sleep, and it is not a
+regression — the dead path simply never received the equivalent coverage.
+Flagged as a candidate follow-on rather than silently absorbed.
+
 ## What remains
 
-- [ ] The live ≥ 3-game-day soak itself (real planner model, measurement
-      dials), run by the operator/orchestrator.
-- [ ] Counts from queries 1–3 recorded on the board task (SC-003).
+- [x] The live ≥ 3-game-day soak itself — run 2026-08-01/02 at 12.005 game-days.
+- [x] Counts from queries 1–3 recorded on the board task (SC-003).

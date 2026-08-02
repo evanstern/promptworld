@@ -40,15 +40,19 @@ there: pre-submit gate + in-flight cancel, mind-side, ladder untouched).
 
 ## Phase 4: Soak evidence (card AC #2)
 
-- [ ] T007 Seeded soak (≥ 3 game-days, measurement-run dials): count
+- [X] T007 Seeded soak (≥ 3 game-days, measurement-run dials): count
   "is asleep" `agent.intent_rejected` per game-day (target ≤ 1 vs baseline
   ~31) and planner `cog.thought` rows for asleep-at-submit agents (target 0);
   record the counts on the board task (SC-003).
-  **PARTIAL** — measurement queries implemented + documented in
-  [soak.md](soak.md); the live soak needs a real local planner model over
-  ≥ 3 game-days (an operator measurement run, not runnable meaningfully from
-  the implementation environment). Remaining: the run itself + counts on the
-  board card.
+  **DONE** — soak run 2026-08-01/02 to **12.005 game-days** (4x the bar):
+  **0** "is asleep" rejections (**0.0/game-day** vs the 31.2 baseline, target
+  ≤ 1) and **0** planner thoughts submitted while asleep. Non-vacuous: 244
+  `agent.slept` / 242 `agent.woke` edges, with the gate firing 102 `asleep at
+  dequeue` + 88 `cancelled in flight: agent slept` — 192 planner round-trips
+  prevented. Reproduced in a second world on a different local model. Full
+  results, the recorded stage-4-instead-of-harsh-dials deviation, and a
+  dead-agent parity caveat (27 "is dead" rejections leak where sleep leaks 0)
+  in [soak.md](soak.md); counts also recorded on TASK-175.
 
 ## Phase 5: Reconcile with spec 102 + grounding + gates
 
