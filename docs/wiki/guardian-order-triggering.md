@@ -9,7 +9,7 @@ sources:
   - internal/guardian/digest.go
   - internal/llm/llm.go
   - internal/llm/config.go
-verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
+verified_against: 17ccdde318dcb02ca240430c10092eb96f940ac7
 ---
 
 # Guardian order triggering

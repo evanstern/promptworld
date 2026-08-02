@@ -11,7 +11,7 @@ sources:
   - internal/daemon/daemon.go
   - cmd/promptworld/commands.go
   - internal/tui/views.go
-verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
+verified_against: 17ccdde318dcb02ca240430c10092eb96f940ac7
 ---
 
 # LLM provider health (preflight + tool-silence detection)
@@ -73,9 +73,9 @@ Transport failures never reach `observeSuccess` (the worker replies before
 the success path) — they neither count nor reset; the breaker owns those.
 
 **Fresh-world defaults** (US3) close the loop from the other end — see
-[[llm-orchestrator]]'s `DefaultConfig` for the `cogito:3b` + `tool_mode:
-"json"` default that makes this feature's warnings the safety net rather
-than the first-run experience.
+[[llm-orchestrator]]'s `DefaultConfig` for the `gemma4:latest` + `tool_mode:
+"native"` default (spec 109/TASK-184) that makes this feature's warnings the
+safety net rather than the first-run experience.
 
 ## Surfaces
 

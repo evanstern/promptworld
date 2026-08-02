@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/llm-providers.md@598098640fecce348792f0a78689b7af48d4f842">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-orchestrator.md@1fae0d8536eb43e43eaa7b747aaeaf0b6e05ac83">
+<meta name="promptworld-docs:source" content="docs/llm-providers.md@aea51a4654fa079cfa1ffa1f5cfac6166331286f">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-orchestrator.md@17ccdde318dcb02ca240430c10092eb96f940ac7">
 <meta name="promptworld-docs:source" content="README.md@4e160b902dd96a6b4a8f4342ae75cdcbc8048c53">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@fc1a8314f3f71a33c5e2145c914d5cbb511d9196">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@17ccdde318dcb02ca240430c10092eb96f940ac7">
 <title>AI setup basics — promptworld player docs</title>
 <style>
   :root {
@@ -91,14 +91,26 @@ promptworld start demo</code></pre>
 <p>For everyday villager decisions, promptworld expects an OpenAI-compatible model
 server running on your own machine — <a href="https://ollama.com">Ollama</a> is the
 common choice, listening at <code>http://localhost:11434/v1</code> by default. A
-freshly created world's <code>llm.json</code> already names <code>cogito:3b</code> as
-that model — the one proven, across long test runs, to actually cooperate with the
-game's tool-calling out of the box, so there's nothing to reconfigure to make it work.
-Install Ollama, then pull the model:</p>
-<pre><code>ollama pull cogito:3b</code></pre>
+freshly created world's <code>llm.json</code> already names <code>gemma4:latest</code>
+as that model — chosen because it reliably cooperates with the game's structured
+output and tool-calling out of the box, so there's nothing to reconfigure to make it
+work. Install Ollama, then pull the model:</p>
+<pre><code>ollama pull gemma4:latest</code></pre>
 <p><code>promptworld new</code> prints this exact command for you as part of its
 "world created" summary, so you never have to guess which model name to use — it's
 read straight from the same defaults the world was just written with.</p>
+<p><strong>If you ever swap in a different local model</strong> (rather than using the
+shipped default), one thing is worth knowing: some model builds — Apple-optimized
+"MLX" builds in particular — silently ignore the structured-output format the game
+relies on. The model still answers normally and the game sees a normal-looking reply,
+so nothing anywhere tells you it happened; it just quietly shows up later as
+villagers' decisions failing to parse or scenes getting abandoned partway through.
+You can check whether a model you're considering is safe before switching to it:</p>
+<pre><code>curl -s http://localhost:11434/api/show -d '{"model":"&lt;name&gt;"}' | jq '.details.format'</code></pre>
+<p><code>"gguf"</code> is safe; <code>"safetensors"</code> (or anything else) means
+don't use that model here. The shipped default, <code>gemma4:latest</code>, is a
+gguf build, so this only matters if you go looking for an alternative. Full detail
+lives in <strong>docs/llm-providers.md</strong>.</p>
 
 <h2>Optional: the cloud tier</h2>
 <p>A handful of higher-value moments — nightly memory digestion, the narrated

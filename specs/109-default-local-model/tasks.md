@@ -43,19 +43,26 @@ Dispatch tier: Sonnet (`claude-sonnet-5`, `.claude/agents/spec-implementer.md`).
 
 ## Phase 4: Grounding (spec 069 — pr gate blocks without this)
 
-- [ ] T009 For each wiki note pinning `internal/llm/config.go` —
+- [X] T009 For each wiki note pinning `internal/llm/config.go` —
       `llm-provider-registry`, `llm-orchestrator`, `llm-chain-walk-dispatch`,
       `llm-provider-health`, `nightly-consolidation`, `guardian-report-card`,
       `guardian-order-triggering` — read `git diff <pin>..HEAD -- internal/llm/config.go`
       and classify RE-PIN-ONLY or NEEDS-REVIEW. Amend prose before re-pinning anything
       classified NEEDS-REVIEW. Never re-pin without reading the diff.
-- [ ] T010 Regenerate `docs/player/` if `docs/wiki/` changed; verify with
+      **Deviation:** `nightly-consolidation.md` does not pin `internal/llm/config.go`
+      (its `sources:` list is `internal/sim/consolidate.go`, `internal/mind/consolidate.go`,
+      `internal/mind/validate.go`, `internal/mind/retry.go`, `internal/mind/nightreport.go`,
+      `internal/persona/personas.go`) — this task's own line names it in error; the
+      `check-merge-drift.mjs pr` gate never flagged it, and it was left untouched. The
+      other 6 notes were re-pinned; see final report for the RE-PIN-ONLY/NEEDS-REVIEW
+      classification and reasoning per note.
+- [X] T010 Regenerate `docs/player/` if `docs/wiki/` changed; verify with
       `node .claude/skills/player-docs/scripts/check-freshness.mjs --check`.
 
 ## Phase 5: Verification and PR
 
-- [ ] T011 `go build ./...`, `go vet ./...`, `go test ./...` all green.
-- [ ] T012 SC-001 live check: create a throwaway world OUTSIDE `~/.promptworld/` with an
+- [X] T011 `go build ./...`, `go vet ./...`, `go test ./...` all green.
+- [X] T012 SC-001 live check: create a throwaway world OUTSIDE `~/.promptworld/` with an
       untouched `llm.json`; confirm the guidance line names `gemma4:latest`; confirm one
       schema-constrained call returns parseable JSON and one tool-calling call returns a
       well-formed tool call against the local endpoint. Record the observed output in the
