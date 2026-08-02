@@ -1,10 +1,10 @@
 ---
 id: TASK-175
 title: 'Mind loop: stop scheduling sleeping villagers'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-30 16:42'
-updated_date: '2026-08-02 13:37'
+updated_date: '2026-08-02 22:29'
 labels: []
 dependencies: []
 ordinal: 143000
@@ -25,13 +25,15 @@ Spec: specs/106-sleep-gated-planning
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 Sleeping villagers do not consume planner calls (mind gates on sleep state or scheduler skips until agent.woke)
-- [ ] #2 A soak shows 'is asleep' intent rejections reduced to near zero from playtest-1's baseline of 905/29 days
+- [x] #2 A soak shows 'is asleep' intent rejections reduced to near zero from playtest-1's baseline of 905/29 days
 - [x] #3 Spec phase: Unavailability mirror + pre-submit gate (US1 layer 1)
 - [x] #4 Spec phase: In-flight cancel (US1 layer 2)
 - [x] #5 Spec phase: Wake resumption + regression (US2)
-- [ ] #6 Spec phase: Soak evidence (card AC #2)
+- [x] #6 Spec phase: Soak evidence (card AC #2)
 - [x] #7 Spec phase: Reconcile with spec 102 + grounding + gates
 <!-- AC:END -->
+
+
 
 ## Implementation Notes
 
@@ -49,4 +51,12 @@ T007 soak evidence MEASURED @ tick 261994 / 3.032 game-days. Interim only in tha
 T007 FINAL soak evidence @ tick 1037280 / 12.005 game-days, 90 conversation scenes — supersedes the 3.03-game-day interim note and strengthens it. SC-003 PASSES on every clause with a 4x longer horizon: (1) 'is asleep' agent.intent_rejected = 0 over 12.005 game-days = 0.0/game-day vs the 31.2/game-day playtest-1 baseline; target <=1/game-day. (2) planner cog.thought submitted while asleep = 0 (target 0). (3) Decisively non-vacuous: 244 agent.slept / 242 agent.woke edges, and the gate's own work scales with them — 'asleep at dequeue' 102 rows (suppressed), 'cancelled in flight: agent slept' 88 rows (unusable), 'dead at dequeue' 1, 'cancelled in flight: agent died' 1. That is 192 planner round-trips prevented over 12 game-days, every one of which would previously have become a rejection. Outcome tagging matches the spec exactly: dequeue rows suppressed, in-flight rows unusable.
 
 PARITY CAVEAT worth recording (does NOT affect SC-003, which is scoped to sleep): the dead-agent path is materially leakier than the sleep path. '% is dead' agent.intent_rejected = 27 over the run, while the dead-side gate fired only twice (1 'dead at dequeue', 1 'cancelled in flight: agent died'). The sleep side leaks ZERO by comparison. soak.md frames dead-agent as a same-shape parity check, so the asymmetry suggests the dead path never got the equivalent coverage. Candidate follow-on; not a blocker for this task.
+
+spec-bridge sync: Unavailability mirror + pre-submit gate (US1 layer 1): 3/3 · In-flight cancel (US1 layer 2): 2/2 · Wake resumption + regression (US2): 1/1 · Soak evidence (card AC #2): 1/1 · Reconcile with spec 102 + grounding + gates: 2/2 — status In Progress → Done
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+All spec tasks complete (Unavailability mirror + pre-submit gate (US1 layer 1): 3/3 · In-flight cancel (US1 layer 2): 2/2 · Wake resumption + regression (US2): 1/1 · Soak evidence (card AC #2): 1/1 · Reconcile with spec 102 + grounding + gates: 2/2). Derived Done by spec-bridge sync.
+<!-- SECTION:FINAL_SUMMARY:END -->
