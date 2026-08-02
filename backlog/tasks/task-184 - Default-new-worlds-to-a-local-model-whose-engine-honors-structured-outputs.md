@@ -4,7 +4,7 @@ title: Default new worlds to a local model whose engine honors structured output
 status: In Progress
 assignee: []
 created_date: '2026-08-02 16:03'
-updated_date: '2026-08-02 16:05'
+updated_date: '2026-08-02 16:23'
 labels:
   - llm
   - local-tier
@@ -35,10 +35,17 @@ Spec: specs/109-default-local-model
 - [ ] #2 docs/llm-providers.md documents the MLX-versus-gguf structured-output hazard, how to check details.format before trusting a model, and the reasoning_effort knob with its measured speed effect
 - [ ] #3 The 'promptworld new' guidance line names the new default model rather than a stale one
 - [ ] #4 Tests covering DefaultConfig updated; every wiki note whose pinned sources this branch touches is re-verified and re-pinned in-branch; docs/player regenerated if docs/wiki changed
+- [ ] #5 Spec phase: Default config
+- [ ] #6 Spec phase: Tests
+- [ ] #7 Spec phase: Operator documentation
+- [ ] #8 Spec phase: Grounding (spec 069 — pr gate blocks without this)
+- [ ] #9 Spec phase: Verification and PR
 <!-- AC:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 Dispatch tier: Sonnet — claude-sonnet-5, via the .claude/agents/spec-implementer.md definition. Rubric justification (constitution P.V): single-package change in internal/llm plus doc reconciliation and test updates; no cross-package or architectural surface, no concurrency/scheduling/governor logic, and the diagnosis is already complete at file:line so no design exploration is required. Escalation to spec-implementer-opus is NOT indicated. Carded and claimed 2026-08-02 out of the TASK-174 soak investigation.
+
+OPERATOR DECISION 2026-08-02, resolved before implementation dispatch: default local model becomes gemma4:latest (8B gguf, 9.6GB), with tool_mode moving from 'json' to 'native' since gemma4:latest function-calls natively. qwen3.6:latest (36B MoE, 23.9GB) is documented as the recommended upgrade for capable machines rather than shipped as the default — a 24GB first pull needing ~24GB RAM is too heavy a default. cogito:3b superseded: it is CORRECT for structured output but visibly poorer in the same benchmark (emitted target:'no' as a tool argument, wrote a memory field as an identifier rather than prose). Recorded in specs/109-default-local-model/spec.md under 'Decision'. Two corrections to the earlier framing, both verified in code: (1) reasoning_effort needs NO change — zero-priced providers already resolve it to 'none' (internal/llm/providers.go:628-631, keyed on zeroPriced() at config.go:158), so no local provider pays for hidden reasoning today; (2) the SHIPPED default (cogito:3b) was never broken for structured output — the actual defect is docs/llm-providers.md, which names gemma4:12b-mlx as 'a documented upgrade path' (line 29) and uses it as the worked registry example (line 44), steering operators onto the one model that cannot hold a schema. That is what the operator's own llm.json did and the direct cause of the TASK-174/TASK-183 symptoms. Spec artifacts complete on branch task-184-default-local-model @ 6ec54b16: spec.md + plan.md + tasks.md, 13 tasks across 5 phases.
 <!-- SECTION:NOTES:END -->
