@@ -67,5 +67,5 @@ Dispatch tier: Sonnet (`claude-sonnet-5`, `.claude/agents/spec-implementer.md`).
       schema-constrained call returns parseable JSON and one tool-calling call returns a
       well-formed tool call against the local endpoint. Record the observed output in the
       PR body. Tear the world down afterwards.
-- [ ] T013 `node scripts/check-merge-drift.mjs pr` from the worktree, exit 0, then
+- [X] T013 `node scripts/check-merge-drift.mjs pr` from the worktree, exit 0, then
       `gh pr create`. Re-run the gate after any merge-in from main.
