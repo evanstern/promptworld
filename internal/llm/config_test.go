@@ -118,11 +118,12 @@ func TestLegacyCloudProviderTransportMapping(t *testing.T) {
 }
 
 // TestDefaultV2SemanticallyEqualsLegacy (spec 024 FR-017, T006; local provider
-// updated by spec 034 R6/T014): the v2 default WriteDefault emits derives the
+// updated by spec 109/TASK-184): the v2 default WriteDefault emits derives the
 // SAME registry an equivalent legacy config would — proving the new-world
 // scaffold's shape (two named providers, today's routes) still round-trips
-// through the legacy derivation path, now carrying the live-proven cogito:3b
-// fresh-world default instead of the old gemma4 default.
+// through the legacy derivation path, now carrying the gemma4:latest
+// fresh-world default (spec 109: gguf build, honors schema constraints,
+// tool-calls natively) instead of the prior cogito:3b default.
 func TestDefaultV2SemanticallyEqualsLegacy(t *testing.T) {
 	vp, vr, err := DefaultConfig().resolveRegistry()
 	if err != nil {
@@ -130,7 +131,7 @@ func TestDefaultV2SemanticallyEqualsLegacy(t *testing.T) {
 	}
 	legacy := Config{
 		MonthlyBudgetUSD: 100,
-		Local:            LocalConfig{Endpoint: "http://localhost:11434/v1", Model: "cogito:3b", Parallel: 4, ToolMode: "json"},
+		Local:            LocalConfig{Endpoint: "http://localhost:11434/v1", Model: "gemma4:latest", Parallel: 4, ToolMode: "native"},
 		Cloud:            CloudConfig{Model: "claude-opus-4-8", InputUSDPerMTok: 5, OutputUSDPerMTok: 25, APIKeyEnv: "ANTHROPIC_API_KEY"},
 	}
 	lp, lr, err := legacy.resolveRegistry()
@@ -145,18 +146,20 @@ func TestDefaultV2SemanticallyEqualsLegacy(t *testing.T) {
 	}
 }
 
-// TestDefaultConfigLocalProvider (spec 034 R6/T014): the fresh-world default
-// local provider is the TASK-73 live-proven shape — cogito:3b, tool_mode
-// "json", parallel 4 — not the old gemma4:12b-mlx default. This is the golden
-// assertion the docs/README alignment (T016) and cmdNew guidance line (T015)
-// both depend on staying true.
+// TestDefaultConfigLocalProvider (spec 109/TASK-184): the fresh-world default
+// local provider is gemma4:latest, tool_mode "native", parallel 4 — a gguf
+// build that honors JSON-Schema constraints and tool-calls natively, not the
+// prior cogito:3b/"json" default (TASK-73) nor the MLX gemma4:12b-mlx that
+// silently discards schema constraints. This is the golden assertion the
+// docs/README alignment (T016) and cmdNew guidance line (T015) both depend
+// on staying true.
 func TestDefaultConfigLocalProvider(t *testing.T) {
 	local := DefaultConfig().Providers["local"]
-	if local.Model != "cogito:3b" {
-		t.Errorf("default local model = %q, want cogito:3b", local.Model)
+	if local.Model != "gemma4:latest" {
+		t.Errorf("default local model = %q, want gemma4:latest", local.Model)
 	}
-	if local.ToolMode != "json" {
-		t.Errorf("default local tool_mode = %q, want json", local.ToolMode)
+	if local.ToolMode != "native" {
+		t.Errorf("default local tool_mode = %q, want native", local.ToolMode)
 	}
 	if local.Parallel != 4 {
 		t.Errorf("default local parallel = %d, want 4", local.Parallel)
@@ -166,10 +169,10 @@ func TestDefaultConfigLocalProvider(t *testing.T) {
 	}
 }
 
-// TestWriteDefaultEmitsCogitoDefault (spec 034 R6/T014): WriteDefault's actual
-// on-disk llm.json — what `promptworld new` writes — carries the same
-// cogito:3b/json/4 shape, not just the in-memory DefaultConfig() value.
-func TestWriteDefaultEmitsCogitoDefault(t *testing.T) {
+// TestWriteDefaultEmitsGemmaDefault (spec 109/TASK-184): WriteDefault's
+// actual on-disk llm.json — what `promptworld new` writes — carries the same
+// gemma4:latest/native/4 shape, not just the in-memory DefaultConfig() value.
+func TestWriteDefaultEmitsGemmaDefault(t *testing.T) {
 	p := filepath.Join(t.TempDir(), "llm.json")
 	if err := WriteDefault(p); err != nil {
 		t.Fatal(err)
@@ -179,8 +182,8 @@ func TestWriteDefaultEmitsCogitoDefault(t *testing.T) {
 		t.Fatal(err)
 	}
 	local := cfg.Providers["local"]
-	if local.Model != "cogito:3b" || local.ToolMode != "json" || local.Parallel != 4 {
-		t.Errorf("WriteDefault local provider = %+v, want model cogito:3b, tool_mode json, parallel 4", local)
+	if local.Model != "gemma4:latest" || local.ToolMode != "native" || local.Parallel != 4 {
+		t.Errorf("WriteDefault local provider = %+v, want model gemma4:latest, tool_mode native, parallel 4", local)
 	}
 }
 

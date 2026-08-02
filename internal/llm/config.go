@@ -449,22 +449,31 @@ func resolveReasoningEffort(v *string, def string) string {
 // DefaultConfig matches the grounding decisions in the v2 registry shape
 // (FR-017): local Ollama for the per-agent chatter, Claude for the nightly/
 // narrative work, $100/month hard ceiling, expressed as two named providers
-// with today's routes. The local provider is the fresh-world default proven
-// live (spec 034 R6 / TASK-73 eval record: three 8-game-hour soaks on
-// cogito:3b + tool_mode "json", 789/896/982 planner decisions) rather than
-// today's two-tier defaults verbatim — gemma4:12b-mlx never function-called
-// reliably out of the box and isn't a stock registry pull.
+// with today's routes. The local provider is gemma4:latest (spec 109/
+// TASK-184). Measured 2026-08-02: a model's *build format*, not its family
+// or size, decides whether Ollama honors a JSON-Schema constraint at all.
+// gguf builds (cogito:3b, gemma4:latest, qwen3.6:latest) all honor schema
+// constraints; the MLX/safetensors build gemma4:12b-mlx silently discards
+// them and returns prose regardless of which constraint mechanism is used
+// (OpenAI-compat json_schema strict or non-strict, Ollama's native `format`
+// param) — see spec 109's measured table. Among the schema-honoring gguf
+// models, gemma4:latest was chosen over cogito:3b (the prior default,
+// TASK-73) for output quality — the same benchmark had cogito:3b emit a
+// malformed tool argument where gemma4:latest produced a sensible one — and
+// over qwen3.6:latest (23.9 GB) for download/RAM weight; qwen3.6:latest
+// remains the documented upgrade path for capable machines
+// (docs/llm-providers.md).
 func DefaultConfig() Config {
 	return Config{
 		MonthlyBudgetUSD: 100,
 		Providers: map[string]ProviderConfig{
-			// cogito:3b + tool_mode "json" is the live-proven fresh-world
-			// default (TASK-73 eval record, spec 034 R6): it's a stock
-			// `ollama pull cogito:3b` away and its planner tool calls
-			// succeed out of the box. gemma-class models (e.g.
-			// gemma4:12b-mlx) remain the documented upgrade path for
-			// operators who serve them (docs/llm-providers.md).
-			"local": {Transport: ProviderOpenAICompat, Endpoint: "http://localhost:11434/v1", Model: "cogito:3b", Parallel: 4, ToolMode: "json"},
+			// gemma4:latest is a gguf build (not MLX/safetensors), so it
+			// honors JSON-Schema constraints, and it function-calls
+			// natively — hence tool_mode "native" rather than the "json"
+			// envelope fallback. cogito:3b, the prior default, still
+			// needs tool_mode "json": measured live (TASK-52), it never
+			// function-calls natively.
+			"local": {Transport: ProviderOpenAICompat, Endpoint: "http://localhost:11434/v1", Model: "gemma4:latest", Parallel: 4, ToolMode: "native"},
 			"cloud": {Transport: ProviderAnthropic, Model: "claude-opus-4-8", InputUSDPerMTok: 5, OutputUSDPerMTok: 25, APIKeyEnv: "ANTHROPIC_API_KEY"},
 		},
 		Routes: defaultRoutes(),

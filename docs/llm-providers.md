@@ -21,14 +21,15 @@ Two rules:
 - Config is read at boot only: edit `llm.json`, then restart the daemon
   (`promptworld stop <world> && promptworld start <world>`).
 
-New worlds (`promptworld new`) are written in the v2 shape. As of spec 034 the fresh-world
-default local provider is `cogito:3b` with `tool_mode: "json"` and `parallel: 4` — the
-configuration proven live (TASK-73 eval record: three 8-game-hour soaks, 789/896/982
-planner decisions) to make planner tool calls succeed with zero config editing. `promptworld
-new` prints the model name and an `ollama pull cogito:3b` command to make first-run
-painless. gemma-class models (e.g. `gemma4:12b-mlx`, shown in the example below) remain a
-documented upgrade path for operators who serve them, but a fresh world is not written
-expecting one.
+New worlds (`promptworld new`) are written in the v2 shape. As of spec 109 the fresh-world
+default local provider is `gemma4:latest` with `tool_mode: "native"` and `parallel: 4` — a
+gguf-served model, chosen because Ollama's build format (not model family or size) decides
+whether JSON-Schema constraints are honored at all, and `gemma4:latest` both honors them
+and tool-calls natively out of the box (see "MLX models silently ignore schema
+constraints" below). `promptworld new` prints the model name and an
+`ollama pull gemma4:latest` command to make first-run painless. `qwen3.6:latest` remains a
+documented upgrade path for operators with the RAM to serve it (~24 GB), but a fresh world
+is not written expecting one.
 
 ## The v2 shape: providers + routes
 
@@ -40,8 +41,8 @@ for the actual `promptworld new` default.
 {
   "monthly_budget_usd": 100,
   "providers": {
-    "gemma":  { "transport": "openai_compat", "endpoint": "http://localhost:11434/v1",
-                "model": "gemma4:12b-mlx", "parallel": 2, "endpoint_capacity": 4 },
+    "qwen":   { "transport": "openai_compat", "endpoint": "http://localhost:11434/v1",
+                "model": "qwen3.6:latest", "parallel": 2, "endpoint_capacity": 4 },
     "cogito": { "transport": "openai_compat", "endpoint": "http://localhost:11434/v1",
                 "model": "cogito:3b", "parallel": 4, "endpoint_capacity": 4,
                 "tool_mode": "json" },
@@ -50,9 +51,9 @@ for the actual `promptworld new` default.
                 "api_key_env": "ANTHROPIC_API_KEY" }
   },
   "routes": {
-    "planner":       ["gemma"],
-    "conversation":  ["cogito", "gemma"],
-    "meeting":       ["cogito", "gemma"],
+    "planner":       ["qwen"],
+    "conversation":  ["cogito", "qwen"],
+    "meeting":       ["cogito", "qwen"],
     "consolidation": ["cloud"],
     "narrator":      ["cloud"],
     "drama":         ["cloud"],
@@ -61,9 +62,12 @@ for the actual `promptworld new` default.
 }
 ```
 
-This example is the live-proven division of labor: high-volume structured kinds
-(conversation turns, meeting flavor) on the small parallel model, prose kinds on the
-quality model, the nightly/narrative tier on cloud.
+This example is a division of labor: high-volume structured kinds (conversation turns,
+meeting flavor) on the small parallel model, prose kinds on the quality model, the
+nightly/narrative tier on cloud. `qwen3.6:latest` is gguf-served (honors schema
+constraints, tool-calls natively) and is the documented upgrade for machines with the RAM
+to serve a 24 GB MoE model — see "MLX models silently ignore schema constraints" below for
+why an MLX-served model (e.g. `gemma4:12b-mlx`) does not belong in this slot.
 
 ### Providers
 
@@ -79,12 +83,55 @@ Each named entry declares one model source. Fields:
 | `api_key` | inline key — LAN-local routers only; wins over `api_key_env` |
 | `parallel` | concurrent worker slots against this provider (1–16, warn-and-clamp) |
 | `reasoning_effort` | hidden chain-of-thought posture; zero-priced default `"none"`, priced default omit |
-| `tool_mode` | `"native"` (default) or `"json"` fallback envelope; `anthropic` transport ignores it. cogito:3b needs `"json"` — measured live (TASK-52): it never function-calls natively. Inert on non-tool kinds (conversation/meeting), so set it on the entry regardless — a future chain edit then can't trip the native-mode failure |
+| `tool_mode` | `"native"` (default) or `"json"` fallback envelope; `anthropic` transport ignores it. `"native"` is the fresh-world default because the shipped local model (`gemma4:latest`) tool-calls natively; cogito:3b needs `"json"` — measured live (TASK-52): it never function-calls natively. Inert on non-tool kinds (conversation/meeting), so set it on the entry regardless — a future chain edit then can't trip the native-mode failure |
 | `endpoint_capacity` | opt-in cross-world concurrency bound for the endpoint (see leases below) |
 
 Every knob that used to be per-tier is now per-provider. Zero-priced providers are
 "local-class": never refused for budget reasons, seeded with local-class latency
 bootstraps.
+
+### MLX models silently ignore schema constraints
+
+promptworld's JSON-reliability work (planner tool calls, conversation outcomes, the
+utterance route) rests on **sampler-level constraint**: the caller sets a JSON Schema,
+`internal/llm/providers.go` attaches it as an OpenAI-compat `response_format:
+{type: json_schema}` envelope (or, for tool calls, native function-calling), and the
+provider is expected to make invalid output unrepresentable.
+
+**Ollama's MLX engine (`details.format: "safetensors"`) silently discards that envelope.**
+Measured 2026-08-02 on the same harness across four models:
+
+| model | `details.format` | schema-constrained JSON | native tool call |
+|---|---|---|---|
+| `cogito:3b` | gguf | valid | yes |
+| `gemma4:latest` (8B) | gguf | valid | yes |
+| `gemma4:12b-mlx` | safetensors (MLX) | **returns prose** | yes |
+| `qwen3.6:latest` (36B MoE) | gguf | valid | yes |
+
+The split tracks the **build format**, not the model family or size: `gemma4:12b-mlx`
+fails head-to-head against its own gguf sibling `gemma4:latest`. All three constraint
+mechanisms were tried against it and all three returned free prose instead of JSON:
+OpenAI-compat `json_schema` strict, the same non-strict, and Ollama's own native
+`/api/chat` `format` parameter.
+
+**Check before you serve a model in this slot**: query the endpoint and read
+`details.format`.
+
+```sh
+curl -s http://localhost:11434/api/show -d '{"model":"gemma4:12b-mlx"}' | jq '.details.format'
+```
+
+`"gguf"` is safe; `"safetensors"` (or any non-`"gguf"` value) means schema constraints
+will be silently ignored by that model.
+
+**The symptom, and why it is dangerous**: a schema-constrained call returns prose where
+JSON was demanded. Nothing downstream distinguishes "the model refused to follow the
+schema" from any other kind of malformed output, so it surfaces only as parse failures,
+retries, and — in conversation/utterance routes — abandoned scenes. **Nothing in the
+daemon log, the boot sequence, or `promptworld calibrate` reports the underlying cause**;
+the provider reports success (HTTP 200, a normal-looking completion) the entire time. This
+cost a 12-game-day soak (TASK-174/spec 103) before the cause was isolated to the provider,
+not the code (spec 109).
 
 ### Routes: the chain IS the policy
 

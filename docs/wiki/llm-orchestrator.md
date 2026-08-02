@@ -10,7 +10,7 @@ sources:
   - internal/llm/providers.go
   - internal/llm/lease.go
   - internal/llm/pending.go
-verified_against: 1fae0d8536eb43e43eaa7b747aaeaf0b6e05ac83
+verified_against: 17ccdde318dcb02ca240430c10092eb96f940ac7
 ---
 
 # LLM orchestrator
@@ -79,15 +79,18 @@ spec 035 (FR-004/FR-008), an additive `omitempty` `CalibratedAt` string
 field verbatim, empty for a bootstrap-seeded provider. [[cli-promptworld]]'s
 `status` rendering turns this into one `providerCalibrationLine` per provider.
 
-**Fresh-world defaults** (`DefaultConfig`, spec 034 R6): the local provider a
-brand-new `llm.json` ships with is `{model: "cogito:3b", tool_mode: "json",
-parallel: 4}` — the configuration the TASK-73 eval record proved live (three
-8-game-hour soaks, 789–982 planner decisions each) — rather than the earlier
-`gemma4:12b-mlx`/native default, a machine-local MLX build that never
-reliably function-called out of the box and isn't a stock registry pull;
-gemma-class models remain the documented upgrade path for operators who serve
-them (docs/llm-providers.md). Existing worlds' `llm.json` files are untouched
-by construction (config is per-world, read once at boot). `cmdNew`
+**Fresh-world defaults** (`DefaultConfig`, spec 109/TASK-184): the local
+provider a brand-new `llm.json` ships with is `{model: "gemma4:latest",
+tool_mode: "native", parallel: 4}`. A model's *build format*, not family or
+size, decides whether Ollama honors a JSON-Schema constraint: gguf builds
+(cogito:3b, gemma4:latest, qwen3.6:latest) honor them; the MLX/safetensors
+build `gemma4:12b-mlx` silently discards them and returns prose regardless
+of constraint mechanism — see spec 109's measured table. gemma4:latest
+supersedes cogito:3b (the prior default, TASK-73) for output quality and is
+preferred over qwen3.6:latest (23.9 GB) for download/RAM weight;
+qwen3.6:latest remains the documented upgrade path for capable machines
+(docs/llm-providers.md). Existing worlds' `llm.json` files are untouched by
+construction (config is per-world, read once at boot). `cmdNew`
 ([[cli-promptworld]]) prints the expected model and its pull command read
 straight from `DefaultConfig()`.
 

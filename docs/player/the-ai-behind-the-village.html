@@ -6,10 +6,10 @@
 <meta name="promptworld-docs:generated-by" content="player-docs">
 <meta name="promptworld-docs:source" content="docs/wiki/agent-mind.md@cb0eb0c0b00c7ecef9d0a6a88d49c3ee994953b4">
 <meta name="promptworld-docs:source" content="docs/wiki/cognition.md@04ff15001bd8a74f7c2965889c0d318fc0dc03a9">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-orchestrator.md@1fae0d8536eb43e43eaa7b747aaeaf0b6e05ac83">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-orchestrator.md@17ccdde318dcb02ca240430c10092eb96f940ac7">
 <meta name="promptworld-docs:source" content="docs/wiki/nightly-consolidation.md@1fae0d8536eb43e43eaa7b747aaeaf0b6e05ac83">
 <meta name="promptworld-docs:source" content="docs/wiki/social-fabric.md@c61cd6c04ddfcd2a976c14a49ba071e8fd768a73">
-<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@fc1a8314f3f71a33c5e2145c914d5cbb511d9196">
+<meta name="promptworld-docs:source" content="docs/wiki/llm-provider-health.md@17ccdde318dcb02ca240430c10092eb96f940ac7">
 <meta name="promptworld-docs:source" content="docs/wiki/mental-maps.md@fc1a8314f3f71a33c5e2145c914d5cbb511d9196">
 <meta name="promptworld-docs:source" content="docs/wiki/memory-retrieval.md@bd13e84095eb7dd15d2911e524dd0ca0d467bda8">
 <meta name="promptworld-docs:source" content="docs/wiki/decision-context.md@fc1a8314f3f71a33c5e2145c914d5cbb511d9196">
@@ -231,9 +231,9 @@ quality for — most notably nightly memory digestion (below) and the narrated
 <a href="reading-the-story.html">chronicle</a>, plus the guardian's own conversation with
 you. This split is configurable, and the
 <a href="llm-setup-basics.html">setup basics page</a> walks through the minimum you
-need to turn it on. A brand-new world's local model is <code>cogito:3b</code> by
-default — chosen because it was proven, across long test runs, to reliably follow
-the game's instructions rather than quietly talking past them.</p>
+need to turn it on. A brand-new world's local model is <code>gemma4:latest</code> by
+default — chosen because it reliably follows the game's instructions and honors its
+structured-output requirements, rather than quietly talking past them.</p>
 <p>Because a villager's decisions depend entirely on that local model actually
 cooperating, promptworld watches its own back: if the configured model turns out to
 be missing, its server unreachable, or it keeps answering without ever actually
