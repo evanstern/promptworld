@@ -3,10 +3,10 @@ id: TASK-182
 title: >-
   User manual: reference pages for players (commands, world files,
   troubleshooting)
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-08-01 23:17'
-updated_date: '2026-08-01 23:55'
+updated_date: '2026-08-02 00:33'
 labels: []
 dependencies: []
 priority: medium
@@ -55,3 +55,9 @@ Spec Kit run complete through tasks: specs/108-player-manual/{spec,plan,tasks}.m
 
 PR #154 opened (draft): https://github.com/evanstern/promptworld/pull/154 — three reference pages (command-reference, world-files-reference, troubleshooting) + index nav + player-docs skill/gate wiring. check-freshness --check: 16 fresh, 0 stale, 0 missing, 0 broken-ref. check-merge-drift pr: pass, no findings. Flag audit clean (no invented flags). Implemented by claude-sonnet-5 via .claude/agents/spec-implementer.md as planned; no escalation needed. Spec narrative corrected 21 -> 22 subcommands after the implementer flagged the mismatch with FR-001's own list.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Shipped the player's user manual as three gated reference pages in docs/player/ — command-reference.html (all 22 subcommands grouped by player intent, plus the two hidden pre-052 compat aliases), world-files-reference.html (all nine world-folder files, each labelled yours-to-edit / read-dont-edit / leave-alone), and troubleshooting.html (all seven required symptoms, each resolving to a real observable surface — a ps column, a status field, a TUI badge, a daemon-log warning). index.html gained a Reference section. The load-bearing part is the wiring: the player-docs skill and check-freshness.mjs EXPECTED_PAGES now cover the three pages, so a future change to a pinned source restales the manual and the pr gate blocks until it is re-projected in the same PR — the manual cannot silently rot. Also corrected a pre-existing staleness in the skill's mapping table (docs/wiki/metatron.md -> the guardian* family, dead since the spec 052 rename), and corrected the spec's own narrative count from 21 to 22 subcommands after the implementer flagged the mismatch with FR-001's list. Verified on merged main: check-freshness 16 fresh / 0 stale / 0 missing / 0 broken-ref; session gate reports player-docs stale=false and wiki stale=false. Spec 108. PR #154 merged with a merge commit fc8b467. Tier: claude-sonnet-5 via .claude/agents/spec-implementer.md, no escalation. Known follow-up: troubleshooting.html grounds the horizon/suppression check through the TUI badge rather than the literal promptworld status line, because cli-runtime-control.md is not a declared source for that page — adding it is a one-line change if the exact status strings are wanted.
+<!-- SECTION:FINAL_SUMMARY:END -->
