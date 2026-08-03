@@ -4,7 +4,7 @@ title: 'Polish session 1: freeform tweaks and small fixes against a live world'
 status: In Progress
 assignee: []
 created_date: '2026-08-03 17:33'
-updated_date: '2026-08-03 18:39'
+updated_date: '2026-08-03 19:02'
 labels: []
 dependencies: []
 ordinal: 177001
@@ -55,6 +55,8 @@ PDLC cycle on its own card.
 
 (entries appended as the session runs — one per item: what, diagnosis with file:line, decision,
 ad-hoc vs spec)
+
+Spec: specs/115-chronicle-feed-wrap
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
@@ -64,7 +66,16 @@ ad-hoc vs spec)
 - [ ] #3 All session work lands on a single branch and a single PR; no per-item task cards or PRs are created
 - [ ] #4 Operator visual QA passes on the live world for every shipped item before the PR is opened
 - [ ] #5 Grounding is done once at the end, in-branch: wiki re-pinned, player docs regenerated, tui-design amended where internal/tui changed, and the pr merge-drift gate is green
+- [ ] #6 Spec phase: Setup
+- [ ] #7 Spec phase: Foundational (blocking prerequisites)
+- [ ] #8 Spec phase: User Story 1 — A thought can be read to its end (P1) 🎯 MVP
+- [ ] #9 Spec phase: User Story 2 — The feed still reads as a table (P2)
+- [ ] #10 Spec phase: User Story 3 — Narrow panes degrade sensibly (P3)
+- [ ] #11 Spec phase: Row budget and evidence
+- [ ] #12 Spec phase: Polish and cross-cutting
 <!-- AC:END -->
+
+
 
 ## Implementation Notes
 
