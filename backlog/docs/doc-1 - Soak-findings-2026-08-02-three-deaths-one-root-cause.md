@@ -3,7 +3,7 @@ id: doc-1
 title: 'Soak findings 2026-08-02 - three deaths, one root cause'
 type: specification
 created_date: '2026-08-03 01:45'
-updated_date: '2026-08-03 01:45'
+updated_date: '2026-08-03 02:05'
 ---
 **Status:** findings only — nothing carded, no code changed. For another agent to review, challenge, and (if it holds up) turn into board tasks.
 
@@ -93,7 +93,11 @@ Raw runs live under another job's scratch dir:
 - `/Users/evanstern/.claude/jobs/ca35de11/tmp/soak/soak-qwen/` — same, daemon may still be running (PID in `daemon.pid`)
 - `progress.log`, `progress-qwen.log` — 15-minute sampled counters
 
-**These are deleted when that job is cleaned up.** If any of this is to be reproducible, the two `world.db` files should be copied somewhere durable first. Open them read-only (`file:...?mode=ro`) — Run B's daemon may still be writing.
+**These are deleted when that job is cleaned up.** Open them read-only (`file:...?mode=ro`) — Run B's daemon may still be writing.
+
+**Preserved 2026-08-02 → `~/Claude/soak-evidence/2026-08-02/`** (that dir's `README.md` carries full provenance). Both `world.db` files were captured with `sqlite3 ".backup"`, not `cp` — both are WAL-mode and Run B had a 7.3 MB outstanding WAL under a live writer, so a plain file copy would have been torn. `pragma integrity_check` passes on both. Run A's copy matches the source row-for-row (132,299 events); Run B's is a consistent point-in-time snapshot the still-running source has since moved past (+14 events by the time counts were compared). Placement is provisional — ~236 MB of database plus ~3 MB of logs, and nothing but this doc references the path.
+
+Two details confirmed at capture time that qualify the evidence base: Run B's daemon **was** in fact still running (pid 88853, ~10h elapsed, sim-day ~6.5 and climbing), so every Run B count is a floor rather than a final figure; and **both runs used seed 1337** — they differ by model, not by seed, so the "one seed each" caveat below is really one seed total, run twice.
 
 All counts above came from SQL over the append-only `events` table; code claims were read in the source.
 
