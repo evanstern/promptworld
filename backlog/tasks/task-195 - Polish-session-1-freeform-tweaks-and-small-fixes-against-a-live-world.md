@@ -4,7 +4,7 @@ title: 'Polish session 1: freeform tweaks and small fixes against a live world'
 status: In Progress
 assignee: []
 created_date: '2026-08-03 17:33'
-updated_date: '2026-08-03 17:36'
+updated_date: '2026-08-03 17:48'
 labels: []
 dependencies: []
 ordinal: 177001
@@ -87,4 +87,61 @@ ad-hoc vs spec)
 - Harness trap hit and corrected during setup: a `cd` into the worktree persisted across shell
   calls, so the first attempt at this very note was edited and committed on the branch instead of
   main. Reset off the branch and redone at root — board state has exactly one home.
+
+### Harness amendment: world-02 → world-03 (2026-08-03)
+
+Operator cut and calibrated **world-03** and it replaces world-02 as the session's live world.
+Rationale on record: world-02 is `stage: stage-1`, immutable for the world's life
+(`internal/world/world.go:84-91`), so its guardian grant is capped at 15 of 20 tools with zero
+miracle kinds (`internal/guardian/charter.go:735-741`, intersected at `:762`) — `work_miracle`,
+`canonize_region`, `pause`, `start`, `adjust_speed` are structurally unreachable there. world-03 is
+`stage-4` with `stage_overridden: true`, so the full grant is testable.
+
+world-03 is now running on the branch binary (operator authorized taking the binary): clean
+`stop`/`start` cycle preserved state at tick 1489, day 1 06:24, pid 62622. Helper retargeted.
+
+### Decision 1 — daemon boot report reads dead legacy LLM config fields
+
+**Item.** Every world boots with `daemon: llm orchestrator on (local  @ , cloud , budget $100/mo)`
+— model and endpoint blank. Observed on world-03 and identically in world-02's `daemon.log:2`.
+
+**Diagnosis (complete).** `llm.json` has two mutually exclusive shapes
+(`internal/llm/config.go:27,34-35`): the v2 registry (`providers` + `routes`) and the legacy
+two-tier (`local`/`cloud`). `resolveRegistry` (`internal/llm/config.go:567-572`) rejects both being
+present, so on a v2 world the legacy `Local`/`Cloud` structs are always zero. The daemon's
+boot-report block reads exactly those dead fields:
+
+- `internal/daemon/daemon.go:351` — `localDesc` ← `llmCfg.Local.Model` / `.Endpoint` (empty)
+- `internal/daemon/daemon.go:329-331` — `cloudDesc` ← `llmCfg.Cloud.*` (empty)
+- `internal/daemon/daemon.go:336` — `llmCfg.Local.Workers()` → `, parallel N` suffix never appears
+- `internal/daemon/daemon.go:345,348` — `Local/Cloud.ToolModeResolved()` → clamp warnings never fire
+
+`DefaultConfig` writes the v2 shape (`internal/llm/config.go:449,469`), so every world created since
+spec 024 is affected.
+
+**Not purely cosmetic.** v2 has correct per-provider equivalents, `pc.workers(name)` and
+`pc.toolModeResolved(name)` (`internal/llm/config.go:178,194`), but both callers discard the
+warning — `internal/llm/llm.go:585` (`slots, _`) and `internal/llm/llm.go:1105` (`mode, _`) — and
+nothing else prints them. So on a v2 world an out-of-range `parallel` or an invalid `tool_mode` is
+silently clamped with no operator-visible warning, where the legacy shape warned. A diagnostic
+regression left behind by the format change. Runtime behavior is correct throughout; the defect is
+confined to the operator-facing boot report.
+
+**Decision — ad-hoc (no spec).** Surgical, single block, complete file:line diagnosis. Replace the
+hardcoded two-tier line with an N-provider report sourced from the resolved registry:
+
+```
+daemon: llm orchestrator on (2 providers, budget $100/mo)
+daemon:   local  qwen3.6:latest @ http://localhost:11434/v1
+daemon:   cloud  cc/claude-sonnet-5 @ http://localhost:20128/v1
+```
+
+`, parallel N` appended per provider where N > 1; the two discarded clamp warnings routed back to
+the boot channel. Rejected alternative: keep the single-line form — unreadable past two providers
+and still bakes in the tier names, which v2 does not guarantee.
+
+**Provenance.** Operator authorized taking the binary; the boot-line shape is the assistant's
+recommendation adopted absent objection, and is trivially revisable. Implemented inline rather than
+delegated to `spec-implementer` per constitution Principle V — this session's harness instructions
+forbid subagent dispatch unless the operator requests it. Flagged for the operator to redirect.
 <!-- SECTION:NOTES:END -->
