@@ -48,11 +48,17 @@ narrative-locus fork — is an operator checkpoint below, not a lane question.)
     janitor prescription is declined on that evidence. Never claim, rebase, or clean
     its branch or worktree.
 - **Paused — untouched (`paused` label in the task's frontmatter `labels:`):** none.
-- **Preserved state (never touch):** the two soak worlds the re-open evidence rests on —
-  `/Users/evanstern/.claude/jobs/ca35de11/tmp/soak/soak-world` (12.02 game-days, gemma)
-  and its `soak-qwen` sibling (5.69 game-days, qwen3.6) — plus every world under
-  `~/.promptworld/measure/`. These are the before-side of this task's before/after
-  comparison; destroying them destroys the evidence bar in "Done means".
+- **Preserved state (never touch):** the two soak worlds the re-open evidence rests on,
+  plus every world under `~/.promptworld/measure/`. These are the before-side of this
+  task's before/after comparison; destroying them destroys the evidence bar in
+  "Done means".
+  **Updated 2026-08-02:** a sibling session captured both worlds durably to
+  `~/Claude/soak-evidence/2026-08-02/` with `sqlite3 .backup` (board doc-1, main
+  `6c4700be`) — Run A `soak-world` (gemma4:12b-mlx, 12.02 game-days, 132,299 events,
+  row-for-row identical to source) and Run B `soak-qwen` (qwen3.6, 114,635 events, a
+  point-in-time snapshot taken with its daemon still running at sim-day ~6.5, so its
+  counts are a floor). Both used **seed 1337** — they differ by model, not by seed. This
+  sweep reads the DURABLE copies; the original job-scratch paths vanish on job cleanup.
 - **Queued (this runbook's scope):** TASK-173 alone. Spec number **110** claimed
   (`specs/110-absence-attribution`, claim commit `eae58fb0` on
   `task-173-absence-attribution`); card marker landed on main at `46222529`.

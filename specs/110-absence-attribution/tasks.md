@@ -64,10 +64,23 @@ of the preserved soak world's own event log rather than a fresh live soak, so th
 before/after comparison is controlled on identical input. See the runbook's amended
 "HOST ADDITION — the evidence bar" section, including its recorded limitation.
 
-Preserved world (READ-ONLY — never mutate, it is the before-side of the comparison):
-`/Users/evanstern/.claude/jobs/ca35de11/tmp/soak/soak-world/world.db` (12.02 game-days).
-Its `world.db` is WAL-mode; `sqlite3 -readonly` FAILS on it now the daemon has stopped —
-open it without `-readonly`, and copy it before any experiment that could write.
+Preserved world (READ-ONLY — never mutate, it is the before-side of the comparison).
+**Use the durable copy**, captured 2026-08-02 by a sibling session with `sqlite3 .backup`
+(both DBs are WAL-mode; a `cp` would have been torn) and recorded in board doc-1:
+
+- `~/Claude/soak-evidence/2026-08-02/soak-world/world.db` — **Run A**, 12.02 game-days,
+  `gemma4:12b-mlx`, 132,299 events. Matches its source row-for-row. This is the run the
+  spec's per-chapter table was measured on and the primary evidence base.
+- `~/Claude/soak-evidence/2026-08-02/soak-qwen/world.db` — **Run B**, `qwen3.6`, 114,635
+  events, a consistent point-in-time snapshot taken while its daemon was still running at
+  sim-day ~6.5, so its counts are a **floor**, not a final figure. Secondary — it is the
+  SC-006 cross-model check, and it does not meet the 12-game-day bar on its own.
+- Both runs used **seed 1337**: they differ by model, not by seed.
+- `~/Claude/soak-evidence/2026-08-02/README.md` carries full provenance.
+
+The original job-scratch paths (`/Users/evanstern/.claude/jobs/ca35de11/tmp/soak/…`) are
+deleted when that job is cleaned up — do not depend on them. Copy before any experiment
+that could write, and never mutate the preserved copies.
 
 - [ ] T015 Build the replay harness: feed the preserved world's event log through the
       Mind's absorb path in order and capture, per chapter, the exact `md.narrLines`
