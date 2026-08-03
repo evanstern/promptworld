@@ -209,9 +209,37 @@ Mapped to the board card's acceptance criteria and to the runbook's evidence bar
 (≥12 game-days; a shorter window cannot disprove the 12.02-game-day soak that re-opened
 this card).
 
-- **SC-001 (card AC#2)** In a soak of ≥12 game-days on the same scenario, **no named
-  absence storyline** appears in the chronicle ring, and absence-themed chronicle entries
-  fall from the soak baseline of 18/90 (20%) to **at most 5%**.
+- **SC-001 (card AC#2)** Over ≥12 game-days of real world data, **no named absence
+  storyline** appears in the chronicle ring, and absence-themed chronicle entries fall
+  substantially from the soak baseline.
+
+  **BASELINE CORRECTION (2026-08-03, factual defect in this spec as first written).** The
+  original text said "the soak baseline of 18/90 (20%)". That figure is wrong: 18 is a
+  count of absence-themed chronicle *entries*, while 90 was `chronicle.md`'s *line* count —
+  two different units. Measured like-for-like, Run A's baseline is **18 of 56 entries =
+  32%**. The "at most 5%" threshold was derived from the wrong denominator and is therefore
+  not authoritative; it is superseded by the two clauses below, and the miss it produces is
+  recorded rather than erased (see the verdict note).
+
+  **SC-001a — the storyline clause (the one that maps to AC#2's actual words).** No
+  **named** absence storyline slug appears. AC#2 forbids a correction earning
+  *mystery-grade narrative weight*; a named storyline carrying a fifth to nearly half of a
+  run's entries is exactly that, and it is what every before-run produced.
+
+  **SC-001b — the volume clause.** Absence-themed entries fall to a small minority of
+  entries, reported by BOTH measures: (i) the crude keyword match used for the baseline,
+  and (ii) the sharper measure the criterion was reaching for — entries that treat a
+  **remembered map feature's absence as unexplained**. Measure (ii) is reported because
+  measure (i) demonstrably catches unrelated content (a rumour that a villager
+  disappeared, a conversation about a desolate marsh); reporting only whichever measure
+  flatters the result would be the failure mode this card was already closed on once.
+
+  **VERDICT AS MEASURED (see `evidence.md`): SC-001a met outright, SC-001b split.**
+  Named absence storyline: present in **4 of 4** before-runs (19–43% of entries each),
+  **0 of 3** after-runs. Keyword-measure share: 32–50% before → **6%, 7%, 3%** after — two
+  of three above the superseded 5% line. Sharper measure: **0 of 122 after-run entries**
+  concern a remembered map feature being gone. The letter-of-the-threshold miss is
+  **flagged to the operator, not self-certified** — see the runbook's checkpoint 4.
 - **SC-002 (card AC#2)** Corrections' share of the narrator's per-chapter line buffer
   falls from the measured median ~57% to **at most one line per chapter**, and no chapter
   overflows `narrMaxLines` on account of corrections.
