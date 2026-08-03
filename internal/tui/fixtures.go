@@ -375,6 +375,23 @@ func midGameFeed() []store.Event {
 		`{"agent":%s,"need":"warmth","level":0,"since":%d}`, agentRef(1), midGameTick-3000))
 	add("agent.moved", fmt.Sprintf(`{"agent":%s,"x":%d,"y":%d}`, agentRef(2), 24, 31))
 	add("agent.intent_done", fmt.Sprintf(`{"agent":%s}`, agentRef(3)))
+	// Long prose (spec 115 FR-012). Every other event in this fixture digests
+	// to a short summary — coordinates, names, causes — so before these two,
+	// no committed frame contained a line long enough to wrap and the feed's
+	// wrap behavior could not be reviewed from frames at all. These are the
+	// two digests that carry player-authored prose (agent.thought and
+	// social.conversation_turn, both via speech() segments), and both texts are
+	// sized to wrap at 160 columns, the widest committed size and therefore the
+	// binding one. They sit at the tail so they land in the visible window at
+	// every committed size.
+	add("agent.thought", fmt.Sprintf(
+		`{"agent":%s,"text":%q,"source":"planner"}`, agentRef(0),
+		"I keep coming back to the chest by the river and whether anyone actually saw "+
+			"who opened it, because nobody will say a word about it while Rowan is in earshot."))
+	add("social.conversation_turn", fmt.Sprintf(
+		`{"conv":%d,"speaker":%s,"listener":%s,"text":%q}`, midGameTick-2000, agentRef(1), agentRef(2),
+		"If the forage upriver is really gone we should say so at the meeting tonight "+
+			"instead of each of us quietly walking further every morning and pretending otherwise."))
 	return evs
 }
 

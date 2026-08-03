@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sort"
 )
 
 // Config is llm.json in the world save directory. Endpoints, models, and
@@ -556,6 +557,57 @@ func LoadConfig(path string) (*Config, error) {
 		return nil, fmt.Errorf("%s: %w", path, err)
 	}
 	return &cfg, nil
+}
+
+// ProviderReport is one resolved provider as the daemon's boot line reports it:
+// the operator-facing answer to "what will this world actually call?". Both
+// config shapes resolve into it (v2 verbatim, legacy through deriveLegacy), so
+// the report never depends on which shape a world's llm.json happens to use.
+type ProviderReport struct {
+	Name     string
+	Model    string
+	Endpoint string // empty for the anthropic transport, which has no endpoint knob
+	Workers  int    // effective, post-clamp
+}
+
+// ProviderReports resolves the registry and returns its providers in stable name
+// order, plus every warn-and-clamp warning the construction path would otherwise
+// swallow. The clamps happen per provider at construction (FR-003) and both
+// call sites discard the warning — llm.go's workers() and toolModeResolved()
+// callers — so this is the only place an out-of-range `parallel` or an unknown
+// `tool_mode` becomes visible to the operator.
+//
+// A registry that fails to resolve yields nothing: LoadConfig has already
+// refused that config as a boot error, so there is no boot line to report on.
+func (c Config) ProviderReports() ([]ProviderReport, []string) {
+	providers, _, err := c.resolveRegistry()
+	if err != nil {
+		return nil, nil
+	}
+	names := make([]string, 0, len(providers))
+	for name := range providers {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	reports := make([]ProviderReport, 0, len(names))
+	var warns []string
+	for _, name := range names {
+		pc := providers[name]
+		workers, wWarn := pc.workers(name)
+		if wWarn != "" {
+			warns = append(warns, wWarn)
+		}
+		if _, tmWarn := pc.toolModeResolved(name); tmWarn != "" {
+			warns = append(warns, tmWarn)
+		}
+		reports = append(reports, ProviderReport{
+			Name:     name,
+			Model:    pc.Model,
+			Endpoint: pc.Endpoint,
+			Workers:  workers,
+		})
+	}
+	return reports, warns
 }
 
 // resolveRegistry normalizes either config shape into the runtime registry:

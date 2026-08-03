@@ -8,7 +8,7 @@ sources:
   - internal/guardian/turn.go
   - internal/sim/executor.go
   - internal/daemon/daemon.go
-verified_against: 012f715f55d8d87317e601ad75686c599d277349
+verified_against: f8e8afff5d38198e12d5007e3d022863813374ef
 ---
 
 # Guardian survival watches

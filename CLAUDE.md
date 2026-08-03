@@ -230,6 +230,18 @@ pushes first wins, and the loser's non-fast-forward rejection is a **signal**, n
   first commit creates `specs/NNN-<slug>/` (the stub claims the number),
   pushed with the branch and landed on main via an immediate manual
   `git merge --no-ff` at root. Never force-push.
+- **Stub-first, always — the spec stub lands on main BEFORE any code (TASK-195):**
+  the ordering above is not a formality. `spec-bridge`'s gate derives a linked
+  task's provable status by reading `<root>/specs/NNN-*` off the **filesystem**
+  (`deriveSpecState`, `lib/spec-derive.mjs` — `existsSync`/`readFileSync`, no git
+  awareness). A spec dir that exists only on a branch is invisible to it, so the
+  moment such a spec is linked, the gate reports the card as exceeding artifacts
+  that are in fact complete, and the only remedies are unlinking or landing the
+  spec on main. **A session that MIGHT escalate to a spec claims its number and
+  lands the stub on main up front, before its first code commit** — including
+  freeform/polish sessions, which are exactly the ones that discover mid-stream
+  that an item needs a spec. Retrofitting the stub afterwards means merging a
+  branch that already carries unreviewed code, which the PR boundary forbids.
 - **Rejected push = stop-the-lane signal:** fetch, re-read the board and `specs/`, and
   if another session now holds that task or that number, STOP the lane and surface the
   collision to the operator — do not rebase and continue. If the rejection was

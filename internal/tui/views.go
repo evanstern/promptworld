@@ -1073,7 +1073,13 @@ func (m Model) dockTabContent(width, height int) string {
 	}
 	switch m.dockTab {
 	case paneChronicle:
-		maxWrap := 1
+		// Spec 115: the feed wraps rather than truncates at every width a
+		// player actually reads at. This was `1` — truncate — for anything
+		// 60 columns or wider, which is every full-width read, so a villager's
+		// thought was cut mid-sentence exactly where the player was reading.
+		// The narrow dock keeps its 3-line cap: in a sliver of a pane an
+		// unbounded thought would evict the rest of the feed.
+		maxWrap := wrapUnbounded
 		if width < 60 {
 			maxWrap = 3
 		}
@@ -2244,15 +2250,22 @@ func paintStyledLine(l styledLine, fam lipgloss.Style, selected bool) string {
 //
 // Selection reverse is preserved in all three paths.
 func renderChronicleRow(l chronicleLine, cols chronicleColumns, width, maxWrap int, selected bool) string {
+	// The continuation indent is this row's OWN prefix width (spec 115 FR-004,
+	// contract §3) — computed here, per row, per frame. It is never a constant
+	// and never cached: cols.TickWidth and cols.TypeWidth are measured from
+	// exactly the rows about to render, so a wider tick or a longer event type
+	// scrolling into view legitimately moves the summary column, and an indent
+	// remembered from the previous frame would align to nothing.
+	prefix := chronicleLinePrefix(l, cols)
+	indent := len([]rune(prefix))
 	if isAlertType(l.Type) {
-		return styleWholeLine(plainChronicleLine(l, cols), width, maxWrap, styleFeedAlert, selected)
+		return styleWholeLine(plainChronicleLine(l, cols), width, maxWrap, indent, styleFeedAlert, selected)
 	}
 	if isLabeledVoiceFamily(l.Family) {
-		return styleWholeLine(plainChronicleLine(l, cols), width, maxWrap, familyTint(l.Family), selected)
+		return styleWholeLine(plainChronicleLine(l, cols), width, maxWrap, indent, familyTint(l.Family), selected)
 	}
-	prefix := chronicleLinePrefix(l, cols)
 	fam := familyTint(l.Family)
-	styledLines := styleWrapLine(prefix, l.Summary, width, maxWrap)
+	styledLines := styleWrapLine(prefix, l.Summary, width, maxWrap, indent)
 	out := make([]string, len(styledLines))
 	for i, sl := range styledLines {
 		out[i] = paintStyledLine(sl, fam, selected)
@@ -2263,8 +2276,8 @@ func renderChronicleRow(l chronicleLine, cols chronicleColumns, width, maxWrap i
 // styleWholeLine wraps/truncates the plain line then renders every
 // physical line with one uniform style — the alert and labeled-voice paths
 // don't need per-segment attribution (contract §2).
-func styleWholeLine(plain string, width, maxWrap int, style lipgloss.Style, selected bool) string {
-	lines := wrapOrTruncatePlain(plain, width, maxWrap)
+func styleWholeLine(plain string, width, maxWrap, indent int, style lipgloss.Style, selected bool) string {
+	lines := wrapOrTruncatePlain(plain, width, maxWrap, indent)
 	if selected {
 		style = style.Reverse(true)
 	}
@@ -2283,7 +2296,7 @@ func (m Model) chronicleView() string {
 		width = 30
 	}
 	rows := m.height - 9
-	return m.chronicleBody(width, rows, 1)
+	return m.chronicleBody(width, rows, wrapUnbounded) // spec 115: wrap, don't truncate
 }
 
 // chronNames renders an entry's cast, styled like agents elsewhere.

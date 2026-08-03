@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/daemon/daemon.go
   - internal/sim/tuning.go
-verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
+verified_against: 4efa712bb90538c9c195d23146077e7fc535e511
 ---
 
 # World tuning: boot seeding, genesis pin, and replay independence

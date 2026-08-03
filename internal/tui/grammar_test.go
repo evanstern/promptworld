@@ -2,6 +2,7 @@ package tui
 
 import (
 	"encoding/json"
+	"github.com/muesli/termenv"
 	"strings"
 	"testing"
 
@@ -265,12 +266,12 @@ func TestComputeChronicleColumnsAlignment(t *testing.T) {
 // Unchanged by the digest grammar rework (T005).
 func TestWrapOrTruncatePlain(t *testing.T) {
 	short := "short line"
-	if got := wrapOrTruncatePlain(short, 40, 1); len(got) != 1 || got[0] != short {
+	if got := wrapOrTruncatePlain(short, 40, 1, 0); len(got) != 1 || got[0] != short {
 		t.Errorf("short line under width should pass through: %v", got)
 	}
 
 	long := strings.Repeat("x", 50)
-	got := wrapOrTruncatePlain(long, 20, 1)
+	got := wrapOrTruncatePlain(long, 20, 1, 0)
 	if len(got) != 1 {
 		t.Fatalf("maxWrap=1 must yield exactly one line: %v", got)
 	}
@@ -281,7 +282,7 @@ func TestWrapOrTruncatePlain(t *testing.T) {
 		t.Errorf("truncated line width = %d, want 20", len([]rune(got[0])))
 	}
 
-	wrapped := wrapOrTruncatePlain("one two three four five six seven eight nine ten", 12, 3)
+	wrapped := wrapOrTruncatePlain("one two three four five six seven eight nine ten", 12, 3, 0)
 	if len(wrapped) > 3 {
 		t.Fatalf("dock wrap must cap at maxWrap=3 lines: %v", wrapped)
 	}
@@ -337,9 +338,9 @@ func TestStyleWrapLinePlainEquivalence(t *testing.T) {
 		l := formatChronicleLine(e, names, nil)
 		for _, w := range widths {
 			cols := computeChronicleColumns([]chronicleLine{l}, w.dock)
-			plain := wrapOrTruncatePlain(plainChronicleLine(l, cols), w.width, w.maxWrap)
+			plain := wrapOrTruncatePlain(plainChronicleLine(l, cols), w.width, w.maxWrap, 0)
 			prefix := chronicleLinePrefix(l, cols)
-			styled := plainOf(styleWrapLine(prefix, l.Summary, w.width, w.maxWrap))
+			styled := plainOf(styleWrapLine(prefix, l.Summary, w.width, w.maxWrap, 0))
 			if len(styled) != len(plain) {
 				t.Fatalf("%s (width=%d dock=%v): styleWrapLine produced %d lines, wrapOrTruncatePlain produced %d\nstyled: %v\nplain:  %v",
 					typ, w.width, w.dock, len(styled), len(plain), styled, plain)
@@ -368,7 +369,7 @@ func TestStyleWrapLineMidWordRoleBoundary(t *testing.T) {
 	}
 	cols := computeChronicleColumns([]chronicleLine{l}, true)
 	prefix := chronicleLinePrefix(l, cols)
-	lines := styleWrapLine(prefix, l.Summary, 12, 3)
+	lines := styleWrapLine(prefix, l.Summary, 12, 3, 0)
 
 	full := strings.Join(plainOf(lines), " ")
 	if !strings.Contains(full, "Ash's") {
@@ -391,6 +392,219 @@ func TestStyleWrapLineMidWordRoleBoundary(t *testing.T) {
 			if ln.Roles[i] == styleRoleName {
 				t.Errorf("rune %q at %d (\"'s\") incorrectly carries styleRoleName", r[i], i)
 			}
+		}
+	}
+}
+
+// --- spec 115: wrap budget, hanging indent, narrow fallback ---------------
+
+// longFeedText is prose long enough to wrap at every width these tests use.
+const longFeedText = "I keep coming back to the chest by the river and whether anyone " +
+	"actually saw who opened it, because nobody will say a word about it while Rowan is in earshot."
+
+// TestWrapBudgetDomain (spec 115 T008, contract §2): the budget's three
+// domains. 0 is unbounded — the value the solo feed passes, and the one that
+// did not exist before this feature.
+func TestWrapBudgetDomain(t *testing.T) {
+	const width = 40
+	if got := wrapOrTruncatePlain(longFeedText, width, 1, 0); len(got) != 1 || !strings.HasSuffix(got[0], "…") {
+		t.Errorf("maxWrap=1 must truncate to one elided line, got %d lines: %v", len(got), got)
+	}
+	capped := wrapOrTruncatePlain(longFeedText, width, 3, 0)
+	if len(capped) != 3 {
+		t.Errorf("maxWrap=3 must cap at 3 lines, got %d: %v", len(capped), capped)
+	}
+	if !strings.HasSuffix(capped[len(capped)-1], "…") {
+		t.Errorf("a capped wrap must elide its last line: %q", capped[len(capped)-1])
+	}
+	unbounded := wrapOrTruncatePlain(longFeedText, width, wrapUnbounded, 0)
+	if len(unbounded) <= 3 {
+		t.Fatalf("wrapUnbounded must exceed the capped form for this text, got %d lines", len(unbounded))
+	}
+	for i, ln := range unbounded {
+		if strings.Contains(ln, "…") {
+			t.Errorf("unbounded wrap must never elide (line %d): %q", i, ln)
+		}
+	}
+	if joined := strings.Join(unbounded, " "); joined != longFeedText {
+		t.Errorf("unbounded wrap lost or altered text:\n got %q\nwant %q", joined, longFeedText)
+	}
+}
+
+// TestWrapShortLineVerbatim (spec 115 FR-009): a line that fits is returned
+// byte-identically. This is the regression the golden frames caught during
+// implementation — routing short rows through wrapText collapses the runs of
+// spaces that form the feed's column padding, silently destroying alignment on
+// every row that never needed wrapping.
+func TestWrapShortLineVerbatim(t *testing.T) {
+	padded := "396000 20:00  agent.moved               Oak → (22,40)"
+	for _, budget := range []int{wrapUnbounded, 1, 3} {
+		got := wrapOrTruncatePlain(padded, 120, budget, 30)
+		if len(got) != 1 || got[0] != padded {
+			t.Errorf("budget=%d: short line must pass through verbatim, got %q", budget, got)
+		}
+	}
+}
+
+// TestWrapHangingIndent (spec 115 FR-003/FR-005, contract §3): continuation
+// lines begin at the indent column and carry nothing else.
+func TestWrapHangingIndent(t *testing.T) {
+	const width, indent = 80, 30
+	prefix := strings.Repeat("P", indent)
+	lines := wrapOrTruncatePlain(prefix+longFeedText, width, wrapUnbounded, indent)
+	if len(lines) < 2 {
+		t.Fatalf("want a wrapped line, got %d: %v", len(lines), lines)
+	}
+	if !strings.HasPrefix(lines[0], prefix) {
+		t.Errorf("first line must carry the prefix verbatim: %q", lines[0])
+	}
+	for i, ln := range lines[1:] {
+		if !strings.HasPrefix(ln, strings.Repeat(" ", indent)) {
+			t.Errorf("continuation %d must start at the indent column: %q", i+1, ln)
+		}
+		if strings.TrimSpace(ln[:indent]) != "" {
+			t.Errorf("continuation %d must carry no prefix content: %q", i+1, ln)
+		}
+		if len([]rune(ln)) > width {
+			t.Errorf("continuation %d exceeds width %d: %d runes", i+1, width, len([]rune(ln)))
+		}
+	}
+}
+
+// TestWrapNarrowFallback (spec 115 FR-006, contract §3): an indent that would
+// leave under minWrapTextWidth collapses to zero — never to a reduced value,
+// because a partial indent aligns to nothing.
+func TestWrapNarrowFallback(t *testing.T) {
+	if got := resolveWrapIndent(40, 20); got != 0 {
+		t.Errorf("width 40 indent 20 leaves %d < %d of text: want indent 0, got %d",
+			20, minWrapTextWidth, got)
+	}
+	if got := resolveWrapIndent(80, 30); got != 30 {
+		t.Errorf("width 80 indent 30 leaves 50 of text: want the indent kept, got %d", got)
+	}
+	const width, indent = 40, 20
+	lines := wrapOrTruncatePlain(strings.Repeat("P", indent)+longFeedText, width, wrapUnbounded, indent)
+	for i, ln := range lines[1:] {
+		if strings.HasPrefix(ln, " ") {
+			t.Errorf("fallback must emit no indent (line %d): %q", i+1, ln)
+		}
+		if len([]rune(ln)) > width {
+			t.Errorf("line %d exceeds width: %q", i+1, ln)
+		}
+	}
+}
+
+// TestWrapPlainStyledEquivalence (spec 115 T009): the plain and styled paths
+// must produce identical characters for the same input, budget and indent —
+// the two are separate implementations kept deliberately in lockstep, and a
+// divergence would show as alert rows aligning differently from ordinary rows
+// in the same frame.
+func TestWrapPlainStyledEquivalence(t *testing.T) {
+	prefix := "396000 20:00  agent.thought             "
+	summary := []seg{{Text: longFeedText, Role: segSpeech}}
+	for _, tc := range []struct{ width, budget, indent int }{
+		{160, wrapUnbounded, len(prefix)},
+		{80, wrapUnbounded, len(prefix)},
+		{60, 3, len(prefix)},
+		{40, wrapUnbounded, len(prefix)}, // trips the narrow fallback
+		{120, 1, len(prefix)},            // truncate path
+		{100, wrapUnbounded, 0},
+	} {
+		plain := wrapOrTruncatePlain(prefix+longFeedText, tc.width, tc.budget, tc.indent)
+		styled := plainOf(styleWrapLine(prefix, summary, tc.width, tc.budget, tc.indent))
+		if len(styled) != len(plain) {
+			t.Fatalf("width=%d budget=%d indent=%d: styled %d lines, plain %d\nstyled: %v\nplain:  %v",
+				tc.width, tc.budget, tc.indent, len(styled), len(plain), styled, plain)
+		}
+		for i := range plain {
+			if styled[i] != plain[i] {
+				t.Errorf("width=%d budget=%d indent=%d line %d:\n styled %q\n plain  %q",
+					tc.width, tc.budget, tc.indent, i, styled[i], plain[i])
+			}
+		}
+	}
+}
+
+// TestWrapDegenerateWidths (spec 115 FR-007, US3): no panic, no zero-width
+// text column, nothing exceeding the pane — including a single word longer
+// than the column, which cannot be broken between words.
+func TestWrapDegenerateWidths(t *testing.T) {
+	unbreakable := strings.Repeat("x", 200)
+	for _, width := range []int{1, 5, 10, 24, 40, 80, 160} {
+		for _, indent := range []int{0, 10, 30, 500} {
+			for _, budget := range []int{wrapUnbounded, 1, 3} {
+				lines := wrapOrTruncatePlain(longFeedText, width, budget, indent)
+				if len(lines) == 0 {
+					t.Errorf("width=%d indent=%d budget=%d produced no lines", width, indent, budget)
+				}
+				got := wrapOrTruncatePlain(unbreakable, width, budget, indent)
+				if len(got) == 0 {
+					t.Errorf("unbreakable word at width=%d indent=%d budget=%d produced no lines",
+						width, indent, budget)
+				}
+			}
+		}
+	}
+}
+
+// TestAlertTierWrapsWithTheSameIndent (spec 115 T020, contract §5): the alert
+// and labeled-voice tiers render whole-line rather than prefix-plus-summary,
+// through a different function. They must land on the same indent as ordinary
+// rows — otherwise a death or a norm violation scrolling past would align
+// differently from every row around it, in the same frame.
+func TestAlertTierWrapsWithTheSameIndent(t *testing.T) {
+	const width = 100
+	mk := func(typ string) chronicleLine {
+		return chronicleLine{
+			Tick: 396000, Time: "20:00", Type: typ,
+			Family:  eventFamilyOf(typ),
+			Summary: []seg{{Text: longFeedText, Role: segSpeech}},
+		}
+	}
+	alert := mk("agent.died") // isAlertType -> whole-line path
+	plainRow := mk("agent.thought")
+	cols := computeChronicleColumns([]chronicleLine{alert, plainRow}, false)
+	indent := len([]rune(chronicleLinePrefix(alert, cols)))
+
+	for _, l := range []chronicleLine{alert, plainRow} {
+		out := ansiRe.ReplaceAllString(renderChronicleRow(l, cols, width, wrapUnbounded, false), "")
+		lines := strings.Split(out, "\n")
+		if len(lines) < 2 {
+			t.Fatalf("%s did not wrap at width %d: %q", l.Type, width, out)
+		}
+		for i, ln := range lines[1:] {
+			got := len(ln) - len(strings.TrimLeft(ln, " "))
+			if got != indent {
+				t.Errorf("%s continuation %d starts at column %d, want %d\n%q",
+					l.Type, i+1, got, indent, ln)
+			}
+		}
+	}
+}
+
+// TestSelectedWrappedRowIsWhollyReversed (spec 115 T021, contract §6): a
+// selected row that occupies several lines must read as ONE selection. Nothing
+// exercised selection across a wrapped row before this feature, because before
+// it no row could wrap at a width where selection is used.
+func TestSelectedWrappedRowIsWhollyReversed(t *testing.T) {
+	const width = 100
+	l := chronicleLine{
+		Tick: 396000, Time: "20:00", Type: "agent.thought",
+		Family:  eventFamilyOf("agent.thought"),
+		Summary: []seg{{Text: longFeedText, Role: segSpeech}},
+	}
+	// lipgloss emits no escapes under the default Ascii profile a test binary
+	// gets, so selection would be invisible to this assertion without pinning
+	// a real profile first.
+	withColorProfile(t, termenv.TrueColor)
+	cols := computeChronicleColumns([]chronicleLine{l}, false)
+	lines := strings.Split(renderChronicleRow(l, cols, width, wrapUnbounded, true), "\n")
+	if len(lines) < 2 {
+		t.Fatalf("row did not wrap: %v", lines)
+	}
+	for i, ln := range lines {
+		if !strings.Contains(ln, "\x1b[7m") {
+			t.Errorf("selected row line %d carries no reverse styling: %q", i, ln)
 		}
 	}
 }

@@ -5,7 +5,7 @@ kind: pipeline
 sources:
   - internal/daemon/daemon.go
   - internal/daemon/curriculum.go
-verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
+verified_against: 4efa712bb90538c9c195d23146077e7fc535e511
 ---
 
 # Daemon boot: notify fan-out and orchestrator gate

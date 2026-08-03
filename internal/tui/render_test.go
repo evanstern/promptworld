@@ -147,7 +147,7 @@ func TestPaintStyledLineRoleMapping(t *testing.T) {
 		{Text: `"hi"`, Role: segSpeech},
 		{Text: " x2", Role: segEmphasis},
 	}
-	lines := styleWrapLine("TYPE  ", summary, 60, 1)
+	lines := styleWrapLine("TYPE  ", summary, 60, 1, 0)
 	if len(lines) != 1 {
 		t.Fatalf("want 1 styled line, got %d", len(lines))
 	}

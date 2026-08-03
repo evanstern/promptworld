@@ -392,3 +392,186 @@ func TestMaterializeFixtureRejectsBadInput(t *testing.T) {
 		t.Error("non-empty target directory: want an error")
 	}
 }
+
+// --- spec 115: the raw feed wraps, aligned to the summary column ----------
+
+// midGameSoloFrame renders the mid-game fixture's solo chronicle at a size,
+// with ANSI stripped, as the line slice these tests assert over.
+func midGameSoloFrame(t *testing.T, w, h int) []string {
+	t.Helper()
+	f, ok := fixtureByID(FixtureMidGame)
+	if !ok {
+		t.Fatal("mid-game fixture missing")
+	}
+	m, err := f.build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	m.width, m.height = w, h
+	m.solo = true
+	m.dockTab = paneChronicle
+	return strings.Split(ansiRe.ReplaceAllString(m.View(), ""), "\n")
+}
+
+// feedRowFor returns the index of the first line carrying the given event
+// type in its type column, or -1.
+func feedRowFor(lines []string, eventType string) int {
+	for i, ln := range lines {
+		if strings.Contains(ln, eventType) {
+			return i
+		}
+	}
+	return -1
+}
+
+// TestFeedWrapsLongProseInFull (spec 115 US1, SC-001/SC-002): the whole
+// thought reaches the screen. Before this feature the summary was cut at the
+// pane edge with "…" and the end of the sentence was unrecoverable — the feed
+// being the only place it is shown.
+func TestFeedWrapsLongProseInFull(t *testing.T) {
+	lines := midGameSoloFrame(t, 160, 50)
+	row := feedRowFor(lines, "agent.thought")
+	if row < 0 {
+		t.Fatal("the mid-game fixture no longer emits agent.thought — FR-012 regressed")
+	}
+	joined := strings.Join(lines[row:], " ")
+	for _, fragment := range []string{
+		"I keep coming back to the chest by the river",
+		"while Rowan is in earshot",
+	} {
+		if !strings.Contains(joined, fragment) {
+			t.Errorf("wrapped thought lost %q — the feed truncated it", fragment)
+		}
+	}
+	if strings.Contains(lines[row], "…") {
+		t.Errorf("a wrapped row must not be elided: %q", lines[row])
+	}
+}
+
+// TestFeedContinuationAlignsToSummaryColumn (spec 115 US2, SC-003): every
+// continuation line starts exactly where its own row's summary starts, and
+// carries no tick, time or type content.
+func TestFeedContinuationAlignsToSummaryColumn(t *testing.T) {
+	lines := midGameSoloFrame(t, 160, 50)
+	row := feedRowFor(lines, "agent.thought")
+	if row < 0 {
+		t.Fatal("no agent.thought row")
+	}
+	// Columns are counted in RUNES, not bytes: the pane border "\u2502" is three
+	// bytes, so strings.Index would report a column two past the visual one.
+	b := strings.Index(lines[row], "Ash thought:")
+	if b < 0 {
+		t.Fatalf("could not locate the summary column in %q", lines[row])
+	}
+	summaryCol := len([]rune(lines[row][:b]))
+	cont := []rune(lines[row+1])
+	contCol := 0
+	for contCol < len(cont) && (cont[contCol] == ' ' || cont[contCol] == '\u2502') {
+		contCol++
+	}
+	if contCol != summaryCol {
+		t.Errorf("continuation starts at column %d, want the summary column %d\n row:  %q\n cont: %q",
+			contCol, summaryCol, lines[row], string(cont))
+	}
+	rail := strings.TrimFunc(string(cont[:summaryCol]), func(r rune) bool { return r == ' ' || r == '\u2502' })
+	if rail != "" {
+		t.Errorf("continuation's left rail must carry no content, got %q", rail)
+	}
+}
+
+// TestFeedWrapsWithoutSplittingWords (spec 115 FR-002): breaks land between
+// words. Checked by rejoining the wrapped lines and comparing to the source —
+// a mid-word split would leave a fragment that no longer reads as the text.
+func TestFeedWrapsWithoutSplittingWords(t *testing.T) {
+	lines := midGameSoloFrame(t, 160, 50)
+	row := feedRowFor(lines, "social.conversation_turn")
+	if row < 0 {
+		t.Fatal("no social.conversation_turn row")
+	}
+	rejoined := strings.Join(strings.Fields(strings.Join(lines[row:row+2], " ")), " ")
+	if !strings.Contains(rejoined, "we should say so at the meeting tonight") {
+		t.Errorf("wrap split a word — rejoined text reads %q", rejoined)
+	}
+}
+
+// TestFeedRespectsPaneWidthAtEverySize (spec 115 FR-007, SC-004) and the row
+// budget (FR-008, SC-005): nothing overflows horizontally and the body still
+// fits its rows once events occupy several lines each.
+func TestFeedRespectsPaneWidthAtEverySize(t *testing.T) {
+	// Scoped to the chronicle body — the surface spec 115 governs. The frame's
+	// TITLE row overflows by one rune at 80 columns, which is PRE-EXISTING
+	// (present in the committed pre-115 frame) and belongs to the spec-114
+	// family of width clamps, not to this feature. Asserting over the whole
+	// frame would silently adopt that bug as ours.
+	for _, size := range []struct{ w, h int }{{112, 30}, {113, 30}, {160, 50}} {
+		lines := midGameSoloFrame(t, size.w, size.h)
+		start := -1
+		for i, ln := range lines {
+			if strings.Contains(ln, "raw feed") {
+				start = i
+				break
+			}
+		}
+		if start < 0 {
+			t.Fatalf("%dx%d rendered no raw feed — the test is no longer measuring the feed", size.w, size.h)
+		}
+		for i, ln := range lines[start:] {
+			if n := len([]rune(ln)); n > size.w {
+				t.Errorf("%dx%d feed line %d is %d runes, exceeds the pane: %q",
+					size.w, size.h, start+i, n, ln)
+			}
+		}
+		if len(lines) > size.h {
+			t.Errorf("%dx%d rendered %d rows, over the %d-row budget", size.w, size.h, len(lines), size.h)
+		}
+	}
+}
+
+// TestNarrowFallbackFeedWrapsWithinWidth (spec 115 US3, T012): below the
+// widescreen breakpoint the frame router shows the map rather than the feed,
+// so the narrow-fallback chronicle renderer — the one T012 switched from
+// truncate to unbounded wrap — is exercised directly. Its body must wrap long
+// prose and stay inside the pane.
+func TestNarrowFallbackFeedWrapsWithinWidth(t *testing.T) {
+	f, ok := fixtureByID(FixtureMidGame)
+	if !ok {
+		t.Fatal("mid-game fixture missing")
+	}
+	m, err := f.build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	m.width, m.height = 80, 30
+	body := ansiRe.ReplaceAllString(m.chronicleView(), "")
+	lines := strings.Split(body, "\n")
+	// Lines 0-1 are the hint and its blank. The hint is deliberately unclamped
+	// — in a real frame the pane border clips it, and calling the body renderer
+	// directly bypasses that clipping. Only the feed rows are this test's
+	// subject; chronicleView budgets them at m.width-4.
+	const hintRows = 2
+	if len(lines) <= hintRows {
+		t.Fatalf("narrow fallback rendered no feed rows: %q", body)
+	}
+	bodyWidth := m.width - 4
+	for i, ln := range lines[hintRows:] {
+		if n := len([]rune(ln)); n > bodyWidth {
+			t.Errorf("narrow fallback row %d is %d runes, exceeds body width %d: %q",
+				i+hintRows, n, bodyWidth, ln)
+		}
+	}
+	if !strings.Contains(body, "chest by the river") {
+		t.Error("narrow fallback did not render the long thought at all")
+	}
+	if strings.Contains(body, "…") {
+		t.Error("narrow fallback still truncates instead of wrapping")
+	}
+}
+
+// TestFeedNewestRowStaysVisible (spec 115 FR-008): the feed auto-follows the
+// tail, so multi-row events must not push the newest event out of view.
+func TestFeedNewestRowStaysVisible(t *testing.T) {
+	lines := midGameSoloFrame(t, 160, 50)
+	if feedRowFor(lines, "social.conversation_turn") < 0 {
+		t.Error("the newest event is not visible — wrapping pushed the tail off the pane")
+	}
+}
