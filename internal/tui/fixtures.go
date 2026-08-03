@@ -26,7 +26,11 @@ package tui
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"time"
 
@@ -128,6 +132,66 @@ func (f Fixture) world() *world.World {
 // build constructs the fixture's posed Model with its canned per-user record.
 func (f Fixture) build() (Model, error) { return f.buildWith(fixturePerUserState()) }
 
+// MaterializeFixture writes fixture id's world into dir and returns its posed
+// Model, ready to hand straight to tea.NewProgram — the interactive half of
+// the harness (spec.md FR-006, AC #8).
+//
+// Same recipe, same pose, same canned per-user record and same frozen clock
+// as Frame(): the interactive session and the dumped frame ARE the same
+// model, which is the entire point (tasks.md T012). Exactly two things
+// differ, both unavoidably — the world lives in a real (throwaway) directory
+// so a key that touches world files lands somewhere writable instead of at
+// the fixture's nominal sentinel path, and Bubble Tea supplies the size from
+// the real terminal via WindowSizeMsg instead of the harness's --size.
+//
+// dir must be empty or nonexistent; the caller owns it (and its removal).
+func MaterializeFixture(id, state, dir string) (Model, error) {
+	f, ok := fixtureByID(id)
+	if !ok {
+		return Model{}, fmt.Errorf("unknown fixture %q (want one of: %s)", id, strings.Join(FixtureIDs(), ", "))
+	}
+	w, err := f.materialize(dir)
+	if err != nil {
+		return Model{}, err
+	}
+	m, err := f.build()
+	if err != nil {
+		return Model{}, err
+	}
+	// Same manifest, real directory: gameMap regenerated from (seed, size,
+	// terrain_gen) is byte-identical either way, so only the path moves.
+	m.w = w
+	if err := poseState(&m, state); err != nil {
+		return Model{}, err
+	}
+	return m, nil
+}
+
+// materialize writes the fixture's manifest into dir, making it a world
+// directory a client can legitimately point at. It deliberately does NOT go
+// through world.Create: Create stamps a fresh CreatedAt and its own default
+// manifest, which would silently discard the fixture's stage and scenario
+// config — the two fields that decide whether the exercise tab and the
+// lesson row render at all.
+func (f Fixture) materialize(dir string) (*world.World, error) {
+	if entries, err := os.ReadDir(dir); err == nil && len(entries) > 0 {
+		return nil, fmt.Errorf("fixture %s: directory %s is not empty", f.ID, dir)
+	} else if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return nil, err
+	}
+	if err := os.MkdirAll(filepath.Join(dir, "agents"), 0o755); err != nil {
+		return nil, err
+	}
+	data, err := json.MarshalIndent(f.manifest, "", "  ")
+	if err != nil {
+		return nil, err
+	}
+	if err := os.WriteFile(filepath.Join(dir, world.ManifestName), append(data, '\n'), 0o644); err != nil {
+		return nil, err
+	}
+	return &world.World{Dir: dir, Manifest: f.manifest}, nil
+}
+
 // buildWith is build's injectable form: the tests use it to construct the
 // SAME fixture against the live (on-disk) per-user record, which is how the
 // determinism proof shows the canned record is actually load-bearing rather
@@ -135,6 +199,7 @@ func (f Fixture) build() (Model, error) { return f.buildWith(fixturePerUserState
 func (f Fixture) buildWith(pu perUserState) (Model, error) {
 	w := f.world()
 	m := newModel(w, pu, func() time.Time { return fixtureNow })
+	m.offline = true // never dial a socket for a canned scene (tui.go Init)
 	m.replica = sim.NewState(f.manifest.Seed, m.gameMap)
 	if f.pose != nil {
 		if err := f.pose(&m); err != nil {

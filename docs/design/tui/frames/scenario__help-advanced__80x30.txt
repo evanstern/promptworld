@@ -1,0 +1,33 @@
+First Night — tick 54720 · day 1 21:12 · running · speed 4x (4.0 t/s) [8 villagers]
+ 1 map   2 chronicle   3 guardian   4 villagers   5 systems   6 exercise 
+
+The gru just attacked a villager — a real threat, not a random event.
+→ press 2 for the chronicle  (? for more · x dismiss)
+
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ HELP · keys                                                                  │
+│ Global (home) — advanced (t: tier · n/p: mode)                               │
+│                                                                              │
+│ 6                select the exercise tab (scenario worlds only; inert elsewh │
+│ 1                return to the map (exits solo, if solo'd)                   │
+│ tab/shift+tab    cycle the dock tabs (alias for 2/3/4/5)                     │
+│ enter            narrow fallback: focus the minibuffer from the guardian pan │
+│ esc              exit solo zoom (no effect when already home)                │
+│ a                chronicle: filter by agent (chronicle tab only)             │
+│ t                chronicle: filter by thread (chronicle tab only)            │
+│ r                chronicle: toggle raw ↔ narrated (chronicle tab only)       │
+│ ←↑↓→             pan the map                                                 │
+│ c                recenter the camera on the wanderers                        │
+│ [ ]              speed down / up                                             │
+│                                                                              │
+│ ctrl+c — quit, from anywhere                                                 │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│ esc/? close · tab section · t tier · n/p mode · J/K scroll                   │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+esc/? close · tab section · t tier · n/p mode · J/K scroll

@@ -148,6 +148,17 @@ type Model struct {
 	clientNow func() time.Time
 	markSeen  func(id, worldName string)
 
+	// offline marks a model whose scene is a canned Go value rather than a
+	// live daemon — every design-harness fixture (fixtures.go), and nothing
+	// else. It suppresses Init's connect/poll batch: a fixture world has no
+	// socket, so connecting would fail instantly, flip `connected` off, set
+	// lastErr and start a 2s retry loop, i.e. an interactive fixture session
+	// would show something OTHER than the frame the harness dumps for the
+	// same fixture — the one thing MaterializeFixture exists to prevent
+	// (spec 112 T012). Nothing in the render path reads it, so a dumped
+	// frame is unaffected either way.
+	offline bool
+
 	// active is the narrow fallback's single visible pane (today's model,
 	// unchanged). dockTab/solo are the widescreen composite's dock
 	// selection and zoom state (pages/solo-views.md). Both are kept in
@@ -512,6 +523,13 @@ func skinFromStatus(st *ipc.StatusData) *skin.Skin {
 }
 
 func (m Model) Init() tea.Cmd {
+	if m.offline {
+		// A design-harness fixture: no socket to reach and a frozen clock, so
+		// neither half of the live batch has anything to do. Returning no
+		// command leaves the posed scene exactly as Frame() renders it, and
+		// keypresses still drive it normally.
+		return nil
+	}
 	return tea.Batch(connect(m.w), pollTick())
 }
 
@@ -692,6 +710,20 @@ func sendConsole(c *ipc.Client, text string) tea.Cmd {
 
 func timeControl(c *ipc.Client, cmd string, args any) tea.Cmd {
 	return func() tea.Msg {
+		if c == nil {
+			// The clock keys gate on m.connected alone, which on every live
+			// path implies a client (connectedMsg sets the two together). A
+			// design-harness fixture breaks that pairing — it renders as
+			// connected because its canned status IS the scene, but holds no
+			// client — so an interactive fixture session would otherwise
+			// dereference nil on the first space/[/] press. Inert is the right
+			// answer: there is no daemon to obey. The guard is INSIDE the
+			// command rather than around it because the focus/keymap contract
+			// tests assert that these keys dispatch a command at all
+			// (focus_test.go, look_test.go) — the dispatch is the contract,
+			// the round trip is what has nothing to talk to.
+			return nil
+		}
 		st, err := c.Status(cmd, args)
 		if err != nil {
 			return disconnectedMsg{err}

@@ -41,6 +41,21 @@ Four classes, plus two top-level index files:
   its owning file, both directions complete.
 - **`INDEX.md`** (this file) — authority statement, taxonomy, gate rules.
 
+One directory sits outside the four classes because it is **generated, not
+authored** (spec 112, TASK-187):
+
+- **[`frames/`](frames/README.md)** — the frame matrix: one plain-text file
+  per (fixture, state, size), each the exact string `View()` hands Bubble Tea,
+  written by `promptworld frames --dump`. The pages above remain the design
+  *authority* (what a surface is supposed to be); these frames are the
+  *evidence* (what it currently is), so a drift like `pages/home.md`'s
+  recorded "Reconciliation correction" is greppable rather than reconstructed
+  by hand. Because its contents are generated, the directory is exempt from
+  `check-tui-design.mjs` (`GENERATED_DIRS`) — every check that script runs
+  asserts a property of an authored page (a `class`, a hand-verified pin, an
+  `anatomy.md` row) that generated output does not and should not have. Never
+  hand-edit a frame; change `internal/tui` and regenerate.
+
 ## File map
 
 Every file the finished feature lands, per plan.md's Project Structure.

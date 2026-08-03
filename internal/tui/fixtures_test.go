@@ -314,3 +314,81 @@ func TestFixturesTouchNoWorldDirectory(t *testing.T) {
 		}
 	}
 }
+
+// TestMaterializeFixtureIsTheSameSceneAsTheDump is T012's actual claim: the
+// interactive session the operator drives and the frame the matrix dumps are
+// the same model, not two constructions that happen to look alike. If they
+// ever diverge, every frame under docs/design/tui/frames/ stops being
+// evidence about what the client shows.
+func TestMaterializeFixtureIsTheSameSceneAsTheDump(t *testing.T) {
+	const w, h = 160, 50
+	for _, f := range Fixtures() {
+		for _, state := range []string{"home", "help-lessons"} {
+			t.Run(f.ID+"/"+state, func(t *testing.T) {
+				dir := filepath.Join(t.TempDir(), "world")
+				m, err := MaterializeFixture(f.ID, state, dir)
+				if err != nil {
+					t.Fatal(err)
+				}
+				// Bubble Tea supplies the size live; the harness supplies it
+				// as --size. That is the only difference there may be.
+				m.width, m.height = w, h
+				restore := forceColorProfile(false)
+				got := m.View()
+				restore()
+
+				want, err := Frame(FrameOptions{Fixture: f.ID, State: state, Width: w, Height: h})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if got != want {
+					t.Errorf("the interactive model and the dumped frame differ for %s/%s", f.ID, state)
+				}
+
+				// The materialized directory must be a real world dir carrying
+				// the fixture's OWN manifest — stage and scenario config
+				// included, since those two fields decide whether the exercise
+				// tab and the lesson row render at all.
+				opened, err := world.Open(dir)
+				if err != nil {
+					t.Fatalf("materialized dir is not a world: %v", err)
+				}
+				if opened.Manifest.Stage != f.manifest.Stage {
+					t.Errorf("stage = %q, want %q", opened.Manifest.Stage, f.manifest.Stage)
+				}
+				if (opened.Manifest.Scenario == nil) != (f.manifest.Scenario == nil) {
+					t.Errorf("scenario config was not carried into the materialized world")
+				}
+
+				// Offline: connecting would fail instantly against a world with
+				// no daemon, flip `connected` off and start a retry loop — i.e.
+				// the interactive session would show something OTHER than the
+				// frame above, within a frame or two of opening.
+				if !m.offline {
+					t.Error("a materialized fixture must be offline")
+				}
+				if cmd := m.Init(); cmd != nil {
+					t.Error("Init() on a fixture model must issue no command")
+				}
+			})
+		}
+	}
+}
+
+// TestMaterializeFixtureRejectsBadInput: an unknown fixture or state must
+// fail loudly rather than open the client on a silently wrong scene.
+func TestMaterializeFixtureRejectsBadInput(t *testing.T) {
+	if _, err := MaterializeFixture("nope", "home", filepath.Join(t.TempDir(), "w")); err == nil {
+		t.Error("unknown fixture: want an error")
+	}
+	if _, err := MaterializeFixture(FixtureEmpty, "nope", filepath.Join(t.TempDir(), "w")); err == nil {
+		t.Error("unknown state: want an error")
+	}
+	occupied := t.TempDir()
+	if err := os.WriteFile(filepath.Join(occupied, "something"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := MaterializeFixture(FixtureEmpty, "home", occupied); err == nil {
+		t.Error("non-empty target directory: want an error")
+	}
+}

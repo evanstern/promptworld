@@ -61,6 +61,13 @@ Usage:
   promptworld stages [--json]                      list the curriculum ladder's four stages —
                                                    identity, concept, grants, unlock evidence,
                                                    and your earned state
+  promptworld frames --fixture <id> [--state s] [--size WxH] [--ansi]
+  promptworld frames --list | --dump [--out DIR] | --fixture <id> --interactive
+                                                   render the TUI against a canned fixture world:
+                                                   print one frame, dump the whole design matrix
+                                                   to docs/design/tui/frames/, or open the real
+                                                   interactive client on a fixture — no daemon,
+                                                   no LLM, no sim (spec 112)
 `
 
 // dispatch resolves a subcommand name to its handler. Canonical names only in
@@ -109,6 +116,8 @@ func dispatch(cmd string) (func([]string) error, bool) {
 		return cmdDivergence, true
 	case "stages":
 		return cmdStages, true
+	case "frames":
+		return cmdFrames, true
 	case "guardian", "metatron": // "metatron" is the hidden compat alias (spec 052 FR-008)
 		return cmdGuardian, true
 	case "work", "miracle": // "miracle" is the hidden compat alias (spec 052 FR-008)

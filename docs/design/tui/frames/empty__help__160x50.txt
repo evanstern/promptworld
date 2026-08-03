@@ -1,0 +1,50 @@
+Ashgrove — disconnected (retrying…)
+8 villagers A B C R F H O S
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ HELP · keys                                                                                                                                                  │
+│ Global (home) — basic (t: tier · n/p: mode)                                                                                                                  │
+│                                                                                                                                                              │
+│ 2                select the chronicle tab; press again to solo it (or return home if already solo'd)                                                         │
+│ 3                select the guardian tab; press again to solo it (or return home if already solo'd)                                                          │
+│ 4                select the villagers tab; press again to solo it (or return home if already solo'd)                                                         │
+│ 5                select the systems tab; press again to solo it (or return home if already solo'd)                                                           │
+│ G                open the guardian console — a full-screen page for the conversation, charter/skills, and $EDITOR (G/1/esc closes)                           │
+│ m                focus the minibuffer — ask the guardian                                                                                                     │
+│ space            pause / resume the clock                                                                                                                    │
+│ q                quit                                                                                                                                        │
+│                                                                                                                                                              │
+│ ctrl+c — quit, from anywhere                                                                                                                                 │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│ esc/? close · tab section · t tier · n/p mode · J/K scroll                                                                                                   │
+│                                                                                                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ⏎ m — speak with the guardian…                                                                                                                               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+esc/? close · tab section · t tier · n/p mode · J/K scroll

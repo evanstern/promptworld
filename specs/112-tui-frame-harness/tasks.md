@@ -43,32 +43,32 @@ One task, one PR. Every phase below lands as a commit on this single branch.
 
 ## Phase 3 — CLI surface
 
-- [ ] T010 Add `cmd/promptworld/frames.go`: `promptworld frames --fixture <f> --state <s>
+- [x] T010 Add `cmd/promptworld/frames.go`: `promptworld frames --fixture <f> --state <s>
       --size <WxH> [--ansi]`, printing one frame to stdout. No daemon, no LLM, no sim
       (AC #2).
-- [ ] T011 Register the verb in the command table and add `--list` to enumerate fixtures
+- [x] T011 Register the verb in the command table and add `--list` to enumerate fixtures
       and states.
-- [ ] T012 `--interactive` materializes a fixture into a temp world dir and runs the same
+- [x] T012 `--interactive` materializes a fixture into a temp world dir and runs the same
       `tea.NewProgram(tui.New(w), tea.WithAltScreen(), tea.WithMouseCellMotion())`
       construction as `cmdUI` (`cmd/promptworld/commands.go:848`), so the interactive view
       and the dumped frame are the same thing (AC #8).
-- [ ] T013 Unit tests for flag parsing and size parsing, alongside the code.
+- [x] T013 Unit tests for flag parsing and size parsing, alongside the code.
 
 ## Phase 4 — Matrix dump
 
-- [ ] T014 **Check R3 first:** confirm `scripts/check-tui-design.mjs` accepts a new
+- [x] T014 **Check R3 first:** confirm `scripts/check-tui-design.mjs` accepts a new
       `docs/design/tui/frames/` directory — its taxonomy check rejects files outside
       `pages/panels/overlays/patterns`. If rejected, amend the checker in this same PR
       and say so in the design docs. Do this before generating the matrix, not at PR time.
-- [ ] T015 Add `promptworld frames --dump` writing every (fixture, state, size)
+- [x] T015 Add `promptworld frames --dump` writing every (fixture, state, size)
       combination to `docs/design/tui/frames/`, one file per combination, over sizes
       straddling the widescreen breakpoint and the 50/50 column split (AC #5).
       **Do not assume terminal-height frames below the breakpoint** — see spec.md FR-008:
       the narrow fallback has no fold arithmetic, so those frames are content-height and
       legitimately shorter than the requested height. A height assertion that ignores this
       will fail on every fixture at 80×30.
-- [ ] T016 Generate and commit the matrix.
-- [ ] T017 Add `docs/design/tui/frames/README.md` explaining what the directory is, how
+- [x] T016 Generate and commit the matrix.
+- [x] T017 Add `docs/design/tui/frames/README.md` explaining what the directory is, how
       to regenerate it, and that it is generated — never hand-edited.
 
 ## Phase 5 — Gates and grounding
