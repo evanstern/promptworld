@@ -565,3 +565,98 @@ func TestMaxTokensLoadsFromV2File(t *testing.T) {
 		t.Errorf("ConsolidationTokens = %d, want 900", n)
 	}
 }
+
+// TestProviderReportsV2NamesEveryProvider (TASK-195): the daemon's boot report
+// reads the RESOLVED registry, so a v2 `providers` world names each provider's
+// model and endpoint. The pre-TASK-195 boot line read the legacy Local/Cloud
+// fields, which resolveRegistry guarantees are zero under the v2 shape — every
+// world created since spec 024 booted with "(local  @ , cloud , …)".
+func TestProviderReportsV2NamesEveryProvider(t *testing.T) {
+	p := writeConfigFile(t, `{
+		"monthly_budget_usd": 100,
+		"providers": {
+			"local": {"transport": "openai_compat", "endpoint": "http://localhost:11434/v1", "model": "qwen", "parallel": 3},
+			"cloud": {"transport": "openai_compat", "endpoint": "http://localhost:20128/v1", "model": "sonnet", "input_usd_per_mtok": 1, "output_usd_per_mtok": 5}
+		},
+		"routes": {"planner": ["local"], "conversation": ["local"], "meeting": ["local"],
+			"consolidation": ["cloud"], "drama": ["cloud"], "metatron": ["cloud"],
+			"metatron_watch": ["cloud"], "narrator": ["cloud"], "report_card": ["cloud"],
+			"steward": ["cloud"]}
+	}`)
+	cfg, err := LoadConfig(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reports, warns := cfg.ProviderReports()
+	if len(warns) != 0 {
+		t.Errorf("in-range knobs warned: %v", warns)
+	}
+	want := []ProviderReport{
+		{Name: "cloud", Model: "sonnet", Endpoint: "http://localhost:20128/v1", Workers: 1},
+		{Name: "local", Model: "qwen", Endpoint: "http://localhost:11434/v1", Workers: 3},
+	}
+	if !reflect.DeepEqual(reports, want) {
+		t.Errorf("ProviderReports() = %+v, want %+v (stable name order)", reports, want)
+	}
+}
+
+// TestProviderReportsSurfaceClampWarnings (TASK-195): the per-provider
+// warn-and-clamp knobs are computed at construction and their warnings
+// DISCARDED there (llm.go's workers()/toolModeResolved() callers), so a v2
+// world clamped an out-of-range parallel or an unknown tool_mode in silence.
+// ProviderReports is the one path that hands them back to the boot channel.
+func TestProviderReportsSurfaceClampWarnings(t *testing.T) {
+	p := writeConfigFile(t, `{
+		"monthly_budget_usd": 100,
+		"providers": {
+			"local": {"transport": "openai_compat", "endpoint": "http://e/v1", "model": "qwen", "parallel": 99, "tool_mode": "telepathy"}
+		},
+		"routes": {"planner": ["local"], "conversation": ["local"], "meeting": ["local"],
+			"consolidation": ["local"], "drama": ["local"], "metatron": ["local"],
+			"metatron_watch": ["local"], "narrator": ["local"], "report_card": ["local"],
+			"steward": ["local"]}
+	}`)
+	cfg, err := LoadConfig(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reports, warns := cfg.ProviderReports()
+	if len(reports) != 1 || reports[0].Workers != maxLocalWorkers {
+		t.Fatalf("reports = %+v, want one provider clamped to %d workers", reports, maxLocalWorkers)
+	}
+	if len(warns) != 2 {
+		t.Fatalf("got %d warnings, want 2 (parallel clamp + tool_mode): %v", len(warns), warns)
+	}
+	for _, want := range []string{"providers.local.parallel", "telepathy"} {
+		if !strings.Contains(strings.Join(warns, "\n"), want) {
+			t.Errorf("warnings %v missing %q", warns, want)
+		}
+	}
+}
+
+// TestProviderReportsLegacyStillRenders (TASK-195): the legacy two-tier shape
+// keeps reporting as local/cloud, and an anthropic cloud tier — which has no
+// endpoint knob — reports a bare model so the boot line never prints a dangling
+// " @ ".
+func TestProviderReportsLegacyStillRenders(t *testing.T) {
+	p := writeConfigFile(t, `{
+		"monthly_budget_usd": 100,
+		"local": {"endpoint": "http://localhost:11434/v1", "model": "gemma"},
+		"cloud": {"model": "claude-opus-4-8", "input_usd_per_mtok": 5, "output_usd_per_mtok": 25}
+	}`)
+	cfg, err := LoadConfig(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reports, warns := cfg.ProviderReports()
+	if len(warns) != 0 {
+		t.Errorf("legacy in-range knobs warned: %v", warns)
+	}
+	want := []ProviderReport{
+		{Name: "cloud", Model: "claude-opus-4-8", Endpoint: "", Workers: 1},
+		{Name: "local", Model: "gemma", Endpoint: "http://localhost:11434/v1", Workers: 1},
+	}
+	if !reflect.DeepEqual(reports, want) {
+		t.Errorf("ProviderReports() = %+v, want %+v", reports, want)
+	}
+}

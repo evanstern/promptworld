@@ -326,34 +326,39 @@ func Run(dir string) error {
 				fmt.Print(teachingPostureBootLine(w.Manifest.Name, teachingPostureSpeed, est, orch.CalibratedAt(name)))
 			}
 		}
-		cloudDesc := llmCfg.Cloud.Model
-		if llmCfg.Cloud.Provider == llm.ProviderOpenAICompat {
-			cloudDesc = fmt.Sprintf("%s @ %s", llmCfg.Cloud.Model, llmCfg.Cloud.Endpoint)
+		// LLM registry boot report (TASK-195). Sourced from the RESOLVED registry,
+		// never the legacy Local/Cloud fields: those are always zero on a v2
+		// `providers` world, because resolveRegistry rejects both shapes at once
+		// (internal/llm/config.go). Reading them blanked every model and endpoint
+		// on this line for every world created since spec 024, and silently
+		// dropped the parallel/tool_mode clamp warnings — which no other code path
+		// prints. The report scales to N providers because the v2 registry does
+		// not promise exactly two named tiers.
+		providerReports, providerWarns := llmCfg.ProviderReports()
+		// Warn-and-clamp knobs (TASK-45 concurrency, TASK-52 tool-use loop):
+		// surface every clamp, never fatal.
+		for _, warn := range providerWarns {
+			fmt.Printf("daemon: %s\n", warn)
 		}
-		// Local-tier concurrency (TASK-45): surface the effective worker count
-		// when it exceeds the default, and warn (never fatal) when the operator
-		// configured an out-of-range value that was clamped.
-		localWorkers, workersWarn := llmCfg.Local.Workers()
-		if workersWarn != "" {
-			fmt.Printf("daemon: %s\n", workersWarn)
-		}
-		// Agent tool-use loop knobs (TASK-52): surface any clamp/unknown-value
-		// warning the same way as the concurrency knob — warn, never fatal.
 		if _, roundsWarn := llmCfg.Rounds(); roundsWarn != "" {
 			fmt.Printf("daemon: %s\n", roundsWarn)
 		}
-		if _, tmWarn := llmCfg.Local.ToolModeResolved(); tmWarn != "" {
-			fmt.Printf("daemon: %s\n", tmWarn)
+		providerNoun := "providers"
+		if len(providerReports) == 1 {
+			providerNoun = "provider"
 		}
-		if _, tmWarn := llmCfg.Cloud.ToolModeResolved(); tmWarn != "" {
-			fmt.Printf("daemon: %s\n", tmWarn)
+		fmt.Printf("daemon: llm orchestrator on (%d %s, budget $%.0f/mo)\n",
+			len(providerReports), providerNoun, llmCfg.MonthlyBudgetUSD)
+		for _, pr := range providerReports {
+			desc := pr.Model
+			if pr.Endpoint != "" {
+				desc = fmt.Sprintf("%s @ %s", pr.Model, pr.Endpoint)
+			}
+			if pr.Workers > 1 {
+				desc += fmt.Sprintf(", parallel %d", pr.Workers)
+			}
+			fmt.Printf("daemon:   %s  %s\n", pr.Name, desc)
 		}
-		localDesc := fmt.Sprintf("local %s @ %s", llmCfg.Local.Model, llmCfg.Local.Endpoint)
-		if localWorkers > 1 {
-			localDesc += fmt.Sprintf(", parallel %d", localWorkers)
-		}
-		fmt.Printf("daemon: llm orchestrator on (%s, cloud %s, budget $%.0f/mo)\n",
-			localDesc, cloudDesc, llmCfg.MonthlyBudgetUSD)
 		loopRounds, _ := llmCfg.Rounds()
 		// Cognition token budgets (spec 025 US2): resolve the three per-kind
 		// max_tokens knobs and surface any clamp/out-of-range warning on the same
