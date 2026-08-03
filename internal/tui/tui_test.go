@@ -171,10 +171,13 @@ func TestMapRendersPilesAndStockpileZones(t *testing.T) {
 		{X: cx + 1, Y: cy, Planks: 2}, // Manhattan-adjacent to the pile above → one zone
 		{X: cx - 6, Y: cy - 6, Food: []sim.FoodBatch{{Kind: "food_raw", N: 5, SpoilAt: 100}}}, // isolated
 	}
-	view := m.mapView()
-	lines := strings.Split(view, "\n")
-	gridOnly := strings.Join(lines[:len(lines)-1], "\n")
-	legend := lines[len(lines)-1]
+	// Spec 114: assert on the COMPOSED legend, not mapView's clamped output.
+	// mapView clamps to the terminal width, and testModel is 80 columns wide —
+	// this test is about what the inspection surface reports, not how much of
+	// it survives an 80-column terminal (that is
+	// TestNarrowLegendClampedToTerminalWidth's job).
+	vw, vh := m.narrowViewport()
+	gridOnly, legend := m.renderMapGrid(vw, vh)
 
 	if !strings.Contains(gridOnly, "%") {
 		t.Error("pile glyph % missing from map grid")
@@ -233,10 +236,13 @@ func TestMapRendersChestGlyphAndInspection(t *testing.T) {
 		// agent's own position would hide the glyph the test asserts on.
 		{Kind: "chest", X: cx + 1, Y: cy, Owner: 1, Store: &sim.Inventory{Wood: 3, Planks: 2, FoodRaw: 5}},
 	}
-	view := m.mapView()
-	lines := strings.Split(view, "\n")
-	gridOnly := strings.Join(lines[:len(lines)-1], "\n")
-	legend := lines[len(lines)-1]
+	// Spec 114: assert on the COMPOSED legend, not mapView's clamped output.
+	// mapView clamps to the terminal width, and testModel is 80 columns wide —
+	// this test is about what the inspection surface reports, not how much of
+	// it survives an 80-column terminal (that is
+	// TestNarrowLegendClampedToTerminalWidth's job).
+	vw, vh := m.narrowViewport()
+	gridOnly, legend := m.renderMapGrid(vw, vh)
 
 	if !strings.Contains(gridOnly, "☐") {
 		t.Error("chest glyph ☐ missing from map grid")
@@ -269,10 +275,13 @@ func TestMapRendersWallGlyphs(t *testing.T) {
 		{Kind: "wall_plank", X: cx + 1, Y: cy, HP: sim.WallMaxHP("wall_plank")},
 		{Kind: "wall_stone", X: cx + 2, Y: cy, HP: 100},
 	}
-	view := m.mapView()
-	lines := strings.Split(view, "\n")
-	gridOnly := strings.Join(lines[:len(lines)-1], "\n")
-	legend := lines[len(lines)-1]
+	// Spec 114: assert on the COMPOSED legend, not mapView's clamped output.
+	// mapView clamps to the terminal width, and testModel is 80 columns wide —
+	// this test is about what the inspection surface reports, not how much of
+	// it survives an 80-column terminal (that is
+	// TestNarrowLegendClampedToTerminalWidth's job).
+	vw, vh := m.narrowViewport()
+	gridOnly, legend := m.renderMapGrid(vw, vh)
 
 	if !strings.Contains(gridOnly, styleWall.Render("▤")) {
 		t.Error("full-health plank wall glyph ▤ (normal style) missing from map grid")
@@ -300,10 +309,13 @@ func TestMapRendersPathGlyph(t *testing.T) {
 		{Kind: "path", X: cx + 1, Y: cy}, // off the agent's tile
 		{Kind: "path", X: cx, Y: cy},     // under the agent — agent glyph must win
 	}
-	view := m.mapView()
-	lines := strings.Split(view, "\n")
-	gridOnly := strings.Join(lines[:len(lines)-1], "\n")
-	legend := lines[len(lines)-1]
+	// Spec 114: assert on the COMPOSED legend, not mapView's clamped output.
+	// mapView clamps to the terminal width, and testModel is 80 columns wide —
+	// this test is about what the inspection surface reports, not how much of
+	// it survives an 80-column terminal (that is
+	// TestNarrowLegendClampedToTerminalWidth's job).
+	vw, vh := m.narrowViewport()
+	gridOnly, legend := m.renderMapGrid(vw, vh)
 
 	if !strings.Contains(gridOnly, stylePath.Render("·")) {
 		t.Error("path glyph · (path style) missing from map grid")
@@ -337,10 +349,13 @@ func TestMapRendersGraveGlyph(t *testing.T) {
 	m.replica.Structures = []sim.Structure{
 		{Kind: "grave", X: cx, Y: cy}, // co-located with Ash's own tile
 	}
-	view := m.mapView()
-	lines := strings.Split(view, "\n")
-	gridOnly := strings.Join(lines[:len(lines)-1], "\n")
-	legend := lines[len(lines)-1]
+	// Spec 114: assert on the COMPOSED legend, not mapView's clamped output.
+	// mapView clamps to the terminal width, and testModel is 80 columns wide —
+	// this test is about what the inspection surface reports, not how much of
+	// it survives an 80-column terminal (that is
+	// TestNarrowLegendClampedToTerminalWidth's job).
+	vw, vh := m.narrowViewport()
+	gridOnly, legend := m.renderMapGrid(vw, vh)
 
 	if !strings.Contains(gridOnly, styleGrave.Render("✝")) {
 		t.Error("grave glyph ✝ (grave style) missing from map grid at the dead agent's own death tile")
