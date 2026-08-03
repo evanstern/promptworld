@@ -6,7 +6,7 @@ sources:
   - internal/tui/views.go
   - internal/tui/decisions.go
   - internal/tui/tui.go
-verified_against: bd13e84095eb7dd15d2911e524dd0ca0d467bda8
+verified_against: 9f7df6137c78506f9d5ab48809f6c2e4855da782
 ---
 
 # TUI villagers tab

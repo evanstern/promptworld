@@ -1,0 +1,30 @@
+Ashgrove — tick 396000 · day 5 20:00 · running · speed 8x (8.0 t/s)
+8 villagers A B C R f h † †
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ HELP · keys                                                                                                  │
+│ Global (home) — advanced (t: tier · n/p: mode)                                                               │
+│                                                                                                              │
+│ 6                select the exercise tab (scenario worlds only; inert elsewhere); press again to solo it     │
+│ 1                return to the map (exits solo, if solo'd)                                                   │
+│ tab/shift+tab    cycle the dock tabs (alias for 2/3/4/5)                                                     │
+│ enter            narrow fallback: focus the minibuffer from the guardian pane (no effect in the widescreen c │
+│ esc              exit solo zoom (no effect when already home)                                                │
+│ a                chronicle: filter by agent (chronicle tab only)                                             │
+│ t                chronicle: filter by thread (chronicle tab only)                                            │
+│ r                chronicle: toggle raw ↔ narrated (chronicle tab only)                                       │
+│ ←↑↓→             pan the map                                                                                 │
+│ c                recenter the camera on the wanderers                                                        │
+│ [ ]              speed down / up                                                                             │
+│                                                                                                              │
+│ ctrl+c — quit, from anywhere                                                                                 │
+│                                                                                                              │
+│ esc/? close · tab section · t tier · n/p mode · J/K scroll                                                   │
+│                                                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+The gru just attacked a villager — a real threat, not a random event.
+→ press 2 for the chronicle  (? for more · x dismiss)
+⚡⚡· (2/3) · next +1 @ 06:00 · 👁 2 standing orders · faith 62
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ⏎ m — speak with the guardian…                                                                               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+esc/? close · tab section · t tier · n/p mode · J/K scroll

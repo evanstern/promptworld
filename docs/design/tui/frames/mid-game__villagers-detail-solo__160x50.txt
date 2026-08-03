@@ -1,0 +1,50 @@
+Ashgrove — tick 396000 · day 5 20:00 · running · speed 8x (8.0 t/s)
+8 villagers A B C R f h † †
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ VILLAGERS                                                                                                                                                    │
+│ ASH                                                                                                                                                          │
+│                                                                                                                                                              │
+│ Ash · awake · (36,9)                                                                                                                                         │
+│ health █░░░░ food ███░░ rest ████░ warmth ████░ morale ███░░                                                                                                 │
+│                                                                                                                                                              │
+│ objective: no objective yet                                                                                                                                  │
+│                                                                                                                                                              │
+│ inventory: empty pack                                                                                                                                        │
+│                                                                                                                                                              │
+│ narrative: a long night watching the fire die and reviving it by hand.                                                                                       │
+│ beliefs:                                                                                                                                                     │
+│   the fire needs tending (80%)                                                                                                                               │
+│                                                                                                                                                              │
+│ memories                                                                                                                                                     │
+│ day 1 06:19 (3★) chopped wood at the treeline                                                                                                                │
+│ day 1 06:18 (3★) chopped wood at the treeline                                                                                                                │
+│ day 1 06:17 (3★) chopped wood at the treeline                                                                                                                │
+│ day 1 06:16 (3★) chopped wood at the treeline                                                                                                                │
+│ day 1 06:15 (3★) chopped wood at the treeline                                                                                                                │
+│ day 1 06:14 (3★) chopped wood at the treeline                                                                                                                │
+│ day 1 06:13 (3★) chopped wood at the treeline                                                                                                                │
+│ day 1 06:12 (3★) chopped wood at the treeline                                                                                                                │
+│ day 1 06:11 (3★) chopped wood at the treeline                                                                                                                │
+│ day 1 06:10 (3★) chopped wood at the treeline                                                                                                                │
+│ day 1 06:09 (3★) chopped wood at the treeline                                                                                                                │
+│ day 1 06:08 (3★) chopped wood at the treeline                                                                                                                │
+│ day 1 06:07 (3★) chopped wood at the treeline                                                                                                                │
+│ day 1 06:06 (3★) chopped wood at the treeline                                                                                                                │
+│ day 1 06:05 (3★) chopped wood at the treeline                                                                                                                │
+│ day 1 06:04 (3★) chopped wood at the treeline                                                                                                                │
+│ day 1 06:03 (3★) chopped wood at the treeline                                                                                                                │
+│ day 1 06:02 (3★) chopped wood at the treeline                                                                                                                │
+│ day 1 06:01 (3★) chopped wood at the treeline                                                                                                                │
+│ day 1 06:00 (3★) chopped wood at the treeline                                                                                                                │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+The gru just attacked a villager — a real threat, not a random event.
+→ press 2 for the chronicle  (? for more · x dismiss)
+⚡⚡· (2/3) · next +1 @ 06:00 · 👁 2 standing orders · faith 62
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ⏎ m — speak with the guardian…                                                                                                                               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+d decisions · esc back · space pause · q quit · ? help

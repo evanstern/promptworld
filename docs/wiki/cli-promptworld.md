@@ -5,7 +5,7 @@ kind: component
 sources:
   - cmd/promptworld/main.go
   - cmd/promptworld/commands.go
-verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
+verified_against: 9f7df6137c78506f9d5ab48809f6c2e4855da782
 ---
 
 # promptworld CLI
@@ -60,6 +60,16 @@ back here):
   guardian's conversational one-shot and operator miracle door, one-shot model
   calls, cognition-horizon benchmarking, and offline embedding-memory gate
   evidence.
+
+One registered subcommand sits outside those three families because its
+audience is a developer, not a player: `frames` (spec 112, `frames.go`)
+renders the TUI headlessly against a canned in-process fixture world — one
+frame to stdout, the whole design matrix to `docs/design/tui/frames/`
+(`--dump`), the catalog of fixtures/states/sizes (`--list`), or the real
+interactive client on a fixture (`--interactive`). It reaches no daemon, no
+LLM and no sim, and it is the one per-world-looking command that takes no
+`<world>` argument at all — a fixture is a Go value, so `resolveWorld` is
+never involved. See [[tui-client]].
 
 ## Connections
 
