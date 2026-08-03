@@ -3,10 +3,10 @@ id: TASK-173
 title: >-
   Absence attribution: harvest-explained map corrections shouldn't spawn a
   village-wide mystery
-status: Done
+status: To Do
 assignee: []
 created_date: '2026-07-30 16:41'
-updated_date: '2026-07-31 01:16'
+updated_date: '2026-08-03 00:37'
 labels: []
 dependencies: []
 ordinal: 141000
@@ -36,6 +36,18 @@ Scope note: spec 097 (perception of absence — dedup, disconfirmation decay) me
 
 <!-- SECTION:NOTES:BEGIN -->
 sweep (runbook docs/design/playtest-1-findings-sweep-runbook.md): measurement soak started 2026-07-30 — world ~/.promptworld/measure/task-173-measure-1 (scenario cold-dawn, seed 46103 pinned by the exercise, teaching+tutor, llm.json mirrored from playtest-1), current main binary (ef115a6a), 16x. Measures what spec 097 absorbs: map-correction rate + share of chronicle entries narrating absence, vs playtest-1 baseline (2,932 corrections/29 days, dominant storyline). Scope checkpoint follows measurement.
+
+RE-OPENED 2026-08-02 on the evidence its own Final Summary named: 'if a month-scale run ever resurfaces an absence storyline, re-open with that evidence.' Operator reported still seeing the vanishing-landscape effect; measured and confirmed. The 4.2-game-day window the drop decision rested on was too short — the storyline reappears past it.
+
+EVIDENCE — two independent worlds on current main, both showing a named absence storyline in the chronicle:
+- soak-world, 12.02 game-days, local gemma4:12b-mlx: chronicle carries a **[the-missing-trees]** storyline; 18 of 90 chronicle entries absence-themed. Sample narration: 'This pattern of vanishing landmarks continued as other villagers joined the search, finding nothing but empty spaces where wood once stood'; 'The forest seemed to be emptying themselves'; 'Birch's insistence on supernatural occurrences has cast a shadow over the woods.'
+- soak-qwen, 5.69 game-days, local qwen3.6:latest (the new spec 109 default): chronicle carries **[the-disappearance-of-res...]**; 15 of 51 entries absence-themed. NOT model-specific — reproduces across both providers.
+
+AC#2 IS THE ONE FAILING, and decisively: in soak-world, 969 of 972 map_corrected 'gone' entries (99.7%, over 352 distinct locations) match an agent.chopped/agent.quarried event at EXACTLY those coordinates. Only 3 entries in 12 game-days are genuinely unexplained. So essentially every correction is harvest-explained mundane resource consumption, and it is still earning mystery-grade narrative weight — which is precisely what AC#2 forbids. Note the villagers themselves partially reach for the mundane explanation socially ('Birch accuses Sage of cutting trees based on suspicious tracks'), so the social attribution layer is doing something; the failure is downstream, at storyline/narration salience.
+
+WHAT IS NOT BROKEN — do not re-litigate these: TASK-159/spec 081 clearly worked at the memory layer. Absence-flavoured memories are 1,234 of 18,283 = 6.7% of all memories, against TASK-159's 75% showstopper baseline (346/461). Correction rate is 69.3/game-day against playtest-1's ~101/day with a comparable harvest rate. The problem is no longer that villagers drown in loss memories; it is that the storyline/narrator machinery amplifies a 6.7% minority signal into a dominant named thread. That reframes the remaining work from memory formation to narrative salience — the attribution seam this card originally scoped, now with a sharper target.
+
+Worlds preserved for whoever picks this up: /Users/evanstern/.claude/jobs/ca35de11/tmp/soak/soak-world (stopped, 12 game-days) and soak-qwen. Query note: these world.db files are WAL-mode and sqlite3 -readonly fails on them once the daemon has stopped and no -wal file remains; open without -readonly.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
