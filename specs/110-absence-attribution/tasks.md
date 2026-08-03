@@ -116,14 +116,14 @@ that could write, and never mutate the preserved copies.
 
 ## Phase 5: Grounding and PR
 
-- [ ] T020 Re-verify and re-pin `docs/wiki/chronicle.md` in-branch against the actual
+- [X] T020 Re-verify and re-pin `docs/wiki/chronicle.md` in-branch against the actual
       diff (honest re-pin: classify RE-PIN-ONLY vs NEEDS-REVIEW, amend prose first).
       Phase 2/3 changed `internal/mind/narrate.go` substantially, so this is a genuine
       NEEDS-REVIEW, not a mechanical bump. Check `agent-mind.md` / `mental-maps.md`
       sources and re-pin only if touched.
-- [ ] T021 Regenerate `docs/player/` if any `docs/wiki/` note changed; confirm with
+- [X] T021 Regenerate `docs/player/` if any `docs/wiki/` note changed; confirm with
       `node .claude/skills/player-docs/scripts/check-freshness.mjs --check`.
-- [ ] T022 Update the runbook's execution log row, then run
+- [X] T022 Update the runbook's execution log row, then run
       `node scripts/check-merge-drift.mjs pr` from the worktree; resolve every blocking
       finding and treat its semantic-overlap warnings as the companion-artifact checklist.
 - [ ] T023 Open the PR from the worktree. Merge with `gh pr merge --merge` — never
