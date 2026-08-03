@@ -4,7 +4,7 @@ title: 'Polish session 1: freeform tweaks and small fixes against a live world'
 status: In Progress
 assignee: []
 created_date: '2026-08-03 17:33'
-updated_date: '2026-08-03 18:18'
+updated_date: '2026-08-03 18:24'
 labels: []
 dependencies: []
 ordinal: 177001
@@ -250,4 +250,19 @@ code is unchanged with a threshold branch present. Full gate suite 34/34, no reg
 **Session footprint so far: 17 of 191 notes (9%)** — `internal/daemon/daemon.go` (12),
 `internal/llm/config.go` (6), five overlapping. `scripts/` is sourced by no wiki note, so decision 3
 added nothing to the grounding bill. 13 notes of headroom before the threshold trips.
+
+### Decision 4 — implementation stays inline for this session
+
+Operator ruling: keep implementing inline rather than dispatching `spec-implementer`. This resolves
+the open question flagged with decision 1 and governs the whole session.
+
+A recorded, deliberate deviation from constitution Principle V (v1.3.0), which requires the planning
+tier to delegate implementation to a pinned agent definition. The grounds: this session's harness
+forbids subagent dispatch unless the operator asks, and the polish loop's value is the tight
+discuss → diagnose → implement → live-prove cycle against a running world, which a delegation hop
+would break for slices this small. The model that actually served every slice here is
+`claude-opus-5` — the planning session's own model — which is the tier Principle V assigns to hard
+slices anyway, so the work was never served below its rubric tier, only served without the hop.
+
+Scope: this session only. It is not a precedent for spec'd work, where delegation still holds.
 <!-- SECTION:NOTES:END -->
