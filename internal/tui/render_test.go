@@ -25,7 +25,7 @@ import (
 // paused/inspect (both in the dock and solo'd), at several sizes straddling
 // the breakpoint and the 50/50 column split.
 //
-// The state list and the posing logic are States()/poseState (spec 110 T007/
+// The state list and the posing logic are States()/poseState (spec 112 T007/
 // T008, design.go) — the same registry and the same poser the frame harness
 // drives, so this sweep and the dumped matrix can never disagree about what
 // states exist or what one of them means.

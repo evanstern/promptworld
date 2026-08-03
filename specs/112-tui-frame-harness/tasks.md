@@ -1,4 +1,4 @@
-# Tasks — spec 110, TUI frame harness
+# Tasks — spec 112, TUI frame harness
 
 **Board task:** TASK-187 · **Branch:** `task-187-frame-harness`
 
@@ -33,9 +33,11 @@ One task, one PR. Every phase below lands as a commit on this single branch.
       `internal/tui/render_test.go` to consume it, so the matrix and the tests cannot
       disagree about what states exist (plan.md F3).
 - [x] T008 Pose each state (`home`, `solo`, `inspect`, `inspect-solo`, `villagers-solo`,
-      `villagers-detail-solo`, `metatron-solo`, `help`, `help-advanced`,
+      `villagers-detail-solo`, `guardian-solo`, `help`, `help-advanced`,
       `help-walkthrough`, `help-lessons`) reusing the existing test-helper logic rather
-      than a parallel implementation.
+      than a parallel implementation. **Amended 2026-08-02:** `metatron-solo` →
+      `guardian-solo`; the old spelling trips `internal/lint/fiction_sweep_test.go`
+      (spec 052 SC-001) once hoisted out of a `_test.go` file. See spec.md FR-005.
 - [x] T009 ANSI suppressed by default via the `termenv` profile `render_test.go` already
       forces; `ANSI: true` opts back in (AC #4).
 
@@ -61,6 +63,10 @@ One task, one PR. Every phase below lands as a commit on this single branch.
 - [ ] T015 Add `promptworld frames --dump` writing every (fixture, state, size)
       combination to `docs/design/tui/frames/`, one file per combination, over sizes
       straddling the widescreen breakpoint and the 50/50 column split (AC #5).
+      **Do not assume terminal-height frames below the breakpoint** — see spec.md FR-008:
+      the narrow fallback has no fold arithmetic, so those frames are content-height and
+      legitimately shorter than the requested height. A height assertion that ignores this
+      will fail on every fixture at 80×30.
 - [ ] T016 Generate and commit the matrix.
 - [ ] T017 Add `docs/design/tui/frames/README.md` explaining what the directory is, how
       to regenerate it, and that it is generated — never hand-edited.

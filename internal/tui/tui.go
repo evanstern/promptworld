@@ -137,7 +137,7 @@ type Model struct {
 	unlocks *worlds.Unlocks
 
 	// clientNow and markSeen are the wall-clock and per-user-persistence
-	// seams the design frame harness injects (spec 110, plan.md F1/F4 —
+	// seams the design frame harness injects (spec 112, plan.md F1/F4 —
 	// fixtures.go/design.go). Both are nil on every live path (New), where
 	// they resolve to time.Now and worlds.MarkLessonSeen respectively, so a
 	// real client's behavior is exactly what it was before the seam existed.
@@ -395,7 +395,7 @@ type chronHitRegion struct {
 // unlocks record (spec 078 FR-006) — plus the writer that persists a lesson
 // the moment it surfaces. The three are bundled into one injectable value
 // because together they are exactly the state that makes an otherwise
-// identical world render DIFFERENTLY on two machines (spec 110, plan.md F1):
+// identical world render DIFFERENTLY on two machines (spec 112, plan.md F1):
 // the frame harness hands the fixture path a fixed canned record instead of
 // whatever sits in the operator's home directory.
 type perUserState struct {
@@ -420,7 +420,7 @@ func New(w *world.World) Model {
 	return newModel(w, livePerUserState(), nil)
 }
 
-// newModel is New's injectable core (spec 110 T003). pu supplies the
+// newModel is New's injectable core (spec 112 T003). pu supplies the
 // per-user records and the seen-writer; now supplies the wall clock (nil =
 // time.Now). New passes the live record and a nil clock, so the live path
 // is byte-for-byte the construction it always was.
@@ -453,7 +453,7 @@ func newModel(w *world.World, pu perUserState, now func() time.Time) Model {
 }
 
 // wallNow is the client's wall clock, read through the injectable seam
-// (spec 110 F4) — time.Now on every live path, a frozen instant under the
+// (spec 112 F4) — time.Now on every live path, a frozen instant under the
 // frame harness. Only the lessons projection consults it; nothing in the
 // render path does, which is what makes freezing it sufficient.
 func (m Model) wallNow() time.Time {

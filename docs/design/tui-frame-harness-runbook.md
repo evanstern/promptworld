@@ -33,11 +33,27 @@ merging `main`. Per the sweep skill's background-job execution mode, the substit
 below apply and are recorded so a resuming session does not read them as sloppiness.
 
 - **The claim's main-push is unavailable**, so claim-before-work's mutual-exclusion
-  primitive (spec 065) cannot fire. Mitigation: single-task sweep, no sibling session
-  holds TASK-187 or spec 110 — verified, `check-merge-drift claim --dir
-  110-tui-frame-harness` passed at `8a85e4b7`. The card was moved to In Progress at root
-  under the board-sync exception but sits **unpushed** pending the operator;
-  `check-merge-drift worktree` therefore warns `card-not-claimed` by design, not omission.
+  primitive (spec 065) cannot fire. The card was moved to In Progress at root under the
+  board-sync exception but sits **unpushed** pending the operator; `check-merge-drift
+  worktree` therefore warns `card-not-claimed` by design, not omission.
+- **This cost us the spec number, exactly as predicted.** The sweep first claimed
+  **spec 110** (`check-merge-drift claim --dir 110-tui-frame-harness` passed at
+  `8a85e4b7`) and pushed `specs/110-tui-frame-harness/` on the task branch. Within the
+  hour a concurrent session re-opened TASK-173, linked it to
+  `specs/110-absence-attribution`, and **pushed that claim to `origin/main`** — where
+  TASK-187 still read `To Do` because this job cannot push the board. A branch push
+  claims nothing; the push to `main` is the primitive, so that session holds 110 and this
+  one lost the race fairly. Per doctrine this is a renumber, not a stop-the-lane: the
+  collision was on the NUMBER, and TASK-187 itself was never contested.
+- **Then it happened a second time, mid-rename.** The renumber to **111** was already
+  under way when `specs/111-claim-gate-branch-visibility` landed on `origin/main`; the
+  claim hook caught it on the next write (`spec-number-collision`, next free 112).
+  Renumbered again to **spec 112**, re-verified free at `1b17cd33`. Two lost races inside
+  one task is the measurement, not bad luck: **in background mode the spec number is not
+  safe until the board claim reaches `main`.** Either the operator pushes the claim
+  commit, or a sweep should expect to renumber and should therefore defer creating the
+  spec directory until as late as possible. Note the sibling that took 111 is
+  `111-claim-gate-branch-visibility` — a session working on precisely this hazard.
 - Sweep-close and this runbook's status flip land in the same PR, there being no next
   branch to ride.
 - **Harness/root-guard incompatibility, worked around.** The harness's background-job
@@ -92,9 +108,9 @@ other page pins `72f82f41`, which resolves.
 - **Merge-drift gate: present at `scripts/check-merge-drift.mjs`.** Mandatory at every
   choke point, invocations verbatim:
   - `node scripts/check-merge-drift.mjs session` — at sweep start (done: `warnings`, exit 0).
-  - `node scripts/check-merge-drift.mjs claim --dir 110-tui-frame-harness` — before
+  - `node scripts/check-merge-drift.mjs claim --dir 112-tui-frame-harness` — before
     creating the spec dir (done: `pass`).
-  - `node scripts/check-merge-drift.mjs worktree --spec 110 --task TASK-187` — before
+  - `node scripts/check-merge-drift.mjs worktree --spec 112 --task TASK-187` — before
     `git worktree add` (done: `warnings`, `card-not-claimed` as explained above).
   - `node scripts/check-merge-drift.mjs pr` — from the worktree before `gh pr create` AND
     after every history move. Nonzero exit blocks.
@@ -114,9 +130,9 @@ other page pins `72f82f41`, which resolves.
 
 **No PR opens for TASK-187 until each line below checks true.**
 
-- [ ] `specs/110-tui-frame-harness/spec.md` — requirements mapped to the card's 9 ACs.
-- [ ] `specs/110-tui-frame-harness/plan.md` — checked against `.specify/memory/constitution.md`.
-- [ ] `specs/110-tui-frame-harness/tasks.md` — real phased breakdown, not one catch-all box.
+- [ ] `specs/112-tui-frame-harness/spec.md` — requirements mapped to the card's 9 ACs.
+- [ ] `specs/112-tui-frame-harness/plan.md` — checked against `.specify/memory/constitution.md`.
+- [ ] `specs/112-tui-frame-harness/tasks.md` — real phased breakdown, not one catch-all box.
 - [ ] The card carries its machine-findable Spec marker (`spec-bridge:link`).
 - [ ] Lane 0's dead pin repaired; `node scripts/check-tui-design.mjs` exits 0.
 - [ ] Determinism proven: the scene matrix regenerated twice is byte-identical (AC #3).
@@ -159,7 +175,7 @@ actually served.
 ## Done means
 
 - TASK-187 Done on the board via its own merged PR.
-- `specs/110-tui-frame-harness/` carries spec.md + plan.md + tasks.md; the card keeps its
+- `specs/112-tui-frame-harness/` carries spec.md + plan.md + tasks.md; the card keeps its
   Spec marker.
 - `node scripts/check-tui-design.mjs` exits 0 on main; `check-merge-drift.mjs session` no
   longer reports `tui-design` stale.

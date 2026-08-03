@@ -1,6 +1,6 @@
-# Plan — spec 110, TUI frame harness
+# Plan — spec 112, TUI frame harness
 
-**Spec:** `specs/110-tui-frame-harness/spec.md` · **Board task:** TASK-187
+**Spec:** `specs/112-tui-frame-harness/spec.md` · **Board task:** TASK-187
 
 ## Constitution check (`.specify/memory/constitution.md` v1.3.0)
 

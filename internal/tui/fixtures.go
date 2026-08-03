@@ -1,6 +1,6 @@
 package tui
 
-// The design-harness fixtures (spec 110, TASK-187): three canned worlds the
+// The design-harness fixtures (spec 112, TASK-187): three canned worlds the
 // frame harness (design.go) renders, so looking at a real frame costs one
 // command instead of a compile-and-run cycle.
 //

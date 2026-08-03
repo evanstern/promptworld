@@ -1,6 +1,6 @@
 package tui
 
-// The design frame harness (spec 110, TASK-187): render one (fixture, state,
+// The design frame harness (spec 112, TASK-187): render one (fixture, state,
 // size) combination to the exact string the terminal would receive.
 //
 // This lives INSIDE package tui rather than in cmd/promptworld because the

@@ -81,8 +81,28 @@ forces a `termenv` profile — reuse that seam rather than inventing a second on
 A driver writes every combination to `docs/design/tui/frames/`, one file per combination.
 The starting matrix is the state set already enumerated in `internal/tui/render_test.go`
 — `home`, `solo`, `inspect`, `inspect-solo`, `villagers-solo`, `villagers-detail-solo`,
-`metatron-solo`, `help`, `help-advanced`, `help-walkthrough`, `help-lessons` — across
+`guardian-solo`, `help`, `help-advanced`, `help-walkthrough`, `help-lessons` — across
 sizes straddling the widescreen breakpoint and the 50/50 column split.
+
+> **Amendment (orchestrator, 2026-08-02, after phase 2).** This list said `metatron-solo`
+> when written, copied verbatim from `render_test.go`. That name cannot ship in a
+> production `.go` file: `internal/lint/fiction_sweep_test.go` (spec 052 SC-001) bans bare
+> fiction literals in non-test Go sources, and the old spelling survived in
+> `render_test.go` only because that sweep skips `_test.go` files. Hoisting the state
+> registry into `design.go` is exactly the case the gate exists to catch. Renamed to
+> **`guardian-solo`** — the state poses `paneGuardian` either way, and every other name in
+> the list is already post-spec-052 vocabulary. TASK-187's card carries the same
+> correction.
+
+### FR-008 — narrow frames are content-height, not terminal-height
+
+Discovered during phase 2 and recorded here so the matrix dump does not encode a false
+invariant. `TestWidescreenViewExactHeight` asserts `len(lines) == height` only at widths at
+or above the widescreen breakpoint, because the narrow fallback has no fold arithmetic
+(`docs/design/tui/patterns/layout.md`, ruling b). A frame rendered at 80×30 is therefore
+content-height and shorter than 30 lines — correct renderer behavior, not a defect. The
+matrix dump, and any height assertion over it, MUST NOT assume terminal-height frames below
+the breakpoint.
 
 ### FR-006 — Interactive launch
 The operator can launch the real interactive TUI against any fixture in one command and
