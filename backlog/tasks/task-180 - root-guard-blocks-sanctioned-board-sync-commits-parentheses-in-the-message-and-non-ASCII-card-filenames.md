@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-08-01 04:25'
+updated_date: '2026-08-03 00:56'
 labels:
   - debt
 dependencies: []
@@ -37,3 +38,13 @@ Neither defect is a security hole — both fail closed, blocking allowed work ra
 - [ ] #2 A board-sync commit staging only a card file whose name contains non-ASCII characters is allowed via the no-pathspec staged-set branch, with a regression test using an em-dash filename
 - [ ] #3 Both fixes preserve fail-closed behavior: no commit touching a path outside backlog/ becomes allowed, covered by existing or new negative tests
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+THIRD + FOURTH defect, same hook, hit live 2026-08-02 while claiming TASK-173 (sweep). Both belong in this card's one fix pass.
+
+3. Shell-redirection tokens parsed as pathspecs. parseGitInvocation stops the segment at the first char in /[;|&\n`)]/ (root-guard-hook.mjs:182). A sanctioned board-sync commit written as 'git commit -m "board-sync: ..." -- backlog/x.md 2>&1 | tail -5' is truncated at the '&' of '2>&1', leaving '2>' as a trailing token that isBoardSyncCommit reads as a pathspec; boardPathspecOk('2>') is false, so the commit blocks. Reproduced three times in a row; the identical command with the redirection removed exits 0. This is the SAME root cause as defect 1 (the boundary regex doubling as a tokenizer) and should share its fix and its regression test — pin a message-with-parens case AND a trailing-redirection case.
+
+4. The worktree carve-out does not recognise the harness's isolation root. pre-write blocks any write under the root checkout that is not gitignored; the sanctioned escape is '.worktrees/<task-branch>'. Claude Code background jobs isolate via EnterWorktree, which always creates worktrees under '.claude/worktrees/<name>' - a TRACKED subtree here - so every write in a harness-created worktree is blocked as a root-checkout write. praxisflux's pdlc:sweep documents exactly that path in its 'Background-job / no-main-push execution mode', so the two doctrines do not overlap at all. Workaround used: 'git worktree add .worktrees/task-173 ...' at root, then EnterWorktree with path: pointing at it (satisfies the harness isolation guard and root-guard both). Durable fix: treat any path under a directory listed by 'git worktree list' as worktree-authored, or at minimum add '.claude/worktrees/' to the carve-out and to .gitignore.
+<!-- SECTION:NOTES:END -->
