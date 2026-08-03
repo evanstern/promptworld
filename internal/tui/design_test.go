@@ -56,36 +56,56 @@ func TestFrameRendersEveryCombination(t *testing.T) {
 	}
 }
 
-// TestFrameMatchesDirectView is the fidelity assertion (FR-007): a dumped
-// frame is not a re-rendering of the UI, it IS the UI — Frame's output must
-// equal what the same fixture Model's View() produces at the same size and
-// state. Every other guarantee in this feature rests on this one.
+// TestFrameMatchesDirectView is the fidelity assertion (FR-007, AC #9): a
+// dumped frame is not a re-rendering of the UI, it IS the UI — Frame's
+// output must equal what the same fixture Model's View() produces at the
+// same size and state. Every other guarantee in this feature rests on this
+// one: the frames under docs/design/tui/frames/ are only evidence about the
+// client if this holds.
+//
+// AC #9 asks for "at least one page per fixture", and this test began as
+// exactly that — two states, one widescreen size. That floor is too low for
+// what the assertion is load-bearing FOR (spec 112 T019, judged during phase
+// 5). Frame() does three things View() does not: it poses the Model through
+// poseState, it sets width/height itself, and it forces the color profile.
+// Every one of those is per-(state, size), so a sample of two states at one
+// widescreen size leaves the failure modes that matter uncovered — most
+// sharply the NARROW fallback, which is a structurally different render
+// branch (narrowView, no fold arithmetic — FR-008) and which the committed
+// matrix ships a frame for at 80x30. A Frame/View divergence there would
+// have been invisible.
+//
+// So the sweep is total: every fixture, every registered state, every size
+// the harness renders at. Fidelity is not sampled, it is exhaustive over the
+// harness's own domain — which is affordable precisely because a frame is a
+// pure function of a Go value.
 func TestFrameMatchesDirectView(t *testing.T) {
 	for _, f := range Fixtures() {
-		for _, state := range []string{"home", "villagers-solo"} {
-			t.Run(f.ID+"/"+state, func(t *testing.T) {
-				const w, h = 140, 40
-				got, err := Frame(FrameOptions{Fixture: f.ID, State: state, Width: w, Height: h})
-				if err != nil {
-					t.Fatal(err)
-				}
+		for _, state := range States() {
+			for _, sz := range frameSizes {
+				t.Run(fmt.Sprintf("%s/%s/%dx%d", f.ID, state, sz.w, sz.h), func(t *testing.T) {
+					got, err := Frame(FrameOptions{Fixture: f.ID, State: state, Width: sz.w, Height: sz.h})
+					if err != nil {
+						t.Fatal(err)
+					}
 
-				m, err := f.build()
-				if err != nil {
-					t.Fatal(err)
-				}
-				m.width, m.height = w, h
-				if err := poseState(&m, state); err != nil {
-					t.Fatal(err)
-				}
-				restore := forceColorProfile(false)
-				want := m.View()
-				restore()
+					m, err := f.build()
+					if err != nil {
+						t.Fatal(err)
+					}
+					m.width, m.height = sz.w, sz.h
+					if err := poseState(&m, state); err != nil {
+						t.Fatal(err)
+					}
+					restore := forceColorProfile(false)
+					want := m.View()
+					restore()
 
-				if got != want {
-					t.Errorf("Frame() diverged from a direct View() on the same posed Model:\ngot:\n%s\nwant:\n%s", got, want)
-				}
-			})
+					if got != want {
+						t.Errorf("Frame() diverged from a direct View() on the same posed Model:\ngot:\n%s\nwant:\n%s", got, want)
+					}
+				})
+			}
 		}
 	}
 }

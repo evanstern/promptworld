@@ -6,8 +6,10 @@ package main
 // render API itself.
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -164,6 +166,143 @@ func TestDumpFramesWritesEveryCombination(t *testing.T) {
 			t.Errorf("%s is empty", n)
 		}
 	}
+}
+
+// TestDumpFramesIsDeterministic is AC #3 at MATRIX grain (spec.md FR-003):
+// the whole matrix regenerated twice in one process is byte-identical, file
+// for file, in the same order.
+//
+// The single-frame form lives with the render API (design_test.go's
+// TestFrameDeterministic). This one adds what that cannot see: a fixture
+// mutated in place by rendering it would leak from the first sweep into the
+// second, and the dump is the only caller that renders every combination
+// back to back.
+func TestDumpFramesIsDeterministic(t *testing.T) {
+	first, second := t.TempDir(), t.TempDir()
+	namesA, err := dumpFrames(first)
+	if err != nil {
+		t.Fatal(err)
+	}
+	namesB, err := dumpFrames(second)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Join(namesA, "\n") != strings.Join(namesB, "\n") {
+		t.Fatalf("two dumps wrote different file sets:\n%v\nvs\n%v", namesA, namesB)
+	}
+	for _, name := range namesA {
+		a, err := os.ReadFile(filepath.Join(first, name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, err := os.ReadFile(filepath.Join(second, name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !bytes.Equal(a, b) {
+			t.Errorf("%s differs between two dumps in the same process\n%s", name, firstDifference(a, b))
+		}
+	}
+}
+
+// TestDumpFramesMatchesCommittedMatrix is the other half of AC #3, and the
+// half that actually earns plan.md R1: a fresh dump must equal the copy
+// committed under docs/design/tui/frames/.
+//
+// Two dumps in one process agree with each other about anything they BOTH
+// read — including the operator's home directory, the wall clock, or any
+// environment read nobody predicted (R1's stated risk is precisely "hidden
+// per-user or environment reads beyond F1"). The committed matrix was
+// generated on a different machine, at a different time, under a different
+// HOME. Comparing against it is what makes an environment-dependent read
+// fail this suite instead of surviving to a reviewer's eye — and it keeps
+// the checked-in frames honest evidence rather than a stale snapshot nobody
+// re-dumped.
+//
+// A failure here means one of two things, and the message says which to
+// check: either internal/tui changed and the matrix was not regenerated
+// (`promptworld frames --dump`, commit the result), or a frame depends on
+// something outside the fixture, which is a defect in the harness.
+func TestDumpFramesMatchesCommittedMatrix(t *testing.T) {
+	committed := filepath.Join(repoRoot(t), defaultFramesDir)
+	dir := t.TempDir()
+	names, err := dumpFrames(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const remedy = "run `promptworld frames --dump` from the repo root and commit the result " +
+		"(if the diff is not explained by an internal/tui change, a frame is reading something outside its fixture)"
+	for _, name := range names {
+		fresh, err := os.ReadFile(filepath.Join(dir, name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		onDisk, err := os.ReadFile(filepath.Join(committed, name))
+		if os.IsNotExist(err) {
+			t.Errorf("%s is missing from the committed matrix — %s", name, remedy)
+			continue
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !bytes.Equal(fresh, onDisk) {
+			t.Errorf("%s: a fresh dump differs from the committed frame — %s\n%s",
+				name, remedy, firstDifference(onDisk, fresh))
+		}
+	}
+
+	// The committed directory must be exactly this generation, not a
+	// superset: a frame left behind by a renamed state or a dropped size is
+	// evidence for a screen no code produces. dumpFrames prunes, so this
+	// only ever fires against what is COMMITTED.
+	written := map[string]bool{}
+	for _, n := range names {
+		written[n] = true
+	}
+	entries, err := os.ReadDir(committed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, e := range entries {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".txt") || written[e.Name()] {
+			continue
+		}
+		t.Errorf("%s is committed but no combination produces it — %s", e.Name(), remedy)
+	}
+}
+
+// repoRoot walks up from the test's working directory to the module root, so
+// the committed-matrix comparison does not hardcode this package's depth.
+func repoRoot(t *testing.T) string {
+	t.Helper()
+	dir, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for {
+		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+			return dir
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			t.Fatal("no go.mod found above the test's working directory")
+		}
+		dir = parent
+	}
+}
+
+// firstDifference reports the first line two frames disagree on. A whole
+// 160x50 frame printed twice is unreadable in test output; the line number
+// and the two versions of that one line are what a reader actually needs.
+func firstDifference(want, got []byte) string {
+	a := strings.Split(string(want), "\n")
+	b := strings.Split(string(got), "\n")
+	for i := 0; i < len(a) && i < len(b); i++ {
+		if a[i] != b[i] {
+			return "first differing line " + strconv.Itoa(i+1) + ":\n committed: " + strconv.Quote(a[i]) + "\n fresh:     " + strconv.Quote(b[i])
+		}
+	}
+	return "line counts differ: " + strconv.Itoa(len(a)) + " vs " + strconv.Itoa(len(b))
 }
 
 // TestDumpFramesPrunesStaleFrames: the directory must be exactly the current
