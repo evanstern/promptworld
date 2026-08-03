@@ -57,29 +57,48 @@ the spec dir, and the branch's commits — never chat context.
 - [X] T014 Tests for T012–T013; then `go build ./...`, `go test ./...`, and
       `go test -race ./internal/mind/...` green (SC-005).
 
-## Phase 4: Evidence
+## Phase 4: Evidence (replay + re-narrate — runbook amendment 2026-08-02, operator-decided)
 
-- [ ] T015 SC-004: replay the preserved soak world's event log through the ledger +
-      classifier and assert 100% precision — no correction lacking a coordinate-matching
-      harvest is classified attributed, and the 3 known anomalies classify as
-      unexplained.
-- [ ] T016 Run the soak: ≥12 game-days, same scenario, on `gemma4:12b-mlx`; and on
-      `qwen3.6` where feasible (SC-006 — a single-model run records its reason).
-- [ ] T017 Record the runbook's four required measurements on TASK-173: (a) count and
-      share of absence-themed chronicle entries; (b) whether any *named* absence
-      storyline slug appears; (c) the harvest-explained share of corrections; (d) the
-      count of genuinely-unexplained absences and evidence they still surfaced.
-- [ ] T018 Tick board AC#2 and AC#3 against T017's evidence — not before.
+The evidence bar's window is unchanged (≥12 game-days of real data); the route is replay
+of the preserved soak world's own event log rather than a fresh live soak, so the
+before/after comparison is controlled on identical input. See the runbook's amended
+"HOST ADDITION — the evidence bar" section, including its recorded limitation.
+
+Preserved world (READ-ONLY — never mutate, it is the before-side of the comparison):
+`/Users/evanstern/.claude/jobs/ca35de11/tmp/soak/soak-world/world.db` (12.02 game-days).
+Its `world.db` is WAL-mode; `sqlite3 -readonly` FAILS on it now the daemon has stopped —
+open it without `-readonly`, and copy it before any experiment that could write.
+
+- [ ] T015 Build the replay harness: feed the preserved world's event log through the
+      Mind's absorb path in order and capture, per chapter, the exact `md.narrLines`
+      buffer the narrator would receive. Offline — no model calls in this task.
+- [ ] T016 SC-004 (precision) and SC-003 (anti-suppression), from T015's replay:
+      assert 100% precision — no correction lacking a coordinate-matching harvest is
+      classified attributed — and that the 3 known genuinely-unexplained corrections
+      each still produce their own line.
+- [ ] T017 SC-002 (volume), from T015's replay: report per chapter the correction lines
+      before vs after, and confirm attributed corrections contribute at most one line
+      per chapter and no chapter overflows `narrMaxLines` on their account. The
+      before-side baseline to reproduce is in `spec.md`'s per-chapter table (median 57%,
+      peak 68%, 5 of 12 day chapters over the 120-line ring).
+- [ ] T018 SC-001 (the actual outcome): re-narrate the replayed chapters with the live
+      model — `gemma4:12b-mlx`, and `qwen3.6` too where feasible (SC-006) — and report
+      whether any **named** absence storyline slug appears, plus the count and share of
+      absence-themed entries against the 18/90 (20%) baseline.
+- [ ] T019 Record all four measurements on TASK-173 (the runbook's (a)–(d)), then tick
+      board AC#2 and AC#3 against that evidence — not before.
 
 ## Phase 5: Grounding and PR
 
-- [ ] T019 Re-verify and re-pin `docs/wiki/chronicle.md` in-branch against the actual
+- [ ] T020 Re-verify and re-pin `docs/wiki/chronicle.md` in-branch against the actual
       diff (honest re-pin: classify RE-PIN-ONLY vs NEEDS-REVIEW, amend prose first).
-      Check `agent-mind.md` / `mental-maps.md` sources and re-pin only if touched.
-- [ ] T020 Regenerate `docs/player/` if any `docs/wiki/` note changed; confirm with
+      Phase 2/3 changed `internal/mind/narrate.go` substantially, so this is a genuine
+      NEEDS-REVIEW, not a mechanical bump. Check `agent-mind.md` / `mental-maps.md`
+      sources and re-pin only if touched.
+- [ ] T021 Regenerate `docs/player/` if any `docs/wiki/` note changed; confirm with
       `node .claude/skills/player-docs/scripts/check-freshness.mjs --check`.
-- [ ] T021 Update the runbook's execution log row, then run
+- [ ] T022 Update the runbook's execution log row, then run
       `node scripts/check-merge-drift.mjs pr` from the worktree; resolve every blocking
       finding and treat its semantic-overlap warnings as the companion-artifact checklist.
-- [ ] T022 Open the PR from the worktree. Merge with `gh pr merge --merge` — never
+- [ ] T023 Open the PR from the worktree. Merge with `gh pr merge --merge` — never
       squash: this branch carries in-branch wiki re-pins.

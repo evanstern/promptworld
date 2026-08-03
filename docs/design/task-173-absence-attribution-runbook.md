@@ -129,21 +129,43 @@ and needs the same checkpoint.
       `spec-bridge:link` update mode **before** implementation dispatch.
 - **Escape lines (operator-signed only):** none. TASK-173 gets a full spec set.
 - **HOST ADDITION — the evidence bar (this task's Lane-0 ruling, checkable):**
-  - [ ] AC#2/AC#3 are proven by a **soak of at least 12 game-days**, not by unit tests
-        alone and not by a short run. Rationale, binding: the 2026-07-30 close ticked
-        both ACs off a 4.2-game-day window, and the storyline reappeared past it. A
-        window shorter than the 12.02-game-day soak that produced the re-open evidence
+  - [ ] AC#2/AC#3 are proven over **at least 12 game-days of real world data**, not by
+        unit tests alone and not by a short run. Rationale, binding: the 2026-07-30 close
+        ticked both ACs off a 4.2-game-day window, and the storyline reappeared past it.
+        A window shorter than the 12.02-game-day soak that produced the re-open evidence
         cannot disprove that soak, so it cannot close this card.
+
+    **AMENDMENT 2026-08-02 (operator-decided, at the Phase 4 boundary).** The bar
+    originally read "a soak of at least 12 game-days" and was satisfiable only by a fresh
+    live run (~18h minimum, ~29h observed). The operator was offered three routes —
+    replay+re-narrate, fresh live soak, or both — and **chose replay + re-narrate**. The
+    bar is therefore satisfied by: replaying the **preserved 12.02-game-day soak world's
+    own event log** through the new code, then re-narrating its chapters with the live
+    model. **This is not a softening and the checkpoint-4 "never soften a gate" rule is
+    not being bent:** the window is unchanged (the same 12.02 game-days, the same events
+    that produced the re-open evidence), and the comparison becomes *controlled* — before
+    and after differ only by this branch's diff, where a fresh soak would confound the
+    change with run-to-run variance on a different seed path. What replay genuinely cannot
+    cover is recorded as a limitation below, not papered over.
+
+    **Limitation, recorded rather than resolved:** replay exercises the narrator's INPUT
+    faithfully but re-runs its OUTPUT against a live model, so SC-001 is evidence about
+    the same chapters, not about a fresh world's emergent dynamics; and it cannot show
+    that the new code changes nothing about how the world itself runs (villager behaviour
+    is not driven by the chronicle, so the risk is low, but it is not zero-by-proof). If a
+    later month-scale live run ever resurfaces an absence storyline, that is grounds to
+    re-open again — the same clause this card's first close carried, kept deliberately.
   - [ ] The soak reports, on the card: (a) count and share of chronicle entries that are
         absence-themed; (b) whether any **named** absence storyline slug appears in the
         chronicle ring; (c) the harvest-explained share of `agent.map_corrected` "gone"
         entries (the soak baseline is 969/972 = 99.7% over 352 distinct locations);
         (d) the count of genuinely-unexplained absences and evidence that they still
         surfaced (AC#3's anti-suppression check — the baseline is 3 in 12 game-days).
-  - [ ] Where feasible the soak runs on **both** local models the re-open reproduced on
-        (gemma4:12b-mlx and qwen3.6), since the card establishes the failure is not
-        model-specific. A single-model soak is acceptable only with the reason recorded
-        on the card.
+  - [ ] Where feasible the re-narration runs on **both** local models the re-open
+        reproduced on (gemma4:12b-mlx and qwen3.6), since the card establishes the failure
+        is not model-specific. A single-model run is acceptable only with the reason
+        recorded on the card. (Under the amendment this is cheap — re-narration is ~24
+        model calls per model, not a second full run.)
 
 ## Concurrency & conflict doctrine
 
