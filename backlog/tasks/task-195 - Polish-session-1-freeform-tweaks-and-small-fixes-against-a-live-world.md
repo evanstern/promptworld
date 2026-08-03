@@ -4,7 +4,7 @@ title: 'Polish session 1: freeform tweaks and small fixes against a live world'
 status: In Progress
 assignee: []
 created_date: '2026-08-03 17:33'
-updated_date: '2026-08-03 19:23'
+updated_date: '2026-08-03 19:33'
 labels: []
 dependencies: []
 ordinal: 177001
@@ -433,4 +433,36 @@ neither taken here:
    because it writes to main outside a PR.
 2. *Change the session rule* — a polish session that might escalate claims its spec number and lands
    a stub on main up front, before any code, so the ordering spec 065 assumes always holds.
+
+### Decision 7 — stub-first rule adopted in-repo; the tool gap carded upstream
+
+Operator ruling: do #2 ourselves if it does not step on praxis, and card praxis if it must.
+Investigation says **both**, because #2 and the underlying gap are different layers.
+
+**#2 is ours — no plugin change needed.** "A session that might escalate claims its number and
+lands the stub on main up front" is a promptworld session-flow rule. Adopted as a new bullet in
+the Claim-before-work section of `CLAUDE.md` (branch commit 4efa712b), stated for
+freeform/polish sessions explicitly, since the spec-first case the protocol was written for never
+hits this. Rides this PR.
+
+**The gap underneath is praxis-level.** `deriveSpecState` in the spec-bridge plugin's
+`lib/spec-derive.mjs` (~line 148) resolves every artifact through `existsSync`/`readFileSync` on a
+working-tree path:
+
+```js
+const has = (name) => existsSync(join(specDir, name));
+```
+
+No git awareness anywhere in the path, so a branch-only spec dir is structurally invisible.
+Carded as **praxisflux TASK-104** ("spec-bridge gate is blind to spec dirs that live only on a
+branch"), committed and pushed to that repo at 335edfa, with four ACs and the precedent named:
+promptworld's own claim gate closed the identical hole in spec 111 via `branchHeldSpecNumbers`,
+which enumerates `refs/remotes/origin/task-*` and reads each branch tree. The card also flags that
+`link`'s phase-AC seeding and `sync` share the same derivation and may share the bug.
+
+**#1 not taken.** Since #2 was doable in-repo, we are not landing spec 115's artifacts on main
+outside a PR. Note what that means for THIS branch: the stub-first rule is **preventive, not
+curative** — spec 115 stays unlinked (decision 6) until the PR merges, at which point
+`specs/115-chronicle-feed-wrap/` is on main and the link can be restored with the bridge deriving
+its true state.
 <!-- SECTION:NOTES:END -->
