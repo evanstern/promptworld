@@ -514,6 +514,14 @@ function tuiSurfaceFiles(branchFiles) {
   return branchFiles.filter((f) => f.startsWith('internal/tui/'));
 }
 
+// Wiki-footprint warn threshold (TASK-195): how many notes a single branch may
+// stale before session mode calls out its breadth. Calibrated off this repo's
+// note-per-source concentration rather than picked round — internal/sim/
+// state.go is sourced by 27 notes and internal/tui/{tui,views}.go together by
+// ~27, so 30 is the point at which a branch has demonstrably reached into a
+// SECOND hot subsystem. A narrow branch never approaches it.
+const WIKI_FOOTPRINT_THRESHOLD = 30;
+
 function wikiSourcesOverlap(branchFiles, wikiNotes) {
   const bset = new Set(branchFiles);
   const hits = new Map(); // notePath -> matched files
@@ -991,9 +999,12 @@ function emitReport(report, json) {
     lines.push('branches:');
     for (const b of report.branches) {
       lines.push(
-        `  ${b.name}  task=${b.task || '-'}  baseLag=${b.baseLag}  dirty=${b.dirty}  cleanupEligible=${b.cleanupEligible}${
-          b.cleanupReason ? ` (${b.cleanupReason})` : ''
-        }`
+        `  ${b.name}  task=${b.task || '-'}  baseLag=${b.baseLag}  dirty=${b.dirty}${
+          // TASK-195: the footprint count rides the branch line rather than its
+          // own finding, so the number stays legible below threshold without
+          // adding a per-branch finding to every session report.
+          b.wikiFootprint === undefined ? '' : `  wikiNotes=${b.wikiFootprint}`
+        }  cleanupEligible=${b.cleanupEligible}${b.cleanupReason ? ` (${b.cleanupReason})` : ''}`
       );
     }
   }
@@ -1344,6 +1355,35 @@ function runSession(flags, cwd) {
   const wikiNotes = loadWikiNotes(mainWt, originMainTip);
   const wikiResult = computeWikiGrounding(wikiNotes, mainWt, originMainTip);
   findings.push(...wikiResult.findings);
+
+  // Wiki footprint (TASK-195). Staleness is idempotent per note — a note is
+  // stale iff any of its sources changed since its pin (computeWikiGrounding
+  // above), so touching one file fifty times stales exactly the notes touching
+  // it once stales. The re-pin bill is therefore a set union over FILES
+  // TOUCHED, never a sum over edits, and deferring grounding to the end of a
+  // branch's life costs nothing extra. What does grow is BREADTH, and this
+  // repo's note-per-source concentration makes that sharp (internal/sim/
+  // state.go alone is sourced by 27 notes). So the thing worth measuring is a
+  // branch's footprint, not how long it has gone without grounding.
+  //
+  // Advisory only: session mode never blocks, so this warns and never gates.
+  // Turning the threshold into a gate is a separate, spec'd decision.
+  for (const b of branches) {
+    b.wikiFootprint = b.mergeBase ? wikiSourcesOverlap(b.changedFiles, wikiNotes).size : 0;
+    if (b.wikiFootprint >= WIKI_FOOTPRINT_THRESHOLD) {
+      findings.push(
+        makeDriftFinding({
+          severity: 'warn',
+          gate: 'session',
+          rule: 'wiki-footprint',
+          message: `${b.name} touches sources for ${b.wikiFootprint} of ${wikiNotes.length} wiki notes (threshold ${WIKI_FOOTPRINT_THRESHOLD}) — the branch has reached across subsystems; ground it or stop widening its scope`,
+          evidence: [b.name],
+          task: b.task,
+          key: b.name,
+        }, mainWt, [b.task])
+      );
+    }
+  }
   const playerSurface = computePlayerDocsSurface(mainWt);
   const tuiSurface = computeTuiDesignSurface(mainWt);
   if (playerSurface.stale) {

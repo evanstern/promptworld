@@ -811,3 +811,99 @@ test('088/US2 edge: branch touches docs/design/tui/ only (re-pin-only PR) -> no 
   assert.equal(report.findings.find((x) => x.rule === 'tui-design-stale'), undefined);
   assert.equal(report.findings.find((x) => x.rule === 'tui-surface'), undefined, 'no internal/tui/ touch -> no tui-surface warn');
 });
+
+// ---------------------------------------------------------------------------
+// TASK-195 — wiki-footprint threshold in session mode. Wiki staleness is
+// idempotent per note (a note is stale iff a source changed since its pin), so
+// the re-pin bill a branch runs up is a set union over files touched, not a
+// sum over edits — deferring grounding costs nothing, but WIDENING does. This
+// section brackets the threshold exactly: one branch at it, one a single note
+// below. Same fixture pattern as the 069/080 sections.
+// ---------------------------------------------------------------------------
+
+const root195 = mkdtempSync(join(tmpdir(), 'wiki-footprint-test-'));
+after(() => rmSync(root195, { recursive: true, force: true }));
+
+const origin195 = join(root195, 'origin.git');
+run69('git', ['init', '--bare', '-b', 'main', origin195]);
+const clone195 = join(root195, 'clone');
+run69('git', ['clone', origin195, clone195]);
+const gitIn195 = (...args) => gitIn69(clone195, ...args);
+
+function commitAll195(msg) {
+  gitIn195('add', '-A');
+  gitIn195('commit', '-m', msg);
+  return gitIn195('rev-parse', 'HEAD').stdout.trim();
+}
+
+// Two sources with deliberately different note fan-out: 30 notes (exactly the
+// WIKI_FOOTPRINT_THRESHOLD) and 29 (one below). The check is a >= test, so
+// these two branches bracket it with no slack.
+write69(clone195, 'internal/wide/w.go', 'package wide // v1\n');
+write69(clone195, 'internal/narrow/n.go', 'package narrow // v1\n');
+const seed195 = commitAll195('seed: two sources with different note fan-out');
+for (let i = 0; i < 30; i++) {
+  write69(
+    clone195,
+    `docs/wiki/wide-${i}.md`,
+    `---\nverified_against: ${seed195}\nsources:\n  - internal/wide/w.go\n---\n\n# Wide ${i}\n`
+  );
+}
+for (let i = 0; i < 29; i++) {
+  write69(
+    clone195,
+    `docs/wiki/narrow-${i}.md`,
+    `---\nverified_against: ${seed195}\nsources:\n  - internal/narrow/n.go\n---\n\n# Narrow ${i}\n`
+  );
+}
+commitAll195('seed: 30 wide-sourced notes, 29 narrow-sourced notes');
+gitIn195('push', 'origin', 'main');
+
+function branch195(name, mutate) {
+  gitIn195('switch', '-c', name, 'main');
+  try {
+    mutate();
+  } finally {
+    gitIn195('switch', 'main');
+  }
+}
+
+branch195('task-901-wide', () => {
+  write69(clone195, 'internal/wide/w.go', 'package wide // v2\n');
+  commitAll195('wide: touch the source 30 notes pin');
+});
+branch195('task-902-narrow', () => {
+  write69(clone195, 'internal/narrow/n.go', 'package narrow // v2\n');
+  commitAll195('narrow: touch the source 29 notes pin');
+});
+
+function gate195() {
+  return run69(process.execPath, [SCRIPT_PATH, 'session', '--json'], { cwd: clone195 });
+}
+
+test('195/session: a branch at the wiki-footprint threshold warns and reports its count', () => {
+  const report = parseGate69(gate195());
+  const wide = report.branches.find((b) => b.name === 'task-901-wide');
+  assert.ok(wide, 'expected the wide branch in the report');
+  assert.equal(wide.wikiFootprint, 30, 'footprint counts every note whose sources the branch touched');
+  const f = report.findings.find((x) => x.rule === 'wiki-footprint' && x.evidence.includes('task-901-wide'));
+  assert.ok(f, 'expected a wiki-footprint finding at the threshold');
+  assert.equal(f.severity, 'warn', 'session mode is advisory — footprint must never block');
+});
+
+test('195/session: a branch one note below the threshold reports its count and does not warn', () => {
+  const report = parseGate69(gate195());
+  const narrow = report.branches.find((b) => b.name === 'task-902-narrow');
+  assert.ok(narrow, 'expected the narrow branch in the report');
+  assert.equal(narrow.wikiFootprint, 29, 'the count is reported below threshold, not hidden');
+  assert.equal(
+    report.findings.find((x) => x.rule === 'wiki-footprint' && x.evidence.includes('task-902-narrow')),
+    undefined,
+    'below the threshold must not warn'
+  );
+});
+
+test('195/session: the footprint check never blocks session start', () => {
+  const r = gate195();
+  assert.equal(r.status, 0, `session must not block on footprint: ${r.stdout}${r.stderr}`);
+});
