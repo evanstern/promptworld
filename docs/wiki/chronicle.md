@@ -6,7 +6,7 @@ sources:
   - internal/sim/chronicle.go
   - internal/mind/narrate.go
   - internal/scribe/scribe.go
-verified_against: 3590f2e0d78d3c4b4ced3edd97a49e5512ab2743
+verified_against: b6ac0684f48394f22d897fe07fe7b5ab325d13d8
 ---
 
 # Chronicle
@@ -45,7 +45,9 @@ gist+topics, rumors told, gifts, broken promises, chest thefts (spec 013's
 same narrative weight as a broken promise, a trust violation), musings, and
 (spec 041) three [[mental-maps]] beats — a discovery gone stale
 (`agent.map_corrected`, "X went looking for the <kind> at (x,y) and found
-it gone"), directions changing hands (`social.place_told`, "X told Y about
+it gone" — since spec 110 this per-event line is emitted ONLY when no known
+harvest explains the absence; [[absence-attribution]]), directions
+changing hands (`social.place_told`, "X told Y about
 the <kind> at (x,y)"), and a divine reveal (`guardian.place_revealed`, "A
 vision showed X the <kind> at (x,y)") — each voiced by the first fact in
 the event's canonical order, and (TASK-13) the whole [[governance]] arc:
@@ -99,6 +101,13 @@ the chronicle's own: a suppressed verdict, a full queue, a transport
 error, or (after the spec-105 ladder below) empty output is a logged GAP
 in the morgue's prose, never a stall — [[morgue]]'s factual record never
 waits on it.
+
+**Absence attribution** (spec 110, TASK-173): correction lines used to be the
+MAJORITY of a day chapter's buffer, which is why the narrator kept naming a
+vanishing-landscape storyline. A correction a known harvest explains now emits
+NO line of its own — the chapter's worth coalesces into ONE `corrSummaryMarker`
+line at `closeChapter` — while unexplained absences keep theirs byte-identical.
+Mechanism, dials, and measured before/after: [[absence-attribution]].
 
 **Truncation-aware retry ladder** (spec 105, TASK-172): the chapter call
 was the sibling failure site of the consolidation blackout — playtest-1's

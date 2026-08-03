@@ -157,6 +157,21 @@ type Mind struct {
 	narrQ     chan narrJob
 	narrRetry chan narrCarry
 
+	// harvests (spec 110 FR-001) is the bounded, coordinate-keyed ledger of
+	// recent harvests the chronicle classifies map corrections against — an
+	// absence at a tile someone chopped or quarried inside the window is
+	// ordinary, not a phenomenon. Absorb-owned exactly as narrLines is (fed
+	// from the agent.chopped/agent.quarried arm below, read on the chronicle
+	// line path), so it needs no lock of its own. Zero value is usable.
+	harvests harvestLedger
+
+	// corrTally (spec 110 FR-003/FR-007) is the per-chapter map-correction
+	// accumulator: attributed corrections fold in here instead of each taking
+	// a chronicle line, and closeChapter turns the whole chapter's worth into
+	// ONE coalesced line plus one telemetry summary. Absorb-owned and reset
+	// alongside narrLines, so it holds no lock. Zero value is usable.
+	corrTally correctionTally
+
 	// Governance phrasing (TASK-13): bounded queue + single-flight worker
 	// rephrasing enacted proposals in the proposer's voice.
 	meetQ chan meetingJob
@@ -320,6 +335,11 @@ func (md *Mind) absorb(batch []store.Event) {
 			// re-arms later through the ordinary correction, exactly as today.
 			var p sim.HarvestPayload
 			if json.Unmarshal(e.Payload, &p) == nil {
+				// Spec 110 (FR-001): the same harvest that clears the tile is
+				// what makes a later "found it gone" mundane — record it in the
+				// chronicle's ledger. Ledger-only; the spec-081 witness re-arm
+				// below is untouched.
+				md.harvests.record(p.X, p.Y, p.Agent.ID, e.Tick)
 				md.arm(p.Agent.ID, e.Seq)
 				for w := range md.replica.Agents {
 					if w == p.Agent.ID {
