@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-08-03 01:34'
-updated_date: '2026-08-03 01:35'
+updated_date: '2026-08-03 03:57'
 labels:
   - gate
   - spec-bridge
@@ -72,3 +72,24 @@ Option (a) is the recommendation on file; (c) would trade a false alarm for a do
 - [ ] #5 The chosen resolution is recorded on this card with its rationale, including whether it lands upstream in the praxisflux spec-bridge plugin or as a doctrine change here
 - [ ] #6 If the resolution is upstream, the plugin version carrying it is pinned on this card and verified live in this repo
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Concrete instance observed 2026-08-02, during TASK-191 (unrelated lane). The spec-bridge Stop gate blocked session exit with:
+
+  [spec-bridge] TASK-173 is "In Progress" but specs/110-absence-attribution only proves "To Do": spec.md missing, plan.md missing, no tasks in tasks.md.
+
+Every clause of that finding is false. On branch task-173-absence-attribution (pushed to origin at d8731a56, so auditable from any clone):
+
+  specs/110-absence-attribution/spec.md      present
+  specs/110-absence-attribution/plan.md      present
+  specs/110-absence-attribution/tasks.md     present, 9 tasks
+  specs/110-absence-attribution/evidence.md  present
+
+On main the directory does not exist at all — which is exactly what spec 069 requires, since spec artifacts ride the PR and land at merge. TASK-173 is fully compliant with the wiki-in-PR lifecycle and the gate punishes it for that compliance.
+
+Blast radius beyond the false alarm itself: the gate names a remedy ("set the task back") that is actively wrong. Following it would (a) assert something false about the world, and (b) reach into another session's claimed lane, which the spec 065 claim protocol forbids — a rejected claim is a stop-the-lane signal to surface, never a state to overwrite. A session that trusts the gate's remedy corrupts a peer's claim; a session that ignores it cannot cleanly exit. There is no correct action available to the blocked session, which is what makes this High rather than cosmetic.
+
+Suggested resolution when this is worked: resolve the spec dir against the task's own branch (the board card names the task, and the branch is discoverable as task-<N>-<slug> / already reported by the session gate's branch table) before falling back to main. The merge-drift pr gate already reasons about branch-carried grounding this way, so the pattern exists in-repo.
+<!-- SECTION:NOTES:END -->
