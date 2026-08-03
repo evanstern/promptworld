@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-08-03 01:34'
-updated_date: '2026-08-03 03:57'
+updated_date: '2026-08-03 04:11'
 labels:
   - gate
   - spec-bridge
@@ -92,4 +92,6 @@ On main the directory does not exist at all — which is exactly what spec 069 r
 Blast radius beyond the false alarm itself: the gate names a remedy ("set the task back") that is actively wrong. Following it would (a) assert something false about the world, and (b) reach into another session's claimed lane, which the spec 065 claim protocol forbids — a rejected claim is a stop-the-lane signal to surface, never a state to overwrite. A session that trusts the gate's remedy corrupts a peer's claim; a session that ignores it cannot cleanly exit. There is no correct action available to the blocked session, which is what makes this High rather than cosmetic.
 
 Suggested resolution when this is worked: resolve the spec dir against the task's own branch (the board card names the task, and the branch is discoverable as task-<N>-<slug> / already reported by the session gate's branch table) before falling back to main. The merge-drift pr gate already reasons about branch-carried grounding this way, so the pattern exists in-repo.
+
+RECURRENCE 2026-08-03, TASK-173 lane (sweep): the Stop gate fired again with the same false verdict - 'TASK-173 is In Progress but specs/110-absence-attribution only proves To Do: spec.md missing, plan.md missing, no tasks in tasks.md'. Verified false at the moment it fired: branch task-173-absence-attribution carries spec.md, plan.md, tasks.md AND now evidence.md under specs/110-absence-attribution, all committed and pushed; 'git ls-tree --name-only origin/main specs/110-absence-attribution/' returns EMPTY, which is exactly what spec 069 prescribes. This is the third consecutive compliant lane to be flagged, and the first where the gate's remediation advice would have caused real damage: its suggested fix is 'set the task back', but TASK-173's In Progress status IS the spec-065 claim mutex - reverting it would release the card to another session mid-lane while the branch holds five phases of work. Recording that as an additional argument for fixing the read locus rather than softening the message: the advice is not merely noisy, it is actively wrong under the claim protocol.
 <!-- SECTION:NOTES:END -->
