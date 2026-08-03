@@ -4,7 +4,7 @@ title: 'Polish session 1: freeform tweaks and small fixes against a live world'
 status: In Progress
 assignee: []
 created_date: '2026-08-03 17:33'
-updated_date: '2026-08-03 20:03'
+updated_date: '2026-08-03 20:11'
 labels: []
 dependencies: []
 ordinal: 177001
@@ -63,7 +63,7 @@ ad-hoc vs spec)
 - [ ] #2 Any item exceeding the trivial-exemption bar (surgical fix + complete file:line diagnosis + ACs on this card) is escalated to a Spec Kit spec and linked via spec-bridge before implementation
 - [ ] #3 All session work lands on a single branch and a single PR; no per-item task cards or PRs are created
 - [x] #4 Operator visual QA passes on the live world for every shipped item before the PR is opened
-- [ ] #5 Grounding is done once at the end, in-branch: wiki re-pinned, player docs regenerated, tui-design amended where internal/tui changed, and the pr merge-drift gate is green
+- [x] #5 Grounding is done once at the end, in-branch: wiki re-pinned, player docs regenerated, tui-design amended where internal/tui changed, and the pr merge-drift gate is green
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -476,4 +476,50 @@ the spec 115 changes — `go build ./...` during implementation never rewrites t
 artifact. Anyone QA-ing with it would have been looking at the old truncating feed. Rebuilt at
 15:45 before handing over the QA routes. Worth remembering for any future session that proves a
 client-side change against a live world.
+
+### Step 9 — grounding complete, pr gate GREEN (commits 16eb9d5e, 3d81662e)
+
+**Wiki: 32 notes re-verified against 4efa712b.** The planner offered zero auto-repinnable notes, so
+every one was read against the diff. No wiki note names the wrap renderers by symbol, and every
+"truncat" hit in the corpus turned out to be about something else — the `agent.path_truncated`
+event, the 80-rune payload cap, `fitTakeoverLines`' row budget, memory sections, the refuel ceiling.
+**Three notes made claims the diff actually invalidates**, and only those three changed prose:
+
+- `daemon-cognition-calibration` named `llmCfg.Local.Workers()`'s `workersWarn` and "both tiers'
+  `ToolModeResolved()`" as the boot warning sources. Both call sites are gone.
+- `llm-provider-registry` gains `Config.ProviderReports()` as the shape-independent accessor, with
+  the reason: the two config shapes are mutually exclusive, so `Config.Local`/`Cloud` are always
+  zero on a v2 world.
+- `tui-chronicle-feed` gains the wrap and hanging-indent behavior.
+
+The other 29 were re-pinned unchanged — verified, not assumed.
+
+**Size-budget honesty.** `tui-chronicle-feed` was **already 8060 chars** before this session —
+pre-existing debt owned by TASK-156. My first draft of the wrap paragraph took it to 8969; condensed
+to 8592, pointing at the design authority for the full statement. So this change adds **532** chars
+to a note that was already over, not 909. It does add to TASK-156's debt; recorded rather than
+buried.
+
+**Player docs: 24 provenance tags re-pinned across 9 pages.** Eight were pin-only — their sources
+moved commit but not content. `understanding-the-screen` genuinely changed, because the feed wrap is
+player-visible: it now says a thought or line of conversation wraps rather than being cut at the
+right edge, that continuation rows line up under where the sentence began, and that a narrow side
+panel stops after three rows.
+
+**Gates, all green:**
+
+```
+check-merge-drift pr   → exit 0 (only the tui-surface reminder, already satisfied)
+go test ./...          → exit 0
+check-tui-design       → all checks passed
+tui-frames --check     → committed matrix matches a fresh --dump
+player-docs --check    → 16 fresh, 0 stale, 0 missing, 0 broken-ref
+wiki freshness         → exit 0; planner silent
+```
+
+Branch freshened by **merging origin/main into it** (never rebased — rebases stale in-branch wiki
+pins): `baseLag` 16 → 0. That merge brought in the concurrent session's TASK-196/197 cards, which
+touch nothing this branch does.
+
+AC #5 ticked. The branch is PR-ready.
 <!-- SECTION:NOTES:END -->

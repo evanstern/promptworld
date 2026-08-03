@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/executor.go
   - internal/sim/agents.go
-verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
+verified_against: 012f715f55d8d87317e601ad75686c599d277349
 ---
 
 # Executor — needs-conditioned recovery and the neglect detector

@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>promptworld Quickstart Guide — design mockup</title>
+<style>
+  :root {
+    --paper:      #f7f8f5;
+    --paper-2:    #eef1ec;
+    --ink:        #161a18;
+    --ink-2:      #3a423e;
+    --muted:      #5c6763;
+    --rule:       #d7ddd6;
+    --rule-soft:  #e6eae4;
+    --accent:     #a35c0b;
+    --accent-ink: #7d4708;
+    --mono-bg:    #e9ede7;
+
+    --c-note:     #3d6382;
+    --c-tip:      #46734a;
+    --c-warn:     #a8690e;
+    --c-pit:      #9a3a2b;
+    --c-hood:     #5c5379;
+    --c-intent:   #2b6a66;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+    --measure: 74ch;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:      #121614;
+      --paper-2:    #1a201d;
+      --ink:        #e4e9e4;
+      --ink-2:      #c2ccc5;
+      --muted:      #8d9a94;
+      --rule:       #2b332e;
+      --rule-soft:  #222925;
+      --accent:     #e0a052;
+      --accent-ink: #f0bc78;
+      --mono-bg:    #1e2521;
+
+      --c-note:     #7ba6cc;
+      --c-tip:      #7cb281;
+      --c-warn:     #d99b3f;
+      --c-pit:      #d17a68;
+      --c-hood:     #a396cc;
+      --c-intent:   #5fada7;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#121614; --paper-2:#1a201d; --ink:#e4e9e4; --ink-2:#c2ccc5; --muted:#8d9a94;
+    --rule:#2b332e; --rule-soft:#222925; --accent:#e0a052; --accent-ink:#f0bc78; --mono-bg:#1e2521;
+    --c-note:#7ba6cc; --c-tip:#7cb281; --c-warn:#d99b3f; --c-pit:#d17a68; --c-hood:#a396cc; --c-intent:#5fada7;
+  }
+  :root[data-theme="light"] {
+    --paper:#f7f8f5; --paper-2:#eef1ec; --ink:#161a18; --ink-2:#3a423e; --muted:#5c6763;
+    --rule:#d7ddd6; --rule-soft:#e6eae4; --accent:#a35c0b; --accent-ink:#7d4708; --mono-bg:#e9ede7;
+    --c-note:#3d6382; --c-tip:#46734a; --c-warn:#a8690e; --c-pit:#9a3a2b; --c-hood:#5c5379; --c-intent:#2b6a66;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.62;
+    margin: 0 auto;
+    padding: 2.5rem 1.25rem 5rem;
+    max-width: 56rem;
+  }
+
+  /* ---- wiki furniture ---------------------------------------------- */
+  .crumb {
+    font-family: var(--mono);
+    font-size: .74rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding-bottom: .5rem;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 1.5rem;
+  }
+  .crumb a { color: var(--muted); }
+
+  h1 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 2.6rem;
+    line-height: 1.1;
+    letter-spacing: -.01em;
+    margin: 0 0 .2rem;
+    text-wrap: balance;
+  }
+  .sub {
+    font-family: var(--mono);
+    font-size: .78rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 1.4rem;
+  }
+  h2 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 1.65rem;
+    line-height: 1.2;
+    margin: 3rem 0 .9rem;
+    padding-bottom: .35rem;
+    border-bottom: 1px solid var(--rule);
+    text-wrap: balance;
+    clear: both;
+  }
+  h3 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 1.14rem;
+    margin: 1.9rem 0 .5rem;
+    text-wrap: balance;
+  }
+  p, ul, ol { max-width: var(--measure); }
+  p { margin: .85rem 0; }
+  li { margin: .3rem 0; }
+  a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px;
+  }
+  .lede {
+    font-family: var(--serif);
+    font-size: 1.22rem;
+    line-height: 1.55;
+    color: var(--ink-2);
+    max-width: 58ch;
+    margin: 0 0 1.6rem;
+  }
+  code, kbd, .mono { font-family: var(--mono); font-size: .88em; }
+  code { background: var(--mono-bg); padding: .1em .38em; border-radius: 3px; }
+  kbd {
+    background: var(--paper-2); border: 1px solid var(--rule);
+    border-bottom-width: 2px; border-radius: 4px;
+    padding: .06em .4em; font-size: .82em;
+  }
+  pre {
+    background: var(--paper-2); border: 1px solid var(--rule-soft);
+    border-left: 3px solid var(--rule);
+    padding: .85rem 1rem; border-radius: 4px; overflow-x: auto;
+    font-family: var(--mono); font-size: .84rem; line-height: 1.6;
+  }
+  pre code { background: none; padding: 0; }
+
+  /* ---- infobox ------------------------------------------------------ */
+  .infobox {
+    float: right;
+    width: 19rem;
+    max-width: 100%;
+    margin: 0 0 1.25rem 1.75rem;
+    border: 1px solid var(--rule);
+    background: var(--paper-2);
+    border-radius: 4px;
+    font-size: .845rem;
+  }
+  .infobox .ib-title {
+    font-family: var(--serif);
+    font-size: 1rem;
+    text-align: center;
+    padding: .5rem .75rem;
+    border-bottom: 1px solid var(--rule);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+  }
+  .infobox table { margin: 0; border: 0; }
+  .infobox th, .infobox td { border: 0; border-bottom: 1px solid var(--rule-soft); padding: .38rem .75rem; }
+  .infobox th { color: var(--muted); font-weight: 500; width: 8.5rem; vertical-align: top; }
+  .infobox tr:last-child th, .infobox tr:last-child td { border-bottom: 0; }
+
+  /* ---- ToC ---------------------------------------------------------- */
+  .toc {
+    display: inline-block;
+    min-width: 17rem;
+    border: 1px solid var(--rule);
+    background: var(--paper-2);
+    border-radius: 4px;
+    padding: .8rem 1.5rem .9rem 1rem;
+    margin: 1rem 0 1.5rem;
+    font-size: .9rem;
+  }
+  .toc .toc-title {
+    font-family: var(--mono); font-size: .72rem; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: .45rem;
+  }
+  .toc ol { list-style: none; counter-reset: t1; margin: 0; padding: 0; }
+  .toc ol ol { counter-reset: t2; margin: .1rem 0 .25rem .2rem; }
+  .toc li { counter-increment: t1; margin: .12rem 0; }
+  .toc ol ol li { counter-increment: t2; }
+  .toc > ol > li > a::before { content: counter(t1) "  "; color: var(--muted); font-family: var(--mono); font-size: .85em; }
+  .toc ol ol li a::before { content: counter(t1) "." counter(t2) "  "; color: var(--muted); font-family: var(--mono); font-size: .85em; }
+  .toc a { text-decoration: none; color: var(--ink-2); }
+  .toc a:hover { color: var(--accent-ink); text-decoration: underline; }
+
+  /* ---- callouts ------------------------------------------------------ */
+  .cal {
+    display: grid;
+    grid-template-columns: 1.6rem 1fr;
+    gap: .1rem .7rem;
+    max-width: var(--measure);
+    margin: 1.15rem 0;
+    padding: .7rem .9rem .75rem .8rem;
+    border-left: 3px solid var(--k);
+    background: color-mix(in srgb, var(--k) 8%, transparent);
+    border-radius: 0 4px 4px 0;
+    font-size: .945rem;
+  }
+  .cal .glyph {
+    font-family: var(--mono); font-weight: 700; color: var(--k);
+    text-align: center; line-height: 1.5;
+  }
+  .cal .label {
+    font-family: var(--mono); font-size: .7rem; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--k); line-height: 1.7;
+  }
+  .cal .body { grid-column: 2; }
+  .cal p { margin: .15rem 0 0; max-width: none; }
+  .cal--note   { --k: var(--c-note); }
+  .cal--tip    { --k: var(--c-tip); }
+  .cal--warn   { --k: var(--c-warn); }
+  .cal--pit    { --k: var(--c-pit); }
+  .cal--hood   { --k: var(--c-hood); }
+  .cal--intent { --k: var(--c-intent); }
+  .cal--hood summary {
+    cursor: pointer; font-family: var(--mono); font-size: .7rem;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--k);
+  }
+  .cal--hood summary + * { margin-top: .4rem; }
+
+  /* ---- tables -------------------------------------------------------- */
+  .tw { overflow-x: auto; margin: 1.2rem 0; }
+  table { border-collapse: collapse; width: 100%; font-size: .92rem; }
+  th, td { border: 1px solid var(--rule); padding: .45rem .6rem; text-align: left; vertical-align: top; }
+  thead th { background: var(--paper-2); font-weight: 600; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--mono); font-size: .85em; }
+
+  /* ---- figures ------------------------------------------------------- */
+  figure { margin: 1.6rem 0; }
+  figure svg { display: block; width: 100%; height: auto; max-width: 44rem; }
+  figcaption {
+    font-size: .84rem; color: var(--muted); margin-top: .5rem;
+    max-width: var(--measure); border-left: 2px solid var(--rule); padding-left: .7rem;
+  }
+  .fig-id { font-family: var(--mono); font-size: .72rem; letter-spacing: .08em; color: var(--accent); }
+
+  /* svg tokens */
+  .s-box   { fill: var(--paper-2); stroke: var(--rule); stroke-width: 1.5; }
+  .s-boxk  { fill: color-mix(in srgb, var(--accent) 12%, transparent); stroke: var(--accent); stroke-width: 1.5; }
+  .s-lab   { fill: var(--ink); font-family: var(--sans); font-size: 12px; }
+  .s-labk  { fill: var(--accent-ink); font-family: var(--sans); font-size: 12px; font-weight: 600; }
+  .s-sub   { fill: var(--muted); font-family: var(--mono); font-size: 10px; }
+  .s-line  { stroke: var(--muted); stroke-width: 1.4; fill: none; }
+  .s-dash  { stroke: var(--muted); stroke-width: 1.2; fill: none; stroke-dasharray: 4 4; }
+
+  /* ---- continue + navbox ---------------------------------------------- */
+  .continue {
+    display: inline-block; margin: 2.2rem 0 0;
+    font-family: var(--serif); font-size: 1.15rem;
+    border-bottom: 2px solid var(--accent); padding-bottom: .1rem; text-decoration: none;
+  }
+  .navbox {
+    margin-top: 3.5rem; border: 1px solid var(--rule); border-radius: 4px;
+    font-size: .875rem; overflow: hidden;
+  }
+  .navbox .nb-title {
+    font-family: var(--serif); text-align: center; padding: .45rem;
+    background: var(--paper-2); border-bottom: 1px solid var(--rule);
+  }
+  .navbox table { border: 0; }
+  .navbox th {
+    border: 0; border-bottom: 1px solid var(--rule-soft); width: 8rem;
+    background: color-mix(in srgb, var(--accent) 7%, transparent);
+    font-family: var(--mono); font-size: .72rem; letter-spacing: .07em;
+    text-transform: uppercase; color: var(--muted); font-weight: 500;
+  }
+  .navbox td { border: 0; border-bottom: 1px solid var(--rule-soft); }
+  .navbox tr:last-child th, .navbox tr:last-child td { border-bottom: 0; }
+
+  .note-strip {
+    font-size: .82rem; color: var(--muted); font-family: var(--mono);
+    border-top: 1px solid var(--rule); margin-top: 3rem; padding-top: .9rem;
+  }
+  .mock-banner {
+    border: 1px dashed var(--accent); border-radius: 4px;
+    padding: .7rem .9rem; margin: 0 0 2rem;
+    font-size: .88rem; color: var(--ink-2);
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
+    max-width: var(--measure);
+  }
+  @media (max-width: 640px) {
+    .infobox { float: none; width: 100%; margin: 0 0 1.5rem; }
+    h1 { font-size: 2rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="crumb">promptworld &rsaquo; Guides &rsaquo; <strong>Quickstart Guide</strong></div>
+
+<div class="mock-banner">
+  <strong>This is a design mockup.</strong> It shows the proposed hub page rendered in the
+  guide's actual design system — table of contents, infobox, the six callout types, two of the
+  eight SVG diagrams, and the footer navbox. Body copy is real but not final. The full
+  page-by-page outline lives in <code>docs/design/quickstart-guide-outline.md</code>.
+</div>
+
+<h1>Quickstart Guide</h1>
+<p class="sub">From nothing installed &rarr; to a village you understand</p>
+
+<div class="infobox">
+  <div class="ib-title">Quickstart Guide</div>
+  <table>
+    <tr><th>Runs on</th><td>Any terminal (macOS, Linux)</td></tr>
+    <tr><th>You need</th><td>Go, to build the binary</td></tr>
+    <tr><th>AI model</th><td>Optional &mdash; the world runs without one</td></tr>
+    <tr><th>Saves to</th><td><code>~/.promptworld/worlds/</code></td></tr>
+    <tr><th>Permadeath</th><td>Yes. No reload, no undo.</td></tr>
+    <tr><th>Time to first village</th><td>~20 minutes</td></tr>
+    <tr><th>Guide length</th><td>7 chapters, ~2&ndash;3k words each</td></tr>
+  </table>
+</div>
+
+<p class="lede">This guide gets you from nothing installed to a village you understand. It
+skips depth, tips, and best practice &mdash; except where skipping them loses you the
+village.</p>
+
+<div class="toc">
+  <div class="toc-title">Contents</div>
+  <ol>
+    <li><a href="#s1">What you&rsquo;re getting into</a></li>
+    <li><a href="#s2">How you actually do anything</a></li>
+    <li><a href="#s3">The shape of this guide</a>
+      <ol>
+        <li><a href="#s3">The seven chapters</a></li>
+        <li><a href="#s3">Where to stop</a></li>
+      </ol>
+    </li>
+    <li><a href="#s4">Before you start</a></li>
+    <li><a href="#s5">Design system reference</a></li>
+  </ol>
+</div>
+
+<h2 id="s1">1 &nbsp;What you&rsquo;re getting into</h2>
+
+<p>You don&rsquo;t play a character. You have eight villagers, each with a mind of its own,
+and one intermediary who will do things on your behalf if you ask well. That&rsquo;s the
+whole game.</p>
+
+<p>The other thing to understand before anything else is that the world is not a program
+you run. It&rsquo;s a program that is already running.</p>
+
+<figure>
+  <svg viewBox="0 0 640 210" role="img" aria-label="Three pieces: the daemon runs continuously, the world folder holds everything on disk, and your terminal attaches and detaches.">
+    <rect class="s-boxk" x="8"   y="42" width="180" height="74" rx="5"/>
+    <rect class="s-box"  x="230" y="42" width="180" height="74" rx="5"/>
+    <rect class="s-box"  x="452" y="42" width="180" height="74" rx="5"/>
+
+    <text class="s-labk" x="98"  y="70" text-anchor="middle">The daemon</text>
+    <text class="s-sub"  x="98"  y="88" text-anchor="middle">always running</text>
+    <text class="s-sub"  x="98"  y="103" text-anchor="middle">24/7, awake or not</text>
+
+    <text class="s-lab"  x="320" y="70" text-anchor="middle">The world folder</text>
+    <text class="s-sub"  x="320" y="88" text-anchor="middle">on disk, copyable</text>
+    <text class="s-sub"  x="320" y="103" text-anchor="middle">map · history · charter</text>
+
+    <text class="s-lab"  x="542" y="70" text-anchor="middle">Your terminal</text>
+    <text class="s-sub"  x="542" y="88" text-anchor="middle">comes and goes</text>
+    <text class="s-sub"  x="542" y="103" text-anchor="middle">attach · detach</text>
+
+    <path class="s-line" d="M188 70 H228"/>
+    <path class="s-line" d="M228 88 H190"/>
+    <polygon points="228,70 220,66 220,74" fill="currentColor" opacity=".55"/>
+    <polygon points="190,88 198,84 198,92" fill="currentColor" opacity=".55"/>
+    <text class="s-sub" x="208" y="60" text-anchor="middle">writes</text>
+
+    <path class="s-dash" d="M450 79 H412"/>
+    <polygon points="412,79 420,75 420,83" fill="currentColor" opacity=".55"/>
+    <text class="s-sub" x="431" y="70" text-anchor="middle">reads</text>
+
+    <path class="s-dash" d="M542 42 V22 H98 V40"/>
+    <polygon points="98,40 94,32 102,32" fill="currentColor" opacity=".55"/>
+    <text class="s-sub" x="320" y="16" text-anchor="middle">you talk to it here &mdash; but it never waits for you</text>
+
+    <text class="s-sub" x="8" y="150">Quitting the terminal (<tspan font-weight="700">q</tspan>) detaches. It does not stop the world.</text>
+    <text class="s-sub" x="8" y="168">Only <tspan font-weight="700">promptworld stop</tspan> stops the world.</text>
+    <text class="s-sub" x="8" y="186">Nothing is ever lost by walking away &mdash; the story keeps being written.</text>
+  </svg>
+  <figcaption><span class="fig-id">D1</span> &nbsp;The three pieces. Most confusion in the
+  first hour comes from expecting the terminal to <em>be</em> the game.</figcaption>
+</figure>
+
+<div class="cal cal--warn">
+  <div class="glyph">!</div><div class="label">Warning</div>
+  <div class="body"><p>A villager who dies stays dead. There is no reload and no undo. Your
+  first village will probably lose someone.</p></div>
+</div>
+
+<div class="cal cal--intent">
+  <div class="glyph">&sect;</div><div class="label">Design intent</div>
+  <div class="body"><p>Losing a villager is the story, not a failure state. The game narrates
+  a death the same way it narrates a harvest, and the postmortem &mdash; what led up to it,
+  who was there, what changed after &mdash; is the payoff you came for.</p></div>
+</div>
+
+<h2 id="s2">2 &nbsp;How you actually do anything</h2>
+
+<p>You cannot click a villager and tell it to chop wood. Every bit of influence you have
+goes through one intermediary &mdash; the Guardian &mdash; and it goes through in
+<em>words</em>.</p>
+
+<figure>
+  <svg viewBox="0 0 640 250" role="img" aria-label="Influence funnel: you speak to the Guardian, which sends omens, visions, standing orders and designations to the villagers; their actions become events, which become the chronicle you read.">
+    <rect class="s-box"  x="8"  y="14" width="112" height="42" rx="5"/>
+    <text class="s-lab"  x="64" y="40" text-anchor="middle">You</text>
+
+    <rect class="s-boxk" x="8"  y="86" width="112" height="52" rx="5"/>
+    <text class="s-labk" x="64" y="108" text-anchor="middle">The Guardian</text>
+    <text class="s-sub"  x="64" y="124" text-anchor="middle">spends charges</text>
+
+    <path class="s-line" d="M64 56 V84"/>
+    <polygon points="64,84 60,76 68,76" fill="currentColor" opacity=".55"/>
+    <text class="s-sub" x="72" y="74">plain words</text>
+
+    <rect class="s-box" x="188" y="10"  width="146" height="30" rx="4"/>
+    <rect class="s-box" x="188" y="48"  width="146" height="30" rx="4"/>
+    <rect class="s-box" x="188" y="86"  width="146" height="30" rx="4"/>
+    <rect class="s-box" x="188" y="124" width="146" height="30" rx="4"/>
+    <text class="s-lab" x="200" y="30">an omen</text>
+    <text class="s-lab" x="200" y="68">a vision</text>
+    <text class="s-lab" x="200" y="106">a standing order</text>
+    <text class="s-lab" x="200" y="144">a mark on the map</text>
+
+    <path class="s-line" d="M120 112 C152 112 152 25 186 25"/>
+    <path class="s-line" d="M120 112 C152 112 152 63 186 63"/>
+    <path class="s-line" d="M120 112 C152 112 152 101 186 101"/>
+    <path class="s-line" d="M120 112 C152 112 152 139 186 139"/>
+
+    <rect class="s-box" x="392" y="60" width="112" height="52" rx="5"/>
+    <text class="s-lab" x="448" y="82"  text-anchor="middle">Villagers</text>
+    <text class="s-sub" x="448" y="98"  text-anchor="middle">decide for themselves</text>
+
+    <path class="s-line" d="M334 25  C366 25  366 82 390 82"/>
+    <path class="s-line" d="M334 63  C366 63  366 82 390 82"/>
+    <path class="s-line" d="M334 101 C366 101 366 84 390 84"/>
+    <path class="s-line" d="M334 139 C366 139 366 86 390 86"/>
+    <polygon points="390,83 382,79 382,88" fill="currentColor" opacity=".55"/>
+
+    <rect class="s-box" x="392" y="150" width="112" height="42" rx="5"/>
+    <text class="s-lab" x="448" y="176" text-anchor="middle">Events</text>
+    <path class="s-line" d="M448 112 V148"/>
+    <polygon points="448,148 444,140 452,140" fill="currentColor" opacity=".55"/>
+
+    <rect class="s-boxk" x="536" y="150" width="96" height="42" rx="5"/>
+    <text class="s-labk" x="584" y="176" text-anchor="middle">Chronicle</text>
+    <path class="s-line" d="M504 171 H534"/>
+    <polygon points="534,171 526,167 526,175" fill="currentColor" opacity=".55"/>
+
+    <path class="s-dash" d="M584 150 V214 H64 V60"/>
+    <polygon points="64,60 60,68 68,68" fill="currentColor" opacity=".55"/>
+    <text class="s-sub" x="324" y="230" text-anchor="middle">&mdash; you read what happened, and decide what to say next &mdash;</text>
+  </svg>
+  <figcaption><span class="fig-id">D2</span> &nbsp;The influence funnel. Nothing you do
+  reaches a villager directly, and nothing you ask for is guaranteed &mdash; they decide.</figcaption>
+</figure>
+
+<div class="cal cal--pit">
+  <div class="glyph">&times;</div><div class="label">Pitfall</div>
+  <div class="body"><p>New players tell the Guardian <em>what they want to be true</em>
+  (&ldquo;keep everyone warm&rdquo;). Tell it <em>what to watch for and what to do about
+  it</em> instead &mdash; that&rsquo;s the whole skill the game is teaching.</p></div>
+</div>
+
+<h2 id="s3">3 &nbsp;The shape of this guide</h2>
+
+<div class="tw">
+<table>
+  <thead>
+    <tr><th class="num">#</th><th>Chapter</th><th>What you&rsquo;ll have at the end</th><th class="num">~words</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="num">1</td><td><a href="#">Setup</a></td><td>A world on disk, running, with your terminal attached</td><td class="num">2,200</td></tr>
+    <tr><td class="num">2</td><td><a href="#">Reading the screen</a></td><td>You can tell what&rsquo;s happening without asking</td><td class="num">2,400</td></tr>
+    <tr><td class="num">3</td><td><a href="#">Your first night</a></td><td>Everyone survives till dawn. Probably.</td><td class="num">2,600</td></tr>
+    <tr><td class="num">4</td><td><a href="#">Your first week</a></td><td>Standing orders that work while you&rsquo;re away</td><td class="num">3,200</td></tr>
+    <tr><td class="num">5</td><td><a href="#">When someone dies</a></td><td>You can read a death back to its cause</td><td class="num">1,800</td></tr>
+    <tr><td class="num">6</td><td><a href="#">The four stages</a></td><td>You know what mastery is and how it&rsquo;s earned</td><td class="num">3,000</td></tr>
+    <tr><td class="num">7</td><td><a href="#">What next</a></td><td>Somewhere to go</td><td class="num">1,200</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="cal cal--tip">
+  <div class="glyph">&rarr;</div><div class="label">Tip</div>
+  <div class="body"><p>You can stop after chapter 3 and have a genuinely good time. Chapters
+  4&ndash;6 are for when you want the village to survive without you watching.</p></div>
+</div>
+
+<h2 id="s4">4 &nbsp;Before you start</h2>
+
+<ol>
+  <li><strong>Go installed.</strong> That&rsquo;s the only hard requirement.</li>
+  <li><strong>A local model server</strong> &mdash; optional, but it&rsquo;s the difference
+  between villagers who react and villagers who <em>think</em>.</li>
+  <li><strong>Twenty minutes</strong>, and a willingness to watch for ten of them without
+  touching anything.</li>
+</ol>
+
+<div class="cal cal--note">
+  <div class="glyph">i</div><div class="label">Note</div>
+  <div class="body"><p>With no model configured the world still runs &mdash; villagers walk,
+  eat, sleep and freeze on reflex alone. It&rsquo;s a real game and worth an hour. Chapter 1
+  covers turning minds on.</p></div>
+</div>
+
+<details class="cal cal--hood">
+  <summary>Under the hood &mdash; why speed is a ceiling, not a promise</summary>
+  <div class="body"><p>Villager decisions cost a model call, and model calls take real time.
+  When you raise the speed, the game raises the <em>ceiling</em>; if thinking can&rsquo;t keep
+  up, it quietly settles lower rather than letting villagers stop thinking. Chapter 2 covers
+  what you&rsquo;ll see when that happens.</p></div>
+</details>
+
+<a class="continue" href="#">Continue to &rarr; Setup</a>
+
+<h2 id="s5">5 &nbsp;Design system reference</h2>
+
+<p>Not part of the shipped page &mdash; included here so the conventions can be signed off
+before seven chapters get written against them.</p>
+
+<h3>The six callouts</h3>
+
+<div class="cal cal--note"><div class="glyph">i</div><div class="label">Note</div>
+  <div class="body"><p>Neutral clarification. The reader is not in danger and has nothing to do.</p></div></div>
+<div class="cal cal--tip"><div class="glyph">&rarr;</div><div class="label">Tip</div>
+  <div class="body"><p>Makes play nicer. Always safe to skip.</p></div></div>
+<div class="cal cal--warn"><div class="glyph">!</div><div class="label">Warning</div>
+  <div class="body"><p>You will lose something irreversibly if you ignore this.</p></div></div>
+<div class="cal cal--pit"><div class="glyph">&times;</div><div class="label">Pitfall</div>
+  <div class="body"><p>The specific, observed mistake new players make here.</p></div></div>
+<details class="cal cal--hood"><summary>Under the hood &mdash; collapsed by default</summary>
+  <div class="body"><p>Optional mechanical depth. Never load-bearing: a reader who skips every
+  one of these still finishes the guide able to play.</p></div></details>
+<div class="cal cal--intent"><div class="glyph">&sect;</div><div class="label">Design intent</div>
+  <div class="body"><p>Why the game <em>refuses</em> to do the thing you want. Used sparingly
+  &mdash; roughly once per chapter, at the point of maximum frustration.</p></div></div>
+
+<h3>Rules the prose has to follow</h3>
+<ul>
+  <li>No paragraph over four rendered lines. Longer becomes a list or a table.</li>
+  <li>Every procedure is a numbered list, one action per step, imperative mood.</li>
+  <li>Every &ldquo;what does this mean&rdquo; answer is a table.</li>
+  <li>At least one callout per <code>&lt;h2&gt;</code> section &mdash; they are the main
+  defence against wall-of-text.</li>
+  <li>A page splits at <strong>8,000 words</strong>, at the nearest <code>&lt;h2&gt;</code>.
+  A contents list over ~12 entries is the earlier warning.</li>
+</ul>
+
+<div class="navbox">
+  <div class="nb-title">promptworld Quickstart Guide</div>
+  <table>
+    <tr>
+      <th>Progression</th>
+      <td>Setup &middot; Reading the screen &middot; Your first night &middot; Your first week
+      &middot; When someone dies &middot; The four stages &middot; What next</td>
+    </tr>
+    <tr>
+      <th>Concepts</th>
+      <td>The Guardian &middot; Needs &amp; neglect &middot; The gru &middot; Speed &amp; thinking</td>
+    </tr>
+    <tr>
+      <th>Reference</th>
+      <td>Command reference &middot; Keys reference &middot; World files &middot; Troubleshooting
+      <span style="color:var(--muted)">(&rarr; player docs)</span></td>
+    </tr>
+  </table>
+</div>
+
+<p class="note-strip">Mockup for review &mdash; proposal, not shipped documentation.
+Outline of record: docs/design/quickstart-guide-outline.md</p>
+</body>
+</html>

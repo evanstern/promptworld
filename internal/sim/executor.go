@@ -1360,14 +1360,25 @@ func executeAtTarget(s *State, m *worldmap.Map, i int, nextTick int64) []store.E
 
 	// US1-AS1 zero-space guard (T011): a gather whose taker has no free bulk
 	// does not happen — no harvest event and, crucially, no depletion (the
-	// tree/den/outcrop/forage tile is left untouched for later). The intent
-	// simply resolves. Same contested-resource re-validation as the vanished-
-	// resource case above, keyed on the pouch instead of the world (research R2).
+	// tree/den/outcrop/forage tile is left untouched for later). Same
+	// contested-resource re-validation as the vanished-resource case above,
+	// keyed on the pouch instead of the world (research R2).
+	//
+	// TASK-196: it resolves LOUDLY, via intentFailPackFull. It used to emit a
+	// bare agent.intent_done — the SAME event a successful gather emits — so a
+	// full pouch was indistinguishable from a harvest to the villager, the
+	// planner, and the chronicle alike. World-03 killed Cedar with it: his pack
+	// sat at exactly 24/24 (20 wood + 4 planks) after he dropped his food to
+	// carry more wood, and the ~20 forages that followed each completed the full
+	// work cycle, yielded nothing, and told him nothing. He starved on day 1
+	// standing on a live forage patch, having never eaten once. Routing through
+	// intentFailedEvents preserves both halves of the guard's own invariant (no
+	// yield, no depletion) while closing the IntentLog record "failed", which is
+	// what puts the reason in front of the next thought.
 	switch in.Goal {
 	case "forage", "chop", "hunt", "quarry", "collect_water":
 		if freeBulk(a.Inv) == 0 {
-			emit("agent.intent_done", AgentPayload{Agent: Ref(i)})
-			return events
+			return append(events, intentFailedEvents(s, i, a, in, intentFailPackFull, nextTick)...)
 		}
 	}
 
@@ -1665,10 +1676,18 @@ func buildFailedEvents(s *State, i int, a *Agent, in *Intent, reason string, nex
 // under the intent between landing and completion. intentFailInvalid is a
 // malformed intent argument that no amount of world-state change could ever
 // satisfy — never something another agent contested (deposit's empty Kind).
+// intentFailPackFull (TASK-196) is the zero-space guard's exit, shared by every
+// gather goal: the world held what the agent came for and the agent did the
+// work, but there was no room to carry it. It is deliberately its own reason
+// rather than folded into intentFailContested, because the remedy is unique and
+// entirely within the agent's own gift — drop or store something — and a
+// villager who cannot tell "the berries were gone" from "my hands were full"
+// can act on neither.
 const (
 	intentFailTargetGone = "target gone"
 	intentFailContested  = "contested"
 	intentFailInvalid    = "invalid"
+	intentFailPackFull   = "pack full"
 )
 
 // intentFailGoalNoun is the player-facing noun phrase for a failed non-build
@@ -1713,6 +1732,8 @@ func intentFailureCause(reason string) string {
 		return "it was gone by the time I got there"
 	case intentFailInvalid:
 		return "I never had what it needed"
+	case intentFailPackFull:
+		return "my hands were too full to carry any more"
 	default: // intentFailTargetGone
 		return "the target was gone"
 	}

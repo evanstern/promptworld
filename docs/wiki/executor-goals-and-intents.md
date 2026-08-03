@@ -6,7 +6,7 @@ sources:
   - internal/sim/executor.go
   - internal/sim/agents.go
   - internal/sim/recipes.go
-verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
+verified_against: 012f715f55d8d87317e601ad75686c599d277349
 ---
 
 # Executor — goals and intents
@@ -47,9 +47,21 @@ site/resource re-validation, and `craft_*`/`cook`/`bathe`/`deposit`/`withdraw`'s
 completion-time no-op recheck, now emit `agent.intent_failed` via
 `intentFailedEvents` — the same shape (position + a paired failure memory at
 the build-failure salience tier), reason drawn from a small closed vocabulary
-(`intentFailTargetGone`/`intentFailContested`/`intentFailInvalid`) —
-INSTEAD of the bare `agent.intent_done` these resolved through before;
-`agent.intent_done` now means an unambiguous success (or an instant/
+(`intentFailTargetGone`/`intentFailContested`/`intentFailInvalid`, joined by
+`intentFailPackFull` below) —
+INSTEAD of the bare `agent.intent_done` these resolved through before.
+TASK-196 added the fourth member and the last gather path still resolving
+silently: the spec-013 US1-AS1 zero-space guard, which fires when a
+`forage`/`chop`/`hunt`/`quarry`/`collect_water` completes with `freeBulk` at
+zero, now emits `agent.intent_failed{reason: intentFailPackFull}` ("pack full")
+in place of the bare `agent.intent_done` it shared with a successful harvest.
+It is its own reason rather than a `contested` variant because the remedy is
+unique and wholly the agent's own — drop or store something — and the world-03
+run demonstrated the cost of the ambiguity: Cedar starved to death on day 1
+standing on a live forage patch, foraging it ~20 times with a pack full of wood,
+because every no-op reported itself as a success. The guard's no-yield and
+no-depletion invariants are untouched.
+With that, `agent.intent_done` means an unambiguous success (or an instant/
 wander-class goal with no re-validation of its own — [[event-types-agent-intents]]
 carries the full reason/payload table). Movement itself gets a second,
 conditional cadence slot (spec 032 US3): the staggered phase-0 tick always steps,
