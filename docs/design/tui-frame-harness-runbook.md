@@ -126,6 +126,52 @@ other page pins `72f82f41`, which resolves.
   re-pins out of main's history — the precise hazard that produced Lane 0.
 - **Go hygiene:** `gofmt -l` clean, `go build ./...`, `go test ./...` green before PR.
 
+## Gate changes this PR makes — OPERATOR PING (runbook amendment, 2026-08-02)
+
+The sweep skill requires that any change to a gate this runbook enumerates be recorded here
+and surfaced to the operator rather than buried in a spec artifact. This PR changes one.
+
+**`scripts/check-tui-design.mjs` gains a `GENERATED_DIRS` exemption.** Phase 4's T014 probe
+found the checker **refuses** `docs/design/tui/frames/` — empirically, by creating the
+directory and running it:
+
+```
+file-set  docs/design/tui/frames/README.md  file lives outside the taxonomy
+                                            (pages/panels/overlays/patterns) …
+pins      docs/design/tui/frames/README.md  missing frontmatter
+2 violation(s)                                                          # exit 1
+```
+
+Two facts, not one: the frames themselves were **already invisible** (`walkMarkdown`
+collects only `.md`, and frames are `.txt`), so only the README was rejected — and it was
+rejected twice over, by the taxonomy check and the pins check.
+
+The exemption is applied at **file-collection** time rather than inside each individual
+check, so a later check cannot reach a generated file by forgetting the exemption.
+
+**Is this a softening?** The orchestrator's judgment: no. Every check the script runs
+asserts a property of an *authored* design page — a `class` matching its directory, a pin
+naming the commit a human verified it against, an `anatomy.md` row. Generated output has
+none of those and should not: its authority is the generator, and a hand-written pin on it
+would be a claim nobody made. Scoping the checker to what it actually governs is a
+correction, not a relaxation. Rationale is recorded in
+`specs/047-tui-design-reference-v2/contracts/check-script.md` and echoed in
+`docs/design/tui/INDEX.md` and the frames README. **Flagged for the operator regardless —
+it is a gate change, and gate changes are the operator's call, not the sweep's.**
+
+## Known gate interaction: spec-bridge Stop gate in background mode
+
+The `spec-bridge` Stop gate reports TASK-187 as "In Progress but `specs/112-tui-frame-harness`
+only proves To Do: spec.md missing, plan.md missing". The artifacts are **not** missing —
+they are committed on `task-187-frame-harness`. The gate reads the **root checkout**, which
+is on `main`, where the spec directory does not yet exist because the branch is unmerged.
+
+The gate is correct about what it can see. The escape it offers — setting the card back to
+To Do — is refused on purpose: that is editing derived state to silence a gate while the
+work is demonstrably in progress, which the project's own doctrine forbids. The genuinely
+missing artifact is "spec files on `main`", produced by merging, which a background job
+cannot do. **Expect this warning until the PR merges; it resolves at merge.**
+
 ## Per-task artifacts required before PR
 
 **No PR opens for TASK-187 until each line below checks true.**

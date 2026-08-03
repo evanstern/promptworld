@@ -81,6 +81,31 @@ world dir and runs the existing `tea.NewProgram(tui.New(w), …)` path from
 `cmd/promptworld/commands.go:848`. Reusing `cmdUI`'s exact program construction is what
 keeps the interactive view and the dumped frame the same thing.
 
+> **Amendment (orchestrator, 2026-08-02, after phase 3) — purpose over letter, accepted.**
+> The paragraph above is wrong in its specifics and the implementer was right to deviate.
+> `tui.New(w)` re-reads the operator's home directory, discards the fixture's canned events
+> and status, and runs a live clock — so following the letter would produce an interactive
+> session that is emphatically **not** the same thing as the dumped frame, defeating the
+> only reason FR-006 exists. The shipped behavior keeps `cmdUI`'s exact **program**
+> construction (`tea.NewProgram(…, WithAltScreen(), WithMouseCellMotion())` plus
+> `FatalErr` surfacing) but hands it the fixture's **posed model** rather than
+> `tui.New(w)`. A test asserts that model's `View()` is byte-identical to the dumped frame
+> for the same fixture and state, which is the invariant the letter was only gesturing at.
+>
+> The temp world dir is written from the fixture's own manifest rather than via
+> `world.Create`, which would stamp a fresh `CreatedAt` and discard the stage and scenario
+> config that decide whether the exercise tab and lesson row render at all.
+>
+> Two seams were required to make the equality true rather than merely asserted, and both
+> are legitimate: an `offline` flag so `Init` issues no connect (a fixture world has no
+> socket; the failed connect would flip `connected` off and start a retry loop, changing
+> the frame within a tick or two), and `timeControl` tolerating a nil client (a fixture
+> renders as connected while holding no client, and the clock keys gate on `connected`
+> alone, so the first space press would have panicked). The nil guard belongs **inside**
+> the returned closure, not in place of it — returning `nil` instead of the command broke
+> four existing tests that assert those keys dispatch a command at all. The dispatch is the
+> contract; only the round trip has nothing to talk to.
+
 ### Fidelity test (FR-007 / AC #9)
 
 An in-package test builds a Model through the fixture path, calls `View()` directly, and

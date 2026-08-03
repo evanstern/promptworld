@@ -81,6 +81,11 @@ One task, one PR. Every phase below lands as a commit on this single branch.
 - [ ] T020 `gofmt -l` clean, `go build ./...`, `go test ./...` green.
 - [ ] T021 Amend `docs/design/tui/` for this feature and re-pin every affected page;
       `node scripts/check-tui-design.mjs --changed <range>` exits 0.
+      **Known stale pin, must be re-pinned:** phase 4 added a `frames/` entry to
+      `docs/design/tui/INDEX.md`'s taxonomy section. Its `verified_against` still
+      *resolves*, so the pins check does NOT catch it — but its content changed, which
+      makes the pin stale in substance. Re-pin `INDEX.md` explicitly; do not assume a green
+      checker means every pin is honest.
 - [ ] T022 Wiki-in-PR (spec 069): re-verify and re-pin, in-branch, any wiki note listing a
       touched file in its `sources:`; if `docs/wiki/` changed, regenerate `docs/player/`.
       Probe with `node .claude/skills/player-docs/scripts/check-freshness.mjs --check`.
