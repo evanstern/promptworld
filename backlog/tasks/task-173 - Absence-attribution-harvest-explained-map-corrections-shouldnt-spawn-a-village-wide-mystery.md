@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-30 16:41'
-updated_date: '2026-08-03 12:38'
+updated_date: '2026-08-03 13:01'
 labels: []
 dependencies: []
 ordinal: 141000
@@ -38,8 +38,6 @@ Spec: specs/110-absence-attribution
 - [ ] #7 Spec phase: Evidence
 - [ ] #8 Spec phase: Grounding and PR
 <!-- AC:END -->
-
-
 
 ## Implementation Notes
 
@@ -81,6 +79,8 @@ SC-002 (volume): corrections fall from 48-65% of each day chapter to 1-2%; attri
 SC-001 THRESHOLD RULING (operator, 2026-08-03): SC-001 split - storyline clause met outright, numeric clause ('at most 5%') missed on two of three after-runs at 6% and 7%. The implementer escalated rather than rounding it. Two facts bore on the ruling: the 5% threshold was derived from a baseline this spec miscomputed (18/90=20% mixed an entries numerator with a lines denominator; like-for-like it is 18/56=32%), and of the seven residual keyword matches across all after-runs NONE concerns a remembered map feature being gone - on what the criterion was written to catch the after-runs measure 0 of 122 entries. Operator ruled: tick AC#2, the storyline clause governs, since AC#2's words are 'does not earn mystery-grade narrative weight'. Stricter alternatives (tune until the letter passes; require a fresh 12-day live confirmation soak) were offered and declined. The miss is recorded in spec.md and evidence.md, not erased.
 
 RECORDED LIMITATION: replay exercises the narrator's input faithfully but re-runs its output against a live model, so this is evidence about the same 12.02 game-days rather than a fresh world's emergent dynamics, and it cannot exercise the narrator-to-villager feedback loop. The original re-open clause stands: if a later month-scale live run resurfaces an absence storyline, re-open with that evidence.
+
+PR 160 opened (draft) 2026-08-03: https://github.com/evanstern/promptworld/pull/160 - branch task-173-absence-attribution. All five spec-110 phases complete. Grounding rides the PR per spec 069: new docs/wiki/absence-attribution.md split out of chronicle.md, 11 notes re-pinned against read diffs, CAPSULES.md regenerated, INDEX entry added, 3 player pages regenerated (16 fresh / 0 stale). Gates green after the final origin/main merge-in: go build, go test ./..., go test -race ./internal/mind/... (516.6s), merge-drift pr mode PASS with no findings. MERGE WITH --merge, NEVER SQUASH: the branch carries in-branch wiki re-pins and a squash rewrites the hashes they reference.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
