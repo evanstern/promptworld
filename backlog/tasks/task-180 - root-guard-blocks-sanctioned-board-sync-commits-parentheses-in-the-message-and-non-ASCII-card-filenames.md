@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-08-01 04:25'
-updated_date: '2026-08-03 01:28'
+updated_date: '2026-08-03 01:36'
 labels:
   - debt
 dependencies: []
@@ -55,4 +55,16 @@ TWO MORE INSTANCES observed 2026-08-02 during TASK-188's board sync, same parser
 (b) Heredoc PAYLOAD text is scanned as if it were commands. Authoring a plain notes file with a shell heredoc was blocked because the PROSE inside the heredoc quoted a git-commit example. The guard matched quoted text that is data, never executed. Workaround in use: author note files with the Write tool instead of a heredoc.
 
 Shared root cause with this card's existing cases: the guard tokenizes the raw bash string rather than parsing shell grammar, so anything that is not an argument to the git invocation - redirections, pipe segments, heredoc bodies, message text - can be mistaken for one. A fix that only special-cases each new token shape will keep accreting; the durable fix is to isolate the actual git argv (stop at the first redirection or pipe operator, ignore heredoc bodies) before the pathspec walk.
+
+NON-ASCII FILENAME CASE REPRODUCED AND ROOT-CAUSED (2026-08-02, committing TASK-189's card, whose title carries an em dash).
+
+Mechanism, confirmed by reading the hook: with no explicit pathspecs the guard falls back to the staged set (root-guard-hook.mjs:311-315), which it reads via `git diff --cached --name-only`. Git C-QUOTES any path containing non-ASCII bytes, so the em-dash card comes back as a token that literally begins with a double-quote character. The check is files.every((f) => f.startsWith('backlog/')), which is false for a C-quoted path, so a correctly-scoped single-card board-sync commit blocks. Fix candidate: pass -z (git already does the right thing with it, and taskCardsOnOriginMain in check-merge-drift.mjs:471 ALREADY uses -z for exactly this reason and cites it in a comment), or set core.quotePath=false on the read, or strip C-quoting before the prefix test.
+
+WORKAROUND THAT WORKS, verified: pass the card as an EXPLICIT double-quoted pathspec after --. parseGitInvocation's tokenizer (root-guard-hook.mjs:186-189) keeps a double-quoted token whole via /("[^"]*"|'[^']*'|\S+)/ and stripQuotes removes the wrapper, so the real path reaches boardPathspecOk with its leading backlog/ intact and passes. The explicit-pathspec branch (line 305-308) never consults the staged set, so C-quoting never enters the picture.
+
+A WORKAROUND THAT DOES NOT WORK: retitling the task to remove the non-ASCII character. The backlog CLI updates the title inside the card but does NOT rename the file on disk, so the em dash stays in the filename and the block persists.
+
+MECHANISM FOR THE REDIRECTION CASE (a) above, now also root-caused: parseGitInvocation stops the segment at the first character in /[;|&\n`)]/. For a commit followed by a stderr redirect, that boundary lands on the ampersand INSIDE the redirect, leaving a truncated trailing fragment as a token. It does not start with a dash, so it falls through to the pathspec list, fails boardPathspecOk, and blocks. The redirect was never an argument to git at all.
+
+All three cases on this card share one cause: the guard tokenizes the raw bash string instead of parsing shell grammar, and separately trusts porcelain output that git deliberately quotes. Suggested fix order: (1) -z on the staged-set read, cheapest and closes the non-ASCII case outright; (2) stop the git segment at a redirection operator rather than at a bare ampersand; (3) ignore heredoc bodies.
 <!-- SECTION:NOTES:END -->
