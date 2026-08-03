@@ -101,7 +101,7 @@ usable width and no line exceeds the pane.
 - [x] T029 Run `node scripts/check-tui-design.mjs --changed` and resolve any finding until it exits 0
 - [x] T030 Run the full suites: `go test ./...`, `gofmt -l internal/`, `go vet ./internal/...`, and `node --test scripts/check-merge-drift.test.mjs`
 - [x] T031 Confirm SC-006 by checking that no pre-existing `internal/tui` test needed modification; if any did, treat it as a defect in the change rather than a stale test and fix the change
-- [ ] T032 Record on TASK-195 the frame-churn scope from T027, so the PR reviewer knows why many `mid-game` frames changed
+- [x] T032 Record on TASK-195 the frame-churn scope from T027, so the PR reviewer knows why many `mid-game` frames changed
 
 ---
 
