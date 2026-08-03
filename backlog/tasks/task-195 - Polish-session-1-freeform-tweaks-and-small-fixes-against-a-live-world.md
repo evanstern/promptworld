@@ -4,7 +4,7 @@ title: 'Polish session 1: freeform tweaks and small fixes against a live world'
 status: In Progress
 assignee: []
 created_date: '2026-08-03 17:33'
-updated_date: '2026-08-03 18:03'
+updated_date: '2026-08-03 18:14'
 labels: []
 dependencies: []
 ordinal: 177001
@@ -180,4 +180,47 @@ resolved.
 **Correction to the decision-1 note:** the stale-note count is **12**, not ten — the earlier figure
 came from a `grep -rl … | head` that truncated at ten. Adding `internal/llm/config.go` (6 notes),
 this branch's stale union is **17 of 191 notes (9%)**, since five notes source both files.
+
+### Decision 2 — multi-line boot shape stays
+
+Operator confirmed the N-provider multi-line boot report (decision 1). No further change; the
+shipped form is final. Closes the open question flagged when decision 1 landed.
+
+### Decision 3 — wiki-footprint threshold check in the session gate
+
+**Why this and not a grounding cadence.** Grounded in the gate's own logic: a note is stale iff any
+of its `sources:` changed between its pin and the tip (`scripts/check-merge-drift.mjs:799`,
+`changedFiles(n.verified_against, originMainTip, cwd, n.sources)`). That is **binary per note and
+idempotent** — touching `internal/daemon/daemon.go` once stales 12 notes; touching it fifty more
+times stales the same 12. Staleness is a set union over FILES TOUCHED, never a sum over edits, so
+deferring grounding to step 9 costs nothing extra and per-item grounding would re-verify the same
+notes N times. The session contract stands.
+
+What actually grows is **breadth** — the union widens only when new distinct files are touched — and
+the repo's note-per-source concentration makes that sharp: `internal/sim/state.go` 27 notes,
+`executor.go` 26, `agents.go` 22, `tool/registry.go` 15, `sim/loop.go` 15, `tui/tui.go` 14,
+`tui/views.go` 13, `daemon/daemon.go` 12. One stray edit to `sim/state.go` costs more than this
+whole session so far (17 of 191). So the risk knob is scope sprawl across subsystems, not elapsed
+items — and the right instrument measures footprint, not frequency.
+
+**The check.** In `session` mode, per live branch, after `loadWikiNotes`:
+
+- Metric: size of the union from the existing `wikiSourcesOverlap(b.changedFiles, wikiNotes)` —
+  notes whose `sources:` intersect the branch's changed files.
+- Baseline: `mergeBase..tip`, i.e. `b.changedFiles`, committed work only. Uncommitted edits are not
+  counted, consistent with every other per-branch computation in the script. Documented, not fixed.
+- Threshold: **30 notes** (of 191, ~16%). Calibrated off the concentration table — `sim/state.go`
+  alone is 27 and `tui.go`+`views.go` is ~27, so 30 trips precisely when a session has reached into
+  a second hot subsystem, which is the sprawl signal. A narrow session never approaches it.
+- Severity: **warn, never block.** The session gate is non-blocking by design (it injects context at
+  SessionStart and must never stop a session). Making it ever block is a separate, spec'd decision.
+- Rule name: `wiki-footprint`.
+- Always-visible count: `wikiNotes=N` appended to each branch line in the text report and carried in
+  `--json`, so the number is legible below threshold with no extra finding noise.
+
+**Trivial-exemption judgment (AC #2).** Borderline and called deliberately: this adds new gate
+behavior rather than fixing a diagnosed defect, which normally argues for a spec. It lands as ad-hoc
+because the only genuinely policy-shaped knob — whether it can block — is answered by the session
+gate's existing non-blocking contract, leaving a threshold constant and a report field. If the
+threshold should ever gate rather than inform, that is a spec.
 <!-- SECTION:NOTES:END -->
