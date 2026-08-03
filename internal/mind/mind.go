@@ -165,6 +165,13 @@ type Mind struct {
 	// line path), so it needs no lock of its own. Zero value is usable.
 	harvests harvestLedger
 
+	// corrTally (spec 110 FR-003/FR-007) is the per-chapter map-correction
+	// accumulator: attributed corrections fold in here instead of each taking
+	// a chronicle line, and closeChapter turns the whole chapter's worth into
+	// ONE coalesced line plus one telemetry summary. Absorb-owned and reset
+	// alongside narrLines, so it holds no lock. Zero value is usable.
+	corrTally correctionTally
+
 	// Governance phrasing (TASK-13): bounded queue + single-flight worker
 	// rephrasing enacted proposals in the proposer's voice.
 	meetQ chan meetingJob

@@ -49,6 +49,11 @@ const (
 	// so the cap is a bound of last resort, not a tuning dial. Eviction is
 	// oldest-first, as it is for the window.
 	harvestLedgerCap = 4096
+
+	// corrSummaryMarker opens the coalesced correction line (spec 110 FR-003)
+	// so the narrator prompt can name exactly that line as background (FR-005)
+	// without a chapter that has none carrying the instruction at all (FR-008).
+	corrSummaryMarker = "Ordinary harvesting:"
 )
 
 // harvestKey is a ledger coordinate — harvests are attributed by exact tile,
@@ -140,6 +145,95 @@ func (md *Mind) attributedHarvest(x, y int, atTick int64) (agentID int, ok bool)
 	return md.harvests.lookup(x, y, atTick)
 }
 
+// correctionTally is the per-chapter accumulator of map corrections (spec 110
+// FR-003). An attributed correction contributes no line of its own; it folds
+// in here and the whole chapter's worth becomes ONE coalesced summary line at
+// closeChapter, naming the count, the distinct locations, and the harvesters.
+// Unexplained corrections are only counted, for telemetry (FR-007) — they
+// keep their existing per-event line, byte-identical (FR-004/D5).
+// Absorb-goroutine-owned exactly as narrLines is, and reset alongside it, so
+// it needs no lock and starts no goroutine.
+type correctionTally struct {
+	attributed  int
+	unexplained int
+	places      map[harvestKey]bool
+	harvesters  map[int]bool
+}
+
+// attribute folds one harvest-explained correction into the chapter's tally.
+func (t *correctionTally) attribute(x, y, harvester int) {
+	if t.places == nil {
+		t.places = map[harvestKey]bool{}
+		t.harvesters = map[int]bool{}
+	}
+	t.attributed++
+	t.places[harvestKey{x, y}] = true
+	t.harvesters[harvester] = true
+}
+
+// summary renders the chapter's ONE coalesced correction line (FR-003), or ""
+// when nothing was attributed — FR-008's identity case, where the chapter
+// reads exactly as it does today. The wording names the mundane cause and the
+// people responsible, because a cause named is not a mystery (D2); it says
+// nothing a narrator could mistake for an omen. name is the roster path the
+// per-event lines already use.
+func (t *correctionTally) summary(name func(int) string) string {
+	if t.attributed == 0 {
+		return ""
+	}
+	ids := make([]int, 0, len(t.harvesters))
+	for id := range t.harvesters {
+		ids = append(ids, id)
+	}
+	sort.Ints(ids) // deterministic wording from a map-keyed set
+	names := make([]string, len(ids))
+	for i, id := range ids {
+		names[i] = name(id)
+	}
+	return fmt.Sprintf(
+		"%s %d remembered thing%s the villagers went for had already been felled or quarried, at %d location%s, by %s. Routine village business.",
+		corrSummaryMarker, t.attributed, plural(t.attributed),
+		len(t.places), plural(len(t.places)), joinNames(names))
+}
+
+// report renders the chapter's correction telemetry (FR-007) — attributed vs
+// unexplained, plus the attributed spread — or "" for a chapter with no
+// corrections at all, which stays as quiet as it is today (FR-008). Logged
+// rather than evented, following the nightReport precedent (spec 105): a
+// per-period counter flushed as one summary line, so no sim event type,
+// payload, or format_version moves (FR-006).
+func (t *correctionTally) report(label string) string {
+	if t.attributed == 0 && t.unexplained == 0 {
+		return ""
+	}
+	return fmt.Sprintf("mind: chronicle %q corrections: %d attributed (%d location%s, %d harvester%s), %d unexplained",
+		label, t.attributed, len(t.places), plural(len(t.places)),
+		len(t.harvesters), plural(len(t.harvesters)), t.unexplained)
+}
+
+// plural is the chronicle's English-agreement helper: the log lines are read
+// by a model, but they are still prose.
+func plural(n int) string {
+	if n == 1 {
+		return ""
+	}
+	return "s"
+}
+
+// joinNames renders a name list the way the chronicle's prose does — "A",
+// "A and B", "A, B and C".
+func joinNames(names []string) string {
+	switch len(names) {
+	case 0:
+		return "someone"
+	case 1:
+		return names[0]
+	case 2:
+		return names[0] + " and " + names[1]
+	}
+	return strings.Join(names[:len(names)-1], ", ") + " and " + names[len(names)-1]
+}
+
 // narrJob is the immutable chapter a narration runs against.
 type narrJob struct {
 	day      int64
@@ -163,6 +257,15 @@ type narrCarry struct {
 	lines    []string
 }
 
+// agentName resolves an agent index through the roster — the single path every
+// chronicle line (per-event and coalesced alike) names people by.
+func (md *Mind) agentName(i int) string {
+	if i >= 0 && i < len(md.replica.Agents) {
+		return md.replica.Agents[i].Name
+	}
+	return "someone"
+}
+
 // chronicleNote turns one notable event into a chronicle log line and closes
 // chapters at day/night boundaries. Runs in the absorb goroutine (owns the
 // replica, which has already applied e).
@@ -170,12 +273,7 @@ func (md *Mind) chronicleNote(e store.Event) {
 	if md.social == nil {
 		return
 	}
-	name := func(i int) string {
-		if i >= 0 && i < len(md.replica.Agents) {
-			return md.replica.Agents[i].Name
-		}
-		return "someone"
-	}
+	name := md.agentName
 	var line string
 	switch e.Type {
 	case "agent.died":
@@ -269,6 +367,27 @@ func (md *Mind) chronicleNote(e store.Event) {
 		var p sim.MapCorrectedPayload
 		if json.Unmarshal(e.Payload, &p) == nil && len(p.Gone) > 0 {
 			f := p.Gone[0]
+			// Spec 110 (FR-002/FR-003): a thing missing from a tile someone
+			// chopped or quarried inside the window is ordinary, and ordinary
+			// does not earn a line of its own — measured on a 12-game-day
+			// soak, these were ~57% of every day chapter's 120-line buffer and
+			// overflowed the ring on five days, evicting builds, gifts and
+			// assemblies. It folds into the chapter tally instead and the
+			// whole chapter's worth becomes ONE line at closeChapter. narrFrom
+			// still moves, exactly as the per-event line moved it, so the
+			// chapter's window is unchanged.
+			if who, ok := md.attributedHarvest(f.X, f.Y, e.Tick); ok {
+				md.corrTally.attribute(f.X, f.Y, who)
+				if md.narrFrom == 0 {
+					md.narrFrom = e.Tick
+				}
+				return
+			}
+			// Unexplained (FR-004/D5): the genuine-anomaly path, whose line is
+			// untouched below — same wording, same position. AC#3 is served by
+			// removing the 830 look-alikes it was drowning in, not by adding
+			// emphasis here.
+			md.corrTally.unexplained++
 			what := strings.ReplaceAll(f.Kind, "_", " ")
 			if f.Kind == "pile" {
 				what = "cache of goods"
@@ -392,13 +511,7 @@ func (md *Mind) chronicleNote(e store.Event) {
 	if line == "" {
 		return
 	}
-	if md.narrFrom == 0 {
-		md.narrFrom = e.Tick
-	}
-	md.narrLines = append(md.narrLines, fmt.Sprintf("[%s] %s", clock.Format(e.Tick), line))
-	if len(md.narrLines) > narrMaxLines {
-		md.narrLines = append(md.narrLines[:0], md.narrLines[len(md.narrLines)-narrMaxLines:]...)
-	}
+	md.appendNarrLine(e.Tick, line)
 
 	// Scenario-cadence trigger (spec 054 US5, FR-010): one ADDITIONAL chapter
 	// closes at the exercise's pass/fail boundary, so a sub-one-game-day
@@ -420,9 +533,40 @@ func (md *Mind) chronicleNote(e store.Event) {
 	}
 }
 
+// appendNarrLine stamps one line into the chapter buffer, dropping oldest on
+// overflow (the recent story matters most). Shared by chronicleNote's
+// per-event lines and closeChapter's coalesced correction summary (spec 110
+// FR-003) so both obey the same ring and the same timestamp grammar.
+func (md *Mind) appendNarrLine(tick int64, line string) {
+	if md.narrFrom == 0 {
+		md.narrFrom = tick
+	}
+	md.narrLines = append(md.narrLines, fmt.Sprintf("[%s] %s", clock.Format(tick), line))
+	if len(md.narrLines) > narrMaxLines {
+		md.narrLines = append(md.narrLines[:0], md.narrLines[len(md.narrLines)-narrMaxLines:]...)
+	}
+}
+
 // closeChapter snapshots the buffer (plus any carry from a failed call) into
 // a job for the narrator worker. Quiet chapters spend nothing.
 func (md *Mind) closeChapter(day int64, label string, toTick int64) {
+	// Spec 110 (FR-003): the chapter's harvest-attributed corrections, which
+	// contributed no lines of their own, contribute exactly one here — stamped
+	// at the chapter's close, last in the buffer. A chapter that attributed
+	// nothing appends nothing and is byte-identical to today (FR-008). The
+	// tally is per-chapter state, reset alongside narrLines below, in this one
+	// absorb goroutine.
+	if s := md.corrTally.summary(md.agentName); s != "" {
+		md.appendNarrLine(toTick, s)
+	}
+	// FR-007: per-chapter attributed/unexplained counts on the Mind's existing
+	// summary-log telemetry path (the spec 105 nightReport precedent), so a
+	// soak reads the outcome directly instead of re-deriving it from the log.
+	if r := md.corrTally.report(label); r != "" {
+		log.Print(r)
+	}
+	md.corrTally = correctionTally{}
+
 	lines := md.narrLines
 	fromTick := md.narrFrom
 	md.narrLines = nil
@@ -802,8 +946,20 @@ that are not in the log; you may connect and interpret what is there.`,
 func narrateUserPrompt(job narrJob) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "Chapter: %s. The log:\n", job.label)
+	hasSummary := false
 	for _, l := range job.lines {
 		b.WriteString(l + "\n")
+		if strings.Contains(l, corrSummaryMarker) {
+			hasSummary = true
+		}
+	}
+	// Spec 110 (FR-005): the coalesced correction line is ordinary background,
+	// not storyline material — said here, next to the log it describes, and
+	// ONLY when such a line is actually present, so a chapter without one
+	// carries today's prompt byte-for-byte (FR-008). The "group by storyline"
+	// instruction below governs everything else, untouched.
+	if hasSummary {
+		fmt.Fprintf(&b, "\nAny %q line above is ordinary background, not storyline material: its cause is already named and settled. Do not build an entry or a thread around it.\n", corrSummaryMarker)
 	}
 	if len(job.threads) > 0 {
 		fmt.Fprintf(&b, "\nOngoing threads (reuse these slugs when an entry continues one): %s\n",
