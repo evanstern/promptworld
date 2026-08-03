@@ -9,22 +9,22 @@ the spec dir, and the branch's commits — never chat context.
 
 ## Phase 1: Ledger and classifier
 
-- [ ] T001 Add `harvestLedgerWindow` (4 game-days in ticks) and `harvestLedgerCap` to the
+- [X] T001 Add `harvestLedgerWindow` (4 game-days in ticks) and `harvestLedgerCap` to the
       const block in `internal/mind/narrate.go`, each with the comment recording its
       measured justification (lag tops out at 3 game-days; 352 distinct locations over
       12 game-days).
-- [ ] T002 Add the harvest ledger to the Mind: a coordinate-keyed store of
+- [X] T002 Add the harvest ledger to the Mind: a coordinate-keyed store of
       `{agentID, tick}` with oldest-first eviction on both age (window) and count (cap).
       Owned by the absorb goroutine; no locking beyond what the Mind already holds.
-- [ ] T003 Populate the ledger from the existing `agent.chopped` / `agent.quarried`
+- [X] T003 Populate the ledger from the existing `agent.chopped` / `agent.quarried`
       absorb arm in `internal/mind/mind.go:315-346` — the arm already decodes
       `sim.HarvestPayload{Agent, X, Y}`; add the ledger write without disturbing the
       spec-081 witness re-arm logic that shares the arm.
-- [ ] T004 Add `attributedHarvest(x, y int, atTick int64) (agentID int, ok bool)` — a
+- [X] T004 Add `attributedHarvest(x, y int, atTick int64) (agentID int, ok bool)` — a
       pure classifier over the ledger, exported within the package and directly testable.
-- [ ] T005 Unit tests for T002–T004: population, age eviction at the window edge, cap
+- [X] T005 Unit tests for T002–T004: population, age eviction at the window edge, cap
       eviction, exact-coordinate matching, and a miss returning `ok == false`.
-- [ ] T006 Verify Phase 1 is inert: `chronicleNote` output is unchanged by this phase.
+- [X] T006 Verify Phase 1 is inert: `chronicleNote` output is unchanged by this phase.
       Assert it with a test that renders a correction line before and after the ledger
       exists.
 
