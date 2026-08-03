@@ -4,7 +4,7 @@ title: 'Polish session 1: freeform tweaks and small fixes against a live world'
 status: In Progress
 assignee: []
 created_date: '2026-08-03 17:33'
-updated_date: '2026-08-03 17:48'
+updated_date: '2026-08-03 17:56'
 labels: []
 dependencies: []
 ordinal: 177001
@@ -144,4 +144,36 @@ and still bakes in the tier names, which v2 does not guarantee.
 recommendation adopted absent objection, and is trivially revisable. Implemented inline rather than
 delegated to `spec-implementer` per constitution Principle V — this session's harness instructions
 forbid subagent dispatch unless the operator requests it. Flagged for the operator to redirect.
+
+### Decision 1 — SHIPPED on branch (commit f673536a, pushed 2026-08-03)
+
+`Config.ProviderReports()` (`internal/llm/config.go`) resolves either config shape into a stable
+name-ordered provider view and returns the warn-and-clamp warnings the construction path discards;
+the daemon boot block (`internal/daemon/daemon.go`) reports off that instead of the dead legacy
+fields, scaling to N providers.
+
+**Live proof** — world-03 restarted on the branch binary, `daemon.log`:
+
+```
+daemon: llm orchestrator on (2 providers, budget $100/mo)
+daemon:   cloud  cc/claude-sonnet-5 @ http://localhost:20128/v1
+daemon:   local  qwen3.6:latest @ http://localhost:11434/v1
+```
+
+**Tests** — three added to `internal/llm/config_test.go`, all passing: v2 registry names every
+provider in stable order; `parallel: 99` + `tool_mode: "telepathy"` now yield the clamp warnings
+that were silently dropped; legacy shape still renders local/cloud, with a bare model (no dangling
+` @ `) for the endpoint-less anthropic transport. Full `go test ./...` green, `gofmt` clean,
+`go vet` clean.
+
+**Known follow-on, deferred to step 9:** ten wiki notes list `internal/daemon/daemon.go` as a
+source (daemon-orchestrator-startup, daemon-boot-recovery, daemon-cognition-calibration,
+daemon-lifecycle, event-types-clock-world, event-types-guardian-orders, guardian-survival-watches,
+llm-provider-health, scenario-machinery-surfacing, snapshots) and are now stale for the pr gate.
+Not re-pinned per the session contract — grounding runs once at the end.
+
+**Also stale, decide at step 9:** `specs/009-parallel-local-tier/contracts/llm-config.md:36-42`
+documents the old single-line boot shape (`local … , parallel 16, cloud …`). It is a shipped
+spec's contract, so the choice is amend-in-place vs record the supersession here; flagged, not
+resolved.
 <!-- SECTION:NOTES:END -->
