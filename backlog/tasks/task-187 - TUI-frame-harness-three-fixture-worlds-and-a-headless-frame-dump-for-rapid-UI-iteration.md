@@ -3,10 +3,10 @@ id: TASK-187
 title: >-
   TUI frame harness: three fixture worlds and a headless frame dump for rapid UI
   iteration
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-08-03 00:33'
-updated_date: '2026-08-03 01:55'
+updated_date: '2026-08-03 02:00'
 labels:
   - tui
   - design
@@ -79,6 +79,11 @@ Spec: specs/112-tui-frame-harness
 - [ ] #7 The scenario fixture renders the exercise dock tab and the lesson row, which the ambient fixtures do not
 - [ ] #8 The operator can launch the interactive TUI against any of the three fixtures with one command and drive it by keyboard
 - [ ] #9 A frame dumped by the harness matches what the same Model renders in the terminal at the same size — verified by a test asserting harness output equals View() for at least one page per fixture
+- [x] #10 Spec phase: Phase 1 — Lane 0 precondition and fixture core
+- [x] #11 Spec phase: Phase 2 — Render API
+- [x] #12 Spec phase: Phase 3 — CLI surface
+- [x] #13 Spec phase: Phase 4 — Matrix dump
+- [x] #14 Spec phase: Phase 5 — Gates and grounding
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -89,4 +94,12 @@ Model tier (constitution Principle V v1.3.0), recorded at dispatch 2026-08-02: O
 CORRECTION 2026-08-02: the dispatch note above cites specs/110-tui-frame-harness, which is superseded. Two concurrent sessions took the number while this branch worked — 110 went to TASK-173 (specs/110-absence-attribution, whose claim reached origin/main first) and 111 went to specs/111-claim-gate-branch-visibility mid-rename. The canonical spec for TASK-187 is specs/112-tui-frame-harness, which is the marker carried in the description block above. Root cause: this sweep runs as a background job that cannot push main, so its board claim never became the mutual-exclusion event the claim protocol depends on. Recorded in docs/design/tui-frame-harness-runbook.md.
 
 PR open 2026-08-02: https://github.com/evanstern/promptworld/pull/157 (branch task-187-frame-harness, spec 112). Delivered across four dispatches to the Opus 5 implementer tier, model claude-opus-5 serving as pinned. Gates at PR time: gofmt clean, go build ok, go test 23/23 packages, check-tui-design --changed exit 0, check-merge-drift pr exit 0 (warnings only, both verified benign), player-docs 16 fresh 0 stale. 132 generated frames under docs/design/tui/frames/. 18 wiki notes re-verified and re-pinned in-branch (4 NEEDS-REVIEW with prose amended, 14 RE-PIN-ONLY). MERGE WITH --merge, NOT SQUASH: the branch carries pins that a squash would rewrite out of main's history. Two items need the operator: the merge itself, and pushing this board commit (the background job cannot push main, which is what cost this task spec numbers 110 and 111 to concurrent sessions).
+
+spec-bridge sync: Phase 1 — Lane 0 precondition and fixture core: 5/5 · Phase 2 — Render API: 4/4 · Phase 3 — CLI surface: 4/4 · Phase 4 — Matrix dump: 4/4 · Phase 5 — Gates and grounding: 7/7 — status In Progress → Done
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+All spec tasks complete (Phase 1 — Lane 0 precondition and fixture core: 5/5 · Phase 2 — Render API: 4/4 · Phase 3 — CLI surface: 4/4 · Phase 4 — Matrix dump: 4/4 · Phase 5 — Gates and grounding: 7/7). Derived Done by spec-bridge sync.
+<!-- SECTION:FINAL_SUMMARY:END -->
