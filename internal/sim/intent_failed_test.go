@@ -501,3 +501,120 @@ func TestReplayByteIdentityIntentFailed(t *testing.T) {
 			string(live.Marshal()), string(replayed.Marshal()))
 	}
 }
+
+// TestIntentFailedForagePackFullWorld03 is the world-03 regression (TASK-196).
+// Cedar starved to death on day 1 standing on a live forage patch, having never
+// eaten once: he had dropped all six of his food to carry more wood, filling his
+// pack to exactly bulkCap, and every forage after that completed the full work
+// cycle, yielded nothing, and — the actual defect — resolved via a bare
+// agent.intent_done, the SAME event a successful harvest emits. Nothing in the
+// world could tell him, or his planner, that his hands were the problem.
+//
+// The shape asserted here is precisely that run: a full pouch of non-food, an
+// agent standing on forage, work complete. The gather must resolve AUDIBLY —
+// agent.intent_failed / "pack full", a paired same-tick memory naming the full
+// hands, and an IntentLog record closed "failed" so the next thought sees it —
+// while still yielding nothing and depleting nothing (the US1-AS1 invariant the
+// guard exists to protect, unchanged).
+func TestIntentFailedForagePackFullWorld03(t *testing.T) {
+	const seed = 42
+	m := testMap(seed)
+	fx, fy, ok := findForageTile(m)
+	if !ok {
+		t.Skip("no forage tile on this map")
+	}
+	s := NewState(seed, m)
+	isolateAgents(s)
+
+	a := &s.Agents[0]
+	a.Dead = false
+	a.X, a.Y = fx, fy
+	// Cedar's exact pack: full to the cap, and not one scrap of it edible.
+	a.Inv = Inventory{Wood: bulkCap}
+	if freeBulk(a.Inv) != 0 {
+		t.Fatalf("freeBulk = %d, want 0 — the fixture must reproduce a full pack", freeBulk(a.Inv))
+	}
+	// WorkStart pre-set so the work is already complete on tick 1 (quarry idiom).
+	a.Intent = &Intent{Goal: "forage", TargetX: fx, TargetY: fy, WorkStart: 1 - forageTicks}
+	beforeIntentSet := len(a.IntentLog)
+	a.appendIntent(IntentRecord{Goal: "forage", Source: "planner", Tick: s.Tick})
+
+	log := driveTicks(t, s, m, 3, nil)
+
+	var failed bool
+	var p IntentFailedPayload
+	var failTick int64
+	var mem MemoryAddedPayload
+	memTick := int64(-1)
+	for _, e := range log {
+		switch e.Type {
+		case "agent.foraged":
+			t.Fatal("a full-pouch forage must not yield agent.foraged")
+		case "agent.intent_done":
+			var dp AgentPayload
+			mustUnmarshal(t, e.Payload, &dp)
+			if dp.Agent.ID == 0 {
+				t.Fatal("a full-pouch forage resolved via agent.intent_done — this is the world-03 defect: " +
+					"a no-op wearing the same event as a harvest")
+			}
+		case "agent.intent_failed":
+			if !failed {
+				mustUnmarshal(t, e.Payload, &p)
+				if p.Agent.ID == 0 {
+					failed, failTick = true, e.Tick
+				}
+			}
+		case "agent.memory_added":
+			if failed && memTick == -1 {
+				var mp MemoryAddedPayload
+				mustUnmarshal(t, e.Payload, &mp)
+				if mp.Agent.ID == 0 && e.Tick == failTick {
+					mem, memTick = mp, e.Tick
+				}
+			}
+		}
+	}
+	if !failed {
+		t.Fatal("no agent.intent_failed for the full-pouch forager")
+	}
+	if p.Goal != "forage" {
+		t.Errorf("goal = %q, want forage", p.Goal)
+	}
+	if p.Reason != intentFailPackFull {
+		t.Errorf("reason = %q, want %q — the villager must be able to tell a full pack from a vanished patch",
+			p.Reason, intentFailPackFull)
+	}
+	if p.X != fx || p.Y != fy {
+		t.Errorf("position = (%d,%d), want the forager's stand tile (%d,%d)", p.X, p.Y, fx, fy)
+	}
+	if memTick != failTick {
+		t.Fatalf("failure memory tick = %d, want paired same-tick with the event (%d)", memTick, failTick)
+	}
+	if mem.Salience != salIntentFailed {
+		t.Errorf("memory salience = %d, want %d", mem.Salience, salIntentFailed)
+	}
+	if !strings.Contains(mem.Text, "full") {
+		t.Errorf("memory text = %q, want it to name the full hands — this text IS the signal Cedar never got", mem.Text)
+	}
+	// The IntentLog closure is the feedback channel proper: it is what the next
+	// planner thought reads to see the goal did not finish.
+	if len(a.IntentLog) <= beforeIntentSet {
+		t.Fatal("no IntentLog record to inspect")
+	}
+	if r := a.IntentLog[len(a.IntentLog)-1]; r.Outcome != "failed" || r.OutcomeTick != failTick {
+		t.Errorf("IntentLog record = %+v, want outcome \"failed\" @ %d", r, failTick)
+	}
+	// US1-AS1, unchanged: no yield, no depletion, intent cleared.
+	if a.Inv.FoodRaw != 0 {
+		t.Errorf("FoodRaw = %d, want 0 — nothing gathered into a full pouch", a.Inv.FoodRaw)
+	}
+	if bulk(a.Inv) != bulkCap {
+		t.Errorf("bulk = %d, want %d — the pack must be untouched", bulk(a.Inv), bulkCap)
+	}
+	if len(s.Harvested) != 0 {
+		t.Errorf("Harvested = %+v, want empty — the patch is left standing for later (US1-AS1)", s.Harvested)
+	}
+	if a.Intent != nil {
+		t.Error("Intent should be cleared after the no-space gather resolves")
+	}
+}

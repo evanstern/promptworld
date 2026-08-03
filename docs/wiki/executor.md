@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/sim/executor.go
   - internal/sim/agents.go
-verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
+verified_against: 012f715f55d8d87317e601ad75686c599d277349
 ---
 
 # Executor
@@ -34,7 +34,11 @@ kills the build, only a squatter that outlasts the grace period does (below).
 Spec 096 (TASK-95) generalized that pattern to every non-build goal's own
 invalid-exit/contested resolution — `agent.intent_failed`, the same
 loud-failure shape, now covers the goals `build_failed` never did
-([[executor-goals-and-intents]], [[executor-goal-completions]]). Spec 104
+([[executor-goals-and-intents]], [[executor-goal-completions]]). TASK-196
+extended that same shape to the last silent path left: the spec-013 zero-space
+guard, where a gather completed with no free bulk used to emit the very
+`agent.intent_done` a successful harvest emits, and now reports `"pack full"`
+([[executor-world-state]], [[event-types-harvesting-consumption]]). Spec 104
 (ambient event coalescing) thins two of the executor's loudest emission
 paths on a per-world opt-in (`AmbientCoalescing()`, a new spec-048 tuning
 dial): a walk becomes one `agent.path_started` instead of dozens of

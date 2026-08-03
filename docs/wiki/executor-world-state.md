@@ -6,7 +6,7 @@ sources:
   - internal/sim/executor.go
   - internal/sim/terrain.go
   - internal/sim/agents.go
-verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
+verified_against: 012f715f55d8d87317e601ad75686c599d277349
 ---
 
 # Executor — world state: storage economy and terrain
@@ -22,8 +22,9 @@ counts toward a per-villager `bulk` — one unit per inventory count, one per
 carried spear or (since spec 032) axe — capped at `bulkCap` (24), derived via
 `bulk()`/`freeBulk()`, never stored. Every gather completion (`forage`/`chop`/
 `hunt`/`quarry`/`collect_water`) clamps its yield to the taker's pre-event free
-bulk and is skipped — no event, so no depletion — at zero free bulk
-(US1-AS1/AS2); a hand-craft completion re-validates its net
+bulk and is skipped — no harvest event, no depletion — at zero free bulk
+(US1-AS1/AS2; loud, TASK-196 — [[executor-goal-completions]]); a
+hand-craft completion re-validates its net
 output-minus-input bulk delta the same way (only `craft_planks` is net-positive;
 crafts don't truncate — they don't happen if the net won't fit). The
 give-to-starving social rule (`repayable`/`giveable`) likewise requires
