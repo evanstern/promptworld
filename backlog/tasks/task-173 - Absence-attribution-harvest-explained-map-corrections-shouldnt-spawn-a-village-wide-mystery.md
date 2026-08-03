@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-30 16:41'
-updated_date: '2026-08-03 00:58'
+updated_date: '2026-08-03 01:05'
 labels: []
 dependencies: []
 ordinal: 141000
@@ -32,7 +32,14 @@ Spec: specs/110-absence-attribution
 - [x] #1 A v6 re-run of the playtest-1 scenario is measured: rate of map corrections narrated as anomalies, before/after comparison recorded on this task
 - [ ] #2 A map correction explainable by known harvest activity (witnessed or rumored) is attributed as mundane and does not earn mystery-grade narrative weight
 - [ ] #3 Genuinely unexplained absences still surface as noteworthy (the guardian's real mysteries are not suppressed)
+- [ ] #4 Spec phase: Ledger and classifier
+- [ ] #5 Spec phase: Coalesced narration
+- [ ] #6 Spec phase: Prompt and telemetry
+- [ ] #7 Spec phase: Evidence
+- [ ] #8 Spec phase: Grounding and PR
 <!-- AC:END -->
+
+
 
 ## Implementation Notes
 
