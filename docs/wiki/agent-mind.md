@@ -88,7 +88,10 @@ souls pane shows each agent's newest memory. [[nightly-consolidation]] digests e
 day's memories into the soul at sleep; TASK-8 turned the talk primitive into real
 conversations. The mind also hosts the [[chronicle]] narrator (TASK-11): absorb
 collects notable events as named log lines and day/night boundaries hand chapters
-to a single-flight cloud worker — since spec 044 an absorbed
+to a single-flight cloud worker (since spec 110 the Mind also carries two
+absorb-owned chronicle fields beside `narrLines` — a harvest ledger and a
+per-chapter correction tally, so ordinary harvesting stops flooding the chapter
+buffer; [[absence-attribution]]) — since spec 044 an absorbed
 `agent.died`/`run.ended` also queues a [[morgue]] epilogue job on that same
 worker (`queueEpilogue`, mind.go/narrate.go) — and the [[governance]] phrasing driver (TASK-13,
 `meeting.go`): enacted proposals get one best-effort `llm.KindMeeting` call

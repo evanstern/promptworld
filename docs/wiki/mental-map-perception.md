@@ -105,7 +105,9 @@ correction fires in the act's own batch. [[agent-mind]]'s `absorb` extends the
 re-arm trigger set so `agent.chopped`/`agent.quarried` re-arm the actor AND
 any in-radius witness whose live intent targeted the cleared tile —
 `agent.map_corrected` parity, since silent removal no longer gives those
-witnesses a correction to re-arm on (`WitnessRadius` is exported from
+witnesses a correction to re-arm on — and, since spec 110, records the harvest
+so the [[chronicle]] can tell an ordinary stump from a phenomenon
+([[absence-attribution]]) — (`WitnessRadius` is exported from
 `internal/sim` for this reality). Out of scope (FR-010): forage regrow, pile
 draining, structure removal, and miracle terrain removal keep the correction
 narrative.

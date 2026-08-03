@@ -151,6 +151,7 @@ that note (re-pin with `/grounding-wiki:wiki-update`).
   - [[private-dreams]] — spec-098 clustering + habituation in the nightly slot: geometry-first over recorded vectors, ambiguous-band consult, recorded salience-revision/merge outcomes, seeded zeroable boundary jitter, five dream dials
   - [[nightly-belief-decay]] — Split from [[nightly-consolidation]] — how a belief's confidence decays purely on read (sim.EffectiveConfidence, an 8-game-day half-life since its…
 - [[chronicle]] — the narrated story feed: cloud narrator, snapshot-carried catch-up ring
+  - [[absence-attribution]] — spec 110's harvest ledger + per-chapter correction tally: why a remembered tree found gone stops earning its own chronicle line, and only unexplained absences keep theirs
 - [[morgue]] — the run's legacy document: per-death epitaphs + run-end summary from a deterministic genesis replay fold, narrated epilogues blockquoted, charter/orders evidence alignment, regenerable morgue.md
   - [[morgue-epilogues]] — The morgue's narrated prose layer (internal/sim/morgue.go, internal/mind/narrate.go) — the single-flight narrator worker's morgue.epilogue events…
 - [[guardian]] — the guardian (spec 052/TASK-121 renamed from "Metatron", every serialized string frozen byte-identical): console + system-authored turns, omen/vision influence, standing-order agency, clock-control meta tools, charges, the editable charter

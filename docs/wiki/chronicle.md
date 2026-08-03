@@ -45,7 +45,9 @@ gist+topics, rumors told, gifts, broken promises, chest thefts (spec 013's
 same narrative weight as a broken promise, a trust violation), musings, and
 (spec 041) three [[mental-maps]] beats — a discovery gone stale
 (`agent.map_corrected`, "X went looking for the <kind> at (x,y) and found
-it gone"), directions changing hands (`social.place_told`, "X told Y about
+it gone" — since spec 110 this per-event line is emitted ONLY when no known
+harvest explains the absence; [[absence-attribution]]), directions
+changing hands (`social.place_told`, "X told Y about
 the <kind> at (x,y)"), and a divine reveal (`guardian.place_revealed`, "A
 vision showed X the <kind> at (x,y)") — each voiced by the first fact in
 the event's canonical order, and (TASK-13) the whole [[governance]] arc:
@@ -99,6 +101,16 @@ the chronicle's own: a suppressed verdict, a full queue, a transport
 error, or (after the spec-105 ladder below) empty output is a logged GAP
 in the morgue's prose, never a stall — [[morgue]]'s factual record never
 waits on it.
+
+**Absence attribution** (spec 110, TASK-173): every `agent.map_corrected`
+used to contribute its own "found it gone" line, and on a measured 12-game-day
+world those lines were the MAJORITY of every full day chapter — which is why
+the narrator kept naming a vanishing-landscape storyline. Since spec 110 a
+correction the [[absence-attribution]] ledger can pin on a known harvest emits
+NO line of its own; the whole chapter's worth coalesces into ONE
+`corrSummaryMarker` line at `closeChapter`, and only genuinely unexplained
+absences keep their per-event line, byte-identical. Full mechanism, dials, and
+measured before/after: [[absence-attribution]].
 
 **Truncation-aware retry ladder** (spec 105, TASK-172): the chapter call
 was the sibling failure site of the consolidation blackout — playtest-1's

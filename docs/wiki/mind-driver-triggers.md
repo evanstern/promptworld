@@ -32,7 +32,10 @@ same intent-match rule also arms on `agent.chopped`/`agent.quarried`: the actor
 re-arms (a chop always did; a quarry now too), and so does any villager within
 `sim.WitnessRadius` of the cleared tile whose live intent targeted it, standing
 in for the `agent.map_corrected` those on-scene witnesses no longer receive
-(the fact was removed silently at the act; [[mental-map-perception]]).
+(the fact was removed silently at the act; [[mental-map-perception]]). Since
+spec 110 this same arm additionally records the harvest into the chronicle's
+`harvestLedger` — a write beside the arming logic, not a change to it — so a
+later "found it gone" can be told from a phenomenon ([[absence-attribution]]).
 `agent.place_observed` (spec 097) is absorb-consumed but is NOT a planner
 trigger: it drives the belief reconciler (`reconcilePlace` → a worker
 injecting `agent.belief_reinforced`/`agent.memory_promoted` batches through
