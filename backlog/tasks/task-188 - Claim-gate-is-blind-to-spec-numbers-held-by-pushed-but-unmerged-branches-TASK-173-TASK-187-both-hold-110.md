@@ -3,10 +3,10 @@ id: TASK-188
 title: >-
   Claim gate is blind to spec numbers held by pushed-but-unmerged branches
   (TASK-173/TASK-187 both hold 110)
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-08-03 01:16'
-updated_date: '2026-08-03 01:28'
+updated_date: '2026-08-03 02:01'
 labels:
   - gate
   - spec-065
@@ -72,3 +72,21 @@ TWO MORE ROOT-GUARD PARSER DEFECTS FOUND, both belong on TASK-180 (same family a
   (a) Shell redirection and pipe tokens parse as pathspecs. A board-sync commit using the -F message-file form, followed by a stderr redirect and a pipe into tail, was BLOCKED at root - even though -F is correctly listed in COMMIT_SHORT_WITH_VALUE and the staged set was a single backlog/ card file. The trailing redirect, pipe, and tail tokens were read as non-backlog pathspecs. Workaround: run board-sync commits bare, with no redirection and no pipe.
   (b) Heredoc PAYLOAD text is scanned as if it were commands. Writing this very notes file with a shell heredoc was blocked because the prose inside the heredoc quoted a git-commit example. The guard matched the quoted text, not an executed command. Workaround: author note files with the Write tool instead of a heredoc.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Closed the hole that let two concurrent sessions claim the same spec number. The claim gate defined spec-number ownership solely by presence on origin/main, so a number claimed on a pushed-but-unmerged branch was invisible to it — and on 2026-08-02 TASK-173 and TASK-187 both took 110, each with complete spec/plan/tasks, both gates green. It surfaced only when the spec-bridge Stop hook complained the cards exceeded their artifacts, two removes from the cause.
+
+Fix (scripts/check-merge-drift.mjs): branchHeldSpecNumbers(cwd) reads already-fetched refs/remotes/origin/task-* via for-each-ref plus per-branch ls-tree; nextFreeSpecNumber(...maps) takes next-free over the union of main-held and branch-held (also retiring a latent -Infinity on an empty spec set); runClaim() decides main-first then branch, so origin/main keeps attribution when both hold a number and its pre-111 message is byte-identical. Scoped to origin/task-* so release and experiment branches never lock numbers. Pure read, no new fetch, still fails closed on an unreachable remote, degrades to main-only behavior on any git failure. Both merge-drift hook layers inherit the block for free, since they invoke the gate as a subprocess.
+
+Verified: claim-protocol.test.mjs 17/17 with 7 new cases, check-merge-drift.test.mjs 31/31, pr gate pass. Live before the fix, all four passed; after, the two branch-held numbers block and name their holding branch while owner re-claim and a free number pass.
+
+POST-MERGE CONFIRMATION on main (merge commit fe9fc10b, PR 156, merge-commit not squash, 2 parents verified): claim --dir 110-competing now exits 1 naming origin/task-173-absence-attribution and attributing TASK-173 — the branch-held path is live and actively protecting an in-flight lane. claim --dir 111-anything-else exits 1 via the unchanged main-held path. Spec 111 landed complete on main; worktree removed, branch deleted, root fast-forwarded.
+
+Both colliding lanes resolved on their own during the work: TASK-187 renumbered to specs/112-tui-frame-harness and has since merged, leaving 110 cleanly TASK-173's. No card was ever set back and no spec content was moved to main early.
+
+Tier: implemented inline on the planning model (Opus 5, claude-opus-5) rather than delegated, a recorded deviation from constitution Principle V — this session's operator instructions bar spawning subagents unless requested, and the operator directed this session to perform the fix. Rubric-wise a Sonnet-tier slice.
+
+Two follow-ups left on the board rather than folded in: TASK-180 gained three root-caused parser defects found while doing this work (C-quoted staged paths, redirect-boundary tokens, heredoc bodies scanned as commands) with a verified workaround; TASK-189 cards the spec-bridge gate reading main while spec artifacts ride the PR, which is what raised the original alarm. Also noted out of scope: worktree --spec claim-awareness still reads main only.
+<!-- SECTION:FINAL_SUMMARY:END -->
