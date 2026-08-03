@@ -1,10 +1,10 @@
 ---
 id: TASK-195
 title: 'Polish session 1: freeform tweaks and small fixes against a live world'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-08-03 17:33'
-updated_date: '2026-08-03 21:51'
+updated_date: '2026-08-03 21:59'
 labels: []
 dependencies: []
 ordinal: 177001
@@ -55,6 +55,8 @@ PDLC cycle on its own card.
 
 (entries appended as the session runs — one per item: what, diagnosis with file:line, decision,
 ad-hoc vs spec)
+
+Spec: specs/115-chronicle-feed-wrap
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
@@ -64,6 +66,13 @@ ad-hoc vs spec)
 - [ ] #3 All session work lands on a single branch and a single PR; no per-item task cards or PRs are created
 - [x] #4 Operator visual QA passes on the live world for every shipped item before the PR is opened
 - [x] #5 Grounding is done once at the end, in-branch: wiki re-pinned, player docs regenerated, tui-design amended where internal/tui changed, and the pr merge-drift gate is green
+- [x] #6 Spec phase: Setup
+- [x] #7 Spec phase: Foundational (blocking prerequisites)
+- [x] #8 Spec phase: User Story 1 — A thought can be read to its end (P1) 🎯 MVP
+- [x] #9 Spec phase: User Story 2 — The feed still reads as a table (P2)
+- [x] #10 Spec phase: User Story 3 — Narrow panes degrade sensibly (P3)
+- [x] #11 Spec phase: Row budget and evidence
+- [x] #12 Spec phase: Polish and cross-cutting
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -548,3 +557,46 @@ sides. This is the merge-drift gate doing exactly the job spec 051 built it for.
 `specs/115-chronicle-feed-wrap/` is on main the spec-bridge gate can derive its true state — then
 worktree/branch cleanup.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Shipped as PR #163, merged 2026-08-03 via a real merge commit (2b4201cb, three parents — verified,
+because a squash would have rewritten the in-branch wiki pins out of history and staled all 32).
+
+**Three items and one spec, each decided on this card before implementation:**
+
+1. **Daemon boot report read dead config fields.** Every world created since spec 024 booted with
+   `daemon: llm orchestrator on (local  @ , cloud , budget $100/mo)` — the report read the legacy
+   `Config.Local`/`Cloud` structs, which are always zero on a v2 `providers` world. Not merely
+   cosmetic: the same block sourced the `parallel`/`tool_mode` clamp warnings from those dead
+   fields, so a v2 world clamped in total silence. `Config.ProviderReports()` resolves either shape
+   and returns the warnings the construction path discards; the report scales to N providers.
+2. **Wiki-footprint threshold in the session gate.** Grounded in the gate's own logic: staleness is
+   binary per note and idempotent, so the re-pin bill is a set union over files touched, never a sum
+   over edits — grounding cadence is the wrong instrument and footprint breadth is the right one.
+   Warns at 30 of 191 notes, advisory only. It fired on this very branch at 32, and the pr gate
+   independently reported 32 `wiki-repin-missing` findings.
+3. **Spec 115 — the raw feed wraps with a hanging indent** aligned to the summary column, the indent
+   recomputed per frame from the visible window's column widths. 32/32 spec tasks.
+4. **A stub-first rule in `CLAUDE.md`**, from the seam this session discovered the hard way.
+
+**What went wrong, and what caught it.** Routing every row through the wrap path collapsed the
+column padding on SHORT rows — the wrapper budgets on `strings.Fields` and the padding is a run of
+spaces. `TestPreLadderGoldenFrames` failed; its hashes were NOT re-pinned, because the honest read
+was that short rows had genuinely moved. Fixing it revealed a pre-existing defect: the narrow dock
+has always wrapped, so it had always been destroying its own column alignment, and the committed
+frames recorded the collapsed form as if intended. FR-009 was amended rather than left contradicting
+its own diff.
+
+**Two collisions with concurrent sessions, both resolved by merging main in, never rebasing.** The
+second was a `verified_against` collision with TASK-196 on `guardian-survival-watches` — re-verified
+against the union rather than re-pinned blind.
+
+**Left behind deliberately:** a pre-existing 81-rune title row at 80 columns (spec-114 family, out of
+scope, test scoped around it rather than silently adopting it); 532 chars added to TASK-156's
+note-size debt, condensed down from 909; and praxisflux TASK-104 carding the spec-bridge gate's
+blindness to branch-only spec dirs, which is the durable fix behind the stub-first rule.
+
+Spec 115 re-linked to this card post-merge, deriving Done-eligible at 32/32.
+<!-- SECTION:FINAL_SUMMARY:END -->
