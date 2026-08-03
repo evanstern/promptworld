@@ -3,10 +3,10 @@ id: TASK-190
 title: >-
   tui-frames project skill: route every agent to the frame harness before it
   touches the UI
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-08-03 02:52'
-updated_date: '2026-08-03 03:03'
+updated_date: '2026-08-03 03:06'
 labels:
   - tui
   - design
@@ -61,6 +61,8 @@ Spec: specs/113-tui-frames-skill
 - [ ] #7 It carries the three repo traps: root checkout read-only plus the worktree recipe, the bare 'git commit -F <file>' requirement, and merge-commit-only
 - [ ] #8 A guard script under the skill's scripts/ regenerates the matrix and exits nonzero when the committed frames differ from a fresh dump, catching a hand-edited frame
 - [ ] #9 The guard script passes on main at merge time, and running it leaves the working tree clean
+- [x] #10 Spec phase: Phase 1 — Author the skill
+- [x] #11 Spec phase: Phase 2 — Verify and ground
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -69,4 +71,12 @@ Spec: specs/113-tui-frames-skill
 Model tier (constitution Principle V v1.3.0), recorded at dispatch 2026-08-02: Sonnet, model ID claude-sonnet-5, via the spec-implementer agent definition (the definition's frontmatter is the pin; no model parameter, which is silently ignored). Rubric justification: single-package authoring — one SKILL.md and one small Node guard script, no cross-package surface, no concurrency or scheduling logic, no doctrine-adjacent behavior change in the running system. This is the default tier and the escalation rubric does not fire. The doctrine CONTENT was authored at the planning tier (Opus 5) in specs/113-tui-frames-skill/ and handed over; the implementer types, grounds and tests it. Spec: specs/113-tui-frames-skill. Branch: task-190-tui-frames-skill, pushed at 84ecc4b5.
 
 PR open 2026-08-02: https://github.com/evanstern/promptworld/pull/158 (branch task-190-tui-frames-skill, spec 113). Implemented by the Sonnet tier as pinned; orchestrator verified independently rather than on report. Gates: check-frames guard exit 0, check-tui-design all passed, player-docs 16 fresh 0 stale, check-merge-drift pr verdict=pass with NO findings. Guard proven by two independent negative controls on different frames (implementer tampered empty__home__160x50.txt, orchestrator tampered scenario__help__113x30.txt) — both named the file and exited 1, both restored clean. Guard runtime 1.4s, dumps to a temp dir so a green result is evidence rather than a self-fulfilling side effect. No wiki re-pin needed: branch touches no pinned source, verified. MERGE WITH --merge, NOT SQUASH.
+
+spec-bridge sync: Phase 1 — Author the skill: 7/7 · Phase 2 — Verify and ground: 5/5 — status In Progress → Done
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+All spec tasks complete (Phase 1 — Author the skill: 7/7 · Phase 2 — Verify and ground: 5/5). Derived Done by spec-bridge sync.
+<!-- SECTION:FINAL_SUMMARY:END -->
