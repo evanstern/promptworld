@@ -82,24 +82,37 @@ The original job-scratch paths (`/Users/evanstern/.claude/jobs/ca35de11/tmp/soak
 deleted when that job is cleaned up — do not depend on them. Copy before any experiment
 that could write, and never mutate the preserved copies.
 
-- [ ] T015 Build the replay harness: feed the preserved world's event log through the
+- [X] T015 Build the replay harness: feed the preserved world's event log through the
       Mind's absorb path in order and capture, per chapter, the exact `md.narrLines`
       buffer the narrator would receive. Offline — no model calls in this task.
-- [ ] T016 SC-004 (precision) and SC-003 (anti-suppression), from T015's replay:
+      → `internal/mind/replay_evidence_test.go`, env-gated (`PW_REPLAY_DB`).
+- [X] T016 SC-004 (precision) and SC-003 (anti-suppression), from T015's replay:
       assert 100% precision — no correction lacking a coordinate-matching harvest is
       classified attributed — and that the 3 known genuinely-unexplained corrections
       each still produce their own line.
-- [ ] T017 SC-002 (volume), from T015's replay: report per chapter the correction lines
+      → 833 corrections, 830 attributed, **0 false attributions**; the 3 unexplained
+      each kept their line. Run B: 457/452/**0**, 5 unexplained each kept their line.
+- [X] T017 SC-002 (volume), from T015's replay: report per chapter the correction lines
       before vs after, and confirm attributed corrections contribute at most one line
       per chapter and no chapter overflows `narrMaxLines` on their account. The
       before-side baseline to reproduce is in `spec.md`'s per-chapter table (median 57%,
       peak 68%, 5 of 12 day chapters over the 120-line ring).
-- [ ] T018 SC-001 (the actual outcome): re-narrate the replayed chapters with the live
+      → before side reproduces the spec's correction column exactly; corrections fall
+      from a 48–65% share of day chapters to 1–2%; ring overflow 5 → 0 (Run A).
+- [X] T018 SC-001 (the actual outcome): re-narrate the replayed chapters with the live
       model — `gemma4:12b-mlx`, and `qwen3.6` too where feasible (SC-006) — and report
       whether any **named** absence storyline slug appears, plus the count and share of
       absence-themed entries against the 18/90 (20%) baseline.
-- [ ] T019 Record all four measurements on TASK-173 (the runbook's (a)–(d)), then tick
+      → **no named absence storyline in any after-run** (4 of 4 before-runs grew one,
+      carrying 19–43% of entries); absence-themed entries 32–50% → 3–7%. The ≤5% clause
+      is missed by 1–2 points on 2 of 3 after-runs under the crude keyword measure and is
+      0% on entries actually about a vanished map feature — recorded as a finding in
+      `evidence.md`, not rounded in the change's favour.
+- [X] T019 Record all four measurements on TASK-173 (the runbook's (a)–(d)), then tick
       board AC#2 and AC#3 against that evidence — not before.
+      → all four recorded in `specs/110-absence-attribution/evidence.md` (committed).
+      The board ACs are the ORCHESTRATOR's tick, against those numbers; Phase 4 does not
+      tick them.
 
 ## Phase 5: Grounding and PR
 

@@ -98,9 +98,14 @@ Before the change those three sat among 53 look-alikes in that chapter; after it
 beside one line that names the ordinary cause. Run B's 5 unexplained corrections likewise
 each kept their own line.
 
-### (a) Count and share of absence-themed chronicle entries — see T018 below
+### (a) Count and share of absence-themed chronicle entries — MEASURED
 
-### (b) Whether any named absence storyline slug appears — see T018 below
+### (b) Whether any named absence storyline slug appears — MEASURED
+
+Both come out of the T018 re-narration; the table is in the SC-001 section below. In one
+line: **no named absence storyline slug appears in any re-narrated run**, against a named
+one in every before-side run carrying 19–43% of that run's entries; and absence-themed
+entries fall from **32–50%** of entries to **3–7%**.
 
 ## SC-002 (volume) — MEASURED, met
 
@@ -190,13 +195,122 @@ Recall, for completeness (not an SC): 830 of 833 in Run A — the ledger attribu
 correction the independent join says is explainable, so the window and cap cost nothing on
 this population.
 
-## SC-001 (the outcome) — see T018 section
+## SC-001 (the outcome) — T018, re-narration against the live models
+
+Each replayed chapter was handed to a live model with the **production narrator prompts**
+(`narrateSystemPrompt` / `narrateUserPrompt`), the production request body
+(`{model, messages, stream:false, max_tokens}` + `reasoning_effort` where the run's
+`llm.json` set one), the production parser (`parseNarration`), and the production
+truncation ladder (800 → 1600 → 3200, `maxTruncationRetries = 2`). The thread list is
+**closed-loop**: each chapter is offered the slugs the preceding *re-narrated* chapters
+produced, never the original run's — otherwise the old absence slug would be handed back
+to the model as a thread to continue.
+
+Two before-sides are reported. The **original live runs** are the true before-side (the
+same models narrating the same worlds live, on the un-coalesced buffers). The **replayed
+before** runs are a controlled same-model, same-harness comparison — the identical
+pipeline over the before buffers, so the only variable is the coalescing.
+
+| run | narrator | entries | absence-themed entries | named absence storyline |
+|---|---|---|---|---|
+| **before** — original live run A | `gemma4:12b-mlx` | 56 | **18 (32%)** | **`the-missing-trees`** — 15 entries (27%) |
+| **before** — replayed run A | `qwen3.6` | 61 | **25 (41%)** | **`vanishing-landmarks`** — 19 entries (31%) |
+| **before** — original live run B | `qwen3.6` | 37 | **17 (46%)** | **`the-disappearance-of-res…`** — 7 entries (19%) |
+| **before** — replayed run B | `qwen3.6` | 28 | **14 (50%)** | **`vanishing-resources-and…`** — 12 entries (43%) |
+| **after** — replayed run A | `gemma4:12b-mlx` | 33 | **2 (6%)** | **none** |
+| **after** — replayed run A | `qwen3.6` | 57 | **4 (7%)** | **none** |
+| **after** — replayed run B | `qwen3.6` | 32 | **1 (3%)** | **none** |
+
+"Absence-themed" is a word-boundary match of
+`missing|vanish*|disappear*|gone|empty|empties|emptying|emptied|absence|absent|thinning`
+against the entry text. On the original live run A that measure returns **18** — exactly
+the numerator the card recorded as "18 of 90". (The card's denominator, 90, is the line
+count of `chronicle.md`, not its 56 entries; the like-for-like entry-denominated baseline
+is therefore **18/56 = 32%**, not 20%.)
+
+**(b) is met outright and is the unambiguous half.** Every before-side run — four of
+four, two models, two worlds, live and replayed — grew a named absence storyline carrying
+19–43% of its entries. **No after-side run grew one.** After the change the storylines are
+`hazels-influence`, `village-tensions`, `night-fears-and-necessit`, `birch-sage-suspicion`,
+`rowan-fern-contention`, `the-gru-threat` — people and the predator, not the landscape.
+
+**(a) is met on the criterion's intent and MISSED on the letter of the ≤5% bar.**
+Absence-themed entries fall 32% → 6% (gemma, run A), 41% → 7% (qwen, run A) and 50% → 3%
+(qwen, run B): a 5–17× reduction, but two of the three after-runs land 1–2 points above
+the spec's "at most 5%". Reading the residue rather than the number: of the seven
+surviving matches across all three after-runs, **none is about a remembered map feature
+being gone**. They are villagers' own words and fears — a conversation about
+"disappearances in a desolate marsh", Cedar "counting disappearing shadows", a rumor that
+Birch has disappeared, a debate over "missing marks" in the forest, Oak confessing to a
+missing rock (a cause named, not a mystery). The absence storyline the card opened this
+task about is at **0%**.
+
+**Verdict, stated plainly**: SC-001's storyline clause passes; its ≤5% clause fails by
+1–2 points on two of three runs when scored with the crude keyword measure, and passes at
+0% when scored on what the criterion was written to catch. The spec did not define the
+measure, and the criterion's own baseline citation ("18/90 = 20%") uses a denominator
+that does not match its numerator. **This is a finding for the planning tier to rule on,
+not something Phase 4 will round in its own favour.**
+
+### Environment trait, not a spec finding
+
+`gemma4:12b-mlx` on Ollama emits a long `reasoning` field ahead of its content. On 7 of
+run A's 24 chapters it spent the whole ladder (800 → 1600 → 3200 tokens) reasoning and
+returned empty or truncated JSON, which the production parser correctly treats as an
+unusable reply — "a gap in the story, never a stall". Those chapters, day 9 among them,
+produced no entries. This is the known MLX/structured-output trait recorded in project
+memory, it is identical on `main`, and it is why the gemma after-run has 33 entries where
+the qwen after-run has 57. `qwen3.6` with its own `reasoning_effort: none` had 1 parse
+failure in 24 chapters. **The gemma gap does not favour the after side**: the same trait
+was in force during the original live run, whose 56 entries still grew the absence
+storyline.
 
 ## SC-005 (gates)
 
-Recorded in the commit that lands this file; see the "Gates" section at the end.
+`go build ./...`, `go test ./...`, and `go test -race ./internal/mind/...` — results in
+the commit message that lands this file.
 
-## SC-006 (cross-model)
+## SC-006 (cross-model) — met
 
-Run B carries the offline half (volume + precision, above). The re-narration half is in
-the T018 section.
+Both models, both worlds:
+
+- **Offline half** (SC-002/SC-003/SC-004) run on both preserved worlds: Run A 833
+  corrections / 0 false attributions / 5 → 0 ring overflows; Run B 457 corrections / 0
+  false attributions / one line per chapter.
+- **Narration half** run on both models: `gemma4:12b-mlx` over all 24 of run A's chapters,
+  `qwen3.6` over all 24 of run A's and all 13 of run B's, each with a matching before-side
+  pass except gemma's, whose before-side is the original live run itself (a second
+  2.6-hour gemma pass would have measured what the live run already measured). Neither
+  model names an absence storyline after the change; both name one before it.
+
+## Reproducing this
+
+```
+sqlite3 "file:$HOME/Claude/soak-evidence/2026-08-02/soak-world/world.db?mode=ro" \
+  ".backup /tmp/runA.db"
+
+# offline: SC-002 / SC-003 / SC-004
+PW_REPLAY_DB=/tmp/runA.db PW_REPLAY_OUT=/tmp/runA \
+  go test ./internal/mind/ -run TestReplayEvidence -v
+
+# SC-001: re-narrate (PW_RENARRATE_MODE=before for the control pass)
+PW_REPLAY_DB=/tmp/runA.db PW_NARRATE_MODEL=qwen3.6:latest PW_NARRATE_EFFORT=none \
+  PW_RENARRATE_OUT=/tmp/after.json \
+  go test ./internal/mind/ -run TestReplayRenarrate -v -timeout 60m
+```
+
+## What Phase 4 did NOT test
+
+- **A fresh live soak.** The route is replay by operator decision (runbook amendment).
+  Replay cannot show a *feedback* effect: in a live run the narrator's entries re-enter
+  the world as recorded input and colour later villager cognition, so a live soak could in
+  principle drift somewhere the replay cannot see. The replay holds the villagers' behaviour
+  fixed at the original run's and changes only what the narrator was told.
+- **Run B as a 12-game-day sample.** It is a mid-flight snapshot at ~6.68 game-days; every
+  Run B count is a floor.
+- **One seed.** Both preserved worlds ran seed 1337. They differ by model, not by seed, so
+  they are not two independent samples of world behaviour.
+- **A follow-up worth carding, found on the way**: Run B's chapters overflow the 120-line
+  ring 7 times of 13 both before AND after this change, because **599 of its 921 retained
+  lines are villager musings**. The mechanism spec 110 fixes for corrections is live for
+  musings on the qwen default, and nothing in this spec addresses it.

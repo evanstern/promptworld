@@ -427,8 +427,11 @@ func TestReplayRenarrate(t *testing.T) {
 		endpoint = "http://localhost:11434/v1"
 	}
 	seed := uint64(replayEnvInt("PW_REPLAY_SEED", 1337))
+	// PW_RENARRATE_MODE=before narrates the BEFORE-side buffers instead, giving
+	// a controlled same-model, same-harness before/after comparison.
+	ledger := os.Getenv("PW_RENARRATE_MODE") != "before"
 	after := replayWorld(t, db, seed, replayEnvInt("PW_REPLAY_MAPW", 64),
-		replayEnvInt("PW_REPLAY_MAPH", 64), replayEnvInt("PW_REPLAY_TERRAIN", 2), true, true)
+		replayEnvInt("PW_REPLAY_MAPH", 64), replayEnvInt("PW_REPLAY_TERRAIN", 2), ledger, true)
 
 	type outEntry struct {
 		Chapter string `json:"chapter"`
@@ -439,12 +442,18 @@ func TestReplayRenarrate(t *testing.T) {
 	var parseFails []string
 	var threadRing []string
 
-	// PW_RENARRATE_LIMIT caps the number of chapters narrated, for a bounded
-	// cross-model spot-check on a model too slow to run the whole log.
+	// PW_RENARRATE_FROM / _LIMIT select a chapter window (indices, half-open),
+	// for a bounded cross-model spot-check on a model too slow to run the whole
+	// log. A window loses the closed-loop thread history before it, which is
+	// recorded wherever such a run is reported.
+	from := replayEnvInt("PW_RENARRATE_FROM", 0)
 	limit := replayEnvInt("PW_RENARRATE_LIMIT", 0)
 	for i, ch := range after.Chapters {
+		if i < from {
+			continue
+		}
 		if limit > 0 && i >= limit {
-			fmt.Printf("(stopping after %d chapters — PW_RENARRATE_LIMIT)\n", limit)
+			fmt.Printf("(stopping at chapter %d — PW_RENARRATE_LIMIT)\n", limit)
 			break
 		}
 		job := narrJob{day: ch.Day, label: ch.Label, fromTick: ch.From, toTick: ch.To, lines: ch.Lines}
