@@ -4,7 +4,7 @@ title: 'Polish session 1: freeform tweaks and small fixes against a live world'
 status: In Progress
 assignee: []
 created_date: '2026-08-03 17:33'
-updated_date: '2026-08-03 17:33'
+updated_date: '2026-08-03 17:36'
 labels: []
 dependencies: []
 ordinal: 177001
@@ -65,3 +65,26 @@ ad-hoc vs spec)
 - [ ] #4 Operator visual QA passes on the live world for every shipped item before the PR is opened
 - [ ] #5 Grounding is done once at the end, in-branch: wiki re-pinned, player docs regenerated, tui-design amended where internal/tui changed, and the pr merge-drift gate is green
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+### Session harness up (2026-08-03)
+
+- Branch/worktree: `task-195-polish-session-1` at `.worktrees/task-195`, cut from origin/main
+  @57cbaf4d (the claim commit). Worktree gate passed with `--task TASK-195`.
+- Live world: **world-02 in place** at `~/.promptworld/worlds/world-02` — operator's choice over a
+  snapshot copy. It stays running on its current binary until the first branch change lands, then
+  cycles onto the branch build. Nothing else runs against it.
+- Branch build: `go build -o promptworld ./cmd/promptworld` in the worktree, ~3.4s cold — fast
+  enough that rebuild+restart is a viable inner loop. Restart helper lives outside the repo
+  (`$CLAUDE_JOB_DIR/tmp/pw.sh`, verbs: cycle/build/stop/start/ps/status/log) so it never enters
+  the PR diff.
+- TUI inner loop: `.claude/skills/tui-frames` frame harness is green (`--check`: committed matrix
+  matches a fresh dump). UI items go through headless frame dumps first, live world second.
+- Item sourcing: ad-hoc only. Existing polish-shaped cards (TASK-60/61, 114, 116, 142, 152, 174,
+  175, 176) are untouched; if a session item overlaps one, the overlap gets noted and decided then.
+- Harness trap hit and corrected during setup: a `cd` into the worktree persisted across shell
+  calls, so the first attempt at this very note was edited and committed on the branch instead of
+  main. Reset off the branch and redone at root — board state has exactly one home.
+<!-- SECTION:NOTES:END -->
