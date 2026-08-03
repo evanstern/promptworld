@@ -3,10 +3,10 @@ id: TASK-191
 title: >-
   Map legend overflows the terminal: 355 runes into 80 columns, mid-token cut at
   112
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-08-03 03:15'
-updated_date: '2026-08-03 03:54'
+updated_date: '2026-08-03 04:10'
 labels:
   - ui
   - tui
@@ -79,3 +79,23 @@ Two findings surfaced during the work, neither silently resolved:
 
 Scope held: the operator scoped this to the legend class (21 frames). The header (20 frames, TASK-192) and scenario footer (2 frames, TASK-193) were filed rather than fixed, and are registered in the guard's bidirectional deny-list, which fails if an entry is dropped early, outlives its fix, or names a frame the matrix no longer produces — verified all three ways.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Delivered and merged as PR #159 (merge commit fc63ae95, two parents — verified NOT a squash, so the in-branch wiki re-pins remain reachable from main).
+
+The map legend now clamps to the width it renders into and marks the cut with an ellipsis. Before: the narrow path appended the legend outside the map box with no clip at all, so a 354-356 column line reached an 80-column terminal, soft-wrapped into roughly five rows, and pushed the map off the top of the screen; at 112+ it was clipped but cut mid-token with no marker, showing three symbols of twenty as if that were the whole key. Verified on main after merge: the 80x30 legend is one row, 80 columns, ending in the marker.
+
+Implementation is clipLegend (internal/tui/views.go) on ansi.Truncate — ANSI-safe so a cut never severs an escape and bleeds styling down the screen, display-column aware for double-width glyphs, and a no-op when the legend already fits so a fitting legend gains no false marker. Each call site clamps with the budget it owns: m.width for the narrow path (its legend is outside the box), cols-4 for the widescreen box interior. clipLine/clipContent were deliberately left untouched — they are a layout safety net, not a content-communication device, and the chronicle already ellipsizes per-surface, so a global tail risked double-ellipsis where the two layers compose (research.md R2).
+
+Guarded by TestFramesNeverExceedDeclaredWidth, matrix-wide, measuring display columns rather than runes. Its deny-list is bidirectional and was probed all three ways: dropping an entry early, an entry outliving its fix, and an entry naming a dead frame all fail correctly.
+
+Grounding verified fresh on main after merge: frame matrix matches a fresh dump, player docs 16 fresh / 0 stale, tui-design gate passes, and docs/wiki/tui-map-view.md's pin resolves as an ancestor of main.
+
+Two findings the work surfaced, neither silently resolved. (1) Five legend tests were pinning the defect — testModel renders at 80 columns and they asserted inspection content that only fit because the legend was unclamped, verifying something no player could usefully see; repointed at the composition they actually tested. (2) The header-overflow class is 20 frames, not the 11 first reported (the audit misread rows listing "at:1,29" as legend-only) — corrected before the deny-list was written.
+
+Scope held to the legend class. The header (TASK-192) and scenario footer (TASK-193) were filed rather than fixed and are registered in the guard so they cannot be forgotten.
+
+docs/design/tui/panels/map.md records the width policy and closes the spec 060 deferral at map.md:209, whose own re-open trigger was "legend-line overflow pain becomes the actual bottleneck" — this work is that trigger firing and being answered.
+<!-- SECTION:FINAL_SUMMARY:END -->
