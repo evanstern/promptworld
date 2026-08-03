@@ -4,7 +4,7 @@ title: 'Polish session 1: freeform tweaks and small fixes against a live world'
 status: In Progress
 assignee: []
 created_date: '2026-08-03 17:33'
-updated_date: '2026-08-03 18:30'
+updated_date: '2026-08-03 18:39'
 labels: []
 dependencies: []
 ordinal: 177001
@@ -311,4 +311,32 @@ villager name starts).
 reach **exactly 30 — the threshold shipped in decision 3 an hour ago**, which would fire
 `wiki-footprint` on the next session gate run. The instrument works, and it is pointing at this
 item.
+
+### Decision 5 — item 4 escalates to spec 115 (step 5a)
+
+Operator ruling: write a spec and execute it in this session. `specs/115-chronicle-feed-wrap/`
+created and pushed on the branch (commit 9d340ca5).
+
+Three P-ranked stories: **P1** a thought can be read to its end (wrap instead of truncate);
+**P2** the feed still reads as a table (continuation lines begin at the summary column);
+**P3** narrow panes degrade sensibly (the indent yields before the text column becomes a sliver).
+13 FRs, 7 success criteria. FR-004 pins the indent to the per-window column measurements rather
+than a constant — a fixed indent misaligns the moment a wider tick or longer event type scrolls
+into view. FR-012 carries the fixture precondition; FR-013 the design-authority and
+digest-grammar contract amendments.
+
+**Number claimed** via `check-merge-drift claim --dir 115-chronicle-feed-wrap` (pass), then
+published by **pushing the branch rather than the spec-065 stub merge to main**. Deliberate
+deviation, recorded: the branch already carries unreviewed code commits (decisions 1 and 3), so a
+`merge --no-ff` of the stub would land them on main outside the PR. Spec 111's
+`branchHeldSpecNumbers` reads `refs/remotes/origin/task-*`, so a pushed branch's spec number is
+already visible to every clone's claim gate — which is the guarantee the stub merge exists to
+provide. The claim is published; only the mechanism differs.
+
+**One assumption flagged for operator override:** wrap depth in the full-width view is
+**unbounded** — a long thought wraps to as many lines as it needs rather than being capped and
+re-truncated. Capping would reproduce the original complaint in subtler form, since the player
+would still lose the end of the sentence; the row budget already bounds the feed by dropping the
+oldest events. The narrow dock's existing 3-line cap is retained as separate behavior. This is the
+one genuinely arguable call in the spec.
 <!-- SECTION:NOTES:END -->
