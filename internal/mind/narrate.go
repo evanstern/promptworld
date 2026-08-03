@@ -33,7 +33,112 @@ const (
 	narrMaxEntries = 3
 	narrMaxText    = 600
 	narrMaxTokens  = 800
+
+	// harvestLedgerWindow (spec 110 D4/FR-001) bounds how far back a harvest
+	// may explain a map correction at the same coordinates: 4 game-days, in
+	// ticks (1 tick = 1 game second). Measured on the preserved 12.02-game-day
+	// soak world, the harvest→correction lag tops out at 3 game-days (716
+	// same-day, 76 at 1, 35 at 2, 3 at 3, none beyond), so 4 covers 100% of the
+	// explained population with a margin. Missing an attribution merely
+	// restores today's per-event line; a false one would silence a real
+	// mystery, so the window errs generous and the match stays exact-coordinate.
+	harvestLedgerWindow = 4 * 24 * 3600
+	// harvestLedgerCap hard-bounds the ledger so a long run cannot grow it
+	// without bound (FR-001). The same soak world held 352 distinct harvested
+	// locations over 12 game-days; 4096 sits an order of magnitude above that,
+	// so the cap is a bound of last resort, not a tuning dial. Eviction is
+	// oldest-first, as it is for the window.
+	harvestLedgerCap = 4096
 )
+
+// harvestKey is a ledger coordinate — harvests are attributed by exact tile,
+// never by proximity (spec 110: an unharvested location must not hit).
+type harvestKey struct{ x, y int }
+
+// harvestEntry is the most recent harvest recorded at one coordinate: who did
+// it and when.
+type harvestEntry struct {
+	agent int
+	tick  int64
+}
+
+// harvestLedger is the bounded, coordinate-keyed record of recent harvests
+// (spec 110 FR-001) the chronicle uses to tell an ordinary stump from a
+// genuine anomaly. It is absorb-goroutine-owned — the same ownership
+// narrLines already has — so it takes no lock of its own and starts no
+// goroutine. Its contents are derived purely from absorbed events applied in
+// order, so two replays of the same log build the same ledger (FR-006).
+type harvestLedger struct {
+	at map[harvestKey]harvestEntry
+}
+
+// record notes a harvest at (x, y) by agent at tick, then evicts oldest-first
+// on both age (harvestLedgerWindow, relative to this harvest) and count
+// (harvestLedgerCap). A later harvest at the same tile replaces the earlier
+// one: the most recent harvest is the one that explains a correction there.
+func (l *harvestLedger) record(x, y, agent int, tick int64) {
+	if l.at == nil {
+		l.at = make(map[harvestKey]harvestEntry)
+	}
+	l.at[harvestKey{x, y}] = harvestEntry{agent: agent, tick: tick}
+	l.evict(tick)
+}
+
+// evict drops entries the ledger may no longer keep: first everything older
+// than the window at now, then — if the count cap is still exceeded — the
+// oldest remaining entries. Cap eviction breaks tick ties by coordinate so the
+// surviving set is a function of the event log alone (FR-006).
+func (l *harvestLedger) evict(now int64) {
+	for k, e := range l.at {
+		if now-e.tick > harvestLedgerWindow {
+			delete(l.at, k)
+		}
+	}
+	if len(l.at) <= harvestLedgerCap {
+		return
+	}
+	keys := make([]harvestKey, 0, len(l.at))
+	for k := range l.at {
+		keys = append(keys, k)
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		a, b := l.at[keys[i]], l.at[keys[j]]
+		if a.tick != b.tick {
+			return a.tick < b.tick
+		}
+		if keys[i].x != keys[j].x {
+			return keys[i].x < keys[j].x
+		}
+		return keys[i].y < keys[j].y
+	})
+	for _, k := range keys[:len(l.at)-harvestLedgerCap] {
+		delete(l.at, k)
+	}
+}
+
+// lookup reports the harvester of (x, y) when a harvest there falls inside the
+// window ending at atTick. Read-only: a stale entry that eviction has not yet
+// reached still misses, because the age test is applied here too.
+func (l *harvestLedger) lookup(x, y int, atTick int64) (int, bool) {
+	e, ok := l.at[harvestKey{x, y}]
+	if !ok {
+		return 0, false
+	}
+	age := atTick - e.tick
+	if age < 0 || age > harvestLedgerWindow {
+		return 0, false
+	}
+	return e.agent, true
+}
+
+// attributedHarvest classifies one vanished-place coordinate (spec 110
+// FR-002): it returns the harvester and true when the ledger explains the
+// absence at (x, y) as of atTick, and false when nothing in the window does —
+// the unexplained case, which keeps its own chronicle line (FR-004/D5). Pure:
+// it reads the ledger and mutates nothing.
+func (md *Mind) attributedHarvest(x, y int, atTick int64) (agentID int, ok bool) {
+	return md.harvests.lookup(x, y, atTick)
+}
 
 // narrJob is the immutable chapter a narration runs against.
 type narrJob struct {
