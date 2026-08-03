@@ -4,7 +4,7 @@ title: 'Polish session 1: freeform tweaks and small fixes against a live world'
 status: In Progress
 assignee: []
 created_date: '2026-08-03 17:33'
-updated_date: '2026-08-03 18:24'
+updated_date: '2026-08-03 18:30'
 labels: []
 dependencies: []
 ordinal: 177001
@@ -265,4 +265,50 @@ would break for slices this small. The model that actually served every slice he
 slices anyway, so the work was never served below its rubric tier, only served without the hop.
 
 Scope: this session only. It is not a precedent for spec'd work, where delegation still holds.
+
+### Finding — raw feed truncates instead of wrapping (item 4, decision PENDING)
+
+**Ask.** The raw chronicle feed does not word-wrap long lines — worst on thoughts and
+conversations. Wanted: wrap, with continuation lines aligned to the 4th column (where the
+villager name starts).
+
+**Diagnosis.** Two separate causes, both pinned.
+
+1. *No wrap at usable widths.* `internal/tui/views.go:1073-1076` — the chronicle tab sets
+   `maxWrap := 1` and only raises it to 3 when `width < 60`. Wrapping is therefore enabled ONLY in
+   the narrow dock; in solo (full width) and in any dock ≥ 60 columns, `maxWrap == 1` means
+   `styleWrapLine` takes its truncate branch (`internal/tui/grammar.go:426-440`) and the line is
+   cut with `…`. The narrow-fallback `chronicleView` also passes `1`
+   (`internal/tui/views.go:2286`).
+2. *No hanging indent even where wrap IS on.* `styleWrapLine`'s wrap branch
+   (`internal/tui/grammar.go:442-510`) greedy-wraps the FULL flattened line — prefix and summary
+   together — and every continuation line starts at column 0. Nothing in the wrap path knows where
+   the summary column begins.
+
+**Column layout** (`chronicleLinePrefix`, `internal/tui/grammar.go:299-307`): solo renders
+`<TICK> <HH:MM>  <type>  <summary>`; dock drops the tick. The requested alignment target is
+`len(prefix)` — already computable per window from `cols`, never a hardcoded constant, since
+`TickWidth` and `TypeWidth` are derived per visible window (`computeChronicleColumns`).
+
+**Why this is not a one-liner.**
+
+- The digest-grammar contract (`specs/*/contracts/digest-grammar.md` §1/§2) and
+  `docs/design/tui/panels/chronicle.md` both document today's line format and wrap/truncate rules.
+  Changing them is a spec-047 design-authority amendment, gated on the same PR.
+- Row budgeting interacts: `chronicleRawBody` slices the tail to `entryRows` events assuming
+  "each event contributes at least one physical line" and trims overshoot after. Turning wrap on at
+  full width changes physical-line counts for every long event.
+- Narrow widths need a guard: with a ~36-column prefix indent inside a 40-column dock, the residual
+  text column collapses. The minimum-residual-width rule is a real design decision, not an
+  implementation detail.
+- **Fixture gap:** no committed frame reproduces the defect — the three fixtures emit no long
+  conversation/thought events, so `docs/design/tui/frames/` cannot show a before/after. The
+  tui-frames loop treats the frame diff as THE review artifact, so a fixture must gain a long event
+  before this change is reviewable.
+
+**Wiki footprint (dogfooding decision 3).** `internal/tui/views.go` is sourced by 13 notes and
+`internal/tui/grammar.go` by 4 (union 16). Added to this session's existing 17, the branch would
+reach **exactly 30 — the threshold shipped in decision 3 an hour ago**, which would fire
+`wiki-footprint` on the next session gate run. The instrument works, and it is pointing at this
+item.
 <!-- SECTION:NOTES:END -->
