@@ -2,7 +2,7 @@
 title: Panel — chronicle (event feed)
 class: panel
 status: shipped
-verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
+verified_against: b93c7fe1766683dd614bb2a08bd1111ee84dd452
 sources:
   - internal/tui/views.go
   - internal/tui/digest.go
