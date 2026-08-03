@@ -233,4 +233,9 @@ actually served.
 
 | Task | Tier / model | Phases | PR | Merge sha | Date | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| TASK-187 | Opus 5 / `claude-opus-5` | pending | — | — | 2026-08-02 | Lane 0 pin repair folded in |
+| TASK-187 | Opus 5 / `claude-opus-5` (served: `claude-opus-5`) | 1–5 complete | pending (orchestrator opens) | — | 2026-08-02 | Lane 0 pin repair folded in. Branch commits: `0b252dd3` claim/runbook/Lane 0 · `b1564138` P1–2 fixtures + render API · `25e101b9` renumber 110→112, FR-005 amendment, FR-008 added · `0a83f3fc` P3–4 CLI + generated matrix · `fd84389f` planning-tier rulings on the P3–4 deviations · `9a92bfc5` merge origin/main · `9f7df613` P5 determinism + fidelity · `796bdb52` P5 design reference + wiki grounding. Gates at `796bdb52`: `check-tui-design.mjs` exit 0 structurally and with `--changed origin/main...HEAD`; `check-merge-drift.mjs pr` exit 0 (`verdict=warnings` — `stale-base` 2 commits, both `backlog/`-only board syncs, and the `tui-surface` reminder, satisfied); `gofmt -l` clean, `go build ./...` ok, `go test ./...` green across 23 packages; player-docs `check-freshness --check` 16 fresh / 0 stale. 18 wiki notes re-pinned to `9f7df613`, each classified against `git log <pin>..HEAD` over its own sources (4 NEEDS-REVIEW and amended, 14 RE-PIN-ONLY) — that range held only this branch's own commits, so no pin was bumped on the strength of the merge-in. |
+
+**Status line:** the header's `Status:` stays `draft` — only the operator flips it, per
+this file's own standing comment. `Done means` is otherwise satisfied except for the two
+lines that require the merge itself (TASK-187 Done on the board via its merged PR; the
+checks re-run on `main`), which the background-job mode leaves to the operator.

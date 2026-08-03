@@ -73,21 +73,60 @@ One task, one PR. Every phase below lands as a commit on this single branch.
 
 ## Phase 5 — Gates and grounding
 
-- [ ] T018 **Determinism test (AC #3):** regenerate the full matrix twice in one process
+- [x] T018 **Determinism test (AC #3):** regenerate the full matrix twice in one process
       and assert byte-identical output; additionally assert the generated output matches
       the committed copy, so an environment-dependent read fails the suite (plan.md R1).
-- [ ] T019 **Fidelity test (AC #9):** assert `Frame(opts)` equals `View()` for the same
+      Both landed in `cmd/promptworld/frames_test.go`: `TestDumpFramesIsDeterministic`
+      (two dumps, one process) and `TestDumpFramesMatchesCommittedMatrix` (fresh dump vs
+      `docs/design/tui/frames/`, which also refuses a committed `.txt` no combination
+      produces). Negative control run: appending one byte to a committed frame fails the
+      suite naming the file and the first differing line.
+- [x] T019 **Fidelity test (AC #9):** assert `Frame(opts)` equals `View()` for the same
       posed Model, at least one page per fixture.
-- [ ] T020 `gofmt -l` clean, `go build ./...`, `go test ./...` green.
-- [ ] T021 Amend `docs/design/tui/` for this feature and re-pin every affected page;
+      **Judged too thin as it stood and broadened.** `TestFrameMatchesDirectView` met
+      AC #9's letter (2 states x 3 fixtures at 140x40) but not its purpose: `Frame` poses
+      through `poseState`, sets width/height, and forces the color profile — all
+      per-(state, size) — so one widescreen size left the NARROW fallback uncovered, a
+      structurally different render branch (`narrowView`, no fold arithmetic, FR-008)
+      that the committed matrix ships frames for at 80x30. The sweep is now total: every
+      fixture x every `States()` entry x every harness size, 165 comparisons, cheap
+      because a frame is a pure function of a Go value.
+- [x] T020 `gofmt -l` clean, `go build ./...`, `go test ./...` green.
+      Verified at `9f7df613`: gofmt reported no files, build ok, 23 packages pass.
+- [x] T021 Amend `docs/design/tui/` for this feature and re-pin every affected page;
       `node scripts/check-tui-design.mjs --changed <range>` exits 0.
       **Known stale pin, must be re-pinned:** phase 4 added a `frames/` entry to
       `docs/design/tui/INDEX.md`'s taxonomy section. Its `verified_against` still
       *resolves*, so the pins check does NOT catch it — but its content changed, which
       makes the pin stale in substance. Re-pin `INDEX.md` explicitly; do not assume a green
       checker means every pin is honest.
-- [ ] T022 Wiki-in-PR (spec 069): re-verify and re-pin, in-branch, any wiki note listing a
+      Re-pinned `INDEX.md` `c8906da3` → `10b33cc0`, the merge-base with `origin/main`, per
+      spec 047's pin contract (`contracts/frontmatter-and-pins.md`: a main-ancestor
+      commit, never a task-branch head). Honest-re-pin check first: `c8906da3` predates
+      the whole v2 corpus build-out, so the one claim a week of `internal/tui` work could
+      invalidate is the file map — verified exact (25 mapped files, tree holds those 25
+      plus `frames/README.md`). Amendments: the file map gains `frames/` with a `[gen]`
+      marker, and gate rule 4 now names `frames/` as the evidence mockup-vs-real drift can
+      be checked against. No other page amended or re-pinned — this branch's
+      `internal/tui` diff is construction seams that change no rendered surface. Checker
+      exits 0 structurally and with `--changed origin/main...HEAD`.
+- [x] T022 Wiki-in-PR (spec 069): re-verify and re-pin, in-branch, any wiki note listing a
       touched file in its `sources:`; if `docs/wiki/` changed, regenerate `docs/player/`.
       Probe with `node .claude/skills/player-docs/scripts/check-freshness.mjs --check`.
-- [ ] T023 `node scripts/check-merge-drift.mjs pr` exits 0 from the worktree.
-- [ ] T024 Update the runbook execution log and flip its status.
+      18 notes matched. `git log <pin>..HEAD` over each note's own sources returned ONLY
+      this branch's commits, so the entire staleness surface is the branch diff
+      (`tui.go` +123/-13, `main.go` +9, `render_test.go` +8/-51) and the merge-in
+      justified nothing. 4 NEEDS-REVIEW, prose amended then re-pinned (`cli-promptworld`,
+      `tui-client`, `tui-client-mechanics`, `testing-strategy`); 14 RE-PIN-ONLY, each read
+      against the diff. All pinned to `9f7df613`. 7 player pages went stale on pin moves
+      alone; prose deliberately unchanged (the only player-reachable delta is a
+      developer-only command), stamps updated — 16 fresh / 0 stale.
+- [x] T023 `node scripts/check-merge-drift.mjs pr` exits 0 from the worktree.
+      Exit 0, `verdict=warnings`: `stale-base` (2 commits, both `backlog/`-only board
+      syncs) and the `tui-surface` reminder, satisfied by T021. Every
+      `wiki-repin-missing` block and `player-docs-stale` cleared.
+- [x] T024 Update the runbook execution log and flip its status.
+      Execution log filled (phases, every branch commit sha, gate results, date).
+      **The `Status:` line is deliberately NOT flipped:** the runbook's own standing
+      comment reserves `draft → signed-off` to the operator, and `Done means` still has
+      two lines that only the merge can satisfy. Recorded in the runbook beneath the log.
