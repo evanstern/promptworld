@@ -5,7 +5,7 @@ kind: pipeline
 sources:
   - internal/daemon/daemon.go
   - internal/daemon/estimator_persist.go
-verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
+verified_against: 4efa712bb90538c9c195d23146077e7fc535e511
 ---
 
 # Daemon boot: teaching posture and calibration seeding
@@ -29,10 +29,15 @@ calibrated flavor (the planner-serving provider's `CalibratedAt` is set) or
 a provisional one that also prompts `promptworld calibrate <world>` — the
 pessimistic bootstrap-seeded rung still applies either way, just honestly
 labeled. No planner-serving provider means no posture line and no default.
-Boot also surfaces the agent tool-use loop's config warnings the same
-warn-not-error way as the concurrency knob (`llmCfg.Local.Workers()`'s
-`workersWarn`): `llmCfg.Rounds()` (an out-of-range `loop_max_rounds`), both
-tiers' `ToolModeResolved()` (an unknown `tool_mode`), and — since spec 025
+Boot also surfaces the config warnings the same warn-not-error way. Since spec
+115 the per-provider ones come from `llmCfg.ProviderReports()`, which resolves
+either config shape into a name-ordered provider view and returns the
+warn-and-clamp warnings the construction path itself discards — an out-of-range
+`parallel` and an unknown `tool_mode`, per provider. Boot reads that instead of
+the legacy `llmCfg.Local.Workers()` / `Local.Cloud.ToolModeResolved()` pair,
+which is always zero on a `providers` world (the two shapes are mutually
+exclusive) and so printed neither the warnings nor any model name. Alongside
+them: `llmCfg.Rounds()` (an out-of-range `loop_max_rounds`), and — since spec 025
 (TASK-72) — the three per-kind token budgets (`llmCfg.PlannerTokens()`/
 `GuardianTurnTokens()`/`ConsolidationTokens()`, an out-of-range
 `max_tokens.<key>`) each print one line and

@@ -6,7 +6,7 @@ sources:
   - internal/tui/grammar.go
   - internal/tui/digest.go
   - internal/tui/tui.go
-verified_against: 9f7df6137c78506f9d5ab48809f6c2e4855da782
+verified_against: 4efa712bb90538c9c195d23146077e7fc535e511
 ---
 
 # TUI chronicle feed and digest grammar
@@ -29,6 +29,13 @@ turning payload into a readable per-type summary; a feed line reads
 compact `key=value` fields for telemetry families (`cog.*`, `clock.*`,
 `daemon.*`). Columns align at solo width (tick right-aligned, type padded);
 the narrow dock drops the tick and shortens type to its last segment.
+A row that fits renders verbatim (padding never reflowed); since spec 115 one
+that overflows **wraps** between words rather than being cut with `…`, each
+continuation line starting at that row's own summary column. The indent is the
+row's prefix width, recomputed per frame — a constant would misalign as column
+widths shift — and drops to zero below 24 columns of residual text. Unbounded
+at full width, 3-line cap in the narrow dock; the styled and whole-line paths
+share the indent (`docs/design/tui/panels/chronicle.md`).
 The Type column renders every type RAW on every surface — solo column, dock
 short form, detail pane, and the grammar-miss fallback alike. Spec 052
 (FR-013) briefly aliased the then-frozen `metatron.*` namespace segment to

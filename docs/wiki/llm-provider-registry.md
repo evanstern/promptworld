@@ -6,7 +6,7 @@ sources:
   - internal/llm/llm.go
   - internal/llm/config.go
   - internal/llm/providers.go
-verified_against: 17ccdde318dcb02ca240430c10092eb96f940ac7
+verified_against: 4efa712bb90538c9c195d23146077e7fc535e511
 ---
 
 # LLM orchestrator — provider registry, embedding route & transports
@@ -30,7 +30,13 @@ local-class latency bootstraps. The legacy two-entry config (`local`/`cloud`) lo
 forever via `deriveLegacy` — a two-provider registry named `local`/`cloud` with the
 pre-024 routes (planner/conversation/meeting → local; consolidation/narrator/drama/
 metatron → cloud), byte-identical behavior; declaring both shapes in one file is a
-load error. `KindMusing` retired with spec 017: musing is a roster tool inside the
+load error. Because the two shapes are mutually exclusive, `Config.Local`/`Cloud`
+are always zero on a `providers` world — anything wanting a shape-independent view
+must go through the resolved registry. `Config.ProviderReports()` (spec 115) is
+that accessor for boot-time reporting: it resolves either shape, returns providers
+in stable name order with their model, endpoint and post-clamp worker count, and
+hands back the `parallel`/`tool_mode` clamp warnings that the construction path
+computes and discards. `KindMusing` retired with spec 017: musing is a roster tool inside the
 planner loop ([[agent-mind]], [[tool-loop]]). Spec 029 adds `KindGuardianWatch`
 (`"metatron_watch"` — the route-key string is FROZEN, spec 052 ruling 2) — the
 guardian's fuzzy standing-order confirm, a single bare

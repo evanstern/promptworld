@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@aeb0c17a98a8ae1b27fff9111bd009e21841b21c">
-<meta name="promptworld-docs:source" content="docs/wiki/takeover-surfaces.md@aeb0c17a98a8ae1b27fff9111bd009e21841b21c">
+<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@4efa712bb90538c9c195d23146077e7fc535e511">
+<meta name="promptworld-docs:source" content="docs/wiki/takeover-surfaces.md@4efa712bb90538c9c195d23146077e7fc535e511">
 <meta name="promptworld-docs:source" content="docs/wiki/grounded-feedback.md@fc1a8314f3f71a33c5e2145c914d5cbb511d9196">
-<meta name="promptworld-docs:source" content="docs/wiki/village-lens.md@aeb0c17a98a8ae1b27fff9111bd009e21841b21c">
-<meta name="promptworld-docs:source" content="docs/wiki/tile-registry.md@aeb0c17a98a8ae1b27fff9111bd009e21841b21c">
-<meta name="promptworld-docs:source" content="docs/wiki/tui-chronicle-feed.md@9f7df6137c78506f9d5ab48809f6c2e4855da782">
+<meta name="promptworld-docs:source" content="docs/wiki/village-lens.md@4efa712bb90538c9c195d23146077e7fc535e511">
+<meta name="promptworld-docs:source" content="docs/wiki/tile-registry.md@4efa712bb90538c9c195d23146077e7fc535e511">
+<meta name="promptworld-docs:source" content="docs/wiki/tui-chronicle-feed.md@4efa712bb90538c9c195d23146077e7fc535e511">
 <meta name="promptworld-docs:source" content="docs/wiki/stage-defaults.md@9f7df6137c78506f9d5ab48809f6c2e4855da782">
 <title>What do all those things on screen mean? — promptworld player docs</title>
 <style>
@@ -262,6 +262,14 @@ by the night stranger), a broken village law, and a villager the game has caught
 neglecting a vital need for hours without doing anything about it — render as a
 whole highlighted line so they never slip by unnoticed in a busy feed.</li>
 </ul>
+<p>Most raw-feed lines are short and sit one to a row. The interesting ones usually
+aren't: when a villager thinks something, or says something to a neighbour, that line
+is a whole sentence. Those wrap onto as many rows as they need rather than being cut
+off at the right edge, so you can read a thought all the way to its end — the feed is
+the only place it is shown. The continuation rows line up underneath where the
+sentence began, leaving the tick, time and event-type columns down the left as a clean
+edge you can still scan. In a narrow side panel, where wrapping a long thought would
+push everything else off screen, it stops after three rows instead.</p>
 <p>Pause the world (space bar) and the feed becomes selectable: move through entries
 and a detail panel at the bottom shows that entry's full record. That panel's bottom
 row is an actions bar: for most entries it offers to jump the map camera to where the
