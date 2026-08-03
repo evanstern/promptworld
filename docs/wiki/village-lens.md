@@ -105,6 +105,13 @@ marks fire — needs-critical wins when both apply") — a prose note rather
 than a `mapGlyphs` row, since every overlay is a style variant of an
 already-legended glyph, never a new one to key a row on.
 
+Since spec 114 the legend clamps to the terminal width ([[tui-map-view]]), and
+`conditionOverlayNote` sits near the tail of the composed line — so on a narrow
+terminal it is truncated away and the `?` overlay's walkthrough becomes the only
+place the overlay styles are named. The anti-drift discipline is unchanged (one
+note, rendered by both surfaces); what changed is that the legend's copy is
+width-contingent and the overlay's is not.
+
 ## Connections
 
 [[stage-defaults]] (spec 066) is the authority table this feature's villager

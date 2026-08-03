@@ -129,6 +129,35 @@ contents via `summarizeInventoryContents`, capacity `sim.ChestCap`) — a
 chest's `Store` is a plain counts inventory rather than dated batches,
 because chests preserve food indefinitely (no rot deadlines to track).
 
+### Width policy (spec 114)
+
+"Content grows the line" is bounded: the line grows until it reaches the width
+available, then clamps with a trailing `…` (`clipLegend`, built on
+`ansi.Truncate` so the cut is ANSI-safe and measured in display columns rather
+than runes). It is never wrapped to a second row — this panel's rows are the
+scarcer resource, and the shed order drops the legend entirely before the
+viewport shrinks.
+
+Each render path clamps with the budget it owns: `mapView` (narrow) uses
+`m.width`, because its legend renders outside the map box, and `mapPanelView`
+(widescreen) uses `cols-4`, the box interior after `.Width(cols-2)` and
+`Padding(0,1)`. `clipLine`/`clipContent` are untouched by this — they remain a
+layout safety net rather than a content-communication device, and the legend
+now arrives already within budget, so their pass over it is a no-op.
+
+Truncation eats the tail, so composition order is priority order: the day
+phase and viewport extent survive, the glyph key is where the cut usually
+lands, and the prose notes plus all the pile/chest inspection content
+described above are the first casualties at 80 columns. That inspection
+content is therefore a wide-terminal affordance in practice. Segment-priority
+shedding is explicitly not implemented.
+
+Before spec 114 the narrow path applied no clamp at all, so this line reached
+an 80-column terminal at 354–356 columns and soft-wrapped into roughly five
+rows, displacing the map. `TestFramesNeverExceedDeclaredWidth`
+(`cmd/promptworld/frames_test.go` neighbourhood) now guards the whole frame
+matrix against any line exceeding its declared width.
+
 ## Back to parent
 
 [[tui-client]] links here for the map region; that note's own Connections
