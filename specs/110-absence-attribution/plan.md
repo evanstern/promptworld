@@ -156,6 +156,79 @@ recorded here because Phase 2 depends on them.
    `-race` failure is not mistaken for a first occurrence. If it recurs, capture the whole
    output (`> file 2>&1`), do not `tail` it.
 
+## Phase 2/3 implementation notes (recorded on landing T007–T014)
+
+No deviation from the plan's design; four things it left open, resolved in the code and
+recorded here because Phase 4 (the soak) reads them.
+
+1. **Where the FR-007 telemetry surfaces — what the soak queries.** NOT an event: FR-006
+   forbids a new sim event type, and every existing `cog.*` payload is a poor fit. It
+   follows the **spec 105 `nightReport` precedent** instead — an absorb-owned in-memory
+   counter flushed as ONE summary log line per closed chapter, on the daemon's log. The
+   line is emitted from `closeChapter` (`internal/mind/narrate.go`,
+   `correctionTally.report`) and its exact shape is:
+
+   ```
+   mind: chronicle "day 3, dawn to nightfall" corrections: 40 attributed (12 locations, 2 harvesters), 1 unexplained
+   ```
+
+   Note the units agree in number (`1 location, 1 harvester`), so a parser must match
+   `locations?` / `harvesters?`.
+   Grep the daemon log for `corrections: ` (or the fuller `mind: chronicle .* corrections:`)
+   to get per-chapter attributed/unexplained counts directly. The label is the chapter
+   label `closeChapter` already builds, so day and phase are on the line. **A chapter with
+   zero corrections of either kind logs nothing** (FR-008), and the soak must read an
+   absent line as 0/0 rather than as missing data.
+
+2. **The coalesced line's exact wording** (`correctionTally.summary`), stamped like every
+   other chronicle line with `[<clock.Format(toTick)>] ` and appended LAST in the chapter
+   buffer:
+
+   ```
+   Ordinary harvesting: 40 remembered things the villagers went for had already been felled or quarried, at 12 locations, by Ash and Rowan. Routine village business.
+   ```
+
+   Singular agreement is handled (`1 remembered thing … at 1 location, by Ash`).
+   Harvester names are sorted by agent id so the wording is a function of the event log
+   alone (FR-006). The constant `corrSummaryMarker = "Ordinary harvesting:"` is the
+   line's identity, and the FR-005 prompt instruction quotes that same constant — SC-001's
+   soak query can key off it. Deliberately no negation ("not a mystery") in the line: the
+   plan's risk register worried the summary could itself read as ominous, and priming a
+   model with the word it must avoid is the wrong mitigation. Framing is carried by the
+   named cause plus the prompt.
+
+3. **The FR-005 prompt addition is conditional, not static.** `narrateUserPrompt` scans
+   the job's lines for `corrSummaryMarker` and only then appends, after the log and before
+   the ongoing-threads block:
+
+   ```
+   Any "Ordinary harvesting:" line above is ordinary background, not storyline material: its cause is already named and settled. Do not build an entry or a thread around it.
+   ```
+
+   Conditional because FR-008 demands a zero-correction chapter be byte-identical to
+   today — a static addition would change every prompt in the world. Scanning the lines
+   rather than flagging the job also survives the retry-carry path, where a failed
+   chapter's summary line rides into the next chapter's job. The existing
+   "Group by storyline, not by hour." instruction is untouched (pinned by test).
+
+4. **Two judgment calls Phase 2 made that the spec did not pin.**
+   - *An attributed correction still opens the chapter's window.* It emits no line but
+     still sets `md.narrFrom` when that is zero, exactly as its per-event line used to, so
+     a chapter whose earliest event is an attributed correction keeps today's `fromTick`.
+     The alternative (leaving `narrFrom` to the next narratable event) would have silently
+     shortened chapter windows.
+   - *Phase 1's `TestChronicleNoteCorrectionLineInertPhase1` is superseded, deliberately.*
+     Its first half asserted the attributed case still emits a per-event line — the exact
+     assertion Phase 2 inverts — so it is replaced by
+     `TestChronicleNoteAttributedCorrectionEmitsNoLine`. Its second half (an unexplained
+     correction keeps its line, byte-identical) carries over unchanged and now also pins
+     the line's full text. T006's tick stands: Phase 1 *was* inert when it landed.
+
+   Refactor note: `chronicleNote`'s `name` closure became the method `md.agentName` and its
+   line-append block became `md.appendNarrLine`, so `closeChapter`'s summary uses the same
+   roster path and the same ring discipline (FR-003's "the same roster path the existing
+   lines use"). Both are behaviour-preserving extractions.
+
 ## Grounding (wiki-in-PR, spec 069)
 
 - `docs/wiki/chronicle.md` pins `internal/mind/narrate.go` — **will** be touched;

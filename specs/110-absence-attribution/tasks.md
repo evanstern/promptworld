@@ -30,31 +30,31 @@ the spec dir, and the branch's commits — never chat context.
 
 ## Phase 2: Coalesced narration
 
-- [ ] T007 Add the per-chapter correction tally to the Mind (attributed count, distinct
+- [X] T007 Add the per-chapter correction tally to the Mind (attributed count, distinct
       attributed locations, harvester id set), reset alongside `md.narrLines` in
       `closeChapter`.
-- [ ] T008 Route `chronicleNote`'s `agent.map_corrected` arm
+- [X] T008 Route `chronicleNote`'s `agent.map_corrected` arm
       (`internal/mind/narrate.go:159-172`) through `attributedHarvest` on the first
       `Gone` fact — the existing first-fact convention. Attributed: fold into the tally,
       emit no line (FR-003). Unexplained: emit today's line, byte-identical (FR-004).
-- [ ] T009 Emit the single attributed summary line at `closeChapter`, naming the
+- [X] T009 Emit the single attributed summary line at `closeChapter`, naming the
       correction count, the distinct-location count, and the harvesters resolved to
       names through the same roster path the existing lines use.
-- [ ] T010 FR-008: a chapter with zero attributed corrections produces no summary line
+- [X] T010 FR-008: a chapter with zero attributed corrections produces no summary line
       and is byte-identical to today.
-- [ ] T011 Unit tests for T007–T010, including the mixed chapter of User Story 2
+- [X] T011 Unit tests for T007–T010, including the mixed chapter of User Story 2
       (40 attributed + 1 unexplained → one summary line plus one untouched anomaly line)
       and the SC-002 assertion that corrections contribute at most one line per chapter.
 
 ## Phase 3: Prompt and telemetry
 
-- [ ] T012 FR-005: mark the coalesced line as ordinary background rather than storyline
+- [X] T012 FR-005: mark the coalesced line as ordinary background rather than storyline
       material in the narrator prompt (`internal/mind/narrate.go:~705-712`), without
       disturbing the existing "group by storyline, not by hour" instruction for
       everything else.
-- [ ] T013 FR-007: record per-chapter attributed vs unexplained correction counts on the
+- [X] T013 FR-007: record per-chapter attributed vs unexplained correction counts on the
       Mind's existing telemetry path, so the soak reads the outcome directly.
-- [ ] T014 Tests for T012–T013; then `go build ./...`, `go test ./...`, and
+- [X] T014 Tests for T012–T013; then `go build ./...`, `go test ./...`, and
       `go test -race ./internal/mind/...` green (SC-005).
 
 ## Phase 4: Evidence
