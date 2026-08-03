@@ -4,7 +4,7 @@ title: 'Polish session 1: freeform tweaks and small fixes against a live world'
 status: In Progress
 assignee: []
 created_date: '2026-08-03 17:33'
-updated_date: '2026-08-03 17:56'
+updated_date: '2026-08-03 18:03'
 labels: []
 dependencies: []
 ordinal: 177001
@@ -176,4 +176,8 @@ Not re-pinned per the session contract — grounding runs once at the end.
 documents the old single-line boot shape (`local … , parallel 16, cloud …`). It is a shipped
 spec's contract, so the choice is amend-in-place vs record the supersession here; flagged, not
 resolved.
+
+**Correction to the decision-1 note:** the stale-note count is **12**, not ten — the earlier figure
+came from a `grep -rl … | head` that truncated at ten. Adding `internal/llm/config.go` (6 notes),
+this branch's stale union is **17 of 191 notes (9%)**, since five notes source both files.
 <!-- SECTION:NOTES:END -->
