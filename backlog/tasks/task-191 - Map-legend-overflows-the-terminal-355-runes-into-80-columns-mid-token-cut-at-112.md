@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-08-03 03:15'
-updated_date: '2026-08-03 03:23'
+updated_date: '2026-08-03 03:54'
 labels:
   - ui
   - tui
@@ -54,10 +54,28 @@ Spec: specs/114-map-legend-width
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 At every committed frame size, the map legend line never exceeds the declared terminal width (80/112/113/160)
-- [ ] #2 The 80x30 narrow-fallback legend is clamped at the render site, not left to the terminal to wrap
-- [ ] #3 A legend truncated for width ends in a visible ellipsis marker, never a bare mid-token cut
-- [ ] #4 Widening the terminal reveals strictly more legend content
-- [ ] #5 docs/design/tui/panels/map.md records the width policy and resolves the spec-060 legend-overflow deferral at map.md:209
-- [ ] #6 A regression guard fails if any committed frame emits a line wider than its declared width
+- [x] #1 At every committed frame size, the map legend line never exceeds the declared terminal width (80/112/113/160)
+- [x] #2 The 80x30 narrow-fallback legend is clamped at the render site, not left to the terminal to wrap
+- [x] #3 A legend truncated for width ends in a visible ellipsis marker, never a bare mid-token cut
+- [x] #4 Widening the terminal reveals strictly more legend content
+- [x] #5 docs/design/tui/panels/map.md records the width policy and resolves the spec-060 legend-overflow deferral at map.md:209
+- [x] #6 A regression guard fails if any committed frame emits a line wider than its declared width
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+PR #159 open (draft). Spec 114 shipped: legend clamps to its budget with a trailing ellipsis, both render paths, plus a matrix-wide width guard.
+
+Model tier (constitution Principle V — required record): routine tier per the rubric — single package (internal/tui) plus one test in cmd/promptworld, view/rendering code, tests alongside code. No escalation trigger fired: no cross-package or architectural change, no concurrency/scheduling/governor logic, no doctrine-adjacent behavior change, no prior failed attempt.
+
+DEVIATION, disclosed: the model that actually served was claude-opus-5, running INLINE in the planning session rather than as a delegated spec-implementer subagent. Principle V requires the planning tier to delegate and "never implement inline." This session's operating instructions explicitly forbid spawning agents unrequested, and the operator did not request one; the tighter session guardrail was followed and the deviation surfaced to the operator at the time rather than after. Quality impact is nil — Opus 5 is itself the constitution's escalation implementation tier — the deviation is procedural (cost and delegation discipline), not qualitative.
+
+Two findings surfaced during the work, neither silently resolved:
+
+1. Five legend tests were pinning the defect. testModel renders at 80 columns, and TestMapRendersPilesAndStockpileZones / ChestGlyphAndInspection / WallGlyphs / PathGlyph / GraveGlyph all asserted the legend CONTAINED inspection content that only fit because the legend was unclamped. They were verifying something no player at 80 columns could usefully see. Repointed at the composed legend from renderMapGrid (the composition they were actually testing); presentation clamping is now covered separately by legend_width_test.go.
+
+2. The header-overflow class is 20 frames, not the 11 first reported. The initial audit miscounted by reading rows listing "at:1,29" as legend-only. Corrected before the deny-list was written; TASK-192 carries the true figure.
+
+Scope held: the operator scoped this to the legend class (21 frames). The header (20 frames, TASK-192) and scenario footer (2 frames, TASK-193) were filed rather than fixed, and are registered in the guard's bidirectional deny-list, which fails if an entry is dropped early, outlives its fix, or names a frame the matrix no longer produces — verified all three ways.
+<!-- SECTION:NOTES:END -->
