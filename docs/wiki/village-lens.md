@@ -8,7 +8,7 @@ sources:
   - internal/tui/help.go
   - internal/sim/agents.go
   - internal/tui/tiles.go
-verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
+verified_against: aeb0c17a98a8ae1b27fff9111bd009e21841b21c
 ---
 
 # Village lens (villager strip + map condition overlays)
@@ -104,6 +104,13 @@ compact legend line and the `?` help overlay's walkthrough both gain
 marks fire — needs-critical wins when both apply") — a prose note rather
 than a `mapGlyphs` row, since every overlay is a style variant of an
 already-legended glyph, never a new one to key a row on.
+
+Since spec 114 the legend clamps to the terminal width ([[tui-map-view]]), and
+`conditionOverlayNote` sits near the tail of the composed line — so on a narrow
+terminal it is truncated away and the `?` overlay's walkthrough becomes the only
+place the overlay styles are named. The anti-drift discipline is unchanged (one
+note, rendered by both surfaces); what changed is that the legend's copy is
+width-contingent and the overlay's is not.
 
 ## Connections
 

@@ -1,0 +1,50 @@
+Ashgrove — tick 396000 · day 5 20:00 · running · speed 8x (8.0 t/s)
+8 villagers A B C R f h † †
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ HELP · the screen                                                                                                                                            │
+│ Header anatomy                                                                                                                                               │
+│ world name                   the world's name, always shown                                                                                                  │
+│ disconnected                 the client lost its socket connection; it retries automatically, showing the last error                                         │
+│ tick / game time             the current simulated tick and in-world clock time                                                                              │
+│ running / PAUSED             the clock's state — PAUSED renders amber                                                                                        │
+│ speed (t/s)                  the requested speed step and its effective ticks/second                                                                         │
+│ asked … in flight, debt …%   governed speed: the operator asked for more speed than the governor currently allows                                            │
+│ [degraded]                   the clock's effective rate has fallen behind its target                                                                         │
+│ [llm: provider kind]         the first LLM provider carrying an active health condition (see the guardian tab for the rest)                                  │
+│ [suppressed: classes]        cognition classes currently being skipped at this speed (see the guardian tab for remedies)                                     │
+│                                                                                                                                                              │
+│ Map glyphs                                                                                                                                                   │
+│ ~    water — impassable to foot travel                                                                                                                       │
+│ ♠    a tree — choppable for wood                                                                                                                             │
+│ "    wild forage — gatherable food                                                                                                                           │
+│ ^    an intact rock outcrop — quarriable for stone                                                                                                           │
+│ ,    a depleted outcrop — passable, already quarried                                                                                                         │
+│ ᴥ    a gru's den                                                                                                                                             │
+│ ▲    a lit fire — warmth, cooking                                                                                                                            │
+│ △    a cold fire, out of fuel                                                                                                                                │
+│ ⌂    a built shelter                                                                                                                                         │
+│ ▣    a built oven                                                                                                                                            │
+│ %    a ground stockpile of dropped goods                                                                                                                     │
+│ ☐    a built chest, holding goods                                                                                                                            │
+│ ▤▩   a built wall (▤ plank, ▩ stone); dim = damaged                                                                                                          │
+│ ·    a paved path (tan) — distinct from plain ground's dim ·                                                                                                 │
+│ G    the gru — a predator; approach at your peril                                                                                                            │
+│ ✝    a villager's grave — marks where a death occurred                                                                                                       │
+│ ░    marshy wet ground near water — open, walkable                                                                                                           │
+│ ▒    a sandy shoreline flat — open, walkable                                                                                                                 │
+│ S    a stranger — a night trickster after unattended stores                                                                                                  │
+│ ◇    a guardian-marked structure site — a designation awaiting its building                                                                                  │
+│ ┄    a guardian-marked wall line — a designation awaiting its wall                                                                                           │
+│ ◦    the edge of a guardian-marked settlement zone                                                                                                           │
+│ A/a  a villager's initial — uppercase awake, lowercase asleep (agents by initial (lowercase asleep, †dead))                                                  │
+│ … (+9 more — J to scroll)                                                                                                                                    │
+│ esc/? close · tab section · J/K scroll                                                                                                                       │
+│                                                                                                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+The gru just attacked a villager — a real threat, not a random event.
+→ press 2 for the chronicle  (? for more · x dismiss)
+⚡⚡· (2/3) · next +1 @ 06:00 · 👁 2 standing orders · faith 62
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ⏎ m — speak with the guardian…                                                                                                                               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+esc/? close · tab section · J/K scroll

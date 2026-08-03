@@ -1,0 +1,30 @@
+Ashgrove — tick 396000 · day 5 20:00 · running · speed 8x (8.0 t/s)
+8 villagers A B C R f h † †
+╭──────────────────────────────────────────────────────╮ ╭──────────────────────────────────────────────────────╮
+│ MAP · following centroid                             │ │ CHRONICLE │ guardian │ villagers │ systems           │
+│ · · · · · · · · · ▒ ▒ ▒ ▒ ~ ~ " · · · · ^ · · · · ^  │ │ ──────────────────────────────────────────────────── │
+│ · · · · · · · · ▒ ~ ~ ~ ~ ~ ~ A · · · · · · · · · ^  │ │ raw feed · no narrated entries yet — the narrator wr │
+│ · · · · · · · " ~ ~ ~ ~ ~ ~ ~ ░ · · · · · · · · · ^  │ │                                                      │
+│ · · · · · " ░ ~ ~ ~ ~ ~ ~ ~ ~ ░ · · · · · · · · · ·  │ │ 19:27 forage_re… forage regrew at (24,29)            │
+│ · · · · · ░ ~ ~ ~ ~ ~ ~ ~ ~ ~ ♠ · · · · · · · · · ·  │ │ 19:30 saw Hazel saw tree at (31,34)                  │
+│ · · · · ░ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ░ ░ · · · · · · · ·  │ │ 19:32 moved Oak → (38,40)                            │
+│ · · · · ░ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ " · · · · · · ·  │ │ 19:35 speed_set speed=8x                             │
+│ · · · · ░ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ░ · · · · " · ·  │ │ 19:38 slept Fern fell asleep                         │
+│ · · · " ░ ~ ~ ~ ~ ~ ~ ♠ ~ ~ ~ ~ ~ ~ ░ · · " · · R ·  │ │ 19:40 slept Hazel fell asleep                        │
+│ · · · · ░ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ░ " · · · · · ·  │ │ 19:43 attacked the gru attacked Ash · health → 40    │
+│ · · · · ░ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ " · · · · · · · ·  │ │ 19:46 died Oak died: starvation                      │
+│ · · · · ░ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ♠ · · · · · · " · ·  │ │ 19:49 died Sage died: exposure                       │
+│ · · · · ♠ ♠ ♠ ♠ ~ ~ ~ ~ ~ ~ ~ ♠ ♠ ♠ · · · " · · · ·  │ │ 19:51 neglect_d… Birch is dangerously cold and has   │
+│ · " · ♠ ♠ ♠ ♠ ♠ ~ ~ ~ ~ ~ ~ ~ ♠ ♠ ♠ · · · · · · · ·  │ │ done nothing about it (warmth 0)                     │
+│ · ♠ ♠ ♠ ♠ ♠ ♠ ♠ ~ ~ ~ ~ ~ ~ ~ ♠ ♠ ♠ ♠ · · · · · · ·  │ │ 19:54 moved Cedar → (24,31)                          │
+│ · ♠ ♠ ♠ ♠ ♠ ♠ ~ ~ ~ ~ ~ ~ ~ ░ · ♠ ♠ ♠ · · · · · · ·  │ │ 19:57 intent_do… Rowan finished                      │
+│ · ♠ ♠ ♠ ♠ ♠ ♠ ♠ ~ ~ ~ ~ ~ ~ " · · · ♠ · · · ♠ · · ·  │ │                                                      │
+│ night · [21,8–46,24 of 64×64] · ~water ♠wood "forag… │ │                                                      │
+╰──────────────────────────────────────────────────────╯ ╰──────────────────────────────────────────────────────╯
+The gru just attacked a villager — a real threat, not a random event.
+→ press 2 for the chronicle  (? for more · x dismiss)
+⚡⚡· (2/3) · next +1 @ 06:00 · 👁 2 standing orders · faith 62
+╭───────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ⏎ m — speak with the guardian…                                                                                │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+2 chronicle 3 guardian 4 villagers 5 systems (again: solo) · G console · m ask · space pause · q quit · ? help

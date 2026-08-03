@@ -1,0 +1,30 @@
+First Night — tick 54720 · day 1 21:12 · running · speed 4x (4.0 t/s)
+8 villagers A B C R F h O S
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ CHRONICLE · r narrated ↔ raw · a/t filter                                                                    │
+│ raw feed · no narrated entries yet — the narrator writes at day and night boundaries                         │
+│                                                                                                              │
+│ 43920 18:12  agent.intent_set   Sage intends chop (reflex) → (21,26)                                         │
+│ 44640 18:24  agent.intent_done  Ash finished                                                                 │
+│ 45360 18:36  agent.moved        Birch → (27,34)                                                              │
+│ 46080 18:48  agent.intent_set   Cedar intends chop (reflex) → (30,18)                                        │
+│ 46800 19:00  agent.intent_done  Rowan finished                                                               │
+│ 47520 19:12  agent.moved        Fern → (36,26)                                                               │
+│ 48240 19:24  agent.intent_set   Hazel intends chop (reflex) → (39,30)                                        │
+│ 48960 19:36  agent.intent_done  Oak finished                                                                 │
+│ 49680 19:48  agent.moved        Sage → (25,18)                                                               │
+│ 50400 20:00  agent.intent_set   Ash intends chop (reflex) → (28,22)                                          │
+│ 51120 20:12  agent.intent_done  Birch finished                                                               │
+│ 51840 20:24  sim.night_started  night falls on day 1                                                         │
+│ 52560 20:36  gru.sighted        Ash sighted the gru                                                          │
+│ 53280 20:48  gru.attacked       the gru attacked Rowan · health → 55                                         │
+│ 54000 21:00  agent.slept        Hazel fell asleep                                                            │
+│                                                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+The gru just attacked a villager — a real threat, not a random event.
+→ press 2 for the chronicle  (? for more · x dismiss)
+⚡⚡⚡ (3/3) · 👁 0 standing orders · faith 50
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ⏎ m — speak with the guardian…                                                                               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+2 back to map · space resume · q quit · ? help

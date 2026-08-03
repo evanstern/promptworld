@@ -2,7 +2,7 @@
 title: TUI design reference — the living UI authority
 class: index
 status: shipped
-verified_against: c8906da39be3a5b861c2272af37db0a83dcded7a
+verified_against: 10b33cc0665e9fa5f0971b029f7fb3aadd818d61
 ---
 
 # TUI design reference v2
@@ -41,19 +41,37 @@ Four classes, plus two top-level index files:
   its owning file, both directions complete.
 - **`INDEX.md`** (this file) — authority statement, taxonomy, gate rules.
 
+One directory sits outside the four classes because it is **generated, not
+authored** (spec 112, TASK-187):
+
+- **[`frames/`](frames/README.md)** — the frame matrix: one plain-text file
+  per (fixture, state, size), each the exact string `View()` hands Bubble Tea,
+  written by `promptworld frames --dump`. The pages above remain the design
+  *authority* (what a surface is supposed to be); these frames are the
+  *evidence* (what it currently is), so a drift like `pages/home.md`'s
+  recorded "Reconciliation correction" is greppable rather than reconstructed
+  by hand. Because its contents are generated, the directory is exempt from
+  `check-tui-design.mjs` (`GENERATED_DIRS`) — every check that script runs
+  asserts a property of an authored page (a `class`, a hand-verified pin, an
+  `anatomy.md` row) that generated output does not and should not have. Never
+  hand-edit a frame; change `internal/tui` and regenerate.
+
 ## File map
 
 Every file the finished feature lands, per plan.md's Project Structure.
 `[recon]` = existing v1 content reconciled against shipped reality in this
 feature; `[new]` = authored fresh in this feature (spec 047's ten new-surface
-pages plus the taxonomy/gate machinery); dates/waves in parentheses note when
-a `[new]` page's *surface* actually ships in `internal/tui`, per its own
-`status:` frontmatter field.
+pages plus the taxonomy/gate machinery); `[gen]` = generated, landed by a
+LATER feature and listed here only so this map stays the whole directory;
+dates/waves in parentheses note when a `[new]` page's *surface* actually
+ships in `internal/tui`, per its own `status:` frontmatter field.
 
 ```text
 docs/design/tui/
 ├── INDEX.md                         [recon] this file
 ├── anatomy.md                       [new]   region index — every visible element → owning file
+├── frames/                          [gen]   the frame matrix (spec 112) — generated, gate-exempt
+│   └── README.md                            what the directory is and how to regenerate it
 ├── pages/
 │   ├── home.md                      [recon] widescreen composite, stage-shaped defaults
 │   ├── guardian-console.md          [new]   full-height guardian page (decisions 1/2, D5 — Wave 3)
@@ -113,7 +131,15 @@ scripts/
 4. **Mockups are representative, not screenshots.** The check script verifies
    pins and structure, never pixel content; semantic drift between a mockup
    and the real rendering is a same-PR review responsibility, not something
-   the script can catch.
+   the script can catch. Since spec 112 that responsibility has evidence to
+   work from rather than only a careful reading: `frames/` holds the real
+   rendered output for every (fixture, state, size), so "does the mockup
+   still match?" is a `grep` against a generated frame instead of a
+   compile-and-run cycle or a reconstruction after the fact
+   (`pages/home.md`'s "Reconciliation correction" is what the latter costs).
+   The frames do not *replace* any mockup and are not yet gated — wiring a
+   regenerate-and-diff check is a posture change deserving its own review,
+   explicitly out of scope for spec 112.
 
 ## FR-020 audience ruling (corpus-wide convention)
 

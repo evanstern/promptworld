@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-30 16:41'
-updated_date: '2026-08-03 00:51'
+updated_date: '2026-08-03 02:09'
 labels: []
 dependencies: []
 ordinal: 141000
@@ -23,13 +23,20 @@ As a villager in the game, when I hear Cedar has been felling trees all week, ar
 Evidence (playtest-1, 29 game-days): the dominant chronicle thread all 29 days was a "vanishing landscape" horror storyline. Cross-check: ALL 780 distinct "vanished" locations match an agent.chopped/agent.quarried event exactly — zero genuine anomalies. 2,932 agent.map_corrected events (~100/day, never declining) each fed the narrative, while chop-rumors were simultaneously circulating socially (social.rumor_told, social.place_told).
 
 Scope note: spec 097 (perception of absence — dedup, disconfirmation decay) merged after this run. First step is a v6 re-run of the same scenario to measure what 097 already absorbs; the remaining gap is attribution — grounding a correction against known harvest activity (own memories, rumors) before it earns mystery-grade salience/narration.
+
+Spec: specs/110-absence-attribution
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 A v6 re-run of the playtest-1 scenario is measured: rate of map corrections narrated as anomalies, before/after comparison recorded on this task
-- [x] #2 A map correction explainable by known harvest activity (witnessed or rumored) is attributed as mundane and does not earn mystery-grade narrative weight
-- [x] #3 Genuinely unexplained absences still surface as noteworthy (the guardian's real mysteries are not suppressed)
+- [ ] #2 A map correction explainable by known harvest activity (witnessed or rumored) is attributed as mundane and does not earn mystery-grade narrative weight
+- [ ] #3 Genuinely unexplained absences still surface as noteworthy (the guardian's real mysteries are not suppressed)
+- [ ] #4 Spec phase: Ledger and classifier
+- [ ] #5 Spec phase: Coalesced narration
+- [ ] #6 Spec phase: Prompt and telemetry
+- [ ] #7 Spec phase: Evidence
+- [ ] #8 Spec phase: Grounding and PR
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -48,6 +55,17 @@ AC#2 IS THE ONE FAILING, and decisively: in soak-world, 969 of 972 map_corrected
 WHAT IS NOT BROKEN — do not re-litigate these: TASK-159/spec 081 clearly worked at the memory layer. Absence-flavoured memories are 1,234 of 18,283 = 6.7% of all memories, against TASK-159's 75% showstopper baseline (346/461). Correction rate is 69.3/game-day against playtest-1's ~101/day with a comparable harvest rate. The problem is no longer that villagers drown in loss memories; it is that the storyline/narrator machinery amplifies a 6.7% minority signal into a dominant named thread. That reframes the remaining work from memory formation to narrative salience — the attribution seam this card originally scoped, now with a sharper target.
 
 Worlds preserved for whoever picks this up: /Users/evanstern/.claude/jobs/ca35de11/tmp/soak/soak-world (stopped, 12 game-days) and soak-qwen. Query note: these world.db files are WAL-mode and sqlite3 -readonly fails on them once the daemon has stopped and no -wal file remains; open without -readonly.
+
+SWEEP CLAIM 2026-08-02 (/pdlc:sweep on TASK-173, runbook docs/design/task-173-absence-attribution-runbook.md).
+Spec 110 claimed (specs/110-absence-attribution), branch task-173-absence-attribution, worktree .worktrees/task-173.
+AC#2 and AC#3 unchecked: they were ticked by the 2026-07-30 measurement close whose 4.2-game-day window the re-open disproved. They are re-earned by evidence on this branch, not carried over. AC#1 stays ticked - the measurement genuinely happened.
+MODEL TIER: Opus (claude-opus-5) via .claude/agents/spec-implementer-opus.md; fallback claude-opus-4-8 on subscription unavailability. Rubric lines fired: (1) internal/mind orchestration - the absorb driver and the narrator driver; (2) doctrine-adjacent behavior change - determinism doctrine specs 092/094 govern whether attribution may be emitter-computed, and narrative salience is player-facing behavior; (3) a prior attempt shipped a live defect - the measurement-only close did not survive a longer soak. The model that actually served is recorded per dispatch below.
+
+RUNBOOK AMENDMENT 2026-08-02 (operator-decided at the Phase 4 boundary): the evidence bar's ROUTE changed from a fresh live soak to replay + re-narrate of the preserved 12.02-game-day soak world's own event log. The WINDOW is unchanged (same 12.02 game-days, same events that re-opened this card), so this is not a softening: the comparison becomes controlled - before and after differ only by this branch's diff, where a fresh soak would confound the change with run-to-run variance on a different seed path. Operator was offered replay / fresh soak / both, and chose replay. Recorded limitation, not resolved: replay exercises the narrator's INPUT faithfully but re-runs its OUTPUT against a live model, so SC-001 is evidence about the same chapters rather than a fresh world's emergent dynamics. The re-open clause stands - if a later month-scale live run resurfaces an absence storyline, re-open again.
+
+PROGRESS: phases 1-3 complete on task-173-absence-attribution (spec 110). Phase 1 harvest ledger + classifier (f8bc0c1d); phases 2+3 coalesced narration, narrator prompt marking, telemetry (a57920e0). Model that served all dispatches: claude-opus-5 via .claude/agents/spec-implementer-opus.md. go build, full go test ./... , and go test -race ./internal/mind/... all green as of ad4e5030.
+
+MEASURED ROOT CAUSE (new, and it sharpens the card's own framing): the narrator never sees the memory layer's 6.7% absence share. It sees md.narrLines, the per-chapter 120-line buffer, where agent.map_corrected lines are the MAJORITY of every full day chapter - median 57%, peak 68% - and five of twelve day chapters OVERFLOWED the ring, evicting builds, gifts and assemblies while corrections survived by volume. A model told 'group by storyline, not by hour' and handed a list that is more than half 'found it gone' is summarising its input correctly. Also confirmed independently: 830 of 833 corrections match a chop/quarry at exactly those coordinates, every match within 3 game-days (716 same-day), exactly 3 genuine anomalies in 12.02 game-days.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

@@ -1,0 +1,30 @@
+Ashgrove — disconnected (retrying…)
+8 villagers A B C R F H O S
+╭───────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ CHRONICLE · r narrated ↔ raw · a/t filter                                                                     │
+│ raw feed · no narrated entries yet — the narrator writes at day and night boundaries                          │
+│                                                                                                               │
+│ no events yet this session — the chronicle fills as the world moves                                           │
+│                                                                                                               │
+│                                                                                                               │
+│                                                                                                               │
+│                                                                                                               │
+│                                                                                                               │
+│                                                                                                               │
+│                                                                                                               │
+│                                                                                                               │
+│                                                                                                               │
+│                                                                                                               │
+│                                                                                                               │
+│                                                                                                               │
+│                                                                                                               │
+│                                                                                                               │
+│                                                                                                               │
+│                                                                                                               │
+│                                                                                                               │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+╭───────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ⏎ m — speak with the guardian…                                                                                │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+2 back to map · space resume · q quit · ? help

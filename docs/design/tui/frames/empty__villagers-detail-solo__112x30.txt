@@ -1,0 +1,30 @@
+Ashgrove — disconnected (retrying…)
+8 villagers A B C R F H O S
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ VILLAGERS                                                                                                    │
+│ ASH                                                                                                          │
+│                                                                                                              │
+│ Ash · awake · (1,6)                                                                                          │
+│ health █████ food ███░░ rest ████░ warmth ████░ morale ███░░                                                 │
+│                                                                                                              │
+│ objective: no objective yet                                                                                  │
+│                                                                                                              │
+│ inventory: empty pack                                                                                        │
+│                                                                                                              │
+│ narrative: a long night watching the fire die and reviving it by hand.                                       │
+│ beliefs:                                                                                                     │
+│   the fire needs tending (80%)                                                                               │
+│                                                                                                              │
+│ memories                                                                                                     │
+│ day 1 06:19 (3★) chopped wood at the treeline                                                                │
+│ day 1 06:18 (3★) chopped wood at the treeline                                                                │
+│ day 1 06:17 (3★) chopped wood at the treeline                                                                │
+│ day 1 06:16 (3★) chopped wood at the treeline                                                                │
+│ day 1 06:15 (3★) chopped wood at the treeline                                                                │
+│                                                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ⏎ m — speak with the guardian…                                                                               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+d decisions · esc back · space pause · q quit · ? help

@@ -24,66 +24,23 @@ import (
 // row off-screen in the live tmux repro. Covers home, solo, and
 // paused/inspect (both in the dock and solo'd), at several sizes straddling
 // the breakpoint and the 50/50 column split.
+//
+// The state list and the posing logic are States()/poseState (spec 112 T007/
+// T008, design.go) — the same registry and the same poser the frame harness
+// drives, so this sweep and the dumped matrix can never disagree about what
+// states exist or what one of them means.
 func TestWidescreenViewExactHeight(t *testing.T) {
 	sizes := []struct{ w, h int }{
 		{112, 20}, {112, 30}, {113, 30}, {118, 30}, {140, 40}, {160, 50}, {200, 24},
 	}
 	for _, sz := range sizes {
-		for _, state := range []string{
-			"home", "solo", "inspect", "inspect-solo", "villagers-solo", "villagers-detail-solo", "metatron-solo",
-			// spec 045 (TASK-116): the help overlay is a body-replacement
-			// panel like solo zoom (R2) — it must hold the same exact-
-			// height invariant at every size, in every section/tier.
-			"help", "help-advanced", "help-walkthrough", "help-lessons",
-		} {
+		for _, state := range States() {
 			t.Run(fmt.Sprintf("%dx%d/%s", sz.w, sz.h, state), func(t *testing.T) {
 				m := widescreenModel(t)
 				m.width, m.height = sz.w, sz.h
 				seedEvents(&m, 20)
-				switch state {
-				case "solo":
-					m.solo = true
-				case "inspect":
-					m.connected = true
-					m.status = &ipc.StatusData{Clock: ipc.ClockStatus{Paused: true}}
-					m.chronSelected = 5
-				case "inspect-solo":
-					m.connected = true
-					m.status = &ipc.StatusData{Clock: ipc.ClockStatus{Paused: true}}
-					m.chronSelected = 5
-					m.solo = true
-				case "villagers-solo":
-					m.dockTab = paneVillagers
-					m.solo = true
-				case "villagers-detail-solo":
-					m.dockTab = paneVillagers
-					m.solo = true
-					m.villDetail = true
-					m.replica.Agents[0].Beliefs = []sim.Belief{{Statement: "the fire needs tending", Confidence: 80}}
-					m.replica.Agents[0].Narrative = "a long night watching the fire die and reviving it by hand."
-					for i := 0; i < 20; i++ {
-						m.replica.Agents[0].Memories = append(m.replica.Agents[0].Memories,
-							sim.Memory{Text: "chopped wood at the treeline", Salience: 3, Tick: int64(i) * 60})
-					}
-				case "metatron-solo":
-					m.dockTab = paneGuardian
-					m.solo = true
-					m.transcript = []string{"you: why is Rowan hoarding wood?", transcriptGuardianPrefix + "three cold nights, and Ash let the fire die each time."}
-				case "help":
-					m.helpOpen = true
-					m.helpPageMode = helpModeGlobal
-					m.helpSection = helpSectionKeys
-				case "help-advanced":
-					m.helpOpen = true
-					m.helpPageMode = helpModeGlobal
-					m.helpSection = helpSectionKeys
-					m.helpTier = true
-				case "help-walkthrough":
-					m.helpOpen = true
-					m.helpSection = helpSectionWalkthrough
-				case "help-lessons":
-					m.helpOpen = true
-					m.helpSection = helpSectionLessons
+				if err := poseState(&m, state); err != nil {
+					t.Fatal(err)
 				}
 				v := m.View()
 				lines := strings.Split(v, "\n")

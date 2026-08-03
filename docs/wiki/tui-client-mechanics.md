@@ -7,7 +7,7 @@ sources:
   - internal/tui/views.go
   - internal/tui/layout.go
   - internal/tui/digest.go
-verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
+verified_against: aeb0c17a98a8ae1b27fff9111bd009e21841b21c
 ---
 
 # TUI client mechanics: connection, header, and layout
@@ -28,6 +28,21 @@ Connection (`connect`): dial → `FetchState` (state JSON + the `last_seq` it re
 replica starts gapless by construction. `listen` delivers one push per invocation and
 `Update` re-arms it. `applyEvent` skips seqs already folded into the snapshot, applies
 the rest to the replica, bumps its tick, and appends to the chronicle ring.
+
+Since spec 112 one model shape opts out of all of it: a Model marked `offline`
+— set only by the design frame harness's fixtures (`fixtures.go`), never on an
+attached client — makes `Init` return no command, so neither the connect nor
+the poll half ever runs. A fixture's scene is a canned Go value with no socket
+behind it, and a failed dial would flip `connected` off, set `lastErr` and
+start the retry loop described under Resilience, i.e. an interactive fixture
+session would drift away from the frame the harness dumps for the same
+fixture within a tick or two. The same fixture shape is why `timeControl`
+returns early on a nil client: the clock keys gate on `m.connected`, which on
+every live path implies a client (`connectedMsg` sets the two together), but a
+fixture renders as connected while holding none. The guard is inside the
+returned command rather than in place of it — the focus/keymap contract is
+that those keys dispatch a command at all; only the round trip has nothing to
+talk to.
 
 ## Header status: postmortem posture and governed speed
 

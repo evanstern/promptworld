@@ -6,7 +6,7 @@ sources:
   - internal/tui/tiles.go
   - internal/tui/views.go
   - internal/tui/help.go
-verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
+verified_against: aeb0c17a98a8ae1b27fff9111bd009e21841b21c
 ---
 
 # Tile registry
@@ -73,6 +73,14 @@ legend/overlay's existing rows stay byte-stable; marsh/sand (spec 068 US2)
 are appended AFTER the shipped 16 (FR-009/SC-002). `groundTile` is the one
 row NOT in `mapGlyphs` — plain open ground (grass), the terrain fallback for
 any kind with no row of its own, deliberately absent from the legend.
+
+Frozen order is a *composition* guarantee, not a rendering one. Since spec 114
+the in-game legend clamps to the terminal width and marks the cut with `…`
+(`clipLegend`, [[tui-map-view]]), so at narrow widths the later rows of this
+table are composed but truncated away — appending a row still never disturbs
+the rows before it, but it does not follow that every row reaches the screen.
+The `?` overlay's glyph walkthrough renders long-form and is unaffected, which
+is where the full vocabulary stays readable at any width.
 
 **Binding indexes** (`terrainTiles map[worldmap.TileKind]tileRef`,
 `keyTiles map[string]tileRef`, `rebuildTileIndex`): derived views over the

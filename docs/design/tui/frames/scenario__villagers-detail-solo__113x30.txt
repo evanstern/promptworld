@@ -1,0 +1,30 @@
+First Night — tick 54720 · day 1 21:12 · running · speed 4x (4.0 t/s)
+8 villagers A B C R F h O S
+╭───────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ VILLAGERS                                                                                                     │
+│ ASH                                                                                                           │
+│                                                                                                               │
+│ Ash · awake · (20,18)                                                                                         │
+│ health █████ food ███░░ rest ████░ warmth ████░ morale ███░░                                                  │
+│                                                                                                               │
+│ objective: chop → (28,22) (current)                                                                           │
+│                                                                                                               │
+│ inventory: empty pack                                                                                         │
+│                                                                                                               │
+│ narrative: a long night watching the fire die and reviving it by hand.                                        │
+│ beliefs:                                                                                                      │
+│   the fire needs tending (80%)                                                                                │
+│                                                                                                               │
+│ memories                                                                                                      │
+│ day 1 06:19 (3★) chopped wood at the treeline                                                                 │
+│ day 1 06:18 (3★) chopped wood at the treeline                                                                 │
+│ day 1 06:17 (3★) chopped wood at the treeline                                                                 │
+│                                                                                                               │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+The gru just attacked a villager — a real threat, not a random event.
+→ press 2 for the chronicle  (? for more · x dismiss)
+⚡⚡⚡ (3/3) · 👁 0 standing orders · faith 50
+╭───────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ⏎ m — speak with the guardian…                                                                                │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+d decisions · esc back · space pause · q quit · ? help

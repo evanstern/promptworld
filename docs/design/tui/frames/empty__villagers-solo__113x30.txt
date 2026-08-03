@@ -1,0 +1,30 @@
+Ashgrove — disconnected (retrying…)
+8 villagers A B C R F H O S
+╭───────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ VILLAGERS                                                                                                     │
+│ VILLAGERS                                                                                                     │
+│                                                                                                               │
+│ ▌ Ash      awake · idle · (1,6)                                                                               │
+│            health █████ food ███░░ rest ████░ warmth ████░ morale ███░░                                       │
+│            bulk 0/24 · carry 0w 0st 0wt 0pl 0rs · food 0r/0c/0m                                               │
+│                                                                                                               │
+│   Birch    awake · idle · (15,34)                                                                             │
+│            health █████ food ███░░ rest ████░ warmth ████░ morale ███░░                                       │
+│            bulk 0/24 · carry 0w 0st 0wt 0pl 0rs · food 0r/0c/0m                                               │
+│                                                                                                               │
+│   Cedar    awake · idle · (18,43)                                                                             │
+│            health █████ food ███░░ rest ████░ warmth ████░ morale ███░░                                       │
+│            bulk 0/24 · carry 0w 0st 0wt 0pl 0rs · food 0r/0c/0m                                               │
+│                                                                                                               │
+│   Rowan    awake · idle · (19,53)                                                                             │
+│            health █████ food ███░░ rest ████░ warmth ████░ morale ███░░                                       │
+│            bulk 0/24 · carry 0w 0st 0wt 0pl 0rs · food 0r/0c/0m                                               │
+│                                                                                                               │
+│   Fern     awake · idle · (62,9)                                                                              │
+│                                                                                                               │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+╭───────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ⏎ m — speak with the guardian…                                                                                │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+j/k select · ⏎ inspect · space pause · q quit · ? help
