@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-30 16:41'
-updated_date: '2026-08-03 01:05'
+updated_date: '2026-08-03 02:09'
 labels: []
 dependencies: []
 ordinal: 141000
@@ -39,8 +39,6 @@ Spec: specs/110-absence-attribution
 - [ ] #8 Spec phase: Grounding and PR
 <!-- AC:END -->
 
-
-
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
@@ -62,6 +60,12 @@ SWEEP CLAIM 2026-08-02 (/pdlc:sweep on TASK-173, runbook docs/design/task-173-ab
 Spec 110 claimed (specs/110-absence-attribution), branch task-173-absence-attribution, worktree .worktrees/task-173.
 AC#2 and AC#3 unchecked: they were ticked by the 2026-07-30 measurement close whose 4.2-game-day window the re-open disproved. They are re-earned by evidence on this branch, not carried over. AC#1 stays ticked - the measurement genuinely happened.
 MODEL TIER: Opus (claude-opus-5) via .claude/agents/spec-implementer-opus.md; fallback claude-opus-4-8 on subscription unavailability. Rubric lines fired: (1) internal/mind orchestration - the absorb driver and the narrator driver; (2) doctrine-adjacent behavior change - determinism doctrine specs 092/094 govern whether attribution may be emitter-computed, and narrative salience is player-facing behavior; (3) a prior attempt shipped a live defect - the measurement-only close did not survive a longer soak. The model that actually served is recorded per dispatch below.
+
+RUNBOOK AMENDMENT 2026-08-02 (operator-decided at the Phase 4 boundary): the evidence bar's ROUTE changed from a fresh live soak to replay + re-narrate of the preserved 12.02-game-day soak world's own event log. The WINDOW is unchanged (same 12.02 game-days, same events that re-opened this card), so this is not a softening: the comparison becomes controlled - before and after differ only by this branch's diff, where a fresh soak would confound the change with run-to-run variance on a different seed path. Operator was offered replay / fresh soak / both, and chose replay. Recorded limitation, not resolved: replay exercises the narrator's INPUT faithfully but re-runs its OUTPUT against a live model, so SC-001 is evidence about the same chapters rather than a fresh world's emergent dynamics. The re-open clause stands - if a later month-scale live run resurfaces an absence storyline, re-open again.
+
+PROGRESS: phases 1-3 complete on task-173-absence-attribution (spec 110). Phase 1 harvest ledger + classifier (f8bc0c1d); phases 2+3 coalesced narration, narrator prompt marking, telemetry (a57920e0). Model that served all dispatches: claude-opus-5 via .claude/agents/spec-implementer-opus.md. go build, full go test ./... , and go test -race ./internal/mind/... all green as of ad4e5030.
+
+MEASURED ROOT CAUSE (new, and it sharpens the card's own framing): the narrator never sees the memory layer's 6.7% absence share. It sees md.narrLines, the per-chapter 120-line buffer, where agent.map_corrected lines are the MAJORITY of every full day chapter - median 57%, peak 68% - and five of twelve day chapters OVERFLOWED the ring, evicting builds, gifts and assemblies while corrections survived by volume. A model told 'group by storyline, not by hour' and handed a list that is more than half 'found it gone' is summarising its input correctly. Also confirmed independently: 830 of 833 corrections match a chop/quarry at exactly those coordinates, every match within 3 game-days (716 same-day), exactly 3 genuine anomalies in 12.02 game-days.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
