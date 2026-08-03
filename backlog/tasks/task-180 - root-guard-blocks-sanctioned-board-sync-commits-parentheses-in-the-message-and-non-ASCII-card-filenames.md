@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-08-01 04:25'
-updated_date: '2026-08-03 01:36'
+updated_date: '2026-08-03 03:59'
 labels:
   - debt
 dependencies: []
@@ -67,4 +67,23 @@ A WORKAROUND THAT DOES NOT WORK: retitling the task to remove the non-ASCII char
 MECHANISM FOR THE REDIRECTION CASE (a) above, now also root-caused: parseGitInvocation stops the segment at the first character in /[;|&\n`)]/. For a commit followed by a stderr redirect, that boundary lands on the ampersand INSIDE the redirect, leaving a truncated trailing fragment as a token. It does not start with a dash, so it falls through to the pathspec list, fails boardPathspecOk, and blocks. The redirect was never an argument to git at all.
 
 All three cases on this card share one cause: the guard tokenizes the raw bash string instead of parsing shell grammar, and separately trusts porcelain output that git deliberately quotes. Suggested fix order: (1) -z on the staged-set read, cheapest and closes the non-ASCII case outright; (2) stop the git segment at a redirection operator rather than at a bare ampersand; (3) ignore heredoc bodies.
+
+Confirmed 2026-08-02 during TASK-191, and a workaround found.
+
+Reproduction: TASK-189's card filename carries a non-ASCII em-dash. Staging it and committing with no pathspec —
+
+  git add "backlog/tasks/task-189 - ...—...md"
+  git commit -F <message-file>
+
+— is blocked with "blocked `git commit` — direct commits at the root checkout are forbidden EXCEPT board-sync commits scoped entirely to backlog/". The commit WAS scoped entirely to backlog/ (a single staged path, verified with git diff --cached --name-only). With no pathspec on the command line the hook falls back to inspecting staged paths, and git renders a non-ASCII path quoted and octal-escaped ("backlog/tasks/task-189 - ...\342\200\224...md"). The leading double-quote defeats the under-backlog/ prefix test, so a sanctioned commit is rejected.
+
+WORKAROUND (no config change, no bypass): pass the path as an explicit unquoted glob pathspec, so the hook parses the command-line argument instead of git's escaped output —
+
+  git commit -F <message-file> backlog/tasks/task-189*.md
+
+This succeeded on the identical staged state that had just been rejected. The glob is expanded by the shell into a literal argument beginning with backlog/, which the prefix test accepts. It is the sanctioned shape ("every pathspec under backlog/"), merely expressed in a form the parser can read.
+
+Note the workaround is fragile in exactly the way the bug is: quoting the pathspec to survive the spaces in the filename reintroduces a leading quote character. The glob happens to avoid needing quotes.
+
+Suggested fix: have the hook enumerate staged paths with -z (git diff --cached --name-only -z), which emits raw unquoted NUL-delimited paths and sidesteps quotePath entirely, rather than parsing the human-facing quoted form.
 <!-- SECTION:NOTES:END -->
