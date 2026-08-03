@@ -11,7 +11,7 @@ sources:
   - internal/mind/prompt.go
   - internal/mind/context.go
   - internal/mind/mind.go
-verified_against: ebc30ee1990dbcdf17576a2fbe81fdbeb175411d
+verified_against: 012f715f55d8d87317e601ad75686c599d277349
 ---
 
 # Mental map propagation and rendering

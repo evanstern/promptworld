@@ -6,7 +6,8 @@ sources:
   - internal/sim/executor.go
   - internal/sim/recipes.go
   - internal/sim/terrain.go
-verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
+verified_against: 012f715f55d8d87317e601ad75686c599d277349
+size_budget_exempt: pre-existing overage (8069 chars before this pass) — TASK-196 added the gather zero-space guard's loud-failure resolution, which belongs on this note as the per-goal completion authority; a per-goal-family summary-style split is a dedicated future pass, not this task's scope
 ---
 
 # Executor — goal completions
@@ -41,6 +42,15 @@ class):
   the yield to `huntYieldSpear` (vs. `huntYieldBare` bare-handed) and spends that
   spear's last use — spending it to zero emits a companion `agent.spear_broke` right
   after, in the same batch, plus a memory ("My spear broke on the hunt…").
+- Every gather goal (`forage`/`chop`/`hunt`/`quarry`/`collect_water`) is also
+  gated at completion by the spec-013 US1-AS1 zero-space guard: a taker with
+  `freeBulk` at zero gathers nothing and depletes nothing. Since TASK-196 that
+  outcome resolves LOUDLY — `agent.intent_failed`, `intentFailPackFull`
+  (`"pack full"`), paired failure memory ("…my hands were too full to carry any
+  more.") — instead of the bare `agent.intent_done` it shared with a successful
+  harvest, an ambiguity that starved Cedar on a live forage patch in world-03.
+  Its own reason, not `"contested"`: the remedy is the agent's alone (drop or
+  store something).
 - `craft_planks`/`craft_stone`/`craft_spear`/`craft_axe` (spec 032 US2 adds the
   last: 1 plank + 1 stone → one axe holding `axeDurability` (10) uses) → inputs
   re-validated against `recipes.go`'s table at completion (`hasItems`), and the
