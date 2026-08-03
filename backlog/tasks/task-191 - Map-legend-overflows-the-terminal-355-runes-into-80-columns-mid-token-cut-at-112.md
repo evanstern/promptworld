@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-08-03 03:15'
-updated_date: '2026-08-03 03:16'
+updated_date: '2026-08-03 03:23'
 labels:
   - ui
   - tui
@@ -48,6 +48,8 @@ Distinct from the spec 112 FR-008 narrow-fallback caveat: that caveat blesses an
 `truncateRunes` (`internal/tui/digest.go:94`) is the package's idiomatic `…` truncator but is rune-based; the legend carries ANSI from `styleDim.Render`, which is why `clipLine` uses lipgloss `MaxWidth`. The fix needs an ANSI-safe ellipsis clip. Whether that lands in `clipLine` globally (about 18 call sites, many goldens rewritten) or as a legend-local helper is the spec's call. The chronicle already truncates with its own `…` (`grammar.go:284`, `grammar.go:554`), which is precedent for per-surface handling.
 
 Interacts with the documented shed order at `docs/design/tui/panels/map.md:130` ("drop the legend before shrinking the viewport when rows get scarce") and the spec 060 deferral at `map.md:209`, which named "legend-line overflow pain" as its own re-open trigger. This card is that trigger firing.
+
+Spec: specs/114-map-legend-width
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
