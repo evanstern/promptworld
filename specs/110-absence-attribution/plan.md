@@ -129,6 +129,33 @@ wiki changed, run the merge-drift `pr` gate, open the PR.
   it cannot be traded down without a runbook amendment plus an operator ping (runbook
   checkpoint 4).
 
+## Phase 1 implementation notes (recorded on landing T001–T006)
+
+No deviation from the plan; three details it did not pin down, resolved in the code and
+recorded here because Phase 2 depends on them.
+
+1. **Where the ledger lives.** The type, its eviction, and `attributedHarvest` are in
+   `internal/mind/narrate.go` (beside the constants); only the absorb-owned `harvests`
+   field on the `Mind` struct and the one-line write in the harvest arm are in
+   `internal/mind/mind.go`. `attributedHarvest` is a **method on `*Mind`**
+   (`md.attributedHarvest(x, y, atTick)`), delegating to `harvestLedger.lookup` — so
+   Phase 2's `chronicleNote` arm calls it directly and unit tests can drive the ledger
+   without a `Mind`.
+2. **Window and matching semantics** (the edge cases Phase 2's tests will sit on):
+   attribution requires `0 <= atTick - harvestTick <= harvestLedgerWindow` — the edge is
+   **inclusive**, and a harvest recorded at a tick *after* the correction never attributes.
+   A second harvest at the same tile **replaces** the first (most recent explains). Lookup
+   is read-only and re-applies the age test, so a stale entry eviction has not yet reached
+   still misses. Cap eviction breaks tick ties by `(x, y)` so the surviving set is a
+   function of the event log alone (FR-006).
+3. **`-race` flake, unattributed.** The first `go test -race ./internal/mind/...` run on
+   this branch FAILED (562s) with the failing test name lost to a truncated tail; two
+   subsequent full `-count=1` runs passed clean (544s, 545s), as did `go build ./...` and
+   `go test ./...`. Phase 1 adds no goroutine, no lock, and no shared state outside the
+   absorb goroutine, so it cannot be the cause — but it is on the record so a Phase 2/3
+   `-race` failure is not mistaken for a first occurrence. If it recurs, capture the whole
+   output (`> file 2>&1`), do not `tail` it.
+
 ## Grounding (wiki-in-PR, spec 069)
 
 - `docs/wiki/chronicle.md` pins `internal/mind/narrate.go` — **will** be touched;
