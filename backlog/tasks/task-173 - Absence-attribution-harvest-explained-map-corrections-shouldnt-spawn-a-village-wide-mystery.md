@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-30 16:41'
-updated_date: '2026-08-03 00:57'
+updated_date: '2026-08-03 00:58'
 labels: []
 dependencies: []
 ordinal: 141000
@@ -30,8 +30,8 @@ Spec: specs/110-absence-attribution
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 A v6 re-run of the playtest-1 scenario is measured: rate of map corrections narrated as anomalies, before/after comparison recorded on this task
-- [x] #2 A map correction explainable by known harvest activity (witnessed or rumored) is attributed as mundane and does not earn mystery-grade narrative weight
-- [x] #3 Genuinely unexplained absences still surface as noteworthy (the guardian's real mysteries are not suppressed)
+- [ ] #2 A map correction explainable by known harvest activity (witnessed or rumored) is attributed as mundane and does not earn mystery-grade narrative weight
+- [ ] #3 Genuinely unexplained absences still surface as noteworthy (the guardian's real mysteries are not suppressed)
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -50,6 +50,11 @@ AC#2 IS THE ONE FAILING, and decisively: in soak-world, 969 of 972 map_corrected
 WHAT IS NOT BROKEN — do not re-litigate these: TASK-159/spec 081 clearly worked at the memory layer. Absence-flavoured memories are 1,234 of 18,283 = 6.7% of all memories, against TASK-159's 75% showstopper baseline (346/461). Correction rate is 69.3/game-day against playtest-1's ~101/day with a comparable harvest rate. The problem is no longer that villagers drown in loss memories; it is that the storyline/narrator machinery amplifies a 6.7% minority signal into a dominant named thread. That reframes the remaining work from memory formation to narrative salience — the attribution seam this card originally scoped, now with a sharper target.
 
 Worlds preserved for whoever picks this up: /Users/evanstern/.claude/jobs/ca35de11/tmp/soak/soak-world (stopped, 12 game-days) and soak-qwen. Query note: these world.db files are WAL-mode and sqlite3 -readonly fails on them once the daemon has stopped and no -wal file remains; open without -readonly.
+
+SWEEP CLAIM 2026-08-02 (/pdlc:sweep on TASK-173, runbook docs/design/task-173-absence-attribution-runbook.md).
+Spec 110 claimed (specs/110-absence-attribution), branch task-173-absence-attribution, worktree .worktrees/task-173.
+AC#2 and AC#3 unchecked: they were ticked by the 2026-07-30 measurement close whose 4.2-game-day window the re-open disproved. They are re-earned by evidence on this branch, not carried over. AC#1 stays ticked - the measurement genuinely happened.
+MODEL TIER: Opus (claude-opus-5) via .claude/agents/spec-implementer-opus.md; fallback claude-opus-4-8 on subscription unavailability. Rubric lines fired: (1) internal/mind orchestration - the absorb driver and the narrator driver; (2) doctrine-adjacent behavior change - determinism doctrine specs 092/094 govern whether attribution may be emitter-computed, and narrative salience is player-facing behavior; (3) a prior attempt shipped a live defect - the measurement-only close did not survive a longer soak. The model that actually served is recorded per dispatch below.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
