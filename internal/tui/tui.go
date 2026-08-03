@@ -136,6 +136,18 @@ type Model struct {
 	// beyond the stage-1 floor earned), so this field is never nil.
 	unlocks *worlds.Unlocks
 
+	// clientNow and markSeen are the wall-clock and per-user-persistence
+	// seams the design frame harness injects (spec 110, plan.md F1/F4 —
+	// fixtures.go/design.go). Both are nil on every live path (New), where
+	// they resolve to time.Now and worlds.MarkLessonSeen respectively, so a
+	// real client's behavior is exactly what it was before the seam existed.
+	// A fixture supplies a FROZEN clock and a no-op writer, so rendering a
+	// frame neither reads a wall clock nor writes to the operator's home
+	// directory — without which the same fixture renders differently on two
+	// machines and FR-003 fails silently.
+	clientNow func() time.Time
+	markSeen  func(id, worldName string)
+
 	// active is the narrow fallback's single visible pane (today's model,
 	// unchanged). dockTab/solo are the widescreen composite's dock
 	// selection and zoom state (pages/solo-views.md). Both are kept in
@@ -378,26 +390,92 @@ type chronHitRegion struct {
 	rowEvent         []int // rowEvent[i] = m.events index for screen row originY+i
 }
 
+// perUserState is the machine-local, per-operator record the client loads
+// once at construction — the lessons-seen set (spec 055 FR-006) and the
+// unlocks record (spec 078 FR-006) — plus the writer that persists a lesson
+// the moment it surfaces. The three are bundled into one injectable value
+// because together they are exactly the state that makes an otherwise
+// identical world render DIFFERENTLY on two machines (spec 110, plan.md F1):
+// the frame harness hands the fixture path a fixed canned record instead of
+// whatever sits in the operator's home directory.
+type perUserState struct {
+	lessonsSeen *worlds.LessonsSeen
+	unlocks     *worlds.Unlocks
+	// markSeen persists a surfaced lesson id; nil means worlds.MarkLessonSeen
+	// (the live path). A fixture supplies a no-op writer.
+	markSeen func(id, worldName string)
+}
+
+// livePerUserState reads the real operator records — exactly what New() did
+// inline before the seam existed. Both loaders are load-tolerant and never
+// error: a missing, corrupt, or unresolvable home degrades to an empty
+// record rather than failing the client.
+func livePerUserState() perUserState {
+	return perUserState{lessonsSeen: worlds.LoadLessonsSeen(), unlocks: worlds.LoadUnlocks()}
+}
+
+// New builds the live client model for an attached world, reading the
+// operator's own per-user records and running on the real wall clock.
 func New(w *world.World) Model {
+	return newModel(w, livePerUserState(), nil)
+}
+
+// newModel is New's injectable core (spec 110 T003). pu supplies the
+// per-user records and the seen-writer; now supplies the wall clock (nil =
+// time.Now). New passes the live record and a nil clock, so the live path
+// is byte-for-byte the construction it always was.
+func newModel(w *world.World, pu perUserState, now func() time.Time) Model {
 	// Lessons pull half (spec 055 T012, SC-002): populate the help overlay's
 	// lessons section from the same catalog the row (push half) reads —
 	// one catalog, two surfaces, never two hand-maintained lists. Default-
 	// skin resolution here (no status yet); re-resolved with the world skin
 	// once status carries it (skinFromStatus call sites in Update).
 	populateHelpLessons(nil)
+	unlocks := pu.unlocks
+	if unlocks == nil {
+		// The field is documented never-nil (helpLadderLines reads it through
+		// nil-safe methods, but the Entries map is indexed directly): an
+		// injected state that omits the record gets the same empty record
+		// LoadUnlocks would have degraded to.
+		unlocks = &worlds.Unlocks{Entries: map[string]worlds.UnlockEntry{}}
+	}
 	return Model{
 		w: w, gameMap: w.Map(), chronAgent: -1, dockTab: paneChronicle, chronSelected: -1,
 		traces: newDecisionTraces(), chronHit: &chronHitRegion{},
 		mapHit: &mapHitRegion{}, tileHit: &tileHitRegion{}, // spec 074: the chronHit pointer pattern
 		stripHit: &stripHitRegion{}, rosterHit: &rosterHitRegion{}, // spec 086: the reverse-jump rider
-		// Per-user seen-state (spec 055 FR-006): load-tolerant, advisory —
-		// worlds.LoadLessonsSeen() never errors, degrading to an empty
-		// record on a missing/corrupt file or an unresolvable home dir.
-		lessons: newLessonTriggers(lessonSeenIDs(worlds.LoadLessonsSeen())),
-		// Per-user unlocks record (spec 078 FR-006): loaded once here, same
-		// load-tolerant doctrine as the lessons-seen record above.
-		unlocks: worlds.LoadUnlocks(),
+		lessons:  newLessonTriggers(lessonSeenIDs(pu.lessonsSeen)),
+		unlocks:  unlocks,
+		markSeen: pu.markSeen,
+
+		clientNow: now,
 	}
+}
+
+// wallNow is the client's wall clock, read through the injectable seam
+// (spec 110 F4) — time.Now on every live path, a frozen instant under the
+// frame harness. Only the lessons projection consults it; nothing in the
+// render path does, which is what makes freezing it sufficient.
+func (m Model) wallNow() time.Time {
+	if m.clientNow != nil {
+		return m.clientNow()
+	}
+	return time.Now()
+}
+
+// recordLessonSeen persists a just-surfaced lesson id through the injectable
+// writer (nil = worlds.MarkLessonSeen, the live path). Nil-world tolerant,
+// so a zero-value Model can never panic here.
+func (m Model) recordLessonSeen(id string) {
+	name := ""
+	if m.w != nil {
+		name = m.w.Manifest.Name
+	}
+	if m.markSeen != nil {
+		m.markSeen(id, name)
+		return
+	}
+	worlds.MarkLessonSeen(id, name)
 }
 
 // lessonSeenIDs adapts the persisted per-user record (internal/worlds) to
@@ -748,7 +826,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				prevSet := resolveStageDefaults(prevStage, hasScenario)
 				nextSet := resolveStageDefaults(newStage, hasScenario)
 				for _, id := range newlyOnSurfaces(prevSet, nextSet) {
-					announceSurfaceArrival(&m.lessons, id, time.Now())
+					announceSurfaceArrival(&m.lessons, id, m.wallNow())
 				}
 			}
 		}
@@ -827,8 +905,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// promote its head purely from wall-clock time passing, with no new
 		// event required — the ~1s poll tick already firing regardless of
 		// connection state is the natural driver (research.md R4).
-		if surfaced := m.lessons.Advance(time.Now()); surfaced != nil {
-			worlds.MarkLessonSeen(surfaced.ID, m.w.Manifest.Name)
+		if surfaced := m.lessons.Advance(m.wallNow()); surfaced != nil {
+			m.recordLessonSeen(surfaced.ID)
 		}
 		return m, tea.Batch(cmds...)
 
@@ -1310,7 +1388,7 @@ func (m Model) handleGlobalKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		// leaves the model untouched in that case, so there is nothing
 		// further to branch on here (the documented-no-op-fallthrough
 		// doctrine, not a silent gap).
-		m.lessons.Dismiss(time.Now())
+		m.lessons.Dismiss(m.wallNow())
 		return m, nil
 	case "enter":
 		// Narrow-fallback-only affordance (focus-contract.md scope): the
@@ -2096,8 +2174,8 @@ func (m *Model) applyEvent(e store.Event) {
 	// time seam, same "every event exactly once" guarantee. A non-nil
 	// return means a lesson just surfaced (became the active row entry);
 	// persist it immediately (mark-seen-on-surface, not on queue — FR-005).
-	if surfaced := m.lessons.ingest(e, time.Now()); surfaced != nil {
-		worlds.MarkLessonSeen(surfaced.ID, m.w.Manifest.Name)
+	if surfaced := m.lessons.ingest(e, m.wallNow()); surfaced != nil {
+		m.recordLessonSeen(surfaced.ID)
 	}
 	if line, ok := guardianVerdictRow(e); ok {
 		m.transcript = append(m.transcript, line)

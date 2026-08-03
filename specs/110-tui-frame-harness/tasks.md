@@ -9,34 +9,34 @@ One task, one PR. Every phase below lands as a commit on this single branch.
 - [x] T001 Repair the dead design pin: `docs/design/tui/anatomy.md`
       `verified_against` `4eb6471a` → `012032fb`; verify `node scripts/check-tui-design.mjs`
       exits 0. (Done by the orchestrator before dispatch — see the runbook's Lane 0.)
-- [ ] T002 Add `internal/tui/fixtures.go` with a `Fixture` type and the three recipes
+- [x] T002 Add `internal/tui/fixtures.go` with a `Fixture` type and the three recipes
       (`empty`, `mid-game`, `scenario`) as in-process Go values — world, map, event feed,
       villager roster, `ipc.StatusData`, skin/stage config. No shelling out to
       `promptworld new`, so the earned-stage gate (spec 046) is bypassed by construction
       and AC #1's machine-independence holds.
-- [ ] T003 Inject per-user state. `tui.New()` reads `worlds.LoadLessonsSeen()` and
+- [x] T003 Inject per-user state. `tui.New()` reads `worlds.LoadLessonsSeen()` and
       `worlds.LoadUnlocks()` from the operator's home dir (plan.md F1) — give the fixture
       path a seam that supplies a fixed canned record instead. This is the primary
       determinism fix; without it frames differ per machine.
-- [ ] T004 Freeze the clock and can the status so tick/day/wall-time/speed in the header
+- [x] T004 Freeze the clock and can the status so tick/day/wall-time/speed in the header
       are fixed (plan.md F4).
-- [ ] T005 `mid-game` specifically carries awake, asleep AND dead villagers plus a
+- [x] T005 `mid-game` specifically carries awake, asleep AND dead villagers plus a
       chronicle backlog deep enough to overflow the pane (AC #6); `scenario` is built from
       the spec 054 exercise catalog so the exercise tab and lesson row render (AC #7).
 
 ## Phase 2 — Render API
 
-- [ ] T006 Add `internal/tui/design.go` exporting `FrameOptions{Fixture, State, Width,
+- [x] T006 Add `internal/tui/design.go` exporting `FrameOptions{Fixture, State, Width,
       Height, ANSI}` and `Frame(opts) (string, error)`. It lives in-package because the
       layout-bearing Model fields are unexported (plan.md F2).
-- [ ] T007 Export `States() []string` as the single registry of state names, and refactor
+- [x] T007 Export `States() []string` as the single registry of state names, and refactor
       `internal/tui/render_test.go` to consume it, so the matrix and the tests cannot
       disagree about what states exist (plan.md F3).
-- [ ] T008 Pose each state (`home`, `solo`, `inspect`, `inspect-solo`, `villagers-solo`,
+- [x] T008 Pose each state (`home`, `solo`, `inspect`, `inspect-solo`, `villagers-solo`,
       `villagers-detail-solo`, `metatron-solo`, `help`, `help-advanced`,
       `help-walkthrough`, `help-lessons`) reusing the existing test-helper logic rather
       than a parallel implementation.
-- [ ] T009 ANSI suppressed by default via the `termenv` profile `render_test.go` already
+- [x] T009 ANSI suppressed by default via the `termenv` profile `render_test.go` already
       forces; `ANSI: true` opts back in (AC #4).
 
 ## Phase 3 — CLI surface
