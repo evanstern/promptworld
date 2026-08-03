@@ -4,7 +4,7 @@ title: 'Polish session 1: freeform tweaks and small fixes against a live world'
 status: In Progress
 assignee: []
 created_date: '2026-08-03 17:33'
-updated_date: '2026-08-03 20:11'
+updated_date: '2026-08-03 21:51'
 labels: []
 dependencies: []
 ordinal: 177001
@@ -522,4 +522,29 @@ pins): `baseLag` 16 → 0. That merge brought in the concurrent session's TASK-1
 touch nothing this branch does.
 
 AC #5 ticked. The branch is PR-ready.
+
+### PR #163 opened — https://github.com/evanstern/promptworld/pull/163
+
+Branch `task-195-polish-session-1` → `main`. All five ACs ticked; pr gate exit 0 at open time.
+
+**A merge collision was resolved on the way there.** Between the grounding pass and opening the PR,
+TASK-196 (PR #162) and the quickstart outline (PR #161) merged to main, and the pr gate flipped from
+green to **blocked**: `textual-conflict` on `docs/wiki/CAPSULES.md` and
+`docs/wiki/guardian-survival-watches.md`. Both sessions had re-pinned that note — a pure
+`verified_against` collision, no prose conflict — and neither pin was correct afterwards, since
+neither commit sees both changes.
+
+Resolved by merging origin/main INTO the branch (never rebased — rebases stale in-branch pins),
+regenerating `CAPSULES.md` rather than hand-merging it (it is derived), and **re-verifying** the note
+rather than re-pinning it blind: its only daemon claim is that the three watches seed at boot right
+after `seedTuning`, and this branch's `daemon.go` diff touches neither seeding nor tuning — it
+changed the LLM boot-report block alone. Prose stood; pinned to the merge commit, which sees both
+sides. This is the merge-drift gate doing exactly the job spec 051 built it for.
+
+**Post-merge state:** `baseLag` 0, pr gate exit 0 with only the tui-surface reminder (satisfied),
+`go test ./...` exit 0, frames match a fresh dump, player docs 16/16 fresh, wiki planner silent.
+
+**Left for after the merge:** re-link spec 115 to this card (decision 6) — once
+`specs/115-chronicle-feed-wrap/` is on main the spec-bridge gate can derive its true state — then
+worktree/branch cleanup.
 <!-- SECTION:NOTES:END -->
