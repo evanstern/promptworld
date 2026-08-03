@@ -33,6 +33,20 @@ node scripts/check-tui-design.mjs [--json] [--changed [<range>]]
 | `anatomy` | every row target in `anatomy.md` exists; every `pages/`/`panels/`/`overlays/` file is targeted by ≥ 1 anatomy row | the unmapped file or dangling target |
 | `same-pr` | (only with `--changed`) if the range touches `internal/tui/**`, the range must also touch `docs/design/tui/**` | the touched TUI files + "amend docs/design/tui in this PR (re-verify + re-pin affected pages)" |
 
+**Generated-directory exemption (spec 112 T014, amended 2026-08-02).** Every
+check above asserts a property of an *authored* design page — it declares a
+`class` matching its directory, it pins the commit a human verified it
+against, `anatomy.md` maps it. A generated artifact has none of those and
+should not: its authority is the generator, and a hand-written pin on it
+would be a claim nobody made. Top-level directories named in the script's
+`GENERATED_DIRS` are therefore skipped at file-collection time, so no check
+can reach them. Today that is `frames/` — the frame harness's matrix
+(`promptworld frames --dump`), whose frames are `.txt` (already invisible
+here, since only `.md` is walked) alongside one authored `README.md`
+explaining the directory. Without the exemption that README is rejected
+twice over: `file-set` ("outside the taxonomy") and `pins` ("missing
+frontmatter").
+
 ## JSON report shape
 
 ```json

@@ -1,0 +1,30 @@
+First Night — tick 54720 · day 1 21:12 · running · speed 4x (4.0 t/s)
+8 villagers A B C R F h O S
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ HELP · lessons                                                                                               │
+│ Suppression                                                                                                  │
+│ At high speed the guardian skips a villager's turn rather than fall behind — nothing is broken, and no       │
+│ thought is lost, only deferred.                                                                              │
+│                                                                                                              │
+│ The gru                                                                                                      │
+│ The gru is a real predator stalking the map — an attack is a genuine threat to whoever it catches, not a     │
+│ random flavor event.                                                                                         │
+│                                                                                                              │
+│ The action budget                                                                                            │
+│ The guardian's action budget refills on its own over time — you don't have to conserve it forever, just      │
+│ pace bigger asks against what's currently banked.                                                            │
+│                                                                                                              │
+│ Standing orders expire                                                                                       │
+│ A standing order only watches for a limited time; once it expires unmet, the guardian stops watching for it  │
+│ — place a new one if the condition still matters to you.                                                     │
+│ … (+37 more — J to scroll)                                                                                   │
+│ esc/? close · tab section · J/K scroll                                                                       │
+│                                                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+The gru just attacked a villager — a real threat, not a random event.
+→ press 2 for the chronicle  (? for more · x dismiss)
+⚡⚡⚡ (3/3) · 👁 0 standing orders · faith 50
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ⏎ m — speak with the guardian…                                                                               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+esc/? close · tab section · J/K scroll

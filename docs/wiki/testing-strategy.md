@@ -28,7 +28,7 @@ sources:
   - internal/sim/rubric_hygiene_test.go
   - internal/tui/reportcard_test.go
   - internal/tui/help_guardian_test.go
-verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
+verified_against: 9f7df6137c78506f9d5ab48809f6c2e4855da782
 ---
 
 # Testing strategy
@@ -62,6 +62,24 @@ child links back here.
 **Curriculum-ladder & takeover suites** ([[testing-curriculum-takeover]]): The spec-046 staged-worlds curriculum-ladder proof (unlock gate logic, stage-ceiling rosters, unlock records, CLI stage resolution) and the spec-056 takeover dispatch/precedence/dismiss matrix.
 
 **Grounded-feedback & persona suites** ([[testing-feedback-persona]]): The spec-063 grounded-feedback mirror-drift pins and report-card producer/consumer suites, plus the persona lifecycle suite (index-aligned maps, genesis charter/journal seeding, secret events).
+
+**Design frame harness** (spec 112, TASK-187 — no child note yet): the headless
+TUI frame harness carries an in-package suite (`internal/tui/design_test.go`,
+`internal/tui/fixtures_test.go`) plus the dump driver's
+(`cmd/promptworld/frames_test.go`). Two of its assertions are load-bearing
+beyond the feature. `TestFrameMatchesDirectView` sweeps every (fixture, state,
+size) asserting the harness's output *is* `View()`'s rather than a lookalike —
+including the narrow fallback, a structurally different render branch — so
+every generated frame is evidence about the real client. And
+`TestDumpFramesMatchesCommittedMatrix` compares a fresh dump against the frames
+committed under `docs/design/tui/frames/`: regenerating twice in one process
+only proves the two runs agree with each other, so it is the committed copy —
+made on another machine under another `HOME` — that turns a hidden per-user or
+environment read into a test failure instead of a frame that silently differs
+per operator. `internal/tui/render_test.go`'s exact-height sweep no longer
+carries its own state list and posing switch; it drives the harness's `States()`
+and `poseState` (`design.go`), so the test matrix and the generated matrix
+cannot disagree about which states exist or what one of them means.
 
 ## Connections
 

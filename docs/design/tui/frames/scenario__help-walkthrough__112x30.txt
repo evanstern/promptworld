@@ -1,0 +1,30 @@
+First Night — tick 54720 · day 1 21:12 · running · speed 4x (4.0 t/s)
+8 villagers A B C R F h O S
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ HELP · the screen                                                                                            │
+│ Header anatomy                                                                                               │
+│ world name                   the world's name, always shown                                                  │
+│ disconnected                 the client lost its socket connection; it retries automatically, showing the la │
+│ tick / game time             the current simulated tick and in-world clock time                              │
+│ running / PAUSED             the clock's state — PAUSED renders amber                                        │
+│ speed (t/s)                  the requested speed step and its effective ticks/second                         │
+│ asked … in flight, debt …%   governed speed: the operator asked for more speed than the governor currently a │
+│ [degraded]                   the clock's effective rate has fallen behind its target                         │
+│ [llm: provider kind]         the first LLM provider carrying an active health condition (see the guardian ta │
+│ [suppressed: classes]        cognition classes currently being skipped at this speed (see the guardian tab f │
+│                                                                                                              │
+│ Map glyphs                                                                                                   │
+│ ~    water — impassable to foot travel                                                                       │
+│ ♠    a tree — choppable for wood                                                                             │
+│ "    wild forage — gatherable food                                                                           │
+│ … (+29 more — J to scroll)                                                                                   │
+│ esc/? close · tab section · J/K scroll                                                                       │
+│                                                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+The gru just attacked a villager — a real threat, not a random event.
+→ press 2 for the chronicle  (? for more · x dismiss)
+⚡⚡⚡ (3/3) · 👁 0 standing orders · faith 50
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ⏎ m — speak with the guardian…                                                                               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+esc/? close · tab section · J/K scroll

@@ -1,0 +1,33 @@
+Ashgrove — tick 396000 · day 5 20:00 · running · speed 8x (8.0 t/s) [8 villagers]
+ 1 map   2 chronicle   3 guardian   4 villagers   5 systems 
+
+The gru just attacked a villager — a real threat, not a random event.
+→ press 2 for the chronicle  (? for more · x dismiss)
+
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ HELP · lessons                                                               │
+│ Suppression                                                                  │
+│ At high speed the guardian skips a villager's turn rather than fall behind   │
+│ — nothing is broken, and no thought is lost, only deferred.                  │
+│                                                                              │
+│ The gru                                                                      │
+│ The gru is a real predator stalking the map — an attack is a genuine         │
+│ threat to whoever it catches, not a random flavor event.                     │
+│                                                                              │
+│ The action budget                                                            │
+│ The guardian's action budget refills on its own over time — you don't have   │
+│ to conserve it forever, just pace bigger asks against what's currently       │
+│ banked.                                                                      │
+│                                                                              │
+│ Standing orders expire                                                       │
+│ A standing order only watches for a limited time; once it expires unmet, the │
+│ guardian stops watching for it — place a new one if the condition still      │
+│ matters to you.                                                              │
+│                                                                              │
+│ Death is real                                                                │
+│ A villager just died — the world carries real stakes; food, warmth, and      │
+│ … (+40 more — J to scroll)                                                   │
+│ esc/? close · tab section · J/K scroll                                       │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+esc/? close · tab section · J/K scroll

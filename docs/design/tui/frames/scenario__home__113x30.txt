@@ -1,0 +1,30 @@
+First Night — tick 54720 · day 1 21:12 · running · speed 4x (4.0 t/s)
+8 villagers A B C R F h O S
+╭──────────────────────────────────────────────────────╮ ╭──────────────────────────────────────────────────────╮
+│ MAP · following centroid                             │ │ CHRONICLE │ guardian │ villagers │ systems │ exercis │
+│ · · · · · · · · · · " · · · · · · · · · · ▒ ~ ▒ · ·  │ │ ──────────────────────────────────────────────────── │
+│ · · · " · · · · · · · · · · · · · · · · · · ▒ · · ·  │ │ raw feed · no narrated entries yet — the narrator wr │
+│ · · · A · · · · S · · · · · · · · ▒ ▒ ▒ · · · · · ·  │ │                                                      │
+│ · · · · · · · · · · · · · · · · ▒ ~ ~ ~ ▒ · · · · ·  │ │ 19:12 moved Fern → (36,26)                           │
+│ · · · · · · · · · · · · · ▒ ▒ ▒ ~ ~ ~ ~ ▒ · · · " ·  │ │ 19:24 intent_set Hazel intends chop (reflex) →       │
+│ · · · · · · · · " · · · ▒ ~ ~ ~ ~ ~ ~ ~ ▒ · · · · ·  │ │ (39,30)                                              │
+│ · · · · · " · · · · · ▒ ~ ~ ~ ~ ~ ~ ~ ~ ▒ O · · · ·  │ │ 19:36 intent_do… Oak finished                        │
+│ ^ ^ · · · ♠ ♠ ♠ · · · ▒ ~ ~ ~ ~ ~ ~ ~ ~ ░ " · · · ·  │ │ 19:48 moved Sage → (25,18)                           │
+│ ^ ^ ^ · · ♠ ♠ ♠ ♠ · · · ▒ ~ ~ ~ ~ ~ ~ ~ ░ · · · · ·  │ │ 20:00 intent_set Ash intends chop (reflex) →         │
+│ ^ ^ ^ ♠ ♠ ♠ ♠ ♠ ♠ ♠ · · ░ ~ ~ ~ ~ ~ ~ ~ ░ · · · · ·  │ │ (28,22)                                              │
+│ ^ ^ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ · ░ ~ ~ ~ ~ ~ ~ F · · · · · ·  │ │ 20:12 intent_do… Birch finished                      │
+│ ^ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ~ ~ ~ ~ ~ ~ ░ " · · · · ·  │ │ 20:24 night_sta… night falls on day 1                │
+│ ^ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ░ ░ · · · · · · ·  │ │ 20:36 sighted Ash sighted the gru                    │
+│ ^ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ · · · · · · · ·  │ │ 20:48 attacked the gru attacked Rowan · health →     │
+│ ^ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ R ♠ ♠ ♠ ♠ ♠ ♠ · · · · ^ ^ ·  │ │ 55                                                   │
+│ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ · · · · · ^ ·  │ │ 21:00 slept Hazel fell asleep                        │
+│ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ · · · · · ^ ·  │ │                                                      │
+│ night · [17,16–42,32 of 64×64] · ~water ♠wood "forag │ │                                                      │
+╰──────────────────────────────────────────────────────╯ ╰──────────────────────────────────────────────────────╯
+The gru just attacked a villager — a real threat, not a random event.
+→ press 2 for the chronicle  (? for more · x dismiss)
+⚡⚡⚡ (3/3) · 👁 0 standing orders · faith 50
+╭───────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ⏎ m — speak with the guardian…                                                                                │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+2 chronicle 3 guardian 4 villagers 5 systems 6 exercise (again: solo) · G console · m ask · space pause · q quit · ? help

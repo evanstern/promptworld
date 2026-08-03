@@ -9,7 +9,7 @@ sources:
   - internal/tui/tiles.go
   - internal/tui/look.go
   - internal/worlds/unlocks.go
-verified_against: 9b4ed5aef5bfea50b67fac10f8e2153f065a814d
+verified_against: 9f7df6137c78506f9d5ab48809f6c2e4855da782
 ---
 
 # TUI input, focus, and help overlay

@@ -293,3 +293,103 @@ test('hook layers fail open on malformed stdin', () => {
     assert.equal(r.status, 0, `${sub} must fail open on malformed stdin`);
   }
 });
+
+// ---------------------------------------------------------------------------
+// Branch-held claims (spec 111, TASK-188)
+//
+// The hole these cover: spec 065 requires a claim stub to be merged to main
+// immediately, but nothing enforces it. When that step slips the number is
+// claimed only on a pushed branch — invisible to a gate that reads origin/main
+// alone. Observed live on 2026-08-02 (TASK-173 and TASK-187 both held 110).
+//
+// These tests run LAST and are order-dependent on the ones above: they add
+// number 200 on a branch, which moves the next-free number the earlier
+// main-held tests assert on.
+// ---------------------------------------------------------------------------
+
+// A claims number 200 on a pushed branch ONLY — main never sees it. This is the
+// exact shape the pre-111 gate could not detect.
+test('fixture: A claims specs/200-gamma on a pushed branch, never merged to main', () => {
+  gitIn(cloneA, 'switch', '-c', 'task-700-gamma');
+  write(cloneA, 'specs/200-gamma/spec.md', '# Claim stub: 200-gamma (TASK-700)\n');
+  gitIn(cloneA, 'add', '-A');
+  gitIn(cloneA, 'commit', '-m', 'TASK-700: claim spec 200 (stub)');
+  const push = gitIn(cloneA, 'push', '-u', 'origin', 'task-700-gamma');
+  assert.equal(push.status, 0, `branch push must succeed: ${push.stderr}`);
+  gitIn(cloneA, 'switch', 'main');
+
+  const onMain = gitIn(cloneA, 'ls-tree', '--name-only', 'origin/main', '--', 'specs/');
+  assert.doesNotMatch(onMain.stdout, /200-gamma/, 'the claim must NOT be on origin/main — that is the whole point');
+});
+
+test('branch-held number blocks a competing claim and names the holding branch', () => {
+  gitIn(cloneB, 'fetch', 'origin');
+  const r = gate(cloneB, 'claim', '--dir', '200-delta', '--json');
+  assert.equal(r.status, 1, `a branch-held number must block: ${r.stdout}${r.stderr}`);
+  const report = JSON.parse(r.stdout);
+  assert.equal(report.verdict, 'blocked');
+  const f = report.findings.find((x) => x.rule === 'spec-number-collision');
+  assert.ok(f, 'expected a spec-number-collision finding');
+  assert.equal(f.severity, 'block');
+  assert.match(f.message, /specs\/200-gamma/, 'must name the taken dir');
+  assert.match(f.message, /origin\/task-700-gamma/, 'must name the HOLDING BRANCH (FR-004)');
+  assert.ok(
+    f.evidence.includes('origin/task-700-gamma'),
+    'the branch belongs in evidence, not only in the prose'
+  );
+});
+
+test('next free skips branch-held numbers, not just main-held ones (FR-005)', () => {
+  const r = gate(cloneB, 'claim', '--dir', '200-delta', '--json');
+  const f = JSON.parse(r.stdout).findings.find((x) => x.rule === 'spec-number-collision');
+  assert.match(f.message, /next free number is 201/, 'main tops out at 100; the branch holds 200, so 201 is next');
+  assert.doesNotMatch(f.message, /next free number is 101/, 'a main-only next-free would walk the caller into 200');
+});
+
+test('`claim` is idempotent when the owner\'s holder lives on its own branch', () => {
+  const r = gate(cloneA, 'claim', '--dir', '200-gamma', '--json');
+  assert.equal(r.status, 0, `owner re-claim against a branch-held dir must pass: ${r.stdout}${r.stderr}`);
+  const report = JSON.parse(r.stdout);
+  assert.equal(report.verdict, 'pass');
+  assert.equal(report.findings.length, 0);
+});
+
+test('a free number still passes with branch claims present', () => {
+  const r = gate(cloneB, 'claim', '--dir', '201-epsilon', '--json');
+  assert.equal(r.status, 0, `an unheld number must pass: ${r.stdout}${r.stderr}`);
+  assert.equal(JSON.parse(r.stdout).verdict, 'pass');
+});
+
+test('origin/main wins attribution when main AND a branch both hold the number (FR-003)', () => {
+  // 100-alpha is already on main (A's original claim). Put a DIFFERENT dirname
+  // at 100 on a branch, then claim a third: the settled record must be named.
+  gitIn(cloneA, 'switch', '-c', 'task-701-zeta');
+  write(cloneA, 'specs/100-zeta/spec.md', '# Competing branch dir at number 100\n');
+  gitIn(cloneA, 'add', '-A');
+  gitIn(cloneA, 'commit', '-m', 'TASK-701: branch-side dir at number 100');
+  gitIn(cloneA, 'push', '-u', 'origin', 'task-701-zeta');
+  gitIn(cloneA, 'switch', 'main');
+  gitIn(cloneB, 'fetch', 'origin');
+
+  const r = gate(cloneB, 'claim', '--dir', '100-omega', '--json');
+  assert.equal(r.status, 1, 'still a collision');
+  const f = JSON.parse(r.stdout).findings.find((x) => x.rule === 'spec-number-collision');
+  assert.match(f.message, /specs\/100-alpha already exists on origin\/main/, 'main is the settled record and must be named');
+  assert.doesNotMatch(f.message, /100-zeta/, 'the in-flight branch dir must not displace main in the message');
+});
+
+test('a spec dir on a NON-task remote branch is not treated as a claim', () => {
+  // Scope guard: only origin/task-* are claims. A release/experiment branch
+  // carrying spec dirs must not lock numbers for everyone.
+  gitIn(cloneA, 'switch', '-c', 'experiment-noise');
+  write(cloneA, 'specs/300-noise/spec.md', '# Not a claim\n');
+  gitIn(cloneA, 'add', '-A');
+  gitIn(cloneA, 'commit', '-m', 'experiment: spec dir on a non-task branch');
+  gitIn(cloneA, 'push', '-u', 'origin', 'experiment-noise');
+  gitIn(cloneA, 'switch', 'main');
+  gitIn(cloneB, 'fetch', 'origin');
+
+  const r = gate(cloneB, 'claim', '--dir', '300-real', '--json');
+  assert.equal(r.status, 0, `a non-task branch must not lock number 300: ${r.stdout}${r.stderr}`);
+  assert.equal(JSON.parse(r.stdout).verdict, 'pass');
+});
