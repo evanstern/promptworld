@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-30 16:41'
-updated_date: '2026-08-03 00:51'
+updated_date: '2026-08-03 00:57'
 labels: []
 dependencies: []
 ordinal: 141000
@@ -23,6 +23,8 @@ As a villager in the game, when I hear Cedar has been felling trees all week, ar
 Evidence (playtest-1, 29 game-days): the dominant chronicle thread all 29 days was a "vanishing landscape" horror storyline. Cross-check: ALL 780 distinct "vanished" locations match an agent.chopped/agent.quarried event exactly — zero genuine anomalies. 2,932 agent.map_corrected events (~100/day, never declining) each fed the narrative, while chop-rumors were simultaneously circulating socially (social.rumor_told, social.place_told).
 
 Scope note: spec 097 (perception of absence — dedup, disconfirmation decay) merged after this run. First step is a v6 re-run of the same scenario to measure what 097 already absorbs; the remaining gap is attribution — grounding a correction against known harvest activity (own memories, rumors) before it earns mystery-grade salience/narration.
+
+Spec: specs/110-absence-attribution
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
