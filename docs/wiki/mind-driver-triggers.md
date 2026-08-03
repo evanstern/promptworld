@@ -7,7 +7,7 @@ sources:
   - internal/mind/prompt.go
   - internal/mind/parse.go
   - internal/mind/telemetry.go
-verified_against: cb0eb0c0b00c7ecef9d0a6a88d49c3ee994953b4
+verified_against: ebc30ee1990dbcdf17576a2fbe81fdbeb175411d
 ---
 
 # Mind driver cadence and prompt content

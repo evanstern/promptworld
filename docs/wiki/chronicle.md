@@ -6,7 +6,7 @@ sources:
   - internal/sim/chronicle.go
   - internal/mind/narrate.go
   - internal/scribe/scribe.go
-verified_against: 3590f2e0d78d3c4b4ced3edd97a49e5512ab2743
+verified_against: ebc30ee1990dbcdf17576a2fbe81fdbeb175411d
 ---
 
 # Chronicle
@@ -102,15 +102,12 @@ error, or (after the spec-105 ladder below) empty output is a logged GAP
 in the morgue's prose, never a stall — [[morgue]]'s factual record never
 waits on it.
 
-**Absence attribution** (spec 110, TASK-173): every `agent.map_corrected`
-used to contribute its own "found it gone" line, and on a measured 12-game-day
-world those lines were the MAJORITY of every full day chapter — which is why
-the narrator kept naming a vanishing-landscape storyline. Since spec 110 a
-correction the [[absence-attribution]] ledger can pin on a known harvest emits
-NO line of its own; the whole chapter's worth coalesces into ONE
-`corrSummaryMarker` line at `closeChapter`, and only genuinely unexplained
-absences keep their per-event line, byte-identical. Full mechanism, dials, and
-measured before/after: [[absence-attribution]].
+**Absence attribution** (spec 110, TASK-173): correction lines used to be the
+MAJORITY of a day chapter's buffer, which is why the narrator kept naming a
+vanishing-landscape storyline. A correction a known harvest explains now emits
+NO line of its own — the chapter's worth coalesces into ONE `corrSummaryMarker`
+line at `closeChapter` — while unexplained absences keep theirs byte-identical.
+Mechanism, dials, and measured before/after: [[absence-attribution]].
 
 **Truncation-aware retry ladder** (spec 105, TASK-172): the chapter call
 was the sibling failure site of the consolidation blackout — playtest-1's

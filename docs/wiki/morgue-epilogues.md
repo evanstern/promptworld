@@ -6,7 +6,7 @@ sources:
   - internal/sim/morgue.go
   - internal/mind/narrate.go
   - internal/sim/state.go
-verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
+verified_against: ebc30ee1990dbcdf17576a2fbe81fdbeb175411d
 ---
 
 # Morgue narrated epilogues

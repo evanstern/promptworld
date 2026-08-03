@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/mind/narrate.go
   - internal/mind/mind.go
-verified_against: PENDING
+verified_against: ebc30ee1990dbcdf17576a2fbe81fdbeb175411d
 ---
 
 # Absence attribution
