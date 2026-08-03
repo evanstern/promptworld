@@ -132,9 +132,15 @@ func TestBulkYieldTruncatesAtPartialSpace(t *testing.T) {
 }
 
 // TestBulkZeroSpaceGatherNoEventNoDepletion is US1-AS1: a gather completed with
-// zero free bulk emits agent.intent_done only — no harvest event, and no
-// depletion (the forage tile is left for later). Driven through the executor so
-// the guard, not just the reducer clamp, is exercised.
+// zero free bulk yields nothing and depletes nothing (the forage tile is left
+// for later). Driven through the executor so the guard, not just the reducer
+// clamp, is exercised.
+//
+// TASK-196 revised the RESOLUTION half of this assertion: the guard used to
+// emit a bare agent.intent_done, identical to a successful gather, and this
+// test asserted exactly that. It now resolves via agent.intent_failed with
+// reason "pack full". The no-yield/no-depletion invariants below are unchanged
+// — they are what the guard exists to protect; only its audibility changed.
 func TestBulkZeroSpaceGatherNoEventNoDepletion(t *testing.T) {
 	const seed = 42
 	m := testMap(seed)
@@ -151,7 +157,8 @@ func TestBulkZeroSpaceGatherNoEventNoDepletion(t *testing.T) {
 
 	log := driveTicks(t, s, m, 3, nil)
 
-	var sawForaged, sawDone bool
+	var sawForaged, sawDone, sawFailed bool
+	var failReason string
 	for _, e := range log {
 		switch e.Type {
 		case "agent.foraged":
@@ -166,13 +173,26 @@ func TestBulkZeroSpaceGatherNoEventNoDepletion(t *testing.T) {
 			if p.Agent.ID == 0 {
 				sawDone = true
 			}
+		case "agent.intent_failed":
+			var p IntentFailedPayload
+			mustUnmarshal(t, e.Payload, &p)
+			if p.Agent.ID == 0 {
+				sawFailed = true
+				failReason = p.Reason
+			}
 		}
 	}
 	if sawForaged {
 		t.Error("a full-pouch forage emitted agent.foraged — it must not happen at zero free bulk")
 	}
-	if !sawDone {
-		t.Error("a full-pouch forage did not resolve via agent.intent_done")
+	if !sawFailed {
+		t.Error("a full-pouch forage did not resolve via agent.intent_failed (TASK-196: the no-op must be audible)")
+	}
+	if failReason != intentFailPackFull {
+		t.Errorf("intent_failed reason = %q, want %q", failReason, intentFailPackFull)
+	}
+	if sawDone {
+		t.Error("a full-pouch forage emitted agent.intent_done — a no-op must not wear the same event as a harvest")
 	}
 	if len(s.Harvested) != 0 {
 		t.Errorf("Harvested = %+v, want empty — no depletion at zero free bulk (US1-AS1)", s.Harvested)
