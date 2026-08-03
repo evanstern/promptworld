@@ -42,7 +42,7 @@ generated frames under `docs/design/tui/frames/` as the review artifact
 stays one row on every path (FR-008); behavior above the breakpoint must not otherwise
 regress (FR-012)
 
-**Scale/Scope**: 2 render call sites, 1 new helper, 1 new test, 1 deny-list, 21 committed
+**Scale/Scope**: 2 render call sites, 1 new helper, 1 new test, 1 deny-list, 39 committed
 frames regenerated, 1 design-authority page amended
 
 ## Constitution Check
@@ -96,7 +96,7 @@ cmd/promptworld/
 
 docs/design/tui/
 ├── panels/map.md        # width policy recorded; the :209 deferral resolved
-└── frames/*.txt         # 21 frames regenerated — the review artifact
+└── frames/*.txt         # 39 frames regenerated — the review artifact
 ```
 
 **Structure Decision**: no structural change. The feature touches one existing package
@@ -140,14 +140,14 @@ assert no line exceeds that size's declared width, measured in display columns (
 the audit's own rune-based measurement was known to understate width on rows carrying
 double-width glyphs).
 
-It carries an explicit deny-list of the 13 frames failing for the two out-of-scope defect
+It carries an explicit deny-list of the 22 frames failing for the two out-of-scope defect
 classes (header row, scenario footer). The deny-list is bidirectional: a listed frame that
 *starts* passing must also fail the test, so the debt cannot linger unnoticed after someone
 fixes it. Each entry names its follow-up card.
 
 ### 5. Regeneration and authority
 
-Regenerate the matrix with `promptworld frames --dump`; the resulting diff across 21 frames
+Regenerate the matrix with `promptworld frames --dump`; the resulting diff across 39 frames
 is the review artifact. Amend `docs/design/tui/panels/map.md` to state the width policy and
 to resolve the `:209` deferral, whose own re-open trigger — "legend-line overflow pain
 becomes the actual bottleneck" — is what this feature answers. Per the skill's authority-vs-
@@ -157,7 +157,7 @@ same PR, never one silently bent to the other.
 ### 6. Follow-up cards
 
 File two cards for the classes the guard will detect but this feature does not fix: the
-header-row overflow (11 frames) and the scenario keybind footer (2 frames). They are what
+header-row overflow (20 frames) and the scenario keybind footer (2 frames). They are what
 the deny-list entries point at.
 
 ## Complexity Tracking

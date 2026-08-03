@@ -173,7 +173,7 @@ visible legend content is monotonically non-decreasing.
   materially improve what a narrow player sees, but it changes what the legend *says*
   rather than only how wide it is, and it is not needed to stop the layout damage.
 - **The other two over-width defect classes.** The same frame audit found the header row
-  over-width in 11 frames (81–83 columns at 80x30) and the scenario keybind footer
+  over-width in 20 frames (81–83 columns at 80x30) and the scenario keybind footer
   over-width in 2 frames (121 columns at 112/113). They are separate findings with
   separate causes and are not fixed here — though the FR-009 guard will *detect* them, so
   they must be resolved or explicitly registered before the guard can run clean.

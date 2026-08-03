@@ -145,7 +145,7 @@ skill's checker.
 
 **The scope problem this exposes, and how the plan handles it**: a guard honest enough to
 satisfy FR-010 (cover the whole matrix, not just the legend) fails immediately on two
-defect classes this feature does not fix — the header row (11 frames, 81–83 columns at
+defect classes this feature does not fix — the header row (20 frames, 81–83 columns at
 80x30) and the scenario keybind footer (2 frames, 121 columns at 112/113). Three options:
 
 - Scope the guard to the legend line only — rejected, violates FR-010 and leaves the

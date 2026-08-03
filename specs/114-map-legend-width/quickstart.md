@@ -31,7 +31,7 @@ console.log("frames with over-width lines:", bad);
 ```
 
 **Expected before the fix**: 31 frames, of which 21 are the legend class — worst case 356
-columns in an 80-column frame. **Expected after**: 10 frames, all of them the two
+columns in an 80-column frame. **Expected after**: 22 frames, all of them the two
 out-of-scope classes (header row, scenario footer) that the guard's deny-list registers.
 
 Note this snippet counts *runes*, which is what the original audit did. It understates
@@ -69,7 +69,7 @@ go run ./cmd/promptworld frames --dump
 git diff --stat docs/design/tui/frames/
 ```
 
-**Expected**: 21 frames change. That diff is the review artifact for this PR — per the
+**Expected**: 39 frames change — the 21 that were over-width, plus 18 widescreen frames that were already being silently truncated and now show the marker. That diff is the review artifact for this PR — per the
 project's TUI design loop, a UI change arrives as a before/after of real frames, not a
 prose description of one.
 
@@ -124,8 +124,8 @@ if `docs/wiki/` changed.
 
 ## Done when
 
-- Step 1 reports only the 10 deny-listed out-of-scope frames
+- Step 1 reports only the 22 deny-listed out-of-scope frames
 - Step 3 passes, and provably fails when tampered with
-- Step 4's 21-frame diff is attached to the PR as the review artifact
+- Step 4's 39-frame diff is attached to the PR as the review artifact
 - Step 5's monotonicity values are non-decreasing and the no-false-ellipsis count is 0
 - Step 6 is green end to end
