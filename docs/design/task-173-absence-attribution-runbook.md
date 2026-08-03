@@ -217,4 +217,4 @@ and needs the same checkpoint.
 
 | date | task | PR | merge | tokens/cost (best-effort) | notes |
 |------|------|----|-------|---------------------------|-------|
-| 2026-08-02 | TASK-173 | — | — | — | claimed: card In Progress (main `48701799`), spec 110 stub (`eae58fb0`), bridge marker (main `46222529`), tier pin + stale-AC correction (main `70185338`). Spec cycle next. |
+| 2026-08-02 | TASK-173 | — | — | — | claimed: card In Progress (main `48701799`), spec 110 stub (`eae58fb0`), bridge marker (main `46222529`), tier pin + stale-AC correction (main `70185338`). Spec set complete (`8cc6ca6b` spec.md, `ce298a31` plan.md + tasks.md); phase ACs seeded (main `fcf421be`). phases: 1 dispatched — `spec-implementer-opus` (`claude-opus-5`). |
