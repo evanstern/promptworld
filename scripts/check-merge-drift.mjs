@@ -623,6 +623,57 @@ function takenSpecNumbers(originMainTip, cwd) {
   return map;
 }
 
+// Spec numbers held by a PUSHED-but-unmerged task branch (spec 111, TASK-188).
+//
+// takenSpecNumbers above reads only origin/main, which is spec 065's literal
+// definition of ownership — correct only for as long as every session performs
+// the protocol's immediate `git merge --no-ff` of its claim stub. When that step
+// slips, the number is claimed somewhere the gate cannot see, and every later
+// session's claim gate passes: observed live on 2026-08-02, when TASK-173
+// (specs/110-absence-attribution) and TASK-187 (specs/110-tui-frame-harness)
+// both held 110 on pushed branches, neither merged, both gates green.
+//
+// Scoped to refs/remotes/origin/task-* — the repo's branch convention (CLAUDE.md,
+// spec 065). Scanning every remote head would drag in release/experiment branches
+// whose spec dirs are not claims. Reads ONLY already-fetched remote-tracking refs;
+// claim mode's own fetch precedes this, and this helper never fetches, writes, or
+// touches a working tree.
+//
+// Returns Map(number -> { dir, branch }). First writer wins on a duplicate number,
+// and for-each-ref sorts by refname, so when two branches hold one number the
+// reported holder is stable across runs — a gate that named a different branch each
+// run would not be reproducible evidence. Any git failure degrades to today's
+// main-only behavior (empty map, or that one branch skipped) rather than crashing.
+function branchHeldSpecNumbers(cwd) {
+  const map = new Map();
+  const refs = git(['for-each-ref', '--format=%(refname:short)', 'refs/remotes/origin/'], { cwd });
+  if (refs.status !== 0) return map;
+  for (const ref of refs.stdout.split('\n').map((s) => s.trim()).filter(Boolean)) {
+    if (!/^origin\/task-/.test(ref)) continue;
+    const t = git(['ls-tree', '--name-only', ref, '--', 'specs/'], { cwd });
+    if (t.status !== 0) continue;
+    for (const line of t.stdout.split('\n').filter(Boolean)) {
+      const name = line.replace(/^specs\//, '');
+      const m = name.match(/^(\d+)-(.+)$/);
+      if (!m) continue;
+      const number = parseInt(m[1], 10);
+      if (!map.has(number)) map.set(number, { dir: name, branch: ref });
+    }
+  }
+  return map;
+}
+
+// The lowest spec number no holder claims, across every supplied map (spec 111
+// FR-005). Taking the union matters: advising "next free is 110" while a branch
+// holds 110 would walk the caller straight into a second collision. Returns 1 for
+// a repo with no specs at all — Math.max() of an empty set is -Infinity, which the
+// pre-111 inline `Math.max(...taken.keys()) + 1` would have propagated into the
+// message.
+function nextFreeSpecNumber(...maps) {
+  const numbers = maps.flatMap((m) => [...m.keys()]);
+  return numbers.length === 0 ? 1 : Math.max(...numbers) + 1;
+}
+
 function newSpecDirsFromFiles(files) {
   const dirs = new Set();
   for (const f of files) {
@@ -1380,10 +1431,16 @@ function runSession(flags, cwd) {
 // Mode: claim (spec 065)
 // ---------------------------------------------------------------------------
 
-// Blocks authoring against a spec number already taken on origin/main — at
-// directory-creation (claim) time, before any content accumulates. Runs from
-// anywhere inside the repo. Idempotent for the owner: claiming a dirname
-// already on origin/main under the SAME name passes.
+// Blocks authoring against a spec number already taken — at directory-creation
+// (claim) time, before any content accumulates. Runs from anywhere inside the
+// repo. Idempotent for the owner: claiming a dirname already held under the SAME
+// name passes, wherever that holder lives.
+//
+// Two holder positions are consulted (spec 111): origin/main, the settled record,
+// and pushed-but-unmerged origin/task-* branches, the in-flight claims. main wins
+// the attribution when both hold the number — a merged claim is a stronger fact
+// than an in-flight one, and the pre-111 message shape for that case is preserved
+// byte-for-byte.
 function runClaim(flags, cwd) {
   const f = git(['fetch', 'origin'], { cwd });
   if (f.status !== 0) {
@@ -1398,20 +1455,40 @@ function runClaim(flags, cwd) {
 
   const findings = [];
   const taken = takenSpecNumbers(originMainTip, mainWt);
+  const held = branchHeldSpecNumbers(mainWt);
   const number = parseInt(flags.dir.match(/^(\d+)-/)[1], 10);
-  if (taken.has(number) && taken.get(number) !== flags.dir) {
-    const takenDir = taken.get(number);
-    const nextFree = Math.max(...taken.keys()) + 1;
+  const nextFree = nextFreeSpecNumber(taken, held);
+  const mainDir = taken.get(number);
+  const branchHolder = held.get(number);
+  if (mainDir !== undefined && mainDir !== flags.dir) {
     findings.push(
       makeFinding({
         severity: 'block',
         gate: 'claim',
         rule: 'spec-number-collision',
-        message: `specs/${takenDir} already exists on origin/main for number ${formatSpecNum(
+        message: `specs/${mainDir} already exists on origin/main for number ${formatSpecNum(
           number
         )} — claim specs/${flags.dir} is a collision; next free number is ${formatSpecNum(nextFree)}`,
-        evidence: [`specs/${takenDir}`],
-        task: attributeBySpecDir(mainWt, takenDir),
+        evidence: [`specs/${mainDir}`],
+        task: attributeBySpecDir(mainWt, mainDir),
+        key: 'claim',
+      })
+    );
+  } else if (branchHolder !== undefined && branchHolder.dir !== flags.dir) {
+    findings.push(
+      makeFinding({
+        severity: 'block',
+        gate: 'claim',
+        rule: 'spec-number-collision',
+        message: `specs/${branchHolder.dir} is already claimed on branch ${
+          branchHolder.branch
+        } for number ${formatSpecNum(number)} — claim specs/${
+          flags.dir
+        } is a collision; next free number is ${formatSpecNum(
+          nextFree
+        )} (if that branch is abandoned, delete it on origin and re-run)`,
+        evidence: [`specs/${branchHolder.dir}`, branchHolder.branch],
+        task: attributeBySpecDir(mainWt, branchHolder.dir),
         key: 'claim',
       })
     );
