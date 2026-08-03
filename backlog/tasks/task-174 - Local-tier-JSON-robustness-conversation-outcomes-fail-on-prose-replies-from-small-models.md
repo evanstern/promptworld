@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-30 16:42'
-updated_date: '2026-08-02 13:37'
+updated_date: '2026-08-03 02:59'
 labels: []
 dependencies: []
 ordinal: 142000
@@ -52,4 +52,12 @@ CORRECTION + ROOT CAUSE 2026-08-02, supersedes the 2026-08-01 interim note. The 
 ROOT CAUSE, verified by direct probe against the rig: ollama's MLX engine does NOT honor structured-output constraints for gemma4:12b-mlx. Three independent probes all returned free prose — (a) OpenAI-compat response_format {type: json_schema} with strict, (b) same without strict, (c) ollama NATIVE /api/chat with a 'format' JSON-Schema. The code is correct and DOES send the envelope (internal/llm/providers.go:168-179 gated on len(Tools)==0; internal/mind/convo.go:618 sets convoOutcomeSchema), but the provider ignores it, so the constrained decoding AC#1 credits is INERT on this rig — which is the operator's always-on local default. This single cause explains both the outcome-route and utterance-route (TASK-183) failures. AC#1 is therefore true of the code and false of the observed behavior; AC#2 does not pass. RECOMMEND: do not close TASK-174 on this evidence — operator decision required on whether to amend scope, pin a provider/model that honors constraints, or add a parse-repair layer.
 
 SECONDARY FINDING: gemma4:12b-mlx is a THINKING model — it spends completion tokens on a 'reasoning' field before 'content'. Under a small max_tokens budget the reasoning exhausts the budget and content comes back EMPTY, which is the likely source of the soak's 4 'empty utterance' failures (2 retried, 2 terminal). Token budgets on this route do not account for reasoning tokens.
+
+OPERATOR RULING 2026-08-02: route chosen = pin a constraint-honoring model. RESOLVED WITH NO REPO CHANGE. Spec 109 / TASK-184 (Done, PR #155) had already moved the fresh-world default to gemma4:latest, which spec 109's spec.md benchmark measured live on the operator's M1 Max as honoring JSON-Schema constraints and tool-calling natively — the same harness that caught gemma4:12b-mlx returning prose. So the shipped default already satisfies 'pin a model that honors constraints'; promoting qwen3.6:latest to default was explicitly rejected in spec 109 on download weight, NOT correctness, and remains the documented upgrade path. Reversing that here would cross a spec boundary as well as a same-day operator ruling.
+
+The MLX failure was operator world config, not the default: ~/.promptworld/worlds/myworld-01/llm.json pinned gemma4:12b-mlx in the legacy v1 shape, which never receives the spec 109 default since that applies only to worlds created by promptworld new. Operator confirms myworld-01 is defunct; no config change made. world-01 likewise still runs the superseded cogito:3b with tool_mode json.
+
+AC#2 re-measurement therefore rides the running qwen3.6 soak, which spec 109 names as exactly that. Controlled A/B — same seed 1337, same binary, same stage-4 dials, only the local provider differs. At 6.54 game-days / 70 founded scenes it reads outfail=0 outkill=0 uttkill=0, against the gemma4:12b-mlx run's 10 outcome parse failures / 3 outcome kills / 11 utterance kills at 90 scenes. Needs ~20 more founded scenes for like-for-like parity before AC#2 can be closed on it; the watcher exits at 90.
+
+Raw evidence for both runs preserved out of perishable job scratch to ~/Claude/soak-evidence/2026-08-02/ — see board doc-1. Both world.db captured via sqlite3 .backup, integrity_check ok.
 <!-- SECTION:NOTES:END -->
