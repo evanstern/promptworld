@@ -2,7 +2,7 @@
 title: Panel — map (terrain camera viewport)
 class: panel
 status: shipped
-verified_against: 72f82f41f7aa2e345572105894cd0fb7c02fc0aa
+verified_against: aeb0c17a98a8ae1b27fff9111bd009e21841b21c
 sources:
   - internal/tui/views.go
   - internal/tui/tiles.go

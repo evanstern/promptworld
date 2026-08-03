@@ -8,7 +8,7 @@ sources:
   - internal/tui/digest.go
   - internal/tui/tui.go
   - internal/tui/look.go
-verified_against: 9f7df6137c78506f9d5ab48809f6c2e4855da782
+verified_against: aeb0c17a98a8ae1b27fff9111bd009e21841b21c
 ---
 
 # TUI map view
