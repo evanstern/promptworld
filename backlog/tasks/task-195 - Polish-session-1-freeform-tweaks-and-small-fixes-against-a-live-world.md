@@ -4,7 +4,7 @@ title: 'Polish session 1: freeform tweaks and small fixes against a live world'
 status: In Progress
 assignee: []
 created_date: '2026-08-03 17:33'
-updated_date: '2026-08-03 19:33'
+updated_date: '2026-08-03 20:03'
 labels: []
 dependencies: []
 ordinal: 177001
@@ -62,7 +62,7 @@ ad-hoc vs spec)
 - [ ] #1 Every item worked in this session has a decision-log entry on this card — item, file:line diagnosis, and the decision — recorded before its implementation
 - [ ] #2 Any item exceeding the trivial-exemption bar (surgical fix + complete file:line diagnosis + ACs on this card) is escalated to a Spec Kit spec and linked via spec-bridge before implementation
 - [ ] #3 All session work lands on a single branch and a single PR; no per-item task cards or PRs are created
-- [ ] #4 Operator visual QA passes on the live world for every shipped item before the PR is opened
+- [x] #4 Operator visual QA passes on the live world for every shipped item before the PR is opened
 - [ ] #5 Grounding is done once at the end, in-branch: wiki re-pinned, player docs regenerated, tui-design amended where internal/tui changed, and the pr merge-drift gate is green
 <!-- AC:END -->
 
@@ -465,4 +465,15 @@ outside a PR. Note what that means for THIS branch: the stub-first rule is **pre
 curative** — spec 115 stays unlinked (decision 6) until the PR merges, at which point
 `specs/115-chronicle-feed-wrap/` is on main and the link can be restored with the bridge deriving
 its true state.
+
+### Step 8 — operator visual QA signed off (2026-08-03)
+
+Operator reviewed and signed off on the session's shipped work. AC #4 ticked. Step 9 (grounding)
+authorized and starting.
+
+Caught during QA setup: the worktree's `promptworld` binary was still the 13:51 build, from before
+the spec 115 changes — `go build ./...` during implementation never rewrites the `-o promptworld`
+artifact. Anyone QA-ing with it would have been looking at the old truncating feed. Rebuilt at
+15:45 before handing over the QA routes. Worth remembering for any future session that proves a
+client-side change against a live world.
 <!-- SECTION:NOTES:END -->
