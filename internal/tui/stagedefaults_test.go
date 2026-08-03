@@ -175,7 +175,7 @@ type preLadderGoldenFrame struct {
 var preLadderGoldenFrames = []preLadderGoldenFrame{
 	{
 		name: "widescreen-home",
-		want: "f0327b1a9b7b633a5026c1ffb9bf6d761634d616564160f4725f50bcf1e0a9be",
+		want: "5373b689f86591cd1d5c56787d8d6622c92cefa4bfaa4272199c75a6fa668b54",
 		build: func(t *testing.T) Model {
 			m := widescreenModel(t)
 			seedEvents(&m, 20)
@@ -192,7 +192,7 @@ var preLadderGoldenFrames = []preLadderGoldenFrame{
 		// Re-pinned again for spec 084 (TASK-157): the legend grew the three
 		// appended designation tokens (◇site ┄wallplan ◦zone) — the same
 		// sanctioned append-only growth, same guard.
-		want: "8c3a8fdaee1ad1e3d2b9593aa936a68fe07adfe5fba4aeed5574c662d95baeaa",
+		want: "cae336dfa42139e128a917422ba886ca1cb09aa5687f89a4213656ea0eb988dd",
 		build: func(t *testing.T) Model {
 			m := testModel(t)
 			seedEvents(&m, 20)
@@ -216,7 +216,7 @@ var preLadderGoldenFrames = []preLadderGoldenFrame{
 		// dashed `faith —` form. Verified directly by the strip's own tests
 		// (TestGuardianStripFaithStates); not a stage-defaults regression.
 		name: "widescreen-guardian-strip-charges",
-		want: "39833aed8f8a79c10ac195bddff97dcae2314540d11ab82f8530c9f105e1cd6d",
+		want: "f3d4c919fe8d2c11933f9d7f945537901eb02817d96cf92765262d0dcc84e84b",
 		build: func(t *testing.T) Model {
 			m := widescreenModel(t)
 			m.connected = true
@@ -226,7 +226,7 @@ var preLadderGoldenFrames = []preLadderGoldenFrame{
 	},
 	{
 		name: "widescreen-active-lesson-badge-only",
-		want: "72fd8b525fb0e71b743167644a314e0871407e747c42f94cf49b843d6564517f",
+		want: "ba82e060b5ab4ac6112ef27b375852edc3a5a6da14ea0601b76f2504f26fe593",
 		build: func(t *testing.T) Model {
 			// Pre-ladder's lesson-row default is badge+overlay-only (the
 			// table's own Pre-ladder column, matching the pre-055 "off"
@@ -239,7 +239,7 @@ var preLadderGoldenFrames = []preLadderGoldenFrame{
 	},
 	{
 		name: "widescreen-scenario-exercise-tab",
-		want: "3731790b637cdbfc51f9f5b023f1cddad96c5f51776b14620a7741b4bcc6e926",
+		want: "f72509245b98da388becec322f30b2c53a54d584bd9b77fc84a271806cb09482",
 		build: func(t *testing.T) Model {
 			m := scenarioModel(t)
 			m.w.Manifest.Stage = "" // this corpus is pre-ladder even though scenarioModel defaults to stage-1
@@ -285,6 +285,18 @@ var preLadderGoldenFrames = []preLadderGoldenFrame{
 // byte identity is separately guaranteed by spec 068's own pin
 // (TestTilesIdentityPin, a LEGACY-generation fixture) — this corpus's four
 // new hashes reflect the sanctioned new-world visual change, nothing else.
+//
+// Re-pinned again for spec 114 (TASK-191), the five map-bearing frames only:
+// the map legend now clamps to the width it renders into and marks the cut
+// with "…" (clipLegend, views.go). This is the same class of re-pin as spec
+// 068's directly above — a deliberate, spec-sanctioned change to what the
+// legend displays — and it is verified on its own terms by
+// legend_width_test.go (contracts/legend-width.md C1–C5), not by these
+// hashes. help-overlay-open is deliberately absent from this re-pin: it
+// renders no map legend and its hash is unchanged, which is the check that
+// the blast radius really was the legend and nothing else. The "never re-pin
+// for a resolution-only refactor" rule above still holds for spec 066's own
+// wiring.
 func TestPreLadderGoldenFrames(t *testing.T) {
 	for _, fx := range preLadderGoldenFrames {
 		t.Run(fx.name, func(t *testing.T) {

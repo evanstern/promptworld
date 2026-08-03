@@ -19,7 +19,7 @@ Ashgrove — tick 396000 · day 5 20:00 · PAUSED · speed 8x (8.0 t/s)
 │ · ♠ ♠ ♠ ♠ ♠ ♠ ♠ ~ ~ ~ ~ ~ ~ ~ ♠ ♠ ♠ ♠ · · · · · · ·  │ │       "facts": [{"kind":"tree","x":47,"y":34,"seen": │
 │ · ♠ ♠ ♠ ♠ ♠ ♠ ~ ~ ~ ~ ~ ~ ~ ░ · ♠ ♠ ♠ · · · · · · ·  │ │   … (+2 more — J to scroll)  ⏎ jump to Hazel (23,7)  │
 │ · ♠ ♠ ♠ ♠ ♠ ♠ ♠ ~ ~ ~ ~ ~ ~ " · · · ♠ · · · ♠ · · ·  │ │                                                      │
-│ night · [21,8–46,24 of 64×64] · ~water ♠wood "forage │ │                                                      │
+│ night · [21,8–46,24 of 64×64] · ~water ♠wood "forag… │ │                                                      │
 ╰──────────────────────────────────────────────────────╯ ╰──────────────────────────────────────────────────────╯
 The gru just attacked a villager — a real threat, not a random event.
 → press 2 for the chronicle  (? for more · x dismiss)

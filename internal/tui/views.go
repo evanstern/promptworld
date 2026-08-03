@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
 
 	"github.com/evanstern/promptworld/internal/clock"
 	"github.com/evanstern/promptworld/internal/guardian"
@@ -923,17 +924,26 @@ func (m Model) mapPanelView(cols, rows int) string {
 	grid, legend := m.renderMapGrid(vw, vh)
 	content := styleHeader.Render(title) + "\n" + grid
 	if legend != "" {
-		content += "\n" + legend
+		// Spec 114 FR-003: the legend clamps itself, with an ellipsis, to the
+		// box interior. cols-2 goes to .Width() below and Padding(0,1) eats
+		// two more, so cols-4 is the usable width — the same arithmetic
+		// clipContent performs internally (research.md R3).
+		content += "\n" + clipLegend(legend, cols-4)
 	}
-	// clipContent is the load-bearing part here (B1): the legend line is
-	// prose and routinely wider than the panel — without a hard per-line
-	// cap, lipgloss's Width()-driven soft-wrap turns it into two rendered
-	// lines, growing the panel past its Height() budget (Height only
-	// pads short content, it never truncates tall content) and pushing
-	// the header off the top of a real terminal. See clipContent's doc
-	// for why a style-level MaxWidth() does not reliably substitute for
-	// this. Every panel must render to exactly its handed (width,
-	// height) — layout.md's composition contract.
+	// clipContent remains the layout safety net (B1): the legend line is prose
+	// and was routinely wider than the panel — without a hard per-line cap,
+	// lipgloss's Width()-driven soft-wrap turns it into two rendered lines,
+	// growing the panel past its Height() budget (Height only pads short
+	// content, it never truncates tall content) and pushing the header off the
+	// top of a real terminal. See clipContent's doc for why a style-level
+	// MaxWidth() does not reliably substitute for this. Every panel must
+	// render to exactly its handed (width, height) — layout.md's composition
+	// contract.
+	//
+	// Since spec 114 the legend arrives already within budget, so this pass is
+	// a no-op for that line specifically. The net stays: it still guards every
+	// other line, and it still catches the legend if a future change routes
+	// one here unclamped.
 	return styleBox.Width(cols - 2).Height(rows - 2).Render(clipContent(content, cols-2))
 }
 
@@ -1497,8 +1507,15 @@ func (m Model) renderMapGrid(vw, vh int) (grid, legend string) {
 	// counts + food batch totals) are appended to the legend line, the
 	// map panel's one designated inspection surface (map.md: "legend stays
 	// pinned as the panel's last row" — content grows the line, never a
-	// second row; clipContent already clips an over-wide legend, so this is
-	// safe the same way the existing key text is).
+	// second row).
+	//
+	// This comment used to claim "clipContent already clips an over-wide
+	// legend, so this is safe the same way the existing key text is." That was
+	// true of the widescreen path and false of the narrow one, which appended
+	// the legend outside the box with no clip at all — and the false half is
+	// what let a ~355-column line ship into an 80-column terminal (spec 114).
+	// Growing this line is safe now because both callers clamp it with
+	// clipLegend, not because anything downstream happens to catch it.
 	pilesInfo := ""
 	if m.replica != nil && len(m.replica.Piles) > 0 {
 		var visible []sim.Pile
@@ -1734,8 +1751,14 @@ func summarizePileContents(piles []sim.Pile) string {
 // mapView is the narrow-fallback map pane: today's vw/vh formula,
 // unchanged (pages/solo-views.md "Narrow fallback" — "today's single-pane
 // UI renders unchanged").
-func (m Model) mapView() string {
-	vw, vh := 32, 18
+// narrowViewport is the tile viewport the narrow fallback renders at the
+// model's current size. Extracted (spec 114) so mapView and the tests that
+// exercise legend COMPOSITION agree on the geometry instead of duplicating
+// the arithmetic: those tests assert on the composed legend from
+// renderMapGrid, while mapView's own clamping is presentation and is tested
+// separately (TestNarrowLegendClampedToTerminalWidth).
+func (m Model) narrowViewport() (vw, vh int) {
+	vw, vh = 32, 18
 	if m.width > 8 {
 		if w := (m.width - 6) / 2; w < vw || m.width >= 80 {
 			vw = w
@@ -1744,10 +1767,21 @@ func (m Model) mapView() string {
 	if m.height > 12 {
 		vh = m.height - 10
 	}
+	return vw, vh
+}
+
+func (m Model) mapView() string {
+	vw, vh := m.narrowViewport()
 	x0, y0 := m.cameraOrigin(vw, vh)
 	m.recordMapHit(x0, y0, vw, vh) // spec 074 research R6: narrow records mapHit the same way
 	grid, legend := m.renderMapGrid(vw, vh)
-	return styleBox.Render(grid) + "\n" + legend
+	// Spec 114 FR-002: clamp at the render site. This legend sits OUTSIDE the
+	// box, so nothing downstream clips it — before this, the raw ~355-column
+	// line reached an 80-column terminal, soft-wrapped into roughly five rows,
+	// and pushed the map off the top of the screen. m.width is the honest
+	// budget precisely because the legend is outside the box: the whole
+	// terminal width is available to it (research.md R3).
+	return styleBox.Render(grid) + "\n" + clipLegend(legend, m.width)
 }
 
 // tileView is the narrow fallback's TILE-view body-replacement wrapper
@@ -1804,6 +1838,50 @@ func clipContent(content string, boxWidth int) string {
 		lines[i] = clipLine(l, usable)
 	}
 	return strings.Join(lines, "\n")
+}
+
+// legendEllipsis is the marker a shortened legend ends in (spec 114 FR-003).
+const legendEllipsis = "…"
+
+// clipLegend clamps the composed map legend to a column budget, marking the
+// cut with an ellipsis (spec 114, contracts/legend-width.md C1–C5). It is
+// deliberately NOT part of clipLine/clipContent, which stay a pure layout
+// safety net: those guarantee a panel renders to exactly its handed size,
+// while this communicates to the player that content was omitted. Folding the
+// second job into the first would hand every existing clipLine caller a
+// content decision it never asked for, and would risk a double-ellipsis where
+// the chronicle's own "…" (grammar.go) then passes through clipContent. See
+// specs/114-map-legend-width/research.md R2 for the full reasoning.
+//
+// ansi.Truncate does the three hard parts (research.md R1): it never severs an
+// ANSI escape (C5 — the legend is always styleDim.Render'd, so a naive rune
+// slice would bleed styling into every row below), it measures display columns
+// rather than runes so double-width glyphs are counted correctly (FR-007), and
+// it returns the input untouched when it already fits, which is C2's second
+// half — a legend that fits carries no ellipsis and is not padded.
+//
+// Callers pass the budget they own: the narrow path has the full terminal
+// width because its legend renders outside the map box, while the widescreen
+// path has the box interior (research.md R3).
+func clipLegend(legend string, budget int) string {
+	if legend == "" {
+		return legend
+	}
+	if budget < 1 {
+		// A starved resize must degrade, never panic or go negative (B5's
+		// precedent one row up). Nothing legible fits, so render nothing.
+		return ""
+	}
+	if ansi.StringWidth(legend) <= budget {
+		return legend
+	}
+	if budget <= ansi.StringWidth(legendEllipsis) {
+		// No room for content *and* a marker. The marker alone is the more
+		// honest of the two: it says "there is more here" rather than showing
+		// an arbitrary first character as if it were the whole legend.
+		return legendEllipsis
+	}
+	return ansi.Truncate(legend, budget, legendEllipsis)
 }
 
 // --- chronicle (panels/chronicle.md, patterns/chronicle-grammar.md) ---

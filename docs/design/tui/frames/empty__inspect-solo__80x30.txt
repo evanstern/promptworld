@@ -23,5 +23,5 @@ Ashgrove — tick 0 ·  · PAUSED · speed  (0.0 t/s) [lesson] [8 villagers]
 │ ♠ · · · · · · · · · · · · · · · · · · · · · · · · · · ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ │
 │ · · · · · · · · C · · · · · · · · · · · · · · · · · · · · ♠ ♠ ♠ ♠ ♠ ♠ ♠ ♠ │
 ╰───────────────────────────────────────────────────────────────────────────╯
-day · [10,24–46,43 of 64×64] · ~water ♠wood "forage ^rock ,quarried ᴥden ▲fire △cold ⌂shelter ▣oven %pile ☐chest ▤▩wall ·path Ggru ✝grave ░marsh ▒sand Sstranger ◇site ┄wallplan ◦zone · agents by initial (lowercase asleep, †dead) · arrows pan, c center · needs-critical & suppressed-mind mark agents, dying marks fire — needs-critical wins when both apply
+day · [10,24–46,43 of 64×64] · ~water ♠wood "forage ^rock ,quarried ᴥden ▲fire …
 1-5 panes · G console · space pause · q quit · ? help

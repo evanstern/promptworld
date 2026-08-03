@@ -131,6 +131,44 @@ panel's last row; drop the legend before shrinking the viewport when rows
 get scarce (this page's own shed order, distinct from `patterns/layout.md`'s
 chrome-row fold order, which sheds this legend *first* system-wide).
 
+### Width policy (spec 114, TASK-191)
+
+"Content grows the line" now has a stated terminus. The line grows until it
+reaches the width available to it, then **clamps with a trailing `…`** —
+`clipLegend` (`internal/tui/views.go`), built on `ansi.Truncate` so the cut is
+ANSI-safe and measured in display columns rather than runes.
+
+- **One row, always.** Overflow is never remedied by wrapping to a second row:
+  that trades a horizontal violation for a vertical one, and this panel's rows
+  are the scarcer resource. Consistent with the shed order above, which drops
+  the legend *entirely* before the viewport shrinks — it never grows downward.
+- **Clamped at the render site, per path.** The narrow fallback (`mapView`)
+  clamps to `m.width`, because its legend renders outside the map box and the
+  whole terminal width is genuinely available to it. The widescreen panel
+  (`mapPanelView`) clamps to `cols-4` — the box interior after `.Width(cols-2)`
+  and `Padding(0,1)`.
+- **Truncation is signalled.** A shortened legend ends in `…`; a legend that
+  fits carries no marker and is not padded. Both halves are pinned
+  (`legend_width_test.go`).
+- **Monotonic in width.** Widening the terminal never shows less legend.
+- **What is lost first.** Truncation eats the tail, and the composition order
+  is the priority order: day phase and viewport extent survive, the glyph key
+  is where the cut usually lands, and the three prose notes plus all
+  pile/chest inspection detail are the first casualties at 80 columns.
+  Segment-priority shedding — dropping inspection detail *before* cutting into
+  the terrain key — is deliberately NOT implemented; it would change what the
+  legend says rather than only how wide it is. Registered as future work in
+  `specs/114-map-legend-width/spec.md` "Out of Scope".
+
+**Reconciliation note (authority vs. evidence).** Before spec 114 this page
+asserted a legend that "grows the line," and the frames showed a legend that
+grew to 355 columns inside an 80-column terminal — wrapping into roughly five
+rows and pushing the map off-screen — because the narrow path applied no clamp
+at all. The doc described an intent the renderer had no terminus for. The two
+are now reconciled deliberately, in the direction of bounding the intent rather
+than blessing the overflow, and `cmd/promptworld/frames_test.go`'s
+`TestFramesNeverExceedDeclaredWidth` keeps them reconciled.
+
 **Condition-overlay naming** (spec 060 US2 AS5, FR-003): the legend also
 carries a prose note (`conditionOverlayNote`, `internal/tui/help.go`) naming
 the needs-critical/suppressed-mind/dying-fire marker styles above — the
@@ -209,6 +247,20 @@ legend-line pressure. Original deferral text, preserved for its own history:
 > Deferred — re-open if playtesting shows legend-line overflow pain becomes
 > the actual bottleneck (not addressed by a look-cursor anyway, which doesn't
 > touch the legend).
+
+**That deferral's own trigger has now fired, and is resolved (spec 114,
+TASK-191).** "Legend-line overflow pain" did become real — a frame audit found
+the legend rendering at 354–356 columns into an 80-column terminal across 21
+committed frames, wrapping into roughly five rows and displacing the map. The
+deferral text anticipated this and was right about one thing in particular: a
+look-cursor would not have helped, because it "doesn't touch the legend." The
+fix was the width policy above, not a fourth inspection modality.
+
+Nothing here re-opens the look-cursor question, which shipped separately under
+spec 074 for its own unrelated reason (decision 4, "the map cannot be
+interrogated"). This paragraph closes the *overflow* branch of the deferral
+only; no unresolved deferral on this page now names legend overflow as its
+re-open trigger.
 
 **Cursor rendering**: a background-highlight style transform
 (`styleLookCursor`, `lipgloss.Reverse(true)`) over whatever glyph `tile()`
