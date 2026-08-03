@@ -3,10 +3,10 @@ id: TASK-173
 title: >-
   Absence attribution: harvest-explained map corrections shouldn't spawn a
   village-wide mystery
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-30 16:41'
-updated_date: '2026-08-03 00:37'
+updated_date: '2026-08-03 00:51'
 labels: []
 dependencies: []
 ordinal: 141000
