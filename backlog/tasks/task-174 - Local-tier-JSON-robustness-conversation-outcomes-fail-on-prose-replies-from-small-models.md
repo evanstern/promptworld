@@ -3,10 +3,10 @@ id: TASK-174
 title: >-
   Local-tier JSON robustness: conversation outcomes fail on prose replies from
   small models
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-07-30 16:42'
-updated_date: '2026-08-03 02:59'
+updated_date: '2026-08-03 06:11'
 labels: []
 dependencies: []
 ordinal: 142000
@@ -27,10 +27,10 @@ Spec: specs/103-conversation-outcome-json
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 Conversation-outcome calls on the local tier use constrained/JSON-mode decoding (as TASK-58 did for the planner) or fall back to cloud on parse failure
-- [ ] #2 Outcome parse-failure rate is measurable, and a soak on a small local model shows abandoned-outcome rate materially reduced from playtest-1's baseline (22 failed outcomes / 21% scenes abandoned)
+- [x] #2 Outcome parse-failure rate is measurable, and a soak on a small local model shows abandoned-outcome rate materially reduced from playtest-1's baseline (22 failed outcomes / 21% scenes abandoned)
 - [x] #3 Spec phase: Transport — restore structured outputs (internal/llm)
 - [x] #4 Spec phase: Conversation schemas (internal/mind)
-- [ ] #5 Spec phase: Measurement + soak
+- [x] #5 Spec phase: Measurement + soak
 - [x] #6 Spec phase: Grounding
 <!-- AC:END -->
 
@@ -60,4 +60,18 @@ The MLX failure was operator world config, not the default: ~/.promptworld/world
 AC#2 re-measurement therefore rides the running qwen3.6 soak, which spec 109 names as exactly that. Controlled A/B — same seed 1337, same binary, same stage-4 dials, only the local provider differs. At 6.54 game-days / 70 founded scenes it reads outfail=0 outkill=0 uttkill=0, against the gemma4:12b-mlx run's 10 outcome parse failures / 3 outcome kills / 11 utterance kills at 90 scenes. Needs ~20 more founded scenes for like-for-like parity before AC#2 can be closed on it; the watcher exits at 90.
 
 Raw evidence for both runs preserved out of perishable job scratch to ~/Claude/soak-evidence/2026-08-02/ — see board doc-1. Both world.db captured via sqlite3 .backup, integrity_check ok.
+
+spec-bridge sync: Transport — restore structured outputs (internal/llm): 2/2 · Conversation schemas (internal/mind): 3/3 · Measurement + soak: 1/1 · Grounding: 1/1 — status In Progress → Done
+
+T006 FINAL soak evidence 2026-08-03 — SC-001 DEMONSTRATED, AC#2 PASSES at 0. Soak B on qwen3.6:latest (the spec 109 default merged in PR #155): 92 founded scenes over 9.37 game-days, outcome_parse_failures=0, abandoned_scenes=0, abandoned_pct=0.0. Breakdown: landed=90, suppressed=2 ('nothing new since last exchange' — the novelty gate working as designed, not a failure), retried=1 (utterance-route truncation, recovered, scene completed). Exactly one imperfect event in 92 scenes and it was neither terminal nor on the route this spec fixed. Against the playtest-1 baseline of 22 outcome parse failures and 62/293 = 21.2% abandoned. Under the operator's binding AC#2 ruling (scenes abandoned BECAUSE the outcome could not be parsed): 0/92 here vs 3/90 on the old model. Full three-way comparison table, the root-cause narrative, and the reproduction note in docs/design/evidence/task-174/results.md, which replaces the earlier PARTIAL write-up.
+
+SUPERSEDES the 2026-08-01 interim note and its correction: the n=23 reading of soak A reported AC#2 as 0 and was WRONG (true value 3 at n=90). That error is recorded in results.md rather than quietly dropped, because it nearly closed this task on a false negative. Soak B's zero is credible for two independent reasons: it is a zero over 92 scenes, and it was PREDICTED in advance by a direct mechanism probe (the constraint provably reaches the sampler on gguf and is provably discarded on MLX) rather than discovered by looking at outcomes.
+
+Spun out of this task's investigation: TASK-184/spec 109 (default local model → gguf, MLX hazard documented, merged PR #155), TASK-185 (daemon-start capability probe), TASK-186 (dead-path scheduling leak), and TASK-173 re-opened (absence storyline resurfaces past the 4-day window that justified dropping it). TASK-183 re-scoped by this evidence: the utterance route's failure changed character from 'prose, no raw payload' to 'well-formed JSON, truncated' — a token-budget problem, not a schema-adherence one.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+All spec tasks complete (Transport — restore structured outputs (internal/llm): 2/2 · Conversation schemas (internal/mind): 3/3 · Measurement + soak: 1/1 · Grounding: 1/1). Derived Done by spec-bridge sync.
+<!-- SECTION:FINAL_SUMMARY:END -->
