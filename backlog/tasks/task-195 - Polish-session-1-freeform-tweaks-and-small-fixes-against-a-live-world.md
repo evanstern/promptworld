@@ -4,7 +4,7 @@ title: 'Polish session 1: freeform tweaks and small fixes against a live world'
 status: In Progress
 assignee: []
 created_date: '2026-08-03 17:33'
-updated_date: '2026-08-03 18:14'
+updated_date: '2026-08-03 18:18'
 labels: []
 dependencies: []
 ordinal: 177001
@@ -223,4 +223,31 @@ behavior rather than fixing a diagnosed defect, which normally argues for a spec
 because the only genuinely policy-shaped knob — whether it can block — is answered by the session
 gate's existing non-blocking contract, leaving a threshold constant and a report field. If the
 threshold should ever gate rather than inform, that is a spec.
+
+### Decision 3 — SHIPPED on branch (commit b5b9fd0a, pushed 2026-08-03)
+
+`WIKI_FOOTPRINT_THRESHOLD = 30` and a per-branch footprint pass in `runSession`, reusing the
+existing `wikiSourcesOverlap`. `wikiNotes=N` now rides each branch line in the text report and the
+`--json` branch objects; the `wiki-footprint` finding is `warn` and fires at or above the threshold.
+
+**Live proof** — the gate run from this worktree, correctly reporting this session's own branch:
+
+```
+branches:
+  guide-quickstart-outline      task=-         baseLag=6  dirty=false  wikiNotes=0   cleanupEligible=false
+  task-173-absence-attribution  task=TASK-173  baseLag=8  dirty=false  wikiNotes=0   cleanupEligible=true (ancestor)
+  task-195-polish-session-1     task=TASK-195  baseLag=5  dirty=true   wikiNotes=17  cleanupEligible=false
+```
+
+17 matches the independent `grep -rl` union computed during the discussion — two derivations, same
+number. Below threshold, so no warning, as intended.
+
+**Tests** — three added to `scripts/check-merge-drift.test.mjs`, bracketing the threshold with no
+slack: a fixture branch touching a source pinned by exactly 30 notes warns at severity `warn` and
+reports `wikiFootprint: 30`; a branch at 29 reports its count and does NOT warn; and session's exit
+code is unchanged with a threshold branch present. Full gate suite 34/34, no regressions.
+
+**Session footprint so far: 17 of 191 notes (9%)** — `internal/daemon/daemon.go` (12),
+`internal/llm/config.go` (6), five overlapping. `scripts/` is sourced by no wiki note, so decision 3
+added nothing to the grounding bill. 13 notes of headroom before the threshold trips.
 <!-- SECTION:NOTES:END -->
