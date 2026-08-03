@@ -13,7 +13,7 @@ sources:
   - internal/tui/lessons.go
   - internal/tui/reportcard.go
   - internal/tui/tiles.go
-verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
+verified_against: 9f7df6137c78506f9d5ab48809f6c2e4855da782
 ---
 
 # TUI client
@@ -30,6 +30,19 @@ per-step smooth on a coalescing-regime world rather than jumping at each
 `agent.path_started`'s arrival; `AdvanceTo(T)` only ever reaches the
 daemon's own posture at T (items scheduled strictly before T), so the
 replica can never lead the daemon's fold.
+
+**Construction seams (spec 112).** `New(w)` is a thin wrapper over an
+injectable `newModel(w, perUserState, now)`. `perUserState` bundles the three
+things that make an otherwise identical world render *differently on two
+machines*: the lessons-seen set and the unlocks record (both loaded once from
+the operator's home directory — [[instance-manager]]) and the writer that
+persists a lesson the moment it surfaces. `now` is the wall clock the lessons
+projection reads, behind `m.wallNow()`. `New` passes the live records and a
+nil clock, so an attached client constructs exactly as it always did; the
+design frame harness (`internal/tui/design.go`, `fixtures.go`) passes a canned
+record, a no-op writer and a frozen instant, which is what lets a dumped frame
+be byte-identical for every operator. Nothing in the render path consults
+either seam — see `docs/design/tui/frames/README.md`.
 
 ## Surfaces
 
