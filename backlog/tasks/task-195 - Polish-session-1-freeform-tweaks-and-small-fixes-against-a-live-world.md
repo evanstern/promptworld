@@ -4,7 +4,7 @@ title: 'Polish session 1: freeform tweaks and small fixes against a live world'
 status: In Progress
 assignee: []
 created_date: '2026-08-03 17:33'
-updated_date: '2026-08-03 19:02'
+updated_date: '2026-08-03 19:21'
 labels: []
 dependencies: []
 ordinal: 177001
@@ -66,12 +66,12 @@ Spec: specs/115-chronicle-feed-wrap
 - [ ] #3 All session work lands on a single branch and a single PR; no per-item task cards or PRs are created
 - [ ] #4 Operator visual QA passes on the live world for every shipped item before the PR is opened
 - [ ] #5 Grounding is done once at the end, in-branch: wiki re-pinned, player docs regenerated, tui-design amended where internal/tui changed, and the pr merge-drift gate is green
-- [ ] #6 Spec phase: Setup
-- [ ] #7 Spec phase: Foundational (blocking prerequisites)
-- [ ] #8 Spec phase: User Story 1 — A thought can be read to its end (P1) 🎯 MVP
-- [ ] #9 Spec phase: User Story 2 — The feed still reads as a table (P2)
-- [ ] #10 Spec phase: User Story 3 — Narrow panes degrade sensibly (P3)
-- [ ] #11 Spec phase: Row budget and evidence
+- [x] #6 Spec phase: Setup
+- [x] #7 Spec phase: Foundational (blocking prerequisites)
+- [x] #8 Spec phase: User Story 1 — A thought can be read to its end (P1) 🎯 MVP
+- [x] #9 Spec phase: User Story 2 — The feed still reads as a table (P2)
+- [x] #10 Spec phase: User Story 3 — Narrow panes degrade sensibly (P3)
+- [x] #11 Spec phase: Row budget and evidence
 - [ ] #12 Spec phase: Polish and cross-cutting
 <!-- AC:END -->
 
@@ -350,4 +350,59 @@ re-truncated. Capping would reproduce the original complaint in subtler form, si
 would still lose the end of the sentence; the row budget already bounds the feed by dropping the
 oldest events. The narrow dock's existing 3-line cap is retained as separate behavior. This is the
 one genuinely arguable call in the spec.
+
+### Spec 115 — IMPLEMENTED on branch (commits b93c7fe1, 5c98bfdd, pushed)
+
+31 of 32 spec tasks ticked; T032 is this note. Full `go test ./...` green, gate suite 34/34,
+`gofmt`/`go vet` clean, `check-tui-design --changed` exit 0, frame matrix matches a fresh dump.
+
+**Two things the plan did not predict.**
+
+1. *A defect in this change, caught by a pre-existing test.* `TestPreLadderGoldenFrames` failed
+   because routing every row through the wrap path collapsed the column padding on SHORT rows:
+   `wrapText` budgets on `strings.Fields`, and the feed's column padding is exactly a run of
+   spaces. Fixed by returning a fitting line verbatim and wrapping only the summary, never the
+   prefix. This is precisely the signal T031/SC-006 exists to catch, and it caught it.
+
+2. *A pre-existing defect that same fix repairs.* The narrow dock has always wrapped, so it has
+   always been sending every row through that collapsing path — its column padding was being
+   destroyed on rows that never needed wrapping, and the committed frames recorded the collapsed
+   form as if intended:
+
+   ```
+   -  19:12 moved Fern → (36,26)
+   +  19:12 moved       Fern → (36,26)
+   ```
+
+   This is why `scenario__home__*` frames changed despite this feature never touching that
+   fixture. **FR-009 was amended rather than left contradicting its own diff** — it promised
+   byte-identity for rows that fit, which is now true only of the full-width views — and the spec
+   carries a "Discovered during implementation" section stating what changed and why.
+
+**Frame churn (T032):** 8 frames, not the "large number" research R7 predicted — `mid-game__home`
+and `mid-game__solo` at 112/113/160, and `scenario__home` at 112/113. R7's estimate was wrong in
+the safe direction. The scenario pair is the dock repair above, not fixture churn.
+
+**Also found, deliberately NOT fixed here:** at 80 columns the frame's title row is 81 runes
+(`Ashgrove — tick … [8 villagers]`), present in the committed pre-115 frame. Same family as spec
+114's legend clamp, different surface. T023's assertion is scoped to the feed so this change does
+not silently adopt it. Candidate for the next polish item.
+
+### The wiki-footprint gate fired on its own session (decision 3, dogfooded)
+
+```
+task-195-polish-session-1  task=TASK-195  baseLag=10  dirty=false  wikiNotes=32  cleanupEligible=false
+  [warn] wiki-footprint: task-195-polish-session-1 touches sources for 32 of 191 wiki notes
+         (threshold 30) — the branch has reached across subsystems; ground it or stop widening
+```
+
+The pr gate independently reports exactly **32** `wiki-repin-missing` findings — two derivations
+from different code paths agreeing on the number. My pre-implementation projection was 30; the
+extra two come from `internal/tui/fixtures.go`, which I had not counted. The instrument works and
+its threshold is calibrated about right: this branch has in fact reached across `internal/llm`,
+`internal/daemon` and `internal/tui`, which is exactly the condition it was built to name.
+
+**Remaining before the PR:** step 8 (operator visual QA on the live world) and step 9 (wiki
+re-pin for 32 notes, player-docs regeneration, pr gate green). Step 9 is deliberately un-started
+per the session contract — grounding runs once, at the end.
 <!-- SECTION:NOTES:END -->
