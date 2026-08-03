@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-07-30 16:41'
-updated_date: '2026-08-03 02:09'
+updated_date: '2026-08-03 12:38'
 labels: []
 dependencies: []
 ordinal: 141000
@@ -30,14 +30,16 @@ Spec: specs/110-absence-attribution
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 A v6 re-run of the playtest-1 scenario is measured: rate of map corrections narrated as anomalies, before/after comparison recorded on this task
-- [ ] #2 A map correction explainable by known harvest activity (witnessed or rumored) is attributed as mundane and does not earn mystery-grade narrative weight
-- [ ] #3 Genuinely unexplained absences still surface as noteworthy (the guardian's real mysteries are not suppressed)
+- [x] #2 A map correction explainable by known harvest activity (witnessed or rumored) is attributed as mundane and does not earn mystery-grade narrative weight
+- [x] #3 Genuinely unexplained absences still surface as noteworthy (the guardian's real mysteries are not suppressed)
 - [ ] #4 Spec phase: Ledger and classifier
 - [ ] #5 Spec phase: Coalesced narration
 - [ ] #6 Spec phase: Prompt and telemetry
 - [ ] #7 Spec phase: Evidence
 - [ ] #8 Spec phase: Grounding and PR
 <!-- AC:END -->
+
+
 
 ## Implementation Notes
 
@@ -66,6 +68,19 @@ RUNBOOK AMENDMENT 2026-08-02 (operator-decided at the Phase 4 boundary): the evi
 PROGRESS: phases 1-3 complete on task-173-absence-attribution (spec 110). Phase 1 harvest ledger + classifier (f8bc0c1d); phases 2+3 coalesced narration, narrator prompt marking, telemetry (a57920e0). Model that served all dispatches: claude-opus-5 via .claude/agents/spec-implementer-opus.md. go build, full go test ./... , and go test -race ./internal/mind/... all green as of ad4e5030.
 
 MEASURED ROOT CAUSE (new, and it sharpens the card's own framing): the narrator never sees the memory layer's 6.7% absence share. It sees md.narrLines, the per-chapter 120-line buffer, where agent.map_corrected lines are the MAJORITY of every full day chapter - median 57%, peak 68% - and five of twelve day chapters OVERFLOWED the ring, evicting builds, gifts and assemblies while corrections survived by volume. A model told 'group by storyline, not by hour' and handed a list that is more than half 'found it gone' is summarising its input correctly. Also confirmed independently: 830 of 833 corrections match a chop/quarry at exactly those coordinates, every match within 3 game-days (716 same-day), exactly 3 genuine anomalies in 12.02 game-days.
+
+PHASE 4 EVIDENCE (replay + re-narration over the preserved soak worlds; artifact specs/110-absence-attribution/evidence.md, harness internal/mind/replay_evidence_test.go). The runbook's four required measurements:
+
+(a) ABSENCE-THEMED CHRONICLE ENTRIES: 32-50% before -> 3-7% after (gemma run A 32%->6%; qwen run A 41%->7%; qwen run B 50%->3%).
+(b) NAMED ABSENCE STORYLINE SLUG: present in 4 of 4 before-runs, carrying 19-43% of each run's entries (the-missing-trees 15/56, vanishing-landmarks 19/61, the-disappearance-of-res 7/37, vanishing-resources-and 12/28). NONE in any of the 3 after-runs. This is the decisive measurement.
+(c) HARVEST-EXPLAINED SHARE OF CORRECTIONS: run A 833 corrections, 830 attributed (99.6%), 3 unexplained, ZERO false attributions. Run B 457/452/5, zero false. Precision judged against ground truth built from the raw log, not from the ledger under test.
+(d) GENUINELY-UNEXPLAINED ABSENCES STILL SURFACE: run A's 3 are all one tile - a cache of goods at (61,6) with no chop or quarry anywhere in 132,299 events - and three villagers went for it on day 9, each keeping its own line in the pre-110 wording verbatim. Run B's 5 likewise. AC#3 holds.
+
+SC-002 (volume): corrections fall from 48-65% of each day chapter to 1-2%; attributed corrections contribute exactly one line per chapter across all 24 run-A and 13 run-B chapters; ring overflow on run A 5 chapters -> 0, recovering 130 non-correction lines that had been silently evicted. SC-004 100% precision. SC-006 both models. go build, go test ./... and go test -race ./internal/mind/... all green after the origin/main merge-in (58 commits, conflict-free - no main commit had touched internal/mind).
+
+SC-001 THRESHOLD RULING (operator, 2026-08-03): SC-001 split - storyline clause met outright, numeric clause ('at most 5%') missed on two of three after-runs at 6% and 7%. The implementer escalated rather than rounding it. Two facts bore on the ruling: the 5% threshold was derived from a baseline this spec miscomputed (18/90=20% mixed an entries numerator with a lines denominator; like-for-like it is 18/56=32%), and of the seven residual keyword matches across all after-runs NONE concerns a remembered map feature being gone - on what the criterion was written to catch the after-runs measure 0 of 122 entries. Operator ruled: tick AC#2, the storyline clause governs, since AC#2's words are 'does not earn mystery-grade narrative weight'. Stricter alternatives (tune until the letter passes; require a fresh 12-day live confirmation soak) were offered and declined. The miss is recorded in spec.md and evidence.md, not erased.
+
+RECORDED LIMITATION: replay exercises the narrator's input faithfully but re-runs its output against a live model, so this is evidence about the same 12.02 game-days rather than a fresh world's emergent dynamics, and it cannot exercise the narrator-to-villager feedback loop. The original re-open clause stands: if a later month-scale live run resurfaces an absence storyline, re-open with that evidence.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

@@ -36,27 +36,30 @@
 
 ## Phase 3: Measurement + soak
 
-- [ ] T006 PARTIAL (queries done, live soak remaining) — see `docs/design/evidence/task-174/results.md`. Soak per
-  the measurement-run recipe: seeded MEASURE world (never the playtest
-  world), conversation kind routed to gemma4:12b via Ollama, local-only
-  routes (no paid spend), run until ≥ 20 scenes founded. Compute the D6
+- [X] T006 Soak per the measurement-run recipe: seeded world (never the
+  playtest world), conversation kind routed to a local model, local-only
+  routes (no paid spend), run until >= 20 scenes founded. Compute the D6
   metrics (outcome parse-failure count; abandoned-scene rate) from
   `cog.outcome` events; record queries + counts + playtest-1 baseline (22
   outcome parse failures, 83 unusable, 62/293 = 21% abandoned) under
-  `docs/design/evidence/task-174/` (FR-005, SC-001). Implementer prepares +
-  runs; orchestrator reviews evidence.
-  DONE: `docs/design/evidence/task-174/queries.sql` (the reusable D6 query
-  file, verified against a live world.db) is committed. A real soak ran
-  ~25 min against this branch's own binary in a scratchpad-only world
-  (never `~/.promptworld/`); it reached 1 founded scene (a transport
-  timeout, not a parse failure) before the operator-set bounded window
-  elapsed. NOT DONE: the ≥20-scene target — the shared local-model host
-  was under heavy contention from other concurrent sweep lanes for the
-  whole window. Per instruction the soak's daemon and world were stopped
-  and deleted (nothing left running, nothing under `~/.promptworld/`
-  touched). Remaining: re-run with a longer/less-contended window and
-  record the final comparison table.
-
+  `docs/design/evidence/task-174/` (FR-005, SC-001).
+  **DONE 2026-08-03 — SC-001 demonstrated.** Full results, both soaks, and
+  the three-way comparison table in
+  `docs/design/evidence/task-174/results.md`; `queries.sql` is the reusable
+  D6 query file and runs unchanged against either world.
+  Headline (soak B, `qwen3.6:latest`, the spec 109 default): **92 founded
+  scenes over 9.37 game-days, 0 outcome parse failures, 0 abandoned
+  scenes** — against a playtest-1 baseline of 22 parse failures and
+  62/293 = 21% abandoned.
+  Soak A (`gemma4:12b-mlx`, 90 scenes / 11.97 game-days) measured 10 parse
+  failures and 3 scenes killed by one, which led to the root cause: Ollama's
+  MLX engine silently discards schema constraints, so spec 103's correct code
+  never reached the sampler. That produced TASK-184/spec 109 (default moved
+  to a gguf model, merged PR #155) and TASK-185 (daemon-start capability
+  probe). Soak B is the re-run on the new default.
+  Residual, re-scoping TASK-183: the say/utterance route's one remaining
+  retry changed character from "prose, no raw" to "well-formed JSON,
+  truncated" — a token-budget problem, not a schema-adherence one.
 ## Phase 4: Grounding
 
 - [X] T007 Wiki re-pins in-branch: `social-fabric-conversations` prose
