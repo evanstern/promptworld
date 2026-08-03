@@ -223,6 +223,26 @@ and needs the same checkpoint.
    bar — is a runbook amendment plus an operator ping, never an implementer decision note
    buried in a spec artifact.
 
+   **FIRED AND RESOLVED 2026-08-03 — the SC-001 threshold ruling.** Phase 4's evidence
+   split SC-001: its storyline clause passed outright (a named absence storyline in
+   **4 of 4** before-runs carrying 19–43% of entries, **0 of 3** after-runs), while its
+   numeric clause — "absence-themed entries at most 5%" — was missed on two of three
+   after-runs (6%, 7%, 3%). The implementer did **not** round it in the change's favour;
+   it escalated. Two facts then bore on the ruling: (i) the 5% threshold was derived from
+   a baseline this spec miscomputed (18/90 = 20%, mixing an entries numerator with a lines
+   denominator; like-for-like it is 18/56 = **32%**), so the number was never
+   authoritative; and (ii) of the seven residual keyword matches across all after-runs,
+   **none concerns a remembered map feature being gone** — they are a rumour that a
+   villager disappeared, a conversation about a desolate marsh, and similar. On the thing
+   the criterion was written to catch, the after-runs measure **0 of 122 entries**.
+   **Operator ruling: tick AC#2 — the storyline clause governs**, because AC#2's own words
+   are "does not earn mystery-grade narrative weight" and a named storyline carrying a
+   fifth to nearly half of a run's entries is precisely that. The operator was offered the
+   stricter alternatives (hold the card open and tune until the letter passes; or require
+   a fresh ≥12-game-day live confirmation soak) and chose this one. **The miss is recorded,
+   not erased** — it stands in `spec.md`'s SC-001 block and in `evidence.md`, so a later
+   reader sees what was measured, not only what was concluded.
+
 ## Done means
 
 - TASK-173 is **Done on the board via its own merged PR**, moved there by
