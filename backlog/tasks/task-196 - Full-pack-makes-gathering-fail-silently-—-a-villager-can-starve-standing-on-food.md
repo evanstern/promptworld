@@ -3,9 +3,10 @@ id: TASK-196
 title: >-
   Full pack makes gathering fail silently — a villager can starve standing on
   food
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-08-03 19:57'
+updated_date: '2026-08-03 19:58'
 labels:
   - bug
   - sim
