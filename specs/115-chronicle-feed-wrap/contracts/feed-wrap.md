@@ -22,8 +22,11 @@ The tick is right-aligned to the widest tick in the visible window; the type is 
 padded to the widest type in the visible window, capped at 26 runes (solo) or 10 (dock). Both
 widths are recomputed for every frame from exactly the rows about to render.
 
-A row whose summary fits within the pane renders on one line and is **byte-identical to its
-pre-115 rendering**.
+A row whose summary fits within the pane renders on one line, **verbatim** — the prefix's column
+padding is never reflowed. In the full-width views this is byte-identical to the pre-115
+rendering. In the narrow dock it is not: the dock's pre-115 wrap path collapsed every run of
+whitespace, so its column padding was being destroyed on rows that never needed wrapping. The
+padded form is correct and is what this contract requires.
 
 ## §2 Wrap budget
 

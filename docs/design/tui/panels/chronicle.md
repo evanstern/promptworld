@@ -41,11 +41,30 @@ derived advancement, not via feed rows ([map](map.md)).
 - Auto-follows the tail: new events append at the bottom and the view sticks to
   newest. No manual scrolling while running — pausing is the way to read closely
   (the daemon halts, so nothing scrolls away; this is deliberate).
-- Narrow widths (dock) drop the tick column, show the type's short name
-  (last `.` segment), and wrap an event to ≤ 3 lines then truncate with `…`;
-  solo width keeps the tick column and one line per event, truncating with
-  `…`. Full verbatim payload is always in the always-on detail pane below
-  (Mode 2) — no extra keypress required.
+- Narrow widths (dock, under 60 columns) drop the tick column and show the
+  type's short name (last `.` segment); every wider surface keeps the tick
+  column and the full type name.
+- **Wrapping (spec 115).** A row whose summary fits renders on one line,
+  verbatim — the column padding is never reflowed. A row that overflows wraps
+  between words, and every continuation line begins at that row's own summary
+  column, so the tick/time/type rail stays an unbroken left margin and the
+  prose forms one aligned block:
+
+  ```
+   396000 20:00  agent.thought  Ash thought: "I keep coming back to the
+                                chest by the river…"
+  ```
+
+  The indent is the row's prefix width, recomputed every frame from the
+  visible window's column measurements — never a constant, because a wider
+  tick or a longer type scrolling into view legitimately moves the summary
+  column. Where the indent would leave under 24 columns of text the row wraps
+  at full width with no indent at all: a partial indent aligns to nothing.
+
+  Wrap depth is unbounded at full width — a long thought is shown to its end,
+  since the feed is the only place it appears — and capped at 3 lines with `…`
+  in the narrow dock, where an unbounded row would evict the rest of the feed.
+  Full verbatim payload is always in the always-on detail pane below (Mode 2).
 - `r` toggles raw feed ↔ narrated view (existing narrator entries), `a` / `t`
   filter by agent / thread — existing behaviors, preserved in both modes.
 - High-salience alert types render whole-line bold red (`styleFeedAlert`) at

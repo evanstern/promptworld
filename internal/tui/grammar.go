@@ -421,11 +421,11 @@ func fieldsWithOffsets(s string) []fieldSpan {
 // correctly across the rejoin. Either way, wrapping/truncating always
 // happens on plain runes first — a physical line is built, THEN painted —
 // so truncation can never land mid-ANSI-escape (R4).
-func styleWrapLine(prefix string, summary []seg, width, maxWrap int) []styledLine {
+func styleWrapLine(prefix string, summary []seg, width, maxWrap, indent int) []styledLine {
 	full, roles := flattenLineRoles(prefix, summary)
 
-	if maxWrap <= 1 {
-		lines := wrapOrTruncatePlain(full, width, 1)
+	if maxWrap == 1 {
+		lines := wrapOrTruncatePlain(full, width, 1, 0)
 		r := []rune(lines[0])
 		lr := make([]styleRole, len(r))
 		for i := range r {
@@ -441,17 +441,40 @@ func styleWrapLine(prefix string, summary []seg, width, maxWrap int) []styledLin
 	if width < 10 {
 		width = 10
 	}
-	if maxWrap < 1 {
-		maxWrap = 1
+	fullRunes := []rune(full)
+	// Fits: emit verbatim, so the column padding survives untouched. Mirrors
+	// wrapOrTruncatePlain's fits-branch — see the whitespace-collapse note
+	// there for why this is load-bearing rather than an optimization.
+	if len(fullRunes) <= width {
+		lr := make([]styleRole, len(fullRunes))
+		for i := range fullRunes {
+			if i < len(roles) {
+				lr[i] = roles[i]
+			}
+		}
+		return []styledLine{{Runes: fullRunes, Roles: lr}}
 	}
-	fields := fieldsWithOffsets(full)
+	head, tail, indent := splitWrapHead(full, width, indent)
+	headRunes := []rune(head)
+	// Only the summary is field-wrapped; `roleAt` shifts each field's offset
+	// back over the head so per-rune roles still line up with the full line.
+	roleAt := func(i int) styleRole {
+		if i += len(headRunes); i >= 0 && i < len(roles) {
+			return roles[i]
+		}
+		return styleRoleText
+	}
+	// textWidth budgets the wrapped summary; `width` stays the full pane width
+	// so the ellipsis trim below still measures whole physical lines.
+	textWidth := width - indent
+	fields := fieldsWithOffsets(tail)
 	type group struct{ fields []fieldSpan }
 	var groups []group
 	var cur []fieldSpan
 	curLen := 0
 	for _, f := range fields {
 		wl := len(f.Text) // byte length — matches wrapText's own budgeting
-		if curLen > 0 && curLen+1+wl > width {
+		if curLen > 0 && curLen+1+wl > textWidth {
 			groups = append(groups, group{cur})
 			cur = nil
 			curLen = 0
@@ -469,7 +492,7 @@ func styleWrapLine(prefix string, summary []seg, width, maxWrap int) []styledLin
 		return []styledLine{{}}
 	}
 
-	truncated := len(groups) > maxWrap
+	truncated := maxWrap != wrapUnbounded && len(groups) > maxWrap
 	if truncated {
 		groups = groups[:maxWrap]
 	}
@@ -477,6 +500,27 @@ func styleWrapLine(prefix string, summary []seg, width, maxWrap int) []styledLin
 	for gi, g := range groups {
 		var lineRunes []rune
 		var lineRoles []styleRole
+		switch {
+		case gi == 0:
+			// The prefix rides the first line verbatim, roles intact.
+			lineRunes = append(lineRunes, headRunes...)
+			for k := range headRunes {
+				if k < len(roles) {
+					lineRoles = append(lineRoles, roles[k])
+				} else {
+					lineRoles = append(lineRoles, styleRoleText)
+				}
+			}
+		case indent > 0:
+			// Continuation lines carry the hanging indent (contract §3). The
+			// spaces get the plain text role: they are layout, not content,
+			// and painting them with the family tint would smear background
+			// color across the left rail on a selected row.
+			for k := 0; k < indent; k++ {
+				lineRunes = append(lineRunes, ' ')
+				lineRoles = append(lineRoles, styleRoleText)
+			}
+		}
 		for fi, f := range g.fields {
 			if fi > 0 {
 				lineRunes = append(lineRunes, ' ')
@@ -485,7 +529,7 @@ func styleWrapLine(prefix string, summary []seg, width, maxWrap int) []styledLin
 			fr := []rune(f.Text)
 			lineRunes = append(lineRunes, fr...)
 			for k := range fr {
-				lineRoles = append(lineRoles, roles[f.Start+k])
+				lineRoles = append(lineRoles, roleAt(f.Start+k))
 			}
 		}
 		// Mirrors wrapOrTruncatePlain's dock branch exactly: once the group
@@ -539,11 +583,11 @@ func isLabeledVoiceFamily(f eventFamily) bool {
 // rule: solo/narrow keep one line per event and truncate with "…"; dock
 // wraps to at most maxWrap lines before truncating the last one. Pure and
 // ANSI-free so wrap/truncate boundaries are directly testable.
-func wrapOrTruncatePlain(s string, width, maxWrap int) []string {
+func wrapOrTruncatePlain(s string, width, maxWrap, indent int) []string {
 	if width < 10 {
 		width = 10
 	}
-	if maxWrap <= 1 {
+	if maxWrap == 1 {
 		r := []rune(s)
 		if len(r) <= width {
 			return []string{s}
@@ -553,8 +597,29 @@ func wrapOrTruncatePlain(s string, width, maxWrap int) []string {
 		}
 		return []string{string(r) + "…"}
 	}
-	lines := wrapText(s, width)
-	if len(lines) <= maxWrap {
+	// A line that fits is returned VERBATIM. wrapText budgets on
+	// strings.Fields, which collapses runs of whitespace — and the column
+	// padding in a feed prefix is exactly such a run. Sending a short row
+	// through the wrap path would silently reflow `60 06:01  agent.moved   Ash`
+	// into `60 06:01 agent.moved Ash`, destroying the column alignment on the
+	// rows that never needed wrapping at all (FR-009).
+	if r := []rune(s); len(r) <= width {
+		return []string{s}
+	}
+	head, tail, indent := splitWrapHead(s, width, indent)
+	// Only the summary is wrapped; the prefix survives whitespace-intact as
+	// the head of the first line, and every continuation line gets the indent
+	// in its place.
+	chunks := wrapText(tail, width-indent)
+	if len(chunks) == 0 {
+		return []string{s}
+	}
+	lines := make([]string, 0, len(chunks))
+	lines = append(lines, head+chunks[0])
+	for _, c := range chunks[1:] {
+		lines = append(lines, strings.Repeat(" ", indent)+c)
+	}
+	if maxWrap == wrapUnbounded || len(lines) <= maxWrap {
 		return lines
 	}
 	lines = lines[:maxWrap]
@@ -564,6 +629,47 @@ func wrapOrTruncatePlain(s string, width, maxWrap int) []string {
 	}
 	lines[maxWrap-1] = string(last) + "…"
 	return lines
+}
+
+// wrapUnbounded is the wrap budget meaning "as many lines as the text needs"
+// (spec 115 contract §2). The budget's full domain is: 0 unbounded, 1 truncate
+// to a single line with "…", >1 wrap capped at that many lines with "…" on the
+// last. It is 0 rather than a negative sentinel so the zero value of an
+// unset budget is the permissive one — a caller that forgets to choose gets
+// readable output, never silent truncation.
+const wrapUnbounded = 0
+
+// minWrapTextWidth is the narrowest text column worth indenting into (spec 115
+// FR-006, research R4). Below roughly four or five average words, greedy
+// wrapping produces more line breaks than words per line, and a hanging indent
+// costs more than the alignment is worth.
+const minWrapTextWidth = 24
+
+// resolveWrapIndent applies the all-or-nothing narrow-pane fallback: an indent
+// that would leave less than minWrapTextWidth of text collapses to zero rather
+// than shrinking. A partial indent aligns to nothing — neither the summary
+// column nor the margin — so alignment is exact or absent.
+func resolveWrapIndent(width, indent int) int {
+	if indent < 0 || width-indent < minWrapTextWidth {
+		return 0
+	}
+	return indent
+}
+
+// splitWrapHead divides a flattened feed line into the prefix that must survive
+// wrapping verbatim and the summary that may be reflowed, returning the
+// resolved indent alongside them. Both wrap renderers call this so they cut at
+// precisely the same rune and cannot drift (contract §3, T009).
+//
+// An indent at or past the end of the line degrades to zero: there is no
+// summary to wrap, so there is nothing to align to.
+func splitWrapHead(s string, width, indent int) (head, tail string, resolved int) {
+	r := []rune(s)
+	resolved = resolveWrapIndent(width, indent)
+	if resolved >= len(r) {
+		resolved = 0
+	}
+	return string(r[:resolved]), string(r[resolved:]), resolved
 }
 
 // --- inspector (paused expand): verbatim stored event, annotated ---

@@ -4,41 +4,41 @@ Ashgrove — tick 396000 · day 5 20:00 · running · speed 8x (8.0 t/s)
 │ CHRONICLE · r narrated ↔ raw · a/t filter                                                                                                                    │
 │ raw feed · no narrated entries yet — the narrator writes at day and night boundaries                                                                         │
 │                                                                                                                                                              │
-│ 390295 18:24  agent.saw             Hazel saw tree at (23,34)                                                                                                │
-│ 390458 18:27  agent.moved           Oak → (30,40)                                                                                                            │
-│ 390621 18:30  clock.speed_set       speed=8x                                                                                                                 │
-│ 390784 18:33  agent.moved           Ash → (44,9)                                                                                                             │
-│ 390947 18:35  agent.intent_set      Birch intends forage (reflex) → (51,14)                                                                                  │
-│ 391110 18:38  agent.moved           Cedar → (19,19)                                                                                                          │
-│ 391273 18:41  agent.intent_done     Rowan finished                                                                                                           │
-│ 391436 18:43  sim.forage_regrown    forage regrew at (32,29)                                                                                                 │
-│ 391599 18:46  agent.saw             Hazel saw tree at (39,34)                                                                                                │
-│ 391762 18:49  agent.moved           Oak → (46,40)                                                                                                            │
-│ 391925 18:52  clock.speed_set       speed=8x                                                                                                                 │
-│ 392088 18:54  agent.moved           Ash → (20,9)                                                                                                             │
-│ 392251 18:57  agent.intent_set      Birch intends forage (reflex) → (27,14)                                                                                  │
-│ 392414 19:00  agent.moved           Cedar → (35,19)                                                                                                          │
-│ 392577 19:02  agent.intent_done     Rowan finished                                                                                                           │
-│ 392740 19:05  sim.forage_regrown    forage regrew at (48,29)                                                                                                 │
-│ 392903 19:08  agent.saw             Hazel saw tree at (15,34)                                                                                                │
-│ 393066 19:11  agent.moved           Oak → (22,40)                                                                                                            │
-│ 393229 19:13  clock.speed_set       speed=8x                                                                                                                 │
-│ 393392 19:16  agent.moved           Ash → (36,9)                                                                                                             │
-│ 393555 19:19  agent.intent_set      Birch intends forage (reflex) → (43,14)                                                                                  │
-│ 393718 19:21  agent.moved           Cedar → (51,19)                                                                                                          │
-│ 393881 19:24  agent.intent_done     Rowan finished                                                                                                           │
-│ 394044 19:27  sim.forage_regrown    forage regrew at (24,29)                                                                                                 │
-│ 394207 19:30  agent.saw             Hazel saw tree at (31,34)                                                                                                │
-│ 394370 19:32  agent.moved           Oak → (38,40)                                                                                                            │
-│ 394533 19:35  clock.speed_set       speed=8x                                                                                                                 │
-│ 394696 19:38  agent.slept           Fern fell asleep                                                                                                         │
-│ 394859 19:40  agent.slept           Hazel fell asleep                                                                                                        │
-│ 395022 19:43  gru.attacked          the gru attacked Ash · health → 40                                                                                       │
-│ 395185 19:46  agent.died            Oak died: starvation                                                                                                     │
-│ 395348 19:49  agent.died            Sage died: exposure                                                                                                      │
-│ 395511 19:51  sim.neglect_detected  Birch is dangerously cold and has done nothing about it (warmth 0)                                                       │
-│ 395674 19:54  agent.moved           Cedar → (24,31)                                                                                                          │
-│ 395837 19:57  agent.intent_done     Rowan finished                                                                                                           │
+│ 390947 18:35  agent.intent_set          Birch intends forage (reflex) → (51,14)                                                                              │
+│ 391110 18:38  agent.moved               Cedar → (19,19)                                                                                                      │
+│ 391273 18:41  agent.intent_done         Rowan finished                                                                                                       │
+│ 391436 18:43  sim.forage_regrown        forage regrew at (32,29)                                                                                             │
+│ 391599 18:46  agent.saw                 Hazel saw tree at (39,34)                                                                                            │
+│ 391762 18:49  agent.moved               Oak → (46,40)                                                                                                        │
+│ 391925 18:52  clock.speed_set           speed=8x                                                                                                             │
+│ 392088 18:54  agent.moved               Ash → (20,9)                                                                                                         │
+│ 392251 18:57  agent.intent_set          Birch intends forage (reflex) → (27,14)                                                                              │
+│ 392414 19:00  agent.moved               Cedar → (35,19)                                                                                                      │
+│ 392577 19:02  agent.intent_done         Rowan finished                                                                                                       │
+│ 392740 19:05  sim.forage_regrown        forage regrew at (48,29)                                                                                             │
+│ 392903 19:08  agent.saw                 Hazel saw tree at (15,34)                                                                                            │
+│ 393066 19:11  agent.moved               Oak → (22,40)                                                                                                        │
+│ 393229 19:13  clock.speed_set           speed=8x                                                                                                             │
+│ 393392 19:16  agent.moved               Ash → (36,9)                                                                                                         │
+│ 393555 19:19  agent.intent_set          Birch intends forage (reflex) → (43,14)                                                                              │
+│ 393718 19:21  agent.moved               Cedar → (51,19)                                                                                                      │
+│ 393881 19:24  agent.intent_done         Rowan finished                                                                                                       │
+│ 394044 19:27  sim.forage_regrown        forage regrew at (24,29)                                                                                             │
+│ 394207 19:30  agent.saw                 Hazel saw tree at (31,34)                                                                                            │
+│ 394370 19:32  agent.moved               Oak → (38,40)                                                                                                        │
+│ 394533 19:35  clock.speed_set           speed=8x                                                                                                             │
+│ 394696 19:38  agent.slept               Fern fell asleep                                                                                                     │
+│ 394859 19:40  agent.slept               Hazel fell asleep                                                                                                    │
+│ 395022 19:43  gru.attacked              the gru attacked Ash · health → 40                                                                                   │
+│ 395185 19:46  agent.died                Oak died: starvation                                                                                                 │
+│ 395348 19:49  agent.died                Sage died: exposure                                                                                                  │
+│ 395511 19:51  sim.neglect_detected      Birch is dangerously cold and has done nothing about it (warmth 0)                                                   │
+│ 395674 19:54  agent.moved               Cedar → (24,31)                                                                                                      │
+│ 395837 19:57  agent.intent_done         Rowan finished                                                                                                       │
+│ 396000 20:00  agent.thought             Ash thought: "I keep coming back to the chest by the river and whether anyone actually saw who opened it, because    │
+│                                         nobody will say a word about it while Rowan is in earshot." (planner)                                                │
+│ 396163 20:02  social.conversation_turn  Birch→Cedar "If the forage upriver is really gone we should say so at the meeting tonight instead of each of us      │
+│                                         quietly walking further every morning and pretending otherwise."                                                     │
 │                                                                                                                                                              │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 The gru just attacked a villager — a real threat, not a random event.

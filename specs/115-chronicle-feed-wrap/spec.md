@@ -181,7 +181,13 @@ text column retains a usable minimum width and no line exceeds the pane.
   supported size.
 - **FR-008**: The feed MUST continue to honor its row budget exactly once events can occupy
   multiple rows, and the most recent event MUST remain visible.
-- **FR-009**: Events whose summary fits on one line MUST render byte-identically to today.
+- **FR-009**: Events whose summary fits on one line MUST render with their column padding
+  intact — the left rail is never reflowed. In the full-width views this means
+  byte-identical to today. **In the narrow dock it does not**, and deliberately so: the dock
+  already wrapped, and its wrap path collapsed every run of whitespace, so its column padding
+  was being destroyed on rows that never needed wrapping at all. Repairing that is a
+  consequence of this feature, not a regression, and it changes committed dock frames. See the
+  "Discovered during implementation" note below.
 - **FR-010**: Wrapping MUST preserve each character's styling role, so that wrapped prose is
   colored exactly as unwrapped prose is.
 - **FR-011**: A selected wrapped event MUST render as one coherent selection across all of its
@@ -217,6 +223,32 @@ text column retains a usable minimum width and no line exceeds the pane.
   invisible for the mechanical events that make up most of the feed.
 - **SC-007**: The committed frame matrix contains at least one visibly wrapped, indented event,
   so the behavior can be reviewed from frames alone.
+
+## Discovered during implementation
+
+**The narrow dock's column alignment was already broken.** The dock has wrapped since before
+this feature, and its wrap path budgeted with a routine that collapses runs of whitespace —
+which is exactly what the feed's column padding is made of. Every dock row, including short
+ones that never needed wrapping, was therefore reflowed from
+
+```
+19:12 moved       Fern → (36,26)
+```
+
+to
+
+```
+19:12 moved Fern → (36,26)
+```
+
+losing the type column entirely. Nobody had noticed, because the committed frames recorded the
+collapsed form as if it were intended.
+
+The fix this feature needed anyway — return a line that fits verbatim, and wrap only the
+summary — repairs it. Committed `mid-game` and `scenario` dock frames change as a result,
+including frames for a fixture this feature never touched. That is the repair showing up, not
+drift, and FR-009 above was amended to say so rather than claim a byte-identity the diff
+contradicts.
 
 ## Assumptions
 

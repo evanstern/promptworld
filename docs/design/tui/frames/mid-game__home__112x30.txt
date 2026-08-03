@@ -5,19 +5,19 @@ Ashgrove — tick 396000 · day 5 20:00 · running · speed 8x (8.0 t/s)
 │ · · · · · · · · · ▒ ▒ ▒ ▒ ~ ~ " · · · · ^ · · · · ^  │ │ ─────────────────────────────────────────────────── │
 │ · · · · · · · · ▒ ~ ~ ~ ~ ~ ~ A · · · · · · · · · ^  │ │ raw feed · no narrated entries yet — the narrator w │
 │ · · · · · · · " ~ ~ ~ ~ ~ ~ ~ ░ · · · · · · · · · ^  │ │                                                     │
-│ · · · · · " ░ ~ ~ ~ ~ ~ ~ ~ ~ ░ · · · · · · · · · ·  │ │ 19:30 saw Hazel saw tree at (31,34)                 │
-│ · · · · · ░ ~ ~ ~ ~ ~ ~ ~ ~ ~ ♠ · · · · · · · · · ·  │ │ 19:32 moved Oak → (38,40)                           │
-│ · · · · ░ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ░ ░ · · · · · · · ·  │ │ 19:35 speed_set speed=8x                            │
-│ · · · · ░ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ " · · · · · · ·  │ │ 19:38 slept Fern fell asleep                        │
-│ · · · · ░ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ░ · · · · " · ·  │ │ 19:40 slept Hazel fell asleep                       │
-│ · · · " ░ ~ ~ ~ ~ ~ ~ ♠ ~ ~ ~ ~ ~ ~ ░ · · " · · R ·  │ │ 19:43 attacked the gru attacked Ash · health →      │
-│ · · · · ░ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ░ " · · · · · ·  │ │ 40                                                  │
-│ · · · · ░ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ " · · · · · · · ·  │ │ 19:46 died Oak died: starvation                     │
-│ · · · · ░ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ♠ · · · · · · " · ·  │ │ 19:49 died Sage died: exposure                      │
-│ · · · · ♠ ♠ ♠ ♠ ~ ~ ~ ~ ~ ~ ~ ♠ ♠ ♠ · · · " · · · ·  │ │ 19:51 neglect_d… Birch is dangerously cold and      │
-│ · " · ♠ ♠ ♠ ♠ ♠ ~ ~ ~ ~ ~ ~ ~ ♠ ♠ ♠ · · · · · · · ·  │ │ has done nothing about it (warmth 0)                │
-│ · ♠ ♠ ♠ ♠ ♠ ♠ ♠ ~ ~ ~ ~ ~ ~ ~ ♠ ♠ ♠ ♠ · · · · · · ·  │ │ 19:54 moved Cedar → (24,31)                         │
-│ · ♠ ♠ ♠ ♠ ♠ ♠ ~ ~ ~ ~ ~ ~ ~ ░ · ♠ ♠ ♠ · · · · · · ·  │ │ 19:57 intent_do… Rowan finished                     │
+│ · · · · · " ░ ~ ~ ~ ~ ~ ~ ~ ~ ░ · · · · · · · · · ·  │ │                   → 40                              │
+│ · · · · · ░ ~ ~ ~ ~ ~ ~ ~ ~ ~ ♠ · · · · · · · · · ·  │ │ 19:46 died        Oak died: starvation              │
+│ · · · · ░ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ░ ░ · · · · · · · ·  │ │ 19:49 died        Sage died: exposure               │
+│ · · · · ░ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ " · · · · · · ·  │ │ 19:51 neglect_d…  Birch is dangerously cold and has │
+│ · · · · ░ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ░ · · · · " · ·  │ │                   done nothing about it (warmth 0)  │
+│ · · · " ░ ~ ~ ~ ~ ~ ~ ♠ ~ ~ ~ ~ ~ ~ ░ · · " · · R ·  │ │ 19:54 moved       Cedar → (24,31)                   │
+│ · · · · ░ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ░ " · · · · · ·  │ │ 19:57 intent_do…  Rowan finished                    │
+│ · · · · ░ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ " · · · · · · · ·  │ │ 20:00 thought     Ash thought: "I keep coming back  │
+│ · · · · ░ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ♠ · · · · · · " · ·  │ │                   to the chest by the river and     │
+│ · · · · ♠ ♠ ♠ ♠ ~ ~ ~ ~ ~ ~ ~ ♠ ♠ ♠ · · · " · · · ·  │ │                   whether anyone actually saw who…  │
+│ · " · ♠ ♠ ♠ ♠ ♠ ~ ~ ~ ~ ~ ~ ~ ♠ ♠ ♠ · · · · · · · ·  │ │ 20:02 conversat…  Birch→Cedar "If the forage        │
+│ · ♠ ♠ ♠ ♠ ♠ ♠ ♠ ~ ~ ~ ~ ~ ~ ~ ♠ ♠ ♠ ♠ · · · · · · ·  │ │                   upriver is really gone we should  │
+│ · ♠ ♠ ♠ ♠ ♠ ♠ ~ ~ ~ ~ ~ ~ ~ ░ · ♠ ♠ ♠ · · · · · · ·  │ │                   say so at the meeting tonight…    │
 │ · ♠ ♠ ♠ ♠ ♠ ♠ ♠ ~ ~ ~ ~ ~ ~ " · · · ♠ · · · ♠ · · ·  │ │                                                     │
 │ night · [21,8–46,24 of 64×64] · ~water ♠wood "forag… │ │                                                     │
 ╰──────────────────────────────────────────────────────╯ ╰─────────────────────────────────────────────────────╯
