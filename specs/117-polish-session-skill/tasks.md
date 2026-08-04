@@ -52,8 +52,8 @@ One task, one PR. Each phase lands as a commit on this single branch.
 - [X] T015 Confirm the skill is discoverable: it appears in the skills listing with its
       description, and `.claude/skills/polish-session/` matches the repo's project-skill layout.
 - [X] T016 Read `SKILL.md` against SC-001..SC-006 and record the check on the board card.
-- [ ] T017 Wiki-in-PR (spec 069): if the branch touches any file a `docs/wiki/` note lists in
+- [X] T017 Wiki-in-PR (spec 069): if the branch touches any file a `docs/wiki/` note lists in
       `sources:`, re-verify and re-pin that note in-branch; if `docs/wiki/` changes, regenerate
       `docs/player/`. Probe:
       `node .claude/skills/player-docs/scripts/check-freshness.mjs --check`.
-- [ ] T018 `node scripts/check-merge-drift.mjs pr` exits 0 from the worktree.
+- [X] T018 `node scripts/check-merge-drift.mjs pr` exits 0 from the worktree.
