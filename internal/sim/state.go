@@ -2254,7 +2254,7 @@ func (s *State) Apply(e store.Event) error {
 	case "guardian.report_card":
 		return s.applyReportCard(e)
 
-	case "guardian.time_snapped", "guardian.item_granted",
+	case "guardian.time_snapped", "guardian.item_granted", "guardian.item_taken",
 		"guardian.entity_moved", "guardian.entity_removed":
 		return s.applyMiracle(e)
 

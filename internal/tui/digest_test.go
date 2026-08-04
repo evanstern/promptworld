@@ -312,8 +312,10 @@ var catalogFixture = map[string]digestFixture{
 		`{"agent":{"id":0,"name":"Ash"},"text":"Ash kept the fire until the end."}`,
 		`epilogue for Ash: Ash kept the fire until the end.`,
 	},
-	"guardian.time_snapped":   {`{"to_tick":106200,"gratis":false}`, `Guardian snapped time forward to day 2 11:30`},
-	"guardian.item_granted":   {`{"agent":{"id":0,"name":"Ash"},"kind":"food_raw","qty":2,"gratis":false}`, `Guardian granted Ash 2 food_raw`},
+	"guardian.time_snapped": {`{"to_tick":106200,"gratis":false}`, `Guardian snapped time forward to day 2 11:30`},
+	"guardian.item_granted": {`{"agent":{"id":0,"name":"Ash"},"kind":"food_raw","qty":2,"gratis":false}`, `Guardian granted Ash 2 food_raw`},
+	// The removal miracle (spec 116): item_granted's mirror image, same voice.
+	"guardian.item_taken":     {`{"agent":{"id":2,"name":"Cedar"},"kind":"wood","qty":20,"gratis":false}`, `Guardian took 20 wood from Cedar`},
 	"guardian.entity_moved":   {`{"class":"pile","x":3,"y":4,"to_x":6,"to_y":7,"gratis":false}`, `Guardian moved the pile at (3,4) to (6,7)`},
 	"guardian.entity_removed": {`{"class":"structure","x":12,"y":8,"gratis":false}`, `Guardian removed the structure at (12,8)`},
 	"guardian.region_named": {
@@ -812,5 +814,36 @@ func TestJumpOrHintTotality(t *testing.T) {
 				t.Error("detailActions returned an empty label")
 			}
 		})
+	}
+}
+
+// TestDigestItemTakenRendersAndAttributes (spec 116 FR-017, T036): the removal
+// event renders a plain-language chronicle summary instead of falling through
+// as an unknown type, carries the gratis mark like every other miracle, and
+// attributes in the subject column to the villager reached into — exactly as a
+// grant attributes to the villager reached toward.
+func TestDigestItemTakenRendersAndAttributes(t *testing.T) {
+	const payload = `{"agent":{"id":2,"name":"Cedar"},"kind":"wood","qty":20,"gratis":false}`
+	segs := digestOf(t, "guardian.item_taken", payload)
+	if got, want := plainSegs(segs), `Guardian took 20 wood from Cedar`; got != want {
+		t.Errorf("plain summary = %q, want %q", got, want)
+	}
+	if hasSeg(segs, "forced", segEmphasis) {
+		t.Error("charge-priced removal carries the operator-force mark")
+	}
+	gratis := digestOf(t, "guardian.item_taken",
+		`{"agent":{"id":2,"name":"Cedar"},"kind":"wood","qty":20,"gratis":true}`)
+	if !hasSeg(gratis, "forced", segEmphasis) {
+		t.Error("a forced removal is indistinguishable from a charge-priced one")
+	}
+
+	// The subject resolver attributes the removal to its villager.
+	fn, ok := subjectRegistry["guardian.item_taken"]
+	if !ok {
+		t.Fatal("guardian.item_taken has no subject resolver — the feed cannot attribute it")
+	}
+	cand, decOK := fn(store.Event{Seq: 1, Tick: 1, Type: "guardian.item_taken", Payload: json.RawMessage(payload)})
+	if !decOK || !cand.hasActor || cand.actor != 2 {
+		t.Errorf("subject candidate = %+v (ok=%v), want the affected villager (2)", cand, decOK)
 	}
 }

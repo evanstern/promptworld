@@ -651,6 +651,68 @@ func TestMiracleGiveRoundTrip(t *testing.T) {
 	}
 }
 
+// TestMiracleTakeRoundTrip (spec 116 FR-012, T026): the operator "miracle"
+// command reaches the SAME shared batch builder for take_item that the
+// guardian's own door does, on a pure-sim world — goods leave the named
+// villager's pack and land as a pile on the tile they stand on, never unmade.
+// Both legs run --force (gratis) so the round trip tests the DOOR, not the
+// genesis charge bank the give round-trip above already spends.
+func TestMiracleTakeRoundTrip(t *testing.T) {
+	h := newHarness(t, clock.Speed1x)
+	c := h.dial(t)
+
+	if _, err := c.Status("pause", nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.Call("miracle", MiracleArgs{Kind: "give_item",
+		Villager: sim.AgentNames[0], Item: "wood", Qty: 3, Gratis: true}); err != nil {
+		t.Fatalf("seeding grant rejected: %v", err)
+	}
+
+	data, err := c.Call("miracle", MiracleArgs{Kind: "take_item",
+		Villager: sim.AgentNames[0], Item: "wood", Qty: 3, Gratis: true})
+	if err != nil {
+		t.Fatalf("take_item rejected over the wire: %v", err)
+	}
+	var md MiracleData
+	if err := json.Unmarshal(data, &md); err != nil {
+		t.Fatal(err)
+	}
+	if md.Kind != "take_item" || !strings.Contains(md.Summary, "took") {
+		t.Errorf("miracle data wrong: %+v", md)
+	}
+
+	sd, err := c.FetchState()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var after sim.State
+	if err := json.Unmarshal(sd.State, &after); err != nil {
+		t.Fatal(err)
+	}
+	if got := after.Agents[0].Inv.Wood; got != 0 {
+		t.Errorf("Wood after the removal = %d, want 0", got)
+	}
+	x, y := after.Agents[0].X, after.Agents[0].Y
+	var found *sim.Pile
+	for i := range after.Piles {
+		if after.Piles[i].X == x && after.Piles[i].Y == y {
+			found = &after.Piles[i]
+		}
+	}
+	if found == nil || found.Wood != 3 {
+		t.Errorf("the taken wood is not on the ground at (%d,%d): %+v", x, y, found)
+	}
+
+	// An unknown villager name is refused cleanly; the connection survives.
+	if _, err := c.Call("miracle", MiracleArgs{Kind: "take_item", Villager: "Nobody", Item: "wood", Qty: 1}); err == nil {
+		t.Error("take_item naming an unknown villager should be refused")
+	}
+	if _, err := c.Status("status", nil); err != nil {
+		t.Errorf("connection should survive a refused take_item: %v", err)
+	}
+}
+
 func waitForSeq(t *testing.T, c *Client, seq int64) {
 	t.Helper()
 	deadline := time.Now().Add(10 * time.Second)

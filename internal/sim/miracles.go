@@ -38,6 +38,17 @@ type (
 		Qty    int      `json:"qty"`
 		Gratis bool     `json:"gratis"`
 	}
+	// ItemTakenPayload lifts known items OUT of a living villager's inventory
+	// and sets them down as a pile on the tile they stand on (spec 116
+	// FR-009/FR-011) — ItemGrantedPayload's mirror image, field for field. The
+	// goods are MOVED, never unmade: the village's labour survives the reach-in
+	// and the villager (or a neighbour) can pick it back up.
+	ItemTakenPayload struct {
+		Agent  AgentRef `json:"agent"`
+		Kind   string   `json:"kind"`
+		Qty    int      `json:"qty"`
+		Gratis bool     `json:"gratis,omitempty"`
+	}
 	// EntityMovedPayload relocates a villager, structure, or pile from (X,Y) to
 	// (ToX,ToY) (FR-014).
 	EntityMovedPayload struct {
@@ -90,7 +101,7 @@ func (s *State) spendMiracleCharge(eventType string, gratis bool) error {
 	return nil
 }
 
-// applyMiracle is the reducer dispatcher for the four guardian.* miracle event
+// applyMiracle is the reducer dispatcher for the guardian.* miracle event
 // types, routed here from State.Apply. Each arm validates, prices via
 // spendMiracleCharge, and mutates — atomically, or errors with nothing changed.
 func (s *State) applyMiracle(e store.Event) error {
@@ -99,6 +110,8 @@ func (s *State) applyMiracle(e store.Event) error {
 		return s.applyTimeSnapped(e)
 	case "guardian.item_granted":
 		return s.applyItemGranted(e)
+	case "guardian.item_taken":
+		return s.applyItemTaken(e)
 	case "guardian.entity_moved":
 		return s.applyEntityMoved(e)
 	case "guardian.entity_removed":
@@ -507,6 +520,111 @@ var grantableKinds = func() map[string]bool {
 // acceptance can never drift from the schema the model is shown.
 func grantableKind(kind string) bool {
 	return grantableKinds[kind]
+}
+
+// carriedGrantCount is how many units of a GRANT-vocabulary kind a villager
+// carries. It bridges the two deliberately distinct vocabularies (registry.go):
+// a grant/removal names the singular unit ("spear", "axe"), while the storage
+// field is a slice of many ("spears", "axes") whose length IS the count, with
+// durability living inside it. Every other kind is its flat inventory field.
+func carriedGrantCount(inv Inventory, kind string) int {
+	switch kind {
+	case "spear":
+		return len(inv.Spears)
+	case "axe":
+		return len(inv.Axes)
+	}
+	return invField(inv, kind)
+}
+
+// applyItemTaken lifts known items OUT of a living villager's pack and sets
+// them down as a pile on the tile they stand on (spec 116 US3, FR-010/FR-011)
+// — applyItemGranted's mirror image, and deliberately its structural twin:
+// EVERY validation (a valid, living agent; a known item kind; a positive
+// quantity; and the carried-quantity check) precedes the charge spend and the
+// mutation, so a rejected removal spends nothing and leaves no partial
+// application. Reject-whole, never clamp: a request for more than is carried
+// names the actual count so the guardian corrects the quantity rather than
+// silently receiving less than it asked for (the applyItemGranted discipline —
+// and the reason the world-03 grant was refused whole in the first place).
+//
+// The goods are MOVED, not unmade (spec 116 A3): the transfer reuses the
+// agent.dropped arm's exact rules — spears/axes leave most-worn-first with both
+// slices kept sorted ascending, food merges into the tile pile's batches — so
+// the total units in (inventory + tile pile) are unchanged by the arm, and
+// the pile itself is the visible artifact of the reach-in.
+func (s *State) applyItemTaken(e store.Event) error {
+	var p ItemTakenPayload
+	if err := json.Unmarshal(e.Payload, &p); err != nil {
+		return fmt.Errorf("apply %s: %w", e.Type, err)
+	}
+	if p.Agent.ID < 0 || p.Agent.ID >= len(s.Agents) {
+		return fmt.Errorf("apply %s: no villager at index %d", e.Type, p.Agent.ID)
+	}
+	if s.Agents[p.Agent.ID].Dead {
+		return fmt.Errorf("apply %s: %s is beyond a working now", e.Type, s.Agents[p.Agent.ID].Name)
+	}
+	if !grantableKind(p.Kind) {
+		return fmt.Errorf("apply %s: unknown item kind %q (takeable: %s)",
+			e.Type, p.Kind, strings.Join(tool.GrantKinds(), ", "))
+	}
+	if p.Qty <= 0 {
+		return fmt.Errorf("apply %s: take quantity must be positive (got %d)", e.Type, p.Qty)
+	}
+	a := &s.Agents[p.Agent.ID]
+	if carried := carriedGrantCount(a.Inv, p.Kind); carried < p.Qty {
+		return fmt.Errorf("apply %s: taking %d %s from %s is more than they carry (%d)",
+			e.Type, p.Qty, p.Kind, a.Name, carried)
+	}
+	if err := s.spendMiracleCharge(e.Type, p.Gratis); err != nil {
+		return err
+	}
+	// Everything below mutates; nothing below can fail. pileFor is create-or-
+	// merge (one pile per tile, data-model.md), so a removal onto a tile that
+	// already holds goods adds to them rather than raising a second pile.
+	pile := s.pileFor(a.X, a.Y)
+	switch p.Kind {
+	case "spear":
+		// Most-worn-first: the FRONT of the villager's ascending slice moves,
+		// so they keep their best tools and the pile receives the worn ones —
+		// verbatim the agent.dropped arm's rule (state.go), and the same order
+		// hunts already spend them in. Both sides stay sorted ascending.
+		pile.Spears = append(pile.Spears, a.Inv.Spears[:p.Qty]...)
+		sort.Ints(pile.Spears)
+		a.Inv.Spears = trimTaken(a.Inv.Spears, p.Qty)
+	case "axe":
+		// Spec 032 US2: axes move exactly like spears (durabilities preserved,
+		// most-worn first, both sides sorted ascending).
+		pile.Axes = append(pile.Axes, a.Inv.Axes[:p.Qty]...)
+		sort.Ints(pile.Axes)
+		a.Inv.Axes = trimTaken(a.Inv.Axes, p.Qty)
+	default:
+		if isFoodKind(p.Kind) {
+			// Food lands in the pile as a batch, exactly as a villager's own
+			// drop does: carried food holds no spoilage of its own (the
+			// Inventory field is a bare count — only a Pile's FoodBatch has a
+			// SpoilAt), so the pile stamps the drop-tick rot window here and
+			// merges into an existing batch of the same (Kind, SpoilAt).
+			pile.addFood(p.Kind, p.Qty, e.Tick+rotWindowTicks)
+		} else {
+			pile.addNonFood(p.Kind, p.Qty)
+		}
+		addItems(&a.Inv, []Item{{p.Kind, p.Qty}}, -1)
+	}
+	return nil
+}
+
+// trimTaken returns the remainder of an ascending remaining-uses slice after
+// its n most-worn entries have moved to a pile — a fresh slice (never an alias
+// into the original's backing array), and nil when nothing is left, matching
+// the agent.dropped arm's own emptied-slice handling so a JSON round trip of
+// the state is byte-identical either way.
+func trimTaken(uses []int, n int) []int {
+	rest := append([]int(nil), uses[n:]...)
+	if len(rest) == 0 {
+		return nil
+	}
+	return rest
 }
 
 // applyEntityMoved relocates a villager, structure, or pile (spec 016 US1,

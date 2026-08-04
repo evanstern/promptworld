@@ -254,6 +254,12 @@ var injectSocialWhitelist = map[string]bool{
 	"guardian.item_granted":   true,
 	"guardian.entity_moved":   true,
 	"guardian.entity_removed": true,
+	// The removal miracle (spec 116): give_item's mirror image — the goods
+	// leave the pack and land as a pile on the villager's own tile. Its
+	// reducer arm (miracles.go) enforces liveness, the item vocabulary, a
+	// positive quantity, and the carried-quantity check (reject whole, never
+	// clamp) before the charge or any mutation.
+	"guardian.item_taken": true,
 	// The canonization miracle (spec 101): the guardian christens a named
 	// region and, optionally, raises one existing-kind feature within it.
 	// The dry-run's reducer arm (regions.go) enforces bounds/overlap/cap/

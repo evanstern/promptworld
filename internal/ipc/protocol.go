@@ -77,9 +77,9 @@ type MiracleArgs struct {
 	Kind     string `json:"kind"`
 	Day      int    `json:"day,omitempty"`      // time_snap
 	Time     string `json:"time,omitempty"`     // time_snap "HH:MM"
-	Villager string `json:"villager,omitempty"` // give_item
-	Item     string `json:"item,omitempty"`     // give_item inventory kind
-	Qty      int    `json:"qty,omitempty"`      // give_item
+	Villager string `json:"villager,omitempty"` // give_item / take_item (spec 116)
+	Item     string `json:"item,omitempty"`     // give_item / take_item inventory kind
+	Qty      int    `json:"qty,omitempty"`      // give_item / take_item
 	Class    string `json:"class,omitempty"`    // move / remove
 	X        int    `json:"x,omitempty"`        // move / remove source
 	Y        int    `json:"y,omitempty"`

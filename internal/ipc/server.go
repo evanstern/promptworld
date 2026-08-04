@@ -657,6 +657,24 @@ func (c *session) handleMiracle(id int64, args MiracleArgs) {
 		}
 		params = guardian.MiracleParams{Agent: idx, Item: args.Item, Qty: args.Qty}
 		summary = fmt.Sprintf("granted %d %s to %s", args.Qty, args.Item, sim.AgentNames[idx])
+	case "take_item":
+		// Spec 116 FR-012: the operator door reaches the SAME shared builder
+		// the guardian's landMiracle does, so the two channels can never
+		// compose a different batch — give_item's case verbatim, pointed the
+		// other way. The reducer validates liveness, the item kind, and the
+		// reject-whole carried-quantity check at the InjectSocial dry-run.
+		// Works on pure-sim worlds.
+		if args.Villager == "" {
+			c.writeResponse(Response{ID: id, OK: false, Error: "take_item needs a villager name"})
+			return
+		}
+		idx := sim.AgentIndexByName(args.Villager)
+		if idx < 0 {
+			c.writeResponse(Response{ID: id, OK: false, Error: fmt.Sprintf("no villager named %q", args.Villager)})
+			return
+		}
+		params = guardian.MiracleParams{Agent: idx, Item: args.Item, Qty: args.Qty}
+		summary = fmt.Sprintf("took %d %s from %s", args.Qty, args.Item, sim.AgentNames[idx])
 	default:
 		c.writeResponse(Response{ID: id, OK: false, Error: fmt.Sprintf("unknown working kind %q", args.Kind)})
 		return
