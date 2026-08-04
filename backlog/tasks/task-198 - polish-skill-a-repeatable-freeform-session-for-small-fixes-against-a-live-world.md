@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-08-03 23:34'
-updated_date: '2026-08-04 03:02'
+updated_date: '2026-08-04 03:06'
 labels: []
 dependencies: []
 ordinal: 180001
@@ -85,8 +85,6 @@ Spec: specs/117-polish-session-skill
 - [x] #5 The skill names the live-QA binary trap and the golden-test-failure-is-signal rule
 - [x] #6 TASK-195 is referenced as the worked example rather than its lessons being re-narrated in full
 <!-- AC:END -->
-
-
 
 ## Implementation Plan
 
@@ -214,4 +212,13 @@ had gone to `spec-implementer`.
 
 **Deliberately not done:** the PR is not opened (operator approval first), and `spec-bridge:sync`
 will mirror spec 117's phase ACs onto this card only after the merge, when `tasks.md` is on main.
+
+### PR #164 opened — https://github.com/evanstern/promptworld/pull/164
+
+Branch `task-198-polish-skill` → `main`. 7 files, +918/-19, `MERGEABLE`. All six ACs ticked;
+pr gate exit 0 at open time (verdict=pass, no findings, baseLag=0), spec-bridge check ok.
+
+Merge with `--merge`, never squash. After the merge, `spec-bridge:sync` mirrors spec 117's
+phase ACs onto this card — `tasks.md` is on the branch until then — and the worktree and branch
+can be cleaned up once `gh api ... --jq .merged` confirms.
 <!-- SECTION:NOTES:END -->
