@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-08-03 23:34'
-updated_date: '2026-08-04 02:47'
+updated_date: '2026-08-04 02:51'
 labels: []
 dependencies: []
 ordinal: 180001
@@ -72,6 +72,8 @@ CLAUDE.md's "Stub-first, always" bullet, and PR #163.
 - Where the flow's canonical statement lives: the skill alone, or a short CLAUDE.md pointer to it.
 - Whether the skill should scaffold the session card from a template, or leave authoring to the
   session.
+
+Spec: specs/117-polish-session-skill
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
