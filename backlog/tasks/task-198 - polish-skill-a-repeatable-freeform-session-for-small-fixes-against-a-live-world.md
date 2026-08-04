@@ -3,9 +3,10 @@ id: TASK-198
 title: >-
   polish skill: a repeatable freeform session for small fixes against a live
   world
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-08-03 23:34'
+updated_date: '2026-08-04 02:44'
 labels: []
 dependencies: []
 ordinal: 180001
