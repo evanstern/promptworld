@@ -3,10 +3,10 @@ id: TASK-196
 title: >-
   Full pack makes gathering fail silently — a villager can starve standing on
   food
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-08-03 19:57'
-updated_date: '2026-08-03 20:19'
+updated_date: '2026-08-04 02:34'
 labels:
   - bug
   - sim
@@ -79,3 +79,23 @@ Grounding rides the PR (spec 069): 26 wiki notes re-verified against 012f715f, 6
 
 MODEL TIER (Principle V): implemented INLINE on claude-opus-5 rather than dispatching spec-implementer. Deviation from the delegation rule, taken deliberately and recorded here: this session carries an explicit operator directive not to call the Agent tool unless requested, which conflicts with Principle V's 'never implements inline'. Flagged to the operator in-session rather than silently resolved either way. Spec Kit trivial exemption applies (surgical fix, file:line diagnosis pinned on this card before work, ACs on this card).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Merged to main via PR #162 as merge commit 313ce204 (verified: 2 parents, a true --merge, not a squash — so the in-branch wiki pins 012f715f and 8182a0a2 both remain reachable from main and no pin was staled).
+
+Shipped: the spec-013 US1-AS1 zero-space guard in internal/sim/executor.go no longer emits the bare agent.intent_done that a SUCCESSFUL gather also emits. It now resolves through spec 096's existing intentFailedEvents under a new intentFailPackFull reason ('pack full'), paired same-tick with a situated first-person memory ('My foraging came to nothing: my hands were too full to carry any more.') and an IntentLog record closed 'failed' — the signal the next planner thought actually reads. The guard's own invariant is unchanged: at zero free bulk there is still no yield and no depletion.
+
+'pack full' is a distinct reason rather than a 'contested' variant because its remedy is uniquely the agent's own — drop or store something.
+
+Verified on main after merge: the constant, the guard call site, the reason clause, and TestIntentFailedForagePackFullWorld03 are all present; go test ./... was exit 0 across 23 packages with zero failures pre-merge, go build and go vet clean, check-merge-drift pr exit 0.
+
+Grounding rode the PR (spec 069): 26 wiki notes re-verified against 012f715f — 6 edited, of which 3 had stated outright that the zero-free-bulk case is 'skipped entirely — no event', a claim this change makes false; 20 re-pinned unchanged. Player docs re-stamped, 16/16 fresh. CAPSULES.md regenerated.
+
+SCOPE CAVEAT for whoever picks this up next: this fixes the FEEDBACK channel only. The planner is now told its pack is full; whether it responds well — dropping wood rather than re-foraging — is an unproven behavioral question. Worth watching in the next world run before considering the Cedar failure mode fully closed.
+
+FOLLOW-ON: TASK-197 carries the other half of the world-03 death — the guardian read its own 'carrying 24/24, 0 free' digest and still told Cedar to eat what he held, spent both watch turns on survey_site, and never attempted a miracle that give_item would have rejected whole at the carry cap anyway.
+
+MODEL TIER (Principle V): implemented inline on claude-opus-5 rather than via spec-implementer, under this session's explicit operator directive not to dispatch subagents; deviation flagged to the operator in-session and recorded here rather than silently resolved. Spec Kit trivial exemption applied (surgical fix, file:line diagnosis pinned before work, ACs on the card).
+<!-- SECTION:FINAL_SUMMARY:END -->
