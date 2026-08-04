@@ -259,6 +259,19 @@ pushes first wins, and the loser's non-fast-forward rejection is a **signal**, n
   (`card-not-claimed`) when the task's card is not In Progress on origin/main, and with
   `--task` it accepts a spec dir already claimed BY that task.
 
+## Polish sessions — the freeform loop (spec 117)
+
+Small FE/TUI changes and gameplay tweaks against decisions already made run as a
+**polish session**: one long-running card, one branch, one PR, N items, with a
+decision and a file:line diagnosis recorded on the card BEFORE each implementation.
+
+`.claude/skills/polish-session/` is the canonical statement of that flow — the loop,
+the trivial-exemption bar that decides ad-hoc versus spec, why the stub-first rule
+above bites freeform sessions specifically, where grounding goes, and the two
+failures that look like chores. Invoke it (`/polish-session`) rather than restating
+the loop; TASK-195 / PR #163 is the worked example. Probe:
+`node .claude/skills/polish-session/scripts/session-status.mjs --check`.
+
 ## Root checkout is READ-ONLY — worktree + merge only, no rebases (iron-clad)
 
 NOTHING is modified in the root checkout directly — no file edits, no direct
