@@ -3,10 +3,10 @@ id: TASK-197
 title: >-
   Guardian inventory tool: let the Guardian read and change what a villager
   carries, and make it look first
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-08-03 19:57'
-updated_date: '2026-08-04 03:42'
+updated_date: '2026-08-04 16:04'
 labels:
   - guardian
   - tools
@@ -60,12 +60,12 @@ Spec: specs/116-guardian-inventory-tool
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A guardian-facing read tool returns a named villager's full inventory — every kind and its count — plus carried bulk and free bulk against sim.BulkCap
-- [ ] #2 The Guardian's survival watch turn reads a villager's inventory before sending any vision or miracle concerning food, so its message cannot contradict what that villager carries
-- [ ] #3 A guardian-facing write path can both add to and remove from a villager's inventory, respecting the carry cap, so a full pack can be relieved and then fed
-- [ ] #4 Every guardian reach-in emits a durable event and a situated first-person memory for the villager — no silent mutation of a pack
-- [ ] #5 Regression from world-03: a starving villager at 24/24 carrying zero food never receives a vision claiming they are carrying food
-- [ ] #6 The read tool is exercised in the guardian's own tests against a fixture villager whose pack is full of non-food
+- [x] #1 A guardian-facing read tool returns a named villager's full inventory — every kind and its count — plus carried bulk and free bulk against sim.BulkCap
+- [x] #2 The Guardian's survival watch turn reads a villager's inventory before sending any vision or miracle concerning food, so its message cannot contradict what that villager carries
+- [x] #3 A guardian-facing write path can both add to and remove from a villager's inventory, respecting the carry cap, so a full pack can be relieved and then fed
+- [x] #4 Every guardian reach-in emits a durable event and a situated first-person memory for the villager — no silent mutation of a pack
+- [x] #5 Regression from world-03: a starving villager at 24/24 carrying zero food never receives a vision claiming they are carrying food
+- [x] #6 The read tool is exercised in the guardian's own tests against a fixture villager whose pack is full of non-food
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -110,3 +110,29 @@ FOLLOW-ONS FLAGGED, NOT INVENTED (candidates for cards if the operator wants the
 
 AWAITING: operator review of PR #165, including the six spec Assumptions (A1-A6) flagged for review — most notably A2 (the gate does NOT fire on ordinary console turns, only survival turns) and A6 (AC#5 is verified structurally, since model prose cannot be asserted against).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Merged via PR #165 (merge commit 877045a5, a true two-parent merge — the in-branch wiki pin 5761edb is reachable from main, so no re-pin was staled). Spec 116, 46/46 tasks.
+
+The guardian-side half of the world-03 death is closed. Three fixes, because three failures compounded: it could not see pack CONTENTS (only gross bulk), it did not look at all, and it had no way to empty a full pack.
+
+1. inspect_pack — a charge-free Read tool (Effect Read / Gate None, off the turn's one-act budget, granted at every stage on the survey_site/explain/brief_myths profile) returning a deterministic sheet: every kind and count, carried and free bulk against sim.BulkCap, and an explicit statement of whether any food is carried. Backed by a new agentInv mirror refreshed in the same absorb batch as needMirror, with Spears/Axes deep-copied — the replica keeps mutating them, and a test pins the aliasing regression.
+
+2. The look-first gate — on survival-origin turns ONLY, a send_vision or a work_miracle of kind give_item/take_item aimed at a villager whose pack was not opened THAT turn is refused as rejected_gate naming inspect_pack and the villager. Per-villager, per-turn, origin-keyed. Repairable inside the loop's round cap, so a skipped look costs one round, not a turn. Prose had already been tried and had already failed: the carry-headroom digest line WAS in the world-03 prompt and the guardian read past it.
+
+3. take_item — a 1-charge miracle (guardian.item_taken, excluded from the stage-1/2 ceiling on the work_miracle precedent) lifting goods out of a pack into the pile on the villager's own tile via the agent.dropped rules. Reject-whole never clamp; spear/axe wear leaves most-worn-first; food gets a pile rot window; total units in (inventory + tile pile) are conserved. Every reach-in lands its event plus one situated first-person memory in a single atomic batch — no pack mutation is silent. IPC operator door has parity through the same BuildMiracleBatch.
+
+AC#5 is discharged STRUCTURALLY, as recorded in spec Assumption A6: 'never receives a vision claiming they are carrying food' cannot be asserted against model prose, so its testable projection is SC-001 + SC-002 together — the guardian cannot send that villager a vision at all without first receiving a sheet that says, in words, that they carry no food.
+
+GATES: go build/vet/test clean (23 packages); check-tui-design --changed passed; check-merge-drift pr exit 0; 82 wiki notes re-verified and re-pinned; 16 player docs fresh. Phase 8 ticks landed as derived state on branch spec-116-grounding-ticks (merged --no-ff at root, commit 2550e707).
+
+GROUNDING FINDING corrected in-branch: the standing wiki claim 'a miracle never mints a new persistent entity' is now FALSE — take_item's pileFor is create-or-merge, so a removal onto a bare tile mints a sim.Pile. It is the only miracle kind that can; nothing is destroyed either way. Also corrected a spec clause of my own that was unsatisfiable against the code: carried food holds no spoilage (Inventory food fields are bare ints; only Pile.FoodBatch has SpoilAt), so a pack-to-pile transfer MINTS a rot window rather than preserving one.
+
+TIER: Opus 5 via .claude/agents/spec-implementer-opus.md, delegated per constitution Principle V — doctrine-adjacent (new guardian write access into the world plus a new structural refusal).
+
+OPEN FOR OPERATOR REVIEW (recorded, not blocking): spec Assumptions A1-A6, most notably A2 — the gate keys on turnOrigin.survival rather than message text, so it deliberately does NOT fire on an ordinary console turn where the guardian could also misread a pack.
+
+FOLLOW-ONS flagged, not carded (operator's call): (a) vocabulary seam — the sheet renders storage names ('spears') while take_item's enum uses grant names ('spear'), so a model reading the sheet can take a repairable whole-refusal; (b) no CLI verb for removals — the IPC door has parity but 'promptworld work' has no 'take' verb.
+<!-- SECTION:FINAL_SUMMARY:END -->
