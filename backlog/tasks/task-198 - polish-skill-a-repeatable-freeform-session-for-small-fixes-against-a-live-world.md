@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-08-03 23:34'
-updated_date: '2026-08-04 02:44'
+updated_date: '2026-08-04 02:47'
 labels: []
 dependencies: []
 ordinal: 180001
@@ -83,3 +83,50 @@ CLAUDE.md's "Stub-first, always" bullet, and PR #163.
 - [ ] #5 The skill names the live-QA binary trap and the golden-test-failure-is-signal rule
 - [ ] #6 TASK-195 is referenced as the worked example rather than its lessons being re-narrated in full
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+## Open questions, resolved at the start (per the card's instruction)
+
+1. **Does the skill warrant a spec? YES — spec 117 claimed and stubbed on main before any content.**
+   Resolved from artifacts, not preference: the constitution's trivial exemption requires a *surgical
+   fix* with a complete file:line diagnosis, and authoring a new artifact is neither. Precedent is
+   exact — spec 113 specified the `tui-frames` project skill, also a documentation-only deliverable.
+   Claimed stub-first *because* that is the rule this skill exists to teach: dogfooding, not ceremony.
+2. **Where the canonical statement lives: the skill, with a short CLAUDE.md pointer.** Repo convention
+   already answers it — the TUI-design and wiki-in-PR blocks in CLAUDE.md are short pointers and the
+   procedure lives in the skill.
+3. **Scaffold the session card: yes, from a template shipped with the skill.** AC #1 requires a cold
+   session to run the loop without the operator restating it; a card template is the artifact that
+   makes step 1 self-serve.
+
+## Shape
+
+```
+.claude/skills/polish-session/
+├── SKILL.md                       the loop + the four traps + the ad-hoc-vs-spec test
+├── templates/session-card.md      scaffold for the session's single long-running card
+└── scripts/session-status.mjs     advisory probe: binary freshness + wiki footprint
+```
+
+The script is what keeps two ACs from being mere prose. AC #5's binary trap
+(`go build ./...` never rewrites the `-o promptworld` artifact) is purely mechanical — compare the
+binary's mtime against the newest tracked Go source — and AC #4's footprint number already exists in
+the session gate's `--json`. Constitution Principle III: gates over assertions. Advisory, never
+blocking; the session gate's non-blocking contract governs.
+
+## Tier
+
+Authoring is doctrine text plus one small Node probe — the doctrine is authored at the planning tier
+(it is policy, not implementation) and the probe is a single self-contained script with no
+cross-package or concurrency surface. Recorded on delivery per Principle V.
+
+## Steps
+
+1. Claim: card In Progress, spec 117 stub landed on main, worktree cut. (done)
+2. Author spec 117 in full: spec.md, plan.md, tasks.md; link via spec-bridge.
+3. Author the skill: SKILL.md, card template, status probe.
+4. Verify: probe exercised on this very branch (positive + negative control), skill discoverable.
+5. Grounding once at the end, in-branch; then the PR.
+<!-- SECTION:PLAN:END -->
