@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-08-03 23:34'
-updated_date: '2026-08-04 02:51'
+updated_date: '2026-08-04 03:02'
 labels: []
 dependencies: []
 ordinal: 180001
@@ -78,13 +78,15 @@ Spec: specs/117-polish-session-skill
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A polish session can be run end to end from the skill alone, without the operator restating the loop
-- [ ] #2 The skill states the stub-first ordering constraint and why freeform sessions specifically hit it
-- [ ] #3 The skill states the trivial-exemption bar as the test for ad-hoc vs spec, and requires the file:line diagnosis on the card before implementation
-- [ ] #4 The skill routes grounding to the end of the session and teaches reading the session gate's wikiNotes footprint rather than a cadence
-- [ ] #5 The skill names the live-QA binary trap and the golden-test-failure-is-signal rule
-- [ ] #6 TASK-195 is referenced as the worked example rather than its lessons being re-narrated in full
+- [x] #1 A polish session can be run end to end from the skill alone, without the operator restating the loop
+- [x] #2 The skill states the stub-first ordering constraint and why freeform sessions specifically hit it
+- [x] #3 The skill states the trivial-exemption bar as the test for ad-hoc vs spec, and requires the file:line diagnosis on the card before implementation
+- [x] #4 The skill routes grounding to the end of the session and teaches reading the session gate's wikiNotes footprint rather than a cadence
+- [x] #5 The skill names the live-QA binary trap and the golden-test-failure-is-signal rule
+- [x] #6 TASK-195 is referenced as the worked example rather than its lessons being re-narrated in full
 <!-- AC:END -->
+
+
 
 ## Implementation Plan
 
@@ -132,3 +134,84 @@ cross-package or concurrency surface. Recorded on delivery per Principle V.
 4. Verify: probe exercised on this very branch (positive + negative control), skill discoverable.
 5. Grounding once at the end, in-branch; then the PR.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+### Spec 117 authored and the skill shipped on branch (2026-08-03)
+
+Branch `task-198-polish-skill` at `.worktrees/task-198`, five commits, pushed. **pr gate
+verdict=pass, no findings, baseLag=0.** PR not opened — held for operator approval, which is
+step 3 of the wiki-in-PR lifecycle.
+
+**The three open questions, resolved from artifacts rather than as preferences.**
+Spec: **yes** — the constitution's trivial exemption requires a *surgical fix* with a complete
+file:line diagnosis, and authoring a new artifact is neither; spec 113 is the exact precedent
+(the `tui-frames` skill, also documentation-only, got a full spec). Canonical statement: **the
+skill**, with a short CLAUDE.md pointer, matching how the TUI-design and wiki-in-PR blocks
+already point at their skills. Card scaffold: **yes, a template ships with the skill** — AC #1
+requires a cold session to run the loop without the operator restating it, and step 1 is where
+that has to be self-serve.
+
+**Stub-first was dogfooded, and it paid off measurably.** Spec 117's stub landed on main
+(`d8afac22`) before the branch's first content commit. `spec-bridge`'s `deriveSpecState` then
+read `spec.md` present → **In Progress**, matching the card, so `spec-bridge:link` succeeded and
+the bridge check reports *"115 linked task(s), none exceed their artifacts."* TASK-195 had to
+*unlink* spec 115 at this same point (its decision 6). Same tooling, opposite outcome, and the
+only difference is the ordering this card exists to encode.
+
+**Delivered.**
+
+- `.claude/skills/polish-session/SKILL.md` — stub-first stated **before** the loop rather than at
+  step 5 where escalation actually fires, because a session that reads it at step 5 has already
+  made the mistake; the nine-step loop; the trivial-exemption bar with its contrapositive as the
+  escalation signal; grounding routed to step 8 with the idempotence argument for why deferring
+  is free; the two failures that look like chores. TASK-195 cited, not re-narrated.
+- `templates/session-card.md` — the session card scaffold, spec 087 card format, with the five
+  ACs that make the flow checkable.
+- `scripts/session-status.mjs` — read-only probe, advisory exit code, never builds.
+- A CLAUDE.md pointer block (spec 117), pointer only.
+
+**The probe's own trap, verified live rather than asserted.** `go build ./...` ran, exited 0, and
+the probe still reported the binary stale — the TASK-195 failure reproduced on demand:
+
+```
+go build ./... SUCCEEDED
+binary: stale
+  promptworld predates internal/tui/views.go — `go build ./...` does not rewrite it.
+```
+
+Controls: absent binary reported as its own state with the fix (exit 0, not a failure of the
+check); fresh binary exit 0, tree clean; stale binary exit 1.
+
+**Footprint reading verified against a real number, not a trivial zero.** A scratch commit
+touching `internal/daemon/daemon.go` was made and reverted; while it stood, the session gate
+printed `wikiNotes=12` and the probe printed `wikiNotes=12` — and 12 is the count TASK-195
+derived independently for that same file. Agreement is structural: the probe reads
+`branches[].wikiFootprint` from the gate's JSON rather than recomputing it.
+
+**One design defect found reviewing my own work against SC-001..SC-006, and fixed.** The probe
+claimed to report footprint *headroom* but recovered the threshold by parsing the gate's finding
+message — which only exists once the threshold has already been crossed, i.e. exactly when
+headroom has stopped being useful. Below threshold it could print only a bare count, making the
+skill's claim untrue. Now reads the declared `WIKI_FOOTPRINT_THRESHOLD` constant from the gate's
+source and degrades to a bare count if that constant is renamed. Recorded in spec.md under
+"Discovered during implementation" rather than quietly corrected. The same review caught that the
+loop was missing the card-claim push and the step-8 gate commands, so it did not in fact run end
+to end (SC-001).
+
+**Grounding.** No wiki note pins `CLAUDE.md` or `.claude/skills/` — `guardian.md`'s CLAUDE.md
+mention is in-game skin prose and its `sources:` are Go files — so `wikiNotes=0` and there was
+nothing to re-pin. player-docs 16 fresh / 0 stale / 0 missing / 0 broken-ref. Base freshened by
+merging origin/main **into** the branch, never rebased.
+
+**Model tier (Principle V).** Authored at the planning tier, `claude-opus-5`. The deliverable is
+policy — the lifecycle's own statement of itself, which Principle V assigns to the planning tier
+as a non-implementation verb — and the one code artifact is a single self-contained Node probe
+with no cross-package or concurrency surface. This session's harness also forbids subagent
+dispatch unless the operator asks; flagged for redirection if the operator would rather the probe
+had gone to `spec-implementer`.
+
+**Deliberately not done:** the PR is not opened (operator approval first), and `spec-bridge:sync`
+will mirror spec 117's phase ACs onto this card only after the merge, when `tasks.md` is on main.
+<!-- SECTION:NOTES:END -->
