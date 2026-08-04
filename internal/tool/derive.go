@@ -218,6 +218,11 @@ var guardianToolDesc = map[string]string{
 	"issue_directive":    "bind villagers to an active designation: a hard command with your framing words and a lifetime in days",
 	"cancel_directive":   "withdraw a directive by its id",
 	"survey_site":        "a deterministic site fact sheet: terrain mix, nearest water/tree/rock, structures, passability",
+	// inspect_pack (spec 116) renders under GuardianReadGuidance beside
+	// survey_site — this gloss is its read-paragraph line. It answers the
+	// question the targeting digest's gross carry number cannot: WHAT a
+	// villager holds, and whether any of it is food.
+	"inspect_pack": "what one living villager is actually carrying: every kind and count, their carried and free bulk, and whether they hold any food at all",
 	// prophesy (spec 085): the staked vision — the world itself judges the
 	// declared claim at its deadline, and faith rises or falls on the outcome.
 	"prophesy": "declare a prophecy: an omen carrying a machine-checkable claim the world will judge by its deadline — fulfilled earns the village's faith, failed costs more; it cannot be cancelled",
@@ -256,7 +261,19 @@ var miracleKindArgs = map[string]string{
 	// and restates the door's own rule (FR-011): a grant whose qty exceeds the
 	// free amount is refused WHOLE, never partially delivered, so reading the
 	// headroom first avoids the wasted attempt.
-	"give_item": fmt.Sprintf(`villager, item (one of: %s), qty — check the villager's carry headroom in the digest above; a qty that would exceed their free amount is refused whole, not partially delivered`,
+	// (spec 116 FR-016): the headroom clause now names the REMEDY as well as
+	// the rule. In world-03 a starving villager's pack was full of wood, so
+	// every grant of food was refused whole and the guardian had no way to
+	// empty it — the door said no with no repair to offer. take_item is that
+	// repair, and naming it here closes the loop at the point of guidance,
+	// not only at the point of capability.
+	"give_item": fmt.Sprintf(`villager, item (one of: %s), qty — check the villager's carry headroom in the digest above; a qty that would exceed their free amount is refused whole, not partially delivered. If they have no free bulk, take_item first: lift what they do not need out of their pack, then grant`,
+		strings.Join(GrantKinds(), ", ")),
+	// (spec 116 FR-009): give_item's mirror image. The read paragraph's pack
+	// tool — never named here, since a Read tool renders only there — is
+	// where the exact counts come from; the door rejects an over-count
+	// removal WHOLE rather than taking what it can.
+	"take_item": fmt.Sprintf(`villager, item (one of: %s), qty — lifts goods OUT of a villager's pack and sets them down as a pile at their feet (nothing is destroyed; they or a neighbour can pick it back up). Read their pack first for the exact counts: a qty greater than they carry is refused whole`,
 		strings.Join(GrantKinds(), ", ")),
 	"time_snap": `day and time ("HH:MM")`,
 }

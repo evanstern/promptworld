@@ -125,6 +125,7 @@ already-written files and every serialized identifier (event types
 | `skin.guardian.example_ask.accept_mission` | `"get a second fire built near the west huts and keep it fueled"` | help guardian section (spec 107: the player's standing mission) |
 | `skin.guardian.example_ask.note_mission_progress` | `"how is my mission coming along? note where it stands"` | help guardian section (spec 107: mission progress bookkeeping) |
 | `skin.guardian.example_ask.cancel_mission` | `"stand down from the fire mission"` | help guardian section (spec 107: the player's stand-down) |
+| `skin.guardian.example_ask.inspect_pack` | `"what is Cedar actually carrying?"` | help guardian section (spec 116: the read-only look inside a villager's pack) |
 | `skin.stage.stage-1.name` … `skin.stage.stage-4.name` | The Voice / The Written Word / The Craft / The Stewardship | stage display identities (`internal/skin` StageIdentity; spec 046 surfaces) |
 | `skin.stage.stage-1.line` … `skin.stage.stage-4.line` | "you speak, it acts" / "your law outlives the conversation" / "you shape what it can do" / "a world in your care" | one-line stage identity descriptions |
 | `skin.stage.stage-2.ceremony_chapter` | "Your play proved The Written Word: a law that outlives the conversation, written once and honored by every turn since." | `overlays/ceremony.md`'s D6 authorship-voice narrated chapter (spec 056) — stage-1 has no entry (never unlocked, `sim.EvaluateUnlock` never returns it) |

@@ -90,7 +90,7 @@ func TestLoopRosterGuardianContents(t *testing.T) {
 	// explain (spec 063) is the read-only facts tool; the plan layer (spec
 	// 084), prophesy (spec 085), and canonize_region/brief_myths (spec 101)
 	// append after it, positions unshifted.
-	want := []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed", "explain", "place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site", "prophesy", "canonize_region", "brief_myths", "accept_mission", "note_mission_progress", "cancel_mission"}
+	want := []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed", "explain", "place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site", "prophesy", "canonize_region", "brief_myths", "accept_mission", "note_mission_progress", "cancel_mission", "inspect_pack"}
 	got := namesOf(LoopRosterGuardian())
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("LoopRosterGuardian() names = %v, want %v", got, want)

@@ -84,9 +84,13 @@ var RosterVillager = func() []string {
 // note_mission_progress / cancel_mission — charge-free artifact verbs (the
 // plan-layer posture; a mission records intent, the priced verbs still do
 // all the acting).
+// inspect_pack (spec 116) appends last again: the read-only look inside a
+// villager's pack, following survey_site/brief_myths' every-stage read
+// profile. take_item adds NO name here — it is a work_miracle KIND, not a
+// tool, so it rides work_miracle's existing membership.
 var RosterGuardian = []string{"converse", "send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed", "explain",
 	"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site", "prophesy", "canonize_region", "brief_myths",
-	"accept_mission", "note_mission_progress", "cancel_mission"}
+	"accept_mission", "note_mission_progress", "cancel_mission", "inspect_pack"}
 
 // OnRoster reports whether name is on roster — the door membership check.
 func OnRoster(roster []string, name string) bool {
@@ -153,9 +157,12 @@ func LoopRosterVillager() []Tool {
 // appends last, so no existing tool's declared position shifts.
 // The mission layer (spec 107) appends last again, the same discipline:
 // three charge-free artifact verbs, no existing declared position shifts.
+// inspect_pack (spec 116) appends last again: the Read dispatch class, the
+// survey_site/explain shape — declared so the model can call it, and offered
+// at every stage because a read widens no acting capability.
 var loopGuardianTools = []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed", "explain",
 	"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site", "prophesy", "canonize_region", "brief_myths",
-	"accept_mission", "note_mission_progress", "cancel_mission"}
+	"accept_mission", "note_mission_progress", "cancel_mission", "inspect_pack"}
 
 // LoopRosterGuardian returns the ordered declared-tool list the guardian
 // tool-use loop presents to the model (loopGuardianTools), resolved to full

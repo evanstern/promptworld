@@ -38,7 +38,7 @@ var wantExpressive = []string{"say", "gist", "muse"}
 // insensitive — TestRostersResolve sorts before comparing.
 var wantGuardian = []string{"converse", "send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed", "explain",
 	"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site", "prophesy", "canonize_region", "brief_myths",
-	"accept_mission", "note_mission_progress", "cancel_mission"}
+	"accept_mission", "note_mission_progress", "cancel_mission", "inspect_pack"}
 
 // wantGuardianCatalog is the guardian tools' catalog membership in REGISTRATION
 // order (spec 029): converse, then the two influence forms (send_vision/
@@ -53,9 +53,12 @@ var wantGuardian = []string{"converse", "send_omen", "send_vision", "monitor_and
 // canonization miracle and its read-only myth-briefing companion.
 // The mission layer (spec 107) appends last again: three charge-free
 // artifact verbs (accept/note-progress/cancel).
+// inspect_pack (spec 116) appends last of all: the read-only look inside a
+// villager's pack. take_item adds no catalog row — it is a work_miracle KIND,
+// not a tool.
 var wantGuardianCatalog = []string{"converse", "send_vision", "send_omen", "monitor_and_act", "cancel_order", "pause", "start", "adjust_speed", "work_miracle", "explain",
 	"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site", "prophesy", "canonize_region", "brief_myths",
-	"accept_mission", "note_mission_progress", "cancel_mission"}
+	"accept_mission", "note_mission_progress", "cancel_mission", "inspect_pack"}
 var wantVillagerExpressiveTail = []string{"say", "muse", "gist"}
 
 // wantJournal is the four villager journal tools (spec 019, US3): two Expressive
@@ -304,6 +307,8 @@ func TestMiracleCostTable(t *testing.T) {
 		"guardian.entity_removed": 1,
 		"guardian.item_granted":   1,
 		"guardian.time_snapped":   2,
+		// The removal miracle (spec 116): give_item's price, its own event.
+		"guardian.item_taken": 1,
 	}
 	if !reflect.DeepEqual(byEvent, wantEvents) {
 		t.Errorf("MiracleCostsByEvent() = %v, want %v", byEvent, wantEvents)
