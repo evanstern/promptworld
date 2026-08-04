@@ -1,30 +1,32 @@
 ---
 name: guardian-miracle-mechanics
-description: The four miracle event types (time_snapped/item_granted/entity_moved/entity_removed) — reducer dispatch, per-arm validation (validate-not-clamp, reject-whole), and the cost table/gratis doctrine (2 charges for a snap, 1 for the rest; gratis reachable only via the operator's --force door). Split from [[guardian-miracles]]; load for a specific miracle kind's validation rule or its charge cost.
+description: The five miracle event types (time_snapped/item_granted/item_taken/entity_moved/entity_removed) — reducer dispatch, per-arm validation (validate-not-clamp, reject-whole), and the cost table/gratis doctrine (2 charges for a snap, 1 for the rest; gratis reachable only via the operator's --force door). Split from [[guardian-miracles]]; load for a specific miracle kind's validation rule or its charge cost.
 kind: component
 sources:
   - internal/sim/miracles.go
   - internal/tool/registry.go
   - internal/guardian/toolcalls.go
-verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
+size_budget_exempt: spec 116 added the guardian.item_taken row and its applyItemTaken validation/transfer paragraph, which must stay on this note as the normative per-arm authority; a per-kind summary-style split is a dedicated future pass, not this task's scope
+verified_against: 5761edb18e2b5fb49c6a03a050b0d871f5546c05
 ---
 
 # Guardian's miracle mechanics
 
-Split from [[guardian-miracles]] (summary-style, corpus-spec v2) — the four
+Split from [[guardian-miracles]] (summary-style, corpus-spec v2) — the five
 event types' reducer semantics and the cost/gratis doctrine.
 
-**The four event types** (`internal/sim/miracles.go`, canonical JSON, struct-ordered):
+**The five event types** (`internal/sim/miracles.go`, canonical JSON, struct-ordered):
 
 | Event | Payload | Effect |
 |---|---|---|
 | `guardian.time_snapped` | `TimeSnappedPayload{to_tick, gratis}` | jumps `State.Tick` forward to `to_tick`, forward-only (a target at or before the current tick is rejected whole, before any spend); shifts every relative-duration field via `rebaseTicks` first |
 | `guardian.item_granted` | `ItemGrantedPayload{agent, kind, qty, gratis}` | provisions a living villager with `qty` known items, reject-whole (never clamp) if it would exceed the carry cap |
+| `guardian.item_taken` | `ItemTakenPayload{agent, kind, qty, gratis}` | lifts `qty` known items OUT of a living villager's pack and sets them down as a pile on the villager's own tile (`pileFor`, create-or-merge), reject-whole (never clamp) if they carry fewer than `qty` |
 | `guardian.entity_moved` | `EntityMovedPayload{class, x, y, to_x, to_y, gratis}` (`class` ∈ villager\|structure\|pile) | relocates the entity from `(x,y)` to `(to_x,to_y)` |
 | `guardian.entity_removed` | `EntityRemovedPayload{class, x, y, gratis}` (`class` ∈ structure\|pile\|terrain; villager is always rejected) | deletes the entity or overlays the terrain |
 
 `applyMiracle` in `miracles.go` is the reducer dispatcher `sim.State.Apply` routes
-these four types to (alongside `applyMetatron` for `guardian.charge_regenerated`/
+these five types to (alongside `applyMetatron` for `guardian.charge_regenerated`/
 `guardian.nudged` — [[sim-state-reducer]]). Every arm's validation — presence at the
 source, the destination's placement rule, item kind/quantity — precedes both the
 charge spend and the mutation, so a rejected miracle spends nothing and leaves no
@@ -71,6 +73,21 @@ partial application (validate-not-clamp, reject-whole):
   since spec 032 (US2) an axe grant is the same clone against `Inv.Axes` with
   the same fresh-`axeDurability` value the `craft_axe` verb produces, sorted
   the same way.
+- **`applyItemTaken`** (spec 116): `applyItemGranted`'s structural twin, pointed the
+  other way. The same validation order — index in range, villager alive, kind in the
+  `grantableKind` set (rejection enumerates it as `"unknown item kind %q (takeable: %s)"`),
+  positive quantity — plus a carried-quantity check that rejects WHOLE and names what the
+  villager actually holds (`"taking %d %s from %s is more than they carry (%d)"`), all
+  before the charge spend and before any mutation. The goods are MOVED, not unmade:
+  `pileFor(a.X, a.Y)` is the create-or-merge target, so the total units in
+  (inventory + tile pile) are unchanged by the arm, and a removal onto a bare tile mints
+  the pile. Spears and axes leave most-worn-first — the FRONT of the villager's ascending
+  remaining-uses slice moves and both sides stay sorted ascending, verbatim the
+  `agent.dropped` rule and the order hunts already spend them in. Food lands as a pile
+  batch stamped `e.Tick + rotWindowTicks`, merging into an existing batch of the same
+  `(Kind, SpoilAt)`: carried food holds no spoilage of its own (the `Inventory` field is
+  a bare count; only a `Pile`'s `FoodBatch` has a `SpoilAt`), so the pile is where a rot
+  window first exists.
 - **`applyTimeSnapped`**: rejects a non-forward target before any spend or mutation;
   spends 2 charges (the dearest miracle) unless gratis; calls `rebaseTicks`, then
   sets `State.Tick = to_tick`. FR-010 (a snap mints no charges across the skipped
@@ -117,4 +134,4 @@ and the shift-semantics re-base taxonomy a time snap triggers.
 [[worldmap-generation]] and [[tile-registry]] own the terrain vocabulary
 `applyEntityRemoved`'s `removeTerrain` reuses; [[mental-maps]] owns the
 derived explored/sighting bookkeeping a miracle-moved villager gets.
-[[event-types]] catalogs all four payload shapes.
+[[event-types]] catalogs all five payload shapes.

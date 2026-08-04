@@ -6,7 +6,7 @@ sources:
   - internal/sim/state.go
   - internal/sim/agents.go
   - internal/sim/miracles.go
-verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
+verified_against: 5761edb18e2b5fb49c6a03a050b0d871f5546c05
 ---
 
 # Sim state: world & governance dispatch arms
@@ -67,9 +67,10 @@ on re-apply) and the `stranger.*` family to `applyStranger` in
 [[event-types-scenario-incidents]]); the `meeting.*`/`norm.*` families —
 plus `meeting.convention_established` and the `sim.gathering_observed`
 watch event (TASK-36) — dispatch to `applyGovernance` in `governance.go`
-([[governance]]); the four miracle types
-`guardian.time_snapped`/`guardian.item_granted`/`guardian.entity_moved`/
-`guardian.entity_removed` (spec 016, [[guardian-miracles]]) dispatch to
+([[governance]]); the five miracle types
+`guardian.time_snapped`/`guardian.item_granted`/`guardian.item_taken`/
+`guardian.entity_moved`/`guardian.entity_removed` (spec 016 and 116,
+[[guardian-miracles]]) dispatch to
 `applyMiracle` in `miracles.go`, alongside `guardian.charge_regenerated`/
 `guardian.nudged`'s `applyGuardian`. `applyGuardian` and its neighbors also
 own the standing-order lifecycle, charter observation, morgue epilogues,

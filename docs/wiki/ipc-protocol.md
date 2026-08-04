@@ -5,7 +5,7 @@ kind: concept
 sources:
   - internal/ipc/protocol.go
   - specs/001-world-daemon/contracts/client-protocol.md
-verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
+verified_against: 5761edb18e2b5fb49c6a03a050b0d871f5546c05
 ---
 
 # IPC protocol
@@ -44,7 +44,7 @@ clients keep working forever), even though the Go types/package renamed from
 `guardian.*` to `guardian.*` — and `miracle`
 (spec 016, [[guardian-miracles]]): `MiracleArgs{kind, day?, time?, villager?,
 item?, qty?, class?, x?, y?, to_x?, to_y?, gratis?}` where `kind` selects
-`time_snap`/`give_item`/`move`/`remove` and the remaining fields are that kind's
+`time_snap`/`give_item`/`take_item`/`move`/`remove` and the remaining fields are that kind's
 arguments → `MiracleData{kind, charges, gratis, summary}`. `miracle` is the
 **only** surface that accepts `gratis` (the CLI's `--force` sets it, waiving the
 charge — the angel's turn path has no equivalent field); the handler needs only

@@ -6,7 +6,7 @@ sources:
   - internal/tool/registry.go
   - internal/tool/tool.go
   - internal/tool/roster.go
-verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
+verified_against: 5761edb18e2b5fb49c6a03a050b0d871f5546c05
 ---
 
 # Tool registry — authored schemas and clamp-with-notice
@@ -27,7 +27,7 @@ enum drawn from the SAME legacy-World-tool filter `VocabularyLine`/`WorldGoals` 
 so the plan vocabulary can never drift from the free-text one even though the two
 can't share one function call (an initialization-cycle constraint). `work_miracle`
 needs no override: its flat parameter surface (`kind` required Enum over
-`miracleKinds` = `move`/`remove`/`give_item`/`time_snap`, plus every per-kind field
+`miracleKinds` = `move`/`remove`/`give_item`/`time_snap`/`take_item`, plus every per-kind field
 as an optional scalar) is fully Params-derived. (Pre-spec-029 this was also
 load-bearing: the loop driver's `validateArgs` routed every `InputSchemaJSON`
 tool through `set_plan`'s validator, so an override here would have validated

@@ -15,7 +15,7 @@ sources:
   - internal/world/world.go
   - internal/worlds/unlocks.go
   - cmd/promptworld/stages.go
-verified_against: 9f7df6137c78506f9d5ab48809f6c2e4855da782
+verified_against: 5761edb18e2b5fb49c6a03a050b0d871f5546c05
 ---
 
 # Explain tool and tutor guide

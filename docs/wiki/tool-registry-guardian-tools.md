@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/tool/registry.go
   - internal/tool/derive.go
-verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
+verified_against: 5761edb18e2b5fb49c6a03a050b0d871f5546c05
 ---
 
 # Tool registry — the Guardian tool surface
@@ -89,7 +89,7 @@ has no entry — the branch bundle tools ([[bundle-tools]]) render through; it i
 byte-inert for every map-covered built-in, pinned by the before/after
 byte-identity test in `derive_test.go`. Since spec 063 ([[grounded-feedback]]),
 `GuardianToolGuidance` also SKIPS every `Effect: Read` tool in the roster
-(`explain`; `survey_site` since spec 084) — a read tool costs nothing and never consumes the turn's
+(`explain`; `survey_site` since spec 084; `inspect_pack` since spec 116) — a read tool costs nothing and never consumes the turn's
 one act, so listing it under the "call exactly ONE of these" acting doctrine
 would misrepresent it; a sibling `GuardianReadGuidance(roster)` renders those
 tools' own "you may also READ freely" paragraph instead (empty when the
@@ -117,6 +117,19 @@ bookkeeping, stage-1 granted on the plan-layer profile) and adds the
 optional `mission_id` param to `place_designation`/`issue_directive` (the
 atomic pursuit link; their `Events` gain `guardian.mission_progressed`) —
 [[guardian-missions]].
+
+Spec 116 appends `inspect_pack` last (Effect Read, Gate None, one required
+`villager` param): the guardian's free look INSIDE a villager's pack — every
+kind and count, carried and free bulk against `sim.BulkCap`, and an explicit
+statement of whether they hold any food. It renders through
+`GuardianReadGuidance` beside `survey_site`, is granted at every stage
+(read-only, widens no acting capability), and its sheet is assembled turn-side
+from the guardian's absorb-mirrored inventory snapshot
+(`internal/guardian/pack.go`, [[guardian-turn-loop]]) — the tool package has no
+world state of its own. The same spec adds `take_item` to `work_miracle`'s kind
+enum (priced as `give_item`, event `guardian.item_taken`) and names it in
+`give_item`'s carry-headroom hint as the remedy for a full pack —
+[[guardian-miracles]].
 
 ## Connections
 

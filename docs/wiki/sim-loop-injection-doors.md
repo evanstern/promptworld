@@ -4,7 +4,7 @@ description: Loop.InjectSocial (the mind's whitelisted conversation/consolidatio
 kind: component
 sources:
   - internal/sim/loop.go
-verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
+verified_against: 5761edb18e2b5fb49c6a03a050b0d871f5546c05
 ---
 
 # Sim loop — injection doors
@@ -25,9 +25,10 @@ whitelisted as a reducer no-op, `chronicle.entry` appends the story ring,
 `guardian.place_revealed` (spec 041, FR-014) widens the boundary by one — a
 vision's optional place grant, declared in `send_vision`'s `Events` so
 `ValidateToolCoverage` pins it ⊆ this whitelist, whose dry-run enforces a
-living target and a real place before anything lands — the four
-`guardian.time_snapped`/`guardian.item_granted`/`guardian.entity_moved`/
-`guardian.entity_removed` miracle types (spec 016) are whitelisted the same way —
+living target and a real place before anything lands — the five
+`guardian.time_snapped`/`guardian.item_granted`/`guardian.item_taken`/
+`guardian.entity_moved`/`guardian.entity_removed` miracle types (spec 016,
+extended by spec 116) are whitelisted the same way —
 their reducer arms enforce presence/destination/charge before anything lands,
 the whitelist is only the isolation boundary — `guardian.order_placed`/
 `guardian.order_cancelled`/`guardian.order_triggered` (spec 029) join the

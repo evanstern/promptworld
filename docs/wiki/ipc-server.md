@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/ipc/server.go
   - internal/ipc/socket.go
-verified_against: 657c770f87404b936a0587db1f6b00e81b9f0ee6
+verified_against: 5761edb18e2b5fb49c6a03a050b0d871f5546c05
 ---
 
 # IPC server
@@ -45,7 +45,7 @@ snapshot folds, and `horizonClasses` — split out to
 `miracle` (spec 016, [[guardian-miracles]]) dispatches to `handleMiracle`, which
 needs only `srv.loop` — never `srv.llm` or `srv.guardian` — so it works on
 pure-sim worlds with no guardian or orchestrator configured. It fetches the current
-state via `loop.DoState` (to resolve door-side name/tile lookups: a `give_item`
+state via `loop.DoState` (to resolve door-side name/tile lookups: a `give_item`/`take_item`
 villager name through `sim.AgentIndexByName`, a `time_snap` day/`HH:MM` through
 `clock.ParseTimeOfDay`/`clock.TickAt`), builds `guardian.MiracleParams` from the
 kind-specific args, calls the shared `guardian.BuildMiracleBatch` (the same

@@ -1,27 +1,29 @@
 ---
 name: guardian-miracles
-description: The four charge-priced world-edit events (time snap, item grant, entity move, entity remove) the guardian's other mediated act spends from — overview and terminology ("miracle" name vs "working" player-facing noun) only. Mechanics/cost table [[guardian-miracle-mechanics]], SHIFT/KEEP rebase taxonomy [[guardian-miracle-rebase-taxonomy]], the two landing doors [[guardian-miracle-doors]], targeting digest/replay-determinism [[guardian-miracle-guarantees]].
+description: The five charge-priced world-edit events (time snap, item grant, item take, entity move, entity remove) the guardian's other mediated act spends from — overview and terminology ("miracle" name vs "working" player-facing noun) only. Mechanics/cost table [[guardian-miracle-mechanics]], SHIFT/KEEP rebase taxonomy [[guardian-miracle-rebase-taxonomy]], the two landing doors [[guardian-miracle-doors]], targeting digest/replay-determinism [[guardian-miracle-guarantees]].
 kind: component
 sources:
   - internal/sim/miracles.go
   - cmd/promptworld/work.go
   - internal/ipc/server.go
-verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
+verified_against: 5761edb18e2b5fb49c6a03a050b0d871f5546c05
 ---
 
 # Guardian's miracles
 
-Miracles (spec 016) are four direct, charge-priced world edits — spent from the same
+Miracles (spec 016, extended by spec 116) are five direct, charge-priced world edits — spent from the same
 bank as a [[guardian]] omen or vision, but landing a concrete change rather than a
 villager's subjective experience. Like an influence, a miracle lands through
 `Loop.InjectSocial` as
 one atomic, whitelisted batch; the reducer validates rather than clamps, so an
 invalid miracle is rejected wholesale before recording and a recorded miracle always
-re-applies cleanly in replay (spec 016 R1). No new persistent entities exist —
-miracles only mutate fields already in `sim.State`.
+re-applies cleanly in replay (spec 016 R1). Miracles mutate fields already in
+`sim.State`; the one entity any miracle can bring into being is a ground pile,
+minted by spec 116's `guardian.item_taken` when the goods it lifts from a pack
+land on a tile that held none (Operational notes, below).
 
 Terminology (spec 052, TASK-121): "miracle" is the frozen mechanics name — the
-`work_miracle` tool id, the four `guardian.*` event types, the `miracle` IPC/CLI
+`work_miracle` tool id, the `guardian.*` event types, the `miracle` IPC/CLI
 command, and this note's own name all keep it, unchanged. The PLAYER-FACING word is
 now "working" — the default [[skin]]'s `WorkingNoun()`/`WorkingNounPlural()`
 (`"working"`/`"workings"`) resolve wherever the guardian's turn or moment text
@@ -31,8 +33,8 @@ id, event vocabulary, and cost/validation mechanics below can never move.
 
 ## How it works
 
-The four event types (`guardian.time_snapped`/`item_granted`/`entity_moved`/
-`entity_removed`) are dispatched by `applyMiracle` (`miracles.go`); each arm
+The five event types (`guardian.time_snapped`/`item_granted`/`item_taken`/
+`entity_moved`/`entity_removed`) are dispatched by `applyMiracle` (`miracles.go`); each arm
 validates before spending a charge or mutating state — reject-whole, never
 clamp — so a rejected miracle spends nothing and a recorded one always
 re-applies in replay. The dearest miracle (time snap) costs 2 charges,
@@ -76,10 +78,10 @@ taxonomy (a standing order's `ExpiresTick` is a SHIFT field);
 explored/sighting bookkeeping updates; [[social-fabric]]/[[sim-state-reducer]]
 share it since spec 061 (`PairTalk.Tick` SHIFT, the conversation loop
 damper's per-pair ledger);
-[[sim-loop]] whitelists the four event types in `injectSocialWhitelist` and
+[[sim-loop]] whitelists the five event types in `injectSocialWhitelist` and
 reattaches the static map to the dry-run probe; [[sim-state-reducer]] dispatches to
 `applyMiracle` and carries the unexported `m *worldmap.Map` field the reducer arms
-need; [[event-types]] catalogs the four payload shapes; [[ipc-protocol]] and
+need; [[event-types]] catalogs the five payload shapes; [[ipc-protocol]] and
 [[ipc-server]] define and implement the `miracle` wire command; [[cli-promptworld]]
 is the `promptworld work` operator door (hidden `miracle` alias); [[game-clock]]'s `TickAt`/
 `ParseTimeOfDay` resolve a time-snap target; [[world-migration]]'s `MigrateState`
@@ -105,10 +107,17 @@ links back here.
 
 ## Operational notes
 
-A miracle never mints a new persistent entity — it edits fields already in
-`sim.State`. On an ENDED world (spec 044, [[morgue]]) no miracle can land
+A miracle edits fields already in `sim.State` — with ONE exception since spec 116:
+`guardian.item_taken` transfers the removed goods into the pile on the villager's
+own tile through `pileFor`, which is create-or-merge, so a removal onto a tile that
+held no pile MINTS a `sim.Pile`. It is the only miracle kind that can bring a
+persistent entity into being, and it does so through the same create-or-merge helper
+a villager's own `agent.dropped` uses — the pile is ordinary ground goods, not a new
+class. Nothing is destroyed either way: the total units in (inventory + tile pile)
+are unchanged by the arm.
+On an ENDED world (spec 044, [[morgue]]) no miracle can land
 through either door: `InjectSocial` narrows to recorded prose about the
-finished run, so all four miracle event types are refused at the command
+finished run, so all five miracle event types are refused at the command
 gate in [[sim-loop]]. A villager is the one class that can never be removed by any door
 (v1 doctrine); this is enforced in the reducer, not just at the doors, so it holds
 even against a forged event. The gratis flag's only reachable path is the CLI/IPC
