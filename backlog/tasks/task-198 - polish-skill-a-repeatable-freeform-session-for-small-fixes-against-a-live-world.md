@@ -3,10 +3,10 @@ id: TASK-198
 title: >-
   polish skill: a repeatable freeform session for small fixes against a live
   world
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-08-03 23:34'
-updated_date: '2026-08-04 03:06'
+updated_date: '2026-08-04 03:08'
 labels: []
 dependencies: []
 ordinal: 180001
@@ -84,6 +84,9 @@ Spec: specs/117-polish-session-skill
 - [x] #4 The skill routes grounding to the end of the session and teaches reading the session gate's wikiNotes footprint rather than a cadence
 - [x] #5 The skill names the live-QA binary trap and the golden-test-failure-is-signal rule
 - [x] #6 TASK-195 is referenced as the worked example rather than its lessons being re-narrated in full
+- [x] #7 Spec phase: Phase 1 — Author the skill
+- [x] #8 Spec phase: Phase 2 — Template and probe
+- [x] #9 Spec phase: Phase 3 — Verify and ground
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -221,4 +224,60 @@ pr gate exit 0 at open time (verdict=pass, no findings, baseLag=0), spec-bridge 
 Merge with `--merge`, never squash. After the merge, `spec-bridge:sync` mirrors spec 117's
 phase ACs onto this card — `tasks.md` is on the branch until then — and the worktree and branch
 can be cleaned up once `gh api ... --jq .merged` confirms.
+
+spec-bridge sync: Phase 1 — Author the skill: 7/7 · Phase 2 — Template and probe: 3/3 · Phase 3 — Verify and ground: 8/8 — status In Progress → Done
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Shipped as PR #164, merged 2026-08-04 via a real merge commit (c173d977, two parents — verified,
+because a squash would have rewritten the branch's commit hashes out of main's history).
+
+**`.claude/skills/polish-session/` is now the canonical statement of the freeform polish flow**,
+with a CLAUDE.md pointer to it. Specified as spec 117, 18/18 tasks.
+
+- **SKILL.md** — the nine-step loop; the trivial-exemption bar as the ad-hoc-versus-spec test,
+  with its contrapositive as the escalation signal; grounding routed to the end of the session;
+  the two failures that look like chores. Stub-first is stated **before** the loop rather than at
+  step 5 where escalation fires, because a session that reads it at step 5 has already made the
+  mistake.
+- **templates/session-card.md** — the session's single long-running card, spec 087 format, with
+  the five ACs that make the flow checkable.
+- **scripts/session-status.mjs** — read-only probe for the two numbers a polish session must not
+  guess at: binary freshness against the newest tracked Go source, and the branch's wiki footprint
+  read from the session gate's JSON. Advisory exit code; never builds, never writes.
+
+**The three open questions were resolved from artifacts, not as preferences.** Spec: yes — the
+trivial exemption requires a surgical fix with a file:line diagnosis, and authoring a new artifact
+is neither; spec 113 (the tui-frames skill, also documentation-only) is the exact precedent.
+Canonical statement: the skill, CLAUDE.md points. Card scaffold: a template ships, because AC #1
+requires step 1 to be self-serve.
+
+**Stub-first was dogfooded and paid off measurably.** Spec 117's stub landed on main (d8afac22)
+before the branch's first content commit, so `deriveSpecState` read spec.md present → In Progress,
+`spec-bridge:link` succeeded, and the bridge stayed green throughout. TASK-195 had to *unlink*
+spec 115 at exactly this point. Same tooling, opposite outcome; the only difference is the
+ordering this task encodes.
+
+**Two claims verified rather than asserted.** `go build ./...` was run, exited 0, and the probe
+still reported the binary stale — the TASK-195 failure reproduced on demand. And a scratch commit
+touching `internal/daemon/daemon.go` (made, measured, reverted) had the session gate and the probe
+both print `wikiNotes=12`, matching the count TASK-195 derived independently for that file.
+
+**One defect found reviewing the work against its own success criteria.** The probe claimed to
+report footprint headroom but recovered the threshold from the gate's *finding message* — which
+only exists once the threshold has already been crossed, i.e. exactly when headroom stops
+mattering. It now reads the declared `WIKI_FOOTPRINT_THRESHOLD` constant from the gate's source.
+Recorded in spec.md under "Discovered during implementation". The same pass caught that the loop
+was missing the card-claim push and the step-8 gate commands, so it did not in fact run end to end.
+
+**Grounding:** no wiki note pins `CLAUDE.md` or `.claude/skills/`, so `wikiNotes=0` and there was
+nothing to re-pin; player-docs 16/16 fresh. Base freshened by merging origin/main into the branch,
+never rebased.
+
+**Tier (Principle V):** authored inline at `claude-opus-5`, the planning tier — the deliverable is
+policy, a non-implementation verb — under this session's harness rule forbidding subagent dispatch
+unless the operator asks. Flagged on the card at delivery: the probe script is arguably
+implementation that would otherwise have gone to `spec-implementer`.
+<!-- SECTION:FINAL_SUMMARY:END -->
