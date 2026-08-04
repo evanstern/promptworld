@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-08-03 19:57'
-updated_date: '2026-08-04 02:39'
+updated_date: '2026-08-04 02:49'
 labels:
   - guardian
   - tools
@@ -54,6 +54,8 @@ only intervention that would have saved him was sealed shut by the same full pac
   situated memory, never a silent mutation.
 - Related: TASK-167 (carry-cap guidance for give_item, spec 095) is the same blindness seen from the granting
   side; TASK-196 is the villager-side half of the world-03 death.
+
+Spec: specs/116-guardian-inventory-tool
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
