@@ -3,9 +3,10 @@ id: TASK-197
 title: >-
   Guardian inventory tool: let the Guardian read and change what a villager
   carries, and make it look first
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-08-03 19:57'
+updated_date: '2026-08-04 02:39'
 labels:
   - guardian
   - tools
