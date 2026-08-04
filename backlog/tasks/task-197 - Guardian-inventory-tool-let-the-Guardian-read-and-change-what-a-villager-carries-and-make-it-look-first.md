@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-08-03 19:57'
-updated_date: '2026-08-04 02:51'
+updated_date: '2026-08-04 03:42'
 labels:
   - guardian
   - tools
@@ -93,4 +93,20 @@ Six design decisions were RESOLVED FROM ARTIFACTS rather than re-asked, and are 
 - A4 take_item is priced and staged as give_item is (1 charge, excluded from the stage-1/2 ceiling) — same class of act pointed the other way.
 - A5 inspect_pack is granted at every stage — read-only, widens no acting capability.
 - A6 AC#5 is verified STRUCTURALLY. 'never receives a vision claiming they are carrying food' cannot be asserted against model prose; its testable projection is SC-001 + SC-002 together — the Guardian cannot send that villager a vision at all without first receiving a sheet that says in words that they carry no food. The spec claims that projection and no more.
+
+2026-08-03 — PR #165 opened (https://github.com/evanstern/promptworld/pull/165). Implementation complete on task-197-guardian-inventory-tool, tasks.md T001-T046 all ticked.
+
+TIER SERVED: Opus 5 via .claude/agents/spec-implementer-opus.md (the definition's frontmatter pin, not a model parameter). Rubric: doctrine-adjacent behavior change — new guardian write access into a villager's inventory plus a new structural refusal on the survival turn.
+
+WHAT SHIPPED: (1) inspect_pack — charge-free Read tool over a new deep-copied agentInv mirror, deterministic sheet naming every kind/count, carried+free bulk vs sim.BulkCap, and an explicit food line; granted at every stage. (2) The look-first gate — on survival-origin turns only, send_vision / give_item / take_item at a villager not yet inspected THIS turn is rejected_gate naming inspect_pack; per-villager, per-turn, origin-keyed (never message text). (3) take_item — 1-charge miracle landing guardian.item_taken plus one situated first-person memory in one atomic batch, moving goods into the tile's pile via the agent.dropped rules (reject-whole, wear ordering, food batching, conservation invariant); excluded from the stage-1/2 ceiling; IPC door parity.
+
+GATES: go build/vet/test all clean (23 pkgs, exit 0); check-tui-design --changed passed; check-merge-drift pr exit 0; 82 wiki notes re-verified and re-pinned; 16 player docs fresh.
+
+GROUNDING FINDING (corrected in-branch): the standing wiki claim 'a miracle never mints a new persistent entity' is now FALSE — take_item's pileFor is create-or-merge, so a removal onto a bare tile mints a sim.Pile. It is the only miracle kind that can. Nothing is destroyed either way (inventory + tile pile totals conserved).
+
+SPEC CORRECTION (found by the implementer, verified, fixed rather than left wrong): the contract's 'preserve FoodBatch identity and spoilage' clause was unsatisfiable — carried food holds no spoilage (Inventory.FoodRaw/FoodCooked/Meals are bare ints; only Pile.FoodBatch has SpoilAt). A pack-to-pile transfer MINTS a rot window, exactly as a villager's own drop does.
+
+FOLLOW-ONS FLAGGED, NOT INVENTED (candidates for cards if the operator wants them): (a) vocabulary seam — the sheet renders storage names ('spears') while take_item's enum uses grant names ('spear'), so a model reading the sheet may call take_item(item='spears') and take a repairable whole-refusal; (b) no CLI verb for removals — the IPC door has parity but 'promptworld work' has no 'take' verb, so an operator cannot reach take_item from the CLI.
+
+AWAITING: operator review of PR #165, including the six spec Assumptions (A1-A6) flagged for review — most notably A2 (the gate does NOT fire on ordinary console turns, only survival turns) and A6 (AC#5 is verified structurally, since model prose cannot be asserted against).
 <!-- SECTION:NOTES:END -->
