@@ -311,6 +311,29 @@ func systemActLoop(mt *Guardian, name, args string) func(context.Context, toollo
 	}
 }
 
+// systemLookThenActLoop is systemActLoop with the spec-116 look-first step in
+// front: on a SURVIVAL-origin turn the door refuses a vision, grant, or removal
+// aimed at a villager whose pack the guardian has not opened THIS turn, so a
+// scripted survival loop must reproduce the two-call sequence a real model
+// performs. The inspect_pack call is free and never the turn's act, so the
+// acting call still arrives at ordinal 2 with the full one-act budget.
+func systemLookThenActLoop(mt *Guardian, villager, name, args string) func(context.Context, toolloop.Job) (toolloop.Result, error) {
+	return func(ctx context.Context, j toolloop.Job) (toolloop.Result, error) {
+		look := toolCall("inspect_pack", `{"villager":"`+villager+`"}`)
+		lookOut := j.Handlers["inspect_pack"](ctx, look)
+		j.Record(toolloop.CallRecord{JobID: j.JobID, Ordinal: 1, Tool: "inspect_pack",
+			Args: look.Args, Verdict: lookOut.Verdict, Reason: lookOut.ResultForModel, Tier: "cloud"})
+		c := toolCall(name, args)
+		out := j.Handlers[name](ctx, c)
+		j.Record(toolloop.CallRecord{JobID: j.JobID, Ordinal: 2, Tool: name,
+			Args: c.Args, Verdict: out.Verdict, Reason: out.ResultForModel, Tier: "cloud"})
+		if out.Verdict == toolloop.VerdictLanded {
+			return toolloop.Result{Term: toolloop.TermLanded, Landed: &c}, nil
+		}
+		return toolloop.Result{Term: toolloop.TermCapExhausted}, nil
+	}
+}
+
 // TestTriggerFiresEndToEnd (US3 AC-1/AC-2, spec 029 T015): a live matching event
 // enqueues a trigger job; firing it lands order_triggered (the order is consumed),
 // runs the pre-authorized act as a system turn (one charge spent), and queues a
