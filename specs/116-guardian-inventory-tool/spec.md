@@ -205,9 +205,12 @@ replaying the batch reproduces the same state.
   them as a count plus their remaining uses; a removal takes the **most-worn first** (the front
   of the ascending slice), matching how `agent.dropped` and hunts already spend them, so the
   villager keeps their best tools and the pile receives the worn ones.
-- **Food batches.** A villager's food carries spoilage; a pile stores food as `FoodBatch`
-  entries. A removal must preserve batch identity into the pile exactly as a villager's own
-  drop does, so taken food spoils on its original schedule rather than being refreshed.
+- **Food batches.** A pile stores food as `FoodBatch` entries carrying a `SpoilAt`; a
+  villager's carried food does **not** — `sim.Inventory.FoodRaw/FoodCooked/Meals` are bare
+  counts. A removal therefore stamps the rot window at transfer time and merges into a same
+  `(Kind, SpoilAt)` batch, verbatim what a villager's own drop does. *(Corrected during
+  implementation: this bullet previously required preserving an original spoilage schedule,
+  which does not exist for carried food.)*
 - **The tile is not empty of a pile.** One pile per tile: a removal merges into the existing
   pile (create-or-merge), never a second pile.
 - **A removal that empties a pack entirely** is legal — the pack simply reads `0/24`.

@@ -120,8 +120,15 @@ Validation order, all of it BEFORE the charge spend and before any mutation
 7. move exactly `p.Qty` units from `Agents[i].Inv` into `s.pileFor(a.X, a.Y)`:
    - `spears` / `axes`: take from the FRONT of the ascending remaining-uses slice (most-worn
      first), append into the pile's slice, keep both sides sorted ascending
-   - food kinds: transfer preserving `FoodBatch` identity and spoilage, merging same
-     `(Kind, SpoilAt)` batches — the `agent.dropped` behavior
+   - food kinds: stamp the pile batch's `SpoilAt` as `e.Tick + rotWindowTicks` and merge into
+     an existing batch of the same `(Kind, SpoilAt)` — verbatim the `agent.dropped` behavior.
+
+     **Corrected 2026-08-03 during implementation.** This clause originally read "transfer
+     preserving `FoodBatch` identity and spoilage". That is unsatisfiable: carried food has no
+     spoilage to preserve — `sim.Inventory.FoodRaw/FoodCooked/Meals` are bare `int` counts, and
+     `SpoilAt` exists only on `Pile.FoodBatch`. A pack→pile transfer therefore *mints* a rot
+     window exactly as a villager's own drop does; there is no original schedule. The rule
+     above is what `agent.dropped` (`internal/sim/state.go`) actually does.
    - everything else: decrement the inventory field, increment the pile's
 
 Conservation invariant: `units(inventory) + units(tile pile)` is unchanged by the arm.
