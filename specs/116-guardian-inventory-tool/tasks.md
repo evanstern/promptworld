@@ -152,11 +152,11 @@ behavior, not when the code compiles.
 
 ## Phase 8: Grounding (rides the PR — spec 069)
 
-- [ ] **T044** Re-verify and re-pin every `docs/wiki/` note whose pinned sources this branch
+- [X] **T044** Re-verify and re-pin every `docs/wiki/` note whose pinned sources this branch
   touched (`/grounding-wiki:wiki-update`). The pr gate blocks on `wiki-repin-missing`.
-- [ ] **T045** Regenerate `docs/player/` if `docs/wiki/` changed (the `player-docs` skill);
+- [X] **T045** Regenerate `docs/player/` if `docs/wiki/` changed (the `player-docs` skill);
   the pr gate blocks on `player-docs-stale`.
-- [ ] **T046** Run `node scripts/check-merge-drift.mjs pr` from the worktree; exit 0 before
+- [X] **T046** Run `node scripts/check-merge-drift.mjs pr` from the worktree; exit 0 before
   opening the PR.
 
 ## Dependencies
