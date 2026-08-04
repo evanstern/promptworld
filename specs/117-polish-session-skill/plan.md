@@ -63,8 +63,11 @@ Design choices worth stating:
   result meaningless.
 - **Advisory exit code.** Nonzero means "something here needs your attention before live QA," not
   "stop." Nothing in the harness consumes it.
-- **Threshold not duplicated.** The probe parses the threshold out of the gate's own finding
-  message when it fires, and otherwise reports the raw count. It does not hardcode `30`.
+- **Threshold not duplicated.** The probe reads `WIKI_FOOTPRINT_THRESHOLD` out of the gate's
+  source rather than carrying its own copy of `30`, and degrades to a bare count when the
+  constant cannot be found. See "Discovered during implementation" in `spec.md` — the original
+  design read the threshold out of the gate's *finding message*, which only exists once the
+  threshold has already been crossed, i.e. exactly when headroom no longer matters.
 
 ## Risks
 

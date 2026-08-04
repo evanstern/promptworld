@@ -220,12 +220,15 @@ function readFootprint(root, worktree, branch) {
     };
   }
 
-  // The threshold is the gate's constant, not ours. Recover it from the gate's own finding
-  // when it fires; otherwise report the raw count without inventing a number.
   const finding = (report.findings || []).find(
     (f) => f.rule === 'wiki-footprint' && String(f.message || '').includes(mine.name)
   );
-  const thresholdMatch = finding && String(finding.message).match(/threshold (\d+)/);
+
+  // The threshold is the gate's constant, never ours. Below threshold no finding exists to
+  // read it from, so recover it from the gate's source — a declared constant, not a
+  // duplicated literal. Absent (renamed, refactored) degrades to a bare count rather than to
+  // a stale number, which is why headroom is optional in the output.
+  const threshold = readThreshold(gate);
   const totalMatch = finding && String(finding.message).match(/of (\d+) wiki notes/);
 
   return {
@@ -233,10 +236,21 @@ function readFootprint(root, worktree, branch) {
     branch: mine.name,
     wikiNotes: mine.wikiFootprint,
     baseLag: mine.baseLag,
-    threshold: thresholdMatch ? Number(thresholdMatch[1]) : null,
+    threshold,
+    headroom: threshold === null ? null : Math.max(0, threshold - mine.wikiFootprint),
     totalNotes: totalMatch ? Number(totalMatch[1]) : null,
     gateMessage: finding ? finding.message : null,
   };
+}
+
+function readThreshold(gatePath) {
+  try {
+    const src = readFileSync(gatePath, 'utf8');
+    const m = src.match(/WIKI_FOOTPRINT_THRESHOLD\s*=\s*(\d+)/);
+    return m ? Number(m[1]) : null;
+  } catch {
+    return null;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -281,9 +295,12 @@ function main() {
     if (footprint.gateMessage) {
       process.stdout.write(`  [warn] ${footprint.gateMessage}\n`);
     } else {
+      const room =
+        footprint.headroom === null
+          ? 'below the session gate\'s threshold'
+          : `${footprint.headroom} of headroom before the gate's threshold (${footprint.threshold})`;
       process.stdout.write(
-        '  below the session gate\'s threshold; read a rising number as scope sprawl, ' +
-          'not as grounding overdue\n'
+        `  ${room}; read a rising number as scope sprawl, not as grounding overdue\n`
       );
     }
   }

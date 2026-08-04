@@ -175,6 +175,21 @@ pointer, never a second copy.
 - **SC-007** The status probe exits 0 on a fresh binary and nonzero on a stale one, and leaves the
   working tree clean.
 
+## Discovered during implementation
+
+**FR-009's headroom reading needed a different source than planned.** The plan had the probe
+recover the `wiki-footprint` threshold by parsing the gate's finding message, so as never to
+carry a second copy of `30`. That message only exists once the threshold has been crossed —
+which is precisely when headroom has stopped being useful information. Below threshold, the
+intended reading was unavailable and the probe could only print a bare count, leaving the skill's
+claim that it "reports the same number with its headroom" untrue.
+
+Resolved by reading the declared `WIKI_FOOTPRINT_THRESHOLD` constant out of
+`scripts/check-merge-drift.mjs` itself. That is still the gate as the single authority — a
+declared constant read at run time rather than a literal duplicated into this script — and it
+degrades to a bare count if the constant is ever renamed, which is why `headroom` is optional in
+the probe's output rather than assumed present.
+
 ## Acceptance criteria
 
 Mirrors TASK-198's six criteria; see the board card.

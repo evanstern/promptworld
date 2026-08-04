@@ -53,7 +53,10 @@ protocol and praxisflux TASK-104 for the tool gap underneath it.
 1. **Cut the worktree and the branch.** `node scripts/check-merge-drift.mjs worktree --spec NNN
    --task TASK-<n>`, then `git worktree add .worktrees/task-<N> -b task-<N>-<slug> origin/main`.
 2. **Open one long-running card** for the whole session — no per-item cards, no per-item PRs.
-   Scaffold it from `templates/session-card.md` beside this file.
+   Scaffold it from `templates/session-card.md` beside this file, then claim it: card to
+   `In Progress`, committed **at root** scoped to `backlog/` alone, pushed immediately. That
+   push is the mutual-exclusion event; a rejection means another session holds the lane, so
+   stop and surface it rather than pulling and carrying on.
 3. **Get a world running and keep it running.** Cycle it onto the branch build as changes land;
    nothing else runs against it. Keep the restart helper *outside* the repo so it never enters
    the PR diff.
@@ -68,8 +71,13 @@ protocol and praxisflux TASK-104 for the tool gap underneath it.
    spec, link it with `spec-bridge:link`, and execute it in this session.
 6. **Decide whether to go again.** A fresh session is usually the right move once the branch has
    reached across a second subsystem — see the footprint reading below.
-7. **Operator visual QA on the live world.** Rebuild the binary first (see below).
-8. **Ground once, in-branch:** wiki re-pin, player docs, design references, then the `pr` gate.
+7. **Operator visual QA on the live world.** Rebuild the binary first — see below, and
+   `node .claude/skills/polish-session/scripts/session-status.mjs --check` before handing over.
+8. **Ground once, in-branch:** `/grounding-wiki:wiki-update` to re-verify and re-pin every note
+   whose sources this branch touched, then `/player-docs` if `docs/wiki/` changed, then
+   `node scripts/check-tui-design.mjs --changed` if `internal/tui/` changed. Finish with
+   `node scripts/check-merge-drift.mjs pr` at exit 0 — it blocks on `wiki-repin-missing` and
+   `player-docs-stale`, and there is no bypass flag.
 9. **Open the PR.** Merge with `--merge`, never squash — a squash rewrites in-branch commit
    hashes out of main's history and stales every wiki pin the PR carried.
 
@@ -114,12 +122,13 @@ Every branch line carries `wikiNotes=N` — the count of notes whose `sources:` 
 branch's committed changes. It is visible below threshold precisely so you can watch it move. At
 or above the threshold the gate raises `wiki-footprint`, advisory only:
 
-> `[warn] wiki-footprint: <branch> touches sources for N of 191 wiki notes (threshold 30) —
+> `[warn] wiki-footprint: <branch> touches sources for N of <total> wiki notes (threshold T) —
 > the branch has reached across subsystems; ground it or stop widening its scope`
 
 Read a rising number as a **scope-sprawl** signal, not a grounding-overdue one. The two
 sanctioned responses are the two the message names: ground and land what you have, or stop
-widening. `session-status.mjs --check` reports the same number with its headroom.
+widening. `session-status.mjs --check` reports the same count with its remaining headroom —
+both read from the gate, so there is only ever one derivation to trust.
 
 One caveat the count carries: it is computed from committed work (`mergeBase..tip`), so
 uncommitted edits are not in it.
@@ -150,9 +159,10 @@ and why it is correct.
 ## The worked example
 
 **TASK-195** ran this loop end to end by hand: three ad-hoc items, one escalation to spec 115,
-grounding once at the end, shipped as **PR #163**. Its decision log is the full narrative —
-including all three of the failures above, as they actually happened — and is the place to read
-when you want the story rather than the rule.
+grounding once at the end, shipped as **PR #163**. Every rule above that reads as a warning —
+the stub-first ordering, the stale QA binary, the golden-frame failure — is there because that
+run hit it. Its decision log is the full narrative, and is the place to read when you want the
+story rather than the rule.
 
 ```
 backlog task view TASK-195 --plain
