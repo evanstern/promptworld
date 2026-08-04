@@ -104,10 +104,14 @@ func TestWhitelistDiffIdentical(t *testing.T) {
 		// land through the same InjectSocial door as the nudge; they are NOT
 		// registry-tool events (see the registry-doctrine note below), so they
 		// appear only here in the whitelist, not in any tool's Events set.
-		"guardian.time_snapped":         true,
-		"guardian.item_granted":         true,
-		"guardian.entity_moved":         true,
-		"guardian.entity_removed":       true,
+		"guardian.time_snapped":   true,
+		"guardian.item_granted":   true,
+		"guardian.entity_moved":   true,
+		"guardian.entity_removed": true,
+		// Spec 116 widens the boundary by exactly one more: the removal
+		// miracle, give_item's mirror image — the guardian's only way to
+		// empty a pack it means to fill.
+		"guardian.item_taken":           true,
 		"meeting.proposal_rephrased":    true,
 		"cog.thought":                   true,
 		"cog.outcome":                   true,

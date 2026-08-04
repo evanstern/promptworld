@@ -1,6 +1,6 @@
 ---
 name: guardian-miracle-doors
-description: The two doors a miracle lands through — the guardian's turn (work_miracle tool call -> landMiracle) and the operator CLI/IPC door (promptworld work, --force for gratis) — both thin translators onto the shared BuildMiracleBatch + InjectSocial path, plus the fixed perception-memory templates each miracle kind attaches. Split from [[guardian-miracles]]; load for either door's call path.
+description: The two doors a miracle lands through — the guardian's turn (work_miracle tool call -> landMiracle) and the operator CLI/IPC door (promptworld work, --force for gratis) — both thin translators onto the shared BuildMiracleBatch + InjectSocial path, plus the fixed perception-memory templates each miracle kind attaches (including spec 116's take_item removal memory). Split from [[guardian-miracles]]; load for either door's call path.
 kind: component
 sources:
   - internal/guardian/miracle_batch.go
@@ -8,7 +8,8 @@ sources:
   - internal/guardian/toolcalls.go
   - cmd/promptworld/work.go
   - internal/ipc/server.go
-verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
+size_budget_exempt: spec 116 added take_item's perception-memory template to the fixed per-kind list, which must stay beside its four siblings — the list IS this note's subject and a split would separate one kind's memory from the rest; a doors-vs-memories summary-style split is a dedicated future pass, not this task's scope
+verified_against: 5761edb18e2b5fb49c6a03a050b0d871f5546c05
 ---
 
 # Guardian's miracle doors
@@ -32,6 +33,12 @@ exactly as memorable as one of the guardian's omens or visions:
   breath."`
 - `give_item` touches only the granted villager with a rendered
   `"You found N <item> in your hands, as if set there by an unseen giver."`
+- `take_item` (spec 116) touches only the villager taken FROM, with the mirror
+  template `"An unseen hand lifted N <item> from your pack and set it at your
+  feet."` — same recipient shape, same `SalDream`, same `OriginOmen`; only the
+  direction and the words differ. It names where the goods went because they are
+  at the villager's feet to pick back up (`pileFor`), not unmade. FR-013: no pack
+  mutation lands in silence.
 - `move` touches the moved villager only when `class == "villager"`, resolved via
   `s.VillagerAt(x,y)` — the SAME helper the reducer's `applyEntityMoved` and this
   builder both call, so a tile-addressed move and its memory can never name

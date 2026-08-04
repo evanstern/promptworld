@@ -28,6 +28,10 @@ func TestMiracleCostDerivedFromTool(t *testing.T) {
 		"guardian.entity_moved":   1,
 		"guardian.entity_removed": 1,
 		"guardian.item_granted":   1,
+		// The removal miracle (spec 116 FR-009 / A4): give_item's price
+		// exactly — the same world-shaping reach into a pack, pointed the
+		// other way.
+		"guardian.item_taken": 1,
 	}
 	if !reflect.DeepEqual(miracleCost, want) {
 		t.Errorf("sim.miracleCost = %v, want %v", miracleCost, want)
@@ -1488,5 +1492,311 @@ func TestMiracleGrantReplayByteIdentity(t *testing.T) {
 	driveTicks(t, replay, m, ticks, nil)
 	if live.Hash() != replay.Hash() {
 		t.Fatalf("grant replay diverged:\nlive:     %s\nreplayed: %s", string(live.Marshal()), string(replay.Marshal()))
+	}
+}
+
+// --- spec 116 US3: the removal miracle (guardian.item_taken) ---
+//
+// applyItemTaken is applyItemGranted's mirror image, so these suites mirror the
+// grant suites above: the happy path and the unlock it exists for, reject-whole
+// on every validation, the conservation invariant (nothing is created or
+// destroyed), the wear/spoilage rules inherited from the agent.dropped arm, and
+// a replay that reproduces byte-identical state.
+
+// pileAt returns the pile on (x,y), or nil.
+func pileAt(s *State, x, y int) *Pile { return s.Lookup().Pile(x, y) }
+
+// TestMiracleTakeUnlocksAFullPack is AC#1/AC#2 and SC-003 — the world-03 rescue
+// in miniature: a starving villager at 24/24 carrying twenty wood and four
+// planks cannot receive food (the grant is refused WHOLE by the carry cap), the
+// removal frees the bulk and puts the wood on the ground at their feet, and the
+// same grant then lands.
+func TestMiracleTakeUnlocksAFullPack(t *testing.T) {
+	const seed = 42
+	m := testMap(seed)
+	s := NewState(seed, m)
+	s.GuardianCharges = 3
+	s.Agents[0].Inv = Inventory{Wood: 20, Planks: 4} // 24/24: Cedar's pack
+	x, y := s.Agents[0].X, s.Agents[0].Y
+
+	// Before: the pack is a locked door — the grant is rejected whole.
+	if err := applyMiracleErr(s, 100, "guardian.item_granted", ItemGrantedPayload{
+		Agent: Ref(0), Kind: "meals", Qty: 4}); err == nil {
+		t.Fatal("a grant into a full pack should be refused whole (the world-03 lock)")
+	}
+
+	if err := applyMiracleErr(s, 110, "guardian.item_taken", ItemTakenPayload{
+		Agent: Ref(0), Kind: "wood", Qty: 20}); err != nil {
+		t.Fatalf("removal rejected: %v", err)
+	}
+	if got := s.Agents[0].Inv.Wood; got != 0 {
+		t.Errorf("Wood = %d, want 0 (all twenty lifted out)", got)
+	}
+	if got := bulk(s.Agents[0].Inv); got != 4 {
+		t.Errorf("bulk = %d, want 4 (the planks alone)", got)
+	}
+	p := pileAt(s, x, y)
+	if p == nil || p.Wood != 20 {
+		t.Fatalf("the wood did not land as a pile at (%d,%d): %+v", x, y, p)
+	}
+	if s.GuardianCharges != 2 {
+		t.Errorf("charges = %d, want 2 (one spent)", s.GuardianCharges)
+	}
+
+	// After: the same grant lands.
+	if err := applyMiracleErr(s, 120, "guardian.item_granted", ItemGrantedPayload{
+		Agent: Ref(0), Kind: "meals", Qty: 4}); err != nil {
+		t.Fatalf("the grant still failed after the removal: %v", err)
+	}
+	if s.Agents[0].Inv.Meals != 4 {
+		t.Errorf("Meals = %d, want 4", s.Agents[0].Inv.Meals)
+	}
+}
+
+// TestMiracleTakeOverCountWholeReject is AC#3 / FR-010: a removal naming more
+// than is carried is rejected WHOLE, naming the actual count — no partial take,
+// no charge, state byte-identical.
+func TestMiracleTakeOverCountWholeReject(t *testing.T) {
+	const seed = 42
+	m := testMap(seed)
+	s := NewState(seed, m)
+	s.GuardianCharges = 3
+	s.Agents[0].Inv = Inventory{Wood: 20}
+	before := s.Marshal()
+
+	err := applyMiracleErr(s, 40, "guardian.item_taken", ItemTakenPayload{
+		Agent: Ref(0), Kind: "wood", Qty: 30})
+	if err == nil {
+		t.Fatal("an over-count removal should be rejected whole")
+	}
+	if string(s.Marshal()) != string(before) {
+		t.Error("rejected over-count removal mutated state (partial application or charge spent)")
+	}
+	wantMsg := fmt.Sprintf("apply guardian.item_taken: taking 30 wood from %s is more than they carry (20)", AgentNames[0])
+	if err.Error() != wantMsg {
+		t.Errorf("door rejection message:\n got:  %q\n want: %q", err.Error(), wantMsg)
+	}
+}
+
+// TestMiracleTakeRejectsAtTheDoor is AC#5 / FR-010: a dead villager, an
+// out-of-range index, an unknown kind, and a non-positive quantity are each
+// refused before the charge and before any mutation.
+func TestMiracleTakeRejectsAtTheDoor(t *testing.T) {
+	const seed = 42
+	m := testMap(seed)
+	s := NewState(seed, m)
+	s.GuardianCharges = 3
+	s.Agents[0].Inv = Inventory{Wood: 5}
+	s.Agents[1].Dead = true
+	s.Agents[1].Inv = Inventory{Wood: 5}
+	before := s.Marshal()
+
+	cases := []struct {
+		name string
+		p    ItemTakenPayload
+	}{
+		{"dead villager", ItemTakenPayload{Agent: Ref(1), Kind: "wood", Qty: 1}},
+		{"out-of-range index", ItemTakenPayload{Agent: Ref(len(s.Agents)), Kind: "wood", Qty: 1}},
+		{"unknown kind", ItemTakenPayload{Agent: Ref(0), Kind: "gold", Qty: 1}},
+		{"plural storage key", ItemTakenPayload{Agent: Ref(0), Kind: "spears", Qty: 1}},
+		{"zero qty", ItemTakenPayload{Agent: Ref(0), Kind: "wood", Qty: 0}},
+		{"negative qty", ItemTakenPayload{Agent: Ref(0), Kind: "wood", Qty: -3}},
+	}
+	for i, c := range cases {
+		if err := applyMiracleErr(s, int64(50+i), "guardian.item_taken", c.p); err == nil {
+			t.Errorf("%s: removal should be rejected", c.name)
+		}
+	}
+	if string(s.Marshal()) != string(before) {
+		t.Error("a rejected removal mutated state")
+	}
+	// The unknown-kind rejection enumerates the vocabulary, exactly as the
+	// grant door does (TASK-163's live-measurement finding).
+	err := applyMiracleErr(s, 90, "guardian.item_taken", ItemTakenPayload{
+		Agent: Ref(0), Kind: "gold", Qty: 1})
+	for _, k := range tool.GrantKinds() {
+		if !strings.Contains(err.Error(), k) {
+			t.Errorf("door rejection %q does not enumerate takeable kind %q", err.Error(), k)
+		}
+	}
+}
+
+// takenUnits counts every unit of a kind held by a villager plus the pile on
+// their tile — the two sides of the conservation invariant (SC-005).
+func takenUnits(s *State, idx int, kind string) int {
+	n := carriedGrantCount(s.Agents[idx].Inv, kind)
+	if p := pileAt(s, s.Agents[idx].X, s.Agents[idx].Y); p != nil {
+		switch kind {
+		case "spear":
+			n += len(p.Spears)
+		case "axe":
+			n += len(p.Axes)
+		default:
+			n += p.avail(kind)
+		}
+	}
+	return n
+}
+
+// TestMiracleTakeConservesGoods is SC-005 / FR-011: goods are MOVED, never
+// unmade — the total in (inventory + tile pile) is unchanged by a removal, for
+// a plain kind, for spears, and for food.
+func TestMiracleTakeConservesGoods(t *testing.T) {
+	const seed = 42
+	m := testMap(seed)
+	for _, c := range []struct {
+		kind string
+		inv  Inventory
+		qty  int
+	}{
+		{"wood", Inventory{Wood: 9}, 4},
+		{"spear", Inventory{Spears: []int{1, 2, 3}}, 2},
+		{"food_cooked", Inventory{FoodCooked: 6}, 6},
+	} {
+		s := NewState(seed, m)
+		s.GuardianCharges = 3
+		s.Agents[0].Inv = c.inv
+		before := takenUnits(s, 0, c.kind)
+
+		if err := applyMiracleErr(s, 100, "guardian.item_taken", ItemTakenPayload{
+			Agent: Ref(0), Kind: c.kind, Qty: c.qty}); err != nil {
+			t.Fatalf("%s: removal rejected: %v", c.kind, err)
+		}
+		if after := takenUnits(s, 0, c.kind); after != before {
+			t.Errorf("%s: units before = %d, after = %d — the removal created or destroyed goods",
+				c.kind, before, after)
+		}
+	}
+}
+
+// TestMiracleTakeMergesWearAndSpoilage is AC#4 / FR-011: a removal onto a tile
+// that already holds a pile MERGES into it (one pile per tile); spears leave
+// most-worn-first with both slices sorted ascending; and taken food lands as a
+// batch that merges with a same-(kind, spoil_at) batch rather than making a
+// second one — the agent.dropped arm's rules, inherited whole.
+func TestMiracleTakeMergesWearAndSpoilage(t *testing.T) {
+	const seed = 42
+	m := testMap(seed)
+	s := NewState(seed, m)
+	s.GuardianCharges = 9
+	s.Agents[0].Inv = Inventory{Wood: 3, Spears: []int{1, 2, 3}, FoodRaw: 4}
+	x, y := s.Agents[0].X, s.Agents[0].Y
+	// A pile already stands on the tile.
+	existing := s.pileFor(x, y)
+	existing.Wood = 2
+	existing.Spears = []int{5}
+	pilesBefore := len(s.Piles)
+
+	if err := applyMiracleErr(s, 100, "guardian.item_taken", ItemTakenPayload{
+		Agent: Ref(0), Kind: "wood", Qty: 3}); err != nil {
+		t.Fatalf("wood removal rejected: %v", err)
+	}
+	if len(s.Piles) != pilesBefore {
+		t.Errorf("the removal raised a second pile on the tile: %d piles, want %d", len(s.Piles), pilesBefore)
+	}
+	if got := pileAt(s, x, y).Wood; got != 5 {
+		t.Errorf("pile wood = %d, want 5 (2 already there + 3 taken)", got)
+	}
+
+	// Spears: the two most-worn leave, the best stays, both sides ascending.
+	if err := applyMiracleErr(s, 110, "guardian.item_taken", ItemTakenPayload{
+		Agent: Ref(0), Kind: "spear", Qty: 2}); err != nil {
+		t.Fatalf("spear removal rejected: %v", err)
+	}
+	if !reflect.DeepEqual(s.Agents[0].Inv.Spears, []int{3}) {
+		t.Errorf("carried spears = %v, want [3] — the most-worn should leave first", s.Agents[0].Inv.Spears)
+	}
+	if !reflect.DeepEqual(pileAt(s, x, y).Spears, []int{1, 2, 5}) {
+		t.Errorf("pile spears = %v, want [1 2 5] (merged, ascending)", pileAt(s, x, y).Spears)
+	}
+
+	// Food: two removals at the SAME tick share a spoil deadline and merge into
+	// one batch; the batch carries the rot window, not a refreshed count.
+	if err := applyMiracleErr(s, 200, "guardian.item_taken", ItemTakenPayload{
+		Agent: Ref(0), Kind: "food_raw", Qty: 2}); err != nil {
+		t.Fatalf("food removal rejected: %v", err)
+	}
+	if err := applyMiracleErr(s, 200, "guardian.item_taken", ItemTakenPayload{
+		Agent: Ref(0), Kind: "food_raw", Qty: 2}); err != nil {
+		t.Fatalf("second food removal rejected: %v", err)
+	}
+	food := pileAt(s, x, y).Food
+	if len(food) != 1 || food[0].Kind != "food_raw" || food[0].N != 4 {
+		t.Fatalf("pile food = %+v, want one merged food_raw batch of 4", food)
+	}
+	if food[0].SpoilAt != 200+rotWindowTicks {
+		t.Errorf("batch spoil_at = %d, want %d (the drop-tick rot window, the agent.dropped rule)",
+			food[0].SpoilAt, 200+rotWindowTicks)
+	}
+}
+
+// TestMiracleTakeEmptiesPackLegally (edge case): a removal that empties a pack
+// entirely is legal — the pack simply reads 0/24.
+func TestMiracleTakeEmptiesPackLegally(t *testing.T) {
+	const seed = 42
+	m := testMap(seed)
+	s := NewState(seed, m)
+	s.GuardianCharges = 3
+	s.Agents[0].Inv = Inventory{Wood: 7}
+
+	if err := applyMiracleErr(s, 100, "guardian.item_taken", ItemTakenPayload{
+		Agent: Ref(0), Kind: "wood", Qty: 7}); err != nil {
+		t.Fatalf("emptying removal rejected: %v", err)
+	}
+	if bulk(s.Agents[0].Inv) != 0 {
+		t.Errorf("bulk = %d, want 0", bulk(s.Agents[0].Inv))
+	}
+	if freeBulk(s.Agents[0].Inv) != bulkCap {
+		t.Errorf("free bulk = %d, want the whole cap", freeBulk(s.Agents[0].Inv))
+	}
+}
+
+// TestMiracleTakeReplayIdentical is FR-018 / SC-005: a recorded removal
+// re-applies cleanly during reconstruction and produces byte-identical state
+// (the reducer arm validates before it mutates, so replay revalidates the same
+// way the door did).
+func TestMiracleTakeReplayIdentical(t *testing.T) {
+	const seed = 42
+	const ticks = 400
+	m := testMap(seed)
+	genesis := func() *State {
+		s := NewState(seed, m)
+		for i := 1; i < len(s.Agents); i++ {
+			s.Agents[i].Dead = true // lone living villager keeps the run quiet
+		}
+		s.GuardianCharges = 3
+		s.Agents[0].Inv = Inventory{Wood: 6, Spears: []int{2, 4}}
+		return s
+	}
+	commands := map[int64][]store.Event{
+		10: {{Tick: 10, Type: "guardian.item_taken", Payload: mustPayload(ItemTakenPayload{
+			Agent: Ref(0), Kind: "wood", Qty: 4})}},
+		20: {{Tick: 20, Type: "guardian.item_taken", Payload: mustPayload(ItemTakenPayload{
+			Agent: Ref(0), Kind: "spear", Qty: 1})}},
+	}
+
+	live := genesis()
+	log := driveTicks(t, live, m, ticks, commands)
+
+	var removals int
+	for _, e := range log {
+		if e.Type == "guardian.item_taken" {
+			removals++
+		}
+	}
+	if removals != 2 {
+		t.Fatalf("scripted removals missing from the log (saw %d, want 2)", removals)
+	}
+
+	replay := genesis()
+	for _, e := range log {
+		if err := replay.Apply(e); err != nil {
+			t.Fatalf("replay apply %s: %v", e.Type, err)
+		}
+		replay.Tick = e.Tick
+	}
+	driveTicks(t, replay, m, ticks, nil)
+	if live.Hash() != replay.Hash() {
+		t.Fatalf("removal replay diverged:\nlive:     %s\nreplayed: %s", string(live.Marshal()), string(replay.Marshal()))
 	}
 }

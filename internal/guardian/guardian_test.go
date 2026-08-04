@@ -342,6 +342,46 @@ func TestBuildMiracleBatch(t *testing.T) {
 		assertMem(t, batch[1], 2)
 	})
 
+	// Spec 116 FR-013: a removal is a reach into a pack, so it carries the
+	// grant's memory discipline exactly — one memory, the same recipient
+	// shape, the same salience. A pack mutation with no memory attached is a
+	// contract violation, not an optimisation.
+	t.Run("take_one_memory_to_the_taken_from", func(t *testing.T) {
+		batch, err := BuildMiracleBatch(s, "take_item", MiracleParams{Agent: 2, Item: "wood", Qty: 20}, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if batch[0].Type != "guardian.item_taken" || memCount(batch) != 1 {
+			t.Fatalf("take batch wrong: %s, memories %d", batch[0].Type, memCount(batch))
+		}
+		if len(batch) != 2 {
+			t.Fatalf("take batch = %d events, want exactly the removal + one memory", len(batch))
+		}
+		assertMem(t, batch[1], 2)
+		var tp sim.ItemTakenPayload
+		json.Unmarshal(batch[0].Payload, &tp)
+		if tp.Agent.ID != 2 || tp.Kind != "wood" || tp.Qty != 20 || tp.Gratis {
+			t.Errorf("removal payload = %+v, want agent 2 / wood / 20 / charged", tp)
+		}
+		// First-person and in-fiction: the villager's own world, naming both
+		// what left the pack and where it went (no player, no game voice).
+		var mp sim.MemoryAddedPayload
+		json.Unmarshal(batch[1].Payload, &mp)
+		if mp.Origin != sim.OriginOmen {
+			t.Errorf("memory origin = %v, want OriginOmen (the grant's origin)", mp.Origin)
+		}
+		for _, want := range []string{"your pack", "at your feet", "20 wood"} {
+			if !strings.Contains(mp.Text, want) {
+				t.Errorf("removal memory %q missing %q", mp.Text, want)
+			}
+		}
+		for _, forbidden := range []string{"player", "guardian", "miracle"} {
+			if strings.Contains(strings.ToLower(mp.Text), forbidden) {
+				t.Errorf("removal memory %q leaks the outside voice %q", mp.Text, forbidden)
+			}
+		}
+	})
+
 	t.Run("snap_every_living_villager", func(t *testing.T) {
 		batch, err := BuildMiracleBatch(s, "time_snap", MiracleParams{ToTick: 99999}, false)
 		if err != nil {
@@ -1159,18 +1199,20 @@ func TestCharterFallbacks(t *testing.T) {
 	// the bound sits between the truncated total (charter capped at
 	// CharterMaxChars + the fixed frame) and what a full oversized charter would
 	// produce, so it still proves truncation happened. The fixed-frame headroom
-	// is CharterMaxChars+5000 (the frame documents four miracle families plus the
+	// is CharterMaxChars+6000 (the frame documents the miracle families plus the
 	// spec-029 agency surface — meta tools + the initiative sentence; spec 084
 	// adds the five plan-layer tools' guidance bullets + read lines; spec 101
-	// adds canonize_region + brief_myths, and spec 107 the three mission verbs'
-	// guidance bullets (~5.3 KB measured), leaving
-	// comfortable margin over the capped total and well under the untruncated.
+	// adds canonize_region + brief_myths, spec 107 the three mission verbs'
+	// guidance bullets, and spec 116 the take_item kind hint + inspect_pack's
+	// read line (~6.1 KB measured), leaving
+	// comfortable margin over the capped total (~10.1 KB) and well under the
+	// untruncated one (~14.1 KB at CharterMaxChars*2).
 	os.WriteFile(charterPath, []byte(strings.Repeat("x", persona.CharterMaxChars*2)), 0o644)
 	r, _ = mt.Turn(context.Background(), "verbose?")
 	if !strings.Contains(r.Reply, "cap") {
 		t.Errorf("oversize notice absent: %q", r.Reply)
 	}
-	if reqs := orch.requests(); len(reqs[len(reqs)-1].System) > persona.CharterMaxChars+6000 {
+	if reqs := orch.requests(); len(reqs[len(reqs)-1].System) > persona.CharterMaxChars+7000 {
 		t.Error("oversized charter not truncated in prompt")
 	}
 }
@@ -1486,8 +1528,25 @@ func TestMiracleKindsMirrorTool(t *testing.T) {
 		!strings.Contains(err.Error(), "unknown working kind") {
 		t.Error("a kind outside the vocabulary should be unknown to BuildMiracleBatch")
 	}
-	if len(tool.MiracleKinds()) != 4 {
-		t.Errorf("MiracleKinds() = %v, want the four turn-contract kinds", tool.MiracleKinds())
+	// The vocabulary is pinned in BOTH directions (spec 116 T032): every kind
+	// the door accepts must be declared, and the declared list must be exactly
+	// these five — a new kind added to one side alone fails here rather than
+	// shipping a tool the model is offered and the door refuses (or vice
+	// versa). take_item joined at spec 116 as give_item's mirror image.
+	wantKinds := []string{"move", "remove", "give_item", "time_snap", "take_item"}
+	if !reflect.DeepEqual(tool.MiracleKinds(), wantKinds) {
+		t.Errorf("MiracleKinds() = %v, want %v", tool.MiracleKinds(), wantKinds)
+	}
+	for _, k := range wantKinds {
+		if _, ok := tool.MiracleCost(k); !ok {
+			t.Errorf("miracle kind %q has no declared charge price", k)
+		}
+	}
+	// The removal's event type is the one sim's reducer keys its enforcement
+	// on, so the kind→event mapping is pinned here too (via the event-keyed
+	// cost table, the only exported view of it).
+	if _, ok := tool.MiracleCostsByEvent()["guardian.item_taken"]; !ok {
+		t.Error("take_item does not map to guardian.item_taken in the event-keyed cost table")
 	}
 }
 
@@ -2048,7 +2107,7 @@ func TestStatusProvenance(t *testing.T) {
 	}
 	if !reflect.DeepEqual(s.GrantedTools, []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "work_miracle", "pause", "start", "adjust_speed", "explain",
 		"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site", "prophesy", "canonize_region", "brief_myths",
-		"accept_mission", "note_mission_progress", "cancel_mission"}) {
+		"accept_mission", "note_mission_progress", "cancel_mission", "inspect_pack"}) {
 		t.Errorf("default granted tools = %v", s.GrantedTools)
 	}
 

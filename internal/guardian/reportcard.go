@@ -90,7 +90,8 @@ func (mt *Guardian) observeCardActivity(e store.Event) {
 			line = fmt.Sprintf("a %s went out to %d villager(s)", p.Form, len(p.Targets))
 		}
 	case "guardian.order_placed", "guardian.order_triggered", "guardian.order_cancelled",
-		"guardian.time_snapped", "guardian.item_granted", "guardian.entity_moved",
+		"guardian.time_snapped", "guardian.item_granted", "guardian.item_taken",
+		"guardian.entity_moved",
 		"guardian.entity_removed", "guardian.charter_observed", "guardian.skills_observed":
 		line = strings.TrimPrefix(e.Type, "guardian.")
 	// The mission lifecycle (spec 107 D3): every mission event joins the

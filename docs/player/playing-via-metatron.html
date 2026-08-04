@@ -4,18 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="promptworld-docs:generated-by" content="player-docs">
-<meta name="promptworld-docs:source" content="docs/wiki/guardian.md@fc1a8314f3f71a33c5e2145c914d5cbb511d9196">
-<meta name="promptworld-docs:source" content="docs/wiki/guardian-faith.md@012f715f55d8d87317e601ad75686c599d277349">
+<meta name="promptworld-docs:source" content="docs/wiki/guardian.md@5761edb18e2b5fb49c6a03a050b0d871f5546c05">
+<meta name="promptworld-docs:source" content="docs/wiki/guardian-faith.md@5761edb18e2b5fb49c6a03a050b0d871f5546c05">
 <meta name="promptworld-docs:source" content="docs/wiki/bundle-tools.md@72f82f41f7aa2e345572105894cd0fb7c02fc0aa">
-<meta name="promptworld-docs:source" content="docs/wiki/guardian-miracles.md@fc1a8314f3f71a33c5e2145c914d5cbb511d9196">
-<meta name="promptworld-docs:source" content="docs/wiki/guardian-miracle-mechanics.md@fc1a8314f3f71a33c5e2145c914d5cbb511d9196">
-<meta name="promptworld-docs:source" content="docs/wiki/guardian-orders.md@012f715f55d8d87317e601ad75686c599d277349">
+<meta name="promptworld-docs:source" content="docs/wiki/guardian-miracles.md@5761edb18e2b5fb49c6a03a050b0d871f5546c05">
+<meta name="promptworld-docs:source" content="docs/wiki/guardian-miracle-mechanics.md@5761edb18e2b5fb49c6a03a050b0d871f5546c05">
+<meta name="promptworld-docs:source" content="docs/wiki/guardian-orders.md@5761edb18e2b5fb49c6a03a050b0d871f5546c05">
+<meta name="promptworld-docs:source" content="docs/wiki/guardian-survival-watches.md@5761edb18e2b5fb49c6a03a050b0d871f5546c05">
 <meta name="promptworld-docs:source" content="docs/wiki/guardian-missions.md@fc1a8314f3f71a33c5e2145c914d5cbb511d9196">
-<meta name="promptworld-docs:source" content="docs/wiki/curriculum-ladder.md@fc1a8314f3f71a33c5e2145c914d5cbb511d9196">
+<meta name="promptworld-docs:source" content="docs/wiki/curriculum-ladder.md@5761edb18e2b5fb49c6a03a050b0d871f5546c05">
 <meta name="promptworld-docs:source" content="docs/wiki/governance.md@c61cd6c04ddfcd2a976c14a49ba071e8fd768a73">
-<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@4efa712bb90538c9c195d23146077e7fc535e511">
-<meta name="promptworld-docs:source" content="docs/wiki/grounded-feedback.md@fc1a8314f3f71a33c5e2145c914d5cbb511d9196">
-<meta name="promptworld-docs:source" content="docs/wiki/takeover-surfaces.md@4efa712bb90538c9c195d23146077e7fc535e511">
+<meta name="promptworld-docs:source" content="docs/wiki/tui-client.md@5761edb18e2b5fb49c6a03a050b0d871f5546c05">
+<meta name="promptworld-docs:source" content="docs/wiki/grounded-feedback.md@5761edb18e2b5fb49c6a03a050b0d871f5546c05">
+<meta name="promptworld-docs:source" content="docs/wiki/takeover-surfaces.md@5761edb18e2b5fb49c6a03a050b0d871f5546c05">
 <title>Playing via Metatron — promptworld player docs</title>
 <style>
   :root {
@@ -322,12 +323,15 @@ order you placed specifically authorizes it — never on its own initiative.</p>
 <h2>Workings — direct edits to the world</h2>
 <p>A <strong>working</strong> (what the game's own mechanics still call a "miracle"
 under the hood — you'll see that word if you ever poke at the raw event feed) is a
-concrete, direct change to the world itself, of which there are exactly four kinds:</p>
+concrete, direct change to the world itself, of which there are exactly five kinds:</p>
 <table>
 <tr><th>Working</th><th>What it does</th></tr>
 <tr><td>Snap time</td><td>Jump the world's clock forward to a specific time (forward
 only — you can't rewind)</td></tr>
 <tr><td>Give an item</td><td>Hand a chosen villager some quantity of an item</td></tr>
+<tr><td>Take an item</td><td>Lift some quantity of an item back out of a villager's
+pack and set it down at their feet as a pile — nothing is destroyed, and they or a
+neighbour can pick it straight back up</td></tr>
 <tr><td>Move something</td><td>Relocate a villager, a structure, or a pile of goods to
 a new spot — a moved villager also takes in their new surroundings on arrival,
 exactly as if they'd walked there, rather than landing blind</td></tr>
@@ -337,12 +341,38 @@ villagers themselves can never be removed by any working, ever</td></tr>
 <p>Workings are memorable too — a time snap feels to every villager like time
 lurching forward in an instant; a moved villager feels like an unseen hand lifted them
 somewhere new; a given item just appears in the recipient's hands "as if set there by
-an unseen giver."</p>
+an unseen giver"; and when something is taken, the villager remembers an unseen hand
+lifting it from their pack and setting it at their feet. Nothing is ever taken from a
+villager in silence — the moment is always something they can remember and speak of.</p>
 <p>An item grant can only ever deliver one of ten specific kinds of thing: wood,
 stone, water, planks, refined stone, raw food, cooked food, meals, a spear, or an
 axe. Ask for anything outside that list — a mistyped kind, or something the game
 just doesn't grant this way — and the game politely refuses and lists what it can
 grant, rather than guessing at what you meant.</p>
+<p>Taking works the same way in reverse, and it exists to solve a real problem. Every
+villager can only carry so much, and a gift that would overflow their pack is refused
+outright rather than partly delivered — so a villager whose pack is stuffed with
+firewood cannot be handed food, however badly they need it. Taking is the key to that
+lock: lift out what they don't need, then give them what they do. Asking to take more
+of something than they actually carry is refused too, and the game tells you what they
+really have.</p>
+
+<h2>Looking in a villager's pack</h2>
+<p>The guardian can also simply <strong>look</strong> inside a villager's pack, and see
+exactly what they carry — every kind of thing and how much of it, how full their pack
+is, and, stated plainly, whether they are carrying any food at all. Looking is free: it
+costs no charges and doesn't use up the guardian's one action for the turn.</p>
+<p>That last detail matters more than it sounds. Knowing only <em>how full</em> a pack
+is can't tell the difference between a villager who has no food, one who has food and
+isn't eating it, and one whose pack is too full to pick any food up — three situations
+that need three completely different rescues. In an early run of the game a guardian
+watched a man starve to death while telling him to eat the food in his hands. He was
+carrying twenty wood and four planks and not a scrap of food.</p>
+<p>So when the game wakes the guardian because someone is about to die, it is now
+<em>required</em> to look in that villager's pack before it may send them a vision or
+reach into their pack at all. If it tries to speak first, the game stops it and tells
+it to look — and it can look and try again in the same breath, so nothing is lost but
+a moment. A god that misreads what you're carrying is worse than a silent one.</p>
 
 <h2>The report card: what your words actually did</h2>
 <p>From time to time — after a run ends, after a scenario exercise resolves,

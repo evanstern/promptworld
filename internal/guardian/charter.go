@@ -715,9 +715,17 @@ func intersectGrant(g grantSet, gd *bundle.GrantDoc) grantSet {
 // a mission only records the player's standing instruction and its derived
 // progress; the acting still happens through the already-gated verbs, so
 // the stage-1 "no miracles, no clock control" posture is unchanged.
+// inspect_pack (spec 116 FR-015) joins the ceiling too, following the
+// survey_site / brief_myths / explain read profile exactly: charge-free,
+// event-free, never the turn's act, and it widens no ACTING capability —
+// it only lets the guardian see what a villager already carries, which the
+// targeting digest half-told it at every stage already. take_item is
+// DELIBERATELY absent (it is a work_miracle kind, and no miracle kind is
+// granted at stage-1/2 — the canonize_region precedent above): the removal
+// is world-shaping, the read is not.
 var stage1CeilingTools = []string{"send_omen", "send_vision", "monitor_and_act", "cancel_order", "explain",
 	"place_designation", "cancel_designation", "issue_directive", "cancel_directive", "survey_site", "prophesy", "brief_myths",
-	"accept_mission", "note_mission_progress", "cancel_mission"}
+	"accept_mission", "note_mission_progress", "cancel_mission", "inspect_pack"}
 
 // stageCeiling returns the stage's capability ceiling as a narrowing doc —
 // the same shape a persona bundle's grant uses, so intersectGrant applies it

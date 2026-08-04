@@ -17,8 +17,10 @@ package guardian
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"sort"
+	"strings"
 
 	"github.com/evanstern/promptworld/internal/clock"
 	"github.com/evanstern/promptworld/internal/llm"
@@ -37,9 +39,23 @@ type turnDispatch struct {
 	charges int
 	alive   map[int]bool
 	night   bool // mirrored State.Night at turn start — the omen gate (spec 029 T005)
-	tick    int64
-	result  *TurnResult
-	grant   grantSet // this world's capability grant (spec 021 US2): gates handlers + land
+	// survival mirrors turnOrigin.survival at turn start (spec 116 FR-007) —
+	// the look-first gate's ONLY trigger, beside the night mirror above. A
+	// survival watch turn is the one the guardian's own nature woke it for,
+	// where a villager may die and a wrong word is a death; every other origin
+	// (console, ordinary system, scheduled) leaves this false and behaves
+	// byte-identically to before the gate existed.
+	survival bool
+	// looked is the per-turn look-first ledger (spec 116, data-model: "Look-
+	// first ledger"): the set of villager indices handleInspectPack has
+	// SUCCESSFULLY resolved during this tool loop. In-memory, per-turn, never
+	// persisted — the event trail cannot answer "did it look during THIS
+	// loop" without correlating mid-turn cog.tool_call records, which would
+	// couple the door to telemetry (plan.md, Complexity Tracking).
+	looked map[int]bool
+	tick   int64
+	result *TurnResult
+	grant  grantSet // this world's capability grant (spec 021 US2): gates handlers + land
 	// tutor is the tutor channel's whole capability surface (spec 102 D4,
 	// tutor.go): the explain tool's world slice (spec 063 US1) wrapped in a
 	// type that is STRUCTURALLY unable to reach a world door — inert
@@ -54,6 +70,30 @@ type turnDispatch struct {
 // record is the Job.Record sink — one CallRecord per model tool call.
 func (d *turnDispatch) record(r toolloop.CallRecord) {
 	d.records = append(d.records, r)
+}
+
+// noteLooked records that inspect_pack resolved villager idx this turn (spec
+// 116 FR-007). Lazily allocated so a directly-constructed dispatch (the unit
+// tests' surveyCall shape) can never nil-map-panic.
+func (d *turnDispatch) noteLooked(idx int) {
+	if d.looked == nil {
+		d.looked = map[int]bool{}
+	}
+	d.looked[idx] = true
+}
+
+// lookedAt reports whether inspect_pack returned for villager idx earlier in
+// THIS turn's tool loop — the look-first gate's whole question.
+func (d *turnDispatch) lookedAt(idx int) bool { return d.looked[idx] }
+
+// lookFirstRefusal is the gate's repairable refusal (spec 116 FR-007,
+// contracts/pack-access.md §2): it names the exact repair — the tool to call
+// and whose pack — so the model fixes it inside the loop's round cap, exactly
+// as it repairs a door refusal. The literal "inspect_pack" and the villager's
+// name are BOTH contractual; the surrounding words are not.
+func lookFirstRefusal(idx int, what string) string {
+	return fmt.Sprintf("look in %s's pack before you %s — call inspect_pack first",
+		sim.AgentNames[idx], what)
 }
 
 // turnHandlers builds the handler map the tool-use loop dispatches against for
@@ -147,6 +187,12 @@ func (mt *Guardian) turnHandlers(d *turnDispatch) map[string]toolloop.Handler {
 	if d.grant.allows("cancel_mission") {
 		h["cancel_mission"] = mt.handleCancelMission(d)
 	}
+	// inspect_pack (spec 116): the read-only look inside a villager's pack —
+	// grant-gated like every other tool (structural absence when ungranted),
+	// the survey_site dispatch class.
+	if d.grant.allows("inspect_pack") {
+		h["inspect_pack"] = mt.handleInspectPack(d)
+	}
 	return h
 }
 
@@ -181,6 +227,19 @@ func (mt *Guardian) handleVision(d *turnDispatch) toolloop.Handler {
 		reveal, why := parseReveal(call.Args)
 		if why != "" {
 			return toolloop.Outcome{Verdict: toolloop.VerdictRejectedGate, ResultForModel: refusal(why)}
+		}
+		// The look-first gate (spec 116 FR-007/FR-008): on a SURVIVAL watch
+		// turn the guardian may not speak to a villager whose pack it has not
+		// opened this turn — the world-03 failure was a vision telling a man
+		// to eat food he did not carry. Per-villager (looking at one licenses
+		// nothing about another), origin-triggered (never message text: on a
+		// survival turn every word concerns the peril by construction), and
+		// checked BEFORE landVision so nothing lands and no charge moves. An
+		// unresolvable name falls through to the door's own "no villager
+		// named" refusal — the gate never invents a second refusal for it.
+		if idx := agentIndexByName(target); d.survival && idx >= 0 && !d.lookedAt(idx) {
+			return toolloop.Outcome{Verdict: toolloop.VerdictRejectedGate,
+				ResultForModel: refusal(lookFirstRefusal(idx, "speak to them"))}
 		}
 		if nudge, why := mt.landVision(target, text, reveal, d.charges, d.alive, d.grant); nudge != nil {
 			d.result.Nudge = nudge
@@ -254,7 +313,19 @@ func (mt *Guardian) handleCancelOrder(d *turnDispatch) toolloop.Handler {
 // handleMiracle wraps landMiracle. Same accept/reject translation as handleVision.
 func (mt *Guardian) handleMiracle(d *turnDispatch) toolloop.Handler {
 	return func(_ context.Context, call llm.ToolCall) toolloop.Outcome {
-		if miracle, why := mt.landMiracle(parseMiracleArgs(call.Args), d.charges, d.grant); miracle != nil {
+		mm := parseMiracleArgs(call.Args)
+		// The look-first gate's second half (spec 116 FR-007, contracts §2):
+		// the two kinds that REACH INTO a pack — give_item and take_item —
+		// are gated exactly as a vision is on a survival turn. Every other
+		// kind (move / remove / time_snap) touches no inventory and stays
+		// ungated, as does send_omen (it addresses a group, not a pack).
+		if kind := strings.ToLower(strings.TrimSpace(mm.Kind)); d.survival && packReachingKind(kind) {
+			if idx := agentIndexByName(mm.Villager); idx >= 0 && !d.lookedAt(idx) {
+				return toolloop.Outcome{Verdict: toolloop.VerdictRejectedGate,
+					ResultForModel: refusal(lookFirstRefusal(idx, "reach into their pack"))}
+			}
+		}
+		if miracle, why := mt.landMiracle(mm, d.charges, d.grant); miracle != nil {
 			d.result.Miracle = miracle
 			return toolloop.Outcome{Verdict: toolloop.VerdictLanded, ResultForModel: "the " + mt.sk().WorkingNoun() + " is worked: " + miracle.Summary}
 		} else {
@@ -331,6 +402,14 @@ func (mt *Guardian) controlLoop(d *turnDispatch, name string, speed clock.Speed,
 	}
 	d.result.Clock = clockLine
 	return ""
+}
+
+// packReachingKind reports whether a miracle kind reaches into a villager's
+// inventory — the two the look-first gate covers (spec 116 contracts §2). Kept
+// beside the gate rather than in internal/tool: it is a property of THIS gate's
+// scope, not of the miracle vocabulary itself.
+func packReachingKind(kind string) bool {
+	return kind == "give_item" || kind == "take_item"
 }
 
 // refusal guarantees a non-empty rejection reason for the model's feedback and

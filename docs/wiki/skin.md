@@ -4,7 +4,7 @@ description: The runtime skin substrate (spec 052, TASK-121) — the fiction lay
 kind: component
 sources:
   - internal/skin/skin.go
-verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
+verified_against: 5761edb18e2b5fb49c6a03a050b0d871f5546c05
 ---
 
 # Skin
@@ -64,7 +64,7 @@ spec 084 adds the five plan-layer rows, `.place_designation` through
 `.survey_site` — [[guardian-designations]]; spec 085 adds `.prophesy` —
 [[guardian-faith]]; spec 107 adds the three mission rows,
 `.accept_mission`/`.note_mission_progress`/`.cancel_mission` —
-[[guardian-missions]]) —
+[[guardian-missions]]; spec 116 adds `.inspect_pack` — [[guardian-miracles]]) —
 the help overlay's D9 guardian section teaches asking from these.
 
 **`Skin` and its typed accessors**: a `*Skin` holds string-token overrides

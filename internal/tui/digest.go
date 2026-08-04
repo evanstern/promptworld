@@ -1431,6 +1431,19 @@ var digestRegistry = map[string]digestFunc{
 			txt(sk.Name() + " granted "), refSeg(names, p.Agent), txt(" "), emphN(p.Qty), txt(" "), emph(p.Kind),
 		}, gratisMark(p.Gratis)), true
 	},
+	// item_taken (spec 116) is item_granted's mirror image and renders in the
+	// same voice: the removal names the villager, the count, and the kind, and
+	// the goods are at their feet as a pile — never destroyed, so the chronicle
+	// says "took", not "unmade".
+	"guardian.item_taken": func(e store.Event, names []string, sk *skin.Skin) ([]seg, bool) {
+		p, ok := decode[sim.ItemTakenPayload](e)
+		if !ok {
+			return nil, false
+		}
+		return join([]seg{
+			txt(sk.Name() + " took "), emphN(p.Qty), txt(" "), emph(p.Kind), txt(" from "), refSeg(names, p.Agent),
+		}, gratisMark(p.Gratis)), true
+	},
 	// entity_moved: the payload identifies its target by class + source
 	// coordinates only (internal/sim/miracles.go) — no agent index, so a
 	// moved villager renders by its (pre-move) location rather than a
@@ -2119,6 +2132,15 @@ var subjectRegistry = map[string]subjectFunc{
 	},
 	"guardian.item_granted": func(e store.Event) (subjectCandidate, bool) {
 		p, ok := decode[sim.ItemGrantedPayload](e)
+		if !ok {
+			return subjectCandidate{}, false
+		}
+		return actorCandidate(p.Agent.ID), true
+	},
+	// item_taken (spec 116) attributes to the villager reached into, exactly
+	// as a grant attributes to the villager reached toward.
+	"guardian.item_taken": func(e store.Event) (subjectCandidate, bool) {
+		p, ok := decode[sim.ItemTakenPayload](e)
 		if !ok {
 			return subjectCandidate{}, false
 		}

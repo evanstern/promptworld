@@ -7,7 +7,7 @@ sources:
   - internal/guardian/toolcalls.go
   - internal/guardian/charter.go
   - internal/guardian/guardian.go
-verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
+verified_against: 5761edb18e2b5fb49c6a03a050b0d871f5546c05
 ---
 
 # Guardian's turn loop
@@ -117,7 +117,9 @@ never-grounded call is recorded even when nothing landed), via the same
 `sim.NewCogToolCallPayload` constructor [[agent-mind]]'s mind uses — a converse-
 only turn (no tool calls) emits no batch at all. The turn's handlers are exactly
 the granted subset of `send_vision`/`send_omen`/`monitor_and_act`/`cancel_order`/
-`work_miracle`/`pause`/`start`/`adjust_speed`; `converse` is deliberately absent
+`work_miracle`/`pause`/`start`/`adjust_speed` — plus the Read tools
+(`explain`, `survey_site`, `brief_myths`, and `inspect_pack` since spec 116),
+which the driver's read exemption keeps off the one-act budget; `converse` is deliberately absent
 from the handler map (and from `tool.LoopRosterGuardian()`) since it is the
 final-text channel, never a callable tool. Since spec 025 (TASK-72) the turn
 also surfaces the loop's one in-loop transport retry: when
@@ -125,6 +127,20 @@ also surfaces the loop's one in-loop transport retry: when
 NON-terminal `cog.outcome` carrying `sim.OutcomeRetried` and the first
 failure's reason through the same `InjectSocial` door — emitted BEFORE the
 error return, so even a twice-failed turn's retry is countable from the trail.
+
+**Per-turn dispatch state** (`turnDispatch`, `toolcalls.go`): the loop's handlers
+close over one struct carrying the turn's charge/alive snapshot, the mirrored
+`night` flag (the omen gate), the capability grant, the tutor surface, and the
+buffered `CallRecord`s. Spec 116 adds two fields to it: `survival`, mirrored from
+`turnOrigin.survival` at construction, and `looked`, a per-turn ledger of the
+villager indices `inspect_pack` has successfully resolved. Together they are the
+look-first gate — on a survival-origin turn a `send_vision`, or a `work_miracle`
+of kind `give_item`/`take_item`, aimed at a villager absent from the ledger is
+refused as `rejected_gate` before the door is reached. The ledger is in-memory
+and per-turn: it is never persisted, adds no replay surface, and a previous
+turn's look licenses nothing. See [[guardian-survival-watches]] for the gate's
+full rule and [[guardian]]'s `agentInv` mirror (spec 116 FR-006) for the
+inventory-contents snapshot `inspect_pack` renders.
 
 ## Connections
 

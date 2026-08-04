@@ -8,7 +8,8 @@ sources:
   - internal/tool/roster.go
   - internal/tool/validate.go
   - internal/sim/toolcheck.go
-verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
+size_budget_exempt: spec 116 extended both roster enumerations with inspect_pack; the enumerations are this note's subject and must stay verbatim against roster.go; a RosterGuardian-vs-LoopRoster summary-style split is a dedicated future pass, not this task's scope
+verified_against: 5761edb18e2b5fb49c6a03a050b0d871f5546c05
 ---
 
 # Tool registry — derived surfaces, rosters, and validation
@@ -41,7 +42,8 @@ registration order — `set_plan` excluded) + `say`/`muse`/`gist`; `RosterGuardi
 `send_omen`/`send_vision`/`monitor_and_act`/`cancel_order`/`work_miracle`/
 `pause`/`start`/`adjust_speed`; `explain` (spec 063,
 [[grounded-feedback]]); specs 084/085/101 append the plan-layer tools,
-`prophesy`, and `canonize_region`/`brief_myths` — [[guardian-canonization]])
+`prophesy`, and `canonize_region`/`brief_myths` — [[guardian-canonization]];
+spec 107 the mission layer; spec 116 `inspect_pack` last — [[guardian-miracles]])
 — it mirrors `LoopRosterGuardian`'s names plus `converse`. Since spec
 029 the guardian's nudge/send form is validated against the reducer's explicit
 form set, not this roster ([[guardian-orders]]), so `RosterGuardian`'s only live
@@ -72,7 +74,8 @@ is a roster/gloss edit, not a rebuild;
 `cancel_order`, `work_miracle`, the meta tools `pause`/`start`/
 `adjust_speed` (spec 029 order), `explain` (spec 063,
 [[grounded-feedback]]), the plan-layer tools + `prophesy` (084/085), and
-`canonize_region`/`brief_myths` last (spec 101, [[guardian-canonization]])
+`canonize_region`/`brief_myths` (spec 101, [[guardian-canonization]]), the
+mission layer (spec 107), and `inspect_pack` last (spec 116, Effect Read)
 — deliberately NOT `RosterGuardian`, because `converse` is excluded: it is the
 guardian's final-answer channel (the loop's `Result.Final`), not a callable tool,
 and declaring it would trap a `converse` call as `rejected_unknown` (the guardian

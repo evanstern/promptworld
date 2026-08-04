@@ -6,7 +6,7 @@ sources:
   - internal/tui/grammar.go
   - internal/tui/digest.go
   - internal/tui/tui.go
-verified_against: 4efa712bb90538c9c195d23146077e7fc535e511
+verified_against: 5761edb18e2b5fb49c6a03a050b0d871f5546c05
 ---
 
 # TUI chronicle feed and digest grammar

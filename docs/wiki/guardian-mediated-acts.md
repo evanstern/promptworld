@@ -7,7 +7,7 @@ sources:
   - internal/guardian/toolcalls.go
   - internal/guardian/miracle_batch.go
   - internal/sim/guardian.go
-verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
+verified_against: 5761edb18e2b5fb49c6a03a050b0d871f5546c05
 ---
 
 # Guardian's mediated acts
@@ -66,7 +66,7 @@ standing order ([[guardian-orders]]).
 
 **Miracles** (spec 016, [[guardian-miracles]]): the guardian's other charge-priced
 mediated act, spent from the same bank, a declared loop tool: `work_miracle`
-(`kind` ∈ `move`/`remove`/`give_item`/`time_snap`). The retired
+(`kind` ∈ `move`/`remove`/`give_item`/`take_item`/`time_snap`). The retired
 `turnReply.Miracle` anonymous struct had **no gratis field** as its structural
 guarantee; the replacement `miracleArgs` (`toolcalls.go`, the tool-call-parsed
 mirror of the same flat surface) keeps that guarantee identically — nothing to
@@ -110,5 +110,5 @@ table, rebase taxonomy, and the two landing doors; [[guardian-orders]] owns
 the daytime-omen deferral this note's `send_omen` night gate hands off to.
 [[mental-maps]] owns the place-fact vocabulary `send_vision`'s optional
 place grant draws on. [[sim-state-reducer]] validates and lands both
-`guardian.nudged` and the four miracle event types. [[event-types]]
+`guardian.nudged` and the five miracle event types. [[event-types]]
 catalogs all of them.

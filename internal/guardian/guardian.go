@@ -128,6 +128,18 @@ type Guardian struct {
 	// refreshed per batch) — the turn worker reads it to build the miracle
 	// targeting digest (spec 059 US3) without racing the replica.
 	agentNeeds []needMirror
+	// agentInv mirrors each villager's inventory CONTENTS (spec 116 FR-006),
+	// refreshed in the SAME absorb batch as agentNeeds. needMirror.Bulk answers
+	// only "how full", which cannot distinguish the three cases that demand
+	// three different interventions — carries no food / carries food and will
+	// not eat / has no room to pick food up (the world-03 death: a starving
+	// villager at 24/24 holding twenty wood, told by the guardian to eat what
+	// he held). inspect_pack (pack.go) renders THIS snapshot, never the
+	// replica the absorb goroutine owns. The Spears/Axes slices are COPIED,
+	// not aliased: the replica keeps mutating them as hunts and harvests spend
+	// uses, and an aliased slice would let a sheet read a durability that
+	// changed after the mirror was taken.
+	agentInv []sim.Inventory
 	// structXY / pileXY mirror every structure's / ground pile's tile
 	// (absorb-owned, refreshed per batch) so a console turn's bundle handlers
 	// can resolve spec-082 class+tile effect targets (structure@X,Y /
@@ -478,6 +490,9 @@ func (mt *Guardian) mirrorState() {
 	if len(mt.agentNeeds) != len(mt.replica.Agents) {
 		mt.agentNeeds = make([]needMirror, len(mt.replica.Agents))
 	}
+	if len(mt.agentInv) != len(mt.replica.Agents) {
+		mt.agentInv = make([]sim.Inventory, len(mt.replica.Agents))
+	}
 	for i := range mt.replica.Agents {
 		mt.alive[i] = !mt.replica.Agents[i].Dead
 		mt.agentXY[i] = [2]int{mt.replica.Agents[i].X, mt.replica.Agents[i].Y}
@@ -487,6 +502,10 @@ func (mt *Guardian) mirrorState() {
 		// so this can never drift from the reducer's own bulk() arithmetic.
 		mt.agentNeeds[i] = needMirror{Health: n.Health, Food: n.Food, Warmth: n.Warmth,
 			Bulk: sim.Bulk(mt.replica.Agents[i].Inv)}
+		// The CONTENTS beside the gross bulk (spec 116 FR-006), same batch,
+		// same lock — deep-copied so the replica's continuing mutations can
+		// never reach a sheet the turn worker already read.
+		mt.agentInv[i] = copyInventory(mt.replica.Agents[i].Inv)
 	}
 	// Structure/pile tile mirrors (spec 082): position-only, for the turn
 	// worker's bundle-effect target resolution probe.

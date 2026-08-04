@@ -161,7 +161,11 @@ func TestSurvivalTurnActsWithoutPlayer(t *testing.T) {
 	mt, _, inj, dir := newTestGuardian(t, "The child will not starve tonight.")
 	o := seededSurvivalWatch(mt, inj, sim.SurvivalNearDeath)
 	ash := agentIndexByName("Ash")
-	mt.runLoop = systemActLoop(mt, "work_miracle",
+	// Spec 116 FR-007: on a SURVIVAL turn the guardian must open the pack
+	// before it reaches into it, so the scripted loop reproduces the two-call
+	// sequence a real model now performs — inspect_pack (free, never the act),
+	// then the one act. The grant itself is unchanged.
+	mt.runLoop = systemLookThenActLoop(mt, "Ash", "work_miracle",
 		`{"kind":"give_item","villager":"Ash","item":"food_raw","qty":3}`)
 
 	before := inj.state.GuardianCharges
@@ -216,10 +220,14 @@ func TestSurvivalZeroChargeTurnRecorded(t *testing.T) {
 	o := seededSurvivalWatch(mt, inj, sim.SurvivalExposure)
 	oak := agentIndexByName("Oak")
 
-	// The model TRIES a miracle, but the empty bank refuses it in-fiction.
+	// The model TRIES a miracle, but the empty bank refuses it in-fiction. The
+	// look-first call (spec 116) comes first so the EMPTY BANK is still what
+	// refuses the grant here — otherwise this test would pass on the gate's
+	// refusal and stop proving the charge economy at all.
 	called := false
 	mt.runLoop = func(ctx context.Context, j toolloop.Job) (toolloop.Result, error) {
 		called = true
+		j.Handlers["inspect_pack"](ctx, toolCall("inspect_pack", `{"villager":"Oak"}`))
 		c := toolCall("work_miracle", `{"kind":"give_item","villager":"Oak","item":"wood","qty":2}`)
 		out := j.Handlers["work_miracle"](ctx, c)
 		j.Record(toolloop.CallRecord{JobID: j.JobID, Ordinal: 1, Tool: "work_miracle",

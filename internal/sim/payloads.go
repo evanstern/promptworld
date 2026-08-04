@@ -166,6 +166,7 @@ var PayloadCatalog = map[string]func() any{
 	"guardian.skills_observed":    func() any { return &SkillsObservedPayload{} },
 	"guardian.time_snapped":       func() any { return &TimeSnappedPayload{} },
 	"guardian.item_granted":       func() any { return &ItemGrantedPayload{} },
+	"guardian.item_taken":         func() any { return &ItemTakenPayload{} },
 	"guardian.entity_moved":       func() any { return &EntityMovedPayload{} },
 	"guardian.entity_removed":     func() any { return &EntityRemovedPayload{} },
 	"guardian.report_card":        func() any { return &GuardianReportCardPayload{} },

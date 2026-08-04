@@ -109,6 +109,9 @@ var defaultTable = map[string]string{
 	"skin.guardian.example_ask.accept_mission":        `"get a second fire built near the west huts and keep it fueled"`,
 	"skin.guardian.example_ask.note_mission_progress": `"how is my mission coming along? note where it stands"`,
 	"skin.guardian.example_ask.cancel_mission":        `"stand down from the fire mission"`,
+	// The pack read (spec 116): the guardian's look inside a villager's own
+	// hands, same frozen-tool-id keying.
+	"skin.guardian.example_ask.inspect_pack": `"what is Cedar actually carrying?"`,
 }
 
 func init() {

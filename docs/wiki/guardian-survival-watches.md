@@ -1,6 +1,6 @@
 ---
 name: guardian-survival-watches
-description: The spec-059 boot-seeded survival watches (near-death, starvation, exposure) — origin-keyed cap/TTL/cancel exemptions, live-only hysteresis matching (matchSurvival), and the survival-turn frame permitting the guardian to act on its own initiative to save a life. Split from [[guardian-orders]]; load when tracing the three genesis watches' mechanics.
+description: The spec-059 boot-seeded survival watches (near-death, starvation, exposure) — origin-keyed cap/TTL/cancel exemptions, live-only hysteresis matching (matchSurvival), the survival-turn frame permitting the guardian to act on its own initiative to save a life, and the spec-116 look-first gate that refuses a vision or pack-reaching working until inspect_pack has opened that villager's pack this turn. Split from [[guardian-orders]]; load when tracing the three genesis watches' mechanics.
 kind: component
 sources:
   - internal/sim/guardian.go
@@ -8,7 +8,8 @@ sources:
   - internal/guardian/turn.go
   - internal/sim/executor.go
   - internal/daemon/daemon.go
-verified_against: f8e8afff5d38198e12d5007e3d022863813374ef
+size_budget_exempt: spec 116 added the look-first gate, which belongs on this note because the gate exists only on the survival turn and only makes sense beside the initiative carve-out it constrains; a frame-vs-gate summary-style split is a dedicated future pass, not this task's scope
+verified_against: 5761edb18e2b5fb49c6a03a050b0d871f5546c05
 ---
 
 # Guardian survival watches
@@ -98,6 +99,24 @@ player configuration:
   player's alone to command, exactly as before (FR-004). See [[guardian]]'s
   Turns section for the frame-composition mechanics shared with every other
   console/system turn.
+- **The look-first gate** (spec 116 FR-007/FR-008) is the survival turn's ONE
+  added restriction, and it exists because the carve-out above was being spent
+  blind: in world-03 the guardian sent a starving villager a vision telling him
+  to eat food he did not carry, having spent both watch turns looking at the
+  ground and never at the man. `turnOrigin.survival` rides the turn's dispatch
+  state (`turnDispatch.survival`, `toolcalls.go`) beside the night mirror, and
+  a per-turn ledger (`turnDispatch.looked`) records every villager
+  `inspect_pack` successfully resolved this turn. On a survival-origin turn a
+  `send_vision` at villager V, or a `work_miracle` of kind `give_item` or
+  `take_item` upon V, is refused as `rejected_gate` before the door is reached
+  unless V is in that ledger — the reason names `inspect_pack` and the
+  villager, so the model repairs it inside the loop's round cap exactly as it
+  repairs a door refusal. The gate is per-villager (looking at one licenses
+  nothing about another), per-turn (a previous turn's look expires), keyed on
+  the turn ORIGIN rather than on message text, and inert on every non-survival
+  turn. `send_omen` is never gated: it addresses a group, not a pack. See
+  [[guardian-turn-loop]] for the dispatch state it rides and
+  [[tool-registry-guardian-tools]] for `inspect_pack` itself.
 - **The miracle targeting digest** (`buildTargetingDigest`, spec 059 US3) is
   a SEPARATE, independently-gated prompt addition (any turn whose granted
   roster offers `work_miracle`, not just a survival turn) — see

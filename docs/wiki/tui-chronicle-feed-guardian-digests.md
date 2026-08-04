@@ -1,11 +1,11 @@
 ---
 name: tui-chronicle-feed-guardian-digests
-description: Child of [[tui-chronicle-feed]] — the guardian-domain digest grammar entries added since specs 044 (run/morgue), 046 (curriculum), 063 (report card), 076 (world-forked), 084 (plan-layer designations/directives), and the four guardian-miracle entries with their gratis annotation. Load when adding or auditing a guardian-family digest row.
+description: Child of [[tui-chronicle-feed]] — the guardian-domain digest grammar entries added since specs 044 (run/morgue), 046 (curriculum), 063 (report card), 076 (world-forked), 084 (plan-layer designations/directives), and the five guardian-miracle entries with their gratis annotation. Load when adding or auditing a guardian-family digest row.
 kind: component
 sources:
   - internal/tui/grammar.go
   - internal/tui/digest.go
-verified_against: 4efa712bb90538c9c195d23146077e7fc535e511
+verified_against: 5761edb18e2b5fb49c6a03a050b0d871f5546c05
 ---
 
 # TUI chronicle feed — guardian-domain digest entries
@@ -49,11 +49,15 @@ the skin's report-card label, the charter fingerprint, and the note's text
 truncated to 80 runes, `morgue.epilogue`-style). Since spec 076, `world.forked` ([[world-forking]]) gets a
 world-lifecycle-voice entry — "forked from `<parent>` at day D, HH:MM", the
 fork's provenance in game time (the digest line is the v1 rendering;
-chronicle narration of the split is a documented unfunded follow-on). The four
+chronicle narration of the split is a documented unfunded follow-on). The five
 [[guardian-miracles]] types render in the guardian family voice, with a
 trailing emphasized `(forced)` annotation (`gratisMark`) when the
 payload's gratis flag waived the charge — the feed never conflates an
-operator force with a charge-priced miracle. Spec 102
+operator force with a charge-priced miracle. Spec 116 adds the fifth,
+`guardian.item_taken` — the `guardian.item_granted` row's mirror, with both a
+line renderer in the guardian voice and a `subjectCandidate` resolver so the
+removal attributes to the villager it was taken from, exactly as a grant
+attributes to its recipient. Spec 102
 ([[guardian-agentization]], [[event-types-guardian-memory]]) adds seven
 guardian memory-store rows — `guardian.memory_added/embedded/promoted/
 faded`, `guardian.salience_revised`, `guardian.memory_merged`,
@@ -73,5 +77,5 @@ grammar, and the mental-map/memory-retrieval family entries. [[morgue]]
 owns the run-outcome/epilogue events; [[curriculum-ladder]] owns the
 ladder events; [[grounded-feedback]] owns the report card;
 [[world-forking]] owns `world.forked`; [[guardian-designations]] owns the
-plan-layer event lifecycle; [[guardian-miracles]] owns the four miracle
+plan-layer event lifecycle; [[guardian-miracles]] owns the five miracle
 types and the gratis flag.

@@ -104,14 +104,22 @@ func setPlanSchema(goals []string) json.RawMessage {
 	return b
 }
 
-// miracleKinds is the guardian turn's miracle vocabulary — the four kinds the
+// miracleKinds is the guardian turn's miracle vocabulary — the kinds the
 // guardian's work_miracle tool (spec 017 T019b) and internal/guardian's landMiracle
 // / BuildMiracleBatch (spec 016 turn contract) accept. It is declared here as
 // work_miracle's Enum descriptor rather than imported: internal/tool is a leaf
 // (research R1) and cannot see internal/guardian or internal/sim, so the
 // canonical list is MIRRORED, and internal/guardian's TestMiracleKindsMirrorTool
 // pins it equal to BuildMiracleBatch's accepted set so it cannot drift.
-var miracleKinds = []string{"move", "remove", "give_item", "time_snap"}
+//
+// take_item (spec 116 FR-009) joins as give_item's mirror image, appended last
+// so no existing kind's declared position shifts: give_item only ADDS, which
+// made a full pack a locked door the guardian could see (0 free to receive) and
+// had no key for — an over-cap grant is rejected WHOLE, so the one intervention
+// that would have saved the world-03 death was sealed shut by the very fullness
+// nobody could look at. It is the same class of act pointed the other way, so
+// it carries give_item's price exactly.
+var miracleKinds = []string{"move", "remove", "give_item", "time_snap", "take_item"}
 
 // MiracleKinds returns a copy of work_miracle's kind vocabulary, in the order
 // above. Exported for internal/guardian's drift cross-check test.
@@ -133,6 +141,10 @@ var miracleCosts = map[string]int{
 	"remove":    1,
 	"give_item": 1,
 	"time_snap": 2,
+	// take_item is priced as give_item is (spec 116 A4): the same
+	// world-shaping reach into a pack, pointed the other way — a different
+	// price would need a reason the artifacts do not supply.
+	"take_item": 1,
 }
 
 // kindToEvent maps a miracle kind to the store event type it lands as — the
@@ -145,6 +157,7 @@ var kindToEvent = map[string]string{
 	"remove":    "guardian.entity_removed",
 	"give_item": "guardian.item_granted",
 	"time_snap": "guardian.time_snapped",
+	"take_item": "guardian.item_taken",
 }
 
 // MiracleCost returns the charge price of a miracle kind; ok is false for an
@@ -701,7 +714,10 @@ var guardianTools = []Tool{
 		Params: miracleParams(),
 		Cost:   Cost{Charges: 1},
 		Events: []string{"guardian.time_snapped", "guardian.item_granted",
-			"guardian.entity_moved", "guardian.entity_removed", "agent.memory_added"}},
+			"guardian.entity_moved", "guardian.entity_removed", "agent.memory_added",
+			// spec 116: the removal's own event; its companion memory is the
+			// agent.memory_added already declared above.
+			"guardian.item_taken"}},
 	// explain (spec 063 US1, FR-001/FR-002): the guardian's read-only
 	// mechanics-facts tool. Effect READ — the journal-tool precedent: it
 	// returns a deterministic fact sheet into cognition (explain.go), grounds
@@ -885,6 +901,23 @@ var guardianTools = []Tool{
 	{Name: "cancel_mission", Effect: Expressive, Gate: None,
 		Params: []Param{{Name: "id", Kind: Text, Required: true}},
 		Events: []string{"guardian.mission_cancelled"}},
+	// inspect_pack (spec 116 FR-001): the guardian's free look INSIDE a
+	// villager's pack — Effect READ, the survey_site/explain precedent: it
+	// returns a deterministic sheet into cognition (assembled turn-side,
+	// internal/guardian/pack.go), grounds nothing, never consumes the turn's
+	// one mediated act, and is charge-free ("looking is looking, not an
+	// act"). It exists because the targeting digest's gross "carrying 24/24,
+	// 0 free" cannot distinguish carries-no-food from carries-food-and-will-
+	// not-eat from has-no-room-to-take-any — the three cases that want three
+	// different interventions (the world-03 death). `villager` is required;
+	// an unknown or dead name returns a repairable in-fiction miss naming the
+	// living roster, never a hard error, so the param stays unconstrained
+	// beyond its kind. Appended last so no existing tool's registration
+	// position shifts.
+	{Name: "inspect_pack", Effect: Read, Gate: None,
+		Params: []Param{{Name: "villager", Kind: AgentName, Required: true,
+			Description: "whose pack to look inside"}},
+		PromptGloss: `inspect_pack returns exactly what one living villager carries: every kind and its count, their carried and free bulk, and whether they hold any food at all. Free, unlimited, never your act — look before you speak to someone about what they carry, or reach into their pack.`},
 }
 
 // journalTools are the villager-only journal capabilities (spec 019, US3): two

@@ -1,13 +1,14 @@
 ---
 name: testing-guardian-suites
-description: Guardian package behavioral coverage (turn serialization, agency surface, firewall audit, concurrency) plus the standing-order lifecycle proven on both the reducer door and the guardian-side matcher/trigger machinery. Split out of [[testing-strategy]].
+description: Guardian package behavioral coverage (turn serialization, agency surface, firewall audit, concurrency), the spec-116 pack-read and look-first-gate suite (internal/guardian/pack_test.go), plus the standing-order lifecycle proven on both the reducer door and the guardian-side matcher/trigger machinery. Split out of [[testing-strategy]].
 kind: pattern
 sources:
   - internal/sim/guardian_test.go
   - internal/guardian/guardian_test.go
   - internal/guardian/guardian_gaps_test.go
   - internal/guardian/orders_test.go
-verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
+  - internal/guardian/pack_test.go
+verified_against: 5761edb18e2b5fb49c6a03a050b0d871f5546c05
 ---
 
 # Guardian behavior & standing-order suites
@@ -99,6 +100,19 @@ fuzzy-confirm matrix — no-hit silence, rate-cap skipping, negative/failed verd
 armed with no retry, and a yes verdict triggers (`TestFuzzyNoConfirmWithoutHit`,
 `TestFuzzyRateCapSkipsExcess`, `TestFuzzyNegativeVerdictLeavesArmed`,
 `TestFuzzyConfirmFailureNoRetry`, `TestFuzzyYesTriggers`). Channel-gated throughout.
+
+**Pack-read and look-first suite** (`internal/guardian/pack_test.go`, spec 116,
+[[guardian-survival-watches]]): the sheet's own coverage — the world-03 fixture
+(a living villager carrying 20 wood and 4 planks and nothing else, asserting the
+`24/24`, `0 free`, and literal "carries no food" lines), byte-identity across two
+identical calls, the empty pack, the spear remaining-uses rendering, and the
+honest-miss shape for an unknown or dead name (always `read_ok`, never an error
+verdict) — plus the mirror-aliasing regression: mutating the replica's `Spears`
+slice after `mirrorState` must not change what a sheet already read. The gate's
+five cases are pinned here too: refused with no prior look, landing after the
+repair inside the same turn, per-villager scoping (looking at one licenses
+nothing about another), inert on a non-survival turn, and `send_omen` never
+gated. The landed-removal batch and the full survival audit trail round it out.
 
 ## Connections
 

@@ -1,11 +1,11 @@
 ---
 name: testing-miracle-suites
-description: Miracle-cost derivation (sim.miracleCost mirrors the tool registry's price table) and the full miracle reducer/IPC round-trip coverage — move/remove/grant/time-snap arms, charge doctrine, and the rebaseTicks tick-taxonomy completeness guard. Split out of [[testing-strategy]].
+description: Miracle-cost derivation (sim.miracleCost mirrors the tool registry's price table) and the full miracle reducer/IPC round-trip coverage — move/remove/grant/take/time-snap arms, charge doctrine, and the rebaseTicks tick-taxonomy completeness guard. Split out of [[testing-strategy]].
 kind: pattern
 sources:
   - internal/sim/miracles_test.go
   - internal/ipc/ipc_test.go
-verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
+verified_against: 5761edb18e2b5fb49c6a03a050b0d871f5546c05
 ---
 
 # Miracle pricing & reducer suites
@@ -17,11 +17,16 @@ the registry's single authoritative price source, not a mirror, so a price edit
 cannot half-propagate ([[tool-registry]], [[guardian-miracles]]).
 
 **Miracle reducer suite** (`internal/sim/miracles_test.go`, spec 016,
-[[guardian-miracles]]): per-arm coverage for all four types — move (villager/
+[[guardian-miracles]]): per-arm coverage for all five types — move (villager/
 structure-whole/pile-merge, impassable/absent-source rejection), remove
 (villager rejected, chest spill, pile destruction, terrain routing), grant
 (happy path, over-cap whole-reject, unknown kind, dead villager, non-positive
-qty, spear shape), and time-snap (forward-only, duration-preserving,
+qty, spear shape), take (spec 116: the world-03 unlock sequence — a full pack
+refusing a grant, the removal, then the grant landing; over-count whole-reject
+naming the actual carried count; dead villager / unknown kind / non-positive qty;
+the conservation invariant that (inventory + tile pile) totals are unchanged for a
+plain kind, spears, and food; most-worn-first spear ordering; create-or-merge onto
+an existing pile; and replay byte-identity), and time-snap (forward-only, duration-preserving,
 whole-day-no-drift, mints-no-charges-across-skipped-boundaries, while-paused);
 plus charge doctrine (insufficient-charge rejection, gratis waives only the
 charge, gratis is logged visibly). Since TASK-163, `TestGrantKindsMirrorTool`

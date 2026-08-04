@@ -6,7 +6,7 @@ sources:
   - internal/guardian/turn.go
   - internal/tool/derive.go
   - internal/sim/miracles.go
-verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
+verified_against: 5761edb18e2b5fb49c6a03a050b0d871f5546c05
 ---
 
 # Guardian's miracle guarantees
@@ -46,11 +46,23 @@ attempt instead of bouncing off `applyItemGranted`
 pinned byte-unchanged by `TestMiracleGrantOverCapWholeReject`,
 `internal/sim/miracles_test.go`).
 
+Spec 116 closed the half of that loop headroom alone could not: gross bulk told
+the guardian a pack was full but never WHAT filled it, and `give_item` has no
+way to empty one. Two additions answer it. `inspect_pack`
+([[tool-registry-guardian-tools]]) renders a per-villager CONTENTS sheet from a
+new `agentInv []sim.Inventory` mirror refreshed in the SAME `mirrorState` batch
+as `needMirror` — deep-copied, since the replica's `Spears`/`Axes` slices keep
+mutating as hunts and harvests spend uses. `take_item`
+([[guardian-miracle-mechanics]]) is the removal that makes a full pack
+openable. The `give_item` gloss now names `take_item` as the remedy when free
+bulk is zero, so the guidance offers a repair and not just a rule.
+
 **Replay determinism**: a miracle event carries only door-resolved, already-decided
 values (a tick, an index, a kind, a coordinate) — never a name or a day/HH:MM string
 — so `Apply` re-derives nothing at replay time; the same event applied to the same
 prior state always produces the same result. `TestMiracleReplayByteIdentity`,
-`TestMiracleSnapReplayByteIdentity`, and `TestMiracleGrantReplayByteIdentity`
+`TestMiracleSnapReplayByteIdentity`, `TestMiracleGrantReplayByteIdentity`, and
+(spec 116) the removal's own replay test
 (`internal/sim/miracles_test.go`) prove each type replays to the same state hash as
 live application. Spec 091's door-side move-target freshness (villager moves
 naming a target now resolve that villager's LIVE position at the door,

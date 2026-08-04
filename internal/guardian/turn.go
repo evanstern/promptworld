@@ -366,6 +366,12 @@ func (mt *Guardian) runTurn(ctx context.Context, o turnOrigin) (TurnResult, erro
 
 	result := TurnResult{}
 	d := &turnDispatch{mt: mt, charges: charges, alive: alive, night: night, tick: tick, result: &result, grant: grant,
+		// The survival origin rides the dispatch beside the night mirror
+		// (spec 116 FR-007): it is the look-first gate's only trigger, and
+		// the ledger starts this turn empty — looking is per-turn, so a
+		// previous turn's inspect_pack licenses nothing here.
+		survival: o.survival,
+		looked:   map[int]bool{},
 		// The tutor channel (spec 102 D4, tutor.go) wraps the explain scope
 		// (spec 063 US1): the SAME final roster this turn declares (granted
 		// subset, bundle tools included, work_miracle's kind enum already
@@ -805,6 +811,18 @@ func (mt *Guardian) landMiracle(mm miracleArgs, charges int, grant grantSet) (*M
 		item := strings.ToLower(strings.TrimSpace(mm.Item))
 		params = MiracleParams{Agent: idx, Item: item, Qty: mm.Qty}
 		summary = fmt.Sprintf("granted %d %s to %s", mm.Qty, item, sim.AgentNames[idx])
+	case "take_item":
+		// Spec 116: give_item's arm verbatim, pointed the other way — the
+		// door resolves the name, and the reducer stays the semantic
+		// authority for liveness, the item vocabulary, and the reject-whole
+		// carried-quantity check.
+		idx := agentIndexByName(mm.Villager)
+		if idx < 0 {
+			return nil, fmt.Sprintf("no villager named %q", mm.Villager)
+		}
+		item := strings.ToLower(strings.TrimSpace(mm.Item))
+		params = MiracleParams{Agent: idx, Item: item, Qty: mm.Qty}
+		summary = fmt.Sprintf("took %d %s from %s", mm.Qty, item, sim.AgentNames[idx])
 	default:
 		return nil, fmt.Sprintf("unknown %s %q", mt.sk().WorkingNoun(), mm.Kind)
 	}

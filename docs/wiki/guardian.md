@@ -5,7 +5,7 @@ kind: component
 sources:
   - internal/guardian/guardian.go
   - internal/skin/skin.go
-verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
+verified_against: 5761edb18e2b5fb49c6a03a050b0d871f5546c05
 ---
 
 # Guardian
@@ -56,7 +56,7 @@ Two mediated forms carry the guardian's influence and cost a charge from
 the same bank: a **vision**/**omen** (`send_vision`/`send_omen`) lands a
 perception memory on a target villager, a named group, or (omens,
 night-only) everyone; a **miracle** (`work_miracle`) spends the bank on a
-concrete world edit (move/remove/give_item/time_snap) via the shared
+concrete world edit (move/remove/give_item/take_item/time_snap) via the shared
 `BuildMiracleBatch` door. See [[guardian-mediated-acts]] for both, and
 [[guardian-miracles]] for the miracle event types, cost table, rebase
 taxonomy, and landing doors. Since spec 084 a third, CHARGE-FREE verb

@@ -8,7 +8,8 @@ sources:
   - internal/guardian/charter.go
   - cmd/promptworld/stages.go
   - internal/worlds/unlocks.go
-verified_against: fc1a8314f3f71a33c5e2145c914d5cbb511d9196
+size_budget_exempt: spec 116 added inspect_pack to the stage-1 ceiling paragraph, which must stay on this note as the normative ladder authority (the ceiling roster and its rationale are the note's whole subject); a per-stage summary-style split is a dedicated future pass, not this task's scope
+verified_against: 5761edb18e2b5fb49c6a03a050b0d871f5546c05
 ---
 
 # Curriculum ladder
@@ -78,7 +79,11 @@ plus, since spec 085, `prophesy` (send_vision's stage profile — the same
 influence verb with a wager; [[guardian-faith]]), plus, since spec 101,
 `brief_myths` (a read-only lookup, the `survey_site`/`explain` profile —
 `canonize_region` stays OUT, the `work_miracle` precedent —
-[[guardian-canonization]]), with no miracle kinds and the empty-intersection
+[[guardian-canonization]]), plus, since spec 116, `inspect_pack` (the same
+read profile: charge-free, event-free, never the turn's act, and it widens no
+acting capability — it only lets the guardian see what a villager already
+carries; its companion `take_item` stays OUT, a `work_miracle` kind —
+[[guardian-miracles]]), with no miracle kinds and the empty-intersection
 effect shutting out bundle tools; stage-3, stage-4, and pre-ladder worlds
 have no ceiling. `guardian.StageCeilingVerbs(stage)`
 exports a stage's granted loop-tool names in registry order — the SAME
