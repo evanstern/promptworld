@@ -6,7 +6,7 @@ title: >-
 status: Done
 assignee: []
 created_date: '2026-08-03 19:57'
-updated_date: '2026-08-04 16:04'
+updated_date: '2026-08-05 02:35'
 labels:
   - guardian
   - tools
@@ -109,6 +109,14 @@ SPEC CORRECTION (found by the implementer, verified, fixed rather than left wron
 FOLLOW-ONS FLAGGED, NOT INVENTED (candidates for cards if the operator wants them): (a) vocabulary seam — the sheet renders storage names ('spears') while take_item's enum uses grant names ('spear'), so a model reading the sheet may call take_item(item='spears') and take a repairable whole-refusal; (b) no CLI verb for removals — the IPC door has parity but 'promptworld work' has no 'take' verb, so an operator cannot reach take_item from the CLI.
 
 AWAITING: operator review of PR #165, including the six spec Assumptions (A1-A6) flagged for review — most notably A2 (the gate does NOT fire on ordinary console turns, only survival turns) and A6 (AC#5 is verified structurally, since model prose cannot be asserted against).
+
+2026-08-04 — OPERATOR REVIEW of the spec 116 Assumptions (A1-A6), recorded:
+
+- A2 OVERTURNED (widen). The turn-origin trigger is too narrow. Ratified replacement: the gate becomes PERIL-KEYED for visions and UNCONDITIONAL for pack reaches — send_vision is gated on ANY turn origin when the target villager is in a survival band; give_item and take_item are gated on ANY turn for ANY villager (a look is cheap there and it prevents the whole-reject door bounce outright). send_omen stays ungated (it addresses a group, not a pack). Rejected alternatives: universal gating (taxes every vision in the game with an extra round, including routine console play to healthy villagers) and pack-reaches-only (leaves A2's stated gap open — a console turn could still send an imperiled villager a vision contradicting their pack). Carried forward as TASK-199.
+- A6 AGREED as written. AC#5 stays discharged structurally (SC-001 + SC-002); no change.
+- A1, A3, A4, A5 were NOT addressed in this review and remain flagged as originally recorded. They stand as implemented; nothing blocks on them.
+
+Both follow-ons approved for work: the storage/grant vocabulary mismatch (with an explicit operator instruction to CENTRALIZE the definitions rather than patch the symptom — magic strings are the failure mode being designed out) and the missing CLI take verb. Both carried forward as TASK-200.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
