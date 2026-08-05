@@ -6,7 +6,7 @@ title: >-
 status: Done
 assignee: []
 created_date: '2026-08-03 19:57'
-updated_date: '2026-08-05 02:35'
+updated_date: '2026-08-05 02:40'
 labels:
   - guardian
   - tools
@@ -117,6 +117,18 @@ AWAITING: operator review of PR #165, including the six spec Assumptions (A1-A6)
 - A1, A3, A4, A5 were NOT addressed in this review and remain flagged as originally recorded. They stand as implemented; nothing blocks on them.
 
 Both follow-ons approved for work: the storage/grant vocabulary mismatch (with an explicit operator instruction to CENTRALIZE the definitions rather than patch the symptom — magic strings are the failure mode being designed out) and the missing CLI take verb. Both carried forward as TASK-200.
+
+2026-08-04 (same review, correction to the note above) — A1, A3, A4 and A5 are RATIFIED by the operator. The preceding note recorded them as 'not addressed'; that was my under-reading of the review, corrected here rather than by rewriting the earlier entry.
+
+All six spec 116 Assumptions are therefore now resolved:
+- A1 RATIFIED — the look-first gate is structural, not prose. Prompt-only remedies are foreclosed by the world-03 evidence (the carry-headroom digest line was present and read past).
+- A2 OVERTURNED and widened — see the note above; peril-keyed visions, unconditional pack reaches. Carried forward as TASK-199.
+- A3 RATIFIED — taken goods drop to a pile at the villager's feet; they are never unmade. Total goods conserved.
+- A4 RATIFIED — take_item is priced and staged exactly as give_item (1 charge, excluded from the stage-1/2 ceiling).
+- A5 RATIFIED — inspect_pack is granted at every stage; read-only, widens no acting capability.
+- A6 AGREED as written — AC#5 stays discharged structurally via SC-001 + SC-002.
+
+No assumption on spec 116 remains open. The only carried-forward work is TASK-199 (A2's widening) and TASK-200 (the two approved follow-ons).
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
