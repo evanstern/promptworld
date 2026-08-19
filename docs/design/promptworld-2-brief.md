@@ -1,4 +1,10 @@
-# promptworld II — design brief
+# Kithcraft — design brief (promptworld II)
+
+**Name:** **Kithcraft** — operator-ratified 2026-08-19. *Kith* is the forgotten half of
+"kith and kin": one's friends and neighbors, the people who are yours but not family —
+exactly what the villagers are. *-craft* names the vehicle (Minecraft mod), the game loop
+(crafting), and the project's aim: crafting company. "promptworld II" remains the working
+lineage label; the project and its repo should be named Kithcraft.
 
 **Status:** ratified by the operator, 2026-08-19 design session (no edits requested).
 **Provenance:** distilled from a live operator/Claude design session in the promptworld I repo;
